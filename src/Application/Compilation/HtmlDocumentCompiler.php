@@ -9,7 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.2.0';
+    public const COMPILER_VERSION = '0.3.0';
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
 
@@ -90,75 +90,75 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
             if ($type === self::HERO_TYPE) {
                 $heroCount++;
-                $sections[] = $this->compileHero($props);
+                $sections[] = $this->withBlockRuntime($this->compileHero($props), $instanceId, self::HERO_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::FEATURES_TYPE) {
-                $sections[] = $this->compileFeatures($props);
+                $sections[] = $this->withBlockRuntime($this->compileFeatures($props), $instanceId, self::FEATURES_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::CTA_TYPE) {
-                $sections[] = $this->compileCta($props);
+                $sections[] = $this->withBlockRuntime($this->compileCta($props), $instanceId, self::CTA_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::CONTACT_TYPE) {
-                $sections[] = $this->compileContact($props);
+                $sections[] = $this->withBlockRuntime($this->compileContact($props), $instanceId, self::CONTACT_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::HERO_SPLIT_TYPE) {
                 $heroCount++;
-                $sections[] = $this->compileHeroSplit($props);
+                $sections[] = $this->withBlockRuntime($this->compileHeroSplit($props), $instanceId, self::HERO_SPLIT_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::HERO_SLIDER_TYPE) {
                 $heroCount++;
-                $sections[] = $this->compileHeroSlider($props);
+                $sections[] = $this->withBlockRuntime($this->compileHeroSlider($props), $instanceId, self::HERO_SLIDER_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::LOGO_CLOUD_TYPE) {
-                $sections[] = $this->compileLogoCloud($props);
+                $sections[] = $this->withBlockRuntime($this->compileLogoCloud($props), $instanceId, self::LOGO_CLOUD_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::STATS_TYPE) {
-                $sections[] = $this->compileStats($props);
+                $sections[] = $this->withBlockRuntime($this->compileStats($props), $instanceId, self::STATS_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::PRICING_TYPE) {
-                $sections[] = $this->compilePricing($props);
+                $sections[] = $this->withBlockRuntime($this->compilePricing($props), $instanceId, self::PRICING_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::TEAM_TYPE) {
-                $sections[] = $this->compileTeam($props);
+                $sections[] = $this->withBlockRuntime($this->compileTeam($props), $instanceId, self::TEAM_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::GALLERY_TYPE) {
-                $sections[] = $this->compileGallery($props);
+                $sections[] = $this->withBlockRuntime($this->compileGallery($props), $instanceId, self::GALLERY_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
 
             if ($type === self::BAR_CHART_TYPE) {
-                $sections[] = $this->compileBarChart($props);
+                $sections[] = $this->withBlockRuntime($this->compileBarChart($props), $instanceId, self::BAR_CHART_TYPE, $block['motion'] ?? null);
 
                 continue;
             }
@@ -725,6 +725,66 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->assertAllowedImageUrl($src);
 
         return '<img class="'.$className.'" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="'.$loading.'">';
+    }
+
+    private function withBlockRuntime(string $markup, string $instanceId, string $type, mixed $motion): string
+    {
+        $attributes = 'data-block-id="'.$this->escapeAttribute($instanceId).'"';
+
+        if ($motion !== null) {
+            if (! is_array($motion)) {
+                throw new DocumentCompileException('Block motion must be an object.');
+            }
+
+            $this->assertOnlyKeys($motion, ['preset', 'intensity', 'trigger', 'stagger_ms'], 'Block motion');
+            $preset = $this->requiredString($motion, 'preset', 32);
+            $intensity = $this->requiredString($motion, 'intensity', 16);
+            $trigger = $this->requiredString($motion, 'trigger', 16);
+            $stagger = $motion['stagger_ms'] ?? null;
+
+            if (! in_array($preset, $this->allowedMotionPresets($type), true)) {
+                throw new DocumentCompileException('Block motion preset is not supported for this block type.');
+            }
+            if (! in_array($intensity, ['subtle', 'normal', 'strong'], true)) {
+                throw new DocumentCompileException('Block motion intensity is invalid.');
+            }
+            if (! in_array($trigger, ['once', 'repeat'], true)) {
+                throw new DocumentCompileException('Block motion trigger is invalid.');
+            }
+            if (! is_int($stagger) || ! in_array($stagger, [60, 100, 160], true)) {
+                throw new DocumentCompileException('Block motion stagger interval is invalid.');
+            }
+
+            if ($preset !== 'none') {
+                $attributes .= ' data-g7pb-motion="'.$this->escapeAttribute($preset).'"';
+                $attributes .= ' data-g7pb-motion-intensity="'.$this->escapeAttribute($intensity).'"';
+                $attributes .= ' data-g7pb-motion-trigger="'.$this->escapeAttribute($trigger).'"';
+                $attributes .= ' data-g7pb-motion-stagger="'.$stagger.'"';
+            }
+        }
+
+        $compiled = preg_replace('/^<section /', '<section '.$attributes.' ', $markup, 1);
+        if (! is_string($compiled) || $compiled === $markup) {
+            throw new DocumentCompileException('Compiled block markup has no section root.');
+        }
+
+        return $compiled;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function allowedMotionPresets(string $type): array
+    {
+        return match ($type) {
+            self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE => ['none', 'reveal', 'parallax-soft'],
+            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE => ['none', 'reveal', 'stagger'],
+            self::STATS_TYPE => ['none', 'reveal', 'stagger', 'counter'],
+            self::GALLERY_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
+            self::BAR_CHART_TYPE => ['none', 'reveal', 'chart-draw'],
+            self::CTA_TYPE, self::CONTACT_TYPE => ['none', 'reveal'],
+            default => ['none'],
+        };
     }
 
     /**

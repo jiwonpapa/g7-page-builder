@@ -152,6 +152,13 @@ async function expectBlockOrder(locator: Locator, expected: BlockType[]): Promis
   expect(actual).toEqual(expected);
 }
 
+async function selectMotion(page: Page, type: BlockType, preset: string): Promise<void> {
+  await editorBlock(page, type).click();
+  const field = await revealInspectorField(page, 'page-builder-motion-preset');
+  await field.selectOption(preset);
+  await expect(field).toHaveValue(preset);
+}
+
 async function requiredLink(locator: Locator, label: string): Promise<string> {
   await expect(locator).toBeVisible();
   await expect(locator).toHaveAttribute('href', /\S+/);
@@ -405,7 +412,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel);
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
+    await selectMotion(page, 'hero', 'parallax-soft');
+    await selectMotion(page, 'features', 'stagger');
+    await selectMotion(page, 'cta', 'reveal');
+    await selectMotion(page, 'stats', 'counter');
+    await selectMotion(page, 'bar-chart', 'chart-draw');
 
+    await editorBlock(page, 'features').click();
     await page.getByTestId('page-builder-block-move-up').click({ timeout: 10_000 });
     await expectBlockOrder(page.getByTestId('page-builder-block'), PUBLISHED_BLOCK_ORDER);
 
@@ -447,6 +460,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(previewPage.getByText(ctaHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(contactHeading, { exact: true })).toBeVisible();
     await expect(previewPage.locator('form')).toHaveCount(0);
+    await expect(previewPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
+    await expect(previewPage.locator('[data-block-type="hero"]')).toHaveAttribute('data-g7pb-motion', 'parallax-soft');
+    await expect(previewPage.locator('[data-block-type="features"]')).toHaveAttribute('data-g7pb-motion', 'stagger');
     await expectResponsivePage(previewPage, testInfo);
     const repeatedPreviewResponse = await previewPage.reload();
     expect(repeatedPreviewResponse?.ok()).toBe(true);
@@ -475,6 +491,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(publicPage.getByText(ctaHeading, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(contactHeading, { exact: true })).toBeVisible();
     await expect(publicPage.locator('form')).toHaveCount(0);
+    await expect(publicPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
+    const animatedStats = publicPage.locator('[data-block-type="stats"][data-g7pb-motion="counter"]');
+    await animatedStats.scrollIntoViewIfNeeded();
+    await expect(animatedStats).toHaveClass(/is-inview/);
+    const animatedChart = publicPage.locator('[data-block-type="bar-chart"][data-g7pb-motion="chart-draw"]');
+    await animatedChart.scrollIntoViewIfNeeded();
+    await expect(animatedChart).toHaveClass(/is-inview/);
     await expectResponsivePage(publicPage, testInfo);
 
     await page.bringToFront();

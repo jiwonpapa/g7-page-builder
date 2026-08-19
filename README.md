@@ -27,7 +27,7 @@ G7 module-owned public route/viewer
 
 ## 현재 상태
 
-Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가해 12종 테스트 카탈로그를 구현했습니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 구조 미리보기 카탈로그, typed style preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다.
+Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가해 12종 테스트 카탈로그를 구현했습니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 구조 미리보기 카탈로그, typed style·motion preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 공개 효과는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 5종이며, 효과가 있는 페이지에만 경량 IIFE 런타임을 조건부 로드합니다.
 
 전체 유료 MVP는 아직 아닙니다. Gallery의 실제 업로드를 담당할 자체 MediaPort, 기본 SEO, 복구 가능한 문서 보관·삭제, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
 
@@ -61,6 +61,7 @@ Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Clou
 2. 모듈 자체 문서·리비전·발행 저장소
 3. 12종 block schema·editor·PHP compiler·public renderer와 핵심 lifecycle PC·태블릿·모바일 E2E
 4. 별도 문서함, 메타수정, 최근 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제
+5. 5종 typed motion preset, 공개 런타임, reduced-motion·CSP 회귀시험
 
 다음:
 
@@ -77,6 +78,7 @@ Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 �
 - [코어 계약 상태](docs/core-contracts.md)
 - [편집기 엔진 결정](docs/editor-engine-decision.md)
 - [블록 카탈로그 벤치마크](docs/block-catalog-benchmark.md)
+- [동적 효과 계약](docs/motion-effects.md)
 - [MVP 기능 명세](docs/mvp-functional-spec.md)
 - [문서·발행 계약](docs/document-publish-contract.md)
 - [품질 하네스](docs/quality-harness.md)

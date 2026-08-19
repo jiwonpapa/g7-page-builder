@@ -15,7 +15,7 @@ G7 Page Builder의 MVP 공식 지원 환경은 **단일 Ubuntu LTS VPS 기준**�
 
 ```text
 개발·CI
-TypeScript/React --Node + Vite--> dist/js + dist/css
+TypeScript/React --Node + Vite--> editor IIFE + public effects IIFE + CSS
                                       |
                                       v
 운영 서버
@@ -28,6 +28,7 @@ TypeScript/React --Node + Vite--> dist/js + dist/css
 - Node.js와 Vite는 개발·CI 빌드 도구입니다.
 - 운영 서버는 TypeScript를 컴파일하지 않습니다.
 - 브라우저는 릴리스 ZIP에 포함된 JavaScript와 CSS만 실행합니다.
+- 공개 페이지는 motion preset이 있을 때만 React 없는 경량 effects IIFE를 self-hosted asset으로 실행합니다.
 - Page Builder는 자체 Node.js 서버, SSR 서버, Rust daemon, Redis 또는 WebSocket을 런타임 필수조건으로 만들지 않습니다.
 - G7 코어의 Queue·Scheduler·Reverb 사용 여부와 Page Builder의 기본 편집·발행 가능 여부를 분리합니다.
 
@@ -39,7 +40,7 @@ G7 공식 문서도 배포본에 빌드 산출물과 `vendor`가 포함되면 �
 
 1. 고정된 Node·npm 버전으로 의존성을 설치합니다.
 2. TypeScript strict, Vitest와 정적 경계 검사를 통과합니다.
-3. Vite IIFE JavaScript와 CSS를 생성합니다.
+3. Vite로 editor IIFE, public effects IIFE와 CSS를 생성합니다.
 4. `module.json`의 `assets.*.output`과 실제 파일 경로가 일치하는지 검사합니다.
 5. sourcemap·비밀정보·`node_modules`를 제외합니다.
 6. `dist`, `BUILD-INFO`, `SHA256SUMS`를 릴리스 ZIP에 포함합니다.

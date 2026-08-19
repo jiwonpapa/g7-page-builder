@@ -68,6 +68,9 @@
         "props": {
           "type": "object"
         },
+        "motion": {
+          "$ref": "#/$defs/motion"
+        },
         "slots": {
           "type": "object",
           "propertyNames": {
@@ -173,6 +176,25 @@
         },
         "spacing": {
           "enum": ["compact", "normal", "spacious"]
+        }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preset", "intensity", "trigger", "stagger_ms"],
+      "properties": {
+        "preset": {
+          "enum": ["none", "reveal", "stagger", "parallax-soft", "counter", "chart-draw"]
+        },
+        "intensity": {
+          "enum": ["subtle", "normal", "strong"]
+        },
+        "trigger": {
+          "enum": ["once", "repeat"]
+        },
+        "stagger_ms": {
+          "enum": [60, 100, 160]
         }
       }
     },

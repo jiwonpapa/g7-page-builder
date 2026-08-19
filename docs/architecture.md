@@ -45,10 +45,12 @@ PageBuilderDocument v1  <- 유일한 원본
 PHP validate + compile
       |
       v
-last-good published HTML
+last-good published HTML + typed data attributes
       |
       v
 G7 module-owned public route/viewer
+      |
+      +-- motion이 있을 때만 1.6KB gzip public effects IIFE
 ```
 
 ## MVP 공개 방식
@@ -69,3 +71,5 @@ G7 module-owned public route/viewer
 - 모듈이 활성인 schema/compiler 비호환에서는 편집·발행만 중지하고 기존 공개 페이지를 유지합니다.
 - 코어 버전 비호환으로 모듈이 비활성화되면 viewer route도 사라지므로 배포 doctor가 해당 G7 업데이트를 중지합니다.
 - 공개 요청에서는 Puck·Node·컴파일러를 실행하지 않고 저장된 발행본만 읽습니다.
+- 동적 효과는 canonical block의 typed `motion` 계약을 PHP compiler가 `data-g7pb-motion` 속성으로 변환합니다.
+- 공개 효과 런타임은 G7 Adapter view가 self-hosted asset으로 조건부 로드하며 Domain/Application은 브라우저 구현을 알지 않습니다.

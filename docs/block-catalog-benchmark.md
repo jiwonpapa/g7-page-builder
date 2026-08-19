@@ -41,14 +41,14 @@
 - 카탈로그는 block 이름만 나열하지 않고 축약된 실제 구조와 설명을 먼저 보여줍니다.
 - 시각 체계는 밝은 편집면, warm gray/slate, 단일 cobalt accent로 통일합니다.
 - 공개 block은 의미 구조·타이포그래피·간격을 우선하고 과도한 card 중첩을 피합니다.
-- Slider는 브라우저 scroll-snap, 그래프는 semantic `progress`를 사용해 공개 페이지에 새 JS runtime을 추가하지 않습니다.
+- Slider는 브라우저 scroll-snap, 그래프는 semantic `progress`를 기본 구조로 사용합니다. 동적 효과를 선택한 페이지에서만 별도 경량 runtime을 조건부 로드합니다.
 - Gallery는 현재 URL 기반 시험 block입니다. 실제 업로드·선택·삭제는 자체 `MediaPort`가 완성된 뒤 교체합니다.
 
 ## 편집 경계
 
 - 제목·본문·버튼·링크·이미지·반복 item은 모두 편집합니다.
 - 구조, breakpoint, 접근성 속성은 block이 소유합니다.
-- 관리자는 `surface`, `spacing`, 열 수, 색상 tone 같은 allowlist preset만 선택합니다.
+- 관리자는 `surface`, `spacing`, 열 수, 색상 tone과 블록별 motion 같은 allowlist preset만 선택합니다.
 - Tailwind class, inline style, raw HTML/CSS/JS는 저장하지 않습니다.
 - Monaco 기반 Custom Code는 별도 고급 Block Pack과 sandbox·CSP·권한 계약이 생기기 전에는 제공하지 않습니다.
 

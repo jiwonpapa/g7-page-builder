@@ -448,6 +448,10 @@ final class PublicationPersistenceTest extends TestCase
             self::assertStringNotContainsString('max-age', $cacheControl);
             self::assertStringNotContainsString('stale-while-revalidate', $cacheControl);
         }
+        $contentSecurityPolicy = (string) $viewerResponse->headers->get('Content-Security-Policy');
+        self::assertStringContainsString("script-src 'self'", $contentSecurityPolicy);
+        self::assertStringNotContainsString("'unsafe-eval'", $contentSecurityPolicy);
+        self::assertStringNotContainsString("script-src 'self' 'unsafe-inline'", $contentSecurityPolicy);
         self::assertSame(304, $notModifiedResponse->getStatusCode());
     }
 

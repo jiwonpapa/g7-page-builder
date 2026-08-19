@@ -169,6 +169,49 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
     }
 
+    public function test_typed_motion_is_compiled_to_runtime_data_attributes(): void
+    {
+        $payload = $this->document('<p>안전한 본문</p>')->toArray();
+        $payload['blocks'][1]['motion'] = [
+            'preset' => 'stagger',
+            'intensity' => 'strong',
+            'trigger' => 'repeat',
+            'stagger_ms' => 160,
+        ];
+
+        $artifact = (string) (new HtmlDocumentCompiler)->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        )->artifact;
+
+        self::assertStringContainsString('data-block-id="00000000-0000-4000-8000-000000000003"', $artifact);
+        self::assertStringContainsString('data-g7pb-motion="stagger"', $artifact);
+        self::assertStringContainsString('data-g7pb-motion-intensity="strong"', $artifact);
+        self::assertStringContainsString('data-g7pb-motion-trigger="repeat"', $artifact);
+        self::assertStringContainsString('data-g7pb-motion-stagger="160"', $artifact);
+    }
+
+    public function test_motion_preset_is_rejected_for_an_incompatible_block(): void
+    {
+        $payload = $this->document('<p>안전한 본문</p>')->toArray();
+        $payload['blocks'][0]['motion'] = [
+            'preset' => 'chart-draw',
+            'intensity' => 'normal',
+            'trigger' => 'once',
+            'stagger_ms' => 100,
+        ];
+
+        $this->expectException(DocumentCompileException::class);
+        (new HtmlDocumentCompiler)->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+    }
+
     public function test_all_catalog_blocks_compile_to_typed_public_markup(): void
     {
         $payload = $this->catalogPayload();
@@ -185,7 +228,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.2.0', $catalog->compilerVersion);
+        self::assertSame('0.3.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }

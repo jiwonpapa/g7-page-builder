@@ -32,6 +32,15 @@ export interface BlockAppearance {
   spacing: 'compact' | 'normal' | 'spacious';
 }
 
+export type BlockMotionPreset = 'none' | 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
+
+export interface BlockMotion {
+  preset: BlockMotionPreset;
+  intensity: 'subtle' | 'normal' | 'strong';
+  trigger: 'once' | 'repeat';
+  stagger_ms: 60 | 100 | 160;
+}
+
 export interface HeroBlockProps {
   eyebrow: string;
   title: string;
@@ -194,6 +203,7 @@ export interface PageBuilderBlock<TProps extends Record<string, unknown> = Recor
   type: string;
   block_version: number;
   props: TProps;
+  motion?: BlockMotion;
   slots?: Record<string, PageBuilderBlock[]>;
 }
 

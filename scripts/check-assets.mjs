@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(root, 'module.json'), 'utf8'));
 const outputs = [manifest.assets?.js?.output, manifest.assets?.css?.output];
+outputs.push('dist/js/page-effects.iife.js');
 
 for (const output of outputs) {
   if (typeof output !== 'string' || !output.startsWith('dist/')) {

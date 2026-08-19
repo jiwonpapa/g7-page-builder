@@ -19,7 +19,7 @@ fi
 
 for required in \
   module.json module.php composer.json composer.lock package.json package-lock.json \
-  dist/js/page-builder.iife.js dist/css/page-builder.css; do
+  dist/js/page-builder.iife.js dist/js/page-effects.iife.js dist/css/page-builder.css; do
   [[ -f "$root/$required" ]] || { echo "Missing release input: $required" >&2; exit 2; }
 done
 

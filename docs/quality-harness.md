@@ -28,7 +28,8 @@
 - Puck ↔ PageBuilderDocument round-trip Fixture
 - block별 editor props와 compile Fixture
 - `module.json`의 module/plugin 의존성 0개와 optional G7 surface 부재 검사
-- `module.json` output의 존재, 경로, sourcemap 부재를 검사합니다.
+- editor IIFE, public effects IIFE, CSS output의 존재·경로·sourcemap 부재를 검사합니다.
+- motion schema allowlist, Puck 왕복, compiler data attribute, JS-disabled fallback과 reduced-motion을 단위시험합니다.
 
 ## Architecture
 
@@ -64,6 +65,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 7. 재편집 중 기존 공개본 보존과 재발행
 8. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행
 9. 공개 해제 뒤 public 404
+10. typed motion 저장·미리보기·발행, 조건부 public runtime과 실제 in-view 활성화
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 실제 접근성 자동 검사, 고정 시각 baseline과 compile 실패 뒤 public hash 불변 시나리오는 전체 MVP gate에 추가해야 합니다.
 

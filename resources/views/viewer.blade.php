@@ -129,6 +129,19 @@
         .g7pb-hero.g7pb-surface--default, .g7pb-features.g7pb-surface--default, .g7pb-cta.g7pb-surface--default, .g7pb-contact.g7pb-surface--default { background: #fff; color: #172033; }
         .g7pb-hero.g7pb-surface--soft, .g7pb-features.g7pb-surface--soft, .g7pb-cta.g7pb-surface--soft, .g7pb-contact.g7pb-surface--soft { background: #f3f1ed; color: #172033; }
         .g7pb-hero.g7pb-surface--contrast, .g7pb-features.g7pb-surface--contrast, .g7pb-cta.g7pb-surface--contrast, .g7pb-contact.g7pb-surface--contrast { background: #172033; color: #fff; }
+        .g7pb-motion-active .g7pb-block[data-g7pb-motion] { --g7pb-motion-distance: 1.5rem; --g7pb-motion-duration: 680ms; }
+        .g7pb-motion-active .g7pb-block[data-g7pb-motion-intensity='subtle'] { --g7pb-motion-distance: .8rem; --g7pb-motion-duration: 520ms; }
+        .g7pb-motion-active .g7pb-block[data-g7pb-motion-intensity='strong'] { --g7pb-motion-distance: 2.5rem; --g7pb-motion-duration: 880ms; }
+        .g7pb-motion-active .g7pb-block[data-g7pb-motion='reveal'] { opacity: 0; transform: translate3d(0, var(--g7pb-motion-distance), 0); transition: opacity var(--g7pb-motion-duration) ease, transform var(--g7pb-motion-duration) cubic-bezier(.2,.7,.2,1); }
+        .g7pb-motion-active .g7pb-block[data-g7pb-motion='reveal'].is-inview { opacity: 1; transform: translate3d(0, 0, 0); }
+        .g7pb-motion-active [data-g7pb-motion='stagger'] [data-g7pb-motion-item] { opacity: 0; transform: translate3d(0, var(--g7pb-motion-distance), 0); transition: opacity var(--g7pb-motion-duration) ease var(--g7pb-motion-delay, 0ms), transform var(--g7pb-motion-duration) cubic-bezier(.2,.7,.2,1) var(--g7pb-motion-delay, 0ms); }
+        .g7pb-motion-active [data-g7pb-motion='stagger'].is-inview [data-g7pb-motion-item] { opacity: 1; transform: translate3d(0, 0, 0); }
+        .g7pb-motion-active [data-g7pb-motion='chart-draw'] progress[data-g7pb-motion-item] { transform: scaleX(0); transform-origin: left center; transition: transform var(--g7pb-motion-duration) cubic-bezier(.2,.7,.2,1); }
+        .g7pb-motion-active [data-g7pb-motion='chart-draw'].is-inview progress[data-g7pb-motion-item] { transform: scaleX(1); }
+        .g7pb-motion-active [data-g7pb-motion='parallax-soft'] { --g7pb-parallax-distance: 2rem; }
+        .g7pb-motion-active [data-g7pb-motion='parallax-soft'][data-g7pb-motion-intensity='subtle'] { --g7pb-parallax-distance: 1rem; }
+        .g7pb-motion-active [data-g7pb-motion='parallax-soft'][data-g7pb-motion-intensity='strong'] { --g7pb-parallax-distance: 3.25rem; }
+        .g7pb-motion-active [data-g7pb-motion='parallax-soft'] .g7pb-motion-parallax-target { transform: translate3d(0, calc(var(--g7pb-motion-progress, 0) * var(--g7pb-parallax-distance)), 0) scale(1.035); will-change: transform; }
         @media (max-width: 700px) {
             .g7pb-cta, .g7pb-contact { grid-template-columns: 1fr; }
             .g7pb-cta__actions, .g7pb-contact__actions { grid-column: 1; }
@@ -140,7 +153,13 @@
             .g7pb-gallery__grid--3, .g7pb-gallery__grid--4 { grid-template-columns: repeat(2, 1fr); }
             .g7pb-pricing__plan--featured { transform: none; }
         }
+        @media (prefers-reduced-motion: reduce) {
+            .g7pb-block, .g7pb-block *, .g7pb-motion-parallax-target { animation: none !important; transition: none !important; transform: none !important; }
+        }
     </style>
+    @if (str_contains($page->artifact, 'data-g7pb-motion='))
+        <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}"></script>
+    @endif
 </head>
 <body>
     <main class="g7pb-page" data-testid="{{ $rootTestId }}" data-artifact-sha256="{{ $page->artifactSha256 }}">

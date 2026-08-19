@@ -151,6 +151,20 @@ describe('Puck PageBuilderDocument adapter', () => {
     expect(restored.blocks[0]).not.toHaveProperty('readOnly');
   });
 
+  it('round-trips typed block motion without leaking editor-only fields', () => {
+    const animated: PageBuilderDocument = structuredClone(documentFixture);
+    animated.blocks[0].motion = {
+      preset: 'parallax-soft',
+      intensity: 'subtle',
+      trigger: 'repeat',
+      stagger_ms: 60,
+    };
+    const session = canonicalToPuck(animated);
+
+    expect(session.data.content[0].props.motion).toEqual(animated.blocks[0].motion);
+    expect(puckToCanonical(session.data, session.context)).toEqual(animated);
+  });
+
   it('omits empty optional link maps when converting new CTA and Contact blocks', () => {
     const session = canonicalToPuck({ ...documentFixture, blocks: [] });
     const data = {

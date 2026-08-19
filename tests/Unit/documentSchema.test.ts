@@ -40,6 +40,27 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(arbitraryStyle)).toBe(false);
   });
 
+  it('accepts typed motion presets and rejects arbitrary runtime effects', () => {
+    const animated = structuredClone(catalogFixture) as typeof catalogFixture & {
+      blocks: Array<Record<string, unknown>>;
+    };
+    animated.blocks[3].motion = {
+      preset: 'counter',
+      intensity: 'normal',
+      trigger: 'once',
+      stagger_ms: 100,
+    };
+    expect(validate(animated), JSON.stringify(validate.errors)).toBe(true);
+
+    animated.blocks[3].motion = {
+      preset: 'javascript:alert(1)',
+      intensity: 'normal',
+      trigger: 'once',
+      stagger_ms: 100,
+    };
+    expect(validate(animated)).toBe(false);
+  });
+
   it('rejects malformed CTA links and Contact form props', () => {
     const malformedLink = structuredClone(ctaContactFixture);
     malformedLink.blocks[0].props.primaryLink = { label: '시작하기' } as never;

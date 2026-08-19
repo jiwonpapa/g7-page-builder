@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 12종 테스트 block 카탈로그와 별도 문서함·메타수정·최근 20개 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제 완료. Gallery는 URL 기반 시험형이며 자체 MediaPort와 복구 가능한 문서 보관·삭제는 미구현입니다.
+현재 구현: 12종 테스트 block 카탈로그, 5종 typed motion preset과 별도 문서함·메타수정·최근 20개 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제 완료. Gallery는 URL 기반 시험형이며 자체 MediaPort와 복구 가능한 문서 보관·삭제는 미구현입니다.
 
 ## 목표
 
@@ -37,6 +37,7 @@
 - 키보드 focus, label, alt text, 색 대비 기본 검사
 - 블록 추가 전 이름·용도·축약 화면을 보여주는 preview gallery
 - 각 블록의 `surface`와 `spacing`은 검증된 preset만 선택
+- 블록 종류에 맞는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 효과와 강도·실행 방식을 typed preset으로 선택
 
 ### 저장과 복구
 
@@ -63,6 +64,15 @@
 | Bar Chart | heading, 2~8 values/unit/tone | 0~100, semantic progress, tone allowlist | 자유 chart script·실시간 query |
 
 Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Block Pack으로 만들며, 미설치 상태에서는 관련 코드·block·메뉴를 로드하지 않습니다.
+
+## 동적 효과
+
+- 효과는 블록 루트의 `motion` 객체로 저장하며 preset·intensity·trigger·stagger 간격은 allowlist만 허용합니다.
+- Hero 계열은 Reveal·Soft Parallax, 반복 목록은 Reveal·Stagger, Stats는 Counter, Bar Chart는 Chart Draw를 제공합니다.
+- 공개 페이지는 효과가 있을 때만 사전 빌드된 `page-effects.iife.js`를 로드합니다. Puck·React·Node 런타임은 공개 페이지에서 실행하지 않습니다.
+- 자바스크립트 실패·차단 시 콘텐츠는 정적 상태로 그대로 보입니다.
+- `prefers-reduced-motion: reduce`에서는 효과를 설치하지 않습니다.
+- 전역 smooth scroll, scroll hijacking, raw JS, 임의 keyframe·timeline 편집은 허용하지 않습니다.
 
 ## 스타일·코드 편집 정책
 
@@ -113,6 +123,6 @@ Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Bl
 - 자유 CSS/JS, 임의 HTML block
 - 다중 breakpoint별 자유 position
 - Contact form backend
-- 애니메이션 timeline
+- 자유 애니메이션 timeline·사용자 JavaScript
 - 다국어 문서 동시 편집
 - G7 Layout Editor와 양방향 동기화

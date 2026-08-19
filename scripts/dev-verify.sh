@@ -80,12 +80,14 @@ fi
 
 asset_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder.iife.js")"
+effects_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js")"
 asset_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder.css")"
-if [[ "$asset_js_status" == 200 && "$asset_css_status" == 200 ]]; then
-  ok 'Lazy module JS/CSS asset serving'
+if [[ "$asset_js_status" == 200 && "$effects_js_status" == 200 && "$asset_css_status" == 200 ]]; then
+  ok 'Editor, public effects, and CSS asset serving'
 else
-  fail "Module asset serving js=$asset_js_status css=$asset_css_status"
+  fail "Module asset serving editor_js=$asset_js_status effects_js=$effects_js_status css=$asset_css_status"
 fi
 
 if openssl x509 -in "$root/.runtime/tls/g7pb.test.pem" -noout -ext subjectAltName | grep -q 'DNS:g7pb.test'; then

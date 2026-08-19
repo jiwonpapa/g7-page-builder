@@ -57,6 +57,6 @@ final class PageBuilderHomeOverride
 
     private function contentSecurityPolicy(): string
     {
-        return "default-src 'none'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
+        return "default-src 'none'; img-src 'self' https: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
     }
 }

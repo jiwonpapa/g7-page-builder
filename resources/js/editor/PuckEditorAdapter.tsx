@@ -19,6 +19,12 @@ import {
   catalogPuckBlockToCanonical,
   type CatalogEditorComponents,
 } from './catalogBlocks';
+import {
+  createMotionField,
+  DEFAULT_BLOCK_MOTION,
+  motionPreviewAttributes,
+  normalizeBlockMotion,
+} from './blockMotion';
 
 import {
   CONTACT_BLOCK_TYPE,
@@ -27,6 +33,7 @@ import {
   HERO_BLOCK_TYPE,
   type ContactBlockProps,
   type BlockAppearance,
+  type BlockMotion,
   type CtaBlockProps,
   type FeatureItem,
   type FeaturesBlockProps,
@@ -47,6 +54,7 @@ interface HeroEditorProps {
   alignment: 'left' | 'center';
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
 }
 
 interface FeaturesEditorProps {
@@ -54,6 +62,7 @@ interface FeaturesEditorProps {
   items: FeatureItem[];
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
 }
 
 interface CtaEditorProps {
@@ -67,6 +76,7 @@ interface CtaEditorProps {
   theme: 'light' | 'dark';
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
 }
 
 interface ContactEditorProps {
@@ -80,6 +90,7 @@ interface ContactEditorProps {
   mapUrl: string;
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
 }
 
 interface EditorComponents extends CatalogEditorComponents {
@@ -95,6 +106,7 @@ interface BlockRoundTripMetadata {
   blockVersion: number;
   hadSlots: boolean;
   hadAppearance: boolean;
+  hadMotion: boolean;
 }
 
 export interface PuckAdapterContext {
@@ -137,6 +149,7 @@ const DEFAULT_HERO: HeroEditorProps = {
   alignment: 'center',
   surface: 'default',
   spacing: 'spacious',
+  motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
 const DEFAULT_FEATURES: FeaturesEditorProps = {
@@ -147,6 +160,7 @@ const DEFAULT_FEATURES: FeaturesEditorProps = {
   ],
   surface: 'soft',
   spacing: 'normal',
+  motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
 const DEFAULT_CTA: CtaEditorProps = {
@@ -160,6 +174,7 @@ const DEFAULT_CTA: CtaEditorProps = {
   theme: 'light',
   surface: 'soft',
   spacing: 'normal',
+  motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
 const DEFAULT_CONTACT: ContactEditorProps = {
@@ -173,6 +188,7 @@ const DEFAULT_CONTACT: ContactEditorProps = {
   mapUrl: 'https://maps.google.com/',
   surface: 'default',
   spacing: 'normal',
+  motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
 export const PAGE_BUILDER_VIEWPORTS: Viewports = [
@@ -291,6 +307,7 @@ function heroToEditorProps(props: Record<string, unknown>): HeroEditorProps {
     imageAlt: asString(image.alt),
     alignment: normalizeAlignment(props.alignment),
     ...appearanceToEditorProps(props.appearance, { surface: 'default', spacing: 'spacious' }),
+    motion: { ...DEFAULT_BLOCK_MOTION },
   };
 }
 
@@ -299,6 +316,7 @@ function featuresToEditorProps(props: Record<string, unknown>): FeaturesEditorPr
     title: asString(props.title),
     items: normalizeFeatureItems(props.items),
     ...appearanceToEditorProps(props.appearance, { surface: 'soft', spacing: 'normal' }),
+    motion: { ...DEFAULT_BLOCK_MOTION },
   };
 }
 
@@ -327,6 +345,7 @@ function ctaToEditorProps(props: Record<string, unknown>): CtaEditorProps {
     secondaryUrl: secondary.url,
     theme: normalizeTheme(props.theme),
     ...appearanceToEditorProps(props.appearance, { surface: 'soft', spacing: 'normal' }),
+    motion: { ...DEFAULT_BLOCK_MOTION },
   };
 }
 
@@ -344,6 +363,7 @@ function contactToEditorProps(props: Record<string, unknown>): ContactEditorProp
     mapLabel: mapLink.label,
     mapUrl: mapLink.url,
     ...appearanceToEditorProps(props.appearance, { surface: 'default', spacing: 'normal' }),
+    motion: { ...DEFAULT_BLOCK_MOTION },
   };
 }
 
@@ -358,6 +378,7 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
       props: {
         id: block.instance_id,
         ...heroToEditorProps(block.props),
+        motion: normalizeBlockMotion(block.motion),
       },
     };
   }
@@ -368,6 +389,7 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
       props: {
         id: block.instance_id,
         ...featuresToEditorProps(block.props),
+        motion: normalizeBlockMotion(block.motion),
       },
     };
   }
@@ -378,6 +400,7 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
       props: {
         id: block.instance_id,
         ...ctaToEditorProps(block.props),
+        motion: normalizeBlockMotion(block.motion),
       },
     };
   }
@@ -388,6 +411,7 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
       props: {
         id: block.instance_id,
         ...contactToEditorProps(block.props),
+        motion: normalizeBlockMotion(block.motion),
       },
     };
   }
@@ -399,6 +423,7 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
       props: {
         id: block.instance_id,
         ...catalogBlock.props,
+        motion: normalizeBlockMotion(block.motion),
       },
     } as PuckEditorData['content'][number];
   }
@@ -413,6 +438,7 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
       blockVersion: block.block_version,
       hadSlots: Object.prototype.hasOwnProperty.call(block, 'slots'),
       hadAppearance: Object.prototype.hasOwnProperty.call(block.props, 'appearance'),
+      hadMotion: Object.prototype.hasOwnProperty.call(block, 'motion'),
     };
   }
 
@@ -441,7 +467,12 @@ function puckBlockToCanonical(
   context: PuckAdapterContext,
 ): PageBuilderBlock {
   const instanceId = idToUuid(block.props.id);
-  const metadata = context.blocks[instanceId] ?? { blockVersion: 1, hadSlots: true, hadAppearance: false };
+  const metadata = context.blocks[instanceId] ?? {
+    blockVersion: 1,
+    hadSlots: true,
+    hadAppearance: false,
+    hadMotion: false,
+  };
   let type: string;
   let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps | Record<string, unknown>;
 
@@ -547,6 +578,11 @@ function puckBlockToCanonical(
     block_version: metadata.blockVersion,
     props: props as unknown as Record<string, unknown>,
   };
+
+  const motion = normalizeBlockMotion(block.props.motion);
+  if (metadata.hadMotion || motion.preset !== 'none') {
+    canonical.motion = motion;
+  }
 
   if (metadata.hadSlots) {
     canonical.slots = {};
@@ -797,10 +833,12 @@ function FeaturesItemsField({
 function BlockFrame({
   id,
   type,
+  motion,
   children,
 }: {
   id: string;
   type: string;
+  motion: BlockMotion;
   children: React.ReactNode;
 }): React.ReactElement {
   return (
@@ -809,6 +847,7 @@ function BlockFrame({
       data-testid="page-builder-block"
       data-block-id={idToUuid(id)}
       data-block-type={type}
+      {...motionPreviewAttributes(motion)}
     >
       {children}
     </section>
@@ -827,11 +866,12 @@ function HeroPreview({
   alignment,
   surface,
   spacing,
+  motion,
 }: Omit<HeroEditorProps, 'body'> & { id: string; body: React.ReactNode }): React.ReactElement {
   const image = safeImage(imageSrc);
 
   return (
-    <BlockFrame id={id} type="hero">
+    <BlockFrame id={id} type="hero" motion={motion}>
       <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
         <div className="g7pb-preview-hero__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow">{eyebrow}</p>}
@@ -853,7 +893,7 @@ function HeroPreview({
   );
 }
 
-function FeaturesPreview({ id, title, items, surface, spacing }: FeaturesEditorProps & { id: string }): React.ReactElement {
+function FeaturesPreview({ id, title, items, surface, spacing, motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
   const glyphs: Record<string, string> = {
     sparkles: '✦',
     shield: '◆',
@@ -862,7 +902,7 @@ function FeaturesPreview({ id, title, items, surface, spacing }: FeaturesEditorP
   };
 
   return (
-    <BlockFrame id={id} type="features">
+    <BlockFrame id={id} type="features" motion={motion}>
       <div className={`g7pb-preview-features g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
         <h2>{title}</h2>
         <div className="g7pb-preview-features__grid">
@@ -891,9 +931,10 @@ function CtaPreview({
   theme,
   surface,
   spacing,
+  motion,
 }: CtaEditorProps & { id: string }): React.ReactElement {
   return (
-    <BlockFrame id={id} type="cta">
+    <BlockFrame id={id} type="cta" motion={motion}>
       <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
         <div className="g7pb-preview-cta-split__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow">{eyebrow}</p>}
@@ -931,9 +972,10 @@ function ContactPreview({
   mapUrl,
   surface,
   spacing,
+  motion,
 }: ContactEditorProps & { id: string }): React.ReactElement {
   return (
-    <BlockFrame id={id} type="contact">
+    <BlockFrame id={id} type="contact" motion={motion}>
       <div className={`g7pb-preview-contact g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
         <div className="g7pb-preview-contact__heading">
           <p className="g7pb-preview-eyebrow">Contact</p>
@@ -1059,8 +1101,9 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
             { label: '넓게', value: 'spacious' },
           ],
         },
+        motion: createMotionField(['none', 'reveal', 'parallax-soft']),
       },
-      render: ({ id, eyebrow, title, body, primaryLabel, primaryUrl, imageSrc, imageAlt, alignment, surface, spacing }) => (
+      render: ({ id, eyebrow, title, body, primaryLabel, primaryUrl, imageSrc, imageAlt, alignment, surface, spacing, motion }) => (
         <HeroPreview
           id={id}
           eyebrow={eyebrow}
@@ -1073,6 +1116,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
           alignment={alignment}
           surface={surface}
           spacing={spacing}
+          motion={motion}
         />
       ),
     },
@@ -1115,9 +1159,10 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
             { label: '넓게', value: 'spacious' },
           ],
         },
+        motion: createMotionField(['none', 'reveal', 'stagger']),
       },
-      render: ({ id, title, items, surface, spacing }) => (
-        <FeaturesPreview id={id} title={title} items={items} surface={surface} spacing={spacing} />
+      render: ({ id, title, items, surface, spacing, motion }) => (
+        <FeaturesPreview id={id} title={title} items={items} surface={surface} spacing={spacing} motion={motion} />
       ),
     },
     Cta: {
@@ -1212,6 +1257,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
             { label: '넓게', value: 'spacious' },
           ],
         },
+        motion: createMotionField(['none', 'reveal']),
       },
       render: (props) => <CtaPreview {...props} theme={normalizeTheme(props.theme)} />,
     },
@@ -1299,6 +1345,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
             { label: '넓게', value: 'spacious' },
           ],
         },
+        motion: createMotionField(['none', 'reveal']),
       },
       render: (props) => <ContactPreview {...props} />,
     },

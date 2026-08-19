@@ -1,0 +1,262 @@
+{
+  "version": "1.0.0",
+  "layout_name": "admin_page_builder_index",
+  "permissions": [
+    "jiwonpapa-page_builder.documents.read"
+  ],
+  "extends": "_admin_base",
+  "meta": {
+    "title": "페이지 빌더",
+    "description": "페이지 빌더 전용 문서와 공개 경로를 관리합니다."
+  },
+  "data_sources": [
+    {
+      "id": "documents",
+      "type": "api",
+      "endpoint": "/api/modules/jiwonpapa-page_builder/admin/documents",
+      "method": "GET",
+      "auto_fetch": true,
+      "auth_required": true,
+      "refetchOnMount": true,
+      "params": {
+        "page": "{{query.page ?? 1}}",
+        "per_page": 20
+      },
+      "fallback": {
+        "data": {
+          "items": [],
+          "pagination": {
+            "total": 0,
+            "page": 1,
+            "per_page": 100
+          }
+        }
+      }
+    }
+  ],
+  "slots": {
+    "content": [
+      {
+        "id": "page_builder_admin_root",
+        "type": "basic",
+        "name": "Div",
+        "props": {
+          "className": "admin-page-content"
+        },
+        "children": [
+          {
+            "id": "page_builder_header",
+            "type": "basic",
+            "name": "Div",
+            "props": {
+              "className": "flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between"
+            },
+            "children": [
+              {
+                "type": "basic",
+                "name": "Div",
+                "children": [
+                  {
+                    "type": "basic",
+                    "name": "H1",
+                    "props": {
+                      "className": "page-title"
+                    },
+                    "text": "페이지 빌더"
+                  },
+                  {
+                    "type": "basic",
+                    "name": "P",
+                    "props": {
+                      "className": "page-description"
+                    },
+                    "text": "G7 기본 페이지 관리와 분리된 페이지 빌더 문서함입니다."
+                  }
+                ]
+              },
+              {
+                "type": "basic",
+                "name": "Button",
+                "props": {
+                  "type": "button",
+                  "className": "inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-semibold transition-colors"
+                },
+                "actions": [
+                  {
+                    "type": "click",
+                    "handler": "navigate",
+                    "params": {
+                      "path": "/admin/page-builder/create"
+                    }
+                  }
+                ],
+                "text": "새 페이지"
+              }
+            ]
+          },
+          {
+            "id": "page_builder_route_notice",
+            "type": "basic",
+            "name": "Div",
+            "props": {
+              "className": "p-4 mb-6 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 text-sm text-blue-800 dark:text-blue-200"
+            },
+            "text": "공개 주소는 /pages/{슬러그}이며, 홈으로 지정한 발행본은 / 에 표시됩니다."
+          },
+          {
+            "id": "page_builder_empty",
+            "type": "basic",
+            "name": "Div",
+            "if": "{{(documents?.data?.items ?? []).length === 0}}",
+            "props": {
+              "className": "py-16 text-center text-gray-500 dark:text-gray-400"
+            },
+            "children": [
+              {
+                "type": "basic",
+                "name": "H2",
+                "props": {
+                  "className": "section-heading"
+                },
+                "text": "아직 페이지 빌더 문서가 없습니다."
+              },
+              {
+                "type": "basic",
+                "name": "P",
+                "props": {
+                  "className": "mt-2"
+                },
+                "text": "새 페이지를 만든 뒤 블록을 조합해 발행하세요."
+              }
+            ]
+          },
+          {
+            "id": "page_builder_document_{{idx}}",
+            "type": "basic",
+            "name": "Div",
+            "iteration": {
+              "source": "{{documents?.data?.items ?? []}}",
+              "item_var": "documentItem",
+              "index_var": "idx"
+            },
+            "props": {
+              "className": "flex flex-col gap-4 px-5 py-4 mb-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl lg:flex-row lg:items-center lg:justify-between"
+            },
+            "children": [
+              {
+                "type": "basic",
+                "name": "Div",
+                "props": {
+                  "className": "min-w-0"
+                },
+                "children": [
+                  {
+                    "type": "basic",
+                    "name": "Div",
+                    "props": {
+                      "className": "flex items-center gap-2"
+                    },
+                    "children": [
+                      {
+                        "type": "basic",
+                        "name": "H2",
+                        "props": {
+                          "className": "section-heading truncate"
+                        },
+                        "text": "{{documentItem.title}}"
+                      },
+                      {
+                        "type": "composite",
+                        "name": "Badge",
+                        "props": {
+                          "color": "{{documentItem.is_home ? 'green' : (documentItem.public_url ? 'blue' : 'gray')}}",
+                          "text": "{{documentItem.is_home ? '홈' : (documentItem.public_url ? '발행됨' : '초안')}}",
+                          "size": "sm"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "basic",
+                    "name": "P",
+                    "props": {
+                      "className": "mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono"
+                    },
+                    "text": "/pages/{{documentItem.document.slug}}"
+                  }
+                ]
+              },
+              {
+                "type": "basic",
+                "name": "Div",
+                "props": {
+                  "className": "flex flex-wrap items-center gap-2"
+                },
+                "children": [
+                  {
+                    "type": "basic",
+                    "name": "Button",
+                    "if": "{{!!documentItem.public_url}}",
+                    "props": {
+                      "type": "button",
+                      "className": "inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
+                    },
+                    "actions": [
+                      {
+                        "type": "click",
+                        "handler": "openWindow",
+                        "params": {
+                          "path": "{{documentItem.public_url}}",
+                          "target": "_blank"
+                        }
+                      }
+                    ],
+                    "text": "공개 페이지"
+                  },
+                  {
+                    "type": "basic",
+                    "name": "Button",
+                    "props": {
+                      "type": "button",
+                      "className": "inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
+                    },
+                    "actions": [
+                      {
+                        "type": "click",
+                        "handler": "openWindow",
+                        "params": {
+                          "path": "/modules/jiwonpapa-page_builder/admin?document={{documentItem.document.document_id}}",
+                          "target": "_self"
+                        }
+                      }
+                    ],
+                    "text": "설정·기록"
+                  },
+                  {
+                    "type": "basic",
+                    "name": "Button",
+                    "props": {
+                      "type": "button",
+                      "className": "inline-flex items-center px-3 py-2 text-sm font-semibold text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600"
+                    },
+                    "actions": [
+                      {
+                        "type": "click",
+                        "handler": "openWindow",
+                        "params": {
+                          "path": "/modules/jiwonpapa-page_builder/admin/editor?document={{documentItem.document.document_id}}",
+                          "target": "_self"
+                        }
+                      }
+                    ],
+                    "text": "편집"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

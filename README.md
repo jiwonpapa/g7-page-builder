@@ -1,56 +1,88 @@
 # G7 Page Builder
 
-그누보드7의 공개 JSON UI 편집 계약을 이용해 일반 페이지를 블록 방식으로 제작하는 독립 모듈입니다.
+그누보드7 코어를 수정하지 않고 일반 페이지와 랜딩 페이지를 블록 방식으로 제작하는 독립 모듈입니다.
 
 ## 결정된 방향
 
-- G7 레이아웃 편집기를 복제하지 않습니다.
-- G7 코어에는 범용 `JsonUiDocumentEditor` 공개 API만 제안합니다.
-- 이 저장소는 페이지 문서, 블록 프리셋, 발행, 유료 Block Pack과 AI 기능을 소유합니다.
-- Page Builder 원본 문서를 G7 JSON UI로 컴파일합니다.
-- `sirsoft-page`의 공개 계약에만 의존하며 Model·테이블을 직접 사용하지 않습니다.
+- G7 Layout Editor를 호출하거나 확장해 페이지 문서를 편집하지 않습니다.
+- 독립 편집기는 MIT `Puck`을 커널로 사용하고 Puck은 Adapter 뒤에 격리합니다.
+- 이 저장소는 페이지 문서, 리비전, 발행본, 블록 프리셋과 공개 렌더 결과를 소유합니다.
+- `PageBuilderDocument`를 MVP에서는 안전한 HTML로 컴파일하며 G7 JSON UI 출력은 공개 렌더 계약이 생긴 뒤 추가합니다.
+- 기본 모듈은 G7 코어의 lifecycle·Provider·route·migration·admin permission·모듈 소유 admin menu/layout·asset serving 표면만 사용합니다.
+- `sirsoft-page`, `sirsoft-ecommerce`, User Template, Layout Extension은 선택 연동이며 없어도 전체 기본 흐름이 동작합니다.
+- G7의 기존 `페이지 관리`는 메뉴·데이터·URL까지 그대로 보존하고, 별도 `페이지 빌더` 메뉴에서 자체 문서함과 편집기로 진입합니다.
 
 ```text
 PageBuilderDocument
         |
         v
-Block Compiler
+PHP Compiler
         |
         v
-G7 JSON UI document
+Sanitized published artifact
         |
         v
-Public JsonUiFragmentRenderer
+G7 module-owned public route/viewer
 ```
 
 ## 현재 상태
 
-초기 아키텍처 골격입니다. 현재 G7에는 필요한 Page Document/Block Registry 공개 계약이 아직 없으므로 판매 가능한 기능 구현 전 해당 계약을 먼저 확정합니다.
+Hero·Features·CTA·Contact 4개 블록으로 첫 수직 기능을 구현했습니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 블록 preview gallery, typed style preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다.
+
+전체 MVP는 아직 아닙니다. Gallery와 자체 MediaPort, 기본 SEO, 복구 가능한 문서 보관·삭제, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
 
 ## 저장소 역할
 
 | 저장소 | 소유 범위 |
 |---|---|
-| `gnuboard7` | 범용 문서 편집기·JSON UI 렌더링 공개 계약 |
-| `g7-page-builder` | 페이지 문서·Block Pack·발행·AI·라이선스 |
+| `gnuboard7` | 모듈 생명주기·Provider·라우트·migration·관리자 권한·관리자 메뉴 동기화·정적 asset serving |
+| `g7-page-builder` | 독립 편집기·페이지 문서·리비전·발행본·Block Pack·상용 배포 정책 |
 
 ## 개발 환경
 
-- PHP 8.2+
-- Laravel 12 host
+- 로컬 Docker: 실제 `g7pb-dev` 통합 컨테이너 1개
+- PHP 8.5.9 + Xdebug
+- Laravel 12.62.0 host (G7 7.0.7 lock)
+- Nginx, MariaDB 10.11, Redis 7
+- Node 24 LTS, Composer 2
 - React 19.2
 - Vite 7
 - TypeScript strict
-- dnd-kit, Zustand, Immer
-- Vitest, PHPUnit 11, Playwright
+- Puck 0.23.0(정확한 버전 고정), Puck 내장 Tiptap Rich Text
+- Vitest, PHPUnit 13, Pint, PHPStan, Playwright 1.62.1
+
+로컬 접속은 `https://g7pb.test`만 사용합니다. 최초 설치와 일상 명령은 [Docker 로컬 개발환경](docs/docker-development.md)을 따릅니다.
 
 ## 다음 단계
 
-1. G7 코어 공개 계약 초안 확정
-2. `PageBuilderDocument v1` 양방향 검증
-3. Page Document Provider 구현
-4. Hero·Features·Gallery·Contact·Product Grid 5개 POC 블록
-5. 생성→미리보기→발행 E2E
+완료:
 
-자세한 내용은 [아키텍처](docs/architecture.md)와 [코어 계약 제안](docs/core-contracts.md)을 참고합니다.
+1. Puck ↔ `PageBuilderDocument v1` 왕복 Adapter
+2. 모듈 자체 문서·리비전·발행 저장소
+3. Hero·Features·CTA·Contact 수직 기능과 PC·태블릿·모바일 제품 E2E
+4. 별도 문서함, 메타수정, 최근 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제
 
+다음:
+
+1. Gallery와 자체 MediaPort로 기본 MVP 블록 완성
+2. 복구 가능한 문서 보관·삭제와 기본 SEO 계약 구현
+3. 실패 발행 뒤 public hash 불변, 최소 G7 fixture, 접근성·시각 회귀 gate 추가
+
+Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 제공합니다.
+
+## 개발·배포 문서
+
+- [아키텍처](docs/architecture.md)
+- [G7 연동 계약](docs/g7-integration-contract.md)
+- [코어 계약 상태](docs/core-contracts.md)
+- [편집기 엔진 결정](docs/editor-engine-decision.md)
+- [MVP 기능 명세](docs/mvp-functional-spec.md)
+- [문서·발행 계약](docs/document-publish-contract.md)
+- [품질 하네스](docs/quality-harness.md)
+- [런타임·호스팅·Rust 정책](docs/runtime-hosting.md)
+- [Docker 로컬 개발환경](docs/docker-development.md)
+- [스테이징 배포 하네스](docs/deployment-harness.md)
+
+Docker 로컬 개발환경, G7 설치 자동화, 체크섬 기반 릴리스 패키지와 `g7devops` 스테이징 배포 하네스가 구현되어 있습니다. 배포 순서는 `make quality-gate`, `make release-package`, `make deploy-staging`, `make smoke-staging`입니다.
+
+로컬 G7 실행 소스는 제품 Git에서 제외된 `.runtime/gnuboard7`의 별도 clone을 사용합니다. 현재 기준은 공식 G7 `7.0.7`입니다.

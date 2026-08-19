@@ -1,0 +1,10 @@
+.git
+.runtime
+.env
+.env.*
+!.env.docker.local.example
+dist
+node_modules
+output
+vendor
+*.log

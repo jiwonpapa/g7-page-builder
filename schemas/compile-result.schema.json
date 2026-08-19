@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/compile-result-v1.json",
+  "title": "G7 Page Builder Compile Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "compiler_version",
+    "document_id",
+    "source_revision",
+    "target_format",
+    "target_engine_version",
+    "artifact",
+    "artifact_sha256",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "g7-page-builder-compile-result/v1"
+    },
+    "compiler_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "document_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "target_format": {
+      "enum": ["html", "g7-json-ui"]
+    },
+    "target_engine_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "artifact": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object" }
+      ]
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

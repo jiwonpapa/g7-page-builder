@@ -1,0 +1,62 @@
+<?php
+
+namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Symfony\Component\HttpFoundation\Response;
+
+final class PageBuilderHomeOverride
+{
+    public function __construct(private readonly PageBuilderService $service) {}
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (! $request->isMethod('GET') && ! $request->isMethod('HEAD')) {
+            return $next($request);
+        }
+
+        if ($request->path() !== '/') {
+            return $next($request);
+        }
+
+        try {
+            $page = $this->service->findPublishedHome();
+        } catch (\Throwable $exception) {
+            // 모듈 업데이트 중에도 G7 기본 홈은 중단하지 않습니다.
+            Log::warning('Page Builder home override was skipped.', [
+                'exception' => $exception,
+            ]);
+
+            return $next($request);
+        }
+        if ($page === null) {
+            return $next($request);
+        }
+
+        $etag = '"'.$page->representationSha256().'"';
+        if ($request->header('If-None-Match') === $etag) {
+            return response('', 304)
+                ->header('Cache-Control', 'public, no-cache, must-revalidate')
+                ->header('ETag', $etag)
+                ->header('Content-Security-Policy', $this->contentSecurityPolicy());
+        }
+
+        return response()
+            ->view('g7-page-builder::viewer', [
+                'page' => $page,
+                'rootTestId' => 'page-builder-public-root',
+                'canonicalUrl' => url('/'),
+            ])
+            ->header('Cache-Control', 'public, no-cache, must-revalidate')
+            ->header('ETag', $etag)
+            ->header('Content-Security-Policy', $this->contentSecurityPolicy());
+    }
+
+    private function contentSecurityPolicy(): string
+    {
+        return "default-src 'none'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
+    }
+}

@@ -2,7 +2,6 @@
   "name": "jiwonpapa/g7-page-builder",
   "description": "Block-based visual page builder module for Gnuboard7",
   "type": "library",
-  "version": "0.1.0",
   "license": "proprietary",
   "autoload": {
     "psr-4": {
@@ -18,7 +17,26 @@
     }
   },
   "require": {
-    "php": "^8.2"
+    "php": "^8.5"
+  },
+  "require-dev": {
+    "laravel/pint": "^1.30",
+    "phpstan/phpstan": "^2.2",
+    "phpunit/phpunit": "^13.3"
+  },
+  "scripts": {
+    "check:metadata": "composer validate --strict --no-check-publish",
+    "lint": "pint --test",
+    "analyse": "phpstan analyse -c phpstan.neon.dist --memory-limit=1G",
+    "test": "phpunit -c phpunit.xml.dist",
+    "check": [
+      "@check:metadata",
+      "@lint",
+      "@analyse",
+      "@test"
+    ]
+  },
+  "config": {
+    "sort-packages": true
   }
 }
-

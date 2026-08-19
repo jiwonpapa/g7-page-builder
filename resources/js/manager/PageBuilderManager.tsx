@@ -1,0 +1,570 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+
+import {
+  ADMIN_AUTH_TOKEN_KEY,
+  PAGE_BUILDER_EDITOR_PATH,
+  PageBuilderApiClient,
+  PageBuilderApiError,
+  buildAdminLoginUrl,
+} from '../api/pageBuilderApi';
+import type { DocumentResource, RevisionSummary } from '../documents/types';
+
+interface PageBuilderManagerOptions {
+  locale?: string;
+}
+
+const roots = new WeakMap<Element, Root>();
+
+function currentPath(): string {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function hasAdminToken(): boolean {
+  try {
+    return Boolean(window.localStorage.getItem(ADMIN_AUTH_TOKEN_KEY));
+  } catch {
+    return false;
+  }
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof PageBuilderApiError) {
+    const suffix = error.correlationId ? ` (문의 번호: ${error.correlationId})` : '';
+    return `${error.message}${suffix}`;
+  }
+
+  return error instanceof Error ? error.message : '문서 목록을 불러오지 못했습니다.';
+}
+
+function editorUrl(documentId: string): string {
+  return `${PAGE_BUILDER_EDITOR_PATH}?document=${encodeURIComponent(documentId)}`;
+}
+
+function formatRevisionDate(value: string): string {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('ko-KR', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(date);
+}
+
+export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions): React.ReactElement {
+  const api = useMemo(() => new PageBuilderApiClient(), []);
+  const [documents, setDocuments] = useState<DocumentResource[]>([]);
+  const [totalDocuments, setTotalDocuments] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createTitle, setCreateTitle] = useState('');
+  const [createSlug, setCreateSlug] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [metadataDocument, setMetadataDocument] = useState<DocumentResource | null>(null);
+  const [metadataTitle, setMetadataTitle] = useState('');
+  const [metadataSlug, setMetadataSlug] = useState('');
+  const [savingMetadata, setSavingMetadata] = useState(false);
+  const [revisionDocument, setRevisionDocument] = useState<DocumentResource | null>(null);
+  const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
+  const [currentRevision, setCurrentRevision] = useState(0);
+  const [loadingRevisions, setLoadingRevisions] = useState(false);
+  const [previewingRevision, setPreviewingRevision] = useState<number | null>(null);
+  const [restoreCandidate, setRestoreCandidate] = useState<RevisionSummary | null>(null);
+  const [restoringRevision, setRestoringRevision] = useState(false);
+  const [unpublishDocument, setUnpublishDocument] = useState<DocumentResource | null>(null);
+  const [unpublishing, setUnpublishing] = useState(false);
+  const [settingHomeId, setSettingHomeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasAdminToken()) {
+      window.location.assign(buildAdminLoginUrl(currentPath()));
+      return;
+    }
+
+    let active = true;
+    setLoading(true);
+    void api.listDocuments()
+      .then((resource) => {
+        if (active) {
+          setDocuments(resource.items);
+          setTotalDocuments(resource.pagination.total);
+          setMessage(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setMessage(errorMessage(error));
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [api]);
+
+  const createDocument = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    const title = createTitle.trim();
+    const slug = createSlug.trim();
+
+    if (!title) {
+      setMessage('페이지 제목을 입력해 주세요.');
+      return;
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      setMessage('슬러그는 영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.');
+      return;
+    }
+
+    setCreating(true);
+    setMessage(null);
+    try {
+      const resource = await api.createDocument({ title, slug, locale });
+      window.location.assign(editorUrl(resource.document.document_id));
+    } catch (error) {
+      setMessage(errorMessage(error));
+      setCreating(false);
+    }
+  };
+
+  const openMetadataDialog = (resource: DocumentResource): void => {
+    setMetadataDocument(resource);
+    setMetadataTitle(resource.title);
+    setMetadataSlug(resource.document.slug);
+    setMessage(null);
+  };
+
+  const updateMetadata = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    if (!metadataDocument) {
+      return;
+    }
+
+    const title = metadataTitle.trim();
+    const slug = metadataSlug.trim();
+    if (!title) {
+      setMessage('페이지 제목을 입력해 주세요.');
+      return;
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      setMessage('슬러그는 영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.');
+      return;
+    }
+
+    setSavingMetadata(true);
+    setMessage(null);
+    try {
+      const updated = await api.updateDocument(metadataDocument.document.document_id, {
+        title,
+        slug,
+        locale: metadataDocument.document.locale,
+        expected_lock_version: metadataDocument.lock_version,
+      });
+      setDocuments((current) => current.map((resource) =>
+        resource.document.document_id === updated.document.document_id ? updated : resource));
+      setMetadataDocument(null);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setSavingMetadata(false);
+    }
+  };
+
+  const loadRevisions = async (resource: DocumentResource): Promise<void> => {
+    setLoadingRevisions(true);
+    setMessage(null);
+    try {
+      const history = await api.listRevisions(resource.document.document_id);
+      setRevisions(history.items);
+      setCurrentRevision(history.current_revision);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setLoadingRevisions(false);
+    }
+  };
+
+  const openRevisions = (resource: DocumentResource): void => {
+    setRevisionDocument(resource);
+    setRevisions([]);
+    setCurrentRevision(resource.revision);
+    void loadRevisions(resource);
+  };
+
+  const previewRevision = async (revision: number): Promise<void> => {
+    if (!revisionDocument) {
+      return;
+    }
+
+    const previewWindow = window.open('about:blank', '_blank');
+    if (previewWindow) {
+      previewWindow.opener = null;
+      previewWindow.document.title = '미리보기 준비 중';
+      previewWindow.document.body.textContent = '리비전 미리보기를 준비하고 있습니다.';
+    }
+
+    setPreviewingRevision(revision);
+    setMessage(null);
+    try {
+      const ticket = await api.createRevisionPreview(
+        revisionDocument.document.document_id,
+        revision,
+      );
+      if (previewWindow) {
+        previewWindow.location.replace(ticket.preview_url);
+      } else {
+        window.location.assign(ticket.preview_url);
+      }
+    } catch (error) {
+      previewWindow?.close();
+      setMessage(errorMessage(error));
+    } finally {
+      setPreviewingRevision(null);
+    }
+  };
+
+  const restoreRevision = async (): Promise<void> => {
+    if (!revisionDocument || !restoreCandidate) {
+      return;
+    }
+
+    setRestoringRevision(true);
+    setMessage(null);
+    try {
+      const restored = await api.restoreRevision(
+        revisionDocument.document.document_id,
+        restoreCandidate.revision,
+        revisionDocument.lock_version,
+      );
+      setDocuments((current) => current.map((resource) =>
+        resource.document.document_id === restored.document.document_id ? restored : resource));
+      setRevisionDocument(restored);
+      setRestoreCandidate(null);
+      await loadRevisions(restored);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setRestoringRevision(false);
+    }
+  };
+
+  const confirmUnpublish = async (): Promise<void> => {
+    if (!unpublishDocument) {
+      return;
+    }
+
+    setUnpublishing(true);
+    setMessage(null);
+    try {
+      const updated = await api.unpublishDocument(
+        unpublishDocument.document.document_id,
+        unpublishDocument.lock_version,
+      );
+      setDocuments((current) => current.map((resource) =>
+        resource.document.document_id === updated.document.document_id ? updated : resource));
+      if (metadataDocument?.document.document_id === updated.document.document_id) {
+        setMetadataDocument(updated);
+      }
+      setUnpublishDocument(null);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setUnpublishing(false);
+    }
+  };
+
+  const toggleHome = async (resource: DocumentResource): Promise<void> => {
+    setSettingHomeId(resource.document.document_id);
+    setMessage(null);
+    try {
+      await api.setHomeDocument(
+        resource.document.document_id,
+        !resource.is_home,
+        resource.lock_version,
+      );
+      const refreshed = await api.listDocuments();
+      setDocuments(refreshed.items);
+      setTotalDocuments(refreshed.pagination.total);
+      setMetadataDocument((current) => current
+        ? refreshed.items.find((item) => item.document.document_id === current.document.document_id) ?? null
+        : null);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setSettingHomeId(null);
+    }
+  };
+
+  return (
+    <main className="g7pb-root g7pb-manager-root" data-testid="page-builder-manager-app" aria-busy={loading || creating}>
+      <header className="g7pb-manager-header">
+        <div className="g7pb-manager-header__identity">
+          <span className="g7pb-product-mark" aria-hidden="true">G7</span>
+          <div>
+            <p>Page Builder</p>
+            <h1>페이지 빌더 문서</h1>
+          </div>
+        </div>
+        <div className="g7pb-manager-header__actions">
+          <a className="g7pb-button g7pb-button--quiet" href="/admin">G7 관리자</a>
+          <button className="g7pb-button g7pb-button--primary" type="button"
+            data-testid="page-builder-manager-create" onClick={() => setCreateDialogOpen(true)}>
+            새 페이지
+          </button>
+        </div>
+      </header>
+
+      <section className="g7pb-manager-workspace" aria-labelledby="g7pb-manager-heading">
+        <div className="g7pb-manager-summary">
+          <div>
+            <p className="g7pb-kicker">독립 문서함</p>
+            <h2 id="g7pb-manager-heading">페이지 빌더에서 만든 문서만 관리합니다.</h2>
+            <p>G7 기본 페이지 관리는 변경하지 않습니다.</p>
+          </div>
+          <strong data-testid="page-builder-manager-count">{totalDocuments}<span>개 문서</span></strong>
+        </div>
+
+        {message && <div className="g7pb-manager-notice" role="alert">{message}</div>}
+
+        {loading ? (
+          <div className="g7pb-manager-loading" role="status">문서를 불러오는 중입니다.</div>
+        ) : documents.length === 0 ? (
+          <div className="g7pb-manager-empty">
+            <h3>아직 만든 페이지가 없습니다.</h3>
+            <p>완성 블록을 조합할 첫 페이지를 시작하세요.</p>
+            <button className="g7pb-button g7pb-button--primary" type="button"
+              data-testid="page-builder-manager-empty-create" onClick={() => setCreateDialogOpen(true)}>
+              첫 페이지 만들기
+            </button>
+          </div>
+        ) : (
+          <div className="g7pb-document-list" data-testid="page-builder-document-list">
+            <div className="g7pb-document-list__head" aria-hidden="true">
+              <span>문서</span><span>상태</span><span>작업</span>
+            </div>
+            {documents.map((resource) => (
+              <article className="g7pb-document-row" data-testid="page-builder-document-row"
+                data-document-id={resource.document.document_id} key={resource.document.document_id}>
+                <div className="g7pb-document-row__identity">
+                  <h3>{resource.title}</h3>
+                  <p>/{resource.document.slug}</p>
+                </div>
+                <div>
+                  <span className={`g7pb-document-state ${resource.public_url ? 'is-published' : ''}`}>
+                    {resource.is_home ? '홈' : resource.public_url ? '발행됨' : '초안'}
+                  </span>
+                </div>
+                <div className="g7pb-document-row__actions">
+                  {resource.public_url && (
+                    <a href={resource.public_url} target="_blank" rel="noopener noreferrer"
+                      data-testid="page-builder-manager-public-link">공개 ↗</a>
+                  )}
+                  {resource.public_url && (
+                    <button className="g7pb-button g7pb-button--quiet" type="button"
+                      data-testid="page-builder-manager-home"
+                      disabled={settingHomeId !== null}
+                      onClick={() => void toggleHome(resource)}>
+                      {resource.is_home ? '홈 해제' : '홈 지정'}
+                    </button>
+                  )}
+                  <button className="g7pb-button g7pb-button--quiet" type="button"
+                    data-testid="page-builder-manager-settings"
+                    onClick={() => openMetadataDialog(resource)}>설정</button>
+                  <button className="g7pb-button g7pb-button--quiet" type="button"
+                    data-testid="page-builder-manager-revisions"
+                    onClick={() => openRevisions(resource)}>기록</button>
+                  <a className="g7pb-button g7pb-button--quiet" href={editorUrl(resource.document.document_id)}
+                    data-testid="page-builder-manager-edit-link">편집</a>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {createDialogOpen && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-manager-create-dialog">
+          <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-manager-create-heading">
+            <p className="g7pb-kicker">새 문서</p>
+            <h2 id="g7pb-manager-create-heading">페이지 기본 정보</h2>
+            <form onSubmit={(event) => void createDocument(event)}>
+              <label>
+                페이지 제목
+                <input data-testid="page-builder-manager-title-input" value={createTitle} required autoFocus
+                  onChange={(event) => setCreateTitle(event.target.value)} />
+              </label>
+              <label>
+                주소 슬러그
+                <span>영문 소문자, 숫자, 하이픈</span>
+                <input data-testid="page-builder-manager-slug-input" value={createSlug} required
+                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  onChange={(event) => setCreateSlug(event.target.value.toLowerCase())} />
+              </label>
+              <div className="g7pb-dialog__actions">
+                <button type="button" className="g7pb-button g7pb-button--quiet"
+                  onClick={() => setCreateDialogOpen(false)}>취소</button>
+                <button type="submit" className="g7pb-button g7pb-button--primary"
+                  data-testid="page-builder-manager-create-confirm" disabled={creating}>
+                  {creating ? '만드는 중' : '편집 시작'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {metadataDocument && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-manager-metadata-dialog">
+          <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-manager-metadata-heading">
+            <p className="g7pb-kicker">문서 설정</p>
+            <h2 id="g7pb-manager-metadata-heading">페이지 기본 정보 수정</h2>
+            <form onSubmit={(event) => void updateMetadata(event)}>
+              <label>
+                페이지 제목
+                <input data-testid="page-builder-manager-metadata-title" value={metadataTitle} required autoFocus
+                  onChange={(event) => setMetadataTitle(event.target.value)} />
+              </label>
+              <label>
+                주소 슬러그
+                <span>재발행 전에는 기존 공개 주소와 발행본이 유지됩니다.</span>
+                <input data-testid="page-builder-manager-metadata-slug" value={metadataSlug} required
+                  pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  onChange={(event) => setMetadataSlug(event.target.value.toLowerCase())} />
+              </label>
+              <div className="g7pb-dialog__actions">
+                {metadataDocument.public_url && (
+                  <button type="button" className="g7pb-button g7pb-button--danger"
+                    data-testid="page-builder-manager-unpublish"
+                    onClick={() => setUnpublishDocument(metadataDocument)}>공개 해제</button>
+                )}
+                <button type="button" className="g7pb-button g7pb-button--quiet"
+                  onClick={() => setMetadataDocument(null)}>취소</button>
+                <button type="submit" className="g7pb-button g7pb-button--primary"
+                  data-testid="page-builder-manager-metadata-save" disabled={savingMetadata}>
+                  {savingMetadata ? '저장 중' : '초안 정보 저장'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {revisionDocument && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-manager-revisions-dialog">
+          <section className="g7pb-dialog g7pb-dialog--wide" role="dialog" aria-modal="true"
+            aria-labelledby="g7pb-manager-revisions-heading">
+            <div className="g7pb-dialog__heading-row">
+              <div>
+                <p className="g7pb-kicker">리비전 기록</p>
+                <h2 id="g7pb-manager-revisions-heading">{revisionDocument.title}</h2>
+              </div>
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                onClick={() => setRevisionDocument(null)}>닫기</button>
+            </div>
+            <p className="g7pb-revision-help">복원은 과거 상태를 새 초안 리비전으로 복사합니다. 현재 공개본은 재발행 전까지 유지됩니다.</p>
+            {loadingRevisions ? (
+              <div className="g7pb-revision-loading" role="status">리비전을 불러오는 중입니다.</div>
+            ) : (
+              <div className="g7pb-revision-list" data-testid="page-builder-revision-list">
+                {revisions.map((revision) => (
+                  <article className="g7pb-revision-row" data-testid="page-builder-revision-row"
+                    data-revision={revision.revision} key={revision.revision}>
+                    <div className="g7pb-revision-row__number">
+                      <strong>v{revision.revision}</strong>
+                      {revision.revision === currentRevision && <span>현재 초안</span>}
+                    </div>
+                    <div className="g7pb-revision-row__meta">
+                      <strong>{revision.title}</strong>
+                      <span>/{revision.slug} · {revision.block_count}개 블록 · {formatRevisionDate(revision.created_at)}</span>
+                    </div>
+                    <div className="g7pb-revision-row__actions">
+                      <button type="button" className="g7pb-button g7pb-button--quiet"
+                        data-testid="page-builder-revision-preview"
+                        disabled={previewingRevision !== null}
+                        onClick={() => void previewRevision(revision.revision)}>
+                        {previewingRevision === revision.revision ? '준비 중' : '미리보기'}
+                      </button>
+                      {revision.revision !== currentRevision && (
+                        <button type="button" className="g7pb-button g7pb-button--quiet"
+                          data-testid="page-builder-revision-restore"
+                          onClick={() => setRestoreCandidate(revision)}>복원</button>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {revisionDocument && restoreCandidate && (
+        <div className="g7pb-dialog-backdrop g7pb-dialog-backdrop--confirm"
+          data-testid="page-builder-revision-restore-dialog">
+          <section className="g7pb-dialog" role="alertdialog" aria-modal="true"
+            aria-labelledby="g7pb-revision-restore-heading">
+            <p className="g7pb-kicker">안전 복원</p>
+            <h2 id="g7pb-revision-restore-heading">v{restoreCandidate.revision}을 새 초안으로 복원할까요?</h2>
+            <p className="g7pb-dialog__body">기존 리비전과 공개본은 삭제되지 않습니다. 복원 뒤 내용을 확인하고 별도로 발행해야 공개됩니다.</p>
+            <div className="g7pb-dialog__actions">
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                onClick={() => setRestoreCandidate(null)}>취소</button>
+              <button type="button" className="g7pb-button g7pb-button--primary"
+                data-testid="page-builder-revision-restore-confirm" disabled={restoringRevision}
+                onClick={() => void restoreRevision()}>
+                {restoringRevision ? '복원 중' : '새 초안으로 복원'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {unpublishDocument && (
+        <div className="g7pb-dialog-backdrop g7pb-dialog-backdrop--confirm"
+          data-testid="page-builder-unpublish-dialog">
+          <section className="g7pb-dialog" role="alertdialog" aria-modal="true"
+            aria-labelledby="g7pb-unpublish-heading">
+            <p className="g7pb-kicker">공개 해제</p>
+            <h2 id="g7pb-unpublish-heading">이 페이지를 비공개로 전환할까요?</h2>
+            <p className="g7pb-dialog__body">공개 URL은 즉시 404가 됩니다. 문서와 모든 리비전은 남아 있어 다시 편집하고 발행할 수 있습니다.</p>
+            <div className="g7pb-dialog__actions">
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                onClick={() => setUnpublishDocument(null)}>취소</button>
+              <button type="button" className="g7pb-button g7pb-button--danger"
+                data-testid="page-builder-unpublish-confirm" disabled={unpublishing}
+                onClick={() => void confirmUnpublish()}>
+                {unpublishing ? '해제 중' : '공개 해제'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </main>
+  );
+}
+
+export function mountPageBuilderManager(
+  element: Element,
+  options: PageBuilderManagerOptions = {},
+): () => void {
+  roots.get(element)?.unmount();
+  const root = createRoot(element);
+  roots.set(element, root);
+  root.render(<PageBuilderManager {...options} />);
+
+  return () => {
+    roots.get(element)?.unmount();
+    roots.delete(element);
+  };
+}
+
+export function discoverPageBuilderManagers(scope: ParentNode = document): Element[] {
+  return Array.from(scope.querySelectorAll('[data-g7pb-manager], #g7pb-manager'));
+}

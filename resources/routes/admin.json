@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "routes": [
+    {
+      "path": "*/admin/page-builder",
+      "layout": "admin_page_builder_index",
+      "auth_required": true,
+      "meta": {
+        "title": "페이지 빌더"
+      }
+    },
+    {
+      "path": "*/admin/page-builder/create",
+      "layout": "admin_page_builder_create",
+      "auth_required": true,
+      "meta": {
+        "title": "새 페이지"
+      }
+    }
+  ]
+}

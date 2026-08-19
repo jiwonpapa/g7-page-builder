@@ -1,0 +1,7 @@
+parameters:
+    level: 8
+    paths:
+        - src/Domain
+        - src/Application
+        - src/Contracts
+    tmpDir: .phpstan

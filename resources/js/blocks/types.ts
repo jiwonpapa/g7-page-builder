@@ -6,7 +6,7 @@ export interface BlockRequirement {
 
 export interface BlockPreset<TProps extends Record<string, unknown> = Record<string, unknown>> {
   id: string;
-  version: string;
+  version: number;
   category: string;
   label: string;
   thumbnail: string;
@@ -14,4 +14,3 @@ export interface BlockPreset<TProps extends Record<string, unknown> = Record<str
   defaultProps: TProps;
   compile: (props: TProps) => Record<string, unknown>;
 }
-

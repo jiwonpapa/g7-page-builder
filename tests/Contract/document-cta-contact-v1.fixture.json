@@ -1,0 +1,50 @@
+{
+  "schema_version": "g7-page-builder/v1",
+  "document_id": "10000000-0000-4000-8000-000000000001",
+  "slug": "cta-contact-page",
+  "mode": "canvas",
+  "locale": "ko",
+  "tokens": {},
+  "blocks": [
+    {
+      "instance_id": "10000000-0000-4000-8000-000000000002",
+      "type": "content.cta-split-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "다음 단계",
+        "heading": "필요한 페이지를 지금 시작하세요",
+        "body": "핵심 행동과 보조 선택지를 한 곳에서 안내합니다.",
+        "primaryLink": {
+          "label": "시작하기",
+          "url": "/start"
+        },
+        "secondaryLink": {
+          "label": "도입 문의",
+          "url": "mailto:hello@example.com"
+        },
+        "theme": "dark"
+      },
+      "slots": {}
+    },
+    {
+      "instance_id": "10000000-0000-4000-8000-000000000003",
+      "type": "content.contact-info-01",
+      "block_version": 1,
+      "props": {
+        "heading": "문의 안내",
+        "address": "서울특별시 중구 세종대로 110",
+        "phone": "02-1234-5678",
+        "email": "hello@example.com",
+        "cta": {
+          "label": "상담 요청",
+          "url": "/contact"
+        },
+        "mapLink": {
+          "label": "지도에서 보기",
+          "url": "https://maps.google.com/"
+        }
+      },
+      "slots": {}
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+name: g7pb-dev
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: g7pb-dev
+    hostname: g7pb-dev
+    env_file:
+      - .env.docker.local
+    environment:
+      TZ: Asia/Seoul
+      G7PB_DB_HOST: 127.0.0.1
+      G7PB_DB_PORT: "3306"
+      G7PB_G7_ROOT: /var/www/g7
+      G7PB_MODULE_ROOT: /var/www/g7/modules/jiwonpapa-page_builder
+    extra_hosts:
+      - "g7pb.test:127.0.0.1"
+    ports:
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./.runtime/gnuboard7:/var/www/g7
+      - ./:/var/www/g7/modules/jiwonpapa-page_builder
+      - g7pb-module-runtime:/var/www/g7/modules/jiwonpapa-page_builder/.runtime
+      - g7pb-module-node-modules:/var/www/g7/modules/jiwonpapa-page_builder/node_modules
+      - g7pb-module-vendor:/var/www/g7/modules/jiwonpapa-page_builder/vendor
+      - g7pb-g7-vendor:/var/www/g7/vendor
+      - g7pb-g7-node-modules:/var/www/g7/node_modules
+      - g7pb-state:/var/lib/g7pb
+      - ./.runtime/tls:/etc/nginx/tls:ro
+    init: true
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+volumes:
+  g7pb-state:
+    name: g7pb-dev-state
+  g7pb-g7-vendor:
+    name: g7pb-dev-g7-vendor
+  g7pb-g7-node-modules:
+    name: g7pb-dev-g7-node-modules
+  g7pb-module-node-modules:
+    name: g7pb-dev-module-node-modules
+  g7pb-module-vendor:
+    name: g7pb-dev-module-vendor
+  g7pb-module-runtime:
+    name: g7pb-dev-module-runtime

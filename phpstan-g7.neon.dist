@@ -1,0 +1,8 @@
+parameters:
+    level: 8
+    paths:
+        - module.php
+        - src/Infrastructure
+        - src/Providers
+        - src/routes
+    tmpDir: .phpstan-g7

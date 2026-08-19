@@ -1,0 +1,11 @@
+{
+  "schema_version": "g7-page-builder-compile-result/v1",
+  "compiler_version": "0.1.0",
+  "document_id": "00000000-0000-4000-8000-000000000001",
+  "source_revision": 1,
+  "target_format": "html",
+  "target_engine_version": "g7-7.0.7",
+  "artifact": "<section class=\"g7pb-hero\"><h1>페이지 빌더</h1></section>",
+  "artifact_sha256": "e83ffff7f80179da6075e882bbab9f917a0d87c54a1e0912ae60db84ba1c0c56",
+  "warnings": []
+}

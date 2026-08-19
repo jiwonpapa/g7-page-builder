@@ -1,0 +1,206 @@
+{
+  "version": "1.0.0",
+  "layout_name": "admin_page_builder_create",
+  "permissions": [
+    "jiwonpapa-page_builder.documents.create"
+  ],
+  "extends": "_admin_base",
+  "meta": {
+    "title": "새 페이지",
+    "description": "페이지 제목과 공개 주소를 먼저 정합니다."
+  },
+  "init_actions": [
+    {
+      "handler": "setState",
+      "params": {
+        "target": "local",
+        "form": {
+          "title": "",
+          "slug": "",
+          "locale": "ko",
+          "mode": "canvas"
+        }
+      }
+    }
+  ],
+  "slots": {
+    "content": [
+      {
+        "id": "page_builder_create_root",
+        "type": "basic",
+        "name": "Div",
+        "dataKey": "form",
+        "props": {
+          "className": "admin-page-content max-w-3xl mx-auto"
+        },
+        "children": [
+          {
+            "type": "basic",
+            "name": "Div",
+            "props": {
+              "className": "mb-6"
+            },
+            "children": [
+              {
+                "type": "basic",
+                "name": "Div",
+                "children": [
+                  {
+                    "type": "basic",
+                    "name": "H1",
+                    "props": {
+                      "className": "page-title"
+                    },
+                    "text": "새 페이지"
+                  },
+                  {
+                    "type": "basic",
+                    "name": "P",
+                    "props": {
+                      "className": "page-description"
+                    },
+                    "text": "생성 후 전체화면 블록 편집기로 이동합니다."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "basic",
+            "name": "Div",
+            "props": {
+              "className": "space-y-6 py-6"
+            },
+            "children": [
+              {
+                "type": "basic",
+                "name": "Div",
+                "children": [
+                  {
+                    "type": "basic",
+                    "name": "Label",
+                    "props": {
+                      "className": "form-label-block"
+                    },
+                    "text": "페이지 제목"
+                  },
+                  {
+                    "type": "basic",
+                    "name": "Input",
+                    "name_attr": "title",
+                    "props": {
+                      "type": "text",
+                      "name": "title",
+                      "required": true,
+                      "placeholder": "예: 브랜드 소개"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "basic",
+                "name": "Div",
+                "children": [
+                  {
+                    "type": "basic",
+                    "name": "Label",
+                    "props": {
+                      "className": "form-label-block"
+                    },
+                    "text": "공개 주소 슬러그"
+                  },
+                  {
+                    "type": "basic",
+                    "name": "Input",
+                    "name_attr": "slug",
+                    "props": {
+                      "type": "text",
+                      "name": "slug",
+                      "required": true,
+                      "pattern": "[a-z0-9]+(?:-[a-z0-9]+)*",
+                      "placeholder": "brand-intro"
+                    }
+                  },
+                  {
+                    "type": "basic",
+                    "name": "P",
+                    "props": {
+                      "className": "mt-2 text-sm text-gray-500 dark:text-gray-400"
+                    },
+                    "text": "발행 주소: /pages/{슬러그}"
+                  }
+                ]
+              },
+              {
+                "type": "basic",
+                "name": "Div",
+                "props": {
+                  "className": "flex justify-end gap-2 pt-4"
+                },
+                "children": [
+                  {
+                    "type": "basic",
+                    "name": "Button",
+                    "props": {
+                      "type": "button",
+                      "className": "inline-flex items-center px-4 py-2.5 font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
+                    },
+                    "actions": [
+                      {
+                        "type": "click",
+                        "handler": "navigate",
+                        "params": {
+                          "path": "/admin/page-builder"
+                        }
+                      }
+                    ],
+                    "text": "취소"
+                  },
+                  {
+                    "type": "basic",
+                    "name": "Button",
+                    "props": {
+                      "type": "button",
+                      "className": "inline-flex items-center px-4 py-2.5 font-semibold text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600"
+                    },
+                    "actions": [
+                      {
+                        "type": "click",
+                        "handler": "apiCall",
+                        "auth_required": true,
+                        "target": "/api/modules/jiwonpapa-page_builder/admin/documents",
+                        "params": {
+                          "method": "POST",
+                          "body": "{{_local.form}}"
+                        },
+                        "onSuccess": [
+                          {
+                            "handler": "openWindow",
+                            "params": {
+                              "path": "/modules/jiwonpapa-page_builder/admin/editor?document={{response.data.document.document_id}}",
+                              "target": "_self"
+                            }
+                          }
+                        ],
+                        "onError": [
+                          {
+                            "handler": "toast",
+                            "params": {
+                              "type": "error",
+                              "message": "{{error.message ?? '페이지를 만들지 못했습니다.'}}"
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "text": "페이지 만들기"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

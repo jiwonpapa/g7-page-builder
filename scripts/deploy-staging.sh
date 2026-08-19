@@ -6,11 +6,26 @@ ssh_target="${G7PB_STAGING_SSH:-g7devops}"
 
 "$root/scripts/staging-doctor.sh"
 
+if ! git -C "$root" diff --quiet || ! git -C "$root" diff --cached --quiet; then
+  echo 'Staging deployment requires a clean Git worktree.' >&2
+  exit 2
+fi
+
 artifact="${G7PB_RELEASE_ARTIFACT:-}"
 if [[ -z "$artifact" ]]; then
-  artifact="$(find "$root/output/releases" -maxdepth 1 -type f -name 'g7-page-builder-v*.tar.gz' -print | sort | tail -1)"
+  version="$(node -p "require('$root/module.json').version")"
+  commit="$(git -C "$root" rev-parse --short=12 HEAD)"
+  artifact="$root/output/releases/g7-page-builder-v${version}-${commit}.tar.gz"
 fi
 [[ -n "$artifact" && -f "$artifact" ]] || { echo 'No release artifact found. Run make release-package.' >&2; exit 2; }
+
+if [[ "$(basename "$artifact")" == *-dirty.tar.gz ]]; then
+  echo 'Dirty release artifacts cannot be deployed.' >&2
+  exit 2
+fi
+
+build_info="$(tar -xOf "$artifact" jiwonpapa-page_builder/BUILD-INFO)"
+grep -qx 'git_dirty=false' <<< "$build_info" || { echo 'Release BUILD-INFO is not clean.' >&2; exit 2; }
 
 release_id="$(basename "$artifact" .tar.gz)"
 artifact_sha="$(shasum -a 256 "$artifact" | awk '{print $1}')"

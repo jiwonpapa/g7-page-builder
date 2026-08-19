@@ -34,10 +34,21 @@ if (! is_array($connection) || ($connection['driver'] ?? null) !== 'mysql') {
     exit(2);
 }
 
+// Laravel read/write connections keep credentials under the selected side.
+// Backups must follow the write connection because it is the migration source
+// of truth. Top-level options (charset, socket, etc.) remain available.
+$writeConnection = $connection['write'] ?? null;
+if (is_array($writeConnection)) {
+    $connection = array_replace($connection, $writeConnection);
+}
+
 $database = (string) ($connection['database'] ?? '');
 $username = (string) ($connection['username'] ?? '');
 $password = (string) ($connection['password'] ?? '');
-$host = (string) ($connection['host'] ?? '127.0.0.1');
+$configuredHost = $connection['host'] ?? '127.0.0.1';
+$host = is_array($configuredHost)
+    ? (string) ($configuredHost[0] ?? '127.0.0.1')
+    : (string) $configuredHost;
 $port = (string) ($connection['port'] ?? '3306');
 
 if ($database === '' || $username === '') {

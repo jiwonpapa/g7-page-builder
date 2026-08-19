@@ -3,6 +3,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 output_dir="$root/output/releases"
+export COPYFILE_DISABLE=1
 version="$(node -p "require('$root/module.json').version")"
 commit="$(git -C "$root" rev-parse --short=12 HEAD)"
 dirty='false'

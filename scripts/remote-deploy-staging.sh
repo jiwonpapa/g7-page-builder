@@ -40,7 +40,9 @@ grep -q '"identifier": "jiwonpapa-page_builder"' "$staged/module.json"
 )
 
 rollback_path="$app_root/modules/.${module_id}.rollback-$release_id"
+had_previous=false
 if [[ -d "$target" ]]; then
+  had_previous=true
   mv "$target" "$rollback_path"
 fi
 
@@ -50,6 +52,8 @@ restore_files() {
       mv "$target" "$backup_root/module-failed"
     fi
     mv "$rollback_path" "$target"
+  elif [[ "$had_previous" == false && -d "$target" ]]; then
+    mv "$target" "$backup_root/module-failed"
   fi
 }
 trap restore_files ERR
@@ -57,8 +61,8 @@ trap restore_files ERR
 mv "$staged" "$target"
 chmod -R u=rwX,g=rX,o=rX "$target"
 
-installed="$(php artisan module:list --no-ansi | grep -c "$module_id" || true)"
-if [[ "$installed" == 0 ]]; then
+installed="$(php artisan tinker --execute='echo \App\Models\Module::query()->where("identifier", "jiwonpapa-page_builder")->exists() ? "installed" : "absent";' --no-ansi)"
+if [[ "$installed" != *installed* ]]; then
   php artisan module:install "$module_id" --vendor-mode=auto --no-interaction --no-ansi
 else
   php artisan migrate --path="modules/$module_id/database/migrations" --force --no-interaction --no-ansi

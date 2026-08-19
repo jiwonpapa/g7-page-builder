@@ -1,0 +1,6 @@
+/* Tailwind Preflight를 포함하지 않는다. 모든 공개 스타일은 이 루트 아래로 제한한다. */
+.g7pb-root {
+  color: var(--g7pb-color-text, #111827);
+  font-family: var(--g7pb-font-family, system-ui, sans-serif);
+}
+

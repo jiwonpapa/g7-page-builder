@@ -1,0 +1,19 @@
+{
+  "schema": "g7-page-builder/v1",
+  "document_id": "00000000-0000-4000-8000-000000000001",
+  "locale": "ko",
+  "tokens": {
+    "primary": "#2563eb"
+  },
+  "blocks": [
+    {
+      "instance_id": "00000000-0000-4000-8000-000000000002",
+      "type": "content.hero-centered-01",
+      "version": 1,
+      "props": {
+        "title": "페이지 빌더"
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,28 @@
+{
+  "identifier": "jiwonpapa-page_builder",
+  "vendor": "jiwonpapa",
+  "name": {
+    "ko": "G7 페이지 빌더",
+    "en": "G7 Page Builder"
+  },
+  "version": "0.1.0",
+  "license": "proprietary",
+  "description": {
+    "ko": "완성 블록을 조합해 일반 페이지를 제작하는 그누보드7 페이지 빌더",
+    "en": "A block-based visual page builder for Gnuboard7"
+  },
+  "g7_version": ">=7.0.6",
+  "hidden": true,
+  "dependencies": {
+    "modules": {
+      "sirsoft-page": ">=1.0.2"
+    },
+    "plugins": {}
+  },
+  "github_url": null,
+  "github_changelog_url": null,
+  "assets": {
+    "js": [],
+    "css": []
+  }
+}

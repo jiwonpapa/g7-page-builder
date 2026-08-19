@@ -1,0 +1,24 @@
+{
+  "name": "jiwonpapa/g7-page-builder",
+  "description": "Block-based visual page builder module for Gnuboard7",
+  "type": "library",
+  "version": "0.1.0",
+  "license": "proprietary",
+  "autoload": {
+    "psr-4": {
+      "Modules\\Jiwonpapa\\PageBuilder\\": "src/"
+    },
+    "classmap": [
+      "module.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Modules\\Jiwonpapa\\PageBuilder\\Tests\\": "tests/"
+    }
+  },
+  "require": {
+    "php": "^8.2"
+  }
+}
+

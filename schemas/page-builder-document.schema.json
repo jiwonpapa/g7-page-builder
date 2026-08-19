@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/document-v1.json",
+  "title": "G7 Page Builder Document v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "document_id", "locale", "blocks"],
+  "properties": {
+    "schema": {
+      "const": "g7-page-builder/v1"
+    },
+    "document_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "locale": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 16
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      },
+      "default": {}
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/block"
+      }
+    }
+  },
+  "$defs": {
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance_id", "type", "version", "props"],
+      "properties": {
+        "instance_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._/-]+$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "props": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+/vendor/
+/node_modules/
+/dist/
+/.phpunit.cache/
+/.vite/
+/.DS_Store
+/.env
+/.env.*
+!/.env.example
+

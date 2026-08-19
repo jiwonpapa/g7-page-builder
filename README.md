@@ -27,9 +27,9 @@ G7 module-owned public route/viewer
 
 ## 현재 상태
 
-Hero·Features·CTA·Contact 4개 블록으로 첫 수직 기능을 구현했습니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 블록 preview gallery, typed style preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다.
+Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가해 12종 테스트 카탈로그를 구현했습니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 구조 미리보기 카탈로그, typed style preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다.
 
-전체 MVP는 아직 아닙니다. Gallery와 자체 MediaPort, 기본 SEO, 복구 가능한 문서 보관·삭제, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
+전체 유료 MVP는 아직 아닙니다. Gallery의 실제 업로드를 담당할 자체 MediaPort, 기본 SEO, 복구 가능한 문서 보관·삭제, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
 
 ## 저장소 역할
 
@@ -59,12 +59,12 @@ Hero·Features·CTA·Contact 4개 블록으로 첫 수직 기능을 구현했습
 
 1. Puck ↔ `PageBuilderDocument v1` 왕복 Adapter
 2. 모듈 자체 문서·리비전·발행 저장소
-3. Hero·Features·CTA·Contact 수직 기능과 PC·태블릿·모바일 제품 E2E
+3. 12종 block schema·editor·PHP compiler·public renderer와 핵심 lifecycle PC·태블릿·모바일 E2E
 4. 별도 문서함, 메타수정, 최근 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제
 
 다음:
 
-1. Gallery와 자체 MediaPort로 기본 MVP 블록 완성
+1. Gallery를 URL 시험형에서 자체 MediaPort 기반 업로드·선택형으로 전환
 2. 복구 가능한 문서 보관·삭제와 기본 SEO 계약 구현
 3. 실패 발행 뒤 public hash 불변, 최소 G7 fixture, 접근성·시각 회귀 gate 추가
 
@@ -76,6 +76,7 @@ Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 �
 - [G7 연동 계약](docs/g7-integration-contract.md)
 - [코어 계약 상태](docs/core-contracts.md)
 - [편집기 엔진 결정](docs/editor-engine-decision.md)
+- [블록 카탈로그 벤치마크](docs/block-catalog-benchmark.md)
 - [MVP 기능 명세](docs/mvp-functional-spec.md)
 - [문서·발행 계약](docs/document-publish-contract.md)
 - [품질 하네스](docs/quality-harness.md)

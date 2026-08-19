@@ -1,0 +1,115 @@
+{
+  "schema_version": "g7-page-builder/v1",
+  "document_id": "70000000-0000-4000-8000-000000000001",
+  "slug": "catalog-fixture",
+  "mode": "canvas",
+  "locale": "ko",
+  "tokens": {},
+  "blocks": [
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000002",
+      "type": "content.hero-split-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "제품 소개",
+        "title": "분할 히어로",
+        "body": "메시지와 이미지를 나눠 보여줍니다.",
+        "primaryCta": { "label": "보기", "url": "/about" },
+        "mediaPosition": "right"
+      },
+      "slots": {}
+    },
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000003",
+      "type": "content.hero-slider-01",
+      "block_version": 1,
+      "props": {
+        "slides": [
+          { "eyebrow": "장면 1", "title": "첫 메시지", "body": "첫 설명", "buttonLabel": "보기", "buttonUrl": "/one", "imageSrc": "", "imageAlt": "" },
+          { "eyebrow": "장면 2", "title": "두 번째 메시지", "body": "두 번째 설명", "buttonLabel": "보기", "buttonUrl": "/two", "imageSrc": "", "imageAlt": "두 번째 장면" }
+        ],
+        "appearance": { "surface": "contrast", "spacing": "spacious" }
+      }
+    },
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000004",
+      "type": "trust.logo-cloud-01",
+      "block_version": 1,
+      "props": {
+        "heading": "파트너",
+        "logos": [
+          { "name": "Acme", "imageSrc": "", "imageAlt": "", "url": "" },
+          { "name": "Orbit", "imageSrc": "", "imageAlt": "Orbit 로고", "url": "https://example.com" }
+        ]
+      }
+    },
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000005",
+      "type": "data.stats-icons-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "성과",
+        "heading": "핵심 지표",
+        "items": [
+          { "icon": "users", "value": "12,400+", "label": "사용자", "detail": "누적 사용자" },
+          { "icon": "trend", "value": "38%", "label": "성장", "detail": "전년 대비" }
+        ]
+      }
+    },
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000006",
+      "type": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "가격",
+        "heading": "요금제",
+        "plans": [
+          { "name": "Starter", "price": "₩29,000", "period": "/월", "description": "시작 플랜", "features": ["페이지 3개", "기본 지원"], "buttonLabel": "시작", "buttonUrl": "/start", "featured": false },
+          { "name": "Growth", "price": "₩79,000", "period": "/월", "description": "성장 플랜", "features": ["페이지 무제한", "우선 지원"], "buttonLabel": "선택", "buttonUrl": "/growth", "featured": true }
+        ]
+      }
+    },
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000007",
+      "type": "company.team-grid-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "팀",
+        "heading": "함께 만드는 사람들",
+        "members": [
+          { "name": "김하늘", "role": "제품", "bio": "제품을 설계합니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
+          { "name": "이로운", "role": "디자인", "bio": "경험을 디자인합니다.", "imageSrc": "", "imageAlt": "이로운", "profileUrl": "/team/lee" }
+        ]
+      }
+    },
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000008",
+      "type": "media.gallery-grid-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "프로젝트",
+        "heading": "갤러리",
+        "columns": 3,
+        "images": [
+          { "src": "", "alt": "첫 이미지", "caption": "장면 1" },
+          { "src": "", "alt": "두 번째 이미지", "caption": "장면 2" }
+        ]
+      }
+    },
+    {
+      "instance_id": "70000000-0000-4000-8000-000000000009",
+      "type": "data.bar-chart-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "데이터",
+        "heading": "분기별 성과",
+        "description": "0부터 100까지 비교합니다.",
+        "unit": "%",
+        "items": [
+          { "label": "1분기", "value": 42, "tone": "blue" },
+          { "label": "2분기", "value": 74.5, "tone": "emerald" }
+        ]
+      }
+    }
+  ]
+}

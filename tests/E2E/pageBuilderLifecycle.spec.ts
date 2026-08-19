@@ -14,7 +14,30 @@ const NATIVE_MANAGER_PATH = '/admin/page-builder';
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-type BlockType = 'contact' | 'cta' | 'features' | 'hero';
+type BlockType =
+  | 'bar-chart'
+  | 'contact'
+  | 'cta'
+  | 'features'
+  | 'gallery'
+  | 'hero'
+  | 'logo-cloud'
+  | 'pricing'
+  | 'stats'
+  | 'team';
+
+const PUBLISHED_BLOCK_ORDER: BlockType[] = [
+  'features',
+  'hero',
+  'cta',
+  'contact',
+  'logo-cloud',
+  'stats',
+  'pricing',
+  'team',
+  'gallery',
+  'bar-chart',
+];
 
 interface AdminLoginResponse {
   data?: {
@@ -346,6 +369,22 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
+    for (const option of [
+      'hero',
+      'hero-split',
+      'hero-slider',
+      'features',
+      'cta',
+      'contact',
+      'logo-cloud',
+      'stats',
+      'pricing',
+      'team',
+      'gallery',
+      'bar-chart',
+    ]) {
+      await expect(page.getByTestId(`page-builder-block-option-${option}`)).toBeVisible();
+    }
     await page.getByTestId('page-builder-block-option-hero').click();
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
@@ -356,6 +395,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-contact').click();
+    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart']) {
+      await revealEditorHeaderActions(page);
+      await page.getByTestId('page-builder-add-block').click();
+      await page.getByTestId(`page-builder-block-option-${option}`).click();
+    }
 
     await selectAndEditHero(page, heroTitle, heroSubtitle);
     await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel);
@@ -363,14 +407,14 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
 
     await page.getByTestId('page-builder-block-move-up').click({ timeout: 10_000 });
-    await expectBlockOrder(page.getByTestId('page-builder-block'), ['features', 'hero', 'cta', 'contact']);
+    await expectBlockOrder(page.getByTestId('page-builder-block'), PUBLISHED_BLOCK_ORDER);
 
     await saveDraft(page);
     const originalRevision = await currentDocumentRevision(page, documentId);
     await page.reload();
     await expect(page).toHaveURL(new RegExp(`document=${documentId}`));
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-    await expectBlockOrder(page.getByTestId('page-builder-block'), ['features', 'hero', 'cta', 'contact']);
+    await expectBlockOrder(page.getByTestId('page-builder-block'), PUBLISHED_BLOCK_ORDER);
 
     await editorBlock(page, 'hero').click();
     await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(heroTitle);
@@ -397,7 +441,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const previewResponse = await previewPage.goto(previewUrl);
     expect(previewResponse?.ok()).toBe(true);
     await expect(previewPage.getByTestId('page-builder-preview-root')).toBeVisible();
-    await expectBlockOrder(renderedBlocks(previewPage), ['features', 'hero', 'cta', 'contact']);
+    await expectBlockOrder(renderedBlocks(previewPage), PUBLISHED_BLOCK_ORDER);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(ctaHeading, { exact: true })).toBeVisible();
@@ -425,7 +469,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     expect(publicResponse?.ok()).toBe(true);
     await expect(publicPage.getByTestId('page-builder-public-root')).toBeVisible();
     expect(await publicPage.evaluate(() => window.localStorage.getItem('auth_token'))).toBeNull();
-    await expectBlockOrder(renderedBlocks(publicPage), ['features', 'hero', 'cta', 'contact']);
+    await expectBlockOrder(renderedBlocks(publicPage), PUBLISHED_BLOCK_ORDER);
     await expect(publicPage.getByText(heroTitle, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(ctaHeading, { exact: true })).toBeVisible();
@@ -449,7 +493,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await publicPage.reload();
     await expect(publicPage.getByText(revisedHeroTitle, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(heroTitle, { exact: true })).toHaveCount(0);
-    await expectBlockOrder(renderedBlocks(publicPage), ['features', 'hero', 'cta', 'contact']);
+    await expectBlockOrder(renderedBlocks(publicPage), PUBLISHED_BLOCK_ORDER);
     await expectResponsivePage(publicPage, testInfo);
 
     await page.bringToFront();

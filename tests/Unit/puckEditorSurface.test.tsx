@@ -218,6 +218,11 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('특징 목록');
     expect(gallery.textContent).toContain('행동 유도');
     expect(gallery.textContent).toContain('연락처');
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(4);
+    expect(gallery.textContent).toContain('슬라이더 히어로');
+    expect(gallery.textContent).toContain('요금제');
+    expect(gallery.textContent).toContain('팀 소개');
+    expect(gallery.textContent).toContain('갤러리 그리드');
+    expect(gallery.textContent).toContain('막대그래프');
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(12);
   });
 });

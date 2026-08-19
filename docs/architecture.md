@@ -56,7 +56,7 @@ G7 module-owned public route/viewer
 - 문서 스키마 v1은 `canvas`만 허용합니다.
 - `/pages/{slug}` PHP Web route가 발행본을 직접 렌더하며 G7 User SPA layout이나 User Template을 거치지 않습니다.
 - 발행본 하나를 홈으로 지정한 경우에만 `/`을 가로채고, 미지정·조회 실패 시 G7 기본 홈으로 통과시킵니다.
-- G7 공통 Header·Footer를 강제로 주입하지 않습니다. 전용 Header·Footer block은 별도 block으로만 추가하며 현재 Hero·Features·CTA·Contact slice에는 없습니다.
+- G7 공통 Header·Footer를 강제로 주입하지 않습니다. 전용 Header·Footer block은 별도 block으로만 추가하며 현재 12종 테스트 카탈로그에는 없습니다.
 - 향후 User Template shell, `sirsoft-page` metadata, 쇼핑몰 Product Grid, G7 JSON UI는 각각 별도 선택 Adapter·Block Pack으로만 추가합니다.
 - 선택 연동이 없거나 실패해도 기본 문서의 저장·발행·공개 렌더는 중단하지 않습니다.
 

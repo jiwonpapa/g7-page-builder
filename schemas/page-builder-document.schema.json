@@ -111,6 +111,38 @@
               "props": { "$ref": "#/$defs/contactProps" }
             }
           }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.hero-split-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/heroSplitProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.hero-slider-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/heroSliderProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "trust.logo-cloud-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/logoCloudProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "data.stats-icons-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/statsProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "commerce.pricing-tiers-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/pricingProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "company.team-grid-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/teamProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "media.gallery-grid-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/galleryProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "data.bar-chart-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/barChartProps" } } }
         }
       ]
     },
@@ -142,6 +174,101 @@
         "spacing": {
           "enum": ["compact", "normal", "spacious"]
         }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src", "alt"],
+      "properties": {
+        "src": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "alt": { "type": "string", "minLength": 1, "maxLength": 300 }
+      }
+    },
+    "heroSplitProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "title", "body", "mediaPosition"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "body": { "type": "string", "maxLength": 2000 },
+        "primaryCta": { "$ref": "#/$defs/link" },
+        "image": { "$ref": "#/$defs/image" },
+        "mediaPosition": { "enum": ["left", "right"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "heroSliderProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slides"],
+      "properties": {
+        "slides": {
+          "type": "array", "minItems": 2, "maxItems": 5,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["eyebrow", "title", "body", "buttonLabel", "buttonUrl", "imageSrc", "imageAlt"],
+            "properties": {
+              "eyebrow": { "type": "string", "maxLength": 120 },
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "body": { "type": "string", "maxLength": 2000 },
+              "buttonLabel": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "buttonUrl": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "imageSrc": { "type": "string", "maxLength": 2048 },
+              "imageAlt": { "type": "string", "maxLength": 300 }
+            }
+          }
+        },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "logoCloudProps": {
+      "type": "object", "additionalProperties": false, "required": ["heading", "logos"],
+      "properties": {
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "logos": { "type": "array", "minItems": 2, "maxItems": 12, "items": { "type": "object", "additionalProperties": false, "required": ["name", "imageSrc", "imageAlt", "url"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 120 }, "imageSrc": { "type": "string", "maxLength": 2048 }, "imageAlt": { "type": "string", "maxLength": 300 }, "url": { "type": "string", "maxLength": 2048 } } } },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "statsProps": {
+      "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "items"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "items": { "type": "array", "minItems": 2, "maxItems": 6, "items": { "type": "object", "additionalProperties": false, "required": ["icon", "value", "label", "detail"], "properties": { "icon": { "enum": ["trend", "users", "target", "chart"] }, "value": { "type": "string", "minLength": 1, "maxLength": 80 }, "label": { "type": "string", "minLength": 1, "maxLength": 120 }, "detail": { "type": "string", "maxLength": 500 } } } },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "pricingProps": {
+      "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "plans"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "plans": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "type": "object", "additionalProperties": false, "required": ["name", "price", "period", "description", "features", "buttonLabel", "buttonUrl", "featured"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 120 }, "price": { "type": "string", "minLength": 1, "maxLength": 80 }, "period": { "type": "string", "maxLength": 40 }, "description": { "type": "string", "maxLength": 500 }, "features": { "type": "array", "minItems": 1, "maxItems": 12, "items": { "type": "string", "minLength": 1, "maxLength": 200 } }, "buttonLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "buttonUrl": { "type": "string", "minLength": 1, "maxLength": 2048 }, "featured": { "type": "boolean" } } } },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "teamProps": {
+      "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "members"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "members": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "required": ["name", "role", "bio", "imageSrc", "imageAlt", "profileUrl"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 120 }, "role": { "type": "string", "minLength": 1, "maxLength": 160 }, "bio": { "type": "string", "maxLength": 1000 }, "imageSrc": { "type": "string", "maxLength": 2048 }, "imageAlt": { "type": "string", "maxLength": 300 }, "profileUrl": { "type": "string", "maxLength": 2048 } } } },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "galleryProps": {
+      "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "images", "columns"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 }, "columns": { "enum": [2, 3, 4] },
+        "images": { "type": "array", "minItems": 2, "maxItems": 12, "items": { "type": "object", "additionalProperties": false, "required": ["src", "alt", "caption"], "properties": { "src": { "type": "string", "maxLength": 2048 }, "alt": { "type": "string", "minLength": 1, "maxLength": 300 }, "caption": { "type": "string", "maxLength": 300 } } } },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "barChartProps": {
+      "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "description", "unit", "items"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 }, "description": { "type": "string", "maxLength": 1000 }, "unit": { "type": "string", "maxLength": 20 },
+        "items": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "required": ["label", "value", "tone"], "properties": { "label": { "type": "string", "minLength": 1, "maxLength": 120 }, "value": { "type": "number", "minimum": 0, "maximum": 100 }, "tone": { "enum": ["blue", "indigo", "emerald", "amber"] } } } },
+        "appearance": { "$ref": "#/$defs/appearance" }
       }
     },
     "ctaProps": {

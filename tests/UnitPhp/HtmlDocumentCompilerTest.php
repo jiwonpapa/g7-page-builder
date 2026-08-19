@@ -169,6 +169,84 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
     }
 
+    public function test_all_catalog_blocks_compile_to_typed_public_markup(): void
+    {
+        $payload = $this->catalogPayload();
+        $slider = $payload['blocks'][1];
+        unset($payload['blocks'][1]);
+        $payload['blocks'] = array_values($payload['blocks']);
+
+        $compiler = new HtmlDocumentCompiler;
+        $catalog = $compiler->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+        $sliderResult = $compiler->compile(
+            PageBuilderDocument::fromArray(array_replace($payload, ['blocks' => [$slider]])),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+
+        self::assertSame('0.2.0', $catalog->compilerVersion);
+        foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
+            self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
+        }
+        self::assertStringContainsString('data-block-type="hero-slider"', (string) $sliderResult->artifact);
+        self::assertStringContainsString('<progress max="100" value="74.5" data-tone="emerald">', (string) $catalog->artifact);
+        self::assertStringNotContainsString('<script', (string) $catalog->artifact);
+    }
+
+    public function test_catalog_rejects_multiple_hero_family_blocks(): void
+    {
+        $this->expectException(DocumentCompileException::class);
+
+        (new HtmlDocumentCompiler)->compile(
+            PageBuilderDocument::fromArray($this->catalogPayload()),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+    }
+
+    public function test_catalog_rejects_unsafe_action_urls(): void
+    {
+        $payload = $this->catalogPayload();
+        $payload['blocks'] = [$payload['blocks'][4]];
+        $payload['blocks'][0]['props']['plans'][0]['buttonUrl'] = 'javascript:alert(1)';
+
+        $this->expectException(DocumentCompileException::class);
+        (new HtmlDocumentCompiler)->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+    }
+
+    public function test_catalog_rejects_out_of_range_chart_values(): void
+    {
+        $payload = $this->catalogPayload();
+        $payload['blocks'] = [$payload['blocks'][7]];
+        $payload['blocks'][0]['props']['items'][0]['value'] = 101;
+
+        $this->expectException(DocumentCompileException::class);
+        (new HtmlDocumentCompiler)->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function catalogPayload(): array
+    {
+        $contents = file_get_contents(dirname(__DIR__).'/Contract/document-catalog-v1.fixture.json');
+        self::assertIsString($contents);
+
+        return json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+    }
+
     /**
      * @param  array<string, mixed>  $ctaOverrides
      * @param  array<string, mixed>  $contactOverrides

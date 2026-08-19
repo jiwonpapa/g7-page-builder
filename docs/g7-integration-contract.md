@@ -92,7 +92,7 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 - 발행 문서 하나를 홈으로 지정하면 GET/HEAD `/`만 Page Builder가 응답합니다. 지정이 없거나 모듈 조회가 실패하면 G7 기본 홈으로 fail-through 합니다.
 - G7 SPA layout과 Layout Editor를 전혀 사용하지 않습니다.
 - 활성 User Template과 번들 모듈의 존재 여부를 묻지 않습니다.
-- 공개 route는 G7 공통 Header·Footer를 강제로 주입하지 않는 전체 canvas입니다. Header·Footer 전용 block은 전체 MVP 이후 확장 항목이며 현재 Hero·Features·CTA·Contact slice에는 없습니다.
+- 공개 route는 G7 공통 Header·Footer를 강제로 주입하지 않는 전체 canvas입니다. Header·Footer 전용 block은 전체 MVP 이후 확장 항목이며 현재 12종 테스트 카탈로그에는 없습니다.
 - module Provider가 `resources/views`를 `loadViewsFrom`으로 등록하고 자체 Controller가 editor/viewer shell을 렌더합니다. G7 `getViews()` 자동 등록을 가정하지 않습니다.
 - `module.json` asset strategy는 `lazy`이며 shell이 `/api/modules/assets/jiwonpapa-page_builder/dist/...`를 직접 링크합니다. Puck bundle을 다른 G7 화면에 전역 주입하지 않습니다.
 - canonical·Open Graph URL은 `/pages/{slug}` 또는 홈 지정 시 `/`을 사용합니다.

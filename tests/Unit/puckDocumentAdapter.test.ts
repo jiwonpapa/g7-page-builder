@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PuckEditorData } from '../../resources/js/editor/PuckEditorAdapter';
+import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import {
   CONTACT_BLOCK_TYPE,
   CTA_BLOCK_TYPE,
@@ -93,6 +94,16 @@ const documentFixture: PageBuilderDocument = {
 };
 
 describe('Puck PageBuilderDocument adapter', () => {
+  it('round-trips all eight catalog blocks through the Puck adapter', () => {
+    const fixture = catalogFixture as unknown as PageBuilderDocument;
+    const session = canonicalToPuck(fixture);
+
+    expect(session.data.content.map((block) => block.type)).toEqual([
+      'HeroSplit', 'HeroSlider', 'LogoCloud', 'Stats', 'Pricing', 'Team', 'Gallery', 'BarChart',
+    ]);
+    expect(puckToCanonical(session.data, session.context)).toEqual(fixture);
+  });
+
   it('round-trips all canonical MVP blocks without leaking Puck state', () => {
     const session = canonicalToPuck(documentFixture);
     const hero = session.data.content[0];

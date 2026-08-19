@@ -52,10 +52,10 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 
 첫 수직 slice에서 확인한 항목:
 
-1. Hero·Features·CTA·Contact 편집과 선택 block 정렬을 지원합니다.
+1. 12종 테스트 카탈로그의 typed 편집과 선택 block 정렬을 지원합니다.
 2. Puck ↔ `PageBuilderDocument` 왕복 Fixture가 통과합니다.
 3. 저장 후 reload와 Puck undo/redo 표면이 동작합니다.
 4. PC·태블릿·모바일 preview/public 제품 E2E가 통과합니다.
-5. Puck을 import하지 않는 PHP compiler가 같은 네 block을 결정적으로 컴파일합니다.
+5. Puck을 import하지 않는 PHP compiler가 같은 12종 block을 결정적으로 컴파일합니다.
 
 아직 남은 채택 검증은 100개 block 성능 측정과 nested slot입니다. 현재 nested slot은 Adapter와 compiler에서 fail-closed하며, 이 두 항목이 실제 제품 요구가 될 때 기준을 통과하지 못하면 다른 엔진으로 자동 전환하지 않고 원인을 기록한 뒤 결정을 다시 엽니다.

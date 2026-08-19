@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import fixture from '../Contract/document-v1.fixture.json';
 import ctaContactFixture from '../Contract/document-cta-contact-v1.fixture.json';
+import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import compileFixture from '../Contract/compile-result-v1.fixture.json';
 import compileSchema from '../../schemas/compile-result.schema.json';
 import schema from '../../schemas/page-builder-document.schema.json';
@@ -19,6 +20,24 @@ describe('PageBuilderDocument v1 schema', () => {
 
   it('accepts canonical CTA and Contact blocks', () => {
     expect(validate(ctaContactFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('accepts the structured twelve-block test catalog', () => {
+    expect(validate(catalogFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('rejects unsafe or out-of-range catalog values', () => {
+    const invalid = structuredClone(catalogFixture) as unknown as {
+      blocks: Array<{ props: { items: Array<Record<string, unknown>> } }>;
+    };
+    invalid.blocks[7]!.props.items[0]!.value = 140;
+    expect(validate(invalid)).toBe(false);
+
+    const arbitraryStyle = structuredClone(catalogFixture) as typeof catalogFixture & {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    arbitraryStyle.blocks[4].props.className = 'fixed inset-0';
+    expect(validate(arbitraryStyle)).toBe(false);
   });
 
   it('rejects malformed CTA links and Contact form props', () => {

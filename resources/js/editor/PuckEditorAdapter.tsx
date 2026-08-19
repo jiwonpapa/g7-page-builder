@@ -12,6 +12,15 @@ import {
 import '@puckeditor/core/puck.css';
 
 import {
+  CATALOG_GALLERY_ITEMS,
+  CatalogGalleryThumbnail,
+  canonicalCatalogBlockToPuck,
+  catalogComponentConfigs,
+  catalogPuckBlockToCanonical,
+  type CatalogEditorComponents,
+} from './catalogBlocks';
+
+import {
   CONTACT_BLOCK_TYPE,
   CTA_BLOCK_TYPE,
   FEATURES_BLOCK_TYPE,
@@ -73,7 +82,7 @@ interface ContactEditorProps {
   spacing: BlockAppearance['spacing'];
 }
 
-interface EditorComponents {
+interface EditorComponents extends CatalogEditorComponents {
   Hero: HeroEditorProps;
   Features: FeaturesEditorProps;
   Cta: CtaEditorProps;
@@ -383,6 +392,17 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
     };
   }
 
+  const catalogBlock = canonicalCatalogBlockToPuck(block);
+  if (catalogBlock) {
+    return {
+      type: catalogBlock.type,
+      props: {
+        id: block.instance_id,
+        ...catalogBlock.props,
+      },
+    } as PuckEditorData['content'][number];
+  }
+
   throw new Error(`Unsupported PageBuilder block: ${block.type}`);
 }
 
@@ -423,7 +443,7 @@ function puckBlockToCanonical(
   const instanceId = idToUuid(block.props.id);
   const metadata = context.blocks[instanceId] ?? { blockVersion: 1, hadSlots: true, hadAppearance: false };
   let type: string;
-  let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps;
+  let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps | Record<string, unknown>;
 
   if (block.type === 'Hero') {
     const editorProps = block.props as typeof block.props & HeroEditorProps;
@@ -509,7 +529,16 @@ function puckBlockToCanonical(
     }
     props = contactProps;
   } else {
-    throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
+    const catalogBlock = catalogPuckBlockToCanonical(
+      (block as { type: string }).type,
+      block.props as Record<string, unknown>,
+      metadata.hadAppearance,
+    );
+    if (!catalogBlock) {
+      throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
+    }
+    type = catalogBlock.type;
+    props = catalogBlock.props;
   }
 
   const canonical: PageBuilderBlock = {
@@ -942,11 +971,22 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
   categories: {
     content: {
       title: '콘텐츠 블록',
-      components: ['Hero', 'Features', 'Cta', 'Contact'],
+      components: ['Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Contact'],
+      defaultExpanded: true,
+    },
+    business: {
+      title: '비즈니스·신뢰',
+      components: ['LogoCloud', 'Pricing', 'Team'],
+      defaultExpanded: true,
+    },
+    dataMedia: {
+      title: '데이터·미디어',
+      components: ['Stats', 'BarChart', 'Gallery'],
       defaultExpanded: true,
     },
   },
   components: {
+    ...catalogComponentConfigs,
     Hero: {
       label: 'Hero',
       defaultProps: DEFAULT_HERO,
@@ -1282,6 +1322,7 @@ const BLOCK_GALLERY_ITEMS: ReadonlyArray<{
   { type: 'Features', testId: 'page-builder-block-option-features', category: '콘텐츠', title: '특징 목록', description: '장점과 기능을 아이콘이 있는 항목으로 설명합니다.' },
   { type: 'Cta', testId: 'page-builder-block-option-cta', category: '전환', title: '행동 유도', description: '주요 행동과 보조 링크를 선명하게 안내합니다.' },
   { type: 'Contact', testId: 'page-builder-block-option-contact', category: '안내', title: '연락처', description: '주소, 전화, 이메일과 문의 동선을 제공합니다.' },
+  ...CATALOG_GALLERY_ITEMS,
 ];
 
 function BlockGalleryThumbnail({ type }: { type: keyof EditorComponents }): React.ReactElement {
@@ -1294,8 +1335,11 @@ function BlockGalleryThumbnail({ type }: { type: keyof EditorComponents }): Reac
   if (type === 'Cta') {
     return <div className="g7pb-block-thumb g7pb-block-thumb--cta" data-block-preview="cta" aria-hidden="true"><span><i /><b /></span><em /></div>;
   }
+  if (type === 'Contact') {
+    return <div className="g7pb-block-thumb g7pb-block-thumb--contact" data-block-preview="contact" aria-hidden="true"><span><i /><b /></span><em><i /><i /><i /></em></div>;
+  }
 
-  return <div className="g7pb-block-thumb g7pb-block-thumb--contact" data-block-preview="contact" aria-hidden="true"><span><i /><b /></span><em><i /><i /><i /></em></div>;
+  return <CatalogGalleryThumbnail type={type as keyof CatalogEditorComponents} />;
 }
 
 function StableAddBlockControls({
@@ -1497,6 +1541,15 @@ function PuckHeaderLayer({ children }: { children: React.ReactNode }): React.Rea
   return <div className="g7pb-puck-header-layer">{children}</div>;
 }
 
+function PuckDrawerNotice(): React.ReactElement {
+  return (
+    <aside className="g7pb-puck-drawer-notice">
+      <strong>블록 라이브러리</strong>
+      <p>상단의 ‘블록 추가’에서 실제 구성을 미리 본 뒤 선택하세요.</p>
+    </aside>
+  );
+}
+
 export function PuckEditorAdapter({
   document,
   revisionKey,
@@ -1517,6 +1570,7 @@ export function PuckEditorAdapter({
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
     headerActions: () => <ConnectedHeaderControls disabled={disabled} />,
+    drawer: PuckDrawerNotice,
     actionBar: (props: { children: React.ReactNode; label?: string; parentAction?: React.ReactNode }) => (
       <SelectedBlockActionBar {...props} disabled={disabled} />
     ),

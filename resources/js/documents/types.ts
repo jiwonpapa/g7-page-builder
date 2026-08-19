@@ -4,6 +4,14 @@ export const HERO_BLOCK_TYPE = 'content.hero-centered-01' as const;
 export const FEATURES_BLOCK_TYPE = 'content.features-grid-01' as const;
 export const CTA_BLOCK_TYPE = 'content.cta-split-01' as const;
 export const CONTACT_BLOCK_TYPE = 'content.contact-info-01' as const;
+export const HERO_SPLIT_BLOCK_TYPE = 'content.hero-split-01' as const;
+export const HERO_SLIDER_BLOCK_TYPE = 'content.hero-slider-01' as const;
+export const LOGO_CLOUD_BLOCK_TYPE = 'trust.logo-cloud-01' as const;
+export const STATS_BLOCK_TYPE = 'data.stats-icons-01' as const;
+export const PRICING_BLOCK_TYPE = 'commerce.pricing-tiers-01' as const;
+export const TEAM_BLOCK_TYPE = 'company.team-grid-01' as const;
+export const GALLERY_BLOCK_TYPE = 'media.gallery-grid-01' as const;
+export const BAR_CHART_BLOCK_TYPE = 'data.bar-chart-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -63,6 +71,121 @@ export interface ContactBlockProps {
   email: string;
   cta?: PageBuilderLink;
   mapLink?: PageBuilderLink;
+  appearance?: BlockAppearance;
+}
+
+export interface HeroSplitBlockProps {
+  eyebrow: string;
+  title: string;
+  body: string;
+  primaryCta?: PageBuilderLink;
+  image?: PageBuilderImage;
+  mediaPosition: 'left' | 'right';
+  appearance?: BlockAppearance;
+}
+
+export interface HeroSlideItem {
+  eyebrow: string;
+  title: string;
+  body: string;
+  buttonLabel: string;
+  buttonUrl: string;
+  imageSrc: string;
+  imageAlt: string;
+}
+
+export interface HeroSliderBlockProps {
+  slides: HeroSlideItem[];
+  appearance?: BlockAppearance;
+}
+
+export interface LogoItem {
+  name: string;
+  imageSrc: string;
+  imageAlt: string;
+  url: string;
+}
+
+export interface LogoCloudBlockProps {
+  heading: string;
+  logos: LogoItem[];
+  appearance?: BlockAppearance;
+}
+
+export interface StatItem {
+  icon: string;
+  value: string;
+  label: string;
+  detail: string;
+}
+
+export interface StatsBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: StatItem[];
+  appearance?: BlockAppearance;
+}
+
+export interface PricingPlanItem {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  buttonLabel: string;
+  buttonUrl: string;
+  featured: boolean;
+}
+
+export interface PricingBlockProps {
+  eyebrow: string;
+  heading: string;
+  plans: PricingPlanItem[];
+  appearance?: BlockAppearance;
+}
+
+export interface TeamMemberItem {
+  name: string;
+  role: string;
+  bio: string;
+  imageSrc: string;
+  imageAlt: string;
+  profileUrl: string;
+}
+
+export interface TeamBlockProps {
+  eyebrow: string;
+  heading: string;
+  members: TeamMemberItem[];
+  appearance?: BlockAppearance;
+}
+
+export interface GalleryImageItem {
+  src: string;
+  alt: string;
+  caption: string;
+}
+
+export interface GalleryBlockProps {
+  eyebrow: string;
+  heading: string;
+  images: GalleryImageItem[];
+  columns: 2 | 3 | 4;
+  appearance?: BlockAppearance;
+}
+
+export interface BarChartItem {
+  label: string;
+  value: number;
+  tone: 'blue' | 'indigo' | 'emerald' | 'amber';
+}
+
+export interface BarChartBlockProps {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  unit: string;
+  items: BarChartItem[];
   appearance?: BlockAppearance;
 }
 

@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: Hero·Features·CTA·Contact 수직 slice와 별도 문서함·메타수정·최근 20개 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제 완료. Gallery·자체 MediaPort와 복구 가능한 문서 보관·삭제는 미구현입니다.
+현재 구현: 12종 테스트 block 카탈로그와 별도 문서함·메타수정·최근 20개 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제 완료. Gallery는 URL 기반 시험형이며 자체 MediaPort와 복구 가능한 문서 보관·삭제는 미구현입니다.
 
 ## 목표
 
@@ -45,15 +45,22 @@
 - compile 실패는 공개 페이지를 바꾸지 않습니다.
 - 마지막 20개 revision을 조회·미리보기·복원합니다.
 
-## MVP block 5종
+## 1차 테스트 block 12종
 
 | Block | 필수 props | 규칙 | 제외 |
 |---|---|---|---|
 | Hero | eyebrow, title, body richtext, primary CTA, image, alignment | H1 1개, CTA URL allowlist, image alt 필수 | video background |
 | Features | title, 2~6 items(icon/title/body) | icon allowlist, 동일 높이 responsive grid | 자유 중첩 layout |
-| Gallery | 1~12 media refs, alt, columns | 자체 `MediaPort`만 사용, mobile 1~2열 | G7 Attachment 직접 사용·image editor·CDN 변환 |
 | Contact | heading, address, phone, email, CTA/map link | 연락처 표시와 link만 제공 | 제출 form·메일·spam 처리 |
 | CTA | eyebrow, heading, body, primary/secondary link, theme | URL allowlist, heading level 검사 | form·임의 HTML·animation timeline |
+| Hero Split | eyebrow, title, body, CTA, image, media position | hero family 1개, URL·image allowlist | 자유 grid |
+| Hero Slider | 2~5 slides(title/body/CTA/image) | focus 가능한 CSS scroll-snap, hero family 1개 | autoplay·외부 slider runtime |
+| Logo Cloud | heading, 2~12 logos(name/image/link) | URL·image allowlist | 자동 수집 |
+| Stats | heading, 2~8 items(icon/value/label/detail) | icon allowlist | 실시간 analytics query |
+| Pricing | heading, 2~4 plans(features/CTA/featured) | URL allowlist, featured boolean | 결제·구독 처리 |
+| Team | heading, 2~12 members(role/bio/image/link) | profile URL·image allowlist | 조직도·계정 연동 |
+| Gallery | heading, 2~12 images, columns | URL·alt 검증, mobile 1열 | 업로드는 MediaPort 전까지 제외 |
+| Bar Chart | heading, 2~8 values/unit/tone | 0~100, semantic progress, tone allowlist | 자유 chart script·실시간 query |
 
 Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Block Pack으로 만들며, 미설치 상태에서는 관련 코드·block·메뉴를 로드하지 않습니다.
 
@@ -92,8 +99,8 @@ Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Bl
 
 ## 완료 조건
 
-1. Hero·Features·CTA·Contact 수직 기능을 먼저 완성합니다.
-2. 기본 5개 block 모두 schema·editor·PHP compiler·public renderer·Fixture를 가집니다.
+1. 12종 테스트 카탈로그 block 모두 schema·editor·PHP compiler·public renderer·Fixture를 가집니다.
+2. 블록 추가 전에 이름·용도·구조 미리보기를 제공합니다.
 3. 생성부터 rollback까지 Playwright 제품 E2E가 통과합니다.
 4. PC·태블릿·모바일 screenshot baseline을 사람이 확인합니다.
 5. G7 7.0.7 fixture 재컴파일 결과가 결정적입니다.

@@ -144,7 +144,7 @@ make dev-credentials
 | `make dev-check` | PHP·Frontend 품질 게이트 |
 | `make dev-browser-smoke` | 공개·로그인 화면 증거 캡처 |
 | `make dev-infra-e2e` | 공개·로그인 실제 browser assertion |
-| `make dev-e2e` | Hero·Features·CTA·Contact 제품 lifecycle E2E(PC·태블릿·모바일) |
+| `make dev-e2e` | 페이지 빌더 제품 lifecycle E2E(PC·태블릿·모바일) |
 | `make dev-down` | 컨테이너 종료, 데이터 유지 |
 
 G7의 기본 `drivers.json`은 cache=file, session=file, queue=sync, websocket off입니다. Redis와 Reverb 실행 환경은 준비되어 있지만 Page Builder 필수 런타임으로 만들지 않습니다. Scheduler는 설치 후 실행하고, Queue/Reverb 래퍼는 유효 설정이 켜질 때만 실제 worker/server를 시작합니다.
@@ -172,7 +172,7 @@ CONFIRM=RESET_G7PB_DEV make dev-reset
 7. Page Builder 모듈 설치·활성
 8. 컨테이너 내부 Playwright 인프라 E2E assertion
 
-환경 완료와 Page Builder 제품 완료는 다릅니다. 현재 별도 관리자 메뉴와 Hero·Features·CTA·Contact 편집·미리보기·발행·복원·공개 해제 E2E, 릴리스 패키징과 스테이징 배포 하네스는 구현됐습니다. Gallery·MediaPort·기본 SEO·복구 가능한 문서 보관은 다음 제품 범위입니다.
+환경 완료와 Page Builder 제품 완료는 다릅니다. 현재 별도 관리자 메뉴, 12종 테스트 block의 schema·editor·compiler·renderer, 핵심 편집·미리보기·발행·복원·공개 해제 E2E, 릴리스 패키징과 스테이징 배포 하네스는 구현됐습니다. Gallery 실제 업로드용 MediaPort·기본 SEO·복구 가능한 문서 보관은 다음 제품 범위입니다.
 
 ## 문제 확인 순서
 

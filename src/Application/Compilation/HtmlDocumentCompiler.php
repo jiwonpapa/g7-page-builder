@@ -9,7 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.1.0';
+    public const COMPILER_VERSION = '0.2.0';
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
 
@@ -20,6 +20,22 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private const CTA_TYPE = 'content.cta-split-01';
 
     private const CONTACT_TYPE = 'content.contact-info-01';
+
+    private const HERO_SPLIT_TYPE = 'content.hero-split-01';
+
+    private const HERO_SLIDER_TYPE = 'content.hero-slider-01';
+
+    private const LOGO_CLOUD_TYPE = 'trust.logo-cloud-01';
+
+    private const STATS_TYPE = 'data.stats-icons-01';
+
+    private const PRICING_TYPE = 'commerce.pricing-tiers-01';
+
+    private const TEAM_TYPE = 'company.team-grid-01';
+
+    private const GALLERY_TYPE = 'media.gallery-grid-01';
+
+    private const BAR_CHART_TYPE = 'data.bar-chart-01';
 
     /** @var list<string> */
     private const FEATURE_ICONS = [
@@ -97,11 +113,61 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 continue;
             }
 
+            if ($type === self::HERO_SPLIT_TYPE) {
+                $heroCount++;
+                $sections[] = $this->compileHeroSplit($props);
+
+                continue;
+            }
+
+            if ($type === self::HERO_SLIDER_TYPE) {
+                $heroCount++;
+                $sections[] = $this->compileHeroSlider($props);
+
+                continue;
+            }
+
+            if ($type === self::LOGO_CLOUD_TYPE) {
+                $sections[] = $this->compileLogoCloud($props);
+
+                continue;
+            }
+
+            if ($type === self::STATS_TYPE) {
+                $sections[] = $this->compileStats($props);
+
+                continue;
+            }
+
+            if ($type === self::PRICING_TYPE) {
+                $sections[] = $this->compilePricing($props);
+
+                continue;
+            }
+
+            if ($type === self::TEAM_TYPE) {
+                $sections[] = $this->compileTeam($props);
+
+                continue;
+            }
+
+            if ($type === self::GALLERY_TYPE) {
+                $sections[] = $this->compileGallery($props);
+
+                continue;
+            }
+
+            if ($type === self::BAR_CHART_TYPE) {
+                $sections[] = $this->compileBarChart($props);
+
+                continue;
+            }
+
             throw new DocumentCompileException("Block {$index} has an unsupported type.");
         }
 
         if ($heroCount > 1) {
-            throw new DocumentCompileException('A page may contain only one Hero block.');
+            throw new DocumentCompileException('A page may contain only one Hero-family block.');
         }
 
         $artifact = implode("\n", $sections);
@@ -291,6 +357,379 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /**
      * @param  array<string, mixed>  $props
      */
+    private function compileHeroSplit(array $props): string
+    {
+        $this->assertOnlyKeys(
+            $props,
+            ['eyebrow', 'title', 'body', 'primaryCta', 'image', 'mediaPosition', 'appearance'],
+            'Split Hero',
+        );
+
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $title = $this->requiredString($props, 'title', 200);
+        $body = $this->optionalString($props, 'body', 2000);
+        $mediaPosition = $this->requiredString($props, 'mediaPosition', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'spacious');
+
+        if (! in_array($mediaPosition, ['left', 'right'], true)) {
+            throw new DocumentCompileException('Split Hero media position is invalid.');
+        }
+
+        $copy = [];
+        if ($eyebrow !== null && $eyebrow !== '') {
+            $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
+        }
+        $copy[] = '<h1>'.$this->escape($title).'</h1>';
+        if ($body !== null && $body !== '') {
+            $copy[] = '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
+        }
+
+        $cta = $this->optionalMap($props, 'primaryCta');
+        if ($cta !== null) {
+            $copy[] = $this->compileActionLink($cta, 'Split Hero CTA', 'g7pb-button g7pb-button--primary');
+        }
+
+        $image = $this->optionalMap($props, 'image');
+        $src = $image === null ? '' : $this->requiredString($image, 'src', 2048);
+        $alt = $image === null ? '대표 이미지' : $this->requiredString($image, 'alt', 300);
+        if ($image !== null) {
+            $this->assertOnlyKeys($image, ['src', 'alt'], 'Split Hero image');
+        }
+        $media = '<figure class="g7pb-hero-split__media">'.$this->compileCatalogImage(
+            $src,
+            $alt,
+            'g7pb-hero-split__image',
+            '대표 이미지 자리',
+            'eager',
+        ).'</figure>';
+
+        return '<section class="g7pb-block g7pb-hero-split g7pb-hero-split--'.$mediaPosition.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-split"><div class="g7pb-hero-split__copy">'.implode('', $copy).'</div>'.$media.'</section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileHeroSlider(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['slides', 'appearance'], 'Slider Hero');
+        $slides = $props['slides'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'contrast', 'spacious');
+
+        if (! is_array($slides) || count($slides) < 2 || count($slides) > 5) {
+            throw new DocumentCompileException('Slider Hero must contain between two and five slides.');
+        }
+
+        $compiled = [];
+        foreach (array_values($slides) as $index => $slide) {
+            if (! is_array($slide)) {
+                throw new DocumentCompileException("Slider Hero item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys(
+                $slide,
+                ['eyebrow', 'title', 'body', 'buttonLabel', 'buttonUrl', 'imageSrc', 'imageAlt'],
+                "Slider Hero item {$index}",
+            );
+            $eyebrow = $this->optionalString($slide, 'eyebrow', 120);
+            $title = $this->requiredString($slide, 'title', 200);
+            $body = $this->optionalString($slide, 'body', 2000);
+            $buttonLabel = $this->requiredString($slide, 'buttonLabel', 120);
+            $buttonUrl = $this->requiredString($slide, 'buttonUrl', 2048);
+            $imageSrc = $this->optionalString($slide, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->optionalString($slide, 'imageAlt', 300) ?? '';
+            $this->assertAllowedUrl($buttonUrl, "Slider Hero item {$index}");
+
+            $copy = $eyebrow === null || $eyebrow === ''
+                ? ''
+                : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
+            $copy .= '<h2>'.$this->escape($title).'</h2>';
+            if ($body !== null && $body !== '') {
+                $copy .= '<p>'.$this->formatText($body).'</p>';
+            }
+            $copy .= '<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a>';
+            $media = $this->compileCatalogImage(
+                $imageSrc,
+                $imageAlt,
+                'g7pb-hero-slider__image',
+                '슬라이드 '.($index + 1).' 이미지 자리',
+                $index === 0 ? 'eager' : 'lazy',
+            );
+            $compiled[] = '<article class="g7pb-hero-slider__slide"><div class="g7pb-hero-slider__copy">'.$copy.'</div><figure>'.$media.'</figure></article>';
+        }
+
+        return '<section class="g7pb-block g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-slider" aria-label="대표 콘텐츠 슬라이더"><div class="g7pb-hero-slider__track" tabindex="0">'.implode('', $compiled).'</div><p class="g7pb-hero-slider__hint">가로로 넘겨 더 보기</p></section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileLogoCloud(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['heading', 'logos', 'appearance'], 'Logo Cloud');
+        $heading = $this->requiredString($props, 'heading', 200);
+        $logos = $props['logos'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+
+        if (! is_array($logos) || count($logos) < 2 || count($logos) > 12) {
+            throw new DocumentCompileException('Logo Cloud must contain between two and twelve logos.');
+        }
+
+        $items = [];
+        foreach (array_values($logos) as $index => $logo) {
+            if (! is_array($logo)) {
+                throw new DocumentCompileException("Logo item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($logo, ['name', 'imageSrc', 'imageAlt', 'url'], "Logo item {$index}");
+            $name = $this->requiredString($logo, 'name', 120);
+            $imageSrc = $this->optionalString($logo, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->optionalString($logo, 'imageAlt', 300) ?? '';
+            $url = $this->optionalString($logo, 'url', 2048) ?? '';
+            $visual = $imageSrc === ''
+                ? '<span>'.$this->escape($name).'</span>'
+                : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-cloud__image', $name);
+            if ($url !== '') {
+                $this->assertAllowedUrl($url, "Logo item {$index}");
+                $visual = '<a href="'.$this->escapeAttribute($url).'" aria-label="'.$this->escapeAttribute($name).'">'.$visual.'</a>';
+            }
+            $items[] = '<li>'.$visual.'</li>';
+        }
+
+        return '<section class="g7pb-block g7pb-logo-cloud '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-cloud"><h2>'.$this->escape($heading).'</h2><ul>'.implode('', $items).'</ul></section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileStats(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'appearance'], 'Stats');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $icons = ['trend', 'users', 'target', 'chart'];
+
+        if (! is_array($items) || count($items) < 2 || count($items) > 6) {
+            throw new DocumentCompileException('Stats must contain between two and six items.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Stats item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['icon', 'value', 'label', 'detail'], "Stats item {$index}");
+            $icon = $this->requiredString($item, 'icon', 32);
+            if (! in_array($icon, $icons, true)) {
+                throw new DocumentCompileException("Stats item {$index} icon is invalid.");
+            }
+            $value = $this->requiredString($item, 'value', 80);
+            $label = $this->requiredString($item, 'label', 120);
+            $detail = $this->optionalString($item, 'detail', 500) ?? '';
+            $compiled[] = '<article><span class="g7pb-stats__icon g7pb-stats__icon--'.$icon.'" aria-hidden="true"></span><strong>'.$this->escape($value).'</strong><h3>'.$this->escape($label).'</h3><p>'.$this->formatText($detail).'</p></article>';
+        }
+
+        return '<section class="g7pb-block g7pb-stats '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="stats">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-stats__grid">'.implode('', $compiled).'</div></section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compilePricing(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'plans', 'appearance'], 'Pricing');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $plans = $props['plans'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'default', 'spacious');
+
+        if (! is_array($plans) || count($plans) < 2 || count($plans) > 4) {
+            throw new DocumentCompileException('Pricing must contain between two and four plans.');
+        }
+
+        $compiled = [];
+        foreach (array_values($plans) as $index => $plan) {
+            if (! is_array($plan)) {
+                throw new DocumentCompileException("Pricing plan {$index} must be an object.");
+            }
+            $this->assertOnlyKeys(
+                $plan,
+                ['name', 'price', 'period', 'description', 'features', 'buttonLabel', 'buttonUrl', 'featured'],
+                "Pricing plan {$index}",
+            );
+            $name = $this->requiredString($plan, 'name', 120);
+            $price = $this->requiredString($plan, 'price', 80);
+            $period = $this->optionalString($plan, 'period', 40) ?? '';
+            $description = $this->optionalString($plan, 'description', 500) ?? '';
+            $buttonLabel = $this->requiredString($plan, 'buttonLabel', 120);
+            $buttonUrl = $this->requiredString($plan, 'buttonUrl', 2048);
+            $featured = $this->requiredBoolean($plan, 'featured');
+            $features = $plan['features'] ?? null;
+            $this->assertAllowedUrl($buttonUrl, "Pricing plan {$index}");
+
+            if (! is_array($features) || count($features) < 1 || count($features) > 12) {
+                throw new DocumentCompileException("Pricing plan {$index} features are invalid.");
+            }
+            $featureItems = [];
+            foreach (array_values($features) as $featureIndex => $feature) {
+                if (! is_string($feature) || trim($feature) === '' || mb_strlen($feature) > 200) {
+                    throw new DocumentCompileException("Pricing plan {$index} feature {$featureIndex} is invalid.");
+                }
+                $featureItems[] = '<li>'.$this->escape($feature).'</li>';
+            }
+            $featuredClass = $featured ? ' g7pb-pricing__plan--featured' : '';
+            $badge = $featured ? '<span class="g7pb-pricing__badge">추천</span>' : '';
+            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->escape($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong>'.$this->escape($period).'</p><p>'.$this->formatText($description).'</p><ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
+        }
+
+        return '<section class="g7pb-block g7pb-pricing '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="pricing">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-pricing__grid">'.implode('', $compiled).'</div></section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileTeam(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'members', 'appearance'], 'Team');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $members = $props['members'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+
+        if (! is_array($members) || count($members) < 2 || count($members) > 8) {
+            throw new DocumentCompileException('Team must contain between two and eight members.');
+        }
+
+        $compiled = [];
+        foreach (array_values($members) as $index => $member) {
+            if (! is_array($member)) {
+                throw new DocumentCompileException("Team member {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($member, ['name', 'role', 'bio', 'imageSrc', 'imageAlt', 'profileUrl'], "Team member {$index}");
+            $name = $this->requiredString($member, 'name', 120);
+            $role = $this->requiredString($member, 'role', 160);
+            $bio = $this->optionalString($member, 'bio', 1000) ?? '';
+            $imageSrc = $this->optionalString($member, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->optionalString($member, 'imageAlt', 300) ?? '';
+            $profileUrl = $this->optionalString($member, 'profileUrl', 2048) ?? '';
+            $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name, 'g7pb-team__image', mb_substr($name, 0, 1));
+            $memberName = '<h3>'.$this->escape($name).'</h3>';
+            if ($profileUrl !== '') {
+                $this->assertAllowedUrl($profileUrl, "Team member {$index}");
+                $memberName = '<h3><a href="'.$this->escapeAttribute($profileUrl).'">'.$this->escape($name).'</a></h3>';
+            }
+            $compiled[] = '<article><figure>'.$media.'</figure>'.$memberName.'<strong>'.$this->escape($role).'</strong><p>'.$this->formatText($bio).'</p></article>';
+        }
+
+        return '<section class="g7pb-block g7pb-team '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="team">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-team__grid">'.implode('', $compiled).'</div></section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileGallery(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'columns', 'appearance'], 'Gallery');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $images = $props['images'] ?? null;
+        $columns = $props['columns'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+
+        if (! is_int($columns) || ! in_array($columns, [2, 3, 4], true)) {
+            throw new DocumentCompileException('Gallery columns are invalid.');
+        }
+        if (! is_array($images) || count($images) < 2 || count($images) > 12) {
+            throw new DocumentCompileException('Gallery must contain between two and twelve images.');
+        }
+
+        $compiled = [];
+        foreach (array_values($images) as $index => $image) {
+            if (! is_array($image)) {
+                throw new DocumentCompileException("Gallery image {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($image, ['src', 'alt', 'caption'], "Gallery image {$index}");
+            $src = $this->optionalString($image, 'src', 2048) ?? '';
+            $alt = $this->requiredString($image, 'alt', 300);
+            $caption = $this->optionalString($image, 'caption', 300) ?? '';
+            $media = $this->compileCatalogImage($src, $alt, 'g7pb-gallery__image', '이미지 '.($index + 1));
+            $figcaption = $caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>';
+            $compiled[] = '<figure>'.$media.$figcaption.'</figure>';
+        }
+
+        return '<section class="g7pb-block g7pb-gallery '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="gallery">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-gallery__grid g7pb-gallery__grid--'.$columns.'">'.implode('', $compiled).'</div></section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileBarChart(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'unit', 'items', 'appearance'], 'Bar Chart');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $description = $this->optionalString($props, 'description', 1000) ?? '';
+        $unit = $this->optionalString($props, 'unit', 20) ?? '';
+        $items = $props['items'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $tones = ['blue', 'indigo', 'emerald', 'amber'];
+
+        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
+            throw new DocumentCompileException('Bar Chart must contain between two and eight items.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Bar Chart item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['label', 'value', 'tone'], "Bar Chart item {$index}");
+            $label = $this->requiredString($item, 'label', 120);
+            $value = $this->requiredNumber($item, 'value', 0, 100);
+            $tone = $this->requiredString($item, 'tone', 16);
+            if (! in_array($tone, $tones, true)) {
+                throw new DocumentCompileException("Bar Chart item {$index} tone is invalid.");
+            }
+            $formattedValue = rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+            $compiled[] = '<label><span>'.$this->escape($label).'<strong>'.$this->escape($formattedValue.$unit).'</strong></span><progress max="100" value="'.$this->escapeAttribute($formattedValue).'" data-tone="'.$tone.'">'.$this->escape($formattedValue).'</progress></label>';
+        }
+
+        $descriptionMarkup = $description === '' ? '' : '<p>'.$this->formatText($description).'</p>';
+
+        return '<section class="g7pb-block g7pb-bar-chart '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="bar-chart"><figure><figcaption>'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.'</figcaption><div class="g7pb-bar-chart__plot">'.implode('', $compiled).'</div></figure></section>';
+    }
+
+    private function compileSectionHeading(?string $eyebrow, string $heading): string
+    {
+        $eyebrowMarkup = $eyebrow === null || $eyebrow === ''
+            ? ''
+            : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
+
+        return '<header class="g7pb-section-heading">'.$eyebrowMarkup.'<h2>'.$this->escape($heading).'</h2></header>';
+    }
+
+    private function compileCatalogImage(
+        string $src,
+        string $alt,
+        string $className,
+        string $placeholderLabel,
+        string $loading = 'lazy',
+    ): string {
+        if ($src === '') {
+            return '<span class="g7pb-media-placeholder '.$className.'" role="img" aria-label="'.$this->escapeAttribute($placeholderLabel).'"><span>'.$this->escape($placeholderLabel).'</span></span>';
+        }
+
+        if ($alt === '') {
+            throw new DocumentCompileException('Image alternative text is required.');
+        }
+
+        $this->assertAllowedImageUrl($src);
+
+        return '<img class="'.$className.'" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="'.$loading.'">';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
     private function appearanceClasses(array $props, string $defaultSurface, string $defaultSpacing): string
     {
         $appearance = $this->optionalMap($props, 'appearance') ?? [];
@@ -356,6 +795,39 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     /**
      * @param  array<string, mixed>  $values
+     */
+    private function requiredBoolean(array $values, string $key): bool
+    {
+        $value = $values[$key] ?? null;
+
+        if (! is_bool($value)) {
+            throw new DocumentCompileException("Property {$key} must be a boolean.");
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function requiredNumber(array $values, string $key, float $minimum, float $maximum): float
+    {
+        $value = $values[$key] ?? null;
+
+        if ((! is_int($value) && ! is_float($value)) || ! is_finite((float) $value)) {
+            throw new DocumentCompileException("Property {$key} must be a finite number.");
+        }
+
+        $number = (float) $value;
+        if ($number < $minimum || $number > $maximum) {
+            throw new DocumentCompileException("Property {$key} is outside the allowed range.");
+        }
+
+        return $number;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
      * @return array<string, mixed>|null
      */
     private function optionalMap(array $values, string $key): ?array
@@ -401,7 +873,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             return;
         }
 
-        throw new DocumentCompileException('Hero image URL is not allowed.');
+        throw new DocumentCompileException('Image URL is not allowed.');
     }
 
     private function isRelativeUrl(string $url): bool

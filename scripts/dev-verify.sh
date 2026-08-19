@@ -102,6 +102,16 @@ else
   fail 'Page Builder module is not active'
 fi
 
+manifest_module_version="$(jq -r '.version' "$root/module.json")"
+registry_module_version="$("${compose[@]}" exec -T -e MYSQL_PWD="$G7PB_DB_PASSWORD" dev \
+  mariadb -N -h 127.0.0.1 -u "$G7PB_DB_USERNAME" "$G7PB_DB_DATABASE" \
+  -e "SELECT version FROM g7_modules WHERE identifier='jiwonpapa-page_builder' LIMIT 1;")"
+if [[ "$registry_module_version" == "$manifest_module_version" ]]; then
+  ok "Page Builder registry version=$registry_module_version"
+else
+  fail "Page Builder registry version=$registry_module_version manifest=$manifest_module_version"
+fi
+
 module_routes="$("${compose[@]}" exec -T --user www-data dev php artisan route:list --json)"
 if jq -e '
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/documents/{document}/publications/unpublish" and (.method | contains("POST")))] | length == 1)

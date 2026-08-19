@@ -74,7 +74,7 @@ created_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 )
 
 artifact="$output_dir/${release_id}.tar.gz"
-tar -C "$stage_root" -czf "$artifact" jiwonpapa-page_builder
+tar --no-xattrs -C "$stage_root" -czf "$artifact" jiwonpapa-page_builder
 shasum -a 256 "$artifact" > "$artifact.sha256"
 
 verify_root="$(mktemp -d)"

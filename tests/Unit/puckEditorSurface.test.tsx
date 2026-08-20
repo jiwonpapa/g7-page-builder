@@ -351,7 +351,9 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('팀 소개');
     expect(gallery.textContent).toContain('갤러리 그리드');
     expect(gallery.textContent).toContain('막대그래프');
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(12);
+    expect(gallery.textContent).toContain('G7 최근 게시글');
+    expect(gallery.textContent).toContain('G7 상품 그리드');
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(14);
   });
 
   it('uses the actor catalog for search, categories, favorites, and preset insertion', async () => {

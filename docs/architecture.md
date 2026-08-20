@@ -66,12 +66,13 @@ G7 module-owned public route/viewer
 - Site Part는 `site.header.*`, `site.footer.*` 블록만 허용하며 발행 시 PHP compiler와 URL allowlist를 통과한 active revision만 공개합니다.
 - 0.6.x의 `SiteShellPort` 값은 최초 Site Part bootstrap 입력과 미발행 fallback으로만 유지하며 전환 후 편집 진입점으로 사용하지 않습니다.
 - 문서는 기본 `shell_mode=global`이며 인트로·캠페인은 `shell_mode=none`으로 공통영역 없이 렌더합니다. 이 값은 revision과 publication에 함께 snapshot됩니다.
-- 향후 User Template shell, `sirsoft-page` metadata, 쇼핑몰 Product Grid, G7 JSON UI는 각각 별도 선택 Adapter·Block Pack으로만 추가합니다.
+- 향후 User Template shell, `sirsoft-page` metadata, G7 JSON UI는 각각 별도 선택 Adapter·Block Pack으로만 추가합니다.
+- G7 최근 게시글·상품 그리드는 번들 모듈의 Model·Repository·테이블을 참조하지 않고 공개 REST API만 호출하는 선택형 내장 블록입니다. 대상 모듈이 없거나 응답에 실패하면 해당 블록만 빈 상태로 닫힙니다.
 - 선택 연동이 없거나 실패해도 기본 문서의 저장·발행·공개 렌더는 중단하지 않습니다.
 
 ## Block Pack 실행 경계
 
-- 12개 기본 정의는 내장 Pack manifest에서 PHP compiler Registry와 Puck catalog로 동시에 등록합니다.
+- 14개 기본 정의는 내장 Pack manifest에서 PHP compiler Registry와 Puck catalog로 동시에 등록합니다.
 - Data Preset Pack은 JSON props와 정적 자산만 제공하며 실행 코드를 등록하지 않습니다.
 - Code Pack은 발행자 귀속 Ed25519 서명과 모든 파일 digest를 통과한 뒤에만 PHP provider와 editor IIFE를 로드합니다.
 - 비활성 Pack은 신규 카탈로그에서 숨기되 기존 문서 해석용 resolved version을 유지합니다.

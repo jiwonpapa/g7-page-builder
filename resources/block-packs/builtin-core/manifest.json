@@ -1,7 +1,7 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.6.0",
+  "pack_version": "0.7.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
@@ -156,6 +156,30 @@
       "editor_component": "BarChart",
       "compiler": "builtin.bar-chart-01",
       "capabilities": []
+    },
+    {
+      "block_id": "g7.board-recent-posts-01",
+      "block_version": 1,
+      "category": "g7-data",
+      "label": { "ko": "G7 최근 게시글", "en": "G7 recent posts" },
+      "description": { "ko": "G7 공개 게시판 API의 최신글 또는 인기글을 자동 표시합니다.", "en": "Load recent or popular posts from the public G7 board API." },
+      "thumbnail": "thumbnails/g7-recent-posts.svg",
+      "schema_ref": "builtin:g7RecentPostsProps",
+      "editor_component": "G7RecentPosts",
+      "compiler": "builtin.g7-board-recent-posts-01",
+      "capabilities": ["g7.module.sirsoft-board", "public.dynamic-data"]
+    },
+    {
+      "block_id": "g7.ecommerce-product-grid-01",
+      "block_version": 1,
+      "category": "g7-data",
+      "label": { "ko": "G7 상품 그리드", "en": "G7 product grid" },
+      "description": { "ko": "G7 쇼핑몰 공개 API의 최신·신규·인기 상품을 자동 표시합니다.", "en": "Load products from the public G7 ecommerce API." },
+      "thumbnail": "thumbnails/g7-product-grid.svg",
+      "schema_ref": "builtin:g7ProductGridProps",
+      "editor_component": "G7ProductGrid",
+      "compiler": "builtin.g7-ecommerce-product-grid-01",
+      "capabilities": ["g7.module.sirsoft-ecommerce", "public.dynamic-data"]
     }
   ],
   "presets": [],

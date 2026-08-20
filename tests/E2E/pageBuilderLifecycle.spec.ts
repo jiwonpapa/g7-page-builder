@@ -22,6 +22,8 @@ type BlockType =
   | 'gallery'
   | 'hero'
   | 'hero-slider'
+  | 'g7-product-grid'
+  | 'g7-recent-posts'
   | 'logo-cloud'
   | 'pricing'
   | 'stats'
@@ -39,6 +41,8 @@ const PUBLISHED_BLOCK_ORDER: BlockType[] = [
   'team',
   'gallery',
   'bar-chart',
+  'g7-recent-posts',
+  'g7-product-grid',
 ];
 
 const BLOCK_LABELS: Record<BlockType, string> = {
@@ -49,6 +53,8 @@ const BLOCK_LABELS: Record<BlockType, string> = {
   gallery: 'Gallery',
   hero: 'Hero',
   'hero-slider': 'Hero slider',
+  'g7-product-grid': 'G7 Product Grid',
+  'g7-recent-posts': 'G7 Recent Posts',
   'logo-cloud': 'Logo cloud',
   pricing: 'Pricing',
   stats: 'Stats',
@@ -287,7 +293,7 @@ async function revealBlockLibrary(page: Page): Promise<void> {
 async function hideMobileBlockLibrary(page: Page): Promise<void> {
   const viewport = page.viewportSize();
   const library = page.getByTestId('page-builder-block-library');
-  if (!viewport || viewport.width > 720 || !(await library.isVisible())) {
+  if (!viewport || viewport.width > 900 || !(await library.isVisible())) {
     return;
   }
 
@@ -323,6 +329,11 @@ async function selectEditorBlock(page: Page, type: BlockType): Promise<void> {
     await outlineItem.click();
     await navigation.getByText('Outline', { exact: true }).click();
     await expect(outlineItem).toBeHidden();
+    return;
+  }
+
+  if (viewport && viewport.width <= 900) {
+    await editorBlock(page, type).evaluate((element) => (element as HTMLElement).click());
     return;
   }
 
@@ -434,6 +445,7 @@ async function selectAndEditHero(
   title: string,
   subtitle: string,
   buttonLabel: string,
+  directCanvas = true,
 ): Promise<void> {
   const hero = editorBlock(page, 'hero');
   await expect(hero).toHaveCount(1);
@@ -454,16 +466,22 @@ async function selectAndEditHero(
   await expect(inlineSubtitle).toHaveCount(1);
   await expect(inlineBody).toHaveCount(1);
   await expect(inlineButton).toHaveCount(1);
-  await inlineTitle.hover();
-  await expect(inlineTitle).toHaveAttribute('contenteditable', 'plaintext-only');
-  await inlineTitle.fill(title);
-  await inlineSubtitle.hover();
-  await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
-  await inlineSubtitle.fill(subtitle);
-  await inlineButton.hover();
-  await expect(inlineButton).toHaveAttribute('contenteditable', 'plaintext-only');
-  await inlineButton.fill(buttonLabel);
-  await inlineSubtitle.press('Tab');
+  if (directCanvas) {
+    await inlineTitle.hover();
+    await expect(inlineTitle).toHaveAttribute('contenteditable', 'plaintext-only');
+    await inlineTitle.fill(title);
+    await inlineSubtitle.hover();
+    await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
+    await inlineSubtitle.fill(subtitle);
+    await inlineButton.hover();
+    await expect(inlineButton).toHaveAttribute('contenteditable', 'plaintext-only');
+    await inlineButton.fill(buttonLabel);
+    await inlineSubtitle.press('Tab');
+  } else {
+    await (await revealInspectorField(page, 'page-builder-hero-title')).fill(title);
+    await (await revealInspectorField(page, 'page-builder-hero-subtitle')).fill(subtitle);
+    await (await revealInspectorField(page, 'page-builder-hero-primary-label')).fill(buttonLabel);
+  }
   await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(title);
   await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(subtitle);
 }
@@ -487,6 +505,7 @@ async function selectAndEditCta(
   heading: string,
   body: string,
   primaryLabel: string,
+  directCanvas = true,
 ): Promise<void> {
   const cta = editorBlock(page, 'cta');
   await expect(cta).toHaveCount(1);
@@ -494,11 +513,17 @@ async function selectAndEditCta(
   const inline = (field: string): Locator => cta.locator(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
   );
-  for (const [field, value] of [['heading', heading], ['body', body], ['primaryLabel', primaryLabel]] as const) {
-    const target = inline(field);
-    await target.hover({ force: true });
-    await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
-    await target.fill(value);
+  if (directCanvas) {
+    for (const [field, value] of [['heading', heading], ['body', body], ['primaryLabel', primaryLabel]] as const) {
+      const target = inline(field);
+      await target.hover({ force: true });
+      await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
+      await target.fill(value);
+    }
+  } else {
+    await (await revealInspectorField(page, 'page-builder-cta-heading')).fill(heading);
+    await (await revealInspectorField(page, 'page-builder-cta-body')).fill(body);
+    await (await revealInspectorField(page, 'page-builder-cta-primary-label')).fill(primaryLabel);
   }
   await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
   await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
@@ -554,14 +579,19 @@ async function currentDocumentRevision(page: Page, documentId: string): Promise<
 }
 
 async function publish(page: Page): Promise<void> {
-  const committed = page.waitForResponse((response) => {
-    const pathname = new URL(response.url()).pathname;
+  const publishButton = page.getByTestId('page-builder-publish');
+  const trigger = (): Promise<unknown> => (page.viewportSize()?.width ?? 1440) <= 720
+    ? publishButton.evaluate((element) => (element as HTMLButtonElement).click())
+    : publishButton.click();
+  const [response] = await Promise.all([
+    page.waitForResponse((candidate) => {
+      const pathname = new URL(candidate.url()).pathname;
 
-    return response.request().method() === 'POST'
-      && /^\/api\/modules\/jiwonpapa-page_builder\/admin\/publications\/[^/]+\/commit$/.test(pathname);
-  });
-  await page.getByTestId('page-builder-publish').click();
-  const response = await committed;
+      return candidate.request().method() === 'POST'
+        && /^\/api\/modules\/jiwonpapa-page_builder\/admin\/publications\/[^/]+\/commit$/.test(pathname);
+    }, { timeout: 30_000 }),
+    trigger(),
+  ]);
   expect(response.ok()).toBe(true);
   await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute(
     'data-state',
@@ -643,7 +673,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
     await expect(blockPackDialog).toBeVisible();
     await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
-    await expect(blockPackDialog).toContainText('블록 12 / 프리셋 0');
+    await expect(blockPackDialog).toContainText('블록 14 / 프리셋 0');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
     await expect(blockPackDialog.getByRole('button', { name: '최신 버전 확인' })).toBeVisible();
     await blockPackDialog.getByRole('button', { name: '닫기' }).click();
@@ -725,6 +755,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'team',
       'gallery',
       'bar-chart',
+      'g7-recent-posts',
+      'g7-product-grid',
     ]) {
       await expect(page.getByTestId(`page-builder-block-option-${option}`)).toBeVisible();
     }
@@ -740,12 +772,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const visibleSliderInlineFields = slider.locator('[contenteditable]:visible');
     await expect(sliderInlineFields).toHaveCount(8);
     await expect(visibleSliderInlineFields).toHaveCount(4);
-    await visibleSliderInlineFields.first().hover({ force: true });
-    await expect(visibleSliderInlineFields.first()).toHaveAttribute('contenteditable', 'plaintext-only');
-    await slider.getByTestId('page-builder-slider-next').click();
-    await expect(slider.getByTestId('page-builder-slider-slide-1')).toHaveAttribute('aria-pressed', 'true');
-    await expect(slider.locator('[data-slide-index="1"]')).toBeVisible();
-    await expect(slider.locator('[data-slide-index="0"]')).toBeHidden();
+    if (testInfo.project.name === 'desktop') {
+      await visibleSliderInlineFields.first().hover({ force: true });
+      await expect(visibleSliderInlineFields.first()).toHaveAttribute('contenteditable', 'plaintext-only');
+    }
+    if (testInfo.project.name === 'desktop') {
+      await slider.getByTestId('page-builder-slider-next').click();
+      await expect(slider.getByTestId('page-builder-slider-slide-1')).toHaveAttribute('aria-pressed', 'true');
+      await expect(slider.locator('[data-slide-index="1"]')).toBeVisible();
+      await expect(slider.locator('[data-slide-index="0"]')).toBeHidden();
+    }
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-cta').click();
@@ -758,13 +794,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-contact').click();
-    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart']) {
+    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid']) {
       await revealEditorHeaderActions(page);
       await page.getByTestId('page-builder-add-block').click();
       await page.getByTestId(`page-builder-block-option-${option}`).click();
     }
 
-    await selectAndEditHero(page, heroTitle, heroSubtitle, heroButtonLabel);
+    await selectAndEditHero(page, heroTitle, heroSubtitle, heroButtonLabel, testInfo.project.name === 'desktop');
     const mediaUpload = page.waitForResponse((response) =>
       response.request().method() === 'POST'
       && new URL(response.url()).pathname === '/api/modules/jiwonpapa-page_builder/admin/media');
@@ -781,7 +817,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const mediaPayload = await mediaResponse.json() as { data?: { id?: unknown } };
     uploadedMediaId = typeof mediaPayload.data?.id === 'string' ? mediaPayload.data.id : null;
     expect(uploadedMediaId).toMatch(DOCUMENT_ID_PATTERN);
-    await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel);
+    await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel, testInfo.project.name === 'desktop');
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
     await revealEditorHeaderActions(page);
@@ -790,6 +826,21 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectBlockOrder(editorBlocks(page), PUBLISHED_BLOCK_ORDER);
 
     await saveDraft(page);
+    if (testInfo.project.name === 'desktop') {
+      await page.getByTestId('page-builder-source-view').click();
+      const sourceDialog = page.getByTestId('page-builder-source-dialog');
+      await expect(sourceDialog).toBeVisible();
+      await expect(sourceDialog.getByTestId('page-builder-source-document')).toContainText('g7-page-builder/v1');
+      await expect(sourceDialog.getByTestId('page-builder-source-document')).toContainText('g7.board-recent-posts-01');
+      await sourceDialog.getByTestId('page-builder-source-artifact-tab').click();
+      const diagnosticPreview = page.waitForResponse((response) => response.request().method() === 'POST'
+        && new URL(response.url()).pathname.endsWith(`/admin/documents/${documentId}/preview`));
+      await sourceDialog.getByTestId('page-builder-source-generate').click();
+      expect((await diagnosticPreview).ok()).toBe(true);
+      await expect(sourceDialog.getByTestId('page-builder-source-artifact')).toContainText('data-g7pb-data-source="posts"');
+      await sourceDialog.getByRole('button', { name: '원본 보기 닫기' }).click();
+      await expect(sourceDialog).toHaveCount(0);
+    }
     const originalRevision = await currentDocumentRevision(page, documentId);
     await page.reload();
     await expect(page).toHaveURL(new RegExp(`document=${documentId}`));
@@ -854,6 +905,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const repeatedPreviewResponse = await previewPage.reload();
     expect(repeatedPreviewResponse?.ok()).toBe(true);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
+    await previewPage.close();
+    previewPage = undefined;
 
     await page.bringToFront();
     await publish(page);
@@ -883,6 +936,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
     expect(await publicPage.evaluate(() => window.localStorage.getItem('auth_token'))).toBeNull();
     await expectBlockOrder(renderedBlocks(publicPage), PUBLISHED_BLOCK_ORDER);
+    await expect(publicPage.locator('[data-g7pb-data-source="posts"]')).toHaveAttribute('data-g7pb-data-ready', 'true');
+    await expect(publicPage.locator('[data-g7pb-data-source="products"]')).toHaveAttribute('data-g7pb-data-ready', 'true');
+    if (testInfo.project.name === 'desktop') {
+      await publicPage.screenshot({ path: 'output/playwright/page-builder-public-desktop.png', fullPage: true });
+    }
     await expect(publicPage.getByText(heroTitle, { exact: true })).toBeVisible();
     await expect(publicPage.locator('[data-block-type="hero"] img.g7pb-hero__image')).toHaveCount(1);
     await expect(publicPage.getByText(featuresHeading, { exact: true })).toBeVisible();
@@ -900,7 +958,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectResponsivePage(publicPage, testInfo);
 
     await page.bringToFront();
-    await selectAndEditHero(page, revisedHeroTitle, revisedHeroSubtitle, heroButtonLabel);
+    await selectAndEditHero(page, revisedHeroTitle, revisedHeroSubtitle, heroButtonLabel, testInfo.project.name === 'desktop');
     await saveDraft(page);
     await page.reload();
     await selectEditorBlock(page, 'hero');

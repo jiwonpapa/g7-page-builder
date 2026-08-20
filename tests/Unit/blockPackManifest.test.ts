@@ -13,9 +13,13 @@ describe('Block Pack manifest v1 schema', () => {
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it('accepts the twelve-definition builtin core pack', () => {
+  it('accepts the fourteen-definition builtin core pack', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.blocks).toHaveLength(12);
+    expect(builtinManifest.blocks).toHaveLength(14);
+    expect(builtinManifest.blocks.map((block) => block.block_id)).toEqual(expect.arrayContaining([
+      'g7.board-recent-posts-01',
+      'g7.ecommerce-product-grid-01',
+    ]));
   });
 
   it('rejects executable runtime fields in a data pack', () => {

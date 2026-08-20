@@ -64,7 +64,7 @@ else
 fi
 
 expected_session_lifetime="${G7PB_SESSION_LIFETIME:-10080}"
-session_config="$("${compose[@]}" exec -T --user www-data dev php artisan tinker \
+session_config="$("${compose[@]}" exec -T --user www-data -e XDG_CONFIG_HOME=/tmp/g7pb-psysh-config dev php artisan tinker \
   --execute='echo config("session.lifetime")."|".(config("session.expire_on_close") ? "true" : "false");' \
   --no-ansi | tr -d '\r\n')"
 if [[ "$session_config" == "$expected_session_lifetime|false" ]]; then

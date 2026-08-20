@@ -4,6 +4,8 @@
 
 `PageBuilderDocument`만 편집 원본입니다.
 
+관리자 진단 화면은 현재 원본 JSON과 임시 preview compiler의 HTML을 읽기 전용으로 비교할 수 있습니다. 진단 생성은 active publication을 변경하지 않으며, 표시된 HTML을 다시 원본으로 저장할 수 없습니다.
+
 ```json
 {
   "schema_version": "g7-page-builder/v1",

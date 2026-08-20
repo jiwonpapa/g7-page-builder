@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { bootPageEffects, bootSiteShellMenu, parseCounterText } from '../../resources/js/public/pageEffects';
+import { bootDynamicData, bootPageEffects, bootSiteShellMenu, parseCounterText } from '../../resources/js/public/pageEffects';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -71,5 +71,48 @@ describe('published page effects runtime', () => {
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(menu?.hidden).toBe(true);
     expect(document.activeElement).toBe(toggle);
+  });
+
+  it('renders G7 posts and products through public APIs without injecting response HTML', async () => {
+    document.body.innerHTML = `
+      <section data-g7pb-data-source="posts" data-g7pb-endpoint="/api/posts" data-g7pb-audience="all" data-g7pb-empty-message="글 없음">
+        <p data-g7pb-data-status></p><div data-g7pb-data-list aria-busy="true"></div>
+      </section>
+      <section data-g7pb-data-source="products" data-g7pb-endpoint="/api/products" data-g7pb-audience="all" data-g7pb-product-base="/shop/products" data-g7pb-empty-message="상품 없음">
+        <p data-g7pb-data-status></p><div data-g7pb-data-list aria-busy="true"></div>
+      </section>`;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === '/api/posts') {
+        return new Response(JSON.stringify({ success: true, data: [{ id: 7, board_slug: 'notice', board_name: '공지', title: '<img src=x onerror=alert(1)>', created_at_formatted: '방금 전' }] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ success: true, data: { data: [{ id: 9, product_code: 'SKU-9', name: '<script>alert(1)</script>', thumbnail_url: 'javascript:alert(1)', selling_price_formatted: '29,000원' }] } }), { status: 200 });
+    });
+
+    await bootDynamicData(document, fetcher as typeof fetch);
+
+    expect(document.querySelector('[data-g7pb-data-source="posts"] a')?.getAttribute('href')).toBe('/board/notice/7');
+    expect(document.querySelector('[data-g7pb-data-source="posts"] strong')?.textContent).toBe('<img src=x onerror=alert(1)>');
+    expect(document.querySelector('[data-g7pb-data-source="posts"] img')).toBeNull();
+    expect(document.querySelector('[data-g7pb-data-source="products"] a')?.getAttribute('href')).toBe('/shop/products/SKU-9');
+    expect(document.querySelector('[data-g7pb-data-source="products"] strong')?.textContent).toBe('<script>alert(1)</script>');
+    expect(document.querySelector('[data-g7pb-data-source="products"] script')).toBeNull();
+    expect(document.querySelectorAll('[aria-busy="false"]')).toHaveLength(2);
+  });
+
+  it('shows member-only data to members and keeps it hidden from guests', async () => {
+    document.body.innerHTML = `
+      <section data-g7pb-data-source="posts" data-g7pb-endpoint="/api/posts" data-g7pb-audience="member" hidden>
+        <p data-g7pb-data-status></p><div data-g7pb-data-list></div>
+      </section>`;
+    const memberFetch = vi.fn(async (input: RequestInfo | URL) => new Response(JSON.stringify(
+      String(input) === '/api/auth/user'
+        ? { success: true, data: { id: 1 } }
+        : { success: true, data: [] },
+    ), { status: 200 }));
+
+    await bootDynamicData(document, memberFetch as typeof fetch);
+    expect(document.querySelector<HTMLElement>('section')?.hidden).toBe(false);
+    expect(memberFetch).toHaveBeenCalledWith('/api/auth/user', expect.any(Object));
   });
 });

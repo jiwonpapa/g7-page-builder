@@ -1144,8 +1144,20 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             heading: { levels: [2, 3, 4] },
           },
         },
-        primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true },
-        primaryUrl: { type: 'text', label: '버튼 URL' },
+        primaryLabel: {
+          type: 'custom', label: '버튼 문구', contentEditable: true,
+          render: ({ value, onChange, readOnly }) => (
+            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
+              testId="page-builder-hero-primary-label" />
+          ),
+        },
+        primaryUrl: {
+          type: 'custom', label: '버튼 URL',
+          render: ({ value, onChange, readOnly }) => (
+            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
+              testId="page-builder-hero-primary-url" />
+          ),
+        },
         imageSrc: createMediaField('대표 이미지'),
         imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
         alignment: {

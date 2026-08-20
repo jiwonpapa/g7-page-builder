@@ -122,6 +122,21 @@
         .g7pb-section-heading { max-width: 48rem; margin-bottom: clamp(2rem, 5vw, 4rem); }
         .g7pb-section-heading h2 { margin: .65rem 0 0; font-size: clamp(2.1rem, 5vw, 4.25rem); line-height: 1.06; letter-spacing: -.045em; }
         .g7pb-section-eyebrow { margin: 0; color: var(--g7pb-theme-accent); font-size: .75rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+        .g7pb-dynamic__status { min-height: 1.5rem; margin: -2rem 0 2rem; color: #667085; }
+        .g7pb-dynamic-posts { display: grid; border-top: 1px solid #d9dee8; }
+        .g7pb-dynamic-posts article { border-bottom: 1px solid #d9dee8; }
+        .g7pb-dynamic-posts a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem 1.5rem; padding: 1.25rem 0; color: inherit; text-decoration: none; }
+        .g7pb-dynamic-posts a::after { grid-row: 1 / span 2; grid-column: 2; align-self: center; color: var(--g7pb-theme-accent); content: '→'; }
+        .g7pb-dynamic-posts strong, .g7pb-dynamic-posts span { min-width: 0; }
+        .g7pb-dynamic-posts span { color: #667085; font-size: .82rem; }
+        .g7pb-dynamic-products { display: grid; gap: 1.25rem; }
+        .g7pb-dynamic-products--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .g7pb-dynamic-products--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .g7pb-dynamic-products--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .g7pb-dynamic-products article { min-width: 0; }
+        .g7pb-dynamic-products a { display: grid; gap: .7rem; color: inherit; text-decoration: none; }
+        .g7pb-dynamic-products img, .g7pb-dynamic-products__placeholder { display: grid; width: 100%; aspect-ratio: 1 / 1; place-items: center; overflow: hidden; border-radius: var(--g7pb-theme-radius); background: #e5e9f0; object-fit: cover; }
+        .g7pb-dynamic-products a > span:last-child { color: var(--g7pb-theme-accent-strong); font-weight: 800; }
         .g7pb-media-placeholder { display: grid; width: 100%; height: 100%; min-height: 12rem; place-items: center; background: linear-gradient(145deg, #e9edf4, #dce3ee); color: #657187; font-size: .8rem; font-weight: 750; }
         .g7pb-surface--contrast .g7pb-media-placeholder { background: linear-gradient(145deg, #2b3950, #40516c); color: #dbe5f3; }
         .g7pb-hero-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, .9fr); align-items: center; gap: clamp(2rem, 7vw, 7rem); }
@@ -218,6 +233,7 @@
             .g7pb-hero-split__media { aspect-ratio: 16 / 10; }
             .g7pb-hero-slider__slide figure { min-height: 14rem; }
             .g7pb-gallery__grid--3, .g7pb-gallery__grid--4 { grid-template-columns: repeat(2, 1fr); }
+            .g7pb-dynamic-products--3, .g7pb-dynamic-products--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .g7pb-pricing__plan--featured { transform: none; }
         }
         @media (max-width: 899px) {
@@ -232,12 +248,13 @@
         @media (max-width: 520px) {
             .g7pb-site-footer__columns { grid-template-columns: 1fr; }
             .g7pb-site-footer__columns > :first-child { grid-column: auto; }
+            .g7pb-dynamic-products--2, .g7pb-dynamic-products--3, .g7pb-dynamic-products--4 { grid-template-columns: 1fr; }
         }
         @media (prefers-reduced-motion: reduce) {
             .g7pb-block, .g7pb-block *, .g7pb-motion-parallax-target { animation: none !important; transition: none !important; transform: none !important; }
         }
     </style>
-    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider'))
+    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source='))
         <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}"></script>
     @endif
 </head>

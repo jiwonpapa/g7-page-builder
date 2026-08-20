@@ -81,7 +81,8 @@ make integration-verify TASK=integration-20260820
 3. 12종 block schema·editor·PHP compiler·public renderer, 좌측 미리보기 DnD와 반응형 iframe 기기 전환, 핵심 lifecycle PC·태블릿·모바일 E2E
 4. 별도 문서함, 메타수정, 최근 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제
 5. 5종 typed motion preset, 공개 런타임, reduced-motion·CSP 회귀시험
-6. 독립 Block Pack 계약, 12개 내장 블록 Registry 이관, 카탈로그 검색·분류·즐겨찾기
+6. 독립 Block Pack 계약, 14개 내장 블록 Registry 이관, 카탈로그 검색·분류·즐겨찾기
+7. G7 공개 API 기반 최근 게시글·상품 그리드와 전체·비회원·회원 노출 조건
 7. Data/Code Pack ZIP 설치·상태 전환·사용량 기반 제거, GitHub Release digest 업데이트, Ed25519 Code Pack runtime
 
 다음:

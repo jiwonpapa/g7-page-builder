@@ -26,6 +26,32 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(catalogFixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
+  it('accepts typed G7 data blocks and rejects unsafe product routes', () => {
+    const dynamic = {
+      ...structuredClone(fixture),
+      blocks: [
+        {
+          instance_id: '00000000-0000-4000-8000-000000000090',
+          type: 'g7.board-recent-posts-01',
+          block_version: 1,
+          props: { eyebrow: 'NEWS', heading: '최근 글', source: 'recent', period: 'week', limit: 6, audience: 'all', emptyMessage: '글이 없습니다.' },
+          slots: {},
+        },
+        {
+          instance_id: '00000000-0000-4000-8000-000000000091',
+          type: 'g7.ecommerce-product-grid-01',
+          block_version: 1,
+          props: { eyebrow: 'SHOP', heading: '추천 상품', source: 'new', limit: 4, columns: 4, audience: 'member', detailBasePath: '/shop/products', emptyMessage: '상품이 없습니다.' },
+          slots: {},
+        },
+      ],
+    };
+    expect(validate(dynamic), JSON.stringify(validate.errors)).toBe(true);
+
+    dynamic.blocks[1].props.detailBasePath = '//attacker.example/products';
+    expect(validate(dynamic)).toBe(false);
+  });
+
   it('rejects unsafe or out-of-range catalog values', () => {
     const invalid = structuredClone(catalogFixture) as unknown as {
       blocks: Array<{ props: { items: Array<Record<string, unknown>> } }>;

@@ -14,7 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.5.0';
+    public const COMPILER_VERSION = '0.6.0';
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
@@ -50,6 +50,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private const GALLERY_TYPE = 'media.gallery-grid-01';
 
     private const BAR_CHART_TYPE = 'data.bar-chart-01';
+
+    private const G7_RECENT_POSTS_TYPE = 'g7.board-recent-posts-01';
+
+    private const G7_PRODUCT_GRID_TYPE = 'g7.ecommerce-product-grid-01';
 
     /** @var list<string> */
     private const FEATURE_ICONS = [
@@ -211,6 +215,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.team-grid-01' => fn (array $props): string => $this->compileTeam($props),
             'builtin.gallery-grid-01' => fn (array $props): string => $this->compileGallery($props),
             'builtin.bar-chart-01' => fn (array $props): string => $this->compileBarChart($props),
+            'builtin.g7-board-recent-posts-01' => fn (array $props): string => $this->compileG7RecentPosts($props),
+            'builtin.g7-ecommerce-product-grid-01' => fn (array $props): string => $this->compileG7ProductGrid($props),
         ];
 
         foreach ($compilers as $key => $compiler) {
@@ -736,6 +742,67 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return '<section class="g7pb-block g7pb-bar-chart '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="bar-chart"><figure><figcaption>'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.'</figcaption><div class="g7pb-bar-chart__plot">'.implode('', $compiled).'</div></figure></section>';
     }
 
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileG7RecentPosts(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'audience', 'emptyMessage', 'appearance'], 'G7 recent posts');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $source = $this->requiredString($props, 'source', 16);
+        $period = $this->requiredString($props, 'period', 16);
+        $limit = $this->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8, 12]);
+        $audience = $this->requiredString($props, 'audience', 16);
+        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+
+        if (! in_array($source, ['recent', 'popular'], true)
+            || ! in_array($period, ['today', 'week', 'month', 'year'], true)
+            || ! in_array($audience, ['all', 'guest', 'member'], true)) {
+            throw new DocumentCompileException('G7 recent posts configuration is invalid.');
+        }
+
+        $endpoint = $source === 'popular'
+            ? "/api/modules/sirsoft-board/boards/popular?period={$period}&limit={$limit}"
+            : "/api/modules/sirsoft-board/boards/posts/recent?limit={$limit}";
+        $hidden = $audience === 'all' ? '' : ' hidden';
+
+        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--posts '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-recent-posts" data-g7pb-data-source="posts" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts" data-g7pb-data-list aria-busy="true"></div></section>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function compileG7ProductGrid(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'columns', 'audience', 'detailBasePath', 'emptyMessage', 'appearance'], 'G7 product grid');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $source = $this->requiredString($props, 'source', 16);
+        $limit = $this->requiredIntegerChoice($props, 'limit', [2, 3, 4, 6, 8, 12]);
+        $columns = $this->requiredIntegerChoice($props, 'columns', [2, 3, 4]);
+        $audience = $this->requiredString($props, 'audience', 16);
+        $detailBasePath = $this->requiredString($props, 'detailBasePath', 200);
+        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+
+        if (! in_array($source, ['latest', 'new', 'popular'], true)
+            || ! in_array($audience, ['all', 'guest', 'member'], true)
+            || preg_match('#^/[A-Za-z0-9/_-]*$#', $detailBasePath) !== 1) {
+            throw new DocumentCompileException('G7 product grid configuration is invalid.');
+        }
+
+        $endpoint = match ($source) {
+            'new' => "/api/modules/sirsoft-ecommerce/products/new?limit={$limit}",
+            'popular' => "/api/modules/sirsoft-ecommerce/products/popular?limit={$limit}",
+            default => "/api/modules/sirsoft-ecommerce/products?per_page={$limit}&sort=latest",
+        };
+        $hidden = $audience === 'all' ? '' : ' hidden';
+
+        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--products '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-grid" data-g7pb-data-source="products" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-dynamic-products--'.$columns.'" data-g7pb-data-list aria-busy="true"></div></section>';
+    }
+
     private function compileSectionHeading(?string $eyebrow, string $heading): string
     {
         $eyebrowMarkup = $eyebrow === null || $eyebrow === ''
@@ -820,7 +887,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             self::STATS_TYPE => ['none', 'reveal', 'stagger', 'counter'],
             self::GALLERY_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
             self::BAR_CHART_TYPE => ['none', 'reveal', 'chart-draw'],
-            self::CTA_TYPE, self::CONTACT_TYPE => ['none', 'reveal'],
+            self::CTA_TYPE, self::CONTACT_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE => ['none', 'reveal'],
             default => ['none'],
         };
     }
@@ -922,6 +989,20 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         return $number;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @param  list<int>  $choices
+     */
+    private function requiredIntegerChoice(array $values, string $key, array $choices): int
+    {
+        $value = $values[$key] ?? null;
+        if (! is_int($value) || ! in_array($value, $choices, true)) {
+            throw new DocumentCompileException("Property {$key} is invalid.");
+        }
+
+        return $value;
     }
 
     /**

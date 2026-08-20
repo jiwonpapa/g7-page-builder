@@ -284,7 +284,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.5.0', $catalog->compilerVersion);
+        self::assertSame('0.6.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -367,6 +367,35 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
     }
 
+    public function test_g7_dynamic_blocks_compile_only_typed_public_api_placeholders(): void
+    {
+        $result = $this->builtInCompiler()->compile(
+            $this->dynamicDocument(),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+        $artifact = (string) $result->artifact;
+
+        self::assertSame('0.6.0', $result->compilerVersion);
+        self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
+        self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
+        self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
+        self::assertStringContainsString('/api/modules/sirsoft-ecommerce/products/new?limit=4', $artifact);
+        self::assertStringContainsString('data-g7pb-audience="member"', $artifact);
+        self::assertStringContainsString('data-g7pb-product-base="/shop/products"', $artifact);
+        self::assertStringNotContainsString('<script', $artifact);
+        self::assertStringNotContainsString('sirsoft-page', $artifact);
+    }
+
+    public function test_g7_product_grid_rejects_an_unsafe_detail_route(): void
+    {
+        $document = $this->dynamicDocument('//attacker.example/products');
+
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -376,6 +405,41 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertIsString($contents);
 
         return json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    private function dynamicDocument(string $detailBasePath = '/shop/products'): PageBuilderDocument
+    {
+        return new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000080',
+            slug: 'g7-data',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: [],
+            blocks: [
+                [
+                    'instance_id' => '00000000-0000-4000-8000-000000000081',
+                    'type' => 'g7.board-recent-posts-01',
+                    'block_version' => 1,
+                    'props' => [
+                        'eyebrow' => 'NEWS', 'heading' => '최근 게시글', 'source' => 'popular',
+                        'period' => 'week', 'limit' => 6, 'audience' => 'all',
+                        'emptyMessage' => '게시글이 없습니다.',
+                    ],
+                    'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-000000000082',
+                    'type' => 'g7.ecommerce-product-grid-01',
+                    'block_version' => 1,
+                    'props' => [
+                        'eyebrow' => 'SHOP', 'heading' => '신상품', 'source' => 'new',
+                        'limit' => 4, 'columns' => 4, 'audience' => 'member',
+                        'detailBasePath' => $detailBasePath, 'emptyMessage' => '상품이 없습니다.',
+                    ],
+                    'slots' => [],
+                ],
+            ],
+        );
     }
 
     /**

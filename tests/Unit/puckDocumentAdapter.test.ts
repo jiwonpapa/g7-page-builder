@@ -6,6 +6,8 @@ import {
   CONTACT_BLOCK_TYPE,
   CTA_BLOCK_TYPE,
   FEATURES_BLOCK_TYPE,
+  G7_PRODUCT_GRID_BLOCK_TYPE,
+  G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_BLOCK_TYPE,
   type PageBuilderDocument,
 } from '../../resources/js/documents/types';
@@ -349,6 +351,33 @@ describe('Puck PageBuilderDocument adapter', () => {
         slots: {},
       },
     ]);
+  });
+
+  it('round-trips typed G7 public data source settings', () => {
+    const dynamic: PageBuilderDocument = {
+      ...documentFixture,
+      blocks: [
+        {
+          instance_id: '623e4567-e89b-42d3-a456-426614174005',
+          type: G7_RECENT_POSTS_BLOCK_TYPE,
+          block_version: 1,
+          props: { eyebrow: 'NEWS', heading: '인기글', source: 'popular', period: 'month', limit: 8, audience: 'guest', emptyMessage: '글 없음' },
+          slots: {},
+        },
+        {
+          instance_id: '723e4567-e89b-42d3-a456-426614174006',
+          type: G7_PRODUCT_GRID_BLOCK_TYPE,
+          block_version: 1,
+          props: { eyebrow: 'SHOP', heading: '신상품', source: 'new', limit: 6, columns: 3, audience: 'member', detailBasePath: '/shop/products', emptyMessage: '상품 없음' },
+          slots: {},
+        },
+      ],
+    };
+
+    const session = canonicalToPuck(dynamic);
+    const restored = puckToCanonical(session.data, session.context);
+
+    expect(restored.blocks).toEqual(dynamic.blocks);
   });
 
   it('rejects nested slots and unknown canonical blocks at the adapter boundary', () => {

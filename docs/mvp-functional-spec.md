@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 12종 페이지 block 카탈로그, 5종 typed motion preset, 자체 MediaPort, 독립 문서함·복제·보관·복구·발행, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 메뉴 완료.
+현재 구현: 14종 페이지 block 카탈로그, 5종 typed motion preset, 자체 MediaPort, G7 최근글·상품 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 메뉴 완료.
 
 ## 목표
 
@@ -46,6 +46,16 @@
 
 - reload 후 block 순서와 props가 동일해야 합니다.
 - 현재 draft를 복제하면 새 UUID·slug·revision 1의 독립 초안이 생성되고 발행·홈·기존 revision은 승계되지 않아야 합니다.
+
+### G7 공개 데이터 블록
+
+- `g7.board-recent-posts-01`: 최신글·인기글, 기간, 개수, 전체·비회원·회원 노출을 설정합니다.
+- `g7.ecommerce-product-grid-01`: 최신·신규·인기 상품, 개수, 열 수, 전체·비회원·회원 노출과 상품 상세 기본 경로를 설정합니다.
+- 편집 캔버스에서는 실제 데이터와 구분되는 구조 미리보기를 제공합니다.
+- 공개 화면은 같은 origin의 G7 공개 API만 호출하고 응답 문자열을 HTML로 해석하지 않습니다.
+- 대상 모듈 미설치·빈 결과·API 오류는 페이지 전체 오류가 아니라 블록의 명시적 빈 상태 또는 재시도 안내로 처리합니다.
+- 회원 조건은 `/api/auth/user` 결과만 사용하며 Page Builder artifact와 cache에는 개인 데이터를 저장하지 않습니다.
+- 편집기 `원본 보기`는 현재 PageBuilderDocument JSON과 서버가 검증·컴파일한 HTML을 읽기 전용으로 표시합니다. 원본 JSON이나 산출물 HTML을 직접 수정·저장하는 기능은 제공하지 않습니다.
 - 네트워크 실패는 draft를 지우지 않고 재시도 가능 상태로 둡니다.
 - compile 실패는 공개 페이지를 바꾸지 않습니다.
 - 마지막 20개 revision을 조회·미리보기·복원합니다.

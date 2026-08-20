@@ -11,6 +11,8 @@ import { createMediaField } from './MediaPickerField';
 import {
   BAR_CHART_BLOCK_TYPE,
   GALLERY_BLOCK_TYPE,
+  G7_PRODUCT_GRID_BLOCK_TYPE,
+  G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_SLIDER_BLOCK_TYPE,
   HERO_SPLIT_BLOCK_TYPE,
   LOGO_CLOUD_BLOCK_TYPE,
@@ -114,6 +116,33 @@ export interface BarChartEditorProps {
   motion: BlockMotion;
 }
 
+export interface G7RecentPostsEditorProps {
+  eyebrow: string;
+  heading: string;
+  source: 'recent' | 'popular';
+  period: 'today' | 'week' | 'month' | 'year';
+  limit: '3' | '4' | '6' | '8' | '12';
+  audience: 'all' | 'guest' | 'member';
+  emptyMessage: string;
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
+}
+
+export interface G7ProductGridEditorProps {
+  eyebrow: string;
+  heading: string;
+  source: 'latest' | 'new' | 'popular';
+  limit: '2' | '3' | '4' | '6' | '8' | '12';
+  columns: '2' | '3' | '4';
+  audience: 'all' | 'guest' | 'member';
+  detailBasePath: string;
+  emptyMessage: string;
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
+}
+
 export interface CatalogEditorComponents {
   HeroSplit: HeroSplitEditorProps;
   HeroSlider: HeroSliderEditorProps;
@@ -123,6 +152,8 @@ export interface CatalogEditorComponents {
   Team: TeamEditorProps;
   Gallery: GalleryEditorProps;
   BarChart: BarChartEditorProps;
+  G7RecentPosts: G7RecentPostsEditorProps;
+  G7ProductGrid: G7ProductGridEditorProps;
 }
 
 type CatalogComponentType = keyof CatalogEditorComponents;
@@ -254,6 +285,17 @@ const DEFAULT_BAR_CHART: BarChartEditorProps = {
   surface: 'soft',
   spacing: 'normal',
   motion: { ...DEFAULT_BLOCK_MOTION },
+};
+
+const DEFAULT_G7_RECENT_POSTS: G7RecentPostsEditorProps = {
+  eyebrow: '커뮤니티', heading: '최근 게시글', source: 'recent', period: 'week', limit: '6', audience: 'all',
+  emptyMessage: '표시할 게시글이 없습니다.', surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
+};
+
+const DEFAULT_G7_PRODUCT_GRID: G7ProductGridEditorProps = {
+  eyebrow: '스토어', heading: '새로운 상품', source: 'new', limit: '4', columns: '4', audience: 'all',
+  detailBasePath: '/shop/products', emptyMessage: '표시할 상품이 없습니다.',
+  surface: 'soft', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
 function asString(value: unknown, fallback = ''): string {
@@ -478,6 +520,14 @@ function BarChartPreview(props: BarChartEditorProps & { id: string }): React.Rea
   return <BlockFrame id={props.id} type="bar-chart" motion={props.motion}><figure className={`g7pb-preview-bar-chart ${surfaceClass(props.surface, props.spacing)}`}><figcaption><small>{props.eyebrow}</small><h2>{props.heading}</h2><p>{props.description}</p></figcaption><div>{normalizeBars(props.items).map((item, index) => <label key={`${item.label}-${index}`}><span>{item.label}<b>{item.value}{props.unit}</b></span><progress max={100} value={item.value} data-tone={item.tone}>{item.value}</progress></label>)}</div></figure></BlockFrame>;
 }
 
+function G7RecentPostsPreview(props: G7RecentPostsEditorProps & { id: string }): React.ReactElement {
+  return <BlockFrame id={props.id} type="g7-recent-posts" motion={props.motion}><div className={`g7pb-preview-g7-data ${surfaceClass(props.surface, props.spacing)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><em>G7 게시판 · {props.source === 'recent' ? '최신순' : '인기순'} · {props.limit}개</em></header><div className="g7pb-preview-post-list">{['페이지 제작 소식을 전합니다', '새로운 기능 업데이트 안내', '자주 묻는 질문을 확인하세요'].map((title, index) => <article key={title}><span>{index + 1}</span><div><strong>{title}</strong><small>게시판 이름 · 방금 전</small></div><b>→</b></article>)}</div><p className="g7pb-preview-data-note">실제 공개 게시글은 미리보기·발행 화면에서 G7 공개 API로 불러옵니다.</p></div></BlockFrame>;
+}
+
+function G7ProductGridPreview(props: G7ProductGridEditorProps & { id: string }): React.ReactElement {
+  return <BlockFrame id={props.id} type="g7-product-grid" motion={props.motion}><div className={`g7pb-preview-g7-data ${surfaceClass(props.surface, props.spacing)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><em>G7 쇼핑몰 · {props.source === 'new' ? '신상품' : props.source === 'popular' ? '인기 상품' : '최신순'} · {props.limit}개</em></header><div className={`g7pb-preview-product-grid g7pb-preview-product-grid--${props.columns}`}>{['상품 A', '상품 B', '상품 C', '상품 D'].slice(0, Number(props.columns)).map((name, index) => <article key={name}><span aria-hidden="true">상품 이미지</span><strong>{name}</strong><small>{(29000 + index * 10000).toLocaleString()}원</small></article>)}</div><p className="g7pb-preview-data-note">실제 상품은 미리보기·발행 화면에서 G7 공개 API로 불러옵니다.</p></div></BlockFrame>;
+}
+
 export const catalogComponentConfigs: Config<CatalogEditorComponents>['components'] = {
   HeroSplit: {
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
@@ -524,6 +574,29 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
     label: '막대그래프', defaultProps: DEFAULT_BAR_CHART,
     fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, description: { type: 'textarea', label: '설명' }, unit: { type: 'text', label: '단위' }, items: { type: 'array', label: '데이터', min: 2, max: 8, defaultItemProps: (index) => ({ label: `항목 ${index + 1}`, value: 50, tone: 'blue' }), getItemSummary: (item) => `${item.label} · ${item.value}`, arrayFields: { label: { type: 'text', label: '이름' }, value: { type: 'number', label: '값(0~100)', min: 0, max: 100 }, tone: { type: 'select', label: '색상 프리셋', options: [{ label: '파랑', value: 'blue' }, { label: '남색', value: 'indigo' }, { label: '초록', value: 'emerald' }, { label: '노랑', value: 'amber' }] } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'chart-draw']) }, render: (props) => <BarChartPreview {...props} />,
   },
+  G7RecentPosts: {
+    label: 'G7 최근 게시글', defaultProps: DEFAULT_G7_RECENT_POSTS,
+    fields: {
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true },
+      source: { type: 'radio', label: '게시글 기준', options: [{ label: '최신글', value: 'recent' }, { label: '인기글', value: 'popular' }] },
+      period: { type: 'select', label: '인기글 기간', options: [{ label: '오늘', value: 'today' }, { label: '이번 주', value: 'week' }, { label: '이번 달', value: 'month' }, { label: '최근 1년', value: 'year' }] },
+      limit: { type: 'select', label: '표시 개수', options: ['3', '4', '6', '8', '12'].map((value) => ({ label: `${value}개`, value })) },
+      audience: { type: 'select', label: '노출 대상', options: [{ label: '모두', value: 'all' }, { label: '로그아웃 사용자', value: 'guest' }, { label: '로그인 사용자', value: 'member' }] },
+      emptyMessage: { type: 'text', label: '빈 상태 문구' }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']),
+    }, render: (props) => <G7RecentPostsPreview {...props} />,
+  },
+  G7ProductGrid: {
+    label: 'G7 상품 그리드', defaultProps: DEFAULT_G7_PRODUCT_GRID,
+    fields: {
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true },
+      source: { type: 'select', label: '상품 기준', options: [{ label: '최신순', value: 'latest' }, { label: '신상품', value: 'new' }, { label: '인기 상품', value: 'popular' }] },
+      limit: { type: 'select', label: '표시 개수', options: ['2', '3', '4', '6', '8', '12'].map((value) => ({ label: `${value}개`, value })) },
+      columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }, { label: '4열', value: '4' }] },
+      audience: { type: 'select', label: '노출 대상', options: [{ label: '모두', value: 'all' }, { label: '로그아웃 사용자', value: 'guest' }, { label: '로그인 사용자', value: 'member' }] },
+      detailBasePath: { type: 'text', label: '상품 상세 기본 경로' }, emptyMessage: { type: 'text', label: '빈 상태 문구' },
+      surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']),
+    }, render: (props) => <G7ProductGridPreview {...props} />,
+  },
 };
 
 export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] } | null {
@@ -539,6 +612,8 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
   if (block.type === TEAM_BLOCK_TYPE) return { type: 'Team', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), members: normalizeMembers(props.members), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === GALLERY_BLOCK_TYPE) return { type: 'Gallery', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), images: normalizeImages(props.images), columns: props.columns === 2 || props.columns === '2' ? '2' : props.columns === 4 || props.columns === '4' ? '4' : '3', ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === BAR_CHART_BLOCK_TYPE) return { type: 'BarChart', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), unit: asString(props.unit), items: normalizeBars(props.items), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === G7_RECENT_POSTS_BLOCK_TYPE) return { type: 'G7RecentPosts', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(props.period)) ? asString(props.period) as G7RecentPostsEditorProps['period'] : 'week', limit: ['3', '4', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7RecentPostsEditorProps['limit'] : '6', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', emptyMessage: asString(props.emptyMessage, '표시할 게시글이 없습니다.'), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === G7_PRODUCT_GRID_BLOCK_TYPE) return { type: 'G7ProductGrid', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' || props.source === 'latest' ? props.source : 'new', limit: ['2', '3', '6', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7ProductGridEditorProps['limit'] : '4', columns: props.columns === 2 || props.columns === '2' ? '2' : props.columns === 3 || props.columns === '3' ? '3' : '4', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', detailBasePath: asString(props.detailBasePath, '/shop/products'), emptyMessage: asString(props.emptyMessage, '표시할 상품이 없습니다.'), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   return null;
 }
 
@@ -574,6 +649,8 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
   if (type === 'Team') return { type: TEAM_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), members: normalizeMembers(raw.members) }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   if (type === 'Gallery') return { type: GALLERY_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), images: normalizeImages(raw.images), columns: raw.columns === '2' ? 2 : raw.columns === '4' ? 4 : 3 }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
   if (type === 'BarChart') return { type: BAR_CHART_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), unit: asString(raw.unit), items: normalizeBars(raw.items) }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
+  if (type === 'G7RecentPosts') return { type: G7_RECENT_POSTS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(raw.period)) ? raw.period : 'week', limit: Number(raw.limit) || 6, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', emptyMessage: asString(raw.emptyMessage, '표시할 게시글이 없습니다.') }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
+  if (type === 'G7ProductGrid') return { type: G7_PRODUCT_GRID_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' || raw.source === 'latest' ? raw.source : 'new', limit: Number(raw.limit) || 4, columns: Number(raw.columns) || 4, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', detailBasePath: asString(raw.detailBasePath, '/shop/products'), emptyMessage: asString(raw.emptyMessage, '표시할 상품이 없습니다.') }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   return null;
 }
 

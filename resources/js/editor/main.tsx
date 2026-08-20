@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { Braces, FileCode2 } from 'lucide-react';
 
 import '../../css/page-builder.css';
 import {
@@ -111,6 +112,10 @@ function EditorShell({
   const [previewExpiresAt, setPreviewExpiresAt] = useState<string | null>(null);
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [publishedAt, setPublishedAt] = useState<string | null>(null);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [diagnosticTab, setDiagnosticTab] = useState<'document' | 'artifact'>('document');
+  const [compiledSource, setCompiledSource] = useState('');
+  const [diagnosticBusy, setDiagnosticBusy] = useState(false);
 
   const documentRef = useRef<PageBuilderDocument | null>(null);
   const lockVersionRef = useRef(0);
@@ -358,6 +363,32 @@ function EditorShell({
     }
   };
 
+  const generateCompiledDiagnostic = async (): Promise<void> => {
+    const current = documentRef.current;
+    if (!current || !(await saveDraft(true))) return;
+
+    setDiagnosticBusy(true);
+    setMessage(null);
+    try {
+      const preview = await api.createPreview(current.document_id, lockVersionRef.current);
+      const response = await fetch(preview.preview_url, {
+        credentials: 'same-origin',
+        headers: { Accept: 'text/html' },
+      });
+      if (!response.ok) throw new Error('컴파일 산출물을 불러오지 못했습니다.');
+      const html = await response.text();
+      const parsed = new DOMParser().parseFromString(html, 'text/html');
+      const main = parsed.querySelector('main.g7pb-page');
+      if (!main) throw new Error('컴파일 산출물 형식이 올바르지 않습니다.');
+      setCompiledSource(main.innerHTML.trim());
+      setDiagnosticTab('artifact');
+    } catch (error) {
+      setMessage(formatError(error));
+    } finally {
+      setDiagnosticBusy(false);
+    }
+  };
+
   const publish = useCallback(async (): Promise<void> => {
     const current = documentRef.current;
     if (!current || !(await saveDraft(true))) {
@@ -409,6 +440,11 @@ function EditorShell({
               <button type="button" className="g7pb-button g7pb-button--quiet" data-testid="page-builder-save"
                 disabled={working} onClick={() => void saveDraft(true)}>
                 저장
+              </button>
+              <button type="button" className="g7pb-button g7pb-button--quiet g7pb-button--icon-label"
+                data-testid="page-builder-source-view" disabled={working}
+                onClick={() => { setDiagnosticTab('document'); setDiagnosticsOpen(true); }}>
+                <Braces size={16} aria-hidden="true" /><span>원본 보기</span>
               </button>
               {previewUrl ? (
                 <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-preview-link" href={previewUrl}
@@ -508,6 +544,48 @@ function EditorShell({
                   disabled={creating}>{creating ? '만드는 중' : '편집 시작'}</button>
               </div>
             </form>
+          </section>
+        </div>
+      )}
+
+      {diagnosticsOpen && document && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-source-dialog">
+          <section className="g7pb-dialog g7pb-source-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-source-heading">
+            <header>
+              <div>
+                <p className="g7pb-kicker">읽기 전용 진단</p>
+                <h2 id="g7pb-source-heading">원본과 컴파일 산출물</h2>
+              </div>
+              <button type="button" className="g7pb-icon-button" aria-label="원본 보기 닫기" onClick={() => setDiagnosticsOpen(false)}>×</button>
+            </header>
+            <div className="g7pb-source-dialog__tabs" role="tablist" aria-label="진단 형식">
+              <button type="button" role="tab" aria-selected={diagnosticTab === 'document'}
+                data-testid="page-builder-source-document-tab" onClick={() => setDiagnosticTab('document')}>
+                <Braces size={16} aria-hidden="true" /> PageBuilderDocument JSON
+              </button>
+              <button type="button" role="tab" aria-selected={diagnosticTab === 'artifact'}
+                data-testid="page-builder-source-artifact-tab" onClick={() => setDiagnosticTab('artifact')}>
+                <FileCode2 size={16} aria-hidden="true" /> 컴파일 HTML
+              </button>
+            </div>
+            {diagnosticTab === 'document' ? (
+              <pre data-testid="page-builder-source-document">{JSON.stringify(documentRef.current, null, 2)}</pre>
+            ) : compiledSource ? (
+              <pre data-testid="page-builder-source-artifact">{compiledSource}</pre>
+            ) : (
+              <div className="g7pb-source-dialog__empty">
+                <p>현재 초안을 서버 컴파일러로 검증한 읽기 전용 HTML을 생성합니다. 발행 상태는 바뀌지 않습니다.</p>
+                <button type="button" className="g7pb-button g7pb-button--primary"
+                  data-testid="page-builder-source-generate" disabled={diagnosticBusy}
+                  onClick={() => void generateCompiledDiagnostic()}>
+                  {diagnosticBusy ? '생성 중' : '산출물 생성'}
+                </button>
+              </div>
+            )}
+            <footer>
+              <span>직접 수정은 지원하지 않습니다. 편집은 캔버스와 안전한 설정에서만 수행합니다.</span>
+              <button type="button" className="g7pb-button g7pb-button--quiet" onClick={() => setDiagnosticsOpen(false)}>닫기</button>
+            </footer>
           </section>
         </div>
       )}

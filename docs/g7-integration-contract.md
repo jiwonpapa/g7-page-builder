@@ -129,6 +129,18 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 
 선택 Adapter의 capability 실패는 해당 Adapter만 비활성화합니다. 모듈이 활성인 schema/compiler 비호환이면 편집·신규 발행만 막고 기존 active HTML을 계속 제공합니다. 코어 버전 비호환으로 모듈이 비활성화되면 route·asset도 사라지므로 배포 doctor는 해당 G7 업데이트를 금지하고 직전 코어로 롤백합니다.
 
+## 공개 데이터 Adapter
+
+| 기능 | 공개 계약 | 실패 시 동작 |
+|---|---|---|
+| 게시판 최신글 | `GET /api/modules/sirsoft-board/boards/posts/recent?limit=N` | 블록 빈 상태 |
+| 게시판 인기글 | `GET /api/modules/sirsoft-board/boards/popular?period={today|week|month|year}&limit=N` | 블록 빈 상태 |
+| 상품 최신순 | `GET /api/modules/sirsoft-ecommerce/products?per_page=N&sort=latest` | 블록 빈 상태 |
+| 신상품·인기상품 | `GET /api/modules/sirsoft-ecommerce/products/{new|popular}?limit=N` | 블록 빈 상태 |
+| 방문자 구분 | `GET /api/auth/user`의 2xx 여부 | 인증 오류는 비회원으로 처리 |
+
+이 Adapter는 브라우저에서 same-origin JSON만 요청합니다. 응답은 필드별 `textContent`로 렌더하고 상대경로 또는 HTTPS 이미지 외에는 폐기합니다. G7 번들 모듈의 내부 PHP 클래스·DB 테이블·관리자 API를 참조하지 않으며 공개 artifact에는 개인화 결과를 저장하지 않습니다.
+
 ## 선택 연동 규칙
 
 User Template shell, `sirsoft-page` metadata mirror, `sirsoft-ecommerce` Product Grid, G7 JSON UI target은 기본 모듈 밖의 선택 연동입니다.

@@ -12,6 +12,8 @@ export const PRICING_BLOCK_TYPE = 'commerce.pricing-tiers-01' as const;
 export const TEAM_BLOCK_TYPE = 'company.team-grid-01' as const;
 export const GALLERY_BLOCK_TYPE = 'media.gallery-grid-01' as const;
 export const BAR_CHART_BLOCK_TYPE = 'data.bar-chart-01' as const;
+export const G7_RECENT_POSTS_BLOCK_TYPE = 'g7.board-recent-posts-01' as const;
+export const G7_PRODUCT_GRID_BLOCK_TYPE = 'g7.ecommerce-product-grid-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -198,6 +200,31 @@ export interface BarChartBlockProps {
   description: string;
   unit: string;
   items: BarChartItem[];
+  appearance?: BlockAppearance;
+}
+
+export type DynamicAudience = 'all' | 'guest' | 'member';
+
+export interface G7RecentPostsBlockProps {
+  eyebrow: string;
+  heading: string;
+  source: 'recent' | 'popular';
+  period: 'today' | 'week' | 'month' | 'year';
+  limit: 3 | 4 | 6 | 8 | 12;
+  audience: DynamicAudience;
+  emptyMessage: string;
+  appearance?: BlockAppearance;
+}
+
+export interface G7ProductGridBlockProps {
+  eyebrow: string;
+  heading: string;
+  source: 'latest' | 'new' | 'popular';
+  limit: 2 | 3 | 4 | 6 | 8 | 12;
+  columns: 2 | 3 | 4;
+  audience: DynamicAudience;
+  detailBasePath: string;
+  emptyMessage: string;
   appearance?: BlockAppearance;
 }
 

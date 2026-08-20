@@ -7,7 +7,7 @@
 
 블록 인스턴스, 블록 정의, 프리셋, 설치 패키지는 서로 다른 생명주기를 가집니다. 페이지에서 블록을 삭제하는 동작은 문서만 변경하며, Block Pack 비활성화·제거와 연결하지 않습니다.
 
-기본 제품의 12개 블록은 `jiwonpapa/builtin-core` 내장 Pack으로 제공합니다. 외부 Data Preset Pack은 실행 코드 없이 기존 블록의 props를 복사하며, 외부 Code Pack은 서명·신뢰 발행자·버전 병존 계약을 통과할 때만 로드합니다.
+기본 제품의 14개 블록은 `jiwonpapa/builtin-core` 내장 Pack으로 제공합니다. 이 중 G7 최근 게시글·상품 그리드는 공개 API endpoint와 노출 대상을 typed props로만 저장합니다. 외부 Data Preset Pack은 실행 코드 없이 기존 블록의 props를 복사하며, 외부 Code Pack은 서명·신뢰 발행자·버전 병존 계약을 통과할 때만 로드합니다.
 
 ## 용어
 

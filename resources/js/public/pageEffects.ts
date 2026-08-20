@@ -14,6 +14,13 @@ type MotionWindow = Window & {
   IntersectionObserver?: typeof IntersectionObserver;
 };
 
+type DynamicAudience = 'all' | 'guest' | 'member';
+
+interface DynamicPayload {
+  success?: boolean;
+  data?: unknown;
+}
+
 const MOTION_SELECTOR = '.g7pb-block[data-g7pb-motion]';
 const SLIDER_SELECTOR = '[data-g7pb-slider]';
 const STAGGER_TARGETS = [
@@ -24,6 +31,142 @@ const STAGGER_TARGETS = [
   '.g7pb-team__grid article',
   '.g7pb-gallery__grid figure',
 ];
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function asText(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+}
+
+function payloadItems(payload: DynamicPayload): Record<string, unknown>[] {
+  const nested = asRecord(payload.data);
+  const values = Array.isArray(payload.data) ? payload.data : nested && Array.isArray(nested.data) ? nested.data : [];
+  return values.map(asRecord).filter((item): item is Record<string, unknown> => item !== null);
+}
+
+function safeImageSource(value: unknown): string {
+  const source = asText(value);
+  if (source.startsWith('/') && !source.startsWith('//') && !source.includes('\\')) return source;
+  try {
+    const parsed = new URL(source);
+    return parsed.protocol === 'https:' ? parsed.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+async function visitorAudience(fetcher: typeof fetch): Promise<'guest' | 'member'> {
+  try {
+    const response = await fetcher('/api/auth/user', {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    });
+    return response.ok ? 'member' : 'guest';
+  } catch {
+    return 'guest';
+  }
+}
+
+function renderPost(root: Document, item: Record<string, unknown>): HTMLElement | null {
+  const boardSlug = asText(item.board_slug);
+  const id = asText(item.id);
+  const title = asText(item.title);
+  if (!boardSlug || !id || !title) return null;
+
+  const article = root.createElement('article');
+  const link = root.createElement('a');
+  link.href = `/board/${encodeURIComponent(boardSlug)}/${encodeURIComponent(id)}`;
+  const heading = root.createElement('strong');
+  heading.textContent = title;
+  const meta = root.createElement('span');
+  meta.textContent = [asText(item.board_name), asText(item.created_at_formatted)].filter(Boolean).join(' · ');
+  link.append(heading, meta);
+  article.append(link);
+  return article;
+}
+
+function renderProduct(root: Document, item: Record<string, unknown>, basePath: string): HTMLElement | null {
+  const key = asText(item.product_code) || asText(item.id);
+  const name = asText(item.name_localized) || asText(item.name);
+  if (!key || !name) return null;
+
+  const article = root.createElement('article');
+  const link = root.createElement('a');
+  link.href = `${basePath}/${encodeURIComponent(key)}`;
+  const source = safeImageSource(item.thumbnail_url);
+  if (source) {
+    const image = root.createElement('img');
+    image.src = source;
+    image.alt = '';
+    image.loading = 'lazy';
+    link.append(image);
+  } else {
+    const placeholder = root.createElement('span');
+    placeholder.className = 'g7pb-dynamic-products__placeholder';
+    placeholder.textContent = '상품 이미지';
+    link.append(placeholder);
+  }
+  const heading = root.createElement('strong');
+  heading.textContent = name;
+  const price = root.createElement('span');
+  price.textContent = asText(item.selling_price_formatted) || asText(item.selling_price);
+  link.append(heading, price);
+  article.append(link);
+  return article;
+}
+
+export async function bootDynamicData(root: Document = document, fetcher: typeof fetch = fetch): Promise<void> {
+  const blocks = Array.from(root.querySelectorAll<HTMLElement>('[data-g7pb-data-source]'))
+    .filter((block) => block.dataset.g7pbDataReady !== 'true');
+  if (blocks.length === 0) return;
+
+  const needsAudience = blocks.some((block) => block.dataset.g7pbAudience !== 'all');
+  const audience = needsAudience ? await visitorAudience(fetcher) : 'guest';
+
+  await Promise.all(blocks.map(async (block) => {
+    const requiredAudience = (block.dataset.g7pbAudience ?? 'all') as DynamicAudience;
+    if (requiredAudience !== 'all' && requiredAudience !== audience) {
+      block.hidden = true;
+      block.dataset.g7pbDataReady = 'true';
+      return;
+    }
+
+    block.hidden = false;
+    const status = block.querySelector<HTMLElement>('[data-g7pb-data-status]');
+    const list = block.querySelector<HTMLElement>('[data-g7pb-data-list]');
+    const endpoint = block.dataset.g7pbEndpoint ?? '';
+    if (!list || !endpoint.startsWith('/api/')) return;
+
+    try {
+      const response = await fetcher(endpoint, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+      });
+      const payload = await response.json() as DynamicPayload;
+      if (!response.ok || payload.success === false) throw new Error('dynamic data request failed');
+
+      const source = block.dataset.g7pbDataSource;
+      const basePath = block.dataset.g7pbProductBase ?? '/shop/products';
+      const nodes = payloadItems(payload)
+        .map((item) => source === 'posts' ? renderPost(root, item) : renderProduct(root, item, basePath))
+        .filter((node): node is HTMLElement => node !== null);
+      list.replaceChildren(...nodes);
+      list.setAttribute('aria-busy', 'false');
+      if (status) status.textContent = nodes.length === 0
+        ? block.dataset.g7pbEmptyMessage ?? '표시할 항목이 없습니다.'
+        : '';
+    } catch {
+      list.replaceChildren();
+      list.setAttribute('aria-busy', 'false');
+      if (status) status.textContent = '콘텐츠를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    }
+    block.dataset.g7pbDataReady = 'true';
+  }));
+}
 
 export function parseCounterText(value: string): CounterParts | null {
   const match = value.trim().match(/^(.*?)([-+]?\d[\d,]*(?:\.\d+)?)(.*)$/u);
@@ -154,6 +297,8 @@ function installParallax(blocks: HTMLElement[], view: MotionWindow): void {
 
 export function bootPageEffects(root: Document = document, view: MotionWindow = window as MotionWindow): void {
   bootSiteShellMenu(root, view);
+  const fetcher = typeof view.fetch === 'function' ? view.fetch.bind(view) : fetch;
+  void bootDynamicData(root, fetcher);
   const page = root.querySelector<HTMLElement>('.g7pb-page');
   const blocks = Array.from(root.querySelectorAll<HTMLElement>(MOTION_SELECTOR));
   if (!page) return;

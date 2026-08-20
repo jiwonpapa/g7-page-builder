@@ -157,6 +157,14 @@
         {
           "if": { "properties": { "type": { "const": "data.bar-chart-01" } }, "required": ["type"] },
           "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/barChartProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "g7.board-recent-posts-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/g7RecentPostsProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "g7.ecommerce-product-grid-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/g7ProductGridProps" } } }
         }
       ]
     },
@@ -304,6 +312,42 @@
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 }, "description": { "type": "string", "maxLength": 1000 }, "unit": { "type": "string", "maxLength": 20 },
         "items": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "required": ["label", "value", "tone"], "properties": { "label": { "type": "string", "minLength": 1, "maxLength": 120 }, "value": { "type": "number", "minimum": 0, "maximum": 100 }, "tone": { "enum": ["blue", "indigo", "emerald", "amber"] } } } },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "g7RecentPostsProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "source", "period", "limit", "audience", "emptyMessage"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "source": { "enum": ["recent", "popular"] },
+        "period": { "enum": ["today", "week", "month", "year"] },
+        "limit": { "enum": [3, 4, 6, 8, 12] },
+        "audience": { "enum": ["all", "guest", "member"] },
+        "emptyMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "g7ProductGridProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "source", "limit", "columns", "audience", "detailBasePath", "emptyMessage"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "source": { "enum": ["latest", "new", "popular"] },
+        "limit": { "enum": [2, 3, 4, 6, 8, 12] },
+        "columns": { "enum": [2, 3, 4] },
+        "audience": { "enum": ["all", "guest", "member"] },
+        "detailBasePath": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^/[a-zA-Z0-9/_-]*$"
+        },
+        "emptyMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
     },

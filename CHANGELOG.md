@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-20
+
 ### Added
 
 - Codex Git worktree별 path·독점 AREA lease, 범위 밖 변경 차단, profile 검증, 자동 제출 커밋과 Local 순차 병합을 제공하는 coordination 하네스를 추가했습니다.

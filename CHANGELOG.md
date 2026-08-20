@@ -10,11 +10,14 @@
 
 - Codex Git worktree별 path·독점 AREA lease, 범위 밖 변경 차단, profile 검증, 자동 제출 커밋과 Local 순차 병합을 제공하는 coordination 하네스를 추가했습니다.
 - 현재 draft의 블록·토큰·공통영역 표시 방식을 새 UUID·slug·revision 1 초안으로 복제하는 독립 문서함 기능을 추가했습니다.
+- Header와 Footer를 각각 Puck 캔버스에서 드래그·인라인 편집하고 PC·태블릿·모바일로 확인하는 독립 Site Part 문서·리비전·발행 기능을 추가했습니다.
+- Header 내비게이션·공지 바, 기본 Footer·다단 Footer 블록과 로고 직접 업로드를 추가했습니다.
 
 ### Changed
 
 - 고정 `g7pb-dev` runtime과 release·staging 명령은 active Local integration task, 전체 품질 검증 SHA와 clean 상태를 통과해야 실행되도록 변경했습니다.
 - 문서함 작업을 `편집`·`공개 보기`·`더보기` 계층으로 정리하고 ISC 라이선스 Lucide 아이콘을 적용해 한글 버튼이 세로로 깨지지 않도록 변경했습니다.
+- 기존 공통 메뉴 설정 모달 진입점을 `Header 편집`·`Footer 편집` 시각 편집기로 교체하고, Site Part 발행 전 compile·URL 검증을 필수화했습니다.
 
 ## [0.7.0] - 2026-08-20
 

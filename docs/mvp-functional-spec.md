@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 12종 테스트 block 카탈로그, 5종 typed motion preset, 추천 효과 일괄 적용, 자체 MediaPort 이미지 업로드·선택, 별도 문서함·상태·생성/수정/발행일·보관/복원/확인형 삭제, 메타수정·최근 20개 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제, Page Builder 전용 공통 Header·Footer와 PC·모바일 메뉴 완료.
+현재 구현: 12종 페이지 block 카탈로그, 5종 typed motion preset, 자체 MediaPort, 독립 문서함·복제·보관·복구·발행, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 메뉴 완료.
 
 ## 목표
 
@@ -32,6 +32,8 @@
 - block 이동·복제·삭제·선택·부모 선택
 - undo/redo
 - 360·768·1280 px preview
+- Header와 Footer를 설정 모달이 아닌 같은 Puck drag/drop 캔버스에서 각각 편집
+- Header 내비게이션·공지 바, 기본 Footer·다단 Footer의 inline 문구·typed 링크·로고 MediaPort 편집
 - dirty/saving/saved/conflict/publish 상태 표시
 - 2초 debounce autosave와 명시적 저장
 - 다른 revision을 기반으로 저장하면 HTTP 409와 비교/새로고침 안내

@@ -259,6 +259,47 @@ describe('PageBuilderApiClient', () => {
     });
   });
 
+  it('loads, bootstraps, saves, and publishes an independent Header Site Part', async () => {
+    const sitePart = {
+      title: '기본 Header',
+      document: {
+        schema_version: 'g7-page-builder/site-part/v1' as const,
+        site_part_id: '123e4567-e89b-42d3-a456-426614174055',
+        kind: 'header' as const,
+        locale: 'ko',
+        tokens: {},
+        blocks: [],
+      },
+      lock_version: 2,
+      revision: 2,
+      active_revision: null,
+      status: 'draft' as const,
+      created_at: null,
+      updated_at: null,
+      published_at: null,
+    };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: sitePart }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: sitePart }, 201))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: { ...sitePart, lock_version: 3, revision: 3 } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: { ...sitePart, lock_version: 4, active_revision: 3, status: 'published' } }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await client.getSitePart('header', 'ko');
+    await client.bootstrapSitePart('header', 'ko');
+    await client.saveSitePart('header', sitePart.title, sitePart.document, 2);
+    await client.publishSitePart('header', 'ko', 3);
+
+    expect(fetchImpl.mock.calls.map(([url]) => url)).toEqual([
+      `${PAGE_BUILDER_API_PREFIX}/site-parts/header?locale=ko`,
+      `${PAGE_BUILDER_API_PREFIX}/site-parts/header/bootstrap`,
+      `${PAGE_BUILDER_API_PREFIX}/site-parts/header/draft`,
+      `${PAGE_BUILDER_API_PREFIX}/site-parts/header/publish`,
+    ]);
+    expect(JSON.parse(String(fetchImpl.mock.calls[2][1]?.body))).toMatchObject({ expected_lock_version: 2 });
+    expect(JSON.parse(String(fetchImpl.mock.calls[3][1]?.body))).toEqual({ locale: 'ko', expected_lock_version: 3 });
+  });
+
   it('loads the block catalog and stores actor-scoped favorites', async () => {
     const catalog = { items: [], categories: ['hero'] };
     const fetchImpl = vi.fn<typeof fetch>()

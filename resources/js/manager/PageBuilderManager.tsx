@@ -7,6 +7,8 @@ import {
   History,
   Home,
   MoreHorizontal,
+  PanelBottom,
+  PanelTop,
   Pencil,
   Settings,
 } from 'lucide-react';
@@ -680,10 +682,10 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             data-testid="page-builder-manager-block-packs" onClick={openBlockPacks}>
             블록 팩
           </button>
-          <button className="g7pb-button g7pb-button--quiet" type="button"
-            data-testid="page-builder-manager-site-shell" onClick={() => void openSiteShell()}>
-            공통 메뉴
-          </button>
+          <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-site-header"
+            href="/modules/jiwonpapa-page_builder/admin/site-parts/header"><PanelTop size={17} /> Header 편집</a>
+          <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-site-footer"
+            href="/modules/jiwonpapa-page_builder/admin/site-parts/footer"><PanelBottom size={17} /> Footer 편집</a>
           <button className="g7pb-button g7pb-button--primary" type="button"
             data-testid="page-builder-manager-create" onClick={() => setCreateDialogOpen(true)}>
             새 페이지

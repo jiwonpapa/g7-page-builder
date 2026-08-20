@@ -9,6 +9,10 @@ Route::get('admin', [ViewerController::class, 'manager'])
 Route::get('admin/editor', [ViewerController::class, 'editor'])
     ->name('admin.editor');
 
+Route::get('admin/site-parts/{kind}', [ViewerController::class, 'sitePartEditor'])
+    ->whereIn('kind', ['header', 'footer'])
+    ->name('admin.site-part');
+
 Route::get('preview/{token}', [ViewerController::class, 'preview'])
     ->where('token', '[a-f0-9]{64}')
     ->name('preview');

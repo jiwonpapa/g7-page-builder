@@ -14,12 +14,18 @@ import type { DocumentResource, PageBuilderDocument } from '../documents/types';
 import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';
 import { discoverPageBuilderManagers, mountPageBuilderManager } from '../manager/PageBuilderManager';
 import { PuckEditorAdapter } from './PuckEditorAdapter';
+import { SitePartEditor } from './SitePartEditor';
 
 export interface PageBuilderEditorOptions {
   documentId?: string;
   locale?: string;
   title?: string;
   slug?: string;
+}
+
+interface SitePartEditorOptions {
+  kind: 'header' | 'footer';
+  locale: string;
 }
 
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'conflict' | 'error';
@@ -538,6 +544,19 @@ export function discoverPageBuilderEditors(scope: ParentNode = document): Elemen
   return Array.from(scope.querySelectorAll('[data-g7pb-editor], #g7pb-editor'));
 }
 
+function discoverSitePartEditors(scope: ParentNode = document): Element[] {
+  return Array.from(scope.querySelectorAll('[data-g7pb-site-part-editor]'));
+}
+
+function mountSitePartEditor(element: Element): void {
+  const htmlElement = element as HTMLElement;
+  const kind = htmlElement.dataset.kind === 'footer' ? 'footer' : 'header';
+  roots.get(element)?.unmount();
+  const root = createRoot(element);
+  roots.set(element, root);
+  root.render(<SitePartEditor kind={kind} locale={htmlElement.dataset.locale ?? 'ko'} />);
+}
+
 function autoMountEditors(): void {
   for (const element of discoverPageBuilderManagers()) {
     mountPageBuilderManager(element, {
@@ -548,6 +567,13 @@ function autoMountEditors(): void {
   for (const element of discoverPageBuilderEditors()) {
     if (!roots.has(element)) {
       mountPageBuilderEditor(element);
+    }
+  }
+
+
+  for (const element of discoverSitePartEditors()) {
+    if (!roots.has(element)) {
+      mountSitePartEditor(element);
     }
   }
 }

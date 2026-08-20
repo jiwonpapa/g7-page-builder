@@ -3,8 +3,11 @@
 namespace Modules\Jiwonpapa\PageBuilder\Tests\UnitPhp;
 
 use InvalidArgumentException;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
+use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShell;
 use PHPUnit\Framework\TestCase;
 
@@ -130,5 +133,78 @@ final class DomainContractsTest extends TestCase
             'home_url' => '/',
             'navigation' => [['label' => '위험', 'url' => 'javascript:alert(1)']],
         ]);
+    }
+
+    public function test_site_part_round_trips_a_typed_header_document(): void
+    {
+        $document = new SitePartDocument(
+            sitePartId: '00000000-0000-4000-8000-000000000010',
+            kind: 'header',
+            locale: 'ko',
+            tokens: ['accent' => '#2458d6'],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000011',
+                'type' => 'site.header.navigation-01',
+                'block_version' => 1,
+                'props' => ['brand_name' => '지원소프트'],
+                'slots' => [],
+            ]],
+        );
+
+        self::assertSame('g7-page-builder/site-part/v1', $document->schemaVersion);
+        self::assertSame($document->toArray(), SitePartDocument::fromArray($document->toArray())->toArray());
+    }
+
+    public function test_site_part_rejects_a_footer_block_inside_a_header_document(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new SitePartDocument(
+            sitePartId: '00000000-0000-4000-8000-000000000010',
+            kind: 'header',
+            locale: 'ko',
+            tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000011',
+                'type' => 'site.footer.simple-01',
+                'block_version' => 1,
+                'props' => [],
+                'slots' => [],
+            ]],
+        );
+    }
+
+    public function test_site_part_compiler_escapes_content_and_rejects_executable_urls(): void
+    {
+        $document = new SitePartDocument(
+            sitePartId: '00000000-0000-4000-8000-000000000010',
+            kind: 'header',
+            locale: 'ko',
+            tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000011',
+                'type' => 'site.header.navigation-01',
+                'block_version' => 1,
+                'props' => [
+                    'brand_name' => '<script>alert(1)</script>',
+                    'home_url' => '/',
+                    'navigation' => [['label' => '소개', 'url' => '/pages/about']],
+                ],
+                'slots' => [],
+            ]],
+        );
+
+        $artifact = (new SitePartHtmlCompiler)->compile($document, 3);
+
+        self::assertStringNotContainsString('<script>', $artifact->html);
+        self::assertStringContainsString('&lt;script&gt;', $artifact->html);
+        self::assertSame(3, $artifact->sourceRevision);
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $artifact->artifactSha256);
+
+        $unsafe = $document->toArray();
+        $unsafe['blocks'][0]['props']['home_url'] = 'javascript:alert(1)';
+
+        $this->expectException(DocumentCompileException::class);
+        (new SitePartHtmlCompiler)->compile(SitePartDocument::fromArray($unsafe), 3);
     }
 }

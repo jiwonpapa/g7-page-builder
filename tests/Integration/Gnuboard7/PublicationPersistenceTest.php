@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackInstallation;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
@@ -33,6 +35,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageB
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockFavoriteAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockPackRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
 use PHPUnit\Framework\TestCase;
@@ -173,6 +176,58 @@ final class PublicationPersistenceTest extends TestCase
         self::assertSame('', $payload['data']['footer_text']);
     }
 
+    public function test_site_parts_bootstrap_from_legacy_shell_and_publish_independent_revisions(): void
+    {
+        $shells = $this->siteShellService();
+        $savedShell = $shells->save('ko', [
+            'brand_name' => '지원소프트',
+            'logo_url' => '/storage/brand.webp',
+            'home_url' => '/',
+            'header_variant' => 'transparent',
+            'sticky' => true,
+            'navigation' => [['label' => '소개', 'url' => '/pages/about']],
+            'cta' => ['label' => '문의', 'url' => '/pages/contact'],
+            'footer_text' => 'Copyright',
+            'show_footer_navigation' => true,
+        ], 0, 1);
+        $siteParts = new SitePartService(new EloquentSitePartRepository, new SitePartHtmlCompiler);
+
+        $header = $siteParts->bootstrap('header', 'ko', $savedShell->shell, 1);
+        $footer = $siteParts->bootstrap('footer', 'ko', $savedShell->shell, 1);
+
+        self::assertSame('site.header.navigation-01', $header->document->blocks[0]['type']);
+        self::assertSame('지원소프트', $header->document->blocks[0]['props']['brand_name']);
+        self::assertSame('site.footer.simple-01', $footer->document->blocks[0]['type']);
+        self::assertSame(1, $header->revision);
+        self::assertNull($header->activeRevision);
+
+        $document = $header->document->toArray();
+        $document['blocks'][] = [
+            'instance_id' => '00000000-0000-4000-8000-000000000099',
+            'type' => 'site.header.announcement-01',
+            'block_version' => 1,
+            'props' => ['text' => '새 소식', 'link_label' => '보기', 'link_url' => '/pages/news'],
+            'slots' => [],
+        ];
+        $draft = $siteParts->saveDraft('header', 'ko', '메인 Header', $document, $header->lockVersion, 2);
+        self::assertSame(2, $draft->revision);
+        self::assertSame(2, $draft->lockVersion);
+        self::assertTrue($draft->hasUnpublishedChanges());
+
+        $published = $siteParts->publish('header', 'ko', $draft->lockVersion, 2);
+        self::assertSame(2, $published->activeRevision);
+        self::assertSame(3, $published->lockVersion);
+        self::assertFalse($published->hasUnpublishedChanges());
+        self::assertNotNull($published->publishedAt);
+        self::assertSame(2, $siteParts->published('header', 'ko')?->revision);
+        self::assertCount(2, $siteParts->revisions('header', 'ko'));
+        self::assertSame('메인 Header', $siteParts->revisions('header', 'ko')[0]->title);
+
+        $idempotent = $siteParts->bootstrap('header', 'ko', $savedShell->shell, 3);
+        self::assertSame($published->document->sitePartId, $idempotent->document->sitePartId);
+        self::assertSame(2, $idempotent->revision);
+    }
+
     public function test_published_metadata_and_public_slug_do_not_follow_later_draft_changes(): void
     {
         $service = new PageBuilderService(
@@ -288,7 +343,7 @@ final class PublicationPersistenceTest extends TestCase
             null,
         );
         $service->commitPublication($candidate->token);
-        $viewer = new ViewerController($service, $this->siteShellService());
+        $viewer = $this->viewer($service);
 
         $response = $viewer->show(Request::create('/pages/clean-route'), 'clean-route');
         $legacy = $viewer->legacy('clean-route');
@@ -557,7 +612,7 @@ final class PublicationPersistenceTest extends TestCase
         );
         $published = $service->commitPublication($candidate->token);
 
-        $viewer = new ViewerController($service, $this->siteShellService());
+        $viewer = $this->viewer($service);
         $viewerResponse = $viewer->show(Request::create('/cache-safety'), 'cache-safety');
         $notModifiedRequest = Request::create('/cache-safety');
         $notModifiedRequest->headers->set('If-None-Match', (string) $viewerResponse->headers->get('ETag'));
@@ -715,6 +770,16 @@ final class PublicationPersistenceTest extends TestCase
     private function siteShellService(): SiteShellService
     {
         return new SiteShellService(new EloquentSiteShellAdapter);
+    }
+
+    private function viewer(PageBuilderService $service): ViewerController
+    {
+        return new ViewerController(
+            $service,
+            $this->siteShellService(),
+            new SitePartService(new EloquentSitePartRepository, new SitePartHtmlCompiler),
+            new SitePartHtmlCompiler,
+        );
     }
 
     /**

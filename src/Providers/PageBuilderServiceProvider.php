@@ -26,6 +26,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\BlockUsagePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\MediaPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\Ed25519BlockPackSignatureVerifier;
@@ -42,6 +43,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentB
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockPackRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockUsageAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 
 final class PageBuilderServiceProvider extends ServiceProvider
@@ -144,6 +146,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
             },
         );
         $this->app->bind(MediaPort::class, LaravelMediaAdapter::class);
+        $this->app->bind(SitePartRepository::class, EloquentSitePartRepository::class);
         $this->app->bind(SiteShellPort::class, EloquentSiteShellAdapter::class);
     }
 

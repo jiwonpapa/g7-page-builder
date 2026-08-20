@@ -5,6 +5,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockPackController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
@@ -34,6 +35,26 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
     Route::post('block-packs/github/install', [AdminBlockPackController::class, 'githubInstall'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
         ->name('block-packs.github.install');
+    Route::get('site-parts/{kind}', [AdminSitePartController::class, 'show'])
+        ->whereIn('kind', ['header', 'footer'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('site-parts.show');
+    Route::post('site-parts/{kind}/bootstrap', [AdminSitePartController::class, 'bootstrap'])
+        ->whereIn('kind', ['header', 'footer'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.create')
+        ->name('site-parts.bootstrap');
+    Route::put('site-parts/{kind}/draft', [AdminSitePartController::class, 'saveDraft'])
+        ->whereIn('kind', ['header', 'footer'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.update')
+        ->name('site-parts.draft');
+    Route::post('site-parts/{kind}/publish', [AdminSitePartController::class, 'publish'])
+        ->whereIn('kind', ['header', 'footer'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('site-parts.publish');
+    Route::get('site-parts/{kind}/revisions', [AdminSitePartController::class, 'revisions'])
+        ->whereIn('kind', ['header', 'footer'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('site-parts.revisions');
     Route::get('site-shell', [AdminSiteShellController::class, 'show'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('site-shell.show');

@@ -9,7 +9,7 @@ G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목
 | 영역 | 소유자 |
 |---|---|
 | G7 shell과 분리된 `canvas` 전체 | G7 Page Builder |
-| 공통 Header·Footer·PC/모바일 메뉴 설정 | G7 Page Builder |
+| Header·Footer Site Part 문서·리비전·발행본 | G7 Page Builder |
 | 기존 HTML 본문 | HtmlEditor/CKEditor |
 | PageBuilderDocument | G7 Page Builder |
 | Block Pack manifest·설치 상태·관리자 즐겨찾기 | G7 Page Builder |
@@ -20,13 +20,13 @@ G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목
 
 ```text
 Domain
-  PageBuilderDocument, BlockDefinition, BlockPackManifest
+  PageBuilderDocument, SitePartDocument, BlockDefinition, BlockPackManifest
        |
 Application
   Draft, Publish, Migrate, Compile, BlockRegistry, BlockPackManager
        |
 Ports
-  PageBuilderRepository, DocumentCompilerPort, MediaPort,
+  PageBuilderRepository, SitePartRepository, DocumentCompilerPort, MediaPort,
   BlockPackRepository, BlockPackArchivePort, BlockPackReleaseSourcePort,
   BlockFavoritePort, BlockUsagePort, BlockPackProvider
        |
@@ -62,7 +62,9 @@ G7 module-owned public route/viewer
 - 문서 스키마 v1은 `canvas`만 허용합니다.
 - `/pages/{slug}` PHP Web route가 발행본을 직접 렌더하며 G7 User SPA layout이나 User Template을 거치지 않습니다.
 - 발행본 하나를 홈으로 지정한 경우에만 `/`을 가로채고, 미지정·조회 실패 시 G7 기본 홈으로 통과시킵니다.
-- G7 템플릿 Header·Footer를 주입하거나 수정하지 않습니다. 대신 모듈 전용 `SiteShellPort`가 공통 Header·Footer와 PC·모바일 메뉴를 소유합니다.
+- G7 템플릿 Header·Footer를 주입하거나 수정하지 않습니다. 대신 모듈 전용 Header·Footer `SitePartDocument`를 같은 Puck 캔버스에서 편집하고 각각 독립 revision으로 발행합니다.
+- Site Part는 `site.header.*`, `site.footer.*` 블록만 허용하며 발행 시 PHP compiler와 URL allowlist를 통과한 active revision만 공개합니다.
+- 0.6.x의 `SiteShellPort` 값은 최초 Site Part bootstrap 입력과 미발행 fallback으로만 유지하며 전환 후 편집 진입점으로 사용하지 않습니다.
 - 문서는 기본 `shell_mode=global`이며 인트로·캠페인은 `shell_mode=none`으로 공통영역 없이 렌더합니다. 이 값은 revision과 publication에 함께 snapshot됩니다.
 - 향후 User Template shell, `sirsoft-page` metadata, 쇼핑몰 Product Grid, G7 JSON UI는 각각 별도 선택 Adapter·Block Pack으로만 추가합니다.
 - 선택 연동이 없거나 실패해도 기본 문서의 저장·발행·공개 렌더는 중단하지 않습니다.

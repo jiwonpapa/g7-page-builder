@@ -21,6 +21,12 @@
         .g7pb-site-header.is-sticky { position: sticky; top: 0; }
         .g7pb-site-header.is-transparent { position: absolute; border-color: rgb(255 255 255 / 24%); color: #fff; background: linear-gradient(180deg, rgb(10 18 32 / 62%), transparent); backdrop-filter: none; }
         .g7pb-site-header.is-transparent.is-sticky { position: sticky; }
+        .g7pb-site-announcement { position: relative; z-index: 55; padding: .65rem 1.25rem; text-align: center; }
+        .g7pb-site-announcement p { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: center; margin: 0; font-size: .82rem; font-weight: 700; }
+        .g7pb-site-announcement a { color: inherit; font-weight: 850; text-underline-offset: .2rem; }
+        .g7pb-site-announcement--brand { color: #fff; background: #2456df; }
+        .g7pb-site-announcement--dark { color: #fff; background: #172033; }
+        .g7pb-site-announcement--light { color: #172033; background: #eef1f6; }
         .g7pb-site-header__inner { display: grid; width: min(calc(100% - 2.5rem), 72rem); min-height: 4.75rem; grid-template-columns: auto 1fr auto; gap: 2rem; align-items: center; margin: 0 auto; }
         .g7pb-site-brand { display: inline-flex; min-width: 0; align-items: center; gap: .75rem; color: inherit; font-size: 1.05rem; font-weight: 850; letter-spacing: -.02em; text-decoration: none; }
         .g7pb-site-brand img { display: block; width: auto; max-width: 10rem; height: 2.25rem; object-fit: contain; }
@@ -50,6 +56,10 @@
         .g7pb-site-footer nav ul { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin: 0; padding: 0; list-style: none; }
         .g7pb-site-footer nav a { color: inherit; text-decoration: none; }
         .g7pb-site-footer__legal { margin: 3rem 0 0; padding-top: 1.25rem; border-top: 1px solid #2d3748; color: #919bad; font-size: .82rem; }
+        .g7pb-site-footer__columns { display: grid; grid-template-columns: minmax(12rem, 1.5fr) repeat(4, minmax(8rem, 1fr)); gap: clamp(1.5rem, 4vw, 4rem); }
+        .g7pb-site-footer--columns h2 { margin: 0 0 1rem; color: #fff; font-size: .82rem; }
+        .g7pb-site-footer--columns ul { display: grid; gap: .7rem; margin: 0; padding: 0; list-style: none; }
+        .g7pb-site-footer--columns a { color: inherit; text-decoration: none; }
         .g7pb-page { min-height: 100vh; overflow: hidden; }
         .g7pb-block { padding: clamp(3.5rem, 8vw, 8rem) max(1.25rem, calc((100vw - 72rem) / 2)); }
         .g7pb-surface--default { background: #fff; color: #172033; }
@@ -200,19 +210,29 @@
             .g7pb-site-nav, .g7pb-site-header__inner > .g7pb-site-header__cta { display: none; }
             .g7pb-menu-toggle { display: block; }
             .g7pb-site-footer__top { display: grid; }
+            .g7pb-site-footer__columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .g7pb-site-footer__columns > :first-child { grid-column: 1 / -1; }
             .g7pb-site-footer nav ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 520px) {
+            .g7pb-site-footer__columns { grid-template-columns: 1fr; }
+            .g7pb-site-footer__columns > :first-child { grid-column: auto; }
         }
         @media (prefers-reduced-motion: reduce) {
             .g7pb-block, .g7pb-block *, .g7pb-motion-parallax-target { animation: none !important; transition: none !important; transform: none !important; }
         }
     </style>
-    @if (!empty($siteShell) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider'))
+    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider'))
         <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}"></script>
     @endif
 </head>
 <body>
-    @if (!empty($siteShell))
+    @if (!empty($siteShell) || !empty($siteHeaderHtml) || !empty($siteFooterHtml))
         <a class="g7pb-skip-link" href="#g7pb-main">본문 바로가기</a>
+    @endif
+    @if (!empty($siteHeaderHtml))
+        {!! $siteHeaderHtml !!}
+    @elseif (!empty($siteShell))
         <header class="g7pb-site-header {{ $siteShell->sticky ? 'is-sticky' : '' }} {{ $siteShell->headerVariant === 'transparent' ? 'is-transparent' : '' }}"
             data-g7pb-site-header data-testid="page-builder-site-header">
             <div class="g7pb-site-header__inner">
@@ -255,7 +275,9 @@
     <main id="g7pb-main" class="g7pb-page" data-testid="{{ $rootTestId }}" data-artifact-sha256="{{ $page->artifactSha256 }}">
         {!! $page->artifact !!}
     </main>
-    @if (!empty($siteShell))
+    @if (!empty($siteFooterHtml))
+        {!! $siteFooterHtml !!}
+    @elseif (!empty($siteShell))
         <footer class="g7pb-site-footer" data-testid="page-builder-site-footer">
             <div class="g7pb-site-footer__top">
                 <a class="g7pb-site-brand" href="{{ $siteShell->homeUrl }}">{{ $siteShell->brandName }}</a>

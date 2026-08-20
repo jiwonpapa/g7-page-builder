@@ -6,9 +6,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShellSnapshot;
 
 final class ViewerController
@@ -16,6 +19,8 @@ final class ViewerController
     public function __construct(
         private readonly PageBuilderService $service,
         private readonly SiteShellService $siteShellService,
+        private readonly SitePartService $sitePartService,
+        private readonly SitePartHtmlCompiler $sitePartCompiler,
     ) {}
 
     public function manager(): Response
@@ -45,6 +50,21 @@ final class ViewerController
             ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
+    public function sitePartEditor(string $kind): Response
+    {
+        if (! in_array($kind, ['header', 'footer'], true)) {
+            abort(404);
+        }
+
+        return response()
+            ->view('g7-page-builder::site-part-editor', [
+                'kind' => $kind,
+                'locale' => app()->getLocale(),
+            ])
+            ->header('Cache-Control', 'no-store')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
+    }
+
     public function preview(string $token): Response
     {
         $page = $this->service->renderPreview($token);
@@ -53,6 +73,8 @@ final class ViewerController
             abort(404);
         }
         $siteShell = $this->siteShell($page);
+        $siteHeader = $this->sitePart('header', $page);
+        $siteFooter = $this->sitePart('footer', $page);
 
         return response()
             ->view('g7-page-builder::viewer', [
@@ -60,6 +82,8 @@ final class ViewerController
                 'rootTestId' => 'page-builder-preview-root',
                 'canonicalUrl' => null,
                 'siteShell' => $siteShell?->shell,
+                'siteHeaderHtml' => $siteHeader?->html,
+                'siteFooterHtml' => $siteFooter?->html,
             ])
             ->header('Cache-Control', 'no-store')
             ->header('Pragma', 'no-cache')
@@ -76,7 +100,9 @@ final class ViewerController
         }
 
         $siteShell = $this->siteShell($page);
-        $etag = '"'.$this->representationSha256($page, $siteShell).'"';
+        $siteHeader = $this->sitePart('header', $page);
+        $siteFooter = $this->sitePart('footer', $page);
+        $etag = '"'.$this->representationSha256($page, $siteShell, $siteHeader, $siteFooter).'"';
 
         if ($request->header('If-None-Match') === $etag) {
             return response('', 304)
@@ -91,6 +117,8 @@ final class ViewerController
                 'rootTestId' => 'page-builder-public-root',
                 'canonicalUrl' => url('/pages/'.$page->slug),
                 'siteShell' => $siteShell?->shell,
+                'siteHeaderHtml' => $siteHeader?->html,
+                'siteFooterHtml' => $siteFooter?->html,
             ])
             ->header('Cache-Control', 'public, no-cache, must-revalidate')
             ->header('ETag', $etag)
@@ -126,10 +154,39 @@ final class ViewerController
         }
     }
 
-    private function representationSha256(RenderedPage $page, ?SiteShellSnapshot $siteShell): string
+    private function sitePart(string $kind, RenderedPage $page): ?SitePartArtifact
     {
-        return $siteShell === null
-            ? $page->representationSha256()
-            : hash('sha256', $page->representationSha256().$siteShell->shell->representationSha256());
+        if ($page->shellMode !== 'global') {
+            return null;
+        }
+
+        try {
+            $snapshot = $this->sitePartService->published($kind, $page->locale);
+
+            return $snapshot === null
+                ? null
+                : $this->sitePartCompiler->compile($snapshot->document, $snapshot->revision);
+        } catch (\Throwable $exception) {
+            Log::warning('Page Builder Site Part was skipped.', [
+                'kind' => $kind,
+                'locale' => $page->locale,
+                'exception' => $exception,
+            ]);
+
+            return null;
+        }
+    }
+
+    private function representationSha256(
+        RenderedPage $page,
+        ?SiteShellSnapshot $siteShell,
+        ?SitePartArtifact $siteHeader,
+        ?SitePartArtifact $siteFooter,
+    ): string {
+        return hash('sha256', implode(':', [
+            $page->representationSha256(),
+            $siteHeader?->artifactSha256 ?? $siteShell?->shell->representationSha256() ?? '',
+            $siteFooter?->artifactSha256 ?? $siteShell?->shell->representationSha256() ?? '',
+        ]));
     }
 }

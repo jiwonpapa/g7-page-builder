@@ -5,6 +5,10 @@ import type {
   MediaAssetResource,
   MediaListResource,
   SiteShellResource,
+  SitePartDocument,
+  SitePartKind,
+  SitePartResource,
+  SitePartRevisionResource,
   PageBuilderDocument,
   PreviewResource,
   PublicationCommit,
@@ -22,6 +26,7 @@ import type {
 export const PAGE_BUILDER_API_PREFIX = '/api/modules/jiwonpapa-page_builder/admin';
 export const PAGE_BUILDER_MANAGER_PATH = '/admin/page-builder';
 export const PAGE_BUILDER_EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
+export const PAGE_BUILDER_SITE_PART_EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/site-parts';
 export const ADMIN_AUTH_TOKEN_KEY = 'auth_token';
 
 interface ApiClientOptions {
@@ -444,6 +449,51 @@ export class PageBuilderApiClient {
       method: 'PUT',
       body: JSON.stringify({ ...payload, expected_lock_version: expectedLockVersion }),
     });
+  }
+
+  async getSitePart(kind: SitePartKind, locale = 'ko'): Promise<SitePartResource> {
+    const query = new URLSearchParams({ locale });
+    return this.request<SitePartResource>(`/site-parts/${kind}?${query.toString()}`);
+  }
+
+  async bootstrapSitePart(kind: SitePartKind, locale = 'ko'): Promise<SitePartResource> {
+    return this.request<SitePartResource>(`/site-parts/${kind}/bootstrap`, {
+      method: 'POST',
+      body: JSON.stringify({ locale }),
+    });
+  }
+
+  async saveSitePart(
+    kind: SitePartKind,
+    title: string,
+    document: SitePartDocument,
+    expectedLockVersion: number,
+  ): Promise<SitePartResource> {
+    return this.request<SitePartResource>(`/site-parts/${kind}/draft`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        locale: document.locale,
+        title,
+        document,
+        expected_lock_version: expectedLockVersion,
+      }),
+    });
+  }
+
+  async publishSitePart(
+    kind: SitePartKind,
+    locale: string,
+    expectedLockVersion: number,
+  ): Promise<SitePartResource> {
+    return this.request<SitePartResource>(`/site-parts/${kind}/publish`, {
+      method: 'POST',
+      body: JSON.stringify({ locale, expected_lock_version: expectedLockVersion }),
+    });
+  }
+
+  async listSitePartRevisions(kind: SitePartKind, locale = 'ko'): Promise<{ items: SitePartRevisionResource[] }> {
+    const query = new URLSearchParams({ locale });
+    return this.request<{ items: SitePartRevisionResource[] }>(`/site-parts/${kind}/revisions?${query.toString()}`);
   }
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {

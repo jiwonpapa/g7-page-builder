@@ -302,6 +302,8 @@ export interface SiteShellLink {
   url: string;
 }
 
+export type SitePartLink = SiteShellLink;
+
 export interface SiteShellResource {
   locale: string;
   lock_version: number;
@@ -315,6 +317,37 @@ export interface SiteShellResource {
   footer_text: string;
   show_footer_navigation: boolean;
   updated_at: string | null;
+}
+
+export type SitePartKind = 'header' | 'footer';
+
+export interface SitePartDocument {
+  schema_version: 'g7-page-builder/site-part/v1';
+  site_part_id: string;
+  kind: SitePartKind;
+  locale: string;
+  tokens: Record<string, ScalarToken>;
+  blocks: PageBuilderBlock[];
+}
+
+export interface SitePartResource {
+  title: string;
+  document: SitePartDocument;
+  lock_version: number;
+  revision: number;
+  active_revision: number | null;
+  status: 'draft' | 'published_with_changes' | 'published';
+  created_at: string | null;
+  updated_at: string | null;
+  published_at: string | null;
+}
+
+export interface SitePartRevisionResource {
+  revision: number;
+  title: string;
+  document: SitePartDocument;
+  author_id: number | null;
+  created_at: string;
 }
 
 export interface PreviewResource {

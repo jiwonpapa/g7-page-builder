@@ -5,6 +5,18 @@
 - 사용자에게는 존댓말을 사용하고 `형님`이라고 부른다.
 - 결과와 영향부터 간결하게 보고한다.
 
+## Parallel work and integration
+
+- 동시 구현은 채팅별 Codex-managed Git worktree 하나와 task 하나로 분리한다. 기본 Local checkout은 통합과 단일 `g7pb-dev` runtime 전용이다.
+- 모든 구현 task는 깨끗한 기준 SHA에서 `make coord-start TASK=<id> PATHS=<comma-separated-prefixes> PROFILE=<profile>`로 시작한다. migration·공개 계약·버전 파일은 각각 `AREAS=migration`, `shared-contract`, `version` 독점 lease를 함께 얻는다.
+- task가 claim하지 않은 파일은 수정하지 않는다. 범위가 늘어나면 기존 task를 억지로 확장하지 말고 충돌 task가 없는지 확인한 뒤 새 task로 다시 시작하거나 통합 담당자에게 이관한다.
+- Worktree에서는 `make task-submit TASK=<id>`만 사용해 범위검사·프로필 검증·커밋·제출 SHA 기록을 완료한다. 제출 전 수동 merge, 다른 task branch 수정, shared Local checkout 직접 수정은 금지한다.
+- 통합 담당자는 Local에서 `AREAS=integration,runtime`을 독점 claim하고 `make task-integrate TASK=<submitted-id> INTEGRATION_TASK=<integration-id>`로만 순차 병합한다. 하네스의 merge-tree 사전검사와 임시 병합 검증을 우회하지 않는다.
+- `make dev-*`, Docker 기반 `quality-*`, release·staging 명령은 runtime lease를 가진 Local integration task만 실행한다. Worktree에서 고정 `g7pb-dev` 컨테이너를 직접 조작하지 않는다.
+- 모든 제출 task가 통합된 뒤 `make integration-verify TASK=<integration-id>`를 통과해야 release 명령을 사용할 수 있다. 검증한 HEAD가 바뀌면 다시 전체 검증한다.
+- task 채팅과 worktree는 통합 완료 기록 전에 archive·삭제하지 않는다. dirty/untracked 파일이나 기준 SHA 이후 커밋이 있으면 lease를 강제 해제하지 않는다.
+- 현재 task의 범위는 `make coord-status`와 실제 `base_sha` 대비 diff로 판단한다. 채팅 기억이나 문서만으로 다른 task의 소유권을 추정하지 않는다.
+
 ## Architecture boundary
 
 - 제품 저장소는 G7 코어 저장소와 분리한다.

@@ -6,12 +6,26 @@
 
 | Gate | 목적 | 실패 시 |
 |---|---|---|
+| `quality-coordination` | path lease·범위 차단·제출·통합·runtime/release guard 회귀시험 | 병렬 작업·merge 금지 |
 | `quality-php` | Composer validate, Pint, PHPStan, PHPUnit | merge 금지 |
 | `quality-php-coverage` | Xdebug 기반 Unit+G7 integration PHP line coverage | merge 금지 |
 | `quality-frontend` | SemVer/changelog, TS strict, Vitest+V8 coverage, G7 dependency budget, boundary, production build, asset 검사 | merge 금지 |
 | `quality-g7` | module 설치·활성·migration·TLS·DB·Redis·관리자 인증 | 통합 merge 금지 |
 | `dev-browser-smoke` | home/login/runtime 기본 assertion | 환경 완료 아님 |
 | `dev-product-e2e` | 생성→편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
+
+## Worktree coordination
+
+- 모든 구현 Worktree는 깨끗한 기준 SHA, 소유 path prefix, 검증 profile을 `coord-start`로 등록합니다.
+- coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
+- 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
+- `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
+- `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
+- 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
+- `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.
+- shell 회귀시험은 격리된 임시 Git 저장소와 3개 worktree를 만들어 lease 중복, 범위 밖 변경, 자동 제출, runtime 차단, 순차 병합, 검증·완료 history를 확인합니다.
+
+명령과 장애 처리는 [Worktree coordination 하네스](worktree-coordination.md)에 정의합니다.
 
 ## PHP
 
@@ -86,6 +100,6 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 - `frontend`: Node 24, `npm ci`, frontend gate, dist artifact
 - `php`: PHP 8.5, `composer install`, PHP gate
-- 현재 G7 설치·TLS·인증·제품 lifecycle 통합은 로컬 고정 checkout의 `make quality-gate`로 검사합니다.
+- 현재 G7 설치·TLS·인증·제품 lifecycle 통합은 runtime lease를 가진 로컬 고정 checkout의 `make integration-verify TASK=<integration-id>`로 검사합니다.
 - `g7-contract` CI는 G7 7.0.7 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
 - TLS·관리자 인증·실제 module route를 포함하는 `dev-product-e2e`는 현재 로컬 통합 필수 gate입니다. 재현 가능한 CI secret/fixture가 준비되면 별도 `g7-integration` 필수 job으로 승격합니다.

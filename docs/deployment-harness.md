@@ -68,6 +68,8 @@ G7 전체 checkout의 기존 사용자 변경을 수정하거나 정리하지 �
 
 ### 2. Gate
 
+- 모든 Worktree task 통합 완료와 active integration task 단독 상태 확인
+- integration task가 소유한 단일 Local runtime에서 coordination 회귀시험 실행
 - SemVer 문법, 네 버전 원본 일치, Keep a Changelog 형식과 현재 버전 항목 검사
 - 릴리스 시 `Unreleased`가 비어 있는지 검사
 - Composer validate·audit
@@ -126,12 +128,12 @@ G7 전체 checkout의 기존 사용자 변경을 수정하거나 정리하지 �
 | 명령 | 책임 |
 |---|---|
 | `make staging-doctor` | 대상·버전·접속·상태 확인 |
-| `make quality-gate` | 전체 로컬 품질 게이트와 3 viewport 제품 E2E |
-| `make release-package` | 버전 아티팩트와 체크섬 생성 |
-| `make deploy-staging` | 백업 후 단일 스테이징 배포 |
-| `make smoke-staging` | 공개·관리자 shell·asset·route·migration 스모크 |
+| `make integration-verify TASK=<id>` | 전체 로컬 품질 게이트와 3 viewport 제품 E2E, 검증 SHA 기록 |
+| `make release-package TASK=<id>` | 검증 SHA와 clean 상태 확인 후 버전 아티팩트·체크섬 생성 |
+| `make deploy-staging TASK=<id>` | release guard 재확인, 백업 후 단일 스테이징 배포 |
+| `make smoke-staging TASK=<id>` | release guard 재확인, 공개·관리자 shell·asset·route·migration 스모크 |
 
-`release-package`는 dirty worktree와 버전 정책 위반을 거부하고 `CHANGELOG.md`, `BUILD-INFO`, 파일별 `SHA256SUMS`, 압축 아티팩트 SHA-256을 만듭니다. `Unreleased`에 항목이 남아 있으면 새 SemVer 섹션과 버전 원본을 확정하기 전까지 패키징할 수 없습니다. `deploy-staging`은 서버 Doctor를 다시 실행하고, 전체 DB와 기존 모듈 디렉터리를 release id별로 백업한 뒤 모듈 디렉터리만 교체합니다. 파일 교체 중 실패하면 이전 모듈 디렉터리를 자동 복원합니다.
+`release-package`는 `integration-verify`가 기록한 SHA와 현재 HEAD가 다르거나 dirty 상태이면 즉시 거부합니다. 이후 버전 정책을 검사하고 `CHANGELOG.md`, `BUILD-INFO`, 파일별 `SHA256SUMS`, 압축 아티팩트 SHA-256을 만듭니다. `Unreleased`에 항목이 남아 있으면 새 SemVer 섹션과 버전 원본을 확정하기 전까지 패키징할 수 없습니다. `deploy-staging`은 같은 release guard와 서버 Doctor를 다시 실행하고, 전체 DB와 기존 모듈 디렉터리를 release id별로 백업한 뒤 모듈 디렉터리만 교체합니다. 파일 교체 중 실패하면 이전 모듈 디렉터리를 자동 복원합니다.
 
 DB down migration은 데이터 손실 가능성이 있으므로 자동 rollback 명령을 제공하지 않습니다. 필요하면 `/home/g7devops/deploy-backups/g7-page-builder/{release_id}`의 DB dump와 모듈 백업을 확인한 뒤 별도 승인 하에 복구합니다.
 

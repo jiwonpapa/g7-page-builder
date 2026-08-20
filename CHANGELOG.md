@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- Codex Git worktree별 path·독점 AREA lease, 범위 밖 변경 차단, profile 검증, 자동 제출 커밋과 Local 순차 병합을 제공하는 coordination 하네스를 추가했습니다.
+
+### Changed
+
+- 고정 `g7pb-dev` runtime과 release·staging 명령은 active Local integration task, 전체 품질 검증 SHA와 clean 상태를 통과해야 실행되도록 변경했습니다.
+
 ## [0.7.0] - 2026-08-20
 
 ### Added

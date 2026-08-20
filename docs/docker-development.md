@@ -77,15 +77,28 @@ Linux 전용 의존성과 데이터는 다음 전용 named volume에 둡니다.
 
 Mac의 `node_modules`를 Linux 컨테이너와 공유하지 않습니다. 다른 프로젝트 컨테이너·볼륨·BuildKit 캐시는 정리하지 않습니다.
 
+## Local runtime coordination
+
+`g7pb-dev`, 443 포트, DB와 dependency volume은 하나뿐입니다. 따라서 기본 Local checkout에서 `integration,runtime` AREA를 가진 coordination task만 Docker 명령을 실행할 수 있습니다. 다른 Worktree에서 같은 Compose 프로젝트를 실행하면 기존 컨테이너가 다른 소스를 보거나 재생성될 수 있으므로 Makefile runtime guard가 이를 차단합니다.
+
+```bash
+make coord-start \
+  TASK=integration-20260820 \
+  AREAS=integration,runtime,version \
+  PROFILE=full
+```
+
+이후 모든 Docker·G7·브라우저 명령에는 같은 `TASK=integration-20260820`을 전달합니다. 상세 흐름은 [Worktree coordination 하네스](worktree-coordination.md)를 따릅니다.
+
 ## 최초 설치
 
 ```bash
-make dev-bootstrap
+make dev-bootstrap TASK=integration-20260820
 make dev-doctor
-make dev-up
-make dev-install
-make dev-verify
-make dev-infra-e2e
+make dev-up TASK=integration-20260820
+make dev-install TASK=integration-20260820
+make dev-verify TASK=integration-20260820
+make dev-infra-e2e TASK=integration-20260820
 ```
 
 각 단계의 책임은 다음과 같습니다.
@@ -122,7 +135,7 @@ make dev-infra-e2e
 관리자 자격증명은 Git에서 제외된 `.env.docker.local`에만 있습니다.
 
 ```bash
-make dev-credentials
+make dev-credentials TASK=integration-20260820
 ```
 
 이 명령은 사용자가 명시적으로 요청할 때만 로컬 비밀번호를 표시합니다. 일반 로그와 검증 출력에는 비밀번호·쿠키·토큰을 남기지 않습니다.
@@ -131,21 +144,21 @@ make dev-credentials
 
 | 명령 | 책임 |
 |---|---|
-| `make dev-status` | 컨테이너와 Supervisor 프로세스 상태 |
-| `make dev-logs` | `g7pb-dev` 로그만 추적 |
-| `make dev-shell` | 통합 컨테이너 shell |
-| `make dev-build-assets` | 컨테이너 Node로 Page Builder IIFE 빌드 |
-| `make dev-sync` | asset 빌드 후 모듈 migration·권한 선언·G7 cache 동기화 |
-| `make dev-deps` | 컨테이너 안에 모듈 Composer/npm 의존성 설치 |
-| `make quality-php` | Composer validate·Pint·PHPStan·PHPUnit |
-| `make quality-frontend` | TypeScript·Vitest·경계·build·asset 검사 |
-| `make quality-g7` | TLS·DB·G7 설치·모듈·관리자 인증 검사 |
-| `make quality-gate` | 위 세 품질 게이트 실행 |
-| `make dev-check` | PHP·Frontend 품질 게이트 |
-| `make dev-browser-smoke` | 공개·로그인 화면 증거 캡처 |
-| `make dev-infra-e2e` | 공개·로그인 실제 browser assertion |
-| `make dev-e2e` | 페이지 빌더 제품 lifecycle E2E(PC·태블릿·모바일) |
-| `make dev-down` | 컨테이너 종료, 데이터 유지 |
+| `make dev-status TASK=<id>` | 컨테이너와 Supervisor 프로세스 상태 |
+| `make dev-logs TASK=<id>` | `g7pb-dev` 로그만 추적 |
+| `make dev-shell TASK=<id>` | 통합 컨테이너 shell |
+| `make dev-build-assets TASK=<id>` | 컨테이너 Node로 Page Builder IIFE 빌드 |
+| `make dev-sync TASK=<id>` | asset 빌드 후 모듈 migration·권한 선언·G7 cache 동기화 |
+| `make dev-deps TASK=<id>` | 컨테이너 안에 모듈 Composer/npm 의존성 설치 |
+| `make quality-php TASK=<id>` | Composer validate·Pint·PHPStan·PHPUnit |
+| `make quality-frontend TASK=<id>` | TypeScript·Vitest·경계·build·asset 검사 |
+| `make quality-g7 TASK=<id>` | TLS·DB·G7 설치·모듈·관리자 인증 검사 |
+| `make integration-verify TASK=<id>` | coordination과 전체 품질·제품 E2E 게이트 |
+| `make dev-check TASK=<id>` | PHP·Frontend 품질 게이트 |
+| `make dev-browser-smoke TASK=<id>` | 공개·로그인 화면 증거 캡처 |
+| `make dev-infra-e2e TASK=<id>` | 공개·로그인 실제 browser assertion |
+| `make dev-e2e TASK=<id>` | 페이지 빌더 제품 lifecycle E2E(PC·태블릿·모바일) |
+| `make dev-down TASK=<id>` | 컨테이너 종료, 데이터 유지 |
 
 G7의 기본 `drivers.json`은 cache=file, session=file, queue=sync, websocket off입니다. Redis와 Reverb 실행 환경은 준비되어 있지만 Page Builder 필수 런타임으로 만들지 않습니다. Scheduler는 설치 후 실행하고, Queue/Reverb 래퍼는 유효 설정이 켜질 때만 실제 worker/server를 시작합니다.
 
@@ -154,7 +167,7 @@ G7의 기본 `drivers.json`은 cache=file, session=file, queue=sync, websocket o
 `dev-down`은 데이터를 삭제하지 않습니다. 전용 로컬 DB와 의존성 볼륨을 전부 초기화할 때만 아래 명시적 확인값을 사용합니다.
 
 ```bash
-CONFIRM=RESET_G7PB_DEV make dev-reset
+CONFIRM=RESET_G7PB_DEV make dev-reset TASK=integration-20260820
 ```
 
 이 명령은 `g7pb-dev`와 `g7pb-dev-*` 볼륨만 대상으로 합니다. 다른 Docker 프로젝트, 익명 볼륨 또는 BuildKit cache는 삭제하지 않습니다.
@@ -178,8 +191,8 @@ CONFIRM=RESET_G7PB_DEV make dev-reset
 
 ```bash
 make dev-doctor
-make dev-status
-make dev-verify
+make dev-status TASK=integration-20260820
+make dev-verify TASK=integration-20260820
 docker logs --tail 200 g7pb-dev
 ```
 

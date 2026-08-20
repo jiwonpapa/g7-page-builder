@@ -55,6 +55,23 @@ Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Clou
 
 로컬 접속은 `https://g7pb.test`만 사용합니다. 최초 설치와 일상 명령은 [Docker 로컬 개발환경](docs/docker-development.md)을 따릅니다.
 
+## 병렬 Worktree 작업
+
+동시 구현 채팅은 각각 Codex-managed Git worktree와 coordination task를 사용합니다. 기본 Local checkout은 통합과 단일 `g7pb-dev` runtime 전용이며 Worktree에서 Docker·G7·브라우저 gate를 직접 실행할 수 없습니다.
+
+```bash
+# Worktree 구현 채팅
+make coord-start TASK=editor-task PATHS=resources/js/editor,tests/Unit PROFILE=frontend
+make task-submit TASK=editor-task
+
+# 기본 Local 통합 채팅
+make coord-start TASK=integration-20260820 AREAS=integration,runtime,version PROFILE=full
+make task-integrate TASK=editor-task INTEGRATION_TASK=integration-20260820
+make integration-verify TASK=integration-20260820
+```
+
+상세한 소유권·충돌·취소·릴리스 규칙은 [Worktree coordination 하네스](docs/worktree-coordination.md)를 따릅니다.
+
 ## 다음 단계
 
 완료:
@@ -88,11 +105,12 @@ Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 �
 - [문서·발행 계약](docs/document-publish-contract.md)
 - [공통 Header·Footer 계약](docs/site-shell-contract.md)
 - [품질 하네스](docs/quality-harness.md)
+- [Worktree coordination 하네스](docs/worktree-coordination.md)
 - [런타임·호스팅·Rust 정책](docs/runtime-hosting.md)
 - [Docker 로컬 개발환경](docs/docker-development.md)
 - [스테이징 배포 하네스](docs/deployment-harness.md)
 
-Docker 로컬 개발환경, G7 설치 자동화, 체크섬 기반 릴리스 패키지와 `g7devops` 스테이징 배포 하네스가 구현되어 있습니다. 배포 순서는 `make quality-gate`, `make release-package`, `make deploy-staging`, `make smoke-staging`입니다.
+Docker 로컬 개발환경, G7 설치 자동화, 체크섬 기반 릴리스 패키지와 `g7devops` 스테이징 배포 하네스가 구현되어 있습니다. 병렬 task를 모두 통합한 뒤 `make integration-verify TASK=<integration-id>`, `make release-package TASK=<integration-id>`, `make deploy-staging TASK=<integration-id>`, `make smoke-staging TASK=<integration-id>` 순서로 실행합니다.
 
 제품 버전은 [SemVer 정책](docs/versioning-policy.md)을 따르며 사용자 관점 변경사항은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다. G7 관리 화면과 릴리스 패키지는 동일한 버전과 changelog를 사용합니다.
 

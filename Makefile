@@ -1,57 +1,105 @@
 SHELL := /bin/bash
 COMPOSE := docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.yaml
+COORD_HARNESS := ./scripts/coord-harness.sh
+PROFILE ?= mixed
+BASE_REF ?= HEAD
 
-.PHONY: dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
+.NOTPARALLEL:
 
-dev-bootstrap:
+.PHONY: coord-start coord-status coord-check coord-release task-submit task-integrate integration-verify integration-finish runtime-guard release-guard quality-coordination dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
+
+coord-start:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) claim --task "$(TASK)" --paths "$(PATHS)" --areas "$(AREAS)" --profile "$(PROFILE)" --base-ref "$(BASE_REF)"
+
+coord-status:
+	@$(COORD_HARNESS) status $(if $(HISTORY),--history,)
+
+coord-check:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) check --task "$(TASK)"
+
+coord-release:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) release --task "$(TASK)"
+
+task-submit:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) submit --task "$(TASK)"
+
+task-integrate:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) integrate --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)"
+
+integration-verify:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) verify --task "$(TASK)"
+
+integration-finish:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) finish --task "$(TASK)"
+
+runtime-guard:
+	@test -n "$(TASK)" || { echo 'TASK is required for the singleton runtime.' >&2; exit 2; }
+	@$(COORD_HARNESS) runtime-guard --task "$(TASK)"
+
+release-guard:
+	@test -n "$(TASK)" || { echo 'TASK is required for release.' >&2; exit 2; }
+	@$(COORD_HARNESS) release-guard --task "$(TASK)"
+
+quality-coordination:
+	bash tests/Harness/coord-harness.test.sh
+
+dev-bootstrap: runtime-guard
 	./scripts/dev-bootstrap.sh
 
 dev-doctor:
 	./scripts/dev-doctor.sh
 
-dev-build:
+dev-build: runtime-guard
 	$(COMPOSE) build
 
-dev-up: dev-doctor
+dev-up: runtime-guard dev-doctor
 	$(COMPOSE) up -d --build
 	$(COMPOSE) ps
 
-dev-install:
+dev-install: runtime-guard
 	./scripts/dev-install.sh
 
-dev-deps:
+dev-deps: runtime-guard
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && composer install --no-interaction --no-progress --prefer-dist && npm ci'
 
-dev-build-assets:
+dev-build-assets: runtime-guard
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm ci && npm run build'
 
-dev-sync: dev-build-assets
+dev-sync: runtime-guard dev-build-assets
 	./scripts/dev-sync-module.sh
 
-quality-php: dev-deps
+quality-php: runtime-guard dev-deps
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && composer check'
 
-quality-php-coverage: dev-deps
+quality-php-coverage: runtime-guard dev-deps
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e XDEBUG_MODE=coverage \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && mkdir -p output/coverage && vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/UnitPhp tests/Integration --coverage-clover output/coverage/php-clover.xml --coverage-filter src && php scripts/check-php-coverage.php output/coverage/php-clover.xml'
 
-quality-frontend: dev-deps
+quality-frontend: runtime-guard dev-deps
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm run check'
 
-quality-g7: dev-verify
+quality-g7: runtime-guard dev-verify
 	$(COMPOSE) exec -T dev bash -lc 'cd /var/www/g7 && composer validate --no-check-publish'
 	$(COMPOSE) exec -T dev bash -lc 'cd /var/www/g7 && php artisan migrate:status --no-ansi'
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
@@ -61,11 +109,11 @@ quality-g7: dev-verify
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/Integration'
 
-quality-gate: quality-php quality-php-coverage quality-frontend quality-g7 dev-product-e2e
+quality-gate: quality-coordination quality-php quality-php-coverage quality-frontend quality-g7 dev-product-e2e
 
-dev-check: quality-php quality-frontend
+dev-check: quality-coordination quality-php quality-frontend
 
-dev-browser-smoke:
+dev-browser-smoke: runtime-guard
 	mkdir -p output/playwright
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" dev \
 		playwright screenshot --ignore-https-errors --wait-for-timeout=1500 \
@@ -76,13 +124,13 @@ dev-browser-smoke:
 		--viewport-size=1440,1000 https://g7pb.test/admin/login \
 		/var/www/g7/modules/jiwonpapa-page_builder/output/playwright/admin-login.png
 
-dev-infra-e2e: dev-deps
+dev-infra-e2e: runtime-guard dev-deps
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm run test:e2e:infra'
 
-dev-product-e2e: dev-deps
+dev-product-e2e: runtime-guard dev-deps
 	@test -f tests/E2E/pageBuilderLifecycle.spec.ts || { \
 		echo 'MVP product E2E is not implemented: tests/E2E/pageBuilderLifecycle.spec.ts' >&2; \
 		exit 3; \
@@ -94,28 +142,28 @@ dev-product-e2e: dev-deps
 
 dev-e2e: dev-product-e2e
 
-dev-verify:
+dev-verify: runtime-guard
 	./scripts/dev-verify.sh
 
-dev-status:
+dev-status: runtime-guard
 	$(COMPOSE) ps
 	$(COMPOSE) exec -T dev supervisorctl status
 
-dev-logs:
+dev-logs: runtime-guard
 	$(COMPOSE) logs --tail=200 -f dev
 
-dev-shell:
+dev-shell: runtime-guard
 	$(COMPOSE) exec dev bash
 
-dev-credentials:
+dev-credentials: runtime-guard
 	@./scripts/dev-credentials.sh
 
-dev-down:
+dev-down: runtime-guard
 	$(COMPOSE) down
 
-dev-reset:
+dev-reset: runtime-guard
 	@if [[ "$${CONFIRM:-}" != "RESET_G7PB_DEV" ]]; then \
-		echo 'Refusing reset. Run: CONFIRM=RESET_G7PB_DEV make dev-reset'; \
+		echo 'Refusing reset. Run: CONFIRM=RESET_G7PB_DEV make dev-reset TASK=<integration-id>'; \
 		exit 2; \
 	fi
 	@echo 'Removing only: g7pb-dev container/network and g7pb-dev-* volumes'
@@ -124,11 +172,11 @@ dev-reset:
 staging-doctor:
 	./scripts/staging-doctor.sh
 
-release-package:
+release-package: release-guard
 	./scripts/release-package.sh
 
-deploy-staging:
+deploy-staging: release-guard
 	./scripts/deploy-staging.sh
 
-smoke-staging:
+smoke-staging: release-guard
 	./scripts/smoke-staging.sh

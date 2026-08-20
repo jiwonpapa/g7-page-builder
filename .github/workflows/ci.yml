@@ -5,6 +5,12 @@ on:
   pull_request:
 
 jobs:
+  coordination:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: bash tests/Harness/coord-harness.test.sh
+
   frontend:
     runs-on: ubuntu-latest
     steps:

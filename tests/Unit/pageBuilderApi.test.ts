@@ -126,6 +126,7 @@ describe('PageBuilderApiClient', () => {
       title: '수정 제목',
       slug: 'updated-page',
       locale: 'ko',
+      shell_mode: 'global',
       expected_lock_version: 7,
     });
 
@@ -134,6 +135,7 @@ describe('PageBuilderApiClient', () => {
       title: '수정 제목',
       slug: 'updated-page',
       locale: 'ko',
+      shell_mode: 'global',
       expected_lock_version: 7,
     });
   });
@@ -188,6 +190,38 @@ describe('PageBuilderApiClient', () => {
     expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body))).toEqual({
       enabled: true,
       expected_lock_version: 7,
+    });
+  });
+
+  it('loads and saves the module-owned global site header and footer with CAS locking', async () => {
+    const shell = {
+      locale: 'ko',
+      lock_version: 2,
+      brand_name: '지원소프트',
+      logo_url: '',
+      home_url: '/',
+      header_variant: 'solid' as const,
+      sticky: true,
+      navigation: [{ label: '소개', url: '/pages/about' }],
+      cta: { label: '문의하기', url: '/pages/contact' },
+      footer_text: '지원소프트',
+      show_footer_navigation: true,
+      updated_at: null,
+    };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: shell }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: { ...shell, lock_version: 3 } }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.getSiteShell('ko')).resolves.toEqual(shell);
+    await expect(client.saveSiteShell(shell, 2)).resolves.toMatchObject({ lock_version: 3 });
+
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/site-shell?locale=ko`);
+    expect(fetchImpl.mock.calls[1][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/site-shell`);
+    expect(fetchImpl.mock.calls[1][1]?.method).toBe('PUT');
+    expect(JSON.parse(String(fetchImpl.mock.calls[1][1]?.body))).toMatchObject({
+      brand_name: '지원소프트',
+      expected_lock_version: 2,
     });
   });
 

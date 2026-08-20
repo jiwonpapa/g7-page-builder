@@ -118,6 +118,8 @@ export interface PuckAdapterContext {
     slug: string;
     mode: PageBuilderDocument['mode'];
     locale: string;
+    shellMode: NonNullable<PageBuilderDocument['shell_mode']>;
+    hadShellMode: boolean;
     tokens: Record<string, ScalarToken>;
     hadTokens: boolean;
   };
@@ -460,6 +462,8 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
         slug: document.slug,
         mode: document.mode,
         locale: document.locale,
+        shellMode: document.shell_mode ?? 'global',
+        hadShellMode: Object.prototype.hasOwnProperty.call(document, 'shell_mode'),
         tokens: cloneTokens(document.tokens),
         hadTokens: Object.prototype.hasOwnProperty.call(document, 'tokens'),
       },
@@ -611,6 +615,10 @@ export function puckToCanonical(
     locale: context.document.locale,
     blocks: data.content.map((block) => puckBlockToCanonical(block, context)),
   };
+
+  if (context.document.hadShellMode || context.document.shellMode !== 'global') {
+    document.shell_mode = context.document.shellMode;
+  }
 
   if (context.document.hadTokens) {
     document.tokens = cloneTokens(context.document.tokens);

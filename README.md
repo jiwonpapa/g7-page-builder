@@ -27,7 +27,7 @@ G7 module-owned public route/viewer
 
 ## 현재 상태
 
-Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가해 12종 테스트 카탈로그를 구현했습니다. 좌측 Blocks 라이브러리는 12종 축소 구조 미리보기와 용도를 표시하고 Puck 기본 DnD로 블록 사이 정확한 위치에 드롭합니다. Hero 계열 문구는 캔버스에서 직접 수정하며 Slider Hero는 편집 중 선택 장면을 고정하고 공개본에서만 Embla 자동재생을 적용합니다. 상단의 모바일·태블릿·PC 버튼은 iframe 캔버스 폭과 실제 반응형 렌더를 전환하며, `전체 미리보기`는 선택 블록 뒤에 빠르게 추가하는 보조 흐름입니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, typed style·motion preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 공개 효과는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 5종이며, 효과가 있는 페이지에만 경량 IIFE 런타임을 조건부 로드합니다.
+Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가해 12종 테스트 카탈로그를 구현했습니다. 좌측 Blocks 라이브러리는 12종 축소 구조 미리보기와 용도를 표시하고 Puck 기본 DnD로 블록 사이 정확한 위치에 드롭합니다. Hero 계열 문구는 캔버스에서 직접 수정하며 Slider Hero는 편집 중 선택 장면을 고정하고 공개본에서만 Embla 자동재생을 적용합니다. 상단의 모바일·태블릿·PC 버튼은 iframe 캔버스 폭과 실제 반응형 렌더를 전환하며, `전체 미리보기`는 선택 블록 뒤에 빠르게 추가하는 보조 흐름입니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 공통 Header·Footer와 PC·모바일 메뉴 편집, 문서별 인트로 모드, typed style·motion preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 공개 효과는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 5종이며, 효과가 있는 페이지에만 경량 IIFE 런타임을 조건부 로드합니다.
 
 전체 유료 MVP는 아직 아닙니다. 자체 MediaPort 이미지 업로드·선택, 복구 가능한 문서 보관·복원·확인형 영구 삭제, Hero 중복 경고, Embla 슬라이더, 추천 효과 일괄 적용까지 구현됐습니다. 기본 SEO, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
 
@@ -65,9 +65,9 @@ Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Clou
 
 다음:
 
-1. 기본 SEO 계약과 OG 이미지 선택 구현
-2. 접근성·고정 시각 회귀 baseline 보강
-3. 실패 발행 뒤 public hash 불변, 최소 G7 fixture, 접근성·시각 회귀 gate 추가
+1. G7 게시판·쇼핑 상품을 읽는 선택형 `ContentSourcePort`와 동적 Block Pack
+2. 다단 메뉴·드롭다운과 Header·Footer 프리셋 확장
+3. 기본 SEO 계약과 OG 이미지 선택, 접근성·고정 시각 회귀 baseline 보강
 
 Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 제공합니다.
 
@@ -81,6 +81,7 @@ Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 �
 - [동적 효과 계약](docs/motion-effects.md)
 - [MVP 기능 명세](docs/mvp-functional-spec.md)
 - [문서·발행 계약](docs/document-publish-contract.md)
+- [공통 Header·Footer 계약](docs/site-shell-contract.md)
 - [품질 하네스](docs/quality-harness.md)
 - [런타임·호스팅·Rust 정책](docs/runtime-hosting.md)
 - [Docker 로컬 개발환경](docs/docker-development.md)

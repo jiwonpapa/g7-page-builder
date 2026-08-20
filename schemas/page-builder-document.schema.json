@@ -27,6 +27,10 @@
       "minLength": 2,
       "maxLength": 16
     },
+    "shell_mode": {
+      "enum": ["global", "none"],
+      "default": "global"
+    },
     "tokens": {
       "type": "object",
       "additionalProperties": {

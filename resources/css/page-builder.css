@@ -445,6 +445,115 @@ body.g7pb-manager-shell {
   border-color: var(--g7pb-border-strong);
 }
 
+.g7pb-dialog .g7pb-choice-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  column-gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.g7pb-dialog .g7pb-choice-row input {
+  width: 17px;
+  min-height: 17px;
+  margin: 0;
+}
+
+.g7pb-dialog .g7pb-choice-row span {
+  grid-column: 2;
+}
+
+.g7pb-site-shell-dialog {
+  width: min(920px, 100%);
+}
+
+.g7pb-site-shell-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.g7pb-site-shell-logo-field {
+  display: grid;
+  gap: 7px;
+}
+
+.g7pb-dialog .g7pb-site-shell-upload {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--g7pb-text);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.g7pb-site-shell-section {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 10px;
+  background: #f8f8f6;
+}
+
+.g7pb-site-shell-section__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.g7pb-site-shell-section__heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.g7pb-site-shell-section__heading span,
+.g7pb-site-shell-navigation > p {
+  margin: 0;
+  color: var(--g7pb-muted);
+  font-size: 11px;
+}
+
+.g7pb-site-shell-navigation {
+  display: grid;
+  gap: 8px;
+}
+
+.g7pb-site-shell-navigation__item {
+  display: grid;
+  grid-template-columns: 24px minmax(120px, .7fr) minmax(180px, 1.3fr) 34px;
+  gap: 8px;
+  align-items: center;
+}
+
+.g7pb-site-shell-navigation__item > span {
+  color: var(--g7pb-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.g7pb-site-shell-navigation__item > button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--g7pb-danger);
+  background: #fff;
+  cursor: pointer;
+}
+
 .g7pb-dialog__actions {
   display: flex;
   justify-content: flex-end;
@@ -1933,7 +2042,7 @@ body.g7pb-manager-shell {
     display: none;
   }
 
-  .g7pb-manager-header__actions .g7pb-button--quiet {
+  .g7pb-manager-header__actions > a.g7pb-button--quiet {
     display: none;
   }
 
@@ -2051,6 +2160,18 @@ body.g7pb-manager-shell {
 
   .g7pb-dialog {
     padding: 22px;
+  }
+
+  .g7pb-site-shell-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .g7pb-site-shell-navigation__item {
+    grid-template-columns: 24px minmax(0, 1fr) 34px;
+  }
+
+  .g7pb-site-shell-navigation__item input:nth-of-type(2) {
+    grid-column: 2 / 3;
   }
 }
 

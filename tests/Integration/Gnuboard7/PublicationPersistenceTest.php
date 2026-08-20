@@ -18,15 +18,18 @@ use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -103,6 +106,66 @@ final class PublicationPersistenceTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_global_site_shell_uses_cas_locking_and_published_pages_snapshot_the_shell_mode(): void
+    {
+        $siteShell = new SiteShellService(new EloquentSiteShellAdapter);
+        $initial = $siteShell->get('ko');
+        self::assertSame(0, $initial->lockVersion);
+
+        $saved = $siteShell->save('ko', [
+            'brand_name' => '지원소프트',
+            'logo_url' => '',
+            'home_url' => '/',
+            'header_variant' => 'solid',
+            'sticky' => true,
+            'navigation' => [['label' => '소개', 'url' => '/pages/about']],
+            'cta' => ['label' => '문의', 'url' => '/pages/contact'],
+            'footer_text' => '지원소프트',
+            'show_footer_navigation' => true,
+        ], 0, 1);
+        self::assertSame(1, $saved->lockVersion);
+        self::assertSame('지원소프트', $siteShell->get('ko')->shell->brandName);
+
+        try {
+            $siteShell->save('ko', $saved->shell->toArray(), 0, 2);
+            self::fail('A stale site shell write must fail.');
+        } catch (LockConflictException $exception) {
+            self::assertSame(1, $exception->currentLockVersion);
+        }
+
+        $pages = new PageBuilderService(new EloquentPageBuilderRepository, new HtmlDocumentCompiler);
+        $intro = $pages->create('인트로', 'shell-free-intro', 'ko', null, 'none');
+        $candidate = $pages->preparePublication($intro->document->documentId, $intro->lockVersion, null);
+        $published = $pages->commitPublication($candidate->token);
+        self::assertSame('none', $published->shellMode);
+        self::assertSame('none', $pages->findPublished('shell-free-intro')?->shellMode);
+    }
+
+    public function test_site_shell_api_accepts_an_empty_menu_logo_and_footer(): void
+    {
+        $controller = new AdminSiteShellController($this->siteShellService());
+        $response = $controller->update(Request::create('/site-shell', 'PUT', [
+            'locale' => 'ko',
+            'expected_lock_version' => 0,
+            'brand_name' => '메뉴 없는 사이트',
+            'logo_url' => null,
+            'home_url' => '/',
+            'header_variant' => 'solid',
+            'sticky' => true,
+            'navigation' => [],
+            'cta' => null,
+            'footer_text' => null,
+            'show_footer_navigation' => true,
+        ]));
+
+        self::assertSame(200, $response->getStatusCode());
+        $payload = $response->getData(true);
+        self::assertTrue($payload['success']);
+        self::assertSame([], $payload['data']['navigation']);
+        self::assertSame('', $payload['data']['logo_url']);
+        self::assertSame('', $payload['data']['footer_text']);
+    }
+
     public function test_published_metadata_and_public_slug_do_not_follow_later_draft_changes(): void
     {
         $service = new PageBuilderService(
@@ -166,7 +229,7 @@ final class PublicationPersistenceTest extends TestCase
             null,
         );
         $service->commitPublication($candidate->token);
-        $viewer = new ViewerController($service);
+        $viewer = new ViewerController($service, $this->siteShellService());
 
         $response = $viewer->show(Request::create('/pages/clean-route'), 'clean-route');
         $legacy = $viewer->legacy('clean-route');
@@ -221,7 +284,7 @@ final class PublicationPersistenceTest extends TestCase
             new EloquentPageBuilderRepository,
             new HtmlDocumentCompiler,
         );
-        $middleware = new PageBuilderHomeOverride($service);
+        $middleware = new PageBuilderHomeOverride($service, $this->siteShellService());
         $fallback = static fn (): Response => new Response('g7-home', 200);
 
         $before = $middleware->handle(Request::create('/', 'GET'), $fallback);
@@ -435,10 +498,10 @@ final class PublicationPersistenceTest extends TestCase
         );
         $published = $service->commitPublication($candidate->token);
 
-        $viewer = new ViewerController($service);
+        $viewer = new ViewerController($service, $this->siteShellService());
         $viewerResponse = $viewer->show(Request::create('/cache-safety'), 'cache-safety');
         $notModifiedRequest = Request::create('/cache-safety');
-        $notModifiedRequest->headers->set('If-None-Match', '"'.$published->representationSha256().'"');
+        $notModifiedRequest->headers->set('If-None-Match', (string) $viewerResponse->headers->get('ETag'));
         $notModifiedResponse = $viewer->show($notModifiedRequest, 'cache-safety');
         $apiResponse = (new PublicPageController($service))->show('cache-safety');
 
@@ -557,6 +620,11 @@ final class PublicationPersistenceTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    private function siteShellService(): SiteShellService
+    {
+        return new SiteShellService(new EloquentSiteShellAdapter);
     }
 
     /**

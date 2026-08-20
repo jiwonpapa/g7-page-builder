@@ -97,4 +97,77 @@ describe('Page Builder manager surface', () => {
       root.unmount();
     });
   });
+
+  it('edits one global navigation model for desktop and mobile site chrome', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    const emptyList = { items: [], pagination: { total: 0, page: 1, per_page: 100 } };
+    const shell = {
+      locale: 'ko', lock_version: 1, brand_name: '지원소프트', logo_url: '', home_url: '/',
+      header_variant: 'solid', sticky: true,
+      navigation: [{ label: '소개', url: '/pages/about' }],
+      cta: null, footer_text: '지원소프트', show_footer_navigation: true, updated_at: null,
+    };
+    globalThis.fetch = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: emptyList }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: shell }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: {
+        id: '123e4567-e89b-42d3-a456-426614174009', url: '/storage/g7-page-builder/logo.webp',
+        original_name: 'logo.webp', mime_type: 'image/webp', bytes: 12, width: 120, height: 40,
+        created_at: '2026-08-20T09:00:00+09:00',
+      } }), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: {
+        ...shell, lock_version: 2, brand_name: '새 브랜드', logo_url: '/storage/g7-page-builder/logo.webp',
+      } }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
+    const button = await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-site-shell"]');
+    await act(async () => { button.click(); });
+
+    const dialog = await eventually<HTMLElement>('[data-testid="page-builder-site-shell-dialog"]');
+    expect(dialog.textContent).toContain('공통 Header·Footer와 메뉴');
+    expect(dialog.querySelector<HTMLInputElement>('[aria-label="1번 메뉴 이름"]')?.value).toBe('소개');
+    expect(dialog.querySelector<HTMLInputElement>('[aria-label="1번 메뉴 주소"]')?.value).toBe('/pages/about');
+
+    const brand = dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-site-shell-brand"]');
+    const addMenu = dialog.querySelector<HTMLButtonElement>('[data-testid="page-builder-site-shell-add-menu"]');
+    const upload = dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-site-shell-logo-upload"]');
+    const save = dialog.querySelector<HTMLButtonElement>('[data-testid="page-builder-site-shell-save"]');
+    expect(brand && addMenu && upload && save).toBeTruthy();
+
+    await act(async () => {
+      if (brand) {
+        brand.value = '새 브랜드';
+        brand.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      addMenu?.click();
+    });
+    expect(dialog.querySelector<HTMLInputElement>('[aria-label="2번 메뉴 이름"]')?.value).toBe('새 메뉴');
+    await act(async () => {
+      dialog.querySelector<HTMLButtonElement>('[aria-label="새 메뉴 메뉴 삭제"]')?.click();
+      dialog.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click();
+      addMenu?.click();
+    });
+
+    const file = new File(['image'], 'logo.webp', { type: 'image/webp' });
+    Object.defineProperty(upload, 'files', { configurable: true, value: [file] });
+    await act(async () => {
+      upload?.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => {
+      save?.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(document.querySelector('[data-testid="page-builder-site-shell-dialog"]')).toBeNull();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(4);
+
+    await act(async () => { root.unmount(); });
+  });
 });

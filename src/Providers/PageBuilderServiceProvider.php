@@ -11,11 +11,13 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\MediaPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Media\LaravelMediaAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 
 final class PageBuilderServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
         $this->app->bind(PageBuilderRepository::class, EloquentPageBuilderRepository::class);
         $this->app->singleton(DocumentCompilerPort::class, HtmlDocumentCompiler::class);
         $this->app->bind(MediaPort::class, LaravelMediaAdapter::class);
+        $this->app->bind(SiteShellPort::class, EloquentSiteShellAdapter::class);
     }
 
     public function boot(): void

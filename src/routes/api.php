@@ -3,10 +3,17 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 
 Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:sanctum', 'throttle:300,1'])->name('admin.')->group(function (): void {
+    Route::get('site-shell', [AdminSiteShellController::class, 'show'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('site-shell.show');
+    Route::put('site-shell', [AdminSiteShellController::class, 'update'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('site-shell.update');
     Route::get('documents', [AdminDocumentController::class, 'index'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('documents.index');

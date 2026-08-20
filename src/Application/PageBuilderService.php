@@ -22,8 +22,13 @@ final class PageBuilderService
         private readonly DocumentCompilerPort $compiler,
     ) {}
 
-    public function create(string $title, string $slug, string $locale, ?int $actorId): DocumentSnapshot
-    {
+    public function create(
+        string $title,
+        string $slug,
+        string $locale,
+        ?int $actorId,
+        string $shellMode = 'global',
+    ): DocumentSnapshot {
         $title = trim($title);
 
         if ($title === '') {
@@ -37,6 +42,7 @@ final class PageBuilderService
             locale: $locale,
             tokens: [],
             blocks: [],
+            shellMode: $shellMode,
         );
 
         return $this->repository->create($title, $document, $actorId);
@@ -109,6 +115,7 @@ final class PageBuilderService
         string $locale,
         int $expectedLockVersion,
         ?int $actorId,
+        ?string $shellMode = null,
     ): DocumentSnapshot {
         $title = trim($title);
 
@@ -123,6 +130,7 @@ final class PageBuilderService
             $locale,
             $expectedLockVersion,
             $actorId,
+            $shellMode,
         );
     }
 
@@ -178,6 +186,7 @@ final class PageBuilderService
             locale: $source->document->locale,
             artifact: is_string($result->artifact) ? $result->artifact : '',
             artifactSha256: $result->artifactSha256,
+            shellMode: $source->document->shellMode,
         );
     }
 

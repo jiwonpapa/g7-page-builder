@@ -5,11 +5,18 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controller
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShellSnapshot;
 
 final class ViewerController
 {
-    public function __construct(private readonly PageBuilderService $service) {}
+    public function __construct(
+        private readonly PageBuilderService $service,
+        private readonly SiteShellService $siteShellService,
+    ) {}
 
     public function manager(): Response
     {
@@ -45,12 +52,14 @@ final class ViewerController
         if ($page === null) {
             abort(404);
         }
+        $siteShell = $this->siteShell($page);
 
         return response()
             ->view('g7-page-builder::viewer', [
                 'page' => $page,
                 'rootTestId' => 'page-builder-preview-root',
                 'canonicalUrl' => null,
+                'siteShell' => $siteShell?->shell,
             ])
             ->header('Cache-Control', 'no-store')
             ->header('Pragma', 'no-cache')
@@ -66,7 +75,8 @@ final class ViewerController
             abort(404);
         }
 
-        $etag = '"'.$page->representationSha256().'"';
+        $siteShell = $this->siteShell($page);
+        $etag = '"'.$this->representationSha256($page, $siteShell).'"';
 
         if ($request->header('If-None-Match') === $etag) {
             return response('', 304)
@@ -80,6 +90,7 @@ final class ViewerController
                 'page' => $page,
                 'rootTestId' => 'page-builder-public-root',
                 'canonicalUrl' => url('/pages/'.$page->slug),
+                'siteShell' => $siteShell?->shell,
             ])
             ->header('Cache-Control', 'public, no-cache, must-revalidate')
             ->header('ETag', $etag)
@@ -98,5 +109,27 @@ final class ViewerController
     private function contentSecurityPolicy(): string
     {
         return "default-src 'none'; img-src 'self' https: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
+    }
+
+    private function siteShell(RenderedPage $page): ?SiteShellSnapshot
+    {
+        if ($page->shellMode !== 'global') {
+            return null;
+        }
+
+        try {
+            return $this->siteShellService->get($page->locale);
+        } catch (\Throwable $exception) {
+            Log::warning('Page Builder site shell was skipped.', ['exception' => $exception]);
+
+            return null;
+        }
+    }
+
+    private function representationSha256(RenderedPage $page, ?SiteShellSnapshot $siteShell): string
+    {
+        return $siteShell === null
+            ? $page->representationSha256()
+            : hash('sha256', $page->representationSha256().$siteShell->shell->representationSha256());
     }
 }

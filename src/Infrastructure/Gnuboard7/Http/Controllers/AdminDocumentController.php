@@ -56,6 +56,7 @@ final class AdminDocumentController
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'locale' => ['sometimes', 'string', 'min:2', 'max:16'],
             'mode' => ['sometimes', 'in:canvas'],
+            'shell_mode' => ['sometimes', 'in:global,none'],
         ]);
 
         if ($validator->fails()) {
@@ -68,6 +69,7 @@ final class AdminDocumentController
                 (string) $request->input('slug'),
                 (string) $request->input('locale', 'ko'),
                 $this->actorId($request),
+                (string) $request->input('shell_mode', 'global'),
             );
 
             return $this->success('페이지 문서를 생성했습니다.', $this->snapshotData($snapshot), 201);
@@ -194,6 +196,7 @@ final class AdminDocumentController
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'locale' => ['required', 'string', 'min:2', 'max:16'],
             'expected_lock_version' => ['required', 'integer', 'min:1'],
+            'shell_mode' => ['sometimes', 'in:global,none'],
         ]);
 
         if ($validator->fails()) {
@@ -208,6 +211,7 @@ final class AdminDocumentController
                 (string) $request->input('locale'),
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
+                $request->has('shell_mode') ? (string) $request->input('shell_mode') : null,
             );
 
             return $this->success('페이지 정보를 수정했습니다.', $this->snapshotData($snapshot));

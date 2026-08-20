@@ -153,6 +153,7 @@ function installParallax(blocks: HTMLElement[], view: MotionWindow): void {
 }
 
 export function bootPageEffects(root: Document = document, view: MotionWindow = window as MotionWindow): void {
+  bootSiteShellMenu(root, view);
   const page = root.querySelector<HTMLElement>('.g7pb-page');
   const blocks = Array.from(root.querySelectorAll<HTMLElement>(MOTION_SELECTOR));
   if (!page) return;
@@ -191,6 +192,43 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
   }, { threshold: 0.12, rootMargin: '0px 0px -10% 0px' });
 
   blocks.forEach((block) => observer.observe(block));
+}
+
+export function bootSiteShellMenu(root: Document = document, view: Window = window): void {
+  const toggle = root.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]');
+  const menu = root.querySelector<HTMLElement>('[data-g7pb-mobile-menu]');
+  if (!toggle || !menu || toggle.dataset.g7pbMenuReady === 'true') return;
+
+  const close = (restoreFocus = false): void => {
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', '메뉴 열기');
+    menu.hidden = true;
+    root.documentElement.classList.remove('g7pb-menu-open');
+    if (restoreFocus) toggle.focus();
+  };
+  const open = (): void => {
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.setAttribute('aria-label', '메뉴 닫기');
+    menu.hidden = false;
+    root.documentElement.classList.add('g7pb-menu-open');
+    menu.querySelector<HTMLElement>('a, button')?.focus();
+  };
+
+  toggle.addEventListener('click', () => {
+    if (toggle.getAttribute('aria-expanded') === 'true') close();
+    else open();
+  });
+  menu.addEventListener('click', (event) => {
+    if ((event.target as Element | null)?.closest('a')) close();
+  });
+  root.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') close(true);
+  });
+  view.addEventListener('resize', () => {
+    if (view.innerWidth >= 900) close();
+  }, { passive: true });
+  toggle.dataset.g7pbMenuReady = 'true';
+  close();
 }
 
 export function bootPageSliders(root: Document = document, reducedMotion = false): void {

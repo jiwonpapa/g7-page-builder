@@ -15,6 +15,41 @@
         :root { color-scheme: light; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         * { box-sizing: border-box; }
         body { margin: 0; color: #172033; background: #fff; }
+        .g7pb-skip-link { position: fixed; z-index: 1000; top: .75rem; left: .75rem; padding: .75rem 1rem; color: #fff; background: #172033; transform: translateY(-180%); }
+        .g7pb-skip-link:focus { transform: translateY(0); }
+        .g7pb-site-header { position: relative; z-index: 50; width: 100%; border-bottom: 1px solid #e3e7ee; color: #172033; background: rgb(255 255 255 / 96%); backdrop-filter: blur(16px); }
+        .g7pb-site-header.is-sticky { position: sticky; top: 0; }
+        .g7pb-site-header.is-transparent { position: absolute; border-color: rgb(255 255 255 / 24%); color: #fff; background: linear-gradient(180deg, rgb(10 18 32 / 62%), transparent); backdrop-filter: none; }
+        .g7pb-site-header.is-transparent.is-sticky { position: sticky; }
+        .g7pb-site-header__inner { display: grid; width: min(calc(100% - 2.5rem), 72rem); min-height: 4.75rem; grid-template-columns: auto 1fr auto; gap: 2rem; align-items: center; margin: 0 auto; }
+        .g7pb-site-brand { display: inline-flex; min-width: 0; align-items: center; gap: .75rem; color: inherit; font-size: 1.05rem; font-weight: 850; letter-spacing: -.02em; text-decoration: none; }
+        .g7pb-site-brand img { display: block; width: auto; max-width: 10rem; height: 2.25rem; object-fit: contain; }
+        .g7pb-site-nav { justify-self: center; }
+        .g7pb-site-nav ul { display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem); margin: 0; padding: 0; list-style: none; }
+        .g7pb-site-nav a { color: inherit; font-size: .92rem; font-weight: 700; text-decoration: none; }
+        .g7pb-site-nav a:hover, .g7pb-site-nav a:focus-visible { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .35rem; }
+        .g7pb-site-header__cta { display: inline-flex; min-height: 2.75rem; align-items: center; padding: .6rem 1rem; border-radius: 999px; color: #fff; background: #2456df; font-size: .88rem; font-weight: 800; text-decoration: none; }
+        .g7pb-site-header.is-transparent .g7pb-site-header__cta { color: #172033; background: #fff; }
+        .g7pb-menu-toggle { display: none; width: 2.75rem; height: 2.75rem; padding: .65rem; border: 1px solid currentColor; border-radius: 999px; color: inherit; background: transparent; cursor: pointer; }
+        .g7pb-menu-toggle span, .g7pb-menu-toggle::before, .g7pb-menu-toggle::after { display: block; width: 100%; height: 2px; border-radius: 2px; background: currentColor; content: ''; transition: transform 160ms ease, opacity 160ms ease; }
+        .g7pb-menu-toggle span { margin: .3rem 0; }
+        .g7pb-menu-toggle[aria-expanded='true'] span { opacity: 0; }
+        .g7pb-menu-toggle[aria-expanded='true']::before { transform: translateY(.32rem) rotate(45deg); }
+        .g7pb-menu-toggle[aria-expanded='true']::after { transform: translateY(-.32rem) rotate(-45deg); }
+        .g7pb-mobile-menu { position: absolute; top: 100%; right: 0; left: 0; padding: 1rem 1.25rem 1.4rem; border-bottom: 1px solid #dfe4ec; color: #172033; background: #fff; box-shadow: 0 1.2rem 2.5rem rgb(15 23 42 / 14%); }
+        .g7pb-mobile-menu[hidden] { display: none; }
+        .g7pb-mobile-menu ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+        .g7pb-mobile-menu li + li { border-top: 1px solid #edf0f4; }
+        .g7pb-mobile-menu a { display: flex; min-height: 3.25rem; align-items: center; justify-content: space-between; color: inherit; font-weight: 750; text-decoration: none; }
+        .g7pb-mobile-menu a::after { content: '→'; color: #7c879a; }
+        .g7pb-mobile-menu .g7pb-mobile-menu__cta { justify-content: center; margin-top: .75rem; border-radius: .7rem; color: #fff; background: #2456df; }
+        .g7pb-mobile-menu .g7pb-mobile-menu__cta::after { content: none; }
+        .g7pb-site-footer { padding: clamp(3rem, 7vw, 5.5rem) max(1.25rem, calc((100vw - 72rem) / 2)); color: #d6dce6; background: #111827; }
+        .g7pb-site-footer__top { display: flex; gap: 2rem; align-items: start; justify-content: space-between; }
+        .g7pb-site-footer .g7pb-site-brand { color: #fff; }
+        .g7pb-site-footer nav ul { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin: 0; padding: 0; list-style: none; }
+        .g7pb-site-footer nav a { color: inherit; text-decoration: none; }
+        .g7pb-site-footer__legal { margin: 3rem 0 0; padding-top: 1.25rem; border-top: 1px solid #2d3748; color: #919bad; font-size: .82rem; }
         .g7pb-page { min-height: 100vh; overflow: hidden; }
         .g7pb-block { padding: clamp(3.5rem, 8vw, 8rem) max(1.25rem, calc((100vw - 72rem) / 2)); }
         .g7pb-surface--default { background: #fff; color: #172033; }
@@ -160,17 +195,82 @@
             .g7pb-gallery__grid--3, .g7pb-gallery__grid--4 { grid-template-columns: repeat(2, 1fr); }
             .g7pb-pricing__plan--featured { transform: none; }
         }
+        @media (max-width: 899px) {
+            .g7pb-site-header__inner { width: min(calc(100% - 2rem), 72rem); min-height: 4.25rem; grid-template-columns: 1fr auto; }
+            .g7pb-site-nav, .g7pb-site-header__inner > .g7pb-site-header__cta { display: none; }
+            .g7pb-menu-toggle { display: block; }
+            .g7pb-site-footer__top { display: grid; }
+            .g7pb-site-footer nav ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
         @media (prefers-reduced-motion: reduce) {
             .g7pb-block, .g7pb-block *, .g7pb-motion-parallax-target { animation: none !important; transition: none !important; transform: none !important; }
         }
     </style>
-    @if (str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider'))
+    @if (!empty($siteShell) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider'))
         <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}"></script>
     @endif
 </head>
 <body>
-    <main class="g7pb-page" data-testid="{{ $rootTestId }}" data-artifact-sha256="{{ $page->artifactSha256 }}">
+    @if (!empty($siteShell))
+        <a class="g7pb-skip-link" href="#g7pb-main">본문 바로가기</a>
+        <header class="g7pb-site-header {{ $siteShell->sticky ? 'is-sticky' : '' }} {{ $siteShell->headerVariant === 'transparent' ? 'is-transparent' : '' }}"
+            data-g7pb-site-header data-testid="page-builder-site-header">
+            <div class="g7pb-site-header__inner">
+                <a class="g7pb-site-brand" href="{{ $siteShell->homeUrl }}">
+                    @if ($siteShell->logoUrl !== '')
+                        <img src="{{ $siteShell->logoUrl }}" alt="{{ $siteShell->brandName }}">
+                    @else
+                        <span>{{ $siteShell->brandName }}</span>
+                    @endif
+                </a>
+                <nav class="g7pb-site-nav" aria-label="주 메뉴">
+                    <ul>
+                        @foreach ($siteShell->navigation as $item)
+                            <li><a href="{{ $item['url'] }}">{{ $item['label'] }}</a></li>
+                        @endforeach
+                    </ul>
+                </nav>
+                @if ($siteShell->cta !== null)
+                    <a class="g7pb-site-header__cta" href="{{ $siteShell->cta['url'] }}">{{ $siteShell->cta['label'] }}</a>
+                @endif
+                @if ($siteShell->navigation !== [] || $siteShell->cta !== null)
+                    <button class="g7pb-menu-toggle" type="button" aria-expanded="false" aria-controls="g7pb-mobile-navigation"
+                        aria-label="메뉴 열기" data-g7pb-menu-toggle><span></span></button>
+                @endif
+            </div>
+            @if ($siteShell->navigation !== [] || $siteShell->cta !== null)
+                <nav class="g7pb-mobile-menu" id="g7pb-mobile-navigation" aria-label="모바일 메뉴" data-g7pb-mobile-menu hidden>
+                    <ul>
+                        @foreach ($siteShell->navigation as $item)
+                            <li><a href="{{ $item['url'] }}">{{ $item['label'] }}</a></li>
+                        @endforeach
+                    </ul>
+                    @if ($siteShell->cta !== null)
+                        <a class="g7pb-mobile-menu__cta" href="{{ $siteShell->cta['url'] }}">{{ $siteShell->cta['label'] }}</a>
+                    @endif
+                </nav>
+            @endif
+        </header>
+    @endif
+    <main id="g7pb-main" class="g7pb-page" data-testid="{{ $rootTestId }}" data-artifact-sha256="{{ $page->artifactSha256 }}">
         {!! $page->artifact !!}
     </main>
+    @if (!empty($siteShell))
+        <footer class="g7pb-site-footer" data-testid="page-builder-site-footer">
+            <div class="g7pb-site-footer__top">
+                <a class="g7pb-site-brand" href="{{ $siteShell->homeUrl }}">{{ $siteShell->brandName }}</a>
+                @if ($siteShell->showFooterNavigation && $siteShell->navigation !== [])
+                    <nav aria-label="하단 메뉴"><ul>
+                        @foreach ($siteShell->navigation as $item)
+                            <li><a href="{{ $item['url'] }}">{{ $item['label'] }}</a></li>
+                        @endforeach
+                    </ul></nav>
+                @endif
+            </div>
+            @if ($siteShell->footerText !== '')
+                <p class="g7pb-site-footer__legal">{{ $siteShell->footerText }}</p>
+            @endif
+        </footer>
+    @endif
 </body>
 </html>

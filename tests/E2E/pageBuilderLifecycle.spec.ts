@@ -81,6 +81,21 @@ interface CleanupDocumentListResponse {
   success?: unknown;
 }
 
+interface SiteShellResource {
+  locale: string;
+  lock_version: number;
+  brand_name: string;
+  logo_url: string;
+  home_url: string;
+  header_variant: 'solid' | 'transparent';
+  sticky: boolean;
+  navigation: Array<{ label: string; url: string }>;
+  cta: { label: string; url: string } | null;
+  footer_text: string;
+  show_footer_navigation: boolean;
+  updated_at: string | null;
+}
+
 /*
  * This acceptance test handles an administrator credential and bearer token.
  * Disable automatic artifacts for the whole file so neither login request data
@@ -140,6 +155,51 @@ async function authenticateAdmin(context: BrowserContext): Promise<string> {
     return token;
   } finally {
     await authRequest.dispose();
+  }
+}
+
+async function readSiteShell(authToken: string, locale = 'ko'): Promise<SiteShellResource> {
+  const api = await playwrightRequest.newContext({
+    baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: { Accept: 'application/json', Authorization: `Bearer ${authToken}` },
+  });
+  try {
+    const response = await api.get(`/api/modules/jiwonpapa-page_builder/admin/site-shell?locale=${encodeURIComponent(locale)}`);
+    expect(response.ok()).toBe(true);
+    const payload = await response.json() as { success?: boolean; data?: SiteShellResource };
+    if (payload.success !== true || !payload.data) throw new Error('Site shell API returned no configuration.');
+    return payload.data;
+  } finally {
+    await api.dispose();
+  }
+}
+
+async function restoreSiteShell(authToken: string, original: SiteShellResource): Promise<void> {
+  const current = await readSiteShell(authToken, original.locale);
+  const { lock_version: _lockVersion, updated_at: _updatedAt, ...configuration } = original;
+  const api = await playwrightRequest.newContext({
+    baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: {
+      Accept: 'application/json', Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json',
+    },
+  });
+  try {
+    const response = await api.put('/api/modules/jiwonpapa-page_builder/admin/site-shell', {
+      data: { ...configuration, expected_lock_version: current.lock_version },
+    });
+    if (!response.ok()) {
+      const payload = await response.json().catch(() => null) as {
+        data?: { code?: unknown; errors?: unknown };
+        message?: unknown;
+      } | null;
+      throw new Error(
+        `Site shell restore failed with HTTP ${response.status()} (${String(payload?.data?.code ?? 'unknown')}): ${String(payload?.message ?? 'no message')} ${JSON.stringify(payload?.data?.errors ?? {})}`,
+      );
+    }
+  } finally {
+    await api.dispose();
   }
 }
 
@@ -587,6 +647,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
   let previewPage: Page | undefined;
   let publicContext: BrowserContext | undefined;
   let uploadedMediaId: string | null = null;
+  let originalSiteShell: SiteShellResource | null = null;
+  let lifecycleError: unknown;
 
   try {
     page.on('pageerror', (error) => {
@@ -595,6 +657,32 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const managerResponse = await page.goto(MANAGER_PATH);
     expect(managerResponse?.ok()).toBe(true);
     await expect(page.getByTestId('page-builder-manager-app')).toBeVisible();
+
+    const managerLocale = await page.getByTestId('page-builder-manager-root').getAttribute('data-locale') ?? 'ko';
+    originalSiteShell = await readSiteShell(authToken, managerLocale);
+    await page.getByTestId('page-builder-manager-site-shell').click();
+    const siteShellDialog = page.getByTestId('page-builder-site-shell-dialog');
+    await expect(siteShellDialog).toBeVisible();
+    await page.getByTestId('page-builder-site-shell-brand').fill(`E2E Site ${runId}`);
+    const menuDeleteButtons = siteShellDialog.locator('.g7pb-site-shell-navigation__item > button');
+    while (await menuDeleteButtons.count() > 0) await menuDeleteButtons.first().click();
+    await page.getByTestId('page-builder-site-shell-add-menu').click();
+    await siteShellDialog.getByLabel('1번 메뉴 이름').fill('소개');
+    await siteShellDialog.getByLabel('1번 메뉴 주소').fill(`/pages/${slug}`);
+    const siteShellSave = page.waitForResponse((response) => response.request().method() === 'PUT'
+      && new URL(response.url()).pathname.endsWith('/admin/site-shell'));
+    await page.getByTestId('page-builder-site-shell-save').click();
+    const siteShellSaveResponse = await siteShellSave;
+    if (!siteShellSaveResponse.ok()) {
+      const payload = await siteShellSaveResponse.json().catch(() => null) as {
+        data?: { code?: unknown; errors?: unknown };
+        message?: unknown;
+      } | null;
+      throw new Error(
+        `Site shell save failed with HTTP ${siteShellSaveResponse.status()} (${String(payload?.data?.code ?? 'unknown')}): ${String(payload?.message ?? 'no message')} ${JSON.stringify(payload?.data?.errors ?? {})}`,
+      );
+    }
+    await expect(siteShellDialog).toHaveCount(0);
 
     await page.getByTestId('page-builder-manager-create').click();
     await expect(page.getByTestId('page-builder-manager-create-dialog')).toBeVisible();
@@ -755,6 +843,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const previewResponse = await previewPage.goto(previewUrl);
     expect(previewResponse?.ok()).toBe(true);
     await expect(previewPage.getByTestId('page-builder-preview-root')).toBeVisible();
+    await expect(previewPage.getByTestId('page-builder-site-header')).toContainText(`E2E Site ${runId}`);
+    await expect(previewPage.getByTestId('page-builder-site-footer')).toContainText(`E2E Site ${runId}`);
     await expectBlockOrder(renderedBlocks(previewPage), PUBLISHED_BLOCK_ORDER);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
@@ -790,6 +880,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const publicResponse = await publicPage.goto(publicUrl);
     expect(publicResponse?.ok()).toBe(true);
     await expect(publicPage.getByTestId('page-builder-public-root')).toBeVisible();
+    await expect(publicPage.getByTestId('page-builder-site-header')).toContainText(`E2E Site ${runId}`);
+    await expect(publicPage.getByTestId('page-builder-site-footer')).toContainText(`E2E Site ${runId}`);
+    if ((publicPage.viewportSize()?.width ?? 1440) < 900) {
+      const menuToggle = publicPage.locator('[data-g7pb-menu-toggle]');
+      await menuToggle.click();
+      await expect(menuToggle).toHaveAttribute('aria-expanded', 'true');
+      await expect(publicPage.locator('[data-g7pb-mobile-menu]')).toBeVisible();
+      await publicPage.keyboard.press('Escape');
+      await expect(publicPage.locator('[data-g7pb-mobile-menu]')).toBeHidden();
+    }
     expect(await publicPage.evaluate(() => window.localStorage.getItem('auth_token'))).toBeNull();
     await expectBlockOrder(renderedBlocks(publicPage), PUBLISHED_BLOCK_ORDER);
     await expect(publicPage.getByText(heroTitle, { exact: true })).toBeVisible();
@@ -904,15 +1004,37 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       `[data-testid="page-builder-document-row"][data-document-id="${documentId}"]`,
     );
     await restoredDocumentRow.getByTestId('page-builder-manager-settings').click();
+    await page.getByTestId('page-builder-manager-metadata-shell-mode').uncheck();
+    const shellModeSave = page.waitForResponse((response) => response.request().method() === 'PATCH'
+      && new URL(response.url()).pathname.endsWith(`/admin/documents/${documentId}`));
+    await page.getByTestId('page-builder-manager-metadata-save').click();
+    expect((await shellModeSave).ok()).toBe(true);
+    await expect(page.getByTestId('page-builder-manager-metadata-dialog')).toHaveCount(0);
+    await restoredDocumentRow.getByTestId('page-builder-manager-edit-link').click();
+    await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    await publish(page);
+    await publicPage.reload();
+    await expect(publicPage.getByTestId('page-builder-site-header')).toHaveCount(0);
+    await expect(publicPage.getByTestId('page-builder-site-footer')).toHaveCount(0);
+
+    await page.bringToFront();
+    await page.getByTestId('page-builder-manager-link').click();
+    await expect(page).toHaveURL(new RegExp(`${NATIVE_MANAGER_PATH}$`));
+    await page.goto(MANAGER_PATH);
+    await expect(page.getByTestId('page-builder-manager-app')).toBeVisible();
+    const shellFreeDocumentRow = page.locator(
+      `[data-testid="page-builder-document-row"][data-document-id="${documentId}"]`,
+    );
+    await shellFreeDocumentRow.getByTestId('page-builder-manager-settings').click();
     await page.getByTestId('page-builder-manager-unpublish').click();
     await expect(page.getByTestId('page-builder-unpublish-dialog')).toBeVisible();
     await page.getByTestId('page-builder-unpublish-confirm').click();
     await expect(page.getByTestId('page-builder-unpublish-dialog')).toHaveCount(0);
     await page.getByRole('button', { name: '취소' }).click();
-    await expect(restoredDocumentRow).toContainText('초안');
-    await expect(restoredDocumentRow).toContainText('생성');
-    await expect(restoredDocumentRow).toContainText('수정');
-    await expect(restoredDocumentRow.getByTestId('page-builder-manager-public-link')).toHaveCount(0);
+    await expect(shellFreeDocumentRow).toContainText('초안');
+    await expect(shellFreeDocumentRow).toContainText('생성');
+    await expect(shellFreeDocumentRow).toContainText('수정');
+    await expect(shellFreeDocumentRow.getByTestId('page-builder-manager-public-link')).toHaveCount(0);
 
     const unpublishedResponse = await publicPage.reload();
     expect(unpublishedResponse?.status()).toBe(404);
@@ -960,12 +1082,23 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       expect(deleted).toBe(true);
       uploadedMediaId = null;
     }
+  } catch (error) {
+    lifecycleError = error;
   } finally {
-    await previewPage?.close();
-    await publicContext?.close();
-    if (!page.isClosed()) {
-      await page.close();
+    let siteShellRestoreError: unknown;
+    try {
+      if (originalSiteShell) await restoreSiteShell(authToken, originalSiteShell);
+    } catch (error) {
+      siteShellRestoreError = error;
+    } finally {
+      await previewPage?.close();
+      await publicContext?.close();
+      if (!page.isClosed()) {
+        await page.close();
+      }
+      await cleanupE2eArtifacts(authToken, [slug, managedSlug], uploadedMediaId);
     }
-    await cleanupE2eArtifacts(authToken, [slug, managedSlug], uploadedMediaId);
+    if (lifecycleError) throw lifecycleError;
+    if (siteShellRestoreError) throw siteShellRestoreError;
   }
 });

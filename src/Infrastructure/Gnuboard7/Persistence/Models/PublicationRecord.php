@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $title
  * @property string $slug
  * @property string $locale
+ * @property string $shell_mode
  * @property string $compiler_version
  * @property string $target_engine_version
  * @property string $artifact
@@ -42,6 +43,7 @@ final class PublicationRecord extends Model
         'title',
         'slug',
         'locale',
+        'shell_mode',
         'compiler_version',
         'target_engine_version',
         'artifact',

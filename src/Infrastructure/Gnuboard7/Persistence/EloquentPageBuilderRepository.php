@@ -182,8 +182,9 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         string $locale,
         int $expectedLockVersion,
         ?int $actorId,
+        ?string $shellMode = null,
     ): DocumentSnapshot {
-        return DB::transaction(function () use ($documentId, $title, $slug, $locale, $expectedLockVersion, $actorId): DocumentSnapshot {
+        return DB::transaction(function () use ($documentId, $title, $slug, $locale, $expectedLockVersion, $actorId, $shellMode): DocumentSnapshot {
             $record = $this->lockDocument($documentId);
             $this->assertLockVersion($record, $expectedLockVersion);
             $this->assertSlugAvailable($slug, $documentId);
@@ -196,6 +197,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
                 tokens: $current->tokens,
                 blocks: $current->blocks,
                 schemaVersion: $current->schemaVersion,
+                shellMode: $shellMode ?? $current->shellMode,
             );
             $nextRevision = $record->current_revision + 1;
             $this->insertRevision($next, $title, $nextRevision, $actorId);
@@ -290,6 +292,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             }
 
             $this->assertActiveSlugAvailable($record->slug, $record->id);
+            $document = $this->loadDocument($record);
 
             PublicationRecord::query()->create([
                 'id' => $this->uuidV4(),
@@ -299,6 +302,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
                 'title' => $record->title,
                 'slug' => $record->slug,
                 'locale' => $record->locale,
+                'shell_mode' => $document->shellMode,
                 'compiler_version' => $result->compilerVersion,
                 'target_engine_version' => $result->targetEngineVersion,
                 'artifact' => $result->artifact,
@@ -730,6 +734,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             publishedAt: $publishedAt instanceof \DateTimeInterface
                 ? \DateTimeImmutable::createFromInterface($publishedAt)
                 : null,
+            shellMode: $publication->shell_mode,
         );
     }
 

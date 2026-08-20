@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { bootPageEffects, parseCounterText } from '../../resources/js/public/pageEffects';
+import { bootPageEffects, bootSiteShellMenu, parseCounterText } from '../../resources/js/public/pageEffects';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -48,5 +48,28 @@ describe('published page effects runtime', () => {
     expect(page?.dataset.g7pbMotionReduced).toBe('true');
     expect(page?.classList.contains('g7pb-motion-active')).toBe(false);
     expect(document.body.textContent).toContain('항상 보이는 콘텐츠');
+  });
+
+  it('opens and closes the accessible mobile site menu without hiding desktop navigation', () => {
+    document.body.innerHTML = `
+      <header data-g7pb-site-header>
+        <button type="button" aria-expanded="false" aria-controls="site-menu" data-g7pb-menu-toggle>메뉴</button>
+        <nav id="site-menu" data-g7pb-mobile-menu hidden><a href="/pages/about">소개</a></nav>
+      </header>
+      <main class="g7pb-page"></main>`;
+
+    bootSiteShellMenu(document, window);
+    const toggle = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]');
+    const menu = document.querySelector<HTMLElement>('[data-g7pb-mobile-menu]');
+
+    toggle?.click();
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(menu?.hidden).toBe(false);
+    expect(document.documentElement.classList.contains('g7pb-menu-open')).toBe(true);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(menu?.hidden).toBe(true);
+    expect(document.activeElement).toBe(toggle);
   });
 });

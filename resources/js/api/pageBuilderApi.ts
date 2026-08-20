@@ -4,6 +4,7 @@ import type {
   DocumentResource,
   MediaAssetResource,
   MediaListResource,
+  SiteShellResource,
   PageBuilderDocument,
   PreviewResource,
   PublicationCommit,
@@ -140,6 +141,7 @@ export class PageBuilderApiClient {
     slug: string;
     title: string;
     locale: string;
+    shell_mode?: 'global' | 'none';
   }): Promise<DocumentResource> {
     return this.request<DocumentResource>('/documents', {
       method: 'POST',
@@ -171,6 +173,7 @@ export class PageBuilderApiClient {
       title: string;
       slug: string;
       locale: string;
+      shell_mode: 'global' | 'none';
       expected_lock_version: number;
     },
   ): Promise<DocumentResource> {
@@ -328,6 +331,19 @@ export class PageBuilderApiClient {
   async deleteMedia(mediaId: string): Promise<{ media_id: string }> {
     return this.request<{ media_id: string }>(`/media/${encodeURIComponent(mediaId)}`, {
       method: 'DELETE',
+    });
+  }
+
+  async getSiteShell(locale = 'ko'): Promise<SiteShellResource> {
+    const query = new URLSearchParams({ locale });
+    return this.request<SiteShellResource>(`/site-shell?${query.toString()}`);
+  }
+
+  async saveSiteShell(shell: SiteShellResource, expectedLockVersion: number): Promise<SiteShellResource> {
+    const { lock_version: _lockVersion, updated_at: _updatedAt, ...payload } = shell;
+    return this.request<SiteShellResource>('/site-shell', {
+      method: 'PUT',
+      body: JSON.stringify({ ...payload, expected_lock_version: expectedLockVersion }),
     });
   }
 

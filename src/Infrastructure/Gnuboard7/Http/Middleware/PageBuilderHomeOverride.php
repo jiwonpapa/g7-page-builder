@@ -6,11 +6,15 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
 use Symfony\Component\HttpFoundation\Response;
 
 final class PageBuilderHomeOverride
 {
-    public function __construct(private readonly PageBuilderService $service) {}
+    public function __construct(
+        private readonly PageBuilderService $service,
+        private readonly SiteShellService $siteShellService,
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -36,7 +40,17 @@ final class PageBuilderHomeOverride
             return $next($request);
         }
 
-        $etag = '"'.$page->representationSha256().'"';
+        $siteShell = null;
+        if ($page->shellMode === 'global') {
+            try {
+                $siteShell = $this->siteShellService->get($page->locale);
+            } catch (\Throwable $exception) {
+                Log::warning('Page Builder home site shell was skipped.', ['exception' => $exception]);
+            }
+        }
+        $etag = '"'.($siteShell === null
+            ? $page->representationSha256()
+            : hash('sha256', $page->representationSha256().$siteShell->shell->representationSha256())).'"';
         if ($request->header('If-None-Match') === $etag) {
             return response('', 304)
                 ->header('Cache-Control', 'public, no-cache, must-revalidate')
@@ -49,6 +63,7 @@ final class PageBuilderHomeOverride
                 'page' => $page,
                 'rootTestId' => 'page-builder-public-root',
                 'canonicalUrl' => url('/'),
+                'siteShell' => $siteShell?->shell,
             ])
             ->header('Cache-Control', 'public, no-cache, must-revalidate')
             ->header('ETag', $etag)

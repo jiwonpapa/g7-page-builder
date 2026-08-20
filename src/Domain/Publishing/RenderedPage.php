@@ -11,6 +11,7 @@ final readonly class RenderedPage
         public string $artifact,
         public string $artifactSha256,
         public ?\DateTimeImmutable $publishedAt = null,
+        public string $shellMode = 'global',
     ) {}
 
     public function representationSha256(): string
@@ -21,6 +22,7 @@ final readonly class RenderedPage
             'locale' => $this->locale,
             'artifact_sha256' => $this->artifactSha256,
             'published_at' => $this->publishedAt?->format(DATE_ATOM),
+            'shell_mode' => $this->shellMode,
         ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 }

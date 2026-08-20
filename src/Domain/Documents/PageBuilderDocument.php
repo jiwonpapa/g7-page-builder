@@ -19,6 +19,7 @@ final readonly class PageBuilderDocument
         public array $tokens,
         public array $blocks,
         public string $schemaVersion = 'g7-page-builder/v1',
+        public string $shellMode = 'global',
     ) {
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $this->documentId) !== 1) {
             throw new \InvalidArgumentException('Page document id must be a UUID.');
@@ -30,6 +31,10 @@ final readonly class PageBuilderDocument
 
         if ($this->mode !== 'canvas') {
             throw new \InvalidArgumentException('Page mode must be canvas for schema v1.');
+        }
+
+        if (! in_array($this->shellMode, ['global', 'none'], true)) {
+            throw new \InvalidArgumentException('Page site shell mode must be global or none.');
         }
 
         if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $this->slug) !== 1) {
@@ -81,6 +86,7 @@ final readonly class PageBuilderDocument
             tokens: $tokens,
             blocks: array_values($blocks),
             schemaVersion: self::requiredString($data, 'schema_version'),
+            shellMode: is_string($data['shell_mode'] ?? null) ? $data['shell_mode'] : 'global',
         );
     }
 
@@ -92,7 +98,8 @@ final readonly class PageBuilderDocument
      *     mode: string,
      *     locale: string,
      *     tokens: array<string, string|int|float|bool|null>,
-     *     blocks: array<int, array<string, mixed>>
+     *     blocks: array<int, array<string, mixed>>,
+     *     shell_mode: string
      * }
      */
     public function toArray(): array
@@ -105,6 +112,7 @@ final readonly class PageBuilderDocument
             'locale' => $this->locale,
             'tokens' => $this->tokens,
             'blocks' => $this->blocks,
+            'shell_mode' => $this->shellMode,
         ];
     }
 

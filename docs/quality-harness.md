@@ -75,6 +75,8 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 8. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행
 9. 공개 해제 뒤 public 404
 10. typed motion 저장·미리보기·발행, 조건부 public runtime과 실제 in-view 활성화
+11. 공통 Header·Footer 설정 저장·미리보기·공개 렌더, 모바일 메뉴 열기·Escape 닫기·초점 복귀
+12. 문서별 공통영역 제외 후 재발행 시 Header·Footer가 없는 인트로 렌더
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 실제 접근성 자동 검사, 고정 시각 baseline과 compile 실패 뒤 public hash 불변 시나리오는 전체 MVP gate에 추가해야 합니다.
 

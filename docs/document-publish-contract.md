@@ -11,6 +11,7 @@
   "slug": "my-landing-page",
   "mode": "canvas",
   "locale": "ko",
+  "shell_mode": "global",
   "tokens": {},
   "blocks": []
 }
@@ -49,6 +50,7 @@ Block은 `instance_id`, `type`, `block_version`, `props`, 선택형 `slots`를 �
 | `g7pb_revisions` | immutable document JSON, 당시 title, schema version, author, created at |
 | `g7pb_publications` | source revision, prepared lock version, compiler version, artifact, hash, status |
 | `g7pb_preview_tokens` | token hash, document/revision, expires at |
+| `g7pb_site_shells` | locale별 공통 Header·Footer·메뉴 JSON, lock version |
 
 G7 또는 번들 모듈 테이블에 foreign key를 만들지 않습니다. 선택형 외부 reference가 필요해지면 기본 저장소와 분리된 Adapter 전용 mapping table에만 둡니다.
 
@@ -73,6 +75,7 @@ active --unpublish--> superseded + draft retained
 - 공개 해제는 active pointer만 비우고 문서·revision·publication 기록은 삭제하지 않습니다.
 - rollback은 과거 JSON을 새 revision으로 복사한 뒤 정상 publish 절차를 다시 수행합니다. 원본 과거 revision과 현재 active publication은 복원만으로 변경하지 않습니다.
 - 과거 미리보기와 복원은 revision에 저장된 당시 title·slug·locale을 함께 사용합니다.
+- `shell_mode`는 문서 revision과 publication에 snapshot하며 `global` 또는 `none`만 허용합니다. 공통영역 설정 자체는 언어별 CAS 저장소에서 관리합니다.
 
 ## Preview
 

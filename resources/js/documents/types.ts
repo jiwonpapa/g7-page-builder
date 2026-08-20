@@ -232,6 +232,7 @@ export interface PageBuilderDocument {
   slug: string;
   mode: 'canvas';
   locale: string;
+  shell_mode?: 'global' | 'none';
   tokens?: Record<string, ScalarToken>;
   blocks: PageBuilderBlock[];
 }
@@ -294,6 +295,26 @@ export interface MediaAssetResource {
 
 export interface MediaListResource {
   items: MediaAssetResource[];
+}
+
+export interface SiteShellLink {
+  label: string;
+  url: string;
+}
+
+export interface SiteShellResource {
+  locale: string;
+  lock_version: number;
+  brand_name: string;
+  logo_url: string;
+  home_url: string;
+  header_variant: 'solid' | 'transparent';
+  sticky: boolean;
+  navigation: SiteShellLink[];
+  cta: SiteShellLink | null;
+  footer_text: string;
+  show_footer_navigation: boolean;
+  updated_at: string | null;
 }
 
 export interface PreviewResource {

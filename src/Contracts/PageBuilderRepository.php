@@ -45,6 +45,7 @@ interface PageBuilderRepository
         string $locale,
         int $expectedLockVersion,
         ?int $actorId,
+        ?string $shellMode = null,
     ): DocumentSnapshot;
 
     public function storePreviewToken(

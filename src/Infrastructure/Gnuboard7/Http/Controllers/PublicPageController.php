@@ -29,6 +29,7 @@ final class PublicPageController
                     'title' => $page->title,
                     'slug' => $page->slug,
                     'locale' => $page->locale,
+                    'shell_mode' => $page->shellMode,
                     'artifact' => $page->artifact,
                     'artifact_sha256' => $page->artifactSha256,
                     'published_at' => $page->publishedAt?->format(DATE_ATOM),

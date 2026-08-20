@@ -52,6 +52,7 @@ G7 7.0.7에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계
 | slug, title, SEO, 공개 여부 | Page Builder |
 | builder document, draft lock, revision | Page Builder |
 | prepared publication, active publication, compiled HTML | Page Builder |
+| 공통 Header·Footer, 로고, PC·모바일 메뉴 설정 | Page Builder |
 | editor selection/history/sidebar | 브라우저 임시 상태 |
 | G7 Layout JSON | G7 template/module, Page Builder 수정 금지 |
 
@@ -64,6 +65,8 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 | Method | Path | 목적 |
 |---|---|---|
 | GET | `/api/modules/jiwonpapa-page_builder/admin/documents` | 문서 목록 조회 |
+| GET | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 언어별 공통 Header·Footer와 메뉴 조회 |
+| PUT | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | expected lock으로 공통영역 설정 저장 |
 | POST | `/api/modules/jiwonpapa-page_builder/admin/documents` | slug/title/locale 문서 생성, mode는 canvas 고정 |
 | GET | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}` | draft와 lock version 조회 |
 | PATCH | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}` | expected lock으로 title/slug/locale 변경 |
@@ -92,7 +95,7 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 - 발행 문서 하나를 홈으로 지정하면 GET/HEAD `/`만 Page Builder가 응답합니다. 지정이 없거나 모듈 조회가 실패하면 G7 기본 홈으로 fail-through 합니다.
 - G7 SPA layout과 Layout Editor를 전혀 사용하지 않습니다.
 - 활성 User Template과 번들 모듈의 존재 여부를 묻지 않습니다.
-- 공개 route는 G7 공통 Header·Footer를 강제로 주입하지 않는 전체 canvas입니다. Header·Footer 전용 block은 전체 MVP 이후 확장 항목이며 현재 12종 테스트 카탈로그에는 없습니다.
+- 공개 route는 G7 템플릿 Header·Footer를 사용하지 않습니다. 기본 `shell_mode=global`에서는 Page Builder 전용 공통 Header·Footer와 PC·모바일 메뉴를 렌더하고, `none`에서는 콘텐츠 canvas만 렌더합니다.
 - module Provider가 `resources/views`를 `loadViewsFrom`으로 등록하고 자체 Controller가 editor/viewer shell을 렌더합니다. G7 `getViews()` 자동 등록을 가정하지 않습니다.
 - `module.json` asset strategy는 `lazy`이며 shell이 `/api/modules/assets/jiwonpapa-page_builder/dist/...`를 직접 링크합니다. Puck bundle을 다른 G7 화면에 전역 주입하지 않습니다.
 - canonical·Open Graph URL은 `/pages/{slug}` 또는 홈 지정 시 `/`을 사용합니다.

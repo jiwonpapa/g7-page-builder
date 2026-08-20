@@ -106,6 +106,30 @@ else
   fail "Module asset serving editor_js=$asset_js_status effects_js=$effects_js_status editor_css=$asset_css_status public_css=$public_css_status"
 fi
 
+store_catalog_url="$base_url/modules/jiwonpapa-page_builder/store/catalog.json"
+store_catalog="$(curl "${curl_common[@]}" "$store_catalog_url" || true)"
+if jq -e --arg origin "$base_url" '
+  (.catalog_version == "g7pb-store/v1")
+  and (.publisher.id == "jiwonpapa")
+  and (.products | length == 2)
+  and (.products | any(.product_type == "block_pack" and .license == "free"))
+  and (.products | any(.product_type == "page_kit" and .license == "free"))
+  and (.products | all(.artifact.url | startswith($origin + "/modules/jiwonpapa-page_builder/store/artifacts/")))
+' <<<"$store_catalog" >/dev/null 2>&1; then
+  store_asset_failures=0
+  while IFS= read -r url; do
+    [[ "$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' "$url")" == 200 ]] \
+      || store_asset_failures=$((store_asset_failures + 1))
+  done < <(jq -r '.products[] | .artifact.url, .preview.thumbnail_url' <<<"$store_catalog")
+  if (( store_asset_failures == 0 )); then
+    ok 'Official free Store catalog, Block Pack, Page Kit, and previews'
+  else
+    fail "Official Store has $store_asset_failures unavailable asset(s)"
+  fi
+else
+  fail 'Official free Store catalog contract'
+fi
+
 if openssl x509 -in "$root/.runtime/tls/g7pb.test.pem" -noout -ext subjectAltName | grep -q 'DNS:g7pb.test'; then
   ok 'TLS SAN g7pb.test and trusted CA request'
 else
@@ -151,6 +175,16 @@ if jq -e '
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/site-parts/{kind}/publish" and (.method | contains("POST")))] | length == 1)
   and
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/routes/catalog" and (.method | contains("GET")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/store/catalog" and (.method | contains("GET")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/store/block-packs/install" and (.method | contains("POST")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/store/page-kits/apply" and (.method | contains("POST")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/documents/{document}/page-kit/export" and (.method | contains("GET")))] | length == 1)
+  and
+  ([.[] | select(.uri == "modules/jiwonpapa-page_builder/store/catalog.json" and (.method | contains("GET")))] | length == 1)
   and
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/public/pages/{slug}" and (.method | contains("GET")))] | length == 1)
   and
@@ -238,6 +272,16 @@ if jq -e '(.success == true) and (.data.user.is_admin == true)' <<<"$login_respo
     fail 'Active User Template route catalog'
   fi
 
+  official_store_response="$(curl "${curl_common[@]}" \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $auth_token" \
+    "$base_url/api/modules/jiwonpapa-page_builder/admin/store/catalog" || true)"
+  if jq -e '(.success == true) and (.data.publisher.id == "jiwonpapa") and (.data.products | length == 2) and (.data.products | all(.license == "free"))' <<<"$official_store_response" >/dev/null 2>&1; then
+    ok 'Official Store protected catalog and compatibility adapter'
+  else
+    fail 'Official Store protected catalog or compatibility adapter'
+  fi
+
   site_part_response="$(curl "${curl_common[@]}" \
     --header 'Accept: application/json' \
     --header "Authorization: Bearer $auth_token" \
@@ -248,7 +292,7 @@ if jq -e '(.success == true) and (.data.user.is_admin == true)' <<<"$login_respo
     fail 'Header Site Part protected API or schema'
   fi
 
-  unset auth_token page_builder_response route_catalog_response site_part_response
+  unset auth_token page_builder_response route_catalog_response official_store_response site_part_response
 else
   fail 'Admin API authentication'
 fi

@@ -214,4 +214,50 @@ describe('Page Builder manager surface', () => {
 
     await act(async () => { root.unmount(); });
   });
+
+  it('browses official free products and opens Page Kit application as a new draft flow', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    const emptyList = { items: [], pagination: { total: 0, page: 1, per_page: 100 } };
+    const catalog = {
+      catalog_version: 'g7pb-store/v1',
+      publisher: { id: 'jiwonpapa', name: '지원소프트' },
+      generated_at: '2026-08-20T00:00:00+00:00',
+      products: [{
+        product_id: 'jiwonpapa/company-launch', product_type: 'page_kit', product_version: '1.0.0',
+        title: { ko: '회사 소개 랜딩' }, description: { ko: '완성 페이지입니다.' }, category: 'company',
+        tags: ['회사소개', '랜딩'], license: 'free',
+        compatibility: { page_builder: '>=0.10.0 <1.0.0', php: '>=8.5', g7: '>=7.0.7' },
+        preview: { thumbnail_url: 'https://www.g7devops.com/company.svg', screenshots: [], demo_url: null },
+        artifact: { url: 'https://www.g7devops.com/company.zip', sha256: 'a'.repeat(64), bytes: 100 },
+        requirements: { blocks: [] }, compatible: true, compatibility_error: null,
+        installed: false, installed_state: null,
+      }],
+    };
+    globalThis.fetch = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: emptyList }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: catalog }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }));
+
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
+    const button = await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-store"]');
+    await act(async () => { button.click(); });
+
+    const product = await eventually<HTMLElement>('[data-testid="page-builder-store-product"]');
+    expect(product.textContent).toContain('회사 소개 랜딩');
+    expect(product.textContent).toContain('Page Kit · 무료');
+    const apply = product.querySelector<HTMLButtonElement>('[data-testid="page-builder-store-apply-page-kit"]');
+    await act(async () => { apply?.click(); });
+    const dialog = await eventually<HTMLElement>('[data-testid="page-builder-store-page-kit-dialog"]');
+    expect(dialog.textContent).toContain('기존 페이지는 바꾸지 않습니다.');
+    expect(dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-store-page-kit-slug"]')?.value)
+      .toBe('company-launch');
+
+    await act(async () => { root.unmount(); });
+  });
 });

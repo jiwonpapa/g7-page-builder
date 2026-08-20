@@ -21,9 +21,15 @@ fi
 
 for required in \
   CHANGELOG.md module.json module.php composer.json composer.lock package.json package-lock.json \
-  config/block-packs.php \
+  config/block-packs.php config/official-store.php \
   dist/js/page-builder.iife.js dist/js/page-effects.iife.js \
-  dist/css/page-builder.css dist/css/page-builder-public.css; do
+  dist/css/page-builder.css dist/css/page-builder-public.css \
+  resources/store/dist/catalog.json \
+  resources/store/dist/artifacts/jiwonpapa-marketing-presets-1.0.0.zip \
+  resources/store/dist/artifacts/jiwonpapa-company-launch-1.0.0.zip \
+  resources/store/dist/previews/marketing-presets.svg \
+  resources/store/dist/previews/company-launch.svg \
+  schemas/official-store-catalog.schema.json schemas/page-kit-manifest.schema.json; do
   [[ -f "$root/$required" ]] || { echo "Missing release input: $required" >&2; exit 2; }
 done
 

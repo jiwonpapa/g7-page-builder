@@ -15,6 +15,11 @@ services:
       G7PB_DB_PORT: "3306"
       G7PB_G7_ROOT: /var/www/g7
       G7PB_MODULE_ROOT: /var/www/g7/modules/jiwonpapa-page_builder
+      G7PB_STORE_CATALOG_URL: https://g7pb.test/modules/jiwonpapa-page_builder/store/catalog.json
+      G7PB_STORE_ALLOWED_HOSTS: g7pb.test
+      G7PB_STORE_CA_BUNDLE: /etc/nginx/tls/rootCA.pem
+      SSL_CERT_FILE: /etc/nginx/tls/rootCA.pem
+      CURL_CA_BUNDLE: /etc/nginx/tls/rootCA.pem
     extra_hosts:
       - "g7pb.test:127.0.0.1"
     ports:

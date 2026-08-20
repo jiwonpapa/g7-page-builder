@@ -43,7 +43,7 @@ PHP 8.5.9는 2026-08-19 구성 당시 PHP 8.5의 최신 안정 보안 릴리스�
 1. `/etc/hosts`의 `127.0.0.1 g7pb.test`
 2. macOS 신뢰 저장소의 mkcert 로컬 CA
 
-leaf 인증서와 키는 `.runtime/tls`에 생성하고 컨테이너 Nginx에 읽기 전용으로 마운트합니다. mkcert 루트 CA 개인키는 컨테이너에 전달하지 않습니다.
+leaf 인증서와 키는 `.runtime/tls`에 생성하고 컨테이너 Nginx에 읽기 전용으로 마운트합니다. 공식 로컬 마켓 HTTPS 검증을 위해 공개 루트 인증서 `rootCA.pem`만 함께 마운트하고 `G7PB_STORE_CA_BUNDLE`로 Laravel HTTP 클라이언트에도 명시합니다. mkcert 루트 CA 개인키는 컨테이너에 전달하지 않습니다.
 
 ```text
 .runtime/tls/g7pb.test.pem

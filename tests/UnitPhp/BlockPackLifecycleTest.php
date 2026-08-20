@@ -300,6 +300,33 @@ final class BlockPackLifecycleTest extends TestCase
         self::assertTrue($archives->deleted);
     }
 
+    public function test_store_install_rejects_an_archive_whose_manifest_id_differs_from_the_product(): void
+    {
+        $manifest = $this->dataManifest();
+        $repository = $this->repository();
+        $archives = $this->archives($manifest);
+        $manager = new BlockPackManager(
+            $repository, $archives, $this->usage(new BlockPackUsage(0, 0)),
+            $this->registry(), '0.6.0', '7.0.7',
+        );
+
+        try {
+            $manager->installArchive(
+                '/tmp/store-id-mismatch.zip',
+                7,
+                'store',
+                'https://www.g7devops.com/store/mismatch.zip',
+                expectedPackId: 'jiwonpapa/another-product',
+            );
+            self::fail('A mismatched official store manifest was installed.');
+        } catch (\DomainException $exception) {
+            self::assertStringContainsString('상품과 일치하지 않습니다', $exception->getMessage());
+        }
+
+        self::assertNull($repository->find($manifest->packId, $manifest->packVersion));
+        self::assertTrue($archives->deleted);
+    }
+
     public function test_code_pack_requires_a_trusted_ed25519_manifest_signature(): void
     {
         $files = [

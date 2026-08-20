@@ -23,6 +23,12 @@ import type {
   BlockPackResource,
   GitHubBlockPackCheckResource,
 } from '../blocks/types';
+import type {
+  OfficialStoreCatalogResource,
+  PageKitApplyInput,
+  PageKitApplyResource,
+  PageKitExportInput,
+} from '../store/types';
 
 export const PAGE_BUILDER_API_PREFIX = '/api/modules/jiwonpapa-page_builder/admin';
 export const PAGE_BUILDER_MANAGER_PATH = '/admin/page-builder';
@@ -443,6 +449,53 @@ export class PageBuilderApiClient {
     });
   }
 
+  async getOfficialStoreCatalog(): Promise<OfficialStoreCatalogResource> {
+    return this.request<OfficialStoreCatalogResource>('/store/catalog');
+  }
+
+  async installOfficialStoreBlockPack(productId: string, productVersion: string): Promise<BlockPackResource> {
+    return this.request<BlockPackResource>('/store/block-packs/install', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId, product_version: productVersion }),
+    });
+  }
+
+  async applyOfficialStorePageKit(input: PageKitApplyInput): Promise<PageKitApplyResource> {
+    return this.request<PageKitApplyResource>('/store/page-kits/apply', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async downloadPageKit(
+    documentId: string,
+    input: PageKitExportInput,
+  ): Promise<{ blob: Blob; filename: string; sha256: string | null }> {
+    const query = new URLSearchParams({
+      kit_id: input.kit_id,
+      kit_version: input.kit_version,
+      title: input.title,
+      description: input.description,
+    });
+    const response = await this.authorizedFetch(
+      `/documents/${encodeURIComponent(documentId)}/page-kit/export?${query.toString()}`,
+      { method: 'GET' },
+      'application/zip, application/json',
+    );
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw parseErrorPayload(payload, response.status);
+    }
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] ?? 'g7pb-page-kit.zip';
+
+    return {
+      blob: await response.blob(),
+      filename,
+      sha256: response.headers.get('X-G7PB-SHA256'),
+    };
+  }
+
   async getSiteShell(locale = 'ko'): Promise<SiteShellResource> {
     const query = new URLSearchParams({ locale });
     return this.request<SiteShellResource>(`/site-shell?${query.toString()}`);
@@ -502,6 +555,22 @@ export class PageBuilderApiClient {
   }
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const response = await this.authorizedFetch(path, init);
+    const payload = await response.json().catch(() => null);
+    if (response.status === 401) {
+      const loginUrl = buildAdminLoginUrl(this.currentUrl());
+      this.onUnauthorized(loginUrl);
+      throw parseErrorPayload(payload, response.status);
+    }
+
+    if (!response.ok) {
+      throw parseErrorPayload(payload, response.status);
+    }
+
+    return parseEnvelope<T>(payload);
+  }
+
+  private async authorizedFetch(path: string, init: RequestInit = {}, accept = 'application/json'): Promise<Response> {
     const token = this.readAuthToken();
     if (!token) {
       const loginUrl = buildAdminLoginUrl(this.currentUrl());
@@ -514,7 +583,7 @@ export class PageBuilderApiClient {
     }
 
     const headers: Record<string, string> = {
-      Accept: 'application/json',
+      Accept: accept,
       'X-Requested-With': 'XMLHttpRequest',
       Authorization: `Bearer ${token}`,
     };
@@ -537,18 +606,7 @@ export class PageBuilderApiClient {
       );
     }
 
-    const payload = await response.json().catch(() => null);
-    if (response.status === 401) {
-      const loginUrl = buildAdminLoginUrl(this.currentUrl());
-      this.onUnauthorized(loginUrl);
-      throw parseErrorPayload(payload, response.status);
-    }
-
-    if (!response.ok) {
-      throw parseErrorPayload(payload, response.status);
-    }
-
-    return parseEnvelope<T>(payload);
+    return response;
   }
 }
 

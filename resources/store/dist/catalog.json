@@ -1,0 +1,113 @@
+{
+    "catalog_version": "g7pb-store/v1",
+    "publisher": {
+        "id": "jiwonpapa",
+        "name": "지원소프트"
+    },
+    "generated_at": "2026-08-20T00:00:00+00:00",
+    "products": [
+        {
+            "product_id": "jiwonpapa/marketing-presets",
+            "product_type": "block_pack",
+            "product_version": "1.0.0",
+            "title": {
+                "ko": "마케팅 시작 블록",
+                "en": "Marketing starter blocks"
+            },
+            "description": {
+                "ko": "제품 출시 Hero와 문의 CTA 프리셋을 즉시 추가합니다.",
+                "en": "Install launch and contact presets."
+            },
+            "category": "marketing",
+            "tags": [
+                "히어로",
+                "CTA",
+                "마케팅"
+            ],
+            "license": "free",
+            "compatibility": {
+                "page_builder": ">=0.10.0 <1.0.0",
+                "php": ">=8.5",
+                "g7": ">=7.0.7"
+            },
+            "preview": {
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/marketing-presets.svg",
+                "screenshots": [],
+                "demo_url": null
+            },
+            "artifact": {
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-marketing-presets-1.0.0.zip",
+                "sha256": "8e33cf42016f5214cbeda3c12813ee99d239a2e1b955e48226f4f4cf05df28b6",
+                "bytes": 1652
+            },
+            "requirements": {
+                "blocks": [
+                    {
+                        "block_id": "content.hero-centered-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.cta-split-01",
+                        "block_version": 1
+                    }
+                ]
+            }
+        },
+        {
+            "product_id": "jiwonpapa/company-launch",
+            "product_type": "page_kit",
+            "product_version": "1.0.0",
+            "title": {
+                "ko": "회사 소개 랜딩",
+                "en": "Company launch page"
+            },
+            "description": {
+                "ko": "회사 소개, 성과, 팀과 문의 CTA로 구성된 완성 페이지입니다.",
+                "en": "A complete company introduction page."
+            },
+            "category": "company",
+            "tags": [
+                "회사소개",
+                "랜딩",
+                "팀",
+                "CTA"
+            ],
+            "license": "free",
+            "compatibility": {
+                "page_builder": ">=0.10.0 <1.0.0",
+                "php": ">=8.5",
+                "g7": ">=7.0.7"
+            },
+            "preview": {
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/company-launch.svg",
+                "screenshots": [],
+                "demo_url": null
+            },
+            "artifact": {
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-company-launch-1.0.0.zip",
+                "sha256": "e4c4d201e425c053ebc80463f7d14ab477821cfbd900e76b9f67d02d34caead2",
+                "bytes": 1845
+            },
+            "requirements": {
+                "blocks": [
+                    {
+                        "block_id": "content.hero-split-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "data.stats-icons-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "company.team-grid-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.cta-split-01",
+                        "block_version": 1
+                    }
+                ]
+            }
+        }
+    ]
+}

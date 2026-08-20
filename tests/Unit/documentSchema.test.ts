@@ -8,6 +8,7 @@ import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import compileFixture from '../Contract/compile-result-v1.fixture.json';
 import compileSchema from '../../schemas/compile-result.schema.json';
 import schema from '../../schemas/page-builder-document.schema.json';
+import officialCompanyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';
 
 describe('PageBuilderDocument v1 schema', () => {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -24,6 +25,10 @@ describe('PageBuilderDocument v1 schema', () => {
 
   it('accepts the structured twelve-block test catalog', () => {
     expect(validate(catalogFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('accepts every bundled official Page Kit source document', () => {
+    expect(validate(officialCompanyPageKit), JSON.stringify(validate.errors)).toBe(true);
   });
 
   it('accepts typed G7 data blocks and rejects unsafe product routes', () => {

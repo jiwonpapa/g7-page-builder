@@ -5,6 +5,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockPackController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminOfficialStoreController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminRouteCatalogController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
@@ -21,6 +22,18 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
     Route::put('blocks/favorite', [AdminBlockCatalogController::class, 'favorite'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('blocks.favorite');
+    Route::get('store/catalog', [AdminOfficialStoreController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('store.catalog');
+    Route::post('store/block-packs/install', [AdminOfficialStoreController::class, 'installBlockPack'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('store.block-packs.install');
+    Route::post('store/page-kits/apply', [AdminOfficialStoreController::class, 'applyPageKit'])
+        ->middleware([
+            'permission:admin,jiwonpapa-page_builder.documents.read',
+            'permission:admin,jiwonpapa-page_builder.documents.create',
+        ])
+        ->name('store.page-kits.apply');
     Route::get('block-packs', [AdminBlockPackController::class, 'index'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('block-packs.index');
@@ -82,6 +95,13 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
             'permission:admin,jiwonpapa-page_builder.documents.create',
         ])
         ->name('documents.duplicate');
+    Route::get('documents/{document}/page-kit/export', [AdminOfficialStoreController::class, 'exportPageKit'])
+        ->whereUuid('document')
+        ->middleware([
+            'permission:admin,jiwonpapa-page_builder.documents.read',
+            'permission:admin,jiwonpapa-page_builder.documents.manage',
+        ])
+        ->name('documents.page-kit.export');
     Route::get('documents/{document}/revisions', [AdminDocumentController::class, 'revisions'])
         ->whereUuid('document')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')

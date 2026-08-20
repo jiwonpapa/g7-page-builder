@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 use Modules\Jiwonpapa\PageBuilder\Contracts\MediaPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Media\MediaAsset;
+use Modules\Jiwonpapa\PageBuilder\Domain\Media\PortableMedia;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\MediaRecord;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\PublicationRecord;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\RevisionRecord;
@@ -89,6 +90,25 @@ final class LaravelMediaAdapter implements MediaPort
 
         Storage::disk($record->disk)->delete($record->path);
         $record->delete();
+    }
+
+    public function exportByUrl(string $url): ?PortableMedia
+    {
+        /** @var Collection<int, MediaRecord> $records */
+        $records = MediaRecord::query()->get();
+        foreach ($records as $record) {
+            if ($this->publicUrl($record->disk, $record->path) !== $url) {
+                continue;
+            }
+            $contents = Storage::disk($record->disk)->get($record->path);
+            if (! is_string($contents)) {
+                throw new \RuntimeException('내보낼 미디어 파일을 읽지 못했습니다.');
+            }
+
+            return new PortableMedia($this->asset($record), $contents);
+        }
+
+        return null;
     }
 
     private function asset(MediaRecord $record): MediaAsset

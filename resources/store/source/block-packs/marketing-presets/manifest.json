@@ -1,0 +1,51 @@
+{
+  "manifest_version": "g7pb-block-pack/v1",
+  "pack_id": "jiwonpapa/marketing-presets",
+  "pack_version": "1.0.0",
+  "kind": "data",
+  "publisher": {
+    "id": "jiwonpapa",
+    "name": "지원소프트"
+  },
+  "compatibility": {
+    "page_builder": ">=0.10.0 <1.0.0",
+    "php": ">=8.5",
+    "g7": ">=7.0.7"
+  },
+  "blocks": [],
+  "presets": [
+    {
+      "preset_id": "hero.product-launch",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "category": "hero",
+      "label": { "ko": "제품 출시 히어로", "en": "Product launch hero" },
+      "description": { "ko": "출시 메시지와 주요 행동 버튼을 빠르게 시작합니다.", "en": "Start a focused product launch message." },
+      "thumbnail": "assets/hero-product-launch.svg",
+      "props": {
+        "eyebrow": "새로운 소식",
+        "title": "더 나은 경험을 시작합니다",
+        "body": "제품의 핵심 가치와 고객이 얻는 결과를 짧고 분명하게 설명해 주세요.",
+        "primaryCta": { "label": "자세히 보기", "url": "/" },
+        "alignment": "center"
+      }
+    },
+    {
+      "preset_id": "cta.contact-dark",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "category": "action",
+      "label": { "ko": "도입 문의 CTA", "en": "Contact CTA" },
+      "description": { "ko": "짙은 배경의 문의 행동 영역을 추가합니다.", "en": "Add a dark contact call to action." },
+      "thumbnail": "assets/hero-product-launch.svg",
+      "props": {
+        "eyebrow": "다음 단계",
+        "heading": "필요한 페이지를 함께 완성하세요",
+        "body": "도입 범위와 일정에 맞는 방법을 안내합니다.",
+        "primaryLink": { "label": "문의하기", "url": "/" },
+        "theme": "dark"
+      }
+    }
+  ],
+  "files": {}
+}

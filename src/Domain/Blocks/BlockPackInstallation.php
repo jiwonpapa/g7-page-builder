@@ -15,7 +15,7 @@ final readonly class BlockPackInstallation
         public ?int $installedBy,
         public \DateTimeImmutable $updatedAt,
     ) {
-        if (! in_array($this->source, ['builtin', 'local', 'github'], true)) {
+        if (! in_array($this->source, ['builtin', 'local', 'github', 'store'], true)) {
             throw new \InvalidArgumentException('Block Pack installation source is invalid.');
         }
         if ($this->sourceReference === '' || strlen($this->sourceReference) > 512) {

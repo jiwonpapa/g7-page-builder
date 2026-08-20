@@ -1,0 +1,20 @@
+{
+  "manifest_version": "g7pb-page-kit/v1",
+  "kit_id": "jiwonpapa/company-launch",
+  "kit_version": "1.0.0",
+  "publisher": { "id": "jiwonpapa", "name": "지원소프트" },
+  "title": "회사 소개 랜딩",
+  "description": "공식 마켓 Page Kit 계약 fixture입니다.",
+  "license": "free",
+  "compatibility": {
+    "page_builder": ">=0.10.0 <1.0.0",
+    "php": ">=8.5",
+    "g7": ">=7.0.7",
+    "document_schema": "g7-page-builder/v1"
+  },
+  "document": "document.json",
+  "media": [],
+  "files": {
+    "document.json": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

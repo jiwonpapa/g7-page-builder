@@ -53,8 +53,9 @@ final readonly class BlockPackManager
         bool $enable = true,
         ?string $expectedSha256 = null,
         ?string $expectedPackVersion = null,
+        ?string $expectedPackId = null,
     ): BlockPackInstallation {
-        if (! in_array($source, ['local', 'github'], true)) {
+        if (! in_array($source, ['local', 'github', 'store'], true)) {
             throw new \InvalidArgumentException('External Block Pack source is invalid.');
         }
         $stored = $this->archives->store($archivePath, $expectedSha256);
@@ -71,6 +72,9 @@ final readonly class BlockPackManager
             updatedAt: $now,
         );
         try {
+            if ($expectedPackId !== null && $stored->manifest->packId !== $expectedPackId) {
+                throw new \DomainException('Block Pack manifest id가 선택한 공식 마켓 상품과 일치하지 않습니다.');
+            }
             if ($expectedPackVersion !== null && $stored->manifest->packVersion !== $expectedPackVersion) {
                 throw new \DomainException('Block Pack manifest version이 선택한 Release 버전과 일치하지 않습니다.');
             }

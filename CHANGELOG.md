@@ -6,6 +6,25 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-20
+
+### Added
+
+- 지원소프트 단일 발행자의 공식 무료 Block Pack·Page Kit 카탈로그와 immutable ZIP·미리보기 배포 endpoint를 추가했습니다.
+- 문서함에서 공식 무료 마켓을 검색·필터·미리보기하고 Block Pack을 바로 설치하거나 Page Kit을 새 미발행 초안으로 적용하는 흐름을 추가했습니다.
+- 현재 페이지와 Page Builder 소유 이미지를 휴대 가능한 Page Kit ZIP으로 내보내는 운영자 배포 기능을 추가했습니다.
+- 공식 마켓·Page Kit JSON Schema, SHA-256·호스트 allowlist·zip-slip·파일 선언·이미지 실형식·블록/라우트 호환성 검증을 추가했습니다.
+
+### Changed
+
+- 외부 Block Pack 설치 source에 공식 `store`를 추가하되 기존 archive·호환성·Code Pack 서명·사용량 보호 절차를 그대로 적용합니다.
+- Page Kit 적용 시 문서와 모든 블록 identity를 새로 만들고 활성 사이트 템플릿을 사용하도록 고정했습니다.
+
+### Security
+
+- 브라우저가 임의 다운로드 URL을 제출할 수 없으며 카탈로그에 선언된 지원소프트 상품과 허용된 HTTPS 호스트만 설치할 수 있습니다.
+- Page Kit은 기존 문서·발행·홈·G7 템플릿·Header·Footer·Site Shell을 덮어쓰지 않고 검증 또는 컴파일 실패 시 문서 생성을 중단합니다.
+
 ## [0.9.0] - 2026-08-20
 
 ### Added

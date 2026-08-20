@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/official-store-catalog-v1.json",
+  "title": "G7 Page Builder Official Store Catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["catalog_version", "publisher", "generated_at", "products"],
+  "properties": {
+    "catalog_version": { "const": "g7pb-store/v1" },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "const": "jiwonpapa" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "products": {
+      "type": "array",
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/product" }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "localized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ko"],
+      "properties": {
+        "ko": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "en": { "type": "string", "minLength": 1, "maxLength": 240 }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page_builder", "php", "g7"],
+      "properties": {
+        "page_builder": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "php": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "g7": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product_id", "product_type", "product_version", "title",
+        "description", "category", "tags", "license", "compatibility",
+        "preview", "artifact"
+      ],
+      "properties": {
+        "product_id": {
+          "type": "string",
+          "pattern": "^jiwonpapa/[a-z0-9][a-z0-9._-]{1,63}$"
+        },
+        "product_type": { "enum": ["block_pack", "page_kit"] },
+        "product_version": { "$ref": "#/$defs/semver" },
+        "title": { "$ref": "#/$defs/localized" },
+        "description": { "$ref": "#/$defs/localized" },
+        "category": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,63}$" },
+        "tags": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 40 }
+        },
+        "license": { "const": "free" },
+        "compatibility": { "$ref": "#/$defs/compatibility" },
+        "preview": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["thumbnail_url", "screenshots"],
+          "properties": {
+            "thumbnail_url": { "type": "string", "format": "uri", "maxLength": 1000 },
+            "screenshots": {
+              "type": "array",
+              "maxItems": 8,
+              "items": { "type": "string", "format": "uri", "maxLength": 1000 }
+            },
+            "demo_url": { "type": ["string", "null"], "format": "uri", "maxLength": 1000 }
+          }
+        },
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "sha256", "bytes"],
+          "properties": {
+            "url": { "type": "string", "format": "uri", "maxLength": 1000 },
+            "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 52428800 }
+          }
+        },
+        "requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "blocks": {
+              "type": "array",
+              "maxItems": 200,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["block_id", "block_version"],
+                "properties": {
+                  "block_id": { "type": "string", "minLength": 3, "maxLength": 160 },
+                  "block_version": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

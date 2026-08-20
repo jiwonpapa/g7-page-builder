@@ -95,6 +95,39 @@ final class PageBuilderService
         return $this->repository->create($title, $copy, $actorId);
     }
 
+    public function createFromPageKit(
+        string $title,
+        string $slug,
+        PageBuilderDocument $template,
+        ?int $actorId,
+    ): DocumentSnapshot {
+        $title = trim($title);
+        if ($title === '') {
+            throw new \InvalidArgumentException('Page title must not be empty.');
+        }
+
+        $document = new PageBuilderDocument(
+            documentId: $this->uuidV4(),
+            slug: $slug,
+            mode: 'canvas',
+            locale: $template->locale,
+            tokens: $template->tokens,
+            blocks: $this->freshBlockIdentities($template->blocks),
+            schemaVersion: $template->schemaVersion,
+            shellMode: 'template',
+        );
+
+        // 외부 Page Kit은 저장 전에 현재 compiler와 활성 Block Registry를 반드시 통과합니다.
+        $this->compiler->compile(
+            $document,
+            1,
+            'html',
+            HtmlDocumentCompiler::TARGET_ENGINE_VERSION,
+        );
+
+        return $this->repository->create($title, $document, $actorId);
+    }
+
     /** @return list<DocumentRevision> */
     public function revisions(string $documentId, int $limit = 20): array
     {
@@ -327,6 +360,32 @@ final class PageBuilderService
             substr($hex, 16, 4),
             substr($hex, 20),
         );
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $blocks
+     * @return array<int, array<string, mixed>>
+     */
+    private function freshBlockIdentities(array $blocks): array
+    {
+        $fresh = [];
+        foreach ($blocks as $block) {
+            $block['instance_id'] = $this->uuidV4();
+            $slots = $block['slots'] ?? [];
+            if (! is_array($slots)) {
+                throw new \InvalidArgumentException('Page Kit block slots must be an object.');
+            }
+            foreach ($slots as $name => $children) {
+                if (! is_string($name) || ! is_array($children)) {
+                    throw new \InvalidArgumentException('Page Kit block slot is invalid.');
+                }
+                $slots[$name] = $this->freshBlockIdentities(array_values($children));
+            }
+            $block['slots'] = $slots;
+            $fresh[] = $block;
+        }
+
+        return $fresh;
     }
 
     private function createPreviewTicket(

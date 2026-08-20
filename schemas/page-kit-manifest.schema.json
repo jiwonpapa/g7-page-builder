@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/page-kit-manifest-v1.json",
+  "title": "G7 Page Builder Page Kit manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version", "kit_id", "kit_version", "publisher", "title",
+    "description", "license", "compatibility", "document", "media", "files"
+  ],
+  "properties": {
+    "manifest_version": { "const": "g7pb-page-kit/v1" },
+    "kit_id": { "type": "string", "pattern": "^jiwonpapa/[a-z0-9][a-z0-9._-]{1,63}$" },
+    "kit_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "const": "jiwonpapa" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "license": { "const": "free" },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page_builder", "php", "g7", "document_schema"],
+      "properties": {
+        "page_builder": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "php": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "g7": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "document_schema": { "const": "g7-page-builder/v1" }
+      }
+    },
+    "document": { "const": "document.json" },
+    "media": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "sha256", "original_name", "mime_type", "width", "height"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,63}$" },
+          "path": { "type": "string", "pattern": "^media/[A-Za-z0-9._-]+$" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "original_name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "mime_type": { "enum": ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"] },
+          "width": { "type": "integer", "minimum": 1, "maximum": 12000 },
+          "height": { "type": "integer", "minimum": 1, "maximum": 12000 }
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 102,
+      "propertyNames": { "pattern": "^(document\\.json|media/[A-Za-z0-9._-]+)$" },
+      "additionalProperties": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+    }
+  }
+}

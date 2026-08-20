@@ -89,7 +89,7 @@ export interface BlockPackResource {
   kind: BlockPackKind;
   publisher: BlockPackPublisher;
   state: BlockPackState;
-  source: 'builtin' | 'local' | 'github';
+  source: 'builtin' | 'local' | 'github' | 'store';
   source_uri: string | null;
   archive_sha256: string | null;
   blocks: number;

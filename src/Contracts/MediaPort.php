@@ -3,6 +3,7 @@
 namespace Modules\Jiwonpapa\PageBuilder\Contracts;
 
 use Modules\Jiwonpapa\PageBuilder\Domain\Media\MediaAsset;
+use Modules\Jiwonpapa\PageBuilder\Domain\Media\PortableMedia;
 
 interface MediaPort
 {
@@ -19,4 +20,6 @@ interface MediaPort
     ): MediaAsset;
 
     public function delete(string $mediaId): void;
+
+    public function exportByUrl(string $url): ?PortableMedia;
 }

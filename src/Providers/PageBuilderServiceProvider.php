@@ -15,6 +15,8 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\GitHubBlockPackService;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Modules\Jiwonpapa\PageBuilder\Application\Store\OfficialStoreService;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockFavoritePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackArchivePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackAssetUrlPort;
@@ -25,7 +27,9 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackSignatureVerifierPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockUsagePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\MediaPort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\OfficialStoreSourcePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Contracts\PageKitArchivePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\RouteCatalogPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
@@ -48,12 +52,15 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentS
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7RouteCatalogAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\LaravelOfficialStoreSourceAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\ZipPageKitArchiveAdapter;
 
 final class PageBuilderServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/block-packs.php', 'g7-page-builder.block-packs');
+        $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/official-store.php', 'g7-page-builder.official-store');
         $this->app->bind(PageBuilderRepository::class, EloquentPageBuilderRepository::class);
         $this->app->bind(RouteCatalogPort::class, G7RouteCatalogAdapter::class);
         $this->app->singleton(G7TemplateRouteBridge::class);
@@ -116,7 +123,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
             archives: $this->app->make(BlockPackArchivePort::class),
             usage: $this->app->make(BlockUsagePort::class),
             registry: $this->app->make(BlockRegistry::class),
-            pageBuilderVersion: (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2))->packVersion,
+            pageBuilderVersion: $this->moduleVersion(),
             g7Version: '7.0.7',
             runtimes: $this->app->make(BlockPackRuntimeRegistry::class),
         ));
@@ -151,6 +158,21 @@ final class PageBuilderServiceProvider extends ServiceProvider
             },
         );
         $this->app->bind(MediaPort::class, LaravelMediaAdapter::class);
+        $this->app->bind(OfficialStoreSourcePort::class, LaravelOfficialStoreSourceAdapter::class);
+        $this->app->singleton(PageKitArchivePort::class, ZipPageKitArchiveAdapter::class);
+        $this->app->singleton(OfficialStoreService::class, function (): OfficialStoreService {
+            return new OfficialStoreService(
+                source: $this->app->make(OfficialStoreSourcePort::class),
+                pageKits: $this->app->make(PageKitArchivePort::class),
+                blockPacks: $this->app->make(BlockPackManager::class),
+                blocks: $this->app->make(BlockRegistry::class),
+                pages: $this->app->make(PageBuilderService::class),
+                media: $this->app->make(MediaPort::class),
+                routes: $this->app->make(RouteCatalogPort::class),
+                pageBuilderVersion: $this->moduleVersion(),
+                g7Version: '7.0.7',
+            );
+        });
         $this->app->bind(SitePartRepository::class, EloquentSitePartRepository::class);
         $this->app->bind(SiteShellPort::class, EloquentSiteShellAdapter::class);
     }
@@ -191,5 +213,14 @@ final class PageBuilderServiceProvider extends ServiceProvider
             ->name('web.modules.jiwonpapa-page_builder.')
             ->middleware('web')
             ->group($moduleRoot.'/src/routes/module-web.php');
+    }
+
+    private function moduleVersion(): string
+    {
+        $module = json_decode((string) file_get_contents(dirname(__DIR__, 2).'/module.json'), true);
+
+        return is_array($module) && is_string($module['version'] ?? null)
+            ? $module['version']
+            : '0.0.0';
     }
 }

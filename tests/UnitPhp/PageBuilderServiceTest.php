@@ -6,6 +6,7 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
@@ -134,6 +135,105 @@ final class PageBuilderServiceTest extends TestCase
 
         $this->expectException(LockConflictException::class);
         $service->duplicate($source->document->documentId, '복사본', 'page-builder-copy', 4, 7);
+    }
+
+    public function test_page_kit_creates_a_compiled_unpublished_document_with_fresh_identities(): void
+    {
+        $template = new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000020',
+            slug: 'kit-template',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: ['design.palette' => 'blue'],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000021',
+                'type' => 'content.hero-centered-01',
+                'block_version' => 1,
+                'props' => ['title' => 'Page Kit'],
+                'slots' => ['content' => [[
+                    'instance_id' => '00000000-0000-4000-8000-000000000022',
+                    'type' => 'content.hero-centered-01',
+                    'block_version' => 1,
+                    'props' => ['title' => 'Nested Page Kit'],
+                    'slots' => [],
+                ]]],
+            ]],
+            shellMode: 'none',
+        );
+        $repository = $this->createMock(PageBuilderRepository::class);
+        $compiler = $this->createMock(DocumentCompilerPort::class);
+        $compiler->expects(self::once())
+            ->method('compile')
+            ->with(
+                self::callback(static fn (PageBuilderDocument $document): bool => $document->documentId !== $template->documentId
+                    && $document->blocks[0]['instance_id'] !== $template->blocks[0]['instance_id']
+                    && $document->blocks[0]['slots']['content'][0]['instance_id']
+                        !== $template->blocks[0]['slots']['content'][0]['instance_id']
+                    && $document->slug === 'new-kit-page'
+                    && $document->shellMode === 'template'),
+                1,
+                'html',
+                HtmlDocumentCompiler::TARGET_ENGINE_VERSION,
+            )
+            ->willReturnCallback(static fn (PageBuilderDocument $document): CompileResult => new CompileResult(
+                compilerVersion: '0.10.0',
+                documentId: $document->documentId,
+                sourceRevision: 1,
+                targetFormat: 'html',
+                targetEngineVersion: HtmlDocumentCompiler::TARGET_ENGINE_VERSION,
+                artifact: '<section></section>',
+                artifactSha256: hash('sha256', '<section></section>'),
+            ));
+        $repository->expects(self::once())
+            ->method('create')
+            ->willReturnCallback(static fn (string $title, PageBuilderDocument $document): DocumentSnapshot => new DocumentSnapshot(
+                $document,
+                $title,
+                1,
+                1,
+            ));
+        $service = new PageBuilderService($repository, $compiler);
+
+        $created = $service->createFromPageKit(' 새 회사 페이지 ', 'new-kit-page', $template, 7);
+
+        self::assertSame('새 회사 페이지', $created->title);
+        self::assertNull($created->activeArtifactSha256);
+        self::assertFalse($created->isHome);
+    }
+
+    public function test_page_kit_rejects_an_empty_title_and_malformed_slots_before_persistence(): void
+    {
+        $repository = $this->createMock(PageBuilderRepository::class);
+        $repository->expects(self::never())->method('create');
+        $compiler = $this->createMock(DocumentCompilerPort::class);
+        $compiler->expects(self::never())->method('compile');
+        $service = new PageBuilderService($repository, $compiler);
+
+        try {
+            $service->createFromPageKit('   ', 'empty-kit', $this->document(), 7);
+            self::fail('A Page Kit with an empty title was accepted.');
+        } catch (\InvalidArgumentException $exception) {
+            self::assertStringContainsString('title', $exception->getMessage());
+        }
+
+        $malformed = new PageBuilderDocument(
+            '00000000-0000-4000-8000-000000000030',
+            'malformed-kit',
+            'canvas',
+            'ko',
+            [],
+            [[
+                'instance_id' => '00000000-0000-4000-8000-000000000031',
+                'type' => 'content.hero-centered-01',
+                'block_version' => 1,
+                'props' => ['title' => 'Malformed'],
+                'slots' => 'not-an-object',
+            ]],
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('slots');
+        $service->createFromPageKit('Malformed', 'malformed-kit-copy', $malformed, 7);
     }
 
     private function document(): PageBuilderDocument

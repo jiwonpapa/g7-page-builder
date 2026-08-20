@@ -3,14 +3,18 @@ import { createRoot, type Root } from 'react-dom/client';
 import {
   Archive,
   Copy,
+  Download,
   ExternalLink,
   History,
   Home,
+  LayoutTemplate,
   MoreHorizontal,
+  PackagePlus,
   PanelBottom,
   PanelTop,
   Pencil,
   Settings,
+  ShoppingBag,
 } from 'lucide-react';
 
 import {
@@ -22,6 +26,7 @@ import {
 } from '../api/pageBuilderApi';
 import type { DocumentResource, PageShellMode, RevisionSummary } from '../documents/types';
 import type { BlockPackResource, GitHubBlockPackCheckResource } from '../blocks/types';
+import type { OfficialStoreCatalogResource, OfficialStoreProduct } from '../store/types';
 
 interface PageBuilderManagerOptions {
   locale?: string;
@@ -126,6 +131,21 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [githubRepository, setGithubRepository] = useState('');
   const [githubAssetName, setGithubAssetName] = useState('g7pb-block-pack.zip');
   const [githubCheck, setGithubCheck] = useState<GitHubBlockPackCheckResource | null>(null);
+  const [storeOpen, setStoreOpen] = useState(false);
+  const [storeCatalog, setStoreCatalog] = useState<OfficialStoreCatalogResource | null>(null);
+  const [storeLoading, setStoreLoading] = useState(false);
+  const [storeBusy, setStoreBusy] = useState<string | null>(null);
+  const [storeQuery, setStoreQuery] = useState('');
+  const [storeType, setStoreType] = useState<'all' | OfficialStoreProduct['product_type']>('all');
+  const [pageKitProduct, setPageKitProduct] = useState<OfficialStoreProduct | null>(null);
+  const [pageKitTitle, setPageKitTitle] = useState('');
+  const [pageKitSlug, setPageKitSlug] = useState('');
+  const [exportDocument, setExportDocument] = useState<DocumentResource | null>(null);
+  const [exportKitId, setExportKitId] = useState('jiwonpapa/');
+  const [exportKitVersion, setExportKitVersion] = useState('1.0.0');
+  const [exportTitle, setExportTitle] = useState('');
+  const [exportDescription, setExportDescription] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const loadDocuments = React.useCallback(async (status: 'active' | 'archived'): Promise<void> => {
     const resource = await api.listDocuments(1, 100, status);
@@ -200,6 +220,16 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
       resource.title.toLocaleLowerCase('ko').includes(query)
       || resource.document.slug.toLocaleLowerCase('ko').includes(query));
   }, [documents, searchQuery]);
+
+  const visibleStoreProducts = useMemo(() => {
+    const query = storeQuery.trim().toLocaleLowerCase('ko');
+    return (storeCatalog?.products ?? []).filter((product) => {
+      if (storeType !== 'all' && product.product_type !== storeType) return false;
+      if (!query) return true;
+      return [product.title.ko, product.description.ko, product.category, ...product.tags]
+        .some((value) => value.toLocaleLowerCase('ko').includes(query));
+    });
+  }, [storeCatalog, storeQuery, storeType]);
 
   const createDocument = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -326,6 +356,113 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     setBlockPacksOpen(true);
     setMessage(null);
     void loadBlockPacks();
+  };
+
+  const loadOfficialStore = async (): Promise<void> => {
+    setStoreLoading(true);
+    setMessage(null);
+    try {
+      setStoreCatalog(await api.getOfficialStoreCatalog());
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setStoreLoading(false);
+    }
+  };
+
+  const openOfficialStore = (): void => {
+    setStoreOpen(true);
+    setStoreQuery('');
+    setStoreType('all');
+    void loadOfficialStore();
+  };
+
+  const installStoreBlockPack = async (product: OfficialStoreProduct): Promise<void> => {
+    const identity = `${product.product_id}@${product.product_version}`;
+    setStoreBusy(identity);
+    setMessage(null);
+    try {
+      await api.installOfficialStoreBlockPack(product.product_id, product.product_version);
+      await loadOfficialStore();
+      await loadBlockPacks();
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setStoreBusy(null);
+    }
+  };
+
+  const choosePageKit = (product: OfficialStoreProduct): void => {
+    const fallback = product.product_id.split('/').at(-1) ?? 'page-kit';
+    setPageKitProduct(product);
+    setPageKitTitle(product.title.ko);
+    setPageKitSlug(fallback.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'page-kit');
+    setStoreOpen(false);
+  };
+
+  const applyPageKit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    if (!pageKitProduct) return;
+    const title = pageKitTitle.trim();
+    const slug = pageKitSlug.trim();
+    if (!title || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      setMessage('페이지 제목과 영문 소문자·숫자·하이픈 주소를 확인해 주세요.');
+      return;
+    }
+    const identity = `${pageKitProduct.product_id}@${pageKitProduct.product_version}`;
+    setStoreBusy(identity);
+    setMessage(null);
+    try {
+      const resource = await api.applyOfficialStorePageKit({
+        product_id: pageKitProduct.product_id,
+        product_version: pageKitProduct.product_version,
+        title,
+        slug,
+      });
+      window.location.assign(editorUrl(resource.document.document_id));
+    } catch (error) {
+      setMessage(errorMessage(error));
+      setStoreBusy(null);
+    }
+  };
+
+  const openPageKitExport = (resource: DocumentResource): void => {
+    setActionMenuDocumentId(null);
+    setExportDocument(resource);
+    setExportKitId(`jiwonpapa/${resource.document.slug}`);
+    setExportKitVersion('1.0.0');
+    setExportTitle(resource.title);
+    setExportDescription(`${resource.title} Page Kit`);
+    setMessage(null);
+  };
+
+  const exportPageKit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    if (!exportDocument) return;
+    setExporting(true);
+    setMessage(null);
+    try {
+      const result = await api.downloadPageKit(exportDocument.document.document_id, {
+        kit_id: exportKitId.trim(),
+        kit_version: exportKitVersion.trim(),
+        title: exportTitle.trim(),
+        description: exportDescription.trim(),
+      });
+      const url = URL.createObjectURL(result.blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = result.filename;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setExportDocument(null);
+      setMessage(result.sha256 ? `Page Kit 배포 ZIP을 만들었습니다. SHA-256 ${result.sha256.slice(0, 12)}…` : 'Page Kit 배포 ZIP을 만들었습니다.');
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setExporting(false);
+    }
   };
 
   const installBlockPack = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
@@ -622,6 +759,10 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
         <div className="g7pb-manager-header__actions">
           <a className="g7pb-button g7pb-button--quiet" href="/admin">G7 관리자</a>
           <button className="g7pb-button g7pb-button--quiet" type="button"
+            data-testid="page-builder-manager-store" onClick={openOfficialStore}>
+            <ShoppingBag size={17} aria-hidden="true" /> 무료 마켓
+          </button>
+          <button className="g7pb-button g7pb-button--quiet" type="button"
             data-testid="page-builder-manager-block-packs" onClick={openBlockPacks}>
             블록 팩
           </button>
@@ -755,6 +896,10 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                             <button type="button" role="menuitem" data-testid="page-builder-manager-revisions"
                               onClick={() => { setActionMenuDocumentId(null); openRevisions(resource); }}>
                               <History size={15} aria-hidden="true" /><span>변경 기록</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="page-builder-manager-export-page-kit"
+                              onClick={() => openPageKitExport(resource)}>
+                              <Download size={15} aria-hidden="true" /><span>Page Kit 배포 ZIP</span>
                             </button>
                             <button type="button" role="menuitem" data-testid="page-builder-manager-archive"
                               onClick={() => { setActionMenuDocumentId(null); setArchiveDocument(resource); }}>
@@ -1001,6 +1146,151 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                 })}
               </div>
             )}
+          </section>
+        </div>
+      )}
+
+      {storeOpen && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-store-dialog">
+          <section className="g7pb-dialog g7pb-dialog--wide g7pb-store-dialog" role="dialog" aria-modal="true"
+            aria-labelledby="g7pb-store-heading">
+            <div className="g7pb-dialog__heading-row">
+              <div>
+                <p className="g7pb-kicker">지원소프트 공식 배포</p>
+                <h2 id="g7pb-store-heading">무료 Block Pack · Page Kit</h2>
+                <p>검증된 공식 자산만 표시합니다. 제3자 업로드와 판매자 기능은 없습니다.</p>
+              </div>
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                onClick={() => setStoreOpen(false)}>닫기</button>
+            </div>
+            <div className="g7pb-store-tools">
+              <label className="g7pb-manager-search">
+                <span className="sr-only">마켓 검색</span>
+                <input type="search" value={storeQuery} placeholder="이름·설명·태그 검색"
+                  data-testid="page-builder-store-search"
+                  onChange={(event) => setStoreQuery(event.target.value)} />
+              </label>
+              <div className="g7pb-manager-tabs" role="tablist" aria-label="마켓 상품 종류">
+                {([['all', '전체'], ['block_pack', '블록 팩'], ['page_kit', '완성 페이지']] as const).map(([value, label]) => (
+                  <button type="button" role="tab" key={value} aria-selected={storeType === value}
+                    data-testid={`page-builder-store-filter-${value}`}
+                    onClick={() => setStoreType(value)}>{label}</button>
+                ))}
+              </div>
+            </div>
+            {storeLoading ? (
+              <div className="g7pb-manager-loading" role="status">공식 마켓을 불러오는 중입니다.</div>
+            ) : visibleStoreProducts.length === 0 ? (
+              <div className="g7pb-manager-empty"><h3>표시할 무료 상품이 없습니다.</h3><p>검색 조건을 바꾸거나 잠시 뒤 다시 확인해 주세요.</p></div>
+            ) : (
+              <div className="g7pb-store-grid" data-testid="page-builder-store-products">
+                {visibleStoreProducts.map((product) => {
+                  const identity = `${product.product_id}@${product.product_version}`;
+                  return (
+                    <article className="g7pb-store-card" key={identity} data-testid="page-builder-store-product"
+                      data-product-type={product.product_type}>
+                      <a className="g7pb-store-card__preview" href={product.preview.demo_url ?? product.preview.thumbnail_url}
+                        target="_blank" rel="noopener noreferrer" aria-label={`${product.title.ko} 미리보기`}>
+                        <img src={product.preview.thumbnail_url} alt="" loading="lazy" />
+                        <span>크게 미리보기 <ExternalLink size={14} aria-hidden="true" /></span>
+                      </a>
+                      <div className="g7pb-store-card__body">
+                        <span className="g7pb-store-card__kind">
+                          {product.product_type === 'block_pack' ? <PackagePlus size={15} /> : <LayoutTemplate size={15} />}
+                          {product.product_type === 'block_pack' ? 'Block Pack' : 'Page Kit'} · 무료
+                        </span>
+                        <h3>{product.title.ko}</h3>
+                        <p>{product.description.ko}</p>
+                        <small>v{product.product_version} · {product.tags.join(' · ')}</small>
+                        {!product.compatible && <strong className="g7pb-store-card__error">{product.compatibility_error}</strong>}
+                      </div>
+                      <div className="g7pb-store-card__actions">
+                        {product.product_type === 'block_pack' ? (
+                          <button type="button" className="g7pb-button g7pb-button--primary"
+                            data-testid="page-builder-store-install-block-pack"
+                            disabled={!product.compatible || product.installed || storeBusy !== null}
+                            onClick={() => void installStoreBlockPack(product)}>
+                            {product.installed ? '설치됨' : storeBusy === identity ? '검증·설치 중' : '무료 설치'}
+                          </button>
+                        ) : (
+                          <button type="button" className="g7pb-button g7pb-button--primary"
+                            data-testid="page-builder-store-apply-page-kit"
+                            disabled={!product.compatible || storeBusy !== null}
+                            onClick={() => choosePageKit(product)}>새 페이지로 적용</button>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {pageKitProduct && (
+        <div className="g7pb-dialog-backdrop g7pb-dialog-backdrop--confirm"
+          data-testid="page-builder-store-page-kit-dialog">
+          <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-page-kit-apply-heading">
+            <p className="g7pb-kicker">완성 페이지 적용</p>
+            <h2 id="g7pb-page-kit-apply-heading">{pageKitProduct.title.ko}</h2>
+            <p className="g7pb-dialog__body">기존 페이지는 바꾸지 않습니다. 새 UUID와 새 주소를 가진 미발행 초안으로 만들고, 활성 사이트 템플릿을 사용합니다.</p>
+            <form onSubmit={(event) => void applyPageKit(event)}>
+              <label>새 페이지 제목
+                <input value={pageKitTitle} required autoFocus data-testid="page-builder-store-page-kit-title"
+                  onChange={(event) => setPageKitTitle(event.target.value)} />
+              </label>
+              <label>새 페이지 주소
+                <span>영문 소문자, 숫자, 하이픈</span>
+                <input value={pageKitSlug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  data-testid="page-builder-store-page-kit-slug"
+                  onChange={(event) => setPageKitSlug(event.target.value.toLowerCase())} />
+              </label>
+              <div className="g7pb-dialog__actions">
+                <button type="button" className="g7pb-button g7pb-button--quiet"
+                  disabled={storeBusy !== null} onClick={() => { setPageKitProduct(null); setStoreOpen(true); }}>이전</button>
+                <button type="submit" className="g7pb-button g7pb-button--primary"
+                  data-testid="page-builder-store-page-kit-confirm" disabled={storeBusy !== null}>
+                  {storeBusy ? '검증·적용 중' : '새 초안 만들기'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {exportDocument && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-export-page-kit-dialog">
+          <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-page-kit-export-heading">
+            <p className="g7pb-kicker">지원소프트 배포용</p>
+            <h2 id="g7pb-page-kit-export-heading">{exportDocument.title} Page Kit 만들기</h2>
+            <p className="g7pb-dialog__body">현재 초안과 Page Builder 미디어를 휴대 가능한 ZIP으로 만듭니다. 발행 상태·홈 지정·리비전·Header·Footer는 포함하지 않습니다.</p>
+            <form onSubmit={(event) => void exportPageKit(event)}>
+              <label>상품 id
+                <input value={exportKitId} required pattern="jiwonpapa/[a-z0-9][a-z0-9._-]{1,63}"
+                  data-testid="page-builder-export-page-kit-id"
+                  onChange={(event) => setExportKitId(event.target.value.toLowerCase())} />
+              </label>
+              <label>버전
+                <input value={exportKitVersion} required data-testid="page-builder-export-page-kit-version"
+                  onChange={(event) => setExportKitVersion(event.target.value)} />
+              </label>
+              <label>마켓 제목
+                <input value={exportTitle} required onChange={(event) => setExportTitle(event.target.value)} />
+              </label>
+              <label>마켓 설명
+                <textarea value={exportDescription} required rows={3}
+                  onChange={(event) => setExportDescription(event.target.value)} />
+              </label>
+              <div className="g7pb-dialog__actions">
+                <button type="button" className="g7pb-button g7pb-button--quiet"
+                  disabled={exporting} onClick={() => setExportDocument(null)}>취소</button>
+                <button type="submit" className="g7pb-button g7pb-button--primary"
+                  data-testid="page-builder-export-page-kit-confirm" disabled={exporting}>
+                  <Download size={15} aria-hidden="true" /> {exporting ? '만드는 중' : '배포 ZIP 다운로드'}
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       )}

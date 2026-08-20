@@ -418,6 +418,36 @@ describe('PageBuilderApiClient', () => {
     expect(fetchImpl.mock.calls[1][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/block-packs/github/install`);
   });
 
+  it('browses the official free store and applies a Page Kit as a new draft', async () => {
+    const catalog = {
+      catalog_version: 'g7pb-store/v1' as const,
+      publisher: { id: 'jiwonpapa' as const, name: '지원소프트' },
+      generated_at: '2026-08-20T00:00:00+00:00',
+      products: [],
+    };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: catalog }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: documentResource }, 201));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.getOfficialStoreCatalog()).resolves.toEqual(catalog);
+    await expect(client.applyOfficialStorePageKit({
+      product_id: 'jiwonpapa/company-launch',
+      product_version: '1.0.0',
+      title: '회사 소개',
+      slug: 'company-launch',
+    })).resolves.toEqual(documentResource);
+
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/store/catalog`);
+    expect(fetchImpl.mock.calls[1][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/store/page-kits/apply`);
+    expect(JSON.parse(String(fetchImpl.mock.calls[1][1]?.body))).toEqual({
+      product_id: 'jiwonpapa/company-launch',
+      product_version: '1.0.0',
+      title: '회사 소개',
+      slug: 'company-launch',
+    });
+  });
+
   it('redirects to the admin login with a same-origin editor path when auth is missing', async () => {
     const fetchImpl = vi.fn<typeof fetch>();
     const onUnauthorized = vi.fn();

@@ -6,6 +6,7 @@ env_file="$root/.env.docker.local"
 tls_dir="$root/.runtime/tls"
 cert_file="$tls_dir/g7pb.test.pem"
 key_file="$tls_dir/g7pb.test-key.pem"
+ca_file="$(mkcert -CAROOT)/rootCA.pem"
 
 command -v docker >/dev/null || { echo 'Docker is required.' >&2; exit 1; }
 command -v mkcert >/dev/null || { echo 'mkcert is required.' >&2; exit 1; }
@@ -38,6 +39,9 @@ else
 fi
 
 mkdir -p "$tls_dir"
+[[ -f "$ca_file" ]] || { echo 'mkcert root CA is missing.' >&2; exit 1; }
+cp "$ca_file" "$tls_dir/rootCA.pem"
+chmod 0644 "$tls_dir/rootCA.pem"
 if [[ ! -f "$cert_file" || ! -f "$key_file" ]]; then
   TRUST_STORES=system mkcert -cert-file "$cert_file" -key-file "$key_file" g7pb.test
   chmod 0600 "$key_file"

@@ -21,6 +21,7 @@ fi
 
 for required in \
   CHANGELOG.md module.json module.php composer.json composer.lock package.json package-lock.json \
+  config/block-packs.php \
   dist/js/page-builder.iife.js dist/js/page-effects.iife.js dist/css/page-builder.css; do
   [[ -f "$root/$required" ]] || { echo "Missing release input: $required" >&2; exit 2; }
 done
@@ -40,7 +41,7 @@ for file in CHANGELOG.md module.json module.php composer.json composer.lock pack
   cp "$root/$file" "$module_stage/$file"
 done
 
-for directory in database dist resources schemas src; do
+for directory in config database dist resources schemas src; do
   rsync -a "$root/$directory/" "$module_stage/$directory/"
 done
 

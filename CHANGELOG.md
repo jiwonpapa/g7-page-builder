@@ -26,6 +26,7 @@
 - 외부 Code Pack이 내장 Puck component를 덮어쓰거나 manifest에 없는 component를 등록하지 못하도록 차단했습니다.
 - 신뢰 서명키를 publisher namespace에 귀속해 다른 발행자로 위장한 Pack에 재사용하지 못하도록 차단했습니다.
 - 사용 중인 과거 block version을 누락하거나 기존 version 정의를 바꾸는 업데이트가 활성화되지 않도록 차단했습니다.
+- 릴리스 아티팩트에 Block Pack 신뢰 설정 파일을 필수 포함하도록 패키저를 보완했습니다.
 
 ## [0.6.0] - 2026-08-20
 

@@ -47,7 +47,7 @@
 - TypeScript strict, Vitest, V8 coverage, Vite production build
 - 전체 frontend 실행 코드의 statements 54%·branches 54%·functions 47%·lines 56%를 최저선으로 강제합니다.
 - 핵심 `PuckEditorAdapter.tsx`는 statements 80%·branches 77%·functions 76%·lines 81%를 별도 최저선으로 강제합니다.
-- `main.tsx`는 브라우저 수직 E2E가 담당하므로 V8 단위 coverage 분모에서 제외하며, coverage HTML/JSON은 `output/coverage`에 생성합니다.
+- `main.tsx`와 React/Puck Site Part orchestration은 브라우저 수직 E2E가 담당하므로 V8 단위 coverage 분모에서 제외합니다. 순수 Site Part document adapter는 별도 Vitest로 왕복·검증하며, coverage HTML/JSON은 `output/coverage`에 생성합니다.
 - Puck ↔ PageBuilderDocument round-trip Fixture
 - block별 editor props와 compile Fixture
 - `module.json`의 module/plugin 의존성 0개와 optional G7 surface 부재 검사
@@ -89,7 +89,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 8. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행
 9. 공개 해제 뒤 public 404
 10. typed motion 저장·미리보기·발행, 조건부 public runtime과 실제 in-view 활성화
-11. 공통 Header·Footer 설정 저장·미리보기·공개 렌더, 모바일 메뉴 열기·Escape 닫기·초점 복귀
+11. Header·Footer Site Part의 축소 미리보기, 실제 드래그 삽입, 인라인/속성 편집, 저장·발행, 공개 렌더와 모바일 메뉴 열기·Escape 닫기·초점 복귀
 12. 문서별 공통영역 제외 후 재발행 시 Header·Footer가 없는 인트로 렌더
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 실제 접근성 자동 검사, 고정 시각 baseline과 compile 실패 뒤 public hash 불변 시나리오는 전체 MVP gate에 추가해야 합니다.

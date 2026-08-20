@@ -71,11 +71,15 @@ page_builder_manager_status="$(curl "${curl_common[@]}" --output /dev/null --wri
   "$base_url/modules/jiwonpapa-page_builder/admin")"
 page_builder_native_manager_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/admin/page-builder")"
+page_builder_header_editor_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/modules/jiwonpapa-page_builder/admin/site-parts/header")"
+page_builder_footer_editor_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/modules/jiwonpapa-page_builder/admin/site-parts/footer")"
 install_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' "$base_url/install/" || true)"
-if [[ "$home_status" == 200 && "$up_status" == 200 && "$admin_status" == 200 && "$page_builder_manager_status" == 200 && "$page_builder_native_manager_status" == 200 && "$install_status" == 410 ]]; then
-  ok "HTTPS routes home=$home_status up=$up_status admin=$admin_status page-builder=$page_builder_manager_status native-manager=$page_builder_native_manager_status install=$install_status"
+if [[ "$home_status" == 200 && "$up_status" == 200 && "$admin_status" == 200 && "$page_builder_manager_status" == 200 && "$page_builder_native_manager_status" == 200 && "$page_builder_header_editor_status" == 200 && "$page_builder_footer_editor_status" == 200 && "$install_status" == 410 ]]; then
+  ok "HTTPS routes home=$home_status up=$up_status admin=$admin_status page-builder=$page_builder_manager_status native-manager=$page_builder_native_manager_status header-editor=$page_builder_header_editor_status footer-editor=$page_builder_footer_editor_status install=$install_status"
 else
-  fail "HTTPS routes home=$home_status up=$up_status admin=$admin_status page-builder=$page_builder_manager_status native-manager=$page_builder_native_manager_status install=$install_status"
+  fail "HTTPS routes home=$home_status up=$up_status admin=$admin_status page-builder=$page_builder_manager_status native-manager=$page_builder_native_manager_status header-editor=$page_builder_header_editor_status footer-editor=$page_builder_footer_editor_status install=$install_status"
 fi
 
 asset_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
@@ -125,8 +129,16 @@ if jq -e '
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/documents/{document}" and (.method | contains("DELETE")))] | length == 1)
   and
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/media/{media}" and (.method | contains("DELETE")))] | length == 1)
+  and
+  ([.[] | select(.uri == "modules/jiwonpapa-page_builder/admin/site-parts/{kind}" and (.method | contains("GET")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/site-parts/{kind}" and (.method | contains("GET")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/site-parts/{kind}/draft" and (.method | contains("PUT")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/site-parts/{kind}/publish" and (.method | contains("POST")))] | length == 1)
 ' <<<"$module_routes" >/dev/null; then
-  ok 'Recoverable publication, archive purge, and guarded media routes present'
+  ok 'Recoverable publication, archive purge, guarded media, and Site Part routes present'
 else
   fail 'Page Builder route safety contract'
 fi
@@ -173,6 +185,15 @@ else
   ok 'Page Builder module migrations applied'
 fi
 
+site_part_tables="$("${compose[@]}" exec -T -e MYSQL_PWD="$G7PB_DB_PASSWORD" dev \
+  mariadb -N -h 127.0.0.1 -u "$G7PB_DB_USERNAME" "$G7PB_DB_DATABASE" \
+  -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$G7PB_DB_DATABASE' AND TABLE_NAME IN ('g7_g7pb_site_parts', 'g7_g7pb_site_part_revisions');")"
+if [[ "$site_part_tables" == 2 ]]; then
+  ok 'Header/Footer Site Part storage tables'
+else
+  fail "Expected 2 Site Part tables, found $site_part_tables"
+fi
+
 login_response="$(printf '{"email":"%s","password":"%s"}' "$G7PB_ADMIN_EMAIL" "$G7PB_ADMIN_PASSWORD" \
   | curl "${curl_common[@]}" --header 'Content-Type: application/json' --data-binary @- "$base_url/api/auth/admin/login" || true)"
 if jq -e '(.success == true) and (.data.user.is_admin == true)' <<<"$login_response" >/dev/null 2>&1; then
@@ -189,7 +210,17 @@ if jq -e '(.success == true) and (.data.user.is_admin == true)' <<<"$login_respo
     fail 'Page Builder protected API or permission synchronization'
   fi
 
-  unset auth_token page_builder_response
+  site_part_response="$(curl "${curl_common[@]}" \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $auth_token" \
+    "$base_url/api/modules/jiwonpapa-page_builder/admin/site-parts/header?locale=ko" || true)"
+  if jq -e '(.success == true) and (.data.document.kind == "header") and (.data.document.schema_version == "g7-page-builder/site-part/v1")' <<<"$site_part_response" >/dev/null 2>&1; then
+    ok 'Header Site Part protected API and schema'
+  else
+    fail 'Header Site Part protected API or schema'
+  fi
+
+  unset auth_token page_builder_response site_part_response
 else
   fail 'Admin API authentication'
 fi

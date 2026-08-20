@@ -65,8 +65,8 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 | Method | Path | 목적 |
 |---|---|---|
 | GET | `/api/modules/jiwonpapa-page_builder/admin/documents` | 문서 목록 조회 |
-| GET | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 언어별 공통 Header·Footer와 메뉴 조회 |
-| PUT | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | expected lock으로 공통영역 설정 저장 |
+| GET | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 기존 설정에서 Site Part를 최초 생성하기 위한 호환 fallback 조회 |
+| PUT | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 구버전 호환용 설정 저장. 신규 관리자 UI에서는 직접 사용하지 않음 |
 | GET | `/api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}` | 독립 Site Part 초안과 active revision 조회 |
 | POST | `/api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}/bootstrap` | 기존 SiteShell 또는 기본값에서 최초 revision 생성 |
 | PUT | `/api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}/draft` | expected lock으로 Site Part 새 revision 저장 |

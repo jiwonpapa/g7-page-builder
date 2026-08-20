@@ -20,7 +20,7 @@ import {
   PageBuilderApiError,
   buildAdminLoginUrl,
 } from '../api/pageBuilderApi';
-import type { DocumentResource, RevisionSummary, SiteShellResource } from '../documents/types';
+import type { DocumentResource, RevisionSummary } from '../documents/types';
 import type { BlockPackResource, GitHubBlockPackCheckResource } from '../blocks/types';
 
 interface PageBuilderManagerOptions {
@@ -118,11 +118,6 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [purgeDocument, setPurgeDocument] = useState<DocumentResource | null>(null);
   const [purgeConfirmation, setPurgeConfirmation] = useState('');
   const [lifecycleBusy, setLifecycleBusy] = useState(false);
-  const [siteShellOpen, setSiteShellOpen] = useState(false);
-  const [siteShell, setSiteShell] = useState<SiteShellResource | null>(null);
-  const [siteShellLoading, setSiteShellLoading] = useState(false);
-  const [siteShellSaving, setSiteShellSaving] = useState(false);
-  const [siteShellLogoUploading, setSiteShellLogoUploading] = useState(false);
   const [blockPacksOpen, setBlockPacksOpen] = useState(false);
   const [blockPacks, setBlockPacks] = useState<BlockPackResource[]>([]);
   const [blockPacksLoading, setBlockPacksLoading] = useState(false);
@@ -316,20 +311,6 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     }
   };
 
-  const openSiteShell = async (): Promise<void> => {
-    setSiteShellOpen(true);
-    setSiteShellLoading(true);
-    setMessage(null);
-    try {
-      setSiteShell(await api.getSiteShell(locale));
-    } catch (error) {
-      setMessage(errorMessage(error));
-      setSiteShellOpen(false);
-    } finally {
-      setSiteShellLoading(false);
-    }
-  };
-
   const loadBlockPacks = async (): Promise<void> => {
     setBlockPacksLoading(true);
     try {
@@ -441,44 +422,6 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
       setMessage(errorMessage(error));
     } finally {
       setBlockPackBusy(null);
-    }
-  };
-
-  const saveSiteShell = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    if (!siteShell) return;
-    setSiteShellSaving(true);
-    setMessage(null);
-    try {
-      setSiteShell(await api.saveSiteShell(siteShell, siteShell.lock_version));
-      setSiteShellOpen(false);
-    } catch (error) {
-      setMessage(errorMessage(error));
-    } finally {
-      setSiteShellSaving(false);
-    }
-  };
-
-  const updateNavigation = (index: number, field: 'label' | 'url', value: string): void => {
-    setSiteShell((current) => current ? {
-      ...current,
-      navigation: current.navigation.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item),
-    } : current);
-  };
-
-  const uploadSiteLogo = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file || !siteShell) return;
-    setSiteShellLogoUploading(true);
-    setMessage(null);
-    try {
-      const asset = await api.uploadMedia(file);
-      setSiteShell((current) => current ? { ...current, logo_url: asset.url } : current);
-    } catch (error) {
-      setMessage(errorMessage(error));
-    } finally {
-      setSiteShellLogoUploading(false);
     }
   };
 
@@ -1049,114 +992,6 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                   );
                 })}
               </div>
-            )}
-          </section>
-        </div>
-      )}
-
-      {siteShellOpen && (
-        <div className="g7pb-dialog-backdrop" data-testid="page-builder-site-shell-dialog">
-          <section className="g7pb-dialog g7pb-dialog--wide g7pb-site-shell-dialog" role="dialog" aria-modal="true"
-            aria-labelledby="g7pb-site-shell-heading">
-            <div className="g7pb-dialog__heading-row">
-              <div>
-                <p className="g7pb-kicker">Global Site Shell</p>
-                <h2 id="g7pb-site-shell-heading">공통 Header·Footer와 메뉴</h2>
-              </div>
-              <button type="button" className="g7pb-button g7pb-button--quiet"
-                onClick={() => setSiteShellOpen(false)}>닫기</button>
-            </div>
-            {siteShellLoading || !siteShell ? (
-              <div className="g7pb-manager-loading" role="status">공통 메뉴를 불러오는 중입니다.</div>
-            ) : (
-              <form onSubmit={(event) => void saveSiteShell(event)}>
-                <div className="g7pb-site-shell-grid">
-                  <label>사이트 이름
-                    <input value={siteShell.brand_name} required maxLength={120} data-testid="page-builder-site-shell-brand"
-                      onChange={(event) => setSiteShell({ ...siteShell, brand_name: event.target.value })} />
-                  </label>
-                  <div className="g7pb-site-shell-logo-field">
-                    <label>로고 이미지 URL
-                      <input value={siteShell.logo_url} placeholder="비워두면 사이트 이름 표시"
-                        onChange={(event) => setSiteShell({ ...siteShell, logo_url: event.target.value })} />
-                    </label>
-                    <label className="g7pb-site-shell-upload">
-                      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only"
-                        data-testid="page-builder-site-shell-logo-upload" onChange={(event) => void uploadSiteLogo(event)} />
-                      {siteShellLogoUploading ? '업로드 중' : '이미지 직접 업로드'}
-                    </label>
-                  </div>
-                  <label>홈 연결 주소
-                    <input value={siteShell.home_url} required
-                      onChange={(event) => setSiteShell({ ...siteShell, home_url: event.target.value })} />
-                  </label>
-                  <label>Header 스타일
-                    <select className="g7pb-field-control" value={siteShell.header_variant}
-                      onChange={(event) => setSiteShell({ ...siteShell, header_variant: event.target.value as 'solid' | 'transparent' })}>
-                      <option value="solid">기본 배경</option>
-                      <option value="transparent">첫 화면 위 투명</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div className="g7pb-site-shell-section">
-                  <div className="g7pb-site-shell-section__heading">
-                    <div><strong>메뉴 항목</strong><span>데스크톱과 모바일 메뉴가 같은 순서를 사용합니다.</span></div>
-                    <button type="button" className="g7pb-button g7pb-button--quiet"
-                      disabled={siteShell.navigation.length >= 10}
-                      data-testid="page-builder-site-shell-add-menu"
-                      onClick={() => setSiteShell({ ...siteShell, navigation: [...siteShell.navigation, { label: '새 메뉴', url: '/' }] })}>
-                      항목 추가
-                    </button>
-                  </div>
-                  <div className="g7pb-site-shell-navigation">
-                    {siteShell.navigation.map((item, index) => (
-                      <div className="g7pb-site-shell-navigation__item" key={`${index}-${item.label}`}>
-                        <span>{index + 1}</span>
-                        <input aria-label={`${index + 1}번 메뉴 이름`} value={item.label} required maxLength={80}
-                          onChange={(event) => updateNavigation(index, 'label', event.target.value)} />
-                        <input aria-label={`${index + 1}번 메뉴 주소`} value={item.url} required
-                          onChange={(event) => updateNavigation(index, 'url', event.target.value)} />
-                        <button type="button" aria-label={`${item.label} 메뉴 삭제`}
-                          onClick={() => setSiteShell({ ...siteShell, navigation: siteShell.navigation.filter((_, itemIndex) => itemIndex !== index) })}>×</button>
-                      </div>
-                    ))}
-                    {siteShell.navigation.length === 0 && <p>메뉴가 없습니다. 항목을 추가해 주세요.</p>}
-                  </div>
-                </div>
-
-                <div className="g7pb-site-shell-grid">
-                  <label>강조 버튼 문구
-                    <input value={siteShell.cta?.label ?? ''} placeholder="예: 문의하기"
-                      onChange={(event) => setSiteShell({ ...siteShell, cta: event.target.value ? { label: event.target.value, url: siteShell.cta?.url ?? '/' } : null })} />
-                  </label>
-                  <label>강조 버튼 주소
-                    <input value={siteShell.cta?.url ?? ''} disabled={!siteShell.cta}
-                      onChange={(event) => setSiteShell({ ...siteShell, cta: siteShell.cta ? { ...siteShell.cta, url: event.target.value } : null })} />
-                  </label>
-                  <label className="g7pb-choice-row">
-                    <input type="checkbox" checked={siteShell.sticky}
-                      onChange={(event) => setSiteShell({ ...siteShell, sticky: event.target.checked })} />
-                    스크롤할 때 Header 고정
-                  </label>
-                  <label className="g7pb-choice-row">
-                    <input type="checkbox" checked={siteShell.show_footer_navigation}
-                      onChange={(event) => setSiteShell({ ...siteShell, show_footer_navigation: event.target.checked })} />
-                    Footer에 메뉴 반복 표시
-                  </label>
-                </div>
-                <label>Footer 문구
-                  <input value={siteShell.footer_text} maxLength={300}
-                    onChange={(event) => setSiteShell({ ...siteShell, footer_text: event.target.value })} />
-                </label>
-                <div className="g7pb-dialog__actions">
-                  <button type="button" className="g7pb-button g7pb-button--quiet" onClick={() => setSiteShellOpen(false)}>취소</button>
-                  <button type="submit" className="g7pb-button g7pb-button--primary"
-                    data-testid="page-builder-site-shell-save" disabled={siteShellSaving}>
-                    {siteShellSaving ? '저장 중' : '공통 메뉴 저장'}
-                  </button>
-                </div>
-              </form>
             )}
           </section>
         </div>

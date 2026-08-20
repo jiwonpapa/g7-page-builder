@@ -18,6 +18,7 @@
 - 고정 `g7pb-dev` runtime과 release·staging 명령은 active Local integration task, 전체 품질 검증 SHA와 clean 상태를 통과해야 실행되도록 변경했습니다.
 - 문서함 작업을 `편집`·`공개 보기`·`더보기` 계층으로 정리하고 ISC 라이선스 Lucide 아이콘을 적용해 한글 버튼이 세로로 깨지지 않도록 변경했습니다.
 - 기존 공통 메뉴 설정 모달 진입점을 `Header 편집`·`Footer 편집` 시각 편집기로 교체하고, Site Part 발행 전 compile·URL 검증을 필수화했습니다.
+- 사용되지 않던 구형 공통영역 설정 모달 코드를 제거하고 SiteShell API는 최초 Site Part 생성과 미발행 fallback 호환 경로로만 한정했습니다.
 
 ## [0.7.0] - 2026-08-20
 

@@ -79,6 +79,35 @@ function FooterColumnsPreview(props: FooterColumnsProps): React.ReactElement {
   </div>{props.legalText ? <p className="g7pb-site-footer__legal">{props.legalText}</p> : null}</footer>;
 }
 
+function SitePartDrawer({ children }: { children: React.ReactNode }): React.ReactElement {
+  return <div className="g7pb-site-part-library" data-testid="page-builder-site-part-library">
+    <header><strong>Site Part 블록</strong><p>구조를 보고 원하는 위치로 끌어 놓으세요.</p></header>
+    {children}
+  </div>;
+}
+
+function SitePartThumbnail({ name }: { name: string }): React.ReactElement {
+  if (name === 'HeaderNavigation') return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--navigation" aria-hidden="true"><b /><span><i /><i /><i /></span><em /></div>;
+  if (name === 'Announcement') return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--announcement" aria-hidden="true"><b /><i /></div>;
+  if (name === 'FooterColumns') return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--columns" aria-hidden="true"><b /><span><i /><i /><i /></span></div>;
+  return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--footer" aria-hidden="true"><span><b /><i /><i /></span><em /></div>;
+}
+
+function SitePartDrawerItem({ name }: { children: React.ReactNode; name: string }): React.ReactElement {
+  const descriptions: Record<string, string> = {
+    HeaderNavigation: '브랜드·PC 메뉴·모바일 메뉴·강조 버튼',
+    Announcement: '상단 공지와 선택 링크',
+    FooterSimple: '브랜드·하단 메뉴·사업자 문구',
+    FooterColumns: '브랜드와 최대 4개 메뉴 그룹',
+  };
+
+  return <div className="g7pb-site-part-library-card" data-site-part-block={name}>
+    <SitePartThumbnail name={name} />
+    <div><strong>{name === 'HeaderNavigation' ? 'Header · 내비게이션' : name === 'Announcement' ? 'Header · 공지 바' : name === 'FooterColumns' ? 'Footer · 다단 메뉴' : 'Footer · 기본'}</strong><span>{descriptions[name]}</span><em>끌어서 배치</em></div>
+    <span className="g7pb-site-part-library-card__handle" aria-hidden="true">⠿</span>
+  </div>;
+}
+
 export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents> {
   const all: Config<SitePartComponents>['components'] = {
     HeaderNavigation: {
@@ -126,6 +155,11 @@ function errorMessage(error: unknown): string {
 export function SitePartEditor({ kind, locale }: SitePartEditorProps): React.ReactElement {
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const config = useMemo(() => sitePartConfigFor(kind), [kind]);
+  const overrides = useMemo(() => ({
+    drawer: SitePartDrawer,
+    drawerItem: SitePartDrawerItem,
+    headerActions: () => <span className="g7pb-site-part-header-help">블록 선택 후 우측에서 세부 설정</span>,
+  }), []);
   const [resource, setResource] = useState<SitePartResource | null>(null);
   const [data, setData] = useState<SitePartPuckData>({ root: { props: {} }, content: [] });
   const [message, setMessage] = useState<string | null>(null);
@@ -214,7 +248,7 @@ export function SitePartEditor({ kind, locale }: SitePartEditorProps): React.Rea
     {busy && !resource ? <div className="g7pb-loading">Site Part를 준비하는 중입니다.</div> : null}
     {resource ? <div className="g7pb-site-part-puck" aria-busy={busy}>
       <div className="g7pb-site-part-device-legend" aria-hidden="true"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>상단 기기 버튼으로 반응형 화면을 확인하세요.</span></div>
-      <Puck config={config} data={data} height="100%" iframe={{ enabled: true, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
+      <Puck config={config} data={data} height="100%" iframe={{ enabled: true, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ itemSelector: data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null, viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} overrides={overrides} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
     </div> : null}
   </main>;
 }

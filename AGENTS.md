@@ -37,6 +37,9 @@
 ## Compatibility
 
 - 공개 계약과 문서 스키마는 SemVer를 따른다.
+- 제품 버전은 `module.json`, `package.json`, `package-lock.json`에서 항상 일치시킨다.
+- 사용자에게 의미 있는 변경은 Keep a Changelog 형식의 `CHANGELOG.md` `Unreleased`에 기록한다.
+- 배포한 버전의 내용은 바꾸지 않고 변경이 필요하면 새 SemVer를 발행한다.
 - 모든 문서는 `schema_version`, 모든 컴파일 결과는 `compiler_version`을 기록한다.
 - G7 업데이트 후 과거 Fixture 재컴파일·렌더링 시험을 통과해야 한다.
 - 모듈이 활성인 상태의 schema/compiler 비호환에서는 편집·발행을 중지하되 마지막 정상 발행본을 유지한다.

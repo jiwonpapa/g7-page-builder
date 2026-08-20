@@ -8,6 +8,8 @@ version="$(node -p "require('$root/module.json').version")"
 commit="$(git -C "$root" rev-parse --short=12 HEAD)"
 dirty='false'
 
+node "$root/scripts/check-version-policy.mjs" --release
+
 if ! git -C "$root" diff --quiet || ! git -C "$root" diff --cached --quiet; then
   dirty='true'
 fi
@@ -18,7 +20,7 @@ if [[ "$dirty" == true && "${ALLOW_DIRTY:-}" != '1' ]]; then
 fi
 
 for required in \
-  module.json module.php composer.json composer.lock package.json package-lock.json \
+  CHANGELOG.md module.json module.php composer.json composer.lock package.json package-lock.json \
   dist/js/page-builder.iife.js dist/js/page-effects.iife.js dist/css/page-builder.css; do
   [[ -f "$root/$required" ]] || { echo "Missing release input: $required" >&2; exit 2; }
 done
@@ -34,7 +36,7 @@ trap 'rm -rf "$stage_root"' EXIT
 module_stage="$stage_root/jiwonpapa-page_builder"
 mkdir -p "$module_stage"
 
-for file in module.json module.php composer.json composer.lock package.json package-lock.json; do
+for file in CHANGELOG.md module.json module.php composer.json composer.lock package.json package-lock.json; do
   cp "$root/$file" "$module_stage/$file"
 done
 

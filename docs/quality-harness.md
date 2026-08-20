@@ -7,7 +7,7 @@
 | Gate | 목적 | 실패 시 |
 |---|---|---|
 | `quality-php` | Composer validate, Pint, PHPStan, PHPUnit | merge 금지 |
-| `quality-frontend` | TS strict, Vitest, G7 dependency budget, boundary, production build, asset 검사 | merge 금지 |
+| `quality-frontend` | SemVer/changelog, TS strict, Vitest, G7 dependency budget, boundary, production build, asset 검사 | merge 금지 |
 | `quality-g7` | module 설치·활성·migration·TLS·DB·Redis·관리자 인증 | 통합 merge 금지 |
 | `dev-browser-smoke` | home/login/runtime 기본 assertion | 환경 완료 아님 |
 | `dev-product-e2e` | 생성→편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
@@ -24,6 +24,8 @@
 ## Frontend
 
 - Node 24, npm lockfile
+- `module.json`·`package.json`·`package-lock.json` 버전 일치와 SemVer 2.0.0 문법
+- Keep a Changelog의 `Unreleased`, 현재 버전, ISO 날짜, 허용 카테고리 검사
 - TypeScript strict, Vitest, Vite production build
 - Puck ↔ PageBuilderDocument round-trip Fixture
 - block별 editor props와 compile Fixture

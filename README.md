@@ -88,4 +88,6 @@ Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 �
 
 Docker 로컬 개발환경, G7 설치 자동화, 체크섬 기반 릴리스 패키지와 `g7devops` 스테이징 배포 하네스가 구현되어 있습니다. 배포 순서는 `make quality-gate`, `make release-package`, `make deploy-staging`, `make smoke-staging`입니다.
 
+제품 버전은 [SemVer 정책](docs/versioning-policy.md)을 따르며 사용자 관점 변경사항은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다. G7 관리 화면과 릴리스 패키지는 동일한 버전과 changelog를 사용합니다.
+
 로컬 G7 실행 소스는 제품 Git에서 제외된 `.runtime/gnuboard7`의 별도 clone을 사용합니다. 현재 기준은 공식 G7 `7.0.7`입니다.

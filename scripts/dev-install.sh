@@ -168,6 +168,7 @@ if [[ "$installed" != yes ]]; then
 fi
 
 "${compose[@]}" exec -T --user www-data dev g7pb-post-install
+"${compose[@]}" exec -T --user www-data dev g7pb-sync-session-settings
 
 echo 'Installing and activating the mounted Page Builder module...'
 installed_modules="$("${compose[@]}" exec -T --user www-data dev \

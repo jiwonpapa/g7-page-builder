@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 COMPOSE := docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.yaml
 
-.PHONY: dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
+.PHONY: dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
 
 dev-bootstrap:
 	./scripts/dev-bootstrap.sh
@@ -40,6 +40,11 @@ quality-php: dev-deps
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && composer check'
 
+quality-php-coverage: dev-deps
+	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
+		-e XDEBUG_MODE=coverage \
+		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && mkdir -p output/coverage && vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/UnitPhp tests/Integration --coverage-clover output/coverage/php-clover.xml --coverage-filter src && php scripts/check-php-coverage.php output/coverage/php-clover.xml'
+
 quality-frontend: dev-deps
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
@@ -56,7 +61,7 @@ quality-g7: dev-verify
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/Integration'
 
-quality-gate: quality-php quality-frontend quality-g7 dev-product-e2e
+quality-gate: quality-php quality-php-coverage quality-frontend quality-g7 dev-product-e2e
 
 dev-check: quality-php quality-frontend
 

@@ -15,4 +15,5 @@
 /playwright/.auth/
 /.playwright-cli/
 /output/playwright/
+/output/coverage*/
 /output/releases/

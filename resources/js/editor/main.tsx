@@ -442,6 +442,15 @@ function EditorShell({
           {saveState === 'error' && (
             <button type="button" onClick={() => void saveDraft(true)}>다시 저장</button>
           )}
+          <button
+            type="button"
+            className="g7pb-notice__dismiss"
+            aria-label="알림 닫기"
+            data-testid="page-builder-message-dismiss"
+            onClick={() => setMessage(null)}
+          >
+            닫기
+          </button>
         </div>
       )}
 

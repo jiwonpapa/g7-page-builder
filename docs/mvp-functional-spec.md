@@ -84,6 +84,8 @@ Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Bl
 ## Rich Text
 
 - Puck 내장 Tiptap field를 사용합니다.
+- Hero·분할 Hero·Slider Hero의 화면상 문구는 Puck 인라인 편집을 사용하며 URL·이미지·구조·preset은 속성 패널에 둡니다.
+- Slider Hero는 편집 중 자동재생을 멈추고 현재 선택 장면을 고정해 입력 중 화면이 바뀌지 않게 합니다.
 - 허용: paragraph, H2~H4, bold, italic, link, ordered/unordered list, blockquote, hard break.
 - 금지: script, iframe, inline event, 임의 style, raw HTML 입력.
 - 내부 링크와 `https`, `mailto`, `tel`만 허용합니다.

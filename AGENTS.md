@@ -32,6 +32,8 @@
 - Puck의 `AppState`와 원시 `Data`는 영속 원본이 아니다. 저장 전후 항상 `PageBuilderDocument`로 변환한다.
 - 드래그앤드롭·속성 패널·히스토리·반응형 캔버스를 새로 복제하지 않는다.
 - Tiptap은 Puck의 리치텍스트 필드 구현으로만 사용한다. Tiptap을 페이지 레이아웃 엔진으로 사용하지 않는다.
+- Hero 계열의 화면상 텍스트는 Puck `contentEditable`로 직접 편집하고 URL·이미지·구조·preset은 속성 패널에서 편집한다.
+- 임의 class·Tailwind·inline style·raw HTML·JavaScript field를 문서 계약이나 편집기에 추가하지 않는다.
 - Layout Editor는 `PageBuilderDocument`와 생성된 발행본을 열거나 저장하지 않는다.
 
 ## Compatibility
@@ -59,8 +61,8 @@
 
 ## Quality gates
 
-- PHP: PHP 8.5, PHPUnit, Laravel Pint, PHPStan.
-- Frontend: Node 24, TypeScript strict, Vitest, production build 및 asset manifest 검사.
+- PHP: PHP 8.5, PHPUnit, Laravel Pint, PHPStan, Xdebug line coverage 하한선.
+- Frontend: Node 24, TypeScript strict, Vitest V8 coverage 하한선, production build 및 asset manifest 검사.
 - Browser: Playwright로 생성→편집→미리보기→발행 흐름을 확인한다.
 - PC·태블릿·모바일 시각 회귀를 확인한다.
 - 코어 내부 import와 직접 테이블 접근은 정적 검사로 차단한다.

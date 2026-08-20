@@ -11,6 +11,18 @@ class TestResizeObserver {
 }
 
 globalThis.ResizeObserver = TestResizeObserver;
+const localStorageValues = new Map<string, string>();
+Object.defineProperty(window, 'localStorage', {
+  configurable: true,
+  value: {
+    clear: () => localStorageValues.clear(),
+    getItem: (key: string) => localStorageValues.get(key) ?? null,
+    key: (index: number) => Array.from(localStorageValues.keys())[index] ?? null,
+    get length() { return localStorageValues.size; },
+    removeItem: (key: string) => localStorageValues.delete(key),
+    setItem: (key: string, value: string) => localStorageValues.set(key, value),
+  },
+});
 Object.defineProperty(window, 'matchMedia', {
   configurable: true,
   value: vi.fn().mockImplementation((query: string) => ({
@@ -25,6 +37,20 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+  configurable: true,
+  value: () => ({
+    bottom: 40,
+    height: 40,
+    left: 0,
+    right: 100,
+    top: 0,
+    width: 100,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  }),
+});
 
 const { PuckEditorAdapter } = await import('../../resources/js/editor/PuckEditorAdapter');
 
@@ -98,6 +124,7 @@ afterEach(() => {
   for (const cleanup of mounted.splice(0)) {
     cleanup();
   }
+  window.localStorage.clear();
   document.body.replaceChildren();
 });
 
@@ -123,6 +150,60 @@ function editorElements(selector: string): NodeListOf<HTMLElement> {
 }
 
 describe('Puck editor surface contract', () => {
+  it('lets the Hero-family advisory stay dismissed until the block count changes', async () => {
+    const secondHero = {
+      ...structuredClone(fixture.blocks[0]),
+      instance_id: '623e4567-e89b-42d3-a456-426614174005',
+      props: { ...structuredClone(fixture.blocks[0].props), title: 'Second Hero' },
+    };
+    const thirdHero = {
+      ...structuredClone(fixture.blocks[0]),
+      instance_id: '723e4567-e89b-42d3-a456-426614174006',
+      props: { ...structuredClone(fixture.blocks[0].props), title: 'Third Hero' },
+    };
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => {
+      act(() => root.unmount());
+    });
+
+    await act(async () => {
+      root.render(
+        <PuckEditorAdapter
+          document={{ ...fixture, blocks: [...fixture.blocks, secondHero] }}
+          revisionKey={0}
+          iframeEnabled={false}
+          onChange={() => undefined}
+          onPublish={() => undefined}
+        />,
+      );
+    });
+
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-hero-warning"]')).textContent)
+      .toContain('Hero 계열 블록이 2개');
+    const dismiss = await eventually<HTMLButtonElement>('[data-testid="page-builder-hero-warning-dismiss"]');
+    await act(async () => {
+      dismiss.click();
+    });
+    expect(document.querySelector('[data-testid="page-builder-hero-warning"]')).toBeNull();
+
+    await act(async () => {
+      root.render(
+        <PuckEditorAdapter
+          document={{ ...fixture, blocks: [...fixture.blocks, secondHero, thirdHero] }}
+          revisionKey={1}
+          iframeEnabled={false}
+          onChange={() => undefined}
+          onPublish={() => undefined}
+        />,
+      );
+    });
+
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-hero-warning"]')).textContent)
+      .toContain('Hero 계열 블록이 3개');
+  });
+
   it('renders stable block and inspector selectors through the adapter', async () => {
     const container = document.createElement('div');
     document.body.append(container);

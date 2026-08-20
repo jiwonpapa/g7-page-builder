@@ -3,7 +3,8 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.0/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          cacheDirectory=".phpunit.cache"
-         colors="true">
+         colors="true"
+         failOnWarning="true">
     <testsuites>
         <testsuite name="G7 Page Builder">
             <directory>tests/UnitPhp</directory>

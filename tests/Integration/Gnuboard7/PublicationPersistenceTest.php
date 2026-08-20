@@ -499,7 +499,7 @@ final class PublicationPersistenceTest extends TestCase
 
         $archived = $service->archive($created->document->documentId, $created->lockVersion, null);
         self::assertNotNull($archived->archivedAt);
-        self::assertNull($archived->publicUrl);
+        self::assertNull($archived->activePublicSlug);
         self::assertNull($service->findPublished('archive-test'));
         self::assertSame(0, $service->paginate(1, 20, 'active')['total']);
         self::assertSame(1, $service->paginate(1, 20, 'archived')['total']);

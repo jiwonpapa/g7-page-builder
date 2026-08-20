@@ -7,7 +7,8 @@
 | Gate | 목적 | 실패 시 |
 |---|---|---|
 | `quality-php` | Composer validate, Pint, PHPStan, PHPUnit | merge 금지 |
-| `quality-frontend` | SemVer/changelog, TS strict, Vitest, G7 dependency budget, boundary, production build, asset 검사 | merge 금지 |
+| `quality-php-coverage` | Xdebug 기반 Unit+G7 integration PHP line coverage | merge 금지 |
+| `quality-frontend` | SemVer/changelog, TS strict, Vitest+V8 coverage, G7 dependency budget, boundary, production build, asset 검사 | merge 금지 |
 | `quality-g7` | module 설치·활성·migration·TLS·DB·Redis·관리자 인증 | 통합 merge 금지 |
 | `dev-browser-smoke` | home/login/runtime 기본 assertion | 환경 완료 아님 |
 | `dev-product-e2e` | 생성→편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
@@ -20,13 +21,19 @@
 - `phpstan-g7.neon.dist`는 `quality-g7`에서 설치된 G7 autoload를 사용해 module.php, Provider, route, Adapter를 검사합니다.
 - G7 Adapter integration test만 설치된 G7 autoload를 사용합니다.
 - baseline으로 오류를 숨기지 않습니다.
+- Unit+G7 integration을 한 coverage session으로 실행해 전체 PHP line 61%를 최저선으로 강제합니다.
+- 핵심 컴파일러 87%·서비스 96%·Eloquent 저장소 91% line coverage를 각각 별도 최저선으로 강제합니다.
+- PHPUnit warning도 실패로 처리하고 Clover 보고서는 `output/coverage/php-clover.xml`에 생성합니다.
 
 ## Frontend
 
 - Node 24, npm lockfile
 - `module.json`·`package.json`·`package-lock.json` 버전 일치와 SemVer 2.0.0 문법
 - Keep a Changelog의 `Unreleased`, 현재 버전, ISO 날짜, 허용 카테고리 검사
-- TypeScript strict, Vitest, Vite production build
+- TypeScript strict, Vitest, V8 coverage, Vite production build
+- 전체 frontend 실행 코드의 statements 54%·branches 54%·functions 47%·lines 56%를 최저선으로 강제합니다.
+- 핵심 `PuckEditorAdapter.tsx`는 statements 80%·branches 77%·functions 76%·lines 81%를 별도 최저선으로 강제합니다.
+- `main.tsx`는 브라우저 수직 E2E가 담당하므로 V8 단위 coverage 분모에서 제외하며, coverage HTML/JSON은 `output/coverage`에 생성합니다.
 - Puck ↔ PageBuilderDocument round-trip Fixture
 - block별 editor props와 compile Fixture
 - `module.json`의 module/plugin 의존성 0개와 optional G7 surface 부재 검사
@@ -78,5 +85,5 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 - `frontend`: Node 24, `npm ci`, frontend gate, dist artifact
 - `php`: PHP 8.5, `composer install`, PHP gate
 - 현재 G7 설치·TLS·인증·제품 lifecycle 통합은 로컬 고정 checkout의 `make quality-gate`로 검사합니다.
-- `g7-contract` CI는 G7 7.0.7 고정 checkout의 autoload로 Adapter PHPStan과 SQLite 통합 test를 실행합니다.
+- `g7-contract` CI는 G7 7.0.7 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
 - TLS·관리자 인증·실제 module route를 포함하는 `dev-product-e2e`는 현재 로컬 통합 필수 gate입니다. 재현 가능한 CI secret/fixture가 준비되면 별도 `g7-integration` 필수 job으로 승격합니다.

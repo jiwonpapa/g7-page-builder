@@ -1,7 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import type { Config } from '@puckeditor/core';
-import EmblaCarousel from 'embla-carousel';
-import Autoplay from 'embla-carousel-autoplay';
 import {
   createMotionField,
   DEFAULT_BLOCK_MOTION,
@@ -307,6 +305,36 @@ function normalizeHeroSlides(value: unknown): HeroSlideItem[] {
   }));
 }
 
+type HeroSlidePreviewItem = Omit<HeroSlideItem, 'eyebrow' | 'title' | 'body' | 'buttonLabel'> & {
+  eyebrow: React.ReactNode;
+  title: React.ReactNode;
+  body: React.ReactNode;
+  buttonLabel: React.ReactNode;
+};
+
+function inlineContent(value: unknown, fallback: string): React.ReactNode {
+  return React.isValidElement(value) || typeof value === 'string' ? value : fallback;
+}
+
+function previewHeroSlides(value: unknown): HeroSlidePreviewItem[] {
+  const source = Array.isArray(value) ? value : DEFAULT_HERO_SLIDER.slides;
+
+  return source.slice(0, 5).map((raw, index) => {
+    const item = asRecord(raw);
+    const fallback = DEFAULT_HERO_SLIDER.slides[index] ?? DEFAULT_HERO_SLIDER.slides[0];
+
+    return {
+      eyebrow: inlineContent(item.eyebrow, fallback.eyebrow),
+      title: inlineContent(item.title, fallback.title),
+      body: inlineContent(item.body, fallback.body),
+      buttonLabel: inlineContent(item.buttonLabel, fallback.buttonLabel),
+      buttonUrl: asString(item.buttonUrl),
+      imageSrc: asString(item.imageSrc),
+      imageAlt: asString(item.imageAlt),
+    };
+  });
+}
+
 function normalizeLogos(value: unknown): LogoItem[] {
   return normalizeArray(value, DEFAULT_LOGO_CLOUD.logos, 12, (item) => ({
     name: asString(item.name), imageSrc: asString(item.imageSrc), imageAlt: asString(item.imageAlt), url: asString(item.url),
@@ -372,7 +400,7 @@ function HeroSplitPreview(props: HeroSplitEditorProps & { id: string }): React.R
   return (
     <BlockFrame id={props.id} type="hero-split" motion={props.motion}>
       <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${props.mediaPosition} ${surfaceClass(props.surface, props.spacing)}`}>
-        <div className="g7pb-preview-hero-split__copy"><small>{props.eyebrow}</small><h1>{props.title}</h1><p>{props.body}</p>{props.primaryLabel && <a href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
+        <div className="g7pb-preview-hero-split__copy"><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h1 data-g7pb-inline-field="title">{props.title}</h1><p data-g7pb-inline-field="body">{props.body}</p>{props.primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
         <figure><ImageOrPlaceholder src={props.imageSrc} alt={props.imageAlt} label="대표" /></figure>
       </div>
     </BlockFrame>
@@ -380,29 +408,47 @@ function HeroSplitPreview(props: HeroSplitEditorProps & { id: string }): React.R
 }
 
 function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React.ReactElement {
-  const slides = normalizeHeroSlides(props.slides);
-  const viewportRef = useRef<HTMLDivElement>(null);
+  const slides = previewHeroSlides(props.slides);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const activeIndex = Math.min(selectedIndex, Math.max(0, slides.length - 1));
 
-  useEffect(() => {
-    if (!viewportRef.current) return;
-    const autoplay = Autoplay({ delay: Number(props.interval), stopOnInteraction: true, stopOnMouseEnter: true });
-    const embla = EmblaCarousel(viewportRef.current, { loop: props.loop === 'yes' }, props.autoplay === 'yes' ? [autoplay] : []);
-    const select = (): void => setSelectedIndex(embla.selectedScrollSnap());
-    embla.on('select', select);
-    select();
-    return () => embla.destroy();
-  }, [props.autoplay, props.interval, props.loop, slides.length]);
+  const navigate = (target: 'previous' | 'next' | number): void => {
+    if (typeof target === 'number') {
+      setSelectedIndex(Math.min(Math.max(target, 0), slides.length - 1));
+      return;
+    }
+
+    setSelectedIndex((current) => {
+      const next = target === 'previous' ? current - 1 : current + 1;
+      if (props.loop === 'yes') {
+        return (next + slides.length) % slides.length;
+      }
+      return Math.min(Math.max(next, 0), slides.length - 1);
+    });
+  };
 
   return (
     <BlockFrame id={props.id} type="hero-slider" motion={props.motion}>
       <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing)}`}>
-        <div className="g7pb-preview-hero-slider__viewport" ref={viewportRef}>
+        <div className="g7pb-preview-hero-slider__viewport">
           <div className="g7pb-preview-hero-slider__track">
-            {slides.map((slide, index) => <article key={`${slide.title}-${index}`}><div><small>{slide.eyebrow}</small><h2>{slide.title}</h2><p>{slide.body}</p>{slide.buttonLabel && <span>{slide.buttonLabel} →</span>}</div><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></article>)}
+            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}><div><small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small><h2 data-g7pb-inline-field={`slides.${index}.title`}>{slide.title}</h2><p data-g7pb-inline-field={`slides.${index}.body`}>{slide.body}</p>{slide.buttonLabel && <span data-g7pb-inline-field={`slides.${index}.buttonLabel`}>{slide.buttonLabel} →</span>}</div><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></article>)}
           </div>
         </div>
-        <div className="g7pb-preview-hero-slider__dots" aria-label="슬라이드 위치">{slides.map((_, index) => <i className={selectedIndex === index ? 'is-active' : ''} key={index} />)}</div>
+        <div
+          className="g7pb-preview-hero-slider__controls"
+          data-puck-overlay-portal="true"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button type="button" aria-label="이전 슬라이드" data-testid="page-builder-slider-previous" onClick={() => navigate('previous')}>←</button>
+          <div className="g7pb-preview-hero-slider__dots" aria-label="편집할 슬라이드">
+            {slides.map((_, index) => <button type="button" aria-label={`${index + 1}번 슬라이드 편집`} aria-pressed={activeIndex === index} className={activeIndex === index ? 'is-active' : ''} data-testid={`page-builder-slider-slide-${index}`} key={index} onClick={() => navigate(index)} />)}
+          </div>
+          <span>{activeIndex + 1} / {slides.length}</span>
+          <button type="button" aria-label="다음 슬라이드" data-testid="page-builder-slider-next" onClick={() => navigate('next')}>→</button>
+        </div>
+        {props.autoplay === 'yes' && <p className="g7pb-preview-hero-slider__editing-note">편집 중 자동 재생은 멈추며 발행 화면에서만 적용됩니다.</p>}
       </div>
     </BlockFrame>
   );
@@ -436,8 +482,8 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   HeroSplit: {
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
-      eyebrow: { type: 'text', label: '보조 문구' }, title: { type: 'text', label: '제목' }, body: { type: 'textarea', label: '본문' },
-      primaryLabel: { type: 'text', label: '버튼 문구' }, primaryUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true },
+      primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
       surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS },
       motion: createMotionField(['none', 'reveal', 'parallax-soft']),
@@ -446,7 +492,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   HeroSlider: {
     label: '슬라이더 히어로', defaultProps: DEFAULT_HERO_SLIDER,
     fields: {
-      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구' }, title: { type: 'text', label: '제목' }, body: { type: 'textarea', label: '본문' }, buttonLabel: { type: 'text', label: '버튼 문구' }, buttonUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('슬라이드 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
+      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true }, buttonLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, buttonUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('슬라이드 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
       autoplay: { type: 'radio', label: '자동 재생', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },
       interval: { type: 'select', label: '자동 재생 간격', options: [{ label: '3초', value: '3000' }, { label: '5초', value: '5000' }, { label: '7초', value: '7000' }] },
       loop: { type: 'radio', label: '무한 반복', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },

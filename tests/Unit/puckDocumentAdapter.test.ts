@@ -20,6 +20,7 @@ globalThis.ResizeObserver = TestResizeObserver;
 
 const {
   canonicalToPuck,
+  pageBuilderPuckConfig,
   puckToCanonical,
   sanitizeRichTextForPreview,
 } = await import('../../resources/js/editor/PuckEditorAdapter');
@@ -94,6 +95,60 @@ const documentFixture: PageBuilderDocument = {
 };
 
 describe('Puck PageBuilderDocument adapter', () => {
+  it('keeps inline editing explicit for Hero-family copy and excludes structural fields', () => {
+    const components = pageBuilderPuckConfig.components as unknown as Record<string, {
+      fields: Record<string, Record<string, unknown>>;
+    }>;
+    const hero = components.Hero.fields;
+    const split = components.HeroSplit.fields;
+    const sliderFields = components.HeroSlider.fields.slides as {
+      arrayFields: Record<string, Record<string, unknown>>;
+    };
+
+    expect(hero.eyebrow.contentEditable).toBe(true);
+    expect(hero.title.contentEditable).toBe(true);
+    expect(hero.body.contentEditable).toBe(true);
+    expect(hero.primaryUrl.contentEditable).not.toBe(true);
+    expect(hero.imageSrc.contentEditable).not.toBe(true);
+
+    expect(split.eyebrow.contentEditable).toBe(true);
+    expect(split.title.contentEditable).toBe(true);
+    expect(split.body.contentEditable).toBe(true);
+    expect(split.primaryLabel.contentEditable).toBe(true);
+    expect(split.primaryUrl.contentEditable).not.toBe(true);
+
+    expect(sliderFields.arrayFields.eyebrow.contentEditable).toBe(true);
+    expect(sliderFields.arrayFields.title.contentEditable).toBe(true);
+    expect(sliderFields.arrayFields.body.contentEditable).toBe(true);
+    expect(sliderFields.arrayFields.buttonLabel.contentEditable).toBe(true);
+    expect(sliderFields.arrayFields.buttonUrl.contentEditable).not.toBe(true);
+    expect(sliderFields.arrayFields.imageSrc.contentEditable).not.toBe(true);
+  });
+
+  it('does not expose arbitrary code, class, style, or script fields in the editor contract', () => {
+    const forbidden = new Set([
+      'class', 'classname', 'css', 'html', 'javascript', 'script', 'style', 'tailwind',
+    ]);
+
+    const visitFields = (fields: Record<string, unknown>): void => {
+      for (const [name, rawField] of Object.entries(fields)) {
+        expect(forbidden.has(name.toLowerCase()), `unsafe editor field: ${name}`).toBe(false);
+        if (!rawField || typeof rawField !== 'object') continue;
+        const field = rawField as Record<string, unknown>;
+        if (field.arrayFields && typeof field.arrayFields === 'object') {
+          visitFields(field.arrayFields as Record<string, unknown>);
+        }
+        if (field.objectFields && typeof field.objectFields === 'object') {
+          visitFields(field.objectFields as Record<string, unknown>);
+        }
+      }
+    };
+
+    for (const component of Object.values(pageBuilderPuckConfig.components)) {
+      visitFields((component as { fields?: Record<string, unknown> }).fields ?? {});
+    }
+  });
+
   it('round-trips all eight catalog blocks through the Puck adapter', () => {
     const fixture = catalogFixture as unknown as PageBuilderDocument;
     const session = canonicalToPuck(fixture);

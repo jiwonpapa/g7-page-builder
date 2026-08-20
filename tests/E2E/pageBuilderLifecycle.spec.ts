@@ -437,8 +437,27 @@ async function selectAndEditHero(
   const hero = editorBlock(page, 'hero');
   await expect(hero).toHaveCount(1);
   await selectEditorBlock(page, 'hero');
-  await (await revealInspectorField(page, 'page-builder-hero-title')).fill(title);
-  await (await revealInspectorField(page, 'page-builder-hero-subtitle')).fill(subtitle);
+  const inlineTitle = hero.locator(
+    '[data-g7pb-inline-field="title"][contenteditable], [data-g7pb-inline-field="title"] [contenteditable]',
+  );
+  const inlineSubtitle = hero.locator(
+    '[data-g7pb-inline-field="eyebrow"][contenteditable], [data-g7pb-inline-field="eyebrow"] [contenteditable]',
+  );
+  const inlineBody = hero.locator(
+    '[data-g7pb-inline-field="body"][contenteditable], [data-g7pb-inline-field="body"] [contenteditable]',
+  );
+  await expect(inlineTitle).toHaveCount(1);
+  await expect(inlineSubtitle).toHaveCount(1);
+  await expect(inlineBody).toHaveCount(1);
+  await inlineTitle.hover();
+  await expect(inlineTitle).toHaveAttribute('contenteditable', 'plaintext-only');
+  await inlineTitle.fill(title);
+  await inlineSubtitle.hover();
+  await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
+  await inlineSubtitle.fill(subtitle);
+  await inlineSubtitle.press('Tab');
+  await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(title);
+  await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(subtitle);
 }
 
 async function selectAndEditFeatures(
@@ -541,7 +560,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
   context,
   page,
 }, testInfo) => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
 
   const authToken = await authenticateAdmin(context);
 
@@ -646,6 +665,20 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-hero-slider').click();
+    await expect(page.getByTestId('page-builder-hero-warning')).toContainText('Hero 계열 블록이 2개');
+    await page.getByTestId('page-builder-hero-warning-dismiss').click();
+    await expect(page.getByTestId('page-builder-hero-warning')).toBeHidden();
+    const slider = editorBlock(page, 'hero-slider');
+    const sliderInlineFields = slider.locator('[contenteditable]');
+    const visibleSliderInlineFields = slider.locator('[contenteditable]:visible');
+    await expect(sliderInlineFields).toHaveCount(8);
+    await expect(visibleSliderInlineFields).toHaveCount(4);
+    await visibleSliderInlineFields.first().hover();
+    await expect(visibleSliderInlineFields.first()).toHaveAttribute('contenteditable', 'plaintext-only');
+    await slider.getByTestId('page-builder-slider-next').click();
+    await expect(slider.getByTestId('page-builder-slider-slide-1')).toHaveAttribute('aria-pressed', 'true');
+    await expect(slider.locator('[data-slide-index="1"]')).toBeVisible();
+    await expect(slider.locator('[data-slide-index="0"]')).toBeHidden();
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-cta').click();
@@ -694,6 +727,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await page.reload();
     await expect(page).toHaveURL(new RegExp(`document=${documentId}`));
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    await expect(page.getByTestId('page-builder-hero-warning')).toBeHidden();
     await expectBlockOrder(editorBlocks(page), PUBLISHED_BLOCK_ORDER);
 
     await selectEditorBlock(page, 'hero');

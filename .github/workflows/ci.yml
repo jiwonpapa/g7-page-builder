@@ -46,9 +46,11 @@ jobs:
           php-version: '8.5'
           extensions: mbstring, pdo_sqlite, sqlite3
           tools: composer
-          coverage: none
+          coverage: xdebug
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: composer install --no-interaction --no-progress --prefer-dist
         working-directory: .runtime/gnuboard7
       - run: vendor/bin/phpstan analyse --autoload-file=.runtime/gnuboard7/vendor/autoload.php -c phpstan-g7.neon.dist --memory-limit=1G --no-progress
-      - run: vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/Integration
+      - run: mkdir -p output/coverage
+      - run: XDEBUG_MODE=coverage vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/UnitPhp tests/Integration --coverage-clover output/coverage/php-clover.xml --coverage-filter src
+      - run: php scripts/check-php-coverage.php output/coverage/php-clover.xml

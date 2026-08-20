@@ -882,9 +882,9 @@ function HeroPreview({
     <BlockFrame id={id} type="hero" motion={motion}>
       <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
         <div className="g7pb-preview-hero__copy">
-          {eyebrow && <p className="g7pb-preview-eyebrow">{eyebrow}</p>}
-          <h1>{title}</h1>
-          <div className="g7pb-preview-richtext">{body}</div>
+          {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
+          <h1 data-g7pb-inline-field="title">{title}</h1>
+          <div className="g7pb-preview-richtext" data-g7pb-inline-field="body">{body}</div>
           {primaryLabel && (
             <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
               {primaryLabel}
@@ -1044,6 +1044,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         eyebrow: {
           type: 'custom',
           label: '보조 문구',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField
               value={value}
@@ -1056,6 +1057,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         title: {
           type: 'custom',
           label: '제목',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField
               value={value}
@@ -1068,6 +1070,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         body: {
           type: 'richtext',
           label: '본문',
+          contentEditable: true,
           initialHeight: 150,
           options: {
             code: false,
@@ -1770,6 +1773,25 @@ export function PuckEditorAdapter({
   const [data, setData] = useState(initialSession.data);
   const heroFamilyCount = data.content.filter((block) =>
     block.type === 'Hero' || block.type === 'HeroSplit' || block.type === 'HeroSlider').length;
+  const heroWarningKey = `g7pb:warning:${document.document_id}:hero-family:${heroFamilyCount}`;
+  const [warningStateVersion, setWarningStateVersion] = useState(0);
+  const heroWarningDismissed = useMemo(() => {
+    if (heroFamilyCount <= 1 || typeof window === 'undefined') return false;
+    try {
+      return window.localStorage?.getItem(heroWarningKey) === 'dismissed';
+    } catch {
+      return false;
+    }
+  }, [heroFamilyCount, heroWarningKey, warningStateVersion]);
+
+  const dismissHeroWarning = (): void => {
+    try {
+      window.localStorage?.setItem(heroWarningKey, 'dismissed');
+    } catch {
+      // Storage can be unavailable in hardened browsers; dismissal still lasts for this render.
+    }
+    setWarningStateVersion((version) => version + 1);
+  };
 
   useEffect(() => {
     const session = canonicalToPuck(document);
@@ -1796,9 +1818,17 @@ export function PuckEditorAdapter({
 
   return (
     <div className="g7pb-editor" data-testid="page-builder-editor" aria-busy={disabled}>
-      {heroFamilyCount > 1 && (
+      {heroFamilyCount > 1 && !heroWarningDismissed && (
         <div className="g7pb-editor-warning" role="status" data-testid="page-builder-hero-warning">
-          Hero 계열 블록이 {heroFamilyCount}개 있습니다. 사용할 수 있지만 첫 화면 집중도가 낮아질 수 있습니다.
+          <span>Hero 계열 블록이 {heroFamilyCount}개 있습니다. 사용할 수 있지만 첫 화면 집중도가 낮아질 수 있습니다.</span>
+          <button
+            type="button"
+            aria-label="Hero 안내 닫기"
+            data-testid="page-builder-hero-warning-dismiss"
+            onClick={dismissHeroWarning}
+          >
+            닫기
+          </button>
         </div>
       )}
       <Puck

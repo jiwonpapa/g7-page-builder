@@ -23,5 +23,24 @@ export default defineConfig(({ command }) => ({
   test: {
     environment: 'jsdom',
     include: ['tests/Unit/**/*.test.ts', 'tests/Unit/**/*.test.tsx'],
+    coverage: {
+      provider: 'v8',
+      include: ['resources/js/**/*.{ts,tsx}'],
+      exclude: ['resources/js/editor/main.tsx'],
+      reporter: ['text', 'json-summary', 'html'],
+      reportsDirectory: 'output/coverage',
+      thresholds: {
+        statements: 54,
+        branches: 54,
+        functions: 47,
+        lines: 56,
+        'resources/js/editor/PuckEditorAdapter.tsx': {
+          statements: 80,
+          branches: 77,
+          functions: 76,
+          lines: 81,
+        },
+      },
+    },
   },
 }));

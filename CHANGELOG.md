@@ -6,6 +6,27 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-20
+
+### Added
+
+- 독립 블록 정의·프리셋·설치 패키지의 식별자와 상태를 정의하는 Block Pack v1 manifest·PHP/TypeScript Registry 계약을 추가했습니다.
+- 블록 검색·분류·관리자별 즐겨찾기와 Data Preset 복사 카탈로그를 추가했습니다.
+- ZIP Block Pack 설치·활성화·비활성화·문서/리비전 사용량 확인·사용 중 제거 차단을 추가했습니다.
+- GitHub 안정 Release 목록에서 exact ZIP asset의 크기와 SHA-256 digest를 확인한 뒤 명시적으로 설치하는 업데이트 흐름을 추가했습니다.
+- 발행자에 귀속된 Ed25519 서명, 파일 digest, 정확한 provider/compiler/schema/editor 등록을 요구하는 Code Pack runtime을 추가했습니다.
+
+### Changed
+
+- 기존 12개 블록을 `jiwonpapa/builtin-core` 내장 Pack으로 이관하고 compiler dispatch와 Puck gallery를 같은 manifest에서 파생하도록 변경했습니다.
+- Block Pack 비활성화는 신규 추가만 숨기고 기존 문서의 편집·재컴파일 구현은 유지하도록 했습니다.
+
+### Fixed
+
+- 외부 Code Pack이 내장 Puck component를 덮어쓰거나 manifest에 없는 component를 등록하지 못하도록 차단했습니다.
+- 신뢰 서명키를 publisher namespace에 귀속해 다른 발행자로 위장한 Pack에 재사용하지 못하도록 차단했습니다.
+- 사용 중인 과거 block version을 누락하거나 기존 version 정의를 바꾸는 업데이트가 활성화되지 않도록 차단했습니다.
+
 ## [0.6.0] - 2026-08-20
 
 ### Added

@@ -11,6 +11,7 @@ import {
   buildAdminLoginUrl,
 } from '../api/pageBuilderApi';
 import type { DocumentResource, PageBuilderDocument } from '../documents/types';
+import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';
 import { discoverPageBuilderManagers, mountPageBuilderManager } from '../manager/PageBuilderManager';
 import { PuckEditorAdapter } from './PuckEditorAdapter';
 
@@ -146,7 +147,12 @@ function EditorShell({
     let active = true;
     setLoading(true);
     setMessage(null);
-    void api.getDocument(requestedDocumentId)
+    void (async () => {
+      const packs = await api.listBlockPacks();
+      await loadBlockPackEditorAssets(packs.items);
+
+      return api.getDocument(requestedDocumentId);
+    })()
       .then(async (resource) => {
         if (active) {
           applyResource(resource, true);

@@ -225,6 +225,100 @@ describe('PageBuilderApiClient', () => {
     });
   });
 
+  it('loads the block catalog and stores actor-scoped favorites', async () => {
+    const catalog = { items: [], categories: ['hero'] };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: catalog }))
+      .mockResolvedValueOnce(jsonResponse({
+        success: true,
+        message: 'ok',
+        data: { catalog_id: 'block:content.hero-centered-01@1', favorite: true },
+      }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.listBlockCatalog({ query: '히어로', category: 'hero', favorites: true }))
+      .resolves.toEqual(catalog);
+    await client.setBlockFavorite('block:content.hero-centered-01@1', true);
+
+    expect(fetchImpl.mock.calls[0][0]).toBe(
+      `${PAGE_BUILDER_API_PREFIX}/blocks/catalog?query=${encodeURIComponent('히어로')}&category=hero&favorites=true`,
+    );
+    expect(JSON.parse(String(fetchImpl.mock.calls[1][1]?.body))).toEqual({
+      catalog_id: 'block:content.hero-centered-01@1',
+      favorite: true,
+    });
+  });
+
+  it('installs and changes a Block Pack through module-owned lifecycle endpoints', async () => {
+    const pack = {
+      pack_id: 'jiwonpapa/marketing-presets',
+      pack_version: '1.0.0',
+      kind: 'data',
+      publisher: { id: 'jiwonpapa', name: '지원소프트' },
+      state: 'enabled',
+      source: 'local',
+      source_uri: null,
+      archive_sha256: 'a'.repeat(64),
+      blocks: 0,
+      presets: 1,
+      runtime_active: true,
+      editor_asset_url: null,
+      style_asset_urls: [],
+      usage: { documents: 0, revisions: 0 },
+      installed_at: null,
+      updated_at: null,
+    } as const;
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: pack }, 201))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: { ...pack, state: 'disabled' } }))
+      .mockResolvedValueOnce(jsonResponse({
+        success: true,
+        message: 'ok',
+        data: { pack_id: pack.pack_id, pack_version: pack.pack_version },
+      }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await client.installBlockPack(new File(['zip'], 'pack.zip', { type: 'application/zip' }));
+    await client.setBlockPackState(pack.pack_id, pack.pack_version, 'disabled');
+    await client.removeBlockPack(pack.pack_id, pack.pack_version);
+
+    expect(fetchImpl.mock.calls[0][1]?.body).toBeInstanceOf(FormData);
+    expect(JSON.parse(String(fetchImpl.mock.calls[1][1]?.body))).toEqual({
+      pack_id: pack.pack_id,
+      pack_version: pack.pack_version,
+      state: 'disabled',
+    });
+    expect(fetchImpl.mock.calls[2][1]?.method).toBe('DELETE');
+  });
+
+  it('separates GitHub update checking from the explicit install request', async () => {
+    const check = {
+      release: {
+        repository: 'jiwonpapa/g7-blocks',
+        tag: 'v1.2.0',
+        version: '1.2.0',
+        asset_name: 'g7pb-block-pack.zip',
+        asset_bytes: 1024,
+        sha256: 'b'.repeat(64),
+        release_url: 'https://github.com/jiwonpapa/g7-blocks/releases/tag/v1.2.0',
+        published_at: '2026-08-20T00:00:00Z',
+      },
+      installed_version: '1.0.0',
+      update_available: true,
+    };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: check }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: { pack_id: 'x/y' } }, 201));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.checkGitHubBlockPack('jiwonpapa', 'g7-blocks')).resolves.toEqual(check);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    await client.installGitHubBlockPack('jiwonpapa', 'g7-blocks');
+
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/block-packs/github/check`);
+    expect(fetchImpl.mock.calls[1][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/block-packs/github/install`);
+  });
+
   it('redirects to the admin login with a same-origin editor path when auth is missing', async () => {
     const fetchImpl = vi.fn<typeof fetch>();
     const onUnauthorized = vi.fn();

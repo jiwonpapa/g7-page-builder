@@ -2,6 +2,11 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Application\Compilation;
 
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockCompilerRegistry;
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\CallbackBlockTypeCompiler;
+use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackAssetUrlPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
@@ -52,6 +57,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         'star',
     ];
 
+    private BlockCompilerRegistry $blockCompilers;
+
+    public function __construct(
+        private readonly BlockRegistry $blockRegistry,
+        ?BlockCompilerRegistry $blockCompilers = null,
+        private readonly ?BlockSchemaRegistry $blockSchemas = null,
+        private readonly ?BlockPackAssetUrlPort $blockAssets = null,
+    ) {
+        $this->blockCompilers = $blockCompilers ?? new BlockCompilerRegistry;
+        $this->registerBuiltInCompilers();
+    }
+
     public function compile(
         PageBuilderDocument $document,
         int $sourceRevision,
@@ -68,6 +85,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         $heroCount = 0;
         $sections = [];
+        $styleUrls = [];
 
         foreach ($document->blocks as $index => $block) {
             $type = $block['type'] ?? null;
@@ -80,7 +98,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Block {$index} has an invalid instance id.");
             }
 
-            if ($version !== 1 || ! is_array($props) || ! is_array($slots)) {
+            if (! is_string($type) || ! is_int($version) || ! is_array($props) || ! is_array($slots)) {
                 throw new DocumentCompileException("Block {$index} has an invalid version, props, or slots value.");
             }
 
@@ -88,85 +106,50 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Block {$index} uses slots that are not supported by the first vertical slice.");
             }
 
-            if ($type === self::HERO_TYPE) {
+            $definition = $this->blockRegistry->definition($type, $version);
+            if ($definition === null || ! $this->blockCompilers->has($definition->compiler)) {
+                throw new DocumentCompileException("Block {$index} has an unsupported type or compiler.");
+            }
+
+            if (in_array($type, [self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE], true)) {
                 $heroCount++;
-                $sections[] = $this->withBlockRuntime($this->compileHero($props), $instanceId, self::HERO_TYPE, $block['motion'] ?? null);
-
-                continue;
+            }
+            if ($definition->packId !== 'jiwonpapa/builtin-core' && $this->blockAssets !== null) {
+                foreach ($this->blockAssets->styleUrls($definition->packId, $definition->packVersion) as $styleUrl) {
+                    $styleUrls[$styleUrl] = true;
+                }
             }
 
-            if ($type === self::FEATURES_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileFeatures($props), $instanceId, self::FEATURES_TYPE, $block['motion'] ?? null);
-
-                continue;
+            try {
+                if ($definition->packId !== 'jiwonpapa/builtin-core') {
+                    if ($this->blockSchemas === null || ! $this->blockSchemas->has($definition->schemaRef)) {
+                        throw new \DomainException('Block schema validator is not registered.');
+                    }
+                    $this->blockSchemas->validate($definition->schemaRef, $props);
+                }
+                $compiledBlock = $this->blockCompilers->compile($definition->compiler, $props);
+            } catch (DocumentCompileException $exception) {
+                throw $exception;
+            } catch (\Throwable) {
+                throw new DocumentCompileException(
+                    "Block {$index} failed schema validation or compilation.",
+                    'G7PB_BLOCK_RUNTIME_FAILED',
+                );
             }
 
-            if ($type === self::CTA_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileCta($props), $instanceId, self::CTA_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::CONTACT_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileContact($props), $instanceId, self::CONTACT_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::HERO_SPLIT_TYPE) {
-                $heroCount++;
-                $sections[] = $this->withBlockRuntime($this->compileHeroSplit($props), $instanceId, self::HERO_SPLIT_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::HERO_SLIDER_TYPE) {
-                $heroCount++;
-                $sections[] = $this->withBlockRuntime($this->compileHeroSlider($props), $instanceId, self::HERO_SLIDER_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::LOGO_CLOUD_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileLogoCloud($props), $instanceId, self::LOGO_CLOUD_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::STATS_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileStats($props), $instanceId, self::STATS_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::PRICING_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compilePricing($props), $instanceId, self::PRICING_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::TEAM_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileTeam($props), $instanceId, self::TEAM_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::GALLERY_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileGallery($props), $instanceId, self::GALLERY_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            if ($type === self::BAR_CHART_TYPE) {
-                $sections[] = $this->withBlockRuntime($this->compileBarChart($props), $instanceId, self::BAR_CHART_TYPE, $block['motion'] ?? null);
-
-                continue;
-            }
-
-            throw new DocumentCompileException("Block {$index} has an unsupported type.");
+            $sections[] = $this->withBlockRuntime(
+                $compiledBlock,
+                $instanceId,
+                $type,
+                $block['motion'] ?? null,
+            );
         }
 
-        $artifact = implode("\n", $sections);
+        $styles = array_map(
+            fn (string $url): string => '<link rel="stylesheet" href="'.$this->escapeAttribute($url).'">',
+            array_keys($styleUrls),
+        );
+        $artifact = implode("\n", [...$styles, ...$sections]);
         $warnings = $heroCount > 1
             ? ["Hero 계열 블록이 {$heroCount}개 있습니다. 첫 화면 집중도가 낮아질 수 있습니다."]
             : [];
@@ -186,6 +169,30 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     public function supports(string $targetFormat, string $targetEngineVersion): bool
     {
         return $targetFormat === 'html' && $targetEngineVersion === self::TARGET_ENGINE_VERSION;
+    }
+
+    private function registerBuiltInCompilers(): void
+    {
+        $compilers = [
+            'builtin.hero-centered-01' => fn (array $props): string => $this->compileHero($props),
+            'builtin.features-grid-01' => fn (array $props): string => $this->compileFeatures($props),
+            'builtin.cta-split-01' => fn (array $props): string => $this->compileCta($props),
+            'builtin.contact-info-01' => fn (array $props): string => $this->compileContact($props),
+            'builtin.hero-split-01' => fn (array $props): string => $this->compileHeroSplit($props),
+            'builtin.hero-slider-01' => fn (array $props): string => $this->compileHeroSlider($props),
+            'builtin.logo-cloud-01' => fn (array $props): string => $this->compileLogoCloud($props),
+            'builtin.stats-icons-01' => fn (array $props): string => $this->compileStats($props),
+            'builtin.pricing-tiers-01' => fn (array $props): string => $this->compilePricing($props),
+            'builtin.team-grid-01' => fn (array $props): string => $this->compileTeam($props),
+            'builtin.gallery-grid-01' => fn (array $props): string => $this->compileGallery($props),
+            'builtin.bar-chart-01' => fn (array $props): string => $this->compileBarChart($props),
+        ];
+
+        foreach ($compilers as $key => $compiler) {
+            if (! $this->blockCompilers->has($key)) {
+                $this->blockCompilers->register(new CallbackBlockTypeCompiler($key, $compiler));
+            }
+        }
     }
 
     /**

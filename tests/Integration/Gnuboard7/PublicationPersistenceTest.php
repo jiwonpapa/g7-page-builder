@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
-use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
+use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackInstallation;
+use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
+use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackState;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
@@ -28,13 +30,18 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockFavoriteAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockPackRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
+use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
 final class PublicationPersistenceTest extends TestCase
 {
+    use CreatesBuiltInCompiler;
+
     private Capsule $database;
 
     protected function setUp(): void
@@ -133,7 +140,7 @@ final class PublicationPersistenceTest extends TestCase
             self::assertSame(1, $exception->currentLockVersion);
         }
 
-        $pages = new PageBuilderService(new EloquentPageBuilderRepository, new HtmlDocumentCompiler);
+        $pages = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
         $intro = $pages->create('인트로', 'shell-free-intro', 'ko', null, 'none');
         $candidate = $pages->preparePublication($intro->document->documentId, $intro->lockVersion, null);
         $published = $pages->commitPublication($candidate->token);
@@ -170,7 +177,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $created = $service->create('발행 제목', 'published-page', 'ko', null);
         $draft = $service->saveDraft(
@@ -220,7 +227,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $created = $service->create('검색 친화 주소', 'clean-route', 'ko', null);
         $candidate = $service->preparePublication(
@@ -243,7 +250,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $first = $service->create('첫 홈', 'first-home', 'ko', null);
         $second = $service->create('둘째 홈', 'second-home', 'ko', null);
@@ -282,7 +289,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $middleware = new PageBuilderHomeOverride($service, $this->siteShellService());
         $fallback = static fn (): Response => new Response('g7-home', 200);
@@ -309,7 +316,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $owner = $service->create('공개 소유자', 'reserved-public-slug', 'ko', null);
         $candidate = $service->preparePublication(
@@ -357,7 +364,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $created = $service->create('반복 미리보기', 'repeatable-preview', 'ko', null);
         $draft = $service->saveDraft(
@@ -380,7 +387,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $created = $service->create('리비전 복구', 'revision-origin', 'ko', null);
         $original = $service->saveDraft(
@@ -445,7 +452,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $created = $service->create('공개해제 안전성', 'unpublish-safety', 'ko', null);
         $draft = $service->saveDraft(
@@ -488,7 +495,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $created = $service->create('캐시 안전성', 'cache-safety', 'ko', null);
         $candidate = $service->preparePublication(
@@ -524,7 +531,7 @@ final class PublicationPersistenceTest extends TestCase
     {
         $service = new PageBuilderService(
             new EloquentPageBuilderRepository,
-            new HtmlDocumentCompiler,
+            $this->builtInCompiler(),
         );
         $created = $service->create('첫 제목', 'etag-metadata', 'ko', null);
         $firstCandidate = $service->preparePublication(
@@ -555,7 +562,7 @@ final class PublicationPersistenceTest extends TestCase
     public function test_archive_hides_publication_and_purge_requires_archived_slug_confirmation(): void
     {
         $repository = new EloquentPageBuilderRepository;
-        $service = new PageBuilderService($repository, new HtmlDocumentCompiler);
+        $service = new PageBuilderService($repository, $this->builtInCompiler());
         $created = $service->create('보관 테스트', 'archive-test', 'ko', null);
         $candidate = $service->preparePublication($created->document->documentId, $created->lockVersion, null);
         $service->commitPublication($candidate->token);
@@ -576,6 +583,37 @@ final class PublicationPersistenceTest extends TestCase
 
         $service->purge($created->document->documentId, $archived->lockVersion, 'archive-test');
         self::assertNull($repository->find($created->document->documentId));
+    }
+
+    public function test_block_pack_installation_state_and_actor_favorites_use_module_owned_tables(): void
+    {
+        $manifestJson = file_get_contents(dirname(__DIR__, 2).'/Contract/block-pack-data-v1.fixture.json');
+        self::assertIsString($manifestJson);
+        $manifest = BlockPackManifest::fromJson($manifestJson);
+        $now = new \DateTimeImmutable('2026-08-20T00:00:00Z');
+        $repository = new EloquentBlockPackRepository;
+        $installation = new BlockPackInstallation(
+            manifest: $manifest,
+            state: BlockPackState::Staged,
+            source: 'local',
+            sourceReference: '/var/lib/g7pb/packs/marketing-presets/1.0.0',
+            sourceUri: null,
+            archiveSha256: str_repeat('a', 64),
+            installedAt: $now,
+            installedBy: 7,
+            updatedAt: $now,
+        );
+        $repository->save($installation);
+        $repository->save($installation->withState(BlockPackState::Enabled, $now->modify('+1 minute')));
+
+        self::assertSame(BlockPackState::Enabled, $repository->find($manifest->packId, $manifest->packVersion)?->state);
+        self::assertSame($manifest->packVersion, $repository->enabled($manifest->packId)?->manifest->packVersion);
+
+        $favorites = new EloquentBlockFavoriteAdapter;
+        $favorites->setFavorite(7, 'preset:jiwonpapa/marketing-presets:hero.launch-blue', true);
+        self::assertSame(['preset:jiwonpapa/marketing-presets:hero.launch-blue'], $favorites->blockIdsFor(7));
+        $favorites->setFavorite(7, 'preset:jiwonpapa/marketing-presets:hero.launch-blue', false);
+        self::assertSame([], $favorites->blockIdsFor(7));
     }
 
     /**

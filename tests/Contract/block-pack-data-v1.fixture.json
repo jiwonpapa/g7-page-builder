@@ -1,0 +1,42 @@
+{
+  "manifest_version": "g7pb-block-pack/v1",
+  "pack_id": "jiwonpapa/marketing-presets",
+  "pack_version": "1.0.0",
+  "kind": "data",
+  "publisher": {
+    "id": "jiwonpapa",
+    "name": "지원소프트"
+  },
+  "compatibility": {
+    "page_builder": ">=0.6.0 <1.0.0",
+    "php": ">=8.5",
+    "g7": ">=7.0.7"
+  },
+  "blocks": [],
+  "presets": [
+    {
+      "preset_id": "hero.launch-blue",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "category": "hero",
+      "label": {
+        "ko": "출시 안내 히어로",
+        "en": "Launch hero"
+      },
+      "description": {
+        "ko": "제품 출시 메시지와 행동 버튼을 빠르게 시작합니다.",
+        "en": "Start with a product launch message and action."
+      },
+      "thumbnail": "assets/hero-launch-blue.webp",
+      "props": {
+        "eyebrow": "새로운 소식",
+        "title": "새 제품을 소개합니다",
+        "body": "핵심 가치를 짧고 선명하게 설명해 주세요.",
+        "alignment": "center"
+      }
+    }
+  ],
+  "files": {
+    "assets/hero-launch-blue.webp": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

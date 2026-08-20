@@ -1,0 +1,168 @@
+{
+  "manifest_version": "g7pb-block-pack/v1",
+  "pack_id": "jiwonpapa/builtin-core",
+  "pack_version": "0.6.0",
+  "kind": "code",
+  "publisher": {
+    "id": "jiwonpapa",
+    "name": "지원소프트"
+  },
+  "compatibility": {
+    "page_builder": ">=0.6.0 <1.0.0",
+    "php": ">=8.5",
+    "g7": ">=7.0.7"
+  },
+  "blocks": [
+    {
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "category": "hero",
+      "label": { "ko": "히어로", "en": "Centered hero" },
+      "description": { "ko": "핵심 제목, 설명, 버튼과 대표 이미지를 배치합니다.", "en": "Center a primary message and action." },
+      "thumbnail": "thumbnails/hero-centered.svg",
+      "schema_ref": "builtin:heroProps",
+      "editor_component": "Hero",
+      "compiler": "builtin.hero-centered-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.hero-split-01",
+      "block_version": 1,
+      "category": "hero",
+      "label": { "ko": "분할 히어로", "en": "Split hero" },
+      "description": { "ko": "메시지와 대표 이미지를 좌우로 나눠 소개합니다.", "en": "Place a message beside a primary image." },
+      "thumbnail": "thumbnails/hero-split.svg",
+      "schema_ref": "builtin:heroSplitProps",
+      "editor_component": "HeroSplit",
+      "compiler": "builtin.hero-split-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.hero-slider-01",
+      "block_version": 1,
+      "category": "hero",
+      "label": { "ko": "슬라이더 히어로", "en": "Hero slider" },
+      "description": { "ko": "여러 캠페인 장면을 스크롤 가능한 흐름으로 보여줍니다.", "en": "Present multiple primary scenes as slides." },
+      "thumbnail": "thumbnails/hero-slider.svg",
+      "schema_ref": "builtin:heroSliderProps",
+      "editor_component": "HeroSlider",
+      "compiler": "builtin.hero-slider-01",
+      "capabilities": ["public.slider"]
+    },
+    {
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "category": "content",
+      "label": { "ko": "특징 목록", "en": "Feature grid" },
+      "description": { "ko": "장점과 기능을 아이콘이 있는 항목으로 설명합니다.", "en": "Explain features and benefits in a grid." },
+      "thumbnail": "thumbnails/features-grid.svg",
+      "schema_ref": "builtin:featuresProps",
+      "editor_component": "Features",
+      "compiler": "builtin.features-grid-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "category": "action",
+      "label": { "ko": "행동 유도", "en": "Call to action" },
+      "description": { "ko": "주요 행동과 보조 링크를 선명하게 안내합니다.", "en": "Guide visitors to primary and secondary actions." },
+      "thumbnail": "thumbnails/cta-split.svg",
+      "schema_ref": "builtin:ctaProps",
+      "editor_component": "Cta",
+      "compiler": "builtin.cta-split-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.contact-info-01",
+      "block_version": 1,
+      "category": "contact",
+      "label": { "ko": "연락처", "en": "Contact information" },
+      "description": { "ko": "주소, 전화, 이메일과 문의 동선을 제공합니다.", "en": "Show address, phone, email, and contact actions." },
+      "thumbnail": "thumbnails/contact-info.svg",
+      "schema_ref": "builtin:contactProps",
+      "editor_component": "Contact",
+      "compiler": "builtin.contact-info-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "trust.logo-cloud-01",
+      "block_version": 1,
+      "category": "trust",
+      "label": { "ko": "로고 클라우드", "en": "Logo cloud" },
+      "description": { "ko": "고객사와 파트너 이름 또는 로고를 정돈해 보여줍니다.", "en": "Display customer and partner logos." },
+      "thumbnail": "thumbnails/logo-cloud.svg",
+      "schema_ref": "builtin:logoCloudProps",
+      "editor_component": "LogoCloud",
+      "compiler": "builtin.logo-cloud-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "category": "data",
+      "label": { "ko": "숫자·아이콘 지표", "en": "Key statistics" },
+      "description": { "ko": "핵심 수치와 설명을 아이콘 조합으로 강조합니다.", "en": "Highlight key metrics with icons." },
+      "thumbnail": "thumbnails/stats-icons.svg",
+      "schema_ref": "builtin:statsProps",
+      "editor_component": "Stats",
+      "compiler": "builtin.stats-icons-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "category": "commerce",
+      "label": { "ko": "요금제", "en": "Pricing tiers" },
+      "description": { "ko": "2~4개 플랜의 가격, 기능과 추천안을 비교합니다.", "en": "Compare prices and features across plans." },
+      "thumbnail": "thumbnails/pricing-tiers.svg",
+      "schema_ref": "builtin:pricingProps",
+      "editor_component": "Pricing",
+      "compiler": "builtin.pricing-tiers-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "category": "company",
+      "label": { "ko": "팀 소개", "en": "Team grid" },
+      "description": { "ko": "구성원의 사진, 역할과 전문성을 소개합니다.", "en": "Introduce team members, roles, and profiles." },
+      "thumbnail": "thumbnails/team-grid.svg",
+      "schema_ref": "builtin:teamProps",
+      "editor_component": "Team",
+      "compiler": "builtin.team-grid-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "category": "media",
+      "label": { "ko": "갤러리 그리드", "en": "Gallery grid" },
+      "description": { "ko": "2~4열 이미지와 캡션으로 프로젝트를 전시합니다.", "en": "Display images and captions in a responsive grid." },
+      "thumbnail": "thumbnails/gallery-grid.svg",
+      "schema_ref": "builtin:galleryProps",
+      "editor_component": "Gallery",
+      "compiler": "builtin.gallery-grid-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "data.bar-chart-01",
+      "block_version": 1,
+      "category": "data",
+      "label": { "ko": "막대그래프", "en": "Bar chart" },
+      "description": { "ko": "0~100 범위의 데이터를 접근 가능한 그래프로 비교합니다.", "en": "Compare values from zero to one hundred." },
+      "thumbnail": "thumbnails/bar-chart.svg",
+      "schema_ref": "builtin:barChartProps",
+      "editor_component": "BarChart",
+      "compiler": "builtin.bar-chart-01",
+      "capabilities": []
+    }
+  ],
+  "presets": [],
+  "runtime": {
+    "provider": "builtin.core",
+    "editor": "dist/js/page-builder.iife.js",
+    "styles": ["dist/css/page-builder.css"]
+  },
+  "files": {}
+}

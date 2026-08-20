@@ -2,17 +2,24 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Tests\UnitPhp;
 
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockCompilerRegistry;
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\CallbackBlockTypeCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
+use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlDocumentCompilerTest extends TestCase
 {
+    use CreatesBuiltInCompiler;
+
     public function test_compiler_is_deterministic_for_all_mvp_blocks(): void
     {
         $document = $this->document('<p>안전한 <strong>본문</strong></p>');
-        $compiler = new HtmlDocumentCompiler;
+        $compiler = $this->builtInCompiler();
 
         $first = $compiler->compile($document, 1, 'html', 'g7-7.0.7');
         $second = $compiler->compile($document, 1, 'html', 'g7-7.0.7');
@@ -27,10 +34,59 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringNotContainsString('<form', (string) $first->artifact);
     }
 
+    public function test_external_block_fails_closed_without_its_registered_schema_validator(): void
+    {
+        $manifest = BlockPackManifest::fromArray([
+            'manifest_version' => BlockPackManifest::VERSION,
+            'pack_id' => 'vendor/schema-required',
+            'pack_version' => '1.0.0',
+            'kind' => 'code',
+            'publisher' => ['id' => 'vendor', 'name' => 'Vendor', 'key_id' => 'vendor.main'],
+            'compatibility' => ['page_builder' => '>=0.6.0', 'php' => '>=8.5', 'g7' => '>=7.0.7'],
+            'blocks' => [[
+                'block_id' => 'vendor.schema-required-01', 'block_version' => 1, 'category' => 'content',
+                'label' => ['ko' => '스키마 필수'], 'description' => ['ko' => '스키마 없이 컴파일할 수 없습니다.'],
+                'thumbnail' => 'assets/schema.webp', 'schema_ref' => 'vendor:schema-required',
+                'editor_component' => 'VendorSchemaRequired', 'compiler' => 'vendor.schema-required-01',
+                'capabilities' => [],
+            ]],
+            'presets' => [],
+            'runtime' => ['provider' => 'runtime/provider.php', 'editor' => 'dist/editor.js', 'styles' => []],
+            'files' => [],
+        ]);
+        $registry = new BlockRegistry;
+        $registry->register($manifest, enabled: true);
+        $compilers = new BlockCompilerRegistry;
+        $compilers->register(new CallbackBlockTypeCompiler(
+            'vendor.schema-required-01',
+            static fn (array $props): string => '<aside>'.htmlspecialchars((string) ($props['title'] ?? ''), ENT_QUOTES).'</aside>',
+        ));
+        $compiler = new HtmlDocumentCompiler($registry, $compilers);
+        $document = new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000001',
+            slug: 'schema-required',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000002',
+                'type' => 'vendor.schema-required-01', 'block_version' => 1,
+                'props' => ['title' => '차단'], 'slots' => [],
+            ]],
+        );
+
+        try {
+            $compiler->compile($document, 1, 'html', 'g7-7.0.7');
+            self::fail('An external block compiled without a schema validator.');
+        } catch (DocumentCompileException $exception) {
+            self::assertSame('G7PB_BLOCK_RUNTIME_FAILED', $exception->errorCode);
+        }
+    }
+
     public function test_hero_rich_text_preserves_allowed_markup_and_sanitizes_attributes(): void
     {
         $document = $this->document('<p class="remove">설명 <strong>강조</strong> <a href="/guide" target="_blank">안내</a></p>');
-        $result = (new HtmlDocumentCompiler)->compile($document, 1, 'html', 'g7-7.0.7');
+        $result = $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
         self::assertStringContainsString('<p>설명 <strong>강조</strong> <a href="/guide" rel="noopener noreferrer">안내</a></p>', $artifact);
@@ -43,7 +99,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $this->expectException(DocumentCompileException::class);
 
         $document = $this->document('<p onclick="alert(1)">설명</p><script>alert(1)</script>');
-        (new HtmlDocumentCompiler)->compile($document, 1, 'html', 'g7-7.0.7');
+        $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
     }
 
     public function test_hero_rich_text_rejects_javascript_link(): void
@@ -51,7 +107,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $this->expectException(DocumentCompileException::class);
 
         $document = $this->document('<p><a href="javascript:alert(1)">위험</a></p>');
-        (new HtmlDocumentCompiler)->compile($document, 1, 'html', 'g7-7.0.7');
+        $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
     }
 
     public function test_cta_and_contact_escape_plain_text_and_compile_safe_links(): void
@@ -70,7 +126,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             ],
         );
 
-        $artifact = (string) (new HtmlDocumentCompiler)->compile($document, 1, 'html', 'g7-7.0.7')->artifact;
+        $artifact = (string) $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7')->artifact;
 
         self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt; 다음 단계', $artifact);
         self::assertStringContainsString('&lt;img src=x onerror=alert(1)&gt; 설명', $artifact);
@@ -91,7 +147,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             '<p>안전한 본문</p>',
             ['primaryLink' => ['label' => '위험', 'url' => 'javascript:alert(1)']],
         );
-        (new HtmlDocumentCompiler)->compile($document, 1, 'html', 'g7-7.0.7');
+        $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
     }
 
     public function test_contact_rejects_form_configuration(): void
@@ -103,12 +159,12 @@ final class HtmlDocumentCompilerTest extends TestCase
             [],
             ['formAction' => '/submit'],
         );
-        (new HtmlDocumentCompiler)->compile($document, 1, 'html', 'g7-7.0.7');
+        $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
     }
 
     public function test_contact_rejects_invalid_phone_and_email(): void
     {
-        $compiler = new HtmlDocumentCompiler;
+        $compiler = $this->builtInCompiler();
 
         try {
             $compiler->compile(
@@ -140,7 +196,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'spacing' => 'compact',
         ];
 
-        $artifact = (string) (new HtmlDocumentCompiler)->compile(
+        $artifact = (string) $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($payload),
             1,
             'html',
@@ -161,7 +217,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         ];
 
         $this->expectException(DocumentCompileException::class);
-        (new HtmlDocumentCompiler)->compile(
+        $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($payload),
             1,
             'html',
@@ -179,7 +235,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'stagger_ms' => 160,
         ];
 
-        $artifact = (string) (new HtmlDocumentCompiler)->compile(
+        $artifact = (string) $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($payload),
             1,
             'html',
@@ -204,7 +260,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         ];
 
         $this->expectException(DocumentCompileException::class);
-        (new HtmlDocumentCompiler)->compile(
+        $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($payload),
             1,
             'html',
@@ -219,7 +275,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         unset($payload['blocks'][1]);
         $payload['blocks'] = array_values($payload['blocks']);
 
-        $compiler = new HtmlDocumentCompiler;
+        $compiler = $this->builtInCompiler();
         $catalog = $compiler->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
         $sliderResult = $compiler->compile(
             PageBuilderDocument::fromArray(array_replace($payload, ['blocks' => [$slider]])),
@@ -242,7 +298,7 @@ final class HtmlDocumentCompilerTest extends TestCase
 
     public function test_catalog_warns_but_allows_multiple_hero_family_blocks(): void
     {
-        $result = (new HtmlDocumentCompiler)->compile(
+        $result = $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($this->catalogPayload()),
             1,
             'html',
@@ -262,7 +318,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $payload['blocks'][0]['props']['plans'][0]['buttonUrl'] = 'javascript:alert(1)';
 
         $this->expectException(DocumentCompileException::class);
-        (new HtmlDocumentCompiler)->compile(
+        $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($payload),
             1,
             'html',
@@ -277,7 +333,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $payload['blocks'][0]['props']['items'][0]['value'] = 101;
 
         $this->expectException(DocumentCompileException::class);
-        (new HtmlDocumentCompiler)->compile(
+        $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($payload),
             1,
             'html',

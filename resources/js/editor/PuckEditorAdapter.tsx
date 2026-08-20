@@ -12,13 +12,21 @@ import {
 import '@puckeditor/core/puck.css';
 
 import {
-  CATALOG_GALLERY_ITEMS,
   CatalogGalleryThumbnail,
   canonicalCatalogBlockToPuck,
   catalogComponentConfigs,
   catalogPuckBlockToCanonical,
   type CatalogEditorComponents,
 } from './catalogBlocks';
+import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS } from '../blocks/builtinCatalog';
+import type { BlockCatalogItem } from '../blocks/types';
+import {
+  externalBlockForComponent,
+  externalBlockForDocument,
+  externalEditorComponents,
+  isEditorComponentRegistered,
+} from '../blocks/runtimeRegistry';
+import { ADMIN_AUTH_TOKEN_KEY, PageBuilderApiClient } from '../api/pageBuilderApi';
 import {
   createMotionField,
   DEFAULT_BLOCK_MOTION,
@@ -430,7 +438,20 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
         ...catalogBlock.props,
         motion: normalizeBlockMotion(block.motion),
       },
-    } as PuckEditorData['content'][number];
+    } as unknown as PuckEditorData['content'][number];
+  }
+
+  const externalBlock = externalBlockForDocument(block.type, block.block_version);
+  if (externalBlock) {
+    return {
+      type: externalBlock.editor_component,
+      props: {
+        ...block.props,
+        id: block.instance_id,
+        motion: normalizeBlockMotion(block.motion),
+        __g7pbBlockVersion: block.block_version,
+      },
+    } as unknown as PuckEditorData['content'][number];
   }
 
   throw new Error(`Unsupported PageBuilder block: ${block.type}`);
@@ -485,6 +506,7 @@ function puckBlockToCanonical(
     hadSliderSettings: false,
   };
   let type: string;
+  let blockVersion = metadata.blockVersion;
   let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps | Record<string, unknown>;
 
   if (block.type === 'Hero') {
@@ -578,16 +600,27 @@ function puckBlockToCanonical(
       metadata.hadSliderSettings,
     );
     if (!catalogBlock) {
-      throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
+      const externalBlock = externalBlockForComponent((block as { type: string }).type);
+      if (!externalBlock) {
+        throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
+      }
+      const externalProps = { ...block.props } as Record<string, unknown>;
+      delete externalProps.id;
+      delete externalProps.motion;
+      delete externalProps.__g7pbBlockVersion;
+      type = externalBlock.block_id;
+      blockVersion = externalBlock.block_version;
+      props = externalProps;
+    } else {
+      type = catalogBlock.type;
+      props = catalogBlock.props;
     }
-    type = catalogBlock.type;
-    props = catalogBlock.props;
   }
 
   const canonical: PageBuilderBlock = {
     instance_id: instanceId,
     type,
-    block_version: metadata.blockVersion,
+    block_version: blockVersion,
     props: props as unknown as Record<string, unknown>,
   };
 
@@ -1377,19 +1410,76 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
 
 const usePageBuilderPuck = createUsePuck<Config<EditorComponents>>();
 
-const BLOCK_GALLERY_ITEMS: ReadonlyArray<{
+interface BlockGalleryItem {
+  catalogId: string;
+  kind: 'definition' | 'preset';
   type: keyof EditorComponents;
   testId: string;
   category: string;
   title: string;
   description: string;
-}> = [
-  { type: 'Hero', testId: 'page-builder-block-option-hero', category: '첫 화면', title: '히어로', description: '핵심 제목, 설명, 버튼과 대표 이미지를 배치합니다.' },
-  { type: 'Features', testId: 'page-builder-block-option-features', category: '콘텐츠', title: '특징 목록', description: '장점과 기능을 아이콘이 있는 항목으로 설명합니다.' },
-  { type: 'Cta', testId: 'page-builder-block-option-cta', category: '전환', title: '행동 유도', description: '주요 행동과 보조 링크를 선명하게 안내합니다.' },
-  { type: 'Contact', testId: 'page-builder-block-option-contact', category: '안내', title: '연락처', description: '주소, 전화, 이메일과 문의 동선을 제공합니다.' },
-  ...CATALOG_GALLERY_ITEMS,
-];
+  searchText: string;
+  blockId: string;
+  blockVersion: number;
+  favorite: boolean;
+  presetProps: Record<string, unknown> | null;
+}
+
+const BLOCK_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_DEFINITIONS.map((definition) => {
+  const type = definition.editor_component;
+  if (!Object.prototype.hasOwnProperty.call(pageBuilderPuckConfig.components, type)) {
+    throw new Error(`Builtin Block Pack editor component is not registered: ${type}`);
+  }
+
+  return {
+    catalogId: `block:${definition.block_id}@${definition.block_version}`,
+    kind: 'definition',
+    type: type as keyof EditorComponents,
+    testId: blockCatalogTestId(type),
+    category: BLOCK_CATEGORY_LABELS[definition.category] ?? definition.category,
+    title: definition.label.ko,
+    description: definition.description.ko,
+    searchText: [definition.block_id, ...Object.values(definition.label), ...Object.values(definition.description)].join(' '),
+    blockId: definition.block_id,
+    blockVersion: definition.block_version,
+    favorite: false,
+    presetProps: null,
+  };
+});
+
+interface BlockCatalogContextValue {
+  items: ReadonlyArray<BlockGalleryItem>;
+  toggleFavorite: (catalogId: string, favorite: boolean) => Promise<void>;
+}
+
+const BlockCatalogContext = React.createContext<BlockCatalogContextValue>({
+  items: BLOCK_GALLERY_ITEMS,
+  toggleFavorite: async () => undefined,
+});
+
+function apiCatalogItemToGalleryItem(item: BlockCatalogItem, locale: string): BlockGalleryItem | null {
+  if (!Object.prototype.hasOwnProperty.call(pageBuilderPuckConfig.components, item.editor_component)
+    && !isEditorComponentRegistered(item.editor_component)) {
+    return null;
+  }
+  const staticItem = BLOCK_GALLERY_ITEMS.find((candidate) => candidate.catalogId === item.catalog_id);
+  const safeLocale = locale === 'en' ? 'en' : 'ko';
+
+  return {
+    catalogId: item.catalog_id,
+    kind: item.kind,
+    type: item.editor_component as keyof EditorComponents,
+    testId: staticItem?.testId ?? `page-builder-block-${item.catalog_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`,
+    category: BLOCK_CATEGORY_LABELS[item.category] ?? item.category,
+    title: item.label[safeLocale] ?? item.label.ko,
+    description: item.description[safeLocale] ?? item.description.ko,
+    searchText: [item.block_id, ...Object.values(item.label), ...Object.values(item.description)].join(' '),
+    blockId: item.block_id,
+    blockVersion: item.block_version,
+    favorite: item.favorite,
+    presetProps: item.preset_props,
+  };
+}
 
 function BlockGalleryThumbnail({ type }: { type: keyof EditorComponents }): React.ReactElement {
   if (type === 'Hero') {
@@ -1421,8 +1511,22 @@ function StableAddBlockControls({
   selectedZone: string;
   disabled: boolean;
 }): React.ReactElement {
+  const { items, toggleFavorite } = React.useContext(BlockCatalogContext);
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const firstItemRef = useRef<HTMLButtonElement>(null);
+  const categories = useMemo(() => Array.from(new Set(items.map((item) => item.category))).sort(), [items]);
+  const visibleItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase('ko');
+    return items.filter((item) => {
+      if (favoritesOnly && !item.favorite) return false;
+      if (category && item.category !== category) return false;
+      if (!normalizedQuery) return true;
+      return item.searchText.toLocaleLowerCase('ko').includes(normalizedQuery);
+    });
+  }, [category, favoritesOnly, items, query]);
 
   useEffect(() => {
     if (!open) {
@@ -1450,17 +1554,34 @@ function StableAddBlockControls({
     };
   }, [open]);
 
-  const insert = (componentType: keyof EditorComponents): void => {
+  const insert = (item: BlockGalleryItem): void => {
     const destinationIndex = selectedZone === 'root:default-zone' && selectedIndex !== null
       ? selectedIndex + 1
       : contentLength;
+    const instanceId = idToUuid(`${item.catalogId}:${Date.now()}:${Math.random()}`);
 
     dispatch({
       type: 'insert',
-      componentType,
+      componentType: item.type,
       destinationIndex,
       destinationZone: 'root:default-zone',
+      id: instanceId,
     });
+    if (item.presetProps) {
+      const presetBlock = canonicalBlockToPuck({
+        instance_id: instanceId,
+        type: item.blockId,
+        block_version: item.blockVersion,
+        props: item.presetProps,
+        slots: {},
+      });
+      dispatch({
+        type: 'replace',
+        destinationIndex,
+        destinationZone: 'root:default-zone',
+        data: presetBlock,
+      });
+    }
     dispatch({
       type: 'setUi',
       ui: {
@@ -1503,20 +1624,48 @@ function StableAddBlockControls({
               <button type="button" className="g7pb-block-gallery__close" aria-label="블록 갤러리 닫기"
                 onClick={() => setOpen(false)}>×</button>
             </header>
+            <div className="g7pb-block-gallery__tools" aria-label="블록 찾기">
+              <input
+                type="search"
+                value={query}
+                placeholder="블록 이름 또는 설명 검색"
+                aria-label="블록 검색"
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              <select value={category} aria-label="블록 분류" onChange={(event) => setCategory(event.target.value)}>
+                <option value="">전체 분류</option>
+                {categories.map((itemCategory) => <option key={itemCategory} value={itemCategory}>{itemCategory}</option>)}
+              </select>
+              <button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}>
+                ★ 즐겨찾기
+              </button>
+            </div>
             <div className="g7pb-block-gallery__grid">
-              {BLOCK_GALLERY_ITEMS.map((item, index) => (
-                <button key={item.type} type="button" className="g7pb-block-gallery__item"
-                  ref={index === 0 ? firstItemRef : undefined}
-                  data-testid={item.testId} onClick={() => insert(item.type)}>
-                  <BlockGalleryThumbnail type={item.type} />
-                  <span className="g7pb-block-gallery__copy">
-                    <small>{item.category}</small>
-                    <strong>{item.title}</strong>
-                    <span>{item.description}</span>
-                    <em>이 블록 추가 →</em>
-                  </span>
-                </button>
+              {visibleItems.map((item, index) => (
+                <article key={item.catalogId} className="g7pb-block-gallery__item">
+                  <button type="button" className="g7pb-block-gallery__add"
+                    ref={index === 0 ? firstItemRef : undefined}
+                    data-testid={item.testId} onClick={() => insert(item)}>
+                    <BlockGalleryThumbnail type={item.type} />
+                    <span className="g7pb-block-gallery__copy">
+                      <small>{item.kind === 'preset' ? `${item.category} · 프리셋` : item.category}</small>
+                      <strong>{item.title}</strong>
+                      <span>{item.description}</span>
+                      <em>이 블록 추가 →</em>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="g7pb-block-gallery__favorite"
+                    aria-label={`${item.title} ${item.favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}`}
+                    aria-pressed={item.favorite}
+                    onClick={() => void toggleFavorite(item.catalogId, !item.favorite)}
+                  >
+                    {item.favorite ? '★' : '☆'}
+                  </button>
+                </article>
               ))}
+              {visibleItems.length === 0 && <p className="g7pb-block-gallery__empty">조건에 맞는 블록이 없습니다.</p>}
             </div>
           </section>
         </div>,
@@ -1746,7 +1895,9 @@ function PuckDrawerLibrary({ children }: { children: React.ReactNode }): React.R
 }
 
 function PuckDrawerItem({ children, name }: { children: React.ReactNode; name: string }): React.ReactElement {
-  const item = BLOCK_GALLERY_ITEMS.find((candidate) => candidate.type === name);
+  const { items } = React.useContext(BlockCatalogContext);
+  const item = items.find((candidate) => candidate.kind === 'definition' && candidate.type === name)
+    ?? BLOCK_GALLERY_ITEMS.find((candidate) => candidate.type === name);
 
   if (!item) {
     return <>{children}</>;
@@ -1761,7 +1912,7 @@ function PuckDrawerItem({ children, name }: { children: React.ReactNode; name: s
         <small>{item.category}</small>
         <strong>{item.title}</strong>
         <span>{item.description}</span>
-        <em>끌어서 배치</em>
+        <em>{item.favorite ? '★ 즐겨찾기 · 끌어서 배치' : '끌어서 배치'}</em>
       </div>
       <span className="g7pb-puck-drawer-card__handle" aria-hidden="true">⠿</span>
     </div>
@@ -1776,9 +1927,18 @@ export function PuckEditorAdapter({
   onChange,
   onPublish,
 }: PuckEditorAdapterProps): React.ReactElement {
+  const api = useMemo(() => new PageBuilderApiClient(), []);
+  const runtimePuckConfig = useMemo(() => ({
+    ...pageBuilderPuckConfig,
+    components: {
+      ...pageBuilderPuckConfig.components,
+      ...externalEditorComponents(),
+    },
+  }) as Config<EditorComponents>, []);
   const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);
+  const [catalogItems, setCatalogItems] = useState<ReadonlyArray<BlockGalleryItem>>(BLOCK_GALLERY_ITEMS);
   const heroFamilyCount = data.content.filter((block) =>
     block.type === 'Hero' || block.type === 'HeroSplit' || block.type === 'HeroSlider').length;
   const heroWarningKey = `g7pb:warning:${document.document_id}:hero-family:${heroFamilyCount}`;
@@ -1806,6 +1966,40 @@ export function PuckEditorAdapter({
     contextRef.current = session.context;
     setData(session.data);
   }, [document.document_id, revisionKey]);
+
+  useEffect(() => {
+    let active = true;
+    try {
+      if (!window.localStorage.getItem(ADMIN_AUTH_TOKEN_KEY)) return undefined;
+    } catch {
+      return undefined;
+    }
+
+    void api.listBlockCatalog({ locale: document.locale })
+      .then((resource) => {
+        if (!active) return;
+        const items = resource.items
+          .map((item) => apiCatalogItemToGalleryItem(item, document.locale))
+          .filter((item): item is BlockGalleryItem => item !== null);
+        if (items.length > 0) setCatalogItems(items);
+      })
+      .catch(() => {
+        // The embedded builtin catalog remains available when an admin API request fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [api, document.locale]);
+
+  const toggleFavorite = React.useCallback(async (catalogId: string, favorite: boolean): Promise<void> => {
+    await api.setBlockFavorite(catalogId, favorite);
+    setCatalogItems((current) => current.map((item) => item.catalogId === catalogId ? { ...item, favorite } : item));
+  }, [api]);
+  const blockCatalogContext = useMemo<BlockCatalogContextValue>(() => ({
+    items: catalogItems,
+    toggleFavorite,
+  }), [catalogItems, toggleFavorite]);
 
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
@@ -1839,26 +2033,28 @@ export function PuckEditorAdapter({
           </button>
         </div>
       )}
-      <Puck
-        config={pageBuilderPuckConfig}
-        data={data}
-        height="100%"
-        iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }}
-        viewports={PAGE_BUILDER_VIEWPORTS}
-        ui={{
-          viewports: {
-            current: { width: 1280, height: 'auto' },
-            controlsVisible: false,
-            options: PAGE_BUILDER_VIEWPORTS,
-          },
-        }}
-        permissions={{ edit: !disabled, insert: !disabled, delete: !disabled, duplicate: !disabled, drag: !disabled }}
-        overrides={overrides}
-        headerTitle="페이지 블록"
-        headerPath={document.slug}
-        onChange={updateCanonical}
-        onPublish={(nextData) => onPublish(updateCanonical(nextData))}
-      />
+      <BlockCatalogContext.Provider value={blockCatalogContext}>
+        <Puck
+          config={runtimePuckConfig}
+          data={data}
+          height="100%"
+          iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }}
+          viewports={PAGE_BUILDER_VIEWPORTS}
+          ui={{
+            viewports: {
+              current: { width: 1280, height: 'auto' },
+              controlsVisible: false,
+              options: PAGE_BUILDER_VIEWPORTS,
+            },
+          }}
+          permissions={{ edit: !disabled, insert: !disabled, delete: !disabled, duplicate: !disabled, drag: !disabled }}
+          overrides={overrides}
+          headerTitle="페이지 블록"
+          headerPath={document.slug}
+          onChange={updateCanonical}
+          onPublish={(nextData) => onPublish(updateCanonical(nextData))}
+        />
+      </BlockCatalogContext.Provider>
     </div>
   );
 }

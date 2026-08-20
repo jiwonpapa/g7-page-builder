@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockCatalogController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockPackController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
@@ -8,6 +10,30 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Publ
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 
 Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:sanctum', 'throttle:300,1'])->name('admin.')->group(function (): void {
+    Route::get('blocks/catalog', [AdminBlockCatalogController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('blocks.catalog');
+    Route::put('blocks/favorite', [AdminBlockCatalogController::class, 'favorite'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('blocks.favorite');
+    Route::get('block-packs', [AdminBlockPackController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('block-packs.index');
+    Route::post('block-packs', [AdminBlockPackController::class, 'store'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('block-packs.store');
+    Route::put('block-packs/state', [AdminBlockPackController::class, 'state'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('block-packs.state');
+    Route::delete('block-packs', [AdminBlockPackController::class, 'destroy'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('block-packs.destroy');
+    Route::post('block-packs/github/check', [AdminBlockPackController::class, 'githubCheck'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('block-packs.github.check');
+    Route::post('block-packs/github/install', [AdminBlockPackController::class, 'githubInstall'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('block-packs.github.install');
     Route::get('site-shell', [AdminSiteShellController::class, 'show'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('site-shell.show');

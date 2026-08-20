@@ -658,6 +658,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     expect(managerResponse?.ok()).toBe(true);
     await expect(page.getByTestId('page-builder-manager-app')).toBeVisible();
 
+    await page.getByTestId('page-builder-manager-block-packs').click();
+    const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
+    await expect(blockPackDialog).toBeVisible();
+    await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
+    await expect(blockPackDialog).toContainText('블록 12 / 프리셋 0');
+    await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
+    await expect(blockPackDialog.getByRole('button', { name: '최신 버전 확인' })).toBeVisible();
+    await blockPackDialog.getByRole('button', { name: '닫기' }).click();
+    await expect(blockPackDialog).toHaveCount(0);
+
     const managerLocale = await page.getByTestId('page-builder-manager-root').getAttribute('data-locale') ?? 'ko';
     originalSiteShell = await readSiteShell(authToken, managerLocale);
     await page.getByTestId('page-builder-manager-site-shell').click();
@@ -733,6 +743,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
 
     await page.getByTestId('page-builder-add-block').click();
+    const blockSearch = page.getByLabel('블록 검색');
+    await blockSearch.fill('막대그래프');
+    await expect(page.getByTestId('page-builder-block-option-bar-chart')).toBeVisible();
+    await expect(page.getByTestId('page-builder-block-option-hero')).toHaveCount(0);
+    await blockSearch.fill('');
     for (const option of [
       'hero',
       'hero-split',

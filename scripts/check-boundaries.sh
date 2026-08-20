@@ -113,4 +113,30 @@ if [[ -d "$ROOT/src/Providers" ]] && rg -n \
   exit 1
 fi
 
+if rg -n 'releases/latest' "$ROOT/src" "$ROOT/resources"; then
+  echo 'Block Pack updates must select a verified SemVer release instead of trusting GitHub releases/latest.' >&2
+  exit 1
+fi
+
+for signed_pack_contract in \
+  "manifest.sig" \
+  "\$this->signatures->verify"; do
+  if ! rg -Fq "$signed_pack_contract" "$ROOT/src/Infrastructure/BlockPacks/ZipBlockPackArchiveAdapter.php"; then
+    echo "Missing signed Code Pack archive contract: $signed_pack_contract" >&2
+    exit 1
+  fi
+done
+
+if ! rg -Fq "publisher_id" "$ROOT/src/Infrastructure/BlockPacks/Ed25519BlockPackSignatureVerifier.php" \
+  || ! rg -Fq "builtinEditorComponents" "$ROOT/resources/js/blocks/runtimeRegistry.ts"; then
+  echo 'Code Pack trust must bind keys to publishers and prevent builtin editor component overrides.' >&2
+  exit 1
+fi
+
+if ! rg -Fq "['digest']" "$ROOT/src/Infrastructure/BlockPacks/GitHubReleaseSourceAdapter.php" \
+  || ! rg -Fq "expectedSha256: \$release->sha256" "$ROOT/src/Application/Blocks/GitHubBlockPackService.php"; then
+  echo 'GitHub Block Pack installation must preserve the release SHA-256 digest chain.' >&2
+  exit 1
+fi
+
 echo 'Architecture boundaries: OK'

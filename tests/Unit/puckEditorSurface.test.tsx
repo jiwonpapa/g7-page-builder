@@ -348,4 +348,100 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('막대그래프');
     expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(12);
   });
+
+  it('uses the actor catalog for search, categories, favorites, and preset insertion', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    const catalog = {
+      items: [
+        {
+          catalog_id: 'block:content.hero-centered-01@1', kind: 'definition',
+          block_id: 'content.hero-centered-01', block_version: 1,
+          pack_id: 'builtin/core', pack_version: '0.6.0', category: 'hero',
+          label: { ko: '서버 히어로', en: 'Server Hero' },
+          description: { ko: '서버 카탈로그 정의', en: 'Server catalog definition' },
+          thumbnail: 'thumbnails/hero.svg', editor_component: 'Hero', favorite: true,
+          insertable: true, preset_props: null,
+        },
+        {
+          catalog_id: 'preset:vendor/marketing:promotion', kind: 'preset',
+          block_id: 'content.hero-centered-01', block_version: 1,
+          pack_id: 'vendor/marketing', pack_version: '1.0.0', category: 'marketing',
+          label: { ko: '프로모션 히어로', en: 'Promotion hero' },
+          description: { ko: '설치한 데이터 프리셋', en: 'Installed data preset' },
+          thumbnail: 'thumbnails/promotion.svg', editor_component: 'Hero', favorite: false,
+          insertable: true,
+          preset_props: {
+            eyebrow: '한정 혜택', title: '프로모션 제목', body: '<p>프로모션 본문</p>', alignment: 'center',
+          },
+        },
+        {
+          catalog_id: 'block:vendor.missing-01@1', kind: 'definition',
+          block_id: 'vendor.missing-01', block_version: 1,
+          pack_id: 'vendor/missing', pack_version: '1.0.0', category: 'content',
+          label: { ko: '로드되지 않은 블록' }, description: { ko: '표시하면 안 됩니다.' },
+          thumbnail: 'missing.svg', editor_component: 'MissingRuntime', favorite: false,
+          insertable: true, preset_props: null,
+        },
+      ],
+      categories: ['hero', 'marketing'],
+    };
+    globalThis.fetch = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: catalog }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        success: true, message: 'ok', data: { catalog_id: 'preset:vendor/marketing:promotion', favorite: true },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const onChange = vi.fn();
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => { act(() => root.unmount()); });
+    await act(async () => {
+      root.render(
+        <PuckEditorAdapter
+          document={{ ...fixture, locale: 'en', blocks: [] }} revisionKey={0} iframeEnabled={false}
+          onChange={onChange} onPublish={() => undefined}
+        />,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const addButton = await eventually<HTMLButtonElement>('[data-testid="page-builder-add-block"]');
+    await act(async () => { addButton.click(); });
+    const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
+    expect(gallery.textContent).toContain('Server Hero');
+    expect(gallery.textContent).toContain('Promotion hero');
+    expect(gallery.textContent).not.toContain('로드되지 않은 블록');
+
+    const search = gallery.querySelector<HTMLInputElement>('[aria-label="블록 검색"]');
+    await act(async () => {
+      if (search) {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(search, '프로모션');
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+    expect(gallery.textContent).not.toContain('Server Hero');
+    expect(gallery.textContent).toContain('Promotion hero');
+
+    const favorite = gallery.querySelector<HTMLButtonElement>('[aria-label="Promotion hero 즐겨찾기 추가"]');
+    await act(async () => {
+      favorite?.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(gallery.querySelector('[aria-label="Promotion hero 즐겨찾기 해제"]')).not.toBeNull();
+
+    const preset = gallery.querySelector<HTMLButtonElement>('[data-testid="page-builder-block-preset-vendor-marketing-promotion"]');
+    await act(async () => {
+      preset?.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onChange).toHaveBeenCalled();
+    expect(onChange.mock.lastCall?.[0].blocks[0]).toMatchObject({
+      type: 'content.hero-centered-01', block_version: 1,
+      props: { eyebrow: '한정 혜택', title: '프로모션 제목' },
+    });
+  });
 });

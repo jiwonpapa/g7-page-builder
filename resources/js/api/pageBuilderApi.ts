@@ -12,6 +12,12 @@ import type {
   RevisionListResource,
   RevisionResource,
 } from '../documents/types';
+import type {
+  BlockCatalogResource,
+  BlockPackListResource,
+  BlockPackResource,
+  GitHubBlockPackCheckResource,
+} from '../blocks/types';
 
 export const PAGE_BUILDER_API_PREFIX = '/api/modules/jiwonpapa-page_builder/admin';
 export const PAGE_BUILDER_MANAGER_PATH = '/admin/page-builder';
@@ -331,6 +337,82 @@ export class PageBuilderApiClient {
   async deleteMedia(mediaId: string): Promise<{ media_id: string }> {
     return this.request<{ media_id: string }>(`/media/${encodeURIComponent(mediaId)}`, {
       method: 'DELETE',
+    });
+  }
+
+  async listBlockCatalog(filters: {
+    query?: string;
+    category?: string;
+    favorites?: boolean;
+    locale?: string;
+  } = {}): Promise<BlockCatalogResource> {
+    const query = new URLSearchParams();
+    if (filters.query) query.set('query', filters.query);
+    if (filters.category) query.set('category', filters.category);
+    if (filters.favorites) query.set('favorites', 'true');
+    if (filters.locale) query.set('locale', filters.locale);
+    const suffix = query.size > 0 ? `?${query.toString()}` : '';
+
+    return this.request<BlockCatalogResource>(`/blocks/catalog${suffix}`);
+  }
+
+  async setBlockFavorite(catalogId: string, favorite: boolean): Promise<{ catalog_id: string; favorite: boolean }> {
+    return this.request<{ catalog_id: string; favorite: boolean }>('/blocks/favorite', {
+      method: 'PUT',
+      body: JSON.stringify({ catalog_id: catalogId, favorite }),
+    });
+  }
+
+  async listBlockPacks(): Promise<BlockPackListResource> {
+    return this.request<BlockPackListResource>('/block-packs');
+  }
+
+  async installBlockPack(archive: File, enable = true, archiveSha256?: string): Promise<BlockPackResource> {
+    const form = new FormData();
+    form.append('archive', archive);
+    form.append('enable', enable ? '1' : '0');
+    if (archiveSha256) form.append('archive_sha256', archiveSha256);
+
+    return this.request<BlockPackResource>('/block-packs', { method: 'POST', body: form });
+  }
+
+  async setBlockPackState(
+    packId: string,
+    packVersion: string,
+    state: 'enabled' | 'disabled',
+  ): Promise<BlockPackResource> {
+    return this.request<BlockPackResource>('/block-packs/state', {
+      method: 'PUT',
+      body: JSON.stringify({ pack_id: packId, pack_version: packVersion, state }),
+    });
+  }
+
+  async removeBlockPack(packId: string, packVersion: string): Promise<{ pack_id: string; pack_version: string }> {
+    return this.request<{ pack_id: string; pack_version: string }>('/block-packs', {
+      method: 'DELETE',
+      body: JSON.stringify({ pack_id: packId, pack_version: packVersion }),
+    });
+  }
+
+  async checkGitHubBlockPack(
+    owner: string,
+    repository: string,
+    assetName = 'g7pb-block-pack.zip',
+  ): Promise<GitHubBlockPackCheckResource> {
+    return this.request<GitHubBlockPackCheckResource>('/block-packs/github/check', {
+      method: 'POST',
+      body: JSON.stringify({ owner, repository, asset_name: assetName }),
+    });
+  }
+
+  async installGitHubBlockPack(
+    owner: string,
+    repository: string,
+    assetName = 'g7pb-block-pack.zip',
+  ): Promise<BlockPackResource> {
+    return this.request<BlockPackResource>('/block-packs/github/install', {
+      method: 'POST',
+      body: JSON.stringify({ owner, repository, asset_name: assetName, enable: true }),
     });
   }
 

@@ -12,6 +12,7 @@ G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목
 | 공통 Header·Footer·PC/모바일 메뉴 설정 | G7 Page Builder |
 | 기존 HTML 본문 | HtmlEditor/CKEditor |
 | PageBuilderDocument | G7 Page Builder |
+| Block Pack manifest·설치 상태·관리자 즐겨찾기 | G7 Page Builder |
 | Puck UI 상태 | 임시 편집 상태, 영속 금지 |
 | 컴파일된 HTML·JSON UI | 생성물, 직접 편집 금지 |
 
@@ -19,16 +20,18 @@ G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목
 
 ```text
 Domain
-  PageBuilderDocument, BlockDefinition
+  PageBuilderDocument, BlockDefinition, BlockPackManifest
        |
 Application
-  Draft, Publish, Migrate, Compile
+  Draft, Publish, Migrate, Compile, BlockRegistry, BlockPackManager
        |
 Ports
-  PageDocumentPort, DocumentCompilerPort, PublicationPort, MediaPort
+  PageBuilderRepository, DocumentCompilerPort, MediaPort,
+  BlockPackRepository, BlockPackArchivePort, BlockPackReleaseSourcePort,
+  BlockFavoritePort, BlockUsagePort, BlockPackProvider
        |
 Adapters
-  PuckEditor, Gnuboard7, MySQL, Storage
+  PuckEditor, Gnuboard7, MySQL, local ZIP storage, GitHub Release
 ```
 
 ## 실행 흐름
@@ -63,6 +66,15 @@ G7 module-owned public route/viewer
 - 문서는 기본 `shell_mode=global`이며 인트로·캠페인은 `shell_mode=none`으로 공통영역 없이 렌더합니다. 이 값은 revision과 publication에 함께 snapshot됩니다.
 - 향후 User Template shell, `sirsoft-page` metadata, 쇼핑몰 Product Grid, G7 JSON UI는 각각 별도 선택 Adapter·Block Pack으로만 추가합니다.
 - 선택 연동이 없거나 실패해도 기본 문서의 저장·발행·공개 렌더는 중단하지 않습니다.
+
+## Block Pack 실행 경계
+
+- 12개 기본 정의는 내장 Pack manifest에서 PHP compiler Registry와 Puck catalog로 동시에 등록합니다.
+- Data Preset Pack은 JSON props와 정적 자산만 제공하며 실행 코드를 등록하지 않습니다.
+- Code Pack은 발행자 귀속 Ed25519 서명과 모든 파일 digest를 통과한 뒤에만 PHP provider와 editor IIFE를 로드합니다.
+- 비활성 Pack은 신규 카탈로그에서 숨기되 기존 문서 해석용 resolved version을 유지합니다.
+- Pack 제거는 해당 block identity를 참조하는 모든 모듈 소유 문서·리비전이 0일 때만 수행합니다.
+- GitHub 네트워크는 관리자의 확인·설치 요청에서만 사용하며 공개 요청은 마지막 정상 발행 HTML만 읽습니다.
 
 ## 업데이트 원칙
 

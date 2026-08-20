@@ -577,17 +577,6 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
   return null;
 }
 
-export const CATALOG_GALLERY_ITEMS: ReadonlyArray<{ type: CatalogComponentType; testId: string; category: string; title: string; description: string }> = [
-  { type: 'HeroSplit', testId: 'page-builder-block-option-hero-split', category: '첫 화면', title: '분할 히어로', description: '메시지와 대표 이미지를 좌우로 나눠 소개합니다.' },
-  { type: 'HeroSlider', testId: 'page-builder-block-option-hero-slider', category: '첫 화면', title: '슬라이더 히어로', description: '여러 캠페인 장면을 스크롤 가능한 흐름으로 보여줍니다.' },
-  { type: 'LogoCloud', testId: 'page-builder-block-option-logo-cloud', category: '신뢰', title: '로고 클라우드', description: '고객사와 파트너 이름 또는 로고를 정돈해 보여줍니다.' },
-  { type: 'Stats', testId: 'page-builder-block-option-stats', category: '데이터', title: '숫자·아이콘 지표', description: '핵심 수치와 설명을 아이콘 조합으로 강조합니다.' },
-  { type: 'Pricing', testId: 'page-builder-block-option-pricing', category: '전환', title: '요금제', description: '2~4개 플랜의 가격, 기능과 추천안을 비교합니다.' },
-  { type: 'Team', testId: 'page-builder-block-option-team', category: '회사 소개', title: '팀 소개', description: '구성원의 사진, 역할과 전문성을 소개합니다.' },
-  { type: 'Gallery', testId: 'page-builder-block-option-gallery', category: '미디어', title: '갤러리 그리드', description: '2~4열 이미지와 캡션으로 프로젝트를 전시합니다.' },
-  { type: 'BarChart', testId: 'page-builder-block-option-bar-chart', category: '데이터', title: '막대그래프', description: '0~100 범위의 데이터를 접근 가능한 그래프로 비교합니다.' },
-];
-
 export function CatalogGalleryThumbnail({ type }: { type: CatalogComponentType }): React.ReactElement {
   return <div className={`g7pb-block-thumb g7pb-block-thumb--catalog g7pb-block-thumb--${type.replace(/[A-Z]/g, (value) => `-${value.toLowerCase()}`).replace(/^-/, '')}`} data-block-preview={type} aria-hidden="true"><b /><span><i /><i /><i /><i /></span><em /></div>;
 }

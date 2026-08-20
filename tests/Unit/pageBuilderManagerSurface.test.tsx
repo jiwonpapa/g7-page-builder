@@ -170,4 +170,42 @@ describe('Page Builder manager surface', () => {
 
     await act(async () => { root.unmount(); });
   });
+
+  it('manages independent Block Packs and explains in-use removal blocking', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    const emptyList = { items: [], pagination: { total: 0, page: 1, per_page: 100 } };
+    const packs = {
+      items: [{
+        pack_id: 'vendor/content-pack', pack_version: '1.2.0', kind: 'code',
+        publisher: { id: 'vendor', name: '검증 발행자', key_id: 'vendor.main' },
+        state: 'disabled', source: 'github', source_uri: 'https://github.com/vendor/content-pack/releases/tag/v1.2.0',
+        archive_sha256: 'a'.repeat(64), blocks: 2, presets: 3, runtime_active: true,
+        editor_asset_url: '/modules/jiwonpapa-page_builder/block-packs/vendor/content-pack/1.2.0/dist/editor.js',
+        style_asset_urls: [], usage: { documents: 1, revisions: 4 },
+        installed_at: '2026-08-20T09:00:00+09:00', updated_at: '2026-08-20T09:00:00+09:00',
+      }],
+    };
+    globalThis.fetch = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: emptyList }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: packs }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }));
+
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
+    const button = await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-block-packs"]');
+    await act(async () => { button.click(); });
+
+    const dialog = await eventually<HTMLElement>('[data-testid="page-builder-block-packs-dialog"]');
+    expect(dialog.textContent).toContain('블록 팩 설치·사용·제거');
+    expect(dialog.textContent).toContain('문서 1 · 리비전 4 사용 중');
+    expect(dialog.textContent).toContain('GitHub Release에서 확인');
+    expect(dialog.querySelector<HTMLButtonElement>('.g7pb-button--danger')?.disabled).toBe(true);
+
+    await act(async () => { root.unmount(); });
+  });
 });

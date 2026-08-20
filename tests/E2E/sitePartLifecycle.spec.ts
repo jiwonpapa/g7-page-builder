@@ -140,6 +140,12 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     await expect(page.getByTitle('Switch to 모바일 viewport')).toBeVisible();
     await expect(page.getByTitle('Switch to 태블릿 viewport')).toBeVisible();
     await expect(page.getByTitle('Switch to PC viewport')).toBeVisible();
+    const mediaFileInputs = page.getByTestId('page-builder-media-file');
+    const mediaFileInputCount = await mediaFileInputs.count();
+    expect(mediaFileInputCount).toBeGreaterThan(0);
+    for (let index = 0; index < mediaFileInputCount; index += 1) {
+      await expect(mediaFileInputs.nth(index)).toBeHidden();
+    }
     expect(pageErrors, pageErrors.join('\n')).toEqual([]);
     await page.screenshot({ path: 'output/playwright/site-part-header-editor.png', fullPage: true });
 

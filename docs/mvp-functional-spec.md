@@ -110,7 +110,7 @@ Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Bl
 ## 완료 조건
 
 1. 12종 테스트 카탈로그 block 모두 schema·editor·PHP compiler·public renderer·Fixture를 가집니다.
-2. 블록 추가 전에 이름·용도·구조 미리보기를 제공합니다.
+2. 좌측 Blocks에서 이름·용도·축소 구조를 확인하고 원하는 블록 사이에 드롭할 수 있으며, 상세 미리보기는 선택 블록 뒤 빠른 추가를 제공합니다.
 3. 생성부터 rollback까지 Playwright 제품 E2E가 통과합니다.
 4. PC·태블릿·모바일 screenshot baseline을 사람이 확인합니다.
 5. G7 7.0.7 fixture 재컴파일 결과가 결정적입니다.

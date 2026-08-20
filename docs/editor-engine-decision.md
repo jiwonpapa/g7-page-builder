@@ -45,6 +45,9 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 - DB와 API에는 `PageBuilderDocument`만 저장합니다.
 - Puck `AppState`, selection, sidebar, history와 원시 `Data`를 저장하지 않습니다.
 - 공개 페이지는 Puck `<Render>`를 로드하지 않습니다.
+- 좌측 Blocks는 공개 `drawer`·`drawerItem` override로 축소 미리보기만 꾸미고, 삽입·드롭·정렬은 Puck 기본 DnD를 그대로 사용합니다.
+- 상세 `전체 미리보기`는 선택한 block 바로 뒤에 삽입하는 보조 흐름이며 좌측 DnD를 대체하지 않습니다.
+- 모바일·태블릿·PC 버튼은 Puck `UiState.viewports`와 공식 iframe canvas를 제어합니다. 임의 CSS 축소 화면을 반응형 검증으로 간주하지 않습니다.
 - Puck Cloud, Puck AI, Tiptap Pro/Cloud는 MVP 범위 밖입니다.
 - 제3자 MIT/BSD/Apache 저작권 고지는 릴리스의 `THIRD-PARTY-NOTICES`에 포함합니다.
 
@@ -52,10 +55,10 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 
 첫 수직 slice에서 확인한 항목:
 
-1. 12종 테스트 카탈로그의 typed 편집과 선택 block 정렬을 지원합니다.
+1. 12종 테스트 카탈로그의 좌측 축소 미리보기, 원하는 위치 DnD, typed 편집과 선택 block 정렬을 지원합니다.
 2. Puck ↔ `PageBuilderDocument` 왕복 Fixture가 통과합니다.
 3. 저장 후 reload와 Puck undo/redo 표면이 동작합니다.
-4. PC·태블릿·모바일 preview/public 제품 E2E가 통과합니다.
+4. 편집기 모바일·태블릿·PC iframe 전환과 preview/public 제품 E2E가 통과합니다.
 5. Puck을 import하지 않는 PHP compiler가 같은 12종 block을 결정적으로 컴파일합니다.
 
 아직 남은 채택 검증은 100개 block 성능 측정과 nested slot입니다. 현재 nested slot은 Adapter와 compiler에서 fail-closed하며, 이 두 항목이 실제 제품 요구가 될 때 기준을 통과하지 못하면 다른 엔진으로 자동 전환하지 않고 원인을 기록한 뒤 결정을 다시 엽니다.

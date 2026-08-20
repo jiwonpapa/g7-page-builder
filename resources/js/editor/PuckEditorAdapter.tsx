@@ -131,6 +131,7 @@ interface PuckEditorAdapterProps {
   document: PageBuilderDocument;
   revisionKey: number;
   disabled?: boolean;
+  iframeEnabled?: boolean;
   onChange: (document: PageBuilderDocument) => void;
   onPublish: (document: PageBuilderDocument) => void | Promise<void>;
 }
@@ -1392,10 +1393,14 @@ function BlockGalleryThumbnail({ type }: { type: keyof EditorComponents }): Reac
 function StableAddBlockControls({
   dispatch,
   contentLength,
+  selectedIndex,
+  selectedZone,
   disabled,
 }: {
   dispatch: (action: PuckAction) => void;
   contentLength: number;
+  selectedIndex: number | null;
+  selectedZone: string;
   disabled: boolean;
 }): React.ReactElement {
   const [open, setOpen] = useState(false);
@@ -1428,11 +1433,25 @@ function StableAddBlockControls({
   }, [open]);
 
   const insert = (componentType: keyof EditorComponents): void => {
+    const destinationIndex = selectedZone === 'root:default-zone' && selectedIndex !== null
+      ? selectedIndex + 1
+      : contentLength;
+
     dispatch({
       type: 'insert',
       componentType,
-      destinationIndex: contentLength,
+      destinationIndex,
       destinationZone: 'root:default-zone',
+    });
+    dispatch({
+      type: 'setUi',
+      ui: {
+        itemSelector: {
+          index: destinationIndex,
+          zone: 'root:default-zone',
+        },
+      },
+      recordHistory: false,
     });
     setOpen(false);
   };
@@ -1446,7 +1465,7 @@ function StableAddBlockControls({
         disabled={disabled}
         onClick={() => setOpen((value) => !value)}
       >
-        블록 추가
+        전체 미리보기
       </button>
       {open && globalThis.document && createPortal(
         <div className="g7pb-block-gallery-backdrop" data-testid="page-builder-block-gallery"
@@ -1461,7 +1480,7 @@ function StableAddBlockControls({
               <div>
                 <p>블록 라이브러리</p>
                 <h2 id="g7pb-block-gallery-title">화면을 보고 블록을 선택하세요</h2>
-                <span>추가 전에 구성과 용도를 확인할 수 있습니다.</span>
+                <span>선택하면 현재 블록 바로 뒤에 추가됩니다. 정확한 위치는 좌측 라이브러리에서 끌어 놓으세요.</span>
               </div>
               <button type="button" className="g7pb-block-gallery__close" aria-label="블록 갤러리 닫기"
                 onClick={() => setOpen(false)}>×</button>
@@ -1492,17 +1511,66 @@ function StableAddBlockControls({
 function StableHeaderControls({
   dispatch,
   contentLength,
+  selectedIndex,
+  selectedZone,
+  currentViewportWidth,
+  viewportState,
   disabled,
 }: {
   dispatch: (action: PuckAction) => void;
   contentLength: number;
+  selectedIndex: number | null;
+  selectedZone: string;
+  currentViewportWidth: number | '100%';
+  viewportState: {
+    current: { width: number | '100%'; height: number | 'auto' };
+    controlsVisible: boolean;
+    options: Viewports;
+  };
   disabled: boolean;
 }): React.ReactElement {
+  const setViewport = (width: number): void => {
+    const viewport = PAGE_BUILDER_VIEWPORTS.find((candidate) => candidate.width === width);
+    if (!viewport) {
+      return;
+    }
+
+    dispatch({
+      type: 'setUi',
+      ui: {
+        viewports: {
+          ...viewportState,
+          current: {
+            width: viewport.width,
+            height: viewport.height ?? 'auto',
+          },
+        },
+      },
+      recordHistory: false,
+    });
+  };
+
   return (
     <div className="g7pb-header-controls">
+      <div className="g7pb-viewport-switcher" role="group" aria-label="캔버스 기기 미리보기">
+        {PAGE_BUILDER_VIEWPORTS.map((viewport) => (
+          <button
+            key={viewport.width}
+            type="button"
+            data-testid={`page-builder-viewport-${viewport.width}`}
+            aria-pressed={currentViewportWidth === viewport.width}
+            disabled={disabled}
+            onClick={() => setViewport(viewport.width as number)}
+          >
+            {viewport.label}
+          </button>
+        ))}
+      </div>
       <StableAddBlockControls
         dispatch={dispatch}
         contentLength={contentLength}
+        selectedIndex={selectedIndex}
+        selectedZone={selectedZone}
         disabled={disabled}
       />
     </div>
@@ -1512,11 +1580,18 @@ function StableHeaderControls({
 function ConnectedHeaderControls({ disabled }: { disabled: boolean }): React.ReactElement {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
   const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
+  const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
+  const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
+  const viewportState = usePageBuilderPuck((state) => state.appState.ui.viewports);
 
   return (
     <StableHeaderControls
       dispatch={dispatch}
       contentLength={contentLength}
+      selectedIndex={selectedIndex}
+      selectedZone={selectedZone}
+      currentViewportWidth={viewportState.current.width}
+      viewportState={viewportState}
       disabled={disabled}
     />
   );
@@ -1588,12 +1663,38 @@ function PuckHeaderLayer({ children }: { children: React.ReactNode }): React.Rea
   return <div className="g7pb-puck-header-layer">{children}</div>;
 }
 
-function PuckDrawerNotice(): React.ReactElement {
+function PuckDrawerLibrary({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
-    <aside className="g7pb-puck-drawer-notice">
-      <strong>블록 라이브러리</strong>
-      <p>상단의 ‘블록 추가’에서 실제 구성을 미리 본 뒤 선택하세요.</p>
-    </aside>
+    <div className="g7pb-puck-drawer-library" data-testid="page-builder-block-library">
+      <header className="g7pb-puck-drawer-library__header">
+        <strong>블록 라이브러리</strong>
+        <p>미리보기를 끌어 캔버스의 원하는 위치에 놓으세요.</p>
+      </header>
+      {children}
+    </div>
+  );
+}
+
+function PuckDrawerItem({ children, name }: { children: React.ReactNode; name: string }): React.ReactElement {
+  const item = BLOCK_GALLERY_ITEMS.find((candidate) => candidate.type === name);
+
+  if (!item) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="g7pb-puck-drawer-card" data-library-block={item.type}>
+      <div className="g7pb-puck-drawer-card__preview">
+        <BlockGalleryThumbnail type={item.type} />
+      </div>
+      <div className="g7pb-puck-drawer-card__copy">
+        <small>{item.category}</small>
+        <strong>{item.title}</strong>
+        <span>{item.description}</span>
+        <em>끌어서 배치</em>
+      </div>
+      <span className="g7pb-puck-drawer-card__handle" aria-hidden="true">⠿</span>
+    </div>
   );
 }
 
@@ -1601,6 +1702,7 @@ export function PuckEditorAdapter({
   document,
   revisionKey,
   disabled = false,
+  iframeEnabled = true,
   onChange,
   onPublish,
 }: PuckEditorAdapterProps): React.ReactElement {
@@ -1617,7 +1719,8 @@ export function PuckEditorAdapter({
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
     headerActions: () => <ConnectedHeaderControls disabled={disabled} />,
-    drawer: PuckDrawerNotice,
+    drawer: PuckDrawerLibrary,
+    drawerItem: PuckDrawerItem,
     actionBar: (props: { children: React.ReactNode; label?: string; parentAction?: React.ReactNode }) => (
       <SelectedBlockActionBar {...props} disabled={disabled} />
     ),
@@ -1636,8 +1739,15 @@ export function PuckEditorAdapter({
         config={pageBuilderPuckConfig}
         data={data}
         height="100%"
-        iframe={{ enabled: false }}
+        iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }}
         viewports={PAGE_BUILDER_VIEWPORTS}
+        ui={{
+          viewports: {
+            current: { width: 1280, height: 'auto' },
+            controlsVisible: false,
+            options: PAGE_BUILDER_VIEWPORTS,
+          },
+        }}
         permissions={{ edit: !disabled, insert: !disabled, delete: !disabled, duplicate: !disabled, drag: !disabled }}
         overrides={overrides}
         headerTitle="페이지 블록"

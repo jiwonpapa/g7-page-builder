@@ -27,7 +27,7 @@ G7 module-owned public route/viewer
 
 ## 현재 상태
 
-Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가해 12종 테스트 카탈로그를 구현했습니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 구조 미리보기 카탈로그, typed style·motion preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 공개 효과는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 5종이며, 효과가 있는 페이지에만 경량 IIFE 런타임을 조건부 로드합니다.
+Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가해 12종 테스트 카탈로그를 구현했습니다. 좌측 Blocks 라이브러리는 12종 축소 구조 미리보기와 용도를 표시하고 Puck 기본 DnD로 블록 사이 정확한 위치에 드롭합니다. 상단의 모바일·태블릿·PC 버튼은 iframe 캔버스 폭과 실제 반응형 렌더를 전환하며, `전체 미리보기`는 선택 블록 뒤에 빠르게 추가하는 보조 흐름입니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, typed style·motion preset, 블록 추가·편집·정렬, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 공개 효과는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 5종이며, 효과가 있는 페이지에만 경량 IIFE 런타임을 조건부 로드합니다.
 
 전체 유료 MVP는 아직 아닙니다. Gallery의 실제 업로드를 담당할 자체 MediaPort, 기본 SEO, 복구 가능한 문서 보관·삭제, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
 
@@ -59,7 +59,7 @@ Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Clou
 
 1. Puck ↔ `PageBuilderDocument v1` 왕복 Adapter
 2. 모듈 자체 문서·리비전·발행 저장소
-3. 12종 block schema·editor·PHP compiler·public renderer와 핵심 lifecycle PC·태블릿·모바일 E2E
+3. 12종 block schema·editor·PHP compiler·public renderer, 좌측 미리보기 DnD와 반응형 iframe 기기 전환, 핵심 lifecycle PC·태블릿·모바일 E2E
 4. 별도 문서함, 메타수정, 최근 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제
 5. 5종 typed motion preset, 공개 런타임, reduced-motion·CSP 회귀시험
 

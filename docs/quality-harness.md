@@ -58,9 +58,9 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 1. 관리자 API 인증 뒤 독립 Page Builder 문서함 URL 진입
 2. Page Builder 문서함에서 page/document 생성·재진입
-3. block 추가·속성 편집·순서 변경
+3. 좌측 12종 축소 미리보기 노출, block 사이 실드래그 삽입, 상세 미리보기 추가·속성 편집·순서 변경
 4. reload 뒤 동일성
-5. 세 viewport preview
+5. 편집기 모바일·태블릿·PC iframe 폭 전환과 세 viewport preview
 6. publish, 비로그인 public DOM, 반응형 overflow 확인
 7. 재편집 중 기존 공개본 보존과 재발행
 8. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행

@@ -107,9 +107,13 @@ async function authenticateAdmin(context: BrowserContext): Promise<void> {
 }
 
 function editorBlock(page: Page, type: BlockType): Locator {
-  return page.locator(
+  return page.frameLocator('iframe').locator(
     `[data-testid="page-builder-block"][data-block-type="${type}"]`,
   );
+}
+
+function editorBlocks(page: Page): Locator {
+  return page.frameLocator('iframe').getByTestId('page-builder-block');
 }
 
 function renderedBlocks(page: Page): Locator {
@@ -131,6 +135,27 @@ async function revealEditorHeaderActions(page: Page): Promise<void> {
   await expect(addBlock).toBeVisible();
 }
 
+async function revealBlockLibrary(page: Page): Promise<void> {
+  const library = page.getByTestId('page-builder-block-library');
+  if (await library.isVisible()) {
+    return;
+  }
+
+  await page.getByText('Blocks', { exact: true }).click();
+  await expect(library).toBeVisible();
+}
+
+async function hideMobileBlockLibrary(page: Page): Promise<void> {
+  const viewport = page.viewportSize();
+  const library = page.getByTestId('page-builder-block-library');
+  if (!viewport || viewport.width > 720 || !(await library.isVisible())) {
+    return;
+  }
+
+  await page.getByText('Blocks', { exact: true }).click();
+  await expect(library).toBeHidden();
+}
+
 async function revealInspectorField(page: Page, testId: string): Promise<Locator> {
   const field = visibleTestId(page, testId);
 
@@ -150,6 +175,44 @@ async function expectBlockOrder(locator: Locator, expected: BlockType[]): Promis
   );
 
   expect(actual).toEqual(expected);
+}
+
+async function dragLibraryBlockBefore(
+  page: Page,
+  component: string,
+  targetType: BlockType,
+): Promise<void> {
+  const source = page.getByTestId(`drawer-item:${component}`);
+  const target = editorBlock(page, targetType);
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
+
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  if (!sourceBox || !targetBox) {
+    throw new Error(`Could not resolve drag geometry for ${component} before ${targetType}.`);
+  }
+
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2,
+    sourceBox.y + sourceBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.waitForTimeout(120);
+  await page.mouse.move(
+    sourceBox.x + sourceBox.width / 2 + 12,
+    sourceBox.y + sourceBox.height / 2,
+    { steps: 4 },
+  );
+  await page.mouse.move(targetBox.x + 24, targetBox.y + 4, { steps: 24 });
+  await page.waitForTimeout(180);
+  await page.mouse.up();
+}
+
+async function expectCanvasWidth(page: Page, width: number): Promise<void> {
+  await expect.poll(
+    () => page.locator('#puck-canvas-root').evaluate((element) => element.style.width),
+  ).toBe(`${width}px`);
 }
 
 async function selectMotion(page: Page, type: BlockType, preset: string): Promise<void> {
@@ -374,7 +437,34 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
 
+    await revealBlockLibrary(page);
+    for (const component of [
+      'Hero',
+      'HeroSplit',
+      'HeroSlider',
+      'Features',
+      'Cta',
+      'Contact',
+      'LogoCloud',
+      'Stats',
+      'Pricing',
+      'Team',
+      'Gallery',
+      'BarChart',
+    ]) {
+      await expect(page.getByTestId(`drawer-item:${component}`)).toHaveCount(1);
+    }
+    await hideMobileBlockLibrary(page);
+
     await revealEditorHeaderActions(page);
+    await expect(page.getByTestId('page-builder-viewport-1280')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('page-builder-viewport-360').click();
+    await expectCanvasWidth(page, 360);
+    await page.getByTestId('page-builder-viewport-768').click();
+    await expectCanvasWidth(page, 768);
+    await page.getByTestId('page-builder-viewport-1280').click();
+    await expectCanvasWidth(page, 1280);
+
     await page.getByTestId('page-builder-add-block').click();
     for (const option of [
       'hero',
@@ -395,10 +485,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await page.getByTestId('page-builder-block-option-hero').click();
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
-    await page.getByTestId('page-builder-block-option-features').click();
-    await revealEditorHeaderActions(page);
-    await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-cta').click();
+    await revealBlockLibrary(page);
+    await dragLibraryBlockBefore(page, 'Features', 'hero');
+    await expectBlockOrder(editorBlocks(page), ['features', 'hero', 'cta']);
+    await hideMobileBlockLibrary(page);
+
+    await editorBlock(page, 'cta').click();
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-contact').click();
@@ -418,16 +511,14 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await selectMotion(page, 'stats', 'counter');
     await selectMotion(page, 'bar-chart', 'chart-draw');
 
-    await editorBlock(page, 'features').click();
-    await page.getByTestId('page-builder-block-move-up').click({ timeout: 10_000 });
-    await expectBlockOrder(page.getByTestId('page-builder-block'), PUBLISHED_BLOCK_ORDER);
+    await expectBlockOrder(editorBlocks(page), PUBLISHED_BLOCK_ORDER);
 
     await saveDraft(page);
     const originalRevision = await currentDocumentRevision(page, documentId);
     await page.reload();
     await expect(page).toHaveURL(new RegExp(`document=${documentId}`));
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-    await expectBlockOrder(page.getByTestId('page-builder-block'), PUBLISHED_BLOCK_ORDER);
+    await expectBlockOrder(editorBlocks(page), PUBLISHED_BLOCK_ORDER);
 
     await editorBlock(page, 'hero').click();
     await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(heroTitle);

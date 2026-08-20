@@ -103,7 +103,8 @@ afterEach(() => {
 
 async function eventually<T extends Element>(selector: string): Promise<T> {
   for (let attempt = 0; attempt < 30; attempt += 1) {
-    const element = document.querySelector<T>(selector);
+    const element = document.querySelector<T>(selector)
+      ?? document.querySelector('iframe')?.contentDocument?.querySelector<T>(selector);
     if (element) {
       return element;
     }
@@ -113,6 +114,12 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
   }
 
   throw new Error(`Element not rendered: ${selector}`);
+}
+
+function editorElements(selector: string): NodeListOf<HTMLElement> {
+  const editorDocument = document.querySelector('iframe')?.contentDocument;
+
+  return (editorDocument ?? document).querySelectorAll<HTMLElement>(selector);
 }
 
 describe('Puck editor surface contract', () => {
@@ -129,6 +136,7 @@ describe('Puck editor surface contract', () => {
         <PuckEditorAdapter
           document={fixture}
           revisionKey={0}
+          iframeEnabled={false}
           onChange={() => undefined}
           onPublish={() => undefined}
         />,
@@ -139,7 +147,7 @@ describe('Puck editor surface contract', () => {
     const features = await eventually<HTMLElement>('[data-testid="page-builder-block"][data-block-type="features"]');
     const cta = await eventually<HTMLElement>('[data-testid="page-builder-block"][data-block-type="cta"]');
     const contact = await eventually<HTMLElement>('[data-testid="page-builder-block"][data-block-type="contact"]');
-    expect(document.querySelectorAll('[data-testid="page-builder-block"]')).toHaveLength(4);
+    expect(editorElements('[data-testid="page-builder-block"]')).toHaveLength(4);
     expect(hero.textContent).toContain('Hero body');
     expect(hero.textContent).not.toContain('[object Object]');
 
@@ -183,7 +191,7 @@ describe('Puck editor surface contract', () => {
     });
 
     const reorderedTypes = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-testid="page-builder-block"]'),
+      editorElements('[data-testid="page-builder-block"]'),
     ).map((element) => element.dataset.blockType);
     expect(reorderedTypes).toEqual(['features', 'hero', 'cta', 'contact']);
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-heading"]')).value).toBe('Features title');
@@ -202,13 +210,47 @@ describe('Puck editor surface contract', () => {
         <PuckEditorAdapter
           document={{ ...fixture, blocks: [] }}
           revisionKey={0}
+          iframeEnabled={false}
           onChange={() => undefined}
           onPublish={() => undefined}
         />,
       );
     });
 
+    const library = await eventually<HTMLElement>('[data-testid="page-builder-block-library"]');
+    expect(library.textContent).toContain('미리보기를 끌어 캔버스의 원하는 위치에 놓으세요.');
+    for (const component of [
+      'Hero',
+      'HeroSplit',
+      'HeroSlider',
+      'Features',
+      'Cta',
+      'Contact',
+      'LogoCloud',
+      'Stats',
+      'Pricing',
+      'Team',
+      'Gallery',
+      'BarChart',
+    ]) {
+      const drawerItem = await eventually<HTMLElement>(`[data-testid="drawer-item:${component}"]`);
+      expect(drawerItem.querySelector(`[data-library-block="${component}"]`)).not.toBeNull();
+      expect(drawerItem.querySelector('[data-block-preview]')).not.toBeNull();
+    }
+
+    const mobileViewport = await eventually<HTMLButtonElement>('[data-testid="page-builder-viewport-360"]');
+    const tabletViewport = await eventually<HTMLButtonElement>('[data-testid="page-builder-viewport-768"]');
+    const desktopViewport = await eventually<HTMLButtonElement>('[data-testid="page-builder-viewport-1280"]');
+    expect(desktopViewport.getAttribute('aria-pressed')).toBe('true');
+    expect(mobileViewport.getAttribute('aria-pressed')).toBe('false');
+    await act(async () => {
+      mobileViewport.click();
+    });
+    expect(mobileViewport.getAttribute('aria-pressed')).toBe('true');
+    expect(tabletViewport.getAttribute('aria-pressed')).toBe('false');
+
     const addButton = await eventually<HTMLButtonElement>('[data-testid="page-builder-add-block"]');
+    expect(addButton.textContent).toContain('전체 미리보기');
     await act(async () => {
       addButton.click();
     });

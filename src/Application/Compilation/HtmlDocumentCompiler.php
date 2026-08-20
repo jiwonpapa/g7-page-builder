@@ -14,7 +14,16 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.4.0';
+    public const COMPILER_VERSION = '0.5.0';
+
+    /** @var array<string, string> */
+    private const DESIGN_TOKEN_DEFAULTS = [
+        'design.palette' => 'indigo',
+        'design.font' => 'modern',
+        'design.radius' => 'soft',
+        'design.width' => 'standard',
+        'design.scale' => 'balanced',
+    ];
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
 
@@ -149,7 +158,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             fn (string $url): string => '<link rel="stylesheet" href="'.$this->escapeAttribute($url).'">',
             array_keys($styleUrls),
         );
-        $artifact = implode("\n", [...$styles, ...$sections]);
+        $body = '<div class="'.$this->designClassName($document).'">'."\n"
+            .implode("\n", $sections)."\n"
+            .'</div>';
+        $artifact = implode("\n", [...$styles, $body]);
         $warnings = $heroCount > 1
             ? ["Hero 계열 블록이 {$heroCount}개 있습니다. 첫 화면 집중도가 낮아질 수 있습니다."]
             : [];
@@ -169,6 +181,19 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     public function supports(string $targetFormat, string $targetEngineVersion): bool
     {
         return $targetFormat === 'html' && $targetEngineVersion === self::TARGET_ENGINE_VERSION;
+    }
+
+    private function designClassName(PageBuilderDocument $document): string
+    {
+        $classes = ['g7pb-document-theme'];
+
+        foreach (self::DESIGN_TOKEN_DEFAULTS as $token => $default) {
+            $value = $document->tokens[$token] ?? $default;
+            $suffix = str_replace('design.', '', $token);
+            $classes[] = "g7pb-theme-{$suffix}-{$value}";
+        }
+
+        return implode(' ', $classes);
     }
 
     private function registerBuiltInCompilers(): void

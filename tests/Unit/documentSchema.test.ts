@@ -61,6 +61,22 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(animated)).toBe(false);
   });
 
+  it('accepts allowlisted page design tokens and rejects arbitrary design values', () => {
+    const designed = structuredClone(fixture) as typeof fixture & { tokens: Record<string, unknown> };
+    designed.tokens = {
+      ...designed.tokens,
+      'design.palette': 'emerald',
+      'design.font': 'serif',
+      'design.radius': 'round',
+      'design.width': 'wide',
+      'design.scale': 'large',
+    };
+    expect(validate(designed), JSON.stringify(validate.errors)).toBe(true);
+
+    designed.tokens['design.palette'] = 'url(javascript:alert(1))';
+    expect(validate(designed)).toBe(false);
+  });
+
   it('rejects malformed CTA links and Contact form props', () => {
     const malformedLink = structuredClone(ctaContactFixture);
     malformedLink.blocks[0].props.primaryLink = { label: '시작하기' } as never;

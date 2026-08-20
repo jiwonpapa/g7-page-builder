@@ -237,6 +237,11 @@ describe('Puck editor surface contract', () => {
     });
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-title"]')).value).toBe('Hero title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-subtitle"]')).value).toBe('Hero eyebrow');
+    const mediaOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-media-open"]');
+    await act(async () => {
+      mediaOpenMarker.closest('button')?.click();
+    });
+    expect(await eventually<HTMLElement>('[data-testid="page-builder-media-library"]')).not.toBeNull();
 
     await act(async () => {
       features.click();

@@ -433,6 +433,7 @@ async function selectAndEditHero(
   page: Page,
   title: string,
   subtitle: string,
+  buttonLabel: string,
 ): Promise<void> {
   const hero = editorBlock(page, 'hero');
   await expect(hero).toHaveCount(1);
@@ -446,15 +447,22 @@ async function selectAndEditHero(
   const inlineBody = hero.locator(
     '[data-g7pb-inline-field="body"][contenteditable], [data-g7pb-inline-field="body"] [contenteditable]',
   );
+  const inlineButton = hero.locator(
+    '[data-g7pb-inline-field="primaryLabel"][contenteditable], [data-g7pb-inline-field="primaryLabel"] [contenteditable]',
+  );
   await expect(inlineTitle).toHaveCount(1);
   await expect(inlineSubtitle).toHaveCount(1);
   await expect(inlineBody).toHaveCount(1);
+  await expect(inlineButton).toHaveCount(1);
   await inlineTitle.hover();
   await expect(inlineTitle).toHaveAttribute('contenteditable', 'plaintext-only');
   await inlineTitle.fill(title);
   await inlineSubtitle.hover();
   await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
   await inlineSubtitle.fill(subtitle);
+  await inlineButton.hover();
+  await expect(inlineButton).toHaveAttribute('contenteditable', 'plaintext-only');
+  await inlineButton.fill(buttonLabel);
   await inlineSubtitle.press('Tab');
   await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(title);
   await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(subtitle);
@@ -483,9 +491,15 @@ async function selectAndEditCta(
   const cta = editorBlock(page, 'cta');
   await expect(cta).toHaveCount(1);
   await selectEditorBlock(page, 'cta');
-  await (await revealInspectorField(page, 'page-builder-cta-heading')).fill(heading);
-  await (await revealInspectorField(page, 'page-builder-cta-body')).fill(body);
-  await (await revealInspectorField(page, 'page-builder-cta-primary-label')).fill(primaryLabel);
+  const inline = (field: string): Locator => cta.locator(
+    `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
+  );
+  for (const [field, value] of [['heading', heading], ['body', body], ['primaryLabel', primaryLabel]] as const) {
+    const target = inline(field);
+    await target.hover({ force: true });
+    await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
+    await target.fill(value);
+  }
   await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
   await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
 }
@@ -598,6 +612,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
   const duplicateTitle = `${pageTitle} Copy`;
   const duplicateSlug = `${slug}-copy`;
   const heroTitle = `Original Hero ${runId}`;
+  const heroButtonLabel = `Explore ${runId}`;
   const revisedHeroTitle = `Republished Hero ${runId}`;
   const heroSubtitle = `Original subtitle ${runId}`;
   const revisedHeroSubtitle = `Republished subtitle ${runId}`;
@@ -682,6 +697,15 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expectCanvasWidth(page, 360);
     }
 
+    await page.getByTestId('page-builder-page-design').click();
+    await (await revealInspectorField(page, 'page-builder-design-palette')).selectOption('emerald');
+    await (await revealInspectorField(page, 'page-builder-design-font')).selectOption('serif');
+    await (await revealInspectorField(page, 'page-builder-design-radius')).selectOption('round');
+    await (await revealInspectorField(page, 'page-builder-design-width')).selectOption('wide');
+    await (await revealInspectorField(page, 'page-builder-design-scale')).selectOption('large');
+    await expect(page.frameLocator('iframe').locator('.g7pb-document-theme')).toHaveClass(/g7pb-theme-palette-emerald/);
+
+    await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     const blockSearch = page.getByLabel('블록 검색');
     await blockSearch.fill('막대그래프');
@@ -716,7 +740,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const visibleSliderInlineFields = slider.locator('[contenteditable]:visible');
     await expect(sliderInlineFields).toHaveCount(8);
     await expect(visibleSliderInlineFields).toHaveCount(4);
-    await visibleSliderInlineFields.first().hover();
+    await visibleSliderInlineFields.first().hover({ force: true });
     await expect(visibleSliderInlineFields.first()).toHaveAttribute('contenteditable', 'plaintext-only');
     await slider.getByTestId('page-builder-slider-next').click();
     await expect(slider.getByTestId('page-builder-slider-slide-1')).toHaveAttribute('aria-pressed', 'true');
@@ -740,7 +764,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await page.getByTestId(`page-builder-block-option-${option}`).click();
     }
 
-    await selectAndEditHero(page, heroTitle, heroSubtitle);
+    await selectAndEditHero(page, heroTitle, heroSubtitle, heroButtonLabel);
     const mediaUpload = page.waitForResponse((response) =>
       response.request().method() === 'POST'
       && new URL(response.url()).pathname === '/api/modules/jiwonpapa-page_builder/admin/media');
@@ -773,9 +797,18 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(page.getByTestId('page-builder-hero-warning')).toBeHidden();
     await expectBlockOrder(editorBlocks(page), PUBLISHED_BLOCK_ORDER);
 
+    await revealEditorHeaderActions(page);
+    await page.getByTestId('page-builder-page-design').click();
+    await expect(await revealInspectorField(page, 'page-builder-design-palette')).toHaveValue('emerald');
+    await expect(await revealInspectorField(page, 'page-builder-design-font')).toHaveValue('serif');
+    await expect(await revealInspectorField(page, 'page-builder-design-radius')).toHaveValue('round');
+    await expect(await revealInspectorField(page, 'page-builder-design-width')).toHaveValue('wide');
+    await expect(await revealInspectorField(page, 'page-builder-design-scale')).toHaveValue('large');
+
     await selectEditorBlock(page, 'hero');
     await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(heroTitle);
     await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(heroSubtitle);
+    await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
     await expect(await revealInspectorField(page, 'page-builder-features-heading')).toHaveValue(featuresHeading);
     await expect(await revealInspectorField(page, 'page-builder-features-item-0-title')).toHaveValue(featureTitle);
@@ -800,8 +833,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(previewPage.getByTestId('page-builder-preview-root')).toBeVisible();
     await expect(previewPage.getByTestId('page-builder-site-header')).toBeVisible();
     await expect(previewPage.getByTestId('page-builder-site-footer')).toBeVisible();
+    await expect(previewPage.locator('.g7pb-document-theme')).toHaveClass(/g7pb-theme-palette-emerald/);
+    await expect(previewPage.locator('.g7pb-document-theme')).toHaveClass(/g7pb-theme-font-serif/);
     await expectBlockOrder(renderedBlocks(previewPage), PUBLISHED_BLOCK_ORDER);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
+    await expect(previewPage.getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(ctaHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(contactHeading, { exact: true })).toBeVisible();
@@ -864,7 +900,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectResponsivePage(publicPage, testInfo);
 
     await page.bringToFront();
-    await selectAndEditHero(page, revisedHeroTitle, revisedHeroSubtitle);
+    await selectAndEditHero(page, revisedHeroTitle, revisedHeroSubtitle, heroButtonLabel);
     await saveDraft(page);
     await page.reload();
     await selectEditorBlock(page, 'hero');

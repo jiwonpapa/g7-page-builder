@@ -149,6 +149,18 @@ describe('Puck PageBuilderDocument adapter', () => {
     }
   });
 
+  it('exposes only typed page-level design presets on the Puck root', () => {
+    const root = pageBuilderPuckConfig.root as unknown as {
+      fields: Record<string, { type: string }>;
+    };
+
+    expect(Object.keys(root.fields)).toEqual(['palette', 'font', 'radius', 'width', 'scale']);
+    expect(Object.values(root.fields).every((field) => field.type === 'custom')).toBe(true);
+    expect(root.fields).not.toHaveProperty('css');
+    expect(root.fields).not.toHaveProperty('className');
+    expect(root.fields).not.toHaveProperty('style');
+  });
+
   it('round-trips all eight catalog blocks through the Puck adapter', () => {
     const fixture = catalogFixture as unknown as PageBuilderDocument;
     const session = canonicalToPuck(fixture);
@@ -197,7 +209,7 @@ describe('Puck PageBuilderDocument adapter', () => {
       root: { props: { title: 'Puck-only title' }, readOnly: { title: true } },
       zones: { 'vendor:zone': [] },
       content: session.data.content.map((block) => ({ ...block, readOnly: { title: true } })),
-    } as PuckEditorData;
+    } as unknown as PuckEditorData;
 
     const restored = puckToCanonical(vendorState, session.context);
     expect(restored).toEqual(documentFixture);
@@ -218,6 +230,32 @@ describe('Puck PageBuilderDocument adapter', () => {
 
     expect(session.data.content[0].props.motion).toEqual(animated.blocks[0].motion);
     expect(puckToCanonical(session.data, session.context)).toEqual(animated);
+  });
+
+  it('round-trips safe page design tokens and preserves extension tokens', () => {
+    const designed: PageBuilderDocument = {
+      ...documentFixture,
+      tokens: { ...documentFixture.tokens, 'design.palette': 'emerald', 'design.width': 'wide' },
+    };
+    const session = canonicalToPuck(designed);
+
+    expect(session.data.root.props).toMatchObject({
+      palette: 'emerald', width: 'wide', font: 'modern', radius: 'soft', scale: 'balanced',
+    });
+
+    const edited = structuredClone(session.data);
+    if (!edited.root.props) throw new Error('Page design root props are missing.');
+    edited.root.props.font = 'serif';
+    edited.root.props.radius = 'round';
+    const restored = puckToCanonical(edited, session.context);
+
+    expect(restored.tokens).toMatchObject({
+      accent: '#2458d6',
+      'design.palette': 'emerald',
+      'design.font': 'serif',
+      'design.radius': 'round',
+      'design.width': 'wide',
+    });
   });
 
   it('omits empty optional link maps when converting new CTA and Contact blocks', () => {

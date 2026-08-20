@@ -5,6 +5,7 @@ import { PageBuilderApiClient, PageBuilderApiError } from '../api/pageBuilderApi
 import type { MediaAssetResource } from '../documents/types';
 
 const api = new PageBuilderApiClient();
+export const OPEN_MEDIA_PICKER_EVENT = 'g7pb:open-selected-media-picker';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}KB`;
@@ -36,6 +37,13 @@ function MediaPicker({
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : '미디어를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
   }, [assets.length, open]);
+
+  useEffect(() => {
+    if (readOnly) return undefined;
+    const openFromCanvas = (): void => setOpen(true);
+    window.addEventListener(OPEN_MEDIA_PICKER_EVENT, openFromCanvas);
+    return () => window.removeEventListener(OPEN_MEDIA_PICKER_EVENT, openFromCanvas);
+  }, [readOnly]);
 
   const upload = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.currentTarget.files?.[0];

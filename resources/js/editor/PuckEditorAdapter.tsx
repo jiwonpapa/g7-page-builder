@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  Ban,
+  Blocks,
+  ImageOff,
+  ImagePlus,
+  Monitor,
+  Paintbrush,
+  Smartphone,
+  Sparkles,
+  Tablet,
+} from 'lucide-react';
+import {
   ActionBar,
   createUsePuck,
   Puck,
@@ -33,7 +44,13 @@ import {
   motionPreviewAttributes,
   normalizeBlockMotion,
 } from './blockMotion';
-import { createMediaField } from './MediaPickerField';
+import { createMediaField, OPEN_MEDIA_PICKER_EVENT } from './MediaPickerField';
+import {
+  pageDesignClassName,
+  pageDesignToTokens,
+  tokensToPageDesign,
+  type PageDesignProps,
+} from './pageDesignTokens';
 
 import {
   CONTACT_BLOCK_TYPE,
@@ -109,7 +126,7 @@ interface EditorComponents extends CatalogEditorComponents {
   Contact: ContactEditorProps;
 }
 
-export type PuckEditorData = Data<EditorComponents>;
+export type PuckEditorData = Data<EditorComponents, PageDesignProps>;
 
 interface BlockRoundTripMetadata {
   blockVersion: number;
@@ -473,7 +490,7 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
 
   return {
     data: {
-      root: { props: { title: document.slug } },
+      root: { props: tokensToPageDesign(document.tokens) },
       content: document.blocks.map(canonicalBlockToPuck),
     },
     context: {
@@ -653,14 +670,16 @@ export function puckToCanonical(
     document.shell_mode = context.document.shellMode;
   }
 
-  if (context.document.hadTokens) {
-    document.tokens = cloneTokens(context.document.tokens);
+  const tokens = pageDesignToTokens(data.root.props, context.document.tokens);
+  if (context.document.hadTokens || Object.keys(tokens).length > 0) {
+    document.tokens = tokens;
   }
 
   return document;
 }
 
-function safeLink(value: string): string {
+function safeLink(value: unknown): string {
+  if (typeof value !== 'string') return '#';
   const trimmed = value.trim();
   if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
     return trimmed;
@@ -678,12 +697,13 @@ function safeLink(value: string): string {
   return '#';
 }
 
-function safeImage(value: string): string | null {
+function safeImage(value: unknown): string | null {
   const link = safeLink(value);
   return link === '#' || link.startsWith('mailto:') || link.startsWith('tel:') ? null : link;
 }
 
-function safePhoneLink(value: string): string {
+function safePhoneLink(value: unknown): string {
+  if (typeof value !== 'string') return '#';
   const trimmed = value.trim();
   if (!/^\+?[0-9][0-9 .()\-]{2,39}$/.test(trimmed)) {
     return '#';
@@ -692,7 +712,8 @@ function safePhoneLink(value: string): string {
   return safeLink(`tel:${trimmed.replace(/[ .()\-]/g, '')}`);
 }
 
-function safeEmailLink(value: string): string {
+function safeEmailLink(value: unknown): string {
+  if (typeof value !== 'string') return '#';
   const trimmed = value.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
     return '#';
@@ -928,7 +949,7 @@ function HeroPreview({
           <div className="g7pb-preview-richtext" data-g7pb-inline-field="body">{body}</div>
           {primaryLabel && (
             <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
-              {primaryLabel}
+              <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
             </a>
           )}
         </div>
@@ -953,7 +974,7 @@ function FeaturesPreview({ id, title, items, surface, spacing, motion }: Feature
   return (
     <BlockFrame id={id} type="features" motion={motion}>
       <div className={`g7pb-preview-features g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
-        <h2>{title}</h2>
+        <h2 data-g7pb-inline-field="title">{title}</h2>
         <div className="g7pb-preview-features__grid">
           {normalizeFeatureItems(items).map((item, index) => (
             <article key={`${item.title}-${index}`}>
@@ -986,20 +1007,20 @@ function CtaPreview({
     <BlockFrame id={id} type="cta" motion={motion}>
       <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
         <div className="g7pb-preview-cta-split__copy">
-          {eyebrow && <p className="g7pb-preview-eyebrow">{eyebrow}</p>}
-          <h2>{heading}</h2>
-          {body && <p>{body}</p>}
+          {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
+          <h2 data-g7pb-inline-field="heading">{heading}</h2>
+          {body && <p data-g7pb-inline-field="body">{body}</p>}
         </div>
         {(primaryLabel || secondaryLabel) && (
           <div className="g7pb-preview-cta-split__actions">
             {primaryLabel && (
               <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
-                {primaryLabel}
+                <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
               </a>
             )}
             {secondaryLabel && (
               <a className="g7pb-preview-cta g7pb-preview-cta--secondary" href={safeLink(secondaryUrl)} onClick={(event) => event.preventDefault()}>
-                {secondaryLabel}
+                <span data-g7pb-inline-field="secondaryLabel">{secondaryLabel}</span>
               </a>
             )}
           </div>
@@ -1028,27 +1049,27 @@ function ContactPreview({
       <div className={`g7pb-preview-contact g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
         <div className="g7pb-preview-contact__heading">
           <p className="g7pb-preview-eyebrow">Contact</p>
-          <h2>{heading}</h2>
+          <h2 data-g7pb-inline-field="heading">{heading}</h2>
         </div>
         <address className="g7pb-preview-contact__details">
-          {address && <p>{address}</p>}
+          {address && <p data-g7pb-inline-field="address">{address}</p>}
           {phone && (
-            <a href={safePhoneLink(phone)} onClick={(event) => event.preventDefault()}>{phone}</a>
+            <a href={safePhoneLink(phone)} onClick={(event) => event.preventDefault()}><span data-g7pb-inline-field="phone">{phone}</span></a>
           )}
           {email && (
-            <a href={safeEmailLink(email)} onClick={(event) => event.preventDefault()}>{email}</a>
+            <a href={safeEmailLink(email)} onClick={(event) => event.preventDefault()}><span data-g7pb-inline-field="email">{email}</span></a>
           )}
         </address>
         {(ctaLabel || mapLabel) && (
           <div className="g7pb-preview-contact__actions">
             {ctaLabel && (
               <a className="g7pb-preview-cta" href={safeLink(ctaUrl)} onClick={(event) => event.preventDefault()}>
-                {ctaLabel}
+                <span data-g7pb-inline-field="ctaLabel">{ctaLabel}</span>
               </a>
             )}
             {mapLabel && (
               <a className="g7pb-preview-cta g7pb-preview-cta--secondary" href={safeLink(mapUrl)} onClick={(event) => event.preventDefault()}>
-                {mapLabel}
+                <span data-g7pb-inline-field="mapLabel">{mapLabel}</span>
               </a>
             )}
           </div>
@@ -1058,7 +1079,7 @@ function ContactPreview({
   );
 }
 
-export const pageBuilderPuckConfig: Config<EditorComponents> = {
+export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = {
   categories: {
     content: {
       title: '콘텐츠 블록',
@@ -1123,7 +1144,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
             heading: { levels: [2, 3, 4] },
           },
         },
-        primaryLabel: { type: 'text', label: '버튼 문구' },
+        primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true },
         primaryUrl: { type: 'text', label: '버튼 URL' },
         imageSrc: createMediaField('대표 이미지'),
         imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
@@ -1179,6 +1200,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         title: {
           type: 'custom',
           label: '제목',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField
               value={value}
@@ -1224,6 +1246,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         eyebrow: {
           type: 'custom',
           label: '보조 문구',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-cta-eyebrow" />
@@ -1232,6 +1255,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         heading: {
           type: 'custom',
           label: '제목',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-cta-heading" />
@@ -1240,6 +1264,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         body: {
           type: 'custom',
           label: '본문',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly} multiline
               testId="page-builder-cta-body" />
@@ -1248,6 +1273,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         primaryLabel: {
           type: 'custom',
           label: '주 버튼 문구',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-cta-primary-label" />
@@ -1264,6 +1290,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         secondaryLabel: {
           type: 'custom',
           label: '보조 링크 문구',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-cta-secondary-label" />
@@ -1320,6 +1347,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         heading: {
           type: 'custom',
           label: '제목',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-contact-heading" />
@@ -1328,6 +1356,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         address: {
           type: 'custom',
           label: '주소',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly} multiline
               testId="page-builder-contact-address" />
@@ -1336,6 +1365,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         phone: {
           type: 'custom',
           label: '전화번호',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-contact-phone" />
@@ -1344,6 +1374,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         email: {
           type: 'custom',
           label: '이메일',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-contact-email" />
@@ -1352,6 +1383,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         ctaLabel: {
           type: 'custom',
           label: '문의 링크 문구',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-contact-cta-label" />
@@ -1368,6 +1400,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         mapLabel: {
           type: 'custom',
           label: '지도 링크 문구',
+          contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
             <StableInputField value={value} onChange={onChange} readOnly={readOnly}
               testId="page-builder-contact-map-label" />
@@ -1403,12 +1436,62 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
     },
   },
   root: {
-    fields: {},
-    render: ({ children }) => <div className="g7pb-preview-page">{children}</div>,
+    fields: {
+      palette: {
+        type: 'custom', label: '브랜드 색상',
+        render: ({ value, onChange, readOnly }) => (
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+            testId="page-builder-design-palette" options={[
+              { label: '인디고', value: 'indigo' }, { label: '블루', value: 'blue' },
+              { label: '에메랄드', value: 'emerald' }, { label: '앰버', value: 'amber' },
+              { label: '로즈', value: 'rose' }, { label: '슬레이트', value: 'slate' },
+            ]} />
+        ),
+      },
+      font: {
+        type: 'custom', label: '글꼴 분위기',
+        render: ({ value, onChange, readOnly }) => (
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+            testId="page-builder-design-font" options={[
+              { label: '시스템', value: 'system' }, { label: '모던', value: 'modern' }, { label: '명조', value: 'serif' },
+            ]} />
+        ),
+      },
+      radius: {
+        type: 'custom', label: '모서리',
+        render: ({ value, onChange, readOnly }) => (
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+            testId="page-builder-design-radius" options={[
+              { label: '각지게', value: 'sharp' }, { label: '부드럽게', value: 'soft' }, { label: '둥글게', value: 'round' },
+            ]} />
+        ),
+      },
+      width: {
+        type: 'custom', label: '콘텐츠 폭',
+        render: ({ value, onChange, readOnly }) => (
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+            testId="page-builder-design-width" options={[
+              { label: '좁게', value: 'narrow' }, { label: '기본', value: 'standard' }, { label: '넓게', value: 'wide' },
+            ]} />
+        ),
+      },
+      scale: {
+        type: 'custom', label: '글자 크기',
+        render: ({ value, onChange, readOnly }) => (
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+            testId="page-builder-design-scale" options={[
+              { label: '작게', value: 'compact' }, { label: '기본', value: 'balanced' }, { label: '크게', value: 'large' },
+            ]} />
+        ),
+      },
+    },
+    render: ({ children, ...design }) => (
+      <div className={`g7pb-preview-page ${pageDesignClassName(design)}`}>{children}</div>
+    ),
   },
 };
 
-const usePageBuilderPuck = createUsePuck<Config<EditorComponents>>();
+const usePageBuilderPuck = createUsePuck<Config<EditorComponents, PageDesignProps>>();
 
 interface BlockGalleryItem {
   catalogId: string;
@@ -1604,7 +1687,7 @@ function StableAddBlockControls({
         disabled={disabled}
         onClick={() => setOpen((value) => !value)}
       >
-        블록 추가
+        <Blocks size={16} aria-hidden="true" /><span>블록 추가</span>
       </button>
       {open && globalThis.document && createPortal(
         <div className="g7pb-block-gallery-backdrop" data-testid="page-builder-block-gallery"
@@ -1742,7 +1825,7 @@ function StableHeaderControls({
             },
           },
         })),
-      },
+      } as never,
       recordHistory: true,
     });
   };
@@ -1756,18 +1839,36 @@ function StableHeaderControls({
           ...block,
           props: { ...block.props, motion: { ...DEFAULT_BLOCK_MOTION } },
         })),
-      },
+      } as never,
       recordHistory: true,
     });
   };
 
+  const selectPageDesign = (): void => {
+    dispatch({
+      type: 'setUi',
+      ui: { itemSelector: null },
+      recordHistory: false,
+    });
+  };
+
+  const viewportIcon = (width: number): React.ReactNode => {
+    if (width === 360) return <Smartphone size={15} aria-hidden="true" />;
+    if (width === 768) return <Tablet size={15} aria-hidden="true" />;
+    return <Monitor size={15} aria-hidden="true" />;
+  };
+
   return (
     <div className="g7pb-header-controls">
+      <button type="button" className="g7pb-design-button" data-testid="page-builder-page-design"
+        disabled={disabled} onClick={selectPageDesign}>
+        <Paintbrush size={16} aria-hidden="true" /><span>페이지 디자인</span>
+      </button>
       <div className="g7pb-motion-batch" role="group" aria-label="페이지 효과 일괄 설정">
         <button type="button" disabled={disabled || contentLength === 0}
-          data-testid="page-builder-auto-motion" onClick={applyRecommendedMotions}>추천 효과</button>
+          data-testid="page-builder-auto-motion" onClick={applyRecommendedMotions}><Sparkles size={15} aria-hidden="true" /><span>추천 효과</span></button>
         <button type="button" disabled={disabled || contentLength === 0}
-          data-testid="page-builder-clear-motion" onClick={clearMotions}>효과 없음</button>
+          data-testid="page-builder-clear-motion" onClick={clearMotions}><Ban size={15} aria-hidden="true" /><span>효과 없음</span></button>
       </div>
       <div className="g7pb-viewport-switcher" role="group" aria-label="캔버스 기기 미리보기">
         {PAGE_BUILDER_VIEWPORTS.map((viewport) => (
@@ -1779,7 +1880,7 @@ function StableHeaderControls({
             disabled={disabled}
             onClick={() => setViewport(viewport.width as number)}
           >
-            {viewport.label}
+            {viewportIcon(viewport.width as number)}<span>{viewport.label}</span>
           </button>
         ))}
       </div>
@@ -1828,9 +1929,14 @@ function SelectedBlockActionBar({
   disabled: boolean;
 }): React.ReactElement {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
+  const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
   const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
+  const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null
+    ? data.content[selectedIndex]
+    : null;
+  const hasDirectMedia = selectedBlock?.type === 'Hero' || selectedBlock?.type === 'HeroSplit';
 
   const move = (destinationIndex: number): void => {
     if (selectedIndex === null || destinationIndex < 0 || destinationIndex >= contentLength) {
@@ -1851,6 +1957,20 @@ function SelectedBlockActionBar({
     });
   };
 
+  const clearDirectMedia = (): void => {
+    if (!hasDirectMedia || selectedIndex === null) return;
+    dispatch({
+      type: 'setData',
+      data: {
+        ...data,
+        content: data.content.map((block, index) => index === selectedIndex
+          ? { ...block, props: { ...block.props, imageSrc: '', imageAlt: '' } }
+          : block),
+      } as never,
+      recordHistory: true,
+    });
+  };
+
   return (
     <ActionBar>
       <ActionBar.Group>
@@ -1858,6 +1978,18 @@ function SelectedBlockActionBar({
         {label && <ActionBar.Label label={label} />}
       </ActionBar.Group>
       <ActionBar.Group>
+        {hasDirectMedia && (
+          <>
+            <ActionBar.Action label="대표 이미지 변경" disabled={disabled}
+              onClick={() => window.dispatchEvent(new CustomEvent(OPEN_MEDIA_PICKER_EVENT))}>
+              <ImagePlus size={16} data-testid="page-builder-canvas-media-open" aria-hidden="true" />
+            </ActionBar.Action>
+            <ActionBar.Action label="대표 이미지 비우기" disabled={disabled || !selectedBlock?.props.imageSrc}
+              onClick={clearDirectMedia}>
+              <ImageOff size={16} data-testid="page-builder-canvas-media-clear" aria-hidden="true" />
+            </ActionBar.Action>
+          </>
+        )}
         <ActionBar.Action
           label="블록 위로 이동"
           disabled={disabled || selectedIndex === null || selectedIndex === 0}
@@ -1934,7 +2066,7 @@ export function PuckEditorAdapter({
       ...pageBuilderPuckConfig.components,
       ...externalEditorComponents(),
     },
-  }) as Config<EditorComponents>, []);
+  }) as Config<EditorComponents, PageDesignProps>, []);
   const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);

@@ -101,6 +101,21 @@ final class DomainContractsTest extends TestCase
         );
     }
 
+    public function test_document_rejects_an_unapproved_design_token_value(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Page design token design.palette is invalid.');
+
+        new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000001',
+            slug: 'page-builder',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: ['design.palette' => 'javascript:alert(1)'],
+            blocks: [],
+        );
+    }
+
     public function test_site_shell_validates_navigation_and_has_a_stable_representation_hash(): void
     {
         $shell = SiteShell::fromArray('ko', [

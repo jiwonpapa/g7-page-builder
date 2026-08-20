@@ -33,6 +33,13 @@
     },
     "tokens": {
       "type": "object",
+      "properties": {
+        "design.palette": { "enum": ["indigo", "blue", "emerald", "amber", "rose", "slate"] },
+        "design.font": { "enum": ["system", "modern", "serif"] },
+        "design.radius": { "enum": ["sharp", "soft", "round"] },
+        "design.width": { "enum": ["narrow", "standard", "wide"] },
+        "design.scale": { "enum": ["compact", "balanced", "large"] }
+      },
       "additionalProperties": {
         "anyOf": [
           { "type": "string" },

@@ -284,7 +284,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.4.0', $catalog->compilerVersion);
+        self::assertSame('0.5.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -309,6 +309,32 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('Hero 계열 블록이 2개', $result->warnings[0]);
         self::assertStringContainsString('data-block-type="hero-split"', (string) $result->artifact);
         self::assertStringContainsString('data-block-type="hero-slider"', (string) $result->artifact);
+    }
+
+    public function test_compiler_wraps_artifact_with_allowlisted_page_design_classes(): void
+    {
+        $payload = $this->document('<p>안전한 본문</p>')->toArray();
+        $payload['tokens'] = [
+            'design.palette' => 'emerald',
+            'design.font' => 'serif',
+            'design.radius' => 'round',
+            'design.width' => 'wide',
+            'design.scale' => 'large',
+            'vendor.option' => true,
+        ];
+
+        $result = $this->builtInCompiler()->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+
+        self::assertStringContainsString(
+            'class="g7pb-document-theme g7pb-theme-palette-emerald g7pb-theme-font-serif g7pb-theme-radius-round g7pb-theme-width-wide g7pb-theme-scale-large"',
+            (string) $result->artifact,
+        );
+        self::assertStringNotContainsString('vendor.option', (string) $result->artifact);
     }
 
     public function test_catalog_rejects_unsafe_action_urls(): void

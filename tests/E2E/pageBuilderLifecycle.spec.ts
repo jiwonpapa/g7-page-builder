@@ -62,6 +62,25 @@ interface AdminLoginResponse {
   success?: unknown;
 }
 
+interface CleanupDocumentResource {
+  archived_at?: unknown;
+  document?: {
+    document_id?: unknown;
+    slug?: unknown;
+  };
+  lock_version?: unknown;
+}
+
+interface CleanupDocumentListResponse {
+  data?: {
+    items?: unknown;
+    pagination?: {
+      total?: unknown;
+    };
+  };
+  success?: unknown;
+}
+
 /*
  * This acceptance test handles an administrator credential and bearer token.
  * Disable automatic artifacts for the whole file so neither login request data
@@ -80,7 +99,7 @@ function adminCredentials(): { email: string; password: string } {
   return { email, password };
 }
 
-async function authenticateAdmin(context: BrowserContext): Promise<void> {
+async function authenticateAdmin(context: BrowserContext): Promise<string> {
   const credentials = adminCredentials();
   const authRequest = await playwrightRequest.newContext({
     baseURL: BASE_URL,
@@ -117,8 +136,112 @@ async function authenticateAdmin(context: BrowserContext): Promise<void> {
       },
       { expectedOrigin: origin, authToken: token },
     );
+
+    return token;
   } finally {
     await authRequest.dispose();
+  }
+}
+
+async function cleanupE2eArtifacts(
+  authToken: string,
+  candidateSlugs: string[],
+  uploadedMediaId: string | null,
+): Promise<void> {
+  const cleanupRequest = await playwrightRequest.newContext({
+    baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const expectedSlugs = new Set(candidateSlugs);
+  const targets = new Map<string, { archived: boolean; lockVersion: number; slug: string }>();
+
+  try {
+    for (let pageNumber = 1; ; pageNumber += 1) {
+      const response = await cleanupRequest.get(
+        `/api/modules/jiwonpapa-page_builder/admin/documents?page=${pageNumber}&per_page=100&status=all`,
+      );
+      if (!response.ok()) {
+        throw new Error(`Page Builder E2E cleanup list failed with HTTP ${response.status()}.`);
+      }
+
+      const payload = await response.json() as CleanupDocumentListResponse;
+      const items = payload.success === true && Array.isArray(payload.data?.items)
+        ? payload.data.items as CleanupDocumentResource[]
+        : [];
+
+      for (const item of items) {
+        const documentId = item.document?.document_id;
+        const documentSlug = item.document?.slug;
+        if (
+          typeof documentId === 'string'
+          && typeof documentSlug === 'string'
+          && typeof item.lock_version === 'number'
+          && expectedSlugs.has(documentSlug)
+        ) {
+          targets.set(documentId, {
+            archived: typeof item.archived_at === 'string',
+            lockVersion: item.lock_version,
+            slug: documentSlug,
+          });
+        }
+      }
+
+      const total = payload.data?.pagination?.total;
+      if (typeof total !== 'number' || pageNumber * 100 >= total) {
+        break;
+      }
+    }
+
+    for (const [documentId, target] of targets) {
+      let lockVersion = target.lockVersion;
+      if (!target.archived) {
+        const archiveResponse = await cleanupRequest.post(
+          `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/archive`,
+          { data: { expected_lock_version: lockVersion } },
+        );
+        if (!archiveResponse.ok()) {
+          throw new Error(`Page Builder E2E cleanup archive failed with HTTP ${archiveResponse.status()}.`);
+        }
+
+        const archivePayload = await archiveResponse.json() as {
+          data?: { lock_version?: unknown };
+          success?: unknown;
+        };
+        if (archivePayload.success !== true || typeof archivePayload.data?.lock_version !== 'number') {
+          throw new Error('Page Builder E2E cleanup archive returned no lock version.');
+        }
+        lockVersion = archivePayload.data.lock_version;
+      }
+
+      const purgeResponse = await cleanupRequest.delete(
+        `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`,
+        {
+          data: {
+            confirmation_slug: target.slug,
+            expected_lock_version: lockVersion,
+          },
+        },
+      );
+      if (!purgeResponse.ok()) {
+        throw new Error(`Page Builder E2E cleanup purge failed with HTTP ${purgeResponse.status()}.`);
+      }
+    }
+
+    if (uploadedMediaId) {
+      const mediaResponse = await cleanupRequest.delete(
+        `/api/modules/jiwonpapa-page_builder/admin/media/${uploadedMediaId}`,
+      );
+      if (!mediaResponse.ok()) {
+        throw new Error(`Page Builder E2E media cleanup failed with HTTP ${mediaResponse.status()}.`);
+      }
+    }
+  } finally {
+    await cleanupRequest.dispose();
   }
 }
 
@@ -420,7 +543,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 }, testInfo) => {
   test.setTimeout(120_000);
 
-  await authenticateAdmin(context);
+  const authToken = await authenticateAdmin(context);
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const projectSlug = testInfo.project.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
@@ -801,9 +924,14 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         return response.ok;
       }, uploadedMediaId);
       expect(deleted).toBe(true);
+      uploadedMediaId = null;
     }
   } finally {
     await previewPage?.close();
     await publicContext?.close();
+    if (!page.isClosed()) {
+      await page.close();
+    }
+    await cleanupE2eArtifacts(authToken, [slug, managedSlug], uploadedMediaId);
   }
 });

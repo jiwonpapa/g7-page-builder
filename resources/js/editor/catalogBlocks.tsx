@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Config } from '@puckeditor/core';
+import EmblaCarousel from 'embla-carousel';
+import Autoplay from 'embla-carousel-autoplay';
 import {
   createMotionField,
   DEFAULT_BLOCK_MOTION,
   motionPreviewAttributes,
   normalizeBlockMotion,
 } from './blockMotion';
+import { createMediaField } from './MediaPickerField';
 
 import {
   BAR_CHART_BLOCK_TYPE,
@@ -44,6 +47,9 @@ export interface HeroSplitEditorProps {
 
 export interface HeroSliderEditorProps {
   slides: HeroSlideItem[];
+  autoplay: 'yes' | 'no';
+  interval: '3000' | '5000' | '7000';
+  loop: 'yes' | 'no';
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
   motion: BlockMotion;
@@ -161,6 +167,9 @@ const DEFAULT_HERO_SLIDER: HeroSliderEditorProps = {
     { eyebrow: '첫 번째 이야기', title: '대표 메시지를 선명하게', body: '핵심 캠페인이나 상품을 한 장면으로 소개합니다.', buttonLabel: '살펴보기', buttonUrl: '/', imageSrc: '', imageAlt: '' },
     { eyebrow: '두 번째 이야기', title: '다음 장면으로 이어지는 흐름', body: '서로 다른 메시지를 스크롤 가능한 슬라이드로 연결합니다.', buttonLabel: '더 알아보기', buttonUrl: '/about', imageSrc: '', imageAlt: '' },
   ],
+  autoplay: 'yes',
+  interval: '5000',
+  loop: 'yes',
   surface: 'contrast',
   spacing: 'spacious',
   motion: { ...DEFAULT_BLOCK_MOTION },
@@ -372,12 +381,28 @@ function HeroSplitPreview(props: HeroSplitEditorProps & { id: string }): React.R
 
 function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React.ReactElement {
   const slides = normalizeHeroSlides(props.slides);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    if (!viewportRef.current) return;
+    const autoplay = Autoplay({ delay: Number(props.interval), stopOnInteraction: true, stopOnMouseEnter: true });
+    const embla = EmblaCarousel(viewportRef.current, { loop: props.loop === 'yes' }, props.autoplay === 'yes' ? [autoplay] : []);
+    const select = (): void => setSelectedIndex(embla.selectedScrollSnap());
+    embla.on('select', select);
+    select();
+    return () => embla.destroy();
+  }, [props.autoplay, props.interval, props.loop, slides.length]);
+
   return (
     <BlockFrame id={props.id} type="hero-slider" motion={props.motion}>
       <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing)}`}>
-        <div className="g7pb-preview-hero-slider__track">
-          {slides.map((slide, index) => <article key={`${slide.title}-${index}`}><div><small>{slide.eyebrow}</small><h2>{slide.title}</h2><p>{slide.body}</p>{slide.buttonLabel && <span>{slide.buttonLabel} →</span>}</div><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></article>)}
-        </div><div className="g7pb-preview-hero-slider__dots" aria-hidden="true">{slides.map((_, index) => <i key={index} />)}</div>
+        <div className="g7pb-preview-hero-slider__viewport" ref={viewportRef}>
+          <div className="g7pb-preview-hero-slider__track">
+            {slides.map((slide, index) => <article key={`${slide.title}-${index}`}><div><small>{slide.eyebrow}</small><h2>{slide.title}</h2><p>{slide.body}</p>{slide.buttonLabel && <span>{slide.buttonLabel} →</span>}</div><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></article>)}
+          </div>
+        </div>
+        <div className="g7pb-preview-hero-slider__dots" aria-label="슬라이드 위치">{slides.map((_, index) => <i className={selectedIndex === index ? 'is-active' : ''} key={index} />)}</div>
       </div>
     </BlockFrame>
   );
@@ -412,7 +437,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
       eyebrow: { type: 'text', label: '보조 문구' }, title: { type: 'text', label: '제목' }, body: { type: 'textarea', label: '본문' },
-      primaryLabel: { type: 'text', label: '버튼 문구' }, primaryUrl: { type: 'text', label: '버튼 URL' }, imageSrc: { type: 'text', label: '이미지 URL' }, imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
+      primaryLabel: { type: 'text', label: '버튼 문구' }, primaryUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
       surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS },
       motion: createMotionField(['none', 'reveal', 'parallax-soft']),
@@ -421,14 +446,17 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   HeroSlider: {
     label: '슬라이더 히어로', defaultProps: DEFAULT_HERO_SLIDER,
     fields: {
-      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구' }, title: { type: 'text', label: '제목' }, body: { type: 'textarea', label: '본문' }, buttonLabel: { type: 'text', label: '버튼 문구' }, buttonUrl: { type: 'text', label: '버튼 URL' }, imageSrc: { type: 'text', label: '이미지 URL' }, imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
+      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구' }, title: { type: 'text', label: '제목' }, body: { type: 'textarea', label: '본문' }, buttonLabel: { type: 'text', label: '버튼 문구' }, buttonUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('슬라이드 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
+      autoplay: { type: 'radio', label: '자동 재생', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },
+      interval: { type: 'select', label: '자동 재생 간격', options: [{ label: '3초', value: '3000' }, { label: '5초', value: '5000' }, { label: '7초', value: '7000' }] },
+      loop: { type: 'radio', label: '무한 반복', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },
       surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS },
       motion: createMotionField(['none', 'reveal', 'parallax-soft']),
     }, render: (props) => <HeroSliderPreview {...props} />,
   },
   LogoCloud: {
     label: '로고 클라우드', defaultProps: DEFAULT_LOGO_CLOUD,
-    fields: { heading: { type: 'text', label: '제목' }, logos: { type: 'array', label: '로고', min: 2, max: 12, defaultItemProps: (index) => ({ name: `파트너 ${index + 1}`, imageSrc: '', imageAlt: '', url: '' }), getItemSummary: (item) => item.name, arrayFields: { name: { type: 'text', label: '이름' }, imageSrc: { type: 'text', label: '로고 URL' }, imageAlt: { type: 'text', label: '대체 텍스트' }, url: { type: 'text', label: '연결 URL' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <LogoCloudPreview {...props} />,
+    fields: { heading: { type: 'text', label: '제목' }, logos: { type: 'array', label: '로고', min: 2, max: 12, defaultItemProps: (index) => ({ name: `파트너 ${index + 1}`, imageSrc: '', imageAlt: '', url: '' }), getItemSummary: (item) => item.name, arrayFields: { name: { type: 'text', label: '이름' }, imageSrc: createMediaField('로고 이미지'), imageAlt: { type: 'text', label: '대체 텍스트' }, url: { type: 'text', label: '연결 URL' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <LogoCloudPreview {...props} />,
   },
   Stats: {
     label: '숫자·아이콘 지표', defaultProps: DEFAULT_STATS,
@@ -440,11 +468,11 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   },
   Team: {
     label: '팀 소개', defaultProps: DEFAULT_TEAM,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, members: { type: 'array', label: '구성원', min: 2, max: 8, defaultItemProps: (index) => ({ name: `구성원 ${index + 1}`, role: '역할', bio: '소개를 입력하세요.', imageSrc: '', imageAlt: '', profileUrl: '' }), getItemSummary: (item) => `${item.name} · ${item.role}`, arrayFields: { name: { type: 'text', label: '이름' }, role: { type: 'text', label: '역할' }, bio: { type: 'textarea', label: '소개' }, imageSrc: { type: 'text', label: '사진 URL' }, imageAlt: { type: 'text', label: '대체 텍스트' }, profileUrl: { type: 'text', label: '프로필 URL' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <TeamPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, members: { type: 'array', label: '구성원', min: 2, max: 8, defaultItemProps: (index) => ({ name: `구성원 ${index + 1}`, role: '역할', bio: '소개를 입력하세요.', imageSrc: '', imageAlt: '', profileUrl: '' }), getItemSummary: (item) => `${item.name} · ${item.role}`, arrayFields: { name: { type: 'text', label: '이름' }, role: { type: 'text', label: '역할' }, bio: { type: 'textarea', label: '소개' }, imageSrc: createMediaField('프로필 사진'), imageAlt: { type: 'text', label: '대체 텍스트' }, profileUrl: { type: 'text', label: '프로필 URL' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <TeamPreview {...props} />,
   },
   Gallery: {
     label: '갤러리 그리드', defaultProps: DEFAULT_GALLERY,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }, { label: '4열', value: '4' }] }, images: { type: 'array', label: '이미지', min: 2, max: 12, defaultItemProps: (index) => ({ src: '', alt: `갤러리 이미지 ${index + 1}`, caption: `장면 ${index + 1}` }), getItemSummary: (item, index) => item.caption || `이미지 ${(index ?? 0) + 1}`, arrayFields: { src: { type: 'text', label: '이미지 URL' }, alt: { type: 'text', label: '대체 텍스트' }, caption: { type: 'text', label: '캡션' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger', 'parallax-soft']) }, render: (props) => <GalleryPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }, { label: '4열', value: '4' }] }, images: { type: 'array', label: '이미지', min: 2, max: 12, defaultItemProps: (index) => ({ src: '', alt: `갤러리 이미지 ${index + 1}`, caption: `장면 ${index + 1}` }), getItemSummary: (item, index) => item.caption || `이미지 ${(index ?? 0) + 1}`, arrayFields: { src: createMediaField('갤러리 이미지'), alt: { type: 'text', label: '대체 텍스트' }, caption: { type: 'text', label: '캡션' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger', 'parallax-soft']) }, render: (props) => <GalleryPreview {...props} />,
   },
   BarChart: {
     label: '막대그래프', defaultProps: DEFAULT_BAR_CHART,
@@ -458,7 +486,7 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
     const cta = asRecord(props.primaryCta); const image = asRecord(props.image);
     return { type: 'HeroSplit', props: { eyebrow: asString(props.eyebrow), title: asString(props.title), body: asString(props.body), primaryLabel: asString(cta.label), primaryUrl: asString(cta.url), imageSrc: asString(image.src), imageAlt: asString(image.alt), mediaPosition: props.mediaPosition === 'left' ? 'left' : 'right', ...appearance(props.appearance, { surface: 'default', spacing: 'spacious' }), motion: normalizeBlockMotion(block.motion) } };
   }
-  if (block.type === HERO_SLIDER_BLOCK_TYPE) return { type: 'HeroSlider', props: { slides: normalizeHeroSlides(props.slides), ...appearance(props.appearance, { surface: 'contrast', spacing: 'spacious' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === HERO_SLIDER_BLOCK_TYPE) return { type: 'HeroSlider', props: { slides: normalizeHeroSlides(props.slides), autoplay: props.autoplay === false ? 'no' : 'yes', interval: props.interval === 3000 ? '3000' : props.interval === 7000 ? '7000' : '5000', loop: props.loop === false ? 'no' : 'yes', ...appearance(props.appearance, { surface: 'contrast', spacing: 'spacious' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === LOGO_CLOUD_BLOCK_TYPE) return { type: 'LogoCloud', props: { heading: asString(props.heading), logos: normalizeLogos(props.logos), ...appearance(props.appearance, { surface: 'default', spacing: 'compact' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === STATS_BLOCK_TYPE) return { type: 'Stats', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), items: normalizeStats(props.items), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === PRICING_BLOCK_TYPE) return { type: 'Pricing', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), plans: normalizePricingEditor(props.plans), ...appearance(props.appearance, { surface: 'default', spacing: 'spacious' }), motion: normalizeBlockMotion(block.motion) } };
@@ -475,14 +503,22 @@ function attachAppearance(props: Record<string, unknown>, raw: Record<string, un
   return next;
 }
 
-export function catalogPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean): { type: string; props: Record<string, unknown> } | null {
+export function catalogPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean, includeSliderSettings = false): { type: string; props: Record<string, unknown> } | null {
   if (type === 'HeroSplit') {
     const props: Record<string, unknown> = { eyebrow: asString(raw.eyebrow), title: asString(raw.title), body: asString(raw.body), mediaPosition: raw.mediaPosition === 'left' ? 'left' : 'right' };
     if (asString(raw.primaryLabel) || asString(raw.primaryUrl)) props.primaryCta = { label: asString(raw.primaryLabel), url: asString(raw.primaryUrl) };
     if (asString(raw.imageSrc) || asString(raw.imageAlt)) props.image = { src: asString(raw.imageSrc), alt: asString(raw.imageAlt) };
     return { type: HERO_SPLIT_BLOCK_TYPE, props: attachAppearance(props, raw, { surface: 'default', spacing: 'spacious' }, includeAppearance) };
   }
-  if (type === 'HeroSlider') return { type: HERO_SLIDER_BLOCK_TYPE, props: attachAppearance({ slides: normalizeHeroSlides(raw.slides) }, raw, { surface: 'contrast', spacing: 'spacious' }, includeAppearance) };
+  if (type === 'HeroSlider') {
+    const props: Record<string, unknown> = { slides: normalizeHeroSlides(raw.slides) };
+    if (includeSliderSettings || raw.autoplay === 'no' || raw.interval === '3000' || raw.interval === '7000' || raw.loop === 'no') {
+      props.autoplay = raw.autoplay !== 'no';
+      props.interval = raw.interval === '3000' ? 3000 : raw.interval === '7000' ? 7000 : 5000;
+      props.loop = raw.loop !== 'no';
+    }
+    return { type: HERO_SLIDER_BLOCK_TYPE, props: attachAppearance(props, raw, { surface: 'contrast', spacing: 'spacious' }, includeAppearance) };
+  }
   if (type === 'LogoCloud') return { type: LOGO_CLOUD_BLOCK_TYPE, props: attachAppearance({ heading: asString(raw.heading), logos: normalizeLogos(raw.logos) }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
   if (type === 'Stats') return { type: STATS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), items: normalizeStats(raw.items) }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   if (type === 'Pricing') {

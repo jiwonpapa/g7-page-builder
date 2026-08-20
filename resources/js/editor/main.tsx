@@ -65,8 +65,10 @@ function hasAdminToken(): boolean {
 
 function formatError(error: unknown): string {
   if (error instanceof PageBuilderApiError) {
-    const suffix = error.correlationId ? ` (문의 번호: ${error.correlationId})` : '';
-    return `${error.message}${suffix}`;
+    const message = error.code === 'G7PB_COMPILE_FAILED'
+      ? `미리보기 또는 발행할 수 없는 블록 설정이 있습니다. ${error.message}`
+      : error.message;
+    return error.correlationId ? `${message} · 문의 번호 ${error.correlationId}` : message;
   }
 
   return error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';

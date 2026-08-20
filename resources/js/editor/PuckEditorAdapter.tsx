@@ -25,6 +25,7 @@ import {
   motionPreviewAttributes,
   normalizeBlockMotion,
 } from './blockMotion';
+import { createMediaField } from './MediaPickerField';
 
 import {
   CONTACT_BLOCK_TYPE,
@@ -107,6 +108,7 @@ interface BlockRoundTripMetadata {
   hadSlots: boolean;
   hadAppearance: boolean;
   hadMotion: boolean;
+  hadSliderSettings: boolean;
 }
 
 export interface PuckAdapterContext {
@@ -440,6 +442,9 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
       hadSlots: Object.prototype.hasOwnProperty.call(block, 'slots'),
       hadAppearance: Object.prototype.hasOwnProperty.call(block.props, 'appearance'),
       hadMotion: Object.prototype.hasOwnProperty.call(block, 'motion'),
+      hadSliderSettings: Object.prototype.hasOwnProperty.call(block.props, 'autoplay')
+        || Object.prototype.hasOwnProperty.call(block.props, 'interval')
+        || Object.prototype.hasOwnProperty.call(block.props, 'loop'),
     };
   }
 
@@ -473,6 +478,7 @@ function puckBlockToCanonical(
     hadSlots: true,
     hadAppearance: false,
     hadMotion: false,
+    hadSliderSettings: false,
   };
   let type: string;
   let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps | Record<string, unknown>;
@@ -565,6 +571,7 @@ function puckBlockToCanonical(
       (block as { type: string }).type,
       block.props as Record<string, unknown>,
       metadata.hadAppearance,
+      metadata.hadSliderSettings,
     );
     if (!catalogBlock) {
       throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
@@ -1074,7 +1081,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents> = {
         },
         primaryLabel: { type: 'text', label: '버튼 문구' },
         primaryUrl: { type: 'text', label: '버튼 URL' },
-        imageSrc: { type: 'text', label: '이미지 URL' },
+        imageSrc: createMediaField('대표 이미지'),
         imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
         alignment: {
           type: 'radio',
@@ -1465,7 +1472,7 @@ function StableAddBlockControls({
         disabled={disabled}
         onClick={() => setOpen((value) => !value)}
       >
-        전체 미리보기
+        블록 추가
       </button>
       {open && globalThis.document && createPortal(
         <div className="g7pb-block-gallery-backdrop" data-testid="page-builder-block-gallery"
@@ -1510,6 +1517,7 @@ function StableAddBlockControls({
 
 function StableHeaderControls({
   dispatch,
+  data,
   contentLength,
   selectedIndex,
   selectedZone,
@@ -1518,6 +1526,7 @@ function StableHeaderControls({
   disabled,
 }: {
   dispatch: (action: PuckAction) => void;
+  data: PuckEditorData;
   contentLength: number;
   selectedIndex: number | null;
   selectedZone: string;
@@ -1550,8 +1559,56 @@ function StableHeaderControls({
     });
   };
 
+  const applyRecommendedMotions = (): void => {
+    const recommendedPreset = (type: string): BlockMotion['preset'] => {
+      if (type === 'Hero' || type === 'HeroSplit') return 'parallax-soft';
+      if (type === 'Features' || type === 'LogoCloud' || type === 'Pricing' || type === 'Team' || type === 'Gallery') return 'stagger';
+      if (type === 'Stats') return 'counter';
+      if (type === 'BarChart') return 'chart-draw';
+      return 'reveal';
+    };
+
+    dispatch({
+      type: 'setData',
+      data: {
+        ...data,
+        content: data.content.map((block) => ({
+          ...block,
+          props: {
+            ...block.props,
+            motion: {
+              ...DEFAULT_BLOCK_MOTION,
+              preset: recommendedPreset(block.type),
+            },
+          },
+        })),
+      },
+      recordHistory: true,
+    });
+  };
+
+  const clearMotions = (): void => {
+    dispatch({
+      type: 'setData',
+      data: {
+        ...data,
+        content: data.content.map((block) => ({
+          ...block,
+          props: { ...block.props, motion: { ...DEFAULT_BLOCK_MOTION } },
+        })),
+      },
+      recordHistory: true,
+    });
+  };
+
   return (
     <div className="g7pb-header-controls">
+      <div className="g7pb-motion-batch" role="group" aria-label="페이지 효과 일괄 설정">
+        <button type="button" disabled={disabled || contentLength === 0}
+          data-testid="page-builder-auto-motion" onClick={applyRecommendedMotions}>추천 효과</button>
+        <button type="button" disabled={disabled || contentLength === 0}
+          data-testid="page-builder-clear-motion" onClick={clearMotions}>효과 없음</button>
+      </div>
       <div className="g7pb-viewport-switcher" role="group" aria-label="캔버스 기기 미리보기">
         {PAGE_BUILDER_VIEWPORTS.map((viewport) => (
           <button
@@ -1579,6 +1636,7 @@ function StableHeaderControls({
 
 function ConnectedHeaderControls({ disabled }: { disabled: boolean }): React.ReactElement {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
+  const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
   const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
@@ -1587,6 +1645,7 @@ function ConnectedHeaderControls({ disabled }: { disabled: boolean }): React.Rea
   return (
     <StableHeaderControls
       dispatch={dispatch}
+      data={data}
       contentLength={contentLength}
       selectedIndex={selectedIndex}
       selectedZone={selectedZone}
@@ -1709,6 +1768,8 @@ export function PuckEditorAdapter({
   const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);
+  const heroFamilyCount = data.content.filter((block) =>
+    block.type === 'Hero' || block.type === 'HeroSplit' || block.type === 'HeroSlider').length;
 
   useEffect(() => {
     const session = canonicalToPuck(document);
@@ -1735,6 +1796,11 @@ export function PuckEditorAdapter({
 
   return (
     <div className="g7pb-editor" data-testid="page-builder-editor" aria-busy={disabled}>
+      {heroFamilyCount > 1 && (
+        <div className="g7pb-editor-warning" role="status" data-testid="page-builder-hero-warning">
+          Hero 계열 블록이 {heroFamilyCount}개 있습니다. 사용할 수 있지만 첫 화면 집중도가 낮아질 수 있습니다.
+        </div>
+      )}
       <Puck
         config={pageBuilderPuckConfig}
         data={data}

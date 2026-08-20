@@ -105,6 +105,9 @@ export interface HeroSlideItem {
 
 export interface HeroSliderBlockProps {
   slides: HeroSlideItem[];
+  autoplay?: boolean;
+  interval?: 3000 | 5000 | 7000;
+  loop?: boolean;
   appearance?: BlockAppearance;
 }
 
@@ -241,6 +244,12 @@ export interface DocumentResource {
   public_url: string | null;
   active_artifact_sha256: string | null;
   is_home: boolean;
+  status: 'draft' | 'published' | 'published_with_changes' | 'archived';
+  has_unpublished_changes: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+  published_at: string | null;
+  archived_at: string | null;
 }
 
 export interface RevisionSummary {
@@ -270,6 +279,21 @@ export interface DocumentListResource {
     page: number;
     per_page: number;
   };
+}
+
+export interface MediaAssetResource {
+  id: string;
+  url: string;
+  original_name: string;
+  mime_type: string;
+  bytes: number;
+  width: number;
+  height: number;
+  created_at: string;
+}
+
+export interface MediaListResource {
+  items: MediaAssetResource[];
 }
 
 export interface PreviewResource {

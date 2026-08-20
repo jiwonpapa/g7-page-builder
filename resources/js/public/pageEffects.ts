@@ -1,3 +1,6 @@
+import EmblaCarousel from 'embla-carousel';
+import Autoplay from 'embla-carousel-autoplay';
+
 type MotionPreset = 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
 
 interface CounterParts {
@@ -12,6 +15,7 @@ type MotionWindow = Window & {
 };
 
 const MOTION_SELECTOR = '.g7pb-block[data-g7pb-motion]';
+const SLIDER_SELECTOR = '[data-g7pb-slider]';
 const STAGGER_TARGETS = [
   '.g7pb-features__item',
   '.g7pb-logo-cloud li',
@@ -151,10 +155,13 @@ function installParallax(blocks: HTMLElement[], view: MotionWindow): void {
 export function bootPageEffects(root: Document = document, view: MotionWindow = window as MotionWindow): void {
   const page = root.querySelector<HTMLElement>('.g7pb-page');
   const blocks = Array.from(root.querySelectorAll<HTMLElement>(MOTION_SELECTOR));
-  if (!page || blocks.length === 0) return;
+  if (!page) return;
 
   const reducedMotion = typeof view.matchMedia === 'function'
     && view.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  bootPageSliders(root, reducedMotion);
+  if (blocks.length === 0) return;
+
   if (reducedMotion) {
     page.dataset.g7pbMotionReduced = 'true';
     return;
@@ -184,6 +191,69 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
   }, { threshold: 0.12, rootMargin: '0px 0px -10% 0px' });
 
   blocks.forEach((block) => observer.observe(block));
+}
+
+export function bootPageSliders(root: Document = document, reducedMotion = false): void {
+  for (const slider of root.querySelectorAll<HTMLElement>(SLIDER_SELECTOR)) {
+    if (slider.dataset.g7pbSliderReady === 'true') continue;
+    const viewport = slider.querySelector<HTMLElement>('.g7pb-hero-slider__viewport');
+    const slides = Array.from(slider.querySelectorAll<HTMLElement>('.g7pb-hero-slider__slide'));
+    if (!viewport || slides.length < 2) continue;
+
+    const wantsAutoplay = slider.dataset.g7pbSliderAutoplay === 'true' && !reducedMotion;
+    const autoplay = Autoplay({
+      delay: Number(slider.dataset.g7pbSliderInterval ?? 5000),
+      stopOnInteraction: true,
+      stopOnMouseEnter: true,
+    });
+    const embla = EmblaCarousel(viewport, { loop: slider.dataset.g7pbSliderLoop !== 'false' }, wantsAutoplay ? [autoplay] : []);
+    const previous = slider.querySelector<HTMLButtonElement>('[data-g7pb-slider-prev]');
+    const next = slider.querySelector<HTMLButtonElement>('[data-g7pb-slider-next]');
+    const toggle = slider.querySelector<HTMLButtonElement>('[data-g7pb-slider-toggle]');
+    const dotsRoot = slider.querySelector<HTMLElement>('[data-g7pb-slider-dots]');
+    const status = slider.querySelector<HTMLElement>('[data-g7pb-slider-status]');
+    const dots = slides.map((_, index) => {
+      const dot = root.createElement('button');
+      dot.type = 'button';
+      dot.dataset.g7pbSliderDot = String(index);
+      dot.setAttribute('aria-label', `${index + 1}번 슬라이드`);
+      dot.addEventListener('click', () => embla.scrollTo(index));
+      dotsRoot?.append(dot);
+      return dot;
+    });
+    const update = (): void => {
+      const selected = embla.selectedScrollSnap();
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('is-active', index === selected);
+        dot.setAttribute('aria-current', index === selected ? 'true' : 'false');
+      });
+      slides.forEach((slide, index) => {
+        slide.setAttribute('aria-hidden', index === selected ? 'false' : 'true');
+        slide.inert = index !== selected;
+      });
+      if (status) status.textContent = `${selected + 1} / ${slides.length}`;
+      if (previous) previous.disabled = !embla.canScrollPrev();
+      if (next) next.disabled = !embla.canScrollNext();
+    };
+
+    previous?.addEventListener('click', () => embla.scrollPrev());
+    next?.addEventListener('click', () => embla.scrollNext());
+    toggle?.addEventListener('click', () => {
+      if (autoplay.isPlaying()) {
+        autoplay.stop();
+        toggle.textContent = '재생';
+        toggle.setAttribute('aria-label', '자동 재생 시작');
+      } else {
+        autoplay.play();
+        toggle.textContent = '일시 정지';
+        toggle.setAttribute('aria-label', '자동 재생 일시 정지');
+      }
+    });
+    embla.on('select', update);
+    embla.on('reInit', update);
+    slider.dataset.g7pbSliderReady = 'true';
+    update();
+  }
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {

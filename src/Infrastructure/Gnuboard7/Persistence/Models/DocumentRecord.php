@@ -14,8 +14,11 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $current_revision
  * @property string|null $active_publication_id
  * @property bool $is_home
+ * @property \DateTimeInterface|null $archived_at
  * @property int|null $created_by
  * @property int|null $updated_by
+ * @property \DateTimeInterface $created_at
+ * @property \DateTimeInterface $updated_at
  */
 final class DocumentRecord extends Model
 {
@@ -36,6 +39,7 @@ final class DocumentRecord extends Model
         'current_revision',
         'active_publication_id',
         'is_home',
+        'archived_at',
         'created_by',
         'updated_by',
     ];
@@ -49,6 +53,7 @@ final class DocumentRecord extends Model
             'lock_version' => 'integer',
             'current_revision' => 'integer',
             'is_home' => 'boolean',
+            'archived_at' => 'immutable_datetime',
             'created_by' => 'integer',
             'updated_by' => 'integer',
         ];

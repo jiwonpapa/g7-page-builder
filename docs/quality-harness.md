@@ -44,7 +44,7 @@
 - `module.json`의 번들 module/plugin hard dependency
 - `sirsoft-page`, `/admin/pages`, `페이지 관리`를 Page Builder 메뉴에서 재사용하는 선언
 - 별도 `페이지 빌더` 메뉴 slug·URL·permission의 누락 또는 중복 선언
-- 복구 가능한 archive 계약 없이 문서 hard DELETE route·service·repository를 여는 구현
+- archive 선행·공개 해제·lock version·typed slug 확인 없이 문서 purge를 여는 구현
 
 두 검사는 `npm run check`와 CI frontend job에서 매번 실행합니다.
 

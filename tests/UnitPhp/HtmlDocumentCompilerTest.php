@@ -228,25 +228,31 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.3.0', $catalog->compilerVersion);
+        self::assertSame('0.4.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
         self::assertStringContainsString('data-block-type="hero-slider"', (string) $sliderResult->artifact);
+        self::assertStringContainsString('data-g7pb-slider', (string) $sliderResult->artifact);
+        self::assertStringContainsString('data-g7pb-slider-autoplay="true"', (string) $sliderResult->artifact);
+        self::assertStringContainsString('data-g7pb-slider-prev', (string) $sliderResult->artifact);
         self::assertStringContainsString('<progress max="100" value="74.5" data-tone="emerald">', (string) $catalog->artifact);
         self::assertStringNotContainsString('<script', (string) $catalog->artifact);
     }
 
-    public function test_catalog_rejects_multiple_hero_family_blocks(): void
+    public function test_catalog_warns_but_allows_multiple_hero_family_blocks(): void
     {
-        $this->expectException(DocumentCompileException::class);
-
-        (new HtmlDocumentCompiler)->compile(
+        $result = (new HtmlDocumentCompiler)->compile(
             PageBuilderDocument::fromArray($this->catalogPayload()),
             1,
             'html',
             'g7-7.0.7',
         );
+
+        self::assertCount(1, $result->warnings);
+        self::assertStringContainsString('Hero 계열 블록이 2개', $result->warnings[0]);
+        self::assertStringContainsString('data-block-type="hero-split"', (string) $result->artifact);
+        self::assertStringContainsString('data-block-type="hero-slider"', (string) $result->artifact);
     }
 
     public function test_catalog_rejects_unsafe_action_urls(): void

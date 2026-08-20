@@ -45,9 +45,9 @@ final class PageBuilderService
     /**
      * @return array{items: list<DocumentSnapshot>, total: int, page: int, per_page: int}
      */
-    public function paginate(int $page, int $perPage): array
+    public function paginate(int $page, int $perPage, string $status = 'active'): array
     {
-        return $this->repository->paginate($page, $perPage);
+        return $this->repository->paginate($page, $perPage, $status);
     }
 
     public function get(string $documentId): DocumentSnapshot
@@ -225,6 +225,30 @@ final class PageBuilderService
         ?int $actorId,
     ): DocumentSnapshot {
         return $this->repository->unpublish($documentId, $expectedLockVersion, $actorId);
+    }
+
+    public function archive(
+        string $documentId,
+        int $expectedLockVersion,
+        ?int $actorId,
+    ): DocumentSnapshot {
+        return $this->repository->archive($documentId, $expectedLockVersion, $actorId);
+    }
+
+    public function restoreArchived(
+        string $documentId,
+        int $expectedLockVersion,
+        ?int $actorId,
+    ): DocumentSnapshot {
+        return $this->repository->restoreArchived($documentId, $expectedLockVersion, $actorId);
+    }
+
+    public function purge(
+        string $documentId,
+        int $expectedLockVersion,
+        string $confirmationSlug,
+    ): void {
+        $this->repository->purge($documentId, $expectedLockVersion, $confirmationSlug);
     }
 
     public function setHome(

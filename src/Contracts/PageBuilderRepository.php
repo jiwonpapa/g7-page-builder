@@ -16,7 +16,7 @@ interface PageBuilderRepository
     /**
      * @return array{items: list<DocumentSnapshot>, total: int, page: int, per_page: int}
      */
-    public function paginate(int $page, int $perPage): array;
+    public function paginate(int $page, int $perPage, string $status = 'active'): array;
 
     public function find(string $documentId): ?DocumentSnapshot;
 
@@ -72,6 +72,24 @@ interface PageBuilderRepository
         int $expectedLockVersion,
         ?int $actorId,
     ): DocumentSnapshot;
+
+    public function archive(
+        string $documentId,
+        int $expectedLockVersion,
+        ?int $actorId,
+    ): DocumentSnapshot;
+
+    public function restoreArchived(
+        string $documentId,
+        int $expectedLockVersion,
+        ?int $actorId,
+    ): DocumentSnapshot;
+
+    public function purge(
+        string $documentId,
+        int $expectedLockVersion,
+        string $confirmationSlug,
+    ): void;
 
     public function setHome(
         string $documentId,

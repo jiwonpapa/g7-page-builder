@@ -30,8 +30,7 @@ function hasAdminToken(): boolean {
 
 function errorMessage(error: unknown): string {
   if (error instanceof PageBuilderApiError) {
-    const suffix = error.correlationId ? ` (문의 번호: ${error.correlationId})` : '';
-    return `${error.message}${suffix}`;
+    return error.correlationId ? `${error.message} · 문의 번호 ${error.correlationId}` : error.message;
   }
 
   return error instanceof Error ? error.message : '문서 목록을 불러오지 못했습니다.';
@@ -51,6 +50,17 @@ function formatRevisionDate(value: string): string {
       timeStyle: 'short',
     }).format(date);
 }
+
+function formatDocumentDate(value: string | null): string {
+  return value ? formatRevisionDate(value) : '기록 없음';
+}
+
+const DOCUMENT_STATUS_LABELS: Record<DocumentResource['status'], string> = {
+  draft: '초안',
+  published: '발행됨',
+  published_with_changes: '발행 후 변경',
+  archived: '보관됨',
+};
 
 export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions): React.ReactElement {
   const api = useMemo(() => new PageBuilderApiClient(), []);
@@ -76,6 +86,18 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [unpublishDocument, setUnpublishDocument] = useState<DocumentResource | null>(null);
   const [unpublishing, setUnpublishing] = useState(false);
   const [settingHomeId, setSettingHomeId] = useState<string | null>(null);
+  const [documentFilter, setDocumentFilter] = useState<'active' | 'archived'>('active');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [archiveDocument, setArchiveDocument] = useState<DocumentResource | null>(null);
+  const [purgeDocument, setPurgeDocument] = useState<DocumentResource | null>(null);
+  const [purgeConfirmation, setPurgeConfirmation] = useState('');
+  const [lifecycleBusy, setLifecycleBusy] = useState(false);
+
+  const loadDocuments = React.useCallback(async (status: 'active' | 'archived'): Promise<void> => {
+    const resource = await api.listDocuments(1, 100, status);
+    setDocuments(resource.items);
+    setTotalDocuments(resource.pagination.total);
+  }, [api]);
 
   useEffect(() => {
     if (!hasAdminToken()) {
@@ -85,7 +107,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
 
     let active = true;
     setLoading(true);
-    void api.listDocuments()
+    void api.listDocuments(1, 100, documentFilter)
       .then((resource) => {
         if (active) {
           setDocuments(resource.items);
@@ -107,7 +129,18 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     return () => {
       active = false;
     };
-  }, [api]);
+  }, [api, documentFilter]);
+
+  const visibleDocuments = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase('ko');
+    if (!query) {
+      return documents;
+    }
+
+    return documents.filter((resource) =>
+      resource.title.toLocaleLowerCase('ko').includes(query)
+      || resource.document.slug.toLocaleLowerCase('ko').includes(query));
+  }, [documents, searchQuery]);
 
   const createDocument = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -289,7 +322,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
         !resource.is_home,
         resource.lock_version,
       );
-      const refreshed = await api.listDocuments();
+      const refreshed = await api.listDocuments(1, 100, documentFilter);
       setDocuments(refreshed.items);
       setTotalDocuments(refreshed.pagination.total);
       setMetadataDocument((current) => current
@@ -299,6 +332,65 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
       setMessage(errorMessage(error));
     } finally {
       setSettingHomeId(null);
+    }
+  };
+
+  const confirmArchive = async (): Promise<void> => {
+    if (!archiveDocument) {
+      return;
+    }
+
+    setLifecycleBusy(true);
+    setMessage(null);
+    try {
+      await api.archiveDocument(archiveDocument.document.document_id, archiveDocument.lock_version);
+      const archivedId = archiveDocument.document.document_id;
+      setArchiveDocument(null);
+      setDocuments((current) => current.filter((resource) => resource.document.document_id !== archivedId));
+      setTotalDocuments((current) => Math.max(0, current - 1));
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setLifecycleBusy(false);
+    }
+  };
+
+  const restoreArchived = async (resource: DocumentResource): Promise<void> => {
+    setLifecycleBusy(true);
+    setMessage(null);
+    try {
+      await api.restoreArchivedDocument(resource.document.document_id, resource.lock_version);
+      setDocuments((current) => current.filter((item) => item.document.document_id !== resource.document.document_id));
+      setTotalDocuments((current) => Math.max(0, current - 1));
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setLifecycleBusy(false);
+    }
+  };
+
+  const confirmPurge = async (): Promise<void> => {
+    if (!purgeDocument || purgeConfirmation !== purgeDocument.document.slug) {
+      return;
+    }
+
+    setLifecycleBusy(true);
+    setMessage(null);
+    try {
+      await api.purgeDocument(
+        purgeDocument.document.document_id,
+        purgeDocument.lock_version,
+        purgeConfirmation,
+      );
+      const purgedId = purgeDocument.document.document_id;
+      setPurgeDocument(null);
+      setPurgeConfirmation('');
+      setDocuments((current) => current.filter((resource) => resource.document.document_id !== purgedId));
+      setTotalDocuments((current) => Math.max(0, current - 1));
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setLifecycleBusy(false);
     }
   };
 
@@ -331,37 +423,69 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
           <strong data-testid="page-builder-manager-count">{totalDocuments}<span>개 문서</span></strong>
         </div>
 
+        <div className="g7pb-manager-tools" aria-label="문서 목록 도구">
+          <div className="g7pb-manager-tabs" role="tablist" aria-label="문서 상태">
+            <button type="button" role="tab" aria-selected={documentFilter === 'active'}
+              data-testid="page-builder-manager-filter-active"
+              onClick={() => setDocumentFilter('active')}>사용 중</button>
+            <button type="button" role="tab" aria-selected={documentFilter === 'archived'}
+              data-testid="page-builder-manager-filter-archived"
+              onClick={() => setDocumentFilter('archived')}>보관함</button>
+          </div>
+          <label className="g7pb-manager-search">
+            <span className="sr-only">문서 검색</span>
+            <input type="search" value={searchQuery} placeholder="제목 또는 주소 검색"
+              data-testid="page-builder-manager-search"
+              onChange={(event) => setSearchQuery(event.target.value)} />
+          </label>
+        </div>
+
         {message && <div className="g7pb-manager-notice" role="alert">{message}</div>}
 
         {loading ? (
           <div className="g7pb-manager-loading" role="status">문서를 불러오는 중입니다.</div>
-        ) : documents.length === 0 ? (
+        ) : visibleDocuments.length === 0 ? (
           <div className="g7pb-manager-empty">
-            <h3>아직 만든 페이지가 없습니다.</h3>
-            <p>완성 블록을 조합할 첫 페이지를 시작하세요.</p>
-            <button className="g7pb-button g7pb-button--primary" type="button"
-              data-testid="page-builder-manager-empty-create" onClick={() => setCreateDialogOpen(true)}>
-              첫 페이지 만들기
-            </button>
+            <h3>{searchQuery ? '검색 결과가 없습니다.' : documentFilter === 'archived' ? '보관된 문서가 없습니다.' : '아직 만든 페이지가 없습니다.'}</h3>
+            <p>{searchQuery ? '다른 제목이나 주소로 검색해 보세요.' : documentFilter === 'archived' ? '보관한 문서는 여기서 복원하거나 영구 삭제할 수 있습니다.' : '완성 블록을 조합할 첫 페이지를 시작하세요.'}</p>
+            {!searchQuery && documentFilter === 'active' && (
+              <button className="g7pb-button g7pb-button--primary" type="button"
+                data-testid="page-builder-manager-empty-create" onClick={() => setCreateDialogOpen(true)}>
+                첫 페이지 만들기
+              </button>
+            )}
           </div>
         ) : (
           <div className="g7pb-document-list" data-testid="page-builder-document-list">
             <div className="g7pb-document-list__head" aria-hidden="true">
               <span>문서</span><span>상태</span><span>작업</span>
             </div>
-            {documents.map((resource) => (
+            {visibleDocuments.map((resource) => (
               <article className="g7pb-document-row" data-testid="page-builder-document-row"
                 data-document-id={resource.document.document_id} key={resource.document.document_id}>
                 <div className="g7pb-document-row__identity">
                   <h3>{resource.title}</h3>
                   <p>/{resource.document.slug}</p>
+                  <small>생성 {formatDocumentDate(resource.created_at)} · 수정 {formatDocumentDate(resource.updated_at)}</small>
                 </div>
                 <div>
-                  <span className={`g7pb-document-state ${resource.public_url ? 'is-published' : ''}`}>
-                    {resource.is_home ? '홈' : resource.public_url ? '발행됨' : '초안'}
+                  <span className={`g7pb-document-state is-${resource.status}`}>
+                    {resource.is_home ? '홈' : DOCUMENT_STATUS_LABELS[resource.status]}
                   </span>
+                  {resource.published_at && <small className="g7pb-document-published-at">발행 {formatDocumentDate(resource.published_at)}</small>}
                 </div>
                 <div className="g7pb-document-row__actions">
+                  {resource.status === 'archived' ? (
+                    <>
+                      <button className="g7pb-button g7pb-button--quiet" type="button"
+                        data-testid="page-builder-manager-restore-archived" disabled={lifecycleBusy}
+                        onClick={() => void restoreArchived(resource)}>복원</button>
+                      <button className="g7pb-button g7pb-button--danger" type="button"
+                        data-testid="page-builder-manager-purge"
+                        onClick={() => { setPurgeDocument(resource); setPurgeConfirmation(''); }}>영구 삭제</button>
+                    </>
+                  ) : (
+                    <>
                   {resource.public_url && (
                     <a href={resource.public_url} target="_blank" rel="noopener noreferrer"
                       data-testid="page-builder-manager-public-link">공개 ↗</a>
@@ -382,6 +506,11 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                     onClick={() => openRevisions(resource)}>기록</button>
                   <a className="g7pb-button g7pb-button--quiet" href={editorUrl(resource.document.document_id)}
                     data-testid="page-builder-manager-edit-link">편집</a>
+                      <button className="g7pb-button g7pb-button--quiet" type="button"
+                        data-testid="page-builder-manager-archive"
+                        onClick={() => setArchiveDocument(resource)}>보관</button>
+                    </>
+                  )}
                 </div>
               </article>
             ))}
@@ -542,6 +671,49 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                 onClick={() => void confirmUnpublish()}>
                 {unpublishing ? '해제 중' : '공개 해제'}
               </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {archiveDocument && (
+        <div className="g7pb-dialog-backdrop g7pb-dialog-backdrop--confirm"
+          data-testid="page-builder-archive-dialog">
+          <section className="g7pb-dialog" role="alertdialog" aria-modal="true"
+            aria-labelledby="g7pb-archive-heading">
+            <p className="g7pb-kicker">문서 보관</p>
+            <h2 id="g7pb-archive-heading">{archiveDocument.title} 문서를 보관할까요?</h2>
+            <p className="g7pb-dialog__body">발행 중이면 즉시 공개 해제되고 홈 지정도 해제됩니다. 문서와 리비전은 보관함에서 다시 복원할 수 있습니다.</p>
+            <div className="g7pb-dialog__actions">
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                onClick={() => setArchiveDocument(null)}>취소</button>
+              <button type="button" className="g7pb-button g7pb-button--danger"
+                data-testid="page-builder-archive-confirm" disabled={lifecycleBusy}
+                onClick={() => void confirmArchive()}>{lifecycleBusy ? '보관 중' : '보관함으로 이동'}</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {purgeDocument && (
+        <div className="g7pb-dialog-backdrop g7pb-dialog-backdrop--confirm"
+          data-testid="page-builder-purge-dialog">
+          <section className="g7pb-dialog" role="alertdialog" aria-modal="true"
+            aria-labelledby="g7pb-purge-heading">
+            <p className="g7pb-kicker">영구 삭제</p>
+            <h2 id="g7pb-purge-heading">이 문서와 모든 기록을 삭제할까요?</h2>
+            <p className="g7pb-dialog__body">복구할 수 없습니다. 확인하려면 <strong>{purgeDocument.document.slug}</strong>를 입력해 주세요.</p>
+            <label>
+              확인 주소
+              <input value={purgeConfirmation} autoFocus data-testid="page-builder-purge-confirmation"
+                onChange={(event) => setPurgeConfirmation(event.target.value)} />
+            </label>
+            <div className="g7pb-dialog__actions">
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                onClick={() => { setPurgeDocument(null); setPurgeConfirmation(''); }}>취소</button>
+              <button type="button" className="g7pb-button g7pb-button--danger"
+                data-testid="page-builder-purge-confirm" disabled={lifecycleBusy || purgeConfirmation !== purgeDocument.document.slug}
+                onClick={() => void confirmPurge()}>{lifecycleBusy ? '삭제 중' : '영구 삭제'}</button>
             </div>
           </section>
         </div>

@@ -138,4 +138,4 @@ Rust는 PHP 기준 구현과 실제 병목이 존재한 뒤에만 **무상태 �
 
 로컬 asset build·manifest 검사, `dist`·`BUILD-INFO`·`SHA256SUMS` 패키징, 서버 checksum 검증, 전체 DB·기존 모듈 백업, 모듈 단위 배포와 온라인 스모크가 구현되어 있습니다. 1차 지원 대상은 PHP 8.5의 `g7devops` Ubuntu VPS 한 종류입니다.
 
-제품 기능 중 Gallery 실제 업로드용 자체 MediaPort와 복구 가능한 문서 보관은 아직 미구현입니다. 이는 현재 12종 테스트 카탈로그의 배포 가능 여부와 구분합니다.
+자체 MediaPort와 복구 가능한 문서 보관/복원/확인형 삭제는 구현됐습니다. 호스팅은 `public/storage` 링크와 업로드 쓰기 권한을 설치 doctor에서 반드시 확인합니다.

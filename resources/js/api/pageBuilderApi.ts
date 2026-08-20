@@ -2,6 +2,8 @@ import type {
   ApiEnvelope,
   DocumentListResource,
   DocumentResource,
+  MediaAssetResource,
+  MediaListResource,
   PageBuilderDocument,
   PreviewResource,
   PublicationCommit,
@@ -145,10 +147,15 @@ export class PageBuilderApiClient {
     });
   }
 
-  async listDocuments(page = 1, perPage = 100): Promise<DocumentListResource> {
+  async listDocuments(
+    page = 1,
+    perPage = 100,
+    status: 'active' | 'archived' | 'all' = 'active',
+  ): Promise<DocumentListResource> {
     const query = new URLSearchParams({
       page: String(page),
       per_page: String(perPage),
+      status,
     });
 
     return this.request<DocumentListResource>(`/documents?${query.toString()}`);
@@ -276,6 +283,54 @@ export class PageBuilderApiClient {
     });
   }
 
+  async archiveDocument(documentId: string, expectedLockVersion: number): Promise<DocumentResource> {
+    return this.request<DocumentResource>(`/documents/${encodeURIComponent(documentId)}/archive`, {
+      method: 'POST',
+      body: JSON.stringify({ expected_lock_version: expectedLockVersion }),
+    });
+  }
+
+  async restoreArchivedDocument(documentId: string, expectedLockVersion: number): Promise<DocumentResource> {
+    return this.request<DocumentResource>(`/documents/${encodeURIComponent(documentId)}/restore-archived`, {
+      method: 'POST',
+      body: JSON.stringify({ expected_lock_version: expectedLockVersion }),
+    });
+  }
+
+  async purgeDocument(
+    documentId: string,
+    expectedLockVersion: number,
+    confirmationSlug: string,
+  ): Promise<{ document_id: string }> {
+    return this.request<{ document_id: string }>(`/documents/${encodeURIComponent(documentId)}`, {
+      method: 'DELETE',
+      body: JSON.stringify({
+        expected_lock_version: expectedLockVersion,
+        confirmation_slug: confirmationSlug,
+      }),
+    });
+  }
+
+  async listMedia(): Promise<MediaListResource> {
+    return this.request<MediaListResource>('/media');
+  }
+
+  async uploadMedia(file: File): Promise<MediaAssetResource> {
+    const form = new FormData();
+    form.append('file', file);
+
+    return this.request<MediaAssetResource>('/media', {
+      method: 'POST',
+      body: form,
+    });
+  }
+
+  async deleteMedia(mediaId: string): Promise<{ media_id: string }> {
+    return this.request<{ media_id: string }>(`/media/${encodeURIComponent(mediaId)}`, {
+      method: 'DELETE',
+    });
+  }
+
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = this.readAuthToken();
     if (!token) {
@@ -288,18 +343,21 @@ export class PageBuilderApiClient {
       );
     }
 
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      Authorization: `Bearer ${token}`,
+    };
+    if (!(init.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     let response: Response;
     try {
       response = await this.fetchImpl(`${PAGE_BUILDER_API_PREFIX}${path}`, {
         ...init,
         credentials: 'same-origin',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          Authorization: `Bearer ${token}`,
-          ...init.headers,
-        },
+        headers: { ...headers, ...init.headers },
       });
     } catch (error) {
       throw new PageBuilderApiError(

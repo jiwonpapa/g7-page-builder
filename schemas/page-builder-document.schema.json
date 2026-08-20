@@ -204,7 +204,7 @@
       "required": ["src", "alt"],
       "properties": {
         "src": { "type": "string", "minLength": 1, "maxLength": 2048 },
-        "alt": { "type": "string", "minLength": 1, "maxLength": 300 }
+        "alt": { "type": "string", "maxLength": 300 }
       }
     },
     "heroSplitProps": {
@@ -242,6 +242,9 @@
             }
           }
         },
+        "autoplay": { "type": "boolean", "default": true },
+        "interval": { "enum": [3000, 5000, 7000], "default": 5000 },
+        "loop": { "type": "boolean", "default": true },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
     },

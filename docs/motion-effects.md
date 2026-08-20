@@ -1,6 +1,6 @@
 # Typed motion effects contract
 
-상태: 0.3.0 implementation baseline
+상태: 0.5.0 implementation baseline
 
 ## 결론
 
@@ -60,7 +60,7 @@ PageBuilderDocument.motion
 - `prefers-reduced-motion: reduce`이면 runtime 효과를 설치하지 않습니다.
 - scroll 위치를 강제로 바꾸거나 wheel/touch 입력을 가로채지 않습니다.
 - 전역 smooth scroll, 무한 자동재생, 배경 video, 사용자가 작성한 JS는 금지합니다.
-- 공개 effects bundle 목표는 minified 8KB 이하이며 0.3.0 빌드는 약 3.6KB, gzip 약 1.6KB입니다.
+- 공개 effects bundle은 Embla slider runtime을 포함해 minified 약 26KB, gzip 약 10.4KB입니다. 편집기 bundle과 분리하고 실제 motion/slider 문서에서만 조건부 로드합니다.
 - 편집기 preview는 공개 runtime을 실행하지 않고 짧은 CSS 시연만 제공해 drag/drop과 필드 편집을 방해하지 않습니다.
 
 ## 검증

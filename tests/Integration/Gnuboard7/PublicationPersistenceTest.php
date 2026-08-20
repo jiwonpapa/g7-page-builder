@@ -28,6 +28,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\View
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 
 final class PublicationPersistenceTest extends TestCase
 {
@@ -48,6 +49,7 @@ final class PublicationPersistenceTest extends TestCase
         $container = $this->database->getContainer();
         $container->instance('db', $this->database->getDatabaseManager());
         $container->instance('db.schema', $this->database->getConnection()->getSchemaBuilder());
+        $container->instance('log', new NullLogger);
         $container->instance(
             UrlGeneratorContract::class,
             new UrlGenerator(new RouteCollection, Request::create('https://g7pb.test')),
@@ -485,6 +487,32 @@ final class PublicationPersistenceTest extends TestCase
 
         self::assertSame($first->artifactSha256, $second->artifactSha256);
         self::assertNotSame($first->representationSha256(), $second->representationSha256());
+    }
+
+    public function test_archive_hides_publication_and_purge_requires_archived_slug_confirmation(): void
+    {
+        $repository = new EloquentPageBuilderRepository;
+        $service = new PageBuilderService($repository, new HtmlDocumentCompiler);
+        $created = $service->create('보관 테스트', 'archive-test', 'ko', null);
+        $candidate = $service->preparePublication($created->document->documentId, $created->lockVersion, null);
+        $service->commitPublication($candidate->token);
+
+        $archived = $service->archive($created->document->documentId, $created->lockVersion, null);
+        self::assertNotNull($archived->archivedAt);
+        self::assertNull($archived->publicUrl);
+        self::assertNull($service->findPublished('archive-test'));
+        self::assertSame(0, $service->paginate(1, 20, 'active')['total']);
+        self::assertSame(1, $service->paginate(1, 20, 'archived')['total']);
+
+        try {
+            $service->purge($created->document->documentId, $archived->lockVersion, 'wrong-slug');
+            self::fail('Typed confirmation mismatch was accepted.');
+        } catch (\DomainException) {
+            self::assertNotNull($service->get($created->document->documentId));
+        }
+
+        $service->purge($created->document->documentId, $archived->lockVersion, 'archive-test');
+        self::assertNull($repository->find($created->document->documentId));
     }
 
     /**

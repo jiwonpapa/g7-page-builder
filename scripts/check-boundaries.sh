@@ -47,10 +47,15 @@ if rg -n \
   exit 1
 fi
 
-if rg -n -U \
-  'Route::(delete|match)\([\s\S]{0,300}(DELETE|documents)|function[[:space:]]+(destroy|delete|purge|forceDelete)[[:space:]]*\(|DocumentRecord::query\(\)[\s\S]{0,300}->[[:space:]]*(delete|forceDelete)\(|[$](record|document|documentRecord)->[[:space:]]*(delete|forceDelete)\(' \
-  "$ROOT/src" --glob '*.php'; then
-  echo 'Recoverable archive policy is not implemented; hard document deletion must stay closed.' >&2
+if rg -n 'forceDelete\(|truncate\(' "$ROOT/src" --glob '*.php'; then
+  echo 'Unrecoverable force delete or truncate is forbidden.' >&2
+  exit 1
+fi
+
+if ! rg -q "Route::delete\('documents/\{document\}'" "$ROOT/src/routes/api.php" \
+  || ! rg -q 'confirmation_slug' "$ROOT/src/Infrastructure/Gnuboard7/Http/Controllers/AdminDocumentController.php" \
+  || ! rg -q 'if \(\$record->archived_at === null' "$ROOT/src/Infrastructure/Gnuboard7/Persistence/EloquentPageBuilderRepository.php"; then
+  echo 'Document purge must require an archived document and typed slug confirmation.' >&2
   exit 1
 fi
 

@@ -122,9 +122,11 @@ if jq -e '
   and
   ([.[] | select(.uri == "modules/jiwonpapa-page_builder/p/{slug}" and (.method | contains("GET")))] | length == 1)
   and
-  ([.[] | select((.uri | startswith("api/modules/jiwonpapa-page_builder/")) and (.method | contains("DELETE")))] | length == 0)
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/documents/{document}" and (.method | contains("DELETE")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/media/{media}" and (.method | contains("DELETE")))] | length == 1)
 ' <<<"$module_routes" >/dev/null; then
-  ok 'Recoverable publication route present and hard document deletion absent'
+  ok 'Recoverable publication, archive purge, and guarded media routes present'
 else
   fail 'Page Builder route safety contract'
 fi

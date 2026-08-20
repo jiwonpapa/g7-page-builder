@@ -25,15 +25,18 @@ final class AdminDocumentController
         $validator = Validator::make($request->query->all(), [
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'status' => ['sometimes', 'in:active,archived,all'],
         ]);
 
         if ($validator->fails()) {
             return $this->invalid($request, $validator->errors()->toArray());
         }
 
+        $status = $request->query('status', 'active');
         $result = $this->service->paginate(
             max(1, (int) $request->query('page', '1')),
             min(100, max(1, (int) $request->query('per_page', '20'))),
+            is_string($status) ? $status : 'active',
         );
 
         return $this->success('페이지 목록을 조회했습니다.', [
@@ -391,8 +394,82 @@ final class AdminDocumentController
         }
     }
 
+    public function archive(Request $request, string $document): JsonResponse
+    {
+        $lockVersion = $this->validatedLockVersion($request);
+
+        if ($lockVersion instanceof JsonResponse) {
+            return $lockVersion;
+        }
+
+        try {
+            return $this->success(
+                '페이지 문서를 보관함으로 이동했습니다.',
+                $this->snapshotData($this->service->archive($document, $lockVersion, $this->actorId($request))),
+            );
+        } catch (DocumentNotFoundException $exception) {
+            return $this->domainError($request, 404, 'G7PB_DOCUMENT_NOT_FOUND', $exception->getMessage());
+        } catch (LockConflictException $exception) {
+            return $this->lockConflict($request, $exception);
+        } catch (\Throwable $exception) {
+            return $this->unexpected($request, $exception);
+        }
+    }
+
+    public function restoreArchived(Request $request, string $document): JsonResponse
+    {
+        $lockVersion = $this->validatedLockVersion($request);
+
+        if ($lockVersion instanceof JsonResponse) {
+            return $lockVersion;
+        }
+
+        try {
+            return $this->success(
+                '페이지 문서를 보관함에서 복원했습니다.',
+                $this->snapshotData($this->service->restoreArchived($document, $lockVersion, $this->actorId($request))),
+            );
+        } catch (DocumentNotFoundException $exception) {
+            return $this->domainError($request, 404, 'G7PB_DOCUMENT_NOT_FOUND', $exception->getMessage());
+        } catch (LockConflictException $exception) {
+            return $this->lockConflict($request, $exception);
+        } catch (\Throwable $exception) {
+            return $this->unexpected($request, $exception);
+        }
+    }
+
+    public function purge(Request $request, string $document): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'expected_lock_version' => ['required', 'integer', 'min:1'],
+            'confirmation_slug' => ['required', 'string', 'max:120'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->invalid($request, $validator->errors()->toArray());
+        }
+
+        try {
+            $this->service->purge(
+                $document,
+                (int) $request->input('expected_lock_version'),
+                (string) $request->input('confirmation_slug'),
+            );
+
+            return $this->success('페이지 문서를 영구 삭제했습니다.', ['document_id' => $document]);
+        } catch (DocumentNotFoundException $exception) {
+            return $this->domainError($request, 404, 'G7PB_DOCUMENT_NOT_FOUND', $exception->getMessage());
+        } catch (LockConflictException $exception) {
+            return $this->lockConflict($request, $exception);
+        } catch (\DomainException $exception) {
+            return $this->domainError($request, 409, 'G7PB_DOCUMENT_LIFECYCLE_INVALID', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            return $this->unexpected($request, $exception);
+        }
+    }
+
     /**
-     * @return array{title: string, document: array<string, mixed>, lock_version: int, revision: int, public_url: string|null, active_artifact_sha256: string|null, is_home: bool}
+     * @return array<string, mixed>
      */
     private function snapshotData(DocumentSnapshot $snapshot): array
     {
@@ -406,6 +483,16 @@ final class AdminDocumentController
                 : url('/pages/'.$snapshot->activePublicSlug),
             'active_artifact_sha256' => $snapshot->activeArtifactSha256,
             'is_home' => $snapshot->isHome,
+            'status' => $snapshot->archivedAt !== null
+                ? 'archived'
+                : ($snapshot->activeArtifactSha256 === null
+                    ? 'draft'
+                    : ($snapshot->hasUnpublishedChanges ? 'published_with_changes' : 'published')),
+            'has_unpublished_changes' => $snapshot->hasUnpublishedChanges,
+            'created_at' => $snapshot->createdAt?->format(DATE_ATOM),
+            'updated_at' => $snapshot->updatedAt?->format(DATE_ATOM),
+            'published_at' => $snapshot->publishedAt?->format(DATE_ATOM),
+            'archived_at' => $snapshot->archivedAt?->format(DATE_ATOM),
         ];
     }
 
@@ -481,12 +568,21 @@ final class AdminDocumentController
         string $message,
         array $details = [],
     ): JsonResponse {
+        $correlationId = $this->correlationId($request);
+        Log::warning('G7 Page Builder request was rejected.', [
+            'correlation_id' => $correlationId,
+            'code' => $code,
+            'status' => $status,
+            'path' => $request->path(),
+            'message' => $message,
+        ]);
+
         return response()->json([
             'success' => false,
             'message' => $message,
             'data' => [
                 'code' => $code,
-                'correlation_id' => $this->correlationId($request),
+                'correlation_id' => $correlationId,
                 ...$details,
             ],
         ], $status, [], JSON_UNESCAPED_UNICODE);

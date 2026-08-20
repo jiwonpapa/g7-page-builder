@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 
@@ -59,6 +60,28 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
         ->whereUuid('document')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
         ->name('documents.home');
+    Route::post('documents/{document}/archive', [AdminDocumentController::class, 'archive'])
+        ->whereUuid('document')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('documents.archive');
+    Route::post('documents/{document}/restore-archived', [AdminDocumentController::class, 'restoreArchived'])
+        ->whereUuid('document')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('documents.restore-archived');
+    Route::delete('documents/{document}', [AdminDocumentController::class, 'purge'])
+        ->whereUuid('document')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('documents.purge');
+    Route::get('media', [AdminMediaController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('media.index');
+    Route::post('media', [AdminMediaController::class, 'store'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.update')
+        ->name('media.store');
+    Route::delete('media/{media}', [AdminMediaController::class, 'destroy'])
+        ->whereUuid('media')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('media.destroy');
     Route::post('publications/{token}/commit', [AdminDocumentController::class, 'commitPublication'])
         ->where('token', '[a-f0-9]{64}')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')

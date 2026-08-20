@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 12종 테스트 block 카탈로그, 5종 typed motion preset과 별도 문서함·메타수정·최근 20개 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제 완료. Gallery는 URL 기반 시험형이며 자체 MediaPort와 복구 가능한 문서 보관·삭제는 미구현입니다.
+현재 구현: 12종 테스트 block 카탈로그, 5종 typed motion preset, 추천 효과 일괄 적용, 자체 MediaPort 이미지 업로드·선택, 별도 문서함·상태·생성/수정/발행일·보관/복원/확인형 삭제, 메타수정·최근 20개 리비전 조회·미리보기·새 초안 복원·재발행 rollback·공개 해제 완료.
 
 ## 목표
 
@@ -50,17 +50,17 @@
 
 | Block | 필수 props | 규칙 | 제외 |
 |---|---|---|---|
-| Hero | eyebrow, title, body richtext, primary CTA, image, alignment | H1 1개, CTA URL allowlist, image alt 필수 | video background |
+| Hero | eyebrow, title, body richtext, primary CTA, image, alignment | block별 H1, CTA URL allowlist, alt 입력 권장·빈 alt는 장식 이미지 | video background |
 | Features | title, 2~6 items(icon/title/body) | icon allowlist, 동일 높이 responsive grid | 자유 중첩 layout |
 | Contact | heading, address, phone, email, CTA/map link | 연락처 표시와 link만 제공 | 제출 form·메일·spam 처리 |
 | CTA | eyebrow, heading, body, primary/secondary link, theme | URL allowlist, heading level 검사 | form·임의 HTML·animation timeline |
-| Hero Split | eyebrow, title, body, CTA, image, media position | hero family 1개, URL·image allowlist | 자유 grid |
-| Hero Slider | 2~5 slides(title/body/CTA/image) | focus 가능한 CSS scroll-snap, hero family 1개 | autoplay·외부 slider runtime |
+| Hero Split | eyebrow, title, body, CTA, image, media position | Hero family 중복 시 저장 허용+명확한 경고, URL·image allowlist | 자유 grid |
+| Hero Slider | 2~5 slides(title/body/CTA/image), autoplay, interval, loop | Embla MIT, 키보드 제어·정지·도트·감소된 모션, Hero 중복 경고 | fade·video slide |
 | Logo Cloud | heading, 2~12 logos(name/image/link) | URL·image allowlist | 자동 수집 |
 | Stats | heading, 2~8 items(icon/value/label/detail) | icon allowlist | 실시간 analytics query |
 | Pricing | heading, 2~4 plans(features/CTA/featured) | URL allowlist, featured boolean | 결제·구독 처리 |
 | Team | heading, 2~12 members(role/bio/image/link) | profile URL·image allowlist | 조직도·계정 연동 |
-| Gallery | heading, 2~12 images, columns | URL·alt 검증, mobile 1열 | 업로드는 MediaPort 전까지 제외 |
+| Gallery | heading, 2~12 images, columns | MediaPort 직접 업로드·기존 미디어 선택·URL·alt 검증 | crop·초점 편집 |
 | Bar Chart | heading, 2~8 values/unit/tone | 0~100, semantic progress, tone allowlist | 자유 chart script·실시간 query |
 
 Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Block Pack으로 만들며, 미설치 상태에서는 관련 코드·block·메뉴를 로드하지 않습니다.

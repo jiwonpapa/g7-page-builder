@@ -9,7 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.3.0';
+    public const COMPILER_VERSION = '0.4.0';
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
 
@@ -166,11 +166,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException("Block {$index} has an unsupported type.");
         }
 
-        if ($heroCount > 1) {
-            throw new DocumentCompileException('A page may contain only one Hero-family block.');
-        }
-
         $artifact = implode("\n", $sections);
+        $warnings = $heroCount > 1
+            ? ["Hero 계열 블록이 {$heroCount}개 있습니다. 첫 화면 집중도가 낮아질 수 있습니다."]
+            : [];
 
         return new CompileResult(
             compilerVersion: self::COMPILER_VERSION,
@@ -180,6 +179,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             targetEngineVersion: self::TARGET_ENGINE_VERSION,
             artifact: $artifact,
             artifactSha256: hash('sha256', $artifact),
+            warnings: $warnings,
         );
     }
 
@@ -226,7 +226,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         if ($image !== null) {
             $src = $this->requiredString($image, 'src', 2048);
-            $alt = $this->requiredString($image, 'alt', 300);
+            $alt = $this->optionalString($image, 'alt', 300) ?? '';
             $this->assertAllowedImageUrl($src);
             $parts[] = '<img class="g7pb-hero__image" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="eager">';
         }
@@ -411,12 +411,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileHeroSlider(array $props): string
     {
-        $this->assertOnlyKeys($props, ['slides', 'appearance'], 'Slider Hero');
+        $this->assertOnlyKeys($props, ['slides', 'autoplay', 'interval', 'loop', 'appearance'], 'Slider Hero');
         $slides = $props['slides'] ?? null;
         $appearance = $this->appearanceClasses($props, 'contrast', 'spacious');
+        $autoplay = $props['autoplay'] ?? true;
+        $interval = $props['interval'] ?? 5000;
+        $loop = $props['loop'] ?? true;
 
         if (! is_array($slides) || count($slides) < 2 || count($slides) > 5) {
             throw new DocumentCompileException('Slider Hero must contain between two and five slides.');
+        }
+        if (! is_bool($autoplay) || ! is_bool($loop) || ! in_array($interval, [3000, 5000, 7000], true)) {
+            throw new DocumentCompileException('Slider Hero playback settings are invalid.');
         }
 
         $compiled = [];
@@ -453,10 +459,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 '슬라이드 '.($index + 1).' 이미지 자리',
                 $index === 0 ? 'eager' : 'lazy',
             );
-            $compiled[] = '<article class="g7pb-hero-slider__slide"><div class="g7pb-hero-slider__copy">'.$copy.'</div><figure>'.$media.'</figure></article>';
+            $compiled[] = '<article class="g7pb-hero-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($slides).'"><div class="g7pb-hero-slider__copy">'.$copy.'</div><figure>'.$media.'</figure></article>';
         }
 
-        return '<section class="g7pb-block g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-slider" aria-label="대표 콘텐츠 슬라이더"><div class="g7pb-hero-slider__track" tabindex="0">'.implode('', $compiled).'</div><p class="g7pb-hero-slider__hint">가로로 넘겨 더 보기</p></section>';
+        return '<section class="g7pb-block g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="'.($loop ? 'true' : 'false').'" aria-label="대표 콘텐츠 슬라이더"><div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $compiled).'</div></div><div class="g7pb-hero-slider__controls"><button type="button" data-g7pb-slider-prev aria-label="이전 슬라이드">←</button><div class="g7pb-hero-slider__dots" data-g7pb-slider-dots aria-label="슬라이드 선택"></div><button type="button" data-g7pb-slider-next aria-label="다음 슬라이드">→</button>'.($autoplay ? '<button type="button" data-g7pb-slider-toggle aria-label="자동 재생 일시 정지">일시 정지</button>' : '').'</div><p class="g7pb-hero-slider__status" data-g7pb-slider-status aria-live="polite"></p></section>';
     }
 
     /**

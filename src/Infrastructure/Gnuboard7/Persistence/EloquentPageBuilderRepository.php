@@ -49,9 +49,16 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         });
     }
 
-    public function paginate(int $page, int $perPage): array
+    public function paginate(int $page, int $perPage, string $status = 'active'): array
     {
         $query = DocumentRecord::query()->orderByDesc('updated_at')->orderBy('id');
+        if ($status === 'active') {
+            $query->whereNull('archived_at');
+        } elseif ($status === 'archived') {
+            $query->whereNotNull('archived_at');
+        } elseif ($status !== 'all') {
+            throw new \InvalidArgumentException('Document status filter is invalid.');
+        }
         $total = (clone $query)->count();
         /** @var Collection<int, DocumentRecord> $records */
         $records = $query->forPage($page, $perPage)->get();
@@ -385,6 +392,90 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         });
     }
 
+    public function archive(
+        string $documentId,
+        int $expectedLockVersion,
+        ?int $actorId,
+    ): DocumentSnapshot {
+        return DB::transaction(function () use ($documentId, $expectedLockVersion, $actorId): DocumentSnapshot {
+            $record = $this->lockDocument($documentId);
+            $this->assertLockVersion($record, $expectedLockVersion);
+
+            if ($record->archived_at !== null) {
+                return $this->snapshot($record);
+            }
+
+            if (is_string($record->active_publication_id) && $record->active_publication_id !== '') {
+                PublicationRecord::query()
+                    ->whereKey($record->active_publication_id)
+                    ->where('status', 'active')
+                    ->update(['status' => 'superseded']);
+            }
+
+            $record->fill([
+                'active_publication_id' => null,
+                'is_home' => false,
+                'archived_at' => new \DateTimeImmutable,
+                'lock_version' => $record->lock_version + 1,
+                'updated_by' => $actorId,
+            ])->save();
+
+            /** @var DocumentRecord|null $fresh */
+            $fresh = $record->fresh();
+
+            return $this->snapshot($fresh ?? throw new \RuntimeException('Archived page document is missing.'));
+        });
+    }
+
+    public function restoreArchived(
+        string $documentId,
+        int $expectedLockVersion,
+        ?int $actorId,
+    ): DocumentSnapshot {
+        return DB::transaction(function () use ($documentId, $expectedLockVersion, $actorId): DocumentSnapshot {
+            $record = $this->lockDocument($documentId);
+            $this->assertLockVersion($record, $expectedLockVersion);
+
+            if ($record->archived_at === null) {
+                return $this->snapshot($record);
+            }
+
+            $record->fill([
+                'archived_at' => null,
+                'lock_version' => $record->lock_version + 1,
+                'updated_by' => $actorId,
+            ])->save();
+
+            /** @var DocumentRecord|null $fresh */
+            $fresh = $record->fresh();
+
+            return $this->snapshot($fresh ?? throw new \RuntimeException('Restored page document is missing.'));
+        });
+    }
+
+    public function purge(
+        string $documentId,
+        int $expectedLockVersion,
+        string $confirmationSlug,
+    ): void {
+        DB::transaction(function () use ($documentId, $expectedLockVersion, $confirmationSlug): void {
+            $record = $this->lockDocument($documentId);
+            $this->assertLockVersion($record, $expectedLockVersion);
+
+            if ($record->archived_at === null) {
+                throw new \DomainException('Only an archived page document can be permanently deleted.');
+            }
+            if (! hash_equals($record->slug, trim($confirmationSlug))) {
+                throw new \DomainException('The confirmation slug does not match the page document.');
+            }
+            if (is_string($record->active_publication_id) && $record->active_publication_id !== '') {
+                throw new \DomainException('A published page document cannot be permanently deleted.');
+            }
+
+            $record->delete();
+        });
+    }
+
     public function findPublishedBySlug(string $slug): ?RenderedPage
     {
         /** @var PublicationRecord|null $publication */
@@ -492,6 +583,8 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
     {
         $artifactHash = null;
         $activePublicSlug = null;
+        $publishedAt = null;
+        $publishedRevision = null;
 
         if (is_string($record->active_publication_id) && $record->active_publication_id !== '') {
             /** @var PublicationRecord|null $publication */
@@ -503,6 +596,8 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             if ($publication instanceof PublicationRecord) {
                 $artifactHash = $publication->artifact_sha256;
                 $activePublicSlug = $publication->slug;
+                $publishedAt = $publication->published_at;
+                $publishedRevision = $publication->source_revision;
             }
         }
 
@@ -514,6 +609,15 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             activeArtifactSha256: is_string($artifactHash) ? $artifactHash : null,
             activePublicSlug: is_string($activePublicSlug) ? $activePublicSlug : null,
             isHome: (bool) $record->is_home,
+            createdAt: \DateTimeImmutable::createFromInterface($record->created_at),
+            updatedAt: \DateTimeImmutable::createFromInterface($record->updated_at),
+            publishedAt: $publishedAt instanceof \DateTimeInterface
+                ? \DateTimeImmutable::createFromInterface($publishedAt)
+                : null,
+            archivedAt: $record->archived_at instanceof \DateTimeInterface
+                ? \DateTimeImmutable::createFromInterface($record->archived_at)
+                : null,
+            hasUnpublishedChanges: is_int($publishedRevision) && $publishedRevision !== $record->current_revision,
         );
     }
 

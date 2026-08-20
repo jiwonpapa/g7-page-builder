@@ -42,7 +42,8 @@
 - 시각 체계는 밝은 편집면, warm gray/slate, 단일 cobalt accent로 통일합니다.
 - 공개 block은 의미 구조·타이포그래피·간격을 우선하고 과도한 card 중첩을 피합니다.
 - Slider는 브라우저 scroll-snap, 그래프는 semantic `progress`를 기본 구조로 사용합니다. 동적 효과를 선택한 페이지에서만 별도 경량 runtime을 조건부 로드합니다.
-- Gallery는 현재 URL 기반 시험 block입니다. 실제 업로드·선택·삭제는 자체 `MediaPort`가 완성된 뒤 교체합니다.
+- 이미지 필드는 자체 `MediaPort`의 직접 업로드·최근 미디어 선택을 기본으로 하고 외부 URL은 고급 입력으로 유지합니다. 발행/리비전에서 참조 중인 파일은 삭제를 거부합니다.
+- Hero Slider는 MIT 라이선스 `embla-carousel` 8.6.0과 Autoplay plugin을 사용하며, 서버 렌더 결과는 JS 실패 시 첫 슬라이드를 그대로 노출합니다.
 
 ## 편집 경계
 

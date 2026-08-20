@@ -250,7 +250,7 @@ describe('Puck editor surface contract', () => {
     expect(tabletViewport.getAttribute('aria-pressed')).toBe('false');
 
     const addButton = await eventually<HTMLButtonElement>('[data-testid="page-builder-add-block"]');
-    expect(addButton.textContent).toContain('전체 미리보기');
+    expect(addButton.textContent).toContain('블록 추가');
     await act(async () => {
       addButton.click();
     });

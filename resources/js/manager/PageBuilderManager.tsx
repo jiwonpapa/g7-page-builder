@@ -1,5 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import {
+  Archive,
+  Copy,
+  ExternalLink,
+  History,
+  Home,
+  MoreHorizontal,
+  Pencil,
+  Settings,
+} from 'lucide-react';
 
 import {
   ADMIN_AUTH_TOKEN_KEY,
@@ -56,6 +66,12 @@ function formatDocumentDate(value: string | null): string {
   return value ? formatRevisionDate(value) : '기록 없음';
 }
 
+function duplicateSlug(slug: string): string {
+  const base = slug.slice(0, 115).replace(/-+$/, '');
+
+  return `${base || 'page'}-copy`;
+}
+
 const DOCUMENT_STATUS_LABELS: Record<DocumentResource['status'], string> = {
   draft: '초안',
   published: '발행됨',
@@ -79,6 +95,11 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [metadataSlug, setMetadataSlug] = useState('');
   const [metadataShellMode, setMetadataShellMode] = useState<'global' | 'none'>('global');
   const [savingMetadata, setSavingMetadata] = useState(false);
+  const [duplicateDocument, setDuplicateDocument] = useState<DocumentResource | null>(null);
+  const [duplicateTitle, setDuplicateTitle] = useState('');
+  const [duplicateSlugValue, setDuplicateSlugValue] = useState('');
+  const [duplicating, setDuplicating] = useState(false);
+  const [actionMenuDocumentId, setActionMenuDocumentId] = useState<string | null>(null);
   const [revisionDocument, setRevisionDocument] = useState<DocumentResource | null>(null);
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
   const [currentRevision, setCurrentRevision] = useState(0);
@@ -147,6 +168,31 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     };
   }, [api, documentFilter]);
 
+  useEffect(() => {
+    if (actionMenuDocumentId === null) {
+      return undefined;
+    }
+
+    const closeOnPointerDown = (event: PointerEvent): void => {
+      if (!(event.target instanceof Element) || !event.target.closest('.g7pb-document-actions-menu')) {
+        setActionMenuDocumentId(null);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setActionMenuDocumentId(null);
+      }
+    };
+
+    document.addEventListener('pointerdown', closeOnPointerDown);
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', closeOnPointerDown);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [actionMenuDocumentId]);
+
   const visibleDocuments = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase('ko');
     if (!query) {
@@ -189,6 +235,46 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     setMetadataSlug(resource.document.slug);
     setMetadataShellMode(resource.document.shell_mode ?? 'global');
     setMessage(null);
+  };
+
+  const openDuplicateDialog = (resource: DocumentResource): void => {
+    setActionMenuDocumentId(null);
+    setDuplicateDocument(resource);
+    setDuplicateTitle(`${resource.title} 복사본`);
+    setDuplicateSlugValue(duplicateSlug(resource.document.slug));
+    setMessage(null);
+  };
+
+  const submitDuplicate = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    if (!duplicateDocument) {
+      return;
+    }
+
+    const title = duplicateTitle.trim();
+    const slug = duplicateSlugValue.trim();
+    if (!title) {
+      setMessage('복제본 제목을 입력해 주세요.');
+      return;
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      setMessage('슬러그는 영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.');
+      return;
+    }
+
+    setDuplicating(true);
+    setMessage(null);
+    try {
+      const copy = await api.duplicateDocument(duplicateDocument.document.document_id, {
+        title,
+        slug,
+        expected_lock_version: duplicateDocument.lock_version,
+      });
+      window.location.assign(editorUrl(copy.document.document_id));
+    } catch (error) {
+      setMessage(errorMessage(error));
+      setDuplicating(false);
+    }
   };
 
   const updateMetadata = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -653,7 +739,8 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
               <span>문서</span><span>상태</span><span>작업</span>
             </div>
             {visibleDocuments.map((resource) => (
-              <article className="g7pb-document-row" data-testid="page-builder-document-row"
+              <article className={`g7pb-document-row${actionMenuDocumentId === resource.document.document_id ? ' is-actions-open' : ''}`}
+                data-testid="page-builder-document-row"
                 data-document-id={resource.document.document_id} key={resource.document.document_id}>
                 <div className="g7pb-document-row__identity">
                   <h3>{resource.title}</h3>
@@ -678,29 +765,59 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                     </>
                   ) : (
                     <>
-                  {resource.public_url && (
-                    <a href={resource.public_url} target="_blank" rel="noopener noreferrer"
-                      data-testid="page-builder-manager-public-link">공개 ↗</a>
-                  )}
-                  {resource.public_url && (
-                    <button className="g7pb-button g7pb-button--quiet" type="button"
-                      data-testid="page-builder-manager-home"
-                      disabled={settingHomeId !== null}
-                      onClick={() => void toggleHome(resource)}>
-                      {resource.is_home ? '홈 해제' : '홈 지정'}
-                    </button>
-                  )}
-                  <button className="g7pb-button g7pb-button--quiet" type="button"
-                    data-testid="page-builder-manager-settings"
-                    onClick={() => openMetadataDialog(resource)}>설정</button>
-                  <button className="g7pb-button g7pb-button--quiet" type="button"
-                    data-testid="page-builder-manager-revisions"
-                    onClick={() => openRevisions(resource)}>기록</button>
-                  <a className="g7pb-button g7pb-button--quiet" href={editorUrl(resource.document.document_id)}
-                    data-testid="page-builder-manager-edit-link">편집</a>
-                      <button className="g7pb-button g7pb-button--quiet" type="button"
-                        data-testid="page-builder-manager-archive"
-                        onClick={() => setArchiveDocument(resource)}>보관</button>
+                      <a className="g7pb-button g7pb-button--primary" href={editorUrl(resource.document.document_id)}
+                        data-testid="page-builder-manager-edit-link">
+                        <Pencil size={15} aria-hidden="true" />
+                        <span>편집</span>
+                      </a>
+                      {resource.public_url && (
+                        <a className="g7pb-button g7pb-button--quiet" href={resource.public_url}
+                          target="_blank" rel="noopener noreferrer"
+                          data-testid="page-builder-manager-public-link">
+                          <ExternalLink size={15} aria-hidden="true" />
+                          <span>공개 보기</span>
+                        </a>
+                      )}
+                      <div className="g7pb-document-actions-menu">
+                        <button className="g7pb-button g7pb-button--quiet g7pb-icon-button" type="button"
+                          aria-label={`${resource.title} 더보기`}
+                          aria-expanded={actionMenuDocumentId === resource.document.document_id}
+                          aria-controls={`g7pb-document-actions-${resource.document.document_id}`}
+                          data-testid="page-builder-manager-more"
+                          onClick={() => setActionMenuDocumentId((current) =>
+                            current === resource.document.document_id ? null : resource.document.document_id)}>
+                          <MoreHorizontal size={18} aria-hidden="true" />
+                        </button>
+                        {actionMenuDocumentId === resource.document.document_id && (
+                          <div className="g7pb-document-actions-popover" role="menu"
+                            id={`g7pb-document-actions-${resource.document.document_id}`}>
+                            <button type="button" role="menuitem" data-testid="page-builder-manager-duplicate"
+                              onClick={() => openDuplicateDialog(resource)}>
+                              <Copy size={15} aria-hidden="true" /><span>복제해서 새로 작성</span>
+                            </button>
+                            {resource.public_url && (
+                              <button type="button" role="menuitem" data-testid="page-builder-manager-home"
+                                disabled={settingHomeId !== null}
+                                onClick={() => { setActionMenuDocumentId(null); void toggleHome(resource); }}>
+                                <Home size={15} aria-hidden="true" />
+                                <span>{resource.is_home ? '홈 해제' : '홈 지정'}</span>
+                              </button>
+                            )}
+                            <button type="button" role="menuitem" data-testid="page-builder-manager-settings"
+                              onClick={() => { setActionMenuDocumentId(null); openMetadataDialog(resource); }}>
+                              <Settings size={15} aria-hidden="true" /><span>설정</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="page-builder-manager-revisions"
+                              onClick={() => { setActionMenuDocumentId(null); openRevisions(resource); }}>
+                              <History size={15} aria-hidden="true" /><span>변경 기록</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="page-builder-manager-archive"
+                              onClick={() => { setActionMenuDocumentId(null); setArchiveDocument(resource); }}>
+                              <Archive size={15} aria-hidden="true" /><span>보관함으로 이동</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
@@ -741,6 +858,40 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                 <button type="submit" className="g7pb-button g7pb-button--primary"
                   data-testid="page-builder-manager-create-confirm" disabled={creating}>
                   {creating ? '만드는 중' : '편집 시작'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {duplicateDocument && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-manager-duplicate-dialog">
+          <section className="g7pb-dialog" role="dialog" aria-modal="true"
+            aria-labelledby="g7pb-manager-duplicate-heading">
+            <p className="g7pb-kicker">문서 복제</p>
+            <h2 id="g7pb-manager-duplicate-heading">{duplicateDocument.title}을 새 초안으로 복제</h2>
+            <p className="g7pb-dialog__body">현재 초안의 블록·스타일·공통영역 표시 방식을 복사합니다. 발행 상태, 공개 주소, 홈 지정, 기존 리비전은 복사하지 않습니다.</p>
+            <form onSubmit={(event) => void submitDuplicate(event)}>
+              <label>
+                복제본 제목
+                <input data-testid="page-builder-manager-duplicate-title" value={duplicateTitle}
+                  required autoFocus onChange={(event) => setDuplicateTitle(event.target.value)} />
+              </label>
+              <label>
+                새 주소 슬러그
+                <span>기존 공개 주소와 연결되지 않는 새 주소입니다.</span>
+                <input data-testid="page-builder-manager-duplicate-slug" value={duplicateSlugValue}
+                  required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                  onChange={(event) => setDuplicateSlugValue(event.target.value.toLowerCase())} />
+              </label>
+              <div className="g7pb-dialog__actions">
+                <button type="button" className="g7pb-button g7pb-button--quiet"
+                  disabled={duplicating} onClick={() => setDuplicateDocument(null)}>취소</button>
+                <button type="submit" className="g7pb-button g7pb-button--primary"
+                  data-testid="page-builder-manager-duplicate-confirm" disabled={duplicating}>
+                  <Copy size={15} aria-hidden="true" />
+                  <span>{duplicating ? '복제 중' : '복제하고 편집'}</span>
                 </button>
               </div>
             </form>

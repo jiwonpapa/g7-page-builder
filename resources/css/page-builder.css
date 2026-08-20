@@ -192,10 +192,12 @@ body.g7pb-manager-shell {
   min-height: 36px;
   align-items: center;
   justify-content: center;
+  gap: 7px;
   padding: 7px 13px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
   transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease;
 }
 
@@ -981,7 +983,7 @@ body.g7pb-manager-shell {
 .g7pb-document-list__head,
 .g7pb-document-row {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 120px 320px;
+  grid-template-columns: minmax(260px, 1fr) 120px minmax(250px, auto);
   align-items: center;
   gap: 24px;
 }
@@ -996,11 +998,17 @@ body.g7pb-manager-shell {
 }
 
 .g7pb-document-row {
+  position: relative;
+  z-index: 1;
   min-height: 88px;
   padding: 16px;
   border-top: 1px solid var(--g7pb-border);
   transition: background-color 150ms ease, transform 150ms ease;
   animation: g7pb-row-enter 240ms ease-out both;
+}
+
+.g7pb-document-row.is-actions-open {
+  z-index: 30;
 }
 
 .g7pb-document-row:last-child {
@@ -1095,7 +1103,7 @@ body.g7pb-manager-shell {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
 }
 
 .g7pb-document-row__actions > a:not(.g7pb-button) {
@@ -1108,6 +1116,59 @@ body.g7pb-manager-shell {
 .g7pb-document-row__actions .g7pb-button {
   min-height: 34px;
   padding-inline: 11px;
+}
+
+.g7pb-document-row__actions .g7pb-icon-button {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+}
+
+.g7pb-document-actions-menu {
+  position: relative;
+}
+
+.g7pb-document-actions-popover {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 7px);
+  right: 0;
+  display: grid;
+  width: 218px;
+  padding: 6px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgb(23 32 51 / 16%);
+}
+
+.g7pb-document-actions-popover button {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--g7pb-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.g7pb-document-actions-popover button:hover:not(:disabled),
+.g7pb-document-actions-popover button:focus-visible {
+  background: #f4f6fa;
+  outline: none;
+}
+
+.g7pb-document-actions-popover button:last-child {
+  color: var(--g7pb-danger);
 }
 
 .g7pb-editor {

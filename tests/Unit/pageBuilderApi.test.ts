@@ -73,6 +73,40 @@ describe('PageBuilderApiClient', () => {
     expect(init?.credentials).toBe('same-origin');
   });
 
+  it('duplicates a document into a new draft through a dedicated endpoint', async () => {
+    const copy = {
+      ...documentResource,
+      title: '테스트 페이지 복사본',
+      document: {
+        ...documentResource.document,
+        document_id: '123e4567-e89b-42d3-a456-426614174099',
+        slug: 'test-page-copy',
+      },
+      lock_version: 1,
+      revision: 1,
+    };
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({ success: true, message: 'ok', data: copy }, 201),
+    );
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.duplicateDocument(documentResource.document.document_id, {
+      title: '테스트 페이지 복사본',
+      slug: 'test-page-copy',
+      expected_lock_version: 7,
+    })).resolves.toEqual(copy);
+
+    expect(fetchImpl.mock.calls[0][0]).toBe(
+      `${PAGE_BUILDER_API_PREFIX}/documents/${documentResource.document.document_id}/duplicate`,
+    );
+    expect(fetchImpl.mock.calls[0][1]?.method).toBe('POST');
+    expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body))).toEqual({
+      title: '테스트 페이지 복사본',
+      slug: 'test-page-copy',
+      expected_lock_version: 7,
+    });
+  });
+
   it('uploads media as multipart without forcing a JSON content type', async () => {
     const asset = {
       id: '123e4567-e89b-42d3-a456-426614174001',

@@ -75,6 +75,7 @@ active --unpublish--> superseded + draft retained
 - 공개 해제는 active pointer만 비우고 문서·revision·publication 기록은 삭제하지 않습니다.
 - rollback은 과거 JSON을 새 revision으로 복사한 뒤 정상 publish 절차를 다시 수행합니다. 원본 과거 revision과 현재 active publication은 복원만으로 변경하지 않습니다.
 - 과거 미리보기와 복원은 revision에 저장된 당시 title·slug·locale을 함께 사용합니다.
+- 문서 복제는 원본의 현재 draft를 새 문서 revision 1로 기록하며 publication·home·preview token·revision 이력은 복사하지 않습니다.
 - `shell_mode`는 문서 revision과 publication에 snapshot하며 `global` 또는 `none`만 허용합니다. 공통영역 설정 자체는 언어별 CAS 저장소에서 관리합니다.
 
 ## Preview

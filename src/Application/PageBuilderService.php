@@ -62,6 +62,39 @@ final class PageBuilderService
             ?? throw new DocumentNotFoundException('Page document was not found.');
     }
 
+    public function duplicate(
+        string $documentId,
+        string $title,
+        string $slug,
+        int $expectedLockVersion,
+        ?int $actorId,
+    ): DocumentSnapshot {
+        $title = trim($title);
+
+        if ($title === '') {
+            throw new \InvalidArgumentException('Page title must not be empty.');
+        }
+
+        $source = $this->get($documentId);
+
+        if ($source->lockVersion !== $expectedLockVersion) {
+            throw new LockConflictException($source->lockVersion);
+        }
+
+        $copy = new PageBuilderDocument(
+            documentId: $this->uuidV4(),
+            slug: $slug,
+            mode: 'canvas',
+            locale: $source->document->locale,
+            tokens: $source->document->tokens,
+            blocks: $source->document->blocks,
+            schemaVersion: $source->document->schemaVersion,
+            shellMode: $source->document->shellMode,
+        );
+
+        return $this->repository->create($title, $copy, $actorId);
+    }
+
     /** @return list<DocumentRevision> */
     public function revisions(string $documentId, int $limit = 20): array
     {

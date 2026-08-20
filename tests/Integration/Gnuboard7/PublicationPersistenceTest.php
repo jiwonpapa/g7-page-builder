@@ -223,6 +223,58 @@ final class PublicationPersistenceTest extends TestCase
         );
     }
 
+    public function test_duplicate_is_a_fresh_draft_without_publication_home_or_revision_history(): void
+    {
+        $service = new PageBuilderService(
+            new EloquentPageBuilderRepository,
+            $this->builtInCompiler(),
+        );
+        $created = $service->create('원본 문서', 'duplicate-source', 'ko', null, 'none');
+        $draft = $service->saveDraft(
+            $created->document->documentId,
+            $this->documentPayload($created->document->documentId, 'duplicate-source', 'ko'),
+            $created->lockVersion,
+            null,
+        );
+        $candidate = $service->preparePublication(
+            $draft->document->documentId,
+            $draft->lockVersion,
+            null,
+        );
+        $service->commitPublication($candidate->token);
+        $source = $service->setHome(
+            $draft->document->documentId,
+            true,
+            $service->get($draft->document->documentId)->lockVersion,
+            null,
+        );
+
+        $copy = $service->duplicate(
+            $source->document->documentId,
+            '원본 문서 복사본',
+            'duplicate-source-copy',
+            $source->lockVersion,
+            null,
+        );
+
+        self::assertNotSame($source->document->documentId, $copy->document->documentId);
+        self::assertSame('원본 문서 복사본', $copy->title);
+        self::assertSame('duplicate-source-copy', $copy->document->slug);
+        self::assertSame($source->document->locale, $copy->document->locale);
+        self::assertSame($source->document->tokens, $copy->document->tokens);
+        self::assertSame($source->document->blocks, $copy->document->blocks);
+        self::assertSame($source->document->shellMode, $copy->document->shellMode);
+        self::assertSame(1, $copy->lockVersion);
+        self::assertSame(1, $copy->revision);
+        self::assertCount(1, $service->revisions($copy->document->documentId));
+        self::assertNull($copy->activeArtifactSha256);
+        self::assertNull($copy->activePublicSlug);
+        self::assertNull($copy->publishedAt);
+        self::assertFalse($copy->isHome);
+        self::assertNotNull($service->findPublished('duplicate-source'));
+        self::assertNull($service->findPublished('duplicate-source-copy'));
+    }
+
     public function test_published_page_uses_clean_url_and_legacy_url_redirects_permanently(): void
     {
         $service = new PageBuilderService(

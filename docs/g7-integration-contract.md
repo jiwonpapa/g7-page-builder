@@ -69,6 +69,7 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 | PUT | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | expected lock으로 공통영역 설정 저장 |
 | POST | `/api/modules/jiwonpapa-page_builder/admin/documents` | slug/title/locale 문서 생성, mode는 canvas 고정 |
 | GET | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}` | draft와 lock version 조회 |
+| POST | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}/duplicate` | expected lock의 현재 draft를 새 UUID·slug·revision 1 초안으로 복제 |
 | PATCH | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}` | expected lock으로 title/slug/locale 변경 |
 | PUT | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}/draft` | expected lock으로 draft 저장 |
 | POST | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}/preview` | 만료형 preview token 생성 |
@@ -85,6 +86,8 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 관리자 Web 진입점은 G7 네이티브 문서함 `/admin/page-builder`, 편집기 `/modules/jiwonpapa-page_builder/admin/editor?document={uuid}`로 분리합니다. `/modules/jiwonpapa-page_builder/admin`은 메타데이터·리비전 복구를 위한 모듈 내부 고급 관리 화면이며 G7 기본 페이지 관리와 연결하지 않습니다.
 
 문서는 먼저 archive해야 하며 archive 시 공개본과 홈 지정을 같은 transaction에서 해제합니다. 영구 삭제는 archived 상태, 최신 lock version, 사용자가 직접 입력한 정확한 slug 확인을 모두 통과해야 합니다. 기존 G7 페이지 데이터에는 적용하지 않습니다.
+
+문서 복제는 현재 draft의 blocks·tokens·locale·`shell_mode`만 복사합니다. 새 문서는 다른 UUID와 slug, lock version 1, revision 1의 미발행 초안으로 시작하며 원본의 publication, public URL, home 지정, preview token, 기존 revision 이력을 승계하지 않습니다.
 
 Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle middleware를 명시합니다. autosave·preview를 포함한 한 편집 세션은 허용하되 비정상 반복 요청은 제한합니다. Bearer API 요청에는 CSRF를 요구하지 않습니다. Web form을 추가하는 경우에만 Web middleware의 CSRF를 적용합니다. Public endpoint는 draft, token, 내부 오류를 반환하지 않습니다.
 

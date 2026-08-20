@@ -43,6 +43,7 @@
 ### 저장과 복구
 
 - reload 후 block 순서와 props가 동일해야 합니다.
+- 현재 draft를 복제하면 새 UUID·slug·revision 1의 독립 초안이 생성되고 발행·홈·기존 revision은 승계되지 않아야 합니다.
 - 네트워크 실패는 draft를 지우지 않고 재시도 가능 상태로 둡니다.
 - compile 실패는 공개 페이지를 바꾸지 않습니다.
 - 마지막 20개 revision을 조회·미리보기·복원합니다.

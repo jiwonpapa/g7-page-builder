@@ -615,6 +615,31 @@ async function publish(page: Page): Promise<void> {
   );
 }
 
+async function openDocumentActions(row: Locator): Promise<void> {
+  const more = row.getByTestId('page-builder-manager-more');
+  await more.click();
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+}
+
+async function expectSingleLineAction(action: Locator): Promise<void> {
+  const metrics = await action.evaluate((element) => {
+    const label = element.querySelector('span') ?? element;
+    const range = document.createRange();
+    range.selectNodeContents(label);
+    const lineTops = new Set(Array.from(range.getClientRects(), (rect) => Math.round(rect.top)));
+
+    return {
+      height: element.getBoundingClientRect().height,
+      lines: lineTops.size,
+      whiteSpace: getComputedStyle(element).whiteSpace,
+    };
+  });
+
+  expect(metrics.whiteSpace).toBe('nowrap');
+  expect(metrics.lines).toBeLessThanOrEqual(1);
+  expect(metrics.height).toBeLessThanOrEqual(42);
+}
+
 test('manages, publishes, restores, republishes, and unpublishes a page-builder document', async ({
   browser,
   context,
@@ -630,6 +655,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
   const pageTitle = `Page Builder E2E ${runId}`;
   const managedTitle = `Managed Page Builder E2E ${runId}`;
   const managedSlug = `managed-${slug}`;
+  const duplicateTitle = `${pageTitle} Copy`;
+  const duplicateSlug = `${slug}-copy`;
   const heroTitle = `Original Hero ${runId}`;
   const revisedHeroTitle = `Republished Hero ${runId}`;
   const heroSubtitle = `Original subtitle ${runId}`;
@@ -963,6 +990,40 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     if (!stablePublicHref) {
       throw new Error('Published document row did not retain its public URL.');
     }
+    await expectSingleLineAction(documentRow.getByTestId('page-builder-manager-edit-link'));
+    await expectSingleLineAction(documentRow.getByTestId('page-builder-manager-public-link'));
+
+    await openDocumentActions(documentRow);
+    await documentRow.getByTestId('page-builder-manager-duplicate').click();
+    const duplicateDialog = page.getByTestId('page-builder-manager-duplicate-dialog');
+    await expect(duplicateDialog).toBeVisible();
+    await page.getByTestId('page-builder-manager-duplicate-title').fill(duplicateTitle);
+    await page.getByTestId('page-builder-manager-duplicate-slug').fill(duplicateSlug);
+    const duplicateResponsePromise = page.waitForResponse((response) => response.request().method() === 'POST'
+      && new URL(response.url()).pathname.endsWith(`/admin/documents/${documentId}/duplicate`));
+    await page.getByTestId('page-builder-manager-duplicate-confirm').click();
+    const duplicateResponse = await duplicateResponsePromise;
+    expect(duplicateResponse.status()).toBe(201);
+    await expect.poll(() => new URL(page.url()).searchParams.get('document') ?? '').toMatch(
+      DOCUMENT_ID_PATTERN,
+    );
+    const duplicateDocumentId = new URL(page.url()).searchParams.get('document');
+    if (!duplicateDocumentId) {
+      throw new Error('Duplicated Page Builder document did not provide an identifier.');
+    }
+    await expect(page).toHaveURL(new RegExp(`${EDITOR_PATH}\\?document=${duplicateDocumentId}$`));
+    await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    await selectEditorBlock(page, 'hero');
+    await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(revisedHeroTitle);
+    await page.goto(MANAGER_PATH);
+    const duplicateRow = page.locator(
+      `[data-testid="page-builder-document-row"][data-document-id="${duplicateDocumentId}"]`,
+    );
+    await expect(duplicateRow).toContainText(duplicateTitle);
+    await expect(duplicateRow).toContainText('초안');
+    await expect(duplicateRow.getByTestId('page-builder-manager-public-link')).toHaveCount(0);
+
+    await openDocumentActions(documentRow);
     await documentRow.getByTestId('page-builder-manager-settings').click();
     await expect(page.getByTestId('page-builder-manager-metadata-dialog')).toBeVisible();
     await page.getByTestId('page-builder-manager-metadata-title').fill(managedTitle);
@@ -976,6 +1037,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       stablePublicHref,
     );
 
+    await openDocumentActions(documentRow);
     await documentRow.getByTestId('page-builder-manager-revisions').click();
     await expect(page.getByTestId('page-builder-manager-revisions-dialog')).toBeVisible();
     const originalRevisionRow = page.locator(
@@ -1018,6 +1080,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const restoredDocumentRow = page.locator(
       `[data-testid="page-builder-document-row"][data-document-id="${documentId}"]`,
     );
+    await openDocumentActions(restoredDocumentRow);
     await restoredDocumentRow.getByTestId('page-builder-manager-settings').click();
     await page.getByTestId('page-builder-manager-metadata-shell-mode').uncheck();
     const shellModeSave = page.waitForResponse((response) => response.request().method() === 'PATCH'
@@ -1040,6 +1103,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const shellFreeDocumentRow = page.locator(
       `[data-testid="page-builder-document-row"][data-document-id="${documentId}"]`,
     );
+    await openDocumentActions(shellFreeDocumentRow);
     await shellFreeDocumentRow.getByTestId('page-builder-manager-settings').click();
     await page.getByTestId('page-builder-manager-unpublish').click();
     await expect(page.getByTestId('page-builder-unpublish-dialog')).toBeVisible();
@@ -1054,6 +1118,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const unpublishedResponse = await publicPage.reload();
     expect(unpublishedResponse?.status()).toBe(404);
 
+    await openDocumentActions(restoredDocumentRow);
     await restoredDocumentRow.getByTestId('page-builder-manager-archive').click();
     await expect(page.getByTestId('page-builder-archive-dialog')).toBeVisible();
     await page.getByTestId('page-builder-archive-confirm').click();
@@ -1071,6 +1136,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     );
     await expect(activeRow).toContainText('초안');
 
+    await openDocumentActions(activeRow);
     await activeRow.getByTestId('page-builder-manager-archive').click();
     await page.getByTestId('page-builder-archive-confirm').click();
     await expect(page.getByTestId('page-builder-archive-dialog')).toHaveCount(0);
@@ -1084,6 +1150,24 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await page.getByTestId('page-builder-purge-confirmation').fill(slug);
     await page.getByTestId('page-builder-purge-confirm').click();
     await expect(purgeRow).toHaveCount(0);
+
+    await page.getByTestId('page-builder-manager-filter-active').click();
+    const duplicateCleanupRow = page.locator(
+      `[data-testid="page-builder-document-row"][data-document-id="${duplicateDocumentId}"]`,
+    );
+    await expect(duplicateCleanupRow).toContainText('초안');
+    await openDocumentActions(duplicateCleanupRow);
+    await duplicateCleanupRow.getByTestId('page-builder-manager-archive').click();
+    await page.getByTestId('page-builder-archive-confirm').click();
+    await expect(duplicateCleanupRow).toHaveCount(0);
+    await page.getByTestId('page-builder-manager-filter-archived').click();
+    const duplicatePurgeRow = page.locator(
+      `[data-testid="page-builder-document-row"][data-document-id="${duplicateDocumentId}"]`,
+    );
+    await duplicatePurgeRow.getByTestId('page-builder-manager-purge').click();
+    await page.getByTestId('page-builder-purge-confirmation').fill(duplicateSlug);
+    await page.getByTestId('page-builder-purge-confirm').click();
+    await expect(duplicatePurgeRow).toHaveCount(0);
 
     if (uploadedMediaId) {
       const deleted = await page.evaluate(async (mediaId) => {
@@ -1111,7 +1195,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       if (!page.isClosed()) {
         await page.close();
       }
-      await cleanupE2eArtifacts(authToken, [slug, managedSlug], uploadedMediaId);
+      await cleanupE2eArtifacts(authToken, [slug, managedSlug, duplicateSlug], uploadedMediaId);
     }
     if (lifecycleError) throw lifecycleError;
     if (siteShellRestoreError) throw siteShellRestoreError;

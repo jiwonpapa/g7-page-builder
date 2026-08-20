@@ -173,6 +173,23 @@ export class PageBuilderApiClient {
     return this.request<DocumentResource>(`/documents/${encodeURIComponent(documentId)}`);
   }
 
+  async duplicateDocument(
+    documentId: string,
+    input: {
+      title: string;
+      slug: string;
+      expected_lock_version: number;
+    },
+  ): Promise<DocumentResource> {
+    return this.request<DocumentResource>(
+      `/documents/${encodeURIComponent(documentId)}/duplicate`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
   async updateDocument(
     documentId: string,
     input: {

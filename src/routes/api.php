@@ -50,6 +50,13 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
         ->whereUuid('document')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('documents.show');
+    Route::post('documents/{document}/duplicate', [AdminDocumentController::class, 'duplicate'])
+        ->whereUuid('document')
+        ->middleware([
+            'permission:admin,jiwonpapa-page_builder.documents.read',
+            'permission:admin,jiwonpapa-page_builder.documents.create',
+        ])
+        ->name('documents.duplicate');
     Route::get('documents/{document}/revisions', [AdminDocumentController::class, 'revisions'])
         ->whereUuid('document')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')

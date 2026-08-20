@@ -98,6 +98,63 @@ describe('Page Builder manager surface', () => {
     });
   });
 
+  it('opens a prefilled duplicate flow from the compact document action menu', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    globalThis.fetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      success: true,
+      message: 'ok',
+      data: {
+        items: [{
+          title: '랜딩 페이지',
+          document: {
+            schema_version: 'g7-page-builder/v1',
+            document_id: '123e4567-e89b-42d3-a456-426614174000',
+            slug: 'landing-page',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: {},
+            blocks: [],
+            shell_mode: 'none',
+          },
+          lock_version: 3,
+          revision: 2,
+          public_url: '/pages/landing-page',
+          active_artifact_sha256: 'a'.repeat(64),
+          is_home: true,
+          status: 'published',
+          has_unpublished_changes: false,
+          created_at: '2026-08-20T09:00:00+09:00',
+          updated_at: '2026-08-20T09:30:00+09:00',
+          published_at: '2026-08-20T09:30:00+09:00',
+          archived_at: null,
+        }],
+        pagination: { total: 1, page: 1, per_page: 100 },
+      },
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
+
+    const more = await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-more"]');
+    await act(async () => { more.click(); });
+    const duplicate = await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-duplicate"]');
+    await act(async () => { duplicate.click(); });
+
+    const dialog = await eventually<HTMLElement>('[data-testid="page-builder-manager-duplicate-dialog"]');
+    expect(dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-manager-duplicate-title"]')?.value)
+      .toBe('랜딩 페이지 복사본');
+    expect(dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-manager-duplicate-slug"]')?.value)
+      .toBe('landing-page-copy');
+    expect(dialog.textContent).toContain('발행 상태, 공개 주소, 홈 지정, 기존 리비전은 복사하지 않습니다.');
+
+    await act(async () => { root.unmount(); });
+  });
+
   it('edits one global navigation model for desktop and mobile site chrome', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
     const emptyList = { items: [], pagination: { total: 0, page: 1, per_page: 100 } };

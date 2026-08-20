@@ -96,6 +96,46 @@ final class AdminDocumentController
         }
     }
 
+    public function duplicate(Request $request, string $document): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
+            'expected_lock_version' => ['required', 'integer', 'min:1'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->invalid($request, $validator->errors()->toArray());
+        }
+
+        try {
+            $snapshot = $this->service->duplicate(
+                $document,
+                trim((string) $request->input('title')),
+                (string) $request->input('slug'),
+                (int) $request->input('expected_lock_version'),
+                $this->actorId($request),
+            );
+
+            return $this->success('문서를 새 초안으로 복제했습니다.', $this->snapshotData($snapshot), 201);
+        } catch (DocumentNotFoundException $exception) {
+            return $this->domainError($request, 404, 'G7PB_DOCUMENT_NOT_FOUND', $exception->getMessage());
+        } catch (LockConflictException $exception) {
+            return $this->lockConflict($request, $exception);
+        } catch (SlugAlreadyExistsException $exception) {
+            return $this->domainError(
+                $request,
+                409,
+                'G7PB_DOCUMENT_SLUG_CONFLICT',
+                '이미 사용 중인 페이지 주소입니다. 다른 주소를 입력해 주세요.',
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return $this->domainError($request, 400, 'G7PB_DOCUMENT_INVALID', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            return $this->unexpected($request, $exception);
+        }
+    }
+
     public function revisions(Request $request, string $document): JsonResponse
     {
         $validator = Validator::make($request->query->all(), [

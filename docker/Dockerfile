@@ -79,12 +79,14 @@ COPY docker/bin/entrypoint.sh /usr/local/bin/g7pb-entrypoint
 COPY docker/bin/wait-for-install.sh /usr/local/bin/g7pb-wait-for-install
 COPY docker/bin/healthcheck.sh /usr/local/bin/g7pb-healthcheck
 COPY docker/bin/post-install.sh /usr/local/bin/g7pb-post-install
+COPY docker/bin/sync-session-settings.sh /usr/local/bin/g7pb-sync-session-settings
 
 RUN chmod 0755 \
         /usr/local/bin/g7pb-entrypoint \
         /usr/local/bin/g7pb-wait-for-install \
         /usr/local/bin/g7pb-healthcheck \
         /usr/local/bin/g7pb-post-install \
+        /usr/local/bin/g7pb-sync-session-settings \
     && install -d -o www-data -g www-data /var/www/g7 /var/www/.composer
 
 ENV COMPOSER_ALLOW_SUPERUSER=1 \

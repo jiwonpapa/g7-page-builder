@@ -98,6 +98,8 @@ if [[ -d "$g7_root" ]]; then
   chown -R www-data:www-data "$g7_root/storage" "$g7_root/bootstrap/cache" "$g7_root/vendor"
 fi
 
+/usr/local/bin/g7pb-sync-session-settings
+
 module_root="${G7PB_MODULE_ROOT:-$g7_root/modules/jiwonpapa-page_builder}"
 if [[ -d "$module_root/node_modules" ]]; then
   chown -R "${G7PB_HOST_UID:-www-data}:${G7PB_HOST_GID:-www-data}" "$module_root/node_modules"

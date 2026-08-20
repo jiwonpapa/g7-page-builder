@@ -28,8 +28,8 @@
       "maxLength": 16
     },
     "shell_mode": {
-      "enum": ["global", "none"],
-      "default": "global"
+      "enum": ["template", "builder", "none", "global"],
+      "default": "template"
     },
     "tokens": {
       "type": "object",

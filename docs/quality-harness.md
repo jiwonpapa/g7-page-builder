@@ -63,7 +63,9 @@
 - G7·Sirsoft Model/Repository와 직접 table query
 - `module.php`에서 `AbstractModule` 외 host 구현 import
 - `src/Providers`에서 Adapter binding·View 등록 외 비즈니스 로직
-- Page Builder 소유 2개 이외의 admin route/layout, 모든 user route/layout·resources/extensions 결합
+- Page Builder 소유 2개 이외의 admin route/layout, 정확히 허용한 user route 2개·user layout 3개 이외의 User Template 결합
+- 기존 User Template 파일·layout JSON·DB row 수정, 모듈 namespace 밖 user route/layout 선언
+- G7 TemplateService·ModuleSettingsService·HookManager를 `Infrastructure/Gnuboard7` Adapter 밖에서 사용하는 코드
 - `module.json`의 번들 module/plugin hard dependency
 - `sirsoft-page`, `/admin/pages`, `페이지 관리`를 Page Builder 메뉴에서 재사용하는 선언
 - 별도 `페이지 빌더` 메뉴 slug·URL·permission의 누락 또는 중복 선언
@@ -91,15 +93,19 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 10. typed motion 저장·미리보기·발행, 조건부 public runtime과 실제 in-view 활성화
 11. Header·Footer Site Part의 축소 미리보기, 실제 드래그 삽입, 인라인/속성 편집, 저장·발행, 공개 렌더와 모바일 메뉴 열기·Escape 닫기·초점 복귀
 12. 문서별 공통영역 제외 후 재발행 시 Header·Footer가 없는 인트로 렌더
+13. 활성 User Template route catalog에서 로그인 route를 선택하고 URL이 저장되는지 확인
+14. `template` 문서를 `/pages/{slug}`에서 활성 `_user_base` 안에 렌더하고 Page Builder Site Part가 섞이지 않는지 확인
+15. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 실제 접근성 자동 검사, 고정 시각 baseline과 compile 실패 뒤 public hash 불변 시나리오는 전체 MVP gate에 추가해야 합니다.
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
 
-## CI와 로컬 통합
+## 자동화와 로컬 통합
 
+- 필수 판정은 GitHub Actions가 아니라 로컬 `make quality-gate TASK=<integration-id>`와 동일 Docker runtime을 기준으로 합니다.
 - `frontend`: Node 24, `npm ci`, frontend gate, dist artifact
 - `php`: PHP 8.5, `composer install`, PHP gate
 - 현재 G7 설치·TLS·인증·제품 lifecycle 통합은 runtime lease를 가진 로컬 고정 checkout의 `make integration-verify TASK=<integration-id>`로 검사합니다.
-- `g7-contract` CI는 G7 7.0.7 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
-- TLS·관리자 인증·실제 module route를 포함하는 `dev-product-e2e`는 현재 로컬 통합 필수 gate입니다. 재현 가능한 CI secret/fixture가 준비되면 별도 `g7-integration` 필수 job으로 승격합니다.
+- `quality-g7`은 G7 7.0.7 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
+- TLS·관리자 인증·실제 module route를 포함하는 `dev-product-e2e`는 로컬 통합 필수 gate입니다. 호스팅형 CI나 외부 secret은 필수조건이 아닙니다.

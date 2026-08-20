@@ -2,9 +2,9 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers;
 
+use App\Seo\SeoMiddleware;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
@@ -13,6 +13,7 @@ use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShellSnapshot;
+use Symfony\Component\HttpFoundation\Response;
 
 final class ViewerController
 {
@@ -21,6 +22,7 @@ final class ViewerController
         private readonly SiteShellService $siteShellService,
         private readonly SitePartService $sitePartService,
         private readonly SitePartHtmlCompiler $sitePartCompiler,
+        private readonly ?SeoMiddleware $seo = null,
     ) {}
 
     public function manager(): Response
@@ -65,13 +67,18 @@ final class ViewerController
             ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
-    public function preview(string $token): Response
+    public function preview(Request $request, string $token): Response
     {
+        if ($request->query('shell') === 'template') {
+            return $this->templateApp($request, true);
+        }
+
         $page = $this->service->renderPreview($token);
 
         if ($page === null) {
             abort(404);
         }
+
         $siteShell = $this->siteShell($page);
         $siteHeader = $this->sitePart('header', $page);
         $siteFooter = $this->sitePart('footer', $page);
@@ -97,6 +104,10 @@ final class ViewerController
 
         if ($page === null) {
             abort(404);
+        }
+
+        if ($page->shellMode === 'template') {
+            return $this->templateApp($request, false);
         }
 
         $siteShell = $this->siteShell($page);
@@ -141,7 +152,7 @@ final class ViewerController
 
     private function siteShell(RenderedPage $page): ?SiteShellSnapshot
     {
-        if ($page->shellMode !== 'global') {
+        if (! in_array($page->shellMode, ['builder', 'global'], true)) {
             return null;
         }
 
@@ -156,7 +167,7 @@ final class ViewerController
 
     private function sitePart(string $kind, RenderedPage $page): ?SitePartArtifact
     {
-        if ($page->shellMode !== 'global') {
+        if (! in_array($page->shellMode, ['builder', 'global'], true)) {
             return null;
         }
 
@@ -192,5 +203,21 @@ final class ViewerController
             $siteHeader instanceof SitePartArtifact ? $siteHeader->artifactSha256 : $shellSha256,
             $siteFooter instanceof SitePartArtifact ? $siteFooter->artifactSha256 : $shellSha256,
         ]));
+    }
+
+    private function templateApp(Request $request, bool $preview): Response
+    {
+        $next = static fn (): Response => response()->view('app');
+        $response = ! $preview && $this->seo instanceof SeoMiddleware
+            ? $this->seo->handle($request, $next)
+            : $next();
+
+        $response->headers->set('Cache-Control', $preview ? 'no-store' : 'public, no-cache, must-revalidate');
+        if ($preview) {
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
+        return $response;
     }
 }

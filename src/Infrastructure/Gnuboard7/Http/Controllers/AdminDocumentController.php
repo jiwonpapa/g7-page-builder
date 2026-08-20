@@ -15,10 +15,14 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\RevisionNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SlugAlreadyExistsException;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 
 final class AdminDocumentController
 {
-    public function __construct(private readonly PageBuilderService $service) {}
+    public function __construct(
+        private readonly PageBuilderService $service,
+        private readonly ?G7TemplateRouteBridge $templateRoutes = null,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -56,7 +60,7 @@ final class AdminDocumentController
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'locale' => ['sometimes', 'string', 'min:2', 'max:16'],
             'mode' => ['sometimes', 'in:canvas'],
-            'shell_mode' => ['sometimes', 'in:global,none'],
+            'shell_mode' => ['sometimes', 'in:template,builder,none,global'],
         ]);
 
         if ($validator->fails()) {
@@ -69,7 +73,7 @@ final class AdminDocumentController
                 (string) $request->input('slug'),
                 (string) $request->input('locale', 'ko'),
                 $this->actorId($request),
-                (string) $request->input('shell_mode', 'global'),
+                (string) $request->input('shell_mode', 'template'),
             );
 
             return $this->success('페이지 문서를 생성했습니다.', $this->snapshotData($snapshot), 201);
@@ -182,10 +186,11 @@ final class AdminDocumentController
     public function previewRevision(Request $request, string $document, int $revision): JsonResponse
     {
         try {
+            $source = $this->service->revision($document, $revision);
             $ticket = $this->service->previewRevision($document, $revision, $this->actorId($request));
 
             return $this->success('리비전 미리보기를 준비했습니다.', [
-                'preview_url' => url('/modules/jiwonpapa-page_builder/preview/'.$ticket->token),
+                'preview_url' => $this->previewUrl($ticket->token, $source->document->shellMode),
                 'expires_at' => $ticket->expiresAt->format(DATE_ATOM),
             ]);
         } catch (DocumentNotFoundException $exception) {
@@ -236,7 +241,7 @@ final class AdminDocumentController
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'locale' => ['required', 'string', 'min:2', 'max:16'],
             'expected_lock_version' => ['required', 'integer', 'min:1'],
-            'shell_mode' => ['sometimes', 'in:global,none'],
+            'shell_mode' => ['sometimes', 'in:template,builder,none,global'],
         ]);
 
         if ($validator->fails()) {
@@ -308,10 +313,11 @@ final class AdminDocumentController
         }
 
         try {
+            $snapshot = $this->service->get($document);
             $ticket = $this->service->preview($document, $lockVersion, $this->actorId($request));
 
             return $this->success('미리보기를 준비했습니다.', [
-                'preview_url' => url('/modules/jiwonpapa-page_builder/preview/'.$ticket->token),
+                'preview_url' => $this->previewUrl($ticket->token, $snapshot->document->shellMode),
                 'expires_at' => $ticket->expiresAt->format(DATE_ATOM),
             ]);
         } catch (DocumentNotFoundException $exception) {
@@ -362,6 +368,7 @@ final class AdminDocumentController
     {
         try {
             $page = $this->service->commitPublication($token);
+            $this->templateRoutes?->invalidate();
 
             return $this->success('페이지를 발행했습니다.', [
                 'public_url' => url('/pages/'.$page->slug),
@@ -393,6 +400,7 @@ final class AdminDocumentController
                 $lockVersion,
                 $this->actorId($request),
             );
+            $this->templateRoutes?->invalidate();
 
             return $this->success('페이지 공개를 해제했습니다.', $this->snapshotData($snapshot));
         } catch (DocumentNotFoundException $exception) {
@@ -422,6 +430,7 @@ final class AdminDocumentController
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
             );
+            $this->templateRoutes?->invalidate();
 
             return $this->success(
                 $snapshot->isHome ? '홈 페이지로 지정했습니다.' : '홈 페이지 지정을 해제했습니다.',
@@ -447,9 +456,12 @@ final class AdminDocumentController
         }
 
         try {
+            $snapshot = $this->service->archive($document, $lockVersion, $this->actorId($request));
+            $this->templateRoutes?->invalidate();
+
             return $this->success(
                 '페이지 문서를 보관함으로 이동했습니다.',
-                $this->snapshotData($this->service->archive($document, $lockVersion, $this->actorId($request))),
+                $this->snapshotData($snapshot),
             );
         } catch (DocumentNotFoundException $exception) {
             return $this->domainError($request, 404, 'G7PB_DOCUMENT_NOT_FOUND', $exception->getMessage());
@@ -499,6 +511,7 @@ final class AdminDocumentController
                 (int) $request->input('expected_lock_version'),
                 (string) $request->input('confirmation_slug'),
             );
+            $this->templateRoutes?->invalidate();
 
             return $this->success('페이지 문서를 영구 삭제했습니다.', ['document_id' => $document]);
         } catch (DocumentNotFoundException $exception) {
@@ -538,6 +551,13 @@ final class AdminDocumentController
             'published_at' => $snapshot->publishedAt?->format(DATE_ATOM),
             'archived_at' => $snapshot->archivedAt?->format(DATE_ATOM),
         ];
+    }
+
+    private function previewUrl(string $token, string $shellMode): string
+    {
+        $url = url('/modules/jiwonpapa-page_builder/preview/'.$token);
+
+        return $shellMode === 'template' ? $url.'?shell=template' : $url;
     }
 
     /** @return array<string, mixed> */

@@ -61,7 +61,7 @@ function safeImageSource(value: unknown): string {
 
 async function visitorAudience(fetcher: typeof fetch): Promise<'guest' | 'member'> {
   try {
-    const response = await fetcher('/api/auth/user', {
+    const response = await fetcher('/api/user/auth/user', {
       credentials: 'same-origin',
       headers: { Accept: 'application/json' },
     });
@@ -297,10 +297,12 @@ function installParallax(blocks: HTMLElement[], view: MotionWindow): void {
 
 export function bootPageEffects(root: Document = document, view: MotionWindow = window as MotionWindow): void {
   bootSiteShellMenu(root, view);
+  bootServiceActions(root, view);
   const fetcher = typeof view.fetch === 'function' ? view.fetch.bind(view) : fetch;
   void bootDynamicData(root, fetcher);
   const page = root.querySelector<HTMLElement>('.g7pb-page');
-  const blocks = Array.from(root.querySelectorAll<HTMLElement>(MOTION_SELECTOR));
+  const blocks = Array.from(root.querySelectorAll<HTMLElement>(MOTION_SELECTOR))
+    .filter((block) => block.dataset.g7pbMotionReady !== 'true');
   if (!page) return;
 
   const reducedMotion = typeof view.matchMedia === 'function'
@@ -310,10 +312,12 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
 
   if (reducedMotion) {
     page.dataset.g7pbMotionReduced = 'true';
+    blocks.forEach((block) => { block.dataset.g7pbMotionReady = 'true'; });
     return;
   }
 
   blocks.forEach(prepareBlock);
+  blocks.forEach((block) => { block.dataset.g7pbMotionReady = 'true'; });
   page.classList.add('g7pb-motion-active');
   installParallax(blocks, view);
 
@@ -336,7 +340,56 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
     }
   }, { threshold: 0.12, rootMargin: '0px 0px -10% 0px' });
 
-  blocks.forEach((block) => observer.observe(block));
+  blocks.forEach((block) => {
+    observer.observe(block);
+  });
+}
+
+export function bootServiceActions(
+  root: Document = document,
+  view: Window = window,
+  fetcher: typeof fetch = fetch,
+  navigate: (url: string) => void = (url) => view.location.assign(url),
+  tokenStorage?: Pick<Storage, 'getItem' | 'removeItem'> | null,
+): void {
+  if (root.documentElement.dataset.g7pbServiceActionsReady === 'true') return;
+
+  root.addEventListener('click', (event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href="#g7-action-logout"]');
+    if (!link) return;
+
+    event.preventDefault();
+    if (link.dataset.g7pbActionPending === 'true') return;
+    link.dataset.g7pbActionPending = 'true';
+    link.setAttribute('aria-disabled', 'true');
+
+    let storage = tokenStorage;
+    if (storage === undefined) {
+      try {
+        storage = view.localStorage;
+      } catch {
+        storage = null;
+      }
+    }
+    const token = storage?.getItem('auth_token');
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    void fetcher('/api/user/auth/logout', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers,
+    }).then((response) => {
+      if (!response.ok) throw new Error('logout failed');
+      storage?.removeItem('auth_token');
+      navigate('/');
+    }).catch(() => {
+      link.dataset.g7pbActionPending = 'false';
+      link.removeAttribute('aria-disabled');
+    });
+  });
+
+  root.documentElement.dataset.g7pbServiceActionsReady = 'true';
 }
 
 export function bootSiteShellMenu(root: Document = document, view: Window = window): void {
@@ -384,6 +437,7 @@ export function bootPageSliders(root: Document = document, reducedMotion = false
     if (!viewport || slides.length < 2) continue;
 
     const wantsAutoplay = slider.dataset.g7pbSliderAutoplay === 'true' && !reducedMotion;
+    ensureSliderControls(root, slider, wantsAutoplay);
     const autoplay = Autoplay({
       delay: Number(slider.dataset.g7pbSliderInterval ?? 5000),
       stopOnInteraction: true,
@@ -439,10 +493,79 @@ export function bootPageSliders(root: Document = document, reducedMotion = false
   }
 }
 
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => bootPageEffects(), { once: true });
-  } else {
+export function ensureSliderControls(root: Document, slider: HTMLElement, wantsAutoplay: boolean): void {
+  let controls = slider.querySelector<HTMLElement>('.g7pb-hero-slider__controls');
+  if (!controls) {
+    controls = root.createElement('div');
+    controls.className = 'g7pb-hero-slider__controls';
+    slider.append(controls);
+  }
+
+  const createButton = (attribute: string, label: string, text: string): HTMLButtonElement => {
+    const button = root.createElement('button');
+    button.type = 'button';
+    button.setAttribute(attribute, '');
+    button.setAttribute('aria-label', label);
+    button.textContent = text;
+    return button;
+  };
+
+  let dots = controls.querySelector<HTMLElement>('[data-g7pb-slider-dots]');
+  if (!dots) {
+    dots = root.createElement('div');
+    dots.className = 'g7pb-hero-slider__dots';
+    dots.dataset.g7pbSliderDots = '';
+    dots.setAttribute('aria-label', '슬라이드 선택');
+  }
+
+  const previous = controls.querySelector('[data-g7pb-slider-prev]')
+    ?? createButton('data-g7pb-slider-prev', '이전 슬라이드', '←');
+  const next = controls.querySelector('[data-g7pb-slider-next]')
+    ?? createButton('data-g7pb-slider-next', '다음 슬라이드', '→');
+  controls.replaceChildren(previous, dots, next);
+
+  if (wantsAutoplay) {
+    const toggle = createButton('data-g7pb-slider-toggle', '자동 재생 일시 정지', '일시 정지');
+    controls.append(toggle);
+  }
+
+  if (!slider.querySelector('[data-g7pb-slider-status]')) {
+    const status = root.createElement('p');
+    status.className = 'g7pb-hero-slider__status';
+    status.dataset.g7pbSliderStatus = '';
+    status.setAttribute('aria-live', 'polite');
+    slider.append(status);
+  }
+}
+
+export function observePageEffects(root: Document = document, view: MotionWindow = window as MotionWindow): void {
+  if (typeof MutationObserver !== 'function' || root.documentElement.dataset.g7pbEffectsObserverReady === 'true') return;
+
+  let scheduled = false;
+  const observer = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    queueMicrotask(() => {
+      scheduled = false;
+      bootPageEffects(root, view);
+    });
+  });
+  observer.observe(root.body, { childList: true, subtree: true });
+  root.documentElement.dataset.g7pbEffectsObserverReady = 'true';
+}
+
+const buildMode = (import.meta as ImportMeta & { env?: { MODE?: string } }).env?.MODE;
+const isTestRuntime = buildMode === 'test'
+  || (typeof process !== 'undefined' && process.env.NODE_ENV === 'test');
+
+if (typeof window !== 'undefined' && typeof document !== 'undefined' && !isTestRuntime) {
+  const start = (): void => {
     bootPageEffects();
+    observePageEffects();
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
   }
 }

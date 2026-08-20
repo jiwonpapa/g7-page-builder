@@ -98,10 +98,12 @@ effects_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js")"
 asset_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder.css")"
-if [[ "$asset_js_status" == 200 && "$effects_js_status" == 200 && "$asset_css_status" == 200 ]]; then
-  ok 'Editor, public effects, and CSS asset serving'
+public_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-public.css")"
+if [[ "$asset_js_status" == 200 && "$effects_js_status" == 200 && "$asset_css_status" == 200 && "$public_css_status" == 200 ]]; then
+  ok 'Editor, public effects, editor CSS, and scoped public CSS asset serving'
 else
-  fail "Module asset serving editor_js=$asset_js_status effects_js=$effects_js_status css=$asset_css_status"
+  fail "Module asset serving editor_js=$asset_js_status effects_js=$effects_js_status editor_css=$asset_css_status public_css=$public_css_status"
 fi
 
 if openssl x509 -in "$root/.runtime/tls/g7pb.test.pem" -noout -ext subjectAltName | grep -q 'DNS:g7pb.test'; then
@@ -147,8 +149,14 @@ if jq -e '
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/site-parts/{kind}/draft" and (.method | contains("PUT")))] | length == 1)
   and
   ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/site-parts/{kind}/publish" and (.method | contains("POST")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/admin/routes/catalog" and (.method | contains("GET")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/public/pages/{slug}" and (.method | contains("GET")))] | length == 1)
+  and
+  ([.[] | select(.uri == "api/modules/jiwonpapa-page_builder/public/home" and (.method | contains("GET")))] | length == 1)
 ' <<<"$module_routes" >/dev/null; then
-  ok 'Recoverable publication, archive purge, guarded media, and Site Part routes present'
+  ok 'Recoverable publication, guarded media, Site Part, route catalog, and template data routes present'
 else
   fail 'Page Builder route safety contract'
 fi
@@ -220,6 +228,16 @@ if jq -e '(.success == true) and (.data.user.is_admin == true)' <<<"$login_respo
     fail 'Page Builder protected API or permission synchronization'
   fi
 
+  route_catalog_response="$(curl "${curl_common[@]}" \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $auth_token" \
+    "$base_url/api/modules/jiwonpapa-page_builder/admin/routes/catalog" || true)"
+  if jq -e '(.success == true) and (.data.active_template | type == "string") and (.data.routes | any(.id == "auth.login")) and (.data.routes | any(.id == "auth.logout" and .action == "logout")) and (.data.routes | any(.id == "page-builder.page"))' <<<"$route_catalog_response" >/dev/null 2>&1; then
+    ok 'Active User Template route catalog and typed service actions'
+  else
+    fail 'Active User Template route catalog'
+  fi
+
   site_part_response="$(curl "${curl_common[@]}" \
     --header 'Accept: application/json' \
     --header "Authorization: Bearer $auth_token" \
@@ -230,7 +248,7 @@ if jq -e '(.success == true) and (.data.user.is_admin == true)' <<<"$login_respo
     fail 'Header Site Part protected API or schema'
   fi
 
-  unset auth_token page_builder_response site_part_response
+  unset auth_token page_builder_response route_catalog_response site_part_response
 else
   fail 'Admin API authentication'
 fi

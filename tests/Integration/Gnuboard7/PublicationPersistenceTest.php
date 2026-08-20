@@ -412,7 +412,7 @@ final class PublicationPersistenceTest extends TestCase
 
         $after = $middleware->handle(Request::create('/', 'GET'), $fallback);
         self::assertSame(200, $after->getStatusCode());
-        self::assertSame('g7-page-builder::viewer', $after->getContent());
+        self::assertSame('app', $after->getContent());
         self::assertStringContainsString('no-cache', (string) $after->headers->get('Cache-Control'));
 
         $nonRoot = $middleware->handle(Request::create('/admin', 'GET'), $fallback);
@@ -604,7 +604,7 @@ final class PublicationPersistenceTest extends TestCase
             new EloquentPageBuilderRepository,
             $this->builtInCompiler(),
         );
-        $created = $service->create('캐시 안전성', 'cache-safety', 'ko', null);
+        $created = $service->create('캐시 안전성', 'cache-safety', 'ko', null, 'builder');
         $candidate = $service->preparePublication(
             $created->document->documentId,
             $created->lockVersion,

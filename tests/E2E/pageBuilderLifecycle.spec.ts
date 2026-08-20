@@ -683,6 +683,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(page.getByTestId('page-builder-manager-create-dialog')).toBeVisible();
     await page.getByTestId('page-builder-manager-title-input').fill(pageTitle);
     await page.getByTestId('page-builder-manager-slug-input').fill(slug);
+    await page.getByTestId('page-builder-manager-shell-mode').selectOption('builder');
     await page.getByTestId('page-builder-manager-create-confirm').click();
 
     await expect.poll(() => new URL(page.url()).searchParams.get('document') ?? '').toMatch(
@@ -801,6 +802,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
 
     await selectAndEditHero(page, heroTitle, heroSubtitle, heroButtonLabel, testInfo.project.name === 'desktop');
+    if (testInfo.project.name === 'desktop') {
+      const heroUrl = await revealInspectorField(page, 'page-builder-hero-primary-url');
+      await visibleTestId(page, 'page-builder-route-picker-open').click();
+      const routePicker = page.getByTestId('page-builder-route-picker');
+      await expect(routePicker).toBeVisible();
+      await routePicker.getByPlaceholder('로그인, 게시판, 상품…').fill('로그인');
+      await routePicker.locator('.g7pb-route-picker__routes button').filter({ hasText: '로그인' }).first().click();
+      await routePicker.getByRole('button', { name: /이 경로 연결/ }).click();
+      await expect(heroUrl).toHaveValue('/login');
+    }
     const mediaUpload = page.waitForResponse((response) =>
       response.request().method() === 'POST'
       && new URL(response.url()).pathname === '/api/modules/jiwonpapa-page_builder/admin/media');
@@ -1089,7 +1100,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     );
     await openDocumentActions(restoredDocumentRow);
     await restoredDocumentRow.getByTestId('page-builder-manager-settings').click();
-    await page.getByTestId('page-builder-manager-metadata-shell-mode').uncheck();
+    await page.getByTestId('page-builder-manager-metadata-shell-mode').selectOption('none');
     const shellModeSave = page.waitForResponse((response) => response.request().method() === 'PATCH'
       && new URL(response.url()).pathname.endsWith(`/admin/documents/${documentId}`));
     await page.getByTestId('page-builder-manager-metadata-save').click();
@@ -1205,5 +1216,141 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
     if (lifecycleError) throw lifecycleError;
     if (siteShellRestoreError) throw siteShellRestoreError;
+  }
+});
+
+test('renders a Page Builder page and temporary home inside the active G7 User Template', async ({
+  context,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'The template integration gate runs once on desktop.');
+  test.setTimeout(120_000);
+
+  const authToken = await authenticateAdmin(context);
+  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const slug = `g7pb-template-e2e-${runId}`;
+  const title = `Template Integration ${runId}`;
+  const heroTitle = `Active User Template ${runId}`;
+  const api = await playwrightRequest.newContext({
+    baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  let previousHomeId: string | null = null;
+
+  try {
+    const listResponse = await api.get('/api/modules/jiwonpapa-page_builder/admin/documents?status=active&per_page=100');
+    expect(listResponse.ok()).toBe(true);
+    const listPayload = await listResponse.json() as {
+      data?: { items?: Array<{ is_home?: unknown; document?: { document_id?: unknown } }> };
+    };
+    const previousHome = listPayload.data?.items?.find((item) => item.is_home === true);
+    previousHomeId = typeof previousHome?.document?.document_id === 'string'
+      ? previousHome.document.document_id
+      : null;
+
+    const createResponse = await api.post('/api/modules/jiwonpapa-page_builder/admin/documents', {
+      data: { title, slug, locale: 'ko', mode: 'canvas', shell_mode: 'template' },
+    });
+    expect(createResponse.ok()).toBe(true);
+    const created = await createResponse.json() as {
+      data?: { document?: Record<string, unknown>; lock_version?: unknown };
+    };
+    const documentId = created.data?.document?.document_id;
+    const initialLock = created.data?.lock_version;
+    expect(documentId).toMatch(DOCUMENT_ID_PATTERN);
+    expect(typeof initialLock).toBe('number');
+
+    const document = {
+      ...created.data?.document,
+      schema_version: 'g7-page-builder/v1',
+      shell_mode: 'template',
+      blocks: [{
+        instance_id: crypto.randomUUID(),
+        type: 'content.hero-centered-01',
+        block_version: 1,
+        props: {
+          eyebrow: 'G7 USER TEMPLATE',
+          title: heroTitle,
+          body: '<p>활성 사이트 템플릿의 헤더와 푸터 사이에 렌더링됩니다.</p>',
+          primaryCta: { label: '로그인', url: '/login' },
+          alignment: 'center',
+        },
+        motion: { preset: 'reveal', intensity: 'normal', trigger: 'once', stagger_ms: 100 },
+        slots: [],
+      }],
+    };
+    const draftResponse = await api.put(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/draft`, {
+      data: { document, expected_lock_version: initialLock },
+    });
+    expect(draftResponse.ok()).toBe(true);
+    const draft = await draftResponse.json() as { data?: { lock_version?: unknown } };
+    expect(typeof draft.data?.lock_version).toBe('number');
+
+    const prepareResponse = await api.post(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/publications/prepare`, {
+      data: { expected_lock_version: draft.data?.lock_version },
+    });
+    expect(prepareResponse.ok()).toBe(true);
+    const prepared = await prepareResponse.json() as { data?: { publication_token?: unknown } };
+    expect(typeof prepared.data?.publication_token).toBe('string');
+    const commitResponse = await api.post(`/api/modules/jiwonpapa-page_builder/admin/publications/${prepared.data?.publication_token}/commit`, {
+      data: {},
+    });
+    expect(commitResponse.ok()).toBe(true);
+
+    const publishedResponse = await page.goto(`/pages/${slug}`);
+    expect(publishedResponse?.ok()).toBe(true);
+    await expect(page.locator('#app')).toBeVisible();
+    await expect(page.locator('.g7pb-template-page')).toBeVisible();
+    await expect(page.getByText(heroTitle, { exact: true })).toBeVisible();
+    await expect(page.getByTestId('page-builder-site-header')).toHaveCount(0);
+    await expect(page.locator('[data-block-type="hero"]')).toHaveClass(/is-inview/);
+    await expect.poll(() => page.evaluate(() => {
+      const config = (window as typeof window & { G7Config?: { moduleAssets?: Record<string, { css?: string; js?: string }> } }).G7Config;
+      const assets = config?.moduleAssets?.['jiwonpapa-page_builder'];
+      return `${assets?.css ?? ''}|${assets?.js ?? ''}`;
+    })).toContain('page-builder-public.css');
+
+    const currentResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`);
+    const current = await currentResponse.json() as { data?: { lock_version?: unknown } };
+    const homeResponse = await api.post(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/home`, {
+      data: { enabled: true, expected_lock_version: current.data?.lock_version },
+    });
+    expect(homeResponse.ok()).toBe(true);
+
+    const catalogResponse = await api.get('/api/modules/jiwonpapa-page_builder/admin/routes/catalog');
+    expect(catalogResponse.ok()).toBe(true);
+    const catalogPayload = await catalogResponse.json() as { data?: { active_template?: unknown } };
+    expect(typeof catalogPayload.data?.active_template).toBe('string');
+    const activeTemplate = String(catalogPayload.data?.active_template);
+
+    const routesResponse = await page.request.get(`/api/templates/${encodeURIComponent(activeTemplate)}/routes`);
+    const routesPayload = await routesResponse.json() as { data?: { routes?: Array<{ path?: unknown; layout?: unknown }> } };
+    expect(routesPayload.data?.routes?.find((route) => route.path === '/')?.layout)
+      .toBe('jiwonpapa-page_builder.page_builder_home');
+
+    const homePageResponse = await page.goto('/');
+    expect(homePageResponse?.ok()).toBe(true);
+    await expect(page.getByText(heroTitle, { exact: true })).toBeVisible();
+    await expect(page.locator('.g7pb-template-page')).toBeVisible();
+  } finally {
+    await cleanupE2eArtifacts(authToken, [slug], null);
+    if (previousHomeId) {
+      const previousResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${previousHomeId}`);
+      if (previousResponse.ok()) {
+        const previous = await previousResponse.json() as { data?: { lock_version?: unknown; is_home?: unknown } };
+        if (previous.data?.is_home !== true && typeof previous.data?.lock_version === 'number') {
+          const restoreResponse = await api.post(`/api/modules/jiwonpapa-page_builder/admin/documents/${previousHomeId}/home`, {
+            data: { enabled: true, expected_lock_version: previous.data.lock_version },
+          });
+          expect(restoreResponse.ok()).toBe(true);
+        }
+      }
+    }
+    await api.dispose();
   }
 });

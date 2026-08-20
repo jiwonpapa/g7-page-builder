@@ -2,6 +2,7 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware;
 
+use App\Seo\SeoMiddleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,7 @@ final class PageBuilderHomeOverride
     public function __construct(
         private readonly PageBuilderService $service,
         private readonly SiteShellService $siteShellService,
+        private readonly ?SeoMiddleware $seo = null,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -40,8 +42,17 @@ final class PageBuilderHomeOverride
             return $next($request);
         }
 
+        if ($page->shellMode === 'template') {
+            $response = $this->seo instanceof SeoMiddleware
+                ? $this->seo->handle($request, static fn (): Response => response()->view('app'))
+                : response()->view('app');
+            $response->headers->set('Cache-Control', 'public, no-cache, must-revalidate');
+
+            return $response;
+        }
+
         $siteShell = null;
-        if ($page->shellMode === 'global') {
+        if (in_array($page->shellMode, ['builder', 'global'], true)) {
             try {
                 $siteShell = $this->siteShellService->get($page->locale);
             } catch (\Throwable $exception) {

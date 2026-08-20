@@ -13,7 +13,7 @@ G7 7.0.7의 확장 changelog 규정과 동일하게 한국어, ISO 8601 날짜(`
 SemVer 판단에서 다음을 공개 API로 봅니다.
 
 - `module.json`의 identifier·의존성·지원 G7 버전
-- `/api/modules/jiwonpapa-page_builder/**`, `/pages/{slug}`와 홈 연결 동작
+- `/api/modules/jiwonpapa-page_builder/**`, `/pages/{slug}`, 모듈 user route/layout과 홈 연결 동작
 - `PageBuilderDocument` JSON Schema와 canonical block type·props
 - 모듈이 공개하는 PHP Contract와 발행·미리보기 응답 형식
 - 이미 저장된 문서·revision·publication을 읽고 재발행하는 호환성

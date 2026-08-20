@@ -22,7 +22,8 @@ fi
 for required in \
   CHANGELOG.md module.json module.php composer.json composer.lock package.json package-lock.json \
   config/block-packs.php \
-  dist/js/page-builder.iife.js dist/js/page-effects.iife.js dist/css/page-builder.css; do
+  dist/js/page-builder.iife.js dist/js/page-effects.iife.js \
+  dist/css/page-builder.css dist/css/page-builder-public.css; do
   [[ -f "$root/$required" ]] || { echo "Missing release input: $required" >&2; exit 2; }
 done
 

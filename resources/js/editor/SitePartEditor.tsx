@@ -17,6 +17,7 @@ import {
 } from '../api/pageBuilderApi';
 import type { SitePartKind, SitePartResource } from '../documents/types';
 import { createMediaField } from './MediaPickerField';
+import { createRouteUrlField } from './RouteUrlField';
 import {
   type AnnouncementProps,
   type FooterColumnsProps,
@@ -114,29 +115,29 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
       label: 'Header · 내비게이션',
       defaultProps: { brandName: '사이트 이름', logoUrl: '', homeUrl: '/', variant: 'solid', sticky: true, navigation: [{ label: '소개', url: '/pages/about' }], ctaLabel: '문의하기', ctaUrl: '/pages/contact', mobileMenu: true },
       fields: {
-        brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, logoUrl: createMediaField('로고 이미지'), homeUrl: { type: 'text', label: '홈 URL' },
+        brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, logoUrl: createMediaField('로고 이미지'), homeUrl: createRouteUrlField('홈 연결'),
         variant: { type: 'radio', label: '배경', options: [{ label: '기본', value: 'solid' }, { label: '투명', value: 'transparent' }] }, sticky: { type: 'radio', label: '스크롤 고정', options: [{ label: '고정', value: true }, { label: '고정 안 함', value: false }] },
-        navigation: { type: 'array', label: '메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, url: { type: 'text', label: 'URL' } } },
-        ctaLabel: { type: 'text', label: '강조 버튼 문구', contentEditable: true }, ctaUrl: { type: 'text', label: '강조 버튼 URL' }, mobileMenu: { type: 'radio', label: '모바일 메뉴', options: [{ label: '사용', value: true }, { label: '숨김', value: false }] },
+        navigation: { type: 'array', label: '메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, url: createRouteUrlField('메뉴 연결') } },
+        ctaLabel: { type: 'text', label: '강조 버튼 문구', contentEditable: true }, ctaUrl: createRouteUrlField('강조 버튼 연결'), mobileMenu: { type: 'radio', label: '모바일 메뉴', options: [{ label: '사용', value: true }, { label: '숨김', value: false }] },
       },
       render: (props) => <HeaderNavigationPreview {...props} />,
     },
     Announcement: {
       label: 'Header · 공지 바',
       defaultProps: { text: '새로운 소식을 알려보세요.', linkLabel: '자세히', linkUrl: '/', tone: 'brand' },
-      fields: { text: { type: 'text', label: '공지 문구', contentEditable: true }, linkLabel: { type: 'text', label: '링크 문구', contentEditable: true }, linkUrl: { type: 'text', label: '링크 URL' }, tone: { type: 'select', label: '색상', options: [{ label: '브랜드', value: 'brand' }, { label: '어둡게', value: 'dark' }, { label: '밝게', value: 'light' }] } },
+      fields: { text: { type: 'text', label: '공지 문구', contentEditable: true }, linkLabel: { type: 'text', label: '링크 문구', contentEditable: true }, linkUrl: createRouteUrlField('공지 연결'), tone: { type: 'select', label: '색상', options: [{ label: '브랜드', value: 'brand' }, { label: '어둡게', value: 'dark' }, { label: '밝게', value: 'light' }] } },
       render: (props) => <AnnouncementPreview {...props} />,
     },
     FooterSimple: {
       label: 'Footer · 기본',
       defaultProps: { brandName: '사이트 이름', homeUrl: '/', navigation: [{ label: '소개', url: '/pages/about' }], footerText: '사이트 정보를 입력해 주세요.' },
-      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: { type: 'text', label: '홈 URL' }, navigation: { type: 'array', label: '하단 메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, url: { type: 'text', label: 'URL' } } }, footerText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
+      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: createRouteUrlField('홈 연결'), navigation: { type: 'array', label: '하단 메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, url: createRouteUrlField('메뉴 연결') } }, footerText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
       render: (props) => <FooterSimplePreview {...props} />,
     },
     FooterColumns: {
       label: 'Footer · 다단 메뉴',
       defaultProps: { brandName: '사이트 이름', homeUrl: '/', columns: [{ heading: '서비스', linksText: '소개|/pages/about\n문의|/pages/contact' }], legalText: '사이트 정보를 입력해 주세요.' },
-      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: { type: 'text', label: '홈 URL' }, columns: { type: 'array', label: '메뉴 그룹', min: 1, max: 4, defaultItemProps: (index) => ({ heading: `메뉴 ${index + 1}`, linksText: '링크|/' }), getItemSummary: (item) => item.heading, arrayFields: { heading: { type: 'text', label: '그룹 제목', contentEditable: true }, linksText: { type: 'textarea', label: '링크(이름|URL, 줄바꿈)' } } }, legalText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
+      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: createRouteUrlField('홈 연결'), columns: { type: 'array', label: '메뉴 그룹', min: 1, max: 4, defaultItemProps: (index) => ({ heading: `메뉴 ${index + 1}`, linksText: '링크|/' }), getItemSummary: (item) => item.heading, arrayFields: { heading: { type: 'text', label: '그룹 제목', contentEditable: true }, linksText: { type: 'textarea', label: '링크(이름|URL, 줄바꿈)' } } }, legalText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
       render: (props) => <FooterColumnsPreview {...props} />,
     },
   };

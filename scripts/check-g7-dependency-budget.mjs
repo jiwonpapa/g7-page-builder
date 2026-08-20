@@ -10,8 +10,15 @@ if (manifest.hidden !== false) {
   failures.push('module.json hidden must be false so the separate Page Builder menu remains discoverable');
 }
 
-if (manifest.loading?.strategy !== 'lazy') {
-  failures.push('module.json loading.strategy must be lazy to prevent global editor asset injection');
+if (manifest.loading?.strategy !== 'global') {
+  failures.push('module.json loading.strategy must be global so active User Templates receive public page assets');
+}
+
+if (
+  manifest.assets?.js?.output !== 'dist/js/page-effects.iife.js' ||
+  manifest.assets?.css?.output !== 'dist/css/page-builder-public.css'
+) {
+  failures.push('module.json may inject only the scoped public effects and public page CSS globally');
 }
 
 for (const dependencyType of ['modules', 'plugins']) {
@@ -68,10 +75,36 @@ if (
   failures.push('admin layouts must contain only the Page Builder list and create layouts');
 }
 
-for (const forbiddenPath of ['resources/routes/user.json', 'resources/layouts/user']) {
-  if (containsFile(join(root, forbiddenPath))) {
-    failures.push(`${forbiddenPath} is forbidden in the core-only MVP module`);
+const userRoutesPath = join(root, 'resources/routes/user.json');
+const expectedUserRoutes = [
+  ['*/modules/jiwonpapa-page_builder/preview/:token', 'page_builder_preview'],
+  ['*/pages/:slug', 'page_builder_public'],
+].sort(([left], [right]) => left.localeCompare(right));
+if (!existsSync(userRoutesPath)) {
+  failures.push('resources/routes/user.json is required for module-owned public and preview routes');
+} else {
+  const routes = JSON.parse(readFileSync(userRoutesPath, 'utf8')).routes ?? [];
+  const actual = routes.map((route) => [route.path, route.layout])
+    .sort(([left], [right]) => left.localeCompare(right));
+  if (JSON.stringify(actual) !== JSON.stringify(expectedUserRoutes)) {
+    failures.push('user routes must contain only the two module-owned page and preview routes');
   }
+}
+
+const userLayoutsPath = join(root, 'resources/layouts/user');
+const allowedUserLayouts = new Set([
+  'page_builder_home.json',
+  'page_builder_preview.json',
+  'page_builder_public.json',
+]);
+const userLayoutFiles = existsSync(userLayoutsPath)
+  ? readdirSync(userLayoutsPath).filter((name) => name.endsWith('.json'))
+  : [];
+if (
+  userLayoutFiles.length !== allowedUserLayouts.size ||
+  userLayoutFiles.some((name) => !allowedUserLayouts.has(name))
+) {
+  failures.push('user layouts must contain only the Page Builder home, page, and preview layouts');
 }
 
 if (failures.length > 0) {
@@ -79,4 +112,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('G7 dependency budget: minimal admin shell and core-only manifest OK');
+console.log('G7 dependency budget: template-owned shell, module routes, and scoped public assets OK');

@@ -259,9 +259,32 @@ export interface PageBuilderDocument {
   slug: string;
   mode: 'canvas';
   locale: string;
-  shell_mode?: 'global' | 'none';
+  shell_mode?: PageShellMode;
   tokens?: Record<string, ScalarToken>;
   blocks: PageBuilderBlock[];
+}
+
+export type PageShellMode = 'template' | 'builder' | 'none' | 'global';
+
+export interface RouteCatalogEntry {
+  id: string;
+  label: string;
+  category: string;
+  path: string;
+  action?: 'logout';
+  auth_required: boolean;
+  guest_only: boolean;
+  parameters: string[];
+  parameter_sources: Record<string, 'page' | 'board' | 'category' | 'product' | 'manual'>;
+  source: {
+    kind: 'template' | 'module' | 'core';
+    identifier: string | null;
+  };
+}
+
+export interface RouteCatalogResource {
+  active_template: string;
+  routes: RouteCatalogEntry[];
 }
 
 export interface DocumentResource {

@@ -13,7 +13,7 @@
   "slug": "my-landing-page",
   "mode": "canvas",
   "locale": "ko",
-  "shell_mode": "global",
+  "shell_mode": "template",
   "tokens": {},
   "blocks": []
 }
@@ -78,7 +78,9 @@ active --unpublish--> superseded + draft retained
 - rollback은 과거 JSON을 새 revision으로 복사한 뒤 정상 publish 절차를 다시 수행합니다. 원본 과거 revision과 현재 active publication은 복원만으로 변경하지 않습니다.
 - 과거 미리보기와 복원은 revision에 저장된 당시 title·slug·locale을 함께 사용합니다.
 - 문서 복제는 원본의 현재 draft를 새 문서 revision 1로 기록하며 publication·home·preview token·revision 이력은 복사하지 않습니다.
-- `shell_mode`는 문서 revision과 publication에 snapshot하며 `global` 또는 `none`만 허용합니다. 공통영역 설정 자체는 언어별 CAS 저장소에서 관리합니다.
+- `shell_mode`는 문서 revision과 publication에 snapshot하며 `template`, `builder`, `none`을 허용합니다. 구형 `global`은 `builder`로 읽고 다음 저장에서 정규화합니다.
+- `template`은 활성 G7 User Template의 `_user_base`를 사용합니다. `builder`는 Page Builder Site Part 발행본, `none`은 canvas만 렌더합니다.
+- Page Builder Site Part와 구형 공통영역 설정은 별도 revision/CAS 저장소에서 관리하며 활성 G7 템플릿 데이터에 기록하지 않습니다.
 
 ## Preview
 

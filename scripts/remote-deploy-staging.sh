@@ -74,6 +74,8 @@ fi
 php artisan module:refresh-layout "$module_id" --no-interaction --no-ansi
 php artisan optimize:clear --no-ansi >/dev/null
 php artisan module:cache-clear --no-ansi >/dev/null
+php artisan template:cache-clear --no-ansi >/dev/null
+php artisan seo:clear --no-ansi >/dev/null
 php artisan tinker --execute='$manager = app(\App\Extension\ModuleManager::class); $manager->loadModules(); $module = $manager->getModule("jiwonpapa-page_builder"); if ($module === null) { throw new \RuntimeException("Page Builder module is not loaded."); } $updated = app(\App\Contracts\Repositories\ModuleRepositoryInterface::class)->updateByIdentifier("jiwonpapa-page_builder", ["vendor" => $module->getVendor(), "version" => $module->getVersion(), "github_url" => $module->getGithubUrl(), "metadata" => $module->getMetadata(), "config" => $module->getConfig(), "update_available" => false, "updated_at" => now()]); if ($updated !== 1) { throw new \RuntimeException("Page Builder module registry was not updated."); }' --no-ansi
 
 if [[ -d "$rollback_path" ]]; then

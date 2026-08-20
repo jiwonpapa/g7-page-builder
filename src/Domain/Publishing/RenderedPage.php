@@ -11,7 +11,7 @@ final readonly class RenderedPage
         public string $artifact,
         public string $artifactSha256,
         public ?\DateTimeImmutable $publishedAt = null,
-        public string $shellMode = 'global',
+        public string $shellMode = 'template',
     ) {}
 
     public function representationSha256(): string

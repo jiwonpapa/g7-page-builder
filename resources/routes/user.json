@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "routes": [
+    {
+      "path": "*/pages/:slug",
+      "layout": "page_builder_public",
+      "auth_required": false,
+      "meta": {
+        "title": "페이지"
+      }
+    },
+    {
+      "path": "*/modules/jiwonpapa-page_builder/preview/:token",
+      "layout": "page_builder_preview",
+      "auth_required": false,
+      "meta": {
+        "title": "페이지 미리보기"
+      }
+    }
+  ]
+}

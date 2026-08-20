@@ -5,12 +5,16 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockPackController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminRouteCatalogController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 
 Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:sanctum', 'throttle:300,1'])->name('admin.')->group(function (): void {
+    Route::get('routes/catalog', [AdminRouteCatalogController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('routes.catalog');
     Route::get('blocks/catalog', [AdminBlockCatalogController::class, 'index'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('blocks.catalog');
@@ -153,3 +157,12 @@ Route::get('public/pages/{slug}', [PublicPageController::class, 'show'])
     ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
     ->middleware('throttle:120,1')
     ->name('public.pages.show');
+
+Route::get('public/home', [PublicPageController::class, 'home'])
+    ->middleware('throttle:120,1')
+    ->name('public.home');
+
+Route::get('public/previews/{token}', [PublicPageController::class, 'preview'])
+    ->where('token', '[a-f0-9]{64}')
+    ->middleware('throttle:120,1')
+    ->name('public.previews.show');

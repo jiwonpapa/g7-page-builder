@@ -1,9 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { bootDynamicData, bootPageEffects, bootSiteShellMenu, parseCounterText } from '../../resources/js/public/pageEffects';
+import {
+  bootDynamicData,
+  bootPageEffects,
+  bootServiceActions,
+  ensureSliderControls,
+  parseCounterText,
+} from '../../resources/js/public/pageEffects';
 
 afterEach(() => {
   document.body.innerHTML = '';
+  delete document.documentElement.dataset.g7pbServiceActionsReady;
   vi.restoreAllMocks();
 });
 
@@ -58,7 +65,7 @@ describe('published page effects runtime', () => {
       </header>
       <main class="g7pb-page"></main>`;
 
-    bootSiteShellMenu(document, window);
+    bootPageEffects(document, window);
     const toggle = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]');
     const menu = document.querySelector<HTMLElement>('[data-g7pb-mobile-menu]');
 
@@ -71,6 +78,46 @@ describe('published page effects runtime', () => {
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(menu?.hidden).toBe(true);
     expect(document.activeElement).toBe(toggle);
+  });
+
+  it('restores slider controls removed by the active template HTML sanitizer', () => {
+    document.body.innerHTML = `
+      <section data-g7pb-slider>
+        <div class="g7pb-hero-slider__viewport"></div>
+        <div class="g7pb-hero-slider__controls"><div data-g7pb-slider-dots></div></div>
+        <p data-g7pb-slider-status></p>
+      </section>`;
+    const slider = document.querySelector<HTMLElement>('[data-g7pb-slider]');
+
+    ensureSliderControls(document, slider!, true);
+
+    expect(slider?.querySelector('[data-g7pb-slider-prev]')).not.toBeNull();
+    expect(slider?.querySelector('[data-g7pb-slider-next]')).not.toBeNull();
+    expect(slider?.querySelector('[data-g7pb-slider-toggle]')?.textContent).toBe('일시 정지');
+  });
+
+  it('executes only the typed G7 logout action and clears the local bearer token after success', async () => {
+    const root = document.implementation.createHTMLDocument('logout action');
+    root.body.innerHTML = '<a href="#g7-action-logout"><span>로그아웃</span></a>';
+    let token: string | null = 'test-token';
+    const storage = {
+      getItem: vi.fn(() => token),
+      removeItem: vi.fn(() => { token = null; }),
+    };
+    const fetcher = vi.fn(async () => new Response('{}', { status: 200 }));
+    const navigate = vi.fn();
+
+    bootServiceActions(root, window, fetcher as typeof fetch, navigate, storage);
+    root.querySelector('span')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+
+    expect(fetcher).toHaveBeenCalledWith('/api/user/auth/logout', expect.objectContaining({
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+    }));
+    expect(token).toBeNull();
+    expect(navigate).toHaveBeenCalledWith('/');
   });
 
   it('renders G7 posts and products through public APIs without injecting response HTML', async () => {
@@ -106,13 +153,13 @@ describe('published page effects runtime', () => {
         <p data-g7pb-data-status></p><div data-g7pb-data-list></div>
       </section>`;
     const memberFetch = vi.fn(async (input: RequestInfo | URL) => new Response(JSON.stringify(
-      String(input) === '/api/auth/user'
+      String(input) === '/api/user/auth/user'
         ? { success: true, data: { id: 1 } }
         : { success: true, data: [] },
     ), { status: 200 }));
 
     await bootDynamicData(document, memberFetch as typeof fetch);
     expect(document.querySelector<HTMLElement>('section')?.hidden).toBe(false);
-    expect(memberFetch).toHaveBeenCalledWith('/api/auth/user', expect.any(Object));
+    expect(memberFetch).toHaveBeenCalledWith('/api/user/auth/user', expect.any(Object));
   });
 });

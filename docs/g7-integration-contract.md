@@ -1,11 +1,11 @@
 # G7 integration contract
 
-상태: MVP baseline
+상태: 0.9 implementation baseline
 검증 기준: G7 7.0.7
 
 ## 결론
 
-G7 코어와 번들 템플릿을 수정하지 않습니다. Page Builder는 G7의 실제 공개 모듈 표면 중 필요한 최소 기능만 사용하며 문서·리비전·마지막 정상 발행본을 자체 소유합니다.
+G7 코어와 번들 템플릿을 수정하지 않습니다. Page Builder는 문서·리비전·마지막 정상 발행본을 자체 소유하고, 기본 출력에서만 활성 User Template의 공개 route/layout merge 계약을 사용해 콘텐츠를 연결합니다.
 
 G7 7.0.7에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계약이 없습니다. 따라서 MVP public artifact는 서버에서 정화한 HTML이며, G7 JSON UI compiler는 향후 선택형 target입니다.
 
@@ -14,36 +14,40 @@ G7 7.0.7에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계
 | 필수 G7 표면 | Page Builder 사용 |
 |---|---|
 | `module.php` lifecycle, module Provider 발견 | 설치·활성·비활성·upgrade와 Adapter/View binding 진입점 |
-| `src/routes/api.php`, Provider가 선등록하는 Web route | 모듈 API와 독립 editor/preview, `/pages/{slug}`, 선택형 `/` 홈 응답 |
+| `src/routes/api.php`, Provider가 선등록하는 Web route | 모듈 API와 독립 editor/preview, canonical `/pages/{slug}` 진입점 |
 | `database/migrations` | Page Builder 전용 테이블 |
 | admin auth, permissions | 관리자 API 접근 제어 |
 | `getAdminMenus()`, `resources/routes/admin.json`, module admin layout | 기존 페이지 관리와 분리된 G7 네이티브 Page Builder 문서함 |
-| `module.json` asset manifest, public asset route | 사전 빌드 IIFE/CSS를 자체 shell에서만 로드 |
+| 활성 User Template 식별·merged route 조회 | 기본 template shell과 링크 route catalog |
+| 모듈 `resources/routes/user.json`, `resources/layouts/user/**` | `/pages/:slug`, preview, 선택형 홈 콘텐츠를 `_user_base`에 연결 |
+| `core.routes.filter_merged` hook | template 발행본이 홈일 때만 `/` layout 교체·해제 시 원복 |
+| `module.json` asset manifest, public asset route | scope된 공개 CSS/effects만 G7 shell에 전역 등록; editor bundle은 직접 로드 |
 
 위 항목 외 G7 기능은 기본 제품 의존성이 아닙니다. 특히 `module.json`의 `dependencies.modules`와 `dependencies.plugins`는 빈 객체를 유지합니다.
 
 기본 제품에서 제외:
 
-- User SPA route와 User Template layout
-- User Template·Layout Extension·Layout Editor
-- `sirsoft-page`, `sirsoft-ecommerce`와 기타 번들 모듈
+- 기존 User Template route/layout 파일·DB row의 수정 또는 복제
+- Layout Extension·Layout Editor
+- `sirsoft-page`와 번들 모듈의 내부 PHP 구현·DB 저장소
 - G7 Model·Repository·Service·DB table
 - G7 Attachment/Media Model
 - custom role 등록과 기존 G7·번들 모듈 admin menu 재사용·수정
 
 모듈은 `페이지 빌더` top-level admin menu 하나를 고유 slug `jiwonpapa-page-builder`, 고유 URL `/admin/page-builder`로 선언합니다. 이 문서함·생성 화면은 G7 공개 admin route/layout 계약을 사용해 기존 관리자 외형을 유지합니다. 무거운 drag-and-drop editor만 `/modules/jiwonpapa-page_builder/admin/editor?document={uuid}` 전체화면 shell로 분리합니다. `sirsoft-page`의 `페이지 관리`, slug `sirsoft-page`, URL `/admin/pages`는 그대로 보존하며 Page Builder가 숨기거나 대체하지 않습니다.
 
-로컬 G7 테스트 설치에 번들 모듈이 존재해도 제품 의존성으로 간주하지 않습니다. 기본 모듈은 이들이 비활성·미설치인 환경을 전제로 컴파일되고, 선택 연동은 별도 capability test를 통과할 때만 로드합니다.
+로컬 G7 테스트 설치에 번들 모듈이 존재해도 hard dependency로 간주하지 않습니다. `sirsoft-board`·`sirsoft-ecommerce`의 route와 데이터는 공개 API capability가 있을 때만 선택기에 노출되며, 미설치이면 관련 선택지만 비활성화합니다.
 
 금지:
 
 - G7 또는 번들 모듈의 Model, Repository, Service, DB 테이블 직접 접근
 - G7 `resources/js/core/**`, `G7Core.__runtime`, private Layout Editor bundle 사용
-- 기존 template route/layout JSON 수정
+- 기존 template route/layout JSON·DB row 수정
+- 모듈 namespace 밖 user route/layout 선언
 - 기존 `페이지 관리` admin menu·slug·URL 수정 또는 Page Builder 진입점으로 재사용
 - Layout Editor의 저장 API를 Page Builder 문서 저장소로 사용
 
-루트 `module.php`는 `App\Extension\AbstractModule`을 연결하는 Composition Root 예외입니다. `src/Providers/*ServiceProvider.php`도 Adapter binding과 `loadViewsFrom`만 허용하며 비즈니스 로직은 두지 않습니다.
+루트 `module.php`는 `App\Extension\AbstractModule`을 연결하는 Composition Root 예외입니다. `src/Providers/*ServiceProvider.php`도 Adapter binding, view/Web route/middleware와 G7 route bridge 등록만 허용하며 비즈니스 로직은 두지 않습니다.
 
 ## 소유권
 
@@ -52,9 +56,11 @@ G7 7.0.7에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계
 | slug, title, SEO, 공개 여부 | Page Builder |
 | builder document, draft lock, revision | Page Builder |
 | prepared publication, active publication, compiled HTML | Page Builder |
-| Header·Footer Site Part 원본·revision·active 발행본 | Page Builder |
+| 활성 template Header·Footer·navigation | G7 User Template |
+| `builder` shell Header·Footer Site Part 원본·revision·active 발행본 | Page Builder |
 | editor selection/history/sidebar | 브라우저 임시 상태 |
-| G7 Layout JSON | G7 template/module, Page Builder 수정 금지 |
+| 기존 G7 Layout JSON | G7 template/module, Page Builder 수정 금지 |
+| `page_builder_{public|home|preview}` Layout JSON | Page Builder 모듈 |
 
 `sirsoft-page`의 현재 content row는 draft/published가 분리되지 않으므로 Page Builder 원본이나 last-good 발행 저장소로 사용하지 않습니다. 향후 metadata mirror가 필요하면 별도 선택 Adapter 제품으로 검토하며 기본 모듈에는 포함하지 않습니다.
 
@@ -64,6 +70,7 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 
 | Method | Path | 목적 |
 |---|---|---|
+| GET | `/api/modules/jiwonpapa-page_builder/admin/routes/catalog` | 활성 User Template의 G7 서비스 route와 parameter source 조회 |
 | GET | `/api/modules/jiwonpapa-page_builder/admin/documents` | 문서 목록 조회 |
 | GET | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 기존 설정에서 Site Part를 최초 생성하기 위한 호환 fallback 조회 |
 | PUT | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 구버전 호환용 설정 저장. 신규 관리자 UI에서는 직접 사용하지 않음 |
@@ -87,6 +94,8 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 | POST | `/api/modules/jiwonpapa-page_builder/admin/documents/{id}/home` | 발행 문서를 홈으로 지정하거나 해제, expected lock 적용 |
 | POST | `/api/modules/jiwonpapa-page_builder/admin/publications/{token}/commit` | 후보를 active publication으로 원자 전환 |
 | GET | `/api/modules/jiwonpapa-page_builder/public/pages/{slug}` | active snapshot만 반환 |
+| GET | `/api/modules/jiwonpapa-page_builder/public/home` | template home active snapshot만 반환 |
+| GET | `/api/modules/jiwonpapa-page_builder/public/previews/{token}` | User Template preview용 만료 token snapshot 반환 |
 
 관리자 Web 진입점은 G7 네이티브 문서함 `/admin/page-builder`, 페이지 편집기 `/modules/jiwonpapa-page_builder/admin/editor?document={uuid}`, Site Part 편집기 `/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}`로 분리합니다. G7 기본 페이지 관리와 연결하지 않습니다.
 
@@ -98,14 +107,13 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 
 ## 페이지 렌더
 
-- canonical 공개 route `/pages/{slug}`가 active artifact를 직접 응답합니다.
+- canonical 공개 route `/pages/{slug}`는 `template` 발행본이면 G7 app을 시작하고 모듈 user layout이 active artifact를 `HtmlContent`로 렌더합니다. `builder`·`none`은 자체 viewer가 직접 응답합니다.
 - 과거 `/modules/jiwonpapa-page_builder/p/{slug}`는 공개본이 있을 때 `/pages/{slug}`로 HTTP 301 이동합니다.
-- 발행 문서 하나를 홈으로 지정하면 GET/HEAD `/`만 Page Builder가 응답합니다. 지정이 없거나 모듈 조회가 실패하면 G7 기본 홈으로 fail-through 합니다.
-- G7 SPA layout과 Layout Editor를 전혀 사용하지 않습니다.
-- 활성 User Template과 번들 모듈의 존재 여부를 묻지 않습니다.
-- 공개 route는 G7 템플릿 Header·Footer를 사용하지 않습니다. 기본 `shell_mode=global`에서는 발행된 Page Builder Site Part를 렌더하며 해당 종류가 아직 미발행이면 기존 SiteShell을 종류별 fallback으로 사용합니다. `none`에서는 콘텐츠 canvas만 렌더합니다.
+- `template` 발행 문서 하나를 홈으로 지정하면 merged user route의 `/` layout만 Page Builder home으로 교체합니다. 지정·공개를 해제하거나 조회가 실패하면 원래 G7 템플릿 홈으로 fail-through 합니다.
+- 기본 `shell_mode=template`은 활성 User Template의 `_user_base` Header·Footer·navigation을 사용합니다. `builder`는 Page Builder Site Part, `none`은 콘텐츠 canvas만 렌더합니다.
+- G7 Layout Editor는 전혀 사용하지 않으며 같은 문서를 소유하지 않습니다.
 - module Provider가 `resources/views`를 `loadViewsFrom`으로 등록하고 자체 Controller가 editor/viewer shell을 렌더합니다. G7 `getViews()` 자동 등록을 가정하지 않습니다.
-- `module.json` asset strategy는 `lazy`이며 shell이 `/api/modules/assets/jiwonpapa-page_builder/dist/...`를 직접 링크합니다. Puck bundle을 다른 G7 화면에 전역 주입하지 않습니다.
+- `module.json` global asset에는 `.g7pb-page`로 scope된 public CSS와 가벼운 effects IIFE만 등록합니다. Puck·React editor bundle은 editor shell이 직접 링크하며 다른 G7 화면에 전역 주입하지 않습니다.
 - canonical·Open Graph URL은 `/pages/{slug}` 또는 홈 지정 시 `/`을 사용합니다.
 
 ## 발행 순서
@@ -124,6 +132,7 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 
 - G7 `>=7.0.7`
 - module lifecycle/Provider/routes/migrations/permissions/asset serving 사용 가능
+- 활성 User Template, merged route 조회, module user route/layout sync와 route filter hook 사용 가능
 - `module.json`에 필수 번들 module/plugin dependency가 없음
 - Page Builder schema/compiler version 지원 여부
 
@@ -137,13 +146,13 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 | 게시판 인기글 | `GET /api/modules/sirsoft-board/boards/popular?period={today|week|month|year}&limit=N` | 블록 빈 상태 |
 | 상품 최신순 | `GET /api/modules/sirsoft-ecommerce/products?per_page=N&sort=latest` | 블록 빈 상태 |
 | 신상품·인기상품 | `GET /api/modules/sirsoft-ecommerce/products/{new|popular}?limit=N` | 블록 빈 상태 |
-| 방문자 구분 | `GET /api/auth/user`의 2xx 여부 | 인증 오류는 비회원으로 처리 |
+| 방문자 구분 | `GET /api/user/auth/user`의 2xx 여부 | 인증 오류는 비회원으로 처리 |
 
 이 Adapter는 브라우저에서 same-origin JSON만 요청합니다. 응답은 필드별 `textContent`로 렌더하고 상대경로 또는 HTTPS 이미지 외에는 폐기합니다. G7 번들 모듈의 내부 PHP 클래스·DB 테이블·관리자 API를 참조하지 않으며 공개 artifact에는 개인화 결과를 저장하지 않습니다.
 
 ## 선택 연동 규칙
 
-User Template shell, `sirsoft-page` metadata mirror, `sirsoft-ecommerce` Product Grid, G7 JSON UI target은 기본 모듈 밖의 선택 연동입니다.
+`sirsoft-page` metadata mirror, 더 깊은 `sirsoft-ecommerce` adapter와 G7 JSON UI target은 기본 모듈 밖의 선택 연동입니다. 활성 User Template shell과 route catalog는 기본 G7 Adapter입니다.
 
 - Domain/Application/Contracts에서 선택 연동 type을 import하지 않습니다.
 - 별도 Adapter 또는 Block Pack manifest가 capability와 최소 버전을 선언합니다.

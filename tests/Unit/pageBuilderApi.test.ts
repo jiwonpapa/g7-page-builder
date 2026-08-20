@@ -56,6 +56,30 @@ describe('PageBuilderApiClient', () => {
     );
   });
 
+  it('loads the active G7 template route catalog through the module adapter', async () => {
+    const catalog = {
+      active_template: 'sirsoft-basic',
+      routes: [{
+        id: 'auth.login',
+        label: '로그인',
+        category: '회원',
+        path: '/login',
+        auth_required: false,
+        guest_only: true,
+        parameters: [],
+        parameter_sources: {},
+        source: { kind: 'template', identifier: null },
+      }],
+    };
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({ success: true, message: 'ok', data: catalog }),
+    );
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.getRouteCatalog()).resolves.toEqual(catalog);
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/routes/catalog`);
+  });
+
   it('uses the BaseController envelope and Sanctum Bearer auth', async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({ success: true, message: 'ok', data: documentResource }),

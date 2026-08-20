@@ -25,7 +25,7 @@ final class DomainContractsTest extends TestCase
         );
 
         self::assertSame('g7-page-builder/v1', $document->schemaVersion);
-        self::assertSame('global', $document->shellMode);
+        self::assertSame('template', $document->shellMode);
     }
 
     public function test_document_rejects_non_canvas_mode(): void
@@ -99,6 +99,23 @@ final class DomainContractsTest extends TestCase
             blocks: [],
             shellMode: 'g7-theme',
         );
+    }
+
+    public function test_document_accepts_template_builder_blank_and_legacy_shell_modes(): void
+    {
+        foreach (['template', 'builder', 'none', 'global'] as $shellMode) {
+            $document = new PageBuilderDocument(
+                documentId: '00000000-0000-4000-8000-000000000001',
+                slug: 'page-builder',
+                mode: 'canvas',
+                locale: 'ko',
+                tokens: [],
+                blocks: [],
+                shellMode: $shellMode,
+            );
+
+            self::assertSame($shellMode, $document->shellMode);
+        }
     }
 
     public function test_document_rejects_an_unapproved_design_token_value(): void

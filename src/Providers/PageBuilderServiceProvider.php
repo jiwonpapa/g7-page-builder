@@ -26,6 +26,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\BlockUsagePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\MediaPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Contracts\RouteCatalogPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
@@ -45,6 +46,8 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentB
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7RouteCatalogAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 
 final class PageBuilderServiceProvider extends ServiceProvider
 {
@@ -52,6 +55,8 @@ final class PageBuilderServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/block-packs.php', 'g7-page-builder.block-packs');
         $this->app->bind(PageBuilderRepository::class, EloquentPageBuilderRepository::class);
+        $this->app->bind(RouteCatalogPort::class, G7RouteCatalogAdapter::class);
+        $this->app->singleton(G7TemplateRouteBridge::class);
         $this->app->bind(BlockFavoritePort::class, EloquentBlockFavoriteAdapter::class);
         $this->app->bind(BlockPackRepository::class, EloquentBlockPackRepository::class);
         $this->app->singleton(
@@ -161,6 +166,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
         }
 
         $this->loadViewsFrom($moduleRoot.'/resources/views', 'g7-page-builder');
+        $this->app->make(G7TemplateRouteBridge::class)->register();
 
         $router = $this->app->make(Router::class);
         $router->prependMiddlewareToGroup('web', PageBuilderHomeOverride::class);

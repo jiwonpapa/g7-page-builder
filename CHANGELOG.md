@@ -6,9 +6,24 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-20
+
+### Added
+
+- 활성 G7 User Template의 Header·Footer·navigation을 그대로 사용하는 기본 출력과 모듈 소유 user route 2개·layout 3개를 추가했습니다.
+- 로그인·회원가입·로그아웃·게시판·쇼핑몰·마이페이지·Page Builder 화면을 검색하고 route parameter 대상을 골라 링크를 완성하는 G7 서비스 연결 선택기를 추가했습니다.
+- 임시 문서를 활성 템플릿 안에 발행하고 `/` 홈을 연결한 뒤 원래 홈을 복구하는 실제 브라우저 회귀시험을 추가했습니다.
+
 ### Changed
 
+- 새 문서의 기본 `shell_mode`를 `template`으로 바꾸고, Page Builder Header·Footer는 선택형 `builder`, 공통영역 없는 인트로는 `none`으로 분리했습니다.
+- 공개 CSS와 효과 runtime만 G7 asset manifest로 주입하고 `.g7pb-page` 아래에 scope했으며 무거운 Puck editor bundle은 독립 편집기에서만 로드하도록 변경했습니다.
 - 테스트 스테이징 배포에서 DB dump와 영구 모듈 백업을 제거하고, 배포 중에만 유지되는 임시 파일 rollback으로 제한했습니다.
+
+### Fixed
+
+- G7 사용자 인증·로그아웃 공개 API 경로를 7.0.7 계약에 맞추고 로그아웃 링크를 POST typed action으로 처리했습니다.
+- G7 `HtmlContent` 정화 과정에서 제거되는 Slider 조작 버튼을 공개 runtime이 안전하게 복원하도록 수정했습니다.
 
 ## [0.8.0] - 2026-08-20
 

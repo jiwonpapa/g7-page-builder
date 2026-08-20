@@ -20,7 +20,7 @@ import {
   PageBuilderApiError,
   buildAdminLoginUrl,
 } from '../api/pageBuilderApi';
-import type { DocumentResource, RevisionSummary } from '../documents/types';
+import type { DocumentResource, PageShellMode, RevisionSummary } from '../documents/types';
 import type { BlockPackResource, GitHubBlockPackCheckResource } from '../blocks/types';
 
 interface PageBuilderManagerOptions {
@@ -90,12 +90,12 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createTitle, setCreateTitle] = useState('');
   const [createSlug, setCreateSlug] = useState('');
-  const [createShellMode, setCreateShellMode] = useState<'global' | 'none'>('global');
+  const [createShellMode, setCreateShellMode] = useState<PageShellMode>('template');
   const [creating, setCreating] = useState(false);
   const [metadataDocument, setMetadataDocument] = useState<DocumentResource | null>(null);
   const [metadataTitle, setMetadataTitle] = useState('');
   const [metadataSlug, setMetadataSlug] = useState('');
-  const [metadataShellMode, setMetadataShellMode] = useState<'global' | 'none'>('global');
+  const [metadataShellMode, setMetadataShellMode] = useState<PageShellMode>('template');
   const [savingMetadata, setSavingMetadata] = useState(false);
   const [duplicateDocument, setDuplicateDocument] = useState<DocumentResource | null>(null);
   const [duplicateTitle, setDuplicateTitle] = useState('');
@@ -230,7 +230,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     setMetadataDocument(resource);
     setMetadataTitle(resource.title);
     setMetadataSlug(resource.document.slug);
-    setMetadataShellMode(resource.document.shell_mode ?? 'global');
+    setMetadataShellMode(resource.document.shell_mode ?? 'template');
     setMessage(null);
   };
 
@@ -790,12 +790,16 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                   pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
                   onChange={(event) => setCreateSlug(event.target.value.toLowerCase())} />
               </label>
-              <label className="g7pb-choice-row">
-                <input type="checkbox" checked={createShellMode === 'global'}
+              <label>
+                페이지 출력 방식
+                <span>사이트 템플릿을 기본으로 사용하며 기존 템플릿은 수정하지 않습니다.</span>
+                <select value={createShellMode === 'global' ? 'builder' : createShellMode}
                   data-testid="page-builder-manager-shell-mode"
-                  onChange={(event) => setCreateShellMode(event.target.checked ? 'global' : 'none')} />
-                공통 Header·Footer 표시
-                <span>인트로·캠페인 페이지는 끌 수 있습니다.</span>
+                  onChange={(event) => setCreateShellMode(event.currentTarget.value as PageShellMode)}>
+                  <option value="template">활성 사이트 템플릿 · 권장</option>
+                  <option value="builder">페이지 빌더 Header·Footer</option>
+                  <option value="none">공통영역 없음 · 인트로/캠페인</option>
+                </select>
               </label>
               <div className="g7pb-dialog__actions">
                 <button type="button" className="g7pb-button g7pb-button--quiet"
@@ -862,12 +866,16 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                   pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
                   onChange={(event) => setMetadataSlug(event.target.value.toLowerCase())} />
               </label>
-              <label className="g7pb-choice-row">
-                <input type="checkbox" checked={metadataShellMode === 'global'}
+              <label>
+                페이지 출력 방식
+                <span>변경 사항은 다음 발행부터 공개 페이지에 적용됩니다.</span>
+                <select value={metadataShellMode === 'global' ? 'builder' : metadataShellMode}
                   data-testid="page-builder-manager-metadata-shell-mode"
-                  onChange={(event) => setMetadataShellMode(event.target.checked ? 'global' : 'none')} />
-                공통 Header·Footer 표시
-                <span>끄면 이 페이지는 콘텐츠만 표시됩니다.</span>
+                  onChange={(event) => setMetadataShellMode(event.currentTarget.value as PageShellMode)}>
+                  <option value="template">활성 사이트 템플릿 · 권장</option>
+                  <option value="builder">페이지 빌더 Header·Footer</option>
+                  <option value="none">공통영역 없음 · 인트로/캠페인</option>
+                </select>
               </label>
               <div className="g7pb-dialog__actions">
                 {metadataDocument.public_url && (

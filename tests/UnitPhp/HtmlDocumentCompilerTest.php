@@ -150,6 +150,27 @@ final class HtmlDocumentCompilerTest extends TestCase
         $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
     }
 
+    public function test_cta_accepts_only_the_typed_logout_hash_action(): void
+    {
+        $compiler = $this->builtInCompiler();
+        $artifact = (string) $compiler->compile(
+            $this->document('<p>안전한 본문</p>', ['primaryLink' => ['label' => '로그아웃', 'url' => '#g7-action-logout']]),
+            1,
+            'html',
+            'g7-7.0.7',
+        )->artifact;
+
+        self::assertStringContainsString('href="#g7-action-logout"', $artifact);
+
+        $this->expectException(DocumentCompileException::class);
+        $compiler->compile(
+            $this->document('<p>안전한 본문</p>', ['primaryLink' => ['label' => '임의 동작', 'url' => '#unknown-action']]),
+            1,
+            'html',
+            'g7-7.0.7',
+        );
+    }
+
     public function test_contact_rejects_form_configuration(): void
     {
         $this->expectException(DocumentCompileException::class);

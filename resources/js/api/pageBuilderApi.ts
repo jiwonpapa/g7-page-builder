@@ -15,6 +15,7 @@ import type {
   PublicationPreparation,
   RevisionListResource,
   RevisionResource,
+  RouteCatalogResource,
 } from '../documents/types';
 import type {
   BlockCatalogResource,
@@ -152,7 +153,7 @@ export class PageBuilderApiClient {
     slug: string;
     title: string;
     locale: string;
-    shell_mode?: 'global' | 'none';
+    shell_mode?: PageBuilderDocument['shell_mode'];
   }): Promise<DocumentResource> {
     return this.request<DocumentResource>('/documents', {
       method: 'POST',
@@ -201,7 +202,7 @@ export class PageBuilderApiClient {
       title: string;
       slug: string;
       locale: string;
-      shell_mode: 'global' | 'none';
+      shell_mode: NonNullable<PageBuilderDocument['shell_mode']>;
       expected_lock_version: number;
     },
   ): Promise<DocumentResource> {
@@ -217,6 +218,10 @@ export class PageBuilderApiClient {
     return this.request<RevisionListResource>(
       `/documents/${encodeURIComponent(documentId)}/revisions?${query.toString()}`,
     );
+  }
+
+  async getRouteCatalog(): Promise<RouteCatalogResource> {
+    return this.request<RouteCatalogResource>('/routes/catalog');
   }
 
   async getRevision(documentId: string, revision: number): Promise<RevisionResource> {

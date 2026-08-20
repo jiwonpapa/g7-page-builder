@@ -18,9 +18,10 @@
 ## 공개 방식
 
 - MVP 문서 스키마 v1은 `canvas`만 허용합니다.
-- `/pages/{slug}`는 기본적으로 Page Builder가 소유한 공통 Header·Footer와 메뉴를 함께 렌더합니다. 문서의 `shell_mode=none`은 인트로·캠페인용 콘텐츠 전체 canvas만 렌더합니다.
-- 발행본 하나를 홈으로 지정하면 `/`에서 응답하고, 지정이 없으면 G7 기본 홈을 보존합니다. G7 템플릿 Header·Footer는 가져오거나 수정하지 않습니다.
-- G7 User Template, SPA layout, Layout Editor와 번들 모듈을 요구하지 않습니다.
+- `/pages/{slug}`의 기본 `shell_mode=template`은 현재 활성 G7 User Template의 Header·Footer·navigation 사이에 Page Builder 콘텐츠를 렌더합니다. 템플릿 파일·layout JSON·DB row는 수정하지 않습니다.
+- `shell_mode=builder`는 Page Builder가 소유한 Header·Footer Site Part를, `shell_mode=none`은 인트로·캠페인용 canvas만 렌더합니다.
+- `template` 발행본 하나를 홈으로 지정하면 모듈 home layout이 `/`에서 응답하고, 지정·공개를 해제하면 기존 G7 템플릿 홈을 복구합니다.
+- G7 Layout Editor와 `sirsoft-page`는 요구하지 않습니다. 활성 User Template의 공개 route/layout merge 계약만 최소 의존성으로 사용합니다.
 
 ## 편집기 기능
 
@@ -34,6 +35,7 @@
 - 360·768·1280 px preview
 - Header와 Footer를 설정 모달이 아닌 같은 Puck drag/drop 캔버스에서 각각 편집
 - Header 내비게이션·공지 바, 기본 Footer·다단 Footer의 inline 문구·typed 링크·로고 MediaPort 편집
+- 링크 필드에서 활성 G7 템플릿의 로그인·회원가입·로그아웃·게시판·쇼핑몰·마이페이지·Page Builder route를 검색하고 필요한 route parameter 대상을 선택
 - dirty/saving/saved/conflict/publish 상태 표시
 - 2초 debounce autosave와 명시적 저장
 - 다른 revision을 기반으로 저장하면 HTTP 409와 비교/새로고침 안내
@@ -54,7 +56,7 @@
 - 편집 캔버스에서는 실제 데이터와 구분되는 구조 미리보기를 제공합니다.
 - 공개 화면은 같은 origin의 G7 공개 API만 호출하고 응답 문자열을 HTML로 해석하지 않습니다.
 - 대상 모듈 미설치·빈 결과·API 오류는 페이지 전체 오류가 아니라 블록의 명시적 빈 상태 또는 재시도 안내로 처리합니다.
-- 회원 조건은 `/api/auth/user` 결과만 사용하며 Page Builder artifact와 cache에는 개인 데이터를 저장하지 않습니다.
+- 회원 조건은 `/api/user/auth/user` 결과만 사용하며 Page Builder artifact와 cache에는 개인 데이터를 저장하지 않습니다.
 - 편집기 `원본 보기`는 현재 PageBuilderDocument JSON과 서버가 검증·컴파일한 HTML을 읽기 전용으로 표시합니다. 원본 JSON이나 산출물 HTML을 직접 수정·저장하는 기능은 제공하지 않습니다.
 - 네트워크 실패는 draft를 지우지 않고 재시도 가능 상태로 둡니다.
 - compile 실패는 공개 페이지를 바꾸지 않습니다.

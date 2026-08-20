@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "layout_name": "page_builder_preview",
+  "extends": "_user_base",
+  "meta": {
+    "title": "미리보기 · {{page?.data?.page?.title ?? ''}}",
+    "seo": {
+      "enabled": false
+    }
+  },
+  "data_sources": [
+    {
+      "id": "page",
+      "type": "api",
+      "endpoint": "/api/modules/jiwonpapa-page_builder/public/previews/{{route?.token}}",
+      "method": "GET",
+      "auto_fetch": true,
+      "auth_required": false,
+      "loading_strategy": "blocking",
+      "fallback": {
+        "data": null
+      }
+    }
+  ],
+  "slots": {
+    "content": [
+      {
+        "id": "page_builder_preview_banner",
+        "type": "basic",
+        "name": "Div",
+        "props": {
+          "className": "g7pb-template-preview-banner"
+        },
+        "text": "미리보기 · 이 화면은 공개되지 않습니다."
+      },
+      {
+        "id": "page_builder_preview_content",
+        "type": "composite",
+        "name": "HtmlContent",
+        "if": "{{page?.data?.page?.artifact}}",
+        "props": {
+          "content": "{{page?.data?.page?.artifact ?? ''}}",
+          "isHtml": true,
+          "className": "g7pb-page g7pb-template-page"
+        }
+      }
+    ]
+  }
+}

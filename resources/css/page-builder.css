@@ -2800,6 +2800,47 @@ body.g7pb-manager-shell {
 .g7pb-site-footer--columns h2 { margin: 0 0 1rem; color: #fff; font-size: .82rem; }
 .g7pb-site-footer--columns ul { display: grid; gap: .7rem; }
 
+.g7pb-route-field { display: grid; gap: .45rem; }
+.g7pb-route-field > label { color: #465166; font-size: .72rem; font-weight: 800; }
+.g7pb-route-field__input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4rem; }
+.g7pb-route-field__input-row input { min-width: 0; }
+.g7pb-route-field__input-row button { display: inline-flex; min-height: 2.3rem; align-items: center; gap: .35rem; padding: .45rem .65rem; border: 1px solid #b9c5d8; border-radius: .5rem; color: #2149ae; background: #f7f9ff; font-size: .7rem; font-weight: 850; white-space: nowrap; cursor: pointer; }
+.g7pb-route-picker-backdrop { position: fixed; z-index: 20000; inset: 0; display: grid; place-items: center; padding: 1.25rem; background: rgb(15 23 42 / 54%); backdrop-filter: blur(4px); }
+.g7pb-route-picker { display: grid; width: min(62rem, 100%); max-height: min(46rem, calc(100vh - 2.5rem)); overflow: hidden; border: 1px solid #dce2ec; border-radius: 1rem; color: #172033; background: #fff; box-shadow: 0 2rem 5rem rgb(15 23 42 / 28%); }
+.g7pb-route-picker > header, .g7pb-route-picker > footer { display: flex; gap: 1rem; align-items: center; justify-content: space-between; padding: 1.1rem 1.3rem; }
+.g7pb-route-picker > header { border-bottom: 1px solid #e5e9f0; }
+.g7pb-route-picker > header span { color: #2456df; font-size: .7rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.g7pb-route-picker > header h2 { margin: .15rem 0 0; font-size: 1.25rem; letter-spacing: -.025em; }
+.g7pb-route-picker > header button { display: grid; width: 2.4rem; height: 2.4rem; place-items: center; border: 1px solid #dde3ec; border-radius: 999px; background: #fff; cursor: pointer; }
+.g7pb-route-picker__body { display: grid; min-height: 28rem; grid-template-columns: minmax(18rem, 1fr) minmax(18rem, .9fr); overflow: hidden; }
+.g7pb-route-picker__body > aside { display: grid; min-width: 0; grid-template-rows: auto auto 1fr; gap: .75rem; padding: 1rem; border-right: 1px solid #e5e9f0; background: #f8f9fb; }
+.g7pb-route-picker__search { display: flex; align-items: center; gap: .5rem; padding: 0 .75rem; border: 1px solid #cdd5e1; border-radius: .65rem; background: #fff; }
+.g7pb-route-picker__search input { width: 100%; min-height: 2.7rem; padding: 0; border: 0; outline: 0; background: transparent; }
+.g7pb-route-picker__body nav { display: flex; gap: .35rem; overflow-x: auto; padding-bottom: .15rem; }
+.g7pb-route-picker__body nav button { padding: .4rem .65rem; border: 1px solid #d8dee8; border-radius: 99px; color: #59667a; background: #fff; font-size: .67rem; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.g7pb-route-picker__body nav button[aria-current='true'] { border-color: #2456df; color: #fff; background: #2456df; }
+.g7pb-route-picker__routes { display: grid; align-content: start; gap: .4rem; overflow-y: auto; }
+.g7pb-route-picker__routes > button { display: grid; grid-template-columns: 1fr auto; gap: .25rem .75rem; padding: .75rem .85rem; border: 1px solid transparent; border-radius: .65rem; text-align: left; background: #fff; cursor: pointer; }
+.g7pb-route-picker__routes > button:hover, .g7pb-route-picker__routes > button.is-selected { border-color: #8ba8f5; background: #f0f4ff; }
+.g7pb-route-picker__routes strong { font-size: .8rem; }
+.g7pb-route-picker__routes code { grid-row: 2; grid-column: 1 / -1; overflow: hidden; color: #657187; font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+.g7pb-route-picker__routes span { display: inline-flex; align-items: center; gap: .2rem; color: #6b7280; font-size: .6rem; font-weight: 750; }
+.g7pb-route-picker__detail { min-width: 0; overflow-y: auto; padding: clamp(1.5rem, 4vw, 2.5rem); }
+.g7pb-route-picker__detail h3 { margin: .25rem 0 .65rem; font-size: 1.55rem; letter-spacing: -.035em; }
+.g7pb-route-picker__detail > p:not(.g7pb-kicker) { color: #667085; line-height: 1.65; }
+.g7pb-route-picker__detail label { display: grid; gap: .4rem; margin-top: 1rem; color: #465166; font-size: .72rem; font-weight: 800; }
+.g7pb-route-picker__detail input, .g7pb-route-picker__detail select { min-height: 2.75rem; padding: .6rem .75rem; border: 1px solid #cbd4e1; border-radius: .55rem; background: #fff; }
+.g7pb-route-picker__preview { display: grid; gap: .35rem; margin-top: 1.5rem; padding: 1rem; border-radius: .7rem; background: #172033; color: #fff; }
+.g7pb-route-picker__preview span { color: #aab4c5; font-size: .65rem; font-weight: 800; }
+.g7pb-route-picker__preview code { overflow-wrap: anywhere; color: #fff; }
+.g7pb-route-picker__empty { display: grid; min-height: 100%; place-content: center; justify-items: center; color: #7b8799; text-align: center; }
+.g7pb-route-picker > footer { border-top: 1px solid #e5e9f0; }
+.g7pb-route-picker > footer small { color: #758197; }
+.g7pb-route-picker > footer div { display: flex; gap: .5rem; }
+.g7pb-route-picker > footer button { display: inline-flex; min-height: 2.5rem; align-items: center; gap: .35rem; padding: .55rem .85rem; border: 1px solid #cfd7e3; border-radius: .55rem; background: #fff; font-weight: 800; cursor: pointer; }
+.g7pb-route-picker > footer button.is-primary { border-color: #2456df; color: #fff; background: #2456df; }
+.g7pb-route-picker > footer button:disabled { opacity: .45; cursor: not-allowed; }
+
 @media (max-width: 899px) {
   .g7pb-site-header__inner { width: min(calc(100% - 2rem), 72rem); min-height: 4.25rem; grid-template-columns: 1fr auto; }
   .g7pb-site-nav, .g7pb-site-header__inner > .g7pb-site-header__cta { display: none; }
@@ -2807,6 +2848,9 @@ body.g7pb-manager-shell {
   .g7pb-site-footer__top, .g7pb-site-footer__columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .g7pb-site-footer__columns > :first-child { grid-column: 1 / -1; }
   .g7pb-site-part-device-legend span { display: none; }
+  .g7pb-route-picker__body { grid-template-columns: 1fr; overflow-y: auto; }
+  .g7pb-route-picker__body > aside { max-height: 23rem; border-right: 0; border-bottom: 1px solid #e5e9f0; }
+  .g7pb-route-picker__detail { min-height: 18rem; }
 }
 
 @media (max-width: 520px) {

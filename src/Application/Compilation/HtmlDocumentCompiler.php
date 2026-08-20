@@ -1039,7 +1039,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private function assertAllowedUrl(string $url, string $property): void
     {
-        if ($this->isRelativeUrl($url) || $this->isHttpsUrl($url) || $this->isMailtoUrl($url) || $this->isTelUrl($url)) {
+        if ($url === '#g7-action-logout' || $this->isRelativeUrl($url) || $this->isHttpsUrl($url) || $this->isMailtoUrl($url) || $this->isTelUrl($url)) {
             return;
         }
 

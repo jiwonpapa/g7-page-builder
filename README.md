@@ -8,8 +8,9 @@
 - 독립 편집기는 MIT `Puck`을 커널로 사용하고 Puck은 Adapter 뒤에 격리합니다.
 - 이 저장소는 페이지 문서, 리비전, 발행본, 블록 프리셋과 공개 렌더 결과를 소유합니다.
 - `PageBuilderDocument`를 MVP에서는 안전한 HTML로 컴파일하며 G7 JSON UI 출력은 공개 렌더 계약이 생긴 뒤 추가합니다.
-- 기본 모듈은 G7 코어의 lifecycle·Provider·route·migration·admin permission·모듈 소유 admin menu/layout·asset serving 표면만 사용합니다.
-- `sirsoft-page`, `sirsoft-ecommerce`, User Template, Layout Extension은 선택 연동이며 없어도 전체 기본 흐름이 동작합니다.
+- 기본 모듈은 G7 코어의 lifecycle·Provider·route·migration·admin permission·모듈 소유 admin menu/layout, 활성 User Template의 공개 route/layout merge와 asset serving 표면만 사용합니다.
+- 기본 출력은 현재 활성 User Template의 Header·Footer·navigation을 그대로 사용하고 Page Builder 발행 HTML만 콘텐츠 영역에 삽입합니다. 템플릿 파일·layout JSON·DB row는 수정하지 않습니다.
+- `sirsoft-page`와 Layout Editor는 사용하지 않습니다. `sirsoft-board`·`sirsoft-ecommerce`는 공개 route/API가 있을 때 링크 선택기와 데이터 블록에서만 사용하며 hard dependency가 아닙니다.
 - G7의 기존 `페이지 관리`는 메뉴·데이터·URL까지 그대로 보존하고, 별도 `페이지 빌더` 메뉴에서 자체 문서함과 편집기로 진입합니다.
 
 ```text
@@ -21,17 +22,18 @@ PHP Compiler
         v
 Sanitized published artifact
         |
-        v
-G7 module-owned public route/viewer
+        +--> active G7 User Template content slot (default)
+        |
+        +--> module-owned builder/none viewer (opt-in)
 ```
 
 ## 현재 상태
 
 Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가한 12종 블록은 `jiwonpapa/builtin-core` 내장 Pack으로 등록됩니다. 편집기는 서버 카탈로그의 검색·분류·관리자별 즐겨찾기와 Data Preset 복사를 지원합니다. 관리 화면에서는 외부 Pack ZIP 설치·활성화·비활성화·사용량 확인·안전 제거와 GitHub Release 최신 안정 버전 확인·명시적 설치를 수행합니다. 외부 Code Pack은 신뢰 발행자 Ed25519 서명, 파일 digest, 정확한 PHP compiler/schema/editor 등록을 통과해야 하며 내장 component를 덮어쓸 수 없습니다.
 
-좌측 Blocks 라이브러리는 축소 구조 미리보기와 용도를 표시하고 Puck 기본 DnD로 블록 사이 정확한 위치에 드롭합니다. Hero 계열 문구는 캔버스에서 직접 수정하며 Slider Hero는 편집 중 선택 장면을 고정하고 공개본에서만 Embla 자동재생을 적용합니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 공통 Header·Footer와 PC·모바일 메뉴 편집, 문서별 인트로 모드, typed style·motion preset, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다.
+좌측 Blocks 라이브러리는 축소 구조 미리보기와 용도를 표시하고 Puck 기본 DnD로 블록 사이 정확한 위치에 드롭합니다. Hero 계열 문구는 캔버스에서 직접 수정하며 Slider Hero는 편집 중 선택 장면을 고정하고 공개본에서만 Embla 자동재생을 적용합니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 선택형 Page Builder Header·Footer, PC·모바일 메뉴 편집, 문서별 출력 shell, typed style·motion preset, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 링크 필드는 활성 G7 템플릿의 로그인·회원가입·게시판·쇼핑몰·마이페이지·Page Builder route를 검색하고 필요한 게시판·카테고리·상품·문서를 선택해 URL을 완성합니다.
 
-전체 유료 MVP는 아직 아닙니다. 자체 MediaPort 이미지 업로드·선택, 복구 가능한 문서 보관·복원·확인형 영구 삭제, Hero 중복 경고, Embla 슬라이더, 추천 효과 일괄 적용까지 구현됐습니다. 기본 SEO, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
+전체 유료 MVP는 아직 아닙니다. 자체 MediaPort 이미지 업로드·선택, 복구 가능한 문서 보관·복원·확인형 영구 삭제, Hero 중복 경고, Embla 슬라이더, 추천 효과 일괄 적용, 활성 User Template 연결과 G7 route 선택까지 구현됐습니다. 기본 SEO, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
 
 ## 저장소 역할
 
@@ -88,7 +90,7 @@ make integration-verify TASK=integration-20260820
 다음:
 
 1. G7 게시판·쇼핑 상품을 읽는 선택형 `ContentSourcePort`와 실제 동적 Block Pack
-2. 다단 메뉴·드롭다운과 Header·Footer 프리셋 확장
+2. 선택형 Page Builder shell의 다단 메뉴·드롭다운과 Header·Footer 프리셋 확장
 3. 기본 SEO 계약과 OG 이미지 선택, 접근성·고정 시각 회귀 baseline 보강
 
 Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 제공합니다.
@@ -105,6 +107,7 @@ Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 �
 - [MVP 기능 명세](docs/mvp-functional-spec.md)
 - [문서·발행 계약](docs/document-publish-contract.md)
 - [공통 Header·Footer 계약](docs/site-shell-contract.md)
+- [User Template·라우트 연결 계약](docs/template-route-integration.md)
 - [품질 하네스](docs/quality-harness.md)
 - [Worktree coordination 하네스](docs/worktree-coordination.md)
 - [런타임·호스팅·Rust 정책](docs/runtime-hosting.md)

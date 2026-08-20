@@ -120,7 +120,7 @@ make dev-infra-e2e TASK=integration-20260820
 - 플러그인 `sirsoft-daum_postcode`
 - 개발 중인 `jiwonpapa-page_builder` 설치·활성화
 
-앞의 번들 확장은 `sirsoft-basic` 기본 사이트를 함께 시험하기 위한 로컬 fixture입니다. Page Builder의 `module.json` 의존성은 module/plugin 모두 비어 있으며, 제품 코드는 이 확장들을 import하거나 호출하지 않습니다. 별도 최소 설치 profile은 첫 공개 viewer 구현과 함께 통합 게이트에 추가합니다.
+앞의 번들 확장은 `sirsoft-basic` 기본 사이트와 route/data capability를 함께 시험하기 위한 로컬 fixture입니다. Page Builder의 `module.json` 의존성은 module/plugin 모두 비어 있으며, 제품 코드는 이 확장들의 내부 class·DB table을 import하지 않습니다. 설치된 경우에만 공개 route/API를 링크 선택기와 데이터 블록에서 사용합니다. 별도 최소 설치 profile은 HTML compiler와 독립 shell의 최소 의존성 게이트로 유지합니다.
 
 ## 접속
 

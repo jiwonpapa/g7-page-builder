@@ -45,6 +45,7 @@ import {
   normalizeBlockMotion,
 } from './blockMotion';
 import { createMediaField, OPEN_MEDIA_PICKER_EVENT } from './MediaPickerField';
+import { createRouteUrlField } from './RouteUrlField';
 import {
   pageDesignClassName,
   pageDesignToTokens,
@@ -500,7 +501,7 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
         slug: document.slug,
         mode: document.mode,
         locale: document.locale,
-        shellMode: document.shell_mode ?? 'global',
+        shellMode: document.shell_mode ?? 'template',
         hadShellMode: Object.prototype.hasOwnProperty.call(document, 'shell_mode'),
         tokens: cloneTokens(document.tokens),
         hadTokens: Object.prototype.hasOwnProperty.call(document, 'tokens'),
@@ -666,7 +667,7 @@ export function puckToCanonical(
     blocks: data.content.map((block) => puckBlockToCanonical(block, context)),
   };
 
-  if (context.document.hadShellMode || context.document.shellMode !== 'global') {
+  if (context.document.hadShellMode || context.document.shellMode !== 'template') {
     document.shell_mode = context.document.shellMode;
   }
 
@@ -1151,13 +1152,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
               testId="page-builder-hero-primary-label" />
           ),
         },
-        primaryUrl: {
-          type: 'custom', label: '버튼 URL',
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
-              testId="page-builder-hero-primary-url" />
-          ),
-        },
+        primaryUrl: createRouteUrlField('버튼 연결', 'page-builder-hero-primary-url'),
         imageSrc: createMediaField('대표 이미지'),
         imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
         alignment: {
@@ -1291,14 +1286,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
               testId="page-builder-cta-primary-label" />
           ),
         },
-        primaryUrl: {
-          type: 'custom',
-          label: '주 버튼 URL',
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
-              testId="page-builder-cta-primary-url" />
-          ),
-        },
+        primaryUrl: createRouteUrlField('주 버튼 연결', 'page-builder-cta-primary-url'),
         secondaryLabel: {
           type: 'custom',
           label: '보조 링크 문구',
@@ -1308,14 +1296,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
               testId="page-builder-cta-secondary-label" />
           ),
         },
-        secondaryUrl: {
-          type: 'custom',
-          label: '보조 링크 URL',
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
-              testId="page-builder-cta-secondary-url" />
-          ),
-        },
+        secondaryUrl: createRouteUrlField('보조 링크 연결', 'page-builder-cta-secondary-url'),
         theme: {
           type: 'custom',
           label: '테마',
@@ -1401,14 +1382,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
               testId="page-builder-contact-cta-label" />
           ),
         },
-        ctaUrl: {
-          type: 'custom',
-          label: '문의 링크 URL',
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
-              testId="page-builder-contact-cta-url" />
-          ),
-        },
+        ctaUrl: createRouteUrlField('문의 링크 연결', 'page-builder-contact-cta-url'),
         mapLabel: {
           type: 'custom',
           label: '지도 링크 문구',
@@ -1418,14 +1392,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
               testId="page-builder-contact-map-label" />
           ),
         },
-        mapUrl: {
-          type: 'custom',
-          label: '지도 링크 URL',
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
-              testId="page-builder-contact-map-url" />
-          ),
-        },
+        mapUrl: createRouteUrlField('지도 링크 연결', 'page-builder-contact-map-url'),
         surface: {
           type: 'select', label: '배경 프리셋',
           options: [

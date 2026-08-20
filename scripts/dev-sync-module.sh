@@ -30,6 +30,8 @@ echo 'Synchronizing Page Builder-owned G7 admin layouts...'
 
 "${compose[@]}" exec -T --user www-data dev php artisan optimize:clear --no-ansi >/dev/null
 "${compose[@]}" exec -T --user www-data dev php artisan module:cache-clear --no-ansi >/dev/null
+"${compose[@]}" exec -T --user www-data dev php artisan template:cache-clear --no-ansi >/dev/null
+"${compose[@]}" exec -T --user www-data dev php artisan seo:clear --no-ansi >/dev/null
 "${compose[@]}" exec -T --user www-data \
   -e XDG_CONFIG_HOME=/tmp/g7pb-psysh-config dev \
   php artisan tinker --execute="$registry_code" --no-ansi

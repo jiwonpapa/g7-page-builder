@@ -7,6 +7,7 @@ import {
   normalizeBlockMotion,
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
+import { createRouteUrlField } from './RouteUrlField';
 
 import {
   BAR_CHART_BLOCK_TYPE,
@@ -533,7 +534,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true },
-      primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
+      primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결'), imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
       surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS },
       motion: createMotionField(['none', 'reveal', 'parallax-soft']),
@@ -542,7 +543,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   HeroSlider: {
     label: '슬라이더 히어로', defaultProps: DEFAULT_HERO_SLIDER,
     fields: {
-      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true }, buttonLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, buttonUrl: { type: 'text', label: '버튼 URL' }, imageSrc: createMediaField('슬라이드 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
+      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true }, buttonLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, buttonUrl: createRouteUrlField('버튼 연결'), imageSrc: createMediaField('슬라이드 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
       autoplay: { type: 'radio', label: '자동 재생', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },
       interval: { type: 'select', label: '자동 재생 간격', options: [{ label: '3초', value: '3000' }, { label: '5초', value: '5000' }, { label: '7초', value: '7000' }] },
       loop: { type: 'radio', label: '무한 반복', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },
@@ -552,7 +553,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   },
   LogoCloud: {
     label: '로고 클라우드', defaultProps: DEFAULT_LOGO_CLOUD,
-    fields: { heading: { type: 'text', label: '제목' }, logos: { type: 'array', label: '로고', min: 2, max: 12, defaultItemProps: (index) => ({ name: `파트너 ${index + 1}`, imageSrc: '', imageAlt: '', url: '' }), getItemSummary: (item) => item.name, arrayFields: { name: { type: 'text', label: '이름' }, imageSrc: createMediaField('로고 이미지'), imageAlt: { type: 'text', label: '대체 텍스트' }, url: { type: 'text', label: '연결 URL' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <LogoCloudPreview {...props} />,
+    fields: { heading: { type: 'text', label: '제목' }, logos: { type: 'array', label: '로고', min: 2, max: 12, defaultItemProps: (index) => ({ name: `파트너 ${index + 1}`, imageSrc: '', imageAlt: '', url: '' }), getItemSummary: (item) => item.name, arrayFields: { name: { type: 'text', label: '이름' }, imageSrc: createMediaField('로고 이미지'), imageAlt: { type: 'text', label: '대체 텍스트' }, url: createRouteUrlField('연결 경로') } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <LogoCloudPreview {...props} />,
   },
   Stats: {
     label: '숫자·아이콘 지표', defaultProps: DEFAULT_STATS,
@@ -560,11 +561,11 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   },
   Pricing: {
     label: '요금제', defaultProps: DEFAULT_PRICING,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, plans: { type: 'array', label: '플랜', min: 2, max: 4, defaultItemProps: (index) => ({ name: `Plan ${index + 1}`, price: '₩0', period: '/월', description: '플랜 설명', featuresText: '기능 1\n기능 2', buttonLabel: '선택하기', buttonUrl: '/', featured: 'no' }), getItemSummary: (item) => `${item.name} · ${item.price}`, arrayFields: { name: { type: 'text', label: '플랜명' }, price: { type: 'text', label: '가격' }, period: { type: 'text', label: '기간' }, description: { type: 'textarea', label: '설명' }, featuresText: { type: 'textarea', label: '기능 목록(줄바꿈)' }, buttonLabel: { type: 'text', label: '버튼 문구' }, buttonUrl: { type: 'text', label: '버튼 URL' }, featured: { type: 'radio', label: '추천 플랜', options: [{ label: '일반', value: 'no' }, { label: '추천', value: 'yes' }] } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <PricingPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, plans: { type: 'array', label: '플랜', min: 2, max: 4, defaultItemProps: (index) => ({ name: `Plan ${index + 1}`, price: '₩0', period: '/월', description: '플랜 설명', featuresText: '기능 1\n기능 2', buttonLabel: '선택하기', buttonUrl: '/', featured: 'no' }), getItemSummary: (item) => `${item.name} · ${item.price}`, arrayFields: { name: { type: 'text', label: '플랜명' }, price: { type: 'text', label: '가격' }, period: { type: 'text', label: '기간' }, description: { type: 'textarea', label: '설명' }, featuresText: { type: 'textarea', label: '기능 목록(줄바꿈)' }, buttonLabel: { type: 'text', label: '버튼 문구' }, buttonUrl: createRouteUrlField('버튼 연결'), featured: { type: 'radio', label: '추천 플랜', options: [{ label: '일반', value: 'no' }, { label: '추천', value: 'yes' }] } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <PricingPreview {...props} />,
   },
   Team: {
     label: '팀 소개', defaultProps: DEFAULT_TEAM,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, members: { type: 'array', label: '구성원', min: 2, max: 8, defaultItemProps: (index) => ({ name: `구성원 ${index + 1}`, role: '역할', bio: '소개를 입력하세요.', imageSrc: '', imageAlt: '', profileUrl: '' }), getItemSummary: (item) => `${item.name} · ${item.role}`, arrayFields: { name: { type: 'text', label: '이름' }, role: { type: 'text', label: '역할' }, bio: { type: 'textarea', label: '소개' }, imageSrc: createMediaField('프로필 사진'), imageAlt: { type: 'text', label: '대체 텍스트' }, profileUrl: { type: 'text', label: '프로필 URL' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <TeamPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, members: { type: 'array', label: '구성원', min: 2, max: 8, defaultItemProps: (index) => ({ name: `구성원 ${index + 1}`, role: '역할', bio: '소개를 입력하세요.', imageSrc: '', imageAlt: '', profileUrl: '' }), getItemSummary: (item) => `${item.name} · ${item.role}`, arrayFields: { name: { type: 'text', label: '이름' }, role: { type: 'text', label: '역할' }, bio: { type: 'textarea', label: '소개' }, imageSrc: createMediaField('프로필 사진'), imageAlt: { type: 'text', label: '대체 텍스트' }, profileUrl: createRouteUrlField('프로필 연결') } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <TeamPreview {...props} />,
   },
   Gallery: {
     label: '갤러리 그리드', defaultProps: DEFAULT_GALLERY,

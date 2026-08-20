@@ -27,7 +27,7 @@ final class PageBuilderService
         string $slug,
         string $locale,
         ?int $actorId,
-        string $shellMode = 'global',
+        string $shellMode = 'template',
     ): DocumentSnapshot {
         $title = trim($title);
 

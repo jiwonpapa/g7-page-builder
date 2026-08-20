@@ -63,6 +63,16 @@ else
   fail 'G7 installer finalization'
 fi
 
+expected_session_lifetime="${G7PB_SESSION_LIFETIME:-10080}"
+session_config="$("${compose[@]}" exec -T --user www-data dev php artisan tinker \
+  --execute='echo config("session.lifetime")."|".(config("session.expire_on_close") ? "true" : "false");' \
+  --no-ansi | tr -d '\r\n')"
+if [[ "$session_config" == "$expected_session_lifetime|false" ]]; then
+  ok "Local session lifetime=${expected_session_lifetime}m expire_on_close=false"
+else
+  fail "Local session configuration=$session_config expected=${expected_session_lifetime}|false"
+fi
+
 curl_common=(--silent --show-error --cacert "$ca_file")
 home_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' "$base_url/")"
 up_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' "$base_url/up")"

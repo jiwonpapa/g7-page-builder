@@ -3,8 +3,11 @@ set -euo pipefail
 
 g7_root="${G7PB_G7_ROOT:-/var/www/g7}"
 env_file="$g7_root/.env"
+session_lifetime="${G7PB_SESSION_LIFETIME:-10080}"
 
 [[ -f "$env_file" ]] || { echo 'G7 .env is missing.' >&2; exit 1; }
+[[ "$session_lifetime" =~ ^[0-9]+$ && "$session_lifetime" -ge 60 ]] \
+  || { echo 'G7PB_SESSION_LIFETIME must be an integer of at least 60 minutes.' >&2; exit 1; }
 
 set_env() {
   local key="$1"
@@ -20,6 +23,8 @@ set_env APP_ENV local
 set_env APP_DEBUG true
 set_env APP_URL https://g7pb.test
 set_env SESSION_SECURE_COOKIE true
+set_env SESSION_LIFETIME "$session_lifetime"
+set_env SESSION_EXPIRE_ON_CLOSE false
 set_env SANCTUM_STATEFUL_DOMAINS g7pb.test
 set_env MAIL_MAILER log
 set_env REDIS_HOST 127.0.0.1

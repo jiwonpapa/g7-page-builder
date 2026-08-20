@@ -27,6 +27,7 @@ if [[ ! -f "$env_file" ]]; then
     'G7PB_ADMIN_EMAIL=admin@g7pb.test' \
     "G7PB_ADMIN_PASSWORD=$admin_password" \
     'G7PB_ENABLE_REVERB=0' \
+    'G7PB_SESSION_LIFETIME=10080' \
     "G7PB_HOST_UID=$(id -u)" \
     "G7PB_HOST_GID=$(id -g)" >"$env_file"
   chmod 0600 "$env_file"

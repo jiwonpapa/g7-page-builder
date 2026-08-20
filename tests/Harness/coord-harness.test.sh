@@ -130,6 +130,37 @@ if printf '%s\n' "$final_status" | grep -q '^ACTIVE'; then
   fail 'active task remained after finish'
 fi
 
+same_repo="$temp_root/same-repo"
+git init -b main "$same_repo" >/dev/null
+git -C "$same_repo" config user.name 'Coord Harness Test'
+git -C "$same_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$same_repo/owned"
+printf 'base\n' > "$same_repo/owned/file.txt"
+git -C "$same_repo" add .
+git -C "$same_repo" commit -m 'test: same worktree base' >/dev/null
+(
+  cd "$same_repo"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task same-worktree-task \
+    --paths owned \
+    --profile harness >/dev/null
+  printf 'submitted\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task same-worktree-task >/dev/null
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task same-worktree-integration \
+    --areas integration,runtime \
+    --profile harness >/dev/null
+  printf 'integration\n' > integration.txt
+  git add integration.txt
+  git commit -m 'test: advance integration branch' >/dev/null
+  G7PB_COORD_TESTING=1 "$harness" integrate \
+    --task same-worktree-task \
+    --integration-task same-worktree-integration >/dev/null
+)
+same_status="$(cd "$same_repo" && "$harness" status --history)"
+printf '%s\n' "$same_status" | grep -q $'HISTORY\tsame-worktree-task\tintegrated' \
+  || fail 'same-worktree submitted ancestor was not finalized as integrated'
+
 grep -q '^dev-up: runtime-guard' "$root/Makefile" \
   || fail 'Makefile dev-up runtime guard missing'
 grep -q '^release-package: release-guard' "$root/Makefile" \

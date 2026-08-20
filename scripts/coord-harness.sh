@@ -579,19 +579,30 @@ command_integrate() {
   git merge-base --is-ancestor "$task_base" "$submitted_sha" || fail 'submitted commit의 ancestry가 올바르지 않습니다.'
   [[ -d "$task_worktree" ]] || fail '제출 worktree가 없습니다. Codex snapshot을 복구한 뒤 통합하십시오.'
   [[ -z "$(git -C "$task_worktree" status --porcelain)" ]] || fail '제출 worktree에 미커밋 변경이 남아 있습니다.'
-  [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
-    || fail '제출 뒤 task branch HEAD가 변경되었습니다. 새 변경을 별도 task로 제출하십시오.'
 
   if git merge-base --is-ancestor "$submitted_sha" HEAD; then
+    if [[ "$task_worktree" != "$repo_root" ]]; then
+      [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
+        || fail '제출 뒤 task branch HEAD가 변경되었습니다. 새 변경을 별도 task로 제출하십시오.'
+    fi
     run_integration_profile "$task_profile" "$INTEGRATION_TASK"
     [[ -d "$task_worktree" ]] || fail '통합 검증 중 제출 Worktree가 사라졌습니다.'
-    [[ -z "$(git -C "$task_worktree" status --porcelain)" \
-      && "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
+    [[ -z "$(git -C "$task_worktree" status --porcelain)" ]] \
       || fail '통합 검증 중 제출 Worktree가 변경되었습니다.'
+    if [[ "$task_worktree" == "$repo_root" ]]; then
+      git merge-base --is-ancestor "$submitted_sha" HEAD \
+        || fail '통합 검증 중 이미 포함된 submitted commit이 사라졌습니다.'
+    else
+      [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
+        || fail '통합 검증 중 제출 Worktree가 변경되었습니다.'
+    fi
     finalize_integrated_task "$TASK_ID" "$(git rev-parse HEAD)"
     note "ALREADY_INTEGRATED task=$TASK_ID sha=$submitted_sha"
     return
   fi
+
+  [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
+    || fail '제출 뒤 task branch HEAD가 변경되었습니다. 새 변경을 별도 task로 제출하십시오.'
 
   local merge_tree_output
   merge_tree_output="$(mktemp "${TMPDIR:-/tmp}/g7pb-merge-tree.XXXXXX")"

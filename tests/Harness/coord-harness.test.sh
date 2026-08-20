@@ -168,4 +168,15 @@ grep -q '^release-package: release-guard' "$root/Makefile" \
 grep -q '^## Parallel work and integration' "$root/AGENTS.md" \
   || fail 'AGENTS parallel-work contract missing'
 
+if grep -Eqi 'remote-db-backup|database-before|mysqldump|mariadb-dump|pg_dump' \
+  "$root/scripts/deploy-staging.sh" "$root/scripts/remote-deploy-staging.sh"; then
+  fail 'staging deploy must not create database backups'
+fi
+grep -q 'trap restore_files ERR' "$root/scripts/remote-deploy-staging.sh" \
+  || fail 'staging deploy temporary file rollback trap missing'
+grep -q 'trap cleanup_work EXIT' "$root/scripts/remote-deploy-staging.sh" \
+  || fail 'staging deploy temporary work cleanup missing'
+grep -q 'rm -rf -- "$rollback_path"' "$root/scripts/remote-deploy-staging.sh" \
+  || fail 'staging deploy rollback cleanup missing'
+
 printf 'coord-harness.test: PASS\n'

@@ -87,12 +87,13 @@ G7 전체 checkout의 기존 사용자 변경을 수정하거나 정리하지 �
 - `BUILD-INFO`, `SHA256SUMS` 생성
 - 압축 해제 후 체크섬 재검증
 
-### 4. Backup
+### 4. Temporary file rollback
 
-- 기존 Page Builder 모듈 파일을 release id별로 보존
-- 마이그레이션이 있으면 DB 백업과 복원 가능성 확인
-- 마지막 정상 발행 artifact와 PageBuilderDocument 보존
-- 백업 경로·체크섬·복원 명령 기록
+- `g7devops.com`은 테스트 스테이징이므로 배포 하네스가 DB dump를 만들지 않음
+- 기존 Page Builder 모듈 디렉터리는 파일 교체가 끝날 때까지만 임시 rollback 경로에 유지
+- 배포 중 오류가 나면 임시 디렉터리로 즉시 복원
+- 배포 성공 후 임시 rollback·업로드·작업 디렉터리를 삭제하며 영구 백업을 누적하지 않음
+- 데이터 보존이 필요한 운영 배포 하네스는 스테이징과 분리하여 별도로 설계
 
 ### 5. Deploy
 
@@ -130,12 +131,12 @@ G7 전체 checkout의 기존 사용자 변경을 수정하거나 정리하지 �
 | `make staging-doctor` | 대상·버전·접속·상태 확인 |
 | `make integration-verify TASK=<id>` | 전체 로컬 품질 게이트와 3 viewport 제품 E2E, 검증 SHA 기록 |
 | `make release-package TASK=<id>` | 검증 SHA와 clean 상태 확인 후 버전 아티팩트·체크섬 생성 |
-| `make deploy-staging TASK=<id>` | release guard 재확인, 백업 후 단일 스테이징 배포 |
+| `make deploy-staging TASK=<id>` | release guard 재확인, 임시 파일 rollback을 둔 단일 스테이징 배포 |
 | `make smoke-staging TASK=<id>` | release guard 재확인, 공개·관리자 shell·asset·route·migration 스모크 |
 
-`release-package`는 `integration-verify`가 기록한 SHA와 현재 HEAD가 다르거나 dirty 상태이면 즉시 거부합니다. 이후 버전 정책을 검사하고 `CHANGELOG.md`, `BUILD-INFO`, 파일별 `SHA256SUMS`, 압축 아티팩트 SHA-256을 만듭니다. `Unreleased`에 항목이 남아 있으면 새 SemVer 섹션과 버전 원본을 확정하기 전까지 패키징할 수 없습니다. `deploy-staging`은 같은 release guard와 서버 Doctor를 다시 실행하고, 전체 DB와 기존 모듈 디렉터리를 release id별로 백업한 뒤 모듈 디렉터리만 교체합니다. 파일 교체 중 실패하면 이전 모듈 디렉터리를 자동 복원합니다.
+`release-package`는 `integration-verify`가 기록한 SHA와 현재 HEAD가 다르거나 dirty 상태이면 즉시 거부합니다. 이후 버전 정책을 검사하고 `CHANGELOG.md`, `BUILD-INFO`, 파일별 `SHA256SUMS`, 압축 아티팩트 SHA-256을 만듭니다. `Unreleased`에 항목이 남아 있으면 새 SemVer 섹션과 버전 원본을 확정하기 전까지 패키징할 수 없습니다. `deploy-staging`은 같은 release guard와 서버 Doctor를 다시 실행하고, DB dump 없이 기존 모듈 디렉터리만 임시 rollback 경로로 옮긴 뒤 새 모듈을 교체합니다. 파일 교체 중 실패하면 이전 모듈 디렉터리를 자동 복원하고, 성공하면 임시 파일을 제거합니다.
 
-DB down migration은 데이터 손실 가능성이 있으므로 자동 rollback 명령을 제공하지 않습니다. 필요하면 `/home/g7devops/deploy-backups/g7-page-builder/{release_id}`의 DB dump와 모듈 백업을 확인한 뒤 별도 승인 하에 복구합니다.
+스테이징에는 DB 복구본이 없으므로 destructive migration을 배포하지 않습니다. migration은 additive·forward-only여야 하며, 데이터 변환이나 컬럼 제거가 필요한 변경은 별도 승인과 운영용 백업 절차가 정의되기 전까지 중지합니다.
 
 ## 배포 완료 판정
 
@@ -143,7 +144,7 @@ DB down migration은 데이터 손실 가능성이 있으므로 자동 rollback 
 
 1. 배포 release id와 Git commit
 2. 업로드 전후 SHA-256 일치
-3. 이전 버전 백업과 복원 위치
+3. 배포 중 임시 파일 rollback 동작과 성공 후 정리
 4. 모듈 설치·활성 버전 확인
 5. 공개 HTTPS 스모크
 6. 로컬 인증 E2E 생성→편집→미리보기→발행 결과와 온라인 route·asset 스모크

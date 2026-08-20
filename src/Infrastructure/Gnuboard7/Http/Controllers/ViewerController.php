@@ -183,10 +183,14 @@ final class ViewerController
         ?SitePartArtifact $siteHeader,
         ?SitePartArtifact $siteFooter,
     ): string {
+        $shellSha256 = $siteShell instanceof SiteShellSnapshot
+            ? $siteShell->shell->representationSha256()
+            : '';
+
         return hash('sha256', implode(':', [
             $page->representationSha256(),
-            $siteHeader?->artifactSha256 ?? $siteShell?->shell->representationSha256() ?? '',
-            $siteFooter?->artifactSha256 ?? $siteShell?->shell->representationSha256() ?? '',
+            $siteHeader instanceof SitePartArtifact ? $siteHeader->artifactSha256 : $shellSha256,
+            $siteFooter instanceof SitePartArtifact ? $siteFooter->artifactSha256 : $shellSha256,
         ]));
     }
 }

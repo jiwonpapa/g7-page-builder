@@ -133,6 +133,12 @@ final class AdminSitePartController
             return $this->invalid($request, $validator->errors()->toArray());
         }
 
+        $locale = $request->query('locale');
+        $limit = $request->query('limit', '20');
+        if (! is_string($locale) || ! is_string($limit)) {
+            return $this->invalid($request, ['query' => ['Invalid Site Part revision query.']]);
+        }
+
         try {
             return $this->success('Site Part 리비전을 조회했습니다.', [
                 'items' => array_map(
@@ -145,8 +151,8 @@ final class AdminSitePartController
                     ],
                     $this->siteParts->revisions(
                         $kind,
-                        (string) $request->query('locale'),
-                        (int) $request->query('limit', '20'),
+                        $locale,
+                        (int) $limit,
                     ),
                 ),
             ]);

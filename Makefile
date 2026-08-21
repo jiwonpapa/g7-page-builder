@@ -6,7 +6,7 @@ BASE_REF ?= HEAD
 
 .NOTPARALLEL:
 
-.PHONY: coord-start coord-status coord-check coord-release task-submit task-integrate integration-verify integration-finish runtime-guard release-guard quality-coordination dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
+.PHONY: coord-start coord-status coord-check coord-release task-submit task-resubmit task-integrate integration-verify integration-finish runtime-guard release-guard quality-coordination dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
 
 coord-start:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
@@ -26,6 +26,10 @@ coord-release:
 task-submit:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@$(COORD_HARNESS) submit --task "$(TASK)"
+
+task-resubmit:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) resubmit --task "$(TASK)"
 
 task-integrate:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }

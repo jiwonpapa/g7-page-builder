@@ -14,15 +14,26 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.6.0';
+    public const COMPILER_VERSION = '0.7.0';
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
+        'design.color_mode' => 'light',
         'design.palette' => 'indigo',
         'design.font' => 'modern',
         'design.radius' => 'soft',
         'design.width' => 'standard',
         'design.scale' => 'balanced',
+    ];
+
+    /** @var array<string, list<string>> */
+    private const DESIGN_TOKEN_OPTIONS = [
+        'design.color_mode' => ['light', 'dark', 'system'],
+        'design.palette' => ['indigo', 'blue', 'emerald', 'amber', 'rose', 'slate'],
+        'design.font' => ['system', 'modern', 'serif'],
+        'design.radius' => ['sharp', 'soft', 'round'],
+        'design.width' => ['narrow', 'standard', 'wide'],
+        'design.scale' => ['compact', 'balanced', 'large'],
     ];
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
@@ -54,6 +65,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private const G7_RECENT_POSTS_TYPE = 'g7.board-recent-posts-01';
 
     private const G7_PRODUCT_GRID_TYPE = 'g7.ecommerce-product-grid-01';
+
+    private const INQUIRY_FORM_TYPE = 'form.inquiry-01';
+
+    private const MAP_DIRECTIONS_TYPE = 'location.map-directions-01';
 
     /** @var list<string> */
     private const FEATURE_ICONS = [
@@ -140,7 +155,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                     }
                     $this->blockSchemas->validate($definition->schemaRef, $props);
                 }
-                $compiledBlock = $this->blockCompilers->compile($definition->compiler, $props);
+                $compiledBlock = str_replace(
+                    '__G7PB_PAGE_SLUG__',
+                    rawurlencode($document->slug),
+                    $this->blockCompilers->compile($definition->compiler, $props),
+                );
             } catch (DocumentCompileException $exception) {
                 throw $exception;
             } catch (\Throwable) {
@@ -193,7 +212,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         foreach (self::DESIGN_TOKEN_DEFAULTS as $token => $default) {
             $value = $document->tokens[$token] ?? $default;
-            $suffix = str_replace('design.', '', $token);
+            if (! is_string($value) || ! in_array($value, self::DESIGN_TOKEN_OPTIONS[$token], true)) {
+                throw new DocumentCompileException("Page design token {$token} is invalid.");
+            }
+            $suffix = $token === 'design.color_mode' ? 'mode' : str_replace('design.', '', $token);
             $classes[] = "g7pb-theme-{$suffix}-{$value}";
         }
 
@@ -217,6 +239,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.bar-chart-01' => fn (array $props): string => $this->compileBarChart($props),
             'builtin.g7-board-recent-posts-01' => fn (array $props): string => $this->compileG7RecentPosts($props),
             'builtin.g7-ecommerce-product-grid-01' => fn (array $props): string => $this->compileG7ProductGrid($props),
+            'builtin.inquiry-form-01' => fn (array $props): string => $this->compileInquiryForm($props),
+            'builtin.map-directions-01' => fn (array $props): string => $this->compileMapDirections($props),
         ];
 
         foreach ($compilers as $key => $compiler) {
@@ -803,6 +827,84 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--products '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-grid" data-g7pb-data-source="products" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-dynamic-products--'.$columns.'" data-g7pb-data-list aria-busy="true"></div></section>';
     }
 
+    /** @param array<string, mixed> $props */
+    private function compileInquiryForm(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'formKind', 'submitLabel', 'successMessage', 'privacyLabel', 'showPhone', 'showSubject', 'appearance'], 'Inquiry form');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $description = $this->optionalString($props, 'description', 1000) ?? '';
+        $kind = $this->requiredString($props, 'formKind', 24);
+        $submitLabel = $this->requiredString($props, 'submitLabel', 80);
+        $successMessage = $this->requiredString($props, 'successMessage', 300);
+        $privacyLabel = $this->requiredString($props, 'privacyLabel', 300);
+        $showPhone = $this->requiredBoolean($props, 'showPhone');
+        $showSubject = $this->requiredBoolean($props, 'showSubject');
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        if (! in_array($kind, ['inquiry', 'quote', 'reservation', 'application', 'newsletter'], true)) {
+            throw new DocumentCompileException('Inquiry form kind is invalid.');
+        }
+
+        $phone = $showPhone ? '<label><span>전화번호</span><input type="tel" name="phone" maxlength="40" autocomplete="tel"></label>' : '';
+        $subject = $showSubject ? '<label class="g7pb-inquiry-form__wide"><span>문의 제목</span><input type="text" name="subject" maxlength="200"></label>' : '';
+
+        return '<section class="g7pb-block g7pb-inquiry '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="inquiry-form">'
+            .'<div class="g7pb-inquiry__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').'</div>'
+            .'<form class="g7pb-inquiry-form" method="post" action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-inquiry-form data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escapeAttribute($successMessage).'">'
+            .'<input type="hidden" name="form_kind" value="'.$kind.'"><input type="hidden" name="block_instance_id" value=""><input type="hidden" name="started_at" value="">'
+            .'<label class="g7pb-inquiry-form__honeypot" aria-hidden="true"><span>웹사이트</span><input type="text" name="website" tabindex="-1" autocomplete="off"></label>'
+            .'<label><span>이름</span><input type="text" name="name" maxlength="120" autocomplete="name" required></label>'
+            .'<label><span>이메일</span><input type="email" name="email" maxlength="320" autocomplete="email" required></label>'.$phone.$subject
+            .'<label class="g7pb-inquiry-form__wide"><span>문의 내용</span><textarea name="message" maxlength="5000" rows="6" required></textarea></label>'
+            .'<label class="g7pb-inquiry-form__consent"><input type="checkbox" name="privacy" value="1" required><span>'.$this->escape($privacyLabel).'</span></label>'
+            .'<div class="g7pb-inquiry-form__footer"><button type="submit">'.$this->escape($submitLabel).'</button><p role="status" aria-live="polite" data-g7pb-form-status></p></div>'
+            .'</form></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileMapDirections(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $description = $this->optionalString($props, 'description', 1000) ?? '';
+        $address = $this->requiredString($props, 'address', 500);
+        $latitude = $this->requiredNumber($props, 'latitude', -90, 90);
+        $longitude = $this->requiredNumber($props, 'longitude', -180, 180);
+        $zoom = $this->requiredIntegerChoice($props, 'zoom', [12, 14, 16, 18]);
+        $provider = $this->requiredString($props, 'provider', 24);
+        $directionsLabel = $this->requiredString($props, 'directionsLabel', 80);
+        $directionsUrl = $this->requiredString($props, 'directionsUrl', 2048);
+        $phone = $this->optionalString($props, 'phone', 40) ?? '';
+        $hours = $this->optionalString($props, 'hours', 300) ?? '';
+        $parking = $this->optionalString($props, 'parking', 300) ?? '';
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! in_array($provider, ['openstreetmap', 'google', 'none'], true)) {
+            throw new DocumentCompileException('Map provider is invalid.');
+        }
+        $this->assertAllowedUrl($directionsUrl, 'Directions link');
+
+        $map = '<div class="g7pb-map__placeholder" role="img" aria-label="'.$this->escapeAttribute($address).' 지도 자리"><span>지도 표시 안 함</span></div>';
+        if ($provider === 'openstreetmap') {
+            $delta = match ($zoom) {
+                18 => 0.002, 16 => 0.008, 14 => 0.03, default => 0.12
+            };
+            $bbox = implode(',', [$longitude - $delta, $latitude - $delta, $longitude + $delta, $latitude + $delta]);
+            $src = 'https://www.openstreetmap.org/export/embed.html?bbox='.rawurlencode($bbox).'&marker='.rawurlencode($latitude.','.$longitude);
+            $map = '<iframe title="'.$this->escapeAttribute($address).' 지도" src="'.$this->escapeAttribute($src).'" loading="lazy" referrerpolicy="no-referrer"></iframe>';
+        } elseif ($provider === 'google') {
+            $src = 'https://www.google.com/maps?q='.rawurlencode($latitude.','.$longitude).'&z='.$zoom.'&output=embed';
+            $map = '<iframe title="'.$this->escapeAttribute($address).' 지도" src="'.$this->escapeAttribute($src).'" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>';
+        }
+        $details = '<address><strong>'.$this->escape($address).'</strong>'
+            .($phone === '' ? '' : '<span>'.$this->escape($phone).'</span>')
+            .($hours === '' ? '' : '<span>'.$this->formatText($hours).'</span>')
+            .($parking === '' ? '' : '<span>'.$this->formatText($parking).'</span>')
+            .'<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($directionsUrl).'">'.$this->escape($directionsLabel).'</a></address>';
+
+        return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
+    }
+
     private function compileSectionHeading(?string $eyebrow, string $heading): string
     {
         $eyebrowMarkup = $eyebrow === null || $eyebrow === ''
@@ -887,7 +989,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             self::STATS_TYPE => ['none', 'reveal', 'stagger', 'counter'],
             self::GALLERY_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
             self::BAR_CHART_TYPE => ['none', 'reveal', 'chart-draw'],
-            self::CTA_TYPE, self::CONTACT_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE => ['none', 'reveal'],
+            self::CTA_TYPE, self::CONTACT_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE => ['none', 'reveal'],
             default => ['none'],
         };
     }
@@ -898,9 +1000,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private function appearanceClasses(array $props, string $defaultSurface, string $defaultSpacing): string
     {
         $appearance = $this->optionalMap($props, 'appearance') ?? [];
-        $this->assertOnlyKeys($appearance, ['surface', 'spacing'], 'Block appearance');
+        $this->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign'], 'Block appearance');
         $surface = $this->optionalString($appearance, 'surface', 16) ?? $defaultSurface;
         $spacing = $this->optionalString($appearance, 'spacing', 16) ?? $defaultSpacing;
+        $textScale = $this->optionalString($appearance, 'textScale', 16) ?? 'balanced';
+        $textAlign = $this->optionalString($appearance, 'textAlign', 16) ?? 'left';
 
         if (! in_array($surface, ['default', 'soft', 'contrast'], true)) {
             throw new DocumentCompileException('Block appearance surface is invalid.');
@@ -910,7 +1014,19 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('Block appearance spacing is invalid.');
         }
 
-        return 'g7pb-surface--'.$surface.' g7pb-spacing--'.$spacing;
+        if (! in_array($textScale, ['compact', 'balanced', 'large'], true) || ! in_array($textAlign, ['left', 'center', 'right'], true)) {
+            throw new DocumentCompileException('Block typography appearance is invalid.');
+        }
+
+        $classes = 'g7pb-surface--'.$surface.' g7pb-spacing--'.$spacing;
+        if (array_key_exists('textScale', $appearance) || $textScale !== 'balanced') {
+            $classes .= ' g7pb-text-scale--'.$textScale;
+        }
+        if (array_key_exists('textAlign', $appearance) || $textAlign !== 'left') {
+            $classes .= ' g7pb-text-align--'.$textAlign;
+        }
+
+        return $classes;
     }
 
     /**

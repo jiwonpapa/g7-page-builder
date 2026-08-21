@@ -9,6 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminRouteCatalogController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 
@@ -78,6 +79,17 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
     Route::put('site-shell', [AdminSiteShellController::class, 'update'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
         ->name('site-shell.update');
+    Route::get('form-submissions', [FormSubmissionController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('form-submissions.index');
+    Route::patch('form-submissions/{submission}', [FormSubmissionController::class, 'update'])
+        ->whereUuid('submission')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.update')
+        ->name('form-submissions.update');
+    Route::post('form-submissions/{submission}/retry', [FormSubmissionController::class, 'retry'])
+        ->whereUuid('submission')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('form-submissions.retry');
     Route::get('documents', [AdminDocumentController::class, 'index'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('documents.index');

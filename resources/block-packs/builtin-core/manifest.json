@@ -1,7 +1,7 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.7.0",
+  "pack_version": "0.8.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
@@ -180,6 +180,30 @@
       "editor_component": "G7ProductGrid",
       "compiler": "builtin.g7-ecommerce-product-grid-01",
       "capabilities": ["g7.module.sirsoft-ecommerce", "public.dynamic-data"]
+    },
+    {
+      "block_id": "form.inquiry-01",
+      "block_version": 1,
+      "category": "form",
+      "label": { "ko": "문의·신청 폼", "en": "Inquiry form" },
+      "description": { "ko": "문의, 견적, 예약, 신청 내용을 안전하게 접수하고 관리자 문의함에 보존합니다.", "en": "Collect and retain inquiries, quotes, reservations, and applications." },
+      "thumbnail": "thumbnails/inquiry-form.svg",
+      "schema_ref": "builtin:inquiryFormProps",
+      "editor_component": "InquiryForm",
+      "compiler": "builtin.inquiry-form-01",
+      "capabilities": ["public.form-submission"]
+    },
+    {
+      "block_id": "location.map-directions-01",
+      "block_version": 1,
+      "category": "location",
+      "label": { "ko": "지도·오시는 길", "en": "Map and directions" },
+      "description": { "ko": "주소, 운영 정보, 길찾기와 키 없는 지도 임베드를 함께 제공합니다.", "en": "Show an address, visit details, directions, and a keyless map." },
+      "thumbnail": "thumbnails/map-directions.svg",
+      "schema_ref": "builtin:mapDirectionsProps",
+      "editor_component": "MapDirections",
+      "compiler": "builtin.map-directions-01",
+      "capabilities": ["public.map-embed"]
     }
   ],
   "presets": [],

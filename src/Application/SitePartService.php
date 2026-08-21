@@ -122,6 +122,7 @@ final class SitePartService
                     'navigation' => $shell->navigation,
                     'cta' => $shell->cta,
                     'mobile_menu' => true,
+                    'mobile_menu_style' => $shell->mobileMenuStyle,
                 ],
                 'slots' => [],
             ];

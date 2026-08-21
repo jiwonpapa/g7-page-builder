@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 14종 페이지 block 카탈로그, 5종 typed motion preset, 자체 MediaPort, G7 최근글·상품 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 메뉴 완료.
+현재 구현: 16종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문의함·지도, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 drawer 완료.
 
 ## 목표
 
@@ -34,6 +34,8 @@
 - undo/redo
 - 360·768·1280 px preview
 - Header와 Footer를 설정 모달이 아닌 같은 Puck drag/drop 캔버스에서 각각 편집
+- Header·Page·Footer 전체 사이트 흐름을 중앙 캔버스에서 함께 확인하고 `template`·`builder`·`none` 소유권을 구분
+- 라이트·다크·기기 설정 테마를 즉시 전환하고 공개 결과와 같은 allowlist 토큰을 저장
 - Header 내비게이션·공지 바, 기본 Footer·다단 Footer의 inline 문구·typed 링크·로고 MediaPort 편집
 - 링크 필드에서 활성 G7 템플릿의 로그인·회원가입·로그아웃·게시판·쇼핑몰·마이페이지·Page Builder route를 검색하고 필요한 route parameter 대상을 선택
 - dirty/saving/saved/conflict/publish 상태 표시
@@ -42,6 +44,7 @@
 - 키보드 focus, label, alt text, 색 대비 기본 검사
 - 블록 추가 전 이름·용도·축약 화면을 보여주는 preview gallery
 - 각 블록의 `surface`와 `spacing`은 검증된 preset만 선택
+- 선택 블록의 글자 크기·정렬과 주요 버튼 route·Hero 이미지를 캔버스 문맥 도구에서 바로 편집
 - 블록 종류에 맞는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 효과와 강도·실행 방식을 typed preset으로 선택
 
 ### 저장과 복구
@@ -62,7 +65,7 @@
 - compile 실패는 공개 페이지를 바꾸지 않습니다.
 - 마지막 20개 revision을 조회·미리보기·복원합니다.
 
-## 1차 테스트 block 12종
+## 1차 테스트 block 16종
 
 | Block | 필수 props | 규칙 | 제외 |
 |---|---|---|---|
@@ -78,8 +81,12 @@
 | Team | heading, 2~12 members(role/bio/image/link) | profile URL·image allowlist | 조직도·계정 연동 |
 | Gallery | heading, 2~12 images, columns | MediaPort 직접 업로드·기존 미디어 선택·URL·alt 검증 | crop·초점 편집 |
 | Bar Chart | heading, 2~8 values/unit/tone | 0~100, semantic progress, tone allowlist | 자유 chart script·실시간 query |
+| G7 Recent Posts | source, period, limit, audience | G7 공개 API capability, text-only 안전 렌더 | G7 테이블 직접 조회 |
+| G7 Product Grid | source, limit, columns, audience | G7 공개 API capability, 안전한 상세 route | 쇼핑 모듈 hard dependency |
+| Inquiry Form | kind, heading, fields, consent, success | DB 선저장, CSRF, rate limit, honeypot, 관리자 문의함·메일 재시도 | 문서별 수신자·임의 action |
+| Map Directions | provider, 좌표, 주소, 길찾기, 운영·주차 정보 | OSM·Google keyless iframe 또는 지도 숨김, URL allowlist | 지도 script·API key 저장 |
 
-Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Block Pack으로 만들며, 미설치 상태에서는 관련 코드·block·메뉴를 로드하지 않습니다.
+G7 데이터 블록은 관련 공개 API capability가 없으면 선택지만 비활성화하고 문서 저장·독립 shell 발행·마지막 정상 발행본에는 영향을 주지 않습니다.
 
 ## 동적 효과
 
@@ -100,7 +107,7 @@ Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Bl
 ## Rich Text
 
 - Puck 내장 Tiptap field를 사용합니다.
-- Hero·분할 Hero·Slider Hero의 화면상 문구는 Puck 인라인 편집을 사용하며 URL·이미지·구조·preset은 속성 패널에 둡니다.
+- 모든 내장 블록의 주요 화면상 문구는 Puck 인라인 편집을 사용합니다. 허용된 글자 크기·정렬, 주요 버튼 route와 Hero 이미지 선택은 캔버스 문맥 도구에서도 실행하며 구조·대체 텍스트·preset은 속성 패널에 둡니다.
 - Slider Hero는 편집 중 자동재생을 멈추고 현재 선택 장면을 고정해 입력 중 화면이 바뀌지 않게 합니다.
 - 허용: paragraph, H2~H4, bold, italic, link, ordered/unordered list, blockquote, hard break.
 - 금지: script, iframe, inline event, 임의 style, raw HTML 입력.
@@ -127,7 +134,7 @@ Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Bl
 
 ## 완료 조건
 
-1. 12종 테스트 카탈로그 block 모두 schema·editor·PHP compiler·public renderer·Fixture를 가집니다.
+1. 16종 테스트 카탈로그 block 모두 schema·editor·PHP compiler·public renderer·Fixture를 가집니다.
 2. 좌측 Blocks에서 이름·용도·축소 구조를 확인하고 원하는 블록 사이에 드롭할 수 있으며, 상세 미리보기는 선택 블록 뒤 빠른 추가를 제공합니다.
 3. 생성부터 rollback까지 Playwright 제품 E2E가 통과합니다.
 4. PC·태블릿·모바일 screenshot baseline을 사람이 확인합니다.
@@ -140,7 +147,6 @@ Product Grid는 기본 MVP가 아닙니다. 이후 별도 `sirsoft-ecommerce` Bl
 - AI 생성, 원격 AI·라이선스 서버
 - 자유 CSS/JS, 임의 HTML block
 - 다중 breakpoint별 자유 position
-- Contact form backend
 - 자유 애니메이션 timeline·사용자 JavaScript
 - 다국어 문서 동시 편집
 - G7 Layout Editor와 양방향 동기화

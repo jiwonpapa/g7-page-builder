@@ -5,6 +5,8 @@ import type {
   MediaAssetResource,
   MediaListResource,
   SiteShellResource,
+  FormSubmissionListResource,
+  FormSubmissionResource,
   SitePartDocument,
   SitePartKind,
   SitePartResource,
@@ -499,6 +501,18 @@ export class PageBuilderApiClient {
   async getSiteShell(locale = 'ko'): Promise<SiteShellResource> {
     const query = new URLSearchParams({ locale });
     return this.request<SiteShellResource>(`/site-shell?${query.toString()}`);
+  }
+
+  async listFormSubmissions(status = 'all'): Promise<FormSubmissionListResource> {
+    return this.request<FormSubmissionListResource>(`/form-submissions?${new URLSearchParams({ status }).toString()}`);
+  }
+
+  async updateFormSubmission(id: string, status: FormSubmissionResource['status']): Promise<FormSubmissionResource> {
+    return this.request<FormSubmissionResource>(`/form-submissions/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  }
+
+  async retryFormSubmission(id: string): Promise<FormSubmissionResource> {
+    return this.request<FormSubmissionResource>(`/form-submissions/${encodeURIComponent(id)}/retry`, { method: 'POST' });
   }
 
   async saveSiteShell(shell: SiteShellResource, expectedLockVersion: number): Promise<SiteShellResource> {

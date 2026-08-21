@@ -27,6 +27,7 @@ const header: SitePartDocument = {
       navigation: [{ label: '소개', url: '/pages/about' }],
       cta: { label: '문의', url: '/pages/contact' },
       mobile_menu: true,
+      mobile_menu_style: 'drawer-left',
     },
     slots: {},
   }],

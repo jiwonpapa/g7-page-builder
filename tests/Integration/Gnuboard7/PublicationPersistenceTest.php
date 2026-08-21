@@ -13,6 +13,7 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\RouteCollection;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Fluent;
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
@@ -29,6 +30,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
@@ -37,6 +39,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentB
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\FormSubmissionRecord;
 use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -63,6 +66,13 @@ final class PublicationPersistenceTest extends TestCase
         $container->instance('db', $this->database->getDatabaseManager());
         $container->instance('db.schema', $this->database->getConnection()->getSchemaBuilder());
         $container->instance('log', new NullLogger);
+        $config = $container->make('config');
+        self::assertInstanceOf(Fluent::class, $config);
+        $config->set('g7-page-builder.forms', [
+            'recipient' => null,
+            'ip_hash_key' => 'test-form-hash-key',
+            'minimum_fill_seconds' => 1,
+        ]);
         $container->instance(
             UrlGeneratorContract::class,
             new UrlGenerator(new RouteCollection, Request::create('https://g7pb.test')),
@@ -721,6 +731,57 @@ final class PublicationPersistenceTest extends TestCase
         self::assertSame(['preset:jiwonpapa/marketing-presets:hero.launch-blue'], $favorites->blockIdsFor(7));
         $favorites->setFavorite(7, 'preset:jiwonpapa/marketing-presets:hero.launch-blue', false);
         self::assertSame([], $favorites->blockIdsFor(7));
+    }
+
+    public function test_published_inquiry_is_stored_before_mail_delivery_and_managed_from_the_admin_inbox(): void
+    {
+        $service = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
+        $created = $service->create('문의 페이지', 'inquiry-page', 'ko', null);
+        $payload = $created->document->toArray();
+        $payload['blocks'] = [[
+            'instance_id' => '00000000-0000-4000-8000-000000000094',
+            'type' => 'form.inquiry-01',
+            'block_version' => 1,
+            'props' => [
+                'eyebrow' => 'CONTACT', 'heading' => '문의하세요', 'description' => '답변을 드립니다.',
+                'formKind' => 'inquiry', 'submitLabel' => '문의 보내기', 'successMessage' => '접수되었습니다.',
+                'privacyLabel' => '개인정보 수집에 동의합니다.', 'showPhone' => true, 'showSubject' => true,
+            ],
+            'slots' => [],
+        ]];
+        $draft = $service->saveDraft($created->document->documentId, $payload, $created->lockVersion, null);
+        $candidate = $service->preparePublication($draft->document->documentId, $draft->lockVersion, null);
+        $service->commitPublication($candidate->token);
+        $controller = new FormSubmissionController($service);
+        $request = Request::create('/pages/inquiry-page/inquiries', 'POST', [
+            'block_instance_id' => '00000000-0000-4000-8000-000000000094',
+            'form_kind' => 'inquiry',
+            'name' => '홍길동',
+            'email' => 'hello@example.com',
+            'phone' => '010-1234-5678',
+            'subject' => '도입 문의',
+            'message' => '서비스 도입을 문의합니다.',
+            'privacy' => '1',
+            'website' => '',
+            'started_at' => time() - 2,
+        ], [], [], ['REMOTE_ADDR' => '127.0.0.1', 'HTTP_USER_AGENT' => 'G7PB test']);
+
+        $stored = $controller->store($request, 'inquiry-page');
+        self::assertSame(201, $stored->getStatusCode());
+        $submissionId = (string) $stored->getData(true)['data']['submission_id'];
+        $record = FormSubmissionRecord::query()->findOrFail($submissionId);
+        self::assertSame('unread', $record->status);
+        self::assertSame('failed', $record->mail_status);
+        self::assertSame(1, $record->mail_attempts);
+        self::assertNotSame('127.0.0.1', $record->ip_hash);
+
+        $index = $controller->index(Request::create('/admin/inquiries', 'GET'));
+        self::assertSame($submissionId, $index->getData(true)['data']['items'][0]['id']);
+        $updated = $controller->update(Request::create('/admin/inquiries/'.$submissionId, 'PATCH', ['status' => 'read']), $submissionId);
+        self::assertSame('read', $updated->getData(true)['data']['status']);
+        $retried = $controller->retry($submissionId);
+        self::assertSame(2, $retried->getData(true)['data']['mail_attempts']);
+        self::assertStringContainsString('보존', $retried->getData(true)['message']);
     }
 
     /**

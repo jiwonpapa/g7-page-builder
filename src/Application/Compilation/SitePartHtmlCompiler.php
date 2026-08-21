@@ -8,7 +8,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 
 final class SitePartHtmlCompiler
 {
-    public const COMPILER_VERSION = '0.1.0';
+    public const COMPILER_VERSION = '0.2.0';
 
     public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
     {
@@ -62,6 +62,10 @@ final class SitePartHtmlCompiler
         $ctaLink = is_array($cta) ? $this->link($cta, 'Header CTA') : null;
         $sticky = (bool) ($props['sticky'] ?? true);
         $mobileMenu = (bool) ($props['mobile_menu'] ?? true);
+        $mobileMenuStyle = $this->optionalString($props, 'mobile_menu_style', 24) ?? 'drawer-right';
+        if (! in_array($mobileMenuStyle, ['dropdown', 'drawer-left', 'drawer-right'], true)) {
+            throw new DocumentCompileException('Header mobile menu style is invalid.');
+        }
         $brandContent = $logo === ''
             ? '<span>'.$this->escape($brand).'</span>'
             : '<img src="'.$this->attribute($logo).'" alt="'.$this->attribute($brand).'">';
@@ -74,8 +78,10 @@ final class SitePartHtmlCompiler
                 $navigation,
             ));
             $mobileCta = $ctaLink === null ? '' : '<a class="g7pb-mobile-menu__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
+            $close = $mobileMenuStyle === 'dropdown' ? '' : '<button class="g7pb-mobile-menu__close" type="button" aria-label="메뉴 닫기" data-g7pb-menu-close>&times;</button>';
+            $backdrop = $mobileMenuStyle === 'dropdown' ? '' : '<button class="g7pb-mobile-menu__backdrop" type="button" aria-label="메뉴 닫기" data-g7pb-menu-backdrop hidden></button>';
             $mobileHtml = '<button class="g7pb-menu-toggle" type="button" aria-expanded="false" aria-controls="g7pb-mobile-navigation" aria-label="메뉴 열기" data-g7pb-menu-toggle><span></span></button>'
-                .'<nav class="g7pb-mobile-menu" id="g7pb-mobile-navigation" aria-label="모바일 메뉴" data-g7pb-mobile-menu hidden><ul>'.$mobileLinks.'</ul>'.$mobileCta.'</nav>';
+                .$backdrop.'<nav class="g7pb-mobile-menu g7pb-mobile-menu--'.$mobileMenuStyle.'" id="g7pb-mobile-navigation" aria-label="모바일 메뉴" data-g7pb-mobile-menu data-g7pb-menu-style="'.$mobileMenuStyle.'" hidden>'.$close.'<ul>'.$mobileLinks.'</ul>'.$mobileCta.'</nav>';
         }
 
         $classes = 'g7pb-site-header'.($sticky ? ' is-sticky' : '').($variant === 'transparent' ? ' is-transparent' : '');

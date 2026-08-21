@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   bootDynamicData,
+  bootInquiryForms,
   bootPageEffects,
   bootServiceActions,
   ensureSliderControls,
@@ -9,6 +10,7 @@ import {
 } from '../../resources/js/public/pageEffects';
 
 afterEach(() => {
+  document.head.innerHTML = '';
   document.body.innerHTML = '';
   delete document.documentElement.dataset.g7pbServiceActionsReady;
   vi.restoreAllMocks();
@@ -78,6 +80,60 @@ describe('published page effects runtime', () => {
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(menu?.hidden).toBe(true);
     expect(document.activeElement).toBe(toggle);
+  });
+
+  it('traps keyboard focus inside a drawer menu and restores it when the backdrop closes', () => {
+    document.body.innerHTML = `
+      <header data-g7pb-site-header>
+        <button type="button" aria-expanded="false" aria-controls="drawer-menu" data-g7pb-menu-toggle>메뉴</button>
+        <button type="button" data-g7pb-menu-backdrop hidden>메뉴 닫기</button>
+        <nav id="drawer-menu" data-g7pb-mobile-menu data-g7pb-menu-style="drawer-right" hidden>
+          <button type="button" data-g7pb-menu-close>닫기</button>
+          <a href="/pages/about">소개</a><a href="/pages/contact">문의</a>
+        </nav>
+      </header>`;
+
+    bootPageEffects(document, window);
+    const toggle = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]')!;
+    const backdrop = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-backdrop]')!;
+    const focusable = Array.from(document.querySelectorAll<HTMLElement>('[data-g7pb-mobile-menu] button, [data-g7pb-mobile-menu] a'));
+    toggle.click();
+    expect(document.activeElement).toBe(focusable[0]);
+    focusable.at(-1)?.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(focusable[0]);
+    backdrop.click();
+    expect(document.activeElement).toBe(toggle);
+    expect(backdrop.hidden).toBe(true);
+  });
+
+  it('submits a typed inquiry with CSRF and restores a reusable success state', async () => {
+    document.head.innerHTML = '<meta name="csrf-token" content="csrf-test">';
+    document.body.innerHTML = `
+      <section data-block-id="123e4567-e89b-42d3-a456-426614174099">
+        <form action="/pages/contact/inquiries" data-g7pb-inquiry-form data-g7pb-success-message="접수 완료">
+          <input type="hidden" name="block_instance_id"><input type="hidden" name="started_at">
+          <input name="form_kind" value="inquiry"><input name="website" value="">
+          <input required name="name" value="홍길동"><input required type="email" name="email" value="hello@example.com">
+          <textarea required name="message">문의 내용</textarea><input required type="checkbox" name="privacy" value="1" checked>
+          <p data-g7pb-form-status></p><button type="submit">문의 보내기</button>
+        </form>
+      </section>`;
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({ success: true, message: '문의가 접수되었습니다.' }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    bootInquiryForms(document, fetcher as typeof fetch);
+    const form = document.querySelector<HTMLFormElement>('form')!;
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    const [, init] = fetcher.mock.calls[0]!;
+    expect(init?.headers).toMatchObject({ Accept: 'application/json', 'X-CSRF-TOKEN': 'csrf-test' });
+    expect((init?.body as FormData).get('block_instance_id')).toBe('123e4567-e89b-42d3-a456-426614174099');
+    await vi.waitFor(() => expect(document.querySelector('[data-g7pb-form-status]')?.textContent).toBe('접수 완료'));
+    expect(document.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
+    expect(form.dataset.g7pbFormReady).toBe('true');
   });
 
   it('restores slider controls removed by the active template HTML sanitizer', () => {

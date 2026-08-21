@@ -305,7 +305,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.6.0', $catalog->compilerVersion);
+        self::assertSame('0.7.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -352,7 +352,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
 
         self::assertStringContainsString(
-            'class="g7pb-document-theme g7pb-theme-palette-emerald g7pb-theme-font-serif g7pb-theme-radius-round g7pb-theme-width-wide g7pb-theme-scale-large"',
+            'class="g7pb-document-theme g7pb-theme-mode-light g7pb-theme-palette-emerald g7pb-theme-font-serif g7pb-theme-radius-round g7pb-theme-width-wide g7pb-theme-scale-large"',
             (string) $result->artifact,
         );
         self::assertStringNotContainsString('vendor.option', (string) $result->artifact);
@@ -398,7 +398,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.6.0', $result->compilerVersion);
+        self::assertSame('0.7.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -415,6 +415,41 @@ final class HtmlDocumentCompilerTest extends TestCase
 
         $this->expectException(DocumentCompileException::class);
         $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_inquiry_form_and_map_compile_to_typed_public_markup(): void
+    {
+        $result = $this->builtInCompiler()->compile($this->formAndMapDocument(), 1, 'html', 'g7-7.0.7');
+        $artifact = (string) $result->artifact;
+
+        self::assertStringContainsString('data-block-type="inquiry-form"', $artifact);
+        self::assertStringContainsString('data-block-id="00000000-0000-4000-8000-000000000092"', $artifact);
+        self::assertStringContainsString('action="/pages/business-contact/inquiries"', $artifact);
+        self::assertStringContainsString('name="block_instance_id"', $artifact);
+        self::assertStringContainsString('name="website"', $artifact);
+        self::assertStringContainsString('data-block-type="map-directions"', $artifact);
+        self::assertStringContainsString('https://www.openstreetmap.org/export/embed.html?', $artifact);
+        self::assertStringContainsString('href="https://www.openstreetmap.org/directions"', $artifact);
+        self::assertStringNotContainsString('recipient', $artifact);
+        self::assertStringNotContainsString('<script', $artifact);
+    }
+
+    public function test_inquiry_and_map_reject_untyped_or_unsafe_configuration(): void
+    {
+        $payload = $this->formAndMapDocument()->toArray();
+        $payload['blocks'][0]['props']['recipient'] = 'attacker@example.com';
+
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+            self::fail('An arbitrary form recipient was accepted.');
+        } catch (DocumentCompileException) {
+            self::assertTrue(true);
+        }
+
+        $payload = $this->formAndMapDocument()->toArray();
+        $payload['blocks'][1]['props']['directionsUrl'] = 'javascript:alert(1)';
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
     }
 
     /**
@@ -456,6 +491,43 @@ final class HtmlDocumentCompilerTest extends TestCase
                         'eyebrow' => 'SHOP', 'heading' => '신상품', 'source' => 'new',
                         'limit' => 4, 'columns' => 4, 'audience' => 'member',
                         'detailBasePath' => $detailBasePath, 'emptyMessage' => '상품이 없습니다.',
+                    ],
+                    'slots' => [],
+                ],
+            ],
+        );
+    }
+
+    private function formAndMapDocument(): PageBuilderDocument
+    {
+        return new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000091',
+            slug: 'business-contact',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: ['design.color_mode' => 'system'],
+            blocks: [
+                [
+                    'instance_id' => '00000000-0000-4000-8000-000000000092',
+                    'type' => 'form.inquiry-01',
+                    'block_version' => 1,
+                    'props' => [
+                        'eyebrow' => 'CONTACT', 'heading' => '문의하세요', 'description' => '영업일 기준으로 답변합니다.',
+                        'formKind' => 'inquiry', 'submitLabel' => '문의 보내기', 'successMessage' => '접수되었습니다.',
+                        'privacyLabel' => '개인정보 수집에 동의합니다.', 'showPhone' => true, 'showSubject' => true,
+                    ],
+                    'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-000000000093',
+                    'type' => 'location.map-directions-01',
+                    'block_version' => 1,
+                    'props' => [
+                        'eyebrow' => 'LOCATION', 'heading' => '찾아오시는 길', 'description' => '대중교통을 이용해 주세요.',
+                        'address' => '서울특별시 중구 세종대로 110', 'latitude' => 37.5665, 'longitude' => 126.9780,
+                        'zoom' => 16, 'provider' => 'openstreetmap', 'directionsLabel' => '길찾기',
+                        'directionsUrl' => 'https://www.openstreetmap.org/directions', 'phone' => '02-1234-5678',
+                        'hours' => '평일 09:00~18:00', 'parking' => '주차 1시간 지원',
                     ],
                     'slots' => [],
                 ],

@@ -28,17 +28,19 @@ final class BlockPackContractTest extends TestCase
         self::assertSame($manifest->toArray(), BlockPackManifest::fromArray($manifest->toArray())->toArray());
     }
 
-    public function test_builtin_core_manifest_registers_all_fourteen_definitions(): void
+    public function test_builtin_core_manifest_registers_all_sixteen_definitions(): void
     {
         $manifest = (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2));
         $registry = new BlockRegistry;
         $registry->register($manifest, enabled: true);
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
-        self::assertCount(14, $registry->definitions());
+        self::assertCount(16, $registry->definitions());
         self::assertNotNull($registry->definition('data.bar-chart-01', 1));
         self::assertNotNull($registry->definition('g7.board-recent-posts-01', 1));
         self::assertNotNull($registry->definition('g7.ecommerce-product-grid-01', 1));
+        self::assertNotNull($registry->definition('form.inquiry-01', 1));
+        self::assertNotNull($registry->definition('location.map-directions-01', 1));
     }
 
     public function test_data_pack_rejects_runtime_code(): void

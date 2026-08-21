@@ -1,15 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Ban,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   Blocks,
   ImageOff,
   ImagePlus,
+  Link2,
   Monitor,
   Paintbrush,
+  Moon,
+  Sun,
   Smartphone,
   Sparkles,
   Tablet,
+  Type,
 } from 'lucide-react';
 import {
   ActionBar,
@@ -45,7 +52,9 @@ import {
   normalizeBlockMotion,
 } from './blockMotion';
 import { createMediaField, OPEN_MEDIA_PICKER_EVENT } from './MediaPickerField';
-import { createRouteUrlField } from './RouteUrlField';
+import { createRouteUrlField, OPEN_ROUTE_PICKER_EVENT } from './RouteUrlField';
+import { SitePartEditor, AnnouncementPreview, FooterColumnsPreview, FooterSimplePreview, HeaderNavigationPreview } from './SitePartEditor';
+import { sitePartCanonicalToPuck, type SitePartComponents } from './sitePartDocumentAdapter';
 import {
   pageDesignClassName,
   pageDesignToTokens,
@@ -68,6 +77,7 @@ import {
   type PageBuilderBlock,
   type PageBuilderDocument,
   type ScalarToken,
+  type SitePartResource,
 } from '../documents/types';
 
 interface HeroEditorProps {
@@ -81,6 +91,8 @@ interface HeroEditorProps {
   alignment: 'left' | 'center';
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
   motion: BlockMotion;
 }
 
@@ -89,6 +101,8 @@ interface FeaturesEditorProps {
   items: FeatureItem[];
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
   motion: BlockMotion;
 }
 
@@ -103,6 +117,8 @@ interface CtaEditorProps {
   theme: 'light' | 'dark';
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
   motion: BlockMotion;
 }
 
@@ -117,6 +133,8 @@ interface ContactEditorProps {
   mapUrl: string;
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
   motion: BlockMotion;
 }
 
@@ -125,6 +143,46 @@ interface EditorComponents extends CatalogEditorComponents {
   Features: FeaturesEditorProps;
   Cta: CtaEditorProps;
   Contact: ContactEditorProps;
+}
+
+interface FullSiteCanvasValue {
+  shellMode: PageBuilderDocument['shell_mode'];
+  header: SitePartResource | null;
+  footer: SitePartResource | null;
+  edit: (kind: 'header' | 'footer') => void;
+}
+
+const FullSiteCanvasContext = React.createContext<FullSiteCanvasValue>({ shellMode: 'none', header: null, footer: null, edit: () => undefined });
+
+function SitePartCanvasContent({ resource }: { resource: SitePartResource }): React.ReactElement {
+  const data = sitePartCanonicalToPuck(resource.document);
+  return <>{data.content.map((block, index) => {
+    const props = block.props as SitePartComponents[keyof SitePartComponents] & { id?: string };
+    if (block.type === 'HeaderNavigation') return <HeaderNavigationPreview key={props.id ?? index} {...props as SitePartComponents['HeaderNavigation']} />;
+    if (block.type === 'Announcement') return <AnnouncementPreview key={props.id ?? index} {...props as SitePartComponents['Announcement']} />;
+    if (block.type === 'FooterSimple') return <FooterSimplePreview key={props.id ?? index} {...props as SitePartComponents['FooterSimple']} />;
+    return <FooterColumnsPreview key={props.id ?? index} {...props as SitePartComponents['FooterColumns']} />;
+  })}</>;
+}
+
+function FullSiteCanvasPart({ kind, resource, template }: { kind: 'header' | 'footer'; resource: SitePartResource | null; template: boolean }): React.ReactElement {
+  const canvas = React.useContext(FullSiteCanvasContext);
+  return <section className={`g7pb-full-site-part g7pb-full-site-part--${kind}`} data-testid={`page-builder-canvas-${kind}`}>
+    {resource ? <SitePartCanvasContent resource={resource} /> : <div className="g7pb-full-site-part__placeholder"><strong>{template ? `G7 활성 템플릿 ${kind === 'header' ? 'Header' : 'Footer'}` : `${kind === 'header' ? 'Header' : 'Footer'}가 아직 없습니다.`}</strong><span>{template ? '템플릿 공통 영역은 공개 미리보기에서 정확히 확인합니다.' : '공통 Site Part를 만들어 전체 사이트 흐름을 완성하세요.'}</span></div>}
+    {!template ? <button type="button" className="g7pb-full-site-part__edit" onClick={() => canvas.edit(kind)}>{kind === 'header' ? 'Header' : 'Footer'} 편집</button> : null}
+  </section>;
+}
+
+function FullSiteRoot({ children, design }: { children: React.ReactNode; design: PageDesignProps }): React.ReactElement {
+  const canvas = React.useContext(FullSiteCanvasContext);
+  const template = canvas.shellMode === 'template';
+  const builder = canvas.shellMode === 'builder' || canvas.shellMode === 'global';
+
+  return <div className={`g7pb-preview-page ${pageDesignClassName(design)}`}>
+    {(template || builder) ? <FullSiteCanvasPart kind="header" resource={builder ? canvas.header : null} template={template} /> : null}
+    <div className="g7pb-full-site-page" data-testid="page-builder-canvas-page">{children}</div>
+    {(template || builder) ? <FullSiteCanvasPart kind="footer" resource={builder ? canvas.footer : null} template={template} /> : null}
+  </div>;
 }
 
 export type PuckEditorData = Data<EditorComponents, PageDesignProps>;
@@ -251,7 +309,7 @@ function normalizeSpacing(value: unknown, fallback: BlockAppearance['spacing'] =
 function appearanceToEditorProps(
   value: unknown,
   fallback: BlockAppearance,
-): Pick<HeroEditorProps, 'surface' | 'spacing'> {
+): Pick<HeroEditorProps, 'surface' | 'spacing' | 'textScale' | 'textAlign'> {
   const appearance = typeof value === 'object' && value !== null
     ? value as Record<string, unknown>
     : {};
@@ -259,6 +317,8 @@ function appearanceToEditorProps(
   return {
     surface: normalizeSurface(appearance.surface, fallback.surface),
     spacing: normalizeSpacing(appearance.spacing, fallback.spacing),
+    textScale: appearance.textScale === 'compact' || appearance.textScale === 'large' ? appearance.textScale : 'balanced',
+    textAlign: appearance.textAlign === 'center' || appearance.textAlign === 'right' ? appearance.textAlign : 'left',
   };
 }
 
@@ -266,11 +326,16 @@ function editorAppearance(
   surface: unknown,
   spacing: unknown,
   fallback: BlockAppearance,
+  textScale?: unknown,
+  textAlign?: unknown,
 ): BlockAppearance {
-  return {
+  const appearance: BlockAppearance = {
     surface: normalizeSurface(surface, fallback.surface),
     spacing: normalizeSpacing(spacing, fallback.spacing),
   };
+  if (textScale === 'compact' || textScale === 'large') appearance.textScale = textScale;
+  if (textAlign === 'center' || textAlign === 'right') appearance.textAlign = textAlign;
+  return appearance;
 }
 
 function normalizeFeatureItems(value: unknown): FeatureItem[] {
@@ -536,8 +601,8 @@ function puckBlockToCanonical(
       body: asString(editorProps.body),
       alignment: normalizeAlignment(editorProps.alignment),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' });
-    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious') {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' }, editorProps.textScale, editorProps.textAlign);
+    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious' || appearance.textScale || appearance.textAlign) {
       heroProps.appearance = appearance;
     }
     const primaryLabel = asString(editorProps.primaryLabel);
@@ -558,8 +623,8 @@ function puckBlockToCanonical(
       title: asString(editorProps.title),
       items: normalizeFeatureItems(editorProps.items),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' });
-    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal') {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign);
+    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign) {
       props.appearance = appearance;
     }
   } else if (block.type === 'Cta') {
@@ -571,8 +636,8 @@ function puckBlockToCanonical(
       body: asString(editorProps.body),
       theme: normalizeTheme(editorProps.theme),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' });
-    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal') {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign);
+    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign) {
       ctaProps.appearance = appearance;
     }
     const primaryLabel = asString(editorProps.primaryLabel);
@@ -595,8 +660,8 @@ function puckBlockToCanonical(
       phone: asString(editorProps.phone),
       email: asString(editorProps.email),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'normal' });
-    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'normal') {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign);
+    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign) {
       contactProps.appearance = appearance;
     }
     const ctaLabel = asString(editorProps.ctaLabel);
@@ -804,25 +869,33 @@ function StableSelectField<TValue extends string>({
   readOnly,
   testId,
   options,
+  label,
+  help,
 }: {
   value: TValue;
   onChange: (value: TValue) => void;
   readOnly?: boolean;
   testId: string;
   options: Array<{ label: string; value: TValue }>;
+  label?: string;
+  help?: string;
 }): React.ReactElement {
   return (
-    <select
-      className="g7pb-field-control"
-      data-testid={testId}
-      value={value}
-      disabled={readOnly}
-      onChange={(event) => onChange(event.target.value as TValue)}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>{option.label}</option>
-      ))}
-    </select>
+    <label className={label ? 'g7pb-design-field' : undefined}>
+      {label ? <span>{label}</span> : null}
+      {help ? <small>{help}</small> : null}
+      <select
+        className="g7pb-field-control"
+        data-testid={testId}
+        value={value}
+        disabled={readOnly}
+        onChange={(event) => onChange(event.target.value as TValue)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -937,13 +1010,15 @@ function HeroPreview({
   alignment,
   surface,
   spacing,
+  textScale = 'balanced',
+  textAlign = 'left',
   motion,
 }: Omit<HeroEditorProps, 'body'> & { id: string; body: React.ReactNode }): React.ReactElement {
   const image = safeImage(imageSrc);
 
   return (
     <BlockFrame id={id} type="hero" motion={motion}>
-      <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
+      <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-hero__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <h1 data-g7pb-inline-field="title">{title}</h1>
@@ -964,7 +1039,7 @@ function HeroPreview({
   );
 }
 
-function FeaturesPreview({ id, title, items, surface, spacing, motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
+function FeaturesPreview({ id, title, items, surface, spacing, textScale = 'balanced', textAlign = 'left', motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
   const glyphs: Record<string, string> = {
     sparkles: '✦',
     shield: '◆',
@@ -974,14 +1049,14 @@ function FeaturesPreview({ id, title, items, surface, spacing, motion }: Feature
 
   return (
     <BlockFrame id={id} type="features" motion={motion}>
-      <div className={`g7pb-preview-features g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
+      <div className={`g7pb-preview-features g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <h2 data-g7pb-inline-field="title">{title}</h2>
         <div className="g7pb-preview-features__grid">
           {normalizeFeatureItems(items).map((item, index) => (
             <article key={`${item.title}-${index}`}>
               <span aria-hidden="true">{glyphs[item.icon] ?? glyphs.sparkles}</span>
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
+              <h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3>
+              <p data-g7pb-inline-field={`items.${index}.body`}>{item.body}</p>
             </article>
           ))}
         </div>
@@ -1002,11 +1077,13 @@ function CtaPreview({
   theme,
   surface,
   spacing,
+  textScale = 'balanced',
+  textAlign = 'left',
   motion,
 }: CtaEditorProps & { id: string }): React.ReactElement {
   return (
     <BlockFrame id={id} type="cta" motion={motion}>
-      <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
+      <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-cta-split__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <h2 data-g7pb-inline-field="heading">{heading}</h2>
@@ -1043,11 +1120,13 @@ function ContactPreview({
   mapUrl,
   surface,
   spacing,
+  textScale = 'balanced',
+  textAlign = 'left',
   motion,
 }: ContactEditorProps & { id: string }): React.ReactElement {
   return (
     <BlockFrame id={id} type="contact" motion={motion}>
-      <div className={`g7pb-preview-contact g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`}>
+      <div className={`g7pb-preview-contact g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-contact__heading">
           <p className="g7pb-preview-eyebrow">Contact</p>
           <h2 data-g7pb-inline-field="heading">{heading}</h2>
@@ -1084,7 +1163,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
   categories: {
     content: {
       title: '콘텐츠 블록',
-      components: ['Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Contact'],
+      components: ['Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Contact', 'InquiryForm', 'MapDirections'],
       defaultExpanded: true,
     },
     business: {
@@ -1095,6 +1174,11 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
     dataMedia: {
       title: '데이터·미디어',
       components: ['Stats', 'BarChart', 'Gallery'],
+      defaultExpanded: true,
+    },
+    g7Data: {
+      title: 'G7 데이터',
+      components: ['G7RecentPosts', 'G7ProductGrid'],
       defaultExpanded: true,
     },
   },
@@ -1140,8 +1224,8 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             codeBlock: false,
             horizontalRule: false,
             strike: false,
-            textAlign: false,
-            underline: false,
+            textAlign: {},
+            underline: {},
             heading: { levels: [2, 3, 4] },
           },
         },
@@ -1153,7 +1237,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
           ),
         },
         primaryUrl: createRouteUrlField('버튼 연결', 'page-builder-hero-primary-url'),
-        imageSrc: createMediaField('대표 이미지'),
+        imageSrc: createMediaField('대표 이미지', 'hero-image'),
         imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
         alignment: {
           type: 'radio',
@@ -1416,10 +1500,19 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
   },
   root: {
     fields: {
+      colorMode: {
+        type: 'custom', label: '화면 테마',
+        render: ({ value, onChange, readOnly }) => (
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="화면 테마" help="공개 페이지와 편집 캔버스의 밝기를 정합니다."
+            testId="page-builder-design-color-mode" options={[
+              { label: '라이트', value: 'light' }, { label: '다크', value: 'dark' }, { label: '기기 설정', value: 'system' },
+            ]} />
+        ),
+      },
       palette: {
         type: 'custom', label: '브랜드 색상',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="브랜드 색상" help="버튼, 링크, 강조 요소에 공통 적용됩니다."
             testId="page-builder-design-palette" options={[
               { label: '인디고', value: 'indigo' }, { label: '블루', value: 'blue' },
               { label: '에메랄드', value: 'emerald' }, { label: '앰버', value: 'amber' },
@@ -1430,7 +1523,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       font: {
         type: 'custom', label: '글꼴 분위기',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="글꼴 분위기" help="페이지 전체 타이포그래피 계열을 선택합니다."
             testId="page-builder-design-font" options={[
               { label: '시스템', value: 'system' }, { label: '모던', value: 'modern' }, { label: '명조', value: 'serif' },
             ]} />
@@ -1439,7 +1532,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       radius: {
         type: 'custom', label: '모서리',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="모서리" help="카드, 이미지, 버튼의 둥근 정도입니다."
             testId="page-builder-design-radius" options={[
               { label: '각지게', value: 'sharp' }, { label: '부드럽게', value: 'soft' }, { label: '둥글게', value: 'round' },
             ]} />
@@ -1448,7 +1541,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       width: {
         type: 'custom', label: '콘텐츠 폭',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="콘텐츠 폭" help="본문이 차지하는 최대 가로 폭입니다."
             testId="page-builder-design-width" options={[
               { label: '좁게', value: 'narrow' }, { label: '기본', value: 'standard' }, { label: '넓게', value: 'wide' },
             ]} />
@@ -1457,16 +1550,14 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       scale: {
         type: 'custom', label: '글자 크기',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly}
+          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="기본 글자 크기" help="전체 글자 비율을 한 번에 조절합니다."
             testId="page-builder-design-scale" options={[
               { label: '작게', value: 'compact' }, { label: '기본', value: 'balanced' }, { label: '크게', value: 'large' },
             ]} />
         ),
       },
     },
-    render: ({ children, ...design }) => (
-      <div className={`g7pb-preview-page ${pageDesignClassName(design)}`}>{children}</div>
-    ),
+    render: ({ children, ...design }) => <FullSiteRoot design={design}>{children}</FullSiteRoot>,
   },
 };
 
@@ -1831,6 +1922,14 @@ function StableHeaderControls({
     });
   };
 
+  const setColorMode = (colorMode: PageDesignProps['colorMode']): void => {
+    dispatch({
+      type: 'setData',
+      data: { ...data, root: { ...data.root, props: { ...data.root.props, colorMode } } } as never,
+      recordHistory: true,
+    });
+  };
+
   const viewportIcon = (width: number): React.ReactNode => {
     if (width === 360) return <Smartphone size={15} aria-hidden="true" />;
     if (width === 768) return <Tablet size={15} aria-hidden="true" />;
@@ -1843,6 +1942,11 @@ function StableHeaderControls({
         disabled={disabled} onClick={selectPageDesign}>
         <Paintbrush size={16} aria-hidden="true" /><span>페이지 디자인</span>
       </button>
+      <div className="g7pb-theme-switcher" role="group" aria-label="라이트·다크 테마 미리보기">
+        <button type="button" aria-label="라이트 테마" aria-pressed={(data.root.props?.colorMode ?? 'light') === 'light'} disabled={disabled} onClick={() => setColorMode('light')}><Sun size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label="다크 테마" aria-pressed={data.root.props?.colorMode === 'dark'} disabled={disabled} onClick={() => setColorMode('dark')}><Moon size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label="기기 테마" aria-pressed={data.root.props?.colorMode === 'system'} disabled={disabled} onClick={() => setColorMode('system')}><Monitor size={15} aria-hidden="true" /></button>
+      </div>
       <div className="g7pb-motion-batch" role="group" aria-label="페이지 효과 일괄 설정">
         <button type="button" disabled={disabled || contentLength === 0}
           data-testid="page-builder-auto-motion" onClick={applyRecommendedMotions}><Sparkles size={15} aria-hidden="true" /><span>추천 효과</span></button>
@@ -1916,6 +2020,16 @@ function SelectedBlockActionBar({
     ? data.content[selectedIndex]
     : null;
   const hasDirectMedia = selectedBlock?.type === 'Hero' || selectedBlock?.type === 'HeroSplit';
+  const mediaPickerKey = selectedBlock?.type === 'Hero' ? 'hero-image' : selectedBlock?.type === 'HeroSplit' ? 'hero-split-image' : null;
+  const routePickerTestId = selectedBlock?.type === 'Hero'
+    ? 'page-builder-hero-primary-url'
+    : selectedBlock?.type === 'HeroSplit'
+      ? 'page-builder-hero-split-primary-url'
+      : selectedBlock?.type === 'Cta'
+        ? 'page-builder-cta-primary-url'
+        : selectedBlock?.type === 'Contact'
+          ? 'page-builder-contact-cta-url'
+          : null;
 
   const move = (destinationIndex: number): void => {
     if (selectedIndex === null || destinationIndex < 0 || destinationIndex >= contentLength) {
@@ -1950,6 +2064,23 @@ function SelectedBlockActionBar({
     });
   };
 
+  const updateTypography = (patch: { textScale?: 'compact' | 'balanced' | 'large'; textAlign?: 'left' | 'center' | 'right' }): void => {
+    if (selectedIndex === null) return;
+    dispatch({
+      type: 'setData',
+      data: {
+        ...data,
+        content: data.content.map((block, index) => index === selectedIndex ? { ...block, props: { ...block.props, ...patch } } : block),
+      } as never,
+      recordHistory: true,
+    });
+  };
+
+  const cycleTextScale = (): void => {
+    const current = selectedBlock?.props.textScale;
+    updateTypography({ textScale: current === 'compact' ? 'balanced' : current === 'large' ? 'compact' : 'large' });
+  };
+
   return (
     <ActionBar>
       <ActionBar.Group>
@@ -1960,7 +2091,7 @@ function SelectedBlockActionBar({
         {hasDirectMedia && (
           <>
             <ActionBar.Action label="대표 이미지 변경" disabled={disabled}
-              onClick={() => window.dispatchEvent(new CustomEvent(OPEN_MEDIA_PICKER_EVENT))}>
+              onClick={() => window.dispatchEvent(new CustomEvent(OPEN_MEDIA_PICKER_EVENT, { detail: { pickerKey: mediaPickerKey } }))}>
               <ImagePlus size={16} data-testid="page-builder-canvas-media-open" aria-hidden="true" />
             </ActionBar.Action>
             <ActionBar.Action label="대표 이미지 비우기" disabled={disabled || !selectedBlock?.props.imageSrc}
@@ -1969,6 +2100,16 @@ function SelectedBlockActionBar({
             </ActionBar.Action>
           </>
         )}
+        {routePickerTestId ? <ActionBar.Action label="버튼 연결 편집" disabled={disabled}
+          onClick={() => window.dispatchEvent(new CustomEvent(OPEN_ROUTE_PICKER_EVENT, { detail: { testId: routePickerTestId } }))}>
+          <Link2 size={16} data-testid="page-builder-canvas-route-open" aria-hidden="true" />
+        </ActionBar.Action> : null}
+        {selectedBlock && <>
+          <ActionBar.Action label="글자 크기 순환" disabled={disabled} onClick={cycleTextScale}><Type size={16} data-testid="page-builder-text-scale" aria-hidden="true" /></ActionBar.Action>
+          <ActionBar.Action label="왼쪽 정렬" disabled={disabled} onClick={() => updateTypography({ textAlign: 'left' })}><AlignLeft size={16} data-testid="page-builder-text-align-left" aria-hidden="true" /></ActionBar.Action>
+          <ActionBar.Action label="가운데 정렬" disabled={disabled} onClick={() => updateTypography({ textAlign: 'center' })}><AlignCenter size={16} data-testid="page-builder-text-align-center" aria-hidden="true" /></ActionBar.Action>
+          <ActionBar.Action label="오른쪽 정렬" disabled={disabled} onClick={() => updateTypography({ textAlign: 'right' })}><AlignRight size={16} data-testid="page-builder-text-align-right" aria-hidden="true" /></ActionBar.Action>
+        </>}
         <ActionBar.Action
           label="블록 위로 이동"
           disabled={disabled || selectedIndex === null || selectedIndex === 0}
@@ -2050,6 +2191,8 @@ export function PuckEditorAdapter({
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);
   const [catalogItems, setCatalogItems] = useState<ReadonlyArray<BlockGalleryItem>>(BLOCK_GALLERY_ITEMS);
+  const [siteParts, setSiteParts] = useState<{ header: SitePartResource | null; footer: SitePartResource | null }>({ header: null, footer: null });
+  const [sitePartMode, setSitePartMode] = useState<'header' | 'footer' | null>(null);
   const heroFamilyCount = data.content.filter((block) =>
     block.type === 'Hero' || block.type === 'HeroSplit' || block.type === 'HeroSlider').length;
   const heroWarningKey = `g7pb:warning:${document.document_id}:hero-family:${heroFamilyCount}`;
@@ -2103,6 +2246,22 @@ export function PuckEditorAdapter({
     };
   }, [api, document.locale]);
 
+  useEffect(() => {
+    if (document.shell_mode !== 'builder' && document.shell_mode !== 'global') {
+      setSiteParts({ header: null, footer: null });
+      return undefined;
+    }
+    let active = true;
+    void Promise.allSettled([api.getSitePart('header', document.locale), api.getSitePart('footer', document.locale)]).then(([header, footer]) => {
+      if (!active) return;
+      setSiteParts({
+        header: header.status === 'fulfilled' ? header.value : null,
+        footer: footer.status === 'fulfilled' ? footer.value : null,
+      });
+    });
+    return () => { active = false; };
+  }, [api, document.locale, document.shell_mode]);
+
   const toggleFavorite = React.useCallback(async (catalogId: string, favorite: boolean): Promise<void> => {
     await api.setBlockFavorite(catalogId, favorite);
     setCatalogItems((current) => current.map((item) => item.catalogId === catalogId ? { ...item, favorite } : item));
@@ -2111,6 +2270,11 @@ export function PuckEditorAdapter({
     items: catalogItems,
     toggleFavorite,
   }), [catalogItems, toggleFavorite]);
+  const editSitePart = useCallback((kind: 'header' | 'footer'): void => setSitePartMode(kind), []);
+  const closeSitePartEditor = useCallback((): void => setSitePartMode(null), []);
+  const refreshSitePart = useCallback((resource: SitePartResource): void => {
+    setSiteParts((current) => ({ ...current, [resource.document.kind]: resource }));
+  }, []);
 
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
@@ -2129,6 +2293,24 @@ export function PuckEditorAdapter({
     return nextDocument;
   };
 
+  const fullSiteCanvas = useMemo(() => ({
+    shellMode: document.shell_mode ?? 'template',
+    header: siteParts.header,
+    footer: siteParts.footer,
+    edit: editSitePart,
+  } satisfies FullSiteCanvasValue), [document.shell_mode, editSitePart, siteParts.footer, siteParts.header]);
+
+  if (sitePartMode) {
+    return <SitePartEditor
+      kind={sitePartMode}
+      locale={document.locale}
+      embedded
+      iframeEnabled={iframeEnabled}
+      onBack={closeSitePartEditor}
+      onChanged={refreshSitePart}
+    />;
+  }
+
   return (
     <div className="g7pb-editor" data-testid="page-builder-editor" aria-busy={disabled}>
       {heroFamilyCount > 1 && !heroWarningDismissed && (
@@ -2145,6 +2327,7 @@ export function PuckEditorAdapter({
         </div>
       )}
       <BlockCatalogContext.Provider value={blockCatalogContext}>
+        <FullSiteCanvasContext.Provider value={fullSiteCanvas}>
         <Puck
           config={runtimePuckConfig}
           data={data}
@@ -2165,6 +2348,7 @@ export function PuckEditorAdapter({
           onChange={updateCanonical}
           onPublish={(nextData) => onPublish(updateCanonical(nextData))}
         />
+        </FullSiteCanvasContext.Provider>
       </BlockCatalogContext.Provider>
     </div>
   );

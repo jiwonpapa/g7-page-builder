@@ -31,6 +31,6 @@ describe('page design tokens', () => {
   it('emits only allowlisted deterministic classes', () => {
     expect(pageDesignClassName({
       palette: 'rose', font: 'system', radius: 'sharp', width: 'narrow', scale: 'compact',
-    })).toBe('g7pb-document-theme g7pb-theme-palette-rose g7pb-theme-font-system g7pb-theme-radius-sharp g7pb-theme-width-narrow g7pb-theme-scale-compact');
+    })).toBe('g7pb-document-theme g7pb-theme-mode-light g7pb-theme-palette-rose g7pb-theme-font-system g7pb-theme-radius-sharp g7pb-theme-width-narrow g7pb-theme-scale-compact');
   });
 });

@@ -17,33 +17,40 @@ function MediaPicker({
   onChange,
   readOnly,
   label,
+  pickerKey,
 }: {
   value: string;
   onChange: (next: string) => void;
   readOnly?: boolean;
   label: string;
+  pickerKey?: string;
 }): React.ReactElement {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [assets, setAssets] = useState<MediaAssetResource[]>([]);
+  const [assetsAttempted, setAssetsAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open || assets.length > 0) return;
+    if (!open || assets.length > 0 || assetsAttempted) return;
+    setAssetsAttempted(true);
     setLoading(true);
     void api.listMedia()
       .then((result) => setAssets(result.items))
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : '미디어를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
-  }, [assets.length, open]);
+  }, [assets.length, assetsAttempted, open]);
 
   useEffect(() => {
     if (readOnly) return undefined;
-    const openFromCanvas = (): void => setOpen(true);
+    const openFromCanvas = (event: Event): void => {
+      if (pickerKey && (!(event instanceof CustomEvent) || event.detail?.pickerKey !== pickerKey)) return;
+      setOpen(true);
+    };
     window.addEventListener(OPEN_MEDIA_PICKER_EVENT, openFromCanvas);
     return () => window.removeEventListener(OPEN_MEDIA_PICKER_EVENT, openFromCanvas);
-  }, [readOnly]);
+  }, [pickerKey, readOnly]);
 
   const upload = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.currentTarget.files?.[0];
@@ -123,12 +130,12 @@ function MediaPicker({
   );
 }
 
-export function createMediaField(label: string): Field<string> {
+export function createMediaField(label: string, pickerKey?: string): Field<string> {
   return {
     type: 'custom',
     label,
     render: ({ value, onChange, readOnly }) => (
-      <MediaPicker value={typeof value === 'string' ? value : ''} onChange={onChange} readOnly={readOnly} label={label} />
+      <MediaPicker value={typeof value === 'string' ? value : ''} onChange={onChange} readOnly={readOnly} label={label} pickerKey={pickerKey} />
     ),
   };
 }

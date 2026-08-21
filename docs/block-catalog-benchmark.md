@@ -5,7 +5,7 @@
 
 ## 결론
 
-유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 12종과 G7 공개 데이터 2종, 총 14종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다.
+유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 12종, G7 공개 데이터 2종, 문의 폼 1종, 찾아오기 1종으로 총 16종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다.
 
 ## 공식 제품에서 확인한 공통 구조
 
@@ -19,7 +19,12 @@
 | [Framer Components](https://www.framer.com/help/articles/using-components/) | 재사용 component와 노출된 property로 변형 | raw CSS 대신 재사용 block+typed property 채택 |
 | [Framer CMS Components](https://www.framer.com/updates/cms-components) | property·variant·responsive breakpoint 조합 | surface·spacing·열 수를 제한된 variant로 제공 |
 
-## 1차 구현 카탈로그 12종
+## 1차 콘텐츠 카탈로그 12종
+
+폼·위치 카테고리는 별도 제품 계약으로 추가했습니다.
+
+- Inquiry Form: 문의·견적·예약·신청·뉴스레터, DB 선저장과 관리자 문의함
+- Map Directions: 주소·좌표·OSM/Google/숨김 지도·길찾기·운영 및 주차 정보
 
 | Category | 표시 이름 | Canonical block ID | 용도 |
 |---|---|---|---|
@@ -57,4 +62,4 @@
 
 ## 다음 후보
 
-2차 우선순위는 Testimonials, FAQ Accordion, Process/Timeline, Tabs, Comparison Table, Article/CMS List, Video, Map, Form입니다. Form·CMS·Map은 화면 block보다 먼저 데이터·권한·실패 처리 계약을 정의합니다.
+2차 우선순위는 Testimonials, FAQ Accordion, Process/Timeline, Tabs, Comparison Table, Article/CMS List, Video입니다. 각 데이터 블록은 화면보다 먼저 capability·권한·빈 상태·실패 처리 계약을 정의합니다.

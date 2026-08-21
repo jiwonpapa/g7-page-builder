@@ -366,7 +366,7 @@ function EditorShell({
   const generateCompiledDiagnostic = async (): Promise<void> => {
     const current = documentRef.current;
     if (!current) return;
-    if ((dirtyRef.current || savePromiseRef.current) && !(await saveDraft(true))) return;
+    if (dirtyRef.current && !(await saveDraft(true))) return;
 
     setDiagnosticBusy(true);
     setMessage(null);

@@ -66,13 +66,13 @@ final class PublicationPersistenceTest extends TestCase
         $container->instance('db', $this->database->getDatabaseManager());
         $container->instance('db.schema', $this->database->getConnection()->getSchemaBuilder());
         $container->instance('log', new NullLogger);
-        $container->instance('config', new ConfigRepository([
-            'g7-page-builder' => ['forms' => [
-                'recipient' => null,
-                'ip_hash_key' => 'test-form-hash-key',
-                'minimum_fill_seconds' => 1,
-            ]],
-        ]));
+        $config = $container->make('config');
+        self::assertInstanceOf(ConfigRepository::class, $config);
+        $config->set('g7-page-builder.forms', [
+            'recipient' => null,
+            'ip_hash_key' => 'test-form-hash-key',
+            'minimum_fill_seconds' => 1,
+        ]);
         $container->instance(
             UrlGeneratorContract::class,
             new UrlGenerator(new RouteCollection, Request::create('https://g7pb.test')),

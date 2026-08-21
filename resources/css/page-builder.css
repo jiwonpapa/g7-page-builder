@@ -404,7 +404,7 @@ body.g7pb-manager-shell {
 
 .g7pb-dialog-backdrop {
   position: fixed;
-  z-index: 100;
+  z-index: 15000;
   inset: 0;
   display: grid;
   place-items: center;
@@ -471,7 +471,7 @@ body.g7pb-manager-shell {
 .g7pb-source-dialog__empty p { max-width: 38rem; margin: 0; line-height: 1.65; }
 
 .g7pb-dialog-backdrop--confirm {
-  z-index: 110;
+  z-index: 15100;
   background: rgb(15 23 42 / 58%);
 }
 

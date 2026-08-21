@@ -2058,13 +2058,14 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const canvasUi = React.useContext(CanvasEditingUiContext);
   const overlayRef = useRef<HTMLElement | null>(null);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null ? data.content[selectedIndex] : null;
+  const overlayActive = Boolean(canvasUi?.textToolsOpen && selectedBlock);
   useEffect(() => {
-    if (!canvasUi?.textToolsOpen || !selectedBlock) return undefined;
+    if (!overlayActive) return undefined;
     return registerOverlayPortal(overlayRef.current, {
       disableDrag: true,
       disableDragOnFocus: true,
     });
-  }, [canvasUi?.textToolsOpen, selectedBlock]);
+  }, [overlayActive, selectedIndex, selectedZone]);
   if (!canvasUi?.textToolsOpen || !selectedBlock) return null;
   const blockIndex = selectedIndex as number;
   const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'

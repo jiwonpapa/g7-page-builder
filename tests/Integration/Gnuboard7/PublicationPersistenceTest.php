@@ -746,6 +746,29 @@ final class PublicationPersistenceTest extends TestCase
         self::assertSame($published->representationSha256(), $service->findPublished('seo-snapshot')?->representationSha256());
     }
 
+    public function test_metadata_api_normalizes_empty_seo_form_values_after_laravel_middleware(): void
+    {
+        $service = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
+        $created = $service->create('빈 SEO', 'empty-seo', 'ko', null, 'template');
+        $response = (new AdminDocumentController($service))->update(Request::create('/documents/id', 'PATCH', [
+            'title' => $created->title,
+            'slug' => $created->document->slug,
+            'locale' => $created->document->locale,
+            'expected_lock_version' => $created->lockVersion,
+            'shell_mode' => 'template',
+            'seo' => [
+                'title' => null,
+                'description' => null,
+                'og_image_url' => null,
+                'robots' => 'index',
+            ],
+        ]), $created->document->documentId);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('', $response->getData(true)['data']['document']['seo']['title']);
+        self::assertSame('', $response->getData(true)['data']['document']['seo']['og_image_url']);
+    }
+
     public function test_compile_failure_keeps_the_last_public_artifact_and_representation_hash(): void
     {
         $service = new PageBuilderService(

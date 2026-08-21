@@ -2,6 +2,7 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -73,12 +74,15 @@ final class FormSubmissionController
 
     public function index(Request $request): JsonResponse
     {
-        $status = (string) $request->query('status', 'all');
+        $requestedStatus = $request->query('status', 'all');
+        $status = is_string($requestedStatus) ? $requestedStatus : 'all';
         $query = FormSubmissionRecord::query()->orderByDesc('created_at');
         if (in_array($status, ['unread', 'read', 'archived'], true)) {
             $query->where('status', $status);
         }
-        $items = $query->limit(100)->get()->map(fn (FormSubmissionRecord $record): array => $this->resource($record))->all();
+        /** @var Collection<int, FormSubmissionRecord> $records */
+        $records = $query->limit(100)->get();
+        $items = $records->map(fn (FormSubmissionRecord $record): array => $this->resource($record))->all();
 
         return response()->json(['success' => true, 'message' => '문의함을 조회했습니다.', 'data' => ['items' => $items]]);
     }
@@ -116,7 +120,7 @@ final class FormSubmissionController
             return;
         }
         try {
-            $payload = is_array($record->payload_json) ? $record->payload_json : [];
+            $payload = $record->payload_json;
             $body = "페이지: {$record->page_slug}\n유형: {$record->form_kind}\n이름: ".($payload['name'] ?? '')."\n이메일: {$record->email}\n전화: ".($payload['phone'] ?? '')."\n제목: {$record->subject}\n\n".($payload['message'] ?? '');
             Mail::raw($body, function ($message) use ($recipient, $record): void {
                 $message->to($recipient)->subject('[Page Builder 문의] '.($record->subject !== '' ? $record->subject : $record->page_slug));

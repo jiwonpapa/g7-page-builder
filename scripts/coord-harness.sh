@@ -357,13 +357,24 @@ run_submission_profile() {
 run_integration_profile() {
   local profile="$1"
   local integration_task="$2"
+  local task_areas="${3:-}"
+  local needs_runtime_sync=0
+  if csv_has "$task_areas" migration || csv_has "$task_areas" version; then
+    needs_runtime_sync=1
+  fi
   case "$profile" in
     frontend) make quality-frontend TASK="$integration_task" ;;
     php) make quality-php TASK="$integration_task" ;;
     mixed) make dev-check TASK="$integration_task" ;;
-    g7) make quality-g7 TASK="$integration_task" ;;
+    g7)
+      [[ "$needs_runtime_sync" == 0 ]] || make dev-sync TASK="$integration_task"
+      make quality-g7 TASK="$integration_task"
+      ;;
     docs) make quality-coordination TASK="$integration_task" && make quality-frontend TASK="$integration_task" ;;
-    full) make quality-gate TASK="$integration_task" ;;
+    full)
+      [[ "$needs_runtime_sync" == 0 ]] || make dev-sync TASK="$integration_task"
+      make quality-gate TASK="$integration_task"
+      ;;
     harness)
       [[ "${G7PB_COORD_TESTING:-0}" == 1 ]] || fail 'harness profile은 시험 전용입니다.'
       ;;
@@ -611,6 +622,7 @@ command_integrate() {
   load_task "$TASK_ID"
   [[ "$META_STATUS" == submitted ]] || fail "submitted task만 병합할 수 있습니다: $META_STATUS"
   local task_profile="$META_PROFILE"
+  local task_areas="$META_AREAS"
   local submitted_sha="$META_SUBMITTED_SHA"
   local task_worktree="$META_WORKTREE"
   local task_base="$META_BASE_SHA"
@@ -625,7 +637,7 @@ command_integrate() {
       [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
         || fail '제출 뒤 task branch HEAD가 변경되었습니다. 새 변경을 별도 task로 제출하십시오.'
     fi
-    run_integration_profile "$task_profile" "$INTEGRATION_TASK"
+    run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"
     [[ -d "$task_worktree" ]] || fail '통합 검증 중 제출 Worktree가 사라졌습니다.'
     [[ -z "$(git -C "$task_worktree" status --porcelain)" ]] \
       || fail '통합 검증 중 제출 Worktree가 변경되었습니다.'
@@ -658,7 +670,7 @@ command_integrate() {
     fail 'Git 임시 병합이 실패했습니다.'
   fi
 
-  if ! run_integration_profile "$task_profile" "$INTEGRATION_TASK"; then
+  if ! run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"; then
     git merge --abort >/dev/null 2>&1 || fail '검증 실패 뒤 merge abort도 실패했습니다. 수동 복구가 필요합니다.'
     fail '통합 검증이 실패해 병합을 중단하고 원상복구했습니다.'
   fi

@@ -2117,11 +2117,12 @@ body.g7pb-manager-shell {
   top: var(--g7pb-balloon-top, 5.25rem);
   left: var(--g7pb-balloon-left, 50%);
   width: min(34rem, calc(100vw - 1.5rem));
-  transform: translate(-50%, -100%);
+  transform: translateX(-50%);
   padding: .65rem;
   border-color: #b9c8ed;
   box-shadow: 0 14px 38px rgb(15 23 42 / 24%);
 }
+.g7pb-element-balloon--above { transform: translate(-50%, -100%); }
 .g7pb-element-balloon::after {
   content: '';
   position: absolute;
@@ -2133,6 +2134,12 @@ body.g7pb-manager-shell {
   border-bottom: 1px solid #b9c8ed;
   background: #fff;
   transform: translate(-50%, -50%) rotate(45deg);
+}
+.g7pb-element-balloon--below::after {
+  top: 0;
+  border: 0;
+  border-top: 1px solid #b9c8ed;
+  border-left: 1px solid #b9c8ed;
 }
 .g7pb-element-balloon header { padding-bottom: .5rem; }
 .g7pb-element-balloon .g7pb-context-panel__row { padding-top: .5rem; }

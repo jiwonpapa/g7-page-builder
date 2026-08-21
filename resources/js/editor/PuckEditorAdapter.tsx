@@ -2090,13 +2090,19 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
     update({ elementStyles: nextStyles });
   };
   const anchor = canvasUi.selection?.anchor;
+  const balloonPlacement = isTextElement && anchor && anchor.top >= 360 ? 'above' : 'below';
   const balloonStyle = isTextElement && anchor ? {
-    '--g7pb-balloon-left': `${Math.max(12, Math.min(anchor.left + anchor.width / 2, globalThis.innerWidth - 12))}px`,
-    '--g7pb-balloon-top': `${Math.max(70, anchor.top - 12)}px`,
+    '--g7pb-balloon-left': `${Math.max(
+      Math.min(284, globalThis.innerWidth / 2),
+      Math.min(anchor.left + anchor.width / 2, globalThis.innerWidth - Math.min(284, globalThis.innerWidth / 2)),
+    )}px`,
+    '--g7pb-balloon-top': `${balloonPlacement === 'above'
+      ? anchor.top - 12
+      : Math.max(12, Math.min(anchor.bottom + 12, globalThis.innerHeight - 340))}px`,
   } as React.CSSProperties : undefined;
 
   return createPortal(
-    <section className={`g7pb-context-panel${isTextElement ? ' g7pb-element-balloon' : ''}`} style={balloonStyle}
+    <section className={`g7pb-context-panel${isTextElement ? ` g7pb-element-balloon g7pb-element-balloon--${balloonPlacement}` : ''}`} style={balloonStyle}
       role="dialog" aria-label={isTextElement ? '선택 요소 스타일' : '선택 블록 스타일'} data-testid="page-builder-context-panel">
       <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '선택한 요소에만 적용됩니다.' : '블록 배경과 여백을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
       {isTextElement ? <>

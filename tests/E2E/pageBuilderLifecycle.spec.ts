@@ -876,6 +876,14 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await heroBlock.locator('[data-g7pb-inline-field="title"]').dispatchEvent('pointerdown');
       const elementPanel = page.getByTestId('page-builder-context-panel');
       await expect(elementPanel).toContainText('선택한 요소에만 적용됩니다.');
+      const elementPanelBox = await elementPanel.boundingBox();
+      const editorViewport = page.viewportSize();
+      expect(elementPanelBox).not.toBeNull();
+      expect(editorViewport).not.toBeNull();
+      if (elementPanelBox && editorViewport) {
+        expect(elementPanelBox.y).toBeGreaterThanOrEqual(0);
+        expect(elementPanelBox.y + elementPanelBox.height).toBeLessThanOrEqual(editorViewport.height);
+      }
       await elementPanel.getByTestId('page-builder-text-scale').click();
       await elementPanel.getByTestId('page-builder-text-align-right').click();
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);

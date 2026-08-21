@@ -376,7 +376,7 @@ async function selectEditorBlock(page: Page, type: BlockType): Promise<void> {
     return;
   }
 
-  await editorBlock(page, type).click();
+  await editorBlock(page, type).click({ position: { x: 4, y: 4 } });
 }
 
 async function expectBlockOrder(locator: Locator, expected: BlockType[]): Promise<void> {

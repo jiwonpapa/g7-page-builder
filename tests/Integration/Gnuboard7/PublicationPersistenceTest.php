@@ -2,7 +2,6 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Tests\Integration\Gnuboard7;
 
-use Illuminate\Config\Repository as ConfigRepository;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Routing\ResponseFactory as ResponseFactoryContract;
 use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
@@ -14,6 +13,7 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\RouteCollection;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Fluent;
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
@@ -67,7 +67,7 @@ final class PublicationPersistenceTest extends TestCase
         $container->instance('db.schema', $this->database->getConnection()->getSchemaBuilder());
         $container->instance('log', new NullLogger);
         $config = $container->make('config');
-        self::assertInstanceOf(ConfigRepository::class, $config);
+        self::assertInstanceOf(Fluent::class, $config);
         $config->set('g7-page-builder.forms', [
             'recipient' => null,
             'ip_hash_key' => 'test-form-hash-key',

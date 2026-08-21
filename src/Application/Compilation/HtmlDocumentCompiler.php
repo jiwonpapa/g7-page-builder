@@ -1575,7 +1575,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $selector = $this->elementAppearanceXPath($type, $fieldPath);
             $targets = $selector === null ? false : $xpath->query($selector, $root);
             if (! $targets instanceof \DOMNodeList || $targets->length === 0) {
-                throw new DocumentCompileException("Element appearance target {$fieldPath} is not supported by this block.");
+                throw new DocumentCompileException("Element appearance target {$fieldPath} is not supported by block {$type}.");
             }
             $classes = $this->elementAppearanceClasses($style);
             foreach ($targets as $target) {
@@ -1636,9 +1636,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         $root = match ($fieldPath) {
             'eyebrow' => '(.//*['.$hasClass('g7pb-section-eyebrow').' or '.$hasClass('g7pb-hero__eyebrow').' or '.$hasClass('g7pb-cta__eyebrow').'])[1]',
-            'heading' => $type === self::LOGO_CLOUD_TYPE
-                ? '(.//h2)[1]'
-                : '(.//*['.$hasClass('g7pb-section-heading').']/h2 | .//*['.$hasClass('g7pb-contact__heading').']/h2)[1]',
+            'heading' => match ($type) {
+                self::LOGO_CLOUD_TYPE => '(.//h2)[1]',
+                self::CTA_TYPE => '(.//*['.$hasClass('g7pb-cta__heading').'])[1]',
+                default => '(.//*['.$hasClass('g7pb-section-heading').']/h2 | .//*['.$hasClass('g7pb-contact__heading').']/h2)[1]',
+            },
             'title' => match ($type) {
                 self::HERO_TYPE => '(.//*['.$hasClass('g7pb-hero__title').'])[1]',
                 self::FEATURES_TYPE => '(.//*['.$hasClass('g7pb-features__title').'])[1]',

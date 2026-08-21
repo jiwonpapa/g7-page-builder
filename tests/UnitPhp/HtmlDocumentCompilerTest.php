@@ -263,6 +263,75 @@ final class HtmlDocumentCompilerTest extends TestCase
         $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
     }
 
+    public function test_element_appearance_targets_cover_every_editable_builtin_field(): void
+    {
+        /** @var array<string, list<string>> $fieldsByType */
+        $fieldsByType = [
+            'content.hero-centered-01' => ['eyebrow', 'title', 'body', 'primaryLabel'],
+            'content.features-grid-01' => ['title', 'items.0.title', 'items.0.body'],
+            'content.cta-split-01' => ['eyebrow', 'heading', 'body', 'primaryLabel', 'secondaryLabel'],
+            'content.contact-info-01' => ['heading', 'address', 'phone', 'email', 'ctaLabel', 'mapLabel'],
+            'content.hero-split-01' => ['eyebrow', 'title', 'body', 'primaryLabel'],
+            'content.hero-slider-01' => ['slides.0.eyebrow', 'slides.0.title', 'slides.0.body', 'slides.0.buttonLabel'],
+            'trust.logo-cloud-01' => ['heading', 'logos.0.name'],
+            'data.stats-icons-01' => ['eyebrow', 'heading', 'items.0.value', 'items.0.label', 'items.0.detail'],
+            'commerce.pricing-tiers-01' => ['eyebrow', 'heading', 'plans.0.name', 'plans.0.price', 'plans.0.period', 'plans.0.description', 'plans.0.buttonLabel'],
+            'company.team-grid-01' => ['eyebrow', 'heading', 'members.0.name', 'members.0.role', 'members.0.bio'],
+            'media.gallery-grid-01' => ['eyebrow', 'heading', 'images.0.caption'],
+            'data.bar-chart-01' => ['eyebrow', 'heading', 'description', 'unit', 'items.0.label'],
+            'g7.board-recent-posts-01' => ['eyebrow', 'heading'],
+            'g7.ecommerce-product-grid-01' => ['eyebrow', 'heading'],
+            'form.inquiry-01' => ['eyebrow', 'heading', 'description', 'privacyLabel', 'submitLabel'],
+            'location.map-directions-01' => ['eyebrow', 'heading', 'description', 'address', 'phone', 'hours', 'parking', 'directionsLabel'],
+            'trust.testimonials-01' => ['eyebrow', 'heading', 'items.0.quote', 'items.0.name', 'items.0.role', 'items.0.company'],
+            'content.faq-accordion-01' => ['eyebrow', 'heading', 'items.0.question', 'items.0.answer'],
+            'content.process-timeline-01' => ['eyebrow', 'heading', 'items.0.title', 'items.0.body', 'items.1.linkLabel'],
+            'content.tabs-01' => ['eyebrow', 'heading', 'items.0.label', 'items.0.heading', 'items.0.body'],
+            'commerce.comparison-table-01' => ['eyebrow', 'heading', 'columns.0.title', 'columns.0.description', 'rows.0.feature'],
+            'content.article-list-01' => ['eyebrow', 'heading', 'items.0.category', 'items.0.date', 'items.0.title', 'items.0.summary'],
+            'media.video-embed-01' => ['eyebrow', 'heading', 'caption'],
+            'trust.logo-carousel-01' => ['eyebrow', 'heading', 'logos.0.name'],
+            'trust.testimonial-slider-01' => ['eyebrow', 'heading', 'items.0.quote', 'items.0.name', 'items.0.role', 'items.0.company'],
+            'content.event-schedule-01' => ['eyebrow', 'heading', 'items.0.date', 'items.0.time', 'items.0.location', 'items.0.title', 'items.0.description', 'items.0.buttonLabel'],
+            'content.download-resources-01' => ['eyebrow', 'heading', 'items.0.title', 'items.0.description', 'items.0.fileType', 'items.0.fileSize', 'items.0.buttonLabel'],
+            'g7.board-content-archive-01' => ['eyebrow', 'heading'],
+            'g7.ecommerce-product-showcase-01' => ['eyebrow', 'heading'],
+        ];
+        $documents = [
+            $this->document('<p>안전한 본문</p>'),
+            PageBuilderDocument::fromArray($this->catalogPayload()),
+            $this->dynamicDocument(),
+            $this->formAndMapDocument(),
+            $this->phaseTwoDocument(),
+            $this->phaseThreeDocument(),
+        ];
+        $styledFieldCount = 0;
+        $compiledArtifacts = '';
+
+        foreach ($documents as $document) {
+            $payload = $document->toArray();
+            foreach ($payload['blocks'] as &$block) {
+                $fields = $fieldsByType[$block['type']] ?? [];
+                self::assertNotSame([], $fields, 'Missing element appearance coverage for '.$block['type']);
+                $block['props']['appearance'] = [
+                    'elements' => array_fill_keys($fields, ['font' => 'serif']),
+                ];
+                $styledFieldCount += count($fields);
+            }
+            unset($block);
+
+            $compiledArtifacts .= (string) $this->builtInCompiler()->compile(
+                PageBuilderDocument::fromArray($payload),
+                1,
+                'html',
+                'g7-7.0.7',
+            )->artifact;
+        }
+
+        self::assertCount(29, $fieldsByType);
+        self::assertGreaterThanOrEqual($styledFieldCount, substr_count($compiledArtifacts, 'g7pb-element-font--serif'));
+    }
+
     public function test_block_appearance_rejects_arbitrary_css_values(): void
     {
         $document = $this->document('<p>안전한 본문</p>');

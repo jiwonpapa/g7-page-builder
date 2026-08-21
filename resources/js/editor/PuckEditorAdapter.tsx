@@ -22,6 +22,7 @@ import {
   ActionBar,
   createUsePuck,
   Puck,
+  registerOverlayPortal,
   type Config,
   type Data,
   type PuckAction,
@@ -59,6 +60,11 @@ import {
   notifyCanvasElementSelection,
   resolveMediaFieldPath,
   resolveRouteFieldPath,
+  decorateCanvasElementStyles,
+  normalizeElementAppearance,
+  normalizeElementAppearanceMap,
+  CanvasElementStylesContext,
+  useCanvasElementStyles,
   setValueAtPath,
   valueAtPath,
   type CanvasElementSelection,
@@ -86,6 +92,8 @@ import {
   type HeroBlockProps,
   type PageBuilderBlock,
   type PageBuilderDocument,
+  type ElementAppearance,
+  type ElementAppearanceMap,
   type ScalarToken,
   type SitePartResource,
 } from '../documents/types';
@@ -103,6 +111,7 @@ interface HeroEditorProps {
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
   textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
   motion: BlockMotion;
 }
 
@@ -113,6 +122,7 @@ interface FeaturesEditorProps {
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
   textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
   motion: BlockMotion;
 }
 
@@ -129,6 +139,7 @@ interface CtaEditorProps {
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
   textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
   motion: BlockMotion;
 }
 
@@ -145,6 +156,7 @@ interface ContactEditorProps {
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
   textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
   motion: BlockMotion;
 }
 
@@ -332,7 +344,7 @@ function normalizeSpacing(value: unknown, fallback: BlockAppearance['spacing'] =
 function appearanceToEditorProps(
   value: unknown,
   fallback: BlockAppearance,
-): Pick<HeroEditorProps, 'surface' | 'spacing' | 'textScale' | 'textAlign'> {
+): Pick<HeroEditorProps, 'surface' | 'spacing' | 'textScale' | 'textAlign' | 'elementStyles'> {
   const appearance = typeof value === 'object' && value !== null
     ? value as Record<string, unknown>
     : {};
@@ -342,6 +354,7 @@ function appearanceToEditorProps(
     spacing: normalizeSpacing(appearance.spacing, fallback.spacing),
     textScale: appearance.textScale === 'compact' || appearance.textScale === 'large' ? appearance.textScale : 'balanced',
     textAlign: appearance.textAlign === 'center' || appearance.textAlign === 'right' ? appearance.textAlign : 'left',
+    elementStyles: normalizeElementAppearanceMap(appearance.elements),
   };
 }
 
@@ -351,6 +364,7 @@ function editorAppearance(
   fallback: BlockAppearance,
   textScale?: unknown,
   textAlign?: unknown,
+  elementStyles?: unknown,
 ): BlockAppearance {
   const appearance: BlockAppearance = {
     surface: normalizeSurface(surface, fallback.surface),
@@ -358,6 +372,8 @@ function editorAppearance(
   };
   if (textScale === 'compact' || textScale === 'large') appearance.textScale = textScale;
   if (textAlign === 'center' || textAlign === 'right') appearance.textAlign = textAlign;
+  const elements = normalizeElementAppearanceMap(elementStyles);
+  if (Object.keys(elements).length > 0) appearance.elements = elements;
   return appearance;
 }
 
@@ -624,8 +640,8 @@ function puckBlockToCanonical(
       body: asString(editorProps.body),
       alignment: normalizeAlignment(editorProps.alignment),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' }, editorProps.textScale, editorProps.textAlign);
-    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious' || appearance.textScale || appearance.textAlign) {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
+    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious' || appearance.textScale || appearance.textAlign || appearance.elements) {
       heroProps.appearance = appearance;
     }
     const primaryLabel = asString(editorProps.primaryLabel);
@@ -646,8 +662,8 @@ function puckBlockToCanonical(
       title: asString(editorProps.title),
       items: normalizeFeatureItems(editorProps.items),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign);
-    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign) {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
+    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
       props.appearance = appearance;
     }
   } else if (block.type === 'Cta') {
@@ -659,8 +675,8 @@ function puckBlockToCanonical(
       body: asString(editorProps.body),
       theme: normalizeTheme(editorProps.theme),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign);
-    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign) {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
+    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
       ctaProps.appearance = appearance;
     }
     const primaryLabel = asString(editorProps.primaryLabel);
@@ -683,8 +699,8 @@ function puckBlockToCanonical(
       phone: asString(editorProps.phone),
       email: asString(editorProps.email),
     };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign);
-    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign) {
+    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
+    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
       contactProps.appearance = appearance;
     }
     const ctaLabel = asString(editorProps.ctaLabel);
@@ -1001,13 +1017,16 @@ function BlockFrame({
   id,
   type,
   motion,
+  elementStyles,
   children,
 }: {
   id: string;
   type: string;
   motion: BlockMotion;
+  elementStyles?: ElementAppearanceMap;
   children: React.ReactNode;
 }): React.ReactElement {
+  const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
   return (
     <section
       className="g7pb-preview-block"
@@ -1017,7 +1036,7 @@ function BlockFrame({
       onPointerDownCapture={(event) => notifyCanvasElementSelection(event, idToUuid(id), type)}
       {...motionPreviewAttributes(motion)}
     >
-      {children}
+      {decorateCanvasElementStyles(children, resolvedElementStyles)}
     </section>
   );
 }
@@ -1036,12 +1055,13 @@ function HeroPreview({
   spacing,
   textScale = 'balanced',
   textAlign = 'left',
+  elementStyles,
   motion,
 }: Omit<HeroEditorProps, 'body'> & { id: string; body: React.ReactNode }): React.ReactElement {
   const image = safeImage(imageSrc);
 
   return (
-    <BlockFrame id={id} type="hero" motion={motion}>
+    <BlockFrame id={id} type="hero" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-hero__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
@@ -1063,7 +1083,7 @@ function HeroPreview({
   );
 }
 
-function FeaturesPreview({ id, title, items, surface, spacing, textScale = 'balanced', textAlign = 'left', motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
+function FeaturesPreview({ id, title, items, surface, spacing, textScale = 'balanced', textAlign = 'left', elementStyles, motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
   const glyphs: Record<string, string> = {
     sparkles: '✦',
     shield: '◆',
@@ -1072,7 +1092,7 @@ function FeaturesPreview({ id, title, items, surface, spacing, textScale = 'bala
   };
 
   return (
-    <BlockFrame id={id} type="features" motion={motion}>
+    <BlockFrame id={id} type="features" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-features g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <h2 data-g7pb-inline-field="title">{title}</h2>
         <div className="g7pb-preview-features__grid">
@@ -1103,10 +1123,11 @@ function CtaPreview({
   spacing,
   textScale = 'balanced',
   textAlign = 'left',
+  elementStyles,
   motion,
 }: CtaEditorProps & { id: string }): React.ReactElement {
   return (
-    <BlockFrame id={id} type="cta" motion={motion}>
+    <BlockFrame id={id} type="cta" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-cta-split__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
@@ -1146,10 +1167,11 @@ function ContactPreview({
   spacing,
   textScale = 'balanced',
   textAlign = 'left',
+  elementStyles,
   motion,
 }: ContactEditorProps & { id: string }): React.ReactElement {
   return (
-    <BlockFrame id={id} type="contact" motion={motion}>
+    <BlockFrame id={id} type="contact" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-contact g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-contact__heading">
           <p className="g7pb-preview-eyebrow">Contact</p>
@@ -1271,6 +1293,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             { label: '가운데', value: 'center' },
           ],
         },
+        elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
         surface: {
           type: 'select',
           label: '배경 프리셋',
@@ -1332,6 +1355,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             <FeaturesItemsField value={value} onChange={onChange} readOnly={readOnly} />
           ),
         },
+        elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
         surface: {
           type: 'select', label: '배경 프리셋',
           options: [
@@ -1421,6 +1445,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             />
           ),
         },
+        elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
         surface: {
           type: 'select', label: '배경 프리셋',
           options: [
@@ -1501,6 +1526,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
           ),
         },
         mapUrl: createRouteUrlField('지도 링크 연결', 'page-builder-contact-map-url'),
+        elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
         surface: {
           type: 'select', label: '배경 프리셋',
           options: [
@@ -2030,18 +2056,26 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
+  const overlayRef = useRef<HTMLElement | null>(null);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null ? data.content[selectedIndex] : null;
+  useEffect(() => {
+    if (!canvasUi?.textToolsOpen || !selectedBlock) return undefined;
+    return registerOverlayPortal(overlayRef.current, {
+      disableDrag: true,
+      disableDragOnFocus: true,
+    });
+  }, [canvasUi?.textToolsOpen, selectedBlock]);
   if (!canvasUi?.textToolsOpen || !selectedBlock) return null;
   const blockIndex = selectedIndex as number;
-
-  const currentTextScale = selectedBlock.props.textScale === 'compact' || selectedBlock.props.textScale === 'large'
-    ? selectedBlock.props.textScale : 'balanced';
-  const currentTextAlign = selectedBlock.props.textAlign === 'center' || selectedBlock.props.textAlign === 'right'
-    ? selectedBlock.props.textAlign : 'left';
   const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'
     ? selectedBlock.props.surface : 'default';
   const currentSpacing = selectedBlock.props.spacing === 'compact' || selectedBlock.props.spacing === 'spacious'
     ? selectedBlock.props.spacing : 'normal';
+  const fieldPath = canvasUi.selection?.fieldPath ?? null;
+  const isTextElement = fieldPath !== null && (canvasUi.selection?.role === 'text' || canvasUi.selection?.role === 'action');
+  const elementStyles = normalizeElementAppearanceMap(selectedBlock.props.elementStyles);
+  const currentElement = normalizeElementAppearance(fieldPath ? elementStyles[fieldPath] : undefined);
+  const routeFieldPath = fieldPath ? resolveRouteFieldPath(selectedBlock.type, fieldPath) : null;
   const update = (patch: Record<string, unknown>): void => {
     dispatch({
       type: 'replace', destinationIndex: blockIndex, destinationZone: selectedZone,
@@ -2050,25 +2084,67 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
     });
   };
 
+  const updateElement = (patch: Partial<ElementAppearance>): void => {
+    if (!fieldPath) return;
+    const nextStyle = normalizeElementAppearance({ ...currentElement, ...patch });
+    const nextStyles = { ...elementStyles };
+    if (Object.keys(nextStyle).length === 0) delete nextStyles[fieldPath];
+    else nextStyles[fieldPath] = nextStyle;
+    update({ elementStyles: nextStyles });
+  };
+  const resetElement = (): void => {
+    if (!fieldPath) return;
+    const nextStyles = { ...elementStyles };
+    delete nextStyles[fieldPath];
+    update({ elementStyles: nextStyles });
+  };
+  const anchor = canvasUi.selection?.anchor;
+  const balloonStyle = isTextElement && anchor ? {
+    '--g7pb-balloon-left': `${Math.max(12, Math.min(anchor.left + anchor.width / 2, globalThis.innerWidth - 12))}px`,
+    '--g7pb-balloon-top': `${Math.max(70, anchor.top - 12)}px`,
+  } as React.CSSProperties : undefined;
+
   return createPortal(
-    <section className="g7pb-context-panel" role="dialog" aria-label="선택 블록 스타일" data-testid="page-builder-context-panel">
-      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>안전한 디자인 토큰을 블록 전체에 적용합니다.</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
-      <div className="g7pb-context-panel__row"><span>글자 크기</span><div role="group" aria-label="블록 글자 크기">
-        {(['compact', 'balanced', 'large'] as const).map((scale) => <button type="button" key={scale} disabled={disabled}
-          aria-pressed={currentTextScale === scale} onClick={() => update({ textScale: scale })}
-          data-testid={scale === 'large' ? 'page-builder-text-scale' : `page-builder-text-scale-${scale}`}>{scale === 'compact' ? '작게' : scale === 'large' ? '크게' : '보통'}</button>)}
-      </div></div>
-      <div className="g7pb-context-panel__row"><span>정렬</span><div role="group" aria-label="블록 글자 정렬">
-        <button type="button" disabled={disabled} aria-label="왼쪽 정렬" aria-pressed={currentTextAlign === 'left'} onClick={() => update({ textAlign: 'left' })}><AlignLeft size={16} data-testid="page-builder-text-align-left" /></button>
-        <button type="button" disabled={disabled} aria-label="가운데 정렬" aria-pressed={currentTextAlign === 'center'} onClick={() => update({ textAlign: 'center' })}><AlignCenter size={16} data-testid="page-builder-text-align-center" /></button>
-        <button type="button" disabled={disabled} aria-label="오른쪽 정렬" aria-pressed={currentTextAlign === 'right'} onClick={() => update({ textAlign: 'right' })}><AlignRight size={16} data-testid="page-builder-text-align-right" /></button>
-      </div></div>
-      <div className="g7pb-context-panel__row"><span>배경</span><div role="group" aria-label="블록 배경">
-        {([['default', '기본'], ['soft', '부드럽게'], ['contrast', '강조']] as const).map(([surface, text]) => <button type="button" key={surface} disabled={disabled} aria-pressed={currentSurface === surface} onClick={() => update({ surface })}>{text}</button>)}
-      </div></div>
-      <div className="g7pb-context-panel__row"><span>세로 여백</span><div role="group" aria-label="블록 세로 여백">
-        {([['compact', '좁게'], ['normal', '기본'], ['spacious', '넓게']] as const).map(([spacing, text]) => <button type="button" key={spacing} disabled={disabled} aria-pressed={currentSpacing === spacing} onClick={() => update({ spacing })}>{text}</button>)}
-      </div></div>
+    <section ref={overlayRef} className={`g7pb-context-panel${isTextElement ? ' g7pb-element-balloon' : ''}`} style={balloonStyle}
+      role="dialog" aria-label={isTextElement ? '선택 요소 스타일' : '선택 블록 스타일'} data-testid="page-builder-context-panel">
+      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '선택한 요소에만 적용됩니다.' : '블록 배경과 여백을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
+      {isTextElement ? <>
+        <div className="g7pb-context-panel__row"><span>글꼴</span><div role="group" aria-label="선택 요소 글꼴">
+          {([['inherit', '기본'], ['modern', '모던'], ['serif', '명조'], ['mono', '고정폭']] as const).map(([font, text]) => <button type="button" key={font} disabled={disabled}
+            aria-pressed={(currentElement.font ?? 'inherit') === font} onClick={() => updateElement({ font })}
+            data-testid={`page-builder-element-font-${font}`}>{text}</button>)}
+        </div></div>
+        <div className="g7pb-context-panel__row"><span>크기</span><div role="group" aria-label="선택 요소 글자 크기">
+          {([['small', 'S'], ['base', 'M'], ['large', 'L'], ['xlarge', 'XL']] as const).map(([size, text]) => <button type="button" key={size} disabled={disabled}
+            aria-pressed={(currentElement.size ?? 'base') === size} onClick={() => updateElement({ size })}
+            data-testid={size === 'large' ? 'page-builder-text-scale' : `page-builder-element-size-${size}`}>{text}</button>)}
+        </div></div>
+        <div className="g7pb-context-panel__row"><span>굵기</span><div role="group" aria-label="선택 요소 글자 굵기">
+          {([['regular', '보통'], ['semibold', '굵게'], ['bold', '매우 굵게']] as const).map(([weight, text]) => <button type="button" key={weight} disabled={disabled}
+            aria-pressed={(currentElement.weight ?? 'regular') === weight} onClick={() => updateElement({ weight })}>{text}</button>)}
+        </div></div>
+        <div className="g7pb-context-panel__row"><span>정렬</span><div role="group" aria-label="선택 요소 글자 정렬">
+          <button type="button" disabled={disabled} aria-label="왼쪽 정렬" aria-pressed={(currentElement.align ?? 'left') === 'left'} onClick={() => updateElement({ align: 'left' })}><AlignLeft size={16} data-testid="page-builder-text-align-left" /></button>
+          <button type="button" disabled={disabled} aria-label="가운데 정렬" aria-pressed={currentElement.align === 'center'} onClick={() => updateElement({ align: 'center' })}><AlignCenter size={16} data-testid="page-builder-text-align-center" /></button>
+          <button type="button" disabled={disabled} aria-label="오른쪽 정렬" aria-pressed={currentElement.align === 'right'} onClick={() => updateElement({ align: 'right' })}><AlignRight size={16} data-testid="page-builder-text-align-right" /></button>
+        </div></div>
+        <div className="g7pb-context-panel__row"><span>색상</span><div role="group" aria-label="선택 요소 글자 색상">
+          {([['default', '기본'], ['muted', '보조'], ['accent', '강조'], ['contrast', '반전']] as const).map(([tone, text]) => <button type="button" key={tone} disabled={disabled}
+            aria-pressed={(currentElement.tone ?? 'default') === tone} onClick={() => updateElement({ tone })}
+            data-testid={`page-builder-element-tone-${tone}`}>{text}</button>)}
+        </div></div>
+        <div className="g7pb-element-balloon__footer">
+          {routeFieldPath ? <button type="button" disabled={disabled} onClick={() => canvasUi.setRouteDialogOpen(true)}><Link2 size={15} /> 연결 설정</button> : null}
+          <button type="button" disabled={disabled || !elementStyles[fieldPath]} onClick={resetElement}>스타일 초기화</button>
+        </div>
+      </> : <>
+        <div className="g7pb-context-panel__row"><span>배경</span><div role="group" aria-label="블록 배경">
+          {([['default', '기본'], ['soft', '부드럽게'], ['contrast', '강조']] as const).map(([surface, text]) => <button type="button" key={surface} disabled={disabled} aria-pressed={currentSurface === surface} onClick={() => update({ surface })}>{text}</button>)}
+        </div></div>
+        <div className="g7pb-context-panel__row"><span>세로 여백</span><div role="group" aria-label="블록 세로 여백">
+          {([['compact', '좁게'], ['normal', '기본'], ['spacious', '넓게']] as const).map(([spacing, text]) => <button type="button" key={spacing} disabled={disabled} aria-pressed={currentSpacing === spacing} onClick={() => update({ spacing })}>{text}</button>)}
+        </div></div>
+      </>}
     </section>,
     globalThis.document.body,
   );
@@ -2191,11 +2267,6 @@ function SelectedBlockActionBar({
   const roleLabel = elementSelection?.role === 'media' ? '이미지'
     : elementSelection?.role === 'action' ? '버튼·링크'
       : elementSelection?.role === 'text' ? '텍스트' : '블록';
-  const currentTextScale = selectedBlock?.props.textScale === 'compact' || selectedBlock?.props.textScale === 'large'
-    ? selectedBlock.props.textScale : 'balanced';
-  const currentTextAlign = selectedBlock?.props.textAlign === 'center' || selectedBlock?.props.textAlign === 'right'
-    ? selectedBlock.props.textAlign : 'left';
-
   return (
     <>
     <ActionBar>
@@ -2220,7 +2291,7 @@ function SelectedBlockActionBar({
           <Link2 size={16} data-testid="page-builder-canvas-route-open" aria-hidden="true" />
         </ActionBar.Action> : null}
         {selectedBlock ? <ActionBar.Action
-          label={`블록 스타일 · ${currentTextScale === 'compact' ? '작게' : currentTextScale === 'large' ? '크게' : '보통'} · ${currentTextAlign === 'center' ? '가운데' : currentTextAlign === 'right' ? '오른쪽' : '왼쪽'}`}
+          label={elementSelection?.fieldPath ? `${elementSelection.label} 스타일` : '블록 배경·여백'}
           disabled={disabled} onClick={() => setTextToolsOpen((open) => !open)}>
           <Type size={16} data-testid="page-builder-text-tools-open" aria-hidden="true" />
         </ActionBar.Action> : null}
@@ -2357,7 +2428,7 @@ export function PuckEditorAdapter({
       setCanvasElementSelection(selection);
       setCanvasMediaDialogOpen(false);
       setCanvasRouteDialogOpen(false);
-      setCanvasTextToolsOpen(false);
+      setCanvasTextToolsOpen(selection.role === 'text' || selection.role === 'action');
     };
     const fromMessage = (event: MessageEvent): void => {
       if (event.origin !== window.location.origin || event.data?.type !== CANVAS_ELEMENT_MESSAGE) return;
@@ -2468,6 +2539,11 @@ export function PuckEditorAdapter({
     textToolsOpen: canvasTextToolsOpen,
     setTextToolsOpen: setCanvasTextToolsOpen,
   }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen]);
+  const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(() => Object.fromEntries(data.content.flatMap((block) => {
+    const rawId = asString(block.props.id);
+    const styles = normalizeElementAppearanceMap(block.props.elementStyles);
+    return [[rawId, styles], [idToUuid(rawId), styles]];
+  })), [data.content]);
 
   if (sitePartMode) {
     return <SitePartEditor
@@ -2498,6 +2574,7 @@ export function PuckEditorAdapter({
       <BlockCatalogContext.Provider value={blockCatalogContext}>
         <FullSiteCanvasContext.Provider value={fullSiteCanvas}>
         <CanvasEditingUiContext.Provider value={canvasEditingUi}>
+        <CanvasElementStylesContext.Provider value={canvasElementStyles}>
         <Puck
           config={runtimePuckConfig}
           data={data}
@@ -2518,6 +2595,7 @@ export function PuckEditorAdapter({
           onChange={updateCanonical}
           onPublish={(nextData) => onPublish(updateCanonical(nextData))}
         />
+        </CanvasElementStylesContext.Provider>
         </CanvasEditingUiContext.Provider>
         </FullSiteCanvasContext.Provider>
       </BlockCatalogContext.Provider>

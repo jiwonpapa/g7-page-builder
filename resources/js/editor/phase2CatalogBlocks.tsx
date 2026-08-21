@@ -9,7 +9,7 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
-import { notifyCanvasElementSelection } from './canvasEditingContract';
+import { decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasElementStyles } from './canvasEditingContract';
 import {
   ARTICLE_LIST_BLOCK_TYPE,
   COMPARISON_TABLE_BLOCK_TYPE,
@@ -21,6 +21,7 @@ import {
   type ArticleListItem,
   type BlockAppearance,
   type BlockMotion,
+  type ElementAppearanceMap,
   type ComparisonColumnItem,
   type ComparisonRowItem,
   type FaqItem,
@@ -35,6 +36,7 @@ interface AppearanceEditorProps {
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
   textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
   motion: BlockMotion;
 }
 
@@ -206,7 +208,7 @@ function normalizeArray<T>(value: unknown, fallback: T[], max: number, map: (ite
   return source.slice(0, max).map((item, index) => map(asRecord(item), index));
 }
 
-function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance {
+function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance & { elementStyles?: ElementAppearanceMap } {
   const record = asRecord(value);
   const resolved: BlockAppearance = {
     surface: record.surface === 'soft' || record.surface === 'contrast' ? record.surface : fallback.surface,
@@ -214,13 +216,17 @@ function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance 
   };
   if (record.textScale === 'compact' || record.textScale === 'large') resolved.textScale = record.textScale;
   if (record.textAlign === 'center' || record.textAlign === 'right') resolved.textAlign = record.textAlign;
-  return resolved;
+  const elements = normalizeElementAppearanceMap(record.elementStyles ?? record.elements);
+  return Object.keys(elements).length > 0 ? { ...resolved, elementStyles: elements } : resolved;
 }
 
 function attachAppearance(props: Record<string, unknown>, raw: Record<string, unknown>, fallback: BlockAppearance, include: boolean): Record<string, unknown> {
   const next = { ...props };
-  const resolved = appearance({ surface: raw.surface, spacing: raw.spacing, textScale: raw.textScale, textAlign: raw.textAlign }, fallback);
-  if (include || resolved.surface !== fallback.surface || resolved.spacing !== fallback.spacing || resolved.textScale || resolved.textAlign) next.appearance = resolved;
+  const editor = appearance({ surface: raw.surface, spacing: raw.spacing, textScale: raw.textScale, textAlign: raw.textAlign,
+    elementStyles: raw.elementStyles }, fallback);
+  const { elementStyles, ...resolved } = editor;
+  const canonical: BlockAppearance = { ...resolved, ...(elementStyles && Object.keys(elementStyles).length > 0 ? { elements: elementStyles } : {}) };
+  if (include || canonical.surface !== fallback.surface || canonical.spacing !== fallback.spacing || canonical.textScale || canonical.textAlign || canonical.elements) next.appearance = canonical;
   return next;
 }
 
@@ -277,22 +283,23 @@ function surfaceClass(props: AppearanceEditorProps): string {
   return `g7pb-preview-surface--${props.surface} g7pb-preview-spacing--${props.spacing} g7pb-text-scale--${props.textScale ?? 'balanced'} g7pb-text-align--${props.textAlign ?? 'left'}`;
 }
 
-function Frame({ id, type, motion, children }: { id: string; type: string; motion: BlockMotion; children: React.ReactNode }): React.ReactElement {
+function Frame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
+  const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
   return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
     onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
-    {...motionPreviewAttributes(motion)}>{children}</section>;
+    {...motionPreviewAttributes(motion)}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</section>;
 }
 
 function TestimonialsPreview(props: TestimonialsEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="testimonials" motion={props.motion}><div className={`g7pb-preview-testimonials g7pb-preview-testimonials--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeTestimonials(props.items).map((item, index) => <blockquote key={`${item.name}-${index}`}><span aria-label={`${item.rating}점`}>{'★'.repeat(item.rating)}</span><p data-g7pb-inline-field={`items.${index}.quote`}>“{item.quote}”</p><footer>{safeUrl(item.avatarSrc) ? <img data-g7pb-media-field={`items.${index}.avatarSrc`} src={item.avatarSrc} alt={item.avatarAlt} /> : <i data-g7pb-media-field={`items.${index}.avatarSrc`} aria-hidden="true">{item.name.slice(0, 1)}</i>}<cite><strong data-g7pb-inline-field={`items.${index}.name`}>{item.name}</strong><small><span data-g7pb-inline-field={`items.${index}.role`}>{item.role}</span> · <span data-g7pb-inline-field={`items.${index}.company`}>{item.company}</span></small></cite></footer></blockquote>)}</div></div></Frame>;
+  return <Frame id={props.id} type="testimonials" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-testimonials g7pb-preview-testimonials--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeTestimonials(props.items).map((item, index) => <blockquote key={`${item.name}-${index}`}><span aria-label={`${item.rating}점`}>{'★'.repeat(item.rating)}</span><p data-g7pb-inline-field={`items.${index}.quote`}>“{item.quote}”</p><footer>{safeUrl(item.avatarSrc) ? <img data-g7pb-media-field={`items.${index}.avatarSrc`} src={item.avatarSrc} alt={item.avatarAlt} /> : <i data-g7pb-media-field={`items.${index}.avatarSrc`} aria-hidden="true">{item.name.slice(0, 1)}</i>}<cite><strong data-g7pb-inline-field={`items.${index}.name`}>{item.name}</strong><small><span data-g7pb-inline-field={`items.${index}.role`}>{item.role}</span> · <span data-g7pb-inline-field={`items.${index}.company`}>{item.company}</span></small></cite></footer></blockquote>)}</div></div></Frame>;
 }
 
 function FaqPreview(props: FaqAccordionEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="faq-accordion" motion={props.motion}><div className={`g7pb-preview-faq ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeFaq(props.items).map((item, index) => <details key={`${item.question}-${index}`} open={props.openFirst && index === 0} onToggle={(event) => event.preventDefault()}><summary><span data-g7pb-inline-field={`items.${index}.question`}>{item.question}</span><i aria-hidden="true">+</i></summary><p data-g7pb-inline-field={`items.${index}.answer`}>{item.answer}</p></details>)}</div></div></Frame>;
+  return <Frame id={props.id} type="faq-accordion" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-faq ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeFaq(props.items).map((item, index) => <details key={`${item.question}-${index}`} open={props.openFirst && index === 0} onToggle={(event) => event.preventDefault()}><summary><span data-g7pb-inline-field={`items.${index}.question`}>{item.question}</span><i aria-hidden="true">+</i></summary><p data-g7pb-inline-field={`items.${index}.answer`}>{item.answer}</p></details>)}</div></div></Frame>;
 }
 
 function ProcessPreview(props: ProcessTimelineEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="process-timeline" motion={props.motion}><div className={`g7pb-preview-process g7pb-preview-process--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><ol>{normalizeProcess(props.items).map((item, index) => <li key={`${item.title}-${index}`}><b>{String(index + 1).padStart(2, '0')}</b><h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3><p data-g7pb-inline-field={`items.${index}.body`}>{item.body}</p>{item.linkLabel ? <span data-g7pb-inline-field={`items.${index}.linkLabel`}>{item.linkLabel} →</span> : null}</li>)}</ol></div></Frame>;
+  return <Frame id={props.id} type="process-timeline" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-process g7pb-preview-process--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><ol>{normalizeProcess(props.items).map((item, index) => <li key={`${item.title}-${index}`}><b>{String(index + 1).padStart(2, '0')}</b><h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3><p data-g7pb-inline-field={`items.${index}.body`}>{item.body}</p>{item.linkLabel ? <span data-g7pb-inline-field={`items.${index}.linkLabel`}>{item.linkLabel} →</span> : null}</li>)}</ol></div></Frame>;
 }
 
 function TabsPreview(props: TabsEditorProps & { id: string }): React.ReactElement {
@@ -300,26 +307,27 @@ function TabsPreview(props: TabsEditorProps & { id: string }): React.ReactElemen
   const configured = Math.min(Number(props.initialTab), Math.max(items.length - 1, 0));
   const [selected, setSelected] = useState(configured);
   const active = Math.min(selected, Math.max(items.length - 1, 0));
-  return <Frame id={props.id} type="tabs" motion={props.motion}><div className={`g7pb-preview-tabs g7pb-preview-tabs--${props.tabVariant} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div className="g7pb-preview-tabs__list" role="tablist" onClick={(event) => event.stopPropagation()}>{items.map((item, index) => <button type="button" role="tab" aria-selected={active === index} key={`${item.label}-${index}`} onClick={() => setSelected(index)}><span data-g7pb-inline-field={`items.${index}.label`}>{item.label}</span></button>)}</div>{items.map((item, index) => <article role="tabpanel" hidden={active !== index} key={`${item.heading}-${index}`}><h3 data-g7pb-inline-field={`items.${index}.heading`}>{item.heading}</h3><p data-g7pb-inline-field={`items.${index}.body`}>{item.body}</p></article>)}</div></Frame>;
+  return <Frame id={props.id} type="tabs" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-tabs g7pb-preview-tabs--${props.tabVariant} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div className="g7pb-preview-tabs__list" role="tablist" onClick={(event) => event.stopPropagation()}>{items.map((item, index) => <button type="button" role="tab" aria-selected={active === index} key={`${item.label}-${index}`} onClick={() => setSelected(index)}><span data-g7pb-inline-field={`items.${index}.label`}>{item.label}</span></button>)}</div>{items.map((item, index) => <article role="tabpanel" hidden={active !== index} key={`${item.heading}-${index}`}><h3 data-g7pb-inline-field={`items.${index}.heading`}>{item.heading}</h3><p data-g7pb-inline-field={`items.${index}.body`}>{item.body}</p></article>)}</div></Frame>;
 }
 
 function ComparisonPreview(props: ComparisonTableEditorProps & { id: string }): React.ReactElement {
   const columns = normalizeColumns(props.columns);
   const rows = normalizeComparisonRows(props.rows);
-  return <Frame id={props.id} type="comparison-table" motion={props.motion}><div className={`g7pb-preview-comparison ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div className="g7pb-preview-comparison__scroll"><table><thead><tr><th>항목</th>{columns.map((column, index) => <th className={props.highlightColumn === String(index) ? 'is-highlighted' : ''} key={`${column.title}-${index}`}><strong data-g7pb-inline-field={`columns.${index}.title`}>{column.title}</strong><small data-g7pb-inline-field={`columns.${index}.description`}>{column.description}</small></th>)}</tr></thead><tbody>{rows.map((row, rowIndex) => { const values = row.valuesText.split('\n'); return <tr key={`${row.feature}-${rowIndex}`}><th data-g7pb-inline-field={`rows.${rowIndex}.feature`}>{row.feature}</th>{columns.map((_, columnIndex) => <td className={props.highlightColumn === String(columnIndex) ? 'is-highlighted' : ''} key={columnIndex}>{values[columnIndex] ?? '—'}</td>)}</tr>; })}</tbody></table></div></div></Frame>;
+  return <Frame id={props.id} type="comparison-table" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-comparison ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div className="g7pb-preview-comparison__scroll"><table><thead><tr><th>항목</th>{columns.map((column, index) => <th className={props.highlightColumn === String(index) ? 'is-highlighted' : ''} key={`${column.title}-${index}`}><strong data-g7pb-inline-field={`columns.${index}.title`}>{column.title}</strong><small data-g7pb-inline-field={`columns.${index}.description`}>{column.description}</small></th>)}</tr></thead><tbody>{rows.map((row, rowIndex) => { const values = row.valuesText.split('\n'); return <tr key={`${row.feature}-${rowIndex}`}><th data-g7pb-inline-field={`rows.${rowIndex}.feature`}>{row.feature}</th>{columns.map((_, columnIndex) => <td className={props.highlightColumn === String(columnIndex) ? 'is-highlighted' : ''} key={columnIndex}>{values[columnIndex] ?? '—'}</td>)}</tr>; })}</tbody></table></div></div></Frame>;
 }
 
 function ArticleListPreview(props: ArticleListEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="article-list" motion={props.motion}><div className={`g7pb-preview-articles g7pb-preview-articles--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeArticles(props.items).map((item, index) => <article key={`${item.title}-${index}`}>{safeUrl(item.imageSrc) ? <img data-g7pb-media-field={`items.${index}.imageSrc`} src={item.imageSrc} alt={item.imageAlt} /> : <i data-g7pb-media-field={`items.${index}.imageSrc`} aria-label="대표 이미지 자리">{String(index + 1).padStart(2, '0')}</i>}<div><small><span data-g7pb-inline-field={`items.${index}.category`}>{item.category}</span> · <time data-g7pb-inline-field={`items.${index}.date`}>{item.date}</time></small><h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3><p data-g7pb-inline-field={`items.${index}.summary`}>{item.summary}</p><b data-g7pb-action-field={`items.${index}.title`}>읽어보기 →</b></div></article>)}</div></div></Frame>;
+  return <Frame id={props.id} type="article-list" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-articles g7pb-preview-articles--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeArticles(props.items).map((item, index) => <article key={`${item.title}-${index}`}>{safeUrl(item.imageSrc) ? <img data-g7pb-media-field={`items.${index}.imageSrc`} src={item.imageSrc} alt={item.imageAlt} /> : <i data-g7pb-media-field={`items.${index}.imageSrc`} aria-label="대표 이미지 자리">{String(index + 1).padStart(2, '0')}</i>}<div><small><span data-g7pb-inline-field={`items.${index}.category`}>{item.category}</span> · <time data-g7pb-inline-field={`items.${index}.date`}>{item.date}</time></small><h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3><p data-g7pb-inline-field={`items.${index}.summary`}>{item.summary}</p><b data-g7pb-action-field={`items.${index}.title`}>읽어보기 →</b></div></article>)}</div></div></Frame>;
 }
 
 function VideoPreview(props: VideoEmbedEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="video-embed" motion={props.motion}><div className={`g7pb-preview-video ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><figure data-ratio={props.ratio}><div><span aria-hidden="true">▶</span><strong>{props.provider === 'youtube' ? 'YouTube' : 'Vimeo'} 영상</strong><small>{props.videoId || '영상 ID를 입력하세요'}</small></div><figcaption data-g7pb-inline-field="caption">{props.caption}</figcaption></figure></div></Frame>;
+  return <Frame id={props.id} type="video-embed" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-video ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><figure data-ratio={props.ratio}><div><span aria-hidden="true">▶</span><strong>{props.provider === 'youtube' ? 'YouTube' : 'Vimeo'} 영상</strong><small>{props.videoId || '영상 ID를 입력하세요'}</small></div><figcaption data-g7pb-inline-field="caption">{props.caption}</figcaption></figure></div></Frame>;
 }
 
 const appearanceFields = {
   surface: { type: 'select' as const, label: '배경 프리셋', options: SURFACE_OPTIONS },
   spacing: { type: 'select' as const, label: '세로 여백', options: SPACING_OPTIONS },
+  elementStyles: { type: 'custom' as const, label: '캔버스 요소 스타일', render: () => <></> },
 };
 
 export const phase2CatalogComponentConfigs: Config<Phase2CatalogEditorComponents>['components'] = {

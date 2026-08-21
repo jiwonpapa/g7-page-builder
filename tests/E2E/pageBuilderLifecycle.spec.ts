@@ -868,14 +868,32 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 
     await selectAndEditHero(page, heroTitle, heroSubtitle, heroButtonLabel, testInfo.project.name === 'desktop');
     if (testInfo.project.name === 'desktop') {
+      const heroBlock = editorBlock(page, 'hero');
+      await heroBlock.locator('[data-g7pb-inline-field="title"]').dispatchEvent('pointerdown');
+      const elementPanel = page.getByTestId('page-builder-context-panel');
+      await expect(elementPanel).toContainText('선택한 요소에만 적용됩니다.');
+      await elementPanel.getByTestId('page-builder-text-scale').click();
+      await elementPanel.getByTestId('page-builder-text-align-right').click();
+      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-align--right/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--large/);
+
       const heroUrl = await revealInspectorField(page, 'page-builder-hero-primary-url');
       await visibleTestId(page, 'page-builder-route-picker-open').click();
       const routePicker = page.getByTestId('page-builder-route-picker');
       await expect(routePicker).toBeVisible();
       await routePicker.getByPlaceholder('로그인, 게시판, 상품…').fill('로그인');
       await routePicker.locator('.g7pb-route-picker__routes button').filter({ hasText: '로그인' }).first().click();
-      await routePicker.getByRole('button', { name: /이 경로 연결/ }).click();
+      await expect(routePicker).toBeHidden();
       await expect(heroUrl).toHaveValue('/login');
+
+      await heroBlock.locator('[data-g7pb-inline-field="primaryLabel"]').dispatchEvent('pointerdown');
+      await page.getByTestId('page-builder-canvas-route-open').click();
+      await expect(routePicker).toBeVisible();
+      await routePicker.getByPlaceholder('로그인, 게시판, 상품…').fill('회원가입');
+      await routePicker.locator('.g7pb-route-picker__routes button').filter({ hasText: '회원가입' }).first().click();
+      await expect(routePicker).toBeHidden();
+      await expect(heroUrl).toHaveValue('/register');
     }
     const mediaUpload = page.waitForResponse((response) =>
       response.request().method() === 'POST'
@@ -935,6 +953,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await selectEditorBlock(page, 'hero');
     await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(heroTitle);
     await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(heroSubtitle);
+    if (testInfo.project.name === 'desktop') {
+      await expect(await revealInspectorField(page, 'page-builder-hero-primary-url')).toHaveValue('/register');
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--large/);
+    }
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
     await expect(await revealInspectorField(page, 'page-builder-features-heading')).toHaveValue(featuresHeading);
@@ -964,6 +987,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(previewPage.locator('.g7pb-document-theme')).toHaveClass(/g7pb-theme-font-serif/);
     await expectBlockOrder(renderedBlocks(previewPage), PUBLISHED_BLOCK_ORDER);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
+    if (testInfo.project.name === 'desktop') {
+      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-size--large/);
+      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-align--right/);
+      await expect(previewPage.locator('[data-block-type="hero"] .g7pb-hero__body')).not.toHaveClass(/g7pb-element-size--large/);
+    }
     await expect(previewPage.getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(ctaHeading, { exact: true })).toBeVisible();

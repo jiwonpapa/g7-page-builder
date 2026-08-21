@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Field } from '@puckeditor/core';
 import {
   ArrowRight,
@@ -154,6 +154,20 @@ function RouteUrlPicker({
   const [parameters, setParameters] = useState<Record<string, string>>({});
   const [targets, setTargets] = useState<Partial<Record<CatalogTargetSource, RouteTargetOption[]>>>({});
   const [targetsLoading, setTargetsLoading] = useState<Partial<Record<CatalogTargetSource, boolean>>>({});
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open || !overlayRef.current) return undefined;
+    let cleanup: (() => void) | undefined;
+    let active = true;
+    void import('@puckeditor/core').then(({ registerOverlayPortal }) => {
+      if (active) cleanup = registerOverlayPortal(overlayRef.current, { disableDrag: true, disableDragOnFocus: true });
+    });
+    return () => {
+      active = false;
+      cleanup?.();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || catalog !== null || loading || catalogAttempted) return;
@@ -204,6 +218,12 @@ function RouteUrlPicker({
   const resolved = selected ? resolveRoutePath(selected, parameters) : null;
 
   const choose = (route: RouteCatalogEntry): void => {
+    if (route.parameters.length === 0) {
+      onChange(route.path);
+      setOpen(false);
+      onDismiss?.();
+      return;
+    }
     setSelectedId(route.id);
     setParameters({});
   };
@@ -236,7 +256,7 @@ function RouteUrlPicker({
         </button>
       </div>
       {open ? (
-        <div className="g7pb-route-picker-backdrop" onMouseDown={(event) => {
+        <div ref={overlayRef} className="g7pb-route-picker-backdrop" onMouseDown={(event) => {
           if (event.target === event.currentTarget) close();
         }}>
           <section className="g7pb-route-picker" role="dialog" aria-modal="true" aria-labelledby="g7pb-route-picker-title"

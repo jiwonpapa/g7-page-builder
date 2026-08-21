@@ -263,6 +263,11 @@ describe('Puck editor surface contract', () => {
     document.body.append(container);
     const root = createRoot(container);
     const onChange = vi.fn();
+    vi.spyOn(PageBuilderApiClient.prototype, 'getRouteCatalog').mockResolvedValue({
+      active_template: 'default',
+      routes: [{ id: 'login', label: '로그인', path: '/login', category: '회원', parameters: [],
+        parameter_sources: {}, auth_required: false, guest_only: true, source: { kind: 'core', identifier: null } }],
+    });
     mounted.push(() => {
       act(() => root.unmount());
     });
@@ -295,23 +300,34 @@ describe('Puck editor surface contract', () => {
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-title"]')).value).toBe('Hero title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-subtitle"]')).value).toBe('Hero eyebrow');
 
-    const textTools = await eventually<HTMLElement>('[data-testid="page-builder-text-tools-open"]');
+    const heroTitle = hero.querySelector<HTMLElement>('[data-g7pb-inline-field="title"]');
     await act(async () => {
-      textTools.closest('button')?.click();
+      heroTitle?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
     });
     const textScaleMarker = await eventually<HTMLElement>('[data-testid="page-builder-text-scale"]');
     await act(async () => {
       textScaleMarker.closest('button')?.click();
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.textScale === 'large')).toBe(true);
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.size === 'large'
+      && changed.blocks[0].props.appearance?.textScale === undefined)).toBe(true);
+    expect(await eventually('[data-block-type="hero"] [data-g7pb-inline-field="title"].g7pb-element-size--large')).not.toBeNull();
+    expect(editorElements('[data-block-type="hero"] [data-g7pb-inline-field="body"]')[0]?.classList.contains('g7pb-element-size--large')).toBe(false);
+    const serifMarker = await eventually<HTMLButtonElement>('[data-testid="page-builder-element-font-serif"]');
+    await act(async () => {
+      serifMarker.click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.font === 'serif')).toBe(true);
+    expect(await eventually('[data-block-type="hero"] [data-g7pb-inline-field="title"].g7pb-element-font--serif')).not.toBeNull();
     const alignRightMarker = await eventually<HTMLElement>('[data-testid="page-builder-text-align-right"]');
     await act(async () => {
       alignRightMarker.closest('button')?.click();
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.textScale === 'large'
-      && changed.blocks[0].props.appearance?.textAlign === 'right')).toBe(true);
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.size === 'large'
+      && changed.blocks[0].props.appearance?.elements?.title?.align === 'right')).toBe(true);
 
     const darkTheme = await eventually<HTMLButtonElement>('button[aria-label="다크 테마"]');
     await act(async () => {
@@ -344,8 +360,11 @@ describe('Puck editor surface contract', () => {
     });
     expect(await eventually<HTMLElement>('[data-testid="page-builder-route-picker"]')).not.toBeNull();
     await act(async () => {
-      document.querySelector<HTMLButtonElement>('[data-testid="page-builder-route-picker"] header button')?.click();
+      (await eventually<HTMLButtonElement>('.g7pb-route-picker__routes button')).click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
     });
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.primaryCta?.url === '/login')).toBe(true);
+    expect(document.querySelector('[data-testid="page-builder-route-picker"]')).toBeNull();
 
     await act(async () => {
       features.click();

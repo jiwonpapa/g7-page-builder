@@ -4,6 +4,8 @@ import {
   BUILTIN_CANVAS_EDITING_CONTRACT,
   collectionLimit,
   CANVAS_ELEMENT_MESSAGE,
+  elementAppearanceClassName,
+  normalizeElementAppearanceMap,
   notifyCanvasElementSelection,
   resolveMediaFieldPath,
   resolveRouteFieldPath,
@@ -43,6 +45,21 @@ describe('canvas editing contract', () => {
     expect(valueAtPath(source, 'slides.1.title')).toBe('둘째');
     expect(collectionLimit('HeroSlider', 'slides')).toEqual({ min: 2, max: 5 });
     expect(collectionLimit('ComparisonTable', 'rows')).toEqual({ min: 1, max: 12 });
+  });
+
+  it('normalizes safe element tokens per field path and rejects arbitrary style payloads', () => {
+    const styles = normalizeElementAppearanceMap({
+      title: { font: 'serif', size: 'large', weight: 'bold', align: 'right', tone: 'accent', color: 'red' },
+      'items.0.body': { size: 'expression(alert(1))', align: 'center' },
+      'bad[path]': { size: 'large' },
+    });
+    expect(styles).toEqual({
+      title: { font: 'serif', size: 'large', weight: 'bold', align: 'right', tone: 'accent' },
+      'items.0.body': { align: 'center' },
+    });
+    expect(elementAppearanceClassName(styles, 'title')).toContain('g7pb-element-size--large');
+    expect(elementAppearanceClassName(styles, 'title')).toContain('g7pb-element-font--serif');
+    expect(elementAppearanceClassName(styles, 'items.0.body')).not.toContain('expression');
   });
 
   it('accepts elements from the Puck iframe realm and reports the selected inline field', () => {

@@ -228,6 +228,41 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('g7pb-spacing--compact', $artifact);
     }
 
+    public function test_element_appearance_is_scoped_to_the_selected_field(): void
+    {
+        $payload = $this->document('<p>안전한 본문</p>')->toArray();
+        $payload['blocks'][0]['props']['appearance'] = [
+            'surface' => 'default',
+            'spacing' => 'spacious',
+            'elements' => [
+                'title' => ['size' => 'large', 'weight' => 'bold', 'align' => 'right'],
+            ],
+        ];
+
+        $artifact = (string) $this->builtInCompiler()->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        )->artifact;
+
+        self::assertMatchesRegularExpression('/<h1 class="[^"]*g7pb-hero__title[^"]*g7pb-element-size--large[^"]*g7pb-element-weight--bold[^"]*g7pb-element-align--right[^"]*">/', $artifact);
+        self::assertDoesNotMatchRegularExpression('/g7pb-hero__body[^"]*g7pb-element-size--large/', $artifact);
+    }
+
+    public function test_element_appearance_rejects_arbitrary_tokens(): void
+    {
+        $payload = $this->document('<p>안전한 본문</p>')->toArray();
+        $payload['blocks'][0]['props']['appearance'] = [
+            'surface' => 'default',
+            'spacing' => 'spacious',
+            'elements' => ['title' => ['size' => 'expression(alert(1))']],
+        ];
+
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
     public function test_block_appearance_rejects_arbitrary_css_values(): void
     {
         $document = $this->document('<p>안전한 본문</p>');
@@ -305,7 +340,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.9.0', $catalog->compilerVersion);
+        self::assertSame('0.10.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -398,7 +433,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.9.0', $result->compilerVersion);
+        self::assertSame('0.10.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -457,7 +492,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.9.0', $result->compilerVersion);
+        self::assertSame('0.10.0', $result->compilerVersion);
         foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -496,7 +531,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseThreeDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.9.0', $result->compilerVersion);
+        self::assertSame('0.10.0', $result->compilerVersion);
         foreach (['logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }

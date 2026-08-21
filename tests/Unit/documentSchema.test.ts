@@ -71,6 +71,24 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(arbitraryStyle)).toBe(false);
   });
 
+  it('accepts field-scoped element tokens and rejects unsafe paths or values', () => {
+    const styled = structuredClone(catalogFixture) as unknown as {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    styled.blocks[0].props.appearance = {
+      surface: 'default', spacing: 'spacious',
+      elements: { title: { font: 'serif', size: 'large', weight: 'bold', align: 'right', tone: 'accent' } },
+    };
+    expect(validate(styled), JSON.stringify(validate.errors)).toBe(true);
+
+    const elements = (styled.blocks[0]!.props.appearance as { elements: Record<string, unknown> }).elements;
+    elements['title[onclick]'] = { size: 'large' };
+    expect(validate(styled)).toBe(false);
+    delete elements['title[onclick]'];
+    elements.title = { size: 'expression(alert(1))' };
+    expect(validate(styled)).toBe(false);
+  });
+
   it('accepts typed motion presets and rejects arbitrary runtime effects', () => {
     const animated = structuredClone(catalogFixture) as typeof catalogFixture & {
       blocks: Array<Record<string, unknown>>;

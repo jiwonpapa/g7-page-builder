@@ -14,7 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.9.0';
+    public const COMPILER_VERSION = '0.10.0';
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
@@ -186,6 +186,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                     rawurlencode($document->slug),
                     $this->blockCompilers->compile($definition->compiler, $props),
                 );
+                $compiledBlock = $this->applyElementAppearances($compiledBlock, $props, $type);
             } catch (DocumentCompileException $exception) {
                 throw $exception;
             } catch (\Throwable) {
@@ -685,7 +686,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $featuredClass = $featured ? ' g7pb-pricing__plan--featured' : '';
             $badge = $featured ? '<span class="g7pb-pricing__badge">추천</span>' : '';
-            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->escape($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong>'.$this->escape($period).'</p><p>'.$this->formatText($description).'</p><ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
+            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->escape($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong><span>'.$this->escape($period).'</span></p><p>'.$this->formatText($description).'</p><ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
         }
 
         return '<section class="g7pb-block g7pb-pricing '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="pricing">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-pricing__grid">'.implode('', $compiled).'</div></section>';
@@ -797,7 +798,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Bar Chart item {$index} tone is invalid.");
             }
             $formattedValue = rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
-            $compiled[] = '<label><span>'.$this->escape($label).'<strong>'.$this->escape($formattedValue.$unit).'</strong></span><progress max="100" value="'.$this->escapeAttribute($formattedValue).'" data-tone="'.$tone.'">'.$this->escape($formattedValue).'</progress></label>';
+            $compiled[] = '<label><span><span>'.$this->escape($label).'</span><strong>'.$this->escape($formattedValue).'<span class="g7pb-bar-chart__unit">'.$this->escape($unit).'</span></strong></span><progress max="100" value="'.$this->escapeAttribute($formattedValue).'" data-tone="'.$tone.'">'.$this->escape($formattedValue).'</progress></label>';
         }
 
         $descriptionMarkup = $description === '' ? '' : '<p>'.$this->formatText($description).'</p>';
@@ -936,9 +937,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $map = '<iframe title="'.$this->escapeAttribute($address).' 지도" src="'.$this->escapeAttribute($src).'" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>';
         }
         $details = '<address><strong>'.$this->escape($address).'</strong>'
-            .($phone === '' ? '' : '<span>'.$this->escape($phone).'</span>')
-            .($hours === '' ? '' : '<span>'.$this->formatText($hours).'</span>')
-            .($parking === '' ? '' : '<span>'.$this->formatText($parking).'</span>')
+            .($phone === '' ? '' : '<span class="g7pb-map__phone">'.$this->escape($phone).'</span>')
+            .($hours === '' ? '' : '<span class="g7pb-map__hours">'.$this->formatText($hours).'</span>')
+            .($parking === '' ? '' : '<span class="g7pb-map__parking">'.$this->formatText($parking).'</span>')
             .'<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($directionsUrl).'">'.$this->escape($directionsLabel).'</a></address>';
 
         return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
@@ -974,8 +975,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $avatarAlt = $this->optionalString($item, 'avatarAlt', 300) ?? '';
             $rating = $this->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
             $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonials__avatar', mb_substr($name, 0, 1));
-            $meta = implode(' · ', array_filter([$role, $company], fn (string $value): bool => $value !== ''));
-            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonials__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.($meta === '' ? '' : '<span>'.$this->escape($meta).'</span>').'</cite></footer></blockquote>';
+            $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
+                .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
+                .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
+            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonials__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
         return '<section class="g7pb-block g7pb-testimonials g7pb-testimonials--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonials">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-testimonials__items">'.implode('', $compiled).'</div></section>';
@@ -1275,8 +1278,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $avatarAlt = $this->optionalString($item, 'avatarAlt', 300) ?? '';
             $rating = $this->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
             $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonial-slider__avatar', mb_substr($name, 0, 1));
-            $meta = implode(' · ', array_filter([$role, $company], fn (string $value): bool => $value !== ''));
-            $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonial-slider__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.($meta === '' ? '' : '<span>'.$this->escape($meta).'</span>').'</cite></footer></blockquote>';
+            $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
+                .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
+                .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
+            $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonial-slider__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
         return '<section class="g7pb-block g7pb-testimonial-slider g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonial-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($heading).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
@@ -1347,7 +1352,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $buttonLabel = $this->requiredString($item, 'buttonLabel', 120);
             $url = $this->requiredString($item, 'url', 2048);
             $this->assertAllowedUrl($url, "Download resource {$index}");
-            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->escape($title).'</h3>'.($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').'<small>'.$this->escape(implode(' · ', array_filter([$fileType, $fileSize]))).'</small></div><a href="'.$this->escapeAttribute($url).'">'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
+            $fileMeta = '<span class="g7pb-downloads__file-type">'.$this->escape($fileType).'</span>'
+                .($fileSize === '' ? '' : '<i aria-hidden="true"> · </i><span class="g7pb-downloads__file-size">'.$this->escape($fileSize).'</span>');
+            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->escape($title).'</h3>'.($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'">'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
         }
 
         return '<section class="g7pb-block g7pb-downloads '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="download-resources">'.$this->compileSectionHeading($eyebrow, $heading).'<ul>'.implode('', $compiled).'</ul></section>';
@@ -1500,7 +1507,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private function appearanceClasses(array $props, string $defaultSurface, string $defaultSpacing): string
     {
         $appearance = $this->optionalMap($props, 'appearance') ?? [];
-        $this->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign'], 'Block appearance');
+        $this->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign', 'elements'], 'Block appearance');
         $surface = $this->optionalString($appearance, 'surface', 16) ?? $defaultSurface;
         $spacing = $this->optionalString($appearance, 'spacing', 16) ?? $defaultSpacing;
         $textScale = $this->optionalString($appearance, 'textScale', 16) ?? 'balanced';
@@ -1527,6 +1534,268 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         return $classes;
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     */
+    private function applyElementAppearances(string $markup, array $props, string $type): string
+    {
+        $appearance = $this->optionalMap($props, 'appearance') ?? [];
+        $elements = $appearance['elements'] ?? [];
+        if ($elements === []) {
+            return $markup;
+        }
+        if (! is_array($elements) || count($elements) > 100) {
+            throw new DocumentCompileException('Element appearance map is invalid.');
+        }
+
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        $loaded = $document->loadHTML(
+            '<?xml encoding="UTF-8"><div data-g7pb-compile-root>'.$markup.'</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+        if (! $loaded) {
+            throw new DocumentCompileException('Compiled block could not be decorated.');
+        }
+
+        $rootNodes = (new \DOMXPath($document))->query('//*[@data-g7pb-compile-root]');
+        $root = $rootNodes instanceof \DOMNodeList ? $rootNodes->item(0) : null;
+        if (! $root instanceof \DOMElement) {
+            throw new DocumentCompileException('Compiled block decoration root is missing.');
+        }
+        $xpath = new \DOMXPath($document);
+        foreach ($elements as $fieldPath => $style) {
+            if (! is_string($fieldPath) || preg_match('/^[A-Za-z][A-Za-z0-9]*(?:\.\d+)?(?:\.[A-Za-z][A-Za-z0-9]*)?$/D', $fieldPath) !== 1 || ! is_array($style)) {
+                throw new DocumentCompileException('Element appearance field path is invalid.');
+            }
+            $selector = $this->elementAppearanceXPath($type, $fieldPath);
+            $targets = $selector === null ? false : $xpath->query($selector, $root);
+            if (! $targets instanceof \DOMNodeList || $targets->length === 0) {
+                throw new DocumentCompileException("Element appearance target {$fieldPath} is not supported by this block.");
+            }
+            $classes = $this->elementAppearanceClasses($style);
+            foreach ($targets as $target) {
+                if ($target instanceof \DOMElement) {
+                    $target->setAttribute('class', trim($target->getAttribute('class').' '.$classes));
+                }
+            }
+        }
+
+        $compiled = '';
+        foreach ($root->childNodes as $child) {
+            $compiled .= $document->saveHTML($child);
+        }
+
+        return $compiled;
+    }
+
+    /** @param array<string, mixed> $style */
+    private function elementAppearanceClasses(array $style): string
+    {
+        $this->assertOnlyKeys($style, ['font', 'size', 'weight', 'align', 'tone'], 'Element appearance');
+        if ($style === []) {
+            throw new DocumentCompileException('Element appearance cannot be empty.');
+        }
+        $font = $this->optionalString($style, 'font', 16);
+        $size = $this->optionalString($style, 'size', 16);
+        $weight = $this->optionalString($style, 'weight', 16);
+        $align = $this->optionalString($style, 'align', 16);
+        $tone = $this->optionalString($style, 'tone', 16);
+        if ($font !== null && ! in_array($font, ['inherit', 'system', 'modern', 'serif', 'mono'], true)) {
+            throw new DocumentCompileException('Element appearance font is invalid.');
+        }
+        if ($size !== null && ! in_array($size, ['small', 'base', 'large', 'xlarge'], true)) {
+            throw new DocumentCompileException('Element appearance size is invalid.');
+        }
+        if ($weight !== null && ! in_array($weight, ['regular', 'medium', 'semibold', 'bold'], true)) {
+            throw new DocumentCompileException('Element appearance weight is invalid.');
+        }
+        if ($align !== null && ! in_array($align, ['left', 'center', 'right'], true)) {
+            throw new DocumentCompileException('Element appearance alignment is invalid.');
+        }
+        if ($tone !== null && ! in_array($tone, ['default', 'muted', 'accent', 'contrast'], true)) {
+            throw new DocumentCompileException('Element appearance tone is invalid.');
+        }
+
+        return implode(' ', array_filter([
+            $font === null ? null : 'g7pb-element-font--'.$font,
+            $size === null ? null : 'g7pb-element-size--'.$size,
+            $weight === null ? null : 'g7pb-element-weight--'.$weight,
+            $align === null ? null : 'g7pb-element-align--'.$align,
+            $tone === null ? null : 'g7pb-element-tone--'.$tone,
+        ]));
+    }
+
+    private function elementAppearanceXPath(string $type, string $fieldPath): ?string
+    {
+        $hasClass = static fn (string $class): string => "contains(concat(' ', normalize-space(@class), ' '), ' {$class} ')";
+
+        $root = match ($fieldPath) {
+            'eyebrow' => '(.//*['.$hasClass('g7pb-section-eyebrow').' or '.$hasClass('g7pb-hero__eyebrow').' or '.$hasClass('g7pb-cta__eyebrow').'])[1]',
+            'heading' => $type === self::LOGO_CLOUD_TYPE
+                ? '(.//h2)[1]'
+                : '(.//*['.$hasClass('g7pb-section-heading').']/h2 | .//*['.$hasClass('g7pb-contact__heading').']/h2)[1]',
+            'title' => match ($type) {
+                self::HERO_TYPE => '(.//*['.$hasClass('g7pb-hero__title').'])[1]',
+                self::FEATURES_TYPE => '(.//*['.$hasClass('g7pb-features__title').'])[1]',
+                self::HERO_SPLIT_TYPE => '(.//*['.$hasClass('g7pb-hero-split__copy').']/h1)[1]',
+                default => null,
+            },
+            'body' => match ($type) {
+                self::HERO_TYPE => '(.//*['.$hasClass('g7pb-hero__body').'])[1]',
+                self::CTA_TYPE => '(.//*['.$hasClass('g7pb-cta__body').'])[1]',
+                self::HERO_SPLIT_TYPE => '(.//*['.$hasClass('g7pb-hero-split__body').'])[1]',
+                default => null,
+            },
+            'primaryLabel' => '(.//a['.$hasClass('g7pb-button--primary').'])[1]',
+            'secondaryLabel' => '(.//a['.$hasClass('g7pb-button--secondary').'])[1]',
+            'ctaLabel' => $type === self::CONTACT_TYPE ? '(.//a['.$hasClass('g7pb-button--primary').'])[1]' : null,
+            'mapLabel' => $type === self::CONTACT_TYPE ? '(.//a['.$hasClass('g7pb-button--secondary').'])[1]' : null,
+            'address' => match ($type) {
+                self::CONTACT_TYPE => '(.//*['.$hasClass('g7pb-contact__details').']/p)[1]',
+                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__intro').']//address/strong)[1]',
+                default => null,
+            },
+            'phone' => match ($type) {
+                self::CONTACT_TYPE => '(.//*['.$hasClass('g7pb-contact__details').']/a[starts-with(@href, "tel:")])[1]',
+                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__phone').'])[1]',
+                default => null,
+            },
+            'email' => $type === self::CONTACT_TYPE ? '(.//*['.$hasClass('g7pb-contact__details').']/a[starts-with(@href, "mailto:")])[1]' : null,
+            'description' => match ($type) {
+                self::BAR_CHART_TYPE => '(.//figcaption/p[not('.$hasClass('g7pb-section-eyebrow').')])[1]',
+                self::INQUIRY_FORM_TYPE => '(.//*['.$hasClass('g7pb-inquiry__intro').']/*[self::p and not('.$hasClass('g7pb-section-eyebrow').')])[1]',
+                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__intro').']/*[self::p and not('.$hasClass('g7pb-section-eyebrow').')])[1]',
+                default => null,
+            },
+            'privacyLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*['.$hasClass('g7pb-inquiry-form__consent').']/span)[1]' : null,
+            'submitLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*['.$hasClass('g7pb-inquiry-form__footer').']/button)[1]' : null,
+            'directionsLabel' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__intro').']//address/a)[1]' : null,
+            'hours' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__hours').'])[1]' : null,
+            'parking' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__parking').'])[1]' : null,
+            'caption' => $type === self::VIDEO_EMBED_TYPE ? '(.//figcaption)[1]' : null,
+            'unit' => $type === self::BAR_CHART_TYPE ? './/*['.$hasClass('g7pb-bar-chart__unit').']' : null,
+            default => null,
+        };
+        if ($root !== null) {
+            return $root;
+        }
+
+        if (preg_match('/^([A-Za-z]+)\.(\d+)\.([A-Za-z]+)$/D', $fieldPath, $match) !== 1) {
+            return null;
+        }
+        [, $collection, $zeroIndex, $leaf] = $match;
+        $index = ((int) $zeroIndex) + 1;
+
+        return match ($type) {
+            self::FEATURES_TYPE => $collection === 'items' ? match ($leaf) {
+                'title' => '(.//*['.$hasClass('g7pb-features__item').'])['.$index.']/h3',
+                'body' => '(.//*['.$hasClass('g7pb-features__item').'])['.$index.']/p',
+                default => null,
+            } : null,
+            self::HERO_SLIDER_TYPE => $collection === 'slides' ? match ($leaf) {
+                'eyebrow' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//*['.$hasClass('g7pb-section-eyebrow').']',
+                'title' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//h2',
+                'body' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//div['.$hasClass('g7pb-hero-slider__copy').']/p[not('.$hasClass('g7pb-section-eyebrow').')]',
+                'buttonLabel' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//a',
+                default => null,
+            } : null,
+            self::LOGO_CLOUD_TYPE => $collection === 'logos' && $leaf === 'name' ? '(.//ul/li)['.$index.']//*[self::span][1]' : null,
+            self::LOGO_CAROUSEL_TYPE => $collection === 'logos' && $leaf === 'name' ? '(.//*['.$hasClass('g7pb-logo-carousel__slide').'])['.$index.']//*[self::span][1]' : null,
+            self::STATS_TYPE => $collection === 'items' ? match ($leaf) {
+                'value' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/strong',
+                'label' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/h3',
+                'detail' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/p',
+                default => null,
+            } : null,
+            self::PRICING_TYPE => $collection === 'plans' ? match ($leaf) {
+                'name' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/h3',
+                'price' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']//*['.$hasClass('g7pb-pricing__price').']/strong',
+                'period' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']//*['.$hasClass('g7pb-pricing__price').']/span',
+                'description' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/p[not('.$hasClass('g7pb-pricing__price').')]',
+                'buttonLabel' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/a',
+                default => null,
+            } : null,
+            self::TEAM_TYPE => $collection === 'members' ? match ($leaf) {
+                'name' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/h3',
+                'role' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/strong',
+                'bio' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/p',
+                default => null,
+            } : null,
+            self::GALLERY_TYPE => $collection === 'images' && $leaf === 'caption' ? '(.//*['.$hasClass('g7pb-gallery__grid').']/figure)['.$index.']/figcaption' : null,
+            self::BAR_CHART_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//*['.$hasClass('g7pb-bar-chart__plot').']/label)['.$index.']/span/span' : null,
+            self::TESTIMONIALS_TYPE => $collection === 'items' ? $this->testimonialElementXPath('g7pb-testimonials__items', 'blockquote', $index, $leaf, $hasClass) : null,
+            self::TESTIMONIAL_SLIDER_TYPE => $collection === 'items' ? $this->testimonialElementXPath('g7pb-hero-slider__track', 'blockquote', $index, $leaf, $hasClass) : null,
+            self::FAQ_ACCORDION_TYPE => $collection === 'items' ? match ($leaf) {
+                'question' => '(.//*['.$hasClass('g7pb-faq__items').']/details)['.$index.']/summary/span',
+                'answer' => '(.//*['.$hasClass('g7pb-faq__items').']/details)['.$index.']/div',
+                default => null,
+            } : null,
+            self::PROCESS_TIMELINE_TYPE => $collection === 'items' ? match ($leaf) {
+                'title' => '(.//ol/li)['.$index.']/h3',
+                'body' => '(.//ol/li)['.$index.']/p',
+                'linkLabel' => '(.//ol/li)['.$index.']/a',
+                default => null,
+            } : null,
+            self::TABS_TYPE => $collection === 'items' ? match ($leaf) {
+                'label' => '(.//*['.$hasClass('g7pb-tabs__list').']/button)['.$index.']',
+                'heading' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/h3',
+                'body' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/p',
+                default => null,
+            } : null,
+            self::COMPARISON_TABLE_TYPE => match ($collection) {
+                'columns' => match ($leaf) {
+                    'title' => '(.//thead/tr/th[position() > 1])['.$index.']/strong',
+                    'description' => '(.//thead/tr/th[position() > 1])['.$index.']/span',
+                    default => null,
+                },
+                'rows' => $leaf === 'feature' ? '(.//tbody/tr)['.$index.']/th' : null,
+                default => null,
+            },
+            self::ARTICLE_LIST_TYPE => $collection === 'items' ? match ($leaf) {
+                'category' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//*['.$hasClass('g7pb-articles__meta').']/span',
+                'date' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//*['.$hasClass('g7pb-articles__meta').']/time',
+                'title' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//h3',
+                'summary' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//h3/following-sibling::p[1]',
+                default => null,
+            } : null,
+            self::EVENT_SCHEDULE_TYPE => $collection === 'items' ? match ($leaf) {
+                'date' => '(.//ol/li)['.$index.']/time/strong',
+                'time' => '(.//ol/li)['.$index.']/time/span',
+                'location' => '(.//ol/li)['.$index.']//*['.$hasClass('g7pb-events__location').']',
+                'title' => '(.//ol/li)['.$index.']//h3',
+                'description' => '(.//ol/li)['.$index.']//article/p[not('.$hasClass('g7pb-events__location').')]',
+                'buttonLabel' => '(.//ol/li)['.$index.']//article/a',
+                default => null,
+            } : null,
+            self::DOWNLOAD_RESOURCES_TYPE => $collection === 'items' ? match ($leaf) {
+                'title' => '(.//ul/li)['.$index.']//h3',
+                'description' => '(.//ul/li)['.$index.']//h3/following-sibling::p[1]',
+                'fileType' => '(.//ul/li)['.$index.']//*['.$hasClass('g7pb-downloads__file-type').']',
+                'fileSize' => '(.//ul/li)['.$index.']//*['.$hasClass('g7pb-downloads__file-size').']',
+                'buttonLabel' => '(.//ul/li)['.$index.']/a',
+                default => null,
+            } : null,
+            default => null,
+        };
+    }
+
+    /** @param callable(string): string $hasClass */
+    private function testimonialElementXPath(string $containerClass, string $itemTag, int $index, string $leaf, callable $hasClass): ?string
+    {
+        $base = '(.//*['.$hasClass($containerClass).']/'.$itemTag.')['.$index.']';
+
+        return match ($leaf) {
+            'quote' => $base.'/*['.$hasClass(str_contains($containerClass, 'slider') ? 'g7pb-testimonial-slider__quote' : 'g7pb-testimonials__quote').']',
+            'name' => $base.'//cite/strong',
+            'role' => $base.'//cite/*['.$hasClass('g7pb-testimonial-role').']',
+            'company' => $base.'//cite/*['.$hasClass('g7pb-testimonial-company').']',
+            default => null,
+        };
     }
 
     /**

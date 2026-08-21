@@ -2540,11 +2540,15 @@ export function PuckEditorAdapter({
     textToolsOpen: canvasTextToolsOpen,
     setTextToolsOpen: setCanvasTextToolsOpen,
   }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen]);
-  const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(() => Object.fromEntries(data.content.flatMap((block) => {
+  const canvasElementStylesJson = JSON.stringify(Object.fromEntries(data.content.flatMap((block) => {
     const rawId = asString(block.props.id);
     const styles = normalizeElementAppearanceMap(block.props.elementStyles);
     return [[rawId, styles], [idToUuid(rawId), styles]];
-  })), [data.content]);
+  })));
+  const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(
+    () => JSON.parse(canvasElementStylesJson) as Record<string, ElementAppearanceMap>,
+    [canvasElementStylesJson],
+  );
 
   if (sitePartMode) {
     return <SitePartEditor

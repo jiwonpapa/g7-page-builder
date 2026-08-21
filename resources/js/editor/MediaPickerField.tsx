@@ -18,15 +18,19 @@ function MediaPicker({
   readOnly,
   label,
   pickerKey,
+  initiallyOpen = false,
+  onDismiss,
 }: {
   value: string;
   onChange: (next: string) => void;
   readOnly?: boolean;
   label: string;
   pickerKey?: string;
+  initiallyOpen?: boolean;
+  onDismiss?: () => void;
 }): React.ReactElement {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [assets, setAssets] = useState<MediaAssetResource[]>([]);
   const [assetsAttempted, setAssetsAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -63,6 +67,7 @@ function MediaPicker({
       setAssets((current) => [asset, ...current.filter((item) => item.id !== asset.id)]);
       onChange(asset.url);
       setOpen(false);
+      onDismiss?.();
     } catch (reason) {
       setError(reason instanceof PageBuilderApiError ? reason.message : '이미지를 업로드하지 못했습니다.');
     } finally {
@@ -75,7 +80,10 @@ function MediaPicker({
       <label>{label}</label>
       {value ? <img className="g7pb-media-field__current" src={value} alt="현재 선택 이미지" /> : null}
       <div className="g7pb-media-field__actions">
-        <button type="button" data-testid="page-builder-media-open" onClick={() => setOpen((current) => !current)} disabled={readOnly}>
+        <button type="button" data-testid="page-builder-media-open" onClick={() => setOpen((current) => {
+          if (current) onDismiss?.();
+          return !current;
+        })} disabled={readOnly}>
           {open ? '미디어 닫기' : '업로드 · 미디어 선택'}
         </button>
         {value ? <button type="button" onClick={() => onChange('')} disabled={readOnly}>비우기</button> : null}
@@ -115,7 +123,7 @@ function MediaPicker({
                 key={asset.id}
                 className={asset.url === value ? 'is-selected' : ''}
                 data-testid="page-builder-media-item"
-                onClick={() => { onChange(asset.url); setOpen(false); }}
+                onClick={() => { onChange(asset.url); setOpen(false); onDismiss?.(); }}
                 disabled={readOnly}
                 title={`${asset.original_name} · ${asset.width}×${asset.height} · ${formatBytes(asset.bytes)}`}
               >
@@ -128,6 +136,21 @@ function MediaPicker({
       ) : null}
     </div>
   );
+}
+
+export function CanvasMediaPicker({
+  value,
+  onChange,
+  onDismiss,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onDismiss: () => void;
+}): React.ReactElement {
+  return <div className="g7pb-canvas-dialog" role="dialog" aria-modal="true" aria-label="선택 이미지 편집"
+    data-testid="page-builder-canvas-media-dialog">
+    <MediaPicker value={value} onChange={onChange} label="선택 이미지" initiallyOpen onDismiss={onDismiss} />
+  </div>;
 }
 
 export function createMediaField(label: string, pickerKey?: string): Field<string> {

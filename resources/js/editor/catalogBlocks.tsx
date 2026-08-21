@@ -8,6 +8,7 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
+import { notifyCanvasElementSelection } from './canvasEditingContract';
 import {
   canonicalPhase2BlockToPuck,
   phase2CatalogComponentConfigs,
@@ -500,7 +501,9 @@ function normalizeBars(value: unknown): BarChartItem[] {
 }
 
 function BlockFrame({ id, type, motion, children }: { id: string; type: string; motion: BlockMotion; children: React.ReactNode }): React.ReactElement {
-  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type} {...motionPreviewAttributes(motion)}>{children}</section>;
+  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
+    onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
+    {...motionPreviewAttributes(motion)}>{children}</section>;
 }
 
 function ImageOrPlaceholder({ src, alt, label }: { src: string; alt: string; label: string }): React.ReactElement {
@@ -519,7 +522,7 @@ function HeroSplitPreview(props: HeroSplitEditorProps & { id: string }): React.R
     <BlockFrame id={props.id} type="hero-split" motion={props.motion}>
       <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${props.mediaPosition} ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
         <div className="g7pb-preview-hero-split__copy"><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h1 data-g7pb-inline-field="title">{props.title}</h1><p data-g7pb-inline-field="body">{props.body}</p>{props.primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
-        <figure><ImageOrPlaceholder src={props.imageSrc} alt={props.imageAlt} label="대표" /></figure>
+        <figure data-g7pb-media-field="imageSrc"><ImageOrPlaceholder src={props.imageSrc} alt={props.imageAlt} label="대표" /></figure>
       </div>
     </BlockFrame>
   );
@@ -550,7 +553,7 @@ function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React
       <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
         <div className="g7pb-preview-hero-slider__viewport">
           <div className="g7pb-preview-hero-slider__track">
-            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}><div><small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small><h2 data-g7pb-inline-field={`slides.${index}.title`}>{slide.title}</h2><p data-g7pb-inline-field={`slides.${index}.body`}>{slide.body}</p>{slide.buttonLabel && <span data-g7pb-inline-field={`slides.${index}.buttonLabel`}>{slide.buttonLabel} →</span>}</div><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></article>)}
+            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}><div><small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small><h2 data-g7pb-inline-field={`slides.${index}.title`}>{slide.title}</h2><p data-g7pb-inline-field={`slides.${index}.body`}>{slide.body}</p>{slide.buttonLabel && <span data-g7pb-inline-field={`slides.${index}.buttonLabel`}>{slide.buttonLabel} →</span>}</div><span data-g7pb-media-field={`slides.${index}.imageSrc`}><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></span></article>)}
           </div>
         </div>
         <div
@@ -573,7 +576,7 @@ function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React
 }
 
 function LogoCloudPreview(props: LogoCloudEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="logo-cloud" motion={props.motion}><div className={`g7pb-preview-logo-cloud ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><p data-g7pb-inline-field="heading">{props.heading}</p><div>{normalizeLogos(props.logos).map((logo, index) => <span key={`${logo.name}-${index}`} data-g7pb-inline-field={`logos.${index}.name`}>{safeUrl(logo.imageSrc) ? <img src={safeUrl(logo.imageSrc) ?? ''} alt={logo.imageAlt} /> : logo.name}</span>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="logo-cloud" motion={props.motion}><div className={`g7pb-preview-logo-cloud ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><p data-g7pb-inline-field="heading">{props.heading}</p><div>{normalizeLogos(props.logos).map((logo, index) => <span key={`${logo.name}-${index}`} data-g7pb-inline-field={`logos.${index}.name`}>{safeUrl(logo.imageSrc) ? <img data-g7pb-media-field={`logos.${index}.imageSrc`} src={safeUrl(logo.imageSrc) ?? ''} alt={logo.imageAlt} /> : logo.name}</span>)}</div></div></BlockFrame>;
 }
 
 function StatsPreview(props: StatsEditorProps & { id: string }): React.ReactElement {
@@ -585,11 +588,11 @@ function PricingPreview(props: PricingEditorProps & { id: string }): React.React
 }
 
 function TeamPreview(props: TeamEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="team" motion={props.motion}><div className={`g7pb-preview-team ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeMembers(props.members).map((member, index) => <article key={`${member.name}-${index}`}><figure><ImageOrPlaceholder src={member.imageSrc} alt={member.imageAlt} label={member.name.slice(0, 1)} /></figure><h3 data-g7pb-inline-field={`members.${index}.name`}>{member.name}</h3><strong data-g7pb-inline-field={`members.${index}.role`}>{member.role}</strong><p data-g7pb-inline-field={`members.${index}.bio`}>{member.bio}</p></article>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="team" motion={props.motion}><div className={`g7pb-preview-team ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeMembers(props.members).map((member, index) => <article key={`${member.name}-${index}`}><figure data-g7pb-media-field={`members.${index}.imageSrc`}><ImageOrPlaceholder src={member.imageSrc} alt={member.imageAlt} label={member.name.slice(0, 1)} /></figure><h3 data-g7pb-inline-field={`members.${index}.name`}>{member.name}</h3><strong data-g7pb-inline-field={`members.${index}.role`}>{member.role}</strong><p data-g7pb-inline-field={`members.${index}.bio`}>{member.bio}</p></article>)}</div></div></BlockFrame>;
 }
 
 function GalleryPreview(props: GalleryEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="gallery" motion={props.motion}><div className={`g7pb-preview-gallery ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div className={`g7pb-preview-gallery__grid g7pb-preview-gallery__grid--${props.columns}`}>{normalizeImages(props.images).map((image, index) => <figure key={`${image.caption}-${index}`}><ImageOrPlaceholder src={image.src} alt={image.alt} label={`이미지 ${index + 1}`} /><figcaption data-g7pb-inline-field={`images.${index}.caption`}>{image.caption}</figcaption></figure>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="gallery" motion={props.motion}><div className={`g7pb-preview-gallery ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div className={`g7pb-preview-gallery__grid g7pb-preview-gallery__grid--${props.columns}`}>{normalizeImages(props.images).map((image, index) => <figure key={`${image.caption}-${index}`}><span data-g7pb-media-field={`images.${index}.src`}><ImageOrPlaceholder src={image.src} alt={image.alt} label={`이미지 ${index + 1}`} /></span><figcaption data-g7pb-inline-field={`images.${index}.caption`}>{image.caption}</figcaption></figure>)}</div></div></BlockFrame>;
 }
 
 function BarChartPreview(props: BarChartEditorProps & { id: string }): React.ReactElement {

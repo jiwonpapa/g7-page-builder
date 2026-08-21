@@ -9,6 +9,7 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
+import { notifyCanvasElementSelection } from './canvasEditingContract';
 import {
   ARTICLE_LIST_BLOCK_TYPE,
   COMPARISON_TABLE_BLOCK_TYPE,
@@ -277,11 +278,13 @@ function surfaceClass(props: AppearanceEditorProps): string {
 }
 
 function Frame({ id, type, motion, children }: { id: string; type: string; motion: BlockMotion; children: React.ReactNode }): React.ReactElement {
-  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type} {...motionPreviewAttributes(motion)}>{children}</section>;
+  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
+    onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
+    {...motionPreviewAttributes(motion)}>{children}</section>;
 }
 
 function TestimonialsPreview(props: TestimonialsEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="testimonials" motion={props.motion}><div className={`g7pb-preview-testimonials g7pb-preview-testimonials--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeTestimonials(props.items).map((item, index) => <blockquote key={`${item.name}-${index}`}><span aria-label={`${item.rating}점`}>{'★'.repeat(item.rating)}</span><p data-g7pb-inline-field={`items.${index}.quote`}>“{item.quote}”</p><footer>{safeUrl(item.avatarSrc) ? <img src={item.avatarSrc} alt={item.avatarAlt} /> : <i aria-hidden="true">{item.name.slice(0, 1)}</i>}<cite><strong data-g7pb-inline-field={`items.${index}.name`}>{item.name}</strong><small><span data-g7pb-inline-field={`items.${index}.role`}>{item.role}</span> · <span data-g7pb-inline-field={`items.${index}.company`}>{item.company}</span></small></cite></footer></blockquote>)}</div></div></Frame>;
+  return <Frame id={props.id} type="testimonials" motion={props.motion}><div className={`g7pb-preview-testimonials g7pb-preview-testimonials--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeTestimonials(props.items).map((item, index) => <blockquote key={`${item.name}-${index}`}><span aria-label={`${item.rating}점`}>{'★'.repeat(item.rating)}</span><p data-g7pb-inline-field={`items.${index}.quote`}>“{item.quote}”</p><footer>{safeUrl(item.avatarSrc) ? <img data-g7pb-media-field={`items.${index}.avatarSrc`} src={item.avatarSrc} alt={item.avatarAlt} /> : <i data-g7pb-media-field={`items.${index}.avatarSrc`} aria-hidden="true">{item.name.slice(0, 1)}</i>}<cite><strong data-g7pb-inline-field={`items.${index}.name`}>{item.name}</strong><small><span data-g7pb-inline-field={`items.${index}.role`}>{item.role}</span> · <span data-g7pb-inline-field={`items.${index}.company`}>{item.company}</span></small></cite></footer></blockquote>)}</div></div></Frame>;
 }
 
 function FaqPreview(props: FaqAccordionEditorProps & { id: string }): React.ReactElement {
@@ -307,7 +310,7 @@ function ComparisonPreview(props: ComparisonTableEditorProps & { id: string }): 
 }
 
 function ArticleListPreview(props: ArticleListEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="article-list" motion={props.motion}><div className={`g7pb-preview-articles g7pb-preview-articles--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeArticles(props.items).map((item, index) => <article key={`${item.title}-${index}`}>{safeUrl(item.imageSrc) ? <img src={item.imageSrc} alt={item.imageAlt} /> : <i aria-label="대표 이미지 자리">{String(index + 1).padStart(2, '0')}</i>}<div><small><span data-g7pb-inline-field={`items.${index}.category`}>{item.category}</span> · <time data-g7pb-inline-field={`items.${index}.date`}>{item.date}</time></small><h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3><p data-g7pb-inline-field={`items.${index}.summary`}>{item.summary}</p><b>읽어보기 →</b></div></article>)}</div></div></Frame>;
+  return <Frame id={props.id} type="article-list" motion={props.motion}><div className={`g7pb-preview-articles g7pb-preview-articles--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeArticles(props.items).map((item, index) => <article key={`${item.title}-${index}`}>{safeUrl(item.imageSrc) ? <img data-g7pb-media-field={`items.${index}.imageSrc`} src={item.imageSrc} alt={item.imageAlt} /> : <i data-g7pb-media-field={`items.${index}.imageSrc`} aria-label="대표 이미지 자리">{String(index + 1).padStart(2, '0')}</i>}<div><small><span data-g7pb-inline-field={`items.${index}.category`}>{item.category}</span> · <time data-g7pb-inline-field={`items.${index}.date`}>{item.date}</time></small><h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3><p data-g7pb-inline-field={`items.${index}.summary`}>{item.summary}</p><b data-g7pb-action-field={`items.${index}.title`}>읽어보기 →</b></div></article>)}</div></div></Frame>;
 }
 
 function VideoPreview(props: VideoEmbedEditorProps & { id: string }): React.ReactElement {

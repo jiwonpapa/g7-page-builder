@@ -72,6 +72,7 @@ const fixture: PageBuilderDocument = {
         title: 'Hero title',
         body: '<p>Hero body</p>',
         alignment: 'center',
+        image: { src: 'https://images.example.com/hero.webp', alt: 'Hero image' },
       },
       slots: {},
     },
@@ -294,6 +295,10 @@ describe('Puck editor surface contract', () => {
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-title"]')).value).toBe('Hero title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-subtitle"]')).value).toBe('Hero eyebrow');
 
+    const textTools = await eventually<HTMLElement>('[data-testid="page-builder-text-tools-open"]');
+    await act(async () => {
+      textTools.closest('button')?.click();
+    });
     const textScaleMarker = await eventually<HTMLElement>('[data-testid="page-builder-text-scale"]');
     await act(async () => {
       textScaleMarker.closest('button')?.click();
@@ -315,11 +320,24 @@ describe('Puck editor surface contract', () => {
     });
     expect((await eventually<HTMLElement>('.g7pb-preview-page')).classList.contains('g7pb-theme-mode-dark')).toBe(true);
 
+    const heroImage = hero.querySelector<HTMLElement>('[data-g7pb-media-field="imageSrc"]');
+    expect(heroImage).not.toBeNull();
+    await act(async () => {
+      heroImage?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(document.body.textContent).toContain('이미지 · 이미지');
     const mediaOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-media-open"]');
     await act(async () => {
       mediaOpenMarker.closest('button')?.click();
     });
     expect(await eventually<HTMLElement>('[data-testid="page-builder-media-library"]')).not.toBeNull();
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-testid="page-builder-media-open"]')?.click();
+      hero.querySelector<HTMLElement>('[data-g7pb-inline-field="primaryLabel"]')
+        ?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
     const routeOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-route-open"]');
     await act(async () => {
       routeOpenMarker.closest('button')?.click();
@@ -335,6 +353,18 @@ describe('Puck editor surface contract', () => {
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-heading"]')).value).toBe('Features title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-item-0-title"]')).value).toBe('First title');
     expect((await eventually<HTMLTextAreaElement>('[data-testid="page-builder-features-item-0-body"]')).value).toBe('First body');
+    const firstFeatureTitle = features.querySelector<HTMLElement>('[data-g7pb-inline-field="items.0.title"]');
+    await act(async () => {
+      firstFeatureTitle?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(document.body.textContent).toContain('제목 · 1번 항목 · 텍스트');
+    const duplicateItem = await eventually<HTMLElement>('[data-testid="page-builder-item-duplicate"]');
+    await act(async () => {
+      duplicateItem.closest('button')?.click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[1].props.items?.length === 3)).toBe(true);
 
     await act(async () => {
       cta.click();

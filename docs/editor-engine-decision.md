@@ -53,6 +53,8 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 
 ## 인라인·문맥 편집 계약
 
+가운데 캔버스의 선택·직접 편집 상세 계약은 [Canvas Editing Contract](canvas-editing-contract.md)를 따릅니다. 29개 내장 블록은 공통 요소 선택 계약을 사용하고 Inspector는 고급 설정으로 한정합니다.
+
 - 모든 내장 블록의 주요 제목·설명·버튼 문구와 반복 항목의 핵심 문구는 Puck `contentEditable`로 캔버스에서 직접 편집합니다.
 - Hero 본문만 Puck Rich Text field를 사용하며 Puck 내부 Tiptap 구현을 별도 직접 의존성이나 문서 원본으로 취급하지 않습니다.
 - 선택 블록 문맥 도구에서 허용된 글자 크기와 정렬을 즉시 바꾸고, 주요 버튼은 G7 route 선택기, Hero 이미지는 MediaPort 선택기를 바로 엽니다.

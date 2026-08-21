@@ -344,6 +344,7 @@ async function revealInspectorField(page: Page, testId: string): Promise<Locator
   const field = visibleTestId(page, testId);
 
   if (!(await field.isVisible())) {
+    await page.keyboard.press('Escape');
     await page.locator('nav').getByText('Fields', { exact: true }).click();
   }
 

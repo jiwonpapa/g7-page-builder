@@ -6,6 +6,23 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-21
+
+### Added
+
+- 고객 후기, FAQ 아코디언, 프로세스·타임라인, 탭 콘텐츠, 비교표, 에디토리얼 목록, 안전한 YouTube·Vimeo 영상 블록을 추가했습니다.
+- FAQ 단일 열림 제어와 탭의 방향키·Home·End 탐색, 자동 ARIA 연결을 공개 경량 런타임에 추가했습니다.
+
+### Changed
+
+- 내장 Block Pack과 검색 가능한 블록 라이브러리를 16종에서 23종으로 확장하고 내장 Pack 버전을 0.9.0, HTML compiler를 0.8.0으로 올렸습니다.
+- 새 반복 블록의 화면상 문구는 캔버스 인라인 편집, 이미지·라우트·구조·표시 방식은 typed 속성으로 편집하도록 통일했습니다.
+
+### Security
+
+- 영상 블록은 임의 iframe·URL·스크립트를 저장하지 않고 YouTube·Vimeo 제공자와 검증된 영상 식별자만 컴파일합니다.
+- 공개 CSP의 `frame-src`를 OpenStreetMap·Google Maps·YouTube Privacy Enhanced·Vimeo로 명시 제한했습니다.
+
 ## [0.11.0] - 2026-08-21
 
 ### Added

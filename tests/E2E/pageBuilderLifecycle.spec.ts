@@ -15,10 +15,13 @@ const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type BlockType =
+  | 'article-list'
   | 'bar-chart'
+  | 'comparison-table'
   | 'contact'
   | 'cta'
   | 'features'
+  | 'faq-accordion'
   | 'gallery'
   | 'hero'
   | 'hero-slider'
@@ -26,8 +29,12 @@ type BlockType =
   | 'g7-recent-posts'
   | 'logo-cloud'
   | 'pricing'
+  | 'process-timeline'
   | 'stats'
-  | 'team';
+  | 'tabs'
+  | 'team'
+  | 'testimonials'
+  | 'video-embed';
 
 const PUBLISHED_BLOCK_ORDER: BlockType[] = [
   'features',
@@ -43,6 +50,13 @@ const PUBLISHED_BLOCK_ORDER: BlockType[] = [
   'bar-chart',
   'g7-recent-posts',
   'g7-product-grid',
+  'testimonials',
+  'faq-accordion',
+  'process-timeline',
+  'tabs',
+  'comparison-table',
+  'article-list',
+  'video-embed',
 ];
 
 const BLOCK_LABELS: Record<BlockType, string> = {
@@ -57,8 +71,15 @@ const BLOCK_LABELS: Record<BlockType, string> = {
   'g7-recent-posts': 'G7 Recent Posts',
   'logo-cloud': 'Logo cloud',
   pricing: 'Pricing',
+  'process-timeline': 'Process timeline',
   stats: 'Stats',
   team: 'Team',
+  'article-list': 'Article list',
+  'comparison-table': 'Comparison table',
+  'faq-accordion': 'FAQ accordion',
+  tabs: 'Tabs',
+  testimonials: 'Testimonials',
+  'video-embed': 'Video embed',
 };
 
 interface AdminLoginResponse {
@@ -629,7 +650,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
   context,
   page,
 }, testInfo) => {
-  test.setTimeout(240_000);
+  test.setTimeout(300_000);
 
   const authToken = await authenticateAdmin(context);
 
@@ -673,7 +694,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
     await expect(blockPackDialog).toBeVisible();
     await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
-    await expect(blockPackDialog).toContainText('블록 16 / 프리셋 0');
+    await expect(blockPackDialog).toContainText('블록 23 / 프리셋 0');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
     await expect(blockPackDialog.getByRole('button', { name: '최신 버전 확인' })).toBeVisible();
     await blockPackDialog.getByRole('button', { name: '닫기' }).click();
@@ -710,6 +731,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'Team',
       'Gallery',
       'BarChart',
+      'Testimonials',
+      'FaqAccordion',
+      'ProcessTimeline',
+      'Tabs',
+      'ComparisonTable',
+      'ArticleList',
+      'VideoEmbed',
     ]) {
       await expect(page.getByTestId(`drawer-item:${component}`)).toHaveCount(1);
     }
@@ -758,6 +786,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'bar-chart',
       'g7-recent-posts',
       'g7-product-grid',
+      'testimonials',
+      'faq-accordion',
+      'process-timeline',
+      'tabs',
+      'comparison-table',
+      'article-list',
+      'video-embed',
     ]) {
       await expect(page.getByTestId(`page-builder-block-option-${option}`)).toBeVisible();
     }
@@ -795,7 +830,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-contact').click();
-    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid']) {
+    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid', 'testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed']) {
       await revealEditorHeaderActions(page);
       await page.getByTestId('page-builder-add-block').click();
       await page.getByTestId(`page-builder-block-option-${option}`).click();
@@ -960,6 +995,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(publicPage.locator('form')).toHaveCount(0);
     await expect(publicPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
     await expect(publicPage.locator('[data-g7pb-slider]')).toHaveAttribute('data-g7pb-slider-ready', 'true');
+    await expect(publicPage.locator('[data-g7pb-accordion]')).toHaveAttribute('data-g7pb-accordion-ready', 'true');
+    const publicTabs = publicPage.locator('[data-g7pb-tabs]');
+    await expect(publicTabs).toHaveAttribute('data-g7pb-tabs-ready', 'true');
+    await expect(publicTabs.locator('[role="tab"]').first()).toHaveAttribute('aria-controls', /g7pb-.+-panel-0/);
+    await publicTabs.locator('[role="tab"]').nth(1).click();
+    await expect(publicTabs.locator('[role="tabpanel"]').nth(1)).toBeVisible();
+    await expect(publicPage.locator('[data-block-type="video-embed"] iframe')).toHaveAttribute('src', /youtube-nocookie\.com\/embed\//);
     const animatedStats = publicPage.locator('[data-block-type="stats"][data-g7pb-motion="counter"]');
     await animatedStats.scrollIntoViewIfNeeded();
     await expect(animatedStats).toHaveClass(/is-inview/);

@@ -305,7 +305,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.7.0', $catalog->compilerVersion);
+        self::assertSame('0.8.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -398,7 +398,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.7.0', $result->compilerVersion);
+        self::assertSame('0.8.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -448,6 +448,45 @@ final class HtmlDocumentCompilerTest extends TestCase
 
         $payload = $this->formAndMapDocument()->toArray();
         $payload['blocks'][1]['props']['directionsUrl'] = 'javascript:alert(1)';
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_phase_two_catalog_compiles_accessible_typed_markup(): void
+    {
+        $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
+        $artifact = (string) $result->artifact;
+
+        self::assertSame('0.8.0', $result->compilerVersion);
+        foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
+            self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
+        }
+        self::assertStringContainsString('data-g7pb-accordion-behavior="single"', $artifact);
+        self::assertStringContainsString('<details open>', $artifact);
+        self::assertStringContainsString('role="tablist"', $artifact);
+        self::assertStringContainsString('role="tabpanel"', $artifact);
+        self::assertStringContainsString('<table>', $artifact);
+        self::assertStringContainsString('https://www.youtube-nocookie.com/embed/abcDEF12345?rel=0', $artifact);
+        self::assertStringNotContainsString('<script', $artifact);
+        self::assertStringNotContainsString('javascript:', $artifact);
+    }
+
+    public function test_phase_two_catalog_rejects_untyped_video_and_invalid_tab_state(): void
+    {
+        $payload = $this->phaseTwoDocument()->toArray();
+        $payload['blocks'] = [$payload['blocks'][6]];
+        $payload['blocks'][0]['props']['videoId'] = 'https://attacker.example/embed';
+
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+            self::fail('An arbitrary video URL was accepted.');
+        } catch (DocumentCompileException) {
+            self::assertTrue(true);
+        }
+
+        $payload = $this->phaseTwoDocument()->toArray();
+        $payload['blocks'] = [$payload['blocks'][3]];
+        $payload['blocks'][0]['props']['initialTab'] = 9;
         $this->expectException(DocumentCompileException::class);
         $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
     }
@@ -530,6 +569,66 @@ final class HtmlDocumentCompilerTest extends TestCase
                         'hours' => '평일 09:00~18:00', 'parking' => '주차 1시간 지원',
                     ],
                     'slots' => [],
+                ],
+            ],
+        );
+    }
+
+    private function phaseTwoDocument(): PageBuilderDocument
+    {
+        return new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-0000000000a0',
+            slug: 'phase-two-catalog',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: ['design.color_mode' => 'dark'],
+            blocks: [
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000a1', 'type' => 'trust.testimonials-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '후기', 'heading' => '고객 이야기', 'layout' => 'grid', 'items' => [
+                        ['quote' => '빠르게 만들었습니다.', 'name' => '김고객', 'role' => '대표', 'company' => '예시회사', 'avatarSrc' => '', 'avatarAlt' => '', 'rating' => 5],
+                        ['quote' => '운영이 편해졌습니다.', 'name' => '이고객', 'role' => '운영자', 'company' => '샘플회사', 'avatarSrc' => '', 'avatarAlt' => '', 'rating' => 4],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000a2', 'type' => 'content.faq-accordion-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => 'FAQ', 'heading' => '질문과 답변', 'behavior' => 'single', 'openFirst' => true, 'items' => [
+                        ['question' => '어떻게 시작하나요?', 'answer' => '블록을 선택해 시작합니다.'],
+                        ['question' => '모바일을 지원하나요?', 'answer' => '반응형 출력을 지원합니다.'],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000a3', 'type' => 'content.process-timeline-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '과정', 'heading' => '진행 방법', 'layout' => 'horizontal', 'items' => [
+                        ['title' => '선택', 'body' => '블록을 선택합니다.', 'linkLabel' => '', 'linkUrl' => ''],
+                        ['title' => '발행', 'body' => '검토 후 발행합니다.', 'linkLabel' => '안내', 'linkUrl' => '/guide'],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000a4', 'type' => 'content.tabs-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '안내', 'heading' => '서비스 안내', 'initialTab' => 1, 'style' => 'underline', 'items' => [
+                        ['label' => '기획', 'heading' => '기획 안내', 'body' => '목표를 정합니다.'],
+                        ['label' => '운영', 'heading' => '운영 안내', 'body' => '안전하게 발행합니다.'],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000a5', 'type' => 'commerce.comparison-table-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '비교', 'heading' => '플랜 비교', 'highlightColumn' => 1, 'columns' => [
+                        ['title' => '기본', 'description' => '시작용'], ['title' => '성장', 'description' => '운영용'],
+                    ], 'rows' => [
+                        ['feature' => '페이지', 'values' => ['3개', '무제한']], ['feature' => '지원', 'values' => ['문서', '이메일']],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000a6', 'type' => 'content.article-list-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '소식', 'heading' => '새로운 이야기', 'layout' => 'list', 'items' => [
+                        ['category' => '제품', 'title' => '첫 소식', 'summary' => '첫 번째 소식입니다.', 'date' => '2026-08-21', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/news/first'],
+                        ['category' => '가이드', 'title' => '두 번째 소식', 'summary' => '두 번째 소식입니다.', 'date' => '2026-08-20', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/news/second'],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000a7', 'type' => 'media.video-embed-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '영상', 'heading' => '제품 소개', 'caption' => '제품 소개 영상입니다.', 'provider' => 'youtube', 'videoId' => 'abcDEF12345', 'ratio' => '16:9'], 'slots' => [],
                 ],
             ],
         );

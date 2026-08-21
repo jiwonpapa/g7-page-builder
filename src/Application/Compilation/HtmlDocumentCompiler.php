@@ -14,7 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.7.0';
+    public const COMPILER_VERSION = '0.8.0';
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
@@ -69,6 +69,20 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private const INQUIRY_FORM_TYPE = 'form.inquiry-01';
 
     private const MAP_DIRECTIONS_TYPE = 'location.map-directions-01';
+
+    private const TESTIMONIALS_TYPE = 'trust.testimonials-01';
+
+    private const FAQ_ACCORDION_TYPE = 'content.faq-accordion-01';
+
+    private const PROCESS_TIMELINE_TYPE = 'content.process-timeline-01';
+
+    private const TABS_TYPE = 'content.tabs-01';
+
+    private const COMPARISON_TABLE_TYPE = 'commerce.comparison-table-01';
+
+    private const ARTICLE_LIST_TYPE = 'content.article-list-01';
+
+    private const VIDEO_EMBED_TYPE = 'media.video-embed-01';
 
     /** @var list<string> */
     private const FEATURE_ICONS = [
@@ -241,6 +255,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.g7-ecommerce-product-grid-01' => fn (array $props): string => $this->compileG7ProductGrid($props),
             'builtin.inquiry-form-01' => fn (array $props): string => $this->compileInquiryForm($props),
             'builtin.map-directions-01' => fn (array $props): string => $this->compileMapDirections($props),
+            'builtin.testimonials-01' => fn (array $props): string => $this->compileTestimonials($props),
+            'builtin.faq-accordion-01' => fn (array $props): string => $this->compileFaqAccordion($props),
+            'builtin.process-timeline-01' => fn (array $props): string => $this->compileProcessTimeline($props),
+            'builtin.tabs-01' => fn (array $props): string => $this->compileTabs($props),
+            'builtin.comparison-table-01' => fn (array $props): string => $this->compileComparisonTable($props),
+            'builtin.article-list-01' => fn (array $props): string => $this->compileArticleList($props),
+            'builtin.video-embed-01' => fn (array $props): string => $this->compileVideoEmbed($props),
         ];
 
         foreach ($compilers as $key => $compiler) {
@@ -905,6 +926,272 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
     }
 
+    /** @param array<string, mixed> $props */
+    private function compileTestimonials(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Testimonials');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $layout = $this->requiredString($props, 'layout', 16);
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        if (! in_array($layout, ['grid', 'spotlight'], true)) {
+            throw new DocumentCompileException('Testimonials layout is invalid.');
+        }
+        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
+            throw new DocumentCompileException('Testimonials must contain between two and eight items.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Testimonial item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['quote', 'name', 'role', 'company', 'avatarSrc', 'avatarAlt', 'rating'], "Testimonial item {$index}");
+            $quote = $this->requiredString($item, 'quote', 1200);
+            $name = $this->requiredString($item, 'name', 120);
+            $role = $this->optionalString($item, 'role', 120) ?? '';
+            $company = $this->optionalString($item, 'company', 120) ?? '';
+            $avatarSrc = $this->optionalString($item, 'avatarSrc', 2048) ?? '';
+            $avatarAlt = $this->optionalString($item, 'avatarAlt', 300) ?? '';
+            $rating = $this->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
+            $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonials__avatar', mb_substr($name, 0, 1));
+            $meta = implode(' · ', array_filter([$role, $company], fn (string $value): bool => $value !== ''));
+            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonials__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.($meta === '' ? '' : '<span>'.$this->escape($meta).'</span>').'</cite></footer></blockquote>';
+        }
+
+        return '<section class="g7pb-block g7pb-testimonials g7pb-testimonials--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonials">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-testimonials__items">'.implode('', $compiled).'</div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileFaqAccordion(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'behavior', 'openFirst', 'appearance'], 'FAQ accordion');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $behavior = $this->requiredString($props, 'behavior', 16);
+        $openFirst = $this->requiredBoolean($props, 'openFirst');
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! in_array($behavior, ['single', 'multiple'], true)) {
+            throw new DocumentCompileException('FAQ accordion behavior is invalid.');
+        }
+        if (! is_array($items) || count($items) < 2 || count($items) > 12) {
+            throw new DocumentCompileException('FAQ accordion must contain between two and twelve items.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("FAQ item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['question', 'answer'], "FAQ item {$index}");
+            $question = $this->requiredString($item, 'question', 300);
+            $answer = $this->requiredString($item, 'answer', 4000);
+            $compiled[] = '<details'.($openFirst && $index === 0 ? ' open' : '').'><summary><span>'.$this->escape($question).'</span><i aria-hidden="true">+</i></summary><div>'.$this->formatText($answer).'</div></details>';
+        }
+
+        return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileProcessTimeline(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Process timeline');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $layout = $this->requiredString($props, 'layout', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! in_array($layout, ['vertical', 'horizontal'], true)) {
+            throw new DocumentCompileException('Process timeline layout is invalid.');
+        }
+        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
+            throw new DocumentCompileException('Process timeline must contain between two and eight items.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Process step {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['title', 'body', 'linkLabel', 'linkUrl'], "Process step {$index}");
+            $title = $this->requiredString($item, 'title', 200);
+            $body = $this->requiredString($item, 'body', 1500);
+            $linkLabel = $this->optionalString($item, 'linkLabel', 120) ?? '';
+            $linkUrl = $this->optionalString($item, 'linkUrl', 2048) ?? '';
+            if (($linkLabel === '') !== ($linkUrl === '')) {
+                throw new DocumentCompileException("Process step {$index} link requires both a label and URL.");
+            }
+            $link = '';
+            if ($linkUrl !== '') {
+                $this->assertAllowedUrl($linkUrl, "Process step {$index}");
+                $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).' <span aria-hidden="true">→</span></a>';
+            }
+            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->escape($title).'</h3><p>'.$this->formatText($body).'</p>'.$link.'</li>';
+        }
+
+        return '<section class="g7pb-block g7pb-process g7pb-process--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="process-timeline">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileTabs(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'initialTab', 'style', 'appearance'], 'Tabs');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $initialTab = $props['initialTab'] ?? null;
+        $style = $this->requiredString($props, 'style', 16);
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        if (! in_array($style, ['underline', 'pills'], true)) {
+            throw new DocumentCompileException('Tabs style is invalid.');
+        }
+        if (! is_array($items) || count($items) < 2 || count($items) > 6) {
+            throw new DocumentCompileException('Tabs must contain between two and six items.');
+        }
+        if (! is_int($initialTab) || $initialTab < 0 || $initialTab >= count($items)) {
+            throw new DocumentCompileException('Tabs initial tab is invalid.');
+        }
+
+        $buttons = [];
+        $panels = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Tab item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['label', 'heading', 'body'], "Tab item {$index}");
+            $label = $this->requiredString($item, 'label', 80);
+            $itemHeading = $this->requiredString($item, 'heading', 200);
+            $body = $this->requiredString($item, 'body', 4000);
+            $selected = $initialTab === $index;
+            $buttons[] = '<button type="button" role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</button>';
+            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->escape($itemHeading).'</h3><p>'.$this->formatText($body).'</p></article>';
+        }
+
+        return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escapeAttribute($heading).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileComparisonTable(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'columns', 'rows', 'highlightColumn', 'appearance'], 'Comparison table');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $columns = $props['columns'] ?? null;
+        $rows = $props['rows'] ?? null;
+        $highlight = $props['highlightColumn'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! is_array($columns) || count($columns) < 2 || count($columns) > 4) {
+            throw new DocumentCompileException('Comparison table must contain between two and four columns.');
+        }
+        if (! is_array($rows) || count($rows) < 1 || count($rows) > 12) {
+            throw new DocumentCompileException('Comparison table must contain between one and twelve rows.');
+        }
+        if (! is_int($highlight) || $highlight < -1 || $highlight >= count($columns)) {
+            throw new DocumentCompileException('Comparison table highlighted column is invalid.');
+        }
+
+        $headings = [];
+        foreach (array_values($columns) as $index => $column) {
+            if (! is_array($column)) {
+                throw new DocumentCompileException("Comparison column {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($column, ['title', 'description'], "Comparison column {$index}");
+            $title = $this->requiredString($column, 'title', 120);
+            $description = $this->optionalString($column, 'description', 300) ?? '';
+            $headings[] = '<th scope="col"'.($highlight === $index ? ' class="is-highlighted"' : '').'><strong>'.$this->escape($title).'</strong>'.($description === '' ? '' : '<span>'.$this->formatText($description).'</span>').'</th>';
+        }
+
+        $compiledRows = [];
+        foreach (array_values($rows) as $rowIndex => $row) {
+            if (! is_array($row)) {
+                throw new DocumentCompileException("Comparison row {$rowIndex} must be an object.");
+            }
+            $this->assertOnlyKeys($row, ['feature', 'values'], "Comparison row {$rowIndex}");
+            $feature = $this->requiredString($row, 'feature', 200);
+            $values = $row['values'] ?? null;
+            if (! is_array($values) || count($values) !== count($columns)) {
+                throw new DocumentCompileException("Comparison row {$rowIndex} values must match the columns.");
+            }
+            $cells = [];
+            foreach (array_values($values) as $columnIndex => $value) {
+                if (! is_string($value) || trim($value) === '' || mb_strlen($value) > 300) {
+                    throw new DocumentCompileException("Comparison row {$rowIndex} value {$columnIndex} is invalid.");
+                }
+                $cells[] = '<td'.($highlight === $columnIndex ? ' class="is-highlighted"' : '').'>'.$this->formatText($value).'</td>';
+            }
+            $compiledRows[] = '<tr><th scope="row">'.$this->escape($feature).'</th>'.implode('', $cells).'</tr>';
+        }
+
+        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll"><table><caption class="g7pb-visually-hidden">'.$this->escape($heading).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileArticleList(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Article list');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $layout = $this->requiredString($props, 'layout', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! in_array($layout, ['list', 'grid'], true)) {
+            throw new DocumentCompileException('Article list layout is invalid.');
+        }
+        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
+            throw new DocumentCompileException('Article list must contain between two and eight items.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Article item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['category', 'title', 'summary', 'date', 'imageSrc', 'imageAlt', 'url'], "Article item {$index}");
+            $category = $this->optionalString($item, 'category', 80) ?? '';
+            $title = $this->requiredString($item, 'title', 240);
+            $summary = $this->requiredString($item, 'summary', 1200);
+            $date = $this->optionalString($item, 'date', 40) ?? '';
+            $imageSrc = $this->optionalString($item, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->optionalString($item, 'imageAlt', 300) ?? '';
+            $url = $this->requiredString($item, 'url', 2048);
+            $this->assertAllowedUrl($url, "Article item {$index}");
+            $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $title, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
+            $meta = array_filter([
+                $category === '' ? '' : '<span>'.$this->escape($category).'</span>',
+                $date === '' ? '' : '<time datetime="'.$this->escapeAttribute($date).'">'.$this->escape($date).'</time>',
+            ]);
+            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->escape($title).'</a></h3><p>'.$this->formatText($summary).'</p><a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
+        }
+
+        return '<section class="g7pb-block g7pb-articles g7pb-articles--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="article-list">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-articles__items">'.implode('', $compiled).'</div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileVideoEmbed(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'caption', 'provider', 'videoId', 'ratio', 'appearance'], 'Video embed');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $caption = $this->optionalString($props, 'caption', 1000) ?? '';
+        $provider = $this->requiredString($props, 'provider', 16);
+        $videoId = $this->requiredString($props, 'videoId', 32);
+        $ratio = $this->requiredString($props, 'ratio', 8);
+        $appearance = $this->appearanceClasses($props, 'contrast', 'normal');
+        if (! in_array($provider, ['youtube', 'vimeo'], true) || preg_match('/^[A-Za-z0-9_-]{6,32}$/D', $videoId) !== 1) {
+            throw new DocumentCompileException('Video provider or identifier is invalid.');
+        }
+        if (! in_array($ratio, ['16:9', '4:3', '1:1'], true)) {
+            throw new DocumentCompileException('Video ratio is invalid.');
+        }
+        $src = $provider === 'youtube'
+            ? 'https://www.youtube-nocookie.com/embed/'.$videoId.'?rel=0'
+            : 'https://player.vimeo.com/video/'.$videoId;
+
+        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'"><iframe src="'.$this->escapeAttribute($src).'" title="'.$this->escapeAttribute($heading).'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>'.($caption === '' ? '' : '<figcaption>'.$this->formatText($caption).'</figcaption>').'</figure></section>';
+    }
+
     private function compileSectionHeading(?string $eyebrow, string $heading): string
     {
         $eyebrowMarkup = $eyebrow === null || $eyebrow === ''
@@ -985,11 +1272,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         return match ($type) {
             self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE => ['none', 'reveal', 'parallax-soft'],
-            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE => ['none', 'reveal', 'stagger'],
+            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE, self::TESTIMONIALS_TYPE, self::PROCESS_TIMELINE_TYPE, self::ARTICLE_LIST_TYPE => ['none', 'reveal', 'stagger'],
             self::STATS_TYPE => ['none', 'reveal', 'stagger', 'counter'],
             self::GALLERY_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
             self::BAR_CHART_TYPE => ['none', 'reveal', 'chart-draw'],
-            self::CTA_TYPE, self::CONTACT_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE => ['none', 'reveal'],
+            self::CTA_TYPE, self::CONTACT_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE, self::FAQ_ACCORDION_TYPE, self::TABS_TYPE, self::COMPARISON_TABLE_TYPE, self::VIDEO_EMBED_TYPE => ['none', 'reveal'],
             default => ['none'],
         };
     }

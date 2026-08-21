@@ -77,7 +77,7 @@ G7 module-owned canonical route
 
 ## Block Pack 실행 경계
 
-- 14개 기본 정의는 내장 Pack manifest에서 PHP compiler Registry와 Puck catalog로 동시에 등록합니다.
+- 23개 기본 정의는 내장 Pack manifest에서 PHP compiler Registry와 Puck catalog로 동시에 등록합니다.
 - Data Preset Pack은 JSON props와 정적 자산만 제공하며 실행 코드를 등록하지 않습니다.
 - Code Pack은 발행자 귀속 Ed25519 서명과 모든 파일 digest를 통과한 뒤에만 PHP provider와 editor IIFE를 로드합니다.
 - 비활성 Pack은 신규 카탈로그에서 숨기되 기존 문서 해석용 resolved version을 유지합니다.

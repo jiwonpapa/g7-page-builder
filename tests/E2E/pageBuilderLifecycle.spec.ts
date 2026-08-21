@@ -556,6 +556,8 @@ async function selectAndEditCta(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
   );
   if (directCanvas) {
+    await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
+    await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
     for (const [field, value] of [['heading', heading], ['body', body], ['primaryLabel', primaryLabel]] as const) {
       const target = inline(field);
       await target.dispatchEvent('pointerdown');
@@ -563,14 +565,13 @@ async function selectAndEditCta(
       await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
       await target.fill(value);
     }
-    await cta.dispatchEvent('pointerdown');
   } else {
     await (await revealInspectorField(page, 'page-builder-cta-heading')).fill(heading);
     await (await revealInspectorField(page, 'page-builder-cta-body')).fill(body);
     await (await revealInspectorField(page, 'page-builder-cta-primary-label')).fill(primaryLabel);
+    await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
+    await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
   }
-  await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
-  await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
 }
 
 async function selectAndEditContact(

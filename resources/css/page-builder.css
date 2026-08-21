@@ -71,6 +71,7 @@ body.g7pb-manager-shell {
 .g7pb-command-bar {
   position: relative;
   z-index: 12000;
+  pointer-events: none;
   display: flex;
   flex: 0 0 auto;
   min-height: 70px;
@@ -82,6 +83,11 @@ body.g7pb-manager-shell {
   background: color-mix(in srgb, var(--g7pb-surface) 94%, transparent);
   box-shadow: 0 1px 8px rgb(23 32 51 / 5%);
   backdrop-filter: blur(12px);
+}
+
+.g7pb-command-bar a,
+.g7pb-command-bar button {
+  pointer-events: auto;
 }
 
 .g7pb-command-bar__identity,

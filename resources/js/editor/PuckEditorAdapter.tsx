@@ -2056,7 +2056,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null ? data.content[selectedIndex] : null;
-  if (!canvasUi?.textToolsOpen || !selectedBlock) return null;
+  if (!canvasUi?.textToolsOpen || canvasUi.mediaDialogOpen || canvasUi.routeDialogOpen || !selectedBlock) return null;
   const blockIndex = selectedIndex as number;
   const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'
     ? selectedBlock.props.surface : 'default';

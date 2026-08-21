@@ -103,7 +103,7 @@ test('keeps the public page accessible and visually stable', async ({ page }, te
             eyebrow: 'PAGE BUILDER',
             title: '콘텐츠를 빠르게 만들고 안전하게 발행합니다.',
             body: '<p>블록을 조합하고 화면에서 바로 편집한 뒤 검증된 결과만 공개합니다.</p>',
-            primaryCta: { label: '기능 살펴보기', url: '#features' },
+            primaryCta: { label: '기능 살펴보기', url: '/features' },
             alignment: 'center',
           },
           slots: [],
@@ -148,6 +148,11 @@ test('keeps the public page accessible and visually stable', async ({ page }, te
     const prepareResponse = await api.post(`${API}/documents/${documentId}/publications/prepare`, {
       data: { expected_lock_version: lockVersion },
     });
+    if (!prepareResponse.ok()) {
+      throw new Error(
+        `Public quality publication prepare failed (${prepareResponse.status()}): ${await prepareResponse.text()}`,
+      );
+    }
     expect(prepareResponse.ok()).toBe(true);
     const prepared = await prepareResponse.json() as ResourceEnvelope;
     const publicationToken = prepared.data?.publication_token;
@@ -165,7 +170,6 @@ test('keeps the public page accessible and visually stable', async ({ page }, te
       'content',
       '접근성과 반응형 시각 회귀를 검증하는 고정 공개 페이지입니다.',
     );
-    await page.locator('[data-block-type="features"]').evaluate((element) => { element.id = 'features'; });
     await page.evaluate(() => document.fonts.ready);
 
     const accessibility = await new AxeBuilder({ page })

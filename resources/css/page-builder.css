@@ -2588,6 +2588,8 @@ body.g7pb-manager-shell {
 .g7pb-preview-cta-split.g7pb-preview-surface--contrast,
 .g7pb-preview-contact.g7pb-preview-surface--contrast { background: #172033; color: #fff; }
 
+.g7pb-preview-cta-split.g7pb-preview-cta-split--dark { background: #172033; color: #fff; }
+
 .g7pb-preview-hero.g7pb-preview-spacing--compact,
 .g7pb-preview-features.g7pb-preview-spacing--compact,
 .g7pb-preview-cta-split.g7pb-preview-spacing--compact,

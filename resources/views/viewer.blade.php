@@ -271,6 +271,7 @@
         .g7pb-hero.g7pb-surface--default, .g7pb-features.g7pb-surface--default, .g7pb-cta.g7pb-surface--default, .g7pb-contact.g7pb-surface--default { background: #fff; color: #172033; }
         .g7pb-hero.g7pb-surface--soft, .g7pb-features.g7pb-surface--soft, .g7pb-cta.g7pb-surface--soft, .g7pb-contact.g7pb-surface--soft { background: #f3f1ed; color: #172033; }
         .g7pb-hero.g7pb-surface--contrast, .g7pb-features.g7pb-surface--contrast, .g7pb-cta.g7pb-surface--contrast, .g7pb-contact.g7pb-surface--contrast { background: #172033; color: #fff; }
+        .g7pb-cta.g7pb-cta--dark { background: #172033; color: #fff; }
         .g7pb-theme-mode-dark .g7pb-block.g7pb-surface--default { background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
         .g7pb-theme-mode-dark .g7pb-block.g7pb-surface--soft { background: var(--g7pb-page-panel); color: var(--g7pb-page-text); }
         @media (prefers-color-scheme: dark) {

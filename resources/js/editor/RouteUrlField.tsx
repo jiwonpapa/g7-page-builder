@@ -17,6 +17,7 @@ import type {
 } from '../documents/types';
 
 const api = new PageBuilderApiClient();
+export const OPEN_ROUTE_PICKER_EVENT = 'g7pb:open-selected-route-picker';
 
 type CatalogTargetSource = 'board' | 'category' | 'product';
 
@@ -139,6 +140,7 @@ function RouteUrlPicker({
 }): React.ReactElement {
   const [open, setOpen] = useState(false);
   const [catalog, setCatalog] = useState<RouteCatalogResource | null>(null);
+  const [catalogAttempted, setCatalogAttempted] = useState(false);
   const [documents, setDocuments] = useState<DocumentResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,14 +152,25 @@ function RouteUrlPicker({
   const [targetsLoading, setTargetsLoading] = useState<Partial<Record<CatalogTargetSource, boolean>>>({});
 
   useEffect(() => {
-    if (!open || catalog !== null || loading) return;
+    if (!open || catalog !== null || loading || catalogAttempted) return;
+    setCatalogAttempted(true);
     setLoading(true);
     setError(null);
     void api.getRouteCatalog()
       .then(setCatalog)
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : '서비스 경로를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
-  }, [catalog, loading, open]);
+  }, [catalog, catalogAttempted, loading, open]);
+
+  useEffect(() => {
+    if (readOnly || !testId) return undefined;
+    const openFromCanvas = (event: Event): void => {
+      if (!(event instanceof CustomEvent) || event.detail?.testId !== testId) return;
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_ROUTE_PICKER_EVENT, openFromCanvas);
+    return () => window.removeEventListener(OPEN_ROUTE_PICKER_EVENT, openFromCanvas);
+  }, [readOnly, testId]);
 
   const selected = catalog?.routes.find((route) => route.id === selectedId) ?? null;
   useEffect(() => {

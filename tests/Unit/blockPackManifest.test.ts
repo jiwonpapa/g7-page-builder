@@ -13,12 +13,14 @@ describe('Block Pack manifest v1 schema', () => {
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it('accepts the fourteen-definition builtin core pack', () => {
+  it('accepts the sixteen-definition builtin core pack', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.blocks).toHaveLength(14);
+    expect(builtinManifest.blocks).toHaveLength(16);
     expect(builtinManifest.blocks.map((block) => block.block_id)).toEqual(expect.arrayContaining([
       'g7.board-recent-posts-01',
       'g7.ecommerce-product-grid-01',
+      'form.inquiry-01',
+      'location.map-directions-01',
     ]));
   });
 

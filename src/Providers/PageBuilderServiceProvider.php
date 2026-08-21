@@ -40,6 +40,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\SignedBlockPackProvi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\ZipBlockPackArchiveAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\BlockPacks\LaravelBlockPackAssetUrlAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\BlockPackAssetController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
@@ -61,6 +62,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/block-packs.php', 'g7-page-builder.block-packs');
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/official-store.php', 'g7-page-builder.official-store');
+        $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/forms.php', 'g7-page-builder.forms');
         $this->app->bind(PageBuilderRepository::class, EloquentPageBuilderRepository::class);
         $this->app->bind(RouteCatalogPort::class, G7RouteCatalogAdapter::class);
         $this->app->singleton(G7TemplateRouteBridge::class);
@@ -197,6 +199,11 @@ final class PageBuilderServiceProvider extends ServiceProvider
             ->get('pages/{slug}', [ViewerController::class, 'show'])
             ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
             ->name('web.page-builder.public');
+
+        Route::middleware(['web', 'throttle:10,1'])
+            ->post('pages/{slug}/inquiries', [FormSubmissionController::class, 'store'])
+            ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
+            ->name('web.page-builder.inquiries.store');
 
         Route::middleware('web')
             ->get('modules/jiwonpapa-page_builder/block-packs/{publisher}/{pack}/{version}/{path}', [BlockPackAssetController::class, 'show'])

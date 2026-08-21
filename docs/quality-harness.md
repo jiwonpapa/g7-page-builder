@@ -83,19 +83,21 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 1. 관리자 API 인증 뒤 독립 Page Builder 문서함 URL 진입
 2. Page Builder 문서함에서 page/document 생성·재진입
-3. 좌측 12종 축소 미리보기 노출, block 사이 실드래그 삽입, 상세 미리보기 추가·속성 편집·순서 변경
-4. reload 뒤 동일성
-5. 편집기 모바일·태블릿·PC iframe 폭 전환과 세 viewport preview
-6. publish, 비로그인 public DOM, 반응형 overflow 확인
-7. 재편집 중 기존 공개본 보존과 재발행
-8. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행
-9. 공개 해제 뒤 public 404
-10. typed motion 저장·미리보기·발행, 조건부 public runtime과 실제 in-view 활성화
-11. Header·Footer Site Part의 축소 미리보기, 실제 드래그 삽입, 인라인/속성 편집, 저장·발행, 공개 렌더와 모바일 메뉴 열기·Escape 닫기·초점 복귀
-12. 문서별 공통영역 제외 후 재발행 시 Header·Footer가 없는 인트로 렌더
-13. 활성 User Template route catalog에서 로그인 route를 선택하고 URL이 저장되는지 확인
-14. `template` 문서를 `/pages/{slug}`에서 활성 `_user_base` 안에 렌더하고 Page Builder Site Part가 섞이지 않는지 확인
-15. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
+3. 좌측 16종 축소 미리보기 노출, block 사이 실드래그 삽입, 상세 미리보기 추가·속성 편집·순서 변경
+4. 라이트·다크·기기 테마, Header·Page·Footer 전체 사이트 캔버스와 embedded Site Part 전환
+5. 선택 블록 글자 크기·정렬, 버튼 route·Hero media 문맥 편집과 문의 폼 제출·모바일 drawer 초점 순환
+6. reload 뒤 동일성
+7. 편집기 모바일·태블릿·PC iframe 폭 전환과 세 viewport preview
+8. publish, 비로그인 public DOM, 반응형 overflow 확인
+9. 재편집 중 기존 공개본 보존과 재발행
+10. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행
+11. 공개 해제 뒤 public 404
+12. typed motion 저장·미리보기·발행, 조건부 public runtime과 실제 in-view 활성화
+13. Header·Footer Site Part의 축소 미리보기, 실제 드래그 삽입, 인라인/속성 편집, 저장·발행, 공개 렌더와 모바일 메뉴 열기·Escape 닫기·초점 복귀
+14. 문서별 공통영역 제외 후 재발행 시 Header·Footer가 없는 인트로 렌더
+15. 활성 User Template route catalog에서 로그인 route를 선택하고 URL이 저장되는지 확인
+16. `template` 문서를 `/pages/{slug}`에서 활성 `_user_base` 안에 렌더하고 Page Builder Site Part가 섞이지 않는지 확인
+17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 실제 접근성 자동 검사, 고정 시각 baseline과 compile 실패 뒤 public hash 불변 시나리오는 전체 MVP gate에 추가해야 합니다.
 

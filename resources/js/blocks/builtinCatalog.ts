@@ -19,6 +19,8 @@ export const BLOCK_CATEGORY_LABELS: Readonly<Record<string, string>> = Object.fr
   company: '회사 소개',
   media: '미디어',
   'g7-data': 'G7 데이터',
+  form: '폼·문의',
+  location: '지도·방문',
 });
 
 export function blockCatalogTestId(editorComponent: string): string {

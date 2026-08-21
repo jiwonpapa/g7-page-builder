@@ -8,6 +8,7 @@ import {
   History,
   Home,
   LayoutTemplate,
+  Inbox,
   MoreHorizontal,
   PackagePlus,
   PanelBottom,
@@ -24,7 +25,7 @@ import {
   PageBuilderApiError,
   buildAdminLoginUrl,
 } from '../api/pageBuilderApi';
-import type { DocumentResource, PageShellMode, RevisionSummary } from '../documents/types';
+import type { DocumentResource, FormSubmissionResource, PageShellMode, RevisionSummary } from '../documents/types';
 import type { BlockPackResource, GitHubBlockPackCheckResource } from '../blocks/types';
 import type { OfficialStoreCatalogResource, OfficialStoreProduct } from '../store/types';
 
@@ -146,6 +147,46 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [exportTitle, setExportTitle] = useState('');
   const [exportDescription, setExportDescription] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const [submissions, setSubmissions] = useState<FormSubmissionResource[]>([]);
+  const [inboxLoading, setInboxLoading] = useState(false);
+  const [inboxBusy, setInboxBusy] = useState<string | null>(null);
+
+  const openInbox = async (): Promise<void> => {
+    setInboxOpen(true);
+    setInboxLoading(true);
+    try {
+      setSubmissions((await api.listFormSubmissions()).items);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setInboxLoading(false);
+    }
+  };
+
+  const setSubmissionStatus = async (submission: FormSubmissionResource, status: FormSubmissionResource['status']): Promise<void> => {
+    setInboxBusy(submission.id);
+    try {
+      const updated = await api.updateFormSubmission(submission.id, status);
+      setSubmissions((current) => current.map((item) => item.id === updated.id ? updated : item));
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setInboxBusy(null);
+    }
+  };
+
+  const retrySubmission = async (submission: FormSubmissionResource): Promise<void> => {
+    setInboxBusy(submission.id);
+    try {
+      const updated = await api.retryFormSubmission(submission.id);
+      setSubmissions((current) => current.map((item) => item.id === updated.id ? updated : item));
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setInboxBusy(null);
+    }
+  };
 
   const loadDocuments = React.useCallback(async (status: 'active' | 'archived'): Promise<void> => {
     const resource = await api.listDocuments(1, 100, status);
@@ -762,6 +803,9 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             data-testid="page-builder-manager-store" onClick={openOfficialStore}>
             <ShoppingBag size={17} aria-hidden="true" /> 무료 마켓
           </button>
+          <button className="g7pb-button g7pb-button--quiet" type="button" data-testid="page-builder-manager-inbox" onClick={() => void openInbox()}>
+            <Inbox size={17} aria-hidden="true" /> 문의함
+          </button>
           <button className="g7pb-button g7pb-button--quiet" type="button"
             data-testid="page-builder-manager-block-packs" onClick={openBlockPacks}>
             블록 팩
@@ -916,6 +960,23 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
           </div>
         )}
       </section>
+
+      {inboxOpen && (
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-inbox-dialog">
+          <section className="g7pb-dialog g7pb-dialog--wide g7pb-inbox" role="dialog" aria-modal="true" aria-labelledby="g7pb-inbox-heading">
+            <div className="g7pb-dialog__heading-row"><div><p className="g7pb-kicker">폼 접수 관리</p><h2 id="g7pb-inbox-heading">문의함</h2><p>문의는 메일 발송 여부와 관계없이 이곳에 먼저 보존됩니다.</p></div><button type="button" className="g7pb-button g7pb-button--quiet" onClick={() => setInboxOpen(false)}>닫기</button></div>
+            {inboxLoading ? <div className="g7pb-manager-loading">문의를 불러오는 중입니다.</div> : submissions.length === 0 ? <div className="g7pb-manager-empty"><h3>접수된 문의가 없습니다.</h3></div> : <div className="g7pb-inbox-list">
+              {submissions.map((submission) => <article key={submission.id} data-state={submission.status}>
+                <header><div><span>{submission.form_kind} · /{submission.page_slug}</span><h3>{submission.subject || '제목 없는 문의'}</h3><small>{formatRevisionDate(submission.created_at)} · {submission.email}</small></div><strong data-mail={submission.mail_status}>{submission.mail_status === 'sent' ? '메일 발송됨' : submission.mail_status === 'failed' ? '메일 실패' : '메일 대기'}</strong></header>
+                <dl><div><dt>이름</dt><dd>{submission.payload.name || '-'}</dd></div><div><dt>전화</dt><dd>{submission.payload.phone || '-'}</dd></div></dl>
+                <p>{submission.payload.message || ''}</p>
+                {submission.mail_error ? <small className="g7pb-inbox-error">{submission.mail_error}</small> : null}
+                <footer><button type="button" className="g7pb-button g7pb-button--quiet" disabled={inboxBusy === submission.id} onClick={() => void setSubmissionStatus(submission, submission.status === 'read' ? 'unread' : 'read')}>{submission.status === 'read' ? '읽지 않음' : '읽음 처리'}</button>{submission.mail_status === 'failed' ? <button type="button" className="g7pb-button g7pb-button--quiet" disabled={inboxBusy === submission.id} onClick={() => void retrySubmission(submission)}>메일 재시도</button> : null}<button type="button" className="g7pb-button g7pb-button--danger" disabled={inboxBusy === submission.id} onClick={() => void setSubmissionStatus(submission, 'archived')}>보관</button></footer>
+              </article>)}
+            </div>}
+          </section>
+        </div>
+      )}
 
       {createDialogOpen && (
         <div className="g7pb-dialog-backdrop" data-testid="page-builder-manager-create-dialog">

@@ -16,7 +16,9 @@ import {
   G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_SLIDER_BLOCK_TYPE,
   HERO_SPLIT_BLOCK_TYPE,
+  INQUIRY_FORM_BLOCK_TYPE,
   LOGO_CLOUD_BLOCK_TYPE,
+  MAP_DIRECTIONS_BLOCK_TYPE,
   PRICING_BLOCK_TYPE,
   STATS_BLOCK_TYPE,
   TEAM_BLOCK_TYPE,
@@ -25,6 +27,7 @@ import {
   type BlockMotion,
   type GalleryImageItem,
   type HeroSlideItem,
+  type InquiryFormKind,
   type LogoItem,
   type PageBuilderBlock,
   type PricingPlanItem,
@@ -32,7 +35,14 @@ import {
   type TeamMemberItem,
 } from '../documents/types';
 
-export interface HeroSplitEditorProps {
+interface AppearanceEditorProps {
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
+}
+
+export interface HeroSplitEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   title: string;
   body: string;
@@ -46,7 +56,7 @@ export interface HeroSplitEditorProps {
   motion: BlockMotion;
 }
 
-export interface HeroSliderEditorProps {
+export interface HeroSliderEditorProps extends AppearanceEditorProps {
   slides: HeroSlideItem[];
   autoplay: 'yes' | 'no';
   interval: '3000' | '5000' | '7000';
@@ -56,7 +66,7 @@ export interface HeroSliderEditorProps {
   motion: BlockMotion;
 }
 
-export interface LogoCloudEditorProps {
+export interface LogoCloudEditorProps extends AppearanceEditorProps {
   heading: string;
   logos: LogoItem[];
   surface: BlockAppearance['surface'];
@@ -64,7 +74,7 @@ export interface LogoCloudEditorProps {
   motion: BlockMotion;
 }
 
-export interface StatsEditorProps {
+export interface StatsEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
   items: StatItem[];
@@ -78,7 +88,7 @@ interface PricingPlanEditor extends Omit<PricingPlanItem, 'features' | 'featured
   featured: 'yes' | 'no';
 }
 
-export interface PricingEditorProps {
+export interface PricingEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
   plans: PricingPlanEditor[];
@@ -87,7 +97,7 @@ export interface PricingEditorProps {
   motion: BlockMotion;
 }
 
-export interface TeamEditorProps {
+export interface TeamEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
   members: TeamMemberItem[];
@@ -96,7 +106,7 @@ export interface TeamEditorProps {
   motion: BlockMotion;
 }
 
-export interface GalleryEditorProps {
+export interface GalleryEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
   images: GalleryImageItem[];
@@ -106,7 +116,7 @@ export interface GalleryEditorProps {
   motion: BlockMotion;
 }
 
-export interface BarChartEditorProps {
+export interface BarChartEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
   description: string;
@@ -117,7 +127,7 @@ export interface BarChartEditorProps {
   motion: BlockMotion;
 }
 
-export interface G7RecentPostsEditorProps {
+export interface G7RecentPostsEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
   source: 'recent' | 'popular';
@@ -130,7 +140,7 @@ export interface G7RecentPostsEditorProps {
   motion: BlockMotion;
 }
 
-export interface G7ProductGridEditorProps {
+export interface G7ProductGridEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
   source: 'latest' | 'new' | 'popular';
@@ -139,6 +149,40 @@ export interface G7ProductGridEditorProps {
   audience: 'all' | 'guest' | 'member';
   detailBasePath: string;
   emptyMessage: string;
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
+}
+
+export interface InquiryFormEditorProps extends AppearanceEditorProps {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  formKind: InquiryFormKind;
+  submitLabel: string;
+  successMessage: string;
+  privacyLabel: string;
+  showPhone: boolean;
+  showSubject: boolean;
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  motion: BlockMotion;
+}
+
+export interface MapDirectionsEditorProps extends AppearanceEditorProps {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  zoom: '12' | '14' | '16' | '18';
+  provider: 'openstreetmap' | 'google' | 'none';
+  directionsLabel: string;
+  directionsUrl: string;
+  phone: string;
+  hours: string;
+  parking: string;
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
   motion: BlockMotion;
@@ -155,6 +199,8 @@ export interface CatalogEditorComponents {
   BarChart: BarChartEditorProps;
   G7RecentPosts: G7RecentPostsEditorProps;
   G7ProductGrid: G7ProductGridEditorProps;
+  InquiryForm: InquiryFormEditorProps;
+  MapDirections: MapDirectionsEditorProps;
 }
 
 type CatalogComponentType = keyof CatalogEditorComponents;
@@ -299,6 +345,20 @@ const DEFAULT_G7_PRODUCT_GRID: G7ProductGridEditorProps = {
   surface: 'soft', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
+const DEFAULT_INQUIRY_FORM: InquiryFormEditorProps = {
+  eyebrow: '문의하기', heading: '무엇을 도와드릴까요?', description: '내용을 남겨주시면 확인 후 연락드리겠습니다.',
+  formKind: 'inquiry', submitLabel: '문의 보내기', successMessage: '문의가 접수되었습니다. 빠르게 확인하겠습니다.',
+  privacyLabel: '문의 처리를 위한 개인정보 수집 및 이용에 동의합니다.', showPhone: true, showSubject: true,
+  surface: 'soft', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
+};
+
+const DEFAULT_MAP_DIRECTIONS: MapDirectionsEditorProps = {
+  eyebrow: '오시는 길', heading: '방문을 환영합니다', description: '아래 주소와 교통 정보를 확인해 주세요.',
+  address: '서울특별시 중구 세종대로 110', latitude: 37.5665, longitude: 126.978, zoom: '16', provider: 'openstreetmap',
+  directionsLabel: '길찾기', directionsUrl: 'https://www.openstreetmap.org/', phone: '02-0000-0000', hours: '평일 09:00–18:00', parking: '방문객 주차 가능',
+  surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
+};
+
 function asString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
 }
@@ -317,10 +377,13 @@ function normalizeSpacing(value: unknown, fallback: BlockAppearance['spacing']):
 
 function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance {
   const record = asRecord(value);
-  return {
+  const resolved: BlockAppearance = {
     surface: normalizeSurface(record.surface, fallback.surface),
     spacing: normalizeSpacing(record.spacing, fallback.spacing),
   };
+  if (record.textScale === 'compact' || record.textScale === 'large') resolved.textScale = record.textScale;
+  if (record.textAlign === 'center' || record.textAlign === 'right') resolved.textAlign = record.textAlign;
+  return resolved;
 }
 
 function safeUrl(value: string): string | null {
@@ -435,14 +498,14 @@ function ImageOrPlaceholder({ src, alt, label }: { src: string; alt: string; lab
     : <span className="g7pb-preview-media-placeholder" aria-label={`${label} 이미지 자리`}>{label}</span>;
 }
 
-function surfaceClass(surface: string, spacing: string): string {
-  return `g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing}`;
+function surfaceClass(surface: string, spacing: string, textScale = 'balanced', textAlign = 'left'): string {
+  return `g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`;
 }
 
 function HeroSplitPreview(props: HeroSplitEditorProps & { id: string }): React.ReactElement {
   return (
     <BlockFrame id={props.id} type="hero-split" motion={props.motion}>
-      <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${props.mediaPosition} ${surfaceClass(props.surface, props.spacing)}`}>
+      <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${props.mediaPosition} ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
         <div className="g7pb-preview-hero-split__copy"><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h1 data-g7pb-inline-field="title">{props.title}</h1><p data-g7pb-inline-field="body">{props.body}</p>{props.primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
         <figure><ImageOrPlaceholder src={props.imageSrc} alt={props.imageAlt} label="대표" /></figure>
       </div>
@@ -472,7 +535,7 @@ function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React
 
   return (
     <BlockFrame id={props.id} type="hero-slider" motion={props.motion}>
-      <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing)}`}>
+      <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
         <div className="g7pb-preview-hero-slider__viewport">
           <div className="g7pb-preview-hero-slider__track">
             {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}><div><small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small><h2 data-g7pb-inline-field={`slides.${index}.title`}>{slide.title}</h2><p data-g7pb-inline-field={`slides.${index}.body`}>{slide.body}</p>{slide.buttonLabel && <span data-g7pb-inline-field={`slides.${index}.buttonLabel`}>{slide.buttonLabel} →</span>}</div><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></article>)}
@@ -498,35 +561,49 @@ function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React
 }
 
 function LogoCloudPreview(props: LogoCloudEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="logo-cloud" motion={props.motion}><div className={`g7pb-preview-logo-cloud ${surfaceClass(props.surface, props.spacing)}`}><p>{props.heading}</p><div>{normalizeLogos(props.logos).map((logo, index) => <span key={`${logo.name}-${index}`}>{safeUrl(logo.imageSrc) ? <img src={safeUrl(logo.imageSrc) ?? ''} alt={logo.imageAlt} /> : logo.name}</span>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="logo-cloud" motion={props.motion}><div className={`g7pb-preview-logo-cloud ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><p data-g7pb-inline-field="heading">{props.heading}</p><div>{normalizeLogos(props.logos).map((logo, index) => <span key={`${logo.name}-${index}`} data-g7pb-inline-field={`logos.${index}.name`}>{safeUrl(logo.imageSrc) ? <img src={safeUrl(logo.imageSrc) ?? ''} alt={logo.imageAlt} /> : logo.name}</span>)}</div></div></BlockFrame>;
 }
 
 function StatsPreview(props: StatsEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="stats" motion={props.motion}><div className={`g7pb-preview-stats ${surfaceClass(props.surface, props.spacing)}`}><header><small>{props.eyebrow}</small><h2>{props.heading}</h2></header><div>{normalizeStats(props.items).map((item, index) => <article key={`${item.label}-${index}`}><i aria-hidden="true">{item.icon === 'users' ? '●●' : item.icon === 'trend' ? '↗' : item.icon === 'target' ? '◎' : '▥'}</i><strong>{item.value}</strong><h3>{item.label}</h3><p>{item.detail}</p></article>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="stats" motion={props.motion}><div className={`g7pb-preview-stats ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeStats(props.items).map((item, index) => <article key={`${item.label}-${index}`}><i aria-hidden="true">{item.icon === 'users' ? '●●' : item.icon === 'trend' ? '↗' : item.icon === 'target' ? '◎' : '▥'}</i><strong data-g7pb-inline-field={`items.${index}.value`}>{item.value}</strong><h3 data-g7pb-inline-field={`items.${index}.label`}>{item.label}</h3><p data-g7pb-inline-field={`items.${index}.detail`}>{item.detail}</p></article>)}</div></div></BlockFrame>;
 }
 
 function PricingPreview(props: PricingEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="pricing" motion={props.motion}><div className={`g7pb-preview-pricing ${surfaceClass(props.surface, props.spacing)}`}><header><small>{props.eyebrow}</small><h2>{props.heading}</h2></header><div>{normalizePricingEditor(props.plans).map((plan, index) => <article className={plan.featured === 'yes' ? 'is-featured' : ''} key={`${plan.name}-${index}`}><h3>{plan.name}</h3><p><strong>{plan.price}</strong>{plan.period}</p><span>{plan.description}</span><ul>{plan.featuresText.split('\n').filter(Boolean).map((feature) => <li key={feature}>{feature}</li>)}</ul><b>{plan.buttonLabel}</b></article>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="pricing" motion={props.motion}><div className={`g7pb-preview-pricing ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizePricingEditor(props.plans).map((plan, index) => <article className={plan.featured === 'yes' ? 'is-featured' : ''} key={`${plan.name}-${index}`}><h3 data-g7pb-inline-field={`plans.${index}.name`}>{plan.name}</h3><p><strong data-g7pb-inline-field={`plans.${index}.price`}>{plan.price}</strong><span data-g7pb-inline-field={`plans.${index}.period`}>{plan.period}</span></p><span data-g7pb-inline-field={`plans.${index}.description`}>{plan.description}</span><ul>{plan.featuresText.split('\n').filter(Boolean).map((feature) => <li key={feature}>{feature}</li>)}</ul><b data-g7pb-inline-field={`plans.${index}.buttonLabel`}>{plan.buttonLabel}</b></article>)}</div></div></BlockFrame>;
 }
 
 function TeamPreview(props: TeamEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="team" motion={props.motion}><div className={`g7pb-preview-team ${surfaceClass(props.surface, props.spacing)}`}><header><small>{props.eyebrow}</small><h2>{props.heading}</h2></header><div>{normalizeMembers(props.members).map((member, index) => <article key={`${member.name}-${index}`}><figure><ImageOrPlaceholder src={member.imageSrc} alt={member.imageAlt} label={member.name.slice(0, 1)} /></figure><h3>{member.name}</h3><strong>{member.role}</strong><p>{member.bio}</p></article>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="team" motion={props.motion}><div className={`g7pb-preview-team ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div>{normalizeMembers(props.members).map((member, index) => <article key={`${member.name}-${index}`}><figure><ImageOrPlaceholder src={member.imageSrc} alt={member.imageAlt} label={member.name.slice(0, 1)} /></figure><h3 data-g7pb-inline-field={`members.${index}.name`}>{member.name}</h3><strong data-g7pb-inline-field={`members.${index}.role`}>{member.role}</strong><p data-g7pb-inline-field={`members.${index}.bio`}>{member.bio}</p></article>)}</div></div></BlockFrame>;
 }
 
 function GalleryPreview(props: GalleryEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="gallery" motion={props.motion}><div className={`g7pb-preview-gallery ${surfaceClass(props.surface, props.spacing)}`}><header><small>{props.eyebrow}</small><h2>{props.heading}</h2></header><div className={`g7pb-preview-gallery__grid g7pb-preview-gallery__grid--${props.columns}`}>{normalizeImages(props.images).map((image, index) => <figure key={`${image.caption}-${index}`}><ImageOrPlaceholder src={image.src} alt={image.alt} label={`이미지 ${index + 1}`} /><figcaption>{image.caption}</figcaption></figure>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="gallery" motion={props.motion}><div className={`g7pb-preview-gallery ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header><div className={`g7pb-preview-gallery__grid g7pb-preview-gallery__grid--${props.columns}`}>{normalizeImages(props.images).map((image, index) => <figure key={`${image.caption}-${index}`}><ImageOrPlaceholder src={image.src} alt={image.alt} label={`이미지 ${index + 1}`} /><figcaption data-g7pb-inline-field={`images.${index}.caption`}>{image.caption}</figcaption></figure>)}</div></div></BlockFrame>;
 }
 
 function BarChartPreview(props: BarChartEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="bar-chart" motion={props.motion}><figure className={`g7pb-preview-bar-chart ${surfaceClass(props.surface, props.spacing)}`}><figcaption><small>{props.eyebrow}</small><h2>{props.heading}</h2><p>{props.description}</p></figcaption><div>{normalizeBars(props.items).map((item, index) => <label key={`${item.label}-${index}`}><span>{item.label}<b>{item.value}{props.unit}</b></span><progress max={100} value={item.value} data-tone={item.tone}>{item.value}</progress></label>)}</div></figure></BlockFrame>;
+  return <BlockFrame id={props.id} type="bar-chart" motion={props.motion}><figure className={`g7pb-preview-bar-chart ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><figcaption><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><p data-g7pb-inline-field="description">{props.description}</p></figcaption><div>{normalizeBars(props.items).map((item, index) => <label key={`${item.label}-${index}`}><span><span data-g7pb-inline-field={`items.${index}.label`}>{item.label}</span><b>{item.value}<span data-g7pb-inline-field="unit">{props.unit}</span></b></span><progress max={100} value={item.value} data-tone={item.tone}>{item.value}</progress></label>)}</div></figure></BlockFrame>;
 }
 
 function G7RecentPostsPreview(props: G7RecentPostsEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="g7-recent-posts" motion={props.motion}><div className={`g7pb-preview-g7-data ${surfaceClass(props.surface, props.spacing)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><em>G7 게시판 · {props.source === 'recent' ? '최신순' : '인기순'} · {props.limit}개</em></header><div className="g7pb-preview-post-list">{['페이지 제작 소식을 전합니다', '새로운 기능 업데이트 안내', '자주 묻는 질문을 확인하세요'].map((title, index) => <article key={title}><span>{index + 1}</span><div><strong>{title}</strong><small>게시판 이름 · 방금 전</small></div><b>→</b></article>)}</div><p className="g7pb-preview-data-note">실제 공개 게시글은 미리보기·발행 화면에서 G7 공개 API로 불러옵니다.</p></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="g7-recent-posts" motion={props.motion}><div className={`g7pb-preview-g7-data ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><em>G7 게시판 · {props.source === 'recent' ? '최신순' : '인기순'} · {props.limit}개</em></header><div className="g7pb-preview-post-list">{['페이지 제작 소식을 전합니다', '새로운 기능 업데이트 안내', '자주 묻는 질문을 확인하세요'].map((title, index) => <article key={title}><span>{index + 1}</span><div><strong>{title}</strong><small>게시판 이름 · 방금 전</small></div><b>→</b></article>)}</div><p className="g7pb-preview-data-note">실제 공개 게시글은 미리보기·발행 화면에서 G7 공개 API로 불러옵니다.</p></div></BlockFrame>;
 }
 
 function G7ProductGridPreview(props: G7ProductGridEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="g7-product-grid" motion={props.motion}><div className={`g7pb-preview-g7-data ${surfaceClass(props.surface, props.spacing)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><em>G7 쇼핑몰 · {props.source === 'new' ? '신상품' : props.source === 'popular' ? '인기 상품' : '최신순'} · {props.limit}개</em></header><div className={`g7pb-preview-product-grid g7pb-preview-product-grid--${props.columns}`}>{['상품 A', '상품 B', '상품 C', '상품 D'].slice(0, Number(props.columns)).map((name, index) => <article key={name}><span aria-hidden="true">상품 이미지</span><strong>{name}</strong><small>{(29000 + index * 10000).toLocaleString()}원</small></article>)}</div><p className="g7pb-preview-data-note">실제 상품은 미리보기·발행 화면에서 G7 공개 API로 불러옵니다.</p></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="g7-product-grid" motion={props.motion}><div className={`g7pb-preview-g7-data ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><em>G7 쇼핑몰 · {props.source === 'new' ? '신상품' : props.source === 'popular' ? '인기 상품' : '최신순'} · {props.limit}개</em></header><div className={`g7pb-preview-product-grid g7pb-preview-product-grid--${props.columns}`}>{['상품 A', '상품 B', '상품 C', '상품 D'].slice(0, Number(props.columns)).map((name, index) => <article key={name}><span aria-hidden="true">상품 이미지</span><strong>{name}</strong><small>{(29000 + index * 10000).toLocaleString()}원</small></article>)}</div><p className="g7pb-preview-data-note">실제 상품은 미리보기·발행 화면에서 G7 공개 API로 불러옵니다.</p></div></BlockFrame>;
+}
+
+function InquiryFormPreview(props: InquiryFormEditorProps & { id: string }): React.ReactElement {
+  return <BlockFrame id={props.id} type="inquiry-form" motion={props.motion}><div className={`g7pb-preview-inquiry ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
+    <div><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><p data-g7pb-inline-field="description">{props.description}</p></div>
+    <form onSubmit={(event) => event.preventDefault()} aria-label="문의 폼 미리보기"><label><span>이름</span><input readOnly placeholder="홍길동" /></label><label><span>이메일</span><input readOnly placeholder="hello@example.com" /></label>{props.showPhone ? <label><span>전화번호</span><input readOnly placeholder="010-0000-0000" /></label> : null}{props.showSubject ? <label><span>문의 제목</span><input readOnly placeholder="문의 제목" /></label> : null}<label className="is-wide"><span>문의 내용</span><textarea readOnly rows={5} placeholder="문의 내용을 입력하세요." /></label><label className="is-consent"><input type="checkbox" readOnly /><span data-g7pb-inline-field="privacyLabel">{props.privacyLabel}</span></label><button type="button" data-g7pb-inline-field="submitLabel">{props.submitLabel}</button></form>
+  </div></BlockFrame>;
+}
+
+function MapDirectionsPreview(props: MapDirectionsEditorProps & { id: string }): React.ReactElement {
+  return <BlockFrame id={props.id} type="map-directions" motion={props.motion}><div className={`g7pb-preview-map ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
+    <div><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2><p data-g7pb-inline-field="description">{props.description}</p><address><strong data-g7pb-inline-field="address">{props.address}</strong><span data-g7pb-inline-field="phone">{props.phone}</span><span data-g7pb-inline-field="hours">{props.hours}</span><span data-g7pb-inline-field="parking">{props.parking}</span><b data-g7pb-inline-field="directionsLabel">{props.directionsLabel} →</b></address></div>
+    <figure aria-label="지도 미리보기"><span className="g7pb-preview-map__grid" /><i aria-hidden="true">●</i><figcaption>{props.provider === 'none' ? '지도 숨김' : props.provider === 'google' ? 'Google 지도' : 'OpenStreetMap'} · {props.latitude.toFixed(4)}, {props.longitude.toFixed(4)}</figcaption></figure>
+  </div></BlockFrame>;
 }
 
 export const catalogComponentConfigs: Config<CatalogEditorComponents>['components'] = {
@@ -534,7 +611,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true },
-      primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결'), imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
+      primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결', 'page-builder-hero-split-primary-url'), imageSrc: createMediaField('대표 이미지', 'hero-split-image'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
       surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS },
       motion: createMotionField(['none', 'reveal', 'parallax-soft']),
@@ -553,27 +630,27 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   },
   LogoCloud: {
     label: '로고 클라우드', defaultProps: DEFAULT_LOGO_CLOUD,
-    fields: { heading: { type: 'text', label: '제목' }, logos: { type: 'array', label: '로고', min: 2, max: 12, defaultItemProps: (index) => ({ name: `파트너 ${index + 1}`, imageSrc: '', imageAlt: '', url: '' }), getItemSummary: (item) => item.name, arrayFields: { name: { type: 'text', label: '이름' }, imageSrc: createMediaField('로고 이미지'), imageAlt: { type: 'text', label: '대체 텍스트' }, url: createRouteUrlField('연결 경로') } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <LogoCloudPreview {...props} />,
+    fields: { heading: { type: 'text', label: '제목', contentEditable: true }, logos: { type: 'array', label: '로고', min: 2, max: 12, defaultItemProps: (index) => ({ name: `파트너 ${index + 1}`, imageSrc: '', imageAlt: '', url: '' }), getItemSummary: (item) => item.name, arrayFields: { name: { type: 'text', label: '이름', contentEditable: true }, imageSrc: createMediaField('로고 이미지'), imageAlt: { type: 'text', label: '대체 텍스트' }, url: createRouteUrlField('연결 경로') } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <LogoCloudPreview {...props} />,
   },
   Stats: {
     label: '숫자·아이콘 지표', defaultProps: DEFAULT_STATS,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, items: { type: 'array', label: '지표', min: 2, max: 6, defaultItemProps: (index) => ({ icon: 'chart', value: '0', label: `지표 ${index + 1}`, detail: '지표 설명' }), getItemSummary: (item) => `${item.value} ${item.label}`, arrayFields: { icon: { type: 'select', label: '아이콘', options: STAT_ICON_OPTIONS }, value: { type: 'text', label: '값' }, label: { type: 'text', label: '이름' }, detail: { type: 'textarea', label: '설명' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger', 'counter']) }, render: (props) => <StatsPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, items: { type: 'array', label: '지표', min: 2, max: 6, defaultItemProps: (index) => ({ icon: 'chart', value: '0', label: `지표 ${index + 1}`, detail: '지표 설명' }), getItemSummary: (item) => `${item.value} ${item.label}`, arrayFields: { icon: { type: 'select', label: '아이콘', options: STAT_ICON_OPTIONS }, value: { type: 'text', label: '값', contentEditable: true }, label: { type: 'text', label: '이름', contentEditable: true }, detail: { type: 'textarea', label: '설명', contentEditable: true } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger', 'counter']) }, render: (props) => <StatsPreview {...props} />,
   },
   Pricing: {
     label: '요금제', defaultProps: DEFAULT_PRICING,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, plans: { type: 'array', label: '플랜', min: 2, max: 4, defaultItemProps: (index) => ({ name: `Plan ${index + 1}`, price: '₩0', period: '/월', description: '플랜 설명', featuresText: '기능 1\n기능 2', buttonLabel: '선택하기', buttonUrl: '/', featured: 'no' }), getItemSummary: (item) => `${item.name} · ${item.price}`, arrayFields: { name: { type: 'text', label: '플랜명' }, price: { type: 'text', label: '가격' }, period: { type: 'text', label: '기간' }, description: { type: 'textarea', label: '설명' }, featuresText: { type: 'textarea', label: '기능 목록(줄바꿈)' }, buttonLabel: { type: 'text', label: '버튼 문구' }, buttonUrl: createRouteUrlField('버튼 연결'), featured: { type: 'radio', label: '추천 플랜', options: [{ label: '일반', value: 'no' }, { label: '추천', value: 'yes' }] } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <PricingPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, plans: { type: 'array', label: '플랜', min: 2, max: 4, defaultItemProps: (index) => ({ name: `Plan ${index + 1}`, price: '₩0', period: '/월', description: '플랜 설명', featuresText: '기능 1\n기능 2', buttonLabel: '선택하기', buttonUrl: '/', featured: 'no' }), getItemSummary: (item) => `${item.name} · ${item.price}`, arrayFields: { name: { type: 'text', label: '플랜명', contentEditable: true }, price: { type: 'text', label: '가격', contentEditable: true }, period: { type: 'text', label: '기간', contentEditable: true }, description: { type: 'textarea', label: '설명', contentEditable: true }, featuresText: { type: 'textarea', label: '기능 목록(줄바꿈)' }, buttonLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, buttonUrl: createRouteUrlField('버튼 연결'), featured: { type: 'radio', label: '추천 플랜', options: [{ label: '일반', value: 'no' }, { label: '추천', value: 'yes' }] } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <PricingPreview {...props} />,
   },
   Team: {
     label: '팀 소개', defaultProps: DEFAULT_TEAM,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, members: { type: 'array', label: '구성원', min: 2, max: 8, defaultItemProps: (index) => ({ name: `구성원 ${index + 1}`, role: '역할', bio: '소개를 입력하세요.', imageSrc: '', imageAlt: '', profileUrl: '' }), getItemSummary: (item) => `${item.name} · ${item.role}`, arrayFields: { name: { type: 'text', label: '이름' }, role: { type: 'text', label: '역할' }, bio: { type: 'textarea', label: '소개' }, imageSrc: createMediaField('프로필 사진'), imageAlt: { type: 'text', label: '대체 텍스트' }, profileUrl: createRouteUrlField('프로필 연결') } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <TeamPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, members: { type: 'array', label: '구성원', min: 2, max: 8, defaultItemProps: (index) => ({ name: `구성원 ${index + 1}`, role: '역할', bio: '소개를 입력하세요.', imageSrc: '', imageAlt: '', profileUrl: '' }), getItemSummary: (item) => `${item.name} · ${item.role}`, arrayFields: { name: { type: 'text', label: '이름', contentEditable: true }, role: { type: 'text', label: '역할', contentEditable: true }, bio: { type: 'textarea', label: '소개', contentEditable: true }, imageSrc: createMediaField('프로필 사진'), imageAlt: { type: 'text', label: '대체 텍스트' }, profileUrl: createRouteUrlField('프로필 연결') } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']) }, render: (props) => <TeamPreview {...props} />,
   },
   Gallery: {
     label: '갤러리 그리드', defaultProps: DEFAULT_GALLERY,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }, { label: '4열', value: '4' }] }, images: { type: 'array', label: '이미지', min: 2, max: 12, defaultItemProps: (index) => ({ src: '', alt: `갤러리 이미지 ${index + 1}`, caption: `장면 ${index + 1}` }), getItemSummary: (item, index) => item.caption || `이미지 ${(index ?? 0) + 1}`, arrayFields: { src: createMediaField('갤러리 이미지'), alt: { type: 'text', label: '대체 텍스트' }, caption: { type: 'text', label: '캡션' } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger', 'parallax-soft']) }, render: (props) => <GalleryPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }, { label: '4열', value: '4' }] }, images: { type: 'array', label: '이미지', min: 2, max: 12, defaultItemProps: (index) => ({ src: '', alt: `갤러리 이미지 ${index + 1}`, caption: `장면 ${index + 1}` }), getItemSummary: (item, index) => item.caption || `이미지 ${(index ?? 0) + 1}`, arrayFields: { src: createMediaField('갤러리 이미지'), alt: { type: 'text', label: '대체 텍스트' }, caption: { type: 'text', label: '캡션', contentEditable: true } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger', 'parallax-soft']) }, render: (props) => <GalleryPreview {...props} />,
   },
   BarChart: {
     label: '막대그래프', defaultProps: DEFAULT_BAR_CHART,
-    fields: { eyebrow: { type: 'text', label: '보조 문구' }, heading: { type: 'text', label: '제목' }, description: { type: 'textarea', label: '설명' }, unit: { type: 'text', label: '단위' }, items: { type: 'array', label: '데이터', min: 2, max: 8, defaultItemProps: (index) => ({ label: `항목 ${index + 1}`, value: 50, tone: 'blue' }), getItemSummary: (item) => `${item.label} · ${item.value}`, arrayFields: { label: { type: 'text', label: '이름' }, value: { type: 'number', label: '값(0~100)', min: 0, max: 100 }, tone: { type: 'select', label: '색상 프리셋', options: [{ label: '파랑', value: 'blue' }, { label: '남색', value: 'indigo' }, { label: '초록', value: 'emerald' }, { label: '노랑', value: 'amber' }] } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'chart-draw']) }, render: (props) => <BarChartPreview {...props} />,
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, description: { type: 'textarea', label: '설명', contentEditable: true }, unit: { type: 'text', label: '단위', contentEditable: true }, items: { type: 'array', label: '데이터', min: 2, max: 8, defaultItemProps: (index) => ({ label: `항목 ${index + 1}`, value: 50, tone: 'blue' }), getItemSummary: (item) => `${item.label} · ${item.value}`, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, value: { type: 'number', label: '값(0~100)', min: 0, max: 100 }, tone: { type: 'select', label: '색상 프리셋', options: [{ label: '파랑', value: 'blue' }, { label: '남색', value: 'indigo' }, { label: '초록', value: 'emerald' }, { label: '노랑', value: 'amber' }] } } }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'chart-draw']) }, render: (props) => <BarChartPreview {...props} />,
   },
   G7RecentPosts: {
     label: 'G7 최근 게시글', defaultProps: DEFAULT_G7_RECENT_POSTS,
@@ -598,6 +675,26 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
       surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']),
     }, render: (props) => <G7ProductGridPreview {...props} />,
   },
+  InquiryForm: {
+    label: '문의·신청 폼', defaultProps: DEFAULT_INQUIRY_FORM,
+    fields: {
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, description: { type: 'textarea', label: '설명', contentEditable: true },
+      formKind: { type: 'select', label: '폼 용도', options: [{ label: '일반 문의', value: 'inquiry' }, { label: '견적 요청', value: 'quote' }, { label: '예약', value: 'reservation' }, { label: '신청', value: 'application' }, { label: '뉴스레터', value: 'newsletter' }] },
+      submitLabel: { type: 'text', label: '제출 버튼 문구', contentEditable: true }, successMessage: { type: 'text', label: '접수 완료 문구' }, privacyLabel: { type: 'textarea', label: '개인정보 동의 문구', contentEditable: true },
+      showPhone: { type: 'radio', label: '전화번호', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] }, showSubject: { type: 'radio', label: '문의 제목', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+      surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal']),
+    }, render: (props) => <InquiryFormPreview {...props} />,
+  },
+  MapDirections: {
+    label: '지도·오시는 길', defaultProps: DEFAULT_MAP_DIRECTIONS,
+    fields: {
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, description: { type: 'textarea', label: '설명', contentEditable: true }, address: { type: 'text', label: '주소', contentEditable: true },
+      latitude: { type: 'number', label: '위도', min: -90, max: 90 }, longitude: { type: 'number', label: '경도', min: -180, max: 180 }, zoom: { type: 'select', label: '지도 확대', options: ['12', '14', '16', '18'].map((value) => ({ label: `${value} 단계`, value })) },
+      provider: { type: 'radio', label: '지도 제공자', options: [{ label: 'OpenStreetMap', value: 'openstreetmap' }, { label: 'Google', value: 'google' }, { label: '표시 안 함', value: 'none' }] },
+      directionsLabel: { type: 'text', label: '길찾기 버튼 문구', contentEditable: true }, directionsUrl: createRouteUrlField('길찾기 연결'), phone: { type: 'text', label: '전화번호', contentEditable: true }, hours: { type: 'textarea', label: '운영 시간', contentEditable: true }, parking: { type: 'textarea', label: '주차 안내', contentEditable: true },
+      surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal']),
+    }, render: (props) => <MapDirectionsPreview {...props} />,
+  },
 };
 
 export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] } | null {
@@ -615,13 +712,15 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
   if (block.type === BAR_CHART_BLOCK_TYPE) return { type: 'BarChart', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), unit: asString(props.unit), items: normalizeBars(props.items), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === G7_RECENT_POSTS_BLOCK_TYPE) return { type: 'G7RecentPosts', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(props.period)) ? asString(props.period) as G7RecentPostsEditorProps['period'] : 'week', limit: ['3', '4', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7RecentPostsEditorProps['limit'] : '6', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', emptyMessage: asString(props.emptyMessage, '표시할 게시글이 없습니다.'), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === G7_PRODUCT_GRID_BLOCK_TYPE) return { type: 'G7ProductGrid', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' || props.source === 'latest' ? props.source : 'new', limit: ['2', '3', '6', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7ProductGridEditorProps['limit'] : '4', columns: props.columns === 2 || props.columns === '2' ? '2' : props.columns === 3 || props.columns === '3' ? '3' : '4', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', detailBasePath: asString(props.detailBasePath, '/shop/products'), emptyMessage: asString(props.emptyMessage, '표시할 상품이 없습니다.'), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === INQUIRY_FORM_BLOCK_TYPE) return { type: 'InquiryForm', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), formKind: ['quote', 'reservation', 'application', 'newsletter'].includes(asString(props.formKind)) ? asString(props.formKind) as InquiryFormKind : 'inquiry', submitLabel: asString(props.submitLabel, '문의 보내기'), successMessage: asString(props.successMessage, '문의가 접수되었습니다.'), privacyLabel: asString(props.privacyLabel, '개인정보 수집 및 이용에 동의합니다.'), showPhone: props.showPhone !== false, showSubject: props.showSubject !== false, ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === MAP_DIRECTIONS_BLOCK_TYPE) return { type: 'MapDirections', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), address: asString(props.address), latitude: typeof props.latitude === 'number' ? props.latitude : 37.5665, longitude: typeof props.longitude === 'number' ? props.longitude : 126.978, zoom: ['12', '14', '18'].includes(String(props.zoom)) ? String(props.zoom) as MapDirectionsEditorProps['zoom'] : '16', provider: props.provider === 'google' || props.provider === 'none' ? props.provider : 'openstreetmap', directionsLabel: asString(props.directionsLabel, '길찾기'), directionsUrl: asString(props.directionsUrl, 'https://www.openstreetmap.org/'), phone: asString(props.phone), hours: asString(props.hours), parking: asString(props.parking), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   return null;
 }
 
 function attachAppearance(props: Record<string, unknown>, raw: Record<string, unknown>, fallback: BlockAppearance, include: boolean): Record<string, unknown> {
   const next = { ...props };
-  const resolved = appearance({ surface: raw.surface, spacing: raw.spacing }, fallback);
-  if (include || resolved.surface !== fallback.surface || resolved.spacing !== fallback.spacing) next.appearance = resolved;
+  const resolved = appearance({ surface: raw.surface, spacing: raw.spacing, textScale: raw.textScale, textAlign: raw.textAlign }, fallback);
+  if (include || resolved.surface !== fallback.surface || resolved.spacing !== fallback.spacing || resolved.textScale || resolved.textAlign) next.appearance = resolved;
   return next;
 }
 
@@ -652,6 +751,8 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
   if (type === 'BarChart') return { type: BAR_CHART_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), unit: asString(raw.unit), items: normalizeBars(raw.items) }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   if (type === 'G7RecentPosts') return { type: G7_RECENT_POSTS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(raw.period)) ? raw.period : 'week', limit: Number(raw.limit) || 6, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', emptyMessage: asString(raw.emptyMessage, '표시할 게시글이 없습니다.') }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
   if (type === 'G7ProductGrid') return { type: G7_PRODUCT_GRID_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' || raw.source === 'latest' ? raw.source : 'new', limit: Number(raw.limit) || 4, columns: Number(raw.columns) || 4, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', detailBasePath: asString(raw.detailBasePath, '/shop/products'), emptyMessage: asString(raw.emptyMessage, '표시할 상품이 없습니다.') }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
+  if (type === 'InquiryForm') return { type: INQUIRY_FORM_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), formKind: ['quote', 'reservation', 'application', 'newsletter'].includes(asString(raw.formKind)) ? raw.formKind : 'inquiry', submitLabel: asString(raw.submitLabel), successMessage: asString(raw.successMessage), privacyLabel: asString(raw.privacyLabel), showPhone: raw.showPhone !== false, showSubject: raw.showSubject !== false }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
+  if (type === 'MapDirections') return { type: MAP_DIRECTIONS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), address: asString(raw.address), latitude: typeof raw.latitude === 'number' ? raw.latitude : 37.5665, longitude: typeof raw.longitude === 'number' ? raw.longitude : 126.978, zoom: Number(raw.zoom) || 16, provider: raw.provider === 'google' || raw.provider === 'none' ? raw.provider : 'openstreetmap', directionsLabel: asString(raw.directionsLabel), directionsUrl: asString(raw.directionsUrl), phone: asString(raw.phone), hours: asString(raw.hours), parking: asString(raw.parking) }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
   return null;
 }
 

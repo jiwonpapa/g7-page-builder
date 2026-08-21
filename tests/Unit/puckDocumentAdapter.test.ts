@@ -9,6 +9,8 @@ import {
   G7_PRODUCT_GRID_BLOCK_TYPE,
   G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_BLOCK_TYPE,
+  INQUIRY_FORM_BLOCK_TYPE,
+  MAP_DIRECTIONS_BLOCK_TYPE,
   type PageBuilderDocument,
 } from '../../resources/js/documents/types';
 
@@ -156,7 +158,7 @@ describe('Puck PageBuilderDocument adapter', () => {
       fields: Record<string, { type: string }>;
     };
 
-    expect(Object.keys(root.fields)).toEqual(['palette', 'font', 'radius', 'width', 'scale']);
+    expect(Object.keys(root.fields)).toEqual(['colorMode', 'palette', 'font', 'radius', 'width', 'scale']);
     expect(Object.values(root.fields).every((field) => field.type === 'custom')).toBe(true);
     expect(root.fields).not.toHaveProperty('css');
     expect(root.fields).not.toHaveProperty('className');
@@ -378,6 +380,59 @@ describe('Puck PageBuilderDocument adapter', () => {
     const restored = puckToCanonical(session.data, session.context);
 
     expect(restored.blocks).toEqual(dynamic.blocks);
+  });
+
+  it('round-trips inquiry and location blocks through the typed adapter', () => {
+    const serviceBlocks: PageBuilderDocument = {
+      ...documentFixture,
+      blocks: [
+        {
+          instance_id: '823e4567-e89b-42d3-a456-426614174007',
+          type: INQUIRY_FORM_BLOCK_TYPE,
+          block_version: 1,
+          props: {
+            eyebrow: '상담',
+            heading: '프로젝트를 알려주세요',
+            description: '확인 후 연락드리겠습니다.',
+            formKind: 'quote',
+            submitLabel: '견적 요청',
+            successMessage: '접수되었습니다.',
+            privacyLabel: '문의 처리에 동의합니다.',
+            showPhone: true,
+            showSubject: false,
+            appearance: { surface: 'soft', spacing: 'normal', textScale: 'large', textAlign: 'right' },
+          },
+          slots: {},
+        },
+        {
+          instance_id: '923e4567-e89b-42d3-a456-426614174008',
+          type: MAP_DIRECTIONS_BLOCK_TYPE,
+          block_version: 1,
+          props: {
+            eyebrow: '오시는 길',
+            heading: '사무실 안내',
+            description: '대중교통 이용을 권장합니다.',
+            address: '서울특별시 중구 세종대로 110',
+            latitude: 37.5665,
+            longitude: 126.978,
+            zoom: 16,
+            provider: 'openstreetmap',
+            directionsLabel: '길찾기',
+            directionsUrl: 'https://www.openstreetmap.org/',
+            phone: '02-0000-0000',
+            hours: '평일 09:00–18:00',
+            parking: '방문객 주차 가능',
+            appearance: { surface: 'default', spacing: 'normal', textScale: 'compact', textAlign: 'center' },
+          },
+          slots: {},
+        },
+      ],
+    };
+
+    const session = canonicalToPuck(serviceBlocks);
+
+    expect(session.data.content.map((block) => block.type)).toEqual(['InquiryForm', 'MapDirections']);
+    expect(puckToCanonical(session.data, session.context)).toEqual(serviceBlocks);
   });
 
   it('rejects nested slots and unknown canonical blocks at the adapter boundary', () => {

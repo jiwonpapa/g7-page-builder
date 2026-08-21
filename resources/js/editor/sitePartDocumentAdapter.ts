@@ -12,6 +12,7 @@ export interface HeaderNavigationProps {
   ctaLabel: string;
   ctaUrl: string;
   mobileMenu: boolean;
+  mobileMenuStyle: 'dropdown' | 'drawer-left' | 'drawer-right';
 }
 
 export interface AnnouncementProps {
@@ -131,6 +132,9 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
         ctaLabel: text(cta.label),
         ctaUrl: text(cta.url, '/'),
         mobileMenu: props.mobile_menu !== false,
+        mobileMenuStyle: props.mobile_menu_style === 'dropdown' || props.mobile_menu_style === 'drawer-left'
+          ? props.mobile_menu_style
+          : 'drawer-right',
       } });
       continue;
     }
@@ -177,6 +181,8 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
     const component = block.type as keyof SitePartComponents;
     let canonicalProps: Record<string, unknown>;
     if (component === 'HeaderNavigation') {
+      const sourceBlock = source.blocks.find((candidate) => candidate.instance_id.toLowerCase() === stableUuid(text(props.id, '')).toLowerCase());
+      const mobileMenuStyle = props.mobileMenuStyle === 'dropdown' || props.mobileMenuStyle === 'drawer-left' ? props.mobileMenuStyle : 'drawer-right';
       const ctaLabel = text(props.ctaLabel);
       const ctaUrl = text(props.ctaUrl);
       canonicalProps = {
@@ -184,6 +190,9 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
         variant: props.variant === 'transparent' ? 'transparent' : 'solid', sticky: props.sticky !== false,
         navigation: links(props.navigation), cta: ctaLabel && ctaUrl ? { label: ctaLabel, url: ctaUrl } : null,
         mobile_menu: props.mobileMenu !== false,
+        ...(Object.prototype.hasOwnProperty.call(sourceBlock?.props ?? {}, 'mobile_menu_style') || mobileMenuStyle !== 'drawer-right'
+          ? { mobile_menu_style: mobileMenuStyle }
+          : {}),
       };
     } else if (component === 'Announcement') {
       canonicalProps = {

@@ -147,7 +147,7 @@ final class ViewerController
 
     private function contentSecurityPolicy(): string
     {
-        return "default-src 'none'; img-src 'self' https: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'";
+        return "default-src 'none'; img-src 'self' https: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src https://www.openstreetmap.org https://www.google.com; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'";
     }
 
     private function siteShell(RenderedPage $page): ?SiteShellSnapshot

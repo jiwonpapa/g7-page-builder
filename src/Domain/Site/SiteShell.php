@@ -19,6 +19,7 @@ final readonly class SiteShell
         public ?array $cta,
         public string $footerText,
         public bool $showFooterNavigation,
+        public string $mobileMenuStyle = 'drawer-right',
     ) {
         if (preg_match('/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/', $this->locale) !== 1) {
             throw new \InvalidArgumentException('Site shell locale is invalid.');
@@ -28,6 +29,9 @@ final readonly class SiteShell
         }
         if (! in_array($this->headerVariant, ['solid', 'transparent'], true)) {
             throw new \InvalidArgumentException('Site shell header variant is invalid.');
+        }
+        if (! in_array($this->mobileMenuStyle, ['dropdown', 'drawer-left', 'drawer-right'], true)) {
+            throw new \InvalidArgumentException('Site shell mobile menu style is invalid.');
         }
         if ($this->logoUrl !== '' && ! self::isSafeImageUrl($this->logoUrl)) {
             throw new \InvalidArgumentException('Site shell logo URL is invalid.');
@@ -75,6 +79,7 @@ final readonly class SiteShell
             cta: $cta === null ? null : self::normalizeLink($cta, 'CTA'),
             footerText: self::string($data, 'footer_text', ''),
             showFooterNavigation: (bool) ($data['show_footer_navigation'] ?? true),
+            mobileMenuStyle: self::string($data, 'mobile_menu_style', 'drawer-right'),
         );
     }
 
@@ -101,6 +106,7 @@ final readonly class SiteShell
             'cta' => $this->cta,
             'footer_text' => $this->footerText,
             'show_footer_navigation' => $this->showFooterNavigation,
+            'mobile_menu_style' => $this->mobileMenuStyle,
         ];
     }
 

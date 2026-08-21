@@ -21,10 +21,13 @@ Page Builder가 별도로 소유하는 Header·Footer Site Part는 브랜드와 
 - 사이트 이름, 로고 이미지 URL, 홈 주소
 - `solid` 또는 `transparent` Header, sticky 여부
 - 최대 10개 1단 메뉴와 선택형 CTA
+- 모바일 메뉴 표시 여부와 `dropdown`·`drawer-left`·`drawer-right` 방식
 - Footer 문구와 메뉴 반복 여부
 - compare-and-swap `lock_version`
 
-같은 메뉴 배열을 데스크톱 Header, 모바일 drawer와 선택형 Footer 메뉴에 사용합니다. 모바일 메뉴는 `aria-expanded`, `hidden`, Escape 닫기, 첫 링크 초점과 토글 버튼 초점 복귀를 지원합니다.
+같은 메뉴 배열을 데스크톱 Header, 모바일 메뉴와 선택형 Footer 메뉴에 사용합니다. 모바일 메뉴는 좌·우 drawer 또는 dropdown을 선택하며 `aria-expanded`, `hidden`, backdrop·닫기 버튼·Escape 닫기, drawer 내부 Tab 초점 고정과 토글 버튼 초점 복귀를 지원합니다.
+
+문서 편집 캔버스는 Header·Page·Footer를 한 화면에 표시합니다. `builder`의 Header·Footer는 같은 작업 화면에서 편집할 수 있고, `template` 공통영역은 G7 소유임을 명시한 읽기 전용 영역으로 표시합니다. `none`에는 공통영역이 나타나지 않습니다.
 
 Site Part 변경은 `builder` 공개 페이지의 전체 표현 ETag에 반영됩니다. `template` 페이지에는 영향을 주지 않습니다.
 

@@ -14,6 +14,8 @@ export const GALLERY_BLOCK_TYPE = 'media.gallery-grid-01' as const;
 export const BAR_CHART_BLOCK_TYPE = 'data.bar-chart-01' as const;
 export const G7_RECENT_POSTS_BLOCK_TYPE = 'g7.board-recent-posts-01' as const;
 export const G7_PRODUCT_GRID_BLOCK_TYPE = 'g7.ecommerce-product-grid-01' as const;
+export const INQUIRY_FORM_BLOCK_TYPE = 'form.inquiry-01' as const;
+export const MAP_DIRECTIONS_BLOCK_TYPE = 'location.map-directions-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -32,6 +34,8 @@ export interface PageBuilderImage {
 export interface BlockAppearance {
   surface: 'default' | 'soft' | 'contrast';
   spacing: 'compact' | 'normal' | 'spacious';
+  textScale?: 'compact' | 'balanced' | 'large';
+  textAlign?: 'left' | 'center' | 'right';
 }
 
 export type BlockMotionPreset = 'none' | 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
@@ -228,6 +232,38 @@ export interface G7ProductGridBlockProps {
   appearance?: BlockAppearance;
 }
 
+export type InquiryFormKind = 'inquiry' | 'quote' | 'reservation' | 'application' | 'newsletter';
+
+export interface InquiryFormBlockProps {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  formKind: InquiryFormKind;
+  submitLabel: string;
+  successMessage: string;
+  privacyLabel: string;
+  showPhone: boolean;
+  showSubject: boolean;
+  appearance?: BlockAppearance;
+}
+
+export interface MapDirectionsBlockProps {
+  eyebrow: string;
+  heading: string;
+  description: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  zoom: 12 | 14 | 16 | 18;
+  provider: 'openstreetmap' | 'google' | 'none';
+  directionsLabel: string;
+  directionsUrl: string;
+  phone: string;
+  hours: string;
+  parking: string;
+  appearance?: BlockAppearance;
+}
+
 export interface PageBuilderBlock<TProps extends Record<string, unknown> = Record<string, unknown>> {
   instance_id: string;
   type: string;
@@ -347,6 +383,24 @@ export interface MediaListResource {
   items: MediaAssetResource[];
 }
 
+export interface FormSubmissionResource {
+  id: string;
+  page_slug: string;
+  block_instance_id: string;
+  form_kind: InquiryFormKind;
+  payload: { name?: string; email?: string; phone?: string; subject?: string; message?: string };
+  email: string;
+  subject: string;
+  status: 'unread' | 'read' | 'archived';
+  mail_status: 'pending' | 'sent' | 'failed';
+  mail_error: string | null;
+  mail_attempts: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormSubmissionListResource { items: FormSubmissionResource[]; }
+
 export interface SiteShellLink {
   label: string;
   url: string;
@@ -366,6 +420,7 @@ export interface SiteShellResource {
   cta: SiteShellLink | null;
   footer_text: string;
   show_footer_navigation: boolean;
+  mobile_menu_style?: 'dropdown' | 'drawer-left' | 'drawer-right';
   updated_at: string | null;
 }
 

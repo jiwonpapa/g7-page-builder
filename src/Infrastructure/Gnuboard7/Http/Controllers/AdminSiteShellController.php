@@ -46,6 +46,7 @@ final class AdminSiteShellController
             'cta.url' => ['required_with:cta', 'string', 'max:2048'],
             'footer_text' => ['present', 'nullable', 'string', 'max:300'],
             'show_footer_navigation' => ['required', 'boolean'],
+            'mobile_menu_style' => ['sometimes', 'in:dropdown,drawer-left,drawer-right'],
         ]);
         if ($validator->fails()) {
             return $this->error(400, 'G7PB_SITE_SHELL_INVALID', '공통 메뉴 설정이 올바르지 않습니다.', [

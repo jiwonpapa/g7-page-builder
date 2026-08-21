@@ -1,6 +1,7 @@
 import type { ScalarToken } from '../documents/types';
 
 export const PAGE_DESIGN_TOKEN_KEYS = {
+  colorMode: 'design.color_mode',
   palette: 'design.palette',
   font: 'design.font',
   radius: 'design.radius',
@@ -9,6 +10,7 @@ export const PAGE_DESIGN_TOKEN_KEYS = {
 } as const;
 
 export interface PageDesignProps {
+  colorMode: 'light' | 'dark' | 'system';
   palette: 'indigo' | 'blue' | 'emerald' | 'amber' | 'rose' | 'slate';
   font: 'system' | 'modern' | 'serif';
   radius: 'sharp' | 'soft' | 'round';
@@ -17,6 +19,7 @@ export interface PageDesignProps {
 }
 
 export const DEFAULT_PAGE_DESIGN: PageDesignProps = {
+  colorMode: 'light',
   palette: 'indigo',
   font: 'modern',
   radius: 'soft',
@@ -25,6 +28,7 @@ export const DEFAULT_PAGE_DESIGN: PageDesignProps = {
 };
 
 const OPTIONS = {
+  colorMode: new Set<PageDesignProps['colorMode']>(['light', 'dark', 'system']),
   palette: new Set<PageDesignProps['palette']>(['indigo', 'blue', 'emerald', 'amber', 'rose', 'slate']),
   font: new Set<PageDesignProps['font']>(['system', 'modern', 'serif']),
   radius: new Set<PageDesignProps['radius']>(['sharp', 'soft', 'round']),
@@ -50,6 +54,7 @@ export function tokensToPageDesign(
   tokens: Record<string, ScalarToken> | undefined,
 ): PageDesignProps {
   return {
+    colorMode: option(tokens, 'colorMode'),
     palette: option(tokens, 'palette'),
     font: option(tokens, 'font'),
     radius: option(tokens, 'radius'),
@@ -65,6 +70,7 @@ export function pageDesignToTokens(
   const normalized = tokensToPageDesign({
     ...(existing ?? {}),
     [PAGE_DESIGN_TOKEN_KEYS.palette]: props?.palette ?? DEFAULT_PAGE_DESIGN.palette,
+    [PAGE_DESIGN_TOKEN_KEYS.colorMode]: props?.colorMode ?? DEFAULT_PAGE_DESIGN.colorMode,
     [PAGE_DESIGN_TOKEN_KEYS.font]: props?.font ?? DEFAULT_PAGE_DESIGN.font,
     [PAGE_DESIGN_TOKEN_KEYS.radius]: props?.radius ?? DEFAULT_PAGE_DESIGN.radius,
     [PAGE_DESIGN_TOKEN_KEYS.width]: props?.width ?? DEFAULT_PAGE_DESIGN.width,
@@ -83,13 +89,15 @@ export function pageDesignToTokens(
   return result;
 }
 
-export function pageDesignClassName(props: PageDesignProps): string {
+export function pageDesignClassName(props: Partial<PageDesignProps>): string {
+  const design = { ...DEFAULT_PAGE_DESIGN, ...props };
   return [
     'g7pb-document-theme',
-    `g7pb-theme-palette-${props.palette}`,
-    `g7pb-theme-font-${props.font}`,
-    `g7pb-theme-radius-${props.radius}`,
-    `g7pb-theme-width-${props.width}`,
-    `g7pb-theme-scale-${props.scale}`,
+    `g7pb-theme-mode-${design.colorMode}`,
+    `g7pb-theme-palette-${design.palette}`,
+    `g7pb-theme-font-${design.font}`,
+    `g7pb-theme-radius-${design.radius}`,
+    `g7pb-theme-width-${design.width}`,
+    `g7pb-theme-scale-${design.scale}`,
   ].join(' ');
 }

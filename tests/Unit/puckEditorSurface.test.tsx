@@ -2,7 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { PageBuilderDocument } from '../../resources/js/documents/types';
+import type { PageBuilderDocument, SitePartResource } from '../../resources/js/documents/types';
 
 class TestResizeObserver {
   observe(): void {}
@@ -52,6 +52,7 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
   }),
 });
 
+const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { PuckEditorAdapter } = await import('../../resources/js/editor/PuckEditorAdapter');
 
 const fixture: PageBuilderDocument = {
@@ -126,6 +127,7 @@ afterEach(() => {
   }
   window.localStorage.clear();
   document.body.replaceChildren();
+  vi.restoreAllMocks();
 });
 
 async function eventually<T extends Element>(selector: string): Promise<T> {
@@ -150,6 +152,57 @@ function editorElements(selector: string): NodeListOf<HTMLElement> {
 }
 
 describe('Puck editor surface contract', () => {
+  it('shows builder-owned Header and Footer in the canvas and edits them without leaving the document work surface', async () => {
+    const resource = (kind: 'header' | 'footer'): SitePartResource => ({
+      title: kind === 'header' ? '사이트 Header' : '사이트 Footer',
+      document: {
+        schema_version: 'g7-page-builder/site-part/v1',
+        site_part_id: kind === 'header' ? '123e4567-e89b-42d3-a456-426614174070' : '123e4567-e89b-42d3-a456-426614174071',
+        kind,
+        locale: 'ko',
+        tokens: {},
+        blocks: [{
+          instance_id: kind === 'header' ? '123e4567-e89b-42d3-a456-426614174072' : '123e4567-e89b-42d3-a456-426614174073',
+          type: kind === 'header' ? 'site.header.navigation-01' : 'site.footer.simple-01',
+          block_version: 1,
+          props: kind === 'header'
+            ? { brand_name: '지원소프트', home_url: '/', logo_url: '', variant: 'solid', sticky: true, navigation: [], cta: null, mobile_menu: true, mobile_menu_style: 'drawer-right' }
+            : { brand_name: '지원소프트', home_url: '/', navigation: [], footer_text: 'Copyright' },
+          slots: {},
+        }],
+      },
+      lock_version: 1,
+      revision: 1,
+      active_revision: 1,
+      status: 'published',
+      created_at: '2026-08-21T00:00:00+09:00',
+      updated_at: '2026-08-21T00:00:00+09:00',
+      published_at: '2026-08-21T00:00:00+09:00',
+    });
+    vi.spyOn(PageBuilderApiClient.prototype, 'getSitePart').mockImplementation(async (kind) => resource(kind));
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<PuckEditorAdapter document={{ ...fixture, shell_mode: 'builder' }} revisionKey={0} iframeEnabled={false}
+        onChange={() => undefined} onPublish={() => undefined} />);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-canvas-header"]')).textContent).toContain('지원소프트');
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-canvas-footer"]')).textContent).toContain('Copyright');
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-testid="page-builder-canvas-header"] .g7pb-full-site-part__edit')?.click();
+    });
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-site-part-editor"]')).dataset.kind).toBe('header');
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('button[aria-label="페이지 편집으로 돌아가기"]')?.click();
+    });
+    expect(await eventually<HTMLElement>('[data-testid="page-builder-canvas-page"]')).not.toBeNull();
+  });
+
   it('lets the Hero-family advisory stay dismissed until the block count changes', async () => {
     const secondHero = {
       ...structuredClone(fixture.blocks[0]),
@@ -208,6 +261,7 @@ describe('Puck editor surface contract', () => {
     const container = document.createElement('div');
     document.body.append(container);
     const root = createRoot(container);
+    const onChange = vi.fn();
     mounted.push(() => {
       act(() => root.unmount());
     });
@@ -218,7 +272,7 @@ describe('Puck editor surface contract', () => {
           document={fixture}
           revisionKey={0}
           iframeEnabled={false}
-          onChange={() => undefined}
+          onChange={onChange}
           onPublish={() => undefined}
         />,
       );
@@ -229,6 +283,8 @@ describe('Puck editor surface contract', () => {
     const cta = await eventually<HTMLElement>('[data-testid="page-builder-block"][data-block-type="cta"]');
     const contact = await eventually<HTMLElement>('[data-testid="page-builder-block"][data-block-type="contact"]');
     expect(editorElements('[data-testid="page-builder-block"]')).toHaveLength(4);
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-canvas-header"]')).textContent).toContain('G7 활성 템플릿 Header');
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-canvas-footer"]')).textContent).toContain('G7 활성 템플릿 Footer');
     expect(hero.textContent).toContain('Hero body');
     expect(hero.textContent).not.toContain('[object Object]');
 
@@ -237,11 +293,41 @@ describe('Puck editor surface contract', () => {
     });
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-title"]')).value).toBe('Hero title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-subtitle"]')).value).toBe('Hero eyebrow');
+
+    const textScaleMarker = await eventually<HTMLElement>('[data-testid="page-builder-text-scale"]');
+    await act(async () => {
+      textScaleMarker.closest('button')?.click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.textScale === 'large')).toBe(true);
+    const alignRightMarker = await eventually<HTMLElement>('[data-testid="page-builder-text-align-right"]');
+    await act(async () => {
+      alignRightMarker.closest('button')?.click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.textScale === 'large'
+      && changed.blocks[0].props.appearance?.textAlign === 'right')).toBe(true);
+
+    const darkTheme = await eventually<HTMLButtonElement>('button[aria-label="다크 테마"]');
+    await act(async () => {
+      darkTheme.click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect((await eventually<HTMLElement>('.g7pb-preview-page')).classList.contains('g7pb-theme-mode-dark')).toBe(true);
+
     const mediaOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-media-open"]');
     await act(async () => {
       mediaOpenMarker.closest('button')?.click();
     });
     expect(await eventually<HTMLElement>('[data-testid="page-builder-media-library"]')).not.toBeNull();
+    const routeOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-route-open"]');
+    await act(async () => {
+      routeOpenMarker.closest('button')?.click();
+    });
+    expect(await eventually<HTMLElement>('[data-testid="page-builder-route-picker"]')).not.toBeNull();
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('[data-testid="page-builder-route-picker"] header button')?.click();
+    });
 
     await act(async () => {
       features.click();
@@ -353,7 +439,7 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('막대그래프');
     expect(gallery.textContent).toContain('G7 최근 게시글');
     expect(gallery.textContent).toContain('G7 상품 그리드');
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(14);
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(16);
   });
 
   it('uses the actor catalog for search, categories, favorites, and preset insertion', async () => {

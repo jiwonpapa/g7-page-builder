@@ -221,6 +221,7 @@ final class DomainContractsTest extends TestCase
                     'brand_name' => '<script>alert(1)</script>',
                     'home_url' => '/',
                     'navigation' => [['label' => '소개', 'url' => '/pages/about']],
+                    'mobile_menu_style' => 'drawer-left',
                 ],
                 'slots' => [],
             ]],
@@ -230,6 +231,9 @@ final class DomainContractsTest extends TestCase
 
         self::assertStringNotContainsString('<script>', $artifact->html);
         self::assertStringContainsString('&lt;script&gt;', $artifact->html);
+        self::assertStringContainsString('data-g7pb-menu-style="drawer-left"', $artifact->html);
+        self::assertStringContainsString('data-g7pb-menu-backdrop', $artifact->html);
+        self::assertStringContainsString('data-g7pb-menu-close', $artifact->html);
         self::assertSame(3, $artifact->sourceRevision);
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $artifact->artifactSha256);
 

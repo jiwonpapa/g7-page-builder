@@ -299,6 +299,7 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
   bootSiteShellMenu(root, view);
   bootServiceActions(root, view);
   const fetcher = typeof view.fetch === 'function' ? view.fetch.bind(view) : fetch;
+  bootInquiryForms(root, fetcher);
   void bootDynamicData(root, fetcher);
   const page = root.querySelector<HTMLElement>('.g7pb-page');
   const blocks = Array.from(root.querySelectorAll<HTMLElement>(MOTION_SELECTOR))
@@ -343,6 +344,43 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
   blocks.forEach((block) => {
     observer.observe(block);
   });
+}
+
+export function bootInquiryForms(root: Document = document, fetcher: typeof fetch = fetch): void {
+  const csrf = root.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+  for (const form of root.querySelectorAll<HTMLFormElement>('[data-g7pb-inquiry-form]')) {
+    if (form.dataset.g7pbFormReady === 'true') continue;
+    const block = form.closest<HTMLElement>('[data-block-id]');
+    const blockId = block?.dataset.blockId ?? '';
+    const blockInput = form.elements.namedItem('block_instance_id');
+    const startedInput = form.elements.namedItem('started_at');
+    if (blockInput instanceof HTMLInputElement) blockInput.value = blockId;
+    if (startedInput instanceof HTMLInputElement) startedInput.value = String(Math.floor(Date.now() / 1000));
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const status = form.querySelector<HTMLElement>('[data-g7pb-form-status]');
+      const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (!form.reportValidity() || !blockId || submit?.disabled) return;
+      if (status) status.textContent = '전송 중입니다…';
+      if (submit) submit.disabled = true;
+      void fetcher(form.action, {
+        method: 'POST', credentials: 'same-origin', body: new FormData(form),
+        headers: { Accept: 'application/json', ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}) },
+      }).then(async (response) => {
+        const payload = await response.json().catch(() => null) as { message?: unknown } | null;
+        if (!response.ok) throw new Error(typeof payload?.message === 'string' ? payload.message : '문의 전송에 실패했습니다.');
+        form.reset();
+        if (blockInput instanceof HTMLInputElement) blockInput.value = blockId;
+        if (startedInput instanceof HTMLInputElement) startedInput.value = String(Math.floor(Date.now() / 1000));
+        if (status) status.textContent = form.dataset.g7pbSuccessMessage || '문의가 접수되었습니다.';
+      }).catch((error: unknown) => {
+        if (status) status.textContent = error instanceof Error ? error.message : '문의 전송에 실패했습니다.';
+      }).finally(() => {
+        if (submit) submit.disabled = false;
+      });
+    });
+    form.dataset.g7pbFormReady = 'true';
+  }
 }
 
 export function bootServiceActions(
@@ -395,12 +433,15 @@ export function bootServiceActions(
 export function bootSiteShellMenu(root: Document = document, view: Window = window): void {
   const toggle = root.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]');
   const menu = root.querySelector<HTMLElement>('[data-g7pb-mobile-menu]');
+  const backdrop = root.querySelector<HTMLButtonElement>('[data-g7pb-menu-backdrop]');
+  const closeButton = menu?.querySelector<HTMLButtonElement>('[data-g7pb-menu-close]');
   if (!toggle || !menu || toggle.dataset.g7pbMenuReady === 'true') return;
 
   const close = (restoreFocus = false): void => {
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', '메뉴 열기');
     menu.hidden = true;
+    if (backdrop) backdrop.hidden = true;
     root.documentElement.classList.remove('g7pb-menu-open');
     if (restoreFocus) toggle.focus();
   };
@@ -408,6 +449,7 @@ export function bootSiteShellMenu(root: Document = document, view: Window = wind
     toggle.setAttribute('aria-expanded', 'true');
     toggle.setAttribute('aria-label', '메뉴 닫기');
     menu.hidden = false;
+    if (backdrop) backdrop.hidden = false;
     root.documentElement.classList.add('g7pb-menu-open');
     menu.querySelector<HTMLElement>('a, button')?.focus();
   };
@@ -419,8 +461,22 @@ export function bootSiteShellMenu(root: Document = document, view: Window = wind
   menu.addEventListener('click', (event) => {
     if ((event.target as Element | null)?.closest('a')) close();
   });
+  backdrop?.addEventListener('click', () => close(true));
+  closeButton?.addEventListener('click', () => close(true));
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') close(true);
+    if (event.key !== 'Tab' || toggle.getAttribute('aria-expanded') !== 'true' || menu.dataset.g7pbMenuStyle === 'dropdown') return;
+    const focusable = Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && root.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && root.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
   });
   view.addEventListener('resize', () => {
     if (view.innerWidth >= 900) close();

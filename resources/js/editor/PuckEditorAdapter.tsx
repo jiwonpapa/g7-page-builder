@@ -1163,12 +1163,12 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
   categories: {
     content: {
       title: '콘텐츠 블록',
-      components: ['Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'InquiryForm', 'MapDirections'],
+      components: ['Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
       defaultExpanded: true,
     },
     business: {
       title: '비즈니스·신뢰',
-      components: ['LogoCloud', 'Testimonials', 'Pricing', 'ComparisonTable', 'Team'],
+      components: ['LogoCloud', 'LogoCarousel', 'Testimonials', 'TestimonialSlider', 'Pricing', 'ComparisonTable', 'Team'],
       defaultExpanded: true,
     },
     dataMedia: {
@@ -1178,7 +1178,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
     },
     g7Data: {
       title: 'G7 데이터',
-      components: ['G7RecentPosts', 'G7ProductGrid'],
+      components: ['G7RecentPosts', 'G7BoardArchive', 'G7ProductGrid', 'G7ProductShowcase'],
       defaultExpanded: true,
     },
   },

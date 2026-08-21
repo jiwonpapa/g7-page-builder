@@ -13,9 +13,9 @@ describe('Block Pack manifest v1 schema', () => {
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it('accepts the twenty-three-definition builtin core pack', () => {
+  it('accepts the twenty-nine-definition builtin core pack', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.blocks).toHaveLength(23);
+    expect(builtinManifest.blocks).toHaveLength(29);
     expect(builtinManifest.blocks.map((block) => block.block_id)).toEqual(expect.arrayContaining([
       'g7.board-recent-posts-01',
       'g7.ecommerce-product-grid-01',
@@ -28,6 +28,12 @@ describe('Block Pack manifest v1 schema', () => {
       'commerce.comparison-table-01',
       'content.article-list-01',
       'media.video-embed-01',
+      'trust.logo-carousel-01',
+      'trust.testimonial-slider-01',
+      'content.event-schedule-01',
+      'content.download-resources-01',
+      'g7.board-content-archive-01',
+      'g7.ecommerce-product-showcase-01',
     ]));
   });
 

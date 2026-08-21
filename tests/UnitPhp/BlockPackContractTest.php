@@ -35,7 +35,7 @@ final class BlockPackContractTest extends TestCase
         $registry->register($manifest, enabled: true);
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
-        self::assertCount(23, $registry->definitions());
+        self::assertCount(29, $registry->definitions());
         self::assertNotNull($registry->definition('data.bar-chart-01', 1));
         self::assertNotNull($registry->definition('g7.board-recent-posts-01', 1));
         self::assertNotNull($registry->definition('g7.ecommerce-product-grid-01', 1));

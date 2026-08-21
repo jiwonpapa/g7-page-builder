@@ -1,7 +1,7 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.9.0",
+  "pack_version": "0.10.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
@@ -288,6 +288,78 @@
       "editor_component": "VideoEmbed",
       "compiler": "builtin.video-embed-01",
       "capabilities": ["public.video-embed"]
+    },
+    {
+      "block_id": "trust.logo-carousel-01",
+      "block_version": 1,
+      "category": "trust",
+      "label": { "ko": "로고 캐러셀", "en": "Logo carousel" },
+      "description": { "ko": "파트너 로고를 접근 가능한 가로 캐러셀로 보여줍니다.", "en": "Present partner logos in an accessible carousel." },
+      "thumbnail": "thumbnails/logo-carousel.svg",
+      "schema_ref": "builtin:logoCarouselProps",
+      "editor_component": "LogoCarousel",
+      "compiler": "builtin.logo-carousel-01",
+      "capabilities": ["public.slider"]
+    },
+    {
+      "block_id": "trust.testimonial-slider-01",
+      "block_version": 1,
+      "category": "trust",
+      "label": { "ko": "후기 슬라이더", "en": "Testimonial slider" },
+      "description": { "ko": "고객 경험을 한 장면씩 집중해서 전달합니다.", "en": "Focus attention on one customer story at a time." },
+      "thumbnail": "thumbnails/testimonial-slider.svg",
+      "schema_ref": "builtin:testimonialSliderProps",
+      "editor_component": "TestimonialSlider",
+      "compiler": "builtin.testimonial-slider-01",
+      "capabilities": ["public.slider"]
+    },
+    {
+      "block_id": "content.event-schedule-01",
+      "block_version": 1,
+      "category": "content",
+      "label": { "ko": "이벤트 일정", "en": "Event schedule" },
+      "description": { "ko": "행사 날짜, 장소, 설명과 신청 동선을 일정표로 구성합니다.", "en": "Arrange event dates, locations, details, and actions." },
+      "thumbnail": "thumbnails/event-schedule.svg",
+      "schema_ref": "builtin:eventScheduleProps",
+      "editor_component": "EventSchedule",
+      "compiler": "builtin.event-schedule-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.download-resources-01",
+      "block_version": 1,
+      "category": "content",
+      "label": { "ko": "다운로드 자료", "en": "Download resources" },
+      "description": { "ko": "소개서, 가이드, 에셋 등 자료 파일의 다운로드 동선을 제공합니다.", "en": "Offer guides, brochures, and assets as typed download links." },
+      "thumbnail": "thumbnails/download-resources.svg",
+      "schema_ref": "builtin:downloadResourcesProps",
+      "editor_component": "DownloadResources",
+      "compiler": "builtin.download-resources-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "g7.board-content-archive-01",
+      "block_version": 1,
+      "category": "g7-data",
+      "label": { "ko": "G7 콘텐츠 아카이브", "en": "G7 content archive" },
+      "description": { "ko": "공개 게시글을 제목 검색과 게시판 필터가 있는 아카이브로 표시합니다.", "en": "Show public board posts in a searchable and filterable archive." },
+      "thumbnail": "thumbnails/g7-board-archive.svg",
+      "schema_ref": "builtin:g7BoardArchiveProps",
+      "editor_component": "G7BoardArchive",
+      "compiler": "builtin.g7-board-content-archive-01",
+      "capabilities": ["g7.module.sirsoft-board", "public.dynamic-data", "public.search-filter"]
+    },
+    {
+      "block_id": "g7.ecommerce-product-showcase-01",
+      "block_version": 1,
+      "category": "g7-data",
+      "label": { "ko": "G7 상품 쇼케이스", "en": "G7 product showcase" },
+      "description": { "ko": "공개 상품을 대표 상품 강조 또는 가로 목록으로 연결합니다.", "en": "Connect public products in featured or horizontal showcase layouts." },
+      "thumbnail": "thumbnails/g7-product-showcase.svg",
+      "schema_ref": "builtin:g7ProductShowcaseProps",
+      "editor_component": "G7ProductShowcase",
+      "compiler": "builtin.g7-ecommerce-product-showcase-01",
+      "capabilities": ["g7.module.sirsoft-ecommerce", "public.dynamic-data"]
     }
   ],
   "presets": [],

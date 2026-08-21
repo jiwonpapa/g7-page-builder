@@ -305,7 +305,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.8.0', $catalog->compilerVersion);
+        self::assertSame('0.9.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -398,7 +398,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.8.0', $result->compilerVersion);
+        self::assertSame('0.9.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -457,7 +457,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.8.0', $result->compilerVersion);
+        self::assertSame('0.9.0', $result->compilerVersion);
         foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -487,6 +487,43 @@ final class HtmlDocumentCompilerTest extends TestCase
         $payload = $this->phaseTwoDocument()->toArray();
         $payload['blocks'] = [$payload['blocks'][3]];
         $payload['blocks'][0]['props']['initialTab'] = 9;
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_phase_three_catalog_compiles_sliders_resources_and_typed_g7_variants(): void
+    {
+        $result = $this->builtInCompiler()->compile($this->phaseThreeDocument(), 1, 'html', 'g7-7.0.7');
+        $artifact = (string) $result->artifact;
+
+        self::assertSame('0.9.0', $result->compilerVersion);
+        foreach (['logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase'] as $type) {
+            self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
+        }
+        self::assertSame(2, substr_count($artifact, ' data-g7pb-slider '));
+        self::assertStringContainsString('data-g7pb-archive-search', $artifact);
+        self::assertStringContainsString('data-g7pb-archive-filter', $artifact);
+        self::assertStringContainsString('/api/modules/sirsoft-board/boards/posts/recent?limit=12', $artifact);
+        self::assertStringContainsString('/api/modules/sirsoft-ecommerce/products/new?limit=6', $artifact);
+        self::assertStringContainsString('data-g7pb-product-base="/shop/products"', $artifact);
+        self::assertStringNotContainsString('<script', $artifact);
+    }
+
+    public function test_phase_three_catalog_rejects_unsafe_resource_and_product_routes(): void
+    {
+        $payload = $this->phaseThreeDocument()->toArray();
+        $payload['blocks'] = [$payload['blocks'][3]];
+        $payload['blocks'][0]['props']['items'][0]['url'] = 'javascript:alert(1)';
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+            self::fail('An unsafe download route was accepted.');
+        } catch (DocumentCompileException) {
+            self::assertTrue(true);
+        }
+
+        $payload = $this->phaseThreeDocument()->toArray();
+        $payload['blocks'] = [$payload['blocks'][5]];
+        $payload['blocks'][0]['props']['detailBasePath'] = '//attacker.example/products';
         $this->expectException(DocumentCompileException::class);
         $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
     }
@@ -629,6 +666,54 @@ final class HtmlDocumentCompilerTest extends TestCase
                 [
                     'instance_id' => '00000000-0000-4000-8000-0000000000a7', 'type' => 'media.video-embed-01', 'block_version' => 1,
                     'props' => ['eyebrow' => '영상', 'heading' => '제품 소개', 'caption' => '제품 소개 영상입니다.', 'provider' => 'youtube', 'videoId' => 'abcDEF12345', 'ratio' => '16:9'], 'slots' => [],
+                ],
+            ],
+        );
+    }
+
+    private function phaseThreeDocument(): PageBuilderDocument
+    {
+        return new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-0000000000b0',
+            slug: 'phase-three-catalog',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: [],
+            blocks: [
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000b1', 'type' => 'trust.logo-carousel-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '파트너', 'heading' => '함께합니다', 'autoplay' => true, 'interval' => 5000, 'logos' => [
+                        ['name' => 'A', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/a'],
+                        ['name' => 'B', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/b'],
+                        ['name' => 'C', 'imageSrc' => '', 'imageAlt' => '', 'url' => '/c'],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000b2', 'type' => 'trust.testimonial-slider-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '후기', 'heading' => '고객 이야기', 'autoplay' => false, 'interval' => 7000, 'items' => [
+                        ['quote' => '좋습니다.', 'name' => '김고객', 'role' => '대표', 'company' => 'A', 'avatarSrc' => '', 'avatarAlt' => '', 'rating' => 5],
+                        ['quote' => '편합니다.', 'name' => '이고객', 'role' => '운영', 'company' => 'B', 'avatarSrc' => '', 'avatarAlt' => '', 'rating' => 4],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000b3', 'type' => 'content.event-schedule-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '일정', 'heading' => '다가오는 행사', 'layout' => 'agenda', 'items' => [
+                        ['date' => '2026-09-03', 'time' => '14:00', 'title' => '웨비나', 'location' => '온라인', 'description' => '제품을 소개합니다.', 'buttonLabel' => '신청', 'buttonUrl' => '/events/1'],
+                    ]], 'motion' => ['preset' => 'stagger', 'intensity' => 'normal', 'trigger' => 'once', 'stagger_ms' => 100], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000b4', 'type' => 'content.download-resources-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '자료', 'heading' => '다운로드', 'items' => [
+                        ['title' => '소개서', 'description' => '제품 소개서입니다.', 'fileType' => 'PDF', 'fileSize' => '2 MB', 'buttonLabel' => '받기', 'url' => '/files/guide.pdf'],
+                    ]], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000b5', 'type' => 'g7.board-content-archive-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '아카이브', 'heading' => '게시글', 'source' => 'recent', 'period' => 'month', 'limit' => 12, 'audience' => 'all', 'showSearch' => true, 'showBoardFilter' => true, 'emptyMessage' => '게시글이 없습니다.'], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000b6', 'type' => 'g7.ecommerce-product-showcase-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '상품', 'heading' => '추천', 'source' => 'new', 'limit' => 6, 'audience' => 'member', 'detailBasePath' => '/shop/products', 'layout' => 'featured', 'emptyMessage' => '상품이 없습니다.'], 'slots' => [],
                 ],
             ],
         );

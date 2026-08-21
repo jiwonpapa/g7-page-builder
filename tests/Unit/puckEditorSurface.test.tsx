@@ -355,8 +355,10 @@ describe('Puck editor surface contract', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     const routeOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-route-open"]');
+    expect(routeOpenMarker).not.toBeNull();
+    const elementRouteOpenMarker = await eventually<HTMLButtonElement>('[data-testid="page-builder-element-route-open"]');
     await act(async () => {
-      routeOpenMarker.closest('button')?.click();
+      elementRouteOpenMarker.click();
     });
     expect(await eventually<HTMLElement>('[data-testid="page-builder-route-picker"]')).not.toBeNull();
     await act(async () => {

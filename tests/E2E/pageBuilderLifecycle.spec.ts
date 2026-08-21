@@ -900,7 +900,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(heroUrl).toHaveValue('/login');
 
       await heroBlock.locator('[data-g7pb-inline-field="primaryLabel"]').dispatchEvent('pointerdown');
-      await page.getByTestId('page-builder-canvas-route-open').click();
+      await page.getByTestId('page-builder-element-route-open').click();
       await expect(routePicker).toBeVisible();
       await routePicker.getByPlaceholder('로그인, 게시판, 상품…').fill('회원가입');
       await routePicker.locator('.g7pb-route-picker__routes button').filter({ hasText: '회원가입' }).first().click();

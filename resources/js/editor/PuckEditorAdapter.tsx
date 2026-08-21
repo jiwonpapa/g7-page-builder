@@ -2055,9 +2055,12 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
-  const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null ? data.content[selectedIndex] : null;
-  if (!canvasUi?.textToolsOpen || canvasUi.mediaDialogOpen || canvasUi.routeDialogOpen || !selectedBlock) return null;
-  const blockIndex = selectedIndex as number;
+  const selectionIndex = canvasUi?.selection
+    ? data.content.findIndex((block) => idToUuid(asString(block.props.id)) === canvasUi.selection?.blockId)
+    : -1;
+  const blockIndex = selectionIndex >= 0 ? selectionIndex : selectedZone === 'root:default-zone' ? selectedIndex : null;
+  const selectedBlock = blockIndex !== null ? data.content[blockIndex] : null;
+  if (!canvasUi?.textToolsOpen || canvasUi.mediaDialogOpen || canvasUi.routeDialogOpen || !selectedBlock || blockIndex === null) return null;
   const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'
     ? selectedBlock.props.surface : 'default';
   const currentSpacing = selectedBlock.props.spacing === 'compact' || selectedBlock.props.spacing === 'spacious'
@@ -2069,9 +2072,9 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const routeFieldPath = fieldPath ? resolveRouteFieldPath(selectedBlock.type, fieldPath) : null;
   const update = (patch: Record<string, unknown>): void => {
     dispatch({
-      type: 'replace', destinationIndex: blockIndex, destinationZone: selectedZone,
+      type: 'replace', destinationIndex: blockIndex, destinationZone: 'root:default-zone',
       data: { ...selectedBlock, props: { ...selectedBlock.props, ...patch } } as never,
-      ui: { itemSelector: { index: blockIndex, zone: selectedZone } }, recordHistory: true,
+      ui: { itemSelector: { index: blockIndex, zone: 'root:default-zone' } }, recordHistory: true,
     });
   };
 
@@ -2131,7 +2134,8 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
             data-testid={`page-builder-element-tone-${tone}`}>{text}</button>)}
         </div></div>
         <div className="g7pb-element-balloon__footer">
-          {routeFieldPath ? <button type="button" disabled={disabled} onClick={() => canvasUi.setRouteDialogOpen(true)}><Link2 size={15} /> 연결 설정</button> : null}
+          {routeFieldPath ? <button type="button" disabled={disabled} data-testid="page-builder-element-route-open"
+            onClick={() => canvasUi.setRouteDialogOpen(true)}><Link2 size={15} /> 연결 설정</button> : null}
           <button type="button" disabled={disabled || !elementStyles[fieldPath]} onClick={resetElement}>스타일 초기화</button>
         </div>
       </> : <>
@@ -2145,6 +2149,53 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
     </section>,
     globalThis.document.body,
   );
+}
+
+function ConnectedCanvasDialogs(): React.ReactElement | null {
+  const dispatch = usePageBuilderPuck((state) => state.dispatch);
+  const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
+  const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
+  const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
+  const canvasUi = React.useContext(CanvasEditingUiContext);
+  if (!canvasUi) return null;
+
+  const selectionIndex = canvasUi.selection
+    ? data.content.findIndex((block) => idToUuid(asString(block.props.id)) === canvasUi.selection?.blockId)
+    : -1;
+  const blockIndex = selectionIndex >= 0 ? selectionIndex : selectedZone === 'root:default-zone' ? selectedIndex : null;
+  const selectedBlock = blockIndex !== null ? data.content[blockIndex] : null;
+  if (!selectedBlock || blockIndex === null) return null;
+
+  const defaultRouteFieldPath = selectedBlock.type === 'Hero' || selectedBlock.type === 'HeroSplit' || selectedBlock.type === 'Cta'
+    ? 'primaryUrl' : selectedBlock.type === 'Contact' ? 'ctaUrl' : null;
+  const routeFieldPath = canvasUi.selection?.fieldPath
+    ? resolveRouteFieldPath(selectedBlock.type, canvasUi.selection.fieldPath)
+    : defaultRouteFieldPath;
+  const mediaFieldPath = canvasUi.selection
+    ? resolveMediaFieldPath(selectedBlock.type, canvasUi.selection)
+    : selectedBlock.type === 'Hero' || selectedBlock.type === 'HeroSplit' ? 'imageSrc' : null;
+  const updateSelectedPath = (path: string, value: unknown): void => {
+    dispatch({
+      type: 'replace', destinationIndex: blockIndex, destinationZone: 'root:default-zone',
+      data: { ...selectedBlock, props: setValueAtPath(selectedBlock.props, path, value) } as never,
+      ui: { itemSelector: { index: blockIndex, zone: 'root:default-zone' } }, recordHistory: true,
+    });
+  };
+
+  return <>
+    {canvasUi.mediaDialogOpen && mediaFieldPath ? createPortal(
+      <CanvasMediaPicker value={String(valueAtPath(selectedBlock.props, mediaFieldPath) ?? '')}
+        onChange={(value) => { updateSelectedPath(mediaFieldPath, value); canvasUi.setMediaDialogOpen(false); }}
+        onDismiss={() => canvasUi.setMediaDialogOpen(false)} />,
+      globalThis.document.body,
+    ) : null}
+    {canvasUi.routeDialogOpen && routeFieldPath ? createPortal(
+      <CanvasRoutePicker value={String(valueAtPath(selectedBlock.props, routeFieldPath) ?? '')}
+        onChange={(value) => { updateSelectedPath(routeFieldPath, value); canvasUi.setRouteDialogOpen(false); }}
+        onDismiss={() => canvasUi.setRouteDialogOpen(false)} />,
+      globalThis.document.body,
+    ) : null}
+  </>;
 }
 
 function SelectedBlockActionBar({
@@ -2171,9 +2222,7 @@ function SelectedBlockActionBar({
   const {
     selection: elementSelection,
     setSelection: setElementSelection,
-    mediaDialogOpen,
     setMediaDialogOpen,
-    routeDialogOpen,
     setRouteDialogOpen,
     textToolsOpen,
     setTextToolsOpen,
@@ -2315,18 +2364,6 @@ function SelectedBlockActionBar({
         {children}
       </ActionBar.Group>
     </ActionBar>
-    {mediaDialogOpen && selectedBlock && mediaFieldPath ? createPortal(
-      <CanvasMediaPicker value={String(valueAtPath(selectedBlock.props, mediaFieldPath) ?? '')}
-        onChange={(value) => { updateSelectedPath(mediaFieldPath, value); setMediaDialogOpen(false); }}
-        onDismiss={() => setMediaDialogOpen(false)} />,
-      globalThis.document.body,
-    ) : null}
-    {routeDialogOpen && selectedBlock && routeFieldPath ? createPortal(
-      <CanvasRoutePicker value={String(valueAtPath(selectedBlock.props, routeFieldPath) ?? '')}
-        onChange={(value) => { updateSelectedPath(routeFieldPath, value); setRouteDialogOpen(false); }}
-        onDismiss={() => setRouteDialogOpen(false)} />,
-      globalThis.document.body,
-    ) : null}
     </>
   );
 }
@@ -2509,7 +2546,7 @@ export function PuckEditorAdapter({
 
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
-    headerActions: () => <><ConnectedHeaderControls disabled={disabled} /><ConnectedContextPanel disabled={disabled} /></>,
+    headerActions: () => <><ConnectedHeaderControls disabled={disabled} /><ConnectedContextPanel disabled={disabled} /><ConnectedCanvasDialogs /></>,
     drawer: PuckDrawerLibrary,
     drawerItem: PuckDrawerItem,
     actionBar: (props: { children: React.ReactNode; label?: string; parentAction?: React.ReactNode }) => (

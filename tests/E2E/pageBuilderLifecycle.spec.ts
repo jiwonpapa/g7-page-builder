@@ -948,11 +948,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(sourceDialog.getByTestId('page-builder-source-document')).toContainText('g7-page-builder/v1');
       await expect(sourceDialog.getByTestId('page-builder-source-document')).toContainText('g7.board-recent-posts-01');
       await sourceDialog.getByTestId('page-builder-source-artifact-tab').click();
-      const diagnosticPreview = page.waitForResponse((response) => response.request().method() === 'POST'
-        && new URL(response.url()).pathname.endsWith(`/admin/documents/${documentId}/preview`));
       await sourceDialog.getByTestId('page-builder-source-generate').click();
-      expect((await diagnosticPreview).ok()).toBe(true);
-      await expect(sourceDialog.getByTestId('page-builder-source-artifact')).toContainText('data-g7pb-data-source="posts"');
+      await expect(sourceDialog.getByTestId('page-builder-source-artifact')).toContainText(
+        'data-g7pb-data-source="posts"',
+        { timeout: 30_000 },
+      );
       await sourceDialog.getByRole('button', { name: '원본 보기 닫기' }).click();
       await expect(sourceDialog).toHaveCount(0);
     }

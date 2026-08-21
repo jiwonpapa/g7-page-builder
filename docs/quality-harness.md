@@ -99,7 +99,9 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 16. `template` 문서를 `/pages/{slug}`에서 활성 `_user_base` 안에 렌더하고 Page Builder Site Part가 섞이지 않는지 확인
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 
-현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 실제 접근성 자동 검사, 고정 시각 baseline과 compile 실패 뒤 public hash 불변 시나리오는 전체 MVP gate에 추가해야 합니다.
+현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
+
+최소 G7 fixture는 `module.json`의 module/plugin 의존성이 0개인지 확인하고, `sirsoft-board`·`sirsoft-ecommerce` 구현 클래스를 import하지 않은 상태에서 선택형 공개 API placeholder가 컴파일되는지 검사합니다. capability endpoint 실패는 공개 경량 runtime의 빈 상태로 끝나며 문서 저장·독립 shell 발행을 중단하지 않습니다.
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
 

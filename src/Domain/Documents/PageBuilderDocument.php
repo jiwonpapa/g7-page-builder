@@ -29,6 +29,7 @@ final readonly class PageBuilderDocument
         public array $blocks,
         public string $schemaVersion = 'g7-page-builder/v1',
         public string $shellMode = 'template',
+        public ?PageSeoMetadata $seo = null,
     ) {
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $this->documentId) !== 1) {
             throw new \InvalidArgumentException('Page document id must be a UUID.');
@@ -92,21 +93,13 @@ final readonly class PageBuilderDocument
             blocks: array_values($blocks),
             schemaVersion: self::requiredString($data, 'schema_version'),
             shellMode: is_string($data['shell_mode'] ?? null) ? $data['shell_mode'] : 'template',
+            seo: isset($data['seo']) && is_array($data['seo'])
+                ? PageSeoMetadata::fromArray($data['seo'])
+                : null,
         );
     }
 
-    /**
-     * @return array{
-     *     schema_version: string,
-     *     document_id: string,
-     *     slug: string,
-     *     mode: string,
-     *     locale: string,
-     *     tokens: array<string, string|int|float|bool|null>,
-     *     blocks: array<int, array<string, mixed>>,
-     *     shell_mode: string
-     * }
-     */
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         return [
@@ -118,6 +111,7 @@ final readonly class PageBuilderDocument
             'tokens' => $this->tokens,
             'blocks' => $this->blocks,
             'shell_mode' => $this->shellMode,
+            ...($this->seo instanceof PageSeoMetadata ? ['seo' => $this->seo->toArray()] : []),
         ];
     }
 

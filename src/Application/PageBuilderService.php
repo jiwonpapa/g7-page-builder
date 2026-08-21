@@ -8,6 +8,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\DocumentNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\RevisionNotFoundException;
@@ -90,6 +91,7 @@ final class PageBuilderService
             blocks: $source->document->blocks,
             schemaVersion: $source->document->schemaVersion,
             shellMode: $source->document->shellMode,
+            seo: $source->document->seo,
         );
 
         return $this->repository->create($title, $copy, $actorId);
@@ -115,6 +117,7 @@ final class PageBuilderService
             blocks: $this->freshBlockIdentities($template->blocks),
             schemaVersion: $template->schemaVersion,
             shellMode: 'template',
+            seo: $template->seo,
         );
 
         // 외부 Page Kit은 저장 전에 현재 compiler와 활성 Block Registry를 반드시 통과합니다.
@@ -174,6 +177,7 @@ final class PageBuilderService
         return $this->repository->saveDraft($document, $expectedLockVersion, $actorId);
     }
 
+    /** @param array<string, mixed>|null $seo */
     public function updateMetadata(
         string $documentId,
         string $title,
@@ -182,6 +186,7 @@ final class PageBuilderService
         int $expectedLockVersion,
         ?int $actorId,
         ?string $shellMode = null,
+        ?array $seo = null,
     ): DocumentSnapshot {
         $title = trim($title);
 
@@ -197,6 +202,7 @@ final class PageBuilderService
             $expectedLockVersion,
             $actorId,
             $shellMode,
+            $seo === null ? null : PageSeoMetadata::fromArray($seo),
         );
     }
 
@@ -253,6 +259,7 @@ final class PageBuilderService
             artifact: is_string($result->artifact) ? $result->artifact : '',
             artifactSha256: $result->artifactSha256,
             shellMode: $source->document->shellMode,
+            seo: $source->document->seo,
         );
     }
 

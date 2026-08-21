@@ -4,13 +4,38 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="robots" content="{{ $rootTestId === 'page-builder-preview-root' ? 'noindex,nofollow' : 'index,follow' }}">
-    <title>{{ $page->title }}</title>
+    @php
+        $seoTitle = $page->seo?->title ?: $page->title;
+        $seoDescription = $page->seo?->description ?: '';
+        $seoImage = $page->seo?->ogImageUrl ?: '';
+        $robots = $rootTestId === 'page-builder-preview-root' || $page->seo?->robots === 'noindex'
+            ? 'noindex,nofollow'
+            : 'index,follow';
+    @endphp
+    <meta name="robots" content="{{ $robots }}">
+    <title>{{ $seoTitle }}</title>
+    @if ($seoDescription !== '')
+        <meta name="description" content="{{ $seoDescription }}">
+    @endif
     @if (!empty($canonicalUrl))
         <link rel="canonical" href="{{ $canonicalUrl }}">
         <meta property="og:url" content="{{ $canonicalUrl }}">
-        <meta property="og:title" content="{{ $page->title }}">
+        <meta property="og:title" content="{{ $seoTitle }}">
         <meta property="og:type" content="website">
+        @if ($seoDescription !== '')
+            <meta property="og:description" content="{{ $seoDescription }}">
+        @endif
+        @if ($seoImage !== '')
+            <meta property="og:image" content="{{ str_starts_with($seoImage, '/') ? url($seoImage) : $seoImage }}">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:image" content="{{ str_starts_with($seoImage, '/') ? url($seoImage) : $seoImage }}">
+        @else
+            <meta name="twitter:card" content="summary">
+        @endif
+        <meta name="twitter:title" content="{{ $seoTitle }}">
+        @if ($seoDescription !== '')
+            <meta name="twitter:description" content="{{ $seoDescription }}">
+        @endif
     @endif
     <style>
         :root { color-scheme: light; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }

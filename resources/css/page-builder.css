@@ -435,6 +435,83 @@ body.g7pb-manager-shell {
   max-height: min(760px, calc(100dvh - 40px));
   overflow: auto;
 }
+
+.g7pb-dialog--metadata {
+  width: min(680px, 100%);
+  max-height: min(860px, calc(100dvh - 40px));
+  overflow: auto;
+}
+
+.g7pb-metadata-section {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 10px;
+  background: #f8f8f6;
+}
+
+.g7pb-metadata-section legend {
+  padding: 0 7px;
+  color: var(--g7pb-text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.g7pb-metadata-section > p {
+  margin: -5px 0 1px;
+  color: var(--g7pb-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.g7pb-dialog select {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--g7pb-text);
+}
+
+.g7pb-metadata-media {
+  display: grid;
+  gap: 9px;
+}
+
+.g7pb-metadata-media > img {
+  width: 100%;
+  max-height: 190px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.g7pb-metadata-media__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.g7pb-metadata-media__grid {
+  display: grid;
+  max-height: 250px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.g7pb-metadata-media__grid > p { grid-column: 1 / -1; color: var(--g7pb-muted); font-size: 11px; }
+.g7pb-metadata-media__grid button { display: grid; gap: 4px; min-width: 0; padding: 5px; border: 1px solid var(--g7pb-border); border-radius: 7px; background: #fff; cursor: pointer; }
+.g7pb-metadata-media__grid button[aria-pressed='true'] { border-color: var(--g7pb-accent); box-shadow: 0 0 0 2px rgb(36 86 223 / 15%); }
+.g7pb-metadata-media__grid img { width: 100%; aspect-ratio: 4 / 3; border-radius: 4px; object-fit: cover; }
+.g7pb-metadata-media__grid span { overflow: hidden; color: var(--g7pb-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .g7pb-inbox { max-height: min(52rem, calc(100vh - 3rem)); overflow: hidden; }
 .g7pb-inbox-list { display: grid; gap: .75rem; max-height: 38rem; overflow-y: auto; padding: .25rem; }
 .g7pb-inbox-list article { display: grid; gap: .9rem; padding: 1.1rem; border: 1px solid #dce2eb; border-radius: .8rem; background: #fff; }

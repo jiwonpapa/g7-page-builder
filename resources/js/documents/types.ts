@@ -506,8 +506,16 @@ export interface PageBuilderDocument {
   mode: 'canvas';
   locale: string;
   shell_mode?: PageShellMode;
+  seo?: PageSeoMetadata;
   tokens?: Record<string, ScalarToken>;
   blocks: PageBuilderBlock[];
+}
+
+export interface PageSeoMetadata {
+  title: string;
+  description: string;
+  og_image_url: string;
+  robots: 'index' | 'noindex';
 }
 
 export type PageShellMode = 'template' | 'builder' | 'none' | 'global';

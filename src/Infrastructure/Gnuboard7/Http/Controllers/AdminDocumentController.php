@@ -242,6 +242,11 @@ final class AdminDocumentController
             'locale' => ['required', 'string', 'min:2', 'max:16'],
             'expected_lock_version' => ['required', 'integer', 'min:1'],
             'shell_mode' => ['sometimes', 'in:template,builder,none,global'],
+            'seo' => ['sometimes', 'array:title,description,og_image_url,robots'],
+            'seo.title' => ['required_with:seo', 'string', 'max:70'],
+            'seo.description' => ['required_with:seo', 'string', 'max:200'],
+            'seo.og_image_url' => ['required_with:seo', 'string', 'max:2048', 'regex:#^(?:$|/[^\\s]*|https://[^\\s]+)$#u'],
+            'seo.robots' => ['required_with:seo', 'in:index,noindex'],
         ]);
 
         if ($validator->fails()) {
@@ -257,6 +262,7 @@ final class AdminDocumentController
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
                 $request->has('shell_mode') ? (string) $request->input('shell_mode') : null,
+                $request->has('seo') && is_array($request->input('seo')) ? $request->input('seo') : null,
             );
 
             return $this->success('페이지 정보를 수정했습니다.', $this->snapshotData($snapshot));

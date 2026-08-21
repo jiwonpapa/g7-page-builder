@@ -9,6 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\DocumentNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
@@ -156,6 +157,18 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             $this->assertLockVersion($record, $expectedLockVersion);
             $this->assertSlugAvailable($document->slug, $document->documentId);
 
+            // The visual editor deliberately does not own SEO fields. Preserve
+            // metadata configured in the manager when an editor round-trip omits it.
+            if ($document->seo === null) {
+                $current = $this->loadDocument($record);
+                if ($current->seo instanceof PageSeoMetadata) {
+                    $document = PageBuilderDocument::fromArray([
+                        ...$document->toArray(),
+                        'seo' => $current->seo->toArray(),
+                    ]);
+                }
+            }
+
             $nextRevision = $record->current_revision + 1;
             $this->insertRevision($document, $record->title, $nextRevision, $actorId);
 
@@ -183,8 +196,9 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         int $expectedLockVersion,
         ?int $actorId,
         ?string $shellMode = null,
+        ?PageSeoMetadata $seo = null,
     ): DocumentSnapshot {
-        return DB::transaction(function () use ($documentId, $title, $slug, $locale, $expectedLockVersion, $actorId, $shellMode): DocumentSnapshot {
+        return DB::transaction(function () use ($documentId, $title, $slug, $locale, $expectedLockVersion, $actorId, $shellMode, $seo): DocumentSnapshot {
             $record = $this->lockDocument($documentId);
             $this->assertLockVersion($record, $expectedLockVersion);
             $this->assertSlugAvailable($slug, $documentId);
@@ -198,6 +212,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
                 blocks: $current->blocks,
                 schemaVersion: $current->schemaVersion,
                 shellMode: $shellMode ?? $current->shellMode,
+                seo: $seo ?? $current->seo,
             );
             $nextRevision = $record->current_revision + 1;
             $this->insertRevision($next, $title, $nextRevision, $actorId);
@@ -308,6 +323,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
                 'artifact' => $result->artifact,
                 'artifact_sha256' => $result->artifactSha256,
                 'warnings_json' => $this->encodeJson($result->warnings),
+                'seo_json' => $document->seo?->toArray(),
                 'status' => 'candidate',
                 'token_hash' => $tokenHash,
                 'expires_at' => $expiresAt,
@@ -735,6 +751,9 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
                 ? \DateTimeImmutable::createFromInterface($publishedAt)
                 : null,
             shellMode: $publication->shell_mode,
+            seo: is_array($publication->seo_json)
+                ? PageSeoMetadata::fromArray($publication->seo_json)
+                : null,
         );
     }
 

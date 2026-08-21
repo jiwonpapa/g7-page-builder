@@ -24,6 +24,7 @@ use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackInstallation;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackState;
+use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
@@ -676,6 +677,103 @@ final class PublicationPersistenceTest extends TestCase
 
         self::assertSame($first->artifactSha256, $second->artifactSha256);
         self::assertNotSame($first->representationSha256(), $second->representationSha256());
+    }
+
+    public function test_seo_is_preserved_by_editor_saves_and_snapshotted_only_on_publish(): void
+    {
+        $service = new PageBuilderService(
+            new EloquentPageBuilderRepository,
+            $this->builtInCompiler(),
+        );
+        $created = $service->create('검색 페이지', 'seo-snapshot', 'ko', null, 'builder');
+        $configured = $service->updateMetadata(
+            $created->document->documentId,
+            $created->title,
+            $created->document->slug,
+            $created->document->locale,
+            $created->lockVersion,
+            null,
+            'builder',
+            [
+                'title' => '발행 검색 제목',
+                'description' => '발행 검색 설명',
+                'og_image_url' => '/storage/share.webp',
+                'robots' => 'noindex',
+            ],
+        );
+
+        $editorSaved = $service->saveDraft(
+            $configured->document->documentId,
+            $this->documentPayload($configured->document->documentId, 'seo-snapshot', 'ko'),
+            $configured->lockVersion,
+            null,
+        );
+        self::assertSame('발행 검색 제목', $editorSaved->document->seo?->title);
+
+        $candidate = $service->preparePublication(
+            $editorSaved->document->documentId,
+            $editorSaved->lockVersion,
+            null,
+        );
+        $published = $service->commitPublication($candidate->token);
+        self::assertSame('발행 검색 설명', $published->seo?->description);
+        self::assertSame('noindex', $published->seo?->robots);
+
+        $api = (new PublicPageController($service))->show('seo-snapshot');
+        self::assertSame('발행 검색 제목', $api->getData(true)['data']['seo_meta']['title']);
+        self::assertSame('발행 검색 제목', $api->getData(true)['data']['page']['seo_meta']['title']);
+        self::assertSame('noindex, nofollow', $this->viewer($service)
+            ->show(Request::create('/pages/seo-snapshot'), 'seo-snapshot')
+            ->headers->get('X-Robots-Tag'));
+
+        $changedDraft = $service->updateMetadata(
+            $editorSaved->document->documentId,
+            $editorSaved->title,
+            $editorSaved->document->slug,
+            $editorSaved->document->locale,
+            $editorSaved->lockVersion,
+            null,
+            'builder',
+            [
+                'title' => '아직 미발행 제목',
+                'description' => '',
+                'og_image_url' => '',
+                'robots' => 'index',
+            ],
+        );
+        self::assertSame('아직 미발행 제목', $changedDraft->document->seo?->title);
+        self::assertSame('발행 검색 제목', $service->findPublished('seo-snapshot')?->seo?->title);
+        self::assertSame($published->representationSha256(), $service->findPublished('seo-snapshot')?->representationSha256());
+    }
+
+    public function test_compile_failure_keeps_the_last_public_artifact_and_representation_hash(): void
+    {
+        $service = new PageBuilderService(
+            new EloquentPageBuilderRepository,
+            $this->builtInCompiler(),
+        );
+        $created = $service->create('발행 안전성', 'compile-failure-safety', 'ko', null, 'builder');
+        $candidate = $service->preparePublication($created->document->documentId, $created->lockVersion, null);
+        $published = $service->commitPublication($candidate->token);
+
+        $invalidPayload = $this->documentPayload($created->document->documentId, 'compile-failure-safety', 'ko');
+        $invalidPayload['blocks'][0]['type'] = 'vendor.missing-block-01';
+        $draft = $service->saveDraft(
+            $created->document->documentId,
+            $invalidPayload,
+            $created->lockVersion,
+            null,
+        );
+
+        try {
+            $service->preparePublication($draft->document->documentId, $draft->lockVersion, null);
+            self::fail('An unregistered block must not produce a publication candidate.');
+        } catch (DocumentCompileException) {
+            $stillPublished = $service->findPublished('compile-failure-safety');
+            self::assertNotNull($stillPublished);
+            self::assertSame($published->artifactSha256, $stillPublished->artifactSha256);
+            self::assertSame($published->representationSha256(), $stillPublished->representationSha256());
+        }
     }
 
     public function test_archive_hides_publication_and_purge_requires_archived_slug_confirmation(): void

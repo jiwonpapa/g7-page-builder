@@ -12,6 +12,7 @@ import type {
   SitePartResource,
   SitePartRevisionResource,
   PageBuilderDocument,
+  PageSeoMetadata,
   PreviewResource,
   PublicationCommit,
   PublicationPreparation,
@@ -211,6 +212,7 @@ export class PageBuilderApiClient {
       slug: string;
       locale: string;
       shell_mode: NonNullable<PageBuilderDocument['shell_mode']>;
+      seo?: PageSeoMetadata;
       expected_lock_version: number;
     },
   ): Promise<DocumentResource> {

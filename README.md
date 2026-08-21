@@ -29,7 +29,7 @@ Sanitized published artifact
 
 ## 현재 상태
 
-현재 모듈 버전은 `0.13.0`입니다. 29개 내장 블록과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 반응형·테마·폼·지도·G7 공개 데이터 블록, 미리보기·발행·복구 흐름을 제공합니다.
+현재 모듈 버전은 `0.16.0`입니다. 29개 내장 블록과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 반응형·테마·폼·지도·G7 공개 데이터 블록, SEO 스냅샷, 미리보기·발행·복구 흐름을 제공합니다.
 
 현재 화면의 `무료 마켓`은 독립 마켓이 아니라 정적 catalog 두 건으로 설치·적용 계약을 검증하는 내부 배포 시험 하네스입니다. 별도 마켓 모듈, DB, 상품 관리자, 업로드·검증·게시 기능은 아직 없습니다. Page Builder 본체와 상품 규격이 안정된 뒤 [Market 모듈 스펙 주도 개발 명세](docs/market-module-spec.md)에 따라 `g7devops.com` 전용 단일 발행자 모듈로 분리합니다. 기존 소비자·무결성 계약은 [공식 무료 배포 프로토타입 계약](docs/official-store-contract.md)에 기록합니다.
 
@@ -37,7 +37,7 @@ Hero·CTA·콘텐츠·신뢰·가격·팀·미디어·폼·지도·G7 데이터 
 
 좌측 Blocks 라이브러리는 축소 구조 미리보기와 용도를 표시하고 Puck 기본 DnD로 블록 사이 정확한 위치에 드롭합니다. Hero 계열 문구는 캔버스에서 직접 수정하며 Slider Hero는 편집 중 선택 장면을 고정하고 공개본에서만 Embla 자동재생을 적용합니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 선택형 Page Builder Header·Footer, PC·모바일 메뉴 편집, 문서별 출력 shell, typed style·motion preset, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 링크 필드는 활성 G7 템플릿의 로그인·회원가입·게시판·쇼핑몰·마이페이지·Page Builder route를 검색하고 필요한 게시판·카테고리·상품·문서를 선택해 URL을 완성합니다.
 
-전체 유료 MVP는 아직 아닙니다. 자체 MediaPort 이미지 업로드·선택, 복구 가능한 문서 보관·복원·확인형 영구 삭제, Hero 중복 경고, Embla 슬라이더, 추천 효과 일괄 적용, 활성 User Template 연결과 G7 route 선택까지 구현됐습니다. 기본 SEO, 실패 발행 hash 불변 E2E, 최소 G7 fixture와 고정 시각 회귀 baseline은 다음 구현 범위입니다.
+전체 유료 MVP는 아직 아닙니다. 자체 MediaPort 이미지 업로드·선택, 복구 가능한 문서 보관·복원·확인형 영구 삭제, Hero 중복 경고, Embla 슬라이더, 추천 효과 일괄 적용, 활성 User Template 연결과 G7 route 선택, 문서별 SEO·OG 이미지, 실패 발행 hash 불변, 최소 G7 fixture, axe·고정 시각 회귀 gate까지 구현됐습니다.
 
 ## 저장소 역할
 
@@ -93,9 +93,9 @@ make integration-verify TASK=integration-20260820
 
 다음:
 
-1. G7 게시판·쇼핑 상품을 읽는 선택형 `ContentSourcePort`와 실제 동적 Block Pack
-2. 선택형 Page Builder shell의 다단 메뉴·드롭다운과 Header·Footer 프리셋 확장
-3. 기본 SEO 계약과 OG 이미지 선택, 접근성·고정 시각 회귀 baseline 보강
+1. 선택형 Page Builder shell의 다단 메뉴·드롭다운과 Header·Footer 프리셋 확장
+2. 블록 조건부 표시, 반복 데이터 pagination, 다운로드 MediaPort 연결
+3. G7 게시글·상품 단건 상세 capability 블록
 
 Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 제공합니다.
 

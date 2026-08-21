@@ -177,6 +177,66 @@ describe('Page Builder manager surface', () => {
     await act(async () => { root.unmount(); });
   });
 
+  it('edits typed SEO metadata with media and robots controls in document settings', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    const resource = {
+      title: '검색 페이지',
+      document: {
+        schema_version: 'g7-page-builder/v1',
+        document_id: '123e4567-e89b-42d3-a456-426614174000',
+        slug: 'search-page',
+        mode: 'canvas',
+        locale: 'ko',
+        shell_mode: 'builder',
+        seo: {
+          title: '검색 노출 제목',
+          description: '검색 노출 설명',
+          og_image_url: '/storage/share.webp',
+          robots: 'noindex',
+        },
+        tokens: {},
+        blocks: [],
+      },
+      lock_version: 2,
+      revision: 2,
+      public_url: '/pages/search-page',
+      active_artifact_sha256: 'a'.repeat(64),
+      is_home: false,
+      status: 'published',
+      has_unpublished_changes: false,
+      created_at: '2026-08-20T09:00:00+09:00',
+      updated_at: '2026-08-20T09:00:00+09:00',
+      published_at: '2026-08-20T09:00:00+09:00',
+      archived_at: null,
+    };
+    globalThis.fetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      success: true,
+      message: 'ok',
+      data: { items: [resource], pagination: { total: 1, page: 1, per_page: 100 } },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
+    await act(async () => { (await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-more"]')).click(); });
+    await act(async () => { (await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-settings"]')).click(); });
+
+    const dialog = await eventually<HTMLElement>('[data-testid="page-builder-manager-metadata-dialog"]');
+    expect(dialog.textContent).toContain('검색·공유 미리보기');
+    expect(dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-manager-seo-title"]')?.value)
+      .toBe('검색 노출 제목');
+    expect(dialog.querySelector<HTMLTextAreaElement>('[data-testid="page-builder-manager-seo-description"]')?.value)
+      .toBe('검색 노출 설명');
+    expect(dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-manager-seo-image"]')?.value)
+      .toBe('/storage/share.webp');
+    expect(dialog.querySelector<HTMLSelectElement>('[data-testid="page-builder-manager-seo-robots"]')?.value)
+      .toBe('noindex');
+    expect(dialog.textContent).toContain('파일 업로드');
+
+    await act(async () => { root.unmount(); });
+  });
+
   it('manages independent Block Packs and explains in-use removal blocking', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
     const emptyList = { items: [], pagination: { total: 0, page: 1, per_page: 100 } };

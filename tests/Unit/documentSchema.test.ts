@@ -126,6 +126,26 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(designed)).toBe(false);
   });
 
+  it('accepts typed SEO metadata and rejects executable or unknown values', () => {
+    const searchable = {
+      ...structuredClone(fixture),
+      seo: {
+        title: '검색 결과 제목',
+        description: '검색 결과와 링크 공유에 사용하는 설명입니다.',
+        og_image_url: '/storage/page-builder/share.webp',
+        robots: 'index',
+      },
+    };
+    expect(validate(searchable), JSON.stringify(validate.errors)).toBe(true);
+
+    searchable.seo.og_image_url = 'javascript:alert(1)';
+    expect(validate(searchable)).toBe(false);
+    searchable.seo.og_image_url = 'https://cdn.example.com/share.webp';
+    searchable.seo.robots = 'follow-only';
+    expect(validate(searchable)).toBe(false);
+    expect(validate({ ...searchable, seo: { ...searchable.seo, robots: 'index', className: 'fixed' } })).toBe(false);
+  });
+
   it('rejects malformed CTA links and Contact form props', () => {
     const malformedLink = structuredClone(ctaContactFixture);
     malformedLink.blocks[0].props.primaryLink = { label: '시작하기' } as never;

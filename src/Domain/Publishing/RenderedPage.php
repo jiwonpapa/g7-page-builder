@@ -2,6 +2,8 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Domain\Publishing;
 
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
+
 final readonly class RenderedPage
 {
     public function __construct(
@@ -12,6 +14,7 @@ final readonly class RenderedPage
         public string $artifactSha256,
         public ?\DateTimeImmutable $publishedAt = null,
         public string $shellMode = 'template',
+        public ?PageSeoMetadata $seo = null,
     ) {}
 
     public function representationSha256(): string
@@ -23,6 +26,7 @@ final readonly class RenderedPage
             'artifact_sha256' => $this->artifactSha256,
             'published_at' => $this->publishedAt?->format(DATE_ATOM),
             'shell_mode' => $this->shellMode,
+            'seo' => $this->seo?->toArray(),
         ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 }

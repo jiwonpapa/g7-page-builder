@@ -439,7 +439,14 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('막대그래프');
     expect(gallery.textContent).toContain('G7 최근 게시글');
     expect(gallery.textContent).toContain('G7 상품 그리드');
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(16);
+    expect(gallery.textContent).toContain('고객 후기');
+    expect(gallery.textContent).toContain('FAQ 아코디언');
+    expect(gallery.textContent).toContain('프로세스·타임라인');
+    expect(gallery.textContent).toContain('탭 콘텐츠');
+    expect(gallery.textContent).toContain('비교표');
+    expect(gallery.textContent).toContain('에디토리얼 목록');
+    expect(gallery.textContent).toContain('영상');
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(23);
   });
 
   it('uses the actor catalog for search, categories, favorites, and preset insertion', async () => {

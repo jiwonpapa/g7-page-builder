@@ -252,6 +252,72 @@
             .g7pb-theme-mode-system .g7pb-block.g7pb-surface--default { background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
             .g7pb-theme-mode-system .g7pb-block.g7pb-surface--soft { background: var(--g7pb-page-panel); color: var(--g7pb-page-text); }
         }
+        .g7pb-testimonials__items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-testimonials blockquote { margin: 0; padding: 2rem; border-inline-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-testimonials blockquote:last-child { border-inline-end: 0; }
+        .g7pb-testimonials__rating { color: #f59e0b !important; letter-spacing: .08em; }
+        .g7pb-testimonials__quote { min-height: 5rem; font-size: 1.08rem; line-height: 1.72; }
+        .g7pb-testimonials footer { display: flex; gap: .8rem; align-items: center; }
+        .g7pb-testimonials footer figure { width: 2.9rem; height: 2.9rem; flex: 0 0 auto; overflow: hidden; margin: 0; border-radius: 50%; }
+        .g7pb-testimonials__avatar { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
+        .g7pb-testimonials cite { display: grid; font-style: normal; }
+        .g7pb-testimonials cite span { color: var(--g7pb-page-muted, #526071); font-size: .82rem; }
+        .g7pb-testimonials--spotlight .g7pb-testimonials__items { grid-template-columns: 1fr; }
+        .g7pb-testimonials--spotlight blockquote { border-inline-end: 0; border-block-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-faq { display: grid; grid-template-columns: minmax(14rem, .65fr) minmax(0, 1.35fr); gap: clamp(2rem, 6vw, 6rem); }
+        .g7pb-faq .g7pb-section-heading { margin-bottom: 0; }
+        .g7pb-faq details { border-block-start: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-faq details:last-child { border-block-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-faq summary { display: flex; min-height: 4.6rem; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-size: 1.05rem; font-weight: 780; list-style: none; }
+        .g7pb-faq summary::-webkit-details-marker { display: none; }
+        .g7pb-faq summary i { color: var(--g7pb-theme-accent); font-size: 1.5rem; font-style: normal; transition: transform 160ms ease; }
+        .g7pb-faq details[open] summary i { transform: rotate(45deg); }
+        .g7pb-faq details > div { padding: 0 2rem 1.5rem 0; color: var(--g7pb-page-muted, #526071); line-height: 1.75; }
+        .g7pb-process ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); margin: 0; padding: 0; border-block-start: 1px solid var(--g7pb-page-border, #dfe2e8); list-style: none; }
+        .g7pb-process li { position: relative; min-height: 15rem; padding: 1.5rem 1.5rem 2rem 0; border-block-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-process li::before { position: absolute; top: -4px; left: 0; width: .5rem; height: .5rem; border-radius: 50%; background: var(--g7pb-theme-accent); content: ''; }
+        .g7pb-process__number { color: var(--g7pb-theme-accent); font-family: ui-monospace, monospace; }
+        .g7pb-process h3 { margin: 2rem 0 .75rem; font-size: 1.25rem; }
+        .g7pb-process li p { color: var(--g7pb-page-muted, #526071); line-height: 1.65; }
+        .g7pb-process li a { color: var(--g7pb-theme-accent); font-weight: 800; text-decoration: none; }
+        .g7pb-process--vertical ol { grid-template-columns: 1fr; }
+        .g7pb-process--vertical li { min-height: auto; padding-left: 4rem; }
+        .g7pb-tabs__list { display: flex; gap: 1rem; overflow-x: auto; border-block-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-tabs__list button { padding: .9rem .25rem; border: 0; border-block-end: 3px solid transparent; color: var(--g7pb-page-muted, #526071); background: none; font: inherit; font-weight: 800; white-space: nowrap; cursor: pointer; }
+        .g7pb-tabs__list button[aria-selected='true'] { border-color: var(--g7pb-theme-accent); color: inherit; }
+        .g7pb-tabs--pills .g7pb-tabs__list { gap: .5rem; border: 0; }
+        .g7pb-tabs--pills .g7pb-tabs__list button { padding: .7rem 1rem; border: 0; border-radius: 999px; }
+        .g7pb-tabs--pills .g7pb-tabs__list button[aria-selected='true'] { color: #fff; background: var(--g7pb-theme-accent); }
+        .g7pb-tabs [role='tabpanel'] { min-height: 12rem; padding: 2.5rem 0; }
+        .g7pb-tabs [role='tabpanel'] h3 { margin: 0 0 1rem; font-size: 1.75rem; }
+        .g7pb-tabs [role='tabpanel'] p { max-width: 65ch; color: var(--g7pb-page-muted, #526071); line-height: 1.75; }
+        .g7pb-comparison__scroll { overflow-x: auto; }
+        .g7pb-comparison table { width: 100%; min-width: 44rem; border-collapse: collapse; text-align: left; }
+        .g7pb-comparison th, .g7pb-comparison td { padding: 1rem; border-block-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-comparison thead th { border-block-start: 1px solid var(--g7pb-page-border, #dfe2e8); vertical-align: top; }
+        .g7pb-comparison thead strong, .g7pb-comparison thead span { display: block; }
+        .g7pb-comparison thead span { margin-top: .35rem; color: var(--g7pb-page-muted, #526071); font-size: .78rem; font-weight: 500; }
+        .g7pb-comparison .is-highlighted { background: color-mix(in srgb, var(--g7pb-theme-accent) 9%, transparent); }
+        .g7pb-visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; white-space: nowrap !important; }
+        .g7pb-articles__items { border-block-start: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-articles article { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 1.5rem; padding: 1.5rem 0; border-block-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+        .g7pb-articles article figure { aspect-ratio: 4 / 3; overflow: hidden; margin: 0; border-radius: var(--g7pb-theme-radius); }
+        .g7pb-articles__image { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
+        .g7pb-articles__meta { display: flex; gap: .45rem; margin: 0; color: var(--g7pb-page-muted, #526071); font-size: .78rem; }
+        .g7pb-articles h3 { margin: .55rem 0; font-size: 1.35rem; }
+        .g7pb-articles h3 a { color: inherit; text-decoration: none; }
+        .g7pb-articles article > div > p:not(.g7pb-articles__meta) { margin: 0 0 .7rem; color: var(--g7pb-page-muted, #526071); line-height: 1.65; }
+        .g7pb-articles__link { color: var(--g7pb-theme-accent); font-weight: 800; text-decoration: none; }
+        .g7pb-articles--grid .g7pb-articles__items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; border: 0; }
+        .g7pb-articles--grid article { display: block; padding: 0 0 1.5rem; }
+        .g7pb-articles--grid article figure { margin-bottom: 1rem; }
+        .g7pb-video figure { margin: 0; }
+        .g7pb-video__frame { overflow: hidden; border-radius: var(--g7pb-theme-radius); background: #080c14; }
+        .g7pb-video__frame[data-ratio='16:9'] { aspect-ratio: 16 / 9; }
+        .g7pb-video__frame[data-ratio='4:3'] { aspect-ratio: 4 / 3; }
+        .g7pb-video__frame[data-ratio='1:1'] { aspect-ratio: 1; }
+        .g7pb-video iframe { display: block; width: 100%; height: 100%; border: 0; }
+        .g7pb-video figcaption { padding-top: 1rem; color: var(--g7pb-page-muted, #526071); line-height: 1.65; }
         .g7pb-motion-active .g7pb-block[data-g7pb-motion] { --g7pb-motion-distance: 1.5rem; --g7pb-motion-duration: 680ms; }
         .g7pb-motion-active .g7pb-block[data-g7pb-motion-intensity='subtle'] { --g7pb-motion-distance: .8rem; --g7pb-motion-duration: 520ms; }
         .g7pb-motion-active .g7pb-block[data-g7pb-motion-intensity='strong'] { --g7pb-motion-distance: 2.5rem; --g7pb-motion-duration: 880ms; }
@@ -277,6 +343,8 @@
             .g7pb-gallery__grid--3, .g7pb-gallery__grid--4 { grid-template-columns: repeat(2, 1fr); }
             .g7pb-dynamic-products--3, .g7pb-dynamic-products--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .g7pb-pricing__plan--featured { transform: none; }
+            .g7pb-testimonials__items, .g7pb-articles--grid .g7pb-articles__items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .g7pb-faq { grid-template-columns: 1fr; }
         }
         @media (max-width: 899px) {
             .g7pb-site-header__inner { width: min(calc(100% - 2rem), 72rem); min-height: 4.25rem; grid-template-columns: 1fr auto; }
@@ -291,12 +359,15 @@
             .g7pb-site-footer__columns { grid-template-columns: 1fr; }
             .g7pb-site-footer__columns > :first-child { grid-column: auto; }
             .g7pb-dynamic-products--2, .g7pb-dynamic-products--3, .g7pb-dynamic-products--4 { grid-template-columns: 1fr; }
+            .g7pb-testimonials__items, .g7pb-articles--grid .g7pb-articles__items { grid-template-columns: 1fr; }
+            .g7pb-testimonials blockquote { border-inline-end: 0; border-block-end: 1px solid var(--g7pb-page-border, #dfe2e8); }
+            .g7pb-articles article { grid-template-columns: 5.5rem minmax(0, 1fr); }
         }
         @media (prefers-reduced-motion: reduce) {
             .g7pb-block, .g7pb-block *, .g7pb-motion-parallax-target { animation: none !important; transition: none !important; transform: none !important; }
         }
     </style>
-    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source=') || str_contains($page->artifact, 'data-g7pb-inquiry-form'))
+    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source=') || str_contains($page->artifact, 'data-g7pb-inquiry-form') || str_contains($page->artifact, 'data-g7pb-accordion') || str_contains($page->artifact, 'data-g7pb-tabs'))
         <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}"></script>
     @endif
 </head>

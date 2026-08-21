@@ -1,7 +1,7 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.8.0",
+  "pack_version": "0.9.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
@@ -204,6 +204,90 @@
       "editor_component": "MapDirections",
       "compiler": "builtin.map-directions-01",
       "capabilities": ["public.map-embed"]
+    },
+    {
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "category": "trust",
+      "label": { "ko": "고객 후기", "en": "Testimonials" },
+      "description": { "ko": "고객 평가, 역할, 회사와 프로필을 신뢰 요소로 보여줍니다.", "en": "Present customer quotes, ratings, and identities." },
+      "thumbnail": "thumbnails/testimonials.svg",
+      "schema_ref": "builtin:testimonialsProps",
+      "editor_component": "Testimonials",
+      "compiler": "builtin.testimonials-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.faq-accordion-01",
+      "block_version": 1,
+      "category": "content",
+      "label": { "ko": "FAQ 아코디언", "en": "FAQ accordion" },
+      "description": { "ko": "질문과 답변을 접근 가능한 접이식 목록으로 제공합니다.", "en": "Organize questions and answers in an accessible accordion." },
+      "thumbnail": "thumbnails/faq-accordion.svg",
+      "schema_ref": "builtin:faqAccordionProps",
+      "editor_component": "FaqAccordion",
+      "compiler": "builtin.faq-accordion-01",
+      "capabilities": ["public.accordion"]
+    },
+    {
+      "block_id": "content.process-timeline-01",
+      "block_version": 1,
+      "category": "content",
+      "label": { "ko": "프로세스·타임라인", "en": "Process timeline" },
+      "description": { "ko": "절차와 이력을 순서가 있는 단계로 설명합니다.", "en": "Explain a process or history as ordered steps." },
+      "thumbnail": "thumbnails/process-timeline.svg",
+      "schema_ref": "builtin:processTimelineProps",
+      "editor_component": "ProcessTimeline",
+      "compiler": "builtin.process-timeline-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.tabs-01",
+      "block_version": 1,
+      "category": "content",
+      "label": { "ko": "탭 콘텐츠", "en": "Tabbed content" },
+      "description": { "ko": "관련 내용을 키보드로 탐색 가능한 탭으로 구분합니다.", "en": "Group related content into keyboard-accessible tabs." },
+      "thumbnail": "thumbnails/tabs.svg",
+      "schema_ref": "builtin:tabsProps",
+      "editor_component": "Tabs",
+      "compiler": "builtin.tabs-01",
+      "capabilities": ["public.tabs"]
+    },
+    {
+      "block_id": "commerce.comparison-table-01",
+      "block_version": 1,
+      "category": "commerce",
+      "label": { "ko": "비교표", "en": "Comparison table" },
+      "description": { "ko": "제품이나 플랜의 차이를 접근 가능한 표로 비교합니다.", "en": "Compare products or plans in an accessible table." },
+      "thumbnail": "thumbnails/comparison-table.svg",
+      "schema_ref": "builtin:comparisonTableProps",
+      "editor_component": "ComparisonTable",
+      "compiler": "builtin.comparison-table-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "category": "content",
+      "label": { "ko": "에디토리얼 목록", "en": "Editorial list" },
+      "description": { "ko": "선별한 글, 사례, 소식을 이미지와 링크가 있는 목록으로 구성합니다.", "en": "Curate articles, cases, or news with images and links." },
+      "thumbnail": "thumbnails/article-list.svg",
+      "schema_ref": "builtin:articleListProps",
+      "editor_component": "ArticleList",
+      "compiler": "builtin.article-list-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "media.video-embed-01",
+      "block_version": 1,
+      "category": "media",
+      "label": { "ko": "영상", "en": "Video embed" },
+      "description": { "ko": "YouTube 또는 Vimeo 영상을 안전한 식별자 방식으로 삽입합니다.", "en": "Embed a YouTube or Vimeo video by safe identifier." },
+      "thumbnail": "thumbnails/video-embed.svg",
+      "schema_ref": "builtin:videoEmbedProps",
+      "editor_component": "VideoEmbed",
+      "compiler": "builtin.video-embed-01",
+      "capabilities": ["public.video-embed"]
     }
   ],
   "presets": [],

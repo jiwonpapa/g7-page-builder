@@ -185,7 +185,7 @@ CONFIRM=RESET_G7PB_DEV make dev-reset TASK=integration-20260820
 7. Page Builder 모듈 설치·활성
 8. 컨테이너 내부 Playwright 인프라 E2E assertion
 
-환경 완료와 Page Builder 제품 완료는 다릅니다. 현재 별도 관리자 메뉴, 16종 block의 schema·editor·compiler·renderer, MediaPort 업로드, 문의함·지도, 문서 보관/복원, 핵심 편집·미리보기·발행·복원·공개 해제 E2E, 릴리스 패키징과 스테이징 배포 하네스는 구현됐습니다. SEO 세부 설정과 시각 baseline 확대는 다음 제품 범위입니다.
+환경 완료와 Page Builder 제품 완료는 다릅니다. 현재 별도 관리자 메뉴, 23종 block의 manifest·editor·compiler·renderer, MediaPort 업로드, 문의함·지도, 문서 보관/복원, 핵심 편집·미리보기·발행·복원·공개 해제 E2E, 릴리스 패키징과 스테이징 배포 하네스는 구현됐습니다. SEO 세부 설정과 시각 baseline 확대는 다음 제품 범위입니다.
 
 ## 문제 확인 순서
 

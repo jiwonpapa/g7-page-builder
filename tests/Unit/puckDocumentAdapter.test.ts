@@ -3,14 +3,21 @@ import { describe, expect, it } from 'vitest';
 import type { PuckEditorData } from '../../resources/js/editor/PuckEditorAdapter';
 import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import {
+  ARTICLE_LIST_BLOCK_TYPE,
+  COMPARISON_TABLE_BLOCK_TYPE,
   CONTACT_BLOCK_TYPE,
   CTA_BLOCK_TYPE,
+  FAQ_ACCORDION_BLOCK_TYPE,
   FEATURES_BLOCK_TYPE,
   G7_PRODUCT_GRID_BLOCK_TYPE,
   G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_BLOCK_TYPE,
   INQUIRY_FORM_BLOCK_TYPE,
   MAP_DIRECTIONS_BLOCK_TYPE,
+  PROCESS_TIMELINE_BLOCK_TYPE,
+  TABS_BLOCK_TYPE,
+  TESTIMONIALS_BLOCK_TYPE,
+  VIDEO_EMBED_BLOCK_TYPE,
   type PageBuilderDocument,
 } from '../../resources/js/documents/types';
 
@@ -433,6 +440,31 @@ describe('Puck PageBuilderDocument adapter', () => {
 
     expect(session.data.content.map((block) => block.type)).toEqual(['InquiryForm', 'MapDirections']);
     expect(puckToCanonical(session.data, session.context)).toEqual(serviceBlocks);
+  });
+
+  it('round-trips all seven phase-two product blocks and exposes their visible copy inline', () => {
+    const phaseTwo: PageBuilderDocument = {
+      ...documentFixture,
+      blocks: [
+        { instance_id: 'a23e4567-e89b-42d3-a456-426614174009', type: TESTIMONIALS_BLOCK_TYPE, block_version: 1, props: { eyebrow: '후기', heading: '고객 이야기', layout: 'grid', items: [{ quote: '좋았습니다.', name: '김고객', role: '대표', company: '예시', avatarSrc: '', avatarAlt: '', rating: 5 }, { quote: '편리합니다.', name: '이고객', role: '운영', company: '샘플', avatarSrc: '', avatarAlt: '', rating: 4 }] }, slots: {} },
+        { instance_id: 'b23e4567-e89b-42d3-a456-426614174010', type: FAQ_ACCORDION_BLOCK_TYPE, block_version: 1, props: { eyebrow: 'FAQ', heading: '질문', behavior: 'single', openFirst: true, items: [{ question: '질문 1', answer: '답변 1' }, { question: '질문 2', answer: '답변 2' }] }, slots: {} },
+        { instance_id: 'c23e4567-e89b-42d3-a456-426614174011', type: PROCESS_TIMELINE_BLOCK_TYPE, block_version: 1, props: { eyebrow: '과정', heading: '진행', layout: 'horizontal', items: [{ title: '선택', body: '선택합니다.', linkLabel: '', linkUrl: '' }, { title: '발행', body: '발행합니다.', linkLabel: '안내', linkUrl: '/guide' }] }, slots: {} },
+        { instance_id: 'd23e4567-e89b-42d3-a456-426614174012', type: TABS_BLOCK_TYPE, block_version: 1, props: { eyebrow: '안내', heading: '서비스', initialTab: 1, style: 'pills', items: [{ label: '기획', heading: '기획 안내', body: '기획합니다.' }, { label: '운영', heading: '운영 안내', body: '운영합니다.' }] }, slots: {} },
+        { instance_id: 'e23e4567-e89b-42d3-a456-426614174013', type: COMPARISON_TABLE_BLOCK_TYPE, block_version: 1, props: { eyebrow: '비교', heading: '플랜', highlightColumn: 1, columns: [{ title: '기본', description: '시작' }, { title: '성장', description: '운영' }], rows: [{ feature: '페이지', values: ['3개', '무제한'] }] }, slots: {} },
+        { instance_id: 'f23e4567-e89b-42d3-a456-426614174014', type: ARTICLE_LIST_BLOCK_TYPE, block_version: 1, props: { eyebrow: '소식', heading: '이야기', layout: 'list', items: [{ category: '제품', title: '첫 글', summary: '첫 글입니다.', date: '2026-08-21', imageSrc: '', imageAlt: '', url: '/first' }, { category: '가이드', title: '둘째 글', summary: '둘째 글입니다.', date: '2026-08-20', imageSrc: '', imageAlt: '', url: '/second' }] }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174015', type: VIDEO_EMBED_BLOCK_TYPE, block_version: 1, props: { eyebrow: '영상', heading: '제품 소개', caption: '영상 설명', provider: 'youtube', videoId: 'abcDEF12345', ratio: '16:9' }, slots: {} },
+      ],
+    };
+
+    const session = canonicalToPuck(phaseTwo);
+    expect(session.data.content.map((block) => block.type)).toEqual(['Testimonials', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ComparisonTable', 'ArticleList', 'VideoEmbed']);
+    expect(puckToCanonical(session.data, session.context)).toEqual(phaseTwo);
+
+    const components = pageBuilderPuckConfig.components as unknown as Record<string, { fields: Record<string, Record<string, unknown>> }>;
+    expect(components.Testimonials.fields.heading.contentEditable).toBe(true);
+    expect((components.FaqAccordion.fields.items.arrayFields as Record<string, Record<string, unknown>>).question.contentEditable).toBe(true);
+    expect((components.ArticleList.fields.items.arrayFields as Record<string, Record<string, unknown>>).title.contentEditable).toBe(true);
+    expect(components.VideoEmbed.fields.videoId.contentEditable).not.toBe(true);
   });
 
   it('rejects nested slots and unknown canonical blocks at the adapter boundary', () => {

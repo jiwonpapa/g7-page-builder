@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  bootAccordions,
   bootDynamicData,
   bootInquiryForms,
   bootPageEffects,
   bootServiceActions,
+  bootTabs,
   ensureSliderControls,
   parseCounterText,
 } from '../../resources/js/public/pageEffects';
@@ -17,6 +19,37 @@ afterEach(() => {
 });
 
 describe('published page effects runtime', () => {
+  it('keeps single FAQ accordions exclusive and makes tabs keyboard accessible', () => {
+    document.body.innerHTML = `
+      <section data-block-id="123e4567-e89b-42d3-a456-426614174099" data-g7pb-accordion data-g7pb-accordion-behavior="single">
+        <details open><summary>첫 질문</summary><p>첫 답변</p></details>
+        <details><summary>둘째 질문</summary><p>둘째 답변</p></details>
+      </section>
+      <section data-block-id="223e4567-e89b-42d3-a456-426614174099" data-g7pb-tabs data-g7pb-tabs-initial="1">
+        <div role="tablist"><button role="tab">기획</button><button role="tab">운영</button></div>
+        <article role="tabpanel">기획 내용</article><article role="tabpanel">운영 내용</article>
+      </section>`;
+
+    bootAccordions(document);
+    bootTabs(document);
+    const details = Array.from(document.querySelectorAll<HTMLDetailsElement>('details'));
+    details[1].open = true;
+    details[1].dispatchEvent(new Event('toggle'));
+    expect(details[0].open).toBe(false);
+    expect(details[1].open).toBe(true);
+
+    const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = Array.from(document.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true');
+    expect(panels[0].hidden).toBe(true);
+    expect(tabs[0].getAttribute('aria-controls')).toBe(panels[0].id);
+    tabs[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, cancelable: true }));
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(tabs[0]);
+    expect(panels[0].hidden).toBe(false);
+    expect(panels[1].hidden).toBe(true);
+  });
+
   it('parses localized numeric labels while preserving their prefix and suffix', () => {
     expect(parseCounterText('12,400+')).toEqual({ prefix: '', value: 12400, suffix: '+', decimals: 0 });
     expect(parseCounterText('가용성 99.9%')).toEqual({ prefix: '가용성 ', value: 99.9, suffix: '%', decimals: 1 });

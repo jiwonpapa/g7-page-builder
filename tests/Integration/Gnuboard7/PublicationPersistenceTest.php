@@ -639,6 +639,8 @@ final class PublicationPersistenceTest extends TestCase
         }
         $contentSecurityPolicy = (string) $viewerResponse->headers->get('Content-Security-Policy');
         self::assertStringContainsString("script-src 'self'", $contentSecurityPolicy);
+        self::assertStringContainsString('https://www.youtube-nocookie.com', $contentSecurityPolicy);
+        self::assertStringContainsString('https://player.vimeo.com', $contentSecurityPolicy);
         self::assertStringNotContainsString("'unsafe-eval'", $contentSecurityPolicy);
         self::assertStringNotContainsString("script-src 'self' 'unsafe-inline'", $contentSecurityPolicy);
         self::assertSame(304, $notModifiedResponse->getStatusCode());

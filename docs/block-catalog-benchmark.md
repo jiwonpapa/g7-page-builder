@@ -1,11 +1,11 @@
 # Block catalog benchmark
 
-상태: 1차 테스트 카탈로그 구현
-기준일: 2026-08-19
+상태: 2차 제품 카탈로그 구현
+기준일: 2026-08-21
 
 ## 결론
 
-유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 12종, G7 공개 데이터 2종, 문의 폼 1종, 찾아오기 1종으로 총 16종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다.
+유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 19종, G7 공개 데이터 2종, 문의 폼 1종, 찾아오기 1종으로 총 23종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다.
 
 ## 공식 제품에서 확인한 공통 구조
 
@@ -19,7 +19,7 @@
 | [Framer Components](https://www.framer.com/help/articles/using-components/) | 재사용 component와 노출된 property로 변형 | raw CSS 대신 재사용 block+typed property 채택 |
 | [Framer CMS Components](https://www.framer.com/updates/cms-components) | property·variant·responsive breakpoint 조합 | surface·spacing·열 수를 제한된 variant로 제공 |
 
-## 1차 콘텐츠 카탈로그 12종
+## 1·2차 콘텐츠 카탈로그 23종
 
 폼·위치 카테고리는 별도 제품 계약으로 추가했습니다.
 
@@ -42,6 +42,13 @@
 | G7 데이터 | 최근 게시글 | `g7.board-recent-posts-01` | 최신·인기 게시글 자동 목록 |
 | G7 데이터 | 상품 그리드 | `g7.ecommerce-product-grid-01` | 최신·신규·인기 상품 자동 목록 |
 | 데이터 | 막대그래프 | `data.bar-chart-01` | 0~100 값 비교 |
+| 신뢰 | 고객 후기 | `trust.testimonials-01` | 평가·이름·역할·회사·프로필 반복 |
+| 콘텐츠 | FAQ 아코디언 | `content.faq-accordion-01` | 접근 가능한 질문·답변 접기 |
+| 콘텐츠 | 프로세스·타임라인 | `content.process-timeline-01` | 순서가 있는 절차·이력 설명 |
+| 콘텐츠 | 탭 콘텐츠 | `content.tabs-01` | 키보드 탐색 가능한 관련 정보 구분 |
+| 비즈니스 | 비교표 | `commerce.comparison-table-01` | 2~4개 제품·플랜의 의미 있는 표 비교 |
+| 콘텐츠 | 에디토리얼 목록 | `content.article-list-01` | 사람이 선별한 글·사례·소식 목록 |
+| 미디어 | 영상 | `media.video-embed-01` | 허용된 YouTube·Vimeo 영상 식별자 임베드 |
 
 ## UX와 시각 원칙
 
@@ -51,6 +58,9 @@
 - Slider는 브라우저 scroll-snap, 그래프는 semantic `progress`를 기본 구조로 사용합니다. 동적 효과를 선택한 페이지에서만 별도 경량 runtime을 조건부 로드합니다.
 - 이미지 필드는 자체 `MediaPort`의 직접 업로드·최근 미디어 선택을 기본으로 하고 외부 URL은 고급 입력으로 유지합니다. 발행/리비전에서 참조 중인 파일은 삭제를 거부합니다.
 - Hero Slider는 MIT 라이선스 `embla-carousel` 8.6.0과 Autoplay plugin을 사용하며, 서버 렌더 결과는 JS 실패 시 첫 슬라이드를 그대로 노출합니다.
+- FAQ는 native `details`, 비교표는 semantic `table`, 탭은 ARIA tab pattern과 방향키·Home·End 탐색을 사용합니다.
+- 에디토리얼 목록은 관리자가 선별하는 정적 콘텐츠입니다. 자동 최신글·인기글은 기존 G7 Recent Posts가 공개 API capability를 통해 담당합니다.
+- 영상은 임의 iframe URL을 받지 않고 YouTube·Vimeo provider와 검증된 ID만 저장하며 공개 CSP도 두 host만 추가 허용합니다.
 
 ## 편집 경계
 
@@ -62,4 +72,4 @@
 
 ## 다음 후보
 
-2차 우선순위는 Testimonials, FAQ Accordion, Process/Timeline, Tabs, Comparison Table, Article/CMS List, Video입니다. 각 데이터 블록은 화면보다 먼저 capability·권한·빈 상태·실패 처리 계약을 정의합니다.
+3차는 검색·필터 가능한 콘텐츠 아카이브, 로고·후기 슬라이더 variant, 이벤트 일정, 다운로드 자료, 상세 상품·게시판 연결 variant를 후보로 둡니다. G7 데이터 variant는 화면보다 먼저 capability·권한·빈 상태·실패 처리 계약을 정의합니다.

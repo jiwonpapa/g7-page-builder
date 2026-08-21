@@ -16,6 +16,13 @@ export const G7_RECENT_POSTS_BLOCK_TYPE = 'g7.board-recent-posts-01' as const;
 export const G7_PRODUCT_GRID_BLOCK_TYPE = 'g7.ecommerce-product-grid-01' as const;
 export const INQUIRY_FORM_BLOCK_TYPE = 'form.inquiry-01' as const;
 export const MAP_DIRECTIONS_BLOCK_TYPE = 'location.map-directions-01' as const;
+export const TESTIMONIALS_BLOCK_TYPE = 'trust.testimonials-01' as const;
+export const FAQ_ACCORDION_BLOCK_TYPE = 'content.faq-accordion-01' as const;
+export const PROCESS_TIMELINE_BLOCK_TYPE = 'content.process-timeline-01' as const;
+export const TABS_BLOCK_TYPE = 'content.tabs-01' as const;
+export const COMPARISON_TABLE_BLOCK_TYPE = 'commerce.comparison-table-01' as const;
+export const ARTICLE_LIST_BLOCK_TYPE = 'content.article-list-01' as const;
+export const VIDEO_EMBED_BLOCK_TYPE = 'media.video-embed-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -261,6 +268,115 @@ export interface MapDirectionsBlockProps {
   phone: string;
   hours: string;
   parking: string;
+  appearance?: BlockAppearance;
+}
+
+export interface TestimonialItem {
+  quote: string;
+  name: string;
+  role: string;
+  company: string;
+  avatarSrc: string;
+  avatarAlt: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+}
+
+export interface TestimonialsBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: TestimonialItem[];
+  layout: 'grid' | 'spotlight';
+  appearance?: BlockAppearance;
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface FaqAccordionBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: FaqItem[];
+  behavior: 'single' | 'multiple';
+  openFirst: boolean;
+  appearance?: BlockAppearance;
+}
+
+export interface ProcessStepItem {
+  title: string;
+  body: string;
+  linkLabel: string;
+  linkUrl: string;
+}
+
+export interface ProcessTimelineBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: ProcessStepItem[];
+  layout: 'vertical' | 'horizontal';
+  appearance?: BlockAppearance;
+}
+
+export interface TabItem {
+  label: string;
+  heading: string;
+  body: string;
+}
+
+export interface TabsBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: TabItem[];
+  initialTab: number;
+  style: 'underline' | 'pills';
+  appearance?: BlockAppearance;
+}
+
+export interface ComparisonColumnItem {
+  title: string;
+  description: string;
+}
+
+export interface ComparisonRowItem {
+  feature: string;
+  values: string[];
+}
+
+export interface ComparisonTableBlockProps {
+  eyebrow: string;
+  heading: string;
+  columns: ComparisonColumnItem[];
+  rows: ComparisonRowItem[];
+  highlightColumn: number;
+  appearance?: BlockAppearance;
+}
+
+export interface ArticleListItem {
+  category: string;
+  title: string;
+  summary: string;
+  date: string;
+  imageSrc: string;
+  imageAlt: string;
+  url: string;
+}
+
+export interface ArticleListBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: ArticleListItem[];
+  layout: 'list' | 'grid';
+  appearance?: BlockAppearance;
+}
+
+export interface VideoEmbedBlockProps {
+  eyebrow: string;
+  heading: string;
+  caption: string;
+  provider: 'youtube' | 'vimeo';
+  videoId: string;
+  ratio: '16:9' | '4:3' | '1:1';
   appearance?: BlockAppearance;
 }
 

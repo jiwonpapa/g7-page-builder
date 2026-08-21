@@ -8,6 +8,12 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
+import {
+  canonicalPhase2BlockToPuck,
+  phase2CatalogComponentConfigs,
+  phase2PuckBlockToCanonical,
+  type Phase2CatalogEditorComponents,
+} from './phase2CatalogBlocks';
 
 import {
   BAR_CHART_BLOCK_TYPE,
@@ -188,7 +194,7 @@ export interface MapDirectionsEditorProps extends AppearanceEditorProps {
   motion: BlockMotion;
 }
 
-export interface CatalogEditorComponents {
+export interface CatalogEditorComponents extends Phase2CatalogEditorComponents {
   HeroSplit: HeroSplitEditorProps;
   HeroSlider: HeroSliderEditorProps;
   LogoCloud: LogoCloudEditorProps;
@@ -607,6 +613,7 @@ function MapDirectionsPreview(props: MapDirectionsEditorProps & { id: string }):
 }
 
 export const catalogComponentConfigs: Config<CatalogEditorComponents>['components'] = {
+  ...phase2CatalogComponentConfigs,
   HeroSplit: {
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
@@ -698,6 +705,8 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
 };
 
 export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] } | null {
+  const phase2Block = canonicalPhase2BlockToPuck(block);
+  if (phase2Block) return phase2Block as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const props = block.props;
   if (block.type === HERO_SPLIT_BLOCK_TYPE) {
     const cta = asRecord(props.primaryCta); const image = asRecord(props.image);
@@ -725,6 +734,8 @@ function attachAppearance(props: Record<string, unknown>, raw: Record<string, un
 }
 
 export function catalogPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean, includeSliderSettings = false): { type: string; props: Record<string, unknown> } | null {
+  const phase2Block = phase2PuckBlockToCanonical(type, raw, includeAppearance);
+  if (phase2Block) return phase2Block;
   if (type === 'HeroSplit') {
     const props: Record<string, unknown> = { eyebrow: asString(raw.eyebrow), title: asString(raw.title), body: asString(raw.body), mediaPosition: raw.mediaPosition === 'left' ? 'left' : 'right' };
     if (asString(raw.primaryLabel) || asString(raw.primaryUrl)) props.primaryCta = { label: asString(raw.primaryLabel), url: asString(raw.primaryUrl) };

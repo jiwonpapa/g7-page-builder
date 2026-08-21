@@ -30,6 +30,9 @@ const STAGGER_TARGETS = [
   '.g7pb-pricing__plan',
   '.g7pb-team__grid article',
   '.g7pb-gallery__grid figure',
+  '.g7pb-testimonials__items blockquote',
+  '.g7pb-process li',
+  '.g7pb-articles__items article',
 ];
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -298,6 +301,8 @@ function installParallax(blocks: HTMLElement[], view: MotionWindow): void {
 export function bootPageEffects(root: Document = document, view: MotionWindow = window as MotionWindow): void {
   bootSiteShellMenu(root, view);
   bootServiceActions(root, view);
+  bootAccordions(root);
+  bootTabs(root);
   const fetcher = typeof view.fetch === 'function' ? view.fetch.bind(view) : fetch;
   bootInquiryForms(root, fetcher);
   void bootDynamicData(root, fetcher);
@@ -344,6 +349,68 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
   blocks.forEach((block) => {
     observer.observe(block);
   });
+}
+
+export function bootAccordions(root: Document = document): void {
+  for (const accordion of root.querySelectorAll<HTMLElement>('[data-g7pb-accordion]')) {
+    if (accordion.dataset.g7pbAccordionReady === 'true') continue;
+    if (accordion.dataset.g7pbAccordionBehavior === 'single') {
+      for (const item of accordion.querySelectorAll<HTMLDetailsElement>('details')) {
+        item.addEventListener('toggle', () => {
+          if (!item.open) return;
+          for (const sibling of accordion.querySelectorAll<HTMLDetailsElement>('details')) {
+            if (sibling !== item) sibling.open = false;
+          }
+        });
+      }
+    }
+    accordion.dataset.g7pbAccordionReady = 'true';
+  }
+}
+
+export function bootTabs(root: Document = document): void {
+  for (const tabsRoot of root.querySelectorAll<HTMLElement>('[data-g7pb-tabs]')) {
+    if (tabsRoot.dataset.g7pbTabsReady === 'true') continue;
+    const tabs = Array.from(tabsRoot.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = Array.from(tabsRoot.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+    if (tabs.length < 2 || tabs.length !== panels.length) continue;
+    const blockKey = (tabsRoot.dataset.blockId ?? `tabs-${Array.from(root.querySelectorAll('[data-g7pb-tabs]')).indexOf(tabsRoot)}`)
+      .replace(/[^A-Za-z0-9_-]/g, '-');
+
+    const select = (index: number, focus = false): void => {
+      const target = Math.min(Math.max(index, 0), tabs.length - 1);
+      tabs.forEach((tab, tabIndex) => {
+        const selected = tabIndex === target;
+        tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+        tab.tabIndex = selected ? 0 : -1;
+      });
+      panels.forEach((panel, panelIndex) => { panel.hidden = panelIndex !== target; });
+      if (focus) tabs[target]?.focus();
+    };
+
+    tabs.forEach((tab, index) => {
+      const tabId = `g7pb-${blockKey}-tab-${index}`;
+      const panelId = `g7pb-${blockKey}-panel-${index}`;
+      tab.id = tabId;
+      tab.setAttribute('aria-controls', panelId);
+      panels[index].id = panelId;
+      panels[index].setAttribute('aria-labelledby', tabId);
+      tab.addEventListener('click', () => select(index));
+      tab.addEventListener('keydown', (event) => {
+        let target: number | null = null;
+        if (event.key === 'ArrowRight') target = (index + 1) % tabs.length;
+        if (event.key === 'ArrowLeft') target = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === 'Home') target = 0;
+        if (event.key === 'End') target = tabs.length - 1;
+        if (target === null) return;
+        event.preventDefault();
+        select(target, true);
+      });
+    });
+    const configured = Number(tabsRoot.dataset.g7pbTabsInitial ?? 0);
+    select(Number.isInteger(configured) ? configured : 0);
+    tabsRoot.dataset.g7pbTabsReady = 'true';
+  }
 }
 
 export function bootInquiryForms(root: Document = document, fetcher: typeof fetch = fetch): void {

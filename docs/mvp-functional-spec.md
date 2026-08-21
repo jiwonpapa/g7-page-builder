@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 16종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문의함·지도, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 drawer 완료.
+현재 구현: 23종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문의함·지도, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 drawer 완료.
 
 ## 목표
 
@@ -65,7 +65,7 @@
 - compile 실패는 공개 페이지를 바꾸지 않습니다.
 - 마지막 20개 revision을 조회·미리보기·복원합니다.
 
-## 1차 테스트 block 16종
+## 제품 block 23종
 
 | Block | 필수 props | 규칙 | 제외 |
 |---|---|---|---|
@@ -85,6 +85,13 @@
 | G7 Product Grid | source, limit, columns, audience | G7 공개 API capability, 안전한 상세 route | 쇼핑 모듈 hard dependency |
 | Inquiry Form | kind, heading, fields, consent, success | DB 선저장, CSRF, rate limit, honeypot, 관리자 문의함·메일 재시도 | 문서별 수신자·임의 action |
 | Map Directions | provider, 좌표, 주소, 길찾기, 운영·주차 정보 | OSM·Google keyless iframe 또는 지도 숨김, URL allowlist | 지도 script·API key 저장 |
+| Testimonials | heading, 2~8 items(quote/name/role/company/avatar/rating), layout | 평점·이미지·반복 수 allowlist, inline copy | 외부 리뷰 자동 수집 |
+| FAQ Accordion | heading, 2~12 question/answer, behavior, openFirst | native details, 단일·복수 열림, JS 실패 시 정적 접근 | 임의 HTML 답변 |
+| Process Timeline | heading, 2~8 steps, layout, optional link | 순서 목록, typed route, 가로·세로 variant | 자유 연결선·절대 배치 |
+| Tabs | heading, 2~6 tabs, initial tab, style | ARIA tab pattern, 방향키·Home·End, JS 실패 시 모든 내용 유지 | 중첩 block |
+| Comparison Table | heading, 2~4 columns, 1~12 rows, highlight | semantic table, 값 수 일치, 강조 열 allowlist | 임의 셀 병합·HTML |
+| Editorial List | heading, 2~8 items(image/category/title/summary/date/route), layout | 사람이 선별한 목록, MediaPort·route allowlist | 자동 CMS 조회·페이지네이션 |
+| Video Embed | heading, provider, video ID, ratio, caption | YouTube Privacy Enhanced·Vimeo ID allowlist, 제한 CSP | 임의 iframe URL·script |
 
 G7 데이터 블록은 관련 공개 API capability가 없으면 선택지만 비활성화하고 문서 저장·독립 shell 발행·마지막 정상 발행본에는 영향을 주지 않습니다.
 
@@ -134,7 +141,7 @@ G7 데이터 블록은 관련 공개 API capability가 없으면 선택지만 �
 
 ## 완료 조건
 
-1. 16종 테스트 카탈로그 block 모두 schema·editor·PHP compiler·public renderer·Fixture를 가집니다.
+1. 23종 제품 카탈로그 block 모두 manifest·editor·PHP compiler·public renderer·회귀시험을 가집니다.
 2. 좌측 Blocks에서 이름·용도·축소 구조를 확인하고 원하는 블록 사이에 드롭할 수 있으며, 상세 미리보기는 선택 블록 뒤 빠른 추가를 제공합니다.
 3. 생성부터 rollback까지 Playwright 제품 E2E가 통과합니다.
 4. PC·태블릿·모바일 screenshot baseline을 사람이 확인합니다.

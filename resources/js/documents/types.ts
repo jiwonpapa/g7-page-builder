@@ -49,7 +49,18 @@ export interface BlockAppearance {
   spacing: 'compact' | 'normal' | 'spacious';
   textScale?: 'compact' | 'balanced' | 'large';
   textAlign?: 'left' | 'center' | 'right';
+  elements?: ElementAppearanceMap;
 }
+
+export interface ElementAppearance {
+  font?: 'inherit' | 'system' | 'modern' | 'serif' | 'mono';
+  size?: 'small' | 'base' | 'large' | 'xlarge';
+  weight?: 'regular' | 'medium' | 'semibold' | 'bold';
+  align?: 'left' | 'center' | 'right';
+  tone?: 'default' | 'muted' | 'accent' | 'contrast';
+}
+
+export type ElementAppearanceMap = Record<string, ElementAppearance>;
 
 export type BlockMotionPreset = 'none' | 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
 

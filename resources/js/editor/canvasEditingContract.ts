@@ -1,6 +1,17 @@
-import type React from 'react';
+import React from 'react';
+
+import type { ElementAppearance, ElementAppearanceMap } from '../documents/types';
 
 export const CANVAS_ELEMENT_MESSAGE = 'g7pb:canvas-element-selected';
+
+export const CanvasElementStylesContext = React.createContext<Record<string, ElementAppearanceMap>>({});
+
+export function useCanvasElementStyles(blockId: string, fallback?: ElementAppearanceMap): ElementAppearanceMap | undefined {
+  const styles = React.useContext(CanvasElementStylesContext);
+  if (styles[blockId]) return styles[blockId];
+  const uuid = blockId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i)?.[0]?.toLowerCase();
+  return (uuid ? styles[uuid] : undefined) ?? fallback;
+}
 
 export type CanvasElementRole = 'block' | 'text' | 'action' | 'media';
 
@@ -12,6 +23,14 @@ export interface CanvasElementSelection {
   label: string;
   collection: string | null;
   itemIndex: number | null;
+  anchor?: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null;
 }
 
 interface CollectionLimit {
@@ -173,7 +192,7 @@ const COMPONENT_TYPE_BY_BLOCK_TYPE: Record<string, string> = {
   'g7-product-showcase': 'G7ProductShowcase',
 };
 
-function selectionFromPath(blockId: string, blockType: string, fieldPath: string, role: CanvasElementRole): CanvasElementSelection {
+function selectionFromPath(blockId: string, blockType: string, fieldPath: string, role: CanvasElementRole): Omit<CanvasElementSelection, 'anchor'> {
   const segments = fieldPath.split('.');
   const collection = segments.length >= 3 && /^\d+$/.test(segments[1]) ? segments[0] : null;
   const itemIndex = collection ? Number(segments[1]) : null;
@@ -188,6 +207,79 @@ function selectionFromPath(blockId: string, blockType: string, fieldPath: string
     collection,
     itemIndex,
   };
+}
+
+function parentViewportRect(element: HTMLElement | null): CanvasElementSelection['anchor'] {
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  const frame = element.ownerDocument.defaultView?.frameElement;
+  if (!(frame instanceof HTMLElement)) {
+    return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left, width: rect.width, height: rect.height };
+  }
+  const frameRect = frame.getBoundingClientRect();
+  const frameWidth = element.ownerDocument.defaultView?.innerWidth ?? frameRect.width;
+  const frameHeight = element.ownerDocument.defaultView?.innerHeight ?? frameRect.height;
+  const scaleX = frameWidth > 0 ? frameRect.width / frameWidth : 1;
+  const scaleY = frameHeight > 0 ? frameRect.height / frameHeight : 1;
+  return {
+    top: frameRect.top + rect.top * scaleY,
+    right: frameRect.left + rect.right * scaleX,
+    bottom: frameRect.top + rect.bottom * scaleY,
+    left: frameRect.left + rect.left * scaleX,
+    width: rect.width * scaleX,
+    height: rect.height * scaleY,
+  };
+}
+
+export function normalizeElementAppearance(value: unknown): ElementAppearance {
+  const record = value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  return {
+    ...(record.font === 'system' || record.font === 'modern' || record.font === 'serif' || record.font === 'mono' ? { font: record.font } : {}),
+    ...(record.size === 'small' || record.size === 'large' || record.size === 'xlarge' ? { size: record.size } : {}),
+    ...(record.weight === 'medium' || record.weight === 'semibold' || record.weight === 'bold' ? { weight: record.weight } : {}),
+    ...(record.align === 'center' || record.align === 'right' ? { align: record.align } : {}),
+    ...(record.tone === 'muted' || record.tone === 'accent' || record.tone === 'contrast' ? { tone: record.tone } : {}),
+  };
+}
+
+export function normalizeElementAppearanceMap(value: unknown): ElementAppearanceMap {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+    .filter(([path]) => /^[A-Za-z][A-Za-z0-9]*(?:\.\d+)?(?:\.[A-Za-z][A-Za-z0-9]*)?$/.test(path))
+    .map(([path, appearance]) => [path, normalizeElementAppearance(appearance)])
+    .filter(([, appearance]) => Object.keys(appearance).length > 0));
+}
+
+export function elementAppearanceClassName(styles: ElementAppearanceMap | undefined, fieldPath: string): string {
+  const style = normalizeElementAppearance(styles?.[fieldPath]);
+  return [
+    `g7pb-element-font--${style.font ?? 'inherit'}`,
+    `g7pb-element-size--${style.size ?? 'base'}`,
+    `g7pb-element-weight--${style.weight ?? 'regular'}`,
+    `g7pb-element-align--${style.align ?? 'left'}`,
+    `g7pb-element-tone--${style.tone ?? 'default'}`,
+  ].join(' ');
+}
+
+export function decorateCanvasElementStyles(
+  children: React.ReactNode,
+  styles: ElementAppearanceMap | undefined,
+): React.ReactNode {
+  if (!styles || Object.keys(styles).length === 0) return children;
+  return React.Children.map(children, (child) => {
+    if (!React.isValidElement<Record<string, unknown>>(child)) return child;
+    const props = child.props;
+    const fieldPath = typeof props['data-g7pb-inline-field'] === 'string'
+      ? props['data-g7pb-inline-field']
+      : typeof props['data-g7pb-action-field'] === 'string' ? props['data-g7pb-action-field'] : null;
+    const nested = decorateCanvasElementStyles(props.children as React.ReactNode, styles);
+    const className = fieldPath
+      ? [typeof props.className === 'string' ? props.className : '', elementAppearanceClassName(styles, fieldPath)].filter(Boolean).join(' ')
+      : props.className;
+    return React.cloneElement(child, { ...props, className, children: nested });
+  });
 }
 
 export function notifyCanvasElementSelection(
@@ -208,8 +300,9 @@ export function notifyCanvasElementSelection(
     ? 'media'
     : selectable?.dataset.g7pbActionField || inferredAction ? 'action' : fieldPath ? 'text' : 'block';
   const selection = fieldPath
-    ? selectionFromPath(blockId, blockType, fieldPath, role)
-    : { blockId, blockType, fieldPath: null, role, label: '블록 전체', collection: null, itemIndex: null } satisfies CanvasElementSelection;
+    ? { ...selectionFromPath(blockId, blockType, fieldPath, role), anchor: parentViewportRect(selectable) }
+    : { blockId, blockType, fieldPath: null, role, label: '블록 전체', collection: null, itemIndex: null,
+      anchor: parentViewportRect(target.closest<HTMLElement>('[data-block-id]')) } satisfies CanvasElementSelection;
 
   selectable?.ownerDocument.querySelectorAll('[data-g7pb-canvas-selected="true"]').forEach((element) => {
     element.removeAttribute('data-g7pb-canvas-selected');

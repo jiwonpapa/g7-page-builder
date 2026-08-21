@@ -147,7 +147,19 @@ export function CanvasMediaPicker({
   onChange: (next: string) => void;
   onDismiss: () => void;
 }): React.ReactElement {
-  return <div className="g7pb-canvas-dialog" role="dialog" aria-modal="true" aria-label="선택 이미지 편집"
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    let active = true;
+    void import('@puckeditor/core').then(({ registerOverlayPortal }) => {
+      if (active) cleanup = registerOverlayPortal(overlayRef.current, { disableDrag: true, disableDragOnFocus: true });
+    });
+    return () => {
+      active = false;
+      cleanup?.();
+    };
+  }, []);
+  return <div ref={overlayRef} className="g7pb-canvas-dialog" role="dialog" aria-modal="true" aria-label="선택 이미지 편집"
     data-testid="page-builder-canvas-media-dialog">
     <MediaPicker value={value} onChange={onChange} label="선택 이미지" initiallyOpen onDismiss={onDismiss} />
   </div>;

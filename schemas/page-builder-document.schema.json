@@ -195,7 +195,38 @@
         },
         "spacing": {
           "enum": ["compact", "normal", "spacious"]
+        },
+        "textScale": {
+          "enum": ["compact", "balanced", "large"]
+        },
+        "textAlign": {
+          "enum": ["left", "center", "right"]
+        },
+        "elements": {
+          "type": "object",
+          "maxProperties": 100,
+          "propertyNames": {
+            "pattern": "^[A-Za-z][A-Za-z0-9]*(?:\\.[0-9]+)?(?:\\.[A-Za-z][A-Za-z0-9]*)?$"
+          },
+          "patternProperties": {
+            "^[A-Za-z][A-Za-z0-9]*(?:\\.[0-9]+)?(?:\\.[A-Za-z][A-Za-z0-9]*)?$": {
+              "$ref": "#/$defs/elementAppearance"
+            }
+          },
+          "additionalProperties": false
         }
+      }
+    },
+    "elementAppearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "font": { "enum": ["inherit", "system", "modern", "serif", "mono"] },
+        "size": { "enum": ["small", "base", "large", "xlarge"] },
+        "weight": { "enum": ["regular", "medium", "semibold", "bold"] },
+        "align": { "enum": ["left", "center", "right"] },
+        "tone": { "enum": ["default", "muted", "accent", "contrast"] }
       }
     },
     "motion": {

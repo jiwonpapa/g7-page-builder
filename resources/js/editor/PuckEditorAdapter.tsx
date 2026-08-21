@@ -2429,7 +2429,11 @@ export function PuckEditorAdapter({
       setCanvasElementSelection(selection);
       setCanvasMediaDialogOpen(false);
       setCanvasRouteDialogOpen(false);
-      setCanvasTextToolsOpen(selection.role === 'text' || selection.role === 'action');
+      if (selection.role === 'text' || selection.role === 'action') {
+        window.requestAnimationFrame(() => setCanvasTextToolsOpen(true));
+      } else {
+        setCanvasTextToolsOpen(false);
+      }
     };
     const fromMessage = (event: MessageEvent): void => {
       if (event.origin !== window.location.origin || event.data?.type !== CANVAS_ELEMENT_MESSAGE) return;

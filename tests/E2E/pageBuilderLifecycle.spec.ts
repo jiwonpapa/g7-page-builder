@@ -506,12 +506,15 @@ async function selectAndEditHero(
   await expect(inlineBody).toHaveCount(1);
   await expect(inlineButton).toHaveCount(1);
   if (directCanvas) {
+    await inlineTitle.dispatchEvent('pointerdown');
     await inlineTitle.hover();
     await expect(inlineTitle).toHaveAttribute('contenteditable', 'plaintext-only');
     await inlineTitle.fill(title);
+    await inlineSubtitle.dispatchEvent('pointerdown');
     await inlineSubtitle.hover();
     await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
     await inlineSubtitle.fill(subtitle);
+    await inlineButton.dispatchEvent('pointerdown');
     await inlineButton.hover();
     await expect(inlineButton).toHaveAttribute('contenteditable', 'plaintext-only');
     await inlineButton.fill(buttonLabel);
@@ -555,6 +558,7 @@ async function selectAndEditCta(
   if (directCanvas) {
     for (const [field, value] of [['heading', heading], ['body', body], ['primaryLabel', primaryLabel]] as const) {
       const target = inline(field);
+      await target.dispatchEvent('pointerdown');
       await target.hover({ force: true });
       await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
       await target.fill(value);

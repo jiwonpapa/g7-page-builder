@@ -23,6 +23,12 @@ export const TABS_BLOCK_TYPE = 'content.tabs-01' as const;
 export const COMPARISON_TABLE_BLOCK_TYPE = 'commerce.comparison-table-01' as const;
 export const ARTICLE_LIST_BLOCK_TYPE = 'content.article-list-01' as const;
 export const VIDEO_EMBED_BLOCK_TYPE = 'media.video-embed-01' as const;
+export const LOGO_CAROUSEL_BLOCK_TYPE = 'trust.logo-carousel-01' as const;
+export const TESTIMONIAL_SLIDER_BLOCK_TYPE = 'trust.testimonial-slider-01' as const;
+export const EVENT_SCHEDULE_BLOCK_TYPE = 'content.event-schedule-01' as const;
+export const DOWNLOAD_RESOURCES_BLOCK_TYPE = 'content.download-resources-01' as const;
+export const G7_BOARD_ARCHIVE_BLOCK_TYPE = 'g7.board-content-archive-01' as const;
+export const G7_PRODUCT_SHOWCASE_BLOCK_TYPE = 'g7.ecommerce-product-showcase-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -377,6 +383,83 @@ export interface VideoEmbedBlockProps {
   provider: 'youtube' | 'vimeo';
   videoId: string;
   ratio: '16:9' | '4:3' | '1:1';
+  appearance?: BlockAppearance;
+}
+
+export interface LogoCarouselBlockProps {
+  eyebrow: string;
+  heading: string;
+  logos: LogoItem[];
+  autoplay: boolean;
+  interval: 3000 | 5000 | 7000;
+  appearance?: BlockAppearance;
+}
+
+export interface TestimonialSliderBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: TestimonialItem[];
+  autoplay: boolean;
+  interval: 5000 | 7000 | 9000;
+  appearance?: BlockAppearance;
+}
+
+export interface EventScheduleItem {
+  date: string;
+  time: string;
+  title: string;
+  location: string;
+  description: string;
+  buttonLabel: string;
+  buttonUrl: string;
+}
+
+export interface EventScheduleBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: EventScheduleItem[];
+  layout: 'agenda' | 'timeline';
+  appearance?: BlockAppearance;
+}
+
+export interface DownloadResourceItem {
+  title: string;
+  description: string;
+  fileType: string;
+  fileSize: string;
+  buttonLabel: string;
+  url: string;
+}
+
+export interface DownloadResourcesBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: DownloadResourceItem[];
+  appearance?: BlockAppearance;
+}
+
+export interface G7BoardArchiveBlockProps {
+  eyebrow: string;
+  heading: string;
+  source: 'recent' | 'popular';
+  period: 'today' | 'week' | 'month' | 'year';
+  limit: 6 | 8 | 12;
+  audience: DynamicAudience;
+  showSearch: boolean;
+  showBoardFilter: boolean;
+  emptyMessage: string;
+  appearance?: BlockAppearance;
+}
+
+export interface G7ProductShowcaseBlockProps {
+  eyebrow: string;
+  heading: string;
+  source: 'latest' | 'new' | 'popular';
+  limit: 3 | 4 | 6 | 8;
+  audience: DynamicAudience;
+  detailBasePath: string;
+  layout: 'featured' | 'rail';
+  emptyMessage: string;
   appearance?: BlockAppearance;
 }
 

@@ -236,6 +236,38 @@ describe('published page effects runtime', () => {
     expect(document.querySelectorAll('[aria-busy="false"]')).toHaveLength(2);
   });
 
+  it('filters the G7 content archive by title and board without another network request', async () => {
+    document.body.innerHTML = `
+      <section data-g7pb-data-source="post-archive" data-g7pb-endpoint="/api/archive" data-g7pb-audience="all" data-g7pb-empty-message="검색 결과 없음">
+        <input data-g7pb-archive-search><select data-g7pb-archive-filter><option value="">전체 게시판</option></select>
+        <p data-g7pb-data-status></p><div data-g7pb-data-list aria-busy="true"></div>
+      </section>`;
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ success: true, data: [
+      { id: 1, board_slug: 'notice', board_name: '공지', title: '새 기능 안내', created_at_formatted: '오늘' },
+      { id: 2, board_slug: 'guide', board_name: '가이드', title: '운영 시작하기', created_at_formatted: '어제' },
+    ] }), { status: 200 }));
+
+    await bootDynamicData(document, fetcher as typeof fetch);
+    const search = document.querySelector<HTMLInputElement>('[data-g7pb-archive-search]')!;
+    const filter = document.querySelector<HTMLSelectElement>('[data-g7pb-archive-filter]')!;
+    const articles = Array.from(document.querySelectorAll<HTMLElement>('article'));
+    expect(filter.options).toHaveLength(3);
+
+    search.value = '운영';
+    search.dispatchEvent(new Event('input'));
+    expect(articles.map((article) => article.hidden)).toEqual([true, false]);
+
+    search.value = '';
+    filter.value = '공지';
+    filter.dispatchEvent(new Event('change'));
+    expect(articles.map((article) => article.hidden)).toEqual([false, true]);
+
+    search.value = '없는 제목';
+    search.dispatchEvent(new Event('input'));
+    expect(document.querySelector('[data-g7pb-data-status]')?.textContent).toBe('검색 결과 없음');
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it('shows member-only data to members and keeps it hidden from guests', async () => {
     document.body.innerHTML = `
       <section data-g7pb-data-source="posts" data-g7pb-endpoint="/api/posts" data-g7pb-audience="member" hidden>

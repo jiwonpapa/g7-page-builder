@@ -33,6 +33,12 @@ const STAGGER_TARGETS = [
   '.g7pb-testimonials__items blockquote',
   '.g7pb-process li',
   '.g7pb-articles__items article',
+  '.g7pb-events li',
+  '.g7pb-downloads li',
+  '.g7pb-board-archive__items article',
+  '.g7pb-product-showcase__items article',
+  '.g7pb-dynamic-posts article',
+  '.g7pb-dynamic-products article',
 ];
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -81,6 +87,8 @@ function renderPost(root: Document, item: Record<string, unknown>): HTMLElement 
   if (!boardSlug || !id || !title) return null;
 
   const article = root.createElement('article');
+  article.dataset.g7pbArchiveTitle = title.toLocaleLowerCase();
+  article.dataset.g7pbArchiveBoard = asText(item.board_name);
   const link = root.createElement('a');
   link.href = `/board/${encodeURIComponent(boardSlug)}/${encodeURIComponent(id)}`;
   const heading = root.createElement('strong');
@@ -90,6 +98,30 @@ function renderPost(root: Document, item: Record<string, unknown>): HTMLElement 
   link.append(heading, meta);
   article.append(link);
   return article;
+}
+
+function installArchiveFilters(block: HTMLElement, nodes: HTMLElement[], status: HTMLElement | null): void {
+  const search = block.querySelector<HTMLInputElement>('[data-g7pb-archive-search]');
+  const filter = block.querySelector<HTMLSelectElement>('[data-g7pb-archive-filter]');
+  const boards = [...new Set(nodes.map((node) => node.dataset.g7pbArchiveBoard ?? '').filter(Boolean))];
+  if (filter) {
+    filter.replaceChildren(new Option('전체 게시판', ''), ...boards.map((board) => new Option(board, board)));
+  }
+  const apply = (): void => {
+    const query = search?.value.trim().toLocaleLowerCase() ?? '';
+    const board = filter?.value ?? '';
+    let visible = 0;
+    nodes.forEach((node) => {
+      const matches = (!query || (node.dataset.g7pbArchiveTitle ?? '').includes(query))
+        && (!board || node.dataset.g7pbArchiveBoard === board);
+      node.hidden = !matches;
+      if (matches) visible++;
+    });
+    if (status) status.textContent = visible === 0 ? block.dataset.g7pbEmptyMessage ?? '조건에 맞는 게시글이 없습니다.' : '';
+  };
+  search?.addEventListener('input', apply);
+  filter?.addEventListener('change', apply);
+  apply();
 }
 
 function renderProduct(root: Document, item: Record<string, unknown>, basePath: string): HTMLElement | null {
@@ -155,13 +187,22 @@ export async function bootDynamicData(root: Document = document, fetcher: typeof
       const source = block.dataset.g7pbDataSource;
       const basePath = block.dataset.g7pbProductBase ?? '/shop/products';
       const nodes = payloadItems(payload)
-        .map((item) => source === 'posts' ? renderPost(root, item) : renderProduct(root, item, basePath))
+        .map((item) => source === 'posts' || source === 'post-archive' ? renderPost(root, item) : renderProduct(root, item, basePath))
         .filter((node): node is HTMLElement => node !== null);
       list.replaceChildren(...nodes);
+      if (block.dataset.g7pbMotion === 'stagger') {
+        const stagger = Number(block.dataset.g7pbMotionStagger ?? 100);
+        nodes.forEach((node, index) => {
+          node.dataset.g7pbMotionItem = '';
+          node.style.setProperty('--g7pb-motion-order', String(index));
+          node.style.setProperty('--g7pb-motion-delay', `${index * stagger}ms`);
+        });
+      }
       list.setAttribute('aria-busy', 'false');
       if (status) status.textContent = nodes.length === 0
         ? block.dataset.g7pbEmptyMessage ?? '표시할 항목이 없습니다.'
         : '';
+      if (source === 'post-archive' && nodes.length > 0) installArchiveFilters(block, nodes, status);
     } catch {
       list.replaceChildren();
       list.setAttribute('aria-busy', 'false');

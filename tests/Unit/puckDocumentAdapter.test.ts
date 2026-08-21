@@ -9,14 +9,20 @@ import {
   CTA_BLOCK_TYPE,
   FAQ_ACCORDION_BLOCK_TYPE,
   FEATURES_BLOCK_TYPE,
+  DOWNLOAD_RESOURCES_BLOCK_TYPE,
+  EVENT_SCHEDULE_BLOCK_TYPE,
+  G7_BOARD_ARCHIVE_BLOCK_TYPE,
   G7_PRODUCT_GRID_BLOCK_TYPE,
+  G7_PRODUCT_SHOWCASE_BLOCK_TYPE,
   G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_BLOCK_TYPE,
   INQUIRY_FORM_BLOCK_TYPE,
   MAP_DIRECTIONS_BLOCK_TYPE,
+  LOGO_CAROUSEL_BLOCK_TYPE,
   PROCESS_TIMELINE_BLOCK_TYPE,
   TABS_BLOCK_TYPE,
   TESTIMONIALS_BLOCK_TYPE,
+  TESTIMONIAL_SLIDER_BLOCK_TYPE,
   VIDEO_EMBED_BLOCK_TYPE,
   type PageBuilderDocument,
 } from '../../resources/js/documents/types';
@@ -465,6 +471,29 @@ describe('Puck PageBuilderDocument adapter', () => {
     expect((components.FaqAccordion.fields.items.arrayFields as Record<string, Record<string, unknown>>).question.contentEditable).toBe(true);
     expect((components.ArticleList.fields.items.arrayFields as Record<string, Record<string, unknown>>).title.contentEditable).toBe(true);
     expect(components.VideoEmbed.fields.videoId.contentEditable).not.toBe(true);
+  });
+
+  it('round-trips all six phase-three product blocks through the canonical contract', () => {
+    const phaseThree: PageBuilderDocument = {
+      ...documentFixture,
+      blocks: [
+        { instance_id: '123e4567-e89b-42d3-a456-426614174020', type: LOGO_CAROUSEL_BLOCK_TYPE, block_version: 1, props: { eyebrow: '파트너', heading: '함께합니다', autoplay: true, interval: 5000, logos: [{ name: 'A', imageSrc: '', imageAlt: '', url: '/' }, { name: 'B', imageSrc: '', imageAlt: '', url: '/' }, { name: 'C', imageSrc: '', imageAlt: '', url: '/' }] }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174021', type: TESTIMONIAL_SLIDER_BLOCK_TYPE, block_version: 1, props: { eyebrow: '후기', heading: '고객 이야기', autoplay: false, interval: 7000, items: [{ quote: '좋습니다.', name: '김고객', role: '대표', company: 'A', avatarSrc: '', avatarAlt: '', rating: 5 }, { quote: '편합니다.', name: '이고객', role: '운영', company: 'B', avatarSrc: '', avatarAlt: '', rating: 4 }] }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174022', type: EVENT_SCHEDULE_BLOCK_TYPE, block_version: 1, props: { eyebrow: '일정', heading: '행사', layout: 'agenda', items: [{ date: '2026-09-03', time: '14:00', title: '웨비나', location: '온라인', description: '제품을 소개합니다.', buttonLabel: '신청', buttonUrl: '/events/1' }] }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174023', type: DOWNLOAD_RESOURCES_BLOCK_TYPE, block_version: 1, props: { eyebrow: '자료', heading: '다운로드', items: [{ title: '소개서', description: '제품 소개서입니다.', fileType: 'PDF', fileSize: '2 MB', buttonLabel: '받기', url: '/files/guide.pdf' }] }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174024', type: G7_BOARD_ARCHIVE_BLOCK_TYPE, block_version: 1, props: { eyebrow: '아카이브', heading: '게시글', source: 'recent', period: 'month', limit: 12, audience: 'all', showSearch: true, showBoardFilter: true, emptyMessage: '게시글이 없습니다.' }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174025', type: G7_PRODUCT_SHOWCASE_BLOCK_TYPE, block_version: 1, props: { eyebrow: '상품', heading: '추천', source: 'new', limit: 6, audience: 'member', detailBasePath: '/shop/products', layout: 'featured', emptyMessage: '상품이 없습니다.' }, slots: {} },
+      ],
+    };
+
+    const session = canonicalToPuck(phaseThree);
+    expect(session.data.content.map((block) => block.type)).toEqual(['LogoCarousel', 'TestimonialSlider', 'EventSchedule', 'DownloadResources', 'G7BoardArchive', 'G7ProductShowcase']);
+    expect(puckToCanonical(session.data, session.context)).toEqual(phaseThree);
+
+    const components = pageBuilderPuckConfig.components as unknown as Record<string, { fields: Record<string, Record<string, unknown>> }>;
+    expect(components.LogoCarousel.fields.heading.contentEditable).toBe(true);
+    expect((components.EventSchedule.fields.items.arrayFields as Record<string, Record<string, unknown>>).title.contentEditable).toBe(true);
+    expect(components.G7BoardArchive.fields.showSearch.contentEditable).not.toBe(true);
   });
 
   it('rejects nested slots and unknown canonical blocks at the adapter boundary', () => {

@@ -34,7 +34,13 @@ type BlockType =
   | 'tabs'
   | 'team'
   | 'testimonials'
-  | 'video-embed';
+  | 'video-embed'
+  | 'logo-carousel'
+  | 'testimonial-slider'
+  | 'event-schedule'
+  | 'download-resources'
+  | 'g7-board-archive'
+  | 'g7-product-showcase';
 
 const PUBLISHED_BLOCK_ORDER: BlockType[] = [
   'features',
@@ -57,6 +63,12 @@ const PUBLISHED_BLOCK_ORDER: BlockType[] = [
   'comparison-table',
   'article-list',
   'video-embed',
+  'logo-carousel',
+  'testimonial-slider',
+  'event-schedule',
+  'download-resources',
+  'g7-board-archive',
+  'g7-product-showcase',
 ];
 
 const BLOCK_LABELS: Record<BlockType, string> = {
@@ -80,6 +92,12 @@ const BLOCK_LABELS: Record<BlockType, string> = {
   tabs: 'Tabs',
   testimonials: 'Testimonials',
   'video-embed': 'Video embed',
+  'logo-carousel': 'Logo carousel',
+  'testimonial-slider': 'Testimonial slider',
+  'event-schedule': 'Event schedule',
+  'download-resources': 'Download resources',
+  'g7-board-archive': 'G7 Board Archive',
+  'g7-product-showcase': 'G7 Product Showcase',
 };
 
 interface AdminLoginResponse {
@@ -738,6 +756,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'ComparisonTable',
       'ArticleList',
       'VideoEmbed',
+      'LogoCarousel',
+      'TestimonialSlider',
+      'EventSchedule',
+      'DownloadResources',
+      'G7BoardArchive',
+      'G7ProductShowcase',
     ]) {
       await expect(page.getByTestId(`drawer-item:${component}`)).toHaveCount(1);
     }
@@ -793,6 +817,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'comparison-table',
       'article-list',
       'video-embed',
+      'logo-carousel',
+      'testimonial-slider',
+      'event-schedule',
+      'download-resources',
+      'g7-board-archive',
+      'g7-product-showcase',
     ]) {
       await expect(page.getByTestId(`page-builder-block-option-${option}`)).toBeVisible();
     }
@@ -830,7 +860,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-contact').click();
-    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid', 'testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed']) {
+    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid', 'testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed', 'logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase']) {
       await revealEditorHeaderActions(page);
       await page.getByTestId('page-builder-add-block').click();
       await page.getByTestId(`page-builder-block-option-${option}`).click();
@@ -942,7 +972,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(previewPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
     await expect(previewPage.locator('[data-block-type="hero"]')).toHaveAttribute('data-g7pb-motion', 'parallax-soft');
     await expect(previewPage.locator('[data-block-type="features"]')).toHaveAttribute('data-g7pb-motion', 'stagger');
-    const previewSlider = previewPage.locator('[data-g7pb-slider]');
+    const previewSlider = previewPage.locator('[data-g7pb-slider]').first();
     await expect(previewSlider).toHaveAttribute('data-g7pb-slider-ready', 'true');
     await expect(previewSlider.locator('[data-g7pb-slider-status]')).toHaveText('1 / 2');
     await previewSlider.locator('[data-g7pb-slider-next]').click();
@@ -994,7 +1024,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(publicPage.getByText(contactHeading, { exact: true })).toBeVisible();
     await expect(publicPage.locator('form')).toHaveCount(0);
     await expect(publicPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
-    await expect(publicPage.locator('[data-g7pb-slider]')).toHaveAttribute('data-g7pb-slider-ready', 'true');
+    await expect(publicPage.locator('[data-g7pb-slider]')).toHaveCount(3);
+    await expect(publicPage.locator('[data-g7pb-slider]').first()).toHaveAttribute('data-g7pb-slider-ready', 'true');
     await expect(publicPage.locator('[data-g7pb-accordion]')).toHaveAttribute('data-g7pb-accordion-ready', 'true');
     const publicTabs = publicPage.locator('[data-g7pb-tabs]');
     await expect(publicTabs).toHaveAttribute('data-g7pb-tabs-ready', 'true');

@@ -1,11 +1,11 @@
 # Block catalog benchmark
 
-상태: 2차 제품 카탈로그 구현
+상태: 3차 제품 카탈로그 구현
 기준일: 2026-08-21
 
 ## 결론
 
-유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 19종, G7 공개 데이터 2종, 문의 폼 1종, 찾아오기 1종으로 총 23종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다.
+유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 23종, G7 공개 데이터 4종, 문의 폼 1종, 찾아오기 1종으로 총 29종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다.
 
 ## 공식 제품에서 확인한 공통 구조
 
@@ -19,7 +19,7 @@
 | [Framer Components](https://www.framer.com/help/articles/using-components/) | 재사용 component와 노출된 property로 변형 | raw CSS 대신 재사용 block+typed property 채택 |
 | [Framer CMS Components](https://www.framer.com/updates/cms-components) | property·variant·responsive breakpoint 조합 | surface·spacing·열 수를 제한된 variant로 제공 |
 
-## 1·2차 콘텐츠 카탈로그 23종
+## 1·2·3차 콘텐츠 카탈로그 29종
 
 폼·위치 카테고리는 별도 제품 계약으로 추가했습니다.
 
@@ -49,13 +49,19 @@
 | 비즈니스 | 비교표 | `commerce.comparison-table-01` | 2~4개 제품·플랜의 의미 있는 표 비교 |
 | 콘텐츠 | 에디토리얼 목록 | `content.article-list-01` | 사람이 선별한 글·사례·소식 목록 |
 | 미디어 | 영상 | `media.video-embed-01` | 허용된 YouTube·Vimeo 영상 식별자 임베드 |
+| 신뢰 | 로고 캐러셀 | `trust.logo-carousel-01` | 파트너 로고의 접근 가능한 가로 탐색 |
+| 신뢰 | 후기 슬라이더 | `trust.testimonial-slider-01` | 고객 경험을 한 장면씩 집중 전달 |
+| 콘텐츠 | 이벤트 일정 | `content.event-schedule-01` | 행사 날짜·장소·설명·신청 동선 |
+| 콘텐츠 | 다운로드 자료 | `content.download-resources-01` | 소개서·가이드·에셋 파일 연결 |
+| G7 데이터 | 콘텐츠 아카이브 | `g7.board-content-archive-01` | 공개 게시글 제목 검색·게시판 필터·상세 연결 |
+| G7 데이터 | 상품 쇼케이스 | `g7.ecommerce-product-showcase-01` | 공개 상품 대표 강조·가로 목록·상세 연결 |
 
 ## UX와 시각 원칙
 
 - 카탈로그는 block 이름만 나열하지 않고 축약된 실제 구조와 설명을 먼저 보여줍니다.
 - 시각 체계는 밝은 편집면, warm gray/slate, 단일 cobalt accent로 통일합니다.
 - 공개 block은 의미 구조·타이포그래피·간격을 우선하고 과도한 card 중첩을 피합니다.
-- Slider는 브라우저 scroll-snap, 그래프는 semantic `progress`를 기본 구조로 사용합니다. 동적 효과를 선택한 페이지에서만 별도 경량 runtime을 조건부 로드합니다.
+- Hero·로고·후기 Slider는 동일한 Embla 접근성·재생 제어 계약을 사용하고 그래프는 semantic `progress`를 기본 구조로 사용합니다. 동적 효과를 선택한 페이지에서만 별도 경량 runtime을 조건부 로드합니다.
 - 이미지 필드는 자체 `MediaPort`의 직접 업로드·최근 미디어 선택을 기본으로 하고 외부 URL은 고급 입력으로 유지합니다. 발행/리비전에서 참조 중인 파일은 삭제를 거부합니다.
 - Hero Slider는 MIT 라이선스 `embla-carousel` 8.6.0과 Autoplay plugin을 사용하며, 서버 렌더 결과는 JS 실패 시 첫 슬라이드를 그대로 노출합니다.
 - FAQ는 native `details`, 비교표는 semantic `table`, 탭은 ARIA tab pattern과 방향키·Home·End 탐색을 사용합니다.
@@ -72,4 +78,4 @@
 
 ## 다음 후보
 
-3차는 검색·필터 가능한 콘텐츠 아카이브, 로고·후기 슬라이더 variant, 이벤트 일정, 다운로드 자료, 상세 상품·게시판 연결 variant를 후보로 둡니다. G7 데이터 variant는 화면보다 먼저 capability·권한·빈 상태·실패 처리 계약을 정의합니다.
+4차는 조건부 표시 규칙의 시각 편집, 반복 콘텐츠 pagination, 이벤트 캘린더 데이터 연동, 다운로드 파일의 MediaPort 자산 선택, 상품·게시글 단건 상세 블록을 후보로 둡니다. G7 데이터 확장은 화면보다 먼저 capability·권한·빈 상태·실패 처리 계약을 정의합니다.

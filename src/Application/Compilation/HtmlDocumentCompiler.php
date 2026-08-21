@@ -14,7 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.8.0';
+    public const COMPILER_VERSION = '0.9.0';
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
@@ -83,6 +83,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private const ARTICLE_LIST_TYPE = 'content.article-list-01';
 
     private const VIDEO_EMBED_TYPE = 'media.video-embed-01';
+
+    private const LOGO_CAROUSEL_TYPE = 'trust.logo-carousel-01';
+
+    private const TESTIMONIAL_SLIDER_TYPE = 'trust.testimonial-slider-01';
+
+    private const EVENT_SCHEDULE_TYPE = 'content.event-schedule-01';
+
+    private const DOWNLOAD_RESOURCES_TYPE = 'content.download-resources-01';
+
+    private const G7_BOARD_ARCHIVE_TYPE = 'g7.board-content-archive-01';
+
+    private const G7_PRODUCT_SHOWCASE_TYPE = 'g7.ecommerce-product-showcase-01';
 
     /** @var list<string> */
     private const FEATURE_ICONS = [
@@ -262,6 +274,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.comparison-table-01' => fn (array $props): string => $this->compileComparisonTable($props),
             'builtin.article-list-01' => fn (array $props): string => $this->compileArticleList($props),
             'builtin.video-embed-01' => fn (array $props): string => $this->compileVideoEmbed($props),
+            'builtin.logo-carousel-01' => fn (array $props): string => $this->compileLogoCarousel($props),
+            'builtin.testimonial-slider-01' => fn (array $props): string => $this->compileTestimonialSlider($props),
+            'builtin.event-schedule-01' => fn (array $props): string => $this->compileEventSchedule($props),
+            'builtin.download-resources-01' => fn (array $props): string => $this->compileDownloadResources($props),
+            'builtin.g7-board-content-archive-01' => fn (array $props): string => $this->compileG7BoardArchive($props),
+            'builtin.g7-ecommerce-product-showcase-01' => fn (array $props): string => $this->compileG7ProductShowcase($props),
         ];
 
         foreach ($compilers as $key => $compiler) {
@@ -1192,6 +1210,201 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'"><iframe src="'.$this->escapeAttribute($src).'" title="'.$this->escapeAttribute($heading).'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>'.($caption === '' ? '' : '<figcaption>'.$this->formatText($caption).'</figcaption>').'</figure></section>';
     }
 
+    /** @param array<string, mixed> $props */
+    private function compileLogoCarousel(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'logos', 'autoplay', 'interval', 'appearance'], 'Logo carousel');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $logos = $props['logos'] ?? null;
+        $autoplay = $this->requiredBoolean($props, 'autoplay');
+        $interval = $this->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
+        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        if (! is_array($logos) || count($logos) < 3 || count($logos) > 12) {
+            throw new DocumentCompileException('Logo carousel must contain between three and twelve logos.');
+        }
+
+        $slides = [];
+        foreach (array_values($logos) as $index => $logo) {
+            if (! is_array($logo)) {
+                throw new DocumentCompileException("Logo carousel item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($logo, ['name', 'imageSrc', 'imageAlt', 'url'], "Logo carousel item {$index}");
+            $name = $this->requiredString($logo, 'name', 120);
+            $imageSrc = $this->optionalString($logo, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->optionalString($logo, 'imageAlt', 300) ?? '';
+            $url = $this->optionalString($logo, 'url', 2048) ?? '';
+            $visual = $imageSrc === ''
+                ? '<span>'.$this->escape($name).'</span>'
+                : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-carousel__image', $name);
+            if ($url !== '') {
+                $this->assertAllowedUrl($url, "Logo carousel item {$index}");
+                $visual = '<a href="'.$this->escapeAttribute($url).'" aria-label="'.$this->escapeAttribute($name).'">'.$visual.'</a>';
+            }
+            $slides[] = '<div class="g7pb-hero-slider__slide g7pb-logo-carousel__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($logos).'">'.$visual.'</div>';
+        }
+
+        return '<section class="g7pb-block g7pb-logo-carousel g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($heading).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileTestimonialSlider(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'autoplay', 'interval', 'appearance'], 'Testimonial slider');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $autoplay = $this->requiredBoolean($props, 'autoplay');
+        $interval = $this->requiredIntegerChoice($props, 'interval', [5000, 7000, 9000]);
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
+            throw new DocumentCompileException('Testimonial slider must contain between two and eight items.');
+        }
+
+        $slides = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Testimonial slider item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['quote', 'name', 'role', 'company', 'avatarSrc', 'avatarAlt', 'rating'], "Testimonial slider item {$index}");
+            $quote = $this->requiredString($item, 'quote', 1200);
+            $name = $this->requiredString($item, 'name', 120);
+            $role = $this->optionalString($item, 'role', 120) ?? '';
+            $company = $this->optionalString($item, 'company', 120) ?? '';
+            $avatarSrc = $this->optionalString($item, 'avatarSrc', 2048) ?? '';
+            $avatarAlt = $this->optionalString($item, 'avatarAlt', 300) ?? '';
+            $rating = $this->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
+            $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonial-slider__avatar', mb_substr($name, 0, 1));
+            $meta = implode(' · ', array_filter([$role, $company], fn (string $value): bool => $value !== ''));
+            $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonial-slider__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.($meta === '' ? '' : '<span>'.$this->escape($meta).'</span>').'</cite></footer></blockquote>';
+        }
+
+        return '<section class="g7pb-block g7pb-testimonial-slider g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonial-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($heading).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileEventSchedule(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Event schedule');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $layout = $this->requiredString($props, 'layout', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! in_array($layout, ['agenda', 'timeline'], true) || ! is_array($items) || count($items) < 1 || count($items) > 12) {
+            throw new DocumentCompileException('Event schedule configuration is invalid.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Event item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['date', 'time', 'title', 'location', 'description', 'buttonLabel', 'buttonUrl'], "Event item {$index}");
+            $date = $this->requiredString($item, 'date', 40);
+            $time = $this->optionalString($item, 'time', 40) ?? '';
+            $title = $this->requiredString($item, 'title', 240);
+            $location = $this->optionalString($item, 'location', 240) ?? '';
+            $description = $this->requiredString($item, 'description', 1500);
+            $buttonLabel = $this->optionalString($item, 'buttonLabel', 120) ?? '';
+            $buttonUrl = $this->optionalString($item, 'buttonUrl', 2048) ?? '';
+            if (($buttonLabel === '') !== ($buttonUrl === '')) {
+                throw new DocumentCompileException("Event item {$index} link requires both a label and URL.");
+            }
+            $action = '';
+            if ($buttonUrl !== '') {
+                $this->assertAllowedUrl($buttonUrl, "Event item {$index}");
+                $action = '<a href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).' <span aria-hidden="true">→</span></a>';
+            }
+            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->escape($title).'</h3><p>'.$this->formatText($description).'</p>'.$action.'</article></li>';
+        }
+
+        return '<section class="g7pb-block g7pb-events g7pb-events--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="event-schedule">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileDownloadResources(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'appearance'], 'Download resources');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        if (! is_array($items) || count($items) < 1 || count($items) > 12) {
+            throw new DocumentCompileException('Download resources must contain between one and twelve items.');
+        }
+
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Download resource {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['title', 'description', 'fileType', 'fileSize', 'buttonLabel', 'url'], "Download resource {$index}");
+            $title = $this->requiredString($item, 'title', 240);
+            $description = $this->optionalString($item, 'description', 1200) ?? '';
+            $fileType = $this->requiredString($item, 'fileType', 20);
+            $fileSize = $this->optionalString($item, 'fileSize', 40) ?? '';
+            $buttonLabel = $this->requiredString($item, 'buttonLabel', 120);
+            $url = $this->requiredString($item, 'url', 2048);
+            $this->assertAllowedUrl($url, "Download resource {$index}");
+            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->escape($title).'</h3>'.($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').'<small>'.$this->escape(implode(' · ', array_filter([$fileType, $fileSize]))).'</small></div><a href="'.$this->escapeAttribute($url).'">'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
+        }
+
+        return '<section class="g7pb-block g7pb-downloads '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="download-resources">'.$this->compileSectionHeading($eyebrow, $heading).'<ul>'.implode('', $compiled).'</ul></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileG7BoardArchive(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'audience', 'showSearch', 'showBoardFilter', 'emptyMessage', 'appearance'], 'G7 board archive');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $source = $this->requiredString($props, 'source', 16);
+        $period = $this->requiredString($props, 'period', 16);
+        $limit = $this->requiredIntegerChoice($props, 'limit', [6, 8, 12]);
+        $audience = $this->requiredString($props, 'audience', 16);
+        $showSearch = $this->requiredBoolean($props, 'showSearch');
+        $showBoardFilter = $this->requiredBoolean($props, 'showBoardFilter');
+        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! in_array($source, ['recent', 'popular'], true) || ! in_array($period, ['today', 'week', 'month', 'year'], true) || ! in_array($audience, ['all', 'guest', 'member'], true)) {
+            throw new DocumentCompileException('G7 board archive configuration is invalid.');
+        }
+        $endpoint = $source === 'popular' ? "/api/modules/sirsoft-board/boards/popular?period={$period}&limit={$limit}" : "/api/modules/sirsoft-board/boards/posts/recent?limit={$limit}";
+        $hidden = $audience === 'all' ? '' : ' hidden';
+        $tools = ($showSearch || $showBoardFilter)
+            ? '<div class="g7pb-archive__tools">'.($showSearch ? '<label><span class="g7pb-visually-hidden">게시글 제목 검색</span><input type="search" data-g7pb-archive-search placeholder="제목 검색"></label>' : '').($showBoardFilter ? '<label><span class="g7pb-visually-hidden">게시판 선택</span><select data-g7pb-archive-filter><option value="">전체 게시판</option></select></label>' : '').'</div>'
+            : '';
+
+        return '<section class="g7pb-block g7pb-dynamic g7pb-board-archive '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-board-archive" data-g7pb-data-source="post-archive" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).$tools.'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts g7pb-board-archive__items" data-g7pb-data-list aria-busy="true"></div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileG7ProductShowcase(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'audience', 'detailBasePath', 'layout', 'emptyMessage', 'appearance'], 'G7 product showcase');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $source = $this->requiredString($props, 'source', 16);
+        $limit = $this->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8]);
+        $audience = $this->requiredString($props, 'audience', 16);
+        $detailBasePath = $this->requiredString($props, 'detailBasePath', 200);
+        $layout = $this->requiredString($props, 'layout', 16);
+        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        if (! in_array($source, ['latest', 'new', 'popular'], true) || ! in_array($audience, ['all', 'guest', 'member'], true) || ! in_array($layout, ['featured', 'rail'], true) || preg_match('#^/[A-Za-z0-9/_-]*$#', $detailBasePath) !== 1) {
+            throw new DocumentCompileException('G7 product showcase configuration is invalid.');
+        }
+        $endpoint = match ($source) {
+            'new' => "/api/modules/sirsoft-ecommerce/products/new?limit={$limit}",
+            'popular' => "/api/modules/sirsoft-ecommerce/products/popular?limit={$limit}",
+            default => "/api/modules/sirsoft-ecommerce/products?per_page={$limit}&sort=latest",
+        };
+        $hidden = $audience === 'all' ? '' : ' hidden';
+
+        return '<section class="g7pb-block g7pb-dynamic g7pb-product-showcase g7pb-product-showcase--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-showcase" data-g7pb-data-source="product-showcase" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-product-showcase__items" data-g7pb-data-list aria-busy="true"></div></section>';
+    }
+
     private function compileSectionHeading(?string $eyebrow, string $heading): string
     {
         $eyebrowMarkup = $eyebrow === null || $eyebrow === ''
@@ -1272,11 +1485,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         return match ($type) {
             self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE => ['none', 'reveal', 'parallax-soft'],
-            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE, self::TESTIMONIALS_TYPE, self::PROCESS_TIMELINE_TYPE, self::ARTICLE_LIST_TYPE => ['none', 'reveal', 'stagger'],
+            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE, self::TESTIMONIALS_TYPE, self::PROCESS_TIMELINE_TYPE, self::ARTICLE_LIST_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::EVENT_SCHEDULE_TYPE, self::DOWNLOAD_RESOURCES_TYPE, self::G7_BOARD_ARCHIVE_TYPE, self::G7_PRODUCT_SHOWCASE_TYPE => ['none', 'reveal', 'stagger'],
             self::STATS_TYPE => ['none', 'reveal', 'stagger', 'counter'],
             self::GALLERY_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
             self::BAR_CHART_TYPE => ['none', 'reveal', 'chart-draw'],
-            self::CTA_TYPE, self::CONTACT_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE, self::FAQ_ACCORDION_TYPE, self::TABS_TYPE, self::COMPARISON_TABLE_TYPE, self::VIDEO_EMBED_TYPE => ['none', 'reveal'],
+            self::CTA_TYPE, self::CONTACT_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE, self::FAQ_ACCORDION_TYPE, self::TABS_TYPE, self::COMPARISON_TABLE_TYPE, self::VIDEO_EMBED_TYPE, self::LOGO_CAROUSEL_TYPE, self::TESTIMONIAL_SLIDER_TYPE => ['none', 'reveal'],
             default => ['none'],
         };
     }

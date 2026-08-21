@@ -19,6 +19,7 @@ Usage:
   coord-harness.sh status [--history]
   coord-harness.sh check --task ID
   coord-harness.sh submit --task ID [--message MESSAGE]
+  coord-harness.sh resubmit --task ID [--message MESSAGE]
   coord-harness.sh integrate --task ID --integration-task ID
   coord-harness.sh verify --task ID
   coord-harness.sh finish --task ID
@@ -538,6 +539,45 @@ command_submit() {
   note "SUBMITTED task=$TASK_ID sha=$submitted_sha profile=$META_PROFILE"
 }
 
+command_resubmit() {
+  parse_common_args "$@"
+  validate_task_id "$TASK_ID"
+  load_task "$TASK_ID"
+  assert_task_owner
+  [[ "$META_STATUS" == submitted ]] || fail "submitted task만 재제출할 수 있습니다: $META_STATUS"
+
+  local previous_sha="$META_SUBMITTED_SHA"
+  [[ -n "$previous_sha" ]] || fail '기존 submitted SHA가 없습니다.'
+  [[ "$(git rev-parse HEAD)" == "$previous_sha" ]] \
+    || fail '재제출 전 task branch HEAD가 기존 submitted SHA와 일치해야 합니다.'
+
+  collect_and_check_changed_paths "$META_BASE_SHA" "$META_PATHS"
+  run_submission_profile "$META_PROFILE"
+  collect_and_check_changed_paths "$META_BASE_SHA" "$META_PATHS"
+
+  [[ -n "$(git status --porcelain)" ]] || fail '재제출할 변경이 없습니다.'
+  git add -A -- .
+  git commit -m "${MESSAGE:-task($TASK_ID): revise submitted changes}"
+  [[ -z "$(git status --porcelain)" ]] || fail '재제출 커밋 뒤 worktree가 깨끗하지 않습니다.'
+
+  local resubmitted_sha
+  resubmitted_sha="$(git rev-parse HEAD)"
+  git merge-base --is-ancestor "$previous_sha" "$resubmitted_sha" \
+    || fail '재제출 SHA가 기존 submitted SHA의 후손이 아닙니다.'
+  git merge-base --is-ancestor "$META_BASE_SHA" "$resubmitted_sha" \
+    || fail '재제출 SHA가 task 기준 SHA의 후손이 아닙니다.'
+
+  acquire_mutex
+  load_task "$TASK_ID"
+  [[ "$META_STATUS" == submitted ]] || fail 'task 상태가 재제출 도중 변경되었습니다.'
+  [[ "$META_SUBMITTED_SHA" == "$previous_sha" ]] || fail 'submitted SHA가 재제출 도중 변경되었습니다.'
+  META_SUBMITTED_SHA="$resubmitted_sha"
+  META_SUBMITTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  write_task "$META_FILE"
+  release_mutex
+  note "RESUBMITTED task=$TASK_ID previous=$previous_sha sha=$resubmitted_sha profile=$META_PROFILE"
+}
+
 assert_integration_owner() {
   local task="$1"
   load_task "$task"
@@ -722,6 +762,7 @@ case "$command_name" in
   status) command_status "$@" ;;
   check) command_check "$@" ;;
   submit) command_submit "$@" ;;
+  resubmit) command_resubmit "$@" ;;
   integrate) command_integrate "$@" ;;
   verify) command_verify "$@" ;;
   finish) command_finish "$@" ;;

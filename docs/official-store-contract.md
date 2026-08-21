@@ -1,6 +1,11 @@
 # Official Free Store Contract
 
-Status: Accepted for `0.10.0`
+Status: **Prototype consumer/distribution contract for `0.10.0`**
+
+> 이 문서는 `g7-page-builder` 내부 정적 catalog fixture와 설치·적용
+> 소비자 계약을 설명합니다. 별도 마켓 모듈, 마켓 DB, 상품 관리자,
+> 업로드·검증·게시 UI가 구현됐다는 의미가 아닙니다. 향후 독립 마켓은
+> [Market 모듈 스펙 주도 개발 명세](market-module-spec.md)를 따릅니다.
 
 ## Product boundary
 
@@ -146,4 +151,3 @@ There is deliberately no public upload endpoint.
   apply, Page Kit export, permission denial, and route isolation;
 - browser test for browse -> preview -> install/apply -> open new draft;
 - static boundary checks proving no G7 core/model/table/template/layout import.
-

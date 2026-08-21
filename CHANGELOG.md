@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- 현재 Page Builder 내부 Official Store를 독립 마켓 완료본이 아닌 정적 배포 시험 하네스로 정정하고, 향후 `g7devops.com` 전용 단일 발행자 마켓 모듈의 착수 게이트·관리자·DB·API·보안·TDD·이관 완료 기준을 별도 스펙으로 고정했습니다.
+
 ## [0.13.0] - 2026-08-21
 
 ### Added

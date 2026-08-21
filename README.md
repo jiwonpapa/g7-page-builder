@@ -29,9 +29,11 @@ Sanitized published artifact
 
 ## 현재 상태
 
-현재 모듈 버전은 `0.10.0`입니다. 지원소프트 단일 발행자의 공식 무료 마켓에서 검증된 Block Pack을 즉시 설치하고, 완성 Page Kit을 기존 문서와 사이트 설정을 건드리지 않는 새 미발행 초안으로 적용할 수 있습니다. 관리자가 만든 페이지는 모듈 소유 이미지를 포함한 Page Kit ZIP으로 내보낼 수 있습니다. 계약과 제외 범위는 [공식 무료 마켓 계약](docs/official-store-contract.md)에 고정했습니다.
+현재 모듈 버전은 `0.13.0`입니다. 29개 내장 블록과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 반응형·테마·폼·지도·G7 공개 데이터 블록, 미리보기·발행·복구 흐름을 제공합니다.
 
-Hero·Features·CTA·Contact 수직 기능에 Hero Split·Hero Slider·Logo Cloud·Stats·Pricing·Team·Gallery·Bar Chart를 추가한 12종 블록은 `jiwonpapa/builtin-core` 내장 Pack으로 등록됩니다. 편집기는 서버 카탈로그의 검색·분류·관리자별 즐겨찾기와 Data Preset 복사를 지원합니다. 관리 화면에서는 외부 Pack ZIP 설치·활성화·비활성화·사용량 확인·안전 제거와 GitHub Release 최신 안정 버전 확인·명시적 설치를 수행합니다. 외부 Code Pack은 신뢰 발행자 Ed25519 서명, 파일 digest, 정확한 PHP compiler/schema/editor 등록을 통과해야 하며 내장 component를 덮어쓸 수 없습니다.
+현재 화면의 `무료 마켓`은 독립 마켓이 아니라 정적 catalog 두 건으로 설치·적용 계약을 검증하는 내부 배포 시험 하네스입니다. 별도 마켓 모듈, DB, 상품 관리자, 업로드·검증·게시 기능은 아직 없습니다. Page Builder 본체와 상품 규격이 안정된 뒤 [Market 모듈 스펙 주도 개발 명세](docs/market-module-spec.md)에 따라 `g7devops.com` 전용 단일 발행자 모듈로 분리합니다. 기존 소비자·무결성 계약은 [공식 무료 배포 프로토타입 계약](docs/official-store-contract.md)에 기록합니다.
+
+Hero·CTA·콘텐츠·신뢰·가격·팀·미디어·폼·지도·G7 데이터 등 29종 블록은 `jiwonpapa/builtin-core` 내장 Pack으로 등록됩니다. 편집기는 서버 카탈로그의 검색·분류·관리자별 즐겨찾기와 Data Preset 복사를 지원합니다. 관리 화면에서는 외부 Pack ZIP 설치·활성화·비활성화·사용량 확인·안전 제거와 GitHub Release 최신 안정 버전 확인·명시적 설치를 수행합니다. 외부 Code Pack은 신뢰 발행자 Ed25519 서명, 파일 digest, 정확한 PHP compiler/schema/editor 등록을 통과해야 하며 내장 component를 덮어쓸 수 없습니다.
 
 좌측 Blocks 라이브러리는 축소 구조 미리보기와 용도를 표시하고 Puck 기본 DnD로 블록 사이 정확한 위치에 드롭합니다. Hero 계열 문구는 캔버스에서 직접 수정하며 Slider Hero는 편집 중 선택 장면을 고정하고 공개본에서만 Embla 자동재생을 적용합니다. G7 네이티브 페이지 빌더 문서함과 독립 편집기에서 문서 생성·재진입·메타수정, 선택형 Page Builder Header·Footer, PC·모바일 메뉴 편집, 문서별 출력 shell, typed style·motion preset, 초안 저장과 reload, 미리보기, 2단계 발행, `/pages/{slug}` 공개, 선택형 홈(`/`), 리비전 조회·미리보기·복원·재발행 rollback·공개 해제까지 동작합니다. 링크 필드는 활성 G7 템플릿의 로그인·회원가입·게시판·쇼핑몰·마이페이지·Page Builder route를 검색하고 필요한 게시판·카테고리·상품·문서를 선택해 URL을 완성합니다.
 
@@ -105,8 +107,9 @@ Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 �
 - [편집기 엔진 결정](docs/editor-engine-decision.md)
 - [블록 카탈로그 벤치마크](docs/block-catalog-benchmark.md)
 - [Block Pack 계약](docs/block-pack-contract.md)
-- [공식 무료 마켓 계약](docs/official-store-contract.md)
-- [공식 무료 마켓 구현 배치](docs/official-store-implementation-batches.md)
+- [Market 모듈 스펙 주도 개발 명세](docs/market-module-spec.md)
+- [공식 무료 배포 프로토타입 계약](docs/official-store-contract.md)
+- [공식 무료 배포 프로토타입 구현 배치](docs/official-store-implementation-batches.md)
 - [동적 효과 계약](docs/motion-effects.md)
 - [MVP 기능 명세](docs/mvp-functional-spec.md)
 - [문서·발행 계약](docs/document-publish-contract.md)

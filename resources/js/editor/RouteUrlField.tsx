@@ -131,14 +131,18 @@ function RouteUrlPicker({
   readOnly,
   label,
   testId,
+  initiallyOpen = false,
+  onDismiss,
 }: {
   value: string;
   onChange: (next: string) => void;
   readOnly?: boolean;
   label: string;
   testId?: string;
+  initiallyOpen?: boolean;
+  onDismiss?: () => void;
 }): React.ReactElement {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [catalog, setCatalog] = useState<RouteCatalogResource | null>(null);
   const [catalogAttempted, setCatalogAttempted] = useState(false);
   const [documents, setDocuments] = useState<DocumentResource[]>([]);
@@ -207,6 +211,11 @@ function RouteUrlPicker({
     if (!resolved) return;
     onChange(resolved);
     setOpen(false);
+    onDismiss?.();
+  };
+  const close = (): void => {
+    setOpen(false);
+    onDismiss?.();
   };
 
   return (
@@ -228,13 +237,13 @@ function RouteUrlPicker({
       </div>
       {open ? (
         <div className="g7pb-route-picker-backdrop" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setOpen(false);
+          if (event.target === event.currentTarget) close();
         }}>
           <section className="g7pb-route-picker" role="dialog" aria-modal="true" aria-labelledby="g7pb-route-picker-title"
             data-testid="page-builder-route-picker">
             <header>
               <div><span>G7 서비스 연결</span><h2 id="g7pb-route-picker-title">버튼이 이동할 화면을 고르세요.</h2></div>
-              <button type="button" aria-label="닫기" onClick={() => setOpen(false)}><X size={19} /></button>
+              <button type="button" aria-label="닫기" onClick={close}><X size={19} /></button>
             </header>
             <div className="g7pb-route-picker__body">
               <aside>
@@ -288,7 +297,7 @@ function RouteUrlPicker({
             </div>
             <footer>
               <small>활성 템플릿: {catalog?.active_template ?? '확인 중'}</small>
-              <div><button type="button" onClick={() => setOpen(false)}>취소</button><button type="button" className="is-primary"
+              <div><button type="button" onClick={close}>취소</button><button type="button" className="is-primary"
                 disabled={!resolved} onClick={apply}>이 경로 연결 <ArrowRight size={15} /></button></div>
             </footer>
           </section>
@@ -296,6 +305,20 @@ function RouteUrlPicker({
       ) : null}
     </div>
   );
+}
+
+export function CanvasRoutePicker({
+  value,
+  onChange,
+  onDismiss,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onDismiss: () => void;
+}): React.ReactElement {
+  return <div className="g7pb-canvas-route-dialog" data-testid="page-builder-canvas-route-dialog">
+    <RouteUrlPicker value={value} onChange={onChange} label="선택 버튼 연결" initiallyOpen onDismiss={onDismiss} />
+  </div>;
 }
 
 export function createRouteUrlField(label: string, testId?: string): Field<string> {

@@ -195,7 +195,9 @@ export function notifyCanvasElementSelection(
   blockId: string,
   blockType: string,
 ): void {
-  const target = event.target instanceof Element ? event.target : null;
+  const target = event.target && typeof (event.target as Element).closest === 'function'
+    ? event.target as Element
+    : null;
   if (!target) return;
 
   const selectable = target.closest<HTMLElement>('[data-g7pb-media-field], [data-g7pb-action-field], [data-g7pb-inline-field]');

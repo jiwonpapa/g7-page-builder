@@ -22,7 +22,6 @@ import {
   ActionBar,
   createUsePuck,
   Puck,
-  registerOverlayPortal,
   type Config,
   type Data,
   type PuckAction,
@@ -2056,16 +2055,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
-  const overlayRef = useRef<HTMLElement | null>(null);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null ? data.content[selectedIndex] : null;
-  const overlayActive = Boolean(canvasUi?.textToolsOpen && selectedBlock);
-  useEffect(() => {
-    if (!overlayActive) return undefined;
-    return registerOverlayPortal(overlayRef.current, {
-      disableDrag: true,
-      disableDragOnFocus: true,
-    });
-  }, [overlayActive, selectedIndex, selectedZone]);
   if (!canvasUi?.textToolsOpen || !selectedBlock) return null;
   const blockIndex = selectedIndex as number;
   const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'
@@ -2106,7 +2096,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   } as React.CSSProperties : undefined;
 
   return createPortal(
-    <section ref={overlayRef} className={`g7pb-context-panel${isTextElement ? ' g7pb-element-balloon' : ''}`} style={balloonStyle}
+    <section className={`g7pb-context-panel${isTextElement ? ' g7pb-element-balloon' : ''}`} style={balloonStyle}
       role="dialog" aria-label={isTextElement ? '선택 요소 스타일' : '선택 블록 스타일'} data-testid="page-builder-context-panel">
       <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '선택한 요소에만 적용됩니다.' : '블록 배경과 여백을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
       {isTextElement ? <>

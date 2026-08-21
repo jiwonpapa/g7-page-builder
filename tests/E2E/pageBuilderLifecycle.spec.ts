@@ -563,6 +563,7 @@ async function selectAndEditCta(
       await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
       await target.fill(value);
     }
+    await cta.dispatchEvent('pointerdown');
   } else {
     await (await revealInspectorField(page, 'page-builder-cta-heading')).fill(heading);
     await (await revealInspectorField(page, 'page-builder-cta-body')).fill(body);

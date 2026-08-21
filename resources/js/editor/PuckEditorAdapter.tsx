@@ -2178,7 +2178,7 @@ function ConnectedCanvasDialogs(): React.ReactElement | null {
     dispatch({
       type: 'replace', destinationIndex: blockIndex, destinationZone: 'root:default-zone',
       data: { ...selectedBlock, props: setValueAtPath(selectedBlock.props, path, value) } as never,
-      ui: { itemSelector: { index: blockIndex, zone: 'root:default-zone' } }, recordHistory: true,
+      recordHistory: true,
     });
   };
 

@@ -593,7 +593,13 @@ async function selectAndEditContact(
 }
 
 async function saveDraft(page: Page): Promise<void> {
+  const persisted = page.waitForResponse((response) => {
+    const pathname = new URL(response.url()).pathname;
+    return (response.request().method() === 'PUT' && pathname.endsWith('/draft'))
+      || (response.request().method() === 'POST' && pathname.endsWith('/preview'));
+  });
   await page.getByTestId('page-builder-save').click();
+  expect((await persisted).ok()).toBe(true);
   await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute(
     'data-state',
     'saved',

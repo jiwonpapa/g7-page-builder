@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Field } from '@puckeditor/core';
+import { createPortal } from 'react-dom';
 import {
   ArrowRight,
   Link2,
@@ -255,7 +256,7 @@ function RouteUrlPicker({
           <Link2 size={15} /> 연결 선택
         </button>
       </div>
-      {open ? (
+      {open ? createPortal(
         <div ref={overlayRef} className="g7pb-route-picker-backdrop" onMouseDown={(event) => {
           if (event.target === event.currentTarget) close();
         }}>
@@ -321,7 +322,8 @@ function RouteUrlPicker({
                 disabled={!resolved} onClick={apply}>이 경로 연결 <ArrowRight size={15} /></button></div>
             </footer>
           </section>
-        </div>
+        </div>,
+        globalThis.document.body,
       ) : null}
     </div>
   );

@@ -6,6 +6,20 @@
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-08-22
+
+### Added
+
+- Header Site Part에 최대 10개 1차 메뉴와 메뉴별 최대 8개 2차 라우트를 추가했습니다.
+- Header·Footer를 비즈니스·미니멀/컴팩트·커뮤니티 구성으로 바로 시작하는 내장 프리셋을 추가했습니다.
+- `SitePartDocument v1` JSON Schema와 3단 메뉴·실행 URL·임의 스타일을 거부하는 계약 시험을 추가했습니다.
+
+### Changed
+
+- Footer 다단 메뉴의 `이름|URL` 텍스트 입력을 제거하고 모든 하위 링크를 G7 라우트 선택기로 편집하게 바꾸었습니다.
+- PC에서는 hover·focus 드롭다운, 모바일에서는 접힘 제어가 있는 좌·우 drawer 하위 메뉴로 같은 라우트 계약을 출력합니다.
+- G7 User Template 레이아웃이 발행 SEO 스냅샷의 제목·설명·Open Graph 이미지를 사용하게 했습니다.
+
 ## [0.16.0] - 2026-08-21
 
 ### Added

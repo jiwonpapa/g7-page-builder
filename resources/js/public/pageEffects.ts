@@ -545,11 +545,27 @@ export function bootSiteShellMenu(root: Document = document, view: Window = wind
   const closeButton = menu?.querySelector<HTMLButtonElement>('[data-g7pb-menu-close]');
   if (!toggle || !menu || toggle.dataset.g7pbMenuReady === 'true') return;
 
+  const submenuToggles = Array.from(menu.querySelectorAll<HTMLButtonElement>('[data-g7pb-submenu-toggle]'));
+  const setSubmenuOpen = (button: HTMLButtonElement, open: boolean): void => {
+    const submenuId = button.getAttribute('aria-controls');
+    const submenu = submenuId ? root.getElementById(submenuId) : null;
+    if (!submenu) return;
+    button.setAttribute('aria-expanded', String(open));
+    submenu.hidden = !open;
+    const currentLabel = button.getAttribute('aria-label') ?? '';
+    button.setAttribute('aria-label', currentLabel.replace(open ? '열기' : '닫기', open ? '닫기' : '열기'));
+  };
+  const closeSubmenus = (): void => submenuToggles.forEach((button) => setSubmenuOpen(button, false));
+  submenuToggles.forEach((button) => button.addEventListener('click', () => {
+    setSubmenuOpen(button, button.getAttribute('aria-expanded') !== 'true');
+  }));
+
   const close = (restoreFocus = false): void => {
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', '메뉴 열기');
     menu.hidden = true;
     if (backdrop) backdrop.hidden = true;
+    closeSubmenus();
     root.documentElement.classList.remove('g7pb-menu-open');
     if (restoreFocus) toggle.focus();
   };
@@ -574,7 +590,8 @@ export function bootSiteShellMenu(root: Document = document, view: Window = wind
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') close(true);
     if (event.key !== 'Tab' || toggle.getAttribute('aria-expanded') !== 'true' || menu.dataset.g7pbMenuStyle === 'dropdown') return;
-    const focusable = Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+    const focusable = Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'))
+      .filter((element) => element.closest('[hidden]') === null);
     if (focusable.length === 0) return;
     const first = focusable[0];
     const last = focusable[focusable.length - 1];

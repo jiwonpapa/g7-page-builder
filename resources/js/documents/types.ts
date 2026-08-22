@@ -624,7 +624,9 @@ export interface SiteShellLink {
   url: string;
 }
 
-export type SitePartLink = SiteShellLink;
+export interface SitePartLink extends SiteShellLink {
+  children?: SiteShellLink[];
+}
 
 export interface SiteShellResource {
   locale: string;

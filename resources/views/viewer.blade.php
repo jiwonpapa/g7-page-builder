@@ -57,9 +57,15 @@
         .g7pb-site-brand { display: inline-flex; min-width: 0; align-items: center; gap: .75rem; color: inherit; font-size: 1.05rem; font-weight: 850; letter-spacing: -.02em; text-decoration: none; }
         .g7pb-site-brand img { display: block; width: auto; max-width: 10rem; height: 2.25rem; object-fit: contain; }
         .g7pb-site-nav { justify-self: center; }
-        .g7pb-site-nav ul { display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem); margin: 0; padding: 0; list-style: none; }
-        .g7pb-site-nav a { color: inherit; font-size: .92rem; font-weight: 700; text-decoration: none; }
+        .g7pb-site-nav > ul { display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem); margin: 0; padding: 0; list-style: none; }
+        .g7pb-site-nav > ul > li { position: relative; }
+        .g7pb-site-nav a { display: flex; gap: .35rem; align-items: center; color: inherit; font-size: .92rem; font-weight: 700; text-decoration: none; }
         .g7pb-site-nav a:hover, .g7pb-site-nav a:focus-visible { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .35rem; }
+        .g7pb-site-subnav { position: absolute; z-index: 70; top: calc(100% + 1rem); left: 50%; display: grid; min-width: 13rem; gap: .2rem; margin: 0; padding: .65rem; border: 1px solid #e1e5ec; border-radius: .85rem; color: #172033; background: #fff; box-shadow: 0 1.25rem 3rem rgb(15 23 42 / 16%); visibility: hidden; opacity: 0; transform: translate(-50%, -.35rem); transition: opacity 150ms ease, transform 150ms ease, visibility 150ms; list-style: none; }
+        .g7pb-site-subnav::before { position: absolute; right: 0; bottom: 100%; left: 0; height: 1.1rem; content: ''; }
+        .g7pb-site-subnav a { min-height: 2.65rem; padding: .55rem .7rem; border-radius: .55rem; white-space: nowrap; }
+        .g7pb-site-subnav a:hover, .g7pb-site-subnav a:focus-visible { background: #f2f5fa; text-decoration: none; }
+        .g7pb-site-nav li:hover > .g7pb-site-subnav, .g7pb-site-nav li:focus-within > .g7pb-site-subnav { visibility: visible; opacity: 1; transform: translate(-50%, 0); }
         .g7pb-site-header__cta { display: inline-flex; min-height: 2.75rem; align-items: center; padding: .6rem 1rem; border-radius: 999px; color: #fff; background: #2456df; font-size: .88rem; font-weight: 800; text-decoration: none; }
         .g7pb-site-header.is-transparent .g7pb-site-header__cta { color: #172033; background: #fff; }
         .g7pb-menu-toggle { display: none; width: 2.75rem; height: 2.75rem; padding: .65rem; border: 1px solid currentColor; border-radius: 999px; color: inherit; background: transparent; cursor: pointer; }
@@ -76,13 +82,25 @@
         .g7pb-mobile-menu--drawer-left, .g7pb-mobile-menu--drawer-right { position: fixed; z-index: 60; top: 0; bottom: 0; left: auto; width: min(88vw, 24rem); overflow-y: auto; padding: 1.25rem 1.5rem 2rem; border: 0; }
         .g7pb-mobile-menu--drawer-left { right: auto; left: 0; }
         .g7pb-mobile-menu--drawer-right { right: 0; }
+        .g7pb-mobile-menu--drawer-left:not([hidden]) { animation: g7pb-drawer-left-in 180ms ease-out both; }
+        .g7pb-mobile-menu--drawer-right:not([hidden]) { animation: g7pb-drawer-right-in 180ms ease-out both; }
         .g7pb-mobile-menu--drawer-left .g7pb-mobile-menu__close, .g7pb-mobile-menu--drawer-right .g7pb-mobile-menu__close { display: grid; place-items: center; }
         .g7pb-mobile-menu ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
         .g7pb-mobile-menu li + li { border-top: 1px solid #edf0f4; }
         .g7pb-mobile-menu a { display: flex; min-height: 3.25rem; align-items: center; justify-content: space-between; color: inherit; font-weight: 750; text-decoration: none; }
         .g7pb-mobile-menu a::after { content: '→'; color: #7c879a; }
+        .g7pb-mobile-menu__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+        .g7pb-mobile-menu__row > a::after { content: none; }
+        .g7pb-mobile-menu__row button { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 0; border-radius: 999px; color: #344054; background: #f2f4f7; cursor: pointer; }
+        .g7pb-mobile-menu__row button span { transition: transform 150ms ease; }
+        .g7pb-mobile-menu__row button[aria-expanded='true'] span { transform: rotate(180deg); }
+        .g7pb-mobile-subnav { margin: 0 0 .5rem .8rem !important; padding-left: .9rem !important; border-left: 2px solid #dce4f2; }
+        .g7pb-mobile-subnav[hidden] { display: none; }
+        .g7pb-mobile-subnav a { min-height: 2.8rem; color: #526071; font-size: .9rem; }
         .g7pb-mobile-menu .g7pb-mobile-menu__cta { justify-content: center; margin-top: .75rem; border-radius: .7rem; color: #fff; background: #2456df; }
         .g7pb-mobile-menu .g7pb-mobile-menu__cta::after { content: none; }
+        @keyframes g7pb-drawer-left-in { from { opacity: 0; transform: translateX(-2rem); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes g7pb-drawer-right-in { from { opacity: 0; transform: translateX(2rem); } to { opacity: 1; transform: translateX(0); } }
         .g7pb-site-footer { padding: clamp(3rem, 7vw, 5.5rem) max(1.25rem, calc((100vw - 72rem) / 2)); color: #d6dce6; background: #111827; }
         .g7pb-site-footer__top { display: flex; gap: 2rem; align-items: start; justify-content: space-between; }
         .g7pb-site-footer .g7pb-site-brand { color: #fff; }
@@ -436,6 +454,7 @@
         }
         @media (prefers-reduced-motion: reduce) {
             .g7pb-block, .g7pb-block *, .g7pb-motion-parallax-target { animation: none !important; transition: none !important; transform: none !important; }
+            .g7pb-mobile-menu, .g7pb-site-subnav { animation: none !important; transition: none !important; }
         }
     </style>
     @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source=') || str_contains($page->artifact, 'data-g7pb-inquiry-form') || str_contains($page->artifact, 'data-g7pb-accordion') || str_contains($page->artifact, 'data-g7pb-tabs'))

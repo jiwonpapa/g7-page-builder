@@ -109,7 +109,7 @@ async function globalPublicPageUrl(api: APIRequestContext, locale: string): Prom
   const item = payload.data?.items?.find((candidate) =>
     typeof candidate.public_url === 'string'
       && candidate.document?.locale === locale
-      && candidate.document?.shell_mode !== 'none');
+      && candidate.document?.shell_mode === 'builder');
   return typeof item?.public_url === 'string' ? item.public_url : null;
 }
 
@@ -118,6 +118,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
   const token = await authenticate(context);
   const api = await adminApi(token);
   const changedBrand = `Site Part E2E ${Date.now()}`;
+  const childLabel = `하위 기능 ${Date.now()}`;
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   let original: SitePartResource | null = null;
@@ -127,10 +128,26 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     const locale = await page.getByTestId('page-builder-site-part-editor-root').getAttribute('data-locale') ?? 'ko';
     original = await readOrBootstrap(api, 'header', locale);
     const originalBrand = String(original.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.brand_name ?? '사이트 이름');
+    const seededDocument = structuredClone(original.document);
+    const seededNavigationBlock = seededDocument.blocks.find((block) => block.type === 'site.header.navigation-01');
+    if (!seededNavigationBlock) throw new Error('Header navigation block is required for the Site Part E2E seed.');
+    const seededNavigation = Array.isArray(seededNavigationBlock.props.navigation)
+      ? seededNavigationBlock.props.navigation as Array<Record<string, unknown>>
+      : [];
+    if (seededNavigation.length === 0) seededNavigation.push({ label: '서비스', url: '/pages/services' });
+    seededNavigation[0] = { ...seededNavigation[0], children: [{ label: childLabel, url: '/pages/features' }] };
+    seededNavigationBlock.props.navigation = seededNavigation;
+    const seedResponse = await api.put('/api/modules/jiwonpapa-page_builder/admin/site-parts/header/draft', {
+      data: { locale, title: original.title, document: seededDocument, expected_lock_version: original.lock_version },
+    });
+    expect(seedResponse.ok()).toBe(true);
+    await page.reload();
     await expect(page.getByTestId('page-builder-site-part-editor')).toBeVisible();
     await expect(page.getByText('Header 편집', { exact: true })).toBeVisible();
     await expect(page.getByText('Header · 내비게이션', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('상단 기기 버튼으로 반응형 화면을 확인하세요.')).toBeVisible();
+    await expect(page.getByTestId('page-builder-site-part-presets')).toContainText('빠른 시작 프리셋');
+    await expect(page.getByTestId('page-builder-site-part-presets').getByRole('button')).toHaveCount(3);
     const headerNavigationCard = page.locator('[data-testid="drawer-item:HeaderNavigation"]:visible');
     const announcementCard = page.locator('[data-testid="drawer-item:Announcement"]:visible');
     await expect(headerNavigationCard).toHaveCount(1);
@@ -171,12 +188,22 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     const published = await readOrBootstrap(api, 'header', locale);
     expect(published.status).toBe('published');
     expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.brand_name).toBe(changedBrand);
+    const publishedNavigation = published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.navigation as Array<Record<string, unknown>>;
+    expect(publishedNavigation[0]?.children).toEqual([{ label: childLabel, url: '/pages/features' }]);
     expect(published.document.blocks.some((block) => block.type === 'site.header.announcement-01')).toBe(true);
 
     const publicUrl = await globalPublicPageUrl(api, locale);
     if (publicUrl) {
       await page.goto(publicUrl);
       await expect(page.getByTestId('page-builder-site-header')).toContainText(changedBrand);
+      await expect(page.locator('.g7pb-site-subnav').getByText(childLabel, { exact: true })).toBeAttached();
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.reload();
+      await page.locator('[data-g7pb-menu-toggle]').click();
+      const submenuToggle = page.locator('[data-g7pb-submenu-toggle]').first();
+      await submenuToggle.click();
+      await expect(submenuToggle).toHaveAttribute('aria-expanded', 'true');
+      await expect(page.locator('[data-g7pb-mobile-submenu]').getByText(childLabel, { exact: true })).toBeVisible();
     }
   } finally {
     if (original) await restoreAndPublish(api, 'header', original);
@@ -194,6 +221,7 @@ test('opens the Footer as a separate visual Site Part with preview cards', async
     const resource = await readOrBootstrap(api, 'footer', locale);
     await expect(page.getByTestId('page-builder-site-part-editor')).toHaveAttribute('data-kind', 'footer');
     await expect(page.getByText('Footer 편집', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('page-builder-site-part-presets').getByRole('button')).toHaveCount(3);
     const simpleCard = page.locator('[data-testid="drawer-item:FooterSimple"]:visible');
     const columnsCard = page.locator('[data-testid="drawer-item:FooterColumns"]:visible');
     await expect(simpleCard).toHaveCount(1);

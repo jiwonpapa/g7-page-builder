@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 29종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 drawer 완료.
+현재 구현: 29종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
 
 ## 목표
 
@@ -36,7 +36,8 @@
 - Header와 Footer를 설정 모달이 아닌 같은 Puck drag/drop 캔버스에서 각각 편집
 - Header·Page·Footer 전체 사이트 흐름을 중앙 캔버스에서 함께 확인하고 `template`·`builder`·`none` 소유권을 구분
 - 라이트·다크·기기 설정 테마를 즉시 전환하고 공개 결과와 같은 allowlist 토큰을 저장
-- Header 내비게이션·공지 바, 기본 Footer·다단 Footer의 inline 문구·typed 링크·로고 MediaPort 편집
+- Header 1·2차 내비게이션·공지 바, 기본 Footer·다단 Footer의 inline 문구·개별 typed route·로고 MediaPort 편집
+- Header/Footer 비즈니스·미니멀/컴팩트·커뮤니티 프리셋을 적용하고 저장 전 전체 구조를 편집
 - 링크 필드에서 활성 G7 템플릿의 로그인·회원가입·로그아웃·게시판·쇼핑몰·마이페이지·Page Builder route를 검색하고 필요한 route parameter 대상을 선택
 - dirty/saving/saved/conflict/publish 상태 표시
 - 2초 debounce autosave와 명시적 저장

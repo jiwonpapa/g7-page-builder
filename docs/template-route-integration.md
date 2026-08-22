@@ -29,6 +29,8 @@ Page Builder는 기존 `페이지 관리`, `sirsoft-page`, 템플릿 route/layou
 
 편집기 링크 필드는 직접 URL 입력과 `G7 서비스 연결` 선택기를 함께 제공합니다. 선택기는 현재 활성 User Template의 merged route catalog를 읽어 다음 범주를 검색합니다.
 
+Page Builder Site Part의 Header 1·2차 메뉴, CTA, Footer 기본 메뉴와 다단 Footer의 각 링크도 같은 선택기를 사용합니다. `이름|URL` 형식의 대량 텍스트 입력은 사용하지 않습니다.
+
 - 사이트: 홈
 - 회원: 로그인, 회원가입, 비밀번호 찾기, 로그아웃
 - 게시판: 목록, 인기글, 게시판·게시물·작성 화면

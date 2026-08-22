@@ -140,6 +140,35 @@ describe('published page effects runtime', () => {
     expect(backdrop.hidden).toBe(true);
   });
 
+  it('expands one nested mobile route group and resets it when the drawer closes', () => {
+    document.body.innerHTML = `
+      <header data-g7pb-site-header>
+        <button type="button" aria-expanded="false" aria-controls="nested-menu" data-g7pb-menu-toggle>메뉴</button>
+        <nav id="nested-menu" data-g7pb-mobile-menu data-g7pb-menu-style="drawer-left" hidden>
+          <div class="g7pb-mobile-menu__row">
+            <a href="/pages/services">서비스</a>
+            <button type="button" aria-expanded="false" aria-controls="service-routes" aria-label="서비스 하위 메뉴 열기" data-g7pb-submenu-toggle>펼침</button>
+          </div>
+          <ul id="service-routes" data-g7pb-mobile-submenu hidden><li><a href="/pages/features">기능</a></li></ul>
+        </nav>
+      </header>`;
+
+    bootPageEffects(document, window);
+    const menuToggle = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]')!;
+    const submenuToggle = document.querySelector<HTMLButtonElement>('[data-g7pb-submenu-toggle]')!;
+    const submenu = document.querySelector<HTMLElement>('[data-g7pb-mobile-submenu]')!;
+    menuToggle.click();
+    submenuToggle.click();
+    expect(submenuToggle.getAttribute('aria-expanded')).toBe('true');
+    expect(submenuToggle.getAttribute('aria-label')).toContain('닫기');
+    expect(submenu.hidden).toBe(false);
+
+    menuToggle.click();
+    expect(submenuToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(submenuToggle.getAttribute('aria-label')).toContain('열기');
+    expect(submenu.hidden).toBe(true);
+  });
+
   it('submits a typed inquiry with CSRF and restores a reusable success state', async () => {
     document.head.innerHTML = '<meta name="csrf-token" content="csrf-test">';
     document.body.innerHTML = `

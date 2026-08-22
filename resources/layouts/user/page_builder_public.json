@@ -3,7 +3,7 @@
   "layout_name": "page_builder_public",
   "extends": "_user_base",
   "meta": {
-    "title": "{{page?.data?.page?.title ?? ''}}",
+    "title": "{{page?.data?.seo_meta?.title ?? page?.data?.page?.title ?? ''}}",
     "seo": {
       "enabled": true,
       "data_sources": ["page"],
@@ -11,11 +11,14 @@
       "changefreq": "monthly",
       "og": {
         "type": "website",
-        "title": "{{page?.data?.page?.title ?? ''}}"
+        "title": "{{page?.data?.seo_meta?.title ?? page?.data?.page?.title ?? ''}}",
+        "description": "{{page?.data?.seo_meta?.description ?? ''}}",
+        "image": "{{page?.data?.seo_meta?.og_image_url ?? ''}}",
+        "image_alt": "{{page?.data?.seo_meta?.title ?? page?.data?.page?.title ?? ''}}"
       },
       "structured_data": {
         "@type": "WebPage",
-        "name": "{{page?.data?.page?.title ?? ''}}",
+        "name": "{{page?.data?.seo_meta?.title ?? page?.data?.page?.title ?? ''}}",
         "datePublished": "{{page?.data?.page?.published_at ?? ''}}"
       }
     }

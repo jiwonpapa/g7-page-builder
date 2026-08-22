@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Check,
   CloudUpload,
+  LayoutTemplate,
   Monitor,
   Save,
   Smartphone,
@@ -23,10 +24,11 @@ import {
   type FooterColumnsProps,
   type FooterSimpleProps,
   type HeaderNavigationProps,
-  linesToLinks,
   safeSitePartHref,
   type SitePartComponents,
+  type SitePartPresetKey,
   sitePartCanonicalToPuck,
+  sitePartPresetToPuck,
   type SitePartPuckData,
   sitePartPuckToCanonical,
 } from './sitePartDocumentAdapter';
@@ -47,18 +49,25 @@ const VIEWPORTS: Viewports = [
 ];
 
 export function HeaderNavigationPreview(props: HeaderNavigationProps): React.ReactElement {
+  const navigation = (className: string, label: string): React.ReactElement => <nav className={className} aria-label={label}><ul>{props.navigation.map((item, index) => (
+    <li key={`${item.label}-${index}`} className={item.children.length > 0 ? 'has-children' : undefined}>
+      <a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}{item.children.length > 0 ? <span aria-hidden="true">⌄</span> : null}</a>
+      {item.children.length > 0 ? <ul className="g7pb-site-subnav">{item.children.map((child, childIndex) => (
+        <li key={`${child.label}-${childIndex}`}><a href={safeSitePartHref(child.url)} onClick={(event) => event.preventDefault()}>{child.label}</a></li>
+      ))}</ul> : null}
+    </li>
+  ))}</ul></nav>;
   return (
     <header className={`g7pb-site-header ${props.sticky ? 'is-sticky' : ''} ${props.variant === 'transparent' ? 'is-transparent' : ''}`}>
       <div className="g7pb-site-header__inner">
         <a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>
           {props.logoUrl ? <img src={props.logoUrl} alt={props.brandName} /> : <span data-g7pb-inline-field="brandName">{props.brandName}</span>}
         </a>
-        <nav className="g7pb-site-nav" aria-label="주 메뉴"><ul>{props.navigation.map((item, index) => (
-          <li key={`${item.label}-${index}`}><a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}</a></li>
-        ))}</ul></nav>
+        {navigation('g7pb-site-nav', '주 메뉴')}
         {props.ctaLabel ? <a className="g7pb-site-header__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
         {props.mobileMenu ? <button className="g7pb-menu-toggle" type="button" aria-label={`${props.mobileMenuStyle === 'drawer-left' ? '왼쪽' : props.mobileMenuStyle === 'drawer-right' ? '오른쪽' : '아래'} 모바일 메뉴`}><span /></button> : null}
       </div>
+      {props.mobileMenu ? <div className={`g7pb-mobile-menu g7pb-mobile-menu--preview g7pb-mobile-menu--${props.mobileMenuStyle}`}>{navigation('g7pb-mobile-menu__navigation', '모바일 메뉴')}{props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}</div> : null}
     </header>
   );
 }
@@ -80,7 +89,7 @@ export function FooterSimplePreview(props: FooterSimpleProps): React.ReactElemen
 export function FooterColumnsPreview(props: FooterColumnsProps): React.ReactElement {
   return <footer className="g7pb-site-footer g7pb-site-footer--columns"><div className="g7pb-site-footer__columns">
     <div><a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>{props.brandName}</a></div>
-    {props.columns.map((column, index) => <section key={`${column.heading}-${index}`}><h2>{column.heading}</h2><ul>{linesToLinks(column.linksText).map((link, linkIndex) => <li key={`${link.label}-${linkIndex}`}><a href={safeSitePartHref(link.url)} onClick={(event) => event.preventDefault()}>{link.label}</a></li>)}</ul></section>)}
+    {props.columns.map((column, index) => <section key={`${column.heading}-${index}`}><h2>{column.heading}</h2><ul>{column.links.map((link, linkIndex) => <li key={`${link.label}-${linkIndex}`}><a href={safeSitePartHref(link.url)} onClick={(event) => event.preventDefault()}>{link.label}</a></li>)}</ul></section>)}
   </div>{props.legalText ? <p className="g7pb-site-footer__legal">{props.legalText}</p> : null}</footer>;
 }
 
@@ -113,15 +122,39 @@ function SitePartDrawerItem({ name }: { children: React.ReactNode; name: string 
   </div>;
 }
 
+const SITE_PART_PRESETS: Record<SitePartKind, Array<{ key: SitePartPresetKey; label: string; description: string }>> = {
+  header: [
+    { key: 'header-business', label: '비즈니스', description: '공지·2단 메뉴·문의 CTA' },
+    { key: 'header-minimal', label: '미니멀', description: '투명 헤더와 핵심 링크' },
+    { key: 'header-community', label: '커뮤니티', description: '게시판 하위 메뉴·로그인' },
+  ],
+  footer: [
+    { key: 'footer-business', label: '비즈니스', description: '3개 메뉴 그룹과 사업자 정보' },
+    { key: 'footer-compact', label: '컴팩트', description: '핵심 링크만 있는 짧은 Footer' },
+    { key: 'footer-community', label: '커뮤니티', description: '게시판·회원·정책 메뉴' },
+  ],
+};
+
+function SitePartPresetBar({ kind, onApply }: { kind: SitePartKind; onApply: (preset: SitePartPresetKey) => void }): React.ReactElement {
+  return <section className="g7pb-site-part-presets" data-testid="page-builder-site-part-presets" aria-label={`${kind === 'header' ? 'Header' : 'Footer'} 프리셋`}>
+    <header><LayoutTemplate size={18} /><div><strong>빠른 시작 프리셋</strong><span>적용 후 화면과 우측 설정에서 자유롭게 바꾸세요.</span></div></header>
+    <div>{SITE_PART_PRESETS[kind].map((preset) => <button key={preset.key} type="button" onClick={() => onApply(preset.key)}><strong>{preset.label}</strong><span>{preset.description}</span></button>)}</div>
+  </section>;
+}
+
 export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents> {
   const all: Config<SitePartComponents>['components'] = {
     HeaderNavigation: {
       label: 'Header · 내비게이션',
-      defaultProps: { brandName: '사이트 이름', logoUrl: '', homeUrl: '/', variant: 'solid', sticky: true, navigation: [{ label: '소개', url: '/pages/about' }], ctaLabel: '문의하기', ctaUrl: '/pages/contact', mobileMenu: true, mobileMenuStyle: 'drawer-right' },
+      defaultProps: { brandName: '사이트 이름', logoUrl: '', homeUrl: '/', variant: 'solid', sticky: true, navigation: [{ label: '소개', url: '/pages/about', children: [] }], ctaLabel: '문의하기', ctaUrl: '/pages/contact', mobileMenu: true, mobileMenuStyle: 'drawer-right' },
       fields: {
         brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, logoUrl: createMediaField('로고 이미지'), homeUrl: createRouteUrlField('홈 연결'),
         variant: { type: 'radio', label: '배경', options: [{ label: '기본', value: 'solid' }, { label: '투명', value: 'transparent' }] }, sticky: { type: 'radio', label: '스크롤 고정', options: [{ label: '고정', value: true }, { label: '고정 안 함', value: false }] },
-        navigation: { type: 'array', label: '메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, url: createRouteUrlField('메뉴 연결') } },
+        navigation: { type: 'array', label: '1차 메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/', children: [] }), getItemSummary: (item) => item.label, arrayFields: {
+          label: { type: 'text', label: '이름', contentEditable: true },
+          url: createRouteUrlField('1차 메뉴 연결'),
+          children: { type: 'array', label: '2차 메뉴', min: 0, max: 8, defaultItemProps: (index) => ({ label: `하위 메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름' }, url: createRouteUrlField('2차 메뉴 연결') } },
+        } },
         ctaLabel: { type: 'text', label: '강조 버튼 문구', contentEditable: true }, ctaUrl: createRouteUrlField('강조 버튼 연결'),
         mobileMenu: { type: 'radio', label: '모바일 메뉴', options: [{ label: '사용', value: true }, { label: '숨김', value: false }] },
         mobileMenuStyle: { type: 'radio', label: '모바일 열림 방향', options: [{ label: '오른쪽', value: 'drawer-right' }, { label: '왼쪽', value: 'drawer-left' }, { label: '아래', value: 'dropdown' }] },
@@ -142,8 +175,11 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
     },
     FooterColumns: {
       label: 'Footer · 다단 메뉴',
-      defaultProps: { brandName: '사이트 이름', homeUrl: '/', columns: [{ heading: '서비스', linksText: '소개|/pages/about\n문의|/pages/contact' }], legalText: '사이트 정보를 입력해 주세요.' },
-      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: createRouteUrlField('홈 연결'), columns: { type: 'array', label: '메뉴 그룹', min: 1, max: 4, defaultItemProps: (index) => ({ heading: `메뉴 ${index + 1}`, linksText: '링크|/' }), getItemSummary: (item) => item.heading, arrayFields: { heading: { type: 'text', label: '그룹 제목', contentEditable: true }, linksText: { type: 'textarea', label: '링크(이름|URL, 줄바꿈)' } } }, legalText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
+      defaultProps: { brandName: '사이트 이름', homeUrl: '/', columns: [{ heading: '서비스', links: [{ label: '소개', url: '/pages/about' }, { label: '문의', url: '/pages/contact' }] }], legalText: '사이트 정보를 입력해 주세요.' },
+      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: createRouteUrlField('홈 연결'), columns: { type: 'array', label: '메뉴 그룹', min: 1, max: 4, defaultItemProps: (index) => ({ heading: `메뉴 ${index + 1}`, links: [{ label: '링크', url: '/' }] }), getItemSummary: (item) => item.heading, arrayFields: {
+        heading: { type: 'text', label: '그룹 제목', contentEditable: true },
+        links: { type: 'array', label: '그룹 링크', min: 0, max: 8, defaultItemProps: (index) => ({ label: `링크 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름' }, url: createRouteUrlField('하단 메뉴 연결') } },
+      } }, legalText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
       render: (props) => <FooterColumnsPreview {...props} />,
     },
   };
@@ -243,6 +279,17 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
     setMessage(null);
   };
 
+  const applyPreset = (preset: SitePartPresetKey): void => {
+    const current = resourceRef.current;
+    if (!current) return;
+    if (dataRef.current.content.length > 0 && !window.confirm('현재 Site Part 블록을 선택한 프리셋으로 바꾸시겠습니까?')) return;
+    const next = sitePartPresetToPuck(current.document, preset);
+    dataRef.current = next;
+    setData(next);
+    setDirty(true);
+    setMessage('프리셋을 적용했습니다. 라우트와 문구를 확인한 뒤 저장·발행하세요.');
+  };
+
   return <main className={`g7pb-root g7pb-site-part-editor ${embedded ? 'is-embedded' : ''}`} data-testid="page-builder-site-part-editor" data-kind={kind}>
     <header className="g7pb-command-bar">
       <div className="g7pb-command-bar__identity">{embedded ? <button type="button" className="g7pb-icon-link" aria-label="페이지 편집으로 돌아가기" onClick={onBack}><ArrowLeft size={18} /></button> : <a href={PAGE_BUILDER_MANAGER_PATH} className="g7pb-icon-link" aria-label="문서함으로 돌아가기"><ArrowLeft size={18} /></a>}<div><p>Global Site Part</p><strong>{kind === 'header' ? 'Header 편집' : 'Footer 편집'}</strong></div></div>
@@ -255,6 +302,7 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
     {message ? <div className="g7pb-notice" role="alert"><span>{message}</span><button type="button" className="g7pb-notice__dismiss" onClick={() => setMessage(null)}>닫기</button></div> : null}
     {busy && !resource ? <div className="g7pb-loading">Site Part를 준비하는 중입니다.</div> : null}
     {resource ? <div className="g7pb-site-part-puck" aria-busy={busy}>
+      <SitePartPresetBar kind={kind} onApply={applyPreset} />
       <div className="g7pb-site-part-device-legend" aria-hidden="true"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>상단 기기 버튼으로 반응형 화면을 확인하세요.</span></div>
       <Puck config={config} data={data} height="100%" iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ itemSelector: data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null, viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} overrides={overrides} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
     </div> : null}

@@ -20,12 +20,14 @@ Page Builder가 별도로 소유하는 Header·Footer Site Part는 브랜드와 
 
 - 사이트 이름, 로고 이미지 URL, 홈 주소
 - `solid` 또는 `transparent` Header, sticky 여부
-- 최대 10개 1단 메뉴와 선택형 CTA
+- 최대 10개 1차 메뉴, 메뉴별 최대 8개 2차 메뉴와 선택형 CTA
 - 모바일 메뉴 표시 여부와 `dropdown`·`drawer-left`·`drawer-right` 방식
 - Footer 문구와 메뉴 반복 여부
 - compare-and-swap `lock_version`
 
-같은 메뉴 배열을 데스크톱 Header, 모바일 메뉴와 선택형 Footer 메뉴에 사용합니다. 모바일 메뉴는 좌·우 drawer 또는 dropdown을 선택하며 `aria-expanded`, `hidden`, backdrop·닫기 버튼·Escape 닫기, drawer 내부 Tab 초점 고정과 토글 버튼 초점 복귀를 지원합니다.
+같은 typed 메뉴 계약을 PC Header의 hover·focus 드롭다운과 모바일 접힘 하위 메뉴에 사용합니다. 3단 메뉴는 저장·컴파일하지 않습니다. 모바일 메뉴는 좌·우 drawer 또는 dropdown을 선택하며 `aria-expanded`, `hidden`, backdrop·닫기 버튼·Escape 닫기, drawer 내부 Tab 초점 고정과 토글 버튼 초점 복귀를 지원합니다.
+
+Header·Footer는 비즈니스·미니멀/컴팩트·커뮤니티 내장 프리셋으로 시작할 수 있습니다. 프리셋은 편집기 상태를 바꾸는 초안일 뿐이며, 모든 문구·이미지·라우트는 적용 후에도 편집할 수 있습니다.
 
 문서 편집 캔버스는 Header·Page·Footer를 한 화면에 표시합니다. `builder`의 Header·Footer는 같은 작업 화면에서 편집할 수 있고, `template` 공통영역은 G7 소유임을 명시한 읽기 전용 영역으로 표시합니다. `none`에는 공통영역이 나타나지 않습니다.
 
@@ -38,5 +40,5 @@ Site Part 변경은 `builder` 공개 페이지의 전체 표현 ETag에 반영�
 - `GET|POST|PUT /api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}/**`
 - 조회는 documents.read, 저장은 documents.manage 권한을 사용합니다.
 - 로고는 모듈 전용 MediaPort 업로드 결과를 사용하며 외부 HTTP/HTTPS URL도 허용합니다.
-- 현재 Site Part 메뉴는 1단 구조입니다. G7 메뉴 테이블을 직접 읽거나 쓰지 않습니다.
+- Site Part 메뉴는 모든 1·2차 항목에 G7 route 선택기를 사용합니다. G7 메뉴 테이블을 직접 읽거나 쓰지 않습니다.
 - G7 서비스 링크는 [User Template·라우트 연결 계약](template-route-integration.md)의 선택기를 사용합니다.

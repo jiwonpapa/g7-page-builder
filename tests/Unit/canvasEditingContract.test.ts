@@ -6,6 +6,7 @@ import {
   CANVAS_ELEMENT_MESSAGE,
   elementAppearanceClassName,
   normalizeElementAppearanceMap,
+  remapCollectionElementAppearanceMap,
   notifyCanvasElementSelection,
   resolveMediaFieldPath,
   resolveRouteFieldPath,
@@ -16,9 +17,9 @@ import {
 import { BUILTIN_BLOCK_DEFINITIONS } from '../../resources/js/blocks/builtinCatalog';
 
 describe('canvas editing contract', () => {
-  it('covers every one of the 29 builtin blocks without duplicate component names', () => {
-    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(29);
-    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(29);
+  it('covers every one of the 35 builtin blocks without duplicate component names', () => {
+    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(35);
+    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(35);
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType).sort())
       .toEqual(BUILTIN_BLOCK_DEFINITIONS.map((item) => item.editor_component).sort());
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.every((item) => item.directText)).toBe(true);
@@ -28,6 +29,9 @@ describe('canvas editing contract', () => {
 
   it('resolves direct route and media fields from the selected visible element', () => {
     expect(resolveRouteFieldPath('Cta', 'secondaryLabel')).toBe('secondaryUrl');
+    expect(resolveRouteFieldPath('ImageText', 'primaryLabel')).toBe('primaryUrl');
+    expect(resolveRouteFieldPath('Image', 'src')).toBe('linkUrl');
+    expect(resolveRouteFieldPath('Buttons', 'items.1.label')).toBe('items.1.url');
     expect(resolveRouteFieldPath('HeroSlider', 'slides.2.buttonLabel')).toBe('slides.2.buttonUrl');
     expect(resolveRouteFieldPath('DownloadResources', 'items.0.buttonLabel')).toBe('items.0.url');
 
@@ -45,6 +49,8 @@ describe('canvas editing contract', () => {
     expect(valueAtPath(source, 'slides.1.title')).toBe('둘째');
     expect(collectionLimit('HeroSlider', 'slides')).toEqual({ min: 2, max: 5 });
     expect(collectionLimit('ComparisonTable', 'rows')).toEqual({ min: 1, max: 12 });
+    expect(collectionLimit('Buttons', 'items')).toEqual({ min: 1, max: 3 });
+    expect(collectionLimit('IconList', 'items')).toEqual({ min: 2, max: 8 });
   });
 
   it('normalizes safe element tokens per field path and rejects arbitrary style payloads', () => {
@@ -60,6 +66,46 @@ describe('canvas editing contract', () => {
     expect(elementAppearanceClassName(styles, 'title')).toContain('g7pb-element-size--large');
     expect(elementAppearanceClassName(styles, 'title')).toContain('g7pb-element-font--serif');
     expect(elementAppearanceClassName(styles, 'items.0.body')).not.toContain('expression');
+  });
+
+  it('keeps per-item appearance attached to collection content through every edit operation', () => {
+    const styles = {
+      heading: { weight: 'bold' as const },
+      'items.0.label': { tone: 'accent' as const },
+      'items.1.title': { font: 'serif' as const },
+      'items.1.body': { align: 'right' as const },
+      'items.2.title': { size: 'large' as const },
+    };
+
+    expect(remapCollectionElementAppearanceMap(styles, 'items', 'up', 1)).toEqual({
+      heading: { weight: 'bold' },
+      'items.0.title': { font: 'serif' },
+      'items.0.body': { align: 'right' },
+      'items.1.label': { tone: 'accent' },
+      'items.2.title': { size: 'large' },
+    });
+    expect(remapCollectionElementAppearanceMap(styles, 'items', 'down', 1)).toEqual({
+      heading: { weight: 'bold' },
+      'items.0.label': { tone: 'accent' },
+      'items.2.title': { font: 'serif' },
+      'items.2.body': { align: 'right' },
+      'items.1.title': { size: 'large' },
+    });
+    expect(remapCollectionElementAppearanceMap(styles, 'items', 'duplicate', 1)).toEqual({
+      heading: { weight: 'bold' },
+      'items.0.label': { tone: 'accent' },
+      'items.1.title': { font: 'serif' },
+      'items.2.title': { font: 'serif' },
+      'items.1.body': { align: 'right' },
+      'items.2.body': { align: 'right' },
+      'items.3.title': { size: 'large' },
+    });
+    expect(remapCollectionElementAppearanceMap(styles, 'items', 'delete', 1)).toEqual({
+      heading: { weight: 'bold' },
+      'items.0.label': { tone: 'accent' },
+      'items.1.title': { size: 'large' },
+    });
+    expect(styles['items.1.title']).toEqual({ font: 'serif' });
   });
 
   it('accepts elements from the Puck iframe realm and reports the selected inline field', () => {

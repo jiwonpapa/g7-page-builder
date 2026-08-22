@@ -5,10 +5,12 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../Contract/document-v1.fixture.json';
 import ctaContactFixture from '../Contract/document-cta-contact-v1.fixture.json';
 import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
+import foundationFixture from '../Contract/document-foundation-v1.fixture.json';
 import compileFixture from '../Contract/compile-result-v1.fixture.json';
 import compileSchema from '../../schemas/compile-result.schema.json';
 import schema from '../../schemas/page-builder-document.schema.json';
 import officialCompanyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';
+import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
 
 describe('PageBuilderDocument v1 schema', () => {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -25,6 +27,71 @@ describe('PageBuilderDocument v1 schema', () => {
 
   it('accepts the structured twelve-block test catalog', () => {
     expect(validate(catalogFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('accepts all six typed foundation blocks', () => {
+    expect(validate(foundationFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('accepts every bundled preset as a complete one-block document', () => {
+    expect(builtinManifest.presets).toHaveLength(18);
+    builtinManifest.presets.forEach((preset, index) => {
+      const document = {
+        ...structuredClone(fixture),
+        slug: `preset-${index + 1}`,
+        blocks: [{
+          instance_id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+          type: preset.block_id,
+          block_version: preset.block_version,
+          props: structuredClone(preset.props),
+          slots: {},
+        }],
+      };
+      expect(validate(document), `${preset.preset_id}: ${JSON.stringify(validate.errors)}`).toBe(true);
+    });
+  });
+
+  it('rejects malformed foundation block props', () => {
+    const invalidAnchor = structuredClone(foundationFixture) as unknown as {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    invalidAnchor.blocks[0]!.props.anchor = 'javascript:alert(1)';
+    expect(validate(invalidAnchor)).toBe(false);
+
+    const extraButton = structuredClone(foundationFixture) as unknown as {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    const items = extraButton.blocks[3]!.props.items as Array<Record<string, unknown>>;
+    items.push(
+      { label: '세 번째', url: '/', variant: 'text' },
+      { label: '네 번째', url: '/', variant: 'text' },
+    );
+    expect(validate(extraButton)).toBe(false);
+
+    const unsupportedIcon = structuredClone(foundationFixture) as unknown as {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    const iconItems = unsupportedIcon.blocks[5]!.props.items as Array<Record<string, unknown>>;
+    iconItems[0]!.icon = 'javascript';
+    expect(validate(unsupportedIcon)).toBe(false);
+
+    const arbitraryStyle = structuredClone(foundationFixture) as unknown as {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    arbitraryStyle.blocks[4]!.props.className = 'fixed inset-0';
+    expect(validate(arbitraryStyle)).toBe(false);
+
+    const imageWithoutAlt = structuredClone(foundationFixture) as unknown as {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    imageWithoutAlt.blocks[2]!.props.alt = '';
+    expect(validate(imageWithoutAlt)).toBe(false);
+
+    const imageTextWithoutAlt = structuredClone(foundationFixture) as unknown as {
+      blocks: Array<{ props: Record<string, unknown> }>;
+    };
+    imageTextWithoutAlt.blocks[4]!.props.image = { src: 'https://images.example.com/story.webp', alt: '' };
+    expect(validate(imageTextWithoutAlt)).toBe(false);
   });
 
   it('accepts every bundled official Page Kit source document', () => {

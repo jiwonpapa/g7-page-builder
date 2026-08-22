@@ -48,6 +48,12 @@ export interface CanvasBlockEditingCapability {
 }
 
 export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
+  { componentType: 'Heading', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
+  { componentType: 'RichText', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
+  { componentType: 'Image', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
+  { componentType: 'Buttons', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
+  { componentType: 'ImageText', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
+  { componentType: 'IconList', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
   { componentType: 'Hero', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
   { componentType: 'HeroSplit', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
   { componentType: 'HeroSlider', directText: true, collections: ['slides'], directMedia: true, directRoute: true, dynamicData: false },
@@ -80,6 +86,8 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
 ];
 
 const COLLECTION_LIMITS: Record<string, Record<string, CollectionLimit>> = {
+  Buttons: { items: { min: 1, max: 3 } },
+  IconList: { items: { min: 2, max: 8 } },
   Features: { items: { min: 1, max: 6 } },
   HeroSlider: { slides: { min: 2, max: 5 } },
   LogoCloud: { logos: { min: 2, max: 12 } },
@@ -101,6 +109,8 @@ const COLLECTION_LIMITS: Record<string, Record<string, CollectionLimit>> = {
 };
 
 const ROOT_ROUTE_FIELDS: Record<string, Record<string, string>> = {
+  Image: { caption: 'linkUrl', src: 'linkUrl' },
+  ImageText: { primaryLabel: 'primaryUrl' },
   Hero: { primaryLabel: 'primaryUrl' },
   HeroSplit: { primaryLabel: 'primaryUrl' },
   Cta: { primaryLabel: 'primaryUrl', secondaryLabel: 'secondaryUrl' },
@@ -109,6 +119,7 @@ const ROOT_ROUTE_FIELDS: Record<string, Record<string, string>> = {
 };
 
 const COLLECTION_ROUTE_FIELDS: Record<string, Record<string, { trigger: string[]; target: string }>> = {
+  Buttons: { items: { trigger: ['label'], target: 'url' } },
   HeroSlider: { slides: { trigger: ['buttonLabel'], target: 'buttonUrl' } },
   LogoCloud: { logos: { trigger: ['name'], target: 'url' } },
   Pricing: { plans: { trigger: ['buttonLabel'], target: 'buttonUrl' } },
@@ -136,6 +147,7 @@ const FIELD_LABELS: Record<string, string> = {
   title: '제목',
   heading: '제목',
   body: '본문',
+  content: '본문',
   description: '설명',
   primaryLabel: '주 버튼',
   secondaryLabel: '보조 버튼',
@@ -161,6 +173,12 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const COMPONENT_TYPE_BY_BLOCK_TYPE: Record<string, string> = {
+  heading: 'Heading',
+  'rich-text': 'RichText',
+  image: 'Image',
+  buttons: 'Buttons',
+  'image-text': 'ImageText',
+  'icon-list': 'IconList',
   hero: 'Hero',
   'hero-split': 'HeroSplit',
   'hero-slider': 'HeroSlider',
@@ -252,6 +270,47 @@ export function normalizeElementAppearanceMap(value: unknown): ElementAppearance
     .filter(([, appearance]) => Object.keys(appearance).length > 0));
 }
 
+export type CollectionAppearanceOperation = 'up' | 'down' | 'duplicate' | 'delete';
+
+export function remapCollectionElementAppearanceMap(
+  value: unknown,
+  collection: string,
+  operation: CollectionAppearanceOperation,
+  itemIndex: number,
+): ElementAppearanceMap {
+  const styles = normalizeElementAppearanceMap(value);
+  if (!/^[A-Za-z][A-Za-z0-9]*$/.test(collection) || !Number.isInteger(itemIndex) || itemIndex < 0) return styles;
+
+  const next: ElementAppearanceMap = {};
+  Object.entries(styles).forEach(([path, style]) => {
+    const match = path.match(/^([A-Za-z][A-Za-z0-9]*)\.(\d+)\.([A-Za-z][A-Za-z0-9]*)$/);
+    if (!match || match[1] !== collection) {
+      next[path] = { ...style };
+      return;
+    }
+
+    const sourceIndex = Number(match[2]);
+    const leaf = match[3];
+    let targetIndex = sourceIndex;
+    if (operation === 'up') {
+      if (sourceIndex === itemIndex) targetIndex = itemIndex - 1;
+      else if (sourceIndex === itemIndex - 1) targetIndex = itemIndex;
+    } else if (operation === 'down') {
+      if (sourceIndex === itemIndex) targetIndex = itemIndex + 1;
+      else if (sourceIndex === itemIndex + 1) targetIndex = itemIndex;
+    } else if (operation === 'delete') {
+      if (sourceIndex === itemIndex) return;
+      if (sourceIndex > itemIndex) targetIndex = sourceIndex - 1;
+    } else if (operation === 'duplicate') {
+      if (sourceIndex > itemIndex) targetIndex = sourceIndex + 1;
+      if (sourceIndex === itemIndex) next[`${collection}.${itemIndex + 1}.${leaf}`] = { ...style };
+    }
+    if (targetIndex >= 0) next[`${collection}.${targetIndex}.${leaf}`] = { ...style };
+  });
+
+  return next;
+}
+
 export function elementAppearanceClassName(styles: ElementAppearanceMap | undefined, fieldPath: string): string {
   const style = normalizeElementAppearance(styles?.[fieldPath]);
   return [
@@ -327,6 +386,8 @@ export function resolveRouteFieldPath(componentType: string, fieldPath: string):
 
 export function resolveMediaFieldPath(componentType: string, selection: CanvasElementSelection): string | null {
   if (selection.role === 'media' && selection.fieldPath) return selection.fieldPath;
+  if (componentType === 'Image') return selection.fieldPath === null ? 'src' : null;
+  if (componentType === 'ImageText') return selection.fieldPath === null ? 'imageSrc' : null;
   if (componentType === 'Hero') return selection.fieldPath === null ? 'imageSrc' : null;
   if (componentType === 'HeroSplit') return selection.fieldPath === null ? 'imageSrc' : null;
   if (!selection.collection || selection.itemIndex === null) return null;

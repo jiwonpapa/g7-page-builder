@@ -28,14 +28,23 @@ final class BlockPackContractTest extends TestCase
         self::assertSame($manifest->toArray(), BlockPackManifest::fromArray($manifest->toArray())->toArray());
     }
 
-    public function test_builtin_core_manifest_registers_all_twenty_three_definitions(): void
+    public function test_builtin_core_manifest_registers_all_thirty_five_definitions_and_presets(): void
     {
         $manifest = (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2));
         $registry = new BlockRegistry;
         $registry->register($manifest, enabled: true);
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
-        self::assertCount(29, $registry->definitions());
+        self::assertCount(35, $registry->definitions());
+        self::assertCount(18, $registry->presets());
+        self::assertNotNull($registry->definition('content.heading-01', 1));
+        self::assertNotNull($registry->definition('content.rich-text-01', 1));
+        self::assertNotNull($registry->definition('media.image-01', 1));
+        self::assertNotNull($registry->definition('action.buttons-01', 1));
+        self::assertNotNull($registry->definition('media.image-text-01', 1));
+        self::assertNotNull($registry->definition('content.icon-list-01', 1));
+        self::assertArrayHasKey('jiwonpapa/builtin-core:heading.section-intro', $registry->presets());
+        self::assertArrayHasKey('jiwonpapa/builtin-core:icon-list.benefits', $registry->presets());
         self::assertNotNull($registry->definition('data.bar-chart-01', 1));
         self::assertNotNull($registry->definition('g7.board-recent-posts-01', 1));
         self::assertNotNull($registry->definition('g7.ecommerce-product-grid-01', 1));
@@ -48,6 +57,17 @@ final class BlockPackContractTest extends TestCase
         self::assertNotNull($registry->definition('commerce.comparison-table-01', 1));
         self::assertNotNull($registry->definition('content.article-list-01', 1));
         self::assertNotNull($registry->definition('media.video-embed-01', 1));
+    }
+
+    public function test_icon_list_glyph_css_does_not_leak_into_feature_icons(): void
+    {
+        $viewer = file_get_contents(dirname(__DIR__, 2).'/resources/views/viewer.blade.php');
+        self::assertIsString($viewer);
+
+        foreach (['bolt', 'code', 'globe', 'heart', 'layers', 'mobile', 'palette', 'shield', 'sparkles', 'star'] as $icon) {
+            self::assertStringContainsString(".g7pb-icon-list__icon.g7pb-icon--{$icon}::before", $viewer);
+            self::assertStringNotContainsString("        .g7pb-icon--{$icon}::before", $viewer);
+        }
     }
 
     public function test_data_pack_rejects_runtime_code(): void

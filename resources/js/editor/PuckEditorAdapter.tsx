@@ -36,7 +36,7 @@ import {
   catalogPuckBlockToCanonical,
   type CatalogEditorComponents,
 } from './catalogBlocks';
-import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS } from '../blocks/builtinCatalog';
+import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS, BUILTIN_BLOCK_PRESETS, BUILTIN_CORE_MANIFEST } from '../blocks/builtinCatalog';
 import type { BlockCatalogItem } from '../blocks/types';
 import {
   externalBlockForComponent,
@@ -62,6 +62,7 @@ import {
   decorateCanvasElementStyles,
   normalizeElementAppearance,
   normalizeElementAppearanceMap,
+  remapCollectionElementAppearanceMap,
   CanvasElementStylesContext,
   useCanvasElementStyles,
   setValueAtPath,
@@ -1208,7 +1209,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
   categories: {
     content: {
       title: '콘텐츠 블록',
-      components: ['Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
+      components: ['Heading', 'RichText', 'ImageText', 'IconList', 'Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Buttons', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
       defaultExpanded: true,
     },
     business: {
@@ -1218,7 +1219,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
     },
     dataMedia: {
       title: '데이터·미디어',
-      components: ['Stats', 'BarChart', 'Gallery', 'VideoEmbed'],
+      components: ['Image', 'Stats', 'BarChart', 'Gallery', 'VideoEmbed'],
       defaultExpanded: true,
     },
     g7Data: {
@@ -1627,7 +1628,7 @@ interface BlockGalleryItem {
   presetProps: Record<string, unknown> | null;
 }
 
-const BLOCK_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_DEFINITIONS.map((definition) => {
+const BUILTIN_DEFINITION_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_DEFINITIONS.map((definition) => {
   const type = definition.editor_component;
   if (!Object.prototype.hasOwnProperty.call(pageBuilderPuckConfig.components, type)) {
     throw new Error(`Builtin Block Pack editor component is not registered: ${type}`);
@@ -1648,6 +1649,38 @@ const BLOCK_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_DEFIN
     presetProps: null,
   };
 });
+
+const BUILTIN_PRESET_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_PRESETS.map((preset) => {
+  const definition = BUILTIN_BLOCK_DEFINITIONS.find((candidate) =>
+    candidate.block_id === preset.block_id && candidate.block_version === preset.block_version);
+  if (!definition) {
+    throw new Error(`Builtin preset references an unavailable definition: ${preset.preset_id}`);
+  }
+  const type = definition.editor_component;
+  if (!Object.prototype.hasOwnProperty.call(pageBuilderPuckConfig.components, type)) {
+    throw new Error(`Builtin preset editor component is not registered: ${type}`);
+  }
+
+  return {
+    catalogId: `preset:${BUILTIN_CORE_MANIFEST.pack_id}:${preset.preset_id}`,
+    kind: 'preset',
+    type: type as keyof EditorComponents,
+    testId: `page-builder-preset-${preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`,
+    category: BLOCK_CATEGORY_LABELS[preset.category] ?? preset.category,
+    title: preset.label.ko,
+    description: preset.description.ko,
+    searchText: [preset.block_id, preset.preset_id, ...Object.values(preset.label), ...Object.values(preset.description)].join(' '),
+    blockId: preset.block_id,
+    blockVersion: preset.block_version,
+    favorite: false,
+    presetProps: preset.props,
+  };
+});
+
+const BLOCK_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = Object.freeze([
+  ...BUILTIN_DEFINITION_GALLERY_ITEMS,
+  ...BUILTIN_PRESET_GALLERY_ITEMS,
+]);
 
 interface BlockCatalogContextValue {
   items: ReadonlyArray<BlockGalleryItem>;
@@ -2304,7 +2337,16 @@ function SelectedBlockActionBar({
     } else {
       return;
     }
-    updateSelectedProps({ ...selectedBlock.props, [collection]: next });
+    const nextElementStyles = remapCollectionElementAppearanceMap(
+      selectedBlock.props.elementStyles,
+      collection,
+      operation,
+      itemIndex,
+    );
+    const nextProps: Record<string, unknown> = { ...selectedBlock.props, [collection]: next };
+    if (Object.keys(nextElementStyles).length > 0) nextProps.elementStyles = nextElementStyles;
+    else delete nextProps.elementStyles;
+    updateSelectedProps(nextProps);
     const fieldPath = elementSelection?.fieldPath?.replace(`${collection}.${itemIndex}.`, `${collection}.${nextIndex}.`) ?? null;
     setElementSelection((current) => current ? { ...current, fieldPath, itemIndex: nextIndex,
       label: current.label.replace(`${itemIndex + 1}번 항목`, `${nextIndex + 1}번 항목`) } : current);

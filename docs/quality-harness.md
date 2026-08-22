@@ -83,7 +83,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 1. 관리자 API 인증 뒤 독립 Page Builder 문서함 URL 진입
 2. Page Builder 문서함에서 page/document 생성·재진입
-3. 좌측 29종 축소 미리보기 노출, block 사이 실드래그 삽입, 상세 미리보기 추가·속성 편집·순서 변경
+3. 좌측 35종 블록·18개 프리셋 축소 미리보기 노출, block 사이 실드래그 삽입, 상세 미리보기 추가·속성 편집·순서 변경
 4. 라이트·다크·기기 테마, Header·Page·Footer 전체 사이트 캔버스와 embedded Site Part 전환
 5. 선택 블록 글자 크기·정렬, 버튼 route·Hero media 문맥 편집과 문의 폼 제출·모바일 drawer 초점 순환
 6. reload 뒤 동일성

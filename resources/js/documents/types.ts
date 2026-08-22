@@ -29,6 +29,12 @@ export const EVENT_SCHEDULE_BLOCK_TYPE = 'content.event-schedule-01' as const;
 export const DOWNLOAD_RESOURCES_BLOCK_TYPE = 'content.download-resources-01' as const;
 export const G7_BOARD_ARCHIVE_BLOCK_TYPE = 'g7.board-content-archive-01' as const;
 export const G7_PRODUCT_SHOWCASE_BLOCK_TYPE = 'g7.ecommerce-product-showcase-01' as const;
+export const HEADING_BLOCK_TYPE = 'content.heading-01' as const;
+export const RICH_TEXT_BLOCK_TYPE = 'content.rich-text-01' as const;
+export const IMAGE_BLOCK_TYPE = 'media.image-01' as const;
+export const BUTTONS_BLOCK_TYPE = 'action.buttons-01' as const;
+export const IMAGE_TEXT_BLOCK_TYPE = 'media.image-text-01' as const;
+export const ICON_LIST_BLOCK_TYPE = 'content.icon-list-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -471,6 +477,65 @@ export interface G7ProductShowcaseBlockProps {
   detailBasePath: string;
   layout: 'featured' | 'rail';
   emptyMessage: string;
+  appearance?: BlockAppearance;
+}
+
+export interface HeadingBlockProps {
+  eyebrow: string;
+  heading: string;
+  level: 2 | 3 | 4;
+  anchor: string;
+  appearance?: BlockAppearance;
+}
+
+export interface RichTextBlockProps {
+  content: string;
+  measure: 'narrow' | 'standard' | 'wide';
+  appearance?: BlockAppearance;
+}
+
+export interface ImageBlockProps {
+  src: string;
+  alt: string;
+  caption: string;
+  linkUrl: string;
+  aspectRatio: 'auto' | '16:9' | '4:3' | '1:1';
+  appearance?: BlockAppearance;
+}
+
+export interface ButtonItem {
+  label: string;
+  url: string;
+  variant: 'primary' | 'secondary' | 'text';
+}
+
+export interface ButtonsBlockProps {
+  items: ButtonItem[];
+  alignment: 'left' | 'center' | 'right';
+  appearance?: BlockAppearance;
+}
+
+export interface ImageTextBlockProps {
+  eyebrow: string;
+  heading: string;
+  body: string;
+  image: PageBuilderImage;
+  mediaPosition: 'left' | 'right';
+  primaryLink?: PageBuilderLink;
+  appearance?: BlockAppearance;
+}
+
+export interface IconListItem {
+  icon: string;
+  title: string;
+  body: string;
+}
+
+export interface IconListBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: IconListItem[];
+  layout: 'single' | 'two-column';
   appearance?: BlockAppearance;
 }
 

@@ -1,11 +1,11 @@
 # Block catalog benchmark
 
-상태: 3차 제품 카탈로그 구현
-기준일: 2026-08-21
+상태: P0 기본 콘텐츠 카탈로그 확장 구현
+기준일: 2026-08-22
 
 ## 결론
 
-유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 23종, G7 공개 데이터 4종, 문의 폼 1종, 찾아오기 1종으로 총 29종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다.
+유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 29종, G7 공개 데이터 4종, 문의 폼 1종, 찾아오기 1종으로 총 35종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다. 내장 프리셋 18개는 새 타입을 만들지 않고 검증된 props를 복사하는 빠른 시작점입니다.
 
 ## 공식 제품에서 확인한 공통 구조
 
@@ -19,7 +19,19 @@
 | [Framer Components](https://www.framer.com/help/articles/using-components/) | 재사용 component와 노출된 property로 변형 | raw CSS 대신 재사용 block+typed property 채택 |
 | [Framer CMS Components](https://www.framer.com/updates/cms-components) | property·variant·responsive breakpoint 조합 | surface·spacing·열 수를 제한된 variant로 제공 |
 
-## 1·2·3차 콘텐츠 카탈로그 29종
+## P0 기본 6종 선정 근거
+
+사용량 수치를 공개하지 않는 경쟁 제품을 임의 점유율로 순위화하지 않았습니다. 대신 Elementor의 simple widget, Webflow의 element, Framer의 component/property 공식 문서에 반복해서 등장하는 최소 구성 단위를 공통분모로 삼았습니다.
+
+| 공통 구성 단위 | 이번 결정 | 제외한 자유도 |
+|---|---|---|
+| Heading·Text | 제목과 안전한 리치텍스트를 독립 블록으로 제공 | raw HTML·임의 heading 구조 |
+| Image | 대체 텍스트·캡션·연결·비율을 typed props로 제공 | 자유 crop·inline style |
+| Button | 1~3개 행동과 정렬·variant를 제공 | 임의 class·JavaScript action |
+| Image + Text | 대표 이미지와 설명·주요 행동의 좌우 구성을 제공 | 자유 grid·중첩 slot |
+| List | 장점·조건·체크에 쓰는 1·2열 아이콘 목록을 제공 | 임의 SVG·무제한 반복 |
+
+## 제품 콘텐츠 카탈로그 35종
 
 폼·위치 카테고리는 별도 제품 계약으로 추가했습니다.
 
@@ -31,6 +43,12 @@
 | 첫 화면 | 중앙 히어로 | `content.hero-centered-01` | 단일 핵심 메시지 |
 | 첫 화면 | 분할 히어로 | `content.hero-split-01` | 메시지와 대표 이미지 좌우 배치 |
 | 첫 화면 | 히어로 슬라이더 | `content.hero-slider-01` | 2~5개 핵심 장면 |
+| 콘텐츠 | 제목 | `content.heading-01` | 섹션 제목·보조 문구·H2~H4 단계 |
+| 콘텐츠 | 리치텍스트 | `content.rich-text-01` | 문단·소제목·목록·안전한 링크 본문 |
+| 미디어 | 단일 이미지 | `media.image-01` | 대체 텍스트·캡션·연결·고정 비율 이미지 |
+| 행동 | 버튼 묶음 | `action.buttons-01` | 1~3개 주요·보조·텍스트 행동 |
+| 미디어 | 이미지 + 텍스트 | `media.image-text-01` | 이미지·설명·주요 행동 좌우 배치 |
+| 콘텐츠 | 아이콘 목록 | `content.icon-list-01` | 장점·조건·체크 항목 1·2열 목록 |
 | 콘텐츠 | 기능 소개 | `content.features-grid-01` | 아이콘·제목·설명 반복 |
 | 행동 | CTA | `content.cta-split-01` | 다음 행동 유도 |
 | 연락처 | 문의 안내 | `content.contact-info-01` | 주소·전화·메일·지도 링크 |

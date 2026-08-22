@@ -60,6 +60,7 @@ describe('published page effects runtime', () => {
     document.body.innerHTML = `
       <main class="g7pb-page">
         <section class="g7pb-block" data-g7pb-motion="stagger" data-g7pb-motion-stagger="60"><div class="g7pb-features__grid"><article class="g7pb-features__item">첫째</article><article class="g7pb-features__item">둘째</article></div></section>
+        <section class="g7pb-block" data-g7pb-motion="stagger" data-g7pb-motion-stagger="100"><ul class="g7pb-icon-list__items"><li class="g7pb-icon-list__item">빠름</li><li class="g7pb-icon-list__item">안전</li></ul></section>
         <section class="g7pb-block" data-g7pb-motion="counter" data-g7pb-motion-intensity="normal"><div class="g7pb-stats__grid"><article><strong>12,400+</strong></article></div></section>
         <section class="g7pb-block" data-g7pb-motion="chart-draw"><progress max="100" value="74">74</progress></section>
         <section class="g7pb-block" data-g7pb-motion="parallax-soft"><figure><img src="/safe.webp" alt="안전"></figure></section>
@@ -73,8 +74,9 @@ describe('published page effects runtime', () => {
     bootPageEffects(document, window);
 
     expect(document.querySelector('.g7pb-page')?.classList.contains('g7pb-motion-active')).toBe(true);
-    expect(document.querySelectorAll('.is-inview')).toHaveLength(4);
-    expect(document.querySelectorAll('[data-g7pb-motion-item]')).toHaveLength(3);
+    expect(document.querySelectorAll('.is-inview')).toHaveLength(5);
+    expect(document.querySelectorAll('[data-g7pb-motion-item]')).toHaveLength(5);
+    expect(document.querySelectorAll('.g7pb-icon-list__item[data-g7pb-motion-item]')).toHaveLength(2);
     expect(document.querySelector('.g7pb-motion-parallax-target')).not.toBeNull();
     expect(document.querySelector('[data-g7pb-counter-original]')?.textContent).toBe('12,400+');
     expect(document.querySelector('strong')?.getAttribute('aria-label')).toBe('12,400+');

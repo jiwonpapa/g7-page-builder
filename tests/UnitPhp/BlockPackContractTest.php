@@ -59,6 +59,17 @@ final class BlockPackContractTest extends TestCase
         self::assertNotNull($registry->definition('media.video-embed-01', 1));
     }
 
+    public function test_icon_list_glyph_css_does_not_leak_into_feature_icons(): void
+    {
+        $viewer = file_get_contents(dirname(__DIR__, 2).'/resources/views/viewer.blade.php');
+        self::assertIsString($viewer);
+
+        foreach (['bolt', 'code', 'globe', 'heart', 'layers', 'mobile', 'palette', 'shield', 'sparkles', 'star'] as $icon) {
+            self::assertStringContainsString(".g7pb-icon-list__icon.g7pb-icon--{$icon}::before", $viewer);
+            self::assertStringNotContainsString("        .g7pb-icon--{$icon}::before", $viewer);
+        }
+    }
+
     public function test_data_pack_rejects_runtime_code(): void
     {
         $data = $this->fixtureArray();

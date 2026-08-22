@@ -13,6 +13,20 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\Re
 
 final class LaravelMediaAdapter implements MediaPort
 {
+    /** @var array<string, list<string>> */
+    private const DOWNLOAD_MIME_TYPES = [
+        'pdf' => ['application/pdf'],
+        'zip' => ['application/zip', 'application/x-zip-compressed'],
+        'doc' => ['application/msword', 'application/x-ole-storage', 'application/octet-stream'],
+        'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip', 'application/octet-stream'],
+        'xls' => ['application/vnd.ms-excel', 'application/x-ole-storage', 'application/octet-stream'],
+        'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'application/octet-stream'],
+        'ppt' => ['application/vnd.ms-powerpoint', 'application/x-ole-storage', 'application/octet-stream'],
+        'pptx' => ['application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/zip', 'application/octet-stream'],
+        'txt' => ['text/plain'],
+        'csv' => ['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'],
+    ];
+
     public function recent(int $limit = 100): array
     {
         /** @var Collection<int, MediaRecord> $records */
@@ -37,18 +51,11 @@ final class LaravelMediaAdapter implements MediaPort
         ?int $actorId,
     ): MediaAsset {
         $id = $this->uuidV4();
-        $extension = match ($mimeType) {
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            'image/avif' => 'avif',
-            'image/gif' => 'gif',
-            default => throw new \InvalidArgumentException('지원하지 않는 이미지 형식입니다.'),
-        };
+        $extension = $this->storageExtension($originalName, $mimeType, $width, $height);
         $path = 'g7-page-builder/'.date('Y/m').'/'.$id.'.'.$extension;
 
         if (! Storage::disk('public')->put($path, $contents, ['visibility' => 'public'])) {
-            throw new \RuntimeException('이미지 파일을 저장하지 못했습니다.');
+            throw new \RuntimeException('미디어 파일을 저장하지 못했습니다.');
         }
 
         try {
@@ -85,7 +92,7 @@ final class LaravelMediaAdapter implements MediaPort
             RevisionRecord::query()->where('document_json', 'like', '%'.$url.'%')->exists()
             || PublicationRecord::query()->where('artifact', 'like', '%'.$url.'%')->exists()
         ) {
-            throw new \DomainException('페이지나 발행본에서 사용 중인 이미지는 삭제할 수 없습니다.');
+            throw new \DomainException('페이지나 발행본에서 사용 중인 미디어는 삭제할 수 없습니다.');
         }
 
         Storage::disk($record->disk)->delete($record->path);
@@ -132,6 +139,31 @@ final class LaravelMediaAdapter implements MediaPort
         }
 
         return (string) url('/storage/'.ltrim($path, '/'));
+    }
+
+    private function storageExtension(string $originalName, string $mimeType, int $width, int $height): string
+    {
+        if ($width > 0 || $height > 0) {
+            if ($width < 1 || $height < 1) {
+                throw new \InvalidArgumentException('이미지 크기가 올바르지 않습니다.');
+            }
+
+            return match ($mimeType) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                'image/avif' => 'avif',
+                'image/gif' => 'gif',
+                default => throw new \InvalidArgumentException('지원하지 않는 이미지 형식입니다.'),
+            };
+        }
+
+        $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION));
+        if (! in_array($mimeType, self::DOWNLOAD_MIME_TYPES[$extension] ?? [], true)) {
+            throw new \InvalidArgumentException('지원하지 않는 다운로드 파일 형식입니다.');
+        }
+
+        return $extension;
     }
 
     private function uuidV4(): string

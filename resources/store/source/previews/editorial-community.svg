@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 450" role="img" aria-labelledby="title desc">
+  <title id="title">에디토리얼 커뮤니티 홈 미리보기</title>
+  <desc id="desc">대표 이야기, 기사 목록, 지역 일정, 자료와 뉴스레터로 구성된 페이지</desc>
+  <rect width="720" height="450" rx="24" fill="#f1eee6"/>
+  <rect x="38" y="34" width="644" height="166" rx="4" fill="#fffdf8"/>
+  <rect x="62" y="58" width="272" height="118" fill="#c8b596"/><circle cx="151" cy="104" r="30" fill="#6f665d"/><circle cx="237" cy="111" r="26" fill="#928474"/>
+  <rect x="366" y="58" width="78" height="9" rx="4" fill="#b96b3e"/><rect x="366" y="82" width="262" height="25" rx="3" fill="#2f2924"/>
+  <rect x="366" y="119" width="225" height="10" rx="4" fill="#9a9188"/><rect x="366" y="144" width="92" height="22" rx="3" fill="#b96b3e"/>
+  <rect x="38" y="220" width="418" height="194" rx="4" fill="#fffdf8"/>
+  <g stroke="#ddd5c8"><path d="M62 271h370M62 326h370M62 381h370"/></g>
+  <g fill="#b96b3e"><rect x="62" y="241" width="54" height="8" rx="3"/><rect x="62" y="286" width="54" height="8" rx="3"/><rect x="62" y="341" width="54" height="8" rx="3"/></g>
+  <g fill="#403831"><rect x="132" y="239" width="231" height="12" rx="3"/><rect x="132" y="284" width="208" height="12" rx="3"/><rect x="132" y="339" width="245" height="12" rx="3"/></g>
+  <rect x="478" y="220" width="204" height="92" rx="4" fill="#2f2924"/><rect x="501" y="246" width="154" height="13" rx="3" fill="#fffdf8"/><rect x="501" y="276" width="86" height="20" rx="3" fill="#b96b3e"/>
+  <rect x="478" y="330" width="204" height="84" rx="4" fill="#dfd7c8"/><rect x="501" y="353" width="130" height="11" rx="3" fill="#403831"/><rect x="501" y="379" width="102" height="18" rx="3" fill="#b96b3e"/>
+</svg>

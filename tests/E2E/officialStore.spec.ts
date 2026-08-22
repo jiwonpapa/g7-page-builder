@@ -124,7 +124,7 @@ test('official free store previews and applies a Page Kit as a separate draft', 
     const dialog = page.getByTestId('page-builder-store-dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText('제3자 업로드와 판매자 기능은 없습니다.');
-    await expect(page.getByTestId('page-builder-store-product')).toHaveCount(2);
+    await expect(page.getByTestId('page-builder-store-product')).toHaveCount(6);
     await page.getByTestId('page-builder-store-filter-block_pack').click();
     const pack = page.getByTestId('page-builder-store-product');
     await expect(pack).toHaveCount(1);
@@ -134,11 +134,23 @@ test('official free store previews and applies a Page Kit as a separate draft', 
     expect((await installResponse).status()).toBe(201);
     await expect(pack.getByTestId('page-builder-store-install-block-pack')).toHaveText('설치됨');
     await page.getByTestId('page-builder-store-filter-page_kit').click();
-    const kit = page.getByTestId('page-builder-store-product');
+    const kits = page.getByTestId('page-builder-store-product');
+    await expect(kits).toHaveCount(5);
+    await expect(kits).toContainText([
+      '회사 소개 랜딩',
+      '전문 서비스 상담 랜딩',
+      '로컬 비즈니스 방문 안내',
+      '컨퍼런스·행사 랜딩',
+      '에디토리얼·커뮤니티 홈',
+    ]);
+    const previewImages = kits.locator('img');
+    await expect(previewImages).toHaveCount(5);
+    for (const image of await previewImages.all()) {
+      await expect(image).toHaveJSProperty('complete', true);
+      expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    }
+    const kit = kits.filter({ hasText: '회사 소개 랜딩' });
     await expect(kit).toHaveCount(1);
-    await expect(kit).toContainText('회사 소개 랜딩');
-    await expect(kit.locator('img')).toHaveJSProperty('complete', true);
-    expect(await kit.locator('img').evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await kit.getByTestId('page-builder-store-apply-page-kit').click();
 
     const applyDialog = page.getByTestId('page-builder-store-page-kit-dialog');
@@ -162,10 +174,17 @@ test('official free store previews and applies a Page Kit as a separate draft', 
       const created = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`);
       expect(created.status()).toBe(200);
       const payload = await created.json() as {
-        data?: { document?: { shell_mode?: unknown; blocks?: unknown }; status?: unknown };
+        data?: {
+          document?: {
+            shell_mode?: unknown;
+            blocks?: Array<{ props?: { image?: { src?: unknown } } }>;
+          };
+          status?: unknown;
+        };
       };
       expect(payload.data?.document?.shell_mode).toBe('template');
-      expect(Array.isArray(payload.data?.document?.blocks) ? payload.data.document.blocks : []).toHaveLength(4);
+      expect(payload.data?.document?.blocks ?? []).toHaveLength(6);
+      expect(payload.data?.document?.blocks?.[0]?.props?.image?.src).toMatch(/\/storage\/g7-page-builder\//);
       expect(payload.data?.status).toBe('draft');
 
       const exportQuery = new URLSearchParams({

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Media\MediaAsset;
+use Modules\Jiwonpapa\PageBuilder\Domain\Media\PortableMedia;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\ZipPageKitArchiveAdapter;
 
 require dirname(__DIR__).'/vendor/autoload.php';
@@ -68,29 +70,7 @@ $zip->setMtimeName('manifest.json', 315532800);
 $zip->setMtimeName($packAssetPath, 315532800);
 $zip->close();
 
-$pageDocumentValue = json_decode(
-    (string) file_get_contents("{$source}/page-kits/company-launch/document.json"),
-    true,
-    128,
-    JSON_THROW_ON_ERROR,
-);
-$pageDocument = PageBuilderDocument::fromArray($pageDocumentValue);
-$pageKits = new ZipPageKitArchiveAdapter;
-$pageArtifact = $pageKits->write(
-    'jiwonpapa/company-launch',
-    '1.0.0',
-    '회사 소개 랜딩',
-    '회사 소개, 핵심 성과, 팀 소개와 문의 CTA를 갖춘 시작 페이지입니다.',
-    $pageDocument,
-    [],
-);
-$pageArtifactName = 'jiwonpapa-company-launch-1.0.0.zip';
-$pageArtifactPath = "{$dist}/artifacts/{$pageArtifactName}";
-$copy($pageArtifact->path, $pageArtifactPath);
-$pageKits->release($pageArtifact);
-
 $copy("{$packSource}/{$packAssetPath}", "{$dist}/previews/marketing-presets.svg");
-$copy("{$source}/previews/company-launch.svg", "{$dist}/previews/company-launch.svg");
 
 $artifact = static function (string $path, string $url): array {
     $bytes = filesize($path);
@@ -101,6 +81,149 @@ $artifact = static function (string $path, string $url): array {
 
     return ['url' => $url, 'sha256' => $sha256, 'bytes' => $bytes];
 };
+
+$pageKitDefinitions = [
+    [
+        'slug' => 'company-launch',
+        'title' => ['ko' => '회사 소개 랜딩', 'en' => 'Company launch page'],
+        'description' => [
+            'ko' => '회사 소개, 일하는 방식, 성과, 팀, 고객 후기와 문의 CTA로 구성된 완성 페이지입니다.',
+            'en' => 'A complete company introduction and trust-building page.',
+        ],
+        'category' => 'company',
+        'tags' => ['회사소개', '랜딩', '팀', '고객후기'],
+        'media' => 'media/hero-team.webp',
+    ],
+    [
+        'slug' => 'service-conversion',
+        'title' => ['ko' => '전문 서비스 상담 랜딩', 'en' => 'Professional service landing'],
+        'description' => [
+            'ko' => '서비스 가치, 진행 방식, 고객 후기, FAQ와 상담 요청으로 구성된 전환 페이지입니다.',
+            'en' => 'A service conversion page with proof, process, FAQ, and inquiry.',
+        ],
+        'category' => 'services',
+        'tags' => ['전문서비스', '상담', '고객후기', 'FAQ'],
+        'media' => 'media/hero-consultation.webp',
+    ],
+    [
+        'slug' => 'local-business',
+        'title' => ['ko' => '로컬 비즈니스 방문 안내', 'en' => 'Local business visit page'],
+        'description' => [
+            'ko' => '서비스, 이용 순서, 후기, 위치와 방문 예약을 한 페이지에 안내합니다.',
+            'en' => 'A local business page for services, directions, and reservations.',
+        ],
+        'category' => 'local-business',
+        'tags' => ['매장', '예약', '오시는길', '지역서비스'],
+        'media' => 'media/hero-space.webp',
+    ],
+    [
+        'slug' => 'event-launch',
+        'title' => ['ko' => '컨퍼런스·행사 랜딩', 'en' => 'Conference and event landing'],
+        'description' => [
+            'ko' => '행사 개요, 일정, 연사, 파트너, FAQ와 참가 신청을 연결합니다.',
+            'en' => 'A conference page with agenda, speakers, partners, FAQ, and signup.',
+        ],
+        'category' => 'events',
+        'tags' => ['행사', '컨퍼런스', '일정', '참가신청'],
+        'media' => 'media/hero-event.webp',
+    ],
+    [
+        'slug' => 'editorial-community',
+        'title' => ['ko' => '에디토리얼·커뮤니티 홈', 'en' => 'Editorial community home'],
+        'description' => [
+            'ko' => '대표 기사, 지역 일정, 자료와 뉴스레터 신청을 묶은 콘텐츠 홈입니다.',
+            'en' => 'An editorial home for stories, events, resources, and newsletter signup.',
+        ],
+        'category' => 'editorial',
+        'tags' => ['에디토리얼', '커뮤니티', '기사', '뉴스레터'],
+        'media' => 'media/hero-editorial.webp',
+    ],
+];
+
+$pageKits = new ZipPageKitArchiveAdapter;
+$pageProducts = [];
+foreach ($pageKitDefinitions as $definition) {
+    $slug = $definition['slug'];
+    $kitSource = "{$source}/page-kits/{$slug}";
+    $documentValue = json_decode(
+        (string) file_get_contents("{$kitSource}/document.json"),
+        true,
+        128,
+        JSON_THROW_ON_ERROR,
+    );
+    $document = PageBuilderDocument::fromArray($documentValue);
+    $mediaPath = "{$kitSource}/{$definition['media']}";
+    $contents = (string) file_get_contents($mediaPath);
+    /** @var array<int|string, mixed>|false $image */
+    $image = @getimagesizefromstring($contents);
+    if ($image === false
+        || ! is_int($image[0] ?? null)
+        || ! is_int($image[1] ?? null)
+        || ! is_string($image['mime'] ?? null)) {
+        throw new RuntimeException("Page Kit image is invalid: {$mediaPath}");
+    }
+    $portableMedia = new PortableMedia(
+        new MediaAsset(
+            id: "official-{$slug}-hero",
+            url: "official-store://{$slug}/{$definition['media']}",
+            originalName: basename($mediaPath),
+            mimeType: $image['mime'],
+            bytes: strlen($contents),
+            width: $image[0],
+            height: $image[1],
+            createdAt: $generatedAt,
+        ),
+        $contents,
+    );
+    $pageArtifact = $pageKits->write(
+        "jiwonpapa/{$slug}",
+        '1.0.0',
+        $definition['title']['ko'],
+        $definition['description']['ko'],
+        $document,
+        [$portableMedia],
+    );
+    $pageArtifactName = "jiwonpapa-{$slug}-1.0.0.zip";
+    $pageArtifactPath = "{$dist}/artifacts/{$pageArtifactName}";
+    $copy($pageArtifact->path, $pageArtifactPath);
+    $pageKits->release($pageArtifact);
+    $copy("{$source}/previews/{$slug}.svg", "{$dist}/previews/{$slug}.svg");
+
+    $requirements = [];
+    $seenRequirements = [];
+    foreach ($document->blocks as $block) {
+        $blockId = $block['type'] ?? null;
+        $blockVersion = $block['block_version'] ?? null;
+        if (! is_string($blockId) || ! is_int($blockVersion)) {
+            throw new RuntimeException("Page Kit block contract is invalid: {$slug}");
+        }
+        $requirementKey = "{$blockId}@{$blockVersion}";
+        if (isset($seenRequirements[$requirementKey])) {
+            continue;
+        }
+        $seenRequirements[$requirementKey] = true;
+        $requirements[] = ['block_id' => $blockId, 'block_version' => $blockVersion];
+    }
+
+    $pageProducts[] = [
+        'product_id' => "jiwonpapa/{$slug}",
+        'product_type' => 'page_kit',
+        'product_version' => '1.0.0',
+        'title' => $definition['title'],
+        'description' => $definition['description'],
+        'category' => $definition['category'],
+        'tags' => $definition['tags'],
+        'license' => 'free',
+        'compatibility' => ['page_builder' => '>=0.10.0 <1.0.0', 'php' => '>=8.5', 'g7' => '>=7.0.7'],
+        'preview' => [
+            'thumbnail_url' => "{$baseUrl}/previews/{$slug}.svg",
+            'screenshots' => [],
+            'demo_url' => null,
+        ],
+        'artifact' => $artifact($pageArtifactPath, "{$baseUrl}/artifacts/{$pageArtifactName}"),
+        'requirements' => ['blocks' => $requirements],
+    ];
+}
 
 $catalog = [
     ...$catalogMeta,
@@ -126,29 +249,7 @@ $catalog = [
                 ['block_id' => 'content.cta-split-01', 'block_version' => 1],
             ]],
         ],
-        [
-            'product_id' => 'jiwonpapa/company-launch',
-            'product_type' => 'page_kit',
-            'product_version' => '1.0.0',
-            'title' => ['ko' => '회사 소개 랜딩', 'en' => 'Company launch page'],
-            'description' => ['ko' => '회사 소개, 성과, 팀과 문의 CTA로 구성된 완성 페이지입니다.', 'en' => 'A complete company introduction page.'],
-            'category' => 'company',
-            'tags' => ['회사소개', '랜딩', '팀', 'CTA'],
-            'license' => 'free',
-            'compatibility' => ['page_builder' => '>=0.10.0 <1.0.0', 'php' => '>=8.5', 'g7' => '>=7.0.7'],
-            'preview' => [
-                'thumbnail_url' => "{$baseUrl}/previews/company-launch.svg",
-                'screenshots' => [],
-                'demo_url' => null,
-            ],
-            'artifact' => $artifact($pageArtifactPath, "{$baseUrl}/artifacts/{$pageArtifactName}"),
-            'requirements' => ['blocks' => [
-                ['block_id' => 'content.hero-split-01', 'block_version' => 1],
-                ['block_id' => 'data.stats-icons-01', 'block_version' => 1],
-                ['block_id' => 'company.team-grid-01', 'block_version' => 1],
-                ['block_id' => 'content.cta-split-01', 'block_version' => 1],
-            ]],
-        ],
+        ...$pageProducts,
     ],
 ];
 

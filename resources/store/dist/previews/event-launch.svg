@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 450" role="img" aria-labelledby="title desc">
+  <title id="title">컨퍼런스 행사 랜딩 미리보기</title>
+  <desc id="desc">행사 무대, 주요 수치, 일정, 연사와 참가 신청으로 구성된 페이지</desc>
+  <rect width="720" height="450" rx="24" fill="#10182d"/>
+  <rect x="38" y="34" width="644" height="164" rx="18" fill="#1a2542"/>
+  <path d="M38 164L215 82l116 116H38z" fill="#e55b72" opacity=".82"/><circle cx="189" cy="109" r="30" fill="#f2b9ad"/>
+  <rect x="355" y="58" width="96" height="11" rx="5" fill="#f08da0"/><rect x="355" y="84" width="279" height="27" rx="7" fill="#f8fafc"/>
+  <rect x="355" y="124" width="220" height="11" rx="5" fill="#aab4c8"/><rect x="355" y="153" width="112" height="27" rx="7" fill="#e55b72"/>
+  <g fill="#f8fafc"><rect x="38" y="215" width="198" height="67" rx="12"/><rect x="261" y="215" width="198" height="67" rx="12"/><rect x="484" y="215" width="198" height="67" rx="12"/></g>
+  <g fill="#e55b72"><rect x="64" y="236" width="72" height="20" rx="6"/><rect x="287" y="236" width="72" height="20" rx="6"/><rect x="510" y="236" width="72" height="20" rx="6"/></g>
+  <rect x="38" y="301" width="418" height="113" rx="16" fill="#f8fafc"/>
+  <g fill="#e8dce0"><rect x="64" y="326" width="366" height="20" rx="7"/><rect x="64" y="356" width="366" height="20" rx="7"/></g>
+  <g fill="#7e2440"><rect x="77" y="332" width="54" height="8" rx="4"/><rect x="77" y="362" width="54" height="8" rx="4"/></g>
+  <rect x="478" y="301" width="204" height="113" rx="16" fill="#e55b72"/><rect x="502" y="327" width="142" height="17" rx="6" fill="#fff"/><rect x="502" y="365" width="104" height="27" rx="7" fill="#10182d"/>
+</svg>

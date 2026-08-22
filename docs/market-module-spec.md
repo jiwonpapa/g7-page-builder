@@ -25,12 +25,16 @@
 - 운영 이력과 게시 감사 로그
 - G7 기본 Page Builder 관리자에서의 정식 마켓 메뉴와 독립 route
 
-현재 정적 catalog의 상품은 두 개뿐이다.
+현재 정적 catalog의 상품은 6개다.
 
 1. `jiwonpapa/marketing-presets`: 신규 block은 없고 내장 block을 사용하는 preset 두 개만 포함한다.
-2. `jiwonpapa/company-launch`: 회사 소개 Page Kit 한 개다.
+2. `jiwonpapa/company-launch`: 회사 소개·성과·팀·고객 후기·문의 CTA Page Kit이다.
+3. `jiwonpapa/service-conversion`: 서비스 가치·진행 방식·후기·FAQ·상담 요청 Page Kit이다.
+4. `jiwonpapa/local-business`: 서비스·이용 순서·후기·위치·방문 예약 Page Kit이다.
+5. `jiwonpapa/event-launch`: 행사 개요·일정·연사·파트너·FAQ·참가 신청 Page Kit이다.
+6. `jiwonpapa/editorial-community`: 대표 기사·지역 일정·자료·뉴스레터 CTA Page Kit이다.
 
-따라서 현재 기능을 `마켓 완료`로 표시하거나 판매용 마켓으로 설명해서는 안 된다. 독립 마켓 출시 전까지 이 두 상품과 catalog는 개발·회귀시험 fixture로만 취급한다.
+Page Kit 5종 재고 게이트는 충족했지만 선택형 Pack 3개와 독립 마켓 운영 게이트는 아직 충족하지 않았다. 따라서 현재 기능을 `마켓 완료`로 표시하거나 판매용 마켓으로 설명해서는 안 된다. 독립 마켓 출시 전까지 이 상품과 catalog는 공식 무료 콘텐츠와 설치·적용 회귀시험 fixture로만 취급한다.
 
 ## 2. 목표와 제품 경계
 

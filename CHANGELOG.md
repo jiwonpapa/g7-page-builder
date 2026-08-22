@@ -6,15 +6,6 @@
 
 ## [Unreleased]
 
-### Added
-
-- Elementor·Wix·Webflow·Framer·Squarespace의 공식 템플릿 분류와 반복 구조를 기준으로 전문 서비스, 로컬 비즈니스, 행사, 에디토리얼 Page Kit 4종을 추가하고 기존 회사 소개 Kit을 보강했습니다.
-- 공식 Page Kit 5종에 각각 원본 1600×900 WebP Hero 이미지, 목적별 5~7개 블록, 정적 미리보기와 결정적 ZIP artifact를 포함했습니다.
-
-### Changed
-
-- 공식 무료 Store 정적 catalog를 Block Pack 1개와 Page Kit 5개, 총 6개 상품으로 확장했습니다.
-
 ## [0.18.0] - 2026-08-22
 
 ### Added
@@ -25,12 +16,15 @@
 - 모든 블록에 로그인 전·로그인 후·전체 방문자 표시 조건을 설정하는 공통 visibility 계약과 캔버스 제어를 추가했습니다.
 - G7 게시글·상품 반복 블록 4종에 서버 재요청 없는 접근 가능한 페이지 이동을 추가했습니다.
 - 다운로드 자료 블록에 PDF·ZIP·문서 파일 업로드와 기존 파일 선택기를 추가했습니다.
+- Elementor·Wix·Webflow·Framer·Squarespace의 공식 템플릿 분류와 반복 구조를 기준으로 전문 서비스, 로컬 비즈니스, 행사, 에디토리얼 Page Kit 4종을 추가하고 기존 회사 소개 Kit을 보강했습니다.
+- 공식 Page Kit 5종에 각각 원본 1600×900 WebP Hero 이미지, 목적별 5~7개 블록, 정적 미리보기와 결정적 ZIP artifact를 포함했습니다.
 
 ### Changed
 
 - 내장 Block Pack을 37종·18개 프리셋으로 확장하고 내장 Pack과 HTML compiler 버전을 `0.12.0`으로 올렸습니다.
 - 빈 카탈로그 fallback에서도 정의와 내장 프리셋을 모두 검색·미리보기·삽입할 수 있게 했습니다.
 - 제품 버전을 `0.18.0`으로 올리고 이전 v1 문서의 페이지 크기 필드가 없어도 동일하게 재컴파일되도록 호환 기본값을 유지했습니다.
+- 공식 무료 Store 정적 catalog를 Block Pack 1개와 Page Kit 5개, 총 6개 상품으로 확장했습니다.
 
 ### Fixed
 

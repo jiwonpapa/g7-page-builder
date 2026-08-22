@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title">
+  <title id="title">G7 상품 상세 블록</title>
+  <rect width="320" height="180" rx="18" fill="#f6f7fb"/>
+  <rect x="28" y="30" width="112" height="120" rx="12" fill="#dfe7f6"/>
+  <circle cx="84" cy="76" r="17" fill="#fff"/>
+  <path d="M42 133 70 96l22 22 13-12 22 27Z" fill="#5474d8"/>
+  <rect x="164" y="34" width="62" height="8" rx="4" fill="#5474d8"/>
+  <rect x="164" y="57" width="126" height="20" rx="6" fill="#172033"/>
+  <rect x="164" y="91" width="82" height="13" rx="6.5" fill="#34445f"/>
+  <rect x="164" y="119" width="126" height="7" rx="3.5" fill="#b4bdca"/>
+  <rect x="164" y="140" width="88" height="15" rx="7.5" fill="#5474d8"/>
+</svg>

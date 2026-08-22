@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   bootAccordions,
+  bootBlockVisibility,
   bootDynamicData,
   bootInquiryForms,
   bootPageEffects,
@@ -313,5 +314,74 @@ describe('published page effects runtime', () => {
     await bootDynamicData(document, memberFetch as typeof fetch);
     expect(document.querySelector<HTMLElement>('section')?.hidden).toBe(false);
     expect(memberFetch).toHaveBeenCalledWith('/api/user/auth/user', expect.any(Object));
+  });
+
+  it('applies generic block visibility with one cached audience request', async () => {
+    document.body.innerHTML = `
+      <section data-g7pb-visibility-audience="member" hidden>회원 안내</section>
+      <section data-g7pb-visibility-audience="guest" hidden>비회원 안내</section>
+      <section data-g7pb-visibility-audience="all">공통 안내</section>`;
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ success: true, data: { id: 1 } }), { status: 200 }));
+
+    await bootBlockVisibility(document, fetcher as typeof fetch);
+    const blocks = Array.from(document.querySelectorAll<HTMLElement>('section'));
+    expect(blocks.map((block) => block.hidden)).toEqual([false, true, false]);
+    expect(blocks.map((block) => block.dataset.g7pbVisibilityReady)).toEqual(['true', 'true', 'true']);
+    await bootBlockVisibility(document, fetcher as typeof fetch);
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it('paginates loaded lists locally without another API request', async () => {
+    document.body.innerHTML = `
+      <section data-g7pb-data-source="posts" data-g7pb-endpoint="/api/posts" data-g7pb-audience="all" data-g7pb-page-size="2">
+        <p data-g7pb-data-status></p><div data-g7pb-data-list></div>
+        <nav data-g7pb-pagination hidden><button data-g7pb-page-prev>이전</button><span data-g7pb-page-status></span><button data-g7pb-page-next>다음</button></nav>
+      </section>`;
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ success: true, data: Array.from({ length: 5 }, (_, index) => ({
+      id: index + 1, board_slug: 'notice', board_name: '공지', title: `게시글 ${index + 1}`, created_at_formatted: '오늘',
+    })) }), { status: 200 }));
+
+    await bootDynamicData(document, fetcher as typeof fetch);
+    const articles = Array.from(document.querySelectorAll<HTMLElement>('article'));
+    expect(articles.map((article) => article.hidden)).toEqual([false, false, true, true, true]);
+    expect(document.querySelector('[data-g7pb-page-status]')?.textContent).toBe('1 / 3');
+    expect(document.querySelector<HTMLElement>('[data-g7pb-pagination]')?.hidden).toBe(false);
+    document.querySelector<HTMLButtonElement>('[data-g7pb-page-next]')?.click();
+    expect(articles.map((article) => article.hidden)).toEqual([true, true, false, false, true]);
+    expect(document.querySelector('[data-g7pb-page-status]')?.textContent).toBe('2 / 3');
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it('renders selected G7 post and product details as safe text', async () => {
+    document.body.innerHTML = `
+      <section data-g7pb-data-source="post-detail" data-g7pb-endpoint="/api/post/17" data-g7pb-audience="all" data-g7pb-detail-url="/board/notice/17" data-g7pb-detail-label="전체 보기" data-g7pb-show-content="true">
+        <p data-g7pb-data-status></p><div data-g7pb-data-detail aria-busy="true"></div>
+      </section>
+      <section data-g7pb-data-source="product-detail" data-g7pb-endpoint="/api/product/SKU-17" data-g7pb-audience="all" data-g7pb-detail-url="/shop/products/SKU-17" data-g7pb-detail-label="상품 보기" data-g7pb-show-description="true">
+        <p data-g7pb-data-status></p><div data-g7pb-data-detail aria-busy="true"></div>
+      </section>`;
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes('/post/')) return new Response(JSON.stringify({ success: true, data: {
+        id: 17, title: '<img src=x onerror=alert(1)>공지', content: '<p>안전한 <strong>본문</strong></p><script>alert(1)</script>',
+        author: { name: '관리자' }, created_at_formatted: '오늘', view_count: 12, thumbnail: 'javascript:alert(1)',
+      } }), { status: 200 });
+      return new Response(JSON.stringify({ success: true, data: {
+        product_code: 'SKU-17', name_localized: '<script>상품</script>', category_name: '기획 상품',
+        selling_price_formatted: '39,000원', short_description_localized: '<b>대표 설명</b>', thumbnail_url: 'javascript:alert(1)',
+      } }), { status: 200 });
+    });
+
+    await bootDynamicData(document, fetcher as typeof fetch);
+    const details = Array.from(document.querySelectorAll<HTMLElement>('[data-g7pb-data-detail]'));
+    expect(details[0]?.querySelector('h3')?.textContent).toBe('<img src=x onerror=alert(1)>공지');
+    expect(details[0]?.textContent).toContain('안전한 본문');
+    expect(details[0]?.querySelector('script')).toBeNull();
+    expect(details[0]?.querySelector('img')).toBeNull();
+    expect(details[0]?.querySelector('a')?.getAttribute('href')).toBe('/board/notice/17');
+    expect(details[1]?.querySelector('h3')?.textContent).toBe('<script>상품</script>');
+    expect(details[1]?.textContent).toContain('대표 설명');
+    expect(details[1]?.querySelector('script')).toBeNull();
+    expect(details[1]?.querySelector('a')?.getAttribute('href')).toBe('/shop/products/SKU-17');
+    expect(details.map((detail) => detail.getAttribute('aria-busy'))).toEqual(['false', 'false']);
   });
 });

@@ -81,8 +81,10 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
   { componentType: 'VideoEmbed', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
   { componentType: 'G7RecentPosts', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
   { componentType: 'G7BoardArchive', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
+  { componentType: 'G7PostDetail', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: true },
   { componentType: 'G7ProductGrid', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
   { componentType: 'G7ProductShowcase', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
+  { componentType: 'G7ProductDetail', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: true },
 ];
 
 const COLLECTION_LIMITS: Record<string, Record<string, CollectionLimit>> = {
@@ -116,6 +118,8 @@ const ROOT_ROUTE_FIELDS: Record<string, Record<string, string>> = {
   Cta: { primaryLabel: 'primaryUrl', secondaryLabel: 'secondaryUrl' },
   Contact: { ctaLabel: 'ctaUrl', mapLabel: 'mapUrl' },
   MapDirections: { directionsLabel: 'directionsUrl' },
+  G7PostDetail: { linkLabel: 'detailUrl' },
+  G7ProductDetail: { buttonLabel: 'detailUrl' },
 };
 
 const COLLECTION_ROUTE_FIELDS: Record<string, Record<string, { trigger: string[]; target: string }>> = {
@@ -206,8 +210,10 @@ const COMPONENT_TYPE_BY_BLOCK_TYPE: Record<string, string> = {
   'map-directions': 'MapDirections',
   'g7-recent-posts': 'G7RecentPosts',
   'g7-board-archive': 'G7BoardArchive',
+  'g7-post-detail': 'G7PostDetail',
   'g7-product-grid': 'G7ProductGrid',
   'g7-product-showcase': 'G7ProductShowcase',
+  'g7-product-detail': 'G7ProductDetail',
 };
 
 function selectionFromPath(blockId: string, blockType: string, fieldPath: string, role: CanvasElementRole): Omit<CanvasElementSelection, 'anchor'> {

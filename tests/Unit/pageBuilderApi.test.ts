@@ -140,6 +140,7 @@ describe('PageBuilderApiClient', () => {
       bytes: 12,
       width: 2,
       height: 2,
+      kind: 'image' as const,
       created_at: '2026-08-20T09:00:00+09:00',
     };
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
@@ -150,7 +151,25 @@ describe('PageBuilderApiClient', () => {
     await expect(client.uploadMedia(new File(['image'], 'example.webp', { type: 'image/webp' }))).resolves.toEqual(asset);
     const [, init] = fetchImpl.mock.calls[0];
     expect(init?.body).toBeInstanceOf(FormData);
+    expect((init?.body as FormData).get('kind')).toBe('image');
     expect(new Headers(init?.headers).has('Content-Type')).toBe(false);
+  });
+
+  it('lists and uploads downloadable assets through the typed media contract', async () => {
+    const asset = {
+      id: '123e4567-e89b-42d3-a456-426614174002', url: '/storage/g7-page-builder/guide.pdf',
+      original_name: 'guide.pdf', mime_type: 'application/pdf', bytes: 2048, width: 0, height: 0,
+      kind: 'download' as const, created_at: '2026-08-22T09:00:00+09:00',
+    };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { items: [asset] } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: asset }, 201));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.listMedia('download')).resolves.toEqual({ items: [asset] });
+    await expect(client.uploadMedia(new File(['pdf'], 'guide.pdf', { type: 'application/pdf' }), 'download')).resolves.toEqual(asset);
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(`${PAGE_BUILDER_API_PREFIX}/media?kind=download`);
+    expect((fetchImpl.mock.calls[1]?.[1]?.body as FormData).get('kind')).toBe('download');
   });
 
   it('sends expected_lock_version for preview and publication prepare', async () => {

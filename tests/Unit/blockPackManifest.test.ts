@@ -13,12 +13,12 @@ describe('Block Pack manifest v1 schema', () => {
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it('accepts the thirty-five-definition builtin core pack and its practical presets', () => {
+  it('accepts the thirty-seven-definition builtin core pack and its practical presets', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.pack_version).toBe('0.11.0');
-    expect(builtinManifest.blocks).toHaveLength(35);
+    expect(builtinManifest.pack_version).toBe('0.12.0');
+    expect(builtinManifest.blocks).toHaveLength(37);
     expect(builtinManifest.presets).toHaveLength(18);
-    expect(new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`)).size).toBe(35);
+    expect(new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`)).size).toBe(37);
     expect(new Set(builtinManifest.presets.map((preset) => preset.preset_id)).size).toBe(18);
     const definitions = new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`));
     expect(builtinManifest.presets.every((preset) => definitions.has(`${preset.block_id}@${preset.block_version}`))).toBe(true);
@@ -46,6 +46,8 @@ describe('Block Pack manifest v1 schema', () => {
       'content.download-resources-01',
       'g7.board-content-archive-01',
       'g7.ecommerce-product-showcase-01',
+      'g7.board-post-detail-01',
+      'g7.ecommerce-product-detail-01',
     ]));
     expect(builtinManifest.presets.map((preset) => preset.preset_id)).toEqual(expect.arrayContaining([
       'heading.section-intro',

@@ -17,14 +17,14 @@ import {
 import { BUILTIN_BLOCK_DEFINITIONS } from '../../resources/js/blocks/builtinCatalog';
 
 describe('canvas editing contract', () => {
-  it('covers every one of the 35 builtin blocks without duplicate component names', () => {
-    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(35);
-    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(35);
+  it('covers every one of the 37 builtin blocks without duplicate component names', () => {
+    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(37);
+    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(37);
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType).sort())
       .toEqual(BUILTIN_BLOCK_DEFINITIONS.map((item) => item.editor_component).sort());
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.every((item) => item.directText)).toBe(true);
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.filter((item) => item.dynamicData).map((item) => item.componentType))
-      .toEqual(['G7RecentPosts', 'G7BoardArchive', 'G7ProductGrid', 'G7ProductShowcase']);
+      .toEqual(['G7RecentPosts', 'G7BoardArchive', 'G7PostDetail', 'G7ProductGrid', 'G7ProductShowcase', 'G7ProductDetail']);
   });
 
   it('resolves direct route and media fields from the selected visible element', () => {
@@ -34,6 +34,8 @@ describe('canvas editing contract', () => {
     expect(resolveRouteFieldPath('Buttons', 'items.1.label')).toBe('items.1.url');
     expect(resolveRouteFieldPath('HeroSlider', 'slides.2.buttonLabel')).toBe('slides.2.buttonUrl');
     expect(resolveRouteFieldPath('DownloadResources', 'items.0.buttonLabel')).toBe('items.0.url');
+    expect(resolveRouteFieldPath('G7PostDetail', 'linkLabel')).toBe('detailUrl');
+    expect(resolveRouteFieldPath('G7ProductDetail', 'buttonLabel')).toBe('detailUrl');
 
     const selection: CanvasElementSelection = {
       blockId: 'block', blockType: 'gallery', fieldPath: 'images.1.caption', role: 'text',

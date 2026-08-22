@@ -146,9 +146,11 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 | 게시판 인기글 | `GET /api/modules/sirsoft-board/boards/popular?period={today|week|month|year}&limit=N` | 블록 빈 상태 |
 | 상품 최신순 | `GET /api/modules/sirsoft-ecommerce/products?per_page=N&sort=latest` | 블록 빈 상태 |
 | 신상품·인기상품 | `GET /api/modules/sirsoft-ecommerce/products/{new|popular}?limit=N` | 블록 빈 상태 |
+| 게시글 상세 | `GET /api/modules/sirsoft-board/boards/{slug}/posts/{id}` | 블록 빈 상태 |
+| 상품 상세 | `GET /api/modules/sirsoft-ecommerce/products/{product_code|id}` | 블록 빈 상태 |
 | 방문자 구분 | `GET /api/user/auth/user`의 2xx 여부 | 인증 오류는 비회원으로 처리 |
 
-이 Adapter는 브라우저에서 same-origin JSON만 요청합니다. 응답은 필드별 `textContent`로 렌더하고 상대경로 또는 HTTPS 이미지 외에는 폐기합니다. G7 번들 모듈의 내부 PHP 클래스·DB 테이블·관리자 API를 참조하지 않으며 공개 artifact에는 개인화 결과를 저장하지 않습니다.
+이 Adapter는 브라우저에서 same-origin JSON만 요청합니다. 목록 pagination은 최초 응답 안에서만 수행하고 검색·필터 변경 시 첫 페이지로 돌아갑니다. 상세 본문과 상품 설명은 마크업을 실행하지 않고 평문으로 변환하며, 응답은 필드별 `textContent`로 렌더하고 상대경로 또는 HTTPS 이미지 외에는 폐기합니다. 공통 블록 표시 조건과 데이터 블록 자체 노출 조건은 모두 통과해야 요청하며 인증 판정 전에는 fail-closed합니다. G7 번들 모듈의 내부 PHP 클래스·DB 테이블·관리자 API를 참조하지 않으며 공개 artifact에는 개인화 결과를 저장하지 않습니다.
 
 ## 선택 연동 규칙
 

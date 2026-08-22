@@ -3229,6 +3229,19 @@ body.g7pb-manager-shell {
 .g7pb-media-field__grid img { width: 100%; aspect-ratio: 1; border-radius: .35rem; object-fit: cover; }
 .g7pb-media-field__grid span { overflow: hidden; padding: .25rem .1rem 0; font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }
 .g7pb-media-field__error { margin: 0; color: #b42318; font-size: .75rem; }
+.g7pb-download-field { display: grid; gap: .65rem; }
+.g7pb-download-field > label { color: #334155; font-size: .8rem; font-weight: 750; }
+.g7pb-download-field__actions, .g7pb-download-field__library-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.g7pb-download-field button { min-height: 2.35rem; padding: .45rem .75rem; border: 1px solid #cfd5df; border-radius: .6rem; color: #263247; background: #fff; font-weight: 700; cursor: pointer; }
+.g7pb-download-field input[type='url'] { width: 100%; min-height: 2.55rem; padding: .55rem .7rem; border: 1px solid #cfd5df; border-radius: .6rem; }
+.g7pb-download-field__library { display: grid; gap: .7rem; padding: .75rem; border: 1px solid #d8dde6; border-radius: .8rem; background: #f8f8f6; }
+.g7pb-download-field__library-head > div { display: grid; gap: .15rem; }
+.g7pb-download-field__library-head span { color: #64748b; font-size: .7rem; }
+.g7pb-download-field__list { display: grid; gap: .45rem; max-height: 18rem; overflow: auto; }
+.g7pb-download-field__list button { display: grid; min-width: 0; grid-template-columns: 2rem minmax(0, 1fr) auto; align-items: center; gap: .55rem; text-align: left; }
+.g7pb-download-field__list button.is-selected { border-color: #2563eb; box-shadow: 0 0 0 2px rgb(37 99 235 / 16%); }
+.g7pb-download-field__list strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g7pb-download-field__list small { color: #64748b; }
 
 .g7pb-icon-link { display: inline-grid; width: 2.5rem; height: 2.5rem; flex: 0 0 auto; place-items: center; border: 1px solid #d7dce5; border-radius: .7rem; color: #172033; background: #fff; }
 .g7pb-button > svg { flex: 0 0 auto; }
@@ -3328,9 +3341,9 @@ body.g7pb-manager-shell {
 .g7pb-site-footer--columns h2 { margin: 0 0 1rem; color: #fff; font-size: .82rem; }
 .g7pb-site-footer--columns ul { display: grid; gap: .7rem; }
 
-.g7pb-preview-logo-carousel, .g7pb-preview-testimonial-slider, .g7pb-preview-events, .g7pb-preview-downloads, .g7pb-preview-archive, .g7pb-preview-product-showcase { padding-inline: max(24px, calc((100cqw - var(--g7pb-theme-content-width)) / 2)); }
-.g7pb-preview-logo-carousel > header small, .g7pb-preview-testimonial-slider > header small, .g7pb-preview-events > header small, .g7pb-preview-downloads > header small, .g7pb-preview-archive > header small, .g7pb-preview-product-showcase > header small { color: var(--g7pb-theme-accent); font-size: .72rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
-.g7pb-preview-logo-carousel > header h2, .g7pb-preview-testimonial-slider > header h2, .g7pb-preview-events > header h2, .g7pb-preview-downloads > header h2, .g7pb-preview-archive > header h2, .g7pb-preview-product-showcase > header h2 { max-width: 18ch; margin: .65rem 0 2rem; font-size: clamp(2rem, 4vw, 4rem); line-height: 1.04; }
+.g7pb-preview-logo-carousel, .g7pb-preview-testimonial-slider, .g7pb-preview-events, .g7pb-preview-downloads, .g7pb-preview-archive, .g7pb-preview-product-showcase, .g7pb-preview-data-detail { padding-inline: max(24px, calc((100cqw - var(--g7pb-theme-content-width)) / 2)); }
+.g7pb-preview-logo-carousel > header small, .g7pb-preview-testimonial-slider > header small, .g7pb-preview-events > header small, .g7pb-preview-downloads > header small, .g7pb-preview-archive > header small, .g7pb-preview-product-showcase > header small, .g7pb-preview-data-detail > header small { color: var(--g7pb-theme-accent); font-size: .72rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.g7pb-preview-logo-carousel > header h2, .g7pb-preview-testimonial-slider > header h2, .g7pb-preview-events > header h2, .g7pb-preview-downloads > header h2, .g7pb-preview-archive > header h2, .g7pb-preview-product-showcase > header h2, .g7pb-preview-data-detail > header h2 { max-width: 18ch; margin: .65rem 0 2rem; font-size: clamp(2rem, 4vw, 4rem); line-height: 1.04; }
 .g7pb-preview-logo-carousel > div { display: flex; overflow: hidden; border-block: 1px solid var(--g7pb-theme-border); }
 .g7pb-preview-logo-carousel > div > span { display: grid; min-width: 20%; min-height: 7.5rem; place-items: center; padding: 1rem; border-inline-end: 1px solid var(--g7pb-theme-border); }
 .g7pb-preview-logo-carousel > div img { width: 8rem; height: 3rem; object-fit: contain; filter: grayscale(1); }
@@ -3373,6 +3386,15 @@ body.g7pb-manager-shell {
 .g7pb-preview-product-showcase > p { color: var(--g7pb-theme-muted); }
 .g7pb-preview-product-showcase--rail > div { display: flex; overflow: hidden; }
 .g7pb-preview-product-showcase--rail article { min-width: 30%; }
+.g7pb-preview-data-detail > article { display: grid; gap: 1rem; padding: clamp(1.5rem, 4vw, 3rem); border: 1px solid var(--g7pb-theme-border); border-radius: var(--g7pb-theme-radius); }
+.g7pb-preview-data-detail > article h3 { margin: 0; font-size: clamp(1.8rem, 4vw, 3.2rem); line-height: 1.08; }
+.g7pb-preview-data-detail > article p, .g7pb-preview-data-detail > p { margin: 0; color: var(--g7pb-theme-muted); line-height: 1.7; }
+.g7pb-preview-data-detail > article b { justify-self: start; color: var(--g7pb-theme-accent); }
+.g7pb-preview-data-detail__meta { color: var(--g7pb-theme-accent) !important; font-size: .78rem; font-weight: 750; }
+.g7pb-preview-data-detail--product > article { grid-template-columns: minmax(10rem, .75fr) minmax(0, 1fr); align-items: center; }
+.g7pb-preview-data-detail--product > article > div { display: grid; gap: .75rem; }
+.g7pb-preview-data-detail__media { display: grid; width: 100%; aspect-ratio: 1 / 1; place-items: center; border-radius: var(--g7pb-theme-radius); color: var(--g7pb-theme-muted); background: color-mix(in srgb, var(--g7pb-theme-accent) 8%, transparent); }
+.g7pb-preview-data-detail > p { margin-top: 1rem; font-size: .78rem; }
 
 .g7pb-preview-heading,
 .g7pb-preview-rich-text,
@@ -3556,6 +3578,7 @@ body.g7pb-manager-shell {
   .g7pb-preview-events li, .g7pb-preview-downloads li, .g7pb-preview-archive article { grid-template-columns: 1fr; gap: .5rem; }
   .g7pb-preview-archive__tools { display: grid; }
   .g7pb-preview-product-showcase > div { grid-template-columns: 1fr; }
+  .g7pb-preview-data-detail--product > article { grid-template-columns: 1fr; }
   .g7pb-preview-buttons { align-items: stretch; flex-direction: column; }
   .g7pb-preview-button { width: 100%; }
   .g7pb-preview-icon-list ul { grid-template-columns: 1fr; }

@@ -227,6 +227,8 @@ interface BlockRoundTripMetadata {
   hadSlots: boolean;
   hadAppearance: boolean;
   hadMotion: boolean;
+  hadVisibility: boolean;
+  hadPageSize: boolean;
   hadSliderSettings: boolean;
 }
 
@@ -587,6 +589,8 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
       hadSlots: Object.prototype.hasOwnProperty.call(block, 'slots'),
       hadAppearance: Object.prototype.hasOwnProperty.call(block.props, 'appearance'),
       hadMotion: Object.prototype.hasOwnProperty.call(block, 'motion'),
+      hadVisibility: Object.prototype.hasOwnProperty.call(block, 'visibility'),
+      hadPageSize: Object.prototype.hasOwnProperty.call(block.props, 'pageSize'),
       hadSliderSettings: Object.prototype.hasOwnProperty.call(block.props, 'autoplay')
         || Object.prototype.hasOwnProperty.call(block.props, 'interval')
         || Object.prototype.hasOwnProperty.call(block.props, 'loop'),
@@ -596,7 +600,16 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
   return {
     data: {
       root: { props: tokensToPageDesign(document.tokens) },
-      content: document.blocks.map(canonicalBlockToPuck),
+      content: document.blocks.map((block) => {
+        const puckBlock = canonicalBlockToPuck(block);
+        return {
+          ...puckBlock,
+          props: {
+            ...puckBlock.props,
+            __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',
+          },
+        } as unknown as PuckEditorData['content'][number];
+      }),
     },
     context: {
       document: {
@@ -625,6 +638,8 @@ function puckBlockToCanonical(
     hadSlots: true,
     hadAppearance: false,
     hadMotion: false,
+    hadVisibility: false,
+    hadPageSize: true,
     hadSliderSettings: false,
   };
   let type: string;
@@ -730,6 +745,7 @@ function puckBlockToCanonical(
       delete externalProps.id;
       delete externalProps.motion;
       delete externalProps.__g7pbBlockVersion;
+      delete externalProps.__g7pbVisibilityAudience;
       type = externalBlock.block_id;
       blockVersion = externalBlock.block_version;
       props = externalProps;
@@ -746,9 +762,22 @@ function puckBlockToCanonical(
     props: props as unknown as Record<string, unknown>,
   };
 
+  if (!metadata.hadPageSize) {
+    delete canonical.props.pageSize;
+  }
+
   const motion = normalizeBlockMotion(block.props.motion);
   if (metadata.hadMotion || motion.preset !== 'none') {
     canonical.motion = motion;
+  }
+
+  const internalProps = block.props as Record<string, unknown>;
+  const visibilityAudience = internalProps.__g7pbVisibilityAudience === 'guest'
+    || internalProps.__g7pbVisibilityAudience === 'member'
+    ? internalProps.__g7pbVisibilityAudience
+    : 'all';
+  if (metadata.hadVisibility || visibilityAudience !== 'all') {
+    canonical.visibility = { audience: visibilityAudience };
   }
 
   if (metadata.hadSlots) {
@@ -1224,7 +1253,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
     },
     g7Data: {
       title: 'G7 데이터',
-      components: ['G7RecentPosts', 'G7BoardArchive', 'G7ProductGrid', 'G7ProductShowcase'],
+      components: ['G7RecentPosts', 'G7BoardArchive', 'G7PostDetail', 'G7ProductGrid', 'G7ProductShowcase', 'G7ProductDetail'],
       defaultExpanded: true,
     },
   },
@@ -2098,6 +2127,11 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
     ? selectedBlock.props.surface : 'default';
   const currentSpacing = selectedBlock.props.spacing === 'compact' || selectedBlock.props.spacing === 'spacious'
     ? selectedBlock.props.spacing : 'normal';
+  const selectedInternalProps = selectedBlock.props as Record<string, unknown>;
+  const currentVisibility = selectedInternalProps.__g7pbVisibilityAudience === 'guest'
+    || selectedInternalProps.__g7pbVisibilityAudience === 'member'
+    ? selectedInternalProps.__g7pbVisibilityAudience
+    : 'all';
   const fieldPath = canvasUi.selection?.fieldPath ?? null;
   const isTextElement = fieldPath !== null && (canvasUi.selection?.role === 'text' || canvasUi.selection?.role === 'action');
   const elementStyles = normalizeElementAppearanceMap(selectedBlock.props.elementStyles);
@@ -2140,7 +2174,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   return createPortal(
     <section className={`g7pb-context-panel${isTextElement ? ` g7pb-element-balloon g7pb-element-balloon--${balloonPlacement}` : ''}`} style={balloonStyle}
       role="dialog" aria-label={isTextElement ? '선택 요소 스타일' : '선택 블록 스타일'} data-testid="page-builder-context-panel">
-      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '선택한 요소에만 적용됩니다.' : '블록 배경과 여백을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
+      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '선택한 요소에만 적용됩니다.' : '블록 배경·여백·표시 대상을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
       {isTextElement ? <>
         <div className="g7pb-context-panel__row"><span>글꼴</span><div role="group" aria-label="선택 요소 글꼴">
           {([['inherit', '기본'], ['modern', '모던'], ['serif', '명조'], ['mono', '고정폭']] as const).map(([font, text]) => <button type="button" key={font} disabled={disabled}
@@ -2177,6 +2211,11 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
         </div></div>
         <div className="g7pb-context-panel__row"><span>세로 여백</span><div role="group" aria-label="블록 세로 여백">
           {([['compact', '좁게'], ['normal', '기본'], ['spacious', '넓게']] as const).map(([spacing, text]) => <button type="button" key={spacing} disabled={disabled} aria-pressed={currentSpacing === spacing} onClick={() => update({ spacing })}>{text}</button>)}
+        </div></div>
+        <div className="g7pb-context-panel__row"><span>표시 대상</span><div role="group" aria-label="블록 표시 대상">
+          {([['all', '모두'], ['guest', '로그아웃'], ['member', '로그인']] as const).map(([audience, text]) => <button type="button" key={audience} disabled={disabled}
+            aria-pressed={currentVisibility === audience} onClick={() => update({ __g7pbVisibilityAudience: audience })}
+            data-testid={`page-builder-block-visibility-${audience}`}>{text}</button>)}
         </div></div>
       </>}
     </section>,

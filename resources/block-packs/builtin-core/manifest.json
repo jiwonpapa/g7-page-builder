@@ -1,7 +1,7 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.11.0",
+  "pack_version": "0.12.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
@@ -431,6 +431,30 @@
       "schema_ref": "builtin:g7ProductShowcaseProps",
       "editor_component": "G7ProductShowcase",
       "compiler": "builtin.g7-ecommerce-product-showcase-01",
+      "capabilities": ["g7.module.sirsoft-ecommerce", "public.dynamic-data"]
+    },
+    {
+      "block_id": "g7.board-post-detail-01",
+      "block_version": 1,
+      "category": "g7-data",
+      "label": { "ko": "G7 게시글 상세", "en": "G7 post detail" },
+      "description": { "ko": "지정한 게시글의 제목, 작성 정보, 본문 요약을 공개 API로 표시합니다.", "en": "Load a selected post summary from the public G7 board API." },
+      "thumbnail": "thumbnails/g7-post-detail.svg",
+      "schema_ref": "builtin:g7PostDetailProps",
+      "editor_component": "G7PostDetail",
+      "compiler": "builtin.g7-board-post-detail-01",
+      "capabilities": ["g7.module.sirsoft-board", "public.dynamic-data"]
+    },
+    {
+      "block_id": "g7.ecommerce-product-detail-01",
+      "block_version": 1,
+      "category": "g7-data",
+      "label": { "ko": "G7 상품 상세", "en": "G7 product detail" },
+      "description": { "ko": "지정한 상품의 이미지, 가격과 설명을 공개 API로 표시합니다.", "en": "Load a selected product summary from the public G7 ecommerce API." },
+      "thumbnail": "thumbnails/g7-product-detail.svg",
+      "schema_ref": "builtin:g7ProductDetailProps",
+      "editor_component": "G7ProductDetail",
+      "compiler": "builtin.g7-ecommerce-product-detail-01",
       "capabilities": ["g7.module.sirsoft-ecommerce", "public.dynamic-data"]
     }
   ],

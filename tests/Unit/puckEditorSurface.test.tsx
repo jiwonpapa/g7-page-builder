@@ -518,7 +518,9 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('다운로드 자료');
     expect(gallery.textContent).toContain('G7 콘텐츠 아카이브');
     expect(gallery.textContent).toContain('G7 상품 쇼케이스');
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(53);
+    expect(gallery.textContent).toContain('G7 게시글 상세');
+    expect(gallery.textContent).toContain('G7 상품 상세');
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(55);
     builtinManifest.presets.forEach((preset) => {
       const slug = preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
       const button = gallery.querySelector<HTMLButtonElement>(`[data-testid="page-builder-preset-${slug}"]`);

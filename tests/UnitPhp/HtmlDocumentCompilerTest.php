@@ -302,6 +302,8 @@ final class HtmlDocumentCompilerTest extends TestCase
             'content.download-resources-01' => ['eyebrow', 'heading', 'items.0.title', 'items.0.description', 'items.0.fileType', 'items.0.fileSize', 'items.0.buttonLabel'],
             'g7.board-content-archive-01' => ['eyebrow', 'heading'],
             'g7.ecommerce-product-showcase-01' => ['eyebrow', 'heading'],
+            'g7.board-post-detail-01' => ['eyebrow', 'heading', 'linkLabel'],
+            'g7.ecommerce-product-detail-01' => ['eyebrow', 'heading', 'buttonLabel'],
         ];
         $documents = [
             $this->document('<p>안전한 본문</p>'),
@@ -310,6 +312,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             $this->formAndMapDocument(),
             $this->phaseTwoDocument(),
             $this->phaseThreeDocument(),
+            $this->phaseFourDocument(),
             $this->foundationDocument(),
         ];
         $styledFieldCount = 0;
@@ -335,7 +338,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             )->artifact;
         }
 
-        self::assertCount(35, $fieldsByType);
+        self::assertCount(37, $fieldsByType);
         self::assertGreaterThanOrEqual($styledFieldCount, substr_count($compiledArtifacts, 'g7pb-element-font--serif'));
     }
 
@@ -416,7 +419,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.11.0', $catalog->compilerVersion);
+        self::assertSame('0.12.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -433,7 +436,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->foundationDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.11.0', $result->compilerVersion);
+        self::assertSame('0.12.0', $result->compilerVersion);
         foreach (['heading', 'rich-text', 'image', 'buttons', 'image-text', 'icon-list'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -658,7 +661,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.11.0', $result->compilerVersion);
+        self::assertSame('0.12.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -717,7 +720,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.11.0', $result->compilerVersion);
+        self::assertSame('0.12.0', $result->compilerVersion);
         foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -756,7 +759,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseThreeDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.11.0', $result->compilerVersion);
+        self::assertSame('0.12.0', $result->compilerVersion);
         foreach (['logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -766,7 +769,47 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/posts/recent?limit=12', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-ecommerce/products/new?limit=6', $artifact);
         self::assertStringContainsString('data-g7pb-product-base="/shop/products"', $artifact);
+        self::assertSame(2, substr_count($artifact, 'data-g7pb-pagination'));
+        self::assertStringContainsString('data-g7pb-page-size="4"', $artifact);
+        self::assertStringContainsString('data-g7pb-page-size="3"', $artifact);
+        self::assertStringContainsString('href="/files/guide.pdf" download', $artifact);
         self::assertStringNotContainsString('<script', $artifact);
+    }
+
+    public function test_phase_four_g7_details_and_generic_visibility_compile_to_typed_placeholders(): void
+    {
+        $result = $this->builtInCompiler()->compile($this->phaseFourDocument(), 1, 'html', 'g7-7.0.7');
+        $artifact = (string) $result->artifact;
+
+        self::assertSame('0.12.0', $result->compilerVersion);
+        self::assertStringContainsString('data-block-type="g7-post-detail"', $artifact);
+        self::assertStringContainsString('data-block-type="g7-product-detail"', $artifact);
+        self::assertStringContainsString('/api/modules/sirsoft-board/boards/notice/posts/17', $artifact);
+        self::assertStringContainsString('/api/modules/sirsoft-ecommerce/products/SKU-17', $artifact);
+        self::assertStringContainsString('data-g7pb-visibility-audience="member"', $artifact);
+        self::assertStringContainsString('data-g7pb-show-content="true"', $artifact);
+        self::assertStringContainsString('data-g7pb-show-description="false"', $artifact);
+        self::assertSame(2, substr_count($artifact, 'data-g7pb-data-detail'));
+        self::assertStringNotContainsString('<script', $artifact);
+    }
+
+    public function test_phase_four_rejects_unsafe_keys_routes_and_visibility(): void
+    {
+        $payload = $this->phaseFourDocument()->toArray();
+        $payload['blocks'] = [$payload['blocks'][1]];
+        $payload['blocks'][0]['props']['productKey'] = '../secret';
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+            self::fail('An unsafe product key was accepted.');
+        } catch (DocumentCompileException) {
+            self::assertTrue(true);
+        }
+
+        $payload = $this->phaseFourDocument()->toArray();
+        $payload['blocks'] = [$payload['blocks'][0]];
+        $payload['blocks'][0]['visibility'] = ['audience' => 'administrator'];
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
     }
 
     public function test_phase_three_catalog_rejects_unsafe_resource_and_product_routes(): void
@@ -977,11 +1020,33 @@ final class HtmlDocumentCompilerTest extends TestCase
                 ],
                 [
                     'instance_id' => '00000000-0000-4000-8000-0000000000b5', 'type' => 'g7.board-content-archive-01', 'block_version' => 1,
-                    'props' => ['eyebrow' => '아카이브', 'heading' => '게시글', 'source' => 'recent', 'period' => 'month', 'limit' => 12, 'audience' => 'all', 'showSearch' => true, 'showBoardFilter' => true, 'emptyMessage' => '게시글이 없습니다.'], 'slots' => [],
+                    'props' => ['eyebrow' => '아카이브', 'heading' => '게시글', 'source' => 'recent', 'period' => 'month', 'limit' => 12, 'pageSize' => 4, 'audience' => 'all', 'showSearch' => true, 'showBoardFilter' => true, 'emptyMessage' => '게시글이 없습니다.'], 'slots' => [],
                 ],
                 [
                     'instance_id' => '00000000-0000-4000-8000-0000000000b6', 'type' => 'g7.ecommerce-product-showcase-01', 'block_version' => 1,
-                    'props' => ['eyebrow' => '상품', 'heading' => '추천', 'source' => 'new', 'limit' => 6, 'audience' => 'member', 'detailBasePath' => '/shop/products', 'layout' => 'featured', 'emptyMessage' => '상품이 없습니다.'], 'slots' => [],
+                    'props' => ['eyebrow' => '상품', 'heading' => '추천', 'source' => 'new', 'limit' => 6, 'pageSize' => 3, 'audience' => 'member', 'detailBasePath' => '/shop/products', 'layout' => 'featured', 'emptyMessage' => '상품이 없습니다.'], 'slots' => [],
+                ],
+            ],
+        );
+    }
+
+    private function phaseFourDocument(): PageBuilderDocument
+    {
+        return new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-0000000000c0',
+            slug: 'phase-four-data',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: [],
+            blocks: [
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000c1', 'type' => 'g7.board-post-detail-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '게시글', 'heading' => '공지 상세', 'boardSlug' => 'notice', 'postId' => 17, 'detailUrl' => '/board/notice/17', 'linkLabel' => '전체 보기', 'audience' => 'all', 'showContent' => true, 'emptyMessage' => '게시글이 없습니다.'],
+                    'visibility' => ['audience' => 'member'], 'motion' => ['preset' => 'reveal', 'intensity' => 'normal', 'trigger' => 'once', 'stagger_ms' => 100], 'slots' => [],
+                ],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-0000000000c2', 'type' => 'g7.ecommerce-product-detail-01', 'block_version' => 1,
+                    'props' => ['eyebrow' => '상품', 'heading' => '상품 상세', 'productKey' => 'SKU-17', 'detailUrl' => '/shop/products/SKU-17', 'buttonLabel' => '구매 정보 보기', 'audience' => 'guest', 'showDescription' => false, 'emptyMessage' => '상품이 없습니다.'], 'slots' => [],
                 ],
             ],
         );

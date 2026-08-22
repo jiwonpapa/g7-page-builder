@@ -62,15 +62,15 @@
                 "en": "Company launch page"
             },
             "description": {
-                "ko": "회사 소개, 성과, 팀과 문의 CTA로 구성된 완성 페이지입니다.",
-                "en": "A complete company introduction page."
+                "ko": "회사 소개, 일하는 방식, 성과, 팀, 고객 후기와 문의 CTA로 구성된 완성 페이지입니다.",
+                "en": "A complete company introduction and trust-building page."
             },
             "category": "company",
             "tags": [
                 "회사소개",
                 "랜딩",
                 "팀",
-                "CTA"
+                "고객후기"
             ],
             "license": "free",
             "compatibility": {
@@ -85,8 +85,200 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-company-launch-1.0.0.zip",
-                "sha256": "e4c4d201e425c053ebc80463f7d14ab477821cfbd900e76b9f67d02d34caead2",
-                "bytes": 1845
+                "sha256": "c342c0e983ce369eca96a88e8cf53a2ddac39723035428583ced6025e4a1e7d6",
+                "bytes": 77628
+            },
+            "requirements": {
+                "blocks": [
+                    {
+                        "block_id": "content.hero-split-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.features-grid-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "data.stats-icons-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "company.team-grid-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "trust.testimonials-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.cta-split-01",
+                        "block_version": 1
+                    }
+                ]
+            }
+        },
+        {
+            "product_id": "jiwonpapa/service-conversion",
+            "product_type": "page_kit",
+            "product_version": "1.0.0",
+            "title": {
+                "ko": "전문 서비스 상담 랜딩",
+                "en": "Professional service landing"
+            },
+            "description": {
+                "ko": "서비스 가치, 진행 방식, 고객 후기, FAQ와 상담 요청으로 구성된 전환 페이지입니다.",
+                "en": "A service conversion page with proof, process, FAQ, and inquiry."
+            },
+            "category": "services",
+            "tags": [
+                "전문서비스",
+                "상담",
+                "고객후기",
+                "FAQ"
+            ],
+            "license": "free",
+            "compatibility": {
+                "page_builder": ">=0.10.0 <1.0.0",
+                "php": ">=8.5",
+                "g7": ">=7.0.7"
+            },
+            "preview": {
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/service-conversion.svg",
+                "screenshots": [],
+                "demo_url": null
+            },
+            "artifact": {
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-service-conversion-1.0.0.zip",
+                "sha256": "407e1a3900b7aafb46f0964ddd6bc07028866a59f7a27140ff70afd71f6ef544",
+                "bytes": 74713
+            },
+            "requirements": {
+                "blocks": [
+                    {
+                        "block_id": "content.hero-split-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.icon-list-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.process-timeline-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "trust.testimonials-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.faq-accordion-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "form.inquiry-01",
+                        "block_version": 1
+                    }
+                ]
+            }
+        },
+        {
+            "product_id": "jiwonpapa/local-business",
+            "product_type": "page_kit",
+            "product_version": "1.0.0",
+            "title": {
+                "ko": "로컬 비즈니스 방문 안내",
+                "en": "Local business visit page"
+            },
+            "description": {
+                "ko": "서비스, 이용 순서, 후기, 위치와 방문 예약을 한 페이지에 안내합니다.",
+                "en": "A local business page for services, directions, and reservations."
+            },
+            "category": "local-business",
+            "tags": [
+                "매장",
+                "예약",
+                "오시는길",
+                "지역서비스"
+            ],
+            "license": "free",
+            "compatibility": {
+                "page_builder": ">=0.10.0 <1.0.0",
+                "php": ">=8.5",
+                "g7": ">=7.0.7"
+            },
+            "preview": {
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/local-business.svg",
+                "screenshots": [],
+                "demo_url": null
+            },
+            "artifact": {
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-local-business-1.0.0.zip",
+                "sha256": "fdd0459d93b4e10e213d0e04d5d5eca0362a9b3fb4f87946dd62e7e78de1f4b6",
+                "bytes": 110257
+            },
+            "requirements": {
+                "blocks": [
+                    {
+                        "block_id": "content.hero-split-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.features-grid-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.process-timeline-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "trust.testimonials-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "location.map-directions-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "form.inquiry-01",
+                        "block_version": 1
+                    }
+                ]
+            }
+        },
+        {
+            "product_id": "jiwonpapa/event-launch",
+            "product_type": "page_kit",
+            "product_version": "1.0.0",
+            "title": {
+                "ko": "컨퍼런스·행사 랜딩",
+                "en": "Conference and event landing"
+            },
+            "description": {
+                "ko": "행사 개요, 일정, 연사, 파트너, FAQ와 참가 신청을 연결합니다.",
+                "en": "A conference page with agenda, speakers, partners, FAQ, and signup."
+            },
+            "category": "events",
+            "tags": [
+                "행사",
+                "컨퍼런스",
+                "일정",
+                "참가신청"
+            ],
+            "license": "free",
+            "compatibility": {
+                "page_builder": ">=0.10.0 <1.0.0",
+                "php": ">=8.5",
+                "g7": ">=7.0.7"
+            },
+            "preview": {
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/event-launch.svg",
+                "screenshots": [],
+                "demo_url": null
+            },
+            "artifact": {
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-event-launch-1.0.0.zip",
+                "sha256": "d15a389b3d085466f3debd8cea7d36c9b5e3f029685bcac93e9ecda1ee5146c0",
+                "bytes": 51043
             },
             "requirements": {
                 "blocks": [
@@ -99,7 +291,79 @@
                         "block_version": 1
                     },
                     {
+                        "block_id": "content.event-schedule-01",
+                        "block_version": 1
+                    },
+                    {
                         "block_id": "company.team-grid-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "trust.logo-cloud-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.faq-accordion-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "form.inquiry-01",
+                        "block_version": 1
+                    }
+                ]
+            }
+        },
+        {
+            "product_id": "jiwonpapa/editorial-community",
+            "product_type": "page_kit",
+            "product_version": "1.0.0",
+            "title": {
+                "ko": "에디토리얼·커뮤니티 홈",
+                "en": "Editorial community home"
+            },
+            "description": {
+                "ko": "대표 기사, 지역 일정, 자료와 뉴스레터 신청을 묶은 콘텐츠 홈입니다.",
+                "en": "An editorial home for stories, events, resources, and newsletter signup."
+            },
+            "category": "editorial",
+            "tags": [
+                "에디토리얼",
+                "커뮤니티",
+                "기사",
+                "뉴스레터"
+            ],
+            "license": "free",
+            "compatibility": {
+                "page_builder": ">=0.10.0 <1.0.0",
+                "php": ">=8.5",
+                "g7": ">=7.0.7"
+            },
+            "preview": {
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/editorial-community.svg",
+                "screenshots": [],
+                "demo_url": null
+            },
+            "artifact": {
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-editorial-community-1.0.0.zip",
+                "sha256": "758e4c7d5f19a158916521b4f2ef4928f3751ed2b92d89d3818be2bdce3000cb",
+                "bytes": 108806
+            },
+            "requirements": {
+                "blocks": [
+                    {
+                        "block_id": "content.hero-split-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.article-list-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.event-schedule-01",
+                        "block_version": 1
+                    },
+                    {
+                        "block_id": "content.download-resources-01",
                         "block_version": 1
                     },
                     {

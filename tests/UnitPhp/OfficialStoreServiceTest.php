@@ -244,7 +244,7 @@ final class OfficialStoreServiceTest extends TestCase
             $this->routes(), $packs, $archive);
 
         $before = $service->catalog();
-        self::assertCount(2, $before['products']);
+        self::assertCount(6, $before['products']);
         self::assertFalse($before['products'][0]['installed']);
 
         $installed = $service->installBlockPack('jiwonpapa/marketing-presets', '1.0.0', 7);
@@ -268,10 +268,11 @@ final class OfficialStoreServiceTest extends TestCase
                 1,
                 1,
             ));
+        $media = new OfficialStoreMediaFixture;
         [$service] = $this->service(
             $source,
             new ZipPageKitArchiveAdapter,
-            new OfficialStoreMediaFixture,
+            $media,
             $this->routes(),
             pageRepository: $repository,
             compiler: $this->builtInCompiler(),
@@ -288,8 +289,13 @@ final class OfficialStoreServiceTest extends TestCase
         self::assertSame('새 회사 페이지', $created->title);
         self::assertSame('company-from-store', $created->document->slug);
         self::assertSame('template', $created->document->shellMode);
-        self::assertCount(4, $created->document->blocks);
-        self::assertSame('/login', $created->document->blocks[3]['props']['secondaryLink']['url']);
+        self::assertCount(6, $created->document->blocks);
+        self::assertSame('/login', $created->document->blocks[5]['props']['secondaryLink']['url']);
+        self::assertSame(
+            'https://g7pb.test/storage/g7-page-builder/imported.png',
+            $created->document->blocks[0]['props']['image']['src'],
+        );
+        self::assertSame(['hero-team.webp'], $media->stored);
         self::assertNotSame('81000000-0000-4000-8000-000000000001', $created->document->blocks[0]['instance_id']);
         self::assertNull($created->activeArtifactSha256);
         self::assertSame(1, $source->releases);

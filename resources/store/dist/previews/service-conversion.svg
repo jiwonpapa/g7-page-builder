@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 450" role="img" aria-labelledby="title desc">
+  <title id="title">전문 서비스 상담 랜딩 미리보기</title>
+  <desc id="desc">상담 장면, 제공 가치, 진행 방식, 후기와 상담 폼으로 구성된 페이지</desc>
+  <rect width="720" height="450" rx="24" fill="#eef1f4"/>
+  <rect x="38" y="34" width="644" height="157" rx="16" fill="#172033"/>
+  <rect x="62" y="56" width="238" height="113" rx="12" fill="#465568"/>
+  <circle cx="141" cy="107" r="28" fill="#9cabb8"/><circle cx="218" cy="110" r="24" fill="#708194"/>
+  <rect x="334" y="62" width="86" height="11" rx="5" fill="#9dd3c7"/>
+  <rect x="334" y="86" width="286" height="23" rx="7" fill="#f8fafc"/>
+  <rect x="334" y="122" width="222" height="12" rx="6" fill="#b9c3cf"/>
+  <rect x="334" y="150" width="108" height="25" rx="7" fill="#57b3a1"/>
+  <g fill="#fff" stroke="#d5dbe1"><rect x="38" y="209" width="309" height="70" rx="12"/><rect x="373" y="209" width="309" height="70" rx="12"/></g>
+  <g fill="#57b3a1"><circle cx="66" cy="236" r="10"/><circle cx="401" cy="236" r="10"/></g>
+  <g fill="#697789"><rect x="86" y="228" width="126" height="11" rx="5"/><rect x="86" y="247" width="198" height="8" rx="4"/><rect x="421" y="228" width="126" height="11" rx="5"/><rect x="421" y="247" width="198" height="8" rx="4"/></g>
+  <rect x="38" y="299" width="644" height="115" rx="16" fill="#fff"/>
+  <rect x="64" y="324" width="203" height="15" rx="6" fill="#172033"/><rect x="64" y="351" width="303" height="9" rx="4" fill="#a5b0bc"/>
+  <rect x="469" y="322" width="178" height="66" rx="10" fill="#e5f4f0"/><rect x="493" y="343" width="112" height="24" rx="7" fill="#57b3a1"/>
+</svg>

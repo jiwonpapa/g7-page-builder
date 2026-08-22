@@ -31,7 +31,7 @@ Sanitized published artifact
 
 현재 모듈 버전은 `0.18.0`입니다. 37개 내장 블록·18개 실무 프리셋과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 2단 메뉴·좌우 모바일 drawer·Site Part 프리셋, 반응형·테마·폼·지도·G7 공개 데이터 목록·상세 블록, 공통 로그인 전후 표시 조건, SEO 스냅샷, 미리보기·발행·복구 흐름을 제공합니다.
 
-현재 화면의 `무료 마켓`은 독립 마켓이 아니라 정적 catalog 두 건으로 설치·적용 계약을 검증하는 내부 배포 시험 하네스입니다. 별도 마켓 모듈, DB, 상품 관리자, 업로드·검증·게시 기능은 아직 없습니다. Page Builder 본체와 상품 규격이 안정된 뒤 [Market 모듈 스펙 주도 개발 명세](docs/market-module-spec.md)에 따라 `g7devops.com` 전용 단일 발행자 모듈로 분리합니다. 기존 소비자·무결성 계약은 [공식 무료 배포 프로토타입 계약](docs/official-store-contract.md)에 기록합니다.
+현재 화면의 `무료 마켓`은 독립 마켓이 아니라 공식 무료 Block Pack 1개와 목적별 Page Kit 5개를 담은 정적 catalog로 설치·적용 계약을 검증하는 내부 배포 시험 하네스입니다. Page Kit은 회사 소개, 전문 서비스 상담, 로컬 비즈니스 방문, 컨퍼런스·행사, 에디토리얼·커뮤니티 유형을 제공하며 모두 새 미발행 초안으로만 적용됩니다. 별도 마켓 모듈, DB, 상품 관리자, 업로드·검증·게시 기능은 아직 없습니다. Page Builder 본체와 상품 규격이 안정된 뒤 [Market 모듈 스펙 주도 개발 명세](docs/market-module-spec.md)에 따라 `g7devops.com` 전용 단일 발행자 모듈로 분리합니다. 기존 소비자·무결성 계약은 [공식 무료 배포 프로토타입 계약](docs/official-store-contract.md)에 기록합니다.
 
 제목·본문·이미지·버튼·Hero·CTA·콘텐츠·신뢰·가격·팀·폼·지도·G7 데이터 등 37종 블록은 `jiwonpapa/builtin-core` 내장 Pack으로 등록됩니다. 편집기는 18개 내장 프리셋과 서버 카탈로그의 검색·분류·관리자별 즐겨찾기, Data Preset 복사를 지원합니다. 관리 화면에서는 외부 Pack ZIP 설치·활성화·비활성화·사용량 확인·안전 제거와 GitHub Release 최신 안정 버전 확인·명시적 설치를 수행합니다. 외부 Code Pack은 신뢰 발행자 Ed25519 서명, 파일 digest, 정확한 PHP compiler/schema/editor 등록을 통과해야 하며 내장 component를 덮어쓸 수 없습니다.
 

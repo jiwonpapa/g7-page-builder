@@ -10,6 +10,10 @@ import compileFixture from '../Contract/compile-result-v1.fixture.json';
 import compileSchema from '../../schemas/compile-result.schema.json';
 import schema from '../../schemas/page-builder-document.schema.json';
 import officialCompanyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';
+import officialEditorialPageKit from '../../resources/store/source/page-kits/editorial-community/document.json';
+import officialEventPageKit from '../../resources/store/source/page-kits/event-launch/document.json';
+import officialLocalBusinessPageKit from '../../resources/store/source/page-kits/local-business/document.json';
+import officialServicePageKit from '../../resources/store/source/page-kits/service-conversion/document.json';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
 
 describe('PageBuilderDocument v1 schema', () => {
@@ -95,7 +99,17 @@ describe('PageBuilderDocument v1 schema', () => {
   });
 
   it('accepts every bundled official Page Kit source document', () => {
-    expect(validate(officialCompanyPageKit), JSON.stringify(validate.errors)).toBe(true);
+    const pageKits = [
+      officialCompanyPageKit,
+      officialServicePageKit,
+      officialLocalBusinessPageKit,
+      officialEventPageKit,
+      officialEditorialPageKit,
+    ];
+    expect(pageKits).toHaveLength(5);
+    pageKits.forEach((pageKit) => {
+      expect(validate(pageKit), `${pageKit.slug}: ${JSON.stringify(validate.errors)}`).toBe(true);
+    });
   });
 
   it('accepts typed G7 data blocks and rejects unsafe product routes', () => {

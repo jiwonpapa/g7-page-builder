@@ -20,8 +20,19 @@ final class OfficialStoreContractTest extends TestCase
     {
         $catalog = OfficialStoreCatalog::fromArray($this->catalogValue());
 
-        self::assertCount(2, $catalog->products);
-        self::assertSame(['block_pack', 'page_kit'], array_column($catalog->toArray()['products'], 'product_type'));
+        self::assertCount(6, $catalog->products);
+        self::assertSame(
+            ['block_pack', 'page_kit', 'page_kit', 'page_kit', 'page_kit', 'page_kit'],
+            array_column($catalog->toArray()['products'], 'product_type'),
+        );
+        self::assertSame([
+            'jiwonpapa/marketing-presets',
+            'jiwonpapa/company-launch',
+            'jiwonpapa/service-conversion',
+            'jiwonpapa/local-business',
+            'jiwonpapa/event-launch',
+            'jiwonpapa/editorial-community',
+        ], array_column($catalog->toArray()['products'], 'product_id'));
         foreach ($catalog->products as $product) {
             $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
             self::assertFileExists($path);
@@ -66,35 +77,68 @@ final class OfficialStoreContractTest extends TestCase
         OfficialStoreCatalog::fromArray($duplicate);
     }
 
-    public function test_page_kit_archive_round_trips_the_bundled_document(): void
+    public function test_page_kit_archives_round_trip_and_compile_every_bundled_document(): void
     {
         $catalog = OfficialStoreCatalog::fromArray($this->catalogValue());
-        $product = $catalog->find('jiwonpapa/company-launch', '1.0.0');
-        $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
-        $artifact = new StoreArtifact(
-            $path,
-            $product->artifact['url'],
-            $product->artifact['sha256'],
-            $product->artifact['bytes'],
+        $expectedBlocks = [
+            'jiwonpapa/company-launch' => 6,
+            'jiwonpapa/service-conversion' => 6,
+            'jiwonpapa/local-business' => 6,
+            'jiwonpapa/event-launch' => 7,
+            'jiwonpapa/editorial-community' => 5,
+        ];
+        $adapter = new ZipPageKitArchiveAdapter;
+
+        foreach ($expectedBlocks as $productId => $blockCount) {
+            $product = $catalog->find($productId, '1.0.0');
+            $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
+            $bundle = $adapter->read(new StoreArtifact(
+                $path,
+                $product->artifact['url'],
+                $product->artifact['sha256'],
+                $product->artifact['bytes'],
+                false,
+            ));
+
+            self::assertSame($productId, $bundle->kitId);
+            self::assertSame('1.0.0', $bundle->kitVersion);
+            self::assertCount($blockCount, $bundle->document->blocks);
+            self::assertCount(1, $bundle->media);
+            self::assertSame('image-1', $bundle->media[0]->id);
+            self::assertSame('image/webp', $bundle->media[0]->mimeType);
+            self::assertSame(1600, $bundle->media[0]->width);
+            self::assertSame(900, $bundle->media[0]->height);
+
+            $resolved = $bundle->document->toArray();
+            array_walk_recursive($resolved, static function (mixed &$value): void {
+                if ($value === 'g7pb-media://image-1') {
+                    $value = 'https://g7pb.test/storage/g7-page-builder/page-kit.webp';
+                } elseif ($value === 'g7pb-route://auth.login') {
+                    $value = '/login';
+                }
+            });
+            $compiled = $this->builtInCompiler()->compile(
+                PageBuilderDocument::fromArray($resolved),
+                1,
+                'html',
+                'g7-7.0.7',
+            );
+            self::assertIsString($compiled->artifact);
+            self::assertSame(
+                $blockCount,
+                substr_count($compiled->artifact, 'data-testid="page-builder-rendered-block"'),
+            );
+        }
+
+        $company = $catalog->find('jiwonpapa/company-launch', '1.0.0');
+        $companyBundle = $adapter->read(new StoreArtifact(
+            dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($company->artifact['url']),
+            $company->artifact['url'],
+            $company->artifact['sha256'],
+            $company->artifact['bytes'],
             false,
-        );
-
-        $bundle = (new ZipPageKitArchiveAdapter)->read($artifact);
-
-        self::assertSame('jiwonpapa/company-launch', $bundle->kitId);
-        self::assertSame('1.0.0', $bundle->kitVersion);
-        self::assertCount(4, $bundle->document->blocks);
-        self::assertSame('g7pb-route://auth.login', $bundle->document->blocks[3]['props']['secondaryLink']['url']);
-        self::assertSame([], $bundle->media);
-        $resolved = $bundle->document->toArray();
-        $resolved['blocks'][3]['props']['secondaryLink']['url'] = '/login';
-        $compiled = $this->builtInCompiler()->compile(
-            PageBuilderDocument::fromArray($resolved),
-            1,
-            'html',
-            'g7-7.0.7',
-        );
-        self::assertStringContainsString('data-block-type="stats"', (string) $compiled->artifact);
+        ));
+        self::assertSame('g7pb-route://auth.login', $companyBundle->document->blocks[5]['props']['secondaryLink']['url']);
     }
 
     public function test_page_kit_export_round_trips_declared_image_bytes_and_metadata(): void

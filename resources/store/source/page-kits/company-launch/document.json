@@ -22,8 +22,27 @@
         "title": "고객의 다음 성장을 함께 만듭니다",
         "body": "복잡한 문제를 이해하기 쉬운 제품과 서비스로 바꾸는 팀을 소개합니다.",
         "primaryCta": { "label": "서비스 보기", "url": "/" },
-        "mediaPosition": "right"
+        "image": { "src": "g7pb-media://image-1", "alt": "밝은 스튜디오에서 프로젝트를 함께 검토하는 세 명의 팀원" },
+        "mediaPosition": "right",
+        "appearance": { "surface": "default", "spacing": "spacious" }
       },
+      "motion": { "preset": "parallax-soft", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "slots": {}
+    },
+    {
+      "instance_id": "81000000-0000-4000-8000-000000000006",
+      "type": "content.features-grid-01",
+      "block_version": 1,
+      "props": {
+        "title": "성장에 필요한 흐름을 한 팀처럼 연결합니다",
+        "items": [
+          { "icon": "sparkles", "title": "핵심 목표 정렬", "body": "성과 기준과 우선순위를 먼저 합의해 프로젝트의 방향을 분명하게 만듭니다." },
+          { "icon": "layers", "title": "기획부터 운영까지", "body": "전략, 디자인, 개발과 운영이 끊기지 않도록 하나의 실행 흐름으로 연결합니다." },
+          { "icon": "shield", "title": "지속 가능한 결과", "body": "완료 이후에도 내부 팀이 이해하고 개선할 수 있는 기준과 자산을 남깁니다." }
+        ],
+        "appearance": { "surface": "soft", "spacing": "normal" }
+      },
+      "motion": { "preset": "stagger", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
       "slots": {}
     },
     {
@@ -37,8 +56,10 @@
           { "icon": "users", "value": "120+", "label": "완료 프로젝트", "detail": "다양한 업종의 구축 경험" },
           { "icon": "trend", "value": "98%", "label": "고객 만족", "detail": "완료 고객 설문 기준" },
           { "icon": "target", "value": "7년", "label": "운영 경험", "detail": "기획부터 운영까지" }
-        ]
+        ],
+        "appearance": { "surface": "default", "spacing": "normal" }
       },
+      "motion": { "preset": "counter", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
       "slots": {}
     },
     {
@@ -52,8 +73,27 @@
           { "name": "김기획", "role": "Product", "bio": "고객의 문제를 제품 언어로 정리합니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
           { "name": "이디자인", "role": "Design", "bio": "복잡한 흐름을 분명한 경험으로 만듭니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
           { "name": "박개발", "role": "Engineering", "bio": "안정적으로 확장되는 서비스를 구현합니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" }
-        ]
+        ],
+        "appearance": { "surface": "soft", "spacing": "normal" }
       },
+      "motion": { "preset": "stagger", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "slots": {}
+    },
+    {
+      "instance_id": "81000000-0000-4000-8000-000000000007",
+      "type": "trust.testimonials-01",
+      "block_version": 1,
+      "props": {
+        "eyebrow": "함께 만든 변화",
+        "heading": "팀 안에 실행 기준이 남았습니다",
+        "items": [
+          { "quote": "기획과 제작을 따로 설명하지 않아도 한 흐름으로 정리돼 의사결정이 빨라졌습니다.", "name": "최민서", "role": "브랜드 리드", "company": "리테일 팀", "avatarSrc": "", "avatarAlt": "", "rating": 5 },
+          { "quote": "출시 이후 운영까지 고려한 기준을 함께 받아 내부 팀이 직접 개선할 수 있었습니다.", "name": "정현우", "role": "사업 책임자", "company": "B2B 서비스", "avatarSrc": "", "avatarAlt": "", "rating": 5 }
+        ],
+        "layout": "grid",
+        "appearance": { "surface": "default", "spacing": "normal" }
+      },
+      "motion": { "preset": "reveal", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
       "slots": {}
     },
     {
@@ -66,8 +106,10 @@
         "body": "목표와 현재 상황을 알려주시면 필요한 범위부터 함께 정리합니다.",
         "primaryLink": { "label": "문의하기", "url": "/" },
         "secondaryLink": { "label": "로그인", "url": "g7pb-route://auth.login" },
-        "theme": "dark"
+        "theme": "dark",
+        "appearance": { "surface": "contrast", "spacing": "spacious" }
       },
+      "motion": { "preset": "reveal", "intensity": "normal", "trigger": "once", "stagger_ms": 100 },
       "slots": {}
     }
   ]

@@ -4,6 +4,7 @@ import {
   linesToLinks,
   safeSitePartHref,
   sitePartCanonicalToPuck,
+  sitePartPresetToPuck,
   sitePartPuckToCanonical,
 } from '../../resources/js/editor/sitePartDocumentAdapter';
 import type { SitePartDocument } from '../../resources/js/documents/types';
@@ -24,7 +25,7 @@ const header: SitePartDocument = {
       home_url: '/',
       variant: 'solid',
       sticky: true,
-      navigation: [{ label: '소개', url: '/pages/about' }],
+      navigation: [{ label: '소개', url: '/pages/about', children: [{ label: '팀', url: '/pages/team' }] }],
       cta: { label: '문의', url: '/pages/contact' },
       mobile_menu: true,
       mobile_menu_style: 'drawer-left',
@@ -120,4 +121,19 @@ describe('Site Part Puck adapter', () => {
     expect(normalized.blocks[0]?.instance_id).toMatch(/^[0-9a-f-]{36}$/);
     expect(normalized.blocks[0]?.props.cta).toBeNull();
   });
+
+  it('provides editable Header and Footer presets with typed route items', () => {
+    const businessHeader = sitePartPresetToPuck(header, 'header-business');
+    const headerNavigation = businessHeader.content.find((block) => block.type === 'HeaderNavigation');
+    expect(businessHeader.content.map((block) => block.type)).toEqual(['Announcement', 'HeaderNavigation']);
+    expect(headerNavigation?.props.navigation[0]?.children).toHaveLength(2);
+
+    const footer = { ...header, kind: 'footer' as const, site_part_id: '123e4567-e89b-42d3-a456-426614174098', blocks: [] };
+    const businessFooter = sitePartPresetToPuck(footer, 'footer-business');
+    const footerColumns = businessFooter.content.find((block) => block.type === 'FooterColumns');
+    expect(footerColumns?.props.columns).toHaveLength(3);
+    expect(footerColumns?.props.columns[0]?.links[0]).toEqual({ label: '주요 기능', url: '/pages/features' });
+    expect(sitePartPuckToCanonical(businessFooter, footer).blocks[0]?.type).toBe('site.footer.columns-01');
+  });
+
 });

@@ -29,7 +29,7 @@ Sanitized published artifact
 
 ## 현재 상태
 
-현재 모듈 버전은 `0.16.0`입니다. 29개 내장 블록과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 반응형·테마·폼·지도·G7 공개 데이터 블록, SEO 스냅샷, 미리보기·발행·복구 흐름을 제공합니다.
+현재 모듈 버전은 `0.17.0`입니다. 29개 내장 블록과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 2단 메뉴·좌우 모바일 drawer·Site Part 프리셋, 반응형·테마·폼·지도·G7 공개 데이터 블록, SEO 스냅샷, 미리보기·발행·복구 흐름을 제공합니다.
 
 현재 화면의 `무료 마켓`은 독립 마켓이 아니라 정적 catalog 두 건으로 설치·적용 계약을 검증하는 내부 배포 시험 하네스입니다. 별도 마켓 모듈, DB, 상품 관리자, 업로드·검증·게시 기능은 아직 없습니다. Page Builder 본체와 상품 규격이 안정된 뒤 [Market 모듈 스펙 주도 개발 명세](docs/market-module-spec.md)에 따라 `g7devops.com` 전용 단일 발행자 모듈로 분리합니다. 기존 소비자·무결성 계약은 [공식 무료 배포 프로토타입 계약](docs/official-store-contract.md)에 기록합니다.
 
@@ -90,12 +90,12 @@ make integration-verify TASK=integration-20260820
 6. 독립 Block Pack 계약, 14개 내장 블록 Registry 이관, 카탈로그 검색·분류·즐겨찾기
 7. G7 공개 API 기반 최근 게시글·상품 그리드와 전체·비회원·회원 노출 조건
 7. Data/Code Pack ZIP 설치·상태 전환·사용량 기반 제거, GitHub Release digest 업데이트, Ed25519 Code Pack runtime
+8. Page Builder Site Part 2단 메뉴·PC 드롭다운·모바일 하위 메뉴·Header/Footer 프리셋·전체 라우트 선택기
 
 다음:
 
-1. 선택형 Page Builder shell의 다단 메뉴·드롭다운과 Header·Footer 프리셋 확장
-2. 블록 조건부 표시, 반복 데이터 pagination, 다운로드 MediaPort 연결
-3. G7 게시글·상품 단건 상세 capability 블록
+1. 블록 조건부 표시, 반복 데이터 pagination, 다운로드 MediaPort 연결
+2. G7 게시글·상품 단건 상세 capability 블록
 
 Product Grid는 기본 MVP 뒤 `sirsoft-ecommerce` 선택 Block Pack으로만 제공합니다.
 

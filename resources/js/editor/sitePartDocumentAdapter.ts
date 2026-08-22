@@ -8,11 +8,15 @@ export interface HeaderNavigationProps {
   homeUrl: string;
   variant: 'solid' | 'transparent';
   sticky: boolean;
-  navigation: SitePartLink[];
+  navigation: HeaderNavigationItem[];
   ctaLabel: string;
   ctaUrl: string;
   mobileMenu: boolean;
   mobileMenuStyle: 'dropdown' | 'drawer-left' | 'drawer-right';
+}
+
+export interface HeaderNavigationItem extends SitePartLink {
+  children: SitePartLink[];
 }
 
 export interface AnnouncementProps {
@@ -31,7 +35,7 @@ export interface FooterSimpleProps {
 
 export interface FooterColumnItem {
   heading: string;
-  linksText: string;
+  links: SitePartLink[];
 }
 
 export interface FooterColumnsProps {
@@ -68,7 +72,7 @@ function text(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
 }
 
-function links(value: unknown): SitePartLink[] {
+function leafLinks(value: unknown): SitePartLink[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     if (!item || typeof item !== 'object') return [];
@@ -77,16 +81,33 @@ function links(value: unknown): SitePartLink[] {
   });
 }
 
+function headerLinks(value: unknown): HeaderNavigationItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const source = item as Record<string, unknown>;
+    return [{
+      label: text(source.label),
+      url: text(source.url, '/'),
+      children: leafLinks(source.children),
+    }];
+  });
+}
+
+function canonicalHeaderLinks(value: unknown): SitePartLink[] {
+  return headerLinks(value).map((item) => ({
+    label: item.label,
+    url: item.url,
+    ...(item.children.length > 0 ? { children: leafLinks(item.children) } : {}),
+  }));
+}
+
 export function linesToLinks(value: string): SitePartLink[] {
   return value.split('\n').flatMap((line) => {
     const [label, ...urlParts] = line.split('|');
     const url = urlParts.join('|').trim();
     return label?.trim() && url ? [{ label: label.trim(), url }] : [];
   });
-}
-
-function linksToLines(value: unknown): string {
-  return links(value).map((item) => `${item.label}|${item.url}`).join('\n');
 }
 
 function stableUuid(value: string): string {
@@ -112,6 +133,90 @@ export function safeSitePartHref(value: string): string {
   }
 }
 
+export type SitePartPresetKey =
+  | 'header-business'
+  | 'header-minimal'
+  | 'header-community'
+  | 'footer-business'
+  | 'footer-compact'
+  | 'footer-community';
+
+export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePartPresetKey): SitePartPuckData {
+  const presetId = (component: keyof SitePartComponents): string => stableUuid(`${preset}:${component}:${document.locale}`);
+  if (document.kind === 'header') {
+    const navigation = preset === 'header-community'
+      ? [
+        { label: '커뮤니티', url: '/boards', children: [{ label: '최신글', url: '/boards' }, { label: '인기글', url: '/boards?sort=popular' }] },
+        { label: '이용 안내', url: '/pages/guide', children: [] },
+      ]
+      : preset === 'header-minimal'
+        ? [{ label: '소개', url: '/pages/about', children: [] }, { label: '문의', url: '/pages/contact', children: [] }]
+        : [
+          { label: '서비스', url: '/pages/services', children: [{ label: '주요 기능', url: '/pages/features' }, { label: '요금 안내', url: '/pages/pricing' }] },
+          { label: '회사 소개', url: '/pages/about', children: [{ label: '팀', url: '/pages/team' }, { label: '오시는 길', url: '/pages/location' }] },
+        ];
+    const header: SitePartPuckData['content'][number] = {
+      type: 'HeaderNavigation',
+      props: {
+        id: presetId('HeaderNavigation'),
+        brandName: '사이트 이름',
+        logoUrl: '',
+        homeUrl: '/',
+        variant: preset === 'header-minimal' ? 'transparent' : 'solid',
+        sticky: true,
+        navigation,
+        ctaLabel: preset === 'header-minimal' ? '' : preset === 'header-community' ? '로그인' : '문의하기',
+        ctaUrl: preset === 'header-community' ? '/login' : '/pages/contact',
+        mobileMenu: true,
+        mobileMenuStyle: preset === 'header-community' ? 'drawer-left' : 'drawer-right',
+      },
+    };
+    const content: SitePartPuckData['content'] = preset === 'header-business'
+      ? [{
+        type: 'Announcement',
+        props: { id: presetId('Announcement'), text: '중요한 소식을 짧게 알려보세요.', linkLabel: '자세히', linkUrl: '/pages/news', tone: 'brand' },
+      }, header]
+      : [header];
+    return { root: { props: {} }, content } as SitePartPuckData;
+  }
+
+  if (preset === 'footer-compact') {
+    return {
+      root: { props: {} },
+      content: [{
+        type: 'FooterSimple',
+        props: {
+          id: presetId('FooterSimple'), brandName: '사이트 이름', homeUrl: '/',
+          navigation: [{ label: '소개', url: '/pages/about' }, { label: '문의', url: '/pages/contact' }, { label: '개인정보처리방침', url: '/pages/privacy' }],
+          footerText: '© 사이트 이름. All rights reserved.',
+        },
+      }],
+    } as SitePartPuckData;
+  }
+
+  const columns = preset === 'footer-community'
+    ? [
+      { heading: '커뮤니티', links: [{ label: '최신글', url: '/boards' }, { label: '인기글', url: '/boards?sort=popular' }] },
+      { heading: '회원', links: [{ label: '로그인', url: '/login' }, { label: '회원가입', url: '/register' }] },
+      { heading: '안내', links: [{ label: '이용약관', url: '/pages/terms' }, { label: '개인정보처리방침', url: '/pages/privacy' }] },
+    ]
+    : [
+      { heading: '서비스', links: [{ label: '주요 기능', url: '/pages/features' }, { label: '요금 안내', url: '/pages/pricing' }] },
+      { heading: '회사', links: [{ label: '소개', url: '/pages/about' }, { label: '오시는 길', url: '/pages/location' }] },
+      { heading: '지원', links: [{ label: '문의', url: '/pages/contact' }, { label: '개인정보처리방침', url: '/pages/privacy' }] },
+    ];
+  return {
+    root: { props: {} },
+    content: [{
+      type: 'FooterColumns',
+      props: {
+        id: presetId('FooterColumns'), brandName: '사이트 이름', homeUrl: '/', columns,
+        legalText: '상호·대표·사업자번호·연락처 등 필수 사업자 정보를 입력해 주세요.',
+      },
+    }],
+  } as SitePartPuckData;
+}
+
 export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuckData {
   const content: SitePartPuckData['content'] = [];
   for (const block of document.blocks) {
@@ -128,7 +233,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
         homeUrl: text(props.home_url, '/'),
         variant: props.variant === 'transparent' ? 'transparent' : 'solid',
         sticky: props.sticky !== false,
-        navigation: links(props.navigation),
+        navigation: headerLinks(props.navigation),
         ctaLabel: text(cta.label),
         ctaUrl: text(cta.url, '/'),
         mobileMenu: props.mobile_menu !== false,
@@ -153,7 +258,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
         id,
         brandName: text(props.brand_name, '사이트 이름'),
         homeUrl: text(props.home_url, '/'),
-        navigation: links(props.navigation),
+        navigation: leafLinks(props.navigation),
         footerText: text(props.footer_text),
       } });
       continue;
@@ -161,7 +266,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
     const columns = Array.isArray(props.columns) ? props.columns.flatMap((item) => {
       if (!item || typeof item !== 'object') return [];
       const source = item as Record<string, unknown>;
-      return [{ heading: text(source.heading, '메뉴'), linksText: linksToLines(source.links) }];
+      return [{ heading: text(source.heading, '메뉴'), links: leafLinks(source.links) }];
     }) : [];
     content.push({ type: component, props: {
       id,
@@ -188,7 +293,7 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
       canonicalProps = {
         brand_name: text(props.brandName), logo_url: text(props.logoUrl), home_url: text(props.homeUrl, '/'),
         variant: props.variant === 'transparent' ? 'transparent' : 'solid', sticky: props.sticky !== false,
-        navigation: links(props.navigation), cta: ctaLabel && ctaUrl ? { label: ctaLabel, url: ctaUrl } : null,
+        navigation: canonicalHeaderLinks(props.navigation), cta: ctaLabel && ctaUrl ? { label: ctaLabel, url: ctaUrl } : null,
         mobile_menu: props.mobileMenu !== false,
         ...(Object.prototype.hasOwnProperty.call(sourceBlock?.props ?? {}, 'mobile_menu_style') || mobileMenuStyle !== 'drawer-right'
           ? { mobile_menu_style: mobileMenuStyle }
@@ -202,13 +307,13 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
     } else if (component === 'FooterSimple') {
       canonicalProps = {
         brand_name: text(props.brandName), home_url: text(props.homeUrl, '/'),
-        navigation: links(props.navigation), footer_text: text(props.footerText),
+        navigation: leafLinks(props.navigation), footer_text: text(props.footerText),
       };
     } else {
       const columns = Array.isArray(props.columns) ? props.columns.flatMap((item) => {
         if (!item || typeof item !== 'object') return [];
         const sourceColumn = item as Record<string, unknown>;
-        return [{ heading: text(sourceColumn.heading), links: linesToLinks(text(sourceColumn.linksText)) }];
+        return [{ heading: text(sourceColumn.heading), links: leafLinks(sourceColumn.links) }];
       }) : [];
       canonicalProps = {
         brand_name: text(props.brandName), home_url: text(props.homeUrl, '/'), columns, legal_text: text(props.legalText),

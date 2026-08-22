@@ -250,7 +250,11 @@ final class DomainContractsTest extends TestCase
                 'props' => [
                     'brand_name' => '<script>alert(1)</script>',
                     'home_url' => '/',
-                    'navigation' => [['label' => '소개', 'url' => '/pages/about']],
+                    'navigation' => [[
+                        'label' => '소개',
+                        'url' => '/pages/about',
+                        'children' => [['label' => '팀', 'url' => '/pages/team']],
+                    ]],
                     'mobile_menu_style' => 'drawer-left',
                 ],
                 'slots' => [],
@@ -264,6 +268,10 @@ final class DomainContractsTest extends TestCase
         self::assertStringContainsString('data-g7pb-menu-style="drawer-left"', $artifact->html);
         self::assertStringContainsString('data-g7pb-menu-backdrop', $artifact->html);
         self::assertStringContainsString('data-g7pb-menu-close', $artifact->html);
+        self::assertStringContainsString('class="g7pb-site-subnav"', $artifact->html);
+        self::assertStringContainsString('data-g7pb-submenu-toggle', $artifact->html);
+        self::assertStringContainsString('data-g7pb-mobile-submenu', $artifact->html);
+        self::assertStringContainsString('/pages/team', $artifact->html);
         self::assertSame(3, $artifact->sourceRevision);
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $artifact->artifactSha256);
 
@@ -272,5 +280,38 @@ final class DomainContractsTest extends TestCase
 
         $this->expectException(DocumentCompileException::class);
         (new SitePartHtmlCompiler)->compile(SitePartDocument::fromArray($unsafe), 3);
+    }
+
+    public function test_site_part_compiler_rejects_a_third_navigation_level(): void
+    {
+        $document = new SitePartDocument(
+            sitePartId: '00000000-0000-4000-8000-000000000010',
+            kind: 'header',
+            locale: 'ko',
+            tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000011',
+                'type' => 'site.header.navigation-01',
+                'block_version' => 1,
+                'props' => [
+                    'brand_name' => '지원소프트',
+                    'home_url' => '/',
+                    'navigation' => [[
+                        'label' => '서비스',
+                        'url' => '/pages/services',
+                        'children' => [[
+                            'label' => '기능',
+                            'url' => '/pages/features',
+                            'children' => [['label' => '깊은 링크', 'url' => '/pages/deep']],
+                        ]],
+                    ]],
+                ],
+                'slots' => [],
+            ]],
+        );
+
+        $this->expectException(DocumentCompileException::class);
+        $this->expectExceptionMessage('only two menu levels');
+        (new SitePartHtmlCompiler)->compile($document, 1);
     }
 }

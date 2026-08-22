@@ -8,7 +8,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 
 final class SitePartHtmlCompiler
 {
-    public const COMPILER_VERSION = '0.2.0';
+    public const COMPILER_VERSION = '0.3.0';
 
     public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
     {
@@ -54,7 +54,7 @@ final class SitePartHtmlCompiler
             $this->assertImageUrl($logo);
         }
 
-        $navigation = $this->links($props['navigation'] ?? [], 10, 'Header navigation');
+        $navigation = $this->navigationLinks($props['navigation'] ?? [], 10, 8, 'Header navigation');
         $cta = $props['cta'] ?? null;
         if ($cta !== null && ! is_array($cta)) {
             throw new DocumentCompileException('Header CTA must be an object.');
@@ -73,10 +73,7 @@ final class SitePartHtmlCompiler
         $ctaHtml = $ctaLink === null ? '' : '<a class="g7pb-site-header__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
         $mobileHtml = '';
         if ($mobileMenu && ($navigation !== [] || $ctaLink !== null)) {
-            $mobileLinks = implode('', array_map(
-                fn (array $link): string => '<li><a href="'.$this->attribute($link['url']).'">'.$this->escape($link['label']).'</a></li>',
-                $navigation,
-            ));
+            $mobileLinks = $this->mobileNavigation($navigation);
             $mobileCta = $ctaLink === null ? '' : '<a class="g7pb-mobile-menu__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
             $close = $mobileMenuStyle === 'dropdown' ? '' : '<button class="g7pb-mobile-menu__close" type="button" aria-label="메뉴 닫기" data-g7pb-menu-close>&times;</button>';
             $backdrop = $mobileMenuStyle === 'dropdown' ? '' : '<button class="g7pb-mobile-menu__backdrop" type="button" aria-label="메뉴 닫기" data-g7pb-menu-backdrop hidden></button>';
@@ -184,18 +181,87 @@ final class SitePartHtmlCompiler
         return ['label' => $label, 'url' => $url];
     }
 
-    /** @param list<array{label: string, url: string}> $links */
+    /** @param list<array{label: string, url: string, children?: list<array{label: string, url: string}>}> $links */
     private function navigation(array $links, string $label, string $class): string
     {
         if ($links === []) {
             return '';
         }
         $items = implode('', array_map(
-            fn (array $link): string => '<li><a href="'.$this->attribute($link['url']).'">'.$this->escape($link['label']).'</a></li>',
+            function (array $link): string {
+                $children = $link['children'] ?? [];
+                $submenu = '';
+                $class = '';
+                $indicator = '';
+                if ($children !== []) {
+                    $class = ' class="has-children"';
+                    $indicator = '<span aria-hidden="true">⌄</span>';
+                    $submenuItems = implode('', array_map(
+                        fn (array $child): string => '<li><a href="'.$this->attribute($child['url']).'">'.$this->escape($child['label']).'</a></li>',
+                        $children,
+                    ));
+                    $submenu = '<ul class="g7pb-site-subnav">'.$submenuItems.'</ul>';
+                }
+
+                return '<li'.$class.'><a href="'.$this->attribute($link['url']).'">'.$this->escape($link['label']).$indicator.'</a>'.$submenu.'</li>';
+            },
             $links,
         ));
 
         return '<nav'.($class === '' ? '' : ' class="'.$class.'"').' aria-label="'.$this->attribute($label).'"><ul>'.$items.'</ul></nav>';
+    }
+
+    /**
+     * @param  list<array{label: string, url: string, children?: list<array{label: string, url: string}>}>  $links
+     */
+    private function mobileNavigation(array $links): string
+    {
+        $items = [];
+        foreach ($links as $index => $link) {
+            $children = $link['children'] ?? [];
+            if ($children === []) {
+                $items[] = '<li><a href="'.$this->attribute($link['url']).'">'.$this->escape($link['label']).'</a></li>';
+
+                continue;
+            }
+            $submenuId = 'g7pb-mobile-submenu-'.substr(hash('sha256', $link['url'].':'.$index), 0, 10);
+            $submenuItems = implode('', array_map(
+                fn (array $child): string => '<li><a href="'.$this->attribute($child['url']).'">'.$this->escape($child['label']).'</a></li>',
+                $children,
+            ));
+            $items[] = '<li class="has-children"><div class="g7pb-mobile-menu__row"><a href="'.$this->attribute($link['url']).'">'.$this->escape($link['label']).'</a>'
+                .'<button type="button" aria-expanded="false" aria-controls="'.$submenuId.'" aria-label="'.$this->attribute($link['label'].' 하위 메뉴 열기').'" data-g7pb-submenu-toggle><span aria-hidden="true">⌄</span></button></div>'
+                .'<ul class="g7pb-mobile-subnav" id="'.$submenuId.'" data-g7pb-mobile-submenu hidden>'.$submenuItems.'</ul></li>';
+        }
+
+        return implode('', $items);
+    }
+
+    /**
+     * @return list<array{label: string, url: string, children?: list<array{label: string, url: string}>}>
+     */
+    private function navigationLinks(mixed $value, int $maximum, int $childMaximum, string $context): array
+    {
+        if (! is_array($value) || count($value) > $maximum) {
+            throw new DocumentCompileException("{$context} is invalid.");
+        }
+
+        $links = [];
+        foreach (array_values($value) as $index => $item) {
+            if (! is_array($item) || array_diff(array_keys($item), ['label', 'url', 'children']) !== []) {
+                throw new DocumentCompileException("{$context} link {$index} is invalid.");
+            }
+            $link = $this->link($item, $context);
+            $children = $this->links($item['children'] ?? [], $childMaximum, "{$context} child {$index}");
+            foreach (($item['children'] ?? []) as $child) {
+                if (is_array($child) && array_key_exists('children', $child)) {
+                    throw new DocumentCompileException("{$context} supports only two menu levels.");
+                }
+            }
+            $links[] = $children === [] ? $link : [...$link, 'children' => $children];
+        }
+
+        return $links;
     }
 
     /** @param array<string, mixed> $data */

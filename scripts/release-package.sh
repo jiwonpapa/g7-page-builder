@@ -27,8 +27,16 @@ for required in \
   resources/store/dist/catalog.json \
   resources/store/dist/artifacts/jiwonpapa-marketing-presets-1.0.0.zip \
   resources/store/dist/artifacts/jiwonpapa-company-launch-1.0.0.zip \
+  resources/store/dist/artifacts/jiwonpapa-service-conversion-1.0.0.zip \
+  resources/store/dist/artifacts/jiwonpapa-local-business-1.0.0.zip \
+  resources/store/dist/artifacts/jiwonpapa-event-launch-1.0.0.zip \
+  resources/store/dist/artifacts/jiwonpapa-editorial-community-1.0.0.zip \
   resources/store/dist/previews/marketing-presets.svg \
   resources/store/dist/previews/company-launch.svg \
+  resources/store/dist/previews/service-conversion.svg \
+  resources/store/dist/previews/local-business.svg \
+  resources/store/dist/previews/event-launch.svg \
+  resources/store/dist/previews/editorial-community.svg \
   schemas/official-store-catalog.schema.json schemas/page-kit-manifest.schema.json; do
   [[ -f "$root/$required" ]] || { echo "Missing release input: $required" >&2; exit 2; }
 done

@@ -124,6 +124,39 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(dynamic)).toBe(false);
   });
 
+  it('accepts typed G7 details, pagination and generic visibility while rejecting arbitrary audiences', () => {
+    const document = {
+      ...structuredClone(fixture),
+      blocks: [
+        {
+          instance_id: '00000000-0000-4000-8000-000000000092',
+          type: 'g7.board-post-detail-01', block_version: 1,
+          props: { eyebrow: 'POST', heading: '게시글', boardSlug: 'notice', postId: 17, detailUrl: '/board/notice/17', linkLabel: '전체 보기', audience: 'all', showContent: true, emptyMessage: '글이 없습니다.' },
+          visibility: { audience: 'member' }, slots: {},
+        },
+        {
+          instance_id: '00000000-0000-4000-8000-000000000093',
+          type: 'g7.ecommerce-product-detail-01', block_version: 1,
+          props: { eyebrow: 'PRODUCT', heading: '상품', productKey: 'SKU-17', detailUrl: '/shop/products/SKU-17', buttonLabel: '상품 보기', audience: 'guest', showDescription: true, emptyMessage: '상품이 없습니다.' },
+          visibility: { audience: 'all' }, slots: {},
+        },
+        {
+          instance_id: '00000000-0000-4000-8000-000000000094',
+          type: 'g7.board-recent-posts-01', block_version: 1,
+          props: { eyebrow: 'NEWS', heading: '최근 글', source: 'recent', period: 'week', limit: 6, pageSize: 3, audience: 'all', emptyMessage: '글이 없습니다.' },
+          slots: {},
+        },
+      ],
+    };
+    expect(validate(document), JSON.stringify(validate.errors)).toBe(true);
+
+    document.blocks[0]!.visibility = { audience: 'administrator' };
+    expect(validate(document)).toBe(false);
+    document.blocks[0]!.visibility = { audience: 'member' };
+    document.blocks[1]!.props.productKey = '../unsafe';
+    expect(validate(document)).toBe(false);
+  });
+
   it('rejects unsafe or out-of-range catalog values', () => {
     const invalid = structuredClone(catalogFixture) as unknown as {
       blocks: Array<{ props: { items: Array<Record<string, unknown>> } }>;

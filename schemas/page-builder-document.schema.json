@@ -97,6 +97,9 @@
         "motion": {
           "$ref": "#/$defs/motion"
         },
+        "visibility": {
+          "$ref": "#/$defs/visibility"
+        },
         "slots": {
           "type": "object",
           "propertyNames": {
@@ -180,6 +183,14 @@
         {
           "if": { "properties": { "type": { "const": "g7.ecommerce-product-grid-01" } }, "required": ["type"] },
           "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/g7ProductGridProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "g7.board-post-detail-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/g7PostDetailProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "g7.ecommerce-product-detail-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/g7ProductDetailProps" } } }
         },
         {
           "if": { "properties": { "type": { "const": "content.heading-01" } }, "required": ["type"] },
@@ -285,6 +296,14 @@
         "stagger_ms": {
           "enum": [60, 100, 160]
         }
+      }
+    },
+    "visibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audience"],
+      "properties": {
+        "audience": { "enum": ["all", "guest", "member"] }
       }
     },
     "image": {
@@ -510,6 +529,7 @@
         "source": { "enum": ["recent", "popular"] },
         "period": { "enum": ["today", "week", "month", "year"] },
         "limit": { "enum": [3, 4, 6, 8, 12] },
+        "pageSize": { "enum": [3, 4, 6] },
         "audience": { "enum": ["all", "guest", "member"] },
         "emptyMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
         "appearance": { "$ref": "#/$defs/appearance" }
@@ -525,6 +545,7 @@
         "source": { "enum": ["latest", "new", "popular"] },
         "limit": { "enum": [2, 3, 4, 6, 8, 12] },
         "columns": { "enum": [2, 3, 4] },
+        "pageSize": { "enum": [2, 3, 4, 6] },
         "audience": { "enum": ["all", "guest", "member"] },
         "detailBasePath": {
           "type": "string",
@@ -532,6 +553,39 @@
           "maxLength": 200,
           "pattern": "^/[a-zA-Z0-9/_-]*$"
         },
+        "emptyMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "g7PostDetailProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "boardSlug", "postId", "detailUrl", "linkLabel", "audience", "showContent", "emptyMessage"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "boardSlug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,79}$" },
+        "postId": { "type": "integer", "minimum": 1 },
+        "detailUrl": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "linkLabel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "audience": { "enum": ["all", "guest", "member"] },
+        "showContent": { "type": "boolean" },
+        "emptyMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "g7ProductDetailProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "productKey", "detailUrl", "buttonLabel", "audience", "showDescription", "emptyMessage"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "productKey": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$" },
+        "detailUrl": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "buttonLabel": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "audience": { "enum": ["all", "guest", "member"] },
+        "showDescription": { "type": "boolean" },
         "emptyMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
         "appearance": { "$ref": "#/$defs/appearance" }
       }

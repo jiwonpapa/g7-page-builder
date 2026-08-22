@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title">
+  <title id="title">G7 게시글 상세 블록</title>
+  <rect width="320" height="180" rx="18" fill="#f6f7fb"/>
+  <rect x="30" y="25" width="74" height="9" rx="4.5" fill="#5474d8"/>
+  <rect x="30" y="48" width="230" height="22" rx="7" fill="#172033"/>
+  <rect x="30" y="86" width="260" height="7" rx="3.5" fill="#a9b3c2"/>
+  <rect x="30" y="103" width="244" height="7" rx="3.5" fill="#c3cad4"/>
+  <rect x="30" y="120" width="202" height="7" rx="3.5" fill="#c3cad4"/>
+  <rect x="30" y="145" width="92" height="13" rx="6.5" fill="#5474d8"/>
+</svg>

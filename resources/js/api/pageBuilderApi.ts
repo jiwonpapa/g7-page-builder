@@ -3,6 +3,7 @@ import type {
   DocumentListResource,
   DocumentResource,
   MediaAssetResource,
+  MediaAssetKind,
   MediaListResource,
   SiteShellResource,
   FormSubmissionListResource,
@@ -357,13 +358,14 @@ export class PageBuilderApiClient {
     });
   }
 
-  async listMedia(): Promise<MediaListResource> {
-    return this.request<MediaListResource>('/media');
+  async listMedia(kind: MediaAssetKind = 'image'): Promise<MediaListResource> {
+    return this.request<MediaListResource>(`/media?kind=${encodeURIComponent(kind)}`);
   }
 
-  async uploadMedia(file: File): Promise<MediaAssetResource> {
+  async uploadMedia(file: File, kind: MediaAssetKind = 'image'): Promise<MediaAssetResource> {
     const form = new FormData();
     form.append('file', file);
+    form.append('kind', kind);
 
     return this.request<MediaAssetResource>('/media', {
       method: 'POST',

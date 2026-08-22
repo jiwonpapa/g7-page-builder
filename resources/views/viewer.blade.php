@@ -229,6 +229,22 @@
         .g7pb-dynamic-products a { display: grid; gap: .7rem; color: inherit; text-decoration: none; }
         .g7pb-dynamic-products img, .g7pb-dynamic-products__placeholder { display: grid; width: 100%; aspect-ratio: 1 / 1; place-items: center; overflow: hidden; border-radius: var(--g7pb-theme-radius); background: #e5e9f0; object-fit: cover; }
         .g7pb-dynamic-products a > span:last-child { color: var(--g7pb-theme-accent-strong); font-weight: 800; }
+        .g7pb-dynamic-pagination { display: flex; align-items: center; justify-content: center; gap: .75rem; margin-top: 2rem; }
+        .g7pb-dynamic-pagination[hidden] { display: none; }
+        .g7pb-dynamic-pagination button { min-height: 2.5rem; padding: .5rem .9rem; border: 1px solid var(--g7pb-page-border, #dfe2e8); border-radius: var(--g7pb-theme-radius); color: inherit; background: transparent; font: inherit; font-weight: 750; cursor: pointer; }
+        .g7pb-dynamic-pagination button:disabled { opacity: .4; cursor: not-allowed; }
+        .g7pb-dynamic-pagination span { min-width: 4rem; color: var(--g7pb-page-muted, #526071); text-align: center; }
+        .g7pb-data-detail__content[aria-busy='true'] { min-height: 12rem; }
+        .g7pb-data-detail__content article { display: grid; gap: 1rem; }
+        .g7pb-data-detail__content h3 { margin: 0; font-size: clamp(1.8rem, 4vw, 3.4rem); line-height: 1.08; }
+        .g7pb-data-detail__content p { max-width: 70ch; margin: 0; color: var(--g7pb-page-muted, #526071); line-height: 1.75; }
+        .g7pb-data-detail__content a { justify-self: start; padding: .75rem 1rem; border-radius: var(--g7pb-theme-radius); color: #fff; background: var(--g7pb-theme-accent); font-weight: 800; text-decoration: none; }
+        .g7pb-data-detail__meta { color: var(--g7pb-theme-accent) !important; font-size: .78rem; font-weight: 750; }
+        .g7pb-post-detail .g7pb-data-detail__content img { width: 100%; max-height: 30rem; border-radius: var(--g7pb-theme-radius); object-fit: cover; }
+        .g7pb-product-detail .g7pb-data-detail__content article { grid-template-columns: minmax(14rem, .8fr) minmax(0, 1fr); align-items: center; gap: clamp(1.5rem, 5vw, 4rem); }
+        .g7pb-product-detail .g7pb-data-detail__content article > img, .g7pb-data-detail__placeholder { display: grid; width: 100%; aspect-ratio: 1 / 1; place-items: center; border-radius: var(--g7pb-theme-radius); background: #e5e9f0; object-fit: cover; }
+        .g7pb-product-detail .g7pb-data-detail__content article > div { display: grid; gap: 1rem; }
+        .g7pb-product-detail .g7pb-data-detail__content strong { font-size: 1.35rem; }
         .g7pb-media-placeholder { display: grid; width: 100%; height: 100%; min-height: 12rem; place-items: center; background: linear-gradient(145deg, #e9edf4, #dce3ee); color: #657187; font-size: .8rem; font-weight: 750; }
         .g7pb-surface--contrast .g7pb-media-placeholder { background: linear-gradient(145deg, #2b3950, #40516c); color: #dbe5f3; }
         .g7pb-hero-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, .9fr); align-items: center; gap: clamp(2rem, 7vw, 7rem); }
@@ -535,6 +551,7 @@
             .g7pb-downloads__type { width: 3rem; }
             .g7pb-archive__tools { display: grid; }
             .g7pb-product-showcase__items { grid-template-columns: 1fr; }
+            .g7pb-product-detail .g7pb-data-detail__content article { grid-template-columns: 1fr; }
             .g7pb-buttons__items { align-items: stretch; flex-direction: column; }
             .g7pb-buttons__items .g7pb-button { width: 100%; }
             .g7pb-icon-list__items { grid-template-columns: 1fr; }
@@ -546,7 +563,7 @@
             .g7pb-mobile-menu, .g7pb-site-subnav { animation: none !important; transition: none !important; }
         }
     </style>
-    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source=') || str_contains($page->artifact, 'data-g7pb-inquiry-form') || str_contains($page->artifact, 'data-g7pb-accordion') || str_contains($page->artifact, 'data-g7pb-tabs'))
+    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source=') || str_contains($page->artifact, 'data-g7pb-visibility-audience=') || str_contains($page->artifact, 'data-g7pb-inquiry-form') || str_contains($page->artifact, 'data-g7pb-accordion') || str_contains($page->artifact, 'data-g7pb-tabs'))
         <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}"></script>
     @endif
 </head>

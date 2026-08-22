@@ -83,7 +83,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 1. 관리자 API 인증 뒤 독립 Page Builder 문서함 URL 진입
 2. Page Builder 문서함에서 page/document 생성·재진입
-3. 좌측 35종 블록·18개 프리셋 축소 미리보기 노출, block 사이 실드래그 삽입, 상세 미리보기 추가·속성 편집·순서 변경
+3. 좌측 37종 블록·18개 프리셋 축소 미리보기 노출, block 사이 실드래그 삽입, 상세 미리보기 추가·속성 편집·순서 변경
 4. 라이트·다크·기기 테마, Header·Page·Footer 전체 사이트 캔버스와 embedded Site Part 전환
 5. 선택 블록 글자 크기·정렬, 버튼 route·Hero media 문맥 편집과 문의 폼 제출·모바일 drawer 초점 순환
 6. reload 뒤 동일성
@@ -98,6 +98,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 15. 활성 User Template route catalog에서 로그인 route를 선택하고 URL이 저장되는지 확인
 16. `template` 문서를 `/pages/{slug}`에서 활성 `_user_base` 안에 렌더하고 Page Builder Site Part가 섞이지 않는지 확인
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
+18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 

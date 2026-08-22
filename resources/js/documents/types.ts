@@ -35,6 +35,8 @@ export const IMAGE_BLOCK_TYPE = 'media.image-01' as const;
 export const BUTTONS_BLOCK_TYPE = 'action.buttons-01' as const;
 export const IMAGE_TEXT_BLOCK_TYPE = 'media.image-text-01' as const;
 export const ICON_LIST_BLOCK_TYPE = 'content.icon-list-01' as const;
+export const G7_POST_DETAIL_BLOCK_TYPE = 'g7.board-post-detail-01' as const;
+export const G7_PRODUCT_DETAIL_BLOCK_TYPE = 'g7.ecommerce-product-detail-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -239,12 +241,17 @@ export interface BarChartBlockProps {
 
 export type DynamicAudience = 'all' | 'guest' | 'member';
 
+export interface BlockVisibility {
+  audience: DynamicAudience;
+}
+
 export interface G7RecentPostsBlockProps {
   eyebrow: string;
   heading: string;
   source: 'recent' | 'popular';
   period: 'today' | 'week' | 'month' | 'year';
   limit: 3 | 4 | 6 | 8 | 12;
+  pageSize?: 3 | 4 | 6;
   audience: DynamicAudience;
   emptyMessage: string;
   appearance?: BlockAppearance;
@@ -256,6 +263,7 @@ export interface G7ProductGridBlockProps {
   source: 'latest' | 'new' | 'popular';
   limit: 2 | 3 | 4 | 6 | 8 | 12;
   columns: 2 | 3 | 4;
+  pageSize?: 2 | 3 | 4 | 6;
   audience: DynamicAudience;
   detailBasePath: string;
   emptyMessage: string;
@@ -461,6 +469,7 @@ export interface G7BoardArchiveBlockProps {
   source: 'recent' | 'popular';
   period: 'today' | 'week' | 'month' | 'year';
   limit: 6 | 8 | 12;
+  pageSize?: 3 | 4 | 6;
   audience: DynamicAudience;
   showSearch: boolean;
   showBoardFilter: boolean;
@@ -473,6 +482,7 @@ export interface G7ProductShowcaseBlockProps {
   heading: string;
   source: 'latest' | 'new' | 'popular';
   limit: 3 | 4 | 6 | 8;
+  pageSize?: 3 | 4;
   audience: DynamicAudience;
   detailBasePath: string;
   layout: 'featured' | 'rail';
@@ -539,12 +549,38 @@ export interface IconListBlockProps {
   appearance?: BlockAppearance;
 }
 
+export interface G7PostDetailBlockProps {
+  eyebrow: string;
+  heading: string;
+  boardSlug: string;
+  postId: number;
+  detailUrl: string;
+  linkLabel: string;
+  audience: DynamicAudience;
+  showContent: boolean;
+  emptyMessage: string;
+  appearance?: BlockAppearance;
+}
+
+export interface G7ProductDetailBlockProps {
+  eyebrow: string;
+  heading: string;
+  productKey: string;
+  detailUrl: string;
+  buttonLabel: string;
+  audience: DynamicAudience;
+  showDescription: boolean;
+  emptyMessage: string;
+  appearance?: BlockAppearance;
+}
+
 export interface PageBuilderBlock<TProps extends Record<string, unknown> = Record<string, unknown>> {
   instance_id: string;
   type: string;
   block_version: number;
   props: TProps;
   motion?: BlockMotion;
+  visibility?: BlockVisibility;
   slots?: Record<string, PageBuilderBlock[]>;
 }
 
@@ -659,8 +695,11 @@ export interface MediaAssetResource {
   bytes: number;
   width: number;
   height: number;
+  kind: MediaAssetKind;
   created_at: string;
 }
+
+export type MediaAssetKind = 'image' | 'download';
 
 export interface MediaListResource {
   items: MediaAssetResource[];

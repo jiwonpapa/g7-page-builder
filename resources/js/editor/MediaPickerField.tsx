@@ -40,7 +40,7 @@ function MediaPicker({
     if (!open || assets.length > 0 || assetsAttempted) return;
     setAssetsAttempted(true);
     setLoading(true);
-    void api.listMedia()
+    void api.listMedia('image')
       .then((result) => setAssets(result.items))
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : '미디어를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
@@ -63,7 +63,7 @@ function MediaPicker({
     setLoading(true);
     setError(null);
     try {
-      const asset = await api.uploadMedia(file);
+      const asset = await api.uploadMedia(file, 'image');
       setAssets((current) => [asset, ...current.filter((item) => item.id !== asset.id)]);
       onChange(asset.url);
       setOpen(false);

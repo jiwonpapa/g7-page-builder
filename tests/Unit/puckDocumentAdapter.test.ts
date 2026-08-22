@@ -13,7 +13,9 @@ import {
   DOWNLOAD_RESOURCES_BLOCK_TYPE,
   EVENT_SCHEDULE_BLOCK_TYPE,
   G7_BOARD_ARCHIVE_BLOCK_TYPE,
+  G7_POST_DETAIL_BLOCK_TYPE,
   G7_PRODUCT_GRID_BLOCK_TYPE,
+  G7_PRODUCT_DETAIL_BLOCK_TYPE,
   G7_PRODUCT_SHOWCASE_BLOCK_TYPE,
   G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_BLOCK_TYPE,
@@ -500,6 +502,39 @@ describe('Puck PageBuilderDocument adapter', () => {
     expect(components.LogoCarousel.fields.heading.contentEditable).toBe(true);
     expect((components.EventSchedule.fields.items.arrayFields as Record<string, Record<string, unknown>>).title.contentEditable).toBe(true);
     expect(components.G7BoardArchive.fields.showSearch.contentEditable).not.toBe(true);
+  });
+
+  it('round-trips G7 detail blocks and keeps generic audience visibility outside block props', () => {
+    const phaseFour: PageBuilderDocument = {
+      ...documentFixture,
+      blocks: [
+        {
+          instance_id: '123e4567-e89b-42d3-a456-426614174026', type: G7_POST_DETAIL_BLOCK_TYPE, block_version: 1,
+          props: { eyebrow: '게시글', heading: '공지 상세', boardSlug: 'notice', postId: 17, detailUrl: '/board/notice/17', linkLabel: '전체 보기', audience: 'all', showContent: true, emptyMessage: '게시글이 없습니다.' },
+          visibility: { audience: 'member' }, slots: {},
+        },
+        {
+          instance_id: '123e4567-e89b-42d3-a456-426614174027', type: G7_PRODUCT_DETAIL_BLOCK_TYPE, block_version: 1,
+          props: { eyebrow: '상품', heading: '상품 상세', productKey: 'SKU-17', detailUrl: '/shop/products/SKU-17', buttonLabel: '상품 보기', audience: 'guest', showDescription: false, emptyMessage: '상품이 없습니다.' },
+          visibility: { audience: 'all' }, slots: {},
+        },
+      ],
+    };
+
+    const session = canonicalToPuck(phaseFour);
+    expect(session.data.content.map((block) => block.type)).toEqual(['G7PostDetail', 'G7ProductDetail']);
+    expect((session.data.content[0]!.props as Record<string, unknown>).__g7pbVisibilityAudience).toBe('member');
+    expect(puckToCanonical(session.data, session.context)).toEqual(phaseFour);
+
+    const edited = structuredClone(session.data) as PuckEditorData;
+    (edited.content[0]!.props as Record<string, unknown>).__g7pbVisibilityAudience = 'guest';
+    expect(puckToCanonical(edited, session.context).blocks[0]!.visibility).toEqual({ audience: 'guest' });
+    expect(puckToCanonical(edited, session.context).blocks[0]!.props).not.toHaveProperty('__g7pbVisibilityAudience');
+
+    const components = pageBuilderPuckConfig.components as unknown as Record<string, { fields: Record<string, Record<string, unknown>> }>;
+    expect(components.G7PostDetail.fields.linkLabel.contentEditable).toBe(true);
+    expect(components.G7ProductDetail.fields.buttonLabel.contentEditable).toBe(true);
+    expect(components.G7PostDetail.fields.boardSlug.contentEditable).not.toBe(true);
   });
 
   it('round-trips all six foundation blocks and keeps visible copy directly editable', () => {

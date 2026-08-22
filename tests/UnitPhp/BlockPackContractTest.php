@@ -28,14 +28,14 @@ final class BlockPackContractTest extends TestCase
         self::assertSame($manifest->toArray(), BlockPackManifest::fromArray($manifest->toArray())->toArray());
     }
 
-    public function test_builtin_core_manifest_registers_all_thirty_five_definitions_and_presets(): void
+    public function test_builtin_core_manifest_registers_all_thirty_seven_definitions_and_presets(): void
     {
         $manifest = (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2));
         $registry = new BlockRegistry;
         $registry->register($manifest, enabled: true);
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
-        self::assertCount(35, $registry->definitions());
+        self::assertCount(37, $registry->definitions());
         self::assertCount(18, $registry->presets());
         self::assertNotNull($registry->definition('content.heading-01', 1));
         self::assertNotNull($registry->definition('content.rich-text-01', 1));
@@ -48,6 +48,8 @@ final class BlockPackContractTest extends TestCase
         self::assertNotNull($registry->definition('data.bar-chart-01', 1));
         self::assertNotNull($registry->definition('g7.board-recent-posts-01', 1));
         self::assertNotNull($registry->definition('g7.ecommerce-product-grid-01', 1));
+        self::assertNotNull($registry->definition('g7.board-post-detail-01', 1));
+        self::assertNotNull($registry->definition('g7.ecommerce-product-detail-01', 1));
         self::assertNotNull($registry->definition('form.inquiry-01', 1));
         self::assertNotNull($registry->definition('location.map-directions-01', 1));
         self::assertNotNull($registry->definition('trust.testimonials-01', 1));

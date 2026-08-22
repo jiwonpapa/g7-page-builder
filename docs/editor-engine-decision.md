@@ -53,7 +53,7 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 
 ## 인라인·문맥 편집 계약
 
-가운데 캔버스의 선택·직접 편집 상세 계약은 [Canvas Editing Contract](canvas-editing-contract.md)를 따릅니다. 35개 내장 블록은 공통 요소 선택 계약을 사용하고 Inspector는 고급 설정으로 한정합니다.
+가운데 캔버스의 선택·직접 편집 상세 계약은 [Canvas Editing Contract](canvas-editing-contract.md)를 따릅니다. 37개 내장 블록은 공통 요소 선택 계약을 사용하고 Inspector는 고급 설정으로 한정합니다.
 
 - 모든 내장 블록의 주요 제목·설명·버튼 문구와 반복 항목의 핵심 문구는 Puck `contentEditable`로 캔버스에서 직접 편집합니다.
 - Hero, 독립 Rich Text, Image + Text 본문은 Puck Rich Text field를 사용하며 Puck 내부 Tiptap 구현을 별도 직접 의존성이나 문서 원본으로 취급하지 않습니다.
@@ -75,11 +75,11 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 
 첫 수직 slice에서 확인한 항목:
 
-1. 35종 제품 카탈로그와 18개 내장 프리셋의 좌측 축소 미리보기, 원하는 위치 DnD, typed 편집과 선택 block 정렬을 지원합니다.
+1. 37종 제품 카탈로그와 18개 내장 프리셋의 좌측 축소 미리보기, 원하는 위치 DnD, typed 편집과 선택 block 정렬을 지원합니다.
 2. Puck ↔ `PageBuilderDocument` 왕복 Fixture가 통과합니다.
 3. 저장 후 reload와 Puck undo/redo 표면이 동작합니다.
 4. 편집기 모바일·태블릿·PC iframe 전환과 preview/public 제품 E2E가 통과합니다.
-5. Puck을 import하지 않는 PHP compiler가 같은 35종 block을 결정적으로 컴파일합니다.
+5. Puck을 import하지 않는 PHP compiler가 같은 37종 block을 결정적으로 컴파일합니다.
 6. Hero-family 경고 닫기, Hero 직접 입력, Slider 장면 선택·인라인 필드, 요소별 style token과 route 적용 후 저장·재로드를 실제 브라우저 E2E로 검사합니다.
 
 아직 남은 채택 검증은 100개 block 성능 측정과 nested slot입니다. 현재 nested slot은 Adapter와 compiler에서 fail-closed하며, 이 두 항목이 실제 제품 요구가 될 때 기준을 통과하지 못하면 다른 엔진으로 자동 전환하지 않고 원인을 기록한 뒤 결정을 다시 엽니다.

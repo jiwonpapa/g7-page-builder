@@ -22,6 +22,12 @@ import {
   type Phase3CatalogEditorComponents,
 } from './phase3CatalogBlocks';
 import {
+  canonicalPhase4BlockToPuck,
+  phase4CatalogComponentConfigs,
+  phase4PuckBlockToCanonical,
+  type Phase4CatalogEditorComponents,
+} from './phase4CatalogBlocks';
+import {
   canonicalFoundationBlockToPuck,
   foundationCatalogComponentConfigs,
   foundationPuckBlockToCanonical,
@@ -154,6 +160,7 @@ export interface G7RecentPostsEditorProps extends AppearanceEditorProps {
   source: 'recent' | 'popular';
   period: 'today' | 'week' | 'month' | 'year';
   limit: '3' | '4' | '6' | '8' | '12';
+  pageSize: '3' | '4' | '6';
   audience: 'all' | 'guest' | 'member';
   emptyMessage: string;
   surface: BlockAppearance['surface'];
@@ -167,6 +174,7 @@ export interface G7ProductGridEditorProps extends AppearanceEditorProps {
   source: 'latest' | 'new' | 'popular';
   limit: '2' | '3' | '4' | '6' | '8' | '12';
   columns: '2' | '3' | '4';
+  pageSize: '2' | '3' | '4' | '6';
   audience: 'all' | 'guest' | 'member';
   detailBasePath: string;
   emptyMessage: string;
@@ -209,7 +217,7 @@ export interface MapDirectionsEditorProps extends AppearanceEditorProps {
   motion: BlockMotion;
 }
 
-export interface CatalogEditorComponents extends FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents {
+export interface CatalogEditorComponents extends FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents, Phase4CatalogEditorComponents {
   HeroSplit: HeroSplitEditorProps;
   HeroSlider: HeroSliderEditorProps;
   LogoCloud: LogoCloudEditorProps;
@@ -356,12 +364,12 @@ const DEFAULT_BAR_CHART: BarChartEditorProps = {
 };
 
 const DEFAULT_G7_RECENT_POSTS: G7RecentPostsEditorProps = {
-  eyebrow: '커뮤니티', heading: '최근 게시글', source: 'recent', period: 'week', limit: '6', audience: 'all',
+  eyebrow: '커뮤니티', heading: '최근 게시글', source: 'recent', period: 'week', limit: '6', pageSize: '3', audience: 'all',
   emptyMessage: '표시할 게시글이 없습니다.', surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
 const DEFAULT_G7_PRODUCT_GRID: G7ProductGridEditorProps = {
-  eyebrow: '스토어', heading: '새로운 상품', source: 'new', limit: '4', columns: '4', audience: 'all',
+  eyebrow: '스토어', heading: '새로운 상품', source: 'new', limit: '4', columns: '4', pageSize: '4', audience: 'all',
   detailBasePath: '/shop/products', emptyMessage: '표시할 상품이 없습니다.',
   surface: 'soft', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
 };
@@ -635,6 +643,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   ...foundationCatalogComponentConfigs,
   ...phase2CatalogComponentConfigs,
   ...phase3CatalogComponentConfigs,
+  ...phase4CatalogComponentConfigs,
   HeroSplit: {
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
@@ -686,7 +695,8 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true },
       source: { type: 'radio', label: '게시글 기준', options: [{ label: '최신글', value: 'recent' }, { label: '인기글', value: 'popular' }] },
       period: { type: 'select', label: '인기글 기간', options: [{ label: '오늘', value: 'today' }, { label: '이번 주', value: 'week' }, { label: '이번 달', value: 'month' }, { label: '최근 1년', value: 'year' }] },
-      limit: { type: 'select', label: '표시 개수', options: ['3', '4', '6', '8', '12'].map((value) => ({ label: `${value}개`, value })) },
+      limit: { type: 'select', label: '불러올 개수', options: ['3', '4', '6', '8', '12'].map((value) => ({ label: `${value}개`, value })) },
+      pageSize: { type: 'select', label: '페이지당 개수', options: ['3', '4', '6'].map((value) => ({ label: `${value}개`, value })) },
       audience: { type: 'select', label: '노출 대상', options: [{ label: '모두', value: 'all' }, { label: '로그아웃 사용자', value: 'guest' }, { label: '로그인 사용자', value: 'member' }] },
       emptyMessage: { type: 'text', label: '빈 상태 문구' }, elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal', 'stagger']),
     }, render: (props) => <G7RecentPostsPreview {...props} />,
@@ -696,7 +706,8 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true },
       source: { type: 'select', label: '상품 기준', options: [{ label: '최신순', value: 'latest' }, { label: '신상품', value: 'new' }, { label: '인기 상품', value: 'popular' }] },
-      limit: { type: 'select', label: '표시 개수', options: ['2', '3', '4', '6', '8', '12'].map((value) => ({ label: `${value}개`, value })) },
+      limit: { type: 'select', label: '불러올 개수', options: ['2', '3', '4', '6', '8', '12'].map((value) => ({ label: `${value}개`, value })) },
+      pageSize: { type: 'select', label: '페이지당 개수', options: ['2', '3', '4', '6'].map((value) => ({ label: `${value}개`, value })) },
       columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }, { label: '4열', value: '4' }] },
       audience: { type: 'select', label: '노출 대상', options: [{ label: '모두', value: 'all' }, { label: '로그아웃 사용자', value: 'guest' }, { label: '로그인 사용자', value: 'member' }] },
       detailBasePath: { type: 'text', label: '상품 상세 기본 경로' }, emptyMessage: { type: 'text', label: '빈 상태 문구' },
@@ -732,6 +743,8 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
   if (phase2Block) return phase2Block as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const phase3Block = canonicalPhase3BlockToPuck(block);
   if (phase3Block) return phase3Block as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
+  const phase4Block = canonicalPhase4BlockToPuck(block);
+  if (phase4Block) return phase4Block as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const props = block.props;
   if (block.type === HERO_SPLIT_BLOCK_TYPE) {
     const cta = asRecord(props.primaryCta); const image = asRecord(props.image);
@@ -744,8 +757,8 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
   if (block.type === TEAM_BLOCK_TYPE) return { type: 'Team', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), members: normalizeMembers(props.members), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === GALLERY_BLOCK_TYPE) return { type: 'Gallery', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), images: normalizeImages(props.images), columns: props.columns === 2 || props.columns === '2' ? '2' : props.columns === 4 || props.columns === '4' ? '4' : '3', ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === BAR_CHART_BLOCK_TYPE) return { type: 'BarChart', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), unit: asString(props.unit), items: normalizeBars(props.items), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
-  if (block.type === G7_RECENT_POSTS_BLOCK_TYPE) return { type: 'G7RecentPosts', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(props.period)) ? asString(props.period) as G7RecentPostsEditorProps['period'] : 'week', limit: ['3', '4', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7RecentPostsEditorProps['limit'] : '6', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', emptyMessage: asString(props.emptyMessage, '표시할 게시글이 없습니다.'), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
-  if (block.type === G7_PRODUCT_GRID_BLOCK_TYPE) return { type: 'G7ProductGrid', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' || props.source === 'latest' ? props.source : 'new', limit: ['2', '3', '6', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7ProductGridEditorProps['limit'] : '4', columns: props.columns === 2 || props.columns === '2' ? '2' : props.columns === 3 || props.columns === '3' ? '3' : '4', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', detailBasePath: asString(props.detailBasePath, '/shop/products'), emptyMessage: asString(props.emptyMessage, '표시할 상품이 없습니다.'), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === G7_RECENT_POSTS_BLOCK_TYPE) return { type: 'G7RecentPosts', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(props.period)) ? asString(props.period) as G7RecentPostsEditorProps['period'] : 'week', limit: ['3', '4', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7RecentPostsEditorProps['limit'] : '6', pageSize: ['4', '6'].includes(String(props.pageSize)) ? String(props.pageSize) as G7RecentPostsEditorProps['pageSize'] : '3', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', emptyMessage: asString(props.emptyMessage, '표시할 게시글이 없습니다.'), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === G7_PRODUCT_GRID_BLOCK_TYPE) return { type: 'G7ProductGrid', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' || props.source === 'latest' ? props.source : 'new', limit: ['2', '3', '6', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7ProductGridEditorProps['limit'] : '4', columns: props.columns === 2 || props.columns === '2' ? '2' : props.columns === 3 || props.columns === '3' ? '3' : '4', pageSize: ['2', '3', '6'].includes(String(props.pageSize)) ? String(props.pageSize) as G7ProductGridEditorProps['pageSize'] : '4', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', detailBasePath: asString(props.detailBasePath, '/shop/products'), emptyMessage: asString(props.emptyMessage, '표시할 상품이 없습니다.'), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === INQUIRY_FORM_BLOCK_TYPE) return { type: 'InquiryForm', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), formKind: ['quote', 'reservation', 'application', 'newsletter'].includes(asString(props.formKind)) ? asString(props.formKind) as InquiryFormKind : 'inquiry', submitLabel: asString(props.submitLabel, '문의 보내기'), successMessage: asString(props.successMessage, '문의가 접수되었습니다.'), privacyLabel: asString(props.privacyLabel, '개인정보 수집 및 이용에 동의합니다.'), showPhone: props.showPhone !== false, showSubject: props.showSubject !== false, ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === MAP_DIRECTIONS_BLOCK_TYPE) return { type: 'MapDirections', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), address: asString(props.address), latitude: typeof props.latitude === 'number' ? props.latitude : 37.5665, longitude: typeof props.longitude === 'number' ? props.longitude : 126.978, zoom: ['12', '14', '18'].includes(String(props.zoom)) ? String(props.zoom) as MapDirectionsEditorProps['zoom'] : '16', provider: props.provider === 'google' || props.provider === 'none' ? props.provider : 'openstreetmap', directionsLabel: asString(props.directionsLabel, '길찾기'), directionsUrl: asString(props.directionsUrl, 'https://www.openstreetmap.org/'), phone: asString(props.phone), hours: asString(props.hours), parking: asString(props.parking), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   return null;
@@ -768,6 +781,8 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
   if (phase2Block) return phase2Block;
   const phase3Block = phase3PuckBlockToCanonical(type, raw, includeAppearance);
   if (phase3Block) return phase3Block;
+  const phase4Block = phase4PuckBlockToCanonical(type, raw, includeAppearance);
+  if (phase4Block) return phase4Block;
   if (type === 'HeroSplit') {
     const props: Record<string, unknown> = { eyebrow: asString(raw.eyebrow), title: asString(raw.title), body: asString(raw.body), mediaPosition: raw.mediaPosition === 'left' ? 'left' : 'right' };
     if (asString(raw.primaryLabel) || asString(raw.primaryUrl)) props.primaryCta = { label: asString(raw.primaryLabel), url: asString(raw.primaryUrl) };
@@ -792,8 +807,8 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
   if (type === 'Team') return { type: TEAM_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), members: normalizeMembers(raw.members) }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   if (type === 'Gallery') return { type: GALLERY_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), images: normalizeImages(raw.images), columns: raw.columns === '2' ? 2 : raw.columns === '4' ? 4 : 3 }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
   if (type === 'BarChart') return { type: BAR_CHART_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), unit: asString(raw.unit), items: normalizeBars(raw.items) }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
-  if (type === 'G7RecentPosts') return { type: G7_RECENT_POSTS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(raw.period)) ? raw.period : 'week', limit: Number(raw.limit) || 6, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', emptyMessage: asString(raw.emptyMessage, '표시할 게시글이 없습니다.') }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
-  if (type === 'G7ProductGrid') return { type: G7_PRODUCT_GRID_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' || raw.source === 'latest' ? raw.source : 'new', limit: Number(raw.limit) || 4, columns: Number(raw.columns) || 4, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', detailBasePath: asString(raw.detailBasePath, '/shop/products'), emptyMessage: asString(raw.emptyMessage, '표시할 상품이 없습니다.') }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
+  if (type === 'G7RecentPosts') return { type: G7_RECENT_POSTS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(raw.period)) ? raw.period : 'week', limit: Number(raw.limit) || 6, pageSize: Number(raw.pageSize) || 3, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', emptyMessage: asString(raw.emptyMessage, '표시할 게시글이 없습니다.') }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
+  if (type === 'G7ProductGrid') return { type: G7_PRODUCT_GRID_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' || raw.source === 'latest' ? raw.source : 'new', limit: Number(raw.limit) || 4, columns: Number(raw.columns) || 4, pageSize: Number(raw.pageSize) || 4, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', detailBasePath: asString(raw.detailBasePath, '/shop/products'), emptyMessage: asString(raw.emptyMessage, '표시할 상품이 없습니다.') }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   if (type === 'InquiryForm') return { type: INQUIRY_FORM_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), formKind: ['quote', 'reservation', 'application', 'newsletter'].includes(asString(raw.formKind)) ? raw.formKind : 'inquiry', submitLabel: asString(raw.submitLabel), successMessage: asString(raw.successMessage), privacyLabel: asString(raw.privacyLabel), showPhone: raw.showPhone !== false, showSubject: raw.showSubject !== false }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   if (type === 'MapDirections') return { type: MAP_DIRECTIONS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), address: asString(raw.address), latitude: typeof raw.latitude === 'number' ? raw.latitude : 37.5665, longitude: typeof raw.longitude === 'number' ? raw.longitude : 126.978, zoom: Number(raw.zoom) || 16, provider: raw.provider === 'google' || raw.provider === 'none' ? raw.provider : 'openstreetmap', directionsLabel: asString(raw.directionsLabel), directionsUrl: asString(raw.directionsUrl), phone: asString(raw.phone), hours: asString(raw.hours), parking: asString(raw.parking) }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
   return null;

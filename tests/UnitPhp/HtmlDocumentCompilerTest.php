@@ -267,6 +267,12 @@ final class HtmlDocumentCompilerTest extends TestCase
     {
         /** @var array<string, list<string>> $fieldsByType */
         $fieldsByType = [
+            'content.heading-01' => ['eyebrow', 'heading'],
+            'content.rich-text-01' => ['content'],
+            'media.image-01' => ['caption'],
+            'action.buttons-01' => ['items.0.label'],
+            'media.image-text-01' => ['eyebrow', 'heading', 'body', 'primaryLabel'],
+            'content.icon-list-01' => ['eyebrow', 'heading', 'items.0.title', 'items.0.body'],
             'content.hero-centered-01' => ['eyebrow', 'title', 'body', 'primaryLabel'],
             'content.features-grid-01' => ['title', 'items.0.title', 'items.0.body'],
             'content.cta-split-01' => ['eyebrow', 'heading', 'body', 'primaryLabel', 'secondaryLabel'],
@@ -304,6 +310,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             $this->formAndMapDocument(),
             $this->phaseTwoDocument(),
             $this->phaseThreeDocument(),
+            $this->foundationDocument(),
         ];
         $styledFieldCount = 0;
         $compiledArtifacts = '';
@@ -328,7 +335,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             )->artifact;
         }
 
-        self::assertCount(29, $fieldsByType);
+        self::assertCount(35, $fieldsByType);
         self::assertGreaterThanOrEqual($styledFieldCount, substr_count($compiledArtifacts, 'g7pb-element-font--serif'));
     }
 
@@ -409,7 +416,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.10.0', $catalog->compilerVersion);
+        self::assertSame('0.11.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -419,6 +426,155 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('data-g7pb-slider-prev', (string) $sliderResult->artifact);
         self::assertStringContainsString('<progress max="100" value="74.5" data-tone="emerald">', (string) $catalog->artifact);
         self::assertStringNotContainsString('<script', (string) $catalog->artifact);
+    }
+
+    public function test_foundation_blocks_compile_to_safe_typed_public_markup(): void
+    {
+        $result = $this->builtInCompiler()->compile($this->foundationDocument(), 1, 'html', 'g7-7.0.7');
+        $artifact = (string) $result->artifact;
+
+        self::assertSame('0.11.0', $result->compilerVersion);
+        foreach (['heading', 'rich-text', 'image', 'buttons', 'image-text', 'icon-list'] as $type) {
+            self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
+        }
+        self::assertStringContainsString('id="foundation"', $artifact);
+        self::assertStringContainsString('<a href="/guide" rel="noopener noreferrer">내부 링크</a>', $artifact);
+        self::assertStringContainsString('role="group" aria-label="페이지 행동"', $artifact);
+        self::assertStringContainsString('g7pb-icon--bolt', $artifact);
+        self::assertStringContainsString('data-g7pb-motion="stagger"', $artifact);
+        $imageTextMedia = strpos($artifact, 'g7pb-image-text__media');
+        $imageTextCopy = strpos($artifact, 'g7pb-image-text__copy');
+        self::assertIsInt($imageTextMedia);
+        self::assertIsInt($imageTextCopy);
+        self::assertTrue($imageTextMedia < $imageTextCopy, 'Image text keeps media-first DOM order in every variant.');
+        self::assertStringNotContainsString('<script', $artifact);
+        self::assertStringNotContainsString('javascript:', $artifact);
+    }
+
+    public function test_all_builtin_presets_compile_as_typed_documents(): void
+    {
+        $contents = file_get_contents(dirname(__DIR__, 2).'/resources/block-packs/builtin-core/manifest.json');
+        self::assertIsString($contents);
+        $manifest = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+        self::assertCount(18, $manifest['presets']);
+
+        foreach (array_values($manifest['presets']) as $index => $preset) {
+            $document = new PageBuilderDocument(
+                documentId: '00000000-0000-4000-8000-000000000200',
+                slug: 'preset-'.($index + 1),
+                mode: 'canvas',
+                locale: 'ko',
+                tokens: [],
+                blocks: [[
+                    'instance_id' => sprintf('00000000-0000-4000-8000-%012d', $index + 1),
+                    'type' => $preset['block_id'],
+                    'block_version' => $preset['block_version'],
+                    'props' => $preset['props'],
+                    'slots' => [],
+                ]],
+            );
+            $result = $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
+            self::assertStringContainsString('data-testid="page-builder-rendered-block"', (string) $result->artifact, $preset['preset_id']);
+        }
+    }
+
+    public function test_empty_optional_foundation_targets_ignore_only_their_stale_styles(): void
+    {
+        $payload = $this->foundationDocument()->toArray();
+        $payload['blocks'][0]['props']['eyebrow'] = '';
+        $payload['blocks'][0]['props']['appearance']['elements']['eyebrow'] = ['tone' => 'accent'];
+        $payload['blocks'][2]['props']['caption'] = '';
+        $payload['blocks'][2]['props']['appearance'] = ['elements' => ['caption' => ['tone' => 'accent']]];
+        $payload['blocks'][4]['props']['eyebrow'] = '';
+        $payload['blocks'][4]['props']['body'] = '';
+        unset($payload['blocks'][4]['props']['primaryLink']);
+        $payload['blocks'][4]['props']['appearance']['elements'] = [
+            'eyebrow' => ['tone' => 'accent'],
+            'body' => ['tone' => 'accent'],
+            'primaryLabel' => ['tone' => 'accent'],
+        ];
+        $payload['blocks'][5]['props']['eyebrow'] = '';
+        $payload['blocks'][5]['props']['items'][0]['body'] = '';
+        $payload['blocks'][5]['props']['appearance'] = ['elements' => ['eyebrow' => ['tone' => 'accent']]];
+
+        $result = $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+        self::assertStringNotContainsString('g7pb-element-tone--accent', (string) $result->artifact);
+    }
+
+    public function test_duplicate_heading_anchors_fail_closed(): void
+    {
+        $payload = $this->foundationDocument()->toArray();
+        $duplicate = $payload['blocks'][0];
+        $duplicate['instance_id'] = '00000000-0000-4000-8000-000000000299';
+        $payload['blocks'][] = $duplicate;
+
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_foundation_appearance_rejects_unsupported_and_stale_collection_paths(): void
+    {
+        $invalid = $this->foundationDocument()->toArray();
+        $invalid['blocks'][2]['props']['appearance'] = ['elements' => ['body' => ['tone' => 'accent']]];
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($invalid), 1, 'html', 'g7-7.0.7');
+            self::fail('An unsupported Image appearance path was accepted.');
+        } catch (DocumentCompileException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $alias = $this->foundationDocument()->toArray();
+        $alias['blocks'][3]['props']['appearance'] = ['elements' => ['primaryLabel' => ['tone' => 'accent']]];
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($alias), 1, 'html', 'g7-7.0.7');
+            self::fail('A Buttons root alias bypassed its typed items.N.label path.');
+        } catch (DocumentCompileException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $stale = $this->foundationDocument()->toArray();
+        $stale['blocks'][3]['props']['appearance'] = ['elements' => ['items.9.label' => ['tone' => 'accent']]];
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($stale), 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_foundation_blocks_reject_unsafe_markup_urls_and_untyped_values(): void
+    {
+        /** @var array<string, callable(array<string, mixed>&): void> $mutations */
+        $mutations = [
+            'heading anchor' => static function (array &$payload): void {
+                $payload['blocks'][0]['props']['anchor'] = 'javascript:alert';
+            },
+            'rich text script' => static function (array &$payload): void {
+                $payload['blocks'][1]['props']['content'] = '<script>alert(1)</script>';
+            },
+            'image source' => static function (array &$payload): void {
+                $payload['blocks'][2]['props']['src'] = 'javascript:alert(1)';
+            },
+            'image link' => static function (array &$payload): void {
+                $payload['blocks'][2]['props']['linkUrl'] = 'javascript:alert(1)';
+            },
+            'button link' => static function (array &$payload): void {
+                $payload['blocks'][3]['props']['items'][0]['url'] = 'javascript:alert(1)';
+            },
+            'image text body' => static function (array &$payload): void {
+                $payload['blocks'][4]['props']['body'] = '<img src=x onerror=alert(1)>';
+            },
+            'icon name' => static function (array &$payload): void {
+                $payload['blocks'][5]['props']['items'][0]['icon'] = 'javascript';
+            },
+        ];
+
+        foreach ($mutations as $label => $mutate) {
+            $payload = $this->foundationDocument()->toArray();
+            $mutate($payload);
+            try {
+                $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+                self::fail("Unsafe foundation mutation was accepted: {$label}");
+            } catch (DocumentCompileException) {
+                $this->addToAssertionCount(1);
+            }
+        }
     }
 
     public function test_catalog_warns_but_allows_multiple_hero_family_blocks(): void
@@ -502,7 +658,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.10.0', $result->compilerVersion);
+        self::assertSame('0.11.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -561,7 +717,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.10.0', $result->compilerVersion);
+        self::assertSame('0.11.0', $result->compilerVersion);
         foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -600,7 +756,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseThreeDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.10.0', $result->compilerVersion);
+        self::assertSame('0.11.0', $result->compilerVersion);
         foreach (['logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -641,6 +797,14 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertIsString($contents);
 
         return json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    private function foundationDocument(): PageBuilderDocument
+    {
+        $contents = file_get_contents(dirname(__DIR__).'/Contract/document-foundation-v1.fixture.json');
+        self::assertIsString($contents);
+
+        return PageBuilderDocument::fromArray(json_decode($contents, true, flags: JSON_THROW_ON_ERROR));
     }
 
     private function dynamicDocument(string $detailBasePath = '/shop/products'): PageBuilderDocument

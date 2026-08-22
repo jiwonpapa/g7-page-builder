@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title">
+  <title id="title">단일 이미지 블록 미리보기</title>
+  <rect width="320" height="180" rx="18" fill="#f6f7fb"/>
+  <rect x="36" y="24" width="248" height="116" rx="12" fill="#dce5f7"/>
+  <circle cx="230" cy="55" r="14" fill="#fff" opacity=".9"/>
+  <path d="M49 127 110 68l43 39 33-28 85 48Z" fill="#5474d8" opacity=".78"/>
+  <rect x="70" y="151" width="180" height="7" rx="3.5" fill="#98a4b8"/>
+</svg>

@@ -180,6 +180,30 @@
         {
           "if": { "properties": { "type": { "const": "g7.ecommerce-product-grid-01" } }, "required": ["type"] },
           "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/g7ProductGridProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.heading-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/headingProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.rich-text-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/richTextProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "media.image-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/imageBlockProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "action.buttons-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/buttonsProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "media.image-text-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/imageTextProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.icon-list-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/iconListProps" } } }
         }
       ]
     },
@@ -270,6 +294,121 @@
       "properties": {
         "src": { "type": "string", "minLength": 1, "maxLength": 2048 },
         "alt": { "type": "string", "maxLength": 300 }
+      }
+    },
+    "headingProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "level", "anchor"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "level": { "enum": [2, 3, 4] },
+        "anchor": { "type": "string", "maxLength": 80, "pattern": "^(?:$|[a-z][a-z0-9-]{0,79})$" },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "richTextProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content", "measure"],
+      "properties": {
+        "content": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "measure": { "enum": ["narrow", "standard", "wide"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "imageBlockProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src", "alt", "caption", "linkUrl", "aspectRatio"],
+      "properties": {
+        "src": { "type": "string", "maxLength": 2048 },
+        "alt": { "type": "string", "maxLength": 300 },
+        "caption": { "type": "string", "maxLength": 500 },
+        "linkUrl": { "type": "string", "maxLength": 2048 },
+        "aspectRatio": { "enum": ["auto", "16:9", "4:3", "1:1"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      },
+      "allOf": [{
+        "if": { "properties": { "src": { "type": "string", "minLength": 1 } }, "required": ["src"] },
+        "then": { "properties": { "alt": { "type": "string", "minLength": 1 } } }
+      }]
+    },
+    "buttonsProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "alignment"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "url", "variant"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "url": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "variant": { "enum": ["primary", "secondary", "text"] }
+            }
+          }
+        },
+        "alignment": { "enum": ["left", "center", "right"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "imageTextProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "body", "image", "mediaPosition"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "body": { "type": "string", "maxLength": 10000 },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["src", "alt"],
+          "properties": {
+            "src": { "type": "string", "maxLength": 2048 },
+            "alt": { "type": "string", "maxLength": 300 }
+          },
+          "allOf": [{
+            "if": { "properties": { "src": { "type": "string", "minLength": 1 } }, "required": ["src"] },
+            "then": { "properties": { "alt": { "type": "string", "minLength": 1 } } }
+          }]
+        },
+        "mediaPosition": { "enum": ["left", "right"] },
+        "primaryLink": { "$ref": "#/$defs/link" },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "iconListProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "items", "layout"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "items": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["icon", "title", "body"],
+            "properties": {
+              "icon": { "enum": ["bolt", "check", "code", "globe", "heart", "layers", "mobile", "palette", "shield", "sparkles", "star"] },
+              "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+              "body": { "type": "string", "maxLength": 2000 }
+            }
+          }
+        },
+        "layout": { "enum": ["single", "two-column"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
       }
     },
     "heroSplitProps": {

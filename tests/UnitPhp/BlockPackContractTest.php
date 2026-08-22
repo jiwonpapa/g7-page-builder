@@ -28,14 +28,23 @@ final class BlockPackContractTest extends TestCase
         self::assertSame($manifest->toArray(), BlockPackManifest::fromArray($manifest->toArray())->toArray());
     }
 
-    public function test_builtin_core_manifest_registers_all_twenty_three_definitions(): void
+    public function test_builtin_core_manifest_registers_all_thirty_five_definitions_and_presets(): void
     {
         $manifest = (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2));
         $registry = new BlockRegistry;
         $registry->register($manifest, enabled: true);
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
-        self::assertCount(29, $registry->definitions());
+        self::assertCount(35, $registry->definitions());
+        self::assertCount(18, $registry->presets());
+        self::assertNotNull($registry->definition('content.heading-01', 1));
+        self::assertNotNull($registry->definition('content.rich-text-01', 1));
+        self::assertNotNull($registry->definition('media.image-01', 1));
+        self::assertNotNull($registry->definition('action.buttons-01', 1));
+        self::assertNotNull($registry->definition('media.image-text-01', 1));
+        self::assertNotNull($registry->definition('content.icon-list-01', 1));
+        self::assertArrayHasKey('jiwonpapa/builtin-core:heading.section-intro', $registry->presets());
+        self::assertArrayHasKey('jiwonpapa/builtin-core:icon-list.benefits', $registry->presets());
         self::assertNotNull($registry->definition('data.bar-chart-01', 1));
         self::assertNotNull($registry->definition('g7.board-recent-posts-01', 1));
         self::assertNotNull($registry->definition('g7.ecommerce-product-grid-01', 1));

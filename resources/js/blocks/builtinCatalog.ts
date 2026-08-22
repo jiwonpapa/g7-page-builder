@@ -1,11 +1,15 @@
 import rawManifest from '../../../resources/block-packs/builtin-core/manifest.json';
 
-import type { BlockDefinitionDescriptor, BlockPackManifest } from './types';
+import type { BlockDefinitionDescriptor, BlockPackManifest, BlockPresetDescriptor } from './types';
 
 export const BUILTIN_CORE_MANIFEST = rawManifest as BlockPackManifest;
 
 export const BUILTIN_BLOCK_DEFINITIONS: readonly BlockDefinitionDescriptor[] = Object.freeze(
   BUILTIN_CORE_MANIFEST.blocks.map((definition) => Object.freeze({ ...definition })),
+);
+
+export const BUILTIN_BLOCK_PRESETS: readonly BlockPresetDescriptor[] = Object.freeze(
+  BUILTIN_CORE_MANIFEST.presets.map((preset) => Object.freeze({ ...preset, props: Object.freeze({ ...preset.props }) })),
 );
 
 export const BLOCK_CATEGORY_LABELS: Readonly<Record<string, string>> = Object.freeze({

@@ -21,6 +21,12 @@ import {
   phase3PuckBlockToCanonical,
   type Phase3CatalogEditorComponents,
 } from './phase3CatalogBlocks';
+import {
+  canonicalFoundationBlockToPuck,
+  foundationCatalogComponentConfigs,
+  foundationPuckBlockToCanonical,
+  type FoundationCatalogEditorComponents,
+} from './foundationCatalogBlocks';
 
 import {
   BAR_CHART_BLOCK_TYPE,
@@ -203,7 +209,7 @@ export interface MapDirectionsEditorProps extends AppearanceEditorProps {
   motion: BlockMotion;
 }
 
-export interface CatalogEditorComponents extends Phase2CatalogEditorComponents, Phase3CatalogEditorComponents {
+export interface CatalogEditorComponents extends FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents {
   HeroSplit: HeroSplitEditorProps;
   HeroSlider: HeroSliderEditorProps;
   LogoCloud: LogoCloudEditorProps;
@@ -626,6 +632,7 @@ function MapDirectionsPreview(props: MapDirectionsEditorProps & { id: string }):
 }
 
 export const catalogComponentConfigs: Config<CatalogEditorComponents>['components'] = {
+  ...foundationCatalogComponentConfigs,
   ...phase2CatalogComponentConfigs,
   ...phase3CatalogComponentConfigs,
   HeroSplit: {
@@ -719,6 +726,8 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
 };
 
 export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] } | null {
+  const foundationBlock = canonicalFoundationBlockToPuck(block);
+  if (foundationBlock) return foundationBlock as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const phase2Block = canonicalPhase2BlockToPuck(block);
   if (phase2Block) return phase2Block as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const phase3Block = canonicalPhase3BlockToPuck(block);
@@ -753,6 +762,8 @@ function attachAppearance(props: Record<string, unknown>, raw: Record<string, un
 }
 
 export function catalogPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean, includeSliderSettings = false): { type: string; props: Record<string, unknown> } | null {
+  const foundationBlock = foundationPuckBlockToCanonical(type, raw, includeAppearance);
+  if (foundationBlock) return foundationBlock;
   const phase2Block = phase2PuckBlockToCanonical(type, raw, includeAppearance);
   if (phase2Block) return phase2Block;
   const phase3Block = phase3PuckBlockToCanonical(type, raw, includeAppearance);

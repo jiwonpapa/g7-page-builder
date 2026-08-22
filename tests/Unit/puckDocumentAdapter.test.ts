@@ -4,6 +4,7 @@ import type { PuckEditorData } from '../../resources/js/editor/PuckEditorAdapter
 import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import {
   ARTICLE_LIST_BLOCK_TYPE,
+  BUTTONS_BLOCK_TYPE,
   COMPARISON_TABLE_BLOCK_TYPE,
   CONTACT_BLOCK_TYPE,
   CTA_BLOCK_TYPE,
@@ -16,10 +17,15 @@ import {
   G7_PRODUCT_SHOWCASE_BLOCK_TYPE,
   G7_RECENT_POSTS_BLOCK_TYPE,
   HERO_BLOCK_TYPE,
+  HEADING_BLOCK_TYPE,
+  ICON_LIST_BLOCK_TYPE,
+  IMAGE_BLOCK_TYPE,
+  IMAGE_TEXT_BLOCK_TYPE,
   INQUIRY_FORM_BLOCK_TYPE,
   MAP_DIRECTIONS_BLOCK_TYPE,
   LOGO_CAROUSEL_BLOCK_TYPE,
   PROCESS_TIMELINE_BLOCK_TYPE,
+  RICH_TEXT_BLOCK_TYPE,
   TABS_BLOCK_TYPE,
   TESTIMONIALS_BLOCK_TYPE,
   TESTIMONIAL_SLIDER_BLOCK_TYPE,
@@ -494,6 +500,40 @@ describe('Puck PageBuilderDocument adapter', () => {
     expect(components.LogoCarousel.fields.heading.contentEditable).toBe(true);
     expect((components.EventSchedule.fields.items.arrayFields as Record<string, Record<string, unknown>>).title.contentEditable).toBe(true);
     expect(components.G7BoardArchive.fields.showSearch.contentEditable).not.toBe(true);
+  });
+
+  it('round-trips all six foundation blocks and keeps visible copy directly editable', () => {
+    const foundation: PageBuilderDocument = {
+      ...documentFixture,
+      blocks: [
+        { instance_id: '123e4567-e89b-42d3-a456-426614174030', type: HEADING_BLOCK_TYPE, block_version: 1, props: { eyebrow: '안내', heading: '기본 제목', level: 2, anchor: 'foundation' }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174031', type: RICH_TEXT_BLOCK_TYPE, block_version: 1, props: { content: '<p>읽기 쉬운 <strong>본문</strong>입니다.</p>', measure: 'standard' }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174032', type: IMAGE_BLOCK_TYPE, block_version: 1, props: { src: '', alt: '', caption: '이미지 캡션', linkUrl: '', aspectRatio: '16:9' }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174033', type: BUTTONS_BLOCK_TYPE, block_version: 1, props: { items: [{ label: '시작', url: '/start', variant: 'primary' }, { label: '문의', url: '/contact', variant: 'secondary' }], alignment: 'center' }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174034', type: IMAGE_TEXT_BLOCK_TYPE, block_version: 1, props: { eyebrow: '제품', heading: '이미지와 설명', body: '<p>설명 본문</p>', image: { src: '', alt: '' }, mediaPosition: 'right', primaryLink: { label: '보기', url: '/details' } }, slots: {} },
+        { instance_id: '123e4567-e89b-42d3-a456-426614174035', type: ICON_LIST_BLOCK_TYPE, block_version: 1, props: { eyebrow: '장점', heading: '세 가지 기준', items: [{ icon: 'bolt', title: '빠름', body: '빠르게 시작합니다.' }, { icon: 'shield', title: '안전', body: '안전하게 발행합니다.' }], layout: 'two-column' }, slots: {} },
+      ],
+    };
+
+    const session = canonicalToPuck(foundation);
+    expect(session.data.content.map((block) => block.type)).toEqual([
+      'Heading', 'RichText', 'Image', 'Buttons', 'ImageText', 'IconList',
+    ]);
+    expect(puckToCanonical(session.data, session.context)).toEqual(foundation);
+
+    const edited = structuredClone(session.data) as PuckEditorData;
+    (edited.content[0]!.props as Record<string, unknown>).anchor = ' 2026 Launch Plan ';
+    expect(puckToCanonical(edited, session.context).blocks[0]!.props.anchor).toBe('section-2026-launch-plan');
+
+    const components = pageBuilderPuckConfig.components as unknown as Record<string, { fields: Record<string, Record<string, unknown>> }>;
+    expect(components.Heading.fields.heading.contentEditable).toBe(true);
+    expect(components.RichText.fields.content.contentEditable).toBe(true);
+    expect(components.Image.fields.caption.contentEditable).toBe(true);
+    expect(components.Image.fields.src.contentEditable).not.toBe(true);
+    expect((components.Buttons.fields.items.arrayFields as Record<string, Record<string, unknown>>).label.contentEditable).toBe(true);
+    expect((components.Buttons.fields.items.arrayFields as Record<string, Record<string, unknown>>).url.contentEditable).not.toBe(true);
+    expect(components.ImageText.fields.body.contentEditable).toBe(true);
+    expect((components.IconList.fields.items.arrayFields as Record<string, Record<string, unknown>>).title.contentEditable).toBe(true);
   });
 
   it('rejects nested slots and unknown canonical blocks at the adapter boundary', () => {

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PageBuilderDocument, SitePartResource } from '../../resources/js/documents/types';
+import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
 
 class TestResizeObserver {
   observe(): void {}
@@ -444,6 +445,12 @@ describe('Puck editor surface contract', () => {
     expect(library.textContent).toContain('미리보기를 끌어 캔버스의 원하는 위치에 놓으세요.');
     for (const component of [
       'Hero',
+      'Heading',
+      'RichText',
+      'Image',
+      'Buttons',
+      'ImageText',
+      'IconList',
       'HeroSplit',
       'HeroSlider',
       'Features',
@@ -480,6 +487,14 @@ describe('Puck editor surface contract', () => {
 
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
     expect(gallery.textContent).toContain('히어로');
+    expect(gallery.textContent).toContain('제목');
+    expect(gallery.textContent).toContain('리치텍스트');
+    expect(gallery.textContent).toContain('단일 이미지');
+    expect(gallery.textContent).toContain('버튼 묶음');
+    expect(gallery.textContent).toContain('이미지 + 텍스트');
+    expect(gallery.textContent).toContain('아이콘 목록');
+    expect(gallery.textContent).toContain('섹션 시작 제목');
+    expect(gallery.textContent).toContain('서비스 소개 히어로');
     expect(gallery.textContent).toContain('특징 목록');
     expect(gallery.textContent).toContain('행동 유도');
     expect(gallery.textContent).toContain('연락처');
@@ -503,7 +518,20 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('다운로드 자료');
     expect(gallery.textContent).toContain('G7 콘텐츠 아카이브');
     expect(gallery.textContent).toContain('G7 상품 쇼케이스');
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(29);
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(53);
+    builtinManifest.presets.forEach((preset) => {
+      const slug = preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+      const button = gallery.querySelector<HTMLButtonElement>(`[data-testid="page-builder-preset-${slug}"]`);
+      expect(button, preset.preset_id).not.toBeNull();
+      expect(button?.textContent).toContain(preset.label.ko);
+      expect(button?.querySelector('[data-block-preview]')).not.toBeNull();
+    });
+
+    await act(async () => {
+      gallery.querySelector<HTMLButtonElement>('[data-testid="page-builder-preset-heading-section-intro"]')?.click();
+    });
+    expect((await eventually<HTMLElement>('[data-block-type="heading"]')).textContent)
+      .toContain('방문자가 먼저 알아야 할 내용');
   });
 
   it('uses the actor catalog for search, categories, favorites, and preset insertion', async () => {

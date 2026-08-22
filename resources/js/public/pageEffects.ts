@@ -24,6 +24,7 @@ interface DynamicPayload {
 const MOTION_SELECTOR = '.g7pb-block[data-g7pb-motion]';
 const SLIDER_SELECTOR = '[data-g7pb-slider]';
 const STAGGER_TARGETS = [
+  '.g7pb-icon-list__item',
   '.g7pb-features__item',
   '.g7pb-logo-cloud li',
   '.g7pb-stats__grid article',

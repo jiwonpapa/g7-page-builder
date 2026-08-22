@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title">
+  <title id="title">버튼 묶음 블록 미리보기</title>
+  <rect width="320" height="180" rx="18" fill="#f6f7fb"/>
+  <rect x="43" y="66" width="108" height="48" rx="13" fill="#3158cc"/>
+  <rect x="69" y="86" width="56" height="8" rx="4" fill="#fff"/>
+  <rect x="164" y="66" width="113" height="48" rx="13" fill="#fff" stroke="#9da8ba" stroke-width="2"/>
+  <rect x="191" y="86" width="59" height="8" rx="4" fill="#4f5c70"/>
+</svg>

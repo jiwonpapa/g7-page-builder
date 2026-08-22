@@ -23,8 +23,14 @@ type BlockType =
   | 'features'
   | 'faq-accordion'
   | 'gallery'
+  | 'heading'
   | 'hero'
   | 'hero-slider'
+  | 'icon-list'
+  | 'image'
+  | 'image-text'
+  | 'buttons'
+  | 'rich-text'
   | 'g7-product-grid'
   | 'g7-recent-posts'
   | 'logo-cloud'
@@ -48,6 +54,12 @@ const PUBLISHED_BLOCK_ORDER: BlockType[] = [
   'hero-slider',
   'cta',
   'contact',
+  'heading',
+  'rich-text',
+  'image',
+  'buttons',
+  'image-text',
+  'icon-list',
   'logo-cloud',
   'stats',
   'pricing',
@@ -77,8 +89,14 @@ const BLOCK_LABELS: Record<BlockType, string> = {
   cta: 'CTA',
   features: 'Features',
   gallery: 'Gallery',
+  heading: '제목',
   hero: 'Hero',
   'hero-slider': 'Hero slider',
+  'icon-list': '아이콘 목록',
+  image: '단일 이미지',
+  'image-text': '이미지 + 텍스트',
+  buttons: '버튼 묶음',
+  'rich-text': '리치텍스트',
   'g7-product-grid': 'G7 Product Grid',
   'g7-recent-posts': 'G7 Recent Posts',
   'logo-cloud': 'Logo cloud',
@@ -725,7 +743,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
     await expect(blockPackDialog).toBeVisible();
     await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
-    await expect(blockPackDialog).toContainText('블록 29 / 프리셋 0');
+    await expect(blockPackDialog).toContainText('블록 35 / 프리셋 18');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
     await expect(blockPackDialog.getByRole('button', { name: '최신 버전 확인' })).toBeVisible();
     await blockPackDialog.getByRole('button', { name: '닫기' }).click();
@@ -751,6 +769,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealBlockLibrary(page);
     for (const component of [
       'Hero',
+      'Heading',
+      'RichText',
+      'Image',
+      'Buttons',
+      'ImageText',
+      'IconList',
       'HeroSplit',
       'HeroSlider',
       'Features',
@@ -810,6 +834,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await blockSearch.fill('');
     for (const option of [
       'hero',
+      'heading',
+      'rich-text',
+      'image',
+      'buttons',
+      'image-text',
+      'icon-list',
       'hero-split',
       'hero-slider',
       'features',
@@ -873,7 +903,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     await page.getByTestId('page-builder-block-option-contact').click();
-    for (const option of ['logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid', 'testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed', 'logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase']) {
+    for (const option of ['heading', 'rich-text', 'image', 'buttons', 'image-text', 'icon-list', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid', 'testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed', 'logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase']) {
       await revealEditorHeaderActions(page);
       await page.getByTestId('page-builder-add-block').click();
       await page.getByTestId(`page-builder-block-option-${option}`).click();

@@ -13,10 +13,22 @@ describe('Block Pack manifest v1 schema', () => {
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it('accepts the twenty-nine-definition builtin core pack', () => {
+  it('accepts the thirty-five-definition builtin core pack and its practical presets', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.blocks).toHaveLength(29);
+    expect(builtinManifest.pack_version).toBe('0.11.0');
+    expect(builtinManifest.blocks).toHaveLength(35);
+    expect(builtinManifest.presets).toHaveLength(18);
+    expect(new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`)).size).toBe(35);
+    expect(new Set(builtinManifest.presets.map((preset) => preset.preset_id)).size).toBe(18);
+    const definitions = new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`));
+    expect(builtinManifest.presets.every((preset) => definitions.has(`${preset.block_id}@${preset.block_version}`))).toBe(true);
     expect(builtinManifest.blocks.map((block) => block.block_id)).toEqual(expect.arrayContaining([
+      'content.heading-01',
+      'content.rich-text-01',
+      'media.image-01',
+      'action.buttons-01',
+      'media.image-text-01',
+      'content.icon-list-01',
       'g7.board-recent-posts-01',
       'g7.ecommerce-product-grid-01',
       'form.inquiry-01',
@@ -34,6 +46,16 @@ describe('Block Pack manifest v1 schema', () => {
       'content.download-resources-01',
       'g7.board-content-archive-01',
       'g7.ecommerce-product-showcase-01',
+    ]));
+    expect(builtinManifest.presets.map((preset) => preset.preset_id)).toEqual(expect.arrayContaining([
+      'heading.section-intro',
+      'rich-text.article-intro',
+      'image.landscape',
+      'buttons.primary-secondary',
+      'image-text.product-story',
+      'icon-list.benefits',
+      'hero.service-intro',
+      'faq.basic',
     ]));
   });
 

@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 29종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
+현재 구현: 35종 페이지 block 카탈로그와 18개 내장 프리셋, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
 
 ## 목표
 
@@ -66,7 +66,7 @@
 - compile 실패는 공개 페이지를 바꾸지 않습니다.
 - 마지막 20개 revision을 조회·미리보기·복원합니다.
 
-## 제품 block 29종
+## 제품 block 35종
 
 | Block | 필수 props | 규칙 | 제외 |
 |---|---|---|---|
@@ -76,6 +76,12 @@
 | CTA | eyebrow, heading, body, primary/secondary link, theme | URL allowlist, heading level 검사 | form·임의 HTML·animation timeline |
 | Hero Split | eyebrow, title, body, CTA, image, media position | Hero family 중복 시 저장 허용+명확한 경고, URL·image allowlist | 자유 grid |
 | Hero Slider | 2~5 slides(title/body/CTA/image), autoplay, interval, loop | Embla MIT, 키보드 제어·정지·도트·감소된 모션, Hero 중복 경고 | fade·video slide |
+| Heading | eyebrow, heading, H2~H4 level, anchor | 영문 소문자 anchor, 독립 섹션 제목 | 임의 heading tag·HTML |
+| Rich Text | content, measure | 안전 태그·링크 allowlist, 48~80ch 읽기 폭 | raw HTML·script·inline style |
+| Image | src, alt, caption, link, aspect ratio | 이미지·링크 URL allowlist, 원본·16:9·4:3·1:1 | 자유 crop·object position |
+| Buttons | 1~3 items(label/route/variant), alignment | route allowlist, primary·secondary·text | JavaScript action·임의 class |
+| Image + Text | eyebrow, heading, rich body, image, position, primary link | 안전 rich text·image·route, 좌우 2열→모바일 1열 | 자유 grid·중첩 slot |
+| Icon List | heading, 2~8 items(icon/title/body), layout | icon allowlist, 1·2열 구분선 목록 | 임의 SVG·무제한 반복 |
 | Logo Cloud | heading, 2~12 logos(name/image/link) | URL·image allowlist | 자동 수집 |
 | Stats | heading, 2~8 items(icon/value/label/detail) | icon allowlist | 실시간 analytics query |
 | Pricing | heading, 2~4 plans(features/CTA/featured) | URL allowlist, featured boolean | 결제·구독 처리 |
@@ -148,7 +154,7 @@ G7 데이터 블록은 관련 공개 API capability가 없으면 선택지만 �
 
 ## 완료 조건
 
-1. 29종 제품 카탈로그 block 모두 manifest·editor·PHP compiler·public renderer·회귀시험을 가집니다.
+1. 35종 제품 카탈로그 block과 18개 내장 프리셋 모두 manifest·editor·PHP compiler·public renderer·회귀시험을 가집니다.
 2. 좌측 Blocks에서 이름·용도·축소 구조를 확인하고 원하는 블록 사이에 드롭할 수 있으며, 상세 미리보기는 선택 블록 뒤 빠른 추가를 제공합니다.
 3. 생성부터 rollback까지 Playwright 제품 E2E가 통과합니다.
 4. PC·태블릿·모바일 screenshot baseline을 사람이 확인합니다.

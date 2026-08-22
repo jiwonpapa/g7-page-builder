@@ -4,6 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PageBuilderDocument, SitePartResource } from '../../resources/js/documents/types';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
+import companyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';
+import editorialPageKit from '../../resources/store/source/page-kits/editorial-community/document.json';
+import eventPageKit from '../../resources/store/source/page-kits/event-launch/document.json';
+import localBusinessPageKit from '../../resources/store/source/page-kits/local-business/document.json';
+import servicePageKit from '../../resources/store/source/page-kits/service-conversion/document.json';
 
 class TestResizeObserver {
   observe(): void {}
@@ -153,7 +158,81 @@ function editorElements(selector: string): NodeListOf<HTMLElement> {
   return (editorDocument ?? document).querySelectorAll<HTMLElement>(selector);
 }
 
+async function eventuallyContains(selector: string, expected: string): Promise<void> {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const element = document.querySelector<HTMLElement>(selector)
+      ?? document.querySelector('iframe')?.contentDocument?.querySelector<HTMLElement>(selector);
+    if (element?.textContent?.includes(expected)) {
+      return;
+    }
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+  }
+
+  throw new Error(`Text not rendered: ${selector} -> ${expected}`);
+}
+
 describe('Puck editor surface contract', () => {
+  it('keeps structured inline copy visible in every official Page Kit', async () => {
+    const cases: Array<{ document: PageBuilderDocument; checks: Array<[string, string]> }> = [
+      {
+        document: companyPageKit as unknown as PageBuilderDocument,
+        checks: [
+          ['[data-block-type="stats"] [data-g7pb-inline-field="items.0.value"]', '120+'],
+          ['[data-block-type="team"] [data-g7pb-inline-field="members.0.name"]', '김기획'],
+          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.quote"]', '기획과 제작'],
+        ],
+      },
+      {
+        document: servicePageKit as unknown as PageBuilderDocument,
+        checks: [
+          ['[data-block-type="icon-list"] [data-g7pb-inline-field="items.0.title"]', '문제 정의'],
+          ['[data-block-type="process-timeline"] [data-g7pb-inline-field="items.0.title"]', '현재 확인'],
+          ['[data-block-type="faq-accordion"] [data-g7pb-inline-field="items.0.question"]', '요청 범위'],
+        ],
+      },
+      {
+        document: localBusinessPageKit as unknown as PageBuilderDocument,
+        checks: [
+          ['[data-block-type="process-timeline"] [data-g7pb-inline-field="items.0.body"]', '방문 희망 시간'],
+          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.name"]', '김민지'],
+        ],
+      },
+      {
+        document: eventPageKit as unknown as PageBuilderDocument,
+        checks: [
+          ['[data-block-type="event-schedule"] [data-g7pb-inline-field="items.0.title"]', '오프닝 키노트'],
+          ['[data-block-type="logo-cloud"] [data-g7pb-inline-field="logos.0.name"]', 'Northstar'],
+          ['[data-block-type="faq-accordion"] [data-g7pb-inline-field="items.0.question"]', '참가 신청'],
+        ],
+      },
+      {
+        document: editorialPageKit as unknown as PageBuilderDocument,
+        checks: [
+          ['[data-block-type="article-list"] [data-g7pb-inline-field="items.0.title"]', '한 자리를 오래'],
+          ['[data-block-type="event-schedule"] [data-g7pb-inline-field="items.0.location"]', '중앙도서관 앞'],
+          ['[data-block-type="download-resources"] [data-g7pb-inline-field="items.0.title"]', '동네 인터뷰 질문지'],
+        ],
+      },
+    ];
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    for (const [index, pageKit] of cases.entries()) {
+      await act(async () => {
+        root.render(<PuckEditorAdapter key={pageKit.document.document_id} document={pageKit.document} revisionKey={index} iframeEnabled={false}
+          onChange={() => undefined} onPublish={() => undefined} />);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+      for (const [selector, expected] of pageKit.checks) {
+        await eventuallyContains(selector, expected);
+      }
+    }
+  });
+
   it('shows builder-owned Header and Footer in the canvas and edits them without leaving the document work surface', async () => {
     const resource = (kind: 'header' | 'footer'): SitePartResource => ({
       title: kind === 'header' ? '사이트 Header' : '사이트 Footer',

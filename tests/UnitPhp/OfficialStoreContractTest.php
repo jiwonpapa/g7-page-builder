@@ -16,6 +16,20 @@ final class OfficialStoreContractTest extends TestCase
 {
     use CreatesBuiltInCompiler;
 
+    public function test_default_catalog_url_uses_the_non_redirecting_canonical_host(): void
+    {
+        $configSource = file_get_contents(dirname(__DIR__, 2).'/config/official-store.php');
+        self::assertIsString($configSource);
+        self::assertStringContainsString(
+            "'https://www.g7devops.com/modules/jiwonpapa-page_builder/store/catalog.json'",
+            $configSource,
+        );
+        self::assertStringNotContainsString(
+            "\n        'https://g7devops.com/modules/jiwonpapa-page_builder/store/catalog.json'",
+            $configSource,
+        );
+    }
+
     public function test_bundled_catalog_contains_only_official_free_products_with_valid_artifacts(): void
     {
         $catalog = OfficialStoreCatalog::fromArray($this->catalogValue());

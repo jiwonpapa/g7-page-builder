@@ -59,6 +59,12 @@ remote_identity="$(ssh -o BatchMode=yes "$ssh_target" "sudo -n -u g7devops bash 
   exit 1
 }
 
+remote_catalog_url="$(ssh -o BatchMode=yes "$ssh_target" "sudo -n -u g7devops bash -lc 'cd /home/g7devops/public_html && php artisan tinker --execute='\''echo config(\"g7-page-builder.official-store.catalog_url\");'\'' --no-ansi'" | tr -d '\r\n')"
+[[ "$remote_catalog_url" == "$store_catalog_url" ]] || {
+  echo "Staging Store canonical catalog URL mismatch: $remote_catalog_url" >&2
+  exit 1
+}
+
 rm -rf -- "$store_tmp"
 trap - EXIT
 echo "Staging smoke passed: $base_url (Official Store catalog + artifacts verified)"

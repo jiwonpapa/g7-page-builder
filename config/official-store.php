@@ -4,7 +4,7 @@ return [
     'publisher_id' => 'jiwonpapa',
     'catalog_url' => env(
         'G7PB_STORE_CATALOG_URL',
-        'https://g7devops.com/modules/jiwonpapa-page_builder/store/catalog.json',
+        'https://www.g7devops.com/modules/jiwonpapa-page_builder/store/catalog.json',
     ),
     'allowed_hosts' => array_values(array_filter(array_map(
         'trim',

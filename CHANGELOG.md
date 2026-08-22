@@ -6,6 +6,13 @@
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-08-22
+
+### Fixed
+
+- 공식 Store catalog 기본 주소를 리다이렉트가 없는 `www.g7devops.com` canonical URL로 고정해 스테이징 관리자에서 Page Kit 목록이 HTTP 301로 차단되던 문제를 수정했습니다.
+- 스테이징 smoke가 배포 모듈의 실제 Store catalog 설정과 공개 canonical URL이 정확히 일치하는지 검증하게 했습니다.
+
 ## [0.18.0] - 2026-08-22
 
 ### Added

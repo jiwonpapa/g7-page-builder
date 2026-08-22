@@ -6,6 +6,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PreviewSource;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
 
@@ -46,6 +47,7 @@ interface PageBuilderRepository
         int $expectedLockVersion,
         ?int $actorId,
         ?string $shellMode = null,
+        ?PageSeoMetadata $seo = null,
     ): DocumentSnapshot;
 
     public function storePreviewToken(

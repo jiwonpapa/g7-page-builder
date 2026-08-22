@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $artifact
  * @property string $artifact_sha256
  * @property string|null $warnings_json
+ * @property array<string, string>|null $seo_json
  * @property string $status
  * @property string|null $token_hash
  * @property \DateTimeInterface|null $expires_at
@@ -49,6 +50,7 @@ final class PublicationRecord extends Model
         'artifact',
         'artifact_sha256',
         'warnings_json',
+        'seo_json',
         'status',
         'token_hash',
         'expires_at',
@@ -69,6 +71,7 @@ final class PublicationRecord extends Model
             'published_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'created_by' => 'integer',
+            'seo_json' => 'array',
         ];
     }
 }

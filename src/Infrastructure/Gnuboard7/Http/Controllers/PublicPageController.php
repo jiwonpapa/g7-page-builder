@@ -54,6 +54,8 @@ final class PublicPageController
             'success' => true,
             'message' => $message,
             'data' => [
+                // G7 SeoMetaResolver discovers data.seo_meta on each data source.
+                'seo_meta' => $page->seo?->toArray(),
                 'page' => [
                     'title' => $page->title,
                     'slug' => $page->slug,
@@ -62,6 +64,7 @@ final class PublicPageController
                     'artifact' => $page->artifact,
                     'artifact_sha256' => $page->artifactSha256,
                     'published_at' => $page->publishedAt?->format(DATE_ATOM),
+                    'seo_meta' => $page->seo?->toArray(),
                 ],
             ],
         ], 200, $headers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

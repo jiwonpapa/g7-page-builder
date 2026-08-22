@@ -185,6 +185,12 @@ describe('PageBuilderApiClient', () => {
       slug: 'updated-page',
       locale: 'ko',
       shell_mode: 'global',
+      seo: {
+        title: '검색 제목',
+        description: '검색 설명',
+        og_image_url: '/storage/share.webp',
+        robots: 'noindex',
+      },
       expected_lock_version: 7,
     });
 
@@ -194,6 +200,12 @@ describe('PageBuilderApiClient', () => {
       slug: 'updated-page',
       locale: 'ko',
       shell_mode: 'global',
+      seo: {
+        title: '검색 제목',
+        description: '검색 설명',
+        og_image_url: '/storage/share.webp',
+        robots: 'noindex',
+      },
       expected_lock_version: 7,
     });
   });

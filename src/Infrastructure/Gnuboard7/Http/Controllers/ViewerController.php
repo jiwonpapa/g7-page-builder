@@ -107,7 +107,7 @@ final class ViewerController
         }
 
         if ($page->shellMode === 'template') {
-            return $this->templateApp($request, false);
+            return $this->templateApp($request, false, $page);
         }
 
         $siteShell = $this->siteShell($page);
@@ -116,13 +116,15 @@ final class ViewerController
         $etag = '"'.$this->representationSha256($page, $siteShell, $siteHeader, $siteFooter).'"';
 
         if ($request->header('If-None-Match') === $etag) {
-            return response('', 304)
+            $notModified = response('', 304)
                 ->header('Cache-Control', 'public, no-cache, must-revalidate')
                 ->header('ETag', $etag)
                 ->header('Content-Security-Policy', $this->contentSecurityPolicy());
+
+            return $this->withRobotsHeader($notModified, $page);
         }
 
-        return response()
+        $response = response()
             ->view('g7-page-builder::viewer', [
                 'page' => $page,
                 'rootTestId' => 'page-builder-public-root',
@@ -134,6 +136,8 @@ final class ViewerController
             ->header('Cache-Control', 'public, no-cache, must-revalidate')
             ->header('ETag', $etag)
             ->header('Content-Security-Policy', $this->contentSecurityPolicy());
+
+        return $this->withRobotsHeader($response, $page);
     }
 
     public function legacy(string $slug): RedirectResponse
@@ -205,7 +209,7 @@ final class ViewerController
         ]));
     }
 
-    private function templateApp(Request $request, bool $preview): Response
+    private function templateApp(Request $request, bool $preview, ?RenderedPage $page = null): Response
     {
         $next = static fn (): Response => response()->view('app');
         $response = ! $preview && $this->seo instanceof SeoMiddleware
@@ -215,6 +219,19 @@ final class ViewerController
         $response->headers->set('Cache-Control', $preview ? 'no-store' : 'public, no-cache, must-revalidate');
         if ($preview) {
             $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
+        if (! $preview && $page instanceof RenderedPage && $page->seo?->robots === 'noindex') {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
+        return $response;
+    }
+
+    private function withRobotsHeader(Response $response, RenderedPage $page): Response
+    {
+        if ($page->seo?->robots === 'noindex') {
             $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
         }
 

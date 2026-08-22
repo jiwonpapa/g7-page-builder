@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 29종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문의함·지도, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 drawer 완료.
+현재 구현: 29종 페이지 block 카탈로그, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스 공개 데이터 블록, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·독립 revision·PC/태블릿/모바일 drawer 완료.
 
 ## 목표
 

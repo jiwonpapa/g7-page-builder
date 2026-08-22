@@ -31,6 +31,21 @@
       "enum": ["template", "builder", "none", "global"],
       "default": "template"
     },
+    "seo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "description", "og_image_url", "robots"],
+      "properties": {
+        "title": { "type": "string", "maxLength": 70 },
+        "description": { "type": "string", "maxLength": 200 },
+        "og_image_url": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^(?:$|/[^\\s]*|https://[^\\s]+)$"
+        },
+        "robots": { "enum": ["index", "noindex"] }
+      }
+    },
     "tokens": {
       "type": "object",
       "properties": {

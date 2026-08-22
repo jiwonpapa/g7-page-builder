@@ -7,6 +7,7 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShell;
 use PHPUnit\Framework\TestCase;
@@ -131,6 +132,35 @@ final class DomainContractsTest extends TestCase
             tokens: ['design.palette' => 'javascript:alert(1)'],
             blocks: [],
         );
+    }
+
+    public function test_document_round_trips_typed_seo_metadata(): void
+    {
+        $document = new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000001',
+            slug: 'page-builder',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: [],
+            blocks: [],
+            seo: new PageSeoMetadata(
+                title: '검색 제목',
+                description: '검색 설명',
+                ogImageUrl: '/storage/share.webp',
+                robots: 'noindex',
+            ),
+        );
+
+        $roundTripped = PageBuilderDocument::fromArray($document->toArray());
+        self::assertSame('검색 제목', $roundTripped->seo?->title);
+        self::assertSame('/storage/share.webp', $roundTripped->seo?->ogImageUrl);
+        self::assertSame('noindex', $roundTripped->seo?->robots);
+    }
+
+    public function test_seo_metadata_rejects_executable_image_urls(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new PageSeoMetadata(ogImageUrl: 'javascript:alert(1)');
     }
 
     public function test_site_shell_validates_navigation_and_has_a_stable_representation_hash(): void

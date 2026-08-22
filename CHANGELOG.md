@@ -6,6 +6,25 @@
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-08-21
+
+### Added
+
+- 문서별 검색 제목·설명·Open Graph 이미지·검색 제외 설정을 추가하고 기존 MediaPort에서 공유 이미지를 업로드·선택할 수 있게 했습니다.
+- 공개 전용 결정적 fixture에 axe WCAG A/AA 검사와 PC·태블릿·모바일 고정 스크린샷 비교를 추가했습니다.
+- 번들 모듈 hard dependency 없이 G7 공개 capability placeholder가 컴파일되는 최소 G7 fixture를 추가했습니다.
+
+### Changed
+
+- SEO 정보도 문서 리비전과 발행 후보에 포함하고, 공개 요청은 문서를 다시 컴파일하지 않고 발행 당시 SEO 스냅샷만 제공합니다.
+- 공개 표현 hash가 제목·slug·locale·shell·SEO를 모두 반영하도록 하여 메타데이터 재발행도 ETag가 바뀌게 했습니다.
+
+### Fixed
+
+- 시각 편집기가 SEO 필드를 소유하지 않더라도 초안 저장 시 문서함에서 설정한 SEO가 사라지지 않게 했습니다.
+- 독립 viewer와 304 응답에서도 `noindex` 발행 설정이 `X-Robots-Tag`로 유지되게 했습니다.
+- 컴파일 실패 뒤 마지막 정상 공개 artifact와 표현 hash가 바뀌지 않는 통합 회귀시험을 추가했습니다.
+
 ## [0.15.0] - 2026-08-21
 
 ### Added

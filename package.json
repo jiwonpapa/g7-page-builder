@@ -1,6 +1,6 @@
 {
   "name": "@jiwonpapa/g7-page-builder",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -17,7 +17,7 @@
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run",
     "test:e2e:infra": "playwright test tests/E2E/infrastructure.spec.ts",
-    "test:e2e:product": "playwright test tests/E2E/pageBuilderLifecycle.spec.ts tests/E2E/sitePartLifecycle.spec.ts tests/E2E/officialStore.spec.ts",
+    "test:e2e:product": "playwright test tests/E2E/pageBuilderLifecycle.spec.ts tests/E2E/sitePartLifecycle.spec.ts tests/E2E/officialStore.spec.ts tests/E2E/publicQuality.spec.ts",
     "check:g7-budget": "node scripts/check-g7-dependency-budget.mjs",
     "check:boundaries": "bash scripts/check-boundaries.sh",
     "check:assets": "node scripts/check-assets.mjs",
@@ -34,6 +34,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.62.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

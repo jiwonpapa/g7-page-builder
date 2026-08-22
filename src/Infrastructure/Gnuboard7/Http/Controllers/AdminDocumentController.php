@@ -242,6 +242,11 @@ final class AdminDocumentController
             'locale' => ['required', 'string', 'min:2', 'max:16'],
             'expected_lock_version' => ['required', 'integer', 'min:1'],
             'shell_mode' => ['sometimes', 'in:template,builder,none,global'],
+            'seo' => ['sometimes', 'array:title,description,og_image_url,robots'],
+            'seo.title' => ['sometimes', 'nullable', 'string', 'max:70'],
+            'seo.description' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'seo.og_image_url' => ['sometimes', 'nullable', 'string', 'max:2048', 'regex:#^(?:/[^\\s]*|https://[^\\s]+)$#u'],
+            'seo.robots' => ['sometimes', 'in:index,noindex'],
         ]);
 
         if ($validator->fails()) {
@@ -257,6 +262,7 @@ final class AdminDocumentController
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
                 $request->has('shell_mode') ? (string) $request->input('shell_mode') : null,
+                $this->seoInput($request),
             );
 
             return $this->success('페이지 정보를 수정했습니다.', $this->snapshotData($snapshot));
@@ -597,6 +603,22 @@ final class AdminDocumentController
         $identifier = $request->user()?->getAuthIdentifier();
 
         return is_numeric($identifier) ? (int) $identifier : null;
+    }
+
+    /** @return array{title: string, description: string, og_image_url: string, robots: string}|null */
+    private function seoInput(Request $request): ?array
+    {
+        $seo = $request->input('seo');
+        if (! is_array($seo)) {
+            return null;
+        }
+
+        return [
+            'title' => is_string($seo['title'] ?? null) ? $seo['title'] : '',
+            'description' => is_string($seo['description'] ?? null) ? $seo['description'] : '',
+            'og_image_url' => is_string($seo['og_image_url'] ?? null) ? $seo['og_image_url'] : '',
+            'robots' => is_string($seo['robots'] ?? null) ? $seo['robots'] : 'index',
+        ];
     }
 
     private function success(string $message, mixed $data, int $status = 200): JsonResponse

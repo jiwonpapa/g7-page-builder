@@ -179,6 +179,12 @@ function normalizeArray<T>(value: unknown, fallback: T[], max: number, map: (ite
   return source.slice(0, max).map((item) => map(asRecord(item)));
 }
 
+function inlineArrayContent(value: unknown, index: number, key: string, fallback: string): React.ReactNode {
+  const item = Array.isArray(value) ? asRecord(value[index]) : {};
+  const candidate = item[key];
+  return React.isValidElement(candidate) || typeof candidate === 'string' ? candidate : fallback;
+}
+
 function normalizeButtons(value: unknown): ButtonItem[] {
   return normalizeArray(value, DEFAULT_BUTTONS.items, 3, (item) => ({
     label: asString(item.label),
@@ -311,7 +317,7 @@ function ButtonsPreview(props: ButtonsEditorProps & { id: string }): React.React
     <div className={`g7pb-preview-buttons g7pb-preview-buttons--${props.alignment} ${surfaceClass(props)}`} role="group" aria-label="페이지 행동">
       {normalizeButtons(props.items).map((item, index) => <a key={`${item.label}-${index}`}
         className={`g7pb-preview-button g7pb-preview-button--${item.variant}`} href={safeLink(item.url)}
-        data-g7pb-action-field={`items.${index}.label`} onClick={(event) => event.preventDefault()}>{item.label}</a>)}
+        data-g7pb-action-field={`items.${index}.label`} onClick={(event) => event.preventDefault()}>{inlineArrayContent(props.items, index, 'label', item.label)}</a>)}
     </div>
   </Frame>;
 }
@@ -338,8 +344,8 @@ function IconListPreview(props: IconListEditorProps & { id: string }): React.Rea
         <h2 data-g7pb-inline-field="heading">{props.heading}</h2></header>
       <ul>{normalizeIconItems(props.items).map((item, index) => <li key={`${item.title}-${index}`}>
         <i aria-hidden="true">{ICON_GLYPHS[item.icon] ?? ICON_GLYPHS.check}</i>
-        <div><h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3>
-          <p data-g7pb-inline-field={`items.${index}.body`}>{item.body}</p></div>
+        <div><h3 data-g7pb-inline-field={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</h3>
+          <p data-g7pb-inline-field={`items.${index}.body`}>{inlineArrayContent(props.items, index, 'body', item.body)}</p></div>
       </li>)}</ul>
     </div>
   </Frame>;

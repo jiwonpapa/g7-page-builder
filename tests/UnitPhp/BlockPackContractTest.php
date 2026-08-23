@@ -28,15 +28,15 @@ final class BlockPackContractTest extends TestCase
         self::assertSame($manifest->toArray(), BlockPackManifest::fromArray($manifest->toArray())->toArray());
     }
 
-    public function test_builtin_core_manifest_registers_all_thirty_seven_definitions_and_presets(): void
+    public function test_builtin_core_manifest_registers_all_forty_five_definitions_and_presets(): void
     {
         $manifest = (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2));
         $registry = new BlockRegistry;
         $registry->register($manifest, enabled: true);
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
-        self::assertCount(37, $registry->definitions());
-        self::assertCount(18, $registry->presets());
+        self::assertCount(45, $registry->definitions());
+        self::assertCount(55, $registry->presets());
         self::assertNotNull($registry->definition('content.heading-01', 1));
         self::assertNotNull($registry->definition('content.rich-text-01', 1));
         self::assertNotNull($registry->definition('media.image-01', 1));
@@ -59,6 +59,14 @@ final class BlockPackContractTest extends TestCase
         self::assertNotNull($registry->definition('commerce.comparison-table-01', 1));
         self::assertNotNull($registry->definition('content.article-list-01', 1));
         self::assertNotNull($registry->definition('media.video-embed-01', 1));
+        self::assertNotNull($registry->definition('content.divider-01', 1));
+        self::assertNotNull($registry->definition('content.blockquote-01', 1));
+        self::assertNotNull($registry->definition('content.notice-01', 1));
+        self::assertNotNull($registry->definition('content.card-grid-01', 1));
+        self::assertNotNull($registry->definition('navigation.breadcrumbs-01', 1));
+        self::assertNotNull($registry->definition('navigation.anchor-menu-01', 1));
+        self::assertNotNull($registry->definition('navigation.social-links-01', 1));
+        self::assertNotNull($registry->definition('media.image-carousel-01', 1));
     }
 
     public function test_icon_list_glyph_css_does_not_leak_into_feature_icons(): void

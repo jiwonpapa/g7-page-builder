@@ -6,10 +6,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- Elementor·Webflow·Squarespace·Tailwind Plus·daisyUI 공식 카탈로그의 공통 정보 구조를 기준으로 구분선, 인용문, 알림, 카드 그리드, 경로, 앵커 메뉴, 소셜 링크, 이미지 캐러셀 8종을 추가했습니다.
+- 내장 카탈로그를 9개 용도 분류·45종 블록·55개 한국어 프리셋·6개 Quick Add로 확장하고 모든 타입에 고유 썸네일과 프리셋 시작점을 제공합니다.
+- 45종 전체를 한 문서로 실제 발행하고 axe WCAG A/AA·가로넘침·PC/태블릿/모바일 핵심 10종씩 30개 시각 기준선을 확인하는 제품 E2E를 추가했습니다.
+
 ### Changed
 
 - GitHub README 상단에 블록 부품을 로봇 팔로 조립해 반응형 웹사이트를 완성하는 제품 인트로 이미지를 추가했습니다.
 - 로컬·CI 검증 기준을 공식 G7 7.0.8로 올리고 Block Pack·공식 Store 호환성 판정이 설치된 G7의 실제 버전을 사용하도록 변경했습니다.
+- 블록 검색이 이름·용도·분류·한국어 동의어를 함께 찾고, 초기 라이브러리에서 가장 자주 쓰는 기본 6종을 바로 추가할 수 있게 변경했습니다.
+
+### Security
+
+- 새 8종의 route, anchor, network, tone, 반복 수, 이미지 대체 텍스트, 캐러셀 제어를 schema와 PHP compiler의 typed allowlist로 제한하고 임의 class·style·HTML·JavaScript를 허용하지 않습니다.
 
 ## [0.18.3] - 2026-08-23
 

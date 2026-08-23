@@ -215,6 +215,38 @@
         {
           "if": { "properties": { "type": { "const": "content.icon-list-01" } }, "required": ["type"] },
           "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/iconListProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.divider-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/dividerProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.blockquote-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/blockquoteProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.notice-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/noticeProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.card-grid-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/cardGridProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "navigation.breadcrumbs-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/breadcrumbsProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "navigation.anchor-menu-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/anchorMenuProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "navigation.social-links-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/socialLinksProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "media.image-carousel-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/imageCarouselProps" } } }
         }
       ]
     },
@@ -587,6 +619,156 @@
         "audience": { "enum": ["all", "guest", "member"] },
         "showDescription": { "type": "boolean" },
         "emptyMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "dividerProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variant", "width", "label"],
+      "properties": {
+        "variant": { "enum": ["solid", "dashed", "gradient"] },
+        "width": { "enum": ["narrow", "standard", "full"] },
+        "label": { "type": "string", "maxLength": 120 },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "blockquoteProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quote", "citation", "role", "alignment", "variant"],
+      "properties": {
+        "quote": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "citation": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "role": { "type": "string", "maxLength": 160 },
+        "alignment": { "enum": ["left", "center"] },
+        "variant": { "enum": ["line", "mark"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "noticeProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tone", "title", "body", "actionLabel", "actionUrl"],
+      "properties": {
+        "tone": { "enum": ["info", "success", "warning", "critical"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "body": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "actionLabel": { "type": "string", "maxLength": 120 },
+        "actionUrl": { "type": "string", "maxLength": 2048, "pattern": "^(?:$|/[^\\s]*|https://[^\\s]+|mailto:[^\\s]+|tel:[^\\s]+)$" },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "cardGridProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "items", "columns", "variant"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "items": {
+          "type": "array", "minItems": 2, "maxItems": 6,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["kicker", "title", "body", "linkLabel", "linkUrl"],
+            "properties": {
+              "kicker": { "type": "string", "maxLength": 80 },
+              "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+              "body": { "type": "string", "maxLength": 1000 },
+              "linkLabel": { "type": "string", "maxLength": 120 },
+              "linkUrl": { "type": "string", "maxLength": 2048, "pattern": "^(?:$|/[^\\s]*|https://[^\\s]+|mailto:[^\\s]+|tel:[^\\s]+)$" }
+            }
+          }
+        },
+        "columns": { "enum": [2, 3] },
+        "variant": { "enum": ["plain", "outlined"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "breadcrumbsProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "currentLabel"],
+      "properties": {
+        "items": {
+          "type": "array", "minItems": 1, "maxItems": 6,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["label", "url"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "url": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^(?:/[^\\s]*|https://[^\\s]+)$" }
+            }
+          }
+        },
+        "currentLabel": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "anchorMenuProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "items", "sticky", "alignment"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "items": {
+          "type": "array", "minItems": 2, "maxItems": 8,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["label", "anchor"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "anchor": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[a-z][a-z0-9-]{0,79}$" }
+            }
+          }
+        },
+        "sticky": { "type": "boolean" },
+        "alignment": { "enum": ["left", "center"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "socialLinksProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "items", "variant", "alignment"],
+      "properties": {
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "items": {
+          "type": "array", "minItems": 1, "maxItems": 8,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["network", "label", "url"],
+            "properties": {
+              "network": { "enum": ["instagram", "youtube", "facebook", "linkedin", "x", "kakao", "blog", "website"] },
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "url": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^(?:/[^\\s]*|https://[^\\s]+)$" }
+            }
+          }
+        },
+        "variant": { "enum": ["icons", "labels"] },
+        "alignment": { "enum": ["left", "center", "right"] },
+        "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "imageCarouselProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eyebrow", "heading", "images", "autoplay", "interval", "controls", "aspectRatio"],
+      "properties": {
+        "eyebrow": { "type": "string", "maxLength": 120 },
+        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "images": {
+          "type": "array", "minItems": 2, "maxItems": 8,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["src", "alt", "caption"],
+            "properties": {
+              "src": { "type": "string", "maxLength": 2048, "pattern": "^(?:$|/[^\\s]*|https://[^\\s]+)$" },
+              "alt": { "type": "string", "minLength": 1, "maxLength": 300 },
+              "caption": { "type": "string", "maxLength": 300 }
+            }
+          }
+        },
+        "autoplay": { "type": "boolean" },
+        "interval": { "enum": [3000, 5000, 7000] },
+        "controls": { "enum": ["arrows", "dots", "both"] },
+        "aspectRatio": { "enum": ["16:9", "4:3", "1:1"] },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
     },

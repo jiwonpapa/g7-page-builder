@@ -85,6 +85,14 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
   { componentType: 'G7ProductGrid', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
   { componentType: 'G7ProductShowcase', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
   { componentType: 'G7ProductDetail', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: true },
+  { componentType: 'Divider', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
+  { componentType: 'Blockquote', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
+  { componentType: 'Notice', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: false },
+  { componentType: 'CardGrid', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
+  { componentType: 'Breadcrumbs', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
+  { componentType: 'AnchorMenu', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
+  { componentType: 'SocialLinks', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
+  { componentType: 'ImageCarousel', directText: true, collections: ['images'], directMedia: true, directRoute: false, dynamicData: false },
 ];
 
 const COLLECTION_LIMITS: Record<string, Record<string, CollectionLimit>> = {
@@ -108,6 +116,11 @@ const COLLECTION_LIMITS: Record<string, Record<string, CollectionLimit>> = {
   TestimonialSlider: { items: { min: 2, max: 8 } },
   EventSchedule: { items: { min: 1, max: 12 } },
   DownloadResources: { items: { min: 1, max: 12 } },
+  CardGrid: { items: { min: 2, max: 6 } },
+  Breadcrumbs: { items: { min: 1, max: 6 } },
+  AnchorMenu: { items: { min: 2, max: 8 } },
+  SocialLinks: { items: { min: 1, max: 8 } },
+  ImageCarousel: { images: { min: 2, max: 8 } },
 };
 
 const ROOT_ROUTE_FIELDS: Record<string, Record<string, string>> = {
@@ -120,6 +133,7 @@ const ROOT_ROUTE_FIELDS: Record<string, Record<string, string>> = {
   MapDirections: { directionsLabel: 'directionsUrl' },
   G7PostDetail: { linkLabel: 'detailUrl' },
   G7ProductDetail: { buttonLabel: 'detailUrl' },
+  Notice: { actionLabel: 'actionUrl' },
 };
 
 const COLLECTION_ROUTE_FIELDS: Record<string, Record<string, { trigger: string[]; target: string }>> = {
@@ -133,6 +147,9 @@ const COLLECTION_ROUTE_FIELDS: Record<string, Record<string, { trigger: string[]
   LogoCarousel: { logos: { trigger: ['name'], target: 'url' } },
   EventSchedule: { items: { trigger: ['buttonLabel'], target: 'buttonUrl' } },
   DownloadResources: { items: { trigger: ['buttonLabel'], target: 'url' } },
+  CardGrid: { items: { trigger: ['linkLabel'], target: 'linkUrl' } },
+  Breadcrumbs: { items: { trigger: ['label'], target: 'url' } },
+  SocialLinks: { items: { trigger: ['label'], target: 'url' } },
 };
 
 const COLLECTION_MEDIA_FIELDS: Record<string, Record<string, string>> = {
@@ -144,6 +161,7 @@ const COLLECTION_MEDIA_FIELDS: Record<string, Record<string, string>> = {
   ArticleList: { items: 'imageSrc' },
   LogoCarousel: { logos: 'imageSrc' },
   TestimonialSlider: { items: 'avatarSrc' },
+  ImageCarousel: { images: 'src' },
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -160,6 +178,10 @@ const FIELD_LABELS: Record<string, string> = {
   buttonLabel: '버튼',
   linkLabel: '링크',
   directionsLabel: '길찾기 버튼',
+  actionLabel: '안내 링크',
+  currentLabel: '현재 페이지',
+  role: '역할·소속',
+  kicker: '보조 문구',
   imageSrc: '이미지',
   avatarSrc: '프로필 이미지',
   src: '이미지',
@@ -214,6 +236,14 @@ const COMPONENT_TYPE_BY_BLOCK_TYPE: Record<string, string> = {
   'g7-product-grid': 'G7ProductGrid',
   'g7-product-showcase': 'G7ProductShowcase',
   'g7-product-detail': 'G7ProductDetail',
+  divider: 'Divider',
+  blockquote: 'Blockquote',
+  notice: 'Notice',
+  'card-grid': 'CardGrid',
+  breadcrumbs: 'Breadcrumbs',
+  'anchor-menu': 'AnchorMenu',
+  'social-links': 'SocialLinks',
+  'image-carousel': 'ImageCarousel',
 };
 
 function selectionFromPath(blockId: string, blockType: string, fieldPath: string, role: CanvasElementRole): Omit<CanvasElementSelection, 'anchor'> {

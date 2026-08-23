@@ -37,6 +37,14 @@ export const IMAGE_TEXT_BLOCK_TYPE = 'media.image-text-01' as const;
 export const ICON_LIST_BLOCK_TYPE = 'content.icon-list-01' as const;
 export const G7_POST_DETAIL_BLOCK_TYPE = 'g7.board-post-detail-01' as const;
 export const G7_PRODUCT_DETAIL_BLOCK_TYPE = 'g7.ecommerce-product-detail-01' as const;
+export const DIVIDER_BLOCK_TYPE = 'content.divider-01' as const;
+export const BLOCKQUOTE_BLOCK_TYPE = 'content.blockquote-01' as const;
+export const NOTICE_BLOCK_TYPE = 'content.notice-01' as const;
+export const CARD_GRID_BLOCK_TYPE = 'content.card-grid-01' as const;
+export const BREADCRUMBS_BLOCK_TYPE = 'navigation.breadcrumbs-01' as const;
+export const ANCHOR_MENU_BLOCK_TYPE = 'navigation.anchor-menu-01' as const;
+export const SOCIAL_LINKS_BLOCK_TYPE = 'navigation.social-links-01' as const;
+export const IMAGE_CAROUSEL_BLOCK_TYPE = 'media.image-carousel-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -571,6 +579,103 @@ export interface G7ProductDetailBlockProps {
   audience: DynamicAudience;
   showDescription: boolean;
   emptyMessage: string;
+  appearance?: BlockAppearance;
+}
+
+export interface DividerBlockProps {
+  variant: 'solid' | 'dashed' | 'gradient';
+  width: 'narrow' | 'standard' | 'full';
+  label: string;
+  appearance?: BlockAppearance;
+}
+
+export interface BlockquoteBlockProps {
+  quote: string;
+  citation: string;
+  role: string;
+  alignment: 'left' | 'center';
+  variant: 'line' | 'mark';
+  appearance?: BlockAppearance;
+}
+
+export interface NoticeBlockProps {
+  tone: 'info' | 'success' | 'warning' | 'critical';
+  title: string;
+  body: string;
+  actionLabel: string;
+  actionUrl: string;
+  appearance?: BlockAppearance;
+}
+
+export interface CardGridItem {
+  kicker: string;
+  title: string;
+  body: string;
+  linkLabel: string;
+  linkUrl: string;
+}
+
+export interface CardGridBlockProps {
+  eyebrow: string;
+  heading: string;
+  items: CardGridItem[];
+  columns: 2 | 3;
+  variant: 'plain' | 'outlined';
+  appearance?: BlockAppearance;
+}
+
+export interface BreadcrumbItem {
+  label: string;
+  url: string;
+}
+
+export interface BreadcrumbsBlockProps {
+  items: BreadcrumbItem[];
+  currentLabel: string;
+  appearance?: BlockAppearance;
+}
+
+export interface AnchorMenuItem {
+  label: string;
+  anchor: string;
+}
+
+export interface AnchorMenuBlockProps {
+  label: string;
+  items: AnchorMenuItem[];
+  sticky: boolean;
+  alignment: 'left' | 'center';
+  appearance?: BlockAppearance;
+}
+
+export type SocialNetwork = 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'x' | 'kakao' | 'blog' | 'website';
+
+export interface SocialLinkItem {
+  network: SocialNetwork;
+  label: string;
+  url: string;
+}
+
+export interface SocialLinksBlockProps {
+  heading: string;
+  items: SocialLinkItem[];
+  variant: 'icons' | 'labels';
+  alignment: 'left' | 'center' | 'right';
+  appearance?: BlockAppearance;
+}
+
+export interface ImageCarouselItem extends PageBuilderImage {
+  caption: string;
+}
+
+export interface ImageCarouselBlockProps {
+  eyebrow: string;
+  heading: string;
+  images: ImageCarouselItem[];
+  autoplay: boolean;
+  interval: 3000 | 5000 | 7000;
+  controls: 'arrows' | 'dots' | 'both';
+  aspectRatio: '16:9' | '4:3' | '1:1';
   appearance?: BlockAppearance;
 }
 

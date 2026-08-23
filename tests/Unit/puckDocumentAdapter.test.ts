@@ -3,14 +3,19 @@ import { describe, expect, it } from 'vitest';
 import type { PuckEditorData } from '../../resources/js/editor/PuckEditorAdapter';
 import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import {
+  ANCHOR_MENU_BLOCK_TYPE,
   ARTICLE_LIST_BLOCK_TYPE,
+  BLOCKQUOTE_BLOCK_TYPE,
+  BREADCRUMBS_BLOCK_TYPE,
   BUTTONS_BLOCK_TYPE,
+  CARD_GRID_BLOCK_TYPE,
   COMPARISON_TABLE_BLOCK_TYPE,
   CONTACT_BLOCK_TYPE,
   CTA_BLOCK_TYPE,
   FAQ_ACCORDION_BLOCK_TYPE,
   FEATURES_BLOCK_TYPE,
   DOWNLOAD_RESOURCES_BLOCK_TYPE,
+  DIVIDER_BLOCK_TYPE,
   EVENT_SCHEDULE_BLOCK_TYPE,
   G7_BOARD_ARCHIVE_BLOCK_TYPE,
   G7_POST_DETAIL_BLOCK_TYPE,
@@ -22,12 +27,15 @@ import {
   HEADING_BLOCK_TYPE,
   ICON_LIST_BLOCK_TYPE,
   IMAGE_BLOCK_TYPE,
+  IMAGE_CAROUSEL_BLOCK_TYPE,
   IMAGE_TEXT_BLOCK_TYPE,
   INQUIRY_FORM_BLOCK_TYPE,
   MAP_DIRECTIONS_BLOCK_TYPE,
+  NOTICE_BLOCK_TYPE,
   LOGO_CAROUSEL_BLOCK_TYPE,
   PROCESS_TIMELINE_BLOCK_TYPE,
   RICH_TEXT_BLOCK_TYPE,
+  SOCIAL_LINKS_BLOCK_TYPE,
   TABS_BLOCK_TYPE,
   TESTIMONIALS_BLOCK_TYPE,
   TESTIMONIAL_SLIDER_BLOCK_TYPE,
@@ -119,6 +127,24 @@ const documentFixture: PageBuilderDocument = {
   ],
 };
 
+const productionLibraryFixture: PageBuilderDocument = {
+  schema_version: 'g7-page-builder/v1',
+  document_id: '00000000-0000-4000-8000-000000000200',
+  slug: 'production-library-round-trip',
+  mode: 'canvas',
+  locale: 'ko',
+  blocks: [
+    { instance_id: '00000000-0000-4000-8000-000000000201', type: DIVIDER_BLOCK_TYPE, block_version: 1, props: { variant: 'gradient', width: 'standard', label: '서비스 안내' }, slots: {} },
+    { instance_id: '00000000-0000-4000-8000-000000000202', type: BLOCKQUOTE_BLOCK_TYPE, block_version: 1, props: { quote: '좋은 페이지는 다음 행동을 분명하게 만듭니다.', citation: '김기획', role: '제품 책임자', alignment: 'left', variant: 'mark' }, slots: {} },
+    { instance_id: '00000000-0000-4000-8000-000000000203', type: NOTICE_BLOCK_TYPE, block_version: 1, props: { tone: 'info', title: '방문 전 확인해 주세요', body: '운영 시간과 준비 사항을 확인하실 수 있습니다.', actionLabel: '운영 안내', actionUrl: '/guide' }, slots: {} },
+    { instance_id: '00000000-0000-4000-8000-000000000204', type: CARD_GRID_BLOCK_TYPE, block_version: 1, props: { eyebrow: 'SERVICES', heading: '필요한 서비스를 고르세요', items: [{ kicker: '01', title: '상담', body: '목표와 일정을 함께 정리합니다.', linkLabel: '상담 보기', linkUrl: '/consulting' }, { kicker: '02', title: '구축', body: '검증된 흐름으로 페이지를 완성합니다.', linkLabel: '구축 보기', linkUrl: '/build' }], columns: 2, variant: 'outlined' }, slots: {} },
+    { instance_id: '00000000-0000-4000-8000-000000000205', type: BREADCRUMBS_BLOCK_TYPE, block_version: 1, props: { items: [{ label: '홈', url: '/' }, { label: '서비스', url: '/services' }], currentLabel: '상세 안내' }, slots: {} },
+    { instance_id: '00000000-0000-4000-8000-000000000206', type: ANCHOR_MENU_BLOCK_TYPE, block_version: 1, props: { label: '이 페이지에서', items: [{ label: '소개', anchor: 'intro' }, { label: '가격', anchor: 'pricing' }], sticky: true, alignment: 'center' }, slots: {} },
+    { instance_id: '00000000-0000-4000-8000-000000000207', type: SOCIAL_LINKS_BLOCK_TYPE, block_version: 1, props: { heading: '공식 채널', items: [{ network: 'instagram', label: '인스타그램', url: 'https://instagram.com/example' }, { network: 'blog', label: '블로그', url: '/blog' }], variant: 'icons', alignment: 'left' }, slots: {} },
+    { instance_id: '00000000-0000-4000-8000-000000000208', type: IMAGE_CAROUSEL_BLOCK_TYPE, block_version: 1, props: { eyebrow: 'GALLERY', heading: '공간을 미리 만나보세요', images: [{ src: 'https://images.example.com/space-1.webp', alt: '밝은 상담 공간', caption: '편안한 상담 공간' }, { src: '/storage/space-2.webp', alt: '제품 전시 공간', caption: '제품을 살펴보는 전시 공간' }], autoplay: false, interval: 5000, controls: 'both', aspectRatio: '16:9' }, slots: {} },
+  ],
+};
+
 describe('Puck PageBuilderDocument adapter', () => {
   it('keeps inline editing explicit for Hero-family copy and excludes structural fields', () => {
     const components = pageBuilderPuckConfig.components as unknown as Record<string, {
@@ -194,6 +220,33 @@ describe('Puck PageBuilderDocument adapter', () => {
       'HeroSplit', 'HeroSlider', 'LogoCloud', 'Stats', 'Pricing', 'Team', 'Gallery', 'BarChart',
     ]);
     expect(puckToCanonical(session.data, session.context)).toEqual(fixture);
+  });
+
+  it('round-trips all eight production-library blocks with typed structural fields', () => {
+    const session = canonicalToPuck(productionLibraryFixture);
+
+    expect(session.data.content.map((block) => block.type)).toEqual([
+      'Divider', 'Blockquote', 'Notice', 'CardGrid', 'Breadcrumbs', 'AnchorMenu', 'SocialLinks', 'ImageCarousel',
+    ]);
+    expect(puckToCanonical(session.data, session.context)).toEqual(productionLibraryFixture);
+  });
+
+  it('keeps production-library copy editable and structural URLs out of inline editing', () => {
+    const components = pageBuilderPuckConfig.components as unknown as Record<string, {
+      fields: Record<string, Record<string, unknown>>;
+    }>;
+    const notice = components.Notice.fields;
+    const cards = components.CardGrid.fields.items as { arrayFields: Record<string, Record<string, unknown>> };
+    const carousel = components.ImageCarousel.fields.images as { arrayFields: Record<string, Record<string, unknown>> };
+
+    expect(notice.title.contentEditable).toBe(true);
+    expect(notice.body.contentEditable).toBe(true);
+    expect(notice.actionLabel.contentEditable).toBe(true);
+    expect(notice.actionUrl.contentEditable).not.toBe(true);
+    expect(cards.arrayFields.title.contentEditable).toBe(true);
+    expect(cards.arrayFields.linkUrl.contentEditable).not.toBe(true);
+    expect(carousel.arrayFields.caption.contentEditable).toBe(true);
+    expect(carousel.arrayFields.src.contentEditable).not.toBe(true);
   });
 
   it('round-trips all canonical MVP blocks without leaking Puck state', () => {

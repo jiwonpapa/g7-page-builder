@@ -14,7 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.12.0';
+    public const COMPILER_VERSION = '0.13.0';
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
@@ -112,6 +112,22 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private const ICON_LIST_TYPE = 'content.icon-list-01';
 
+    private const DIVIDER_TYPE = 'content.divider-01';
+
+    private const BLOCKQUOTE_TYPE = 'content.blockquote-01';
+
+    private const NOTICE_TYPE = 'content.notice-01';
+
+    private const CARD_GRID_TYPE = 'content.card-grid-01';
+
+    private const BREADCRUMBS_TYPE = 'navigation.breadcrumbs-01';
+
+    private const ANCHOR_MENU_TYPE = 'navigation.anchor-menu-01';
+
+    private const SOCIAL_LINKS_TYPE = 'navigation.social-links-01';
+
+    private const IMAGE_CAROUSEL_TYPE = 'media.image-carousel-01';
+
     /** @var array<string, list<string>> */
     private const ROOT_ELEMENT_FIELDS = [
         self::HEADING_TYPE => ['eyebrow', 'heading'],
@@ -151,6 +167,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         self::G7_PRODUCT_SHOWCASE_TYPE => ['eyebrow', 'heading'],
         self::G7_POST_DETAIL_TYPE => ['eyebrow', 'heading', 'linkLabel'],
         self::G7_PRODUCT_DETAIL_TYPE => ['eyebrow', 'heading', 'buttonLabel'],
+        self::DIVIDER_TYPE => ['label'],
+        self::BLOCKQUOTE_TYPE => ['quote', 'citation', 'role'],
+        self::NOTICE_TYPE => ['title', 'body', 'actionLabel'],
+        self::CARD_GRID_TYPE => ['eyebrow', 'heading'],
+        self::BREADCRUMBS_TYPE => ['currentLabel'],
+        self::ANCHOR_MENU_TYPE => ['label'],
+        self::SOCIAL_LINKS_TYPE => ['heading'],
+        self::IMAGE_CAROUSEL_TYPE => ['eyebrow', 'heading'],
     ];
 
     /** @var list<string> */
@@ -355,6 +379,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.buttons-01' => fn (array $props): string => $this->compileButtons($props),
             'builtin.image-text-01' => fn (array $props): string => $this->compileImageText($props),
             'builtin.icon-list-01' => fn (array $props): string => $this->compileIconList($props),
+            'builtin.divider-01' => fn (array $props): string => $this->compileDivider($props),
+            'builtin.blockquote-01' => fn (array $props): string => $this->compileBlockquote($props),
+            'builtin.notice-01' => fn (array $props): string => $this->compileNotice($props),
+            'builtin.card-grid-01' => fn (array $props): string => $this->compileCardGrid($props),
+            'builtin.breadcrumbs-01' => fn (array $props): string => $this->compileBreadcrumbs($props),
+            'builtin.anchor-menu-01' => fn (array $props): string => $this->compileAnchorMenu($props),
+            'builtin.social-links-01' => fn (array $props): string => $this->compileSocialLinks($props),
+            'builtin.image-carousel-01' => fn (array $props): string => $this->compileImageCarousel($props),
         ];
 
         foreach ($compilers as $key => $compiler) {
@@ -514,6 +546,238 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         return '<section class="g7pb-block g7pb-icon-list g7pb-icon-list--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="icon-list">'.$this->compileSectionHeading($eyebrow, $heading).'<ul class="g7pb-icon-list__items">'.implode('', $compiled).'</ul></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileDivider(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['variant', 'width', 'label', 'appearance'], 'Divider');
+        $variant = $this->requiredString($props, 'variant', 16);
+        $width = $this->requiredString($props, 'width', 16);
+        $label = $this->optionalString($props, 'label', 120) ?? '';
+        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        if (! in_array($variant, ['solid', 'dashed', 'gradient'], true)) {
+            throw new DocumentCompileException('Divider variant is invalid.');
+        }
+        if (! in_array($width, ['narrow', 'standard', 'full'], true)) {
+            throw new DocumentCompileException('Divider width is invalid.');
+        }
+        $labelMarkup = $label === '' ? '' : '<span class="g7pb-divider__label">'.$this->escape($label).'</span>';
+
+        return '<section class="g7pb-block g7pb-divider g7pb-divider--'.$variant.' g7pb-divider--'.$width.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="divider"><span class="g7pb-divider__line" aria-hidden="true"></span>'.$labelMarkup.'<span class="g7pb-divider__line" aria-hidden="true"></span></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileBlockquote(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['quote', 'citation', 'role', 'alignment', 'variant', 'appearance'], 'Blockquote');
+        $quote = $this->requiredString($props, 'quote', 2000);
+        $citation = $this->requiredString($props, 'citation', 120);
+        $role = $this->optionalString($props, 'role', 160) ?? '';
+        $alignment = $this->requiredString($props, 'alignment', 16);
+        $variant = $this->requiredString($props, 'variant', 16);
+        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        if (! in_array($alignment, ['left', 'center'], true) || ! in_array($variant, ['line', 'mark'], true)) {
+            throw new DocumentCompileException('Blockquote alignment or variant is invalid.');
+        }
+        $roleMarkup = $role === '' ? '' : '<span class="g7pb-blockquote__role">'.$this->escape($role).'</span>';
+
+        return '<section class="g7pb-block g7pb-blockquote g7pb-blockquote--'.$alignment.' g7pb-blockquote--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="blockquote"><blockquote><p class="g7pb-blockquote__quote">'.$this->formatText($quote).'</p><footer><cite>'.$this->escape($citation).'</cite>'.$roleMarkup.'</footer></blockquote></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileNotice(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['tone', 'title', 'body', 'actionLabel', 'actionUrl', 'appearance'], 'Notice');
+        $tone = $this->requiredString($props, 'tone', 16);
+        $title = $this->requiredString($props, 'title', 200);
+        $body = $this->requiredString($props, 'body', 2000);
+        $actionLabel = $this->optionalString($props, 'actionLabel', 120) ?? '';
+        $actionUrl = $this->optionalString($props, 'actionUrl', 2048) ?? '';
+        $appearance = $this->appearanceClasses($props, 'soft', 'compact');
+        if (! in_array($tone, ['info', 'success', 'warning', 'critical'], true)) {
+            throw new DocumentCompileException('Notice tone is invalid.');
+        }
+        if (($actionLabel === '') !== ($actionUrl === '')) {
+            throw new DocumentCompileException('Notice action label and URL must be provided together.');
+        }
+        $action = '';
+        if ($actionLabel !== '') {
+            $this->assertAllowedUrl($actionUrl, 'Notice action');
+            $action = '<a class="g7pb-content-notice__action" href="'.$this->escapeAttribute($actionUrl).'">'.$this->escape($actionLabel).'<span aria-hidden="true"> →</span></a>';
+        }
+        $role = $tone === 'critical' ? 'alert' : 'note';
+
+        return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->escape($title).'</h2><p class="g7pb-content-notice__body">'.$this->formatText($body).'</p></div>'.$action.'</section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileCardGrid(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'columns', 'variant', 'appearance'], 'Card grid');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $columns = $this->requiredIntegerChoice($props, 'columns', [2, 3]);
+        $variant = $this->requiredString($props, 'variant', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! is_array($items) || count($items) < 2 || count($items) > 6) {
+            throw new DocumentCompileException('Card grid must contain between two and six items.');
+        }
+        if (! in_array($variant, ['plain', 'outlined'], true)) {
+            throw new DocumentCompileException('Card grid variant is invalid.');
+        }
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Card grid item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['kicker', 'title', 'body', 'linkLabel', 'linkUrl'], "Card grid item {$index}");
+            $kicker = $this->optionalString($item, 'kicker', 80) ?? '';
+            $title = $this->requiredString($item, 'title', 160);
+            $body = $this->optionalString($item, 'body', 1000) ?? '';
+            $linkLabel = $this->optionalString($item, 'linkLabel', 120) ?? '';
+            $linkUrl = $this->optionalString($item, 'linkUrl', 2048) ?? '';
+            if (($linkLabel === '') !== ($linkUrl === '')) {
+                throw new DocumentCompileException("Card grid item {$index} link label and URL must be provided together.");
+            }
+            $link = '';
+            if ($linkLabel !== '') {
+                $this->assertAllowedUrl($linkUrl, "Card grid item {$index}");
+                $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).'<span aria-hidden="true"> →</span></a>';
+            }
+            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->escape($title).'</h3>'.($body === '' ? '' : '<p class="g7pb-card-grid__body">'.$this->formatText($body).'</p>').$link.'</article>';
+        }
+
+        return '<section class="g7pb-block g7pb-card-grid g7pb-card-grid--'.$columns.' g7pb-card-grid--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="card-grid">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-card-grid__items">'.implode('', $compiled).'</div></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileBreadcrumbs(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['items', 'currentLabel', 'appearance'], 'Breadcrumbs');
+        $items = $props['items'] ?? null;
+        $currentLabel = $this->requiredString($props, 'currentLabel', 160);
+        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        if (! is_array($items) || count($items) < 1 || count($items) > 6) {
+            throw new DocumentCompileException('Breadcrumbs must contain between one and six parent items.');
+        }
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Breadcrumb item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['label', 'url'], "Breadcrumb item {$index}");
+            $label = $this->requiredString($item, 'label', 120);
+            $url = $this->requiredString($item, 'url', 2048);
+            $this->assertPageOrHttpsUrl($url, "Breadcrumb item {$index}");
+            $compiled[] = '<li><a href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a></li>';
+        }
+        $compiled[] = '<li aria-current="page">'.$this->escape($currentLabel).'</li>';
+
+        return '<section class="g7pb-block g7pb-breadcrumbs '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="breadcrumbs"><nav aria-label="경로"><ol>'.implode('', $compiled).'</ol></nav></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileAnchorMenu(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['label', 'items', 'sticky', 'alignment', 'appearance'], 'Anchor menu');
+        $label = $this->requiredString($props, 'label', 120);
+        $items = $props['items'] ?? null;
+        $sticky = $this->requiredBoolean($props, 'sticky');
+        $alignment = $this->requiredString($props, 'alignment', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
+            throw new DocumentCompileException('Anchor menu must contain between two and eight items.');
+        }
+        if (! in_array($alignment, ['left', 'center'], true)) {
+            throw new DocumentCompileException('Anchor menu alignment is invalid.');
+        }
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Anchor menu item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['label', 'anchor'], "Anchor menu item {$index}");
+            $itemLabel = $this->requiredString($item, 'label', 120);
+            $anchor = $this->requiredString($item, 'anchor', 80);
+            if (preg_match('/^[a-z][a-z0-9-]{0,79}$/D', $anchor) !== 1) {
+                throw new DocumentCompileException("Anchor menu item {$index} anchor is invalid.");
+            }
+            $compiled[] = '<li><a href="#'.$this->escapeAttribute($anchor).'">'.$this->escape($itemLabel).'</a></li>';
+        }
+        $stickyClass = $sticky ? ' g7pb-anchor-menu--sticky' : '';
+
+        return '<section class="g7pb-block g7pb-anchor-menu g7pb-anchor-menu--'.$alignment.$stickyClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="anchor-menu"><nav aria-label="'.$this->escapeAttribute($label).'"><strong>'.$this->escape($label).'</strong><ul>'.implode('', $compiled).'</ul></nav></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileSocialLinks(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['heading', 'items', 'variant', 'alignment', 'appearance'], 'Social links');
+        $heading = $this->requiredString($props, 'heading', 200);
+        $items = $props['items'] ?? null;
+        $variant = $this->requiredString($props, 'variant', 16);
+        $alignment = $this->requiredString($props, 'alignment', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        $networks = ['instagram', 'youtube', 'facebook', 'linkedin', 'x', 'kakao', 'blog', 'website'];
+        if (! is_array($items) || count($items) < 1 || count($items) > 8) {
+            throw new DocumentCompileException('Social links must contain between one and eight items.');
+        }
+        if (! in_array($variant, ['icons', 'labels'], true) || ! in_array($alignment, ['left', 'center', 'right'], true)) {
+            throw new DocumentCompileException('Social links variant or alignment is invalid.');
+        }
+        $compiled = [];
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Social link item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['network', 'label', 'url'], "Social link item {$index}");
+            $network = $this->requiredString($item, 'network', 16);
+            $label = $this->requiredString($item, 'label', 120);
+            $url = $this->requiredString($item, 'url', 2048);
+            if (! in_array($network, $networks, true)) {
+                throw new DocumentCompileException("Social link item {$index} network is invalid.");
+            }
+            $this->assertPageOrHttpsUrl($url, "Social link item {$index}");
+            $compiled[] = '<li><a class="g7pb-social-links__link g7pb-social-links__link--'.$network.'" href="'.$this->escapeAttribute($url).'" rel="noopener noreferrer"><span class="g7pb-social-links__icon" aria-hidden="true"></span><span>'.$this->escape($label).'</span></a></li>';
+        }
+
+        return '<section class="g7pb-block g7pb-social-links g7pb-social-links--'.$variant.' g7pb-social-links--'.$alignment.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="social-links"><nav aria-label="'.$this->escapeAttribute($heading).'"><h2>'.$this->escape($heading).'</h2><ul>'.implode('', $compiled).'</ul></nav></section>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function compileImageCarousel(array $props): string
+    {
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'autoplay', 'interval', 'controls', 'aspectRatio', 'appearance'], 'Image carousel');
+        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
+        $heading = $this->requiredString($props, 'heading', 200);
+        $images = $props['images'] ?? null;
+        $autoplay = $this->requiredBoolean($props, 'autoplay');
+        $interval = $this->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
+        $controls = $this->requiredString($props, 'controls', 16);
+        $aspectRatio = $this->requiredString($props, 'aspectRatio', 16);
+        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        if (! is_array($images) || count($images) < 2 || count($images) > 8) {
+            throw new DocumentCompileException('Image carousel must contain between two and eight images.');
+        }
+        if (! in_array($controls, ['arrows', 'dots', 'both'], true) || ! in_array($aspectRatio, ['16:9', '4:3', '1:1'], true)) {
+            throw new DocumentCompileException('Image carousel controls or aspect ratio is invalid.');
+        }
+        $slides = [];
+        foreach (array_values($images) as $index => $item) {
+            if (! is_array($item)) {
+                throw new DocumentCompileException("Image carousel item {$index} must be an object.");
+            }
+            $this->assertOnlyKeys($item, ['src', 'alt', 'caption'], "Image carousel item {$index}");
+            $src = $this->optionalString($item, 'src', 2048) ?? '';
+            $alt = $this->requiredString($item, 'alt', 300);
+            $caption = $this->optionalString($item, 'caption', 300) ?? '';
+            $media = $this->compileCatalogImage($src, $alt, 'g7pb-image-carousel__image', ($index + 1).'번 이미지를 선택하세요', $index === 0 ? 'eager' : 'lazy');
+            $slides[] = '<figure class="g7pb-hero-slider__slide g7pb-image-carousel__slide">'.$media.($caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>').'</figure>';
+        }
+
+        return '<section class="g7pb-block g7pb-hero-slider g7pb-image-carousel g7pb-image-carousel--'.str_replace(':', '-', $aspectRatio).' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="image-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" data-g7pb-slider-controls="'.$controls.'" aria-label="'.$this->escapeAttribute($heading).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
     }
 
     /**
@@ -1794,11 +2058,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         return match ($type) {
             self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE => ['none', 'reveal', 'parallax-soft'],
-            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE, self::TESTIMONIALS_TYPE, self::PROCESS_TIMELINE_TYPE, self::ARTICLE_LIST_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::EVENT_SCHEDULE_TYPE, self::DOWNLOAD_RESOURCES_TYPE, self::G7_BOARD_ARCHIVE_TYPE, self::G7_PRODUCT_SHOWCASE_TYPE, self::ICON_LIST_TYPE => ['none', 'reveal', 'stagger'],
+            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE, self::TESTIMONIALS_TYPE, self::PROCESS_TIMELINE_TYPE, self::ARTICLE_LIST_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::EVENT_SCHEDULE_TYPE, self::DOWNLOAD_RESOURCES_TYPE, self::G7_BOARD_ARCHIVE_TYPE, self::G7_PRODUCT_SHOWCASE_TYPE, self::ICON_LIST_TYPE, self::CARD_GRID_TYPE, self::SOCIAL_LINKS_TYPE => ['none', 'reveal', 'stagger'],
             self::STATS_TYPE => ['none', 'reveal', 'stagger', 'counter'],
-            self::GALLERY_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
+            self::GALLERY_TYPE, self::IMAGE_CAROUSEL_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
             self::BAR_CHART_TYPE => ['none', 'reveal', 'chart-draw'],
-            self::CTA_TYPE, self::CONTACT_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE, self::FAQ_ACCORDION_TYPE, self::TABS_TYPE, self::COMPARISON_TABLE_TYPE, self::VIDEO_EMBED_TYPE, self::LOGO_CAROUSEL_TYPE, self::TESTIMONIAL_SLIDER_TYPE, self::HEADING_TYPE, self::RICH_TEXT_TYPE, self::IMAGE_TYPE, self::BUTTONS_TYPE, self::IMAGE_TEXT_TYPE, self::G7_POST_DETAIL_TYPE, self::G7_PRODUCT_DETAIL_TYPE => ['none', 'reveal'],
+            self::CTA_TYPE, self::CONTACT_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE, self::FAQ_ACCORDION_TYPE, self::TABS_TYPE, self::COMPARISON_TABLE_TYPE, self::VIDEO_EMBED_TYPE, self::LOGO_CAROUSEL_TYPE, self::TESTIMONIAL_SLIDER_TYPE, self::HEADING_TYPE, self::RICH_TEXT_TYPE, self::IMAGE_TYPE, self::BUTTONS_TYPE, self::IMAGE_TEXT_TYPE, self::G7_POST_DETAIL_TYPE, self::G7_PRODUCT_DETAIL_TYPE, self::DIVIDER_TYPE, self::BLOCKQUOTE_TYPE, self::NOTICE_TYPE, self::BREADCRUMBS_TYPE, self::ANCHOR_MENU_TYPE => ['none', 'reveal'],
             default => ['none'],
         };
     }
@@ -1950,12 +2214,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 self::CTA_TYPE => '(.//*['.$hasClass('g7pb-cta__heading').'])[1]',
                 self::HEADING_TYPE => '(.//*['.$hasClass('g7pb-heading-block__heading').'])[1]',
                 self::IMAGE_TEXT_TYPE => '(.//*['.$hasClass('g7pb-image-text__copy').']/h2)[1]',
+                self::SOCIAL_LINKS_TYPE => '(.//h2)[1]',
                 default => '(.//*['.$hasClass('g7pb-section-heading').']/h2 | .//*['.$hasClass('g7pb-contact__heading').']/h2)[1]',
             },
             'title' => match ($type) {
                 self::HERO_TYPE => '(.//*['.$hasClass('g7pb-hero__title').'])[1]',
                 self::FEATURES_TYPE => '(.//*['.$hasClass('g7pb-features__title').'])[1]',
                 self::HERO_SPLIT_TYPE => '(.//*['.$hasClass('g7pb-hero-split__copy').']/h1)[1]',
+                self::NOTICE_TYPE => '(.//*['.$hasClass('g7pb-content-notice__title').'])[1]',
                 default => null,
             },
             'body' => match ($type) {
@@ -1963,6 +2229,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 self::CTA_TYPE => '(.//*['.$hasClass('g7pb-cta__body').'])[1]',
                 self::HERO_SPLIT_TYPE => '(.//*['.$hasClass('g7pb-hero-split__body').'])[1]',
                 self::IMAGE_TEXT_TYPE => '(.//*['.$hasClass('g7pb-image-text__body').'])[1]',
+                self::NOTICE_TYPE => '(.//*['.$hasClass('g7pb-content-notice__body').'])[1]',
                 default => null,
             },
             'content' => $type === self::RICH_TEXT_TYPE ? '(.//*['.$hasClass('g7pb-rich-text__content').'])[1]' : null,
@@ -1996,6 +2263,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'parking' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__parking').'])[1]' : null,
             'caption' => in_array($type, [self::IMAGE_TYPE, self::VIDEO_EMBED_TYPE], true) ? '(.//figcaption)[1]' : null,
             'unit' => $type === self::BAR_CHART_TYPE ? './/*['.$hasClass('g7pb-bar-chart__unit').']' : null,
+            'label' => match ($type) {
+                self::DIVIDER_TYPE => '(.//*['.$hasClass('g7pb-divider__label').'])[1]',
+                self::ANCHOR_MENU_TYPE => '(.//nav/strong)[1]',
+                default => null,
+            },
+            'quote' => $type === self::BLOCKQUOTE_TYPE ? '(.//*['.$hasClass('g7pb-blockquote__quote').'])[1]' : null,
+            'citation' => $type === self::BLOCKQUOTE_TYPE ? '(.//cite)[1]' : null,
+            'role' => $type === self::BLOCKQUOTE_TYPE ? '(.//*['.$hasClass('g7pb-blockquote__role').'])[1]' : null,
+            'actionLabel' => $type === self::NOTICE_TYPE ? '(.//*['.$hasClass('g7pb-content-notice__action').'])[1]' : null,
+            'currentLabel' => $type === self::BREADCRUMBS_TYPE ? '(.//li[@aria-current="page"])[1]' : null,
             default => null,
         };
         if ($root !== null) {
@@ -2103,6 +2380,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 'buttonLabel' => '(.//ul/li)['.$index.']/a',
                 default => null,
             } : null,
+            self::CARD_GRID_TYPE => $collection === 'items' ? match ($leaf) {
+                'kicker' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']//*['.$hasClass('g7pb-card-grid__kicker').']',
+                'title' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']/h3',
+                'body' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']//*['.$hasClass('g7pb-card-grid__body').']',
+                'linkLabel' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']/a',
+                default => null,
+            } : null,
+            self::BREADCRUMBS_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//ol/li/a)['.$index.']' : null,
+            self::ANCHOR_MENU_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//nav/ul/li/a)['.$index.']' : null,
+            self::SOCIAL_LINKS_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//nav/ul/li/a/span[last()])['.$index.']' : null,
+            self::IMAGE_CAROUSEL_TYPE => $collection === 'images' && $leaf === 'caption' ? '(.//*['.$hasClass('g7pb-image-carousel__slide').'])['.$index.']/figcaption' : null,
             default => null,
         };
     }
@@ -2116,6 +2404,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             [self::IMAGE_TEXT_TYPE, 'eyebrow'],
             [self::IMAGE_TEXT_TYPE, 'body'],
             [self::ICON_LIST_TYPE, 'eyebrow'] => ($props[$fieldPath] ?? '') === '',
+            [self::DIVIDER_TYPE, 'label'],
+            [self::BLOCKQUOTE_TYPE, 'role'] => ($props[$fieldPath] ?? '') === '',
+            [self::NOTICE_TYPE, 'actionLabel'] => ($props['actionLabel'] ?? '') === '',
             [self::IMAGE_TEXT_TYPE, 'primaryLabel'] => ! is_array($props['primaryLink'] ?? null),
             default => false,
         };
@@ -2275,6 +2566,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         throw new DocumentCompileException('Image URL is not allowed.');
+    }
+
+    private function assertPageOrHttpsUrl(string $url, string $property): void
+    {
+        if ($this->isRelativeUrl($url) || $this->isHttpsUrl($url)) {
+            return;
+        }
+
+        throw new DocumentCompileException("{$property} URL is not allowed.");
     }
 
     private function isRelativeUrl(string $url): bool

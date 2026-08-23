@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 37종 페이지 block 카탈로그와 18개 내장 프리셋, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스·게시글 상세·상품 상세 공개 데이터 블록, 반복 목록 pagination, 공통 로그인 전후 표시 조건, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
+현재 구현: 9개 분류의 45종 페이지 block 카탈로그와 55개 내장 프리셋, 6개 Quick Add, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스·게시글 상세·상품 상세 공개 데이터 블록, 반복 목록 pagination, 공통 로그인 전후 표시 조건, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
 
 ## 목표
 
@@ -71,7 +71,7 @@
 - compile 실패는 공개 페이지를 바꾸지 않습니다.
 - 마지막 20개 revision을 조회·미리보기·복원합니다.
 
-## 제품 block 37종
+## 제품 block 45종
 
 | Block | 필수 props | 규칙 | 제외 |
 |---|---|---|---|
@@ -112,6 +112,14 @@
 | G7 Product Showcase | source, limit, pageSize, audience, detail path, layout | 공개 API capability·안전한 상세 route·image allowlist·pagination | 쇼핑 모듈 hard dependency |
 | G7 Post Detail | board slug, post ID, detail route, audience, content toggle | 공개 API capability·본문 text-only 렌더·URL allowlist | G7 테이블 직접 조회·본문 HTML 실행 |
 | G7 Product Detail | product key, detail route, audience, description toggle | 공개 API capability·텍스트 설명·안전한 image·route | 쇼핑 모듈 hard dependency·설명 HTML 실행 |
+| Divider | variant, width, optional label | 의미 없는 장식선은 `aria-hidden`, 구조 variant allowlist | 임의 border CSS·SVG |
+| Blockquote | quote, citation, role, alignment, variant | semantic blockquote·cite, line·mark variant | Click-to-post·외부 자동 공유 |
+| Notice | tone, title, body, optional action | info·success·warning·critical와 note·alert role | 임의 toast·script action |
+| Card Grid | heading, 2~6 items, columns, variant | 카드별 typed route, 2·3열 반응형 | 자유 중첩·임의 card HTML |
+| Breadcrumbs | 1~6 parent items, current label | nav label, `aria-current=page`, route allowlist | 자동 route tree 조회 |
+| Anchor Menu | label, 2~8 anchors, sticky, alignment | 검증된 영문 anchor와 동일 페이지 이동 | 임의 selector·scroll script |
+| Social Links | heading, 1~8 links, network, variant | network·HTTPS/내부 route allowlist, 접근 가능한 이름 | 임의 SVG·feed embed |
+| Image Carousel | heading, 2~8 images, autoplay, controls, ratio | alt 필수, Embla 제어·상태·reduced motion | video·자유 slide 중첩 |
 
 G7 데이터 블록은 관련 공개 API capability가 없으면 선택지만 비활성화하고 문서 저장·독립 shell 발행·마지막 정상 발행본에는 영향을 주지 않습니다.
 
@@ -161,10 +169,10 @@ G7 데이터 블록은 관련 공개 API capability가 없으면 선택지만 �
 
 ## 완료 조건
 
-1. 37종 제품 카탈로그 block과 18개 내장 프리셋 모두 manifest·editor·PHP compiler·public renderer·회귀시험을 가집니다.
+1. 45종 제품 카탈로그 block과 55개 내장 프리셋 모두 manifest·editor·PHP compiler·public renderer·회귀시험을 가집니다.
 2. 좌측 Blocks에서 이름·용도·축소 구조를 확인하고 원하는 블록 사이에 드롭할 수 있으며, 상세 미리보기는 선택 블록 뒤 빠른 추가를 제공합니다.
 3. 생성부터 rollback까지 Playwright 제품 E2E가 통과합니다.
-4. PC·태블릿·모바일 screenshot baseline을 사람이 확인합니다.
+4. 45종 전체를 한 번에 실제 발행하고 PC·태블릿·모바일에서 핵심 10종씩 총 30개 screenshot baseline, axe WCAG A/AA와 무가로넘침을 확인합니다.
 5. G7 7.0.8 fixture 재컴파일 결과가 결정적입니다.
 6. 실패 발행 뒤 공개 HTML hash가 직전 정상본과 같습니다.
 

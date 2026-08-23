@@ -17,9 +17,9 @@ import {
 import { BUILTIN_BLOCK_DEFINITIONS } from '../../resources/js/blocks/builtinCatalog';
 
 describe('canvas editing contract', () => {
-  it('covers every one of the 37 builtin blocks without duplicate component names', () => {
-    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(37);
-    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(37);
+  it('covers every one of the 45 builtin blocks without duplicate component names', () => {
+    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(45);
+    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(45);
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType).sort())
       .toEqual(BUILTIN_BLOCK_DEFINITIONS.map((item) => item.editor_component).sort());
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.every((item) => item.directText)).toBe(true);

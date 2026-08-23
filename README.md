@@ -1,5 +1,7 @@
 # G7 Page Builder
 
+![G7 Page Builder 블록 조립 공장](docs/assets/readme/g7-page-builder-factory.webp)
+
 그누보드7 코어를 수정하지 않고 일반 페이지와 랜딩 페이지를 블록 방식으로 제작하는 독립 모듈입니다.
 
 ## 결정된 방향

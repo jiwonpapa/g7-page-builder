@@ -125,6 +125,10 @@ final class OfficialStoreContractTest extends TestCase
             self::assertStringNotContainsString('g7pb-media://', $demo);
             self::assertStringNotContainsString('g7pb-route://', $demo);
             self::assertStringNotContainsString('data-g7pb-inquiry-form', $demo);
+            self::assertStringContainsString(
+                'src="/modules/jiwonpapa-page_builder/store/previews/'.basename($product->preview['demo_url']).'-hero.webp"',
+                $demo,
+            );
 
             $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
             $bundle = $adapter->read(new StoreArtifact(

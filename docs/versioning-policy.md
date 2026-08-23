@@ -4,7 +4,7 @@
 
 이 프로젝트는 [Semantic Versioning 2.0.0](https://semver.org/lang/ko/)과
 [Keep a Changelog 1.1.0](https://keepachangelog.com/ko/1.1.0/)을 따릅니다.
-G7 7.0.7의 확장 changelog 규정과 동일하게 한국어, ISO 8601 날짜(`YYYY-MM-DD`),
+G7 7.0.8의 확장 changelog 규정과 동일하게 한국어, ISO 8601 날짜(`YYYY-MM-DD`),
 역순 버전 배치와 `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
 카테고리만 사용합니다.
 

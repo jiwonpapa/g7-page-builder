@@ -12,7 +12,7 @@ if docker compose version >/dev/null 2>&1; then ok 'Docker Compose'; else fail '
 
 if [[ -f "$root/.runtime/gnuboard7/artisan" ]] && [[ -d "$root/.runtime/gnuboard7/.git" ]]; then
   g7_version="$(git -C "$root/.runtime/gnuboard7" describe --tags --exact-match 2>/dev/null || true)"
-  if [[ "$g7_version" == '7.0.7' ]]; then ok 'Gnuboard7 7.0.7 checkout'; else fail "Expected Gnuboard7 7.0.7, found ${g7_version:-untagged}"; fi
+  if [[ "$g7_version" == '7.0.8' ]]; then ok 'Gnuboard7 7.0.8 checkout'; else fail "Expected Gnuboard7 7.0.8, found ${g7_version:-untagged}"; fi
 else
   fail 'Gnuboard7 checkout is missing at .runtime/gnuboard7'
 fi

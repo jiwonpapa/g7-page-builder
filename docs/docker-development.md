@@ -27,7 +27,7 @@ Nginx·PHP·DB·Redis를 서비스별 컨테이너로 분리하지 않습니다.
 | 로컬 도메인 | `https://g7pb.test` |
 | PHP | 공식 이미지 `8.5.9-fpm-bookworm` |
 | Laravel | G7 lock 기준 `12.62.0` |
-| G7 | `7.0.7`, commit `0e8b625436df7fb30cf1632f42d9d6bcb39ac37b` |
+| G7 | `7.0.8`, commit `14eb2e39e4e8e0bf34e3976086d6e5877f219057` |
 | Node | 24.19.0, npm 11.17.0 |
 | Composer | 2.10.2 |
 | DB | MariaDB 10.11, `utf8mb4_unicode_ci` |

@@ -94,6 +94,34 @@ final class OfficialStoreDistributionController
         ]);
     }
 
+    public function demo(string $slug): Response
+    {
+        if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug) !== 1) {
+            abort(404);
+        }
+        $path = $this->root().'/demos/'.$slug.'.html';
+        if (! is_file($path)) {
+            abort(404);
+        }
+        $html = file_get_contents($path);
+        if (! is_string($html) || trim($html) === '') {
+            abort(404);
+        }
+
+        return response()
+            ->view('g7-page-builder::store-demo', [
+                'title' => $this->demoTitle($slug),
+                'html' => $html,
+            ])
+            ->header('Cache-Control', 'public, max-age=300, must-revalidate')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Robots-Tag', 'noindex, nofollow')
+            ->header(
+                'Content-Security-Policy',
+                "default-src 'none'; img-src 'self' https: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'",
+            );
+    }
+
     private function root(): string
     {
         return dirname(__DIR__, 5).'/resources/store/dist';
@@ -108,5 +136,28 @@ final class OfficialStoreDistributionController
         }
 
         return $origin.$path;
+    }
+
+    private function demoTitle(string $slug): string
+    {
+        $catalogPath = $this->root().'/catalog.json';
+        $contents = is_file($catalogPath) ? file_get_contents($catalogPath) : false;
+        if (! is_string($contents)) {
+            return 'Page Kit';
+        }
+        try {
+            $catalog = json_decode($contents, true, 128, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return 'Page Kit';
+        }
+        foreach (is_array($catalog['products'] ?? null) ? $catalog['products'] : [] as $product) {
+            if (is_array($product)
+                && ($product['product_id'] ?? null) === 'jiwonpapa/'.$slug
+                && is_string($product['title']['ko'] ?? null)) {
+                return $product['title']['ko'];
+            }
+        }
+
+        return 'Page Kit';
     }
 }

@@ -62,6 +62,23 @@ for (const product of storeCatalog.products) {
   if (!previewName || !existsSync(join(storeRoot, 'previews', previewName))) {
     throw new Error(`Missing official store preview: ${String(product.product_id)}`);
   }
+  if (product.product_type === 'page_kit') {
+    if (!Array.isArray(product.preview?.screenshots) || product.preview.screenshots.length !== 3) {
+      throw new Error(`Page Kit needs desktop, tablet, and mobile screenshots: ${String(product.product_id)}`);
+    }
+    for (const screenshotUrl of product.preview.screenshots) {
+      const screenshotName = new URL(screenshotUrl).pathname.split('/').at(-1);
+      if (!screenshotName || !existsSync(join(storeRoot, 'previews', screenshotName))) {
+        throw new Error(`Missing Page Kit screenshot: ${String(product.product_id)}`);
+      }
+    }
+    const slug = String(product.product_id).split('/').at(-1);
+    const demoPath = new URL(product.preview?.demo_url).pathname;
+    if (!slug || !demoPath.endsWith(`/store/demos/${slug}`)
+      || !existsSync(join(storeRoot, 'demos', `${slug}.html`))) {
+      throw new Error(`Missing Page Kit demo: ${String(product.product_id)}`);
+    }
+  }
 }
 
 console.log(`Module assets and ${storeCatalog.products.length} official store products: OK`);

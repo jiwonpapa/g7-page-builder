@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Media\MediaAsset;
 use Modules\Jiwonpapa\PageBuilder\Domain\Media\PortableMedia;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\ZipPageKitArchiveAdapter;
 
 require dirname(__DIR__).'/vendor/autoload.php';
@@ -37,7 +40,7 @@ try {
 if ($generatedAt->format(DATE_ATOM) !== $catalogMeta['generated_at']) {
     throw new RuntimeException('Official Store catalog generated_at must use DATE_ATOM.');
 }
-foreach (["{$dist}/artifacts", "{$dist}/previews"] as $directory) {
+foreach (["{$dist}/artifacts", "{$dist}/demos", "{$dist}/previews"] as $directory) {
     if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
         throw new RuntimeException("Cannot create {$directory}");
     }
@@ -141,6 +144,9 @@ $pageKitDefinitions = [
 ];
 
 $pageKits = new ZipPageKitArchiveAdapter;
+$blockRegistry = new BlockRegistry;
+$blockRegistry->register((new BuiltInBlockPackLoader)->load($root), enabled: true);
+$compiler = new HtmlDocumentCompiler($blockRegistry);
 $pageProducts = [];
 foreach ($pageKitDefinitions as $definition) {
     $slug = $definition['slug'];
@@ -188,6 +194,54 @@ foreach ($pageKitDefinitions as $definition) {
     $copy($pageArtifact->path, $pageArtifactPath);
     $pageKits->release($pageArtifact);
     $copy("{$source}/previews/{$slug}.svg", "{$dist}/previews/{$slug}.svg");
+    $copy($mediaPath, "{$dist}/previews/{$slug}-hero.webp");
+
+    $screenshotUrls = [];
+    foreach (['desktop', 'tablet', 'mobile'] as $viewport) {
+        $screenshotName = "{$slug}-{$viewport}.webp";
+        $screenshotSource = "{$source}/screenshots/{$screenshotName}";
+        if (! is_file($screenshotSource)) {
+            throw new RuntimeException("Page Kit screenshot is missing: {$screenshotSource}");
+        }
+        $copy($screenshotSource, "{$dist}/previews/{$screenshotName}");
+        $screenshotUrls[] = "{$baseUrl}/previews/{$screenshotName}";
+    }
+
+    $demoValue = $documentValue;
+    array_walk_recursive($demoValue, static function (mixed &$value) use ($baseUrl, $slug): void {
+        if (! is_string($value)) {
+            return;
+        }
+        if ($value === 'g7pb-media://image-1') {
+            $value = "{$baseUrl}/previews/{$slug}-hero.webp";
+        } elseif ($value === '/' || str_starts_with($value, 'g7pb-route://')) {
+            $value = '/demo-action';
+        }
+    });
+    $compiledDemo = $compiler->compile(
+        PageBuilderDocument::fromArray($demoValue),
+        1,
+        'html',
+        HtmlDocumentCompiler::TARGET_ENGINE_VERSION,
+    );
+    $demoHtml = str_replace(
+        [
+            'method="post" action="/pages/'.rawurlencode($document->slug).'/inquiries"',
+            'data-g7pb-inquiry-form',
+            '<button type="submit">',
+            'href="/demo-action"',
+        ],
+        [
+            'method="get" action="#demo-form"',
+            'data-g7pb-demo-form',
+            '<button type="button" aria-disabled="true">',
+            'href="#demo-action"',
+        ],
+        (string) $compiledDemo->artifact,
+    );
+    if (file_put_contents("{$dist}/demos/{$slug}.html", $demoHtml, LOCK_EX) === false) {
+        throw new RuntimeException("Cannot write Page Kit demo: {$slug}");
+    }
 
     $requirements = [];
     $seenRequirements = [];
@@ -216,9 +270,9 @@ foreach ($pageKitDefinitions as $definition) {
         'license' => 'free',
         'compatibility' => ['page_builder' => '>=0.10.0 <1.0.0', 'php' => '>=8.5', 'g7' => '>=7.0.7'],
         'preview' => [
-            'thumbnail_url' => "{$baseUrl}/previews/{$slug}.svg",
-            'screenshots' => [],
-            'demo_url' => null,
+            'thumbnail_url' => $screenshotUrls[0],
+            'screenshots' => $screenshotUrls,
+            'demo_url' => "{$baseUrl}/demos/{$slug}",
         ],
         'artifact' => $artifact($pageArtifactPath, "{$baseUrl}/artifacts/{$pageArtifactName}"),
         'requirements' => ['blocks' => $requirements],

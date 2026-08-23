@@ -12,6 +12,9 @@ Route::get('store/artifacts/{file}', [OfficialStoreDistributionController::class
 Route::get('store/previews/{file}', [OfficialStoreDistributionController::class, 'preview'])
     ->where('file', '[A-Za-z0-9][A-Za-z0-9._-]{0,199}\.(?:svg|webp|png)')
     ->name('store.preview');
+Route::get('store/demos/{slug}', [OfficialStoreDistributionController::class, 'demo'])
+    ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('store.demo');
 
 Route::get('admin', [ViewerController::class, 'manager'])
     ->name('admin.index');

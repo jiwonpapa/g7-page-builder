@@ -145,16 +145,27 @@ test('official free store previews and applies a Page Kit as a separate draft', 
     ]);
     const previewImages = kits.locator('img');
     await expect(previewImages).toHaveCount(5);
+    await expect(kits.locator('.g7pb-store-card__screenshots')).toHaveCount(5);
     for (const image of await previewImages.all()) {
       await expect(image).toHaveJSProperty('complete', true);
       expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     }
     const kit = kits.filter({ hasText: '회사 소개 랜딩' });
     await expect(kit).toHaveCount(1);
+    await expect(kit).toContainText('실제 데모 보기');
+    await expect(kit).toContainText('PC·태블릿·모바일 실제 화면 3장');
+    const demoUrl = await kit.locator('.g7pb-store-card__preview').getAttribute('href');
+    expect(demoUrl).not.toBeNull();
+    const demo = await page.request.get(demoUrl!);
+    expect(demo.status()).toBe(200);
+    expect(await demo.text()).toContain('page-builder-store-demo-root');
+    expect(demo.headers()['x-robots-tag']).toBe('noindex, nofollow');
     await kit.getByTestId('page-builder-store-apply-page-kit').click();
 
     const applyDialog = page.getByTestId('page-builder-store-page-kit-dialog');
     await expect(applyDialog).toContainText('기존 페이지는 바꾸지 않습니다.');
+    await expect(applyDialog.getByTestId('page-builder-store-page-kit-readiness'))
+      .toContainText('발행 전에 교체할 항목');
     await applyDialog.getByTestId('page-builder-store-page-kit-title').fill('공식 마켓 회사 소개');
     await applyDialog.getByTestId('page-builder-store-page-kit-slug').fill(slug);
     const responsePromise = page.waitForResponse((response) => response.request().method() === 'POST'

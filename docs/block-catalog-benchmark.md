@@ -1,11 +1,13 @@
 # Block catalog benchmark
 
 상태: P0 기본 콘텐츠 카탈로그 확장 구현
-기준일: 2026-08-22
+기준일: 2026-08-24
 
 ## 결론
 
-유명 빌더의 화면을 복제하지 않고 반복되는 정보 구조를 표준 block으로 정규화합니다. 현재 카탈로그는 정적 콘텐츠 29종, G7 공개 데이터 6종, 문의 폼 1종, 찾아오기 1종으로 총 37종이며 모든 block은 추가 전에 이름·용도·축약 미리보기를 보여주고 추가 후 모든 콘텐츠 항목과 제한된 style preset을 편집할 수 있습니다. 내장 프리셋 18개는 새 타입을 만들지 않고 검증된 props를 복사하는 빠른 시작점입니다.
+유명 빌더의 화면이나 유료 소스 코드를 복제하지 않고 반복되는 정보 구조를 typed block으로 정규화합니다. 현재 카탈로그는 정적·상호작용 콘텐츠 37종, G7 공개 데이터 6종, 문의 폼 1종, 찾아오기 1종으로 총 45종입니다. 9개 용도 분류, 6개 Quick Add, 45개 고유 썸네일, 모든 타입을 덮는 55개 한국어 프리셋을 제공합니다.
+
+이는 경쟁 제품의 수백 개 시각 변형과 동일하다는 뜻이 아닙니다. G7 Page Builder의 프로덕트 기준은 각 타입이 schema, editor, compiler, 공개 renderer, 접근성, 반응형 회귀를 함께 갖추는 것입니다. 수량만 많은 템플릿 변형은 block definition으로 중복 계산하지 않습니다.
 
 ## 공식 제품에서 확인한 공통 구조
 
@@ -18,8 +20,14 @@
 | [Webflow accessibility](https://help.webflow.com/hc/en-us/articles/33961346219923-Accessible-elements-in-Webflow) | Slider·Tabs 등에 keyboard와 focus 계약 필요 | Slider는 focus 가능한 scroll-snap 영역으로 제공 |
 | [Framer Components](https://www.framer.com/help/articles/using-components/) | 재사용 component와 노출된 property로 변형 | raw CSS 대신 재사용 block+typed property 채택 |
 | [Framer CMS Components](https://www.framer.com/updates/cms-components) | property·variant·responsive breakpoint 조합 | surface·spacing·열 수를 제한된 variant로 제공 |
+| [Tailwind CSS utility classes](https://tailwindcss.com/docs/styling-with-utility-classes) | 단일 목적 utility를 조합해 컴포넌트를 만드는 CSS 도구 | Tailwind 자체에 완성 버튼 세트가 있다고 간주하지 않음 |
+| [Tailwind Plus UI Blocks](https://tailwindcss.com/plus/ui-blocks) | Button 8, Button Group 5, Breadcrumb 4, Card 10, Divider 8, Alert 6 등 완성 예제를 별도 제품으로 제공 | 자주 쓰는 구조의 독립 제공 필요성만 참고하고 코드·디자인은 복제하지 않음 |
+| [daisyUI Button](https://daisyui.com/components/button/) · [Alert](https://daisyui.com/components/alert/) · [Breadcrumbs](https://daisyui.com/components/breadcrumbs/) · [Carousel](https://daisyui.com/components/carousel/) | Tailwind 위에 버튼 상태·알림 tone·경로·캐러셀을 명시적 component로 추가 | 버튼·알림·탐색·미디어를 typed block으로 제공 |
+| [Squarespace blocks](https://support.squarespace.com/hc/en-us/articles/206543757-Add-content-to-your-site-with-blocks) | Button, Form, Gallery, Line, Quote, Social links 등 페이지 제작의 반복 단위를 block으로 제공 | 전체 폼 빌더보다 페이지 연결에 필요한 기본 자산을 우선 |
 
-## P0 기본 6종 선정 근거
+Tailwind Plus는 공식 라이선스 안내에서 해당 컴포넌트를 재포장한 page builder·UI kit 파생 제품을 허용하지 않습니다. 따라서 분류와 정보 구조만 비교했으며 markup, CSS, 예제 문구는 사용하지 않았습니다.
+
+## P0 기본 6종과 프로덕션 보강 8종 선정 근거
 
 사용량 수치를 공개하지 않는 경쟁 제품을 임의 점유율로 순위화하지 않았습니다. 대신 Elementor의 simple widget, Webflow의 element, Framer의 component/property 공식 문서에 반복해서 등장하는 최소 구성 단위를 공통분모로 삼았습니다.
 
@@ -31,7 +39,20 @@
 | Image + Text | 대표 이미지와 설명·주요 행동의 좌우 구성을 제공 | 자유 grid·중첩 slot |
 | List | 장점·조건·체크에 쓰는 1·2열 아이콘 목록을 제공 | 임의 SVG·무제한 반복 |
 
-## 제품 콘텐츠 카탈로그 37종
+기본 6종만으로도 조합은 가능하지만, 실제 사이트의 상세 페이지·공지·회사 소개·작품 소개에서 반복되는 연결 자산이 빠져 있었습니다. 공식 카탈로그에 교차 등장하고 기존 타입으로 의미를 왜곡하지 않고는 만들기 어려운 구조만 다음 8종으로 보강했습니다.
+
+| 반복 구조 | 추가 block | typed 범위 |
+|---|---|---|
+| 내용 구획 | Divider | solid·dashed·gradient, 폭, 선택 label |
+| 인용·권위 | Blockquote | 인용문, 출처, 역할, line·mark variant |
+| 상태·운영 안내 | Notice | info·success·warning·critical, 선택 action |
+| 서비스·링크 묶음 | Card Grid | 2·3열, 2~6개 카드, 선택 route |
+| 현재 경로 | Breadcrumbs | 1~6개 상위 경로와 현재 페이지 |
+| 긴 페이지 이동 | Anchor Menu | 2~8개 검증 anchor, 선택 sticky |
+| 외부 채널 | Social Links | 허용 network, icon·label variant |
+| 작품·공간 탐색 | Image Carousel | 2~8개 이미지, alt·caption, 제어·reduced motion |
+
+## 제품 콘텐츠 카탈로그 45종
 
 폼·위치 카테고리는 별도 제품 계약으로 추가했습니다.
 
@@ -75,6 +96,14 @@
 | G7 데이터 | 상품 쇼케이스 | `g7.ecommerce-product-showcase-01` | 공개 상품 대표 강조·가로 목록·상세 연결 |
 | G7 데이터 | 게시글 상세 | `g7.board-post-detail-01` | 지정한 공개 게시글의 메타 정보·본문 요약·상세 연결 |
 | G7 데이터 | 상품 상세 | `g7.ecommerce-product-detail-01` | 지정한 공개 상품의 이미지·가격·설명·상세 연결 |
+| 콘텐츠 | 구분선 | `content.divider-01` | 섹션 구획과 선택 label |
+| 콘텐츠 | 인용문 | `content.blockquote-01` | 인용·출처·역할 표시 |
+| 콘텐츠 | 알림 | `content.notice-01` | 상태별 안내와 선택 행동 |
+| 콘텐츠 | 카드 그리드 | `content.card-grid-01` | 서비스·자료·링크 카드 반복 |
+| 탐색 | 경로 | `navigation.breadcrumbs-01` | 상위 경로와 현재 위치 |
+| 탐색 | 앵커 메뉴 | `navigation.anchor-menu-01` | 긴 페이지 내부 이동 |
+| 탐색 | 소셜 링크 | `navigation.social-links-01` | 허용된 외부 채널 연결 |
+| 미디어 | 이미지 캐러셀 | `media.image-carousel-01` | 여러 이미지의 접근 가능한 순차 탐색 |
 
 ## UX와 시각 원칙
 
@@ -96,6 +125,9 @@
 - Tailwind class, inline style, raw HTML/CSS/JS는 저장하지 않습니다.
 - Monaco 기반 Custom Code는 별도 고급 Block Pack과 sandbox·CSP·권한 계약이 생기기 전에는 제공하지 않습니다.
 
-## 다음 후보
+## 이번 범위의 경계
 
-4차에서 조건부 표시 규칙의 시각 편집, 반복 콘텐츠 pagination, 다운로드 파일의 MediaPort 자산 선택, 상품·게시글 단건 상세 블록을 구현했습니다. 다음 후보는 이벤트 캘린더 데이터 연동이며, G7 데이터 확장은 화면보다 먼저 capability·권한·빈 상태·실패 처리 계약을 정의합니다.
+- 버튼은 기존 `Buttons`의 primary·secondary·text 3개 variant와 1~3개 route 묶음으로 유지합니다. Tailwind utility를 문서에 노출하거나 별도 CSS 프레임워크를 런타임 의존성으로 넣지 않습니다.
+- 전체 폼 제품군, 결제·체크아웃, 로그인 UI, 모달·토스트·대시보드 앱 shell은 페이지 콘텐츠 블록 범위를 넘으므로 추가하지 않습니다.
+- 이벤트 캘린더와 고급 메뉴는 향후 G7 capability·권한·빈 상태·실패 처리 계약이 먼저 정의될 때 별도 후보로 평가합니다.
+- 완료 증거는 45/45 preset compile, 45/45 실제 발행, PC·태블릿·모바일 30개 시각 baseline, axe WCAG A/AA, 무가로넘침입니다.

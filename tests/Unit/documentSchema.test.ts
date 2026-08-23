@@ -37,8 +37,42 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(foundationFixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
+  it('accepts all eight production-library blocks and rejects unsafe structural values', () => {
+    const productionDocument = {
+      ...structuredClone(fixture),
+      slug: 'production-library-contract',
+      blocks: [
+        { instance_id: '00000000-0000-4000-8000-000000000201', type: 'content.divider-01', block_version: 1, props: { variant: 'gradient', width: 'standard', label: '서비스 안내' }, slots: {} },
+        { instance_id: '00000000-0000-4000-8000-000000000202', type: 'content.blockquote-01', block_version: 1, props: { quote: '좋은 페이지는 다음 행동을 분명하게 만듭니다.', citation: '김기획', role: '제품 책임자', alignment: 'left', variant: 'mark' }, slots: {} },
+        { instance_id: '00000000-0000-4000-8000-000000000203', type: 'content.notice-01', block_version: 1, props: { tone: 'info', title: '방문 전 확인해 주세요', body: '운영 시간과 준비 사항을 확인하실 수 있습니다.', actionLabel: '운영 안내', actionUrl: '/guide' }, slots: {} },
+        { instance_id: '00000000-0000-4000-8000-000000000204', type: 'content.card-grid-01', block_version: 1, props: { eyebrow: 'SERVICES', heading: '필요한 서비스를 고르세요', items: [{ kicker: '01', title: '상담', body: '목표와 일정을 함께 정리합니다.', linkLabel: '상담 보기', linkUrl: '/consulting' }, { kicker: '02', title: '구축', body: '검증된 흐름으로 페이지를 완성합니다.', linkLabel: '구축 보기', linkUrl: '/build' }], columns: 2, variant: 'outlined' }, slots: {} },
+        { instance_id: '00000000-0000-4000-8000-000000000205', type: 'navigation.breadcrumbs-01', block_version: 1, props: { items: [{ label: '홈', url: '/' }, { label: '서비스', url: '/services' }], currentLabel: '상세 안내' }, slots: {} },
+        { instance_id: '00000000-0000-4000-8000-000000000206', type: 'navigation.anchor-menu-01', block_version: 1, props: { label: '이 페이지에서', items: [{ label: '소개', anchor: 'intro' }, { label: '가격', anchor: 'pricing' }], sticky: true, alignment: 'center' }, slots: {} },
+        { instance_id: '00000000-0000-4000-8000-000000000207', type: 'navigation.social-links-01', block_version: 1, props: { heading: '공식 채널', items: [{ network: 'instagram', label: '인스타그램', url: 'https://instagram.com/example' }, { network: 'blog', label: '블로그', url: '/blog' }], variant: 'icons', alignment: 'left' }, slots: {} },
+        { instance_id: '00000000-0000-4000-8000-000000000208', type: 'media.image-carousel-01', block_version: 1, props: { eyebrow: 'GALLERY', heading: '공간을 미리 만나보세요', images: [{ src: 'https://images.example.com/space-1.webp', alt: '밝은 상담 공간', caption: '편안한 상담 공간' }, { src: '/storage/space-2.webp', alt: '제품 전시 공간', caption: '제품을 살펴보는 전시 공간' }], autoplay: false, interval: 5000, controls: 'both', aspectRatio: '16:9' }, slots: {} },
+      ],
+    };
+    expect(validate(productionDocument), JSON.stringify(validate.errors)).toBe(true);
+
+    const unsafeUrl = structuredClone(productionDocument) as unknown as { blocks: Array<{ props: Record<string, unknown> }> };
+    unsafeUrl.blocks[2]!.props.actionUrl = 'javascript:alert(1)';
+    expect(validate(unsafeUrl)).toBe(false);
+
+    const unsafeAnchor = structuredClone(productionDocument) as unknown as { blocks: Array<{ props: { items: Array<Record<string, unknown>> } }> };
+    unsafeAnchor.blocks[5]!.props.items[0]!.anchor = '#intro onclick=alert(1)';
+    expect(validate(unsafeAnchor)).toBe(false);
+
+    const missingImageAlt = structuredClone(productionDocument) as unknown as { blocks: Array<{ props: { images: Array<Record<string, unknown>> } }> };
+    missingImageAlt.blocks[7]!.props.images[0]!.alt = '';
+    expect(validate(missingImageAlt)).toBe(false);
+
+    const arbitraryStyle = structuredClone(productionDocument) as unknown as { blocks: Array<{ props: Record<string, unknown> }> };
+    arbitraryStyle.blocks[3]!.props.className = 'fixed inset-0';
+    expect(validate(arbitraryStyle)).toBe(false);
+  });
+
   it('accepts every bundled preset as a complete one-block document', () => {
-    expect(builtinManifest.presets).toHaveLength(18);
+    expect(builtinManifest.presets).toHaveLength(55);
     builtinManifest.presets.forEach((preset, index) => {
       const document = {
         ...structuredClone(fixture),

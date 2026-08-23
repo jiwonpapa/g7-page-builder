@@ -33,6 +33,12 @@ import {
   foundationPuckBlockToCanonical,
   type FoundationCatalogEditorComponents,
 } from './foundationCatalogBlocks';
+import {
+  canonicalProductionBlockToPuck,
+  productionCatalogComponentConfigs,
+  productionPuckBlockToCanonical,
+  type ProductionCatalogEditorComponents,
+} from './productionCatalogBlocks';
 
 import {
   BAR_CHART_BLOCK_TYPE,
@@ -217,7 +223,7 @@ export interface MapDirectionsEditorProps extends AppearanceEditorProps {
   motion: BlockMotion;
 }
 
-export interface CatalogEditorComponents extends FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents, Phase4CatalogEditorComponents {
+export interface CatalogEditorComponents extends FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents, Phase4CatalogEditorComponents, ProductionCatalogEditorComponents {
   HeroSplit: HeroSplitEditorProps;
   HeroSlider: HeroSliderEditorProps;
   LogoCloud: LogoCloudEditorProps;
@@ -659,6 +665,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   ...phase2CatalogComponentConfigs,
   ...phase3CatalogComponentConfigs,
   ...phase4CatalogComponentConfigs,
+  ...productionCatalogComponentConfigs,
   HeroSplit: {
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
@@ -760,6 +767,8 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
   if (phase3Block) return phase3Block as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const phase4Block = canonicalPhase4BlockToPuck(block);
   if (phase4Block) return phase4Block as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
+  const productionBlock = canonicalProductionBlockToPuck(block);
+  if (productionBlock) return productionBlock as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const props = block.props;
   if (block.type === HERO_SPLIT_BLOCK_TYPE) {
     const cta = asRecord(props.primaryCta); const image = asRecord(props.image);
@@ -798,6 +807,8 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
   if (phase3Block) return phase3Block;
   const phase4Block = phase4PuckBlockToCanonical(type, raw, includeAppearance);
   if (phase4Block) return phase4Block;
+  const productionBlock = productionPuckBlockToCanonical(type, raw, includeAppearance);
+  if (productionBlock) return productionBlock;
   if (type === 'HeroSplit') {
     const props: Record<string, unknown> = { eyebrow: asString(raw.eyebrow), title: asString(raw.title), body: asString(raw.body), mediaPosition: raw.mediaPosition === 'left' ? 'left' : 'right' };
     if (asString(raw.primaryLabel) || asString(raw.primaryUrl)) props.primaryCta = { label: asString(raw.primaryLabel), url: asString(raw.primaryUrl) };

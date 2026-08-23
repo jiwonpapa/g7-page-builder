@@ -304,6 +304,14 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7.ecommerce-product-showcase-01' => ['eyebrow', 'heading'],
             'g7.board-post-detail-01' => ['eyebrow', 'heading', 'linkLabel'],
             'g7.ecommerce-product-detail-01' => ['eyebrow', 'heading', 'buttonLabel'],
+            'content.divider-01' => ['label'],
+            'content.blockquote-01' => ['quote', 'citation', 'role'],
+            'content.notice-01' => ['title', 'body', 'actionLabel'],
+            'content.card-grid-01' => ['eyebrow', 'heading', 'items.0.kicker', 'items.0.title', 'items.0.body', 'items.0.linkLabel'],
+            'navigation.breadcrumbs-01' => ['items.0.label', 'currentLabel'],
+            'navigation.anchor-menu-01' => ['label', 'items.0.label'],
+            'navigation.social-links-01' => ['heading', 'items.0.label'],
+            'media.image-carousel-01' => ['eyebrow', 'heading', 'images.0.caption'],
         ];
         $documents = [
             $this->document('<p>안전한 본문</p>'),
@@ -314,6 +322,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             $this->phaseThreeDocument(),
             $this->phaseFourDocument(),
             $this->foundationDocument(),
+            $this->productionLibraryDocument(),
         ];
         $styledFieldCount = 0;
         $compiledArtifacts = '';
@@ -338,7 +347,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             )->artifact;
         }
 
-        self::assertCount(37, $fieldsByType);
+        self::assertCount(45, $fieldsByType);
         self::assertGreaterThanOrEqual($styledFieldCount, substr_count($compiledArtifacts, 'g7pb-element-font--serif'));
     }
 
@@ -419,7 +428,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.12.0', $catalog->compilerVersion);
+        self::assertSame('0.13.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -436,7 +445,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->foundationDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.12.0', $result->compilerVersion);
+        self::assertSame('0.13.0', $result->compilerVersion);
         foreach (['heading', 'rich-text', 'image', 'buttons', 'image-text', 'icon-list'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -454,12 +463,59 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringNotContainsString('javascript:', $artifact);
     }
 
+    public function test_production_library_blocks_compile_to_accessible_typed_public_markup(): void
+    {
+        $result = $this->builtInCompiler()->compile($this->productionLibraryDocument(), 1, 'html', 'g7-7.0.7');
+        $artifact = (string) $result->artifact;
+
+        self::assertSame('0.13.0', $result->compilerVersion);
+        foreach (['divider', 'blockquote', 'notice', 'card-grid', 'breadcrumbs', 'anchor-menu', 'social-links', 'image-carousel'] as $type) {
+            self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
+        }
+        self::assertStringContainsString('role="note"', $artifact);
+        self::assertStringContainsString('aria-current="page"', $artifact);
+        self::assertStringContainsString('href="#pricing"', $artifact);
+        self::assertStringContainsString('data-g7pb-slider-controls="both"', $artifact);
+        self::assertStringContainsString('aria-label="1번 이미지를 선택하세요"', $artifact);
+        self::assertStringContainsString('alt="제품 전시 공간"', $artifact);
+        self::assertStringNotContainsString('<script', $artifact);
+        self::assertStringNotContainsString('javascript:', $artifact);
+    }
+
+    public function test_production_library_rejects_unsafe_notice_routes(): void
+    {
+        $document = new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000200', slug: 'unsafe-notice', mode: 'canvas', locale: 'ko', tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000201', 'type' => 'content.notice-01', 'block_version' => 1,
+                'props' => ['tone' => 'critical', 'title' => '주의', 'body' => '안내', 'actionLabel' => '열기', 'actionUrl' => 'javascript:alert(1)'], 'slots' => [],
+            ]],
+        );
+
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_navigation_and_social_blocks_reject_non_page_protocols(): void
+    {
+        $document = new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000210', slug: 'unsafe-social', mode: 'canvas', locale: 'ko', tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000211', 'type' => 'navigation.social-links-01', 'block_version' => 1,
+                'props' => ['heading' => '공식 채널', 'items' => [['network' => 'website', 'label' => '메일', 'url' => 'mailto:test@example.com']], 'variant' => 'labels', 'alignment' => 'left'], 'slots' => [],
+            ]],
+        );
+
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
+    }
+
     public function test_all_builtin_presets_compile_as_typed_documents(): void
     {
         $contents = file_get_contents(dirname(__DIR__, 2).'/resources/block-packs/builtin-core/manifest.json');
         self::assertIsString($contents);
         $manifest = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
-        self::assertCount(18, $manifest['presets']);
+        self::assertCount(55, $manifest['presets']);
 
         foreach (array_values($manifest['presets']) as $index => $preset) {
             $document = new PageBuilderDocument(
@@ -661,7 +717,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.12.0', $result->compilerVersion);
+        self::assertSame('0.13.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -720,7 +776,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.12.0', $result->compilerVersion);
+        self::assertSame('0.13.0', $result->compilerVersion);
         foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -759,7 +815,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseThreeDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.12.0', $result->compilerVersion);
+        self::assertSame('0.13.0', $result->compilerVersion);
         foreach (['logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -781,7 +837,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseFourDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.12.0', $result->compilerVersion);
+        self::assertSame('0.13.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-post-detail"', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-detail"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/notice/posts/17', $artifact);
@@ -848,6 +904,28 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertIsString($contents);
 
         return PageBuilderDocument::fromArray(json_decode($contents, true, flags: JSON_THROW_ON_ERROR));
+    }
+
+    private function productionLibraryDocument(): PageBuilderDocument
+    {
+        $blocks = [
+            ['type' => 'content.divider-01', 'props' => ['variant' => 'gradient', 'width' => 'standard', 'label' => '서비스 안내']],
+            ['type' => 'content.blockquote-01', 'props' => ['quote' => '좋은 페이지는 다음 행동을 분명하게 만듭니다.', 'citation' => '김기획', 'role' => '제품 책임자', 'alignment' => 'left', 'variant' => 'mark']],
+            ['type' => 'content.notice-01', 'props' => ['tone' => 'info', 'title' => '방문 전 확인해 주세요', 'body' => '운영 시간과 준비 사항을 확인하세요.', 'actionLabel' => '운영 안내', 'actionUrl' => '/guide']],
+            ['type' => 'content.card-grid-01', 'props' => ['eyebrow' => 'SERVICES', 'heading' => '필요한 서비스를 고르세요', 'items' => [['kicker' => '01', 'title' => '상담', 'body' => '목표를 정리합니다.', 'linkLabel' => '상담 보기', 'linkUrl' => '/consulting'], ['kicker' => '02', 'title' => '구축', 'body' => '결과물을 만듭니다.', 'linkLabel' => '구축 보기', 'linkUrl' => '/build']], 'columns' => 2, 'variant' => 'outlined']],
+            ['type' => 'navigation.breadcrumbs-01', 'props' => ['items' => [['label' => '홈', 'url' => '/'], ['label' => '서비스', 'url' => '/services']], 'currentLabel' => '상세 안내']],
+            ['type' => 'navigation.anchor-menu-01', 'props' => ['label' => '이 페이지에서', 'items' => [['label' => '소개', 'anchor' => 'intro'], ['label' => '가격', 'anchor' => 'pricing']], 'sticky' => true, 'alignment' => 'center']],
+            ['type' => 'navigation.social-links-01', 'props' => ['heading' => '공식 채널', 'items' => [['network' => 'instagram', 'label' => '인스타그램', 'url' => 'https://instagram.com/example'], ['network' => 'blog', 'label' => '블로그', 'url' => '/blog']], 'variant' => 'icons', 'alignment' => 'left']],
+            ['type' => 'media.image-carousel-01', 'props' => ['eyebrow' => 'GALLERY', 'heading' => '공간을 미리 만나보세요', 'images' => [['src' => '', 'alt' => '밝은 상담 공간', 'caption' => '편안한 상담 공간'], ['src' => '/storage/space-2.webp', 'alt' => '제품 전시 공간', 'caption' => '제품 전시 공간']], 'autoplay' => false, 'interval' => 5000, 'controls' => 'both', 'aspectRatio' => '16:9']],
+        ];
+        $blocks = array_map(static fn (array $block, int $index): array => [
+            'instance_id' => '00000000-0000-4000-8000-'.str_pad((string) (201 + $index), 12, '0', STR_PAD_LEFT),
+            'type' => $block['type'], 'block_version' => 1, 'props' => $block['props'], 'slots' => [],
+        ], $blocks, array_keys($blocks));
+
+        return new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000200', slug: 'production-library', mode: 'canvas', locale: 'ko', tokens: [], blocks: $blocks,
+        );
     }
 
     private function dynamicDocument(string $detailBasePath = '/shop/products'): PageBuilderDocument

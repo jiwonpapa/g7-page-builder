@@ -743,7 +743,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
     await expect(blockPackDialog).toBeVisible();
     await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
-    await expect(blockPackDialog).toContainText('블록 37 / 프리셋 18');
+    await expect(blockPackDialog).toContainText('블록 45 / 프리셋 55');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
     await expect(blockPackDialog.getByRole('button', { name: '최신 버전 확인' })).toBeVisible();
     await blockPackDialog.getByRole('button', { name: '닫기' }).click();
@@ -786,6 +786,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'Team',
       'Gallery',
       'BarChart',
+      'G7RecentPosts',
+      'G7ProductGrid',
+      'InquiryForm',
+      'MapDirections',
       'Testimonials',
       'FaqAccordion',
       'ProcessTimeline',
@@ -801,6 +805,14 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'G7ProductShowcase',
       'G7PostDetail',
       'G7ProductDetail',
+      'Divider',
+      'Blockquote',
+      'Notice',
+      'CardGrid',
+      'Breadcrumbs',
+      'AnchorMenu',
+      'SocialLinks',
+      'ImageCarousel',
     ]) {
       await expect(page.getByTestId(`drawer-item:${component}`)).toHaveCount(1);
     }
@@ -868,6 +880,18 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'download-resources',
       'g7-board-archive',
       'g7-product-showcase',
+      'g7-post-detail',
+      'g7-product-detail',
+      'inquiry-form',
+      'map-directions',
+      'divider',
+      'blockquote',
+      'notice',
+      'card-grid',
+      'breadcrumbs',
+      'anchor-menu',
+      'social-links',
+      'image-carousel',
     ]) {
       await expect(page.getByTestId(`page-builder-block-option-${option}`)).toBeVisible();
     }

@@ -541,6 +541,14 @@ describe('Puck editor surface contract', () => {
       'Team',
       'Gallery',
       'BarChart',
+      'Divider',
+      'Blockquote',
+      'Notice',
+      'CardGrid',
+      'Breadcrumbs',
+      'AnchorMenu',
+      'SocialLinks',
+      'ImageCarousel',
     ]) {
       const drawerItem = await eventually<HTMLElement>(`[data-testid="drawer-item:${component}"]`);
       expect(drawerItem.querySelector(`[data-library-block="${component}"]`)).not.toBeNull();
@@ -599,7 +607,21 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('G7 상품 쇼케이스');
     expect(gallery.textContent).toContain('G7 게시글 상세');
     expect(gallery.textContent).toContain('G7 상품 상세');
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(55);
+    expect(gallery.textContent).toContain('구분선');
+    expect(gallery.textContent).toContain('인용문');
+    expect(gallery.textContent).toContain('알림·안내');
+    expect(gallery.textContent).toContain('카드 그리드');
+    expect(gallery.textContent).toContain('경로 탐색');
+    expect(gallery.textContent).toContain('섹션 바로가기');
+    expect(gallery.textContent).toContain('소셜 링크');
+    expect(gallery.textContent).toContain('이미지 캐러셀');
+    expect(gallery.textContent).toContain('자주 쓰는 기본 블록');
+    expect(gallery.querySelectorAll('[data-testid^="page-builder-quick-add-"]')).toHaveLength(6);
+    const categorySelect = gallery.querySelector<HTMLSelectElement>('[aria-label="블록 분류"]');
+    expect(Array.from(categorySelect?.options ?? []).map((option) => option.textContent)).toEqual([
+      '전체 분류', '기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터',
+    ]);
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(100);
     builtinManifest.presets.forEach((preset) => {
       const slug = preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
       const button = gallery.querySelector<HTMLButtonElement>(`[data-testid="page-builder-preset-${slug}"]`);

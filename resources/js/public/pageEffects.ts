@@ -40,6 +40,9 @@ const STAGGER_TARGETS = [
   '.g7pb-product-showcase__items article',
   '.g7pb-dynamic-posts article',
   '.g7pb-dynamic-products article',
+  '.g7pb-card-grid__item',
+  '.g7pb-social-links li',
+  '.g7pb-image-carousel__slide',
 ];
 
 function asRecord(value: unknown): Record<string, unknown> | null {

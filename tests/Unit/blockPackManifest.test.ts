@@ -1,4 +1,6 @@
 import Ajv2020 from 'ajv/dist/2020';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../Contract/block-pack-data-v1.fixture.json';
@@ -13,15 +15,47 @@ describe('Block Pack manifest v1 schema', () => {
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it('accepts the thirty-seven-definition builtin core pack and its practical presets', () => {
+  it('accepts the forty-five-definition production catalog and covers every type with a unique preview and preset', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.pack_version).toBe('0.12.0');
-    expect(builtinManifest.blocks).toHaveLength(37);
-    expect(builtinManifest.presets).toHaveLength(18);
-    expect(new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`)).size).toBe(37);
-    expect(new Set(builtinManifest.presets.map((preset) => preset.preset_id)).size).toBe(18);
+    expect(builtinManifest.pack_version).toBe('0.13.0');
+    expect(builtinManifest.blocks).toHaveLength(45);
+    expect(builtinManifest.presets).toHaveLength(55);
+    expect(new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`)).size).toBe(45);
+    expect(new Set(builtinManifest.presets.map((preset) => preset.preset_id)).size).toBe(55);
     const definitions = new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`));
     expect(builtinManifest.presets.every((preset) => definitions.has(`${preset.block_id}@${preset.block_version}`))).toBe(true);
+    const presetBlockIds = new Set(builtinManifest.presets.map((preset) => preset.block_id));
+    expect(builtinManifest.blocks.every((block) => presetBlockIds.has(block.block_id))).toBe(true);
+    const thumbnails = builtinManifest.blocks.map((block) => block.thumbnail);
+    expect(new Set(thumbnails).size).toBe(45);
+    const thumbnailContents: string[] = [];
+    thumbnails.forEach((thumbnail) => {
+      const thumbnailPath = resolve('resources/block-packs/builtin-core', thumbnail);
+      expect(existsSync(thumbnailPath), thumbnail).toBe(true);
+      thumbnailContents.push(readFileSync(thumbnailPath, 'utf8'));
+    });
+    expect(new Set(thumbnailContents).size).toBe(45);
+    const editorCss = readFileSync(resolve('resources/css/page-builder.css'), 'utf8');
+    builtinManifest.blocks.forEach((block) => {
+      const slug = block.editor_component.replace(/[A-Z]/g, (value) => `-${value.toLowerCase()}`).replace(/^-/, '');
+      expect(editorCss, `Missing structured gallery preview for ${block.editor_component}`)
+        .toContain(`.g7pb-block-thumb--${slug}`);
+    });
+    const categories = builtinManifest.blocks.reduce<Record<string, number>>((counts, block) => ({
+      ...counts,
+      [block.category]: (counts[block.category] ?? 0) + 1,
+    }), {});
+    expect(categories).toEqual({
+      basic: 6,
+      'hero-conversion': 6,
+      content: 9,
+      media: 3,
+      navigation: 3,
+      'trust-company': 6,
+      'data-comparison': 4,
+      'form-location': 2,
+      'g7-data': 6,
+    });
     expect(builtinManifest.blocks.map((block) => block.block_id)).toEqual(expect.arrayContaining([
       'content.heading-01',
       'content.rich-text-01',
@@ -48,6 +82,14 @@ describe('Block Pack manifest v1 schema', () => {
       'g7.ecommerce-product-showcase-01',
       'g7.board-post-detail-01',
       'g7.ecommerce-product-detail-01',
+      'content.divider-01',
+      'content.blockquote-01',
+      'content.notice-01',
+      'content.card-grid-01',
+      'navigation.breadcrumbs-01',
+      'navigation.anchor-menu-01',
+      'navigation.social-links-01',
+      'media.image-carousel-01',
     ]));
     expect(builtinManifest.presets.map((preset) => preset.preset_id)).toEqual(expect.arrayContaining([
       'heading.section-intro',

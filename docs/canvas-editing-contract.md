@@ -2,7 +2,7 @@
 
 ## 목적
 
-가운데 캔버스는 결과를 보는 미리보기가 아니라 선택 요소 중심의 구조화된 WYSIWYG입니다. 37개 내장 블록은 같은 선택·편집 규칙을 사용하며, 우측 Inspector는 고급 구조와 데이터 설정을 보완합니다.
+가운데 캔버스는 결과를 보는 미리보기가 아니라 선택 요소 중심의 구조화된 WYSIWYG입니다. 45개 내장 블록은 같은 선택·편집 규칙을 사용하며, 우측 Inspector는 고급 구조와 데이터 설정을 보완합니다.
 
 ## 편집 우선순위
 
@@ -22,7 +22,7 @@
 - 미디어 URL은 기존 미디어 API와 허용 URL 검증을, 링크는 기존 G7 route catalog와 URL 정책을 그대로 사용합니다.
 - G7 동적 데이터 블록은 편집용 sample과 공개 API 결과를 구분하며, canvas sample을 원본 데이터로 저장하지 않습니다.
 
-## 37개 블록 계약
+## 45개 블록 계약
 
 `resources/js/editor/canvasEditingContract.ts`의 `BUILTIN_CANVAS_EDITING_CONTRACT`가 단일 목록입니다. 모든 블록은 직접 텍스트 편집을 지원하고, 다음 선택 기능은 블록 특성에 따라 활성화됩니다.
 
@@ -42,7 +42,7 @@
 
 ## 회귀 게이트
 
-- Unit: 37개 계약의 유일성, route/media path 해석, 요소 token allowlist, 중첩 값 불변 갱신, 최소·최대 메타데이터
+- Unit: 45개 계약의 유일성, route/media path 해석, 요소 token allowlist, 중첩 값 불변 갱신, 최소·최대 메타데이터
 - Component: 실제 캔버스 선택, route/media overlay 유지·적용, 선택 요소 token 변경, 형제 요소 비전파, 반복 항목 복제 후 canonical document 반영
 - Browser: 생성 → 직접 편집 → 이미지/경로 → 반복 구조 → 미리보기 → 발행 흐름
 - Visual: PC·태블릿·모바일 캔버스와 문맥 패널의 겹침 및 overflow 확인

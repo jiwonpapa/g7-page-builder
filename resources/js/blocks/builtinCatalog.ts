@@ -13,18 +13,15 @@ export const BUILTIN_BLOCK_PRESETS: readonly BlockPresetDescriptor[] = Object.fr
 );
 
 export const BLOCK_CATEGORY_LABELS: Readonly<Record<string, string>> = Object.freeze({
-  hero: '첫 화면',
+  basic: '기본',
+  'hero-conversion': '첫 화면·전환',
   content: '콘텐츠',
-  action: '전환',
-  contact: '안내',
-  trust: '신뢰',
-  data: '데이터',
-  commerce: '비즈니스',
-  company: '회사 소개',
   media: '미디어',
+  navigation: '탐색',
+  'trust-company': '신뢰·회사',
+  'data-comparison': '데이터·비교',
+  'form-location': '문의·방문',
   'g7-data': 'G7 데이터',
-  form: '폼·문의',
-  location: '지도·방문',
 });
 
 export function blockCatalogTestId(editorComponent: string): string {

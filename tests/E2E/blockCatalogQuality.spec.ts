@@ -97,6 +97,7 @@ test('publishes all 45 catalog blocks and keeps 30 responsive visual baselines',
   let lockVersion = 0;
   const runtimeErrors: string[] = [];
   page.on('pageerror', (error) => runtimeErrors.push(`${error.name}: ${error.message}`));
+  await page.route(/^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//, (route) => route.abort());
 
   try {
     const createResponse = await api.post(`${API}/documents`, {
@@ -177,6 +178,15 @@ test('publishes all 45 catalog blocks and keeps 30 responsive visual baselines',
     expect(new Set(renderedTypes).size).toBe(45);
     expect(renderedTypes.every((type) => type !== '')).toBe(true);
     await expect(page.locator('[data-g7pb-slider-ready="true"]')).toHaveCount(4);
+    const videoFrame = page.locator('.g7pb-video__frame iframe');
+    await expect(videoFrame).toHaveAttribute('title', /\S+/);
+    await expect(videoFrame).toHaveAttribute('loading', 'lazy');
+    await expect(videoFrame).toHaveAttribute('src', /^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//);
+    const comparisonScroller = page.locator('.g7pb-comparison__scroll');
+    await expect(comparisonScroller).toHaveAttribute('role', 'region');
+    await expect(comparisonScroller).toHaveAttribute('tabindex', '0');
+    await comparisonScroller.focus();
+    await expect(comparisonScroller).toBeFocused();
     await page.evaluate(() => document.fonts.ready);
 
     const accessibility = await new AxeBuilder({ page })

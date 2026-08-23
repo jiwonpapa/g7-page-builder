@@ -18,6 +18,10 @@ if (filter_var($baseUrl, FILTER_VALIDATE_URL) === false || ! str_starts_with($ba
     fwrite(STDERR, "Store base URL must be HTTPS.\n");
     exit(1);
 }
+$storeBasePath = parse_url($baseUrl, PHP_URL_PATH);
+if (! is_string($storeBasePath) || $storeBasePath === '' || ! str_starts_with($storeBasePath, '/')) {
+    throw new RuntimeException('Store base URL path is invalid.');
+}
 $source = $root.'/resources/store/source';
 $dist = $root.'/resources/store/dist';
 $catalogMeta = json_decode(
@@ -208,12 +212,12 @@ foreach ($pageKitDefinitions as $definition) {
     }
 
     $demoValue = $documentValue;
-    array_walk_recursive($demoValue, static function (mixed &$value) use ($baseUrl, $slug): void {
+    array_walk_recursive($demoValue, static function (mixed &$value) use ($slug, $storeBasePath): void {
         if (! is_string($value)) {
             return;
         }
         if ($value === 'g7pb-media://image-1') {
-            $value = "{$baseUrl}/previews/{$slug}-hero.webp";
+            $value = "{$storeBasePath}/previews/{$slug}-hero.webp";
         } elseif ($value === '/' || str_starts_with($value, 'g7pb-route://')) {
             $value = '/demo-action';
         }

@@ -160,6 +160,15 @@ test('official free store previews and applies a Page Kit as a separate draft', 
     expect(demo.status()).toBe(200);
     expect(await demo.text()).toContain('page-builder-store-demo-root');
     expect(demo.headers()['x-robots-tag']).toBe('noindex, nofollow');
+    const demoPage = await context.newPage();
+    try {
+      await demoPage.goto(demoUrl!);
+      const demoHero = demoPage.locator('.g7pb-hero-split__media img');
+      await expect(demoHero).toBeVisible();
+      expect(await demoHero.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    } finally {
+      await demoPage.close();
+    }
     await kit.getByTestId('page-builder-store-apply-page-kit').click();
 
     const applyDialog = page.getByTestId('page-builder-store-page-kit-dialog');

@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, request as playwrightRequest, test } from '@playwright/test';
-
-import builtinManifestSource from '../../resources/block-packs/builtin-core/manifest.json';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const API = '/api/modules/jiwonpapa-page_builder/admin';
@@ -20,7 +20,9 @@ interface CatalogManifest {
   presets: Array<{ preset_id: string; block_id: string; block_version: number; props: Record<string, unknown> }>;
 }
 
-const builtinManifest = builtinManifestSource as CatalogManifest;
+const builtinManifest = JSON.parse(
+  readFileSync(resolve('resources/block-packs/builtin-core/manifest.json'), 'utf8'),
+) as CatalogManifest;
 const VISUAL_BLOCKS = [
   'hero',
   'divider',

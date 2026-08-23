@@ -126,7 +126,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
             usage: $this->app->make(BlockUsagePort::class),
             registry: $this->app->make(BlockRegistry::class),
             pageBuilderVersion: $this->moduleVersion(),
-            g7Version: '7.0.7',
+            g7Version: $this->g7Version(),
             runtimes: $this->app->make(BlockPackRuntimeRegistry::class),
         ));
         $this->app->singleton(BlockPackRuntimeRegistry::class, function (): BlockPackRuntimeRegistry {
@@ -172,7 +172,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
                 media: $this->app->make(MediaPort::class),
                 routes: $this->app->make(RouteCatalogPort::class),
                 pageBuilderVersion: $this->moduleVersion(),
-                g7Version: '7.0.7',
+                g7Version: $this->g7Version(),
             );
         });
         $this->app->bind(SitePartRepository::class, EloquentSitePartRepository::class);
@@ -215,7 +215,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
             ])
             ->name('web.page-builder.block-pack-asset');
 
-        // G7 7.0.7의 user SPA catch-all보다 먼저 독립 Web viewer를 등록해야 합니다.
+        // G7 7.0.8의 user SPA catch-all보다 먼저 독립 Web viewer를 등록해야 합니다.
         Route::prefix('modules/jiwonpapa-page_builder')
             ->name('web.modules.jiwonpapa-page_builder.')
             ->middleware('web')
@@ -229,5 +229,12 @@ final class PageBuilderServiceProvider extends ServiceProvider
         return is_array($module) && is_string($module['version'] ?? null)
             ? $module['version']
             : '0.0.0';
+    }
+
+    private function g7Version(): string
+    {
+        $version = config('app.version');
+
+        return is_string($version) && $version !== '' ? $version : '7.0.8';
     }
 }

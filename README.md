@@ -50,7 +50,7 @@ Sanitized published artifact
 
 - 로컬 Docker: 실제 `g7pb-dev` 통합 컨테이너 1개
 - PHP 8.5.9 + Xdebug
-- Laravel 12.62.0 host (G7 7.0.7 lock)
+- Laravel 12.62.0 host (G7 7.0.8 lock)
 - Nginx, MariaDB 10.11, Redis 7
 - Node 24 LTS, Composer 2
 - React 19.2
@@ -126,4 +126,4 @@ Docker 로컬 개발환경, G7 설치 자동화, 체크섬 기반 릴리스 패�
 
 제품 버전은 [SemVer 정책](docs/versioning-policy.md)을 따르며 사용자 관점 변경사항은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다. G7 관리 화면과 릴리스 패키지는 동일한 버전과 changelog를 사용합니다.
 
-로컬 G7 실행 소스는 제품 Git에서 제외된 `.runtime/gnuboard7`의 별도 clone을 사용합니다. 현재 기준은 공식 G7 `7.0.7`입니다.
+로컬 G7 실행 소스는 제품 Git에서 제외된 `.runtime/gnuboard7`의 별도 clone을 사용합니다. 현재 기준은 공식 G7 `7.0.8`입니다.

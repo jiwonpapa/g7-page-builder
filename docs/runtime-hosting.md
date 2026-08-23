@@ -62,7 +62,7 @@ G7 공식 문서도 배포본에 빌드 산출물과 `vendor`가 포함되면 �
 | 제한형 공유호스팅 | 미지원 | SSH 없음, 차단 함수, 웹루트·symlink 변경 불가 | 설치 거부 |
 | Node.js 호스팅 | 불필요 | 해당 없음 | Page Builder는 Node 런타임을 사용하지 않음 |
 
-G7 7.0.7은 공식적으로 Cafe24 공유호스팅 설치 절차를 제공하지만, 모든 웹호스팅을 지원한다는 의미는 아닙니다. 참고: [G7 shared hosting installation](https://github.com/gnuboard/g7/blob/main/INSTALL.md#%EB%B0%A9%EB%B2%95-4-%EA%B3%B5%EC%9C%A0-%ED%98%B8%EC%8A%A4%ED%8C%85).
+G7 7.0.8은 공식적으로 Cafe24 공유호스팅 설치 절차를 제공하지만, 모든 웹호스팅을 지원한다는 의미는 아닙니다. 참고: [G7 shared hosting installation](https://github.com/gnuboard/g7/blob/main/INSTALL.md#%EB%B0%A9%EB%B2%95-4-%EA%B3%B5%EC%9C%A0-%ED%98%B8%EC%8A%A4%ED%8C%85).
 
 향후 `Shared Hosting Lite`를 제공하려면 한 개의 실제 대상 환경에서 다음 Doctor를 모두 통과해야 합니다.
 

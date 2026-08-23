@@ -1,13 +1,13 @@
 # G7 integration contract
 
 상태: 0.9 implementation baseline
-검증 기준: G7 7.0.7
+검증 기준: G7 7.0.8
 
 ## 결론
 
 G7 코어와 번들 템플릿을 수정하지 않습니다. Page Builder는 문서·리비전·마지막 정상 발행본을 자체 소유하고, 기본 출력에서만 활성 User Template의 공개 route/layout merge 계약을 사용해 콘텐츠를 연결합니다.
 
-G7 7.0.7에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계약이 없습니다. 따라서 MVP public artifact는 서버에서 정화한 HTML이며, G7 JSON UI compiler는 향후 선택형 target입니다.
+G7 7.0.8에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계약이 없습니다. 따라서 MVP public artifact는 서버에서 정화한 HTML이며, G7 JSON UI compiler는 향후 선택형 target입니다.
 
 ## 필수 G7 의존성 예산
 

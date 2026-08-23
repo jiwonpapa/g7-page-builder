@@ -2,7 +2,7 @@
 
 ## 결론
 
-MVP에 새 G7 코어 계약이나 코어 수정은 필요하지 않습니다. 이전 문서의 `JsonUiDocumentEditor`, `BlockPresetRegistry`, `JsonUiFragmentRenderer`, `PageDocumentProvider`는 G7 7.0.7에 존재하지 않는 제안 이름이었으며 구현 선행조건에서 제거했습니다.
+MVP에 새 G7 코어 계약이나 코어 수정은 필요하지 않습니다. 이전 문서의 `JsonUiDocumentEditor`, `BlockPresetRegistry`, `JsonUiFragmentRenderer`, `PageDocumentProvider`는 G7 7.0.8에 존재하지 않는 제안 이름이었으며 구현 선행조건에서 제거했습니다.
 
 실제 연동 기준은 [G7 연동 계약](g7-integration-contract.md)입니다.
 

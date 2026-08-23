@@ -105,6 +105,27 @@ final class OfficialStoreContractTest extends TestCase
 
         foreach ($expectedBlocks as $productId => $blockCount) {
             $product = $catalog->find($productId, '1.0.0');
+            self::assertCount(3, $product->preview['screenshots']);
+            self::assertSame($product->preview['screenshots'][0], $product->preview['thumbnail_url']);
+            self::assertIsString($product->preview['demo_url']);
+            $expectedWidths = [1425, 805, 375];
+            foreach ($product->preview['screenshots'] as $index => $screenshotUrl) {
+                $screenshotPath = dirname(__DIR__, 2).'/resources/store/dist/previews/'.basename($screenshotUrl);
+                self::assertFileExists($screenshotPath);
+                $size = getimagesize($screenshotPath);
+                self::assertIsArray($size);
+                self::assertSame($expectedWidths[$index], $size[0]);
+                self::assertSame('image/webp', $size['mime']);
+            }
+            $demoPath = dirname(__DIR__, 2).'/resources/store/dist/demos/'.basename($product->preview['demo_url']).'.html';
+            self::assertFileExists($demoPath);
+            $demo = file_get_contents($demoPath);
+            self::assertIsString($demo);
+            self::assertSame($blockCount, substr_count($demo, 'data-testid="page-builder-rendered-block"'));
+            self::assertStringNotContainsString('g7pb-media://', $demo);
+            self::assertStringNotContainsString('g7pb-route://', $demo);
+            self::assertStringNotContainsString('data-g7pb-inquiry-form', $demo);
+
             $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
             $bundle = $adapter->read(new StoreArtifact(
                 $path,
@@ -153,6 +174,23 @@ final class OfficialStoreContractTest extends TestCase
             false,
         ));
         self::assertSame('g7pb-route://auth.login', $companyBundle->document->blocks[5]['props']['secondaryLink']['url']);
+    }
+
+    public function test_every_built_in_thumbnail_reference_is_shipped(): void
+    {
+        $root = dirname(__DIR__, 2).'/resources/block-packs/builtin-core';
+        $manifest = json_decode(
+            (string) file_get_contents($root.'/manifest.json'),
+            true,
+            128,
+            JSON_THROW_ON_ERROR,
+        );
+        self::assertIsArray($manifest);
+        foreach ([...$manifest['blocks'], ...$manifest['presets']] as $item) {
+            self::assertIsArray($item);
+            self::assertIsString($item['thumbnail'] ?? null);
+            self::assertFileExists($root.'/'.$item['thumbnail']);
+        }
     }
 
     public function test_page_kit_export_round_trips_declared_image_bytes_and_metadata(): void

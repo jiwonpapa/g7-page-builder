@@ -79,9 +79,13 @@
                 "g7": ">=7.0.7"
             },
             "preview": {
-                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/company-launch.svg",
-                "screenshots": [],
-                "demo_url": null
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/company-launch-desktop.webp",
+                "screenshots": [
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/company-launch-desktop.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/company-launch-tablet.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/company-launch-mobile.webp"
+                ],
+                "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/company-launch"
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-company-launch-1.0.0.zip",
@@ -143,9 +147,13 @@
                 "g7": ">=7.0.7"
             },
             "preview": {
-                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/service-conversion.svg",
-                "screenshots": [],
-                "demo_url": null
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/service-conversion-desktop.webp",
+                "screenshots": [
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/service-conversion-desktop.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/service-conversion-tablet.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/service-conversion-mobile.webp"
+                ],
+                "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/service-conversion"
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-service-conversion-1.0.0.zip",
@@ -207,9 +215,13 @@
                 "g7": ">=7.0.7"
             },
             "preview": {
-                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/local-business.svg",
-                "screenshots": [],
-                "demo_url": null
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/local-business-desktop.webp",
+                "screenshots": [
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/local-business-desktop.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/local-business-tablet.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/local-business-mobile.webp"
+                ],
+                "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/local-business"
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-local-business-1.0.0.zip",
@@ -271,9 +283,13 @@
                 "g7": ">=7.0.7"
             },
             "preview": {
-                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/event-launch.svg",
-                "screenshots": [],
-                "demo_url": null
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/event-launch-desktop.webp",
+                "screenshots": [
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/event-launch-desktop.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/event-launch-tablet.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/event-launch-mobile.webp"
+                ],
+                "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/event-launch"
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-event-launch-1.0.0.zip",
@@ -339,9 +355,13 @@
                 "g7": ">=7.0.7"
             },
             "preview": {
-                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/editorial-community.svg",
-                "screenshots": [],
-                "demo_url": null
+                "thumbnail_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/editorial-community-desktop.webp",
+                "screenshots": [
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/editorial-community-desktop.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/editorial-community-tablet.webp",
+                    "https://g7devops.com/modules/jiwonpapa-page_builder/store/previews/editorial-community-mobile.webp"
+                ],
+                "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/editorial-community"
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-editorial-community-1.0.0.zip",

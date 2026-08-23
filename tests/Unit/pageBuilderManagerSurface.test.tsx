@@ -287,7 +287,15 @@ describe('Page Builder manager surface', () => {
         title: { ko: '회사 소개 랜딩' }, description: { ko: '완성 페이지입니다.' }, category: 'company',
         tags: ['회사소개', '랜딩'], license: 'free',
         compatibility: { page_builder: '>=0.10.0 <1.0.0', php: '>=8.5', g7: '>=7.0.7' },
-        preview: { thumbnail_url: 'https://www.g7devops.com/company.svg', screenshots: [], demo_url: null },
+        preview: {
+          thumbnail_url: 'https://www.g7devops.com/company-desktop.webp',
+          screenshots: [
+            'https://www.g7devops.com/company-desktop.webp',
+            'https://www.g7devops.com/company-tablet.webp',
+            'https://www.g7devops.com/company-mobile.webp',
+          ],
+          demo_url: 'https://www.g7devops.com/modules/jiwonpapa-page_builder/store/demos/company-launch',
+        },
         artifact: { url: 'https://www.g7devops.com/company.zip', sha256: 'a'.repeat(64), bytes: 100 },
         requirements: { blocks: [] }, compatible: true, compatibility_error: null,
         installed: false, installed_state: null,
@@ -311,10 +319,16 @@ describe('Page Builder manager surface', () => {
     const product = await eventually<HTMLElement>('[data-testid="page-builder-store-product"]');
     expect(product.textContent).toContain('회사 소개 랜딩');
     expect(product.textContent).toContain('Page Kit · 무료');
+    expect(product.textContent).toContain('실제 데모 보기');
+    expect(product.textContent).toContain('PC·태블릿·모바일 실제 화면 3장');
+    expect(product.querySelector<HTMLAnchorElement>('.g7pb-store-card__preview')?.href)
+      .toBe('https://www.g7devops.com/modules/jiwonpapa-page_builder/store/demos/company-launch');
     const apply = product.querySelector<HTMLButtonElement>('[data-testid="page-builder-store-apply-page-kit"]');
     await act(async () => { apply?.click(); });
     const dialog = await eventually<HTMLElement>('[data-testid="page-builder-store-page-kit-dialog"]');
     expect(dialog.textContent).toContain('기존 페이지는 바꾸지 않습니다.');
+    expect(dialog.textContent).toContain('발행 전에 교체할 항목');
+    expect(dialog.textContent).toContain('샘플 링크를 실제 경로로 연결합니다.');
     expect(dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-store-page-kit-slug"]')?.value)
       .toBe('company-launch');
 

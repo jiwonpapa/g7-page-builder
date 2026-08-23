@@ -1341,7 +1341,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
               <div>
                 <p className="g7pb-kicker">지원소프트 공식 배포</p>
                 <h2 id="g7pb-store-heading">무료 Block Pack · Page Kit</h2>
-                <p>검증된 공식 자산만 표시합니다. 제3자 업로드와 판매자 기능은 없습니다.</p>
+                <p>검증된 공식 자산과 실제 PC·태블릿·모바일 적용 화면만 표시합니다. 제3자 업로드와 판매자 기능은 없습니다.</p>
               </div>
               <button type="button" className="g7pb-button g7pb-button--quiet"
                 onClick={() => setStoreOpen(false)}>닫기</button>
@@ -1375,7 +1375,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                       <a className="g7pb-store-card__preview" href={product.preview.demo_url ?? product.preview.thumbnail_url}
                         target="_blank" rel="noopener noreferrer" aria-label={`${product.title.ko} 미리보기`}>
                         <img src={product.preview.thumbnail_url} alt="" loading="lazy" />
-                        <span>크게 미리보기 <ExternalLink size={14} aria-hidden="true" /></span>
+                        <span>{product.preview.demo_url ? '실제 데모 보기' : '크게 미리보기'} <ExternalLink size={14} aria-hidden="true" /></span>
                       </a>
                       <div className="g7pb-store-card__body">
                         <span className="g7pb-store-card__kind">
@@ -1385,6 +1385,11 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                         <h3>{product.title.ko}</h3>
                         <p>{product.description.ko}</p>
                         <small>v{product.product_version} · {product.tags.join(' · ')}</small>
+                        {product.preview.screenshots.length > 0 && (
+                          <small className="g7pb-store-card__screenshots">
+                            PC·태블릿·모바일 실제 화면 {product.preview.screenshots.length}장
+                          </small>
+                        )}
                         {!product.compatible && <strong className="g7pb-store-card__error">{product.compatibility_error}</strong>}
                       </div>
                       <div className="g7pb-store-card__actions">
@@ -1418,6 +1423,15 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             <p className="g7pb-kicker">완성 페이지 적용</p>
             <h2 id="g7pb-page-kit-apply-heading">{pageKitProduct.title.ko}</h2>
             <p className="g7pb-dialog__body">기존 페이지는 바꾸지 않습니다. 새 UUID와 새 주소를 가진 미발행 초안으로 만들고, 활성 사이트 템플릿을 사용합니다.</p>
+            <div className="g7pb-page-kit-readiness" data-testid="page-builder-store-page-kit-readiness">
+              <strong>발행 전에 교체할 항목</strong>
+              <ul>
+                <li>버튼·기사·자료의 샘플 링크를 실제 경로로 연결합니다.</li>
+                <li>팀·연사·기사의 보조 이미지 자리에는 운영 이미지를 넣거나 의도적인 텍스트형으로 유지합니다.</li>
+                <li>문의 폼·위치·일정 등 실제 운영 정보를 최종 확인합니다.</li>
+              </ul>
+              <p>전용 Hero 이미지는 Page Kit에 포함됩니다.</p>
+            </div>
             <form onSubmit={(event) => void applyPageKit(event)}>
               <label>새 페이지 제목
                 <input value={pageKitTitle} required autoFocus data-testid="page-builder-store-page-kit-title"

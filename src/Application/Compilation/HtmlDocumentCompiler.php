@@ -1637,7 +1637,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiledRows[] = '<tr><th scope="row">'.$this->escape($feature).'</th>'.implode('', $cells).'</tr>';
         }
 
-        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll"><table><caption class="g7pb-visually-hidden">'.$this->escape($heading).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
+        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll" role="region" aria-label="'.$this->escapeAttribute($heading).' 비교표" tabindex="0"><table><caption class="g7pb-visually-hidden">'.$this->escape($heading).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
     }
 
     /** @param array<string, mixed> $props */

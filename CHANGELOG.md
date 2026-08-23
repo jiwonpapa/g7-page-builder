@@ -18,6 +18,10 @@
 - 로컬·CI 검증 기준을 공식 G7 7.0.8로 올리고 Block Pack·공식 Store 호환성 판정이 설치된 G7의 실제 버전을 사용하도록 변경했습니다.
 - 블록 검색이 이름·용도·분류·한국어 동의어를 함께 찾고, 초기 라이브러리에서 가장 자주 쓰는 기본 6종을 바로 추가할 수 있게 변경했습니다.
 
+### Fixed
+
+- 전체 블록 실발행 화면에서 소프트·대비 배경의 보조 문구가 WCAG AA 색상 대비를 충족하고, 가로 스크롤 비교표를 키보드로 탐색할 수 있게 수정했습니다.
+
 ### Security
 
 - 새 8종의 route, anchor, network, tone, 반복 수, 이미지 대체 텍스트, 캐러셀 제어를 schema와 PHP compiler의 typed allowlist로 제한하고 임의 class·style·HTML·JavaScript를 허용하지 않습니다.

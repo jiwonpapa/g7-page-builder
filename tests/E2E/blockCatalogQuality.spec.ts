@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, request as playwrightRequest, test } from '@playwright/test';
-
-import builtinManifestSource from '../../resources/block-packs/builtin-core/manifest.json';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const API = '/api/modules/jiwonpapa-page_builder/admin';
@@ -20,7 +20,9 @@ interface CatalogManifest {
   presets: Array<{ preset_id: string; block_id: string; block_version: number; props: Record<string, unknown> }>;
 }
 
-const builtinManifest = builtinManifestSource as CatalogManifest;
+const builtinManifest = JSON.parse(
+  readFileSync(resolve('resources/block-packs/builtin-core/manifest.json'), 'utf8'),
+) as CatalogManifest;
 const VISUAL_BLOCKS = [
   'hero',
   'divider',
@@ -95,6 +97,7 @@ test('publishes all 45 catalog blocks and keeps 30 responsive visual baselines',
   let lockVersion = 0;
   const runtimeErrors: string[] = [];
   page.on('pageerror', (error) => runtimeErrors.push(`${error.name}: ${error.message}`));
+  await page.route(/^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//, (route) => route.abort());
 
   try {
     const createResponse = await api.post(`${API}/documents`, {
@@ -175,6 +178,15 @@ test('publishes all 45 catalog blocks and keeps 30 responsive visual baselines',
     expect(new Set(renderedTypes).size).toBe(45);
     expect(renderedTypes.every((type) => type !== '')).toBe(true);
     await expect(page.locator('[data-g7pb-slider-ready="true"]')).toHaveCount(4);
+    const videoFrame = page.locator('.g7pb-video__frame iframe');
+    await expect(videoFrame).toHaveAttribute('title', /\S+/);
+    await expect(videoFrame).toHaveAttribute('loading', 'lazy');
+    await expect(videoFrame).toHaveAttribute('src', /^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//);
+    const comparisonScroller = page.locator('.g7pb-comparison__scroll');
+    await expect(comparisonScroller).toHaveAttribute('role', 'region');
+    await expect(comparisonScroller).toHaveAttribute('tabindex', '0');
+    await comparisonScroller.focus();
+    await expect(comparisonScroller).toBeFocused();
     await page.evaluate(() => document.fonts.ready);
 
     const accessibility = await new AxeBuilder({ page })

@@ -276,12 +276,12 @@ const PRICING_LAYOUT_OPTIONS = [{ label: '요금 카드', value: 'cards' }, { la
 const TEAM_LAYOUT_OPTIONS = [{ label: '팀 그리드', value: 'grid' }, { label: '인물 중심', value: 'portraits' }, { label: '에디토리얼', value: 'editorial' }, { label: '대표 인물', value: 'featured' }];
 const GALLERY_LAYOUT_OPTIONS = [{ label: '균등 그리드', value: 'grid' }, { label: '벤토', value: 'bento' }, { label: '메이슨리', value: 'masonry' }, { label: '필름 스트립', value: 'filmstrip' }];
 
-function heroSplitLayout(value: unknown): HeroSplitEditorProps['layout'] { return value === 'balanced' || value === 'overlap' || value === 'offset' ? value : 'screenshot'; }
+function heroSplitLayout(value: unknown): HeroSplitEditorProps['layout'] { return value === 'screenshot' || value === 'overlap' || value === 'offset' ? value : 'balanced'; }
 function logoLayout(value: unknown): LogoCloudEditorProps['layout'] { return value === 'grid' || value === 'panel' ? value : 'strip'; }
-function statsLayout(value: unknown): StatsEditorProps['layout'] { return value === 'grid' || value === 'strip' || value === 'split' ? value : 'editorial'; }
-function pricingLayout(value: unknown): PricingEditorProps['layout'] { return value === 'cards' || value === 'compact' || value === 'editorial' ? value : 'featured'; }
-function teamLayout(value: unknown): TeamEditorProps['layout'] { return value === 'grid' || value === 'editorial' || value === 'featured' ? value : 'portraits'; }
-function galleryLayout(value: unknown): GalleryEditorProps['layout'] { return value === 'grid' || value === 'masonry' || value === 'filmstrip' ? value : 'bento'; }
+function statsLayout(value: unknown): StatsEditorProps['layout'] { return value === 'editorial' || value === 'strip' || value === 'split' ? value : 'grid'; }
+function pricingLayout(value: unknown): PricingEditorProps['layout'] { return value === 'featured' || value === 'compact' || value === 'editorial' ? value : 'cards'; }
+function teamLayout(value: unknown): TeamEditorProps['layout'] { return value === 'portraits' || value === 'editorial' || value === 'featured' ? value : 'grid'; }
+function galleryLayout(value: unknown): GalleryEditorProps['layout'] { return value === 'bento' || value === 'masonry' || value === 'filmstrip' ? value : 'grid'; }
 
 const DEFAULT_HERO_SPLIT: HeroSplitEditorProps = {
   eyebrow: '제품 소개',

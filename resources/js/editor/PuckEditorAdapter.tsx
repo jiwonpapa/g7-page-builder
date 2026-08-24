@@ -108,7 +108,7 @@ interface HeroEditorProps {
   imageSrc: string;
   imageAlt: string;
   alignment: 'left' | 'center';
-  layout: NonNullable<HeroBlockProps['layout']>;
+  layout: NonNullable<HeroBlockProps['layout']> | 'classic';
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
@@ -346,11 +346,13 @@ function normalizeTheme(value: unknown): CtaEditorProps['theme'] {
 }
 
 function normalizeHeroLayout(value: unknown): HeroEditorProps['layout'] {
-  return value === 'poster' || value === 'backdrop' || value === 'editorial' || value === 'device' ? value : 'product';
+  return value === 'product' || value === 'poster' || value === 'backdrop' || value === 'editorial' || value === 'device'
+    ? value
+    : 'classic';
 }
 
 function normalizeFeaturesLayout(value: unknown): FeaturesEditorProps['layout'] {
-  return value === 'grid' || value === 'editorial' || value === 'panel' || value === 'list' ? value : 'bento';
+  return value === 'bento' || value === 'editorial' || value === 'panel' || value === 'list' ? value : 'grid';
 }
 
 function normalizeCtaLayout(value: unknown): CtaEditorProps['layout'] {
@@ -685,8 +687,9 @@ function puckBlockToCanonical(
       title: asString(editorProps.title),
       body: asString(editorProps.body),
       alignment: normalizeAlignment(editorProps.alignment),
-      layout: normalizeHeroLayout(editorProps.layout),
     };
+    const layout = normalizeHeroLayout(editorProps.layout);
+    if (layout !== 'classic') heroProps.layout = layout;
     const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
     if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious' || appearance.textScale || appearance.textAlign || appearance.elements) {
       heroProps.appearance = appearance;
@@ -1366,6 +1369,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
         },
         layout: {
           type: 'select', label: '레이아웃', options: [
+            { label: '기존 기본', value: 'classic' },
             { label: '제품 소개', value: 'product' }, { label: '포스터', value: 'poster' },
             { label: '배경 이미지', value: 'backdrop' }, { label: '에디토리얼', value: 'editorial' },
             { label: '디바이스 쇼케이스', value: 'device' },

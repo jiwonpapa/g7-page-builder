@@ -201,11 +201,11 @@ function asString(value: unknown, fallback = ''): string {
 }
 
 function testimonialsLayout(value: unknown): TestimonialsEditorProps['layout'] {
-  return value === 'grid' || value === 'spotlight' || value === 'split' || value === 'quote-hero' ? value : 'wall';
+  return value === 'spotlight' || value === 'split' || value === 'wall' || value === 'quote-hero' ? value : 'grid';
 }
 
 function articleLayout(value: unknown): ArticleListEditorProps['layout'] {
-  return value === 'list' || value === 'grid' || value === 'featured' || value === 'editorial' ? value : 'magazine';
+  return value === 'grid' || value === 'featured' || value === 'magazine' || value === 'editorial' ? value : 'list';
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

@@ -407,6 +407,7 @@ describe('Puck PageBuilderDocument adapter', () => {
             imageSrc: '',
             imageAlt: '',
             alignment: 'left',
+            layout: 'product',
           },
         },
       ],

@@ -628,7 +628,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $items = $props['items'] ?? null;
         $columns = $this->requiredIntegerChoice($props, 'columns', [2, 3]);
         $variant = $this->requiredString($props, 'variant', 16);
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'grid';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! is_array($items) || count($items) < 2 || count($items) > 6) {
             throw new DocumentCompileException('Card grid must contain between two and six items.');
@@ -636,7 +636,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         if (! in_array($variant, ['plain', 'outlined'], true)) {
             throw new DocumentCompileException('Card grid variant is invalid.');
         }
-        if (! in_array($layout, ['grid', 'bento', 'rail', 'editorial', 'numbered'], true)) {
+        if ($layout !== null && ! in_array($layout, ['grid', 'bento', 'rail', 'editorial', 'numbered'], true)) {
             throw new DocumentCompileException('Card grid layout is invalid.');
         }
         $compiled = [];
@@ -664,7 +664,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->escape($title).'</h3>'.$bodyMarkup.$link.'</article>';
         }
 
-        return '<section class="g7pb-block g7pb-card-grid g7pb-card-grid--'.$columns.' g7pb-card-grid--'.$variant.' g7pb-card-grid--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="card-grid">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-card-grid__items">'.implode('', $compiled).'</div></section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-card-grid--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-card-grid g7pb-card-grid--'.$columns.' g7pb-card-grid--'.$variant.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="card-grid">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-card-grid__items">'.implode('', $compiled).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -804,13 +806,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $title = $this->requiredString($props, 'title', 200);
         $body = $this->optionalString($props, 'body', 4000);
         $alignment = $this->optionalString($props, 'alignment', 16) ?? 'center';
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'product';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
 
         if (! in_array($alignment, ['left', 'center'], true)) {
             throw new DocumentCompileException('Hero alignment must be left or center.');
         }
-        if (! in_array($layout, ['poster', 'product', 'backdrop', 'editorial', 'device'], true)) {
+        if ($layout !== null && ! in_array($layout, ['poster', 'product', 'backdrop', 'editorial', 'device'], true)) {
             throw new DocumentCompileException('Hero layout is invalid.');
         }
 
@@ -842,7 +844,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $parts[] = '<img class="g7pb-hero__image" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="eager">';
         }
 
-        return '<section class="g7pb-block g7pb-hero g7pb-hero--'.$alignment.' g7pb-hero--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero">'.implode('', $parts).'</section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-hero--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-hero g7pb-hero--'.$alignment.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero">'.implode('', $parts).'</section>';
     }
 
     /**
@@ -852,13 +856,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $title = $this->requiredString($props, 'title', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'grid';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
 
         if (! is_array($items) || count($items) < 2 || count($items) > 6) {
             throw new DocumentCompileException('Features must contain between two and six items.');
         }
-        if (! in_array($layout, ['grid', 'bento', 'editorial', 'panel', 'list'], true)) {
+        if ($layout !== null && ! in_array($layout, ['grid', 'bento', 'editorial', 'panel', 'list'], true)) {
             throw new DocumentCompileException('Features layout is invalid.');
         }
 
@@ -880,7 +884,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiledItems[] = '<article class="g7pb-features__item"><span class="g7pb-features__icon g7pb-icon--'.$this->escapeAttribute($icon).'" aria-hidden="true"></span><h3>'.$this->escape($itemTitle).'</h3><p>'.$this->formatText($body).'</p></article>';
         }
 
-        return '<section class="g7pb-block g7pb-features g7pb-features--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="features"><h2 class="g7pb-features__title">'.$this->escape($title).'</h2><div class="g7pb-features__grid">'.implode('', $compiledItems).'</div></section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-features--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-features'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="features"><h2 class="g7pb-features__title">'.$this->escape($title).'</h2><div class="g7pb-features__grid">'.implode('', $compiledItems).'</div></section>';
     }
 
     /**
@@ -898,13 +904,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->requiredString($props, 'heading', 200);
         $body = $this->optionalString($props, 'body', 2000);
         $theme = $this->requiredString($props, 'theme', 16);
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'split';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
 
         if (! in_array($theme, ['light', 'dark'], true)) {
             throw new DocumentCompileException('CTA theme must be light or dark.');
         }
-        if (! in_array($layout, ['split', 'centered', 'banner', 'panel'], true)) {
+        if ($layout !== null && ! in_array($layout, ['split', 'centered', 'banner', 'panel'], true)) {
             throw new DocumentCompileException('CTA layout is invalid.');
         }
 
@@ -931,7 +937,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             ? ''
             : '<div class="g7pb-cta__actions">'.implode('', $actions).'</div>';
 
-        return '<section class="g7pb-block g7pb-cta g7pb-cta--'.$theme.' g7pb-cta--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="cta"><div class="g7pb-cta__copy">'.implode('', $copy).'</div>'.$actionMarkup.'</section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-cta--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-cta g7pb-cta--'.$theme.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="cta"><div class="g7pb-cta__copy">'.implode('', $copy).'</div>'.$actionMarkup.'</section>';
     }
 
     /**
@@ -988,13 +996,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $title = $this->requiredString($props, 'title', 200);
         $body = $this->optionalString($props, 'body', 2000);
         $mediaPosition = $this->requiredString($props, 'mediaPosition', 16);
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'balanced';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
 
         if (! in_array($mediaPosition, ['left', 'right'], true)) {
             throw new DocumentCompileException('Split Hero media position is invalid.');
         }
-        if (! in_array($layout, ['balanced', 'screenshot', 'overlap', 'offset'], true)) {
+        if ($layout !== null && ! in_array($layout, ['balanced', 'screenshot', 'overlap', 'offset'], true)) {
             throw new DocumentCompileException('Split Hero layout is invalid.');
         }
 
@@ -1028,7 +1036,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'eager',
         ).'</figure>';
 
-        return '<section class="g7pb-block g7pb-hero-split g7pb-hero-split--'.$mediaPosition.' g7pb-hero-split--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-split"><div class="g7pb-hero-split__copy">'.implode('', $copy).'</div>'.$media.'</section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-hero-split--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-hero-split g7pb-hero-split--'.$mediaPosition.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-split"><div class="g7pb-hero-split__copy">'.implode('', $copy).'</div>'.$media.'</section>';
     }
 
     /**
@@ -1100,13 +1110,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->assertOnlyKeys($props, ['heading', 'logos', 'layout', 'appearance'], 'Logo Cloud');
         $heading = $this->requiredString($props, 'heading', 200);
         $logos = $props['logos'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'strip';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
 
         if (! is_array($logos) || count($logos) < 2 || count($logos) > 12) {
             throw new DocumentCompileException('Logo Cloud must contain between two and twelve logos.');
         }
-        if (! in_array($layout, ['strip', 'grid', 'panel'], true)) {
+        if ($layout !== null && ! in_array($layout, ['strip', 'grid', 'panel'], true)) {
             throw new DocumentCompileException('Logo Cloud layout is invalid.');
         }
 
@@ -1130,7 +1140,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $items[] = '<li>'.$visual.'</li>';
         }
 
-        return '<section class="g7pb-block g7pb-logo-cloud g7pb-logo-cloud--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-cloud"><h2>'.$this->escape($heading).'</h2><ul>'.implode('', $items).'</ul></section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-logo-cloud--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-logo-cloud'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-cloud"><h2>'.$this->escape($heading).'</h2><ul>'.implode('', $items).'</ul></section>';
     }
 
     /**
@@ -1142,10 +1154,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'grid';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         $icons = ['trend', 'users', 'target', 'chart'];
-        if (! in_array($layout, ['grid', 'strip', 'split', 'editorial'], true)) {
+        if ($layout !== null && ! in_array($layout, ['grid', 'strip', 'split', 'editorial'], true)) {
             throw new DocumentCompileException('Stats layout is invalid.');
         }
 
@@ -1169,7 +1181,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<article><span class="g7pb-stats__icon g7pb-stats__icon--'.$icon.'" aria-hidden="true"></span><strong>'.$this->escape($value).'</strong><h3>'.$this->escape($label).'</h3><p>'.$this->formatText($detail).'</p></article>';
         }
 
-        return '<section class="g7pb-block g7pb-stats g7pb-stats--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="stats">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-stats__grid">'.implode('', $compiled).'</div></section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-stats--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-stats'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="stats">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-stats__grid">'.implode('', $compiled).'</div></section>';
     }
 
     /**
@@ -1181,9 +1195,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
         $plans = $props['plans'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'cards';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
-        if (! in_array($layout, ['cards', 'featured', 'compact', 'editorial'], true)) {
+        if ($layout !== null && ! in_array($layout, ['cards', 'featured', 'compact', 'editorial'], true)) {
             throw new DocumentCompileException('Pricing layout is invalid.');
         }
 
@@ -1226,7 +1240,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->escape($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong><span>'.$this->escape($period).'</span></p><p>'.$this->formatText($description).'</p><ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
         }
 
-        return '<section class="g7pb-block g7pb-pricing g7pb-pricing--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="pricing">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-pricing__grid">'.implode('', $compiled).'</div></section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-pricing--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-pricing'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="pricing">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-pricing__grid">'.implode('', $compiled).'</div></section>';
     }
 
     /**
@@ -1238,9 +1254,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
         $members = $props['members'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'grid';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
-        if (! in_array($layout, ['grid', 'portraits', 'editorial', 'featured'], true)) {
+        if ($layout !== null && ! in_array($layout, ['grid', 'portraits', 'editorial', 'featured'], true)) {
             throw new DocumentCompileException('Team layout is invalid.');
         }
 
@@ -1269,7 +1285,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<article><figure>'.$media.'</figure>'.$memberName.'<strong>'.$this->escape($role).'</strong><p>'.$this->formatText($bio).'</p></article>';
         }
 
-        return '<section class="g7pb-block g7pb-team g7pb-team--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="team">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-team__grid">'.implode('', $compiled).'</div></section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-team--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-team'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="team">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-team__grid">'.implode('', $compiled).'</div></section>';
     }
 
     /**
@@ -1282,13 +1300,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->requiredString($props, 'heading', 200);
         $images = $props['images'] ?? null;
         $columns = $props['columns'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16) ?? 'grid';
+        $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
 
         if (! is_int($columns) || ! in_array($columns, [2, 3, 4], true)) {
             throw new DocumentCompileException('Gallery columns are invalid.');
         }
-        if (! in_array($layout, ['grid', 'bento', 'masonry', 'filmstrip'], true)) {
+        if ($layout !== null && ! in_array($layout, ['grid', 'bento', 'masonry', 'filmstrip'], true)) {
             throw new DocumentCompileException('Gallery layout is invalid.');
         }
         if (! is_array($images) || count($images) < 2 || count($images) > 12) {
@@ -1309,7 +1327,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<figure>'.$media.$figcaption.'</figure>';
         }
 
-        return '<section class="g7pb-block g7pb-gallery g7pb-gallery--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="gallery">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-gallery__grid g7pb-gallery__grid--'.$columns.'">'.implode('', $compiled).'</div></section>';
+        $layoutClass = $layout === null ? '' : ' g7pb-gallery--layout-'.$layout;
+
+        return '<section class="g7pb-block g7pb-gallery'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="gallery">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-gallery__grid g7pb-gallery__grid--'.$columns.'">'.implode('', $compiled).'</div></section>';
     }
 
     /**

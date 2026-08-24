@@ -660,6 +660,7 @@ describe('Puck editor surface contract', () => {
     expect(mobileViewport.getAttribute('aria-pressed')).toBe('true');
     expect(tabletViewport.getAttribute('aria-pressed')).toBe('false');
 
+    const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
     const addButton = await eventually<HTMLButtonElement>('[data-testid="page-builder-add-block"]');
     expect(addButton.textContent).toContain('블록 추가');
     await act(async () => {
@@ -667,6 +668,7 @@ describe('Puck editor surface contract', () => {
     });
 
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
+    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
     expect(Array.from(gallery.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent)).toEqual([
       '전체140', '블록 종류45', '완성 섹션95',
     ]);

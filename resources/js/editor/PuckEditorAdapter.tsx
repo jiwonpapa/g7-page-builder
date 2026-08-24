@@ -1918,7 +1918,7 @@ function StableAddBlockControls({
     if (globalThis.document) {
       globalThis.document.body.style.overflow = 'hidden';
     }
-    firstItemRef.current?.focus();
+    firstItemRef.current?.focus({ preventScroll: true });
 
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {

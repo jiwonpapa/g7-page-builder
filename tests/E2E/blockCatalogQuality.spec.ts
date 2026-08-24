@@ -205,7 +205,7 @@ test('publishes all 45 catalog blocks and keeps 30 responsive visual baselines',
     for (const blockType of VISUAL_BLOCKS) {
       const block = publicRoot.locator(`[data-block-type="${blockType}"]`);
       await expect(block).toHaveCount(1);
-      await expect(block).toHaveScreenshot(`catalog-${blockType}-${testInfo.project.name}.png`, {
+      await expect.soft(block).toHaveScreenshot(`catalog-${blockType}-${testInfo.project.name}.png`, {
         animations: 'disabled',
         caret: 'hide',
         scale: 'css',

@@ -21,12 +21,27 @@
         "eyebrow": "2026 FORWARD CONFERENCE",
         "title": "다음 변화를 만드는 사람들이 만납니다",
         "body": "하루 동안 이어지는 발표와 대화에서 실제 실행 경험과 다음 기회를 확인하세요.",
-        "primaryCta": { "label": "참가 신청하기", "url": "/" },
-        "image": { "src": "g7pb-media://image-1", "alt": "발표를 앞둔 연사와 청중이 있는 현대적인 컨퍼런스 현장" },
+        "primaryCta": {
+          "label": "참가 신청하기",
+          "url": "/"
+        },
+        "image": {
+          "src": "g7pb-media://image-1",
+          "alt": "발표를 앞둔 연사와 청중이 있는 현대적인 컨퍼런스 현장"
+        },
         "mediaPosition": "left",
-        "appearance": { "surface": "contrast", "spacing": "spacious" }
+        "appearance": {
+          "surface": "contrast",
+          "spacing": "spacious"
+        },
+        "layout": "overlap"
       },
-      "motion": { "preset": "parallax-soft", "intensity": "normal", "trigger": "once", "stagger_ms": 60 },
+      "motion": {
+        "preset": "parallax-soft",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 60
+      },
       "slots": {}
     },
     {
@@ -37,14 +52,43 @@
         "eyebrow": "EVENT AT A GLANCE",
         "heading": "한눈에 보는 행사 정보",
         "items": [
-          { "icon": "target", "value": "10.24", "label": "개최일", "detail": "토요일 오전 10시 시작" },
-          { "icon": "users", "value": "8명", "label": "연사", "detail": "제품, 디자인, 운영 실무자" },
-          { "icon": "chart", "value": "6개", "label": "세션", "detail": "키노트와 실전 사례 발표" },
-          { "icon": "trend", "value": "300석", "label": "현장 좌석", "detail": "사전 신청 후 참여" }
+          {
+            "icon": "target",
+            "value": "10.24",
+            "label": "개최일",
+            "detail": "토요일 오전 10시 시작"
+          },
+          {
+            "icon": "users",
+            "value": "8명",
+            "label": "연사",
+            "detail": "제품, 디자인, 운영 실무자"
+          },
+          {
+            "icon": "chart",
+            "value": "6개",
+            "label": "세션",
+            "detail": "키노트와 실전 사례 발표"
+          },
+          {
+            "icon": "trend",
+            "value": "300석",
+            "label": "현장 좌석",
+            "detail": "사전 신청 후 참여"
+          }
         ],
-        "appearance": { "surface": "default", "spacing": "compact" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "compact"
+        },
+        "layout": "strip"
       },
-      "motion": { "preset": "counter", "intensity": "normal", "trigger": "once", "stagger_ms": 60 },
+      "motion": {
+        "preset": "counter",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 60
+      },
       "slots": {}
     },
     {
@@ -55,15 +99,55 @@
         "eyebrow": "PROGRAM",
         "heading": "집중해서 듣고 충분히 이야기하는 일정",
         "items": [
-          { "date": "2026-10-24", "time": "10:00", "title": "오프닝 키노트", "location": "메인 스테이지", "description": "올해의 변화와 다음 실행 과제를 함께 살펴봅니다.", "buttonLabel": "세션 보기", "buttonUrl": "/" },
-          { "date": "2026-10-24", "time": "11:20", "title": "제품을 운영으로 연결하는 법", "location": "메인 스테이지", "description": "만드는 순간 이후를 고려한 제품 결정 사례를 공유합니다.", "buttonLabel": "세션 보기", "buttonUrl": "/" },
-          { "date": "2026-10-24", "time": "14:00", "title": "현장 사례 라운드테이블", "location": "세션룸 A", "description": "서로 다른 조직의 실행 경험을 질문 중심으로 나눕니다.", "buttonLabel": "세션 보기", "buttonUrl": "/" },
-          { "date": "2026-10-24", "time": "16:30", "title": "네트워킹과 클로징", "location": "라운지", "description": "연사와 참가자가 다음 협업 가능성을 연결합니다.", "buttonLabel": "행사 안내", "buttonUrl": "/" }
+          {
+            "date": "2026-10-24",
+            "time": "10:00",
+            "title": "오프닝 키노트",
+            "location": "메인 스테이지",
+            "description": "올해의 변화와 다음 실행 과제를 함께 살펴봅니다.",
+            "buttonLabel": "세션 보기",
+            "buttonUrl": "/"
+          },
+          {
+            "date": "2026-10-24",
+            "time": "11:20",
+            "title": "제품을 운영으로 연결하는 법",
+            "location": "메인 스테이지",
+            "description": "만드는 순간 이후를 고려한 제품 결정 사례를 공유합니다.",
+            "buttonLabel": "세션 보기",
+            "buttonUrl": "/"
+          },
+          {
+            "date": "2026-10-24",
+            "time": "14:00",
+            "title": "현장 사례 라운드테이블",
+            "location": "세션룸 A",
+            "description": "서로 다른 조직의 실행 경험을 질문 중심으로 나눕니다.",
+            "buttonLabel": "세션 보기",
+            "buttonUrl": "/"
+          },
+          {
+            "date": "2026-10-24",
+            "time": "16:30",
+            "title": "네트워킹과 클로징",
+            "location": "라운지",
+            "description": "연사와 참가자가 다음 협업 가능성을 연결합니다.",
+            "buttonLabel": "행사 안내",
+            "buttonUrl": "/"
+          }
         ],
         "layout": "agenda",
-        "appearance": { "surface": "soft", "spacing": "spacious" }
+        "appearance": {
+          "surface": "soft",
+          "spacing": "spacious"
+        }
       },
-      "motion": { "preset": "stagger", "intensity": "normal", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -74,14 +158,51 @@
         "eyebrow": "SPEAKERS",
         "heading": "현장에서 답을 만들어온 연사",
         "members": [
-          { "name": "김하늘", "role": "제품 전략", "bio": "고객 문제를 지속 가능한 제품 운영으로 연결합니다.", "imageSrc": "g7pb-media://image-2", "imageAlt": "제품 전략 연사 김하늘", "profileUrl": "" },
-          { "name": "이로운", "role": "서비스 디자인", "bio": "복잡한 서비스를 사람들이 이해할 수 있는 경험으로 바꿉니다.", "imageSrc": "g7pb-media://image-3", "imageAlt": "서비스 디자인 연사 이로운", "profileUrl": "" },
-          { "name": "박지수", "role": "기술 운영", "bio": "확장 과정에서 안정성과 속도를 함께 지키는 방법을 다룹니다.", "imageSrc": "g7pb-media://image-4", "imageAlt": "기술 운영 연사 박지수", "profileUrl": "" },
-          { "name": "최윤서", "role": "브랜드 커뮤니티", "bio": "일회성 관심을 오래 가는 관계로 만드는 실험을 이어갑니다.", "imageSrc": "g7pb-media://image-5", "imageAlt": "브랜드 커뮤니티 연사 최윤서", "profileUrl": "" }
+          {
+            "name": "김하늘",
+            "role": "제품 전략",
+            "bio": "고객 문제를 지속 가능한 제품 운영으로 연결합니다.",
+            "imageSrc": "g7pb-media://image-2",
+            "imageAlt": "제품 전략 연사 김하늘",
+            "profileUrl": ""
+          },
+          {
+            "name": "이로운",
+            "role": "서비스 디자인",
+            "bio": "복잡한 서비스를 사람들이 이해할 수 있는 경험으로 바꿉니다.",
+            "imageSrc": "g7pb-media://image-3",
+            "imageAlt": "서비스 디자인 연사 이로운",
+            "profileUrl": ""
+          },
+          {
+            "name": "박지수",
+            "role": "기술 운영",
+            "bio": "확장 과정에서 안정성과 속도를 함께 지키는 방법을 다룹니다.",
+            "imageSrc": "g7pb-media://image-4",
+            "imageAlt": "기술 운영 연사 박지수",
+            "profileUrl": ""
+          },
+          {
+            "name": "최윤서",
+            "role": "브랜드 커뮤니티",
+            "bio": "일회성 관심을 오래 가는 관계로 만드는 실험을 이어갑니다.",
+            "imageSrc": "g7pb-media://image-5",
+            "imageAlt": "브랜드 커뮤니티 연사 최윤서",
+            "profileUrl": ""
+          }
         ],
-        "appearance": { "surface": "default", "spacing": "normal" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "normal"
+        },
+        "layout": "featured"
       },
-      "motion": { "preset": "stagger", "intensity": "subtle", "trigger": "once", "stagger_ms": 60 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 60
+      },
       "slots": {}
     },
     {
@@ -91,14 +212,43 @@
       "props": {
         "heading": "행사를 함께 만드는 파트너",
         "logos": [
-          { "name": "Northstar", "imageSrc": "g7pb-media://image-6", "imageAlt": "샘플 파트너 Northstar", "url": "" },
-          { "name": "Orbit", "imageSrc": "g7pb-media://image-7", "imageAlt": "샘플 파트너 Orbit", "url": "" },
-          { "name": "Morrow", "imageSrc": "g7pb-media://image-8", "imageAlt": "샘플 파트너 Morrow", "url": "" },
-          { "name": "Vertex", "imageSrc": "g7pb-media://image-9", "imageAlt": "샘플 파트너 Vertex", "url": "" }
+          {
+            "name": "Northstar",
+            "imageSrc": "g7pb-media://image-6",
+            "imageAlt": "샘플 파트너 Northstar",
+            "url": ""
+          },
+          {
+            "name": "Orbit",
+            "imageSrc": "g7pb-media://image-7",
+            "imageAlt": "샘플 파트너 Orbit",
+            "url": ""
+          },
+          {
+            "name": "Morrow",
+            "imageSrc": "g7pb-media://image-8",
+            "imageAlt": "샘플 파트너 Morrow",
+            "url": ""
+          },
+          {
+            "name": "Vertex",
+            "imageSrc": "g7pb-media://image-9",
+            "imageAlt": "샘플 파트너 Vertex",
+            "url": ""
+          }
         ],
-        "appearance": { "surface": "soft", "spacing": "compact" }
+        "appearance": {
+          "surface": "soft",
+          "spacing": "compact"
+        },
+        "layout": "grid"
       },
-      "motion": { "preset": "stagger", "intensity": "subtle", "trigger": "once", "stagger_ms": 60 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 60
+      },
       "slots": {}
     },
     {
@@ -109,16 +259,36 @@
         "eyebrow": "ATTENDEE GUIDE",
         "heading": "참가 전에 확인하세요",
         "items": [
-          { "question": "참가 신청은 언제 마감되나요?", "answer": "좌석이 모두 배정되면 조기 마감될 수 있습니다." },
-          { "question": "신청 후 참석 안내는 어떻게 받나요?", "answer": "신청 시 남긴 연락처로 확정 안내와 행사 준비 사항을 전달합니다." },
-          { "question": "행사장에 주차할 수 있나요?", "answer": "주차 공간이 제한되어 대중교통 이용을 권장합니다." },
-          { "question": "세션 자료를 받을 수 있나요?", "answer": "공개에 동의한 발표 자료는 행사 종료 후 참가자에게 안내합니다." }
+          {
+            "question": "참가 신청은 언제 마감되나요?",
+            "answer": "좌석이 모두 배정되면 조기 마감될 수 있습니다."
+          },
+          {
+            "question": "신청 후 참석 안내는 어떻게 받나요?",
+            "answer": "신청 시 남긴 연락처로 확정 안내와 행사 준비 사항을 전달합니다."
+          },
+          {
+            "question": "행사장에 주차할 수 있나요?",
+            "answer": "주차 공간이 제한되어 대중교통 이용을 권장합니다."
+          },
+          {
+            "question": "세션 자료를 받을 수 있나요?",
+            "answer": "공개에 동의한 발표 자료는 행사 종료 후 참가자에게 안내합니다."
+          }
         ],
         "behavior": "single",
         "openFirst": true,
-        "appearance": { "surface": "default", "spacing": "normal" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "normal"
+        }
       },
-      "motion": { "preset": "reveal", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "reveal",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -135,9 +305,17 @@
         "privacyLabel": "참가 신청 및 행사 안내를 위한 개인정보 수집과 이용에 동의합니다.",
         "showPhone": true,
         "showSubject": false,
-        "appearance": { "surface": "contrast", "spacing": "spacious" }
+        "appearance": {
+          "surface": "contrast",
+          "spacing": "spacious"
+        }
       },
-      "motion": { "preset": "reveal", "intensity": "normal", "trigger": "once", "stagger_ms": 60 },
+      "motion": {
+        "preset": "reveal",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 60
+      },
       "slots": {}
     }
   ]

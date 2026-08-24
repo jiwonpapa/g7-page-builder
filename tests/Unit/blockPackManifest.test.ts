@@ -18,11 +18,11 @@ describe('Block Pack manifest v1 schema', () => {
 
   it('accepts the forty-five-definition production catalog and covers every type with a unique preview and preset', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.pack_version).toBe('0.14.0');
+    expect(builtinManifest.pack_version).toBe('0.15.0');
     expect(builtinManifest.blocks).toHaveLength(45);
-    expect(builtinManifest.presets).toHaveLength(55);
+    expect(builtinManifest.presets).toHaveLength(95);
     expect(new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`)).size).toBe(45);
-    expect(new Set(builtinManifest.presets.map((preset) => preset.preset_id)).size).toBe(55);
+    expect(new Set(builtinManifest.presets.map((preset) => preset.preset_id)).size).toBe(95);
     const definitions = new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`));
     expect(builtinManifest.presets.every((preset) => definitions.has(`${preset.block_id}@${preset.block_version}`))).toBe(true);
     const presetBlockIds = new Set(builtinManifest.presets.map((preset) => preset.block_id));
@@ -31,7 +31,7 @@ describe('Block Pack manifest v1 schema', () => {
       ...builtinManifest.blocks.map((block) => block.thumbnail),
       ...builtinManifest.presets.map((preset) => preset.thumbnail),
     ];
-    expect(new Set(thumbnails).size).toBe(100);
+    expect(new Set(thumbnails).size).toBe(140);
     const thumbnailContents: Buffer[] = [];
     thumbnails.forEach((thumbnail) => {
       const thumbnailPath = resolve('resources/block-packs/builtin-core', thumbnail);
@@ -46,12 +46,12 @@ describe('Block Pack manifest v1 schema', () => {
       thumbnailContents.push(contents);
     });
     expect(Object.keys(builtinManifest.files).sort()).toEqual([...thumbnails].sort());
-    expect(new Set(thumbnailContents.map((contents) => contents.toString('base64'))).size).toBeGreaterThanOrEqual(55);
+    expect(new Set(thumbnailContents.map((contents) => contents.toString('base64'))).size).toBeGreaterThanOrEqual(90);
     const generatedIndex = JSON.parse(readFileSync(resolve(
       'resources/block-packs/builtin-core/thumbnails/generated/index.json',
     ), 'utf8')) as { count?: number; sources?: Record<string, string> };
-    expect(generatedIndex.count).toBe(100);
-    expect(Object.keys(generatedIndex.sources ?? {})).toHaveLength(100);
+    expect(generatedIndex.count).toBe(140);
+    expect(Object.keys(generatedIndex.sources ?? {})).toHaveLength(140);
     expect(Object.values(generatedIndex.sources ?? {}).every((sha256) => /^[a-f0-9]{64}$/.test(sha256))).toBe(true);
     const categories = builtinManifest.blocks.reduce<Record<string, number>>((counts, block) => ({
       ...counts,

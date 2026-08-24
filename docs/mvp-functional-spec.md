@@ -3,7 +3,7 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
-현재 구현: 9개 분류의 45종 페이지 block 카탈로그와 55개 내장 프리셋, 6개 Quick Add, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스·게시글 상세·상품 상세 공개 데이터 블록, 반복 목록 pagination, 공통 로그인 전후 표시 조건, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
+현재 구현: 9개 분류의 45종 페이지 block 카탈로그와 95개 내장 프리셋, 6개 Quick Add, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스·게시글 상세·상품 상세 공개 데이터 블록, 반복 목록 pagination, 공통 로그인 전후 표시 조건, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
 
 ## 목표
 
@@ -170,7 +170,7 @@ G7 데이터 블록은 관련 공개 API capability가 없으면 선택지만 �
 
 ## 완료 조건
 
-1. 45종 제품 카탈로그 block과 55개 내장 프리셋 모두 manifest·editor·PHP compiler·public renderer·회귀시험을 가집니다.
+1. 45종 제품 카탈로그 block과 95개 내장 프리셋 모두 manifest·editor·PHP compiler·public renderer·회귀시험을 가집니다.
 2. 좌측 Blocks에서 이름·용도·축소 구조를 확인하고 원하는 블록 사이에 드롭할 수 있으며, 상세 미리보기는 선택 블록 뒤 빠른 추가를 제공합니다.
 3. 생성부터 rollback까지 Playwright 제품 E2E가 통과합니다.
 4. 45종 전체를 한 번에 실제 발행하고 PC·태블릿·모바일에서 핵심 10종씩 총 30개 screenshot baseline, axe WCAG A/AA와 무가로넘침을 확인합니다.

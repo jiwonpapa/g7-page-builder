@@ -668,7 +668,7 @@ describe('Puck editor surface contract', () => {
 
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
     expect(Array.from(gallery.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent)).toEqual([
-      '전체100', '블록 종류45', '완성 섹션55',
+      '전체140', '블록 종류45', '완성 섹션95',
     ]);
     expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
       .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공']);
@@ -681,7 +681,7 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('이미지 + 텍스트');
     expect(gallery.textContent).toContain('아이콘 목록');
     expect(gallery.textContent).toContain('섹션 시작 제목');
-    expect(gallery.textContent).toContain('서비스 소개 히어로');
+    expect(gallery.textContent).toContain('제품 소개 히어로');
     expect(gallery.textContent).toContain('특징 목록');
     expect(gallery.textContent).toContain('행동 유도');
     expect(gallery.textContent).toContain('연락처');
@@ -721,7 +721,7 @@ describe('Puck editor surface contract', () => {
     expect(Array.from(categorySelect?.options ?? []).map((option) => option.textContent)).toEqual([
       '전체 분류', '기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터',
     ]);
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(100);
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(140);
     builtinManifest.presets.forEach((preset) => {
       const slug = preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
       const button = gallery.querySelector<HTMLButtonElement>(`[data-testid="page-builder-preset-${slug}"]`);

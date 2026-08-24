@@ -36,7 +36,7 @@ final class BlockPackContractTest extends TestCase
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
         self::assertCount(45, $registry->definitions());
-        self::assertCount(55, $registry->presets());
+        self::assertCount(95, $registry->presets());
         self::assertNotNull($registry->definition('content.heading-01', 1));
         self::assertNotNull($registry->definition('content.rich-text-01', 1));
         self::assertNotNull($registry->definition('media.image-01', 1));

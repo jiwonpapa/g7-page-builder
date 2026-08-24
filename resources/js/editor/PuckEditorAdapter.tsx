@@ -108,6 +108,7 @@ interface HeroEditorProps {
   imageSrc: string;
   imageAlt: string;
   alignment: 'left' | 'center';
+  layout: NonNullable<HeroBlockProps['layout']>;
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
@@ -119,6 +120,7 @@ interface HeroEditorProps {
 interface FeaturesEditorProps {
   title: string;
   items: FeatureItem[];
+  layout: NonNullable<FeaturesBlockProps['layout']>;
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
@@ -136,6 +138,7 @@ interface CtaEditorProps {
   secondaryLabel: string;
   secondaryUrl: string;
   theme: 'light' | 'dark';
+  layout: NonNullable<CtaBlockProps['layout']>;
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
   textScale?: NonNullable<BlockAppearance['textScale']>;
@@ -229,6 +232,8 @@ interface BlockRoundTripMetadata {
   hadAppearance: boolean;
   hadMotion: boolean;
   hadVisibility: boolean;
+  hadLayout: boolean;
+  initialLayout: string | null;
   hadPageSize: boolean;
   hadSliderSettings: boolean;
 }
@@ -275,6 +280,7 @@ const DEFAULT_HERO: HeroEditorProps = {
   imageSrc: '',
   imageAlt: '',
   alignment: 'center',
+  layout: 'product',
   surface: 'default',
   spacing: 'spacious',
   motion: { ...DEFAULT_BLOCK_MOTION },
@@ -286,6 +292,7 @@ const DEFAULT_FEATURES: FeaturesEditorProps = {
     { icon: 'sparkles', title: '빠른 시작', body: '완성 블록을 골라 바로 편집합니다.' },
     { icon: 'shield', title: '안전한 발행', body: '검증된 결과만 공개 페이지에 반영합니다.' },
   ],
+  layout: 'bento',
   surface: 'soft',
   spacing: 'normal',
   motion: { ...DEFAULT_BLOCK_MOTION },
@@ -300,6 +307,7 @@ const DEFAULT_CTA: CtaEditorProps = {
   secondaryLabel: '자세히 보기',
   secondaryUrl: '/about',
   theme: 'light',
+  layout: 'split',
   surface: 'soft',
   spacing: 'normal',
   motion: { ...DEFAULT_BLOCK_MOTION },
@@ -335,6 +343,18 @@ function normalizeAlignment(value: unknown): HeroEditorProps['alignment'] {
 
 function normalizeTheme(value: unknown): CtaEditorProps['theme'] {
   return value === 'dark' ? 'dark' : 'light';
+}
+
+function normalizeHeroLayout(value: unknown): HeroEditorProps['layout'] {
+  return value === 'poster' || value === 'backdrop' || value === 'editorial' || value === 'device' ? value : 'product';
+}
+
+function normalizeFeaturesLayout(value: unknown): FeaturesEditorProps['layout'] {
+  return value === 'grid' || value === 'editorial' || value === 'panel' || value === 'list' ? value : 'bento';
+}
+
+function normalizeCtaLayout(value: unknown): CtaEditorProps['layout'] {
+  return value === 'centered' || value === 'banner' || value === 'panel' ? value : 'split';
 }
 
 function normalizeSurface(value: unknown, fallback: BlockAppearance['surface'] = 'default'): BlockAppearance['surface'] {
@@ -445,6 +465,7 @@ function heroToEditorProps(props: Record<string, unknown>): HeroEditorProps {
     imageSrc: asString(image.src),
     imageAlt: asString(image.alt),
     alignment: normalizeAlignment(props.alignment),
+    layout: normalizeHeroLayout(props.layout),
     ...appearanceToEditorProps(props.appearance, { surface: 'default', spacing: 'spacious' }),
     motion: { ...DEFAULT_BLOCK_MOTION },
   };
@@ -454,6 +475,7 @@ function featuresToEditorProps(props: Record<string, unknown>): FeaturesEditorPr
   return {
     title: asString(props.title),
     items: normalizeFeatureItems(props.items),
+    layout: normalizeFeaturesLayout(props.layout),
     ...appearanceToEditorProps(props.appearance, { surface: 'soft', spacing: 'normal' }),
     motion: { ...DEFAULT_BLOCK_MOTION },
   };
@@ -483,6 +505,7 @@ function ctaToEditorProps(props: Record<string, unknown>): CtaEditorProps {
     secondaryLabel: secondary.label,
     secondaryUrl: secondary.url,
     theme: normalizeTheme(props.theme),
+    layout: normalizeCtaLayout(props.layout),
     ...appearanceToEditorProps(props.appearance, { surface: 'soft', spacing: 'normal' }),
     motion: { ...DEFAULT_BLOCK_MOTION },
   };
@@ -586,12 +609,16 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
 export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSession {
   const metadata: Record<string, BlockRoundTripMetadata> = {};
   for (const block of document.blocks) {
+    const initialPuckBlock = canonicalBlockToPuck(block);
+    const initialLayoutValue = (initialPuckBlock.props as Record<string, unknown>).layout;
     metadata[block.instance_id.toLowerCase()] = {
       blockVersion: block.block_version,
       hadSlots: Object.prototype.hasOwnProperty.call(block, 'slots'),
       hadAppearance: Object.prototype.hasOwnProperty.call(block.props, 'appearance'),
       hadMotion: Object.prototype.hasOwnProperty.call(block, 'motion'),
       hadVisibility: Object.prototype.hasOwnProperty.call(block, 'visibility'),
+      hadLayout: Object.prototype.hasOwnProperty.call(block.props, 'layout'),
+      initialLayout: typeof initialLayoutValue === 'string' ? initialLayoutValue : null,
       hadPageSize: Object.prototype.hasOwnProperty.call(block.props, 'pageSize'),
       hadSliderSettings: Object.prototype.hasOwnProperty.call(block.props, 'autoplay')
         || Object.prototype.hasOwnProperty.call(block.props, 'interval')
@@ -641,6 +668,8 @@ function puckBlockToCanonical(
     hadAppearance: false,
     hadMotion: false,
     hadVisibility: false,
+    hadLayout: true,
+    initialLayout: null,
     hadPageSize: true,
     hadSliderSettings: false,
   };
@@ -656,6 +685,7 @@ function puckBlockToCanonical(
       title: asString(editorProps.title),
       body: asString(editorProps.body),
       alignment: normalizeAlignment(editorProps.alignment),
+      layout: normalizeHeroLayout(editorProps.layout),
     };
     const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
     if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious' || appearance.textScale || appearance.textAlign || appearance.elements) {
@@ -678,6 +708,7 @@ function puckBlockToCanonical(
     props = {
       title: asString(editorProps.title),
       items: normalizeFeatureItems(editorProps.items),
+      layout: normalizeFeaturesLayout(editorProps.layout),
     };
     const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
     if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
@@ -691,6 +722,7 @@ function puckBlockToCanonical(
       heading: asString(editorProps.heading),
       body: asString(editorProps.body),
       theme: normalizeTheme(editorProps.theme),
+      layout: normalizeCtaLayout(editorProps.layout),
     };
     const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
     if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
@@ -766,6 +798,9 @@ function puckBlockToCanonical(
 
   if (!metadata.hadPageSize) {
     delete canonical.props.pageSize;
+  }
+  if (!metadata.hadLayout && canonical.props.layout === metadata.initialLayout) {
+    delete canonical.props.layout;
   }
 
   const motion = normalizeBlockMotion(block.props.motion);
@@ -1099,6 +1134,7 @@ function HeroPreview({
   imageSrc,
   imageAlt,
   alignment,
+  layout,
   surface,
   spacing,
   textScale = 'balanced',
@@ -1110,7 +1146,7 @@ function HeroPreview({
 
   return (
     <BlockFrame id={id} type="hero" motion={motion} elementStyles={elementStyles}>
-      <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
+      <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-hero--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-hero__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <h1 data-g7pb-inline-field="title">{title}</h1>
@@ -1131,7 +1167,7 @@ function HeroPreview({
   );
 }
 
-function FeaturesPreview({ id, title, items, surface, spacing, textScale = 'balanced', textAlign = 'left', elementStyles, motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
+function FeaturesPreview({ id, title, items, layout, surface, spacing, textScale = 'balanced', textAlign = 'left', elementStyles, motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
   const glyphs: Record<string, string> = {
     sparkles: '✦',
     shield: '◆',
@@ -1141,7 +1177,7 @@ function FeaturesPreview({ id, title, items, surface, spacing, textScale = 'bala
 
   return (
     <BlockFrame id={id} type="features" motion={motion} elementStyles={elementStyles}>
-      <div className={`g7pb-preview-features g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
+      <div className={`g7pb-preview-features g7pb-preview-features--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <h2 data-g7pb-inline-field="title">{title}</h2>
         <div className="g7pb-preview-features__grid">
           {normalizeFeatureItems(items).map((item, index) => (
@@ -1167,6 +1203,7 @@ function CtaPreview({
   secondaryLabel,
   secondaryUrl,
   theme,
+  layout,
   surface,
   spacing,
   textScale = 'balanced',
@@ -1176,7 +1213,7 @@ function CtaPreview({
 }: CtaEditorProps & { id: string }): React.ReactElement {
   return (
     <BlockFrame id={id} type="cta" motion={motion} elementStyles={elementStyles}>
-      <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
+      <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-cta-split--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-cta-split__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <h2 data-g7pb-inline-field="heading">{heading}</h2>
@@ -1327,6 +1364,13 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             { label: '가운데', value: 'center' },
           ],
         },
+        layout: {
+          type: 'select', label: '레이아웃', options: [
+            { label: '제품 소개', value: 'product' }, { label: '포스터', value: 'poster' },
+            { label: '배경 이미지', value: 'backdrop' }, { label: '에디토리얼', value: 'editorial' },
+            { label: '디바이스 쇼케이스', value: 'device' },
+          ],
+        },
         elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
         surface: {
           type: 'select',
@@ -1348,7 +1392,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
         },
         motion: createMotionField(['none', 'reveal', 'parallax-soft']),
       },
-      render: ({ id, eyebrow, title, body, primaryLabel, primaryUrl, imageSrc, imageAlt, alignment, surface, spacing, motion }) => (
+      render: ({ id, eyebrow, title, body, primaryLabel, primaryUrl, imageSrc, imageAlt, alignment, layout, surface, spacing, motion }) => (
         <HeroPreview
           id={id}
           eyebrow={eyebrow}
@@ -1359,6 +1403,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
           imageSrc={imageSrc}
           imageAlt={imageAlt}
           alignment={alignment}
+          layout={layout}
           surface={surface}
           spacing={spacing}
           motion={motion}
@@ -1389,6 +1434,11 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             <FeaturesItemsField value={value} onChange={onChange} readOnly={readOnly} />
           ),
         },
+        layout: { type: 'select', label: '레이아웃', options: [
+          { label: '벤토', value: 'bento' }, { label: '균등 그리드', value: 'grid' },
+          { label: '에디토리얼', value: 'editorial' }, { label: '패널', value: 'panel' },
+          { label: '세로 목록', value: 'list' },
+        ] },
         elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
         surface: {
           type: 'select', label: '배경 프리셋',
@@ -1408,8 +1458,8 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
         },
         motion: createMotionField(['none', 'reveal', 'stagger']),
       },
-      render: ({ id, title, items, surface, spacing, motion }) => (
-        <FeaturesPreview id={id} title={title} items={items} surface={surface} spacing={spacing} motion={motion} />
+      render: ({ id, title, items, layout, surface, spacing, motion }) => (
+        <FeaturesPreview id={id} title={title} items={items} layout={layout} surface={surface} spacing={spacing} motion={motion} />
       ),
     },
     Cta: {
@@ -1479,6 +1529,10 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             />
           ),
         },
+        layout: { type: 'select', label: '레이아웃', options: [
+          { label: '분할', value: 'split' }, { label: '가운데 집중', value: 'centered' },
+          { label: '가로 배너', value: 'banner' }, { label: '강조 패널', value: 'panel' },
+        ] },
         elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
         surface: {
           type: 'select', label: '배경 프리셋',

@@ -21,12 +21,27 @@
         "eyebrow": "전문 서비스",
         "title": "복잡한 일을, 실행 가능한 계획으로",
         "body": "현재 상황을 함께 정리하고 가장 필요한 변화부터 현실적인 순서로 제안합니다.",
-        "primaryCta": { "label": "상담 요청하기", "url": "/" },
-        "image": { "src": "g7pb-media://image-1", "alt": "사업자와 상담자가 계획을 함께 검토하는 모습" },
+        "primaryCta": {
+          "label": "상담 요청하기",
+          "url": "/"
+        },
+        "image": {
+          "src": "g7pb-media://image-1",
+          "alt": "사업자와 상담자가 계획을 함께 검토하는 모습"
+        },
         "mediaPosition": "left",
-        "appearance": { "surface": "default", "spacing": "spacious" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "spacious"
+        },
+        "layout": "screenshot"
       },
-      "motion": { "preset": "parallax-soft", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "parallax-soft",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -37,15 +52,39 @@
         "eyebrow": "제공 가치",
         "heading": "결정과 실행에 필요한 것만 남깁니다",
         "items": [
-          { "icon": "sparkles", "title": "문제 정의", "body": "목표와 제약을 먼저 확인해 해결할 문제를 분명하게 정리합니다." },
-          { "icon": "layers", "title": "실행 설계", "body": "필요한 업무를 단계와 책임 단위로 나눠 바로 움직일 수 있게 만듭니다." },
-          { "icon": "shield", "title": "운영 기준", "body": "결과가 지속되도록 검토 기준과 운영 방법까지 함께 남깁니다." },
-          { "icon": "heart", "title": "밀착 소통", "body": "진행 상황과 다음 결정을 이해하기 쉬운 언어로 공유합니다." }
+          {
+            "icon": "sparkles",
+            "title": "문제 정의",
+            "body": "목표와 제약을 먼저 확인해 해결할 문제를 분명하게 정리합니다."
+          },
+          {
+            "icon": "layers",
+            "title": "실행 설계",
+            "body": "필요한 업무를 단계와 책임 단위로 나눠 바로 움직일 수 있게 만듭니다."
+          },
+          {
+            "icon": "shield",
+            "title": "운영 기준",
+            "body": "결과가 지속되도록 검토 기준과 운영 방법까지 함께 남깁니다."
+          },
+          {
+            "icon": "heart",
+            "title": "밀착 소통",
+            "body": "진행 상황과 다음 결정을 이해하기 쉬운 언어로 공유합니다."
+          }
         ],
         "layout": "two-column",
-        "appearance": { "surface": "soft", "spacing": "normal" }
+        "appearance": {
+          "surface": "soft",
+          "spacing": "normal"
+        }
       },
-      "motion": { "preset": "stagger", "intensity": "normal", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -56,15 +95,43 @@
         "eyebrow": "진행 방식",
         "heading": "첫 상담부터 실행 점검까지",
         "items": [
-          { "title": "현재 확인", "body": "목표, 일정, 예산과 이미 시도한 방법을 확인합니다.", "linkLabel": "", "linkUrl": "" },
-          { "title": "우선순위", "body": "효과와 실행 가능성을 기준으로 먼저 할 일을 정합니다.", "linkLabel": "", "linkUrl": "" },
-          { "title": "실행", "body": "합의한 범위를 짧은 단위로 만들고 결과를 공유합니다.", "linkLabel": "", "linkUrl": "" },
-          { "title": "운영 점검", "body": "실제 사용 결과를 확인하고 다음 개선 범위를 정리합니다.", "linkLabel": "상담 신청", "linkUrl": "/" }
+          {
+            "title": "현재 확인",
+            "body": "목표, 일정, 예산과 이미 시도한 방법을 확인합니다.",
+            "linkLabel": "",
+            "linkUrl": ""
+          },
+          {
+            "title": "우선순위",
+            "body": "효과와 실행 가능성을 기준으로 먼저 할 일을 정합니다.",
+            "linkLabel": "",
+            "linkUrl": ""
+          },
+          {
+            "title": "실행",
+            "body": "합의한 범위를 짧은 단위로 만들고 결과를 공유합니다.",
+            "linkLabel": "",
+            "linkUrl": ""
+          },
+          {
+            "title": "운영 점검",
+            "body": "실제 사용 결과를 확인하고 다음 개선 범위를 정리합니다.",
+            "linkLabel": "상담 신청",
+            "linkUrl": "/"
+          }
         ],
         "layout": "horizontal",
-        "appearance": { "surface": "default", "spacing": "spacious" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "spacious"
+        }
       },
-      "motion": { "preset": "stagger", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -75,14 +142,46 @@
         "eyebrow": "고객 경험",
         "heading": "설명보다 결과가 먼저 보였습니다",
         "items": [
-          { "quote": "해야 할 일이 많았는데 우선순위가 분명해져 팀이 바로 움직일 수 있었습니다.", "name": "김지현", "role": "운영 책임자", "company": "로컬 브랜드", "avatarSrc": "g7pb-media://image-2", "avatarAlt": "고객 김지현의 프로필 사진", "rating": 5 },
-          { "quote": "회의가 길어지는 대신 결정 근거와 다음 행동이 한 장에 정리됐습니다.", "name": "박준호", "role": "대표", "company": "전문 서비스 기업", "avatarSrc": "g7pb-media://image-3", "avatarAlt": "고객 박준호의 프로필 사진", "rating": 5 },
-          { "quote": "구축 이후에도 스스로 운영할 수 있는 기준을 남겨준 점이 좋았습니다.", "name": "이서윤", "role": "브랜드 매니저", "company": "성장 기업", "avatarSrc": "g7pb-media://image-4", "avatarAlt": "고객 이서윤의 프로필 사진", "rating": 5 }
+          {
+            "quote": "해야 할 일이 많았는데 우선순위가 분명해져 팀이 바로 움직일 수 있었습니다.",
+            "name": "김지현",
+            "role": "운영 책임자",
+            "company": "로컬 브랜드",
+            "avatarSrc": "g7pb-media://image-2",
+            "avatarAlt": "고객 김지현의 프로필 사진",
+            "rating": 5
+          },
+          {
+            "quote": "회의가 길어지는 대신 결정 근거와 다음 행동이 한 장에 정리됐습니다.",
+            "name": "박준호",
+            "role": "대표",
+            "company": "전문 서비스 기업",
+            "avatarSrc": "g7pb-media://image-3",
+            "avatarAlt": "고객 박준호의 프로필 사진",
+            "rating": 5
+          },
+          {
+            "quote": "구축 이후에도 스스로 운영할 수 있는 기준을 남겨준 점이 좋았습니다.",
+            "name": "이서윤",
+            "role": "브랜드 매니저",
+            "company": "성장 기업",
+            "avatarSrc": "g7pb-media://image-4",
+            "avatarAlt": "고객 이서윤의 프로필 사진",
+            "rating": 5
+          }
         ],
-        "layout": "spotlight",
-        "appearance": { "surface": "contrast", "spacing": "normal" }
+        "layout": "quote-hero",
+        "appearance": {
+          "surface": "contrast",
+          "spacing": "normal"
+        }
       },
-      "motion": { "preset": "reveal", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "reveal",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -93,16 +192,36 @@
         "eyebrow": "상담 전 확인",
         "heading": "자주 묻는 질문",
         "items": [
-          { "question": "아직 요청 범위가 정확하지 않아도 되나요?", "answer": "네. 첫 상담에서 현재 상황과 우선순위를 함께 정리합니다." },
-          { "question": "프로젝트 기간은 어떻게 정하나요?", "answer": "필수 결과물과 내부 의사결정 일정을 확인한 뒤 단계별 일정을 제안합니다." },
-          { "question": "기존 담당자와 함께 진행할 수 있나요?", "answer": "가능합니다. 내부 담당자의 역할과 외부 지원 범위를 먼저 나눕니다." },
-          { "question": "상담 후 바로 계약해야 하나요?", "answer": "아닙니다. 상담 내용을 검토한 뒤 필요한 경우에만 다음 단계를 결정합니다." }
+          {
+            "question": "아직 요청 범위가 정확하지 않아도 되나요?",
+            "answer": "네. 첫 상담에서 현재 상황과 우선순위를 함께 정리합니다."
+          },
+          {
+            "question": "프로젝트 기간은 어떻게 정하나요?",
+            "answer": "필수 결과물과 내부 의사결정 일정을 확인한 뒤 단계별 일정을 제안합니다."
+          },
+          {
+            "question": "기존 담당자와 함께 진행할 수 있나요?",
+            "answer": "가능합니다. 내부 담당자의 역할과 외부 지원 범위를 먼저 나눕니다."
+          },
+          {
+            "question": "상담 후 바로 계약해야 하나요?",
+            "answer": "아닙니다. 상담 내용을 검토한 뒤 필요한 경우에만 다음 단계를 결정합니다."
+          }
         ],
         "behavior": "single",
         "openFirst": true,
-        "appearance": { "surface": "default", "spacing": "normal" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "normal"
+        }
       },
-      "motion": { "preset": "reveal", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "reveal",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -119,9 +238,17 @@
         "privacyLabel": "상담 요청 처리를 위한 개인정보 수집 및 이용에 동의합니다.",
         "showPhone": true,
         "showSubject": true,
-        "appearance": { "surface": "soft", "spacing": "spacious" }
+        "appearance": {
+          "surface": "soft",
+          "spacing": "spacious"
+        }
       },
-      "motion": { "preset": "reveal", "intensity": "normal", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "reveal",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     }
   ]

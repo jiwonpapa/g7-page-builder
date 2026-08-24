@@ -89,8 +89,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-company-launch-1.1.0.zip",
-                "sha256": "fa5af66f3a13f450464c91a15a28e476c81cb77c4d4657d224ea2a063c15f336",
-                "bytes": 207406
+                "sha256": "7654831dd58ae0c7819c26a1f00c87b66a72dd3edf81e89bd9b578810c80f274",
+                "bytes": 207458
             },
             "requirements": {
                 "blocks": [
@@ -157,8 +157,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-service-conversion-1.1.0.zip",
-                "sha256": "fce4660d2e17153eb9d65fabe777b0d387507872b92a05fb3046713a5e11d170",
-                "bytes": 121058
+                "sha256": "1a4f49dd310d8aba7b2866b6fdaa93d53d1afc5d318701257e89f8a04ffe27df",
+                "bytes": 121068
             },
             "requirements": {
                 "blocks": [
@@ -225,8 +225,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-local-business-1.1.0.zip",
-                "sha256": "582cf73926a54acec99082e4eb22435a9e3e16709b61346e7151a065b742353a",
-                "bytes": 191313
+                "sha256": "e644fab1866e170c43c0f50985c26a9238302338ac378faaf85237ace576439e",
+                "bytes": 191326
             },
             "requirements": {
                 "blocks": [
@@ -293,8 +293,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-event-launch-1.1.0.zip",
-                "sha256": "1c863ed1aa4d1fc4a648f4e1b88a072c1722b74e5efa8aef12c4d36fd788a9d6",
-                "bytes": 232299
+                "sha256": "e06278ca0c5b90d4dc32a0ee421bae42fa5047f12855fa4d233ff4f439dc6e7a",
+                "bytes": 232337
             },
             "requirements": {
                 "blocks": [
@@ -365,8 +365,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-editorial-community-1.1.0.zip",
-                "sha256": "80f9bd332f2372776a29f52081e86c489263af50e2e9d7a451def4e33014899b",
-                "bytes": 860208
+                "sha256": "58d4d67658decf4600249e3219c914d75c0dd1362620d89a2d6a2c42171ab329",
+                "bytes": 860230
             },
             "requirements": {
                 "blocks": [

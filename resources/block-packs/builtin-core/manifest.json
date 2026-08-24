@@ -1,7 +1,7 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.14.0",
+  "pack_version": "0.15.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
@@ -1205,12 +1205,10 @@
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
-        "ko": "서비스 소개 히어로",
-        "en": "Service intro hero"
+        "ko": "제품 소개 히어로"
       },
       "description": {
-        "ko": "서비스 가치와 첫 행동을 선명하게 제시합니다.",
-        "en": "Present a service value proposition and first action."
+        "ko": "메시지와 실제 제품 이미지를 좌우로 구성합니다."
       },
       "thumbnail": "thumbnails/generated/preset-13-hero-service-intro.png",
       "props": {
@@ -1221,7 +1219,12 @@
           "label": "시작하기",
           "url": "/"
         },
-        "alignment": "center"
+        "alignment": "left",
+        "layout": "product",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero.webp",
+          "alt": "product 히어로 대표 이미지"
+        }
       }
     },
     {
@@ -1230,12 +1233,10 @@
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
-        "ko": "3가지 핵심 기능",
-        "en": "Three core benefits"
+        "ko": "벤토 기능 소개"
       },
       "description": {
-        "ko": "가장 중요한 기능 세 가지를 짧게 설명합니다.",
-        "en": "Explain the three most important capabilities."
+        "ko": "큰 핵심 기능과 작은 보조 기능을 크기가 다른 패널로 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-14-features-core-benefits.png",
       "props": {
@@ -1256,7 +1257,8 @@
             "title": "안전한 운영",
             "body": "초안과 발행본을 분리해 운영합니다."
           }
-        ]
+        ],
+        "layout": "bento"
       }
     },
     {
@@ -1265,12 +1267,10 @@
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
-        "ko": "도입 문의 CTA",
-        "en": "Contact CTA"
+        "ko": "분할 문의 CTA"
       },
       "description": {
-        "ko": "페이지 끝에서 상담과 상세 안내로 연결합니다.",
-        "en": "Close a page with consultation and detail routes."
+        "ko": "메시지와 행동 버튼을 양쪽으로 분리합니다."
       },
       "thumbnail": "thumbnails/generated/preset-15-cta-contact.png",
       "props": {
@@ -1285,7 +1285,8 @@
           "label": "서비스 보기",
           "url": "/"
         },
-        "theme": "dark"
+        "theme": "dark",
+        "layout": "split"
       }
     },
     {
@@ -1404,10 +1405,10 @@
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
-        "ko": "제품 중심 분할 히어로"
+        "ko": "제품 스크린샷 히어로"
       },
       "description": {
-        "ko": "메시지와 제품 이미지를 좌우로 배치합니다."
+        "ko": "넓은 제품 화면과 설명을 비대칭으로 배치합니다."
       },
       "thumbnail": "thumbnails/generated/preset-19-hero-split-product-focus.png",
       "props": {
@@ -1418,7 +1419,12 @@
           "label": "제품 보기",
           "url": "/"
         },
-        "mediaPosition": "right"
+        "mediaPosition": "right",
+        "layout": "screenshot",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero.webp",
+          "alt": "screenshot 분할 히어로 대표 이미지"
+        }
       }
     },
     {
@@ -1465,10 +1471,10 @@
       "block_version": 1,
       "category": "trust-company",
       "label": {
-        "ko": "파트너 로고"
+        "ko": "파트너 로고 띠"
       },
       "description": {
-        "ko": "함께하는 고객사와 파트너를 한눈에 보여줍니다."
+        "ko": "한 줄에 파트너 이름과 로고를 이어 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-21-logo-cloud-partners.png",
       "props": {
@@ -1498,7 +1504,8 @@
             "imageAlt": "Morrow 로고",
             "url": "/"
           }
-        ]
+        ],
+        "layout": "strip"
       }
     },
     {
@@ -1507,10 +1514,10 @@
       "block_version": 1,
       "category": "data-comparison",
       "label": {
-        "ko": "비즈니스 핵심 지표"
+        "ko": "대형 핵심 지표"
       },
       "description": {
-        "ko": "성과를 설명하는 세 가지 숫자를 강조합니다."
+        "ko": "가장 중요한 숫자 하나를 크게 강조합니다."
       },
       "thumbnail": "thumbnails/generated/preset-22-stats-business-proof.png",
       "props": {
@@ -1535,7 +1542,8 @@
             "label": "가용성",
             "detail": "지난 12개월 기준"
           }
-        ]
+        ],
+        "layout": "editorial"
       }
     },
     {
@@ -1544,10 +1552,10 @@
       "block_version": 1,
       "category": "data-comparison",
       "label": {
-        "ko": "3단계 요금제"
+        "ko": "추천 플랜 강조"
       },
       "description": {
-        "ko": "규모에 맞는 세 가지 플랜을 비교합니다."
+        "ko": "가운데 추천 플랜의 크기와 비중을 높입니다."
       },
       "thumbnail": "thumbnails/generated/preset-23-pricing-three-tier.png",
       "props": {
@@ -1582,7 +1590,8 @@
             "buttonUrl": "/",
             "featured": true
           }
-        ]
+        ],
+        "layout": "featured"
       }
     },
     {
@@ -1591,10 +1600,10 @@
       "block_version": 1,
       "category": "trust-company",
       "label": {
-        "ko": "리더십 팀"
+        "ko": "인물 중심 리더십"
       },
       "description": {
-        "ko": "핵심 구성원의 역할과 전문성을 소개합니다."
+        "ko": "실제 프로필 사진을 큰 세로 비율로 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-24-team-leadership.png",
       "props": {
@@ -1605,19 +1614,36 @@
             "name": "김하늘",
             "role": "대표 · 제품",
             "bio": "고객 문제를 제품 전략과 실행으로 연결합니다.",
-            "imageSrc": "",
-            "imageAlt": "김하늘",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-product.webp",
+            "imageAlt": "김하늘 대표 · 제품",
             "profileUrl": ""
           },
           {
             "name": "이로운",
-            "role": "디자인",
-            "bio": "복잡한 흐름을 편안한 경험으로 만듭니다.",
-            "imageSrc": "",
-            "imageAlt": "이로운",
+            "role": "브랜드 디자인",
+            "bio": "복잡한 메시지를 선명한 경험으로 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-design.webp",
+            "imageAlt": "이로운 브랜드 디자인",
+            "profileUrl": ""
+          },
+          {
+            "name": "박지수",
+            "role": "플랫폼 개발",
+            "bio": "안정적으로 확장되는 서비스 기반을 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-engineering.webp",
+            "imageAlt": "박지수 플랫폼 개발",
+            "profileUrl": ""
+          },
+          {
+            "name": "최유진",
+            "role": "고객 성공",
+            "bio": "도입부터 운영까지 실제 성과를 함께 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-creative.webp",
+            "imageAlt": "최유진 고객 성공",
             "profileUrl": ""
           }
-        ]
+        ],
+        "layout": "portraits"
       }
     },
     {
@@ -1626,10 +1652,10 @@
       "block_version": 1,
       "category": "media",
       "label": {
-        "ko": "프로젝트 갤러리"
+        "ko": "벤토 프로젝트 갤러리"
       },
       "description": {
-        "ko": "프로젝트의 주요 장면을 3열로 보여줍니다."
+        "ko": "대표 장면과 보조 장면을 크기가 다른 격자로 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-25-gallery-project-scenes.png",
       "props": {
@@ -1637,22 +1663,33 @@
         "heading": "장면으로 살펴보는 작업",
         "images": [
           {
-            "src": "",
-            "alt": "프로젝트 장면 1",
-            "caption": "기획 장면"
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-gathering.webp",
+            "alt": "사람들이 모인 커뮤니티 행사",
+            "caption": "커뮤니티"
           },
           {
-            "src": "",
-            "alt": "프로젝트 장면 2",
-            "caption": "제작 장면"
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-park.webp",
+            "alt": "도심 공원의 풍경",
+            "caption": "장소"
           },
           {
-            "src": "",
-            "alt": "프로젝트 장면 3",
-            "caption": "완성 장면"
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "alt": "지역 상점의 내부",
+            "caption": "브랜드"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero-space.webp",
+            "alt": "로컬 비즈니스 공간",
+            "caption": "공간"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-design.webp",
+            "alt": "무대에서 발표하는 연사",
+            "caption": "이벤트"
           }
         ],
-        "columns": 3
+        "columns": 4,
+        "layout": "bento"
       }
     },
     {
@@ -1801,10 +1838,10 @@
       "block_version": 1,
       "category": "trust-company",
       "label": {
-        "ko": "고객 후기 그리드"
+        "ko": "고객 후기 월"
       },
       "description": {
-        "ko": "실제 고객의 변화와 역할을 함께 보여줍니다."
+        "ko": "서로 다른 크기의 후기 카드로 고객 목소리를 풍부하게 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-31-testimonials-customer-proof.png",
       "props": {
@@ -1816,21 +1853,30 @@
             "name": "김민서",
             "role": "브랜드 매니저",
             "company": "오르빗",
-            "avatarSrc": "",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-customer-founder.webp",
             "avatarAlt": "김민서",
             "rating": 5
           },
           {
-            "quote": "모바일에서도 메시지가 분명하게 전달됩니다.",
+            "quote": "모바일에서도 핵심 메시지가 분명하게 전달됩니다.",
             "name": "이도윤",
             "role": "운영 리드",
             "company": "노스스타",
-            "avatarSrc": "",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-customer-operations.webp",
             "avatarAlt": "이도윤",
+            "rating": 5
+          },
+          {
+            "quote": "수정과 발행 흐름이 단순해져 캠페인 대응이 빨라졌습니다.",
+            "name": "박서연",
+            "role": "프로덕트 디자이너",
+            "company": "버텍스",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "avatarAlt": "박서연",
             "rating": 5
           }
         ],
-        "layout": "grid"
+        "layout": "wall"
       }
     },
     {
@@ -1919,10 +1965,10 @@
       "block_version": 1,
       "category": "content",
       "label": {
-        "ko": "인사이트 목록"
+        "ko": "매거진 인사이트"
       },
       "description": {
-        "ko": "세 개의 글을 날짜와 요약으로 소개합니다."
+        "ko": "대표 기사와 보조 기사를 잡지형 그리드로 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-34-articles-insights.png",
       "props": {
@@ -1931,24 +1977,33 @@
         "items": [
           {
             "category": "제품",
-            "title": "더 빠른 페이지 운영",
-            "summary": "콘텐츠 제작 흐름을 소개합니다.",
+            "title": "더 빠른 페이지 운영을 위한 구조",
+            "summary": "편집과 발행 흐름을 실무 관점에서 소개합니다.",
             "date": "2026-08-21",
-            "imageSrc": "",
-            "imageAlt": "페이지 편집 화면",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+            "imageAlt": "더 빠른 페이지 운영을 위한 구조",
             "url": "/"
           },
           {
-            "category": "가이드",
-            "title": "좋은 페이지의 질문",
-            "summary": "방문자 행동 중심으로 구조를 점검합니다.",
+            "category": "브랜드",
+            "title": "지역의 이야기를 시각 언어로 만드는 법",
+            "summary": "사진과 긴 글의 리듬을 함께 설계하는 방법을 살펴봅니다.",
             "date": "2026-08-18",
-            "imageSrc": "",
-            "imageAlt": "페이지 구조 가이드",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "imageAlt": "지역의 이야기를 시각 언어로 만드는 법",
+            "url": "/"
+          },
+          {
+            "category": "인사이트",
+            "title": "행동을 만드는 랜딩 페이지의 순서",
+            "summary": "첫 화면부터 마지막 행동 유도까지 정보 위계를 점검합니다.",
+            "date": "2026-08-15",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
+            "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
             "url": "/"
           }
         ],
-        "layout": "list"
+        "layout": "magazine"
       }
     },
     {
@@ -2289,10 +2344,10 @@
       "block_version": 1,
       "category": "content",
       "label": {
-        "ko": "서비스 카드"
+        "ko": "벤토 서비스 카드"
       },
       "description": {
-        "ko": "세 가지 서비스를 독립된 카드로 소개합니다."
+        "ko": "핵심 서비스와 보조 서비스를 다른 크기로 강조합니다."
       },
       "thumbnail": "thumbnails/generated/preset-47-card-grid-services.png",
       "props": {
@@ -2322,7 +2377,8 @@
           }
         ],
         "columns": 3,
-        "variant": "outlined"
+        "variant": "outlined",
+        "layout": "bento"
       }
     },
     {
@@ -2551,6 +2607,1608 @@
         "showPhone": false,
         "showSubject": false
       }
+    },
+    {
+      "preset_id": "hero.poster",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "포스터형 히어로"
+      },
+      "description": {
+        "ko": "대형 타이포와 짧은 행동을 중심에 집중합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-56-hero-poster.png",
+      "props": {
+        "eyebrow": "새로운 시작",
+        "title": "고객의 다음 행동을 더 분명하게",
+        "body": "<p>누구를 위해 어떤 문제를 해결하는지 한 문장으로 알려주세요.</p>",
+        "primaryCta": {
+          "label": "시작하기",
+          "url": "/"
+        },
+        "alignment": "center",
+        "layout": "poster",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/event-launch-hero-event.webp",
+          "alt": "poster 히어로 대표 이미지"
+        }
+      }
+    },
+    {
+      "preset_id": "hero.backdrop",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "배경 이미지 히어로"
+      },
+      "description": {
+        "ko": "전체 배경 이미지 위에 메시지를 겹쳐 보여줍니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-57-hero-backdrop.png",
+      "props": {
+        "eyebrow": "새로운 시작",
+        "title": "고객의 다음 행동을 더 분명하게",
+        "body": "<p>누구를 위해 어떤 문제를 해결하는지 한 문장으로 알려주세요.</p>",
+        "primaryCta": {
+          "label": "시작하기",
+          "url": "/"
+        },
+        "alignment": "left",
+        "layout": "backdrop",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero-space.webp",
+          "alt": "backdrop 히어로 대표 이미지"
+        }
+      }
+    },
+    {
+      "preset_id": "hero.editorial",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "에디토리얼 히어로"
+      },
+      "description": {
+        "ko": "세리프 제목과 세로 이미지로 잡지형 첫 화면을 만듭니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-58-hero-editorial.png",
+      "props": {
+        "eyebrow": "새로운 시작",
+        "title": "고객의 다음 행동을 더 분명하게",
+        "body": "<p>누구를 위해 어떤 문제를 해결하는지 한 문장으로 알려주세요.</p>",
+        "primaryCta": {
+          "label": "시작하기",
+          "url": "/"
+        },
+        "alignment": "left",
+        "layout": "editorial",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-hero-editorial.webp",
+          "alt": "editorial 히어로 대표 이미지"
+        }
+      }
+    },
+    {
+      "preset_id": "hero.device",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "디바이스 쇼케이스 히어로"
+      },
+      "description": {
+        "ko": "제품 화면을 디바이스 프레임처럼 강조합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-59-hero-device.png",
+      "props": {
+        "eyebrow": "새로운 시작",
+        "title": "고객의 다음 행동을 더 분명하게",
+        "body": "<p>누구를 위해 어떤 문제를 해결하는지 한 문장으로 알려주세요.</p>",
+        "primaryCta": {
+          "label": "시작하기",
+          "url": "/"
+        },
+        "alignment": "left",
+        "layout": "device",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+          "alt": "device 히어로 대표 이미지"
+        }
+      }
+    },
+    {
+      "preset_id": "hero-split.balanced",
+      "block_id": "content.hero-split-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "균형 분할 히어로"
+      },
+      "description": {
+        "ko": "메시지와 이미지를 같은 비중으로 나눕니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-60-hero-split-balanced.png",
+      "props": {
+        "eyebrow": "PRODUCT",
+        "title": "제품의 핵심 가치를 한 장면에",
+        "body": "가장 중요한 변화와 다음 행동을 이미지 옆에서 설명합니다.",
+        "primaryCta": {
+          "label": "제품 보기",
+          "url": "/"
+        },
+        "mediaPosition": "right",
+        "layout": "balanced",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
+          "alt": "balanced 분할 히어로 대표 이미지"
+        }
+      }
+    },
+    {
+      "preset_id": "hero-split.overlap",
+      "block_id": "content.hero-split-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "겹침형 히어로"
+      },
+      "description": {
+        "ko": "이미지 위로 메시지 패널이 겹치는 구성을 만듭니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-61-hero-split-overlap.png",
+      "props": {
+        "eyebrow": "PRODUCT",
+        "title": "제품의 핵심 가치를 한 장면에",
+        "body": "가장 중요한 변화와 다음 행동을 이미지 옆에서 설명합니다.",
+        "primaryCta": {
+          "label": "제품 보기",
+          "url": "/"
+        },
+        "mediaPosition": "right",
+        "layout": "overlap",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-gathering.webp",
+          "alt": "overlap 분할 히어로 대표 이미지"
+        }
+      }
+    },
+    {
+      "preset_id": "hero-split.offset",
+      "block_id": "content.hero-split-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "오프셋 히어로"
+      },
+      "description": {
+        "ko": "텍스트와 세로 이미지의 시작점을 다르게 둡니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-62-hero-split-offset.png",
+      "props": {
+        "eyebrow": "PRODUCT",
+        "title": "제품의 핵심 가치를 한 장면에",
+        "body": "가장 중요한 변화와 다음 행동을 이미지 옆에서 설명합니다.",
+        "primaryCta": {
+          "label": "제품 보기",
+          "url": "/"
+        },
+        "mediaPosition": "right",
+        "layout": "offset",
+        "image": {
+          "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp",
+          "alt": "offset 분할 히어로 대표 이미지"
+        }
+      }
+    },
+    {
+      "preset_id": "features.grid",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "균등 기능 그리드"
+      },
+      "description": {
+        "ko": "동일한 비중의 기능을 빠르게 비교합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-63-features-grid.png",
+      "props": {
+        "title": "필요한 기능을 한눈에",
+        "items": [
+          {
+            "icon": "bolt",
+            "title": "빠른 제작",
+            "body": "검증된 블록으로 페이지를 구성합니다."
+          },
+          {
+            "icon": "palette",
+            "title": "일관된 표현",
+            "body": "디자인 토큰으로 화면의 통일감을 지킵니다."
+          },
+          {
+            "icon": "shield",
+            "title": "안전한 운영",
+            "body": "초안과 발행본을 분리해 운영합니다."
+          }
+        ],
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "features.editorial",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "에디토리얼 기능 목록"
+      },
+      "description": {
+        "ko": "고정 제목 옆에 기능을 세로 흐름으로 설명합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-64-features-editorial.png",
+      "props": {
+        "title": "필요한 기능을 한눈에",
+        "items": [
+          {
+            "icon": "bolt",
+            "title": "빠른 제작",
+            "body": "검증된 블록으로 페이지를 구성합니다."
+          },
+          {
+            "icon": "palette",
+            "title": "일관된 표현",
+            "body": "디자인 토큰으로 화면의 통일감을 지킵니다."
+          },
+          {
+            "icon": "shield",
+            "title": "안전한 운영",
+            "body": "초안과 발행본을 분리해 운영합니다."
+          }
+        ],
+        "layout": "editorial"
+      }
+    },
+    {
+      "preset_id": "features.panel",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "기능 패널"
+      },
+      "description": {
+        "ko": "기능 전체를 하나의 강조 패널 안에 묶습니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-65-features-panel.png",
+      "props": {
+        "title": "필요한 기능을 한눈에",
+        "items": [
+          {
+            "icon": "bolt",
+            "title": "빠른 제작",
+            "body": "검증된 블록으로 페이지를 구성합니다."
+          },
+          {
+            "icon": "palette",
+            "title": "일관된 표현",
+            "body": "디자인 토큰으로 화면의 통일감을 지킵니다."
+          },
+          {
+            "icon": "shield",
+            "title": "안전한 운영",
+            "body": "초안과 발행본을 분리해 운영합니다."
+          }
+        ],
+        "layout": "panel"
+      }
+    },
+    {
+      "preset_id": "features.list",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "기능 세로 목록"
+      },
+      "description": {
+        "ko": "아이콘과 설명을 읽기 쉬운 행 단위로 정리합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-66-features-list.png",
+      "props": {
+        "title": "필요한 기능을 한눈에",
+        "items": [
+          {
+            "icon": "bolt",
+            "title": "빠른 제작",
+            "body": "검증된 블록으로 페이지를 구성합니다."
+          },
+          {
+            "icon": "palette",
+            "title": "일관된 표현",
+            "body": "디자인 토큰으로 화면의 통일감을 지킵니다."
+          },
+          {
+            "icon": "shield",
+            "title": "안전한 운영",
+            "body": "초안과 발행본을 분리해 운영합니다."
+          }
+        ],
+        "layout": "list"
+      }
+    },
+    {
+      "preset_id": "cta.centered",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "가운데 집중 CTA"
+      },
+      "description": {
+        "ko": "한 가지 핵심 행동에 시선을 집중합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-67-cta-centered.png",
+      "props": {
+        "eyebrow": "다음 단계",
+        "heading": "필요한 구성을 함께 정리하세요",
+        "body": "목표와 일정에 맞는 도입 방법을 안내합니다.",
+        "primaryLink": {
+          "label": "문의하기",
+          "url": "/contact"
+        },
+        "secondaryLink": {
+          "label": "서비스 보기",
+          "url": "/"
+        },
+        "theme": "dark",
+        "layout": "centered"
+      }
+    },
+    {
+      "preset_id": "cta.banner",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "가로 배너 CTA"
+      },
+      "description": {
+        "ko": "페이지 중간에 얇은 전환 배너를 배치합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-68-cta-banner.png",
+      "props": {
+        "eyebrow": "다음 단계",
+        "heading": "필요한 구성을 함께 정리하세요",
+        "body": "목표와 일정에 맞는 도입 방법을 안내합니다.",
+        "primaryLink": {
+          "label": "문의하기",
+          "url": "/contact"
+        },
+        "secondaryLink": {
+          "label": "서비스 보기",
+          "url": "/"
+        },
+        "theme": "dark",
+        "layout": "banner"
+      }
+    },
+    {
+      "preset_id": "cta.panel",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "category": "hero-conversion",
+      "label": {
+        "ko": "강조 패널 CTA"
+      },
+      "description": {
+        "ko": "독립된 둥근 패널로 마지막 행동을 강조합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-69-cta-panel.png",
+      "props": {
+        "eyebrow": "다음 단계",
+        "heading": "필요한 구성을 함께 정리하세요",
+        "body": "목표와 일정에 맞는 도입 방법을 안내합니다.",
+        "primaryLink": {
+          "label": "문의하기",
+          "url": "/contact"
+        },
+        "secondaryLink": {
+          "label": "서비스 보기",
+          "url": "/"
+        },
+        "theme": "dark",
+        "layout": "panel"
+      }
+    },
+    {
+      "preset_id": "logo-cloud.grid",
+      "block_id": "trust.logo-cloud-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "파트너 로고 그리드"
+      },
+      "description": {
+        "ko": "고객사 로고를 정돈된 격자로 비교합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-70-logo-cloud-grid.png",
+      "props": {
+        "heading": "함께하는 브랜드와 파트너",
+        "logos": [
+          {
+            "name": "Orbit",
+            "imageSrc": "",
+            "imageAlt": "Orbit 로고",
+            "url": "/"
+          },
+          {
+            "name": "Northstar",
+            "imageSrc": "",
+            "imageAlt": "Northstar 로고",
+            "url": "/"
+          },
+          {
+            "name": "Vertex",
+            "imageSrc": "",
+            "imageAlt": "Vertex 로고",
+            "url": "/"
+          },
+          {
+            "name": "Morrow",
+            "imageSrc": "",
+            "imageAlt": "Morrow 로고",
+            "url": "/"
+          }
+        ],
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "logo-cloud.panel",
+      "block_id": "trust.logo-cloud-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "신뢰 로고 패널"
+      },
+      "description": {
+        "ko": "신뢰 문구와 고객사 로고를 한 패널에 묶습니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-71-logo-cloud-panel.png",
+      "props": {
+        "heading": "함께하는 브랜드와 파트너",
+        "logos": [
+          {
+            "name": "Orbit",
+            "imageSrc": "",
+            "imageAlt": "Orbit 로고",
+            "url": "/"
+          },
+          {
+            "name": "Northstar",
+            "imageSrc": "",
+            "imageAlt": "Northstar 로고",
+            "url": "/"
+          },
+          {
+            "name": "Vertex",
+            "imageSrc": "",
+            "imageAlt": "Vertex 로고",
+            "url": "/"
+          },
+          {
+            "name": "Morrow",
+            "imageSrc": "",
+            "imageAlt": "Morrow 로고",
+            "url": "/"
+          }
+        ],
+        "layout": "panel"
+      }
+    },
+    {
+      "preset_id": "stats.grid",
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "category": "data-comparison",
+      "label": {
+        "ko": "지표 그리드"
+      },
+      "description": {
+        "ko": "여러 성과 지표를 같은 비중으로 보여줍니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-72-stats-grid.png",
+      "props": {
+        "eyebrow": "RESULTS",
+        "heading": "숫자로 확인하는 변화",
+        "items": [
+          {
+            "icon": "users",
+            "value": "12,400+",
+            "label": "누적 사용자",
+            "detail": "서비스를 경험한 사용자"
+          },
+          {
+            "icon": "trend",
+            "value": "38%",
+            "label": "전환 증가",
+            "detail": "최근 분기 평균"
+          },
+          {
+            "icon": "target",
+            "value": "99.9%",
+            "label": "가용성",
+            "detail": "지난 12개월 기준"
+          }
+        ],
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "stats.strip",
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "category": "data-comparison",
+      "label": {
+        "ko": "가로 지표 띠"
+      },
+      "description": {
+        "ko": "페이지 사이에 짧은 성과 띠를 배치합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-73-stats-strip.png",
+      "props": {
+        "eyebrow": "RESULTS",
+        "heading": "숫자로 확인하는 변화",
+        "items": [
+          {
+            "icon": "users",
+            "value": "12,400+",
+            "label": "누적 사용자",
+            "detail": "서비스를 경험한 사용자"
+          },
+          {
+            "icon": "trend",
+            "value": "38%",
+            "label": "전환 증가",
+            "detail": "최근 분기 평균"
+          },
+          {
+            "icon": "target",
+            "value": "99.9%",
+            "label": "가용성",
+            "detail": "지난 12개월 기준"
+          }
+        ],
+        "layout": "strip"
+      }
+    },
+    {
+      "preset_id": "stats.split",
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "category": "data-comparison",
+      "label": {
+        "ko": "제목 분할 지표"
+      },
+      "description": {
+        "ko": "설명 제목과 수치 영역을 좌우로 나눕니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-74-stats-split.png",
+      "props": {
+        "eyebrow": "RESULTS",
+        "heading": "숫자로 확인하는 변화",
+        "items": [
+          {
+            "icon": "users",
+            "value": "12,400+",
+            "label": "누적 사용자",
+            "detail": "서비스를 경험한 사용자"
+          },
+          {
+            "icon": "trend",
+            "value": "38%",
+            "label": "전환 증가",
+            "detail": "최근 분기 평균"
+          },
+          {
+            "icon": "target",
+            "value": "99.9%",
+            "label": "가용성",
+            "detail": "지난 12개월 기준"
+          }
+        ],
+        "layout": "split"
+      }
+    },
+    {
+      "preset_id": "pricing.cards",
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "category": "data-comparison",
+      "label": {
+        "ko": "균등 요금 카드"
+      },
+      "description": {
+        "ko": "플랜을 같은 비중의 카드로 비교합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-75-pricing-cards.png",
+      "props": {
+        "eyebrow": "PRICING",
+        "heading": "필요한 규모에 맞는 플랜",
+        "plans": [
+          {
+            "name": "Starter",
+            "price": "29,000원",
+            "period": "/월",
+            "description": "작게 시작하는 팀",
+            "features": [
+              "페이지 3개",
+              "기본 블록",
+              "이메일 지원"
+            ],
+            "buttonLabel": "시작하기",
+            "buttonUrl": "/",
+            "featured": false
+          },
+          {
+            "name": "Growth",
+            "price": "79,000원",
+            "period": "/월",
+            "description": "성장 중인 비즈니스",
+            "features": [
+              "페이지 무제한",
+              "전체 블록",
+              "우선 지원"
+            ],
+            "buttonLabel": "Growth 선택",
+            "buttonUrl": "/",
+            "featured": true
+          }
+        ],
+        "layout": "cards"
+      }
+    },
+    {
+      "preset_id": "pricing.compact",
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "category": "data-comparison",
+      "label": {
+        "ko": "간결 요금 비교"
+      },
+      "description": {
+        "ko": "각 플랜을 한 행에 요약해 빠르게 비교합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-76-pricing-compact.png",
+      "props": {
+        "eyebrow": "PRICING",
+        "heading": "필요한 규모에 맞는 플랜",
+        "plans": [
+          {
+            "name": "Starter",
+            "price": "29,000원",
+            "period": "/월",
+            "description": "작게 시작하는 팀",
+            "features": [
+              "페이지 3개",
+              "기본 블록",
+              "이메일 지원"
+            ],
+            "buttonLabel": "시작하기",
+            "buttonUrl": "/",
+            "featured": false
+          },
+          {
+            "name": "Growth",
+            "price": "79,000원",
+            "period": "/월",
+            "description": "성장 중인 비즈니스",
+            "features": [
+              "페이지 무제한",
+              "전체 블록",
+              "우선 지원"
+            ],
+            "buttonLabel": "Growth 선택",
+            "buttonUrl": "/",
+            "featured": true
+          }
+        ],
+        "layout": "compact"
+      }
+    },
+    {
+      "preset_id": "pricing.editorial",
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "category": "data-comparison",
+      "label": {
+        "ko": "에디토리얼 요금제"
+      },
+      "description": {
+        "ko": "가격 설명과 플랜 목록을 좌우로 분리합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-77-pricing-editorial.png",
+      "props": {
+        "eyebrow": "PRICING",
+        "heading": "필요한 규모에 맞는 플랜",
+        "plans": [
+          {
+            "name": "Starter",
+            "price": "29,000원",
+            "period": "/월",
+            "description": "작게 시작하는 팀",
+            "features": [
+              "페이지 3개",
+              "기본 블록",
+              "이메일 지원"
+            ],
+            "buttonLabel": "시작하기",
+            "buttonUrl": "/",
+            "featured": false
+          },
+          {
+            "name": "Growth",
+            "price": "79,000원",
+            "period": "/월",
+            "description": "성장 중인 비즈니스",
+            "features": [
+              "페이지 무제한",
+              "전체 블록",
+              "우선 지원"
+            ],
+            "buttonLabel": "Growth 선택",
+            "buttonUrl": "/",
+            "featured": true
+          }
+        ],
+        "layout": "editorial"
+      }
+    },
+    {
+      "preset_id": "team.grid",
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "팀 그리드"
+      },
+      "description": {
+        "ko": "구성원을 균등한 카드로 정리합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-78-team-grid.png",
+      "props": {
+        "eyebrow": "TEAM",
+        "heading": "문제를 해결하는 사람들",
+        "members": [
+          {
+            "name": "김하늘",
+            "role": "대표 · 제품",
+            "bio": "고객 문제를 제품 전략과 실행으로 연결합니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-product.webp",
+            "imageAlt": "김하늘 대표 · 제품",
+            "profileUrl": ""
+          },
+          {
+            "name": "이로운",
+            "role": "브랜드 디자인",
+            "bio": "복잡한 메시지를 선명한 경험으로 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-design.webp",
+            "imageAlt": "이로운 브랜드 디자인",
+            "profileUrl": ""
+          },
+          {
+            "name": "박지수",
+            "role": "플랫폼 개발",
+            "bio": "안정적으로 확장되는 서비스 기반을 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-engineering.webp",
+            "imageAlt": "박지수 플랫폼 개발",
+            "profileUrl": ""
+          },
+          {
+            "name": "최유진",
+            "role": "고객 성공",
+            "bio": "도입부터 운영까지 실제 성과를 함께 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-creative.webp",
+            "imageAlt": "최유진 고객 성공",
+            "profileUrl": ""
+          }
+        ],
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "team.editorial",
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "에디토리얼 팀 소개"
+      },
+      "description": {
+        "ko": "팀 설명과 인물 목록을 좌우로 분리합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-79-team-editorial.png",
+      "props": {
+        "eyebrow": "TEAM",
+        "heading": "문제를 해결하는 사람들",
+        "members": [
+          {
+            "name": "김하늘",
+            "role": "대표 · 제품",
+            "bio": "고객 문제를 제품 전략과 실행으로 연결합니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-product.webp",
+            "imageAlt": "김하늘 대표 · 제품",
+            "profileUrl": ""
+          },
+          {
+            "name": "이로운",
+            "role": "브랜드 디자인",
+            "bio": "복잡한 메시지를 선명한 경험으로 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-design.webp",
+            "imageAlt": "이로운 브랜드 디자인",
+            "profileUrl": ""
+          },
+          {
+            "name": "박지수",
+            "role": "플랫폼 개발",
+            "bio": "안정적으로 확장되는 서비스 기반을 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-engineering.webp",
+            "imageAlt": "박지수 플랫폼 개발",
+            "profileUrl": ""
+          },
+          {
+            "name": "최유진",
+            "role": "고객 성공",
+            "bio": "도입부터 운영까지 실제 성과를 함께 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-creative.webp",
+            "imageAlt": "최유진 고객 성공",
+            "profileUrl": ""
+          }
+        ],
+        "layout": "editorial"
+      }
+    },
+    {
+      "preset_id": "team.featured",
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "대표 인물 강조"
+      },
+      "description": {
+        "ko": "첫 인물을 크게 보여주고 나머지를 보조로 배치합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-80-team-featured.png",
+      "props": {
+        "eyebrow": "TEAM",
+        "heading": "문제를 해결하는 사람들",
+        "members": [
+          {
+            "name": "김하늘",
+            "role": "대표 · 제품",
+            "bio": "고객 문제를 제품 전략과 실행으로 연결합니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-product.webp",
+            "imageAlt": "김하늘 대표 · 제품",
+            "profileUrl": ""
+          },
+          {
+            "name": "이로운",
+            "role": "브랜드 디자인",
+            "bio": "복잡한 메시지를 선명한 경험으로 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-design.webp",
+            "imageAlt": "이로운 브랜드 디자인",
+            "profileUrl": ""
+          },
+          {
+            "name": "박지수",
+            "role": "플랫폼 개발",
+            "bio": "안정적으로 확장되는 서비스 기반을 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-engineering.webp",
+            "imageAlt": "박지수 플랫폼 개발",
+            "profileUrl": ""
+          },
+          {
+            "name": "최유진",
+            "role": "고객 성공",
+            "bio": "도입부터 운영까지 실제 성과를 함께 만듭니다.",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-creative.webp",
+            "imageAlt": "최유진 고객 성공",
+            "profileUrl": ""
+          }
+        ],
+        "layout": "featured"
+      }
+    },
+    {
+      "preset_id": "gallery.grid",
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "category": "media",
+      "label": {
+        "ko": "균등 프로젝트 갤러리"
+      },
+      "description": {
+        "ko": "모든 장면을 같은 크기로 정돈합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-81-gallery-grid.png",
+      "props": {
+        "eyebrow": "PROJECT",
+        "heading": "장면으로 살펴보는 작업",
+        "images": [
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-gathering.webp",
+            "alt": "사람들이 모인 커뮤니티 행사",
+            "caption": "커뮤니티"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-park.webp",
+            "alt": "도심 공원의 풍경",
+            "caption": "장소"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "alt": "지역 상점의 내부",
+            "caption": "브랜드"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero-space.webp",
+            "alt": "로컬 비즈니스 공간",
+            "caption": "공간"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-design.webp",
+            "alt": "무대에서 발표하는 연사",
+            "caption": "이벤트"
+          }
+        ],
+        "columns": 3,
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "gallery.masonry",
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "category": "media",
+      "label": {
+        "ko": "메이슨리 갤러리"
+      },
+      "description": {
+        "ko": "가로와 세로 사진의 원래 리듬을 살립니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-82-gallery-masonry.png",
+      "props": {
+        "eyebrow": "PROJECT",
+        "heading": "장면으로 살펴보는 작업",
+        "images": [
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-gathering.webp",
+            "alt": "사람들이 모인 커뮤니티 행사",
+            "caption": "커뮤니티"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-park.webp",
+            "alt": "도심 공원의 풍경",
+            "caption": "장소"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "alt": "지역 상점의 내부",
+            "caption": "브랜드"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero-space.webp",
+            "alt": "로컬 비즈니스 공간",
+            "caption": "공간"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-design.webp",
+            "alt": "무대에서 발표하는 연사",
+            "caption": "이벤트"
+          }
+        ],
+        "columns": 4,
+        "layout": "masonry"
+      }
+    },
+    {
+      "preset_id": "gallery.filmstrip",
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "category": "media",
+      "label": {
+        "ko": "필름 스트립 갤러리"
+      },
+      "description": {
+        "ko": "큰 장면을 가로로 넘겨 감상합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-83-gallery-filmstrip.png",
+      "props": {
+        "eyebrow": "PROJECT",
+        "heading": "장면으로 살펴보는 작업",
+        "images": [
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-gathering.webp",
+            "alt": "사람들이 모인 커뮤니티 행사",
+            "caption": "커뮤니티"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-park.webp",
+            "alt": "도심 공원의 풍경",
+            "caption": "장소"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "alt": "지역 상점의 내부",
+            "caption": "브랜드"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero-space.webp",
+            "alt": "로컬 비즈니스 공간",
+            "caption": "공간"
+          },
+          {
+            "src": "/modules/jiwonpapa-page_builder/store/previews/event-launch-speaker-design.webp",
+            "alt": "무대에서 발표하는 연사",
+            "caption": "이벤트"
+          }
+        ],
+        "columns": 4,
+        "layout": "filmstrip"
+      }
+    },
+    {
+      "preset_id": "testimonials.grid",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "고객 후기 그리드"
+      },
+      "description": {
+        "ko": "후기를 균등한 열로 비교합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-84-testimonials-grid.png",
+      "props": {
+        "eyebrow": "REVIEWS",
+        "heading": "고객이 경험한 변화",
+        "items": [
+          {
+            "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
+            "name": "김민서",
+            "role": "브랜드 매니저",
+            "company": "오르빗",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-customer-founder.webp",
+            "avatarAlt": "김민서",
+            "rating": 5
+          },
+          {
+            "quote": "모바일에서도 핵심 메시지가 분명하게 전달됩니다.",
+            "name": "이도윤",
+            "role": "운영 리드",
+            "company": "노스스타",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-customer-operations.webp",
+            "avatarAlt": "이도윤",
+            "rating": 5
+          },
+          {
+            "quote": "수정과 발행 흐름이 단순해져 캠페인 대응이 빨라졌습니다.",
+            "name": "박서연",
+            "role": "프로덕트 디자이너",
+            "company": "버텍스",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "avatarAlt": "박서연",
+            "rating": 5
+          }
+        ],
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "testimonials.spotlight",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "고객 후기 집중형"
+      },
+      "description": {
+        "ko": "후기를 한 줄씩 넓게 읽도록 구성합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-85-testimonials-spotlight.png",
+      "props": {
+        "eyebrow": "REVIEWS",
+        "heading": "고객이 경험한 변화",
+        "items": [
+          {
+            "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
+            "name": "김민서",
+            "role": "브랜드 매니저",
+            "company": "오르빗",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-customer-founder.webp",
+            "avatarAlt": "김민서",
+            "rating": 5
+          },
+          {
+            "quote": "모바일에서도 핵심 메시지가 분명하게 전달됩니다.",
+            "name": "이도윤",
+            "role": "운영 리드",
+            "company": "노스스타",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-customer-operations.webp",
+            "avatarAlt": "이도윤",
+            "rating": 5
+          },
+          {
+            "quote": "수정과 발행 흐름이 단순해져 캠페인 대응이 빨라졌습니다.",
+            "name": "박서연",
+            "role": "프로덕트 디자이너",
+            "company": "버텍스",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "avatarAlt": "박서연",
+            "rating": 5
+          }
+        ],
+        "layout": "spotlight"
+      }
+    },
+    {
+      "preset_id": "testimonials.split",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "제목 분할 후기"
+      },
+      "description": {
+        "ko": "섹션 제목과 고객 후기를 좌우로 나눕니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-86-testimonials-split.png",
+      "props": {
+        "eyebrow": "REVIEWS",
+        "heading": "고객이 경험한 변화",
+        "items": [
+          {
+            "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
+            "name": "김민서",
+            "role": "브랜드 매니저",
+            "company": "오르빗",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-customer-founder.webp",
+            "avatarAlt": "김민서",
+            "rating": 5
+          },
+          {
+            "quote": "모바일에서도 핵심 메시지가 분명하게 전달됩니다.",
+            "name": "이도윤",
+            "role": "운영 리드",
+            "company": "노스스타",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-customer-operations.webp",
+            "avatarAlt": "이도윤",
+            "rating": 5
+          },
+          {
+            "quote": "수정과 발행 흐름이 단순해져 캠페인 대응이 빨라졌습니다.",
+            "name": "박서연",
+            "role": "프로덕트 디자이너",
+            "company": "버텍스",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "avatarAlt": "박서연",
+            "rating": 5
+          }
+        ],
+        "layout": "split"
+      }
+    },
+    {
+      "preset_id": "testimonials.quote-hero",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "category": "trust-company",
+      "label": {
+        "ko": "대형 인용 후기"
+      },
+      "description": {
+        "ko": "대표 고객 문장을 큰 타이포로 강조합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-87-testimonials-quote-hero.png",
+      "props": {
+        "eyebrow": "REVIEWS",
+        "heading": "고객이 경험한 변화",
+        "items": [
+          {
+            "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
+            "name": "김민서",
+            "role": "브랜드 매니저",
+            "company": "오르빗",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-customer-founder.webp",
+            "avatarAlt": "김민서",
+            "rating": 5
+          },
+          {
+            "quote": "모바일에서도 핵심 메시지가 분명하게 전달됩니다.",
+            "name": "이도윤",
+            "role": "운영 리드",
+            "company": "노스스타",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-customer-operations.webp",
+            "avatarAlt": "이도윤",
+            "rating": 5
+          },
+          {
+            "quote": "수정과 발행 흐름이 단순해져 캠페인 대응이 빨라졌습니다.",
+            "name": "박서연",
+            "role": "프로덕트 디자이너",
+            "company": "버텍스",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "avatarAlt": "박서연",
+            "rating": 5
+          }
+        ],
+        "layout": "quote-hero"
+      }
+    },
+    {
+      "preset_id": "articles.list",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "인사이트 목록"
+      },
+      "description": {
+        "ko": "이미지와 요약을 행 단위로 차분하게 읽습니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-88-articles-list.png",
+      "props": {
+        "eyebrow": "INSIGHTS",
+        "heading": "새로운 소식과 이야기",
+        "items": [
+          {
+            "category": "제품",
+            "title": "더 빠른 페이지 운영을 위한 구조",
+            "summary": "편집과 발행 흐름을 실무 관점에서 소개합니다.",
+            "date": "2026-08-21",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+            "imageAlt": "더 빠른 페이지 운영을 위한 구조",
+            "url": "/"
+          },
+          {
+            "category": "브랜드",
+            "title": "지역의 이야기를 시각 언어로 만드는 법",
+            "summary": "사진과 긴 글의 리듬을 함께 설계하는 방법을 살펴봅니다.",
+            "date": "2026-08-18",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "imageAlt": "지역의 이야기를 시각 언어로 만드는 법",
+            "url": "/"
+          },
+          {
+            "category": "인사이트",
+            "title": "행동을 만드는 랜딩 페이지의 순서",
+            "summary": "첫 화면부터 마지막 행동 유도까지 정보 위계를 점검합니다.",
+            "date": "2026-08-15",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
+            "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
+            "url": "/"
+          }
+        ],
+        "layout": "list"
+      }
+    },
+    {
+      "preset_id": "articles.grid",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "인사이트 카드 그리드"
+      },
+      "description": {
+        "ko": "여러 글을 같은 비중의 카드로 탐색합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-89-articles-grid.png",
+      "props": {
+        "eyebrow": "INSIGHTS",
+        "heading": "새로운 소식과 이야기",
+        "items": [
+          {
+            "category": "제품",
+            "title": "더 빠른 페이지 운영을 위한 구조",
+            "summary": "편집과 발행 흐름을 실무 관점에서 소개합니다.",
+            "date": "2026-08-21",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+            "imageAlt": "더 빠른 페이지 운영을 위한 구조",
+            "url": "/"
+          },
+          {
+            "category": "브랜드",
+            "title": "지역의 이야기를 시각 언어로 만드는 법",
+            "summary": "사진과 긴 글의 리듬을 함께 설계하는 방법을 살펴봅니다.",
+            "date": "2026-08-18",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "imageAlt": "지역의 이야기를 시각 언어로 만드는 법",
+            "url": "/"
+          },
+          {
+            "category": "인사이트",
+            "title": "행동을 만드는 랜딩 페이지의 순서",
+            "summary": "첫 화면부터 마지막 행동 유도까지 정보 위계를 점검합니다.",
+            "date": "2026-08-15",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
+            "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
+            "url": "/"
+          }
+        ],
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "articles.featured",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "대표 기사 중심"
+      },
+      "description": {
+        "ko": "첫 글을 크게 보여주고 나머지는 간결한 목록으로 둡니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-90-articles-featured.png",
+      "props": {
+        "eyebrow": "INSIGHTS",
+        "heading": "새로운 소식과 이야기",
+        "items": [
+          {
+            "category": "제품",
+            "title": "더 빠른 페이지 운영을 위한 구조",
+            "summary": "편집과 발행 흐름을 실무 관점에서 소개합니다.",
+            "date": "2026-08-21",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+            "imageAlt": "더 빠른 페이지 운영을 위한 구조",
+            "url": "/"
+          },
+          {
+            "category": "브랜드",
+            "title": "지역의 이야기를 시각 언어로 만드는 법",
+            "summary": "사진과 긴 글의 리듬을 함께 설계하는 방법을 살펴봅니다.",
+            "date": "2026-08-18",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "imageAlt": "지역의 이야기를 시각 언어로 만드는 법",
+            "url": "/"
+          },
+          {
+            "category": "인사이트",
+            "title": "행동을 만드는 랜딩 페이지의 순서",
+            "summary": "첫 화면부터 마지막 행동 유도까지 정보 위계를 점검합니다.",
+            "date": "2026-08-15",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
+            "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
+            "url": "/"
+          }
+        ],
+        "layout": "featured"
+      }
+    },
+    {
+      "preset_id": "articles.editorial",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "에디토리얼 기사 목록"
+      },
+      "description": {
+        "ko": "섹션 소개와 기사 흐름을 두 열로 분리합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-91-articles-editorial.png",
+      "props": {
+        "eyebrow": "INSIGHTS",
+        "heading": "새로운 소식과 이야기",
+        "items": [
+          {
+            "category": "제품",
+            "title": "더 빠른 페이지 운영을 위한 구조",
+            "summary": "편집과 발행 흐름을 실무 관점에서 소개합니다.",
+            "date": "2026-08-21",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+            "imageAlt": "더 빠른 페이지 운영을 위한 구조",
+            "url": "/"
+          },
+          {
+            "category": "브랜드",
+            "title": "지역의 이야기를 시각 언어로 만드는 법",
+            "summary": "사진과 긴 글의 리듬을 함께 설계하는 방법을 살펴봅니다.",
+            "date": "2026-08-18",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
+            "imageAlt": "지역의 이야기를 시각 언어로 만드는 법",
+            "url": "/"
+          },
+          {
+            "category": "인사이트",
+            "title": "행동을 만드는 랜딩 페이지의 순서",
+            "summary": "첫 화면부터 마지막 행동 유도까지 정보 위계를 점검합니다.",
+            "date": "2026-08-15",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
+            "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
+            "url": "/"
+          }
+        ],
+        "layout": "editorial"
+      }
+    },
+    {
+      "preset_id": "card-grid.grid",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "균등 서비스 카드"
+      },
+      "description": {
+        "ko": "서비스를 같은 비중으로 비교합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-92-card-grid-grid.png",
+      "props": {
+        "eyebrow": "SERVICES",
+        "heading": "필요한 서비스를 선택하세요",
+        "items": [
+          {
+            "kicker": "01",
+            "title": "상담",
+            "body": "목표와 일정을 함께 정리합니다.",
+            "linkLabel": "상담 보기",
+            "linkUrl": "/consulting"
+          },
+          {
+            "kicker": "02",
+            "title": "구축",
+            "body": "검증된 흐름으로 결과물을 만듭니다.",
+            "linkLabel": "구축 보기",
+            "linkUrl": "/build"
+          },
+          {
+            "kicker": "03",
+            "title": "운영",
+            "body": "발행 이후 개선을 지원합니다.",
+            "linkLabel": "운영 보기",
+            "linkUrl": "/operation"
+          }
+        ],
+        "columns": 3,
+        "variant": "outlined",
+        "layout": "grid"
+      }
+    },
+    {
+      "preset_id": "card-grid.rail",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "서비스 가로 레일"
+      },
+      "description": {
+        "ko": "큰 서비스 카드를 가로로 넘겨 탐색합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-93-card-grid-rail.png",
+      "props": {
+        "eyebrow": "SERVICES",
+        "heading": "필요한 서비스를 선택하세요",
+        "items": [
+          {
+            "kicker": "01",
+            "title": "상담",
+            "body": "목표와 일정을 함께 정리합니다.",
+            "linkLabel": "상담 보기",
+            "linkUrl": "/consulting"
+          },
+          {
+            "kicker": "02",
+            "title": "구축",
+            "body": "검증된 흐름으로 결과물을 만듭니다.",
+            "linkLabel": "구축 보기",
+            "linkUrl": "/build"
+          },
+          {
+            "kicker": "03",
+            "title": "운영",
+            "body": "발행 이후 개선을 지원합니다.",
+            "linkLabel": "운영 보기",
+            "linkUrl": "/operation"
+          }
+        ],
+        "columns": 3,
+        "variant": "outlined",
+        "layout": "rail"
+      }
+    },
+    {
+      "preset_id": "card-grid.editorial",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "에디토리얼 서비스 목록"
+      },
+      "description": {
+        "ko": "서비스 소개 제목과 카드 목록을 좌우로 나눕니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-94-card-grid-editorial.png",
+      "props": {
+        "eyebrow": "SERVICES",
+        "heading": "필요한 서비스를 선택하세요",
+        "items": [
+          {
+            "kicker": "01",
+            "title": "상담",
+            "body": "목표와 일정을 함께 정리합니다.",
+            "linkLabel": "상담 보기",
+            "linkUrl": "/consulting"
+          },
+          {
+            "kicker": "02",
+            "title": "구축",
+            "body": "검증된 흐름으로 결과물을 만듭니다.",
+            "linkLabel": "구축 보기",
+            "linkUrl": "/build"
+          },
+          {
+            "kicker": "03",
+            "title": "운영",
+            "body": "발행 이후 개선을 지원합니다.",
+            "linkLabel": "운영 보기",
+            "linkUrl": "/operation"
+          }
+        ],
+        "columns": 3,
+        "variant": "outlined",
+        "layout": "editorial"
+      }
+    },
+    {
+      "preset_id": "card-grid.numbered",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "번호형 서비스 목록"
+      },
+      "description": {
+        "ko": "서비스를 큰 번호와 함께 행 단위로 정리합니다."
+      },
+      "thumbnail": "thumbnails/generated/preset-95-card-grid-numbered.png",
+      "props": {
+        "eyebrow": "SERVICES",
+        "heading": "필요한 서비스를 선택하세요",
+        "items": [
+          {
+            "kicker": "01",
+            "title": "상담",
+            "body": "목표와 일정을 함께 정리합니다.",
+            "linkLabel": "상담 보기",
+            "linkUrl": "/consulting"
+          },
+          {
+            "kicker": "02",
+            "title": "구축",
+            "body": "검증된 흐름으로 결과물을 만듭니다.",
+            "linkLabel": "구축 보기",
+            "linkUrl": "/build"
+          },
+          {
+            "kicker": "03",
+            "title": "운영",
+            "body": "발행 이후 개선을 지원합니다.",
+            "linkLabel": "운영 보기",
+            "linkUrl": "/operation"
+          }
+        ],
+        "columns": 3,
+        "variant": "outlined",
+        "layout": "numbered"
+      }
     }
   ],
   "runtime": {
@@ -2561,105 +4219,145 @@
     ]
   },
   "files": {
-    "thumbnails/generated/block-01-hero.png": "9bd2ebf2c07bbeba80f18ffc2c7fe52d1f49f0beff7104ee4040d9827aa493f7",
-    "thumbnails/generated/block-02-hero-split.png": "34cacd113f3774091a12d8e7b4d542b4ca19a17fa8a6a263e8a6a61033a022f2",
-    "thumbnails/generated/block-03-hero-slider.png": "2897c427c3e047d62d53d857d9a144753e3c030e7f0c8e47e8c0d6478536efd9",
-    "thumbnails/generated/block-04-heading.png": "271ad78c045a6bb53bef3040a528da0887623db2682797953bb2c9c192cf0deb",
-    "thumbnails/generated/block-05-rich-text.png": "7733e3b1ed779bcf0f8cbf2d9555b13d56b5bd9a1093ad979348c111614b475f",
-    "thumbnails/generated/block-06-image.png": "1248b7f237da5f4b4872f2a8157c35459ced28a08881d8f34b95ae1e88ddd07e",
-    "thumbnails/generated/block-07-buttons.png": "867b644eae2eadf039b7cacf935d436c55aaf181e27ac294e2879f18c8b18591",
-    "thumbnails/generated/block-08-image-text.png": "dabacfc1795c423cf5a9ee208550e21545ae08c99ece5396af526ca59b7daf2e",
-    "thumbnails/generated/block-09-icon-list.png": "f86fca2d75b735c948eebfbde74cd6a64836e3c1a7dd2ef7c6e7f7e62201e926",
-    "thumbnails/generated/block-10-features.png": "ba1f506a07c18a8d1f62e0882409f24698f34ee339c245d9bc946f126e9396bb",
-    "thumbnails/generated/block-11-cta.png": "d8cdf3f18347904e0778ab51ccf70dda062e38d7da8311f7f770e35e56531a72",
-    "thumbnails/generated/block-12-contact.png": "c94931a275ebb4cc177a74fb49d68645a37bb009d34a7f0c2685675e4704181a",
-    "thumbnails/generated/block-13-logo-cloud.png": "6b89a6a7041039f0c28cbf43ab8fa516cf9ef23dfe6d9034e048f45e0f14c2a7",
-    "thumbnails/generated/block-14-stats.png": "ac31ff7185f85e53a604dd869d84854cdff086bcc17215b01ab27b54109cb25f",
-    "thumbnails/generated/block-15-pricing.png": "4697d4882b034f1036cb5eba49354fadb841cd4d8382822bf27f82f36faaaabc",
-    "thumbnails/generated/block-16-team.png": "51d11e4c97810214ef7b55102af005ff6b54f1b248ae08a87b35aab14d8d6b9b",
-    "thumbnails/generated/block-17-gallery.png": "39cfc7632af61c82764747cafe261bc5190f023119356abda123e7c26e6b7f32",
-    "thumbnails/generated/block-18-bar-chart.png": "24a94acf2dc9fdfbc407d5e69b8ec7a8c58688d543ea2f41e62a20070a73e706",
-    "thumbnails/generated/block-19-g7-recent-posts.png": "7372bec2cafcad1171b0515594ab65196301419237cd360cc2a26f380acea8f6",
-    "thumbnails/generated/block-20-g7-product-grid.png": "4d6e104f56c6e8c1b0aa337b9ce635b4541d07459d0c5ec552b47715a55c8c63",
-    "thumbnails/generated/block-21-inquiry-form.png": "49db70818273e101391c448914e2e9e375251d9e83e7280237980dc9d545b6fc",
-    "thumbnails/generated/block-22-map-directions.png": "ff79785200ea275ce0c6191e2cc08ff70d45ccd90a7cce1ddd8c1e39268baa4a",
-    "thumbnails/generated/block-23-testimonials.png": "f779ff0e7b97ba769dee249782bd7135b9a8172ca44d49d0e1695fa418884532",
-    "thumbnails/generated/block-24-faq-accordion.png": "1038823518e9634cd2bb65bca4326374074a7c60dea428761706d8f1f88b993b",
-    "thumbnails/generated/block-25-process-timeline.png": "132d8eaad74942ed1c9521e689881e3d605861744d7805d1a46f336262403268",
-    "thumbnails/generated/block-26-tabs.png": "d08d00aa6fa077f58804e76c05f67632b49e863fe8d2d9de2787056f62c2455a",
-    "thumbnails/generated/block-27-comparison-table.png": "c2aaf20ccc7672c80feb81995fa10362d629c8f069bab2b279263924b8156f4c",
-    "thumbnails/generated/block-28-article-list.png": "04cbd82dd40a15dbf61aaee5a6857ba5b9119dca1c04d50a13a569462c383339",
-    "thumbnails/generated/block-29-video-embed.png": "e84fe8ddbae2f220004b4561d8253857896ec9a5a121b4e54bf298f72406069b",
-    "thumbnails/generated/block-30-logo-carousel.png": "1f1f842a0d82262636c93eae2f79329b9ba3a7d844db60ccdde18a8c490b2511",
-    "thumbnails/generated/block-31-testimonial-slider.png": "0deafc8742723a73fea0485b9221ff7285307dbbec341c0f87cb7ad670345b8d",
-    "thumbnails/generated/block-32-event-schedule.png": "c75d3ad09674aaf280d6b0ed5e309e81fce7662efeff149272d67285c9630432",
-    "thumbnails/generated/block-33-download-resources.png": "b8310b2beaec68759a2f510898d19f07855cae09afeb6c4521ac66d02750bacd",
-    "thumbnails/generated/block-34-g7-board-archive.png": "a26fd145d1d9e9f425fbbccddd78e923897071abcb79b87c8f3cab8f863e2e65",
-    "thumbnails/generated/block-35-g7-product-showcase.png": "66c1fca03303eb684044560cb544c82395c0382916a959e82b4a11483d981219",
-    "thumbnails/generated/block-36-g7-post-detail.png": "3cad3f7cf5cb72dbe9a8499f5d86e661c7a1111a6c2356d3620471b29d59ea46",
-    "thumbnails/generated/block-37-g7-product-detail.png": "0c57c0a7e894f5d411562b602b3261a827eccf2f21be5463550e4828bce50686",
-    "thumbnails/generated/block-38-divider.png": "66dd12aed31039676f7491d16550c35a7f52be9f79ff1388d6ad2ddba0d55211",
-    "thumbnails/generated/block-39-blockquote.png": "ee19d1b834d71a936aff9b56a8281a04d1bcf06b5fcf6cbbff04e85f8edd9e61",
-    "thumbnails/generated/block-40-notice.png": "8b5091efe6ef4f807d9a90570150b5daebe957a6b0b88c61e139739e11d8b7b4",
-    "thumbnails/generated/block-41-card-grid.png": "61c9dbe7e70f4b8da2ed58bfa39f4a8636f9acc549e3ed527b83b43041836fd9",
-    "thumbnails/generated/block-42-breadcrumbs.png": "bd06ac76aef581efec61a9b24da361b94c07c056854fde1e0b81d741cc674116",
-    "thumbnails/generated/block-43-anchor-menu.png": "27752f366063cf87aa9ef2f8714ce44ecd2d655dc258c388fdab7a2347fd640b",
-    "thumbnails/generated/block-44-social-links.png": "ec7638eedb2ceea9a665c0f2d2bb33bf569c92dd87d05ea043d0e88ceab6a4cb",
-    "thumbnails/generated/block-45-image-carousel.png": "297cb0e663ff2e521cb6a7c05e2cfa7c7db02daa1c7387d2f27e7f1895334ec3",
-    "thumbnails/generated/preset-01-heading-section-intro.png": "271ad78c045a6bb53bef3040a528da0887623db2682797953bb2c9c192cf0deb",
-    "thumbnails/generated/preset-02-heading-compact-title.png": "23f5b070b7aee42d177c8c0c0f39129416248da7d7ea444e9d46d6c82492242a",
-    "thumbnails/generated/preset-03-rich-text-article-intro.png": "7733e3b1ed779bcf0f8cbf2d9555b13d56b5bd9a1093ad979348c111614b475f",
-    "thumbnails/generated/preset-04-rich-text-policy.png": "74cca0260885c5f876d1ef8c32009a44880d88a56fb080c355a5b5b58e35421c",
-    "thumbnails/generated/preset-05-image-landscape.png": "1248b7f237da5f4b4872f2a8157c35459ced28a08881d8f34b95ae1e88ddd07e",
-    "thumbnails/generated/preset-06-image-square.png": "e4f9960b6654e465cfc6a078620b569a857296206ca5c21d6b2d7d94ecbb1d4e",
-    "thumbnails/generated/preset-07-buttons-primary-secondary.png": "867b644eae2eadf039b7cacf935d436c55aaf181e27ac294e2879f18c8b18591",
-    "thumbnails/generated/preset-08-buttons-centered-actions.png": "e500592a60ad2af15811eadc5b5b5de70e1b3a4650cceacea37431b59269fa7f",
-    "thumbnails/generated/preset-09-image-text-product-story.png": "dabacfc1795c423cf5a9ee208550e21545ae08c99ece5396af526ca59b7daf2e",
-    "thumbnails/generated/preset-10-image-text-company-story.png": "33f1c1eafde6970ea70aa0856cbc01ea3c0fd4d61e09c55ea9a0815a638c5276",
-    "thumbnails/generated/preset-11-icon-list-benefits.png": "f86fca2d75b735c948eebfbde74cd6a64836e3c1a7dd2ef7c6e7f7e62201e926",
-    "thumbnails/generated/preset-12-icon-list-checklist.png": "10b9e9c1c6f495afc14cc99462ec48f143c8f77952039091295c70c1f00e649f",
-    "thumbnails/generated/preset-13-hero-service-intro.png": "9bd2ebf2c07bbeba80f18ffc2c7fe52d1f49f0beff7104ee4040d9827aa493f7",
-    "thumbnails/generated/preset-14-features-core-benefits.png": "ba1f506a07c18a8d1f62e0882409f24698f34ee339c245d9bc946f126e9396bb",
-    "thumbnails/generated/preset-15-cta-contact.png": "d8cdf3f18347904e0778ab51ccf70dda062e38d7da8311f7f770e35e56531a72",
-    "thumbnails/generated/preset-16-contact-office.png": "c94931a275ebb4cc177a74fb49d68645a37bb009d34a7f0c2685675e4704181a",
-    "thumbnails/generated/preset-17-faq-basic.png": "1038823518e9634cd2bb65bca4326374074a7c60dea428761706d8f1f88b993b",
-    "thumbnails/generated/preset-18-process-four-step.png": "132d8eaad74942ed1c9521e689881e3d605861744d7805d1a46f336262403268",
-    "thumbnails/generated/preset-19-hero-split-product-focus.png": "34cacd113f3774091a12d8e7b4d542b4ca19a17fa8a6a263e8a6a61033a022f2",
-    "thumbnails/generated/preset-20-hero-slider-campaign.png": "2897c427c3e047d62d53d857d9a144753e3c030e7f0c8e47e8c0d6478536efd9",
-    "thumbnails/generated/preset-21-logo-cloud-partners.png": "6b89a6a7041039f0c28cbf43ab8fa516cf9ef23dfe6d9034e048f45e0f14c2a7",
-    "thumbnails/generated/preset-22-stats-business-proof.png": "ac31ff7185f85e53a604dd869d84854cdff086bcc17215b01ab27b54109cb25f",
-    "thumbnails/generated/preset-23-pricing-three-tier.png": "4697d4882b034f1036cb5eba49354fadb841cd4d8382822bf27f82f36faaaabc",
-    "thumbnails/generated/preset-24-team-leadership.png": "51d11e4c97810214ef7b55102af005ff6b54f1b248ae08a87b35aab14d8d6b9b",
-    "thumbnails/generated/preset-25-gallery-project-scenes.png": "39cfc7632af61c82764747cafe261bc5190f023119356abda123e7c26e6b7f32",
-    "thumbnails/generated/preset-26-bar-chart-quarterly.png": "24a94acf2dc9fdfbc407d5e69b8ec7a8c58688d543ea2f41e62a20070a73e706",
-    "thumbnails/generated/preset-27-g7-posts-latest.png": "7372bec2cafcad1171b0515594ab65196301419237cd360cc2a26f380acea8f6",
-    "thumbnails/generated/preset-28-g7-products-new.png": "4d6e104f56c6e8c1b0aa337b9ce635b4541d07459d0c5ec552b47715a55c8c63",
-    "thumbnails/generated/preset-29-inquiry-general.png": "49db70818273e101391c448914e2e9e375251d9e83e7280237980dc9d545b6fc",
-    "thumbnails/generated/preset-30-map-office.png": "ff79785200ea275ce0c6191e2cc08ff70d45ccd90a7cce1ddd8c1e39268baa4a",
-    "thumbnails/generated/preset-31-testimonials-customer-proof.png": "f779ff0e7b97ba769dee249782bd7135b9a8172ca44d49d0e1695fa418884532",
-    "thumbnails/generated/preset-32-tabs-service-guide.png": "d08d00aa6fa077f58804e76c05f67632b49e863fe8d2d9de2787056f62c2455a",
-    "thumbnails/generated/preset-33-comparison-plans.png": "c2aaf20ccc7672c80feb81995fa10362d629c8f069bab2b279263924b8156f4c",
-    "thumbnails/generated/preset-34-articles-insights.png": "04cbd82dd40a15dbf61aaee5a6857ba5b9119dca1c04d50a13a569462c383339",
-    "thumbnails/generated/preset-35-video-product-tour.png": "e84fe8ddbae2f220004b4561d8253857896ec9a5a121b4e54bf298f72406069b",
-    "thumbnails/generated/preset-36-logo-carousel-customers.png": "1f1f842a0d82262636c93eae2f79329b9ba3a7d844db60ccdde18a8c490b2511",
-    "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "0deafc8742723a73fea0485b9221ff7285307dbbec341c0f87cb7ad670345b8d",
-    "thumbnails/generated/preset-38-events-upcoming.png": "c75d3ad09674aaf280d6b0ed5e309e81fce7662efeff149272d67285c9630432",
-    "thumbnails/generated/preset-39-downloads-resource-center.png": "b8310b2beaec68759a2f510898d19f07855cae09afeb6c4521ac66d02750bacd",
-    "thumbnails/generated/preset-40-g7-archive-searchable.png": "a26fd145d1d9e9f425fbbccddd78e923897071abcb79b87c8f3cab8f863e2e65",
-    "thumbnails/generated/preset-41-g7-showcase-featured.png": "66c1fca03303eb684044560cb544c82395c0382916a959e82b4a11483d981219",
-    "thumbnails/generated/preset-42-g7-post-detail-featured.png": "3cad3f7cf5cb72dbe9a8499f5d86e661c7a1111a6c2356d3620471b29d59ea46",
-    "thumbnails/generated/preset-43-g7-product-detail-featured.png": "0c57c0a7e894f5d411562b602b3261a827eccf2f21be5463550e4828bce50686",
-    "thumbnails/generated/preset-44-divider-section-break.png": "66dd12aed31039676f7491d16550c35a7f52be9f79ff1388d6ad2ddba0d55211",
-    "thumbnails/generated/preset-45-blockquote-customer-voice.png": "ee19d1b834d71a936aff9b56a8281a04d1bcf06b5fcf6cbbff04e85f8edd9e61",
-    "thumbnails/generated/preset-46-notice-service-info.png": "8b5091efe6ef4f807d9a90570150b5daebe957a6b0b88c61e139739e11d8b7b4",
-    "thumbnails/generated/preset-47-card-grid-services.png": "61c9dbe7e70f4b8da2ed58bfa39f4a8636f9acc549e3ed527b83b43041836fd9",
-    "thumbnails/generated/preset-48-breadcrumbs-detail-page.png": "bd06ac76aef581efec61a9b24da361b94c07c056854fde1e0b81d741cc674116",
-    "thumbnails/generated/preset-49-anchor-menu-long-page.png": "27752f366063cf87aa9ef2f8714ce44ecd2d655dc258c388fdab7a2347fd640b",
-    "thumbnails/generated/preset-50-social-links-official.png": "ec7638eedb2ceea9a665c0f2d2bb33bf569c92dd87d05ea043d0e88ceab6a4cb",
-    "thumbnails/generated/preset-51-image-carousel-space-tour.png": "297cb0e663ff2e521cb6a7c05e2cfa7c7db02daa1c7387d2f27e7f1895334ec3",
-    "thumbnails/generated/preset-52-inquiry-quote.png": "e2a281427f7f9518109a119dbc2fae93ed3761301302c0a6ea608fb33faa6fcf",
-    "thumbnails/generated/preset-53-inquiry-reservation.png": "4e8c8a1ef1b8dcf719e9f7ad966047d42a4771f8636f0935011b60dde73d8bfc",
-    "thumbnails/generated/preset-54-inquiry-application.png": "c82a90510577c79e8443e494b10bb718d9ac28352e21eabfac390ba5d5e99caf",
-    "thumbnails/generated/preset-55-inquiry-newsletter.png": "ae2bdb6e1d3599b6b5a5d2cb3e7400c049c0a022fbdc31f93c484fa5b2b6dfe9"
+    "thumbnails/generated/block-01-hero.png": "f8a95f23e9f6bb3a830b15b2ab7607163f6c0774d9d582942780a619102797ee",
+    "thumbnails/generated/block-02-hero-split.png": "a7bfd2fbae558bf55a5bb9769b462eae5face89b0ad76e0fe768d5e7c35d44f7",
+    "thumbnails/generated/block-03-hero-slider.png": "251aa1c2f7da9e83da02798f909762f45f8c6573be7b7eac8536efccdf21238f",
+    "thumbnails/generated/block-04-heading.png": "04a7d6465a129e5d3d094aa6d7ab4b8c4dafd85256fdf4999cf103180f5eae61",
+    "thumbnails/generated/block-05-rich-text.png": "ad1bdc5ea7d4ca9c6081b81673a531ff360d266d4da0525375381676d6a1b8e2",
+    "thumbnails/generated/block-06-image.png": "c9257da6adc31cd5363570c68a85bf3d7ed8e7a6cb149efd2a71b9732740bd9a",
+    "thumbnails/generated/block-07-buttons.png": "086ab8db82955c35ed84069725aa7db44cb924d6efe15b9547b8abf0c36ee398",
+    "thumbnails/generated/block-08-image-text.png": "f82d07416f7ccfe74c9d8415651b961b8db97297a1fabec60f38d42a2498bcf9",
+    "thumbnails/generated/block-09-icon-list.png": "967cad5987037a3b925454d76cbf1343ebcbe5c39d097a57d530f31aff1ec0d2",
+    "thumbnails/generated/block-10-features.png": "a20242f5b491af708b6f7bff98d6f3c47cecc33ffa1aa5b913964fb579de9c91",
+    "thumbnails/generated/block-11-cta.png": "62e50d3247e849da0d56622ea5ac44dccc3e7ac7d90e31a2b21b117fa8997071",
+    "thumbnails/generated/block-12-contact.png": "6f9be71cdfb9b37b40a01925b9bbbc641f1c07333b437cdc0f48f6206868aa3a",
+    "thumbnails/generated/block-13-logo-cloud.png": "7f991d03dfe9dba27ba6840105e0862d6d610de2da3845676b69f44448e55d47",
+    "thumbnails/generated/block-14-stats.png": "cfea02e779ddd045bd8a2d309836150bc9c5092e32df57ae8a4641c60956db1d",
+    "thumbnails/generated/block-15-pricing.png": "a3506141530bac5a9ed26c5b558ca57af0c5754eaa8bda2f7fb84634cf827a04",
+    "thumbnails/generated/block-16-team.png": "e647e142004cbe28eb30351e44f3d3e0348b220ee0b9c63bb174950fb96055d3",
+    "thumbnails/generated/block-17-gallery.png": "6bc2edefed6f7ed08d6dc04c44f0513781043704d04a4dbb4bad9798ebdf3e70",
+    "thumbnails/generated/block-18-bar-chart.png": "9e907557bf5318edde44674a1083dab39f2d8ca9998665a177589722c646ade3",
+    "thumbnails/generated/block-19-g7-recent-posts.png": "4f9784ca33621ac60ca1e427cdf51f152539adaaa47a320566fe7dd9a62367e8",
+    "thumbnails/generated/block-20-g7-product-grid.png": "26d2e82e9c43853d4f4070afcced5edf49c6ba929f3e43f46c70d3a9fc6abd1a",
+    "thumbnails/generated/block-21-inquiry-form.png": "c83a684061c6439e72eaeaa052d5604882557df73066246ed49edc077eabc7ab",
+    "thumbnails/generated/block-22-map-directions.png": "b0f2f6b5cbc2aa166a471a47590ca897f0fb08e576e8c769d936e41c468c11ce",
+    "thumbnails/generated/block-23-testimonials.png": "c1c936ba61c5fcabdb9fbda0bcef1b3f296107ec7474a7a986088fc628c4c265",
+    "thumbnails/generated/block-24-faq-accordion.png": "19295a5333c6971b244b5b584adfe78e6972dcb30f559886dd22d615144f6fa6",
+    "thumbnails/generated/block-25-process-timeline.png": "acb53b12fff5f5c7b74e94d34c8963c6e2ff45ebf360f03d8f3fdb1ac8c0a51a",
+    "thumbnails/generated/block-26-tabs.png": "4fc17d9e421fe83c7268e52dd064cecfedda1a3247af00b21fa0633d458215ad",
+    "thumbnails/generated/block-27-comparison-table.png": "1d8cfe024c14c7864e02f100ea05d7905a41861a3766fb79eb04c6fe1a20445c",
+    "thumbnails/generated/block-28-article-list.png": "438d14e4c9ad997bc2f906b1180aa2d391f4387842f22ec640b69ba307465d86",
+    "thumbnails/generated/block-29-video-embed.png": "0a204a04d6b98d31c114dee3f25e0a0b944f28b14afbc9325e66cfd790dabd48",
+    "thumbnails/generated/block-30-logo-carousel.png": "315fc100e04ffe3b9ce512d726f2c565e1bab14e8df682b5bb6d5e02fee9b04b",
+    "thumbnails/generated/block-31-testimonial-slider.png": "e9d7a0542d5be090fed7b161b1ef79813e552405bb74d01e68ee02e61d5a7ea4",
+    "thumbnails/generated/block-32-event-schedule.png": "4181dfd610dd62f73007ad4b5ae77a57e79848ad0585e106903d04455db5d738",
+    "thumbnails/generated/block-33-download-resources.png": "5f9e8b2a1f87615a7c1d747449b5b033ad42b0879278fe3c64680ea5bc466f0c",
+    "thumbnails/generated/block-34-g7-board-archive.png": "fb3eb423ee394ca0fc53c072f88387a71c453a4a183d6f4a6af9803e809a00d4",
+    "thumbnails/generated/block-35-g7-product-showcase.png": "133380fc661e8bf6d1ace2fb69096e32633a9e98b1eab238d4dda0856d7827d9",
+    "thumbnails/generated/block-36-g7-post-detail.png": "505bbe6a1ce6c05e2953aac1511831dff3e1c50b4de785f59b4a7bb2004db946",
+    "thumbnails/generated/block-37-g7-product-detail.png": "21592153b86da7c35dd14f3ff0692e97113258344b918ef699ff8d3348242c5e",
+    "thumbnails/generated/block-38-divider.png": "c65598940618896d985273530cc7bd085d3d0a3cd861d28e7f72e343cbed7479",
+    "thumbnails/generated/block-39-blockquote.png": "c481d9d4a73ef1bbf605fbf42da6892bd2df5d1af27eecb5f9fdb859269dce0d",
+    "thumbnails/generated/block-40-notice.png": "8a35e654a4ff1f542139668d69f3f7daab11513baf68aed3961be0d0df03d3e6",
+    "thumbnails/generated/block-41-card-grid.png": "b01fa4d4b0036913cf1d252003ab9c8394eb5e05bdab3290c54bd69ba9bead9d",
+    "thumbnails/generated/block-42-breadcrumbs.png": "ac2fcd42230b6b959bb58252b120880baa6389e1e636e883fd62ad272a01191f",
+    "thumbnails/generated/block-43-anchor-menu.png": "6da7e725cea8e6e3e919efc220f2d274c04d6b9b0fb8cd21a0f1947215466ecc",
+    "thumbnails/generated/block-44-social-links.png": "105e3ef60baddc8d43d41f34757368f7e79ce3d5917dd0a7852ff7decdd34a28",
+    "thumbnails/generated/block-45-image-carousel.png": "8d2c7731a908bd5c49c28bc77958cb936c32b2f75fb82119832ee0fe6d895915",
+    "thumbnails/generated/preset-01-heading-section-intro.png": "04a7d6465a129e5d3d094aa6d7ab4b8c4dafd85256fdf4999cf103180f5eae61",
+    "thumbnails/generated/preset-02-heading-compact-title.png": "f7b536beb714bac9fa27d94014607461afe9af85edd17926ee90231a195b1722",
+    "thumbnails/generated/preset-03-rich-text-article-intro.png": "ad1bdc5ea7d4ca9c6081b81673a531ff360d266d4da0525375381676d6a1b8e2",
+    "thumbnails/generated/preset-04-rich-text-policy.png": "a00a46f0c661c0334824568d86ae587c3c6a205d83f73327f70a8371ff805fa9",
+    "thumbnails/generated/preset-05-image-landscape.png": "c9257da6adc31cd5363570c68a85bf3d7ed8e7a6cb149efd2a71b9732740bd9a",
+    "thumbnails/generated/preset-06-image-square.png": "ce79fc649fdbf7aaf3d48b6bc75dc7d6e6e6e8bb10c4eceda8e217df4566cdb6",
+    "thumbnails/generated/preset-07-buttons-primary-secondary.png": "086ab8db82955c35ed84069725aa7db44cb924d6efe15b9547b8abf0c36ee398",
+    "thumbnails/generated/preset-08-buttons-centered-actions.png": "bda2b22fd4e88ad2d5bb8a4bdd348acd3cc02e3843dd8751c658a480f5baaeff",
+    "thumbnails/generated/preset-09-image-text-product-story.png": "f82d07416f7ccfe74c9d8415651b961b8db97297a1fabec60f38d42a2498bcf9",
+    "thumbnails/generated/preset-10-image-text-company-story.png": "1b0afec230848daafb52ae3d5235f455fdd377a9ed687fdd87198dca94bd3c20",
+    "thumbnails/generated/preset-11-icon-list-benefits.png": "967cad5987037a3b925454d76cbf1343ebcbe5c39d097a57d530f31aff1ec0d2",
+    "thumbnails/generated/preset-12-icon-list-checklist.png": "871fb49f988c9cac28f8389cff48b4a920fa305a86f49086df65e082161080ff",
+    "thumbnails/generated/preset-13-hero-service-intro.png": "f8a95f23e9f6bb3a830b15b2ab7607163f6c0774d9d582942780a619102797ee",
+    "thumbnails/generated/preset-14-features-core-benefits.png": "a20242f5b491af708b6f7bff98d6f3c47cecc33ffa1aa5b913964fb579de9c91",
+    "thumbnails/generated/preset-15-cta-contact.png": "62e50d3247e849da0d56622ea5ac44dccc3e7ac7d90e31a2b21b117fa8997071",
+    "thumbnails/generated/preset-16-contact-office.png": "6f9be71cdfb9b37b40a01925b9bbbc641f1c07333b437cdc0f48f6206868aa3a",
+    "thumbnails/generated/preset-17-faq-basic.png": "19295a5333c6971b244b5b584adfe78e6972dcb30f559886dd22d615144f6fa6",
+    "thumbnails/generated/preset-18-process-four-step.png": "acb53b12fff5f5c7b74e94d34c8963c6e2ff45ebf360f03d8f3fdb1ac8c0a51a",
+    "thumbnails/generated/preset-19-hero-split-product-focus.png": "a7bfd2fbae558bf55a5bb9769b462eae5face89b0ad76e0fe768d5e7c35d44f7",
+    "thumbnails/generated/preset-20-hero-slider-campaign.png": "251aa1c2f7da9e83da02798f909762f45f8c6573be7b7eac8536efccdf21238f",
+    "thumbnails/generated/preset-21-logo-cloud-partners.png": "7f991d03dfe9dba27ba6840105e0862d6d610de2da3845676b69f44448e55d47",
+    "thumbnails/generated/preset-22-stats-business-proof.png": "cfea02e779ddd045bd8a2d309836150bc9c5092e32df57ae8a4641c60956db1d",
+    "thumbnails/generated/preset-23-pricing-three-tier.png": "a3506141530bac5a9ed26c5b558ca57af0c5754eaa8bda2f7fb84634cf827a04",
+    "thumbnails/generated/preset-24-team-leadership.png": "e647e142004cbe28eb30351e44f3d3e0348b220ee0b9c63bb174950fb96055d3",
+    "thumbnails/generated/preset-25-gallery-project-scenes.png": "6bc2edefed6f7ed08d6dc04c44f0513781043704d04a4dbb4bad9798ebdf3e70",
+    "thumbnails/generated/preset-26-bar-chart-quarterly.png": "9e907557bf5318edde44674a1083dab39f2d8ca9998665a177589722c646ade3",
+    "thumbnails/generated/preset-27-g7-posts-latest.png": "4f9784ca33621ac60ca1e427cdf51f152539adaaa47a320566fe7dd9a62367e8",
+    "thumbnails/generated/preset-28-g7-products-new.png": "26d2e82e9c43853d4f4070afcced5edf49c6ba929f3e43f46c70d3a9fc6abd1a",
+    "thumbnails/generated/preset-29-inquiry-general.png": "c83a684061c6439e72eaeaa052d5604882557df73066246ed49edc077eabc7ab",
+    "thumbnails/generated/preset-30-map-office.png": "b0f2f6b5cbc2aa166a471a47590ca897f0fb08e576e8c769d936e41c468c11ce",
+    "thumbnails/generated/preset-31-testimonials-customer-proof.png": "c1c936ba61c5fcabdb9fbda0bcef1b3f296107ec7474a7a986088fc628c4c265",
+    "thumbnails/generated/preset-32-tabs-service-guide.png": "4fc17d9e421fe83c7268e52dd064cecfedda1a3247af00b21fa0633d458215ad",
+    "thumbnails/generated/preset-33-comparison-plans.png": "1d8cfe024c14c7864e02f100ea05d7905a41861a3766fb79eb04c6fe1a20445c",
+    "thumbnails/generated/preset-34-articles-insights.png": "438d14e4c9ad997bc2f906b1180aa2d391f4387842f22ec640b69ba307465d86",
+    "thumbnails/generated/preset-35-video-product-tour.png": "0a204a04d6b98d31c114dee3f25e0a0b944f28b14afbc9325e66cfd790dabd48",
+    "thumbnails/generated/preset-36-logo-carousel-customers.png": "315fc100e04ffe3b9ce512d726f2c565e1bab14e8df682b5bb6d5e02fee9b04b",
+    "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "e9d7a0542d5be090fed7b161b1ef79813e552405bb74d01e68ee02e61d5a7ea4",
+    "thumbnails/generated/preset-38-events-upcoming.png": "4181dfd610dd62f73007ad4b5ae77a57e79848ad0585e106903d04455db5d738",
+    "thumbnails/generated/preset-39-downloads-resource-center.png": "5f9e8b2a1f87615a7c1d747449b5b033ad42b0879278fe3c64680ea5bc466f0c",
+    "thumbnails/generated/preset-40-g7-archive-searchable.png": "fb3eb423ee394ca0fc53c072f88387a71c453a4a183d6f4a6af9803e809a00d4",
+    "thumbnails/generated/preset-41-g7-showcase-featured.png": "133380fc661e8bf6d1ace2fb69096e32633a9e98b1eab238d4dda0856d7827d9",
+    "thumbnails/generated/preset-42-g7-post-detail-featured.png": "505bbe6a1ce6c05e2953aac1511831dff3e1c50b4de785f59b4a7bb2004db946",
+    "thumbnails/generated/preset-43-g7-product-detail-featured.png": "21592153b86da7c35dd14f3ff0692e97113258344b918ef699ff8d3348242c5e",
+    "thumbnails/generated/preset-44-divider-section-break.png": "c65598940618896d985273530cc7bd085d3d0a3cd861d28e7f72e343cbed7479",
+    "thumbnails/generated/preset-45-blockquote-customer-voice.png": "c481d9d4a73ef1bbf605fbf42da6892bd2df5d1af27eecb5f9fdb859269dce0d",
+    "thumbnails/generated/preset-46-notice-service-info.png": "8a35e654a4ff1f542139668d69f3f7daab11513baf68aed3961be0d0df03d3e6",
+    "thumbnails/generated/preset-47-card-grid-services.png": "b01fa4d4b0036913cf1d252003ab9c8394eb5e05bdab3290c54bd69ba9bead9d",
+    "thumbnails/generated/preset-48-breadcrumbs-detail-page.png": "ac2fcd42230b6b959bb58252b120880baa6389e1e636e883fd62ad272a01191f",
+    "thumbnails/generated/preset-49-anchor-menu-long-page.png": "6da7e725cea8e6e3e919efc220f2d274c04d6b9b0fb8cd21a0f1947215466ecc",
+    "thumbnails/generated/preset-50-social-links-official.png": "105e3ef60baddc8d43d41f34757368f7e79ce3d5917dd0a7852ff7decdd34a28",
+    "thumbnails/generated/preset-51-image-carousel-space-tour.png": "8d2c7731a908bd5c49c28bc77958cb936c32b2f75fb82119832ee0fe6d895915",
+    "thumbnails/generated/preset-52-inquiry-quote.png": "1aa6fe983ba373d47d3b6074368c9c7916a3b16bb239672594e3adf6c9da5d7e",
+    "thumbnails/generated/preset-53-inquiry-reservation.png": "b5221690a54f9a44b362876027151cdc95d27d3a46ea869978ef4d30b1256cfc",
+    "thumbnails/generated/preset-54-inquiry-application.png": "2d54f05530d045a3818365dc6c269608eddcbe1edca359473178d34512a99231",
+    "thumbnails/generated/preset-55-inquiry-newsletter.png": "16ed3fb45ff44eebd055bd26b0a2e8d4fbefaef61f2939b3778d10516f82a326",
+    "thumbnails/generated/preset-56-hero-poster.png": "c249e57290406510a60e0ccbb2a4e18434a17dae378076fe77ab0d284365c614",
+    "thumbnails/generated/preset-57-hero-backdrop.png": "95e99bf3b76d8a4601dc446d1d9212f272e2e8edcebeadb2088a914deb9aaec3",
+    "thumbnails/generated/preset-58-hero-editorial.png": "d0385c6be3e5196f03983da951dda4464595911c5a1fcf2ab7b89059684e5ad6",
+    "thumbnails/generated/preset-59-hero-device.png": "58d6669b10abeba1682bb01758dffc2be9e0236fe6f0944d35929a1b8c447c37",
+    "thumbnails/generated/preset-60-hero-split-balanced.png": "1829acbd47bceeb9d3a46f819479dc821b6d09c3a6f21dcdfe329ee973e8760b",
+    "thumbnails/generated/preset-61-hero-split-overlap.png": "00eec122c5a54ce0139a62703feeb45bf84489d668ecdef93bcf1057ac9c2e91",
+    "thumbnails/generated/preset-62-hero-split-offset.png": "025a32b97638b74bc9f31840b015b6385934de6a6df045ff1c02490b146d29cc",
+    "thumbnails/generated/preset-63-features-grid.png": "360be632e4be0770edad72a86ad21f17c61b0139ed7314a2ac090ccaa9fde191",
+    "thumbnails/generated/preset-64-features-editorial.png": "41202a29e7ea323b9f6faec21b98ef2d728773af357c29d89e2b1916d36bf5b5",
+    "thumbnails/generated/preset-65-features-panel.png": "ca9f7ecf901d1a47d8205b01a4934263641ab3673b02a993eccec26b148d2481",
+    "thumbnails/generated/preset-66-features-list.png": "7b1ffeae924e06dba66db9fe7d288b7539697e258366cd4f3b1226e2dce75582",
+    "thumbnails/generated/preset-67-cta-centered.png": "95d18f5c963c046eaee8e746c6c236b2c3eedf05b3c77194b833ea1a5d56a02c",
+    "thumbnails/generated/preset-68-cta-banner.png": "c78be10dac3d3e31a3cd2d3adc8283ea5574da574ff0ba4d3dbe54f85397e314",
+    "thumbnails/generated/preset-69-cta-panel.png": "c9080e00dcdd00ce18cb9b22db326b6dc8c9f5348edf1f9df7b2006da59b10dc",
+    "thumbnails/generated/preset-70-logo-cloud-grid.png": "830c8e1816963129f49820388c87e2c476c6b205055dec29eec64385a998e01d",
+    "thumbnails/generated/preset-71-logo-cloud-panel.png": "f868e21f839074b5a70f8f33ff25e6feb48c421b3e341d0e4651564a3bd5073c",
+    "thumbnails/generated/preset-72-stats-grid.png": "85eed6f3e3c1ff859c09505a0394402f26619a0bad5be66160a855d58de21c5c",
+    "thumbnails/generated/preset-73-stats-strip.png": "2b0ad9487fc29ada20492e9f58808953676ce2ebc8b655017f48a1f4fa39d082",
+    "thumbnails/generated/preset-74-stats-split.png": "a93e8e64f201d193d28f06d235721fbcdd4c315b9c4c2514139be28b3a4ee5a1",
+    "thumbnails/generated/preset-75-pricing-cards.png": "3b019eabfd996b6f697c8c8eac619f16ae534643fe274bc7d379f07e8b2e1a3f",
+    "thumbnails/generated/preset-76-pricing-compact.png": "4b47d37fda76b5c1b993185b1c8eee10029aa019247cd7e926d62ea68a85f48c",
+    "thumbnails/generated/preset-77-pricing-editorial.png": "68425be64ab78f143007d893242e5f0582ce8a639201d5d2164a065a92e5b3c9",
+    "thumbnails/generated/preset-78-team-grid.png": "ed3a9e0fedc5b1ecd859c1326c2c6de47ed695c3109a176aa179bf68d9e28345",
+    "thumbnails/generated/preset-79-team-editorial.png": "b9fb2ee498769f2059a5b1cf96a3800077e6805e1be57303c27848d365d36b29",
+    "thumbnails/generated/preset-80-team-featured.png": "e647e142004cbe28eb30351e44f3d3e0348b220ee0b9c63bb174950fb96055d3",
+    "thumbnails/generated/preset-81-gallery-grid.png": "5fdae832a9655a6cb7a2ae081ff445f854dff239e4850f0b9eadb95ba7fdcada",
+    "thumbnails/generated/preset-82-gallery-masonry.png": "7d489b567af59803a846cf93d179b5d9470018d970f0a98a945215e3dd403e1e",
+    "thumbnails/generated/preset-83-gallery-filmstrip.png": "17127febaf18bb6ba4b54d922b0691b3f6f9c33a507598e4504d92618ad2d8cd",
+    "thumbnails/generated/preset-84-testimonials-grid.png": "e6d849d9d9f6c56b74bfe182042455cc0ee47bd86ec5746fa129c1229180526b",
+    "thumbnails/generated/preset-85-testimonials-spotlight.png": "e6d849d9d9f6c56b74bfe182042455cc0ee47bd86ec5746fa129c1229180526b",
+    "thumbnails/generated/preset-86-testimonials-split.png": "f7399c90d2443f294dd3693eaaf06d3cd6845feafdee2387d059fcc2d8699e68",
+    "thumbnails/generated/preset-87-testimonials-quote-hero.png": "39f33a86bc3a8de091a2058825e04f38a87b497bb5ae75dacdc96838f61b16f6",
+    "thumbnails/generated/preset-88-articles-list.png": "438d14e4c9ad997bc2f906b1180aa2d391f4387842f22ec640b69ba307465d86",
+    "thumbnails/generated/preset-89-articles-grid.png": "720d227a013af3c41e72e8526eae4d922b8923efb47b302abfa69d8bc2d95807",
+    "thumbnails/generated/preset-90-articles-featured.png": "f169449a4bc804106b94fe6f5488134c0397948eb4a8e6b425d1535db1ac5a83",
+    "thumbnails/generated/preset-91-articles-editorial.png": "658535c9905e9530cf8154b6cc40433111472c52b531f59b456221e2a0022afe",
+    "thumbnails/generated/preset-92-card-grid-grid.png": "cd7ade805ccdfbc8293375d8f87e709197ffa5b9a1f2efd9c2eb0731f2f3a9ef",
+    "thumbnails/generated/preset-93-card-grid-rail.png": "339e473a0041e1a2804b85a71e3a49c7a8882a3c9f9147d5ed3d37c15d02bb64",
+    "thumbnails/generated/preset-94-card-grid-editorial.png": "00f418f07be74b100458d2f03bec9605c192d59d2393dae106a07e935d78ed45",
+    "thumbnails/generated/preset-95-card-grid-numbered.png": "f5bde135811751acb3c1c37f0324cf9e6f9025abb90c2da19be4c6674ff00444"
   }
 }

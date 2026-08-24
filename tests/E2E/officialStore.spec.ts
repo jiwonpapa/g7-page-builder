@@ -216,9 +216,22 @@ test('official free store previews and applies a Page Kit as a separate draft', 
       await expect(page.getByTestId('page-builder-editor')).toBeVisible();
       const importedEditorImages = page.frameLocator('iframe').locator('[data-testid="page-builder-block"] img');
       await expect(importedEditorImages).toHaveCount(6);
-      for (const image of await importedEditorImages.all()) {
-        expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
-      }
+      await importedEditorImages.evaluateAll(async (elements) => {
+        await Promise.all(elements.map(async (element) => {
+          const image = element as HTMLImageElement;
+          image.loading = 'eager';
+          image.scrollIntoView({ block: 'nearest' });
+          if (!image.complete) {
+            await new Promise<void>((resolve, reject) => {
+              image.addEventListener('load', () => resolve(), { once: true });
+              image.addEventListener('error', () => reject(new Error(`Page Kit image failed: ${image.src}`)), { once: true });
+            });
+          }
+          await image.decode();
+        }));
+      });
+      expect(await importedEditorImages.evaluateAll((images) =>
+        images.every((image) => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
 
       const exportQuery = new URLSearchParams({
         kit_id: 'jiwonpapa/e2e-export',

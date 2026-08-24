@@ -818,12 +818,17 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
     const drawerLibrary = page.getByTestId('page-builder-block-library');
     const renderedThumbnails = drawerLibrary.locator('.g7pb-block-thumb--image > img[src*="/thumbnails/generated/"]');
-    await expect(renderedThumbnails).toHaveCount(45);
-    for (const image of (await renderedThumbnails.all()).slice(0, 8)) {
-      await expect(image).toHaveJSProperty('complete', true);
-      expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(320);
-      expect(await image.evaluate((element) => (element as HTMLImageElement).naturalHeight)).toBe(200);
-    }
+    await expect.poll(async () => new Set(await renderedThumbnails.evaluateAll((images) =>
+      images.map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src))).size).toBe(45);
+    const thumbnailMetrics = await renderedThumbnails.evaluateAll((images) => images.map((image) => ({
+      src: (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
+      complete: (image as HTMLImageElement).complete,
+      width: (image as HTMLImageElement).naturalWidth,
+      height: (image as HTMLImageElement).naturalHeight,
+    })));
+    const uniqueThumbnailMetrics = [...new Map(thumbnailMetrics.map((metric) => [metric.src, metric])).values()];
+    expect(uniqueThumbnailMetrics).toHaveLength(45);
+    expect(uniqueThumbnailMetrics.every((metric) => metric.complete && metric.width === 320 && metric.height === 200)).toBe(true);
     const drawerText = await drawerLibrary.textContent();
     expect(drawerText?.match(/끌어/g)?.length ?? 0).toBeLessThanOrEqual(1);
     await hideMobileBlockLibrary(page);

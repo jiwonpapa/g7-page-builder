@@ -41,11 +41,12 @@
 - 링크 필드에서 활성 G7 템플릿의 로그인·회원가입·로그아웃·게시판·쇼핑몰·마이페이지·Page Builder route를 검색하고 필요한 route parameter 대상을 선택
 - dirty/saving/saved/conflict/publish 상태 표시
 - 2초 debounce autosave와 명시적 저장
+- 변경 직후의 즉시 dirty 상태와 문서함·브라우저 이탈 확인, 숨김 전환 시 저장 시도
 - 다른 revision을 기반으로 저장하면 HTTP 409와 비교/새로고침 안내
 - 키보드 focus, label, alt text, 색 대비 기본 검사
-- 블록 추가 전 이름·용도·축약 화면을 보여주는 preview gallery
+- 블록 추가 전 실제 16:10 화면, 이름·용도·출처를 보여주고 블록 종류·완성 섹션·출처를 거르는 preview gallery
 - 각 블록의 `surface`와 `spacing`은 검증된 preset만 선택
-- 선택 블록의 글자 크기·정렬과 주요 버튼 route·Hero 이미지를 캔버스 문맥 도구에서 바로 편집
+- 선택 요소 전체의 글자 크기·정렬과 주요 버튼 route·Hero 이미지를 캔버스 문맥 도구에서 바로 편집하고, 긴 본문 일부는 Tiptap 범위 도구로 글꼴·크기·강조·밑줄·색상·링크를 따로 편집
 - 블록 종류에 맞는 Reveal·Stagger·Soft Parallax·Counter·Chart Draw 효과와 강도·실행 방식을 typed preset으로 선택
 
 ### 저장과 복구

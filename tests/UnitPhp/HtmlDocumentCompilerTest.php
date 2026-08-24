@@ -141,6 +141,28 @@ final class HtmlDocumentCompilerTest extends TestCase
         $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
     }
 
+    public function test_selected_range_typography_is_preserved_in_production_content_blocks(): void
+    {
+        $payload = $this->productionLibraryDocument()->toArray();
+        $payload['blocks'][1]['props']['quote'] = '<p>앞 <span data-g7pb-font="serif" data-g7pb-size="large"><u>선택 인용문</u></span> 뒤</p>';
+        $payload['blocks'][2]['props']['body'] = '<p>안내 <strong>핵심</strong> <a href="/guide">확인</a></p>';
+        $payload['blocks'][3]['props']['items'][0]['body'] = '<p>카드 <span data-g7pb-tone="accent">선택 설명</span></p>';
+
+        $artifact = (string) $this->builtInCompiler()->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        )->artifact;
+
+        self::assertStringContainsString('<span data-g7pb-font="serif" data-g7pb-size="large"><u>선택 인용문</u></span>', $artifact);
+        self::assertStringContainsString('<strong>핵심</strong> <a href="/guide" rel="noopener noreferrer">확인</a>', $artifact);
+        self::assertStringContainsString('<span data-g7pb-tone="accent">선택 설명</span>', $artifact);
+        self::assertStringContainsString('class="g7pb-blockquote__quote"', $artifact);
+        self::assertStringContainsString('class="g7pb-content-notice__body"', $artifact);
+        self::assertStringContainsString('class="g7pb-card-grid__body"', $artifact);
+    }
+
     public function test_cta_and_contact_escape_plain_text_and_compile_safe_links(): void
     {
         $document = $this->document(

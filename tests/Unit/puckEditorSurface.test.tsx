@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PageBuilderDocument, SitePartResource } from '../../resources/js/documents/types';
+import { CANVAS_ELEMENT_MESSAGE } from '../../resources/js/editor/canvasEditingContract';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
 import companyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';
 import editorialPageKit from '../../resources/store/source/page-kits/editorial-community/document.json';
@@ -59,7 +60,7 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 });
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
-const { PuckEditorAdapter } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { PuckEditorAdapter, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
 
 const fixture: PageBuilderDocument = {
   schema_version: 'g7-page-builder/v1',
@@ -191,6 +192,80 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('provides selected-range rich text editing across all long-copy product families', () => {
+    const components = pageBuilderPuckConfig.components as Record<string, { fields: Record<string, any> }>;
+    const field = (component: string, path: string[]): any => path.reduce(
+      (value, segment) => segment === '[]' ? value.arrayFields : value[segment],
+      components[component].fields as any,
+    );
+    const cases: Array<[string, string[]]> = [
+      ['Hero', ['body']],
+      ['RichText', ['content']],
+      ['ImageText', ['body']],
+      ['HeroSplit', ['body']],
+      ['HeroSlider', ['slides', '[]', 'body']],
+      ['Testimonials', ['items', '[]', 'quote']],
+      ['FaqAccordion', ['items', '[]', 'answer']],
+      ['ProcessTimeline', ['items', '[]', 'body']],
+      ['Tabs', ['items', '[]', 'body']],
+      ['ArticleList', ['items', '[]', 'summary']],
+      ['TestimonialSlider', ['items', '[]', 'quote']],
+      ['EventSchedule', ['items', '[]', 'description']],
+      ['DownloadResources', ['items', '[]', 'description']],
+      ['Blockquote', ['quote']],
+      ['Notice', ['body']],
+      ['CardGrid', ['items', '[]', 'body']],
+    ];
+
+    for (const [component, path] of cases) {
+      expect(field(component, path), `${component}.${path.join('.')}`).toMatchObject({
+        type: 'richtext',
+        contentEditable: true,
+      });
+    }
+  });
+
+  it('closes the element-wide balloon on outside click and keeps it closed for rich-text ranges', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const outside = document.createElement('button');
+    outside.textContent = 'outside';
+    document.body.append(outside);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    await act(async () => {
+      root.render(<PuckEditorAdapter document={fixture} revisionKey={0} iframeEnabled={false}
+        onChange={() => undefined} onPublish={() => undefined} />);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent(CANVAS_ELEMENT_MESSAGE, { detail: {
+        blockId: fixture.blocks[0].instance_id,
+        blockType: 'hero',
+        fieldPath: 'title',
+        role: 'text',
+        label: '제목',
+      } }));
+    });
+    expect(await eventually<HTMLElement>('[data-testid="page-builder-context-panel"]')).not.toBeNull();
+
+    await act(async () => { outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    expect(document.querySelector('[data-testid="page-builder-context-panel"]')).toBeNull();
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent(CANVAS_ELEMENT_MESSAGE, { detail: {
+        blockId: fixture.blocks[0].instance_id,
+        blockType: 'hero',
+        fieldPath: 'body',
+        role: 'text',
+        label: '본문',
+        rangeEditing: true,
+      } }));
+    });
+    expect(document.querySelector('[data-testid="page-builder-context-panel"]')).toBeNull();
+  });
+
   it('keeps structured inline copy visible in every official Page Kit', async () => {
     const cases: Array<{ document: PageBuilderDocument; checks: Array<[string, string]> }> = [
       {
@@ -537,7 +612,9 @@ describe('Puck editor surface contract', () => {
     });
 
     const library = await eventually<HTMLElement>('[data-testid="page-builder-block-library"]');
-    expect(library.textContent).toContain('미리보기를 끌어 캔버스의 원하는 위치에 놓으세요.');
+    expect(library.textContent).toContain('실제 화면을 확인하고 블록을 선택하세요.');
+    expect(library.textContent).not.toContain('끌어');
+    expect(library.textContent).toContain('완성 섹션과 모든 출처 보기');
     for (const component of [
       'Hero',
       'Heading',
@@ -569,6 +646,7 @@ describe('Puck editor surface contract', () => {
       const drawerItem = await eventually<HTMLElement>(`[data-testid="drawer-item:${component}"]`);
       expect(drawerItem.querySelector(`[data-library-block="${component}"]`)).not.toBeNull();
       expect(drawerItem.querySelector('[data-block-preview]')).not.toBeNull();
+      expect(drawerItem.querySelector('.g7pb-block-thumb__zoom')).toBeNull();
     }
 
     const mobileViewport = await eventually<HTMLButtonElement>('[data-testid="page-builder-viewport-360"]');
@@ -589,6 +667,12 @@ describe('Puck editor surface contract', () => {
     });
 
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
+    expect(Array.from(gallery.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent)).toEqual([
+      '전체100', '블록 종류45', '완성 섹션55',
+    ]);
+    expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
+      .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공']);
+    expect(gallery.querySelector('.g7pb-block-thumb__zoom')).toBeNull();
     expect(gallery.textContent).toContain('히어로');
     expect(gallery.textContent).toContain('제목');
     expect(gallery.textContent).toContain('리치텍스트');
@@ -718,6 +802,17 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('Server Hero');
     expect(gallery.textContent).toContain('Promotion hero');
     expect(gallery.textContent).not.toContain('로드되지 않은 블록');
+    expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
+      .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공', 'marketing']);
+
+    const presetTab = Array.from(gallery.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
+      .find((tab) => tab.textContent?.includes('완성 섹션'));
+    await act(async () => { presetTab?.click(); });
+    expect(gallery.textContent).not.toContain('Server Hero');
+    expect(gallery.textContent).toContain('Promotion hero');
+    const allTab = Array.from(gallery.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
+      .find((tab) => tab.textContent?.includes('전체'));
+    await act(async () => { allTab?.click(); });
 
     const search = gallery.querySelector<HTMLInputElement>('[aria-label="블록 검색"]');
     await act(async () => {

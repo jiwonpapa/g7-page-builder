@@ -134,4 +134,32 @@ describe('canvas editing contract', () => {
     expect(title?.dataset.g7pbCanvasSelected).toBe('true');
     expect(selection).toMatchObject({ fieldPath: 'title', role: 'text', label: '제목' });
   });
+
+  it('marks rich-text canvas selections as range editing so the element-wide balloon stays closed', () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const frameDocument = frame.contentDocument;
+    expect(frameDocument).not.toBeNull();
+    frameDocument!.body.innerHTML = '<section><div data-g7pb-inline-field="items.0.body" data-g7pb-richtext-field="true"><p>문장 일부를 선택합니다.</p></div></section>';
+    const paragraph = frameDocument!.querySelector<HTMLElement>('p');
+    let selection: CanvasElementSelection | null = null;
+    const receive = (event: Event): void => {
+      selection = (event as CustomEvent<CanvasElementSelection>).detail;
+    };
+    window.addEventListener(CANVAS_ELEMENT_MESSAGE, receive);
+
+    notifyCanvasElementSelection(
+      { target: paragraph } as unknown as Parameters<typeof notifyCanvasElementSelection>[0],
+      'block-id',
+      'card-grid',
+    );
+
+    window.removeEventListener(CANVAS_ELEMENT_MESSAGE, receive);
+    frame.remove();
+    expect(selection).toMatchObject({
+      fieldPath: 'items.0.body',
+      role: 'text',
+      rangeEditing: true,
+    });
+  });
 });

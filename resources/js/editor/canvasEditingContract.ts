@@ -31,6 +31,7 @@ export interface CanvasElementSelection {
     width: number;
     height: number;
   } | null;
+  rangeEditing?: boolean;
 }
 
 interface CollectionLimit {
@@ -386,6 +387,24 @@ export function notifyCanvasElementSelection(
     ? event.target as Element
     : null;
   if (!target) return;
+
+  // Puck's Tiptap rich-text surface owns selection-range editing and its own
+  // compact toolbar. Notify the host so an older element-wide balloon closes,
+  // but keep the field selection for the action bar and collection controls.
+  const richText = target.closest<HTMLElement>('[data-g7pb-richtext-field], [data-puck-richtext]');
+  if (richText) {
+    const fieldPath = richText.dataset.g7pbInlineField ?? target.closest<HTMLElement>('[data-g7pb-inline-field]')?.dataset.g7pbInlineField;
+    if (!fieldPath) return;
+    const selection = {
+      ...selectionFromPath(blockId, blockType, fieldPath, 'text'),
+      anchor: parentViewportRect(richText),
+      rangeEditing: true,
+    } satisfies CanvasElementSelection;
+    const message = { type: CANVAS_ELEMENT_MESSAGE, selection };
+    if (window.parent !== window) window.parent.postMessage(message, window.location.origin);
+    window.dispatchEvent(new CustomEvent(CANVAS_ELEMENT_MESSAGE, { detail: selection }));
+    return;
+  }
 
   const selectable = target.closest<HTMLElement>('[data-g7pb-media-field], [data-g7pb-action-field], [data-g7pb-inline-field]');
   const fieldPath = selectable?.dataset.g7pbMediaField ?? selectable?.dataset.g7pbActionField

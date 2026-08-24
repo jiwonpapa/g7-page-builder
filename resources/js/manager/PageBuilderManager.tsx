@@ -504,6 +504,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
       await api.installOfficialStoreBlockPack(product.product_id, product.product_version);
       await loadOfficialStore();
       await loadBlockPacks();
+      setMessage(`${product.title.ko} 설치 완료 · 편집기 상단 ‘블록 추가’의 출처 필터에서 확인할 수 있습니다.`);
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -593,6 +594,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     try {
       await api.installBlockPack(archive, true);
       await loadBlockPacks();
+      setMessage('블록 팩 설치 완료 · 활성화된 블록과 완성 섹션은 편집기 상단 ‘블록 추가’에 표시됩니다.');
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -674,6 +676,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
         githubRepository.trim(),
         githubAssetName.trim(),
       ));
+      setMessage('GitHub 블록 팩 설치 완료 · 편집기 상단 ‘블록 추가’의 출처 필터에서 확인할 수 있습니다.');
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -886,7 +889,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
           </button>
           <button className="g7pb-button g7pb-button--quiet" type="button"
             data-testid="page-builder-manager-block-packs" onClick={openBlockPacks}>
-            블록 팩
+            블록 라이브러리
           </button>
           <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-site-header"
             href="/modules/jiwonpapa-page_builder/admin/site-parts/header"><PanelTop size={17} /> Header 편집</a>
@@ -1253,12 +1256,13 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             aria-labelledby="g7pb-block-packs-heading">
             <div className="g7pb-dialog__heading-row">
               <div>
-                <p className="g7pb-kicker">독립 블록 자산</p>
-                <h2 id="g7pb-block-packs-heading">블록 팩 설치·사용·제거</h2>
+                <p className="g7pb-kicker">블록 라이브러리 출처</p>
+                <h2 id="g7pb-block-packs-heading">추가 블록·완성 섹션 관리</h2>
               </div>
               <button type="button" className="g7pb-button g7pb-button--quiet"
                 onClick={() => setBlockPacksOpen(false)}>닫기</button>
             </div>
+            <p className="g7pb-block-pack-destination">활성화된 항목은 각 페이지 편집기 상단 <strong>블록 추가</strong>에 합쳐집니다. 출처 필터로 기본 제공과 설치 팩을 구분할 수 있습니다.</p>
             <div className="g7pb-block-pack-toolbar">
               <div>
                 <strong>로컬 ZIP 설치</strong>
@@ -1323,7 +1327,8 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
                       <div className="g7pb-block-pack-row__identity">
                         <span>{pack.kind === 'data' ? 'Data Preset' : 'Code'} Pack</span>
                         <strong>{pack.pack_id}</strong>
-                        <small>v{pack.pack_version} · {pack.publisher.name} · 블록 {pack.blocks} / 프리셋 {pack.presets}</small>
+                        <small>v{pack.pack_version} · {pack.publisher.name} · 블록 {pack.blocks} / 완성 섹션 {pack.presets}</small>
+                        <small>사용 위치: 편집기 → 블록 추가 → {pack.pack_id.split('/').at(-1)?.replace(/[-_]+/g, ' ')}</small>
                       </div>
                       <div className="g7pb-block-pack-row__state">
                         <strong data-state={pack.state}>{pack.state}</strong>

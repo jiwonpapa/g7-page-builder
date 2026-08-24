@@ -116,6 +116,7 @@ function EditorShell({
   const [diagnosticTab, setDiagnosticTab] = useState<'document' | 'artifact'>('document');
   const [compiledSource, setCompiledSource] = useState('');
   const [diagnosticBusy, setDiagnosticBusy] = useState(false);
+  const [leaveHref, setLeaveHref] = useState<string | null>(null);
 
   const documentRef = useRef<PageBuilderDocument | null>(null);
   const lockVersionRef = useRef(0);
@@ -123,6 +124,7 @@ function EditorShell({
   const editVersionRef = useRef(0);
   const loadedDocumentIdRef = useRef<string | null>(null);
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
+  const navigationBypassRef = useRef(false);
 
   const applyResource = useCallback((resource: DocumentResource, resetEditor: boolean): void => {
     documentRef.current = resource.document;
@@ -297,6 +299,52 @@ function EditorShell({
     setMessage(null);
   }, []);
 
+  const handleEditorDirty = useCallback((): void => {
+    dirtyRef.current = true;
+    setSaveState('dirty');
+    setPublishState('idle');
+    setPreviewUrl(null);
+    setPreviewExpiresAt(null);
+  }, []);
+
+  useEffect(() => {
+    const warnBeforeUnload = (event: BeforeUnloadEvent): string | undefined => {
+      if (navigationBypassRef.current || (!dirtyRef.current && saveState !== 'saving' && saveState !== 'error' && saveState !== 'conflict')) {
+        return undefined;
+      }
+      event.preventDefault();
+      event.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [saveState]);
+
+  useEffect(() => {
+    const saveWhenHidden = (): void => {
+      if (globalThis.document?.visibilityState === 'hidden' && dirtyRef.current) void saveDraft(false);
+    };
+    globalThis.document?.addEventListener('visibilitychange', saveWhenHidden);
+    return () => globalThis.document?.removeEventListener('visibilitychange', saveWhenHidden);
+  }, [saveDraft]);
+
+  const navigateTo = (href: string): void => {
+    navigationBypassRef.current = true;
+    window.location.assign(href);
+  };
+
+  const requestNavigation = (event: React.MouseEvent<HTMLAnchorElement>, href: string): void => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!dirtyRef.current && saveState !== 'saving' && saveState !== 'error' && saveState !== 'conflict') return;
+    event.preventDefault();
+    setLeaveHref(href);
+  };
+
+  const saveAndLeave = async (): Promise<void> => {
+    if (!leaveHref || !(await saveDraft(true))) return;
+    navigateTo(leaveHref);
+  };
+
   const createDocument = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const title = createTitle.trim();
@@ -430,7 +478,7 @@ function EditorShell({
 
         <div className="g7pb-command-bar__actions">
           <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-link"
-            href={PAGE_BUILDER_MANAGER_PATH}>
+            href={PAGE_BUILDER_MANAGER_PATH} onClick={(event) => requestNavigation(event, PAGE_BUILDER_MANAGER_PATH)}>
             문서함
           </a>
           {document ? (
@@ -507,7 +555,7 @@ function EditorShell({
 
       {!loading && document && (
         <PuckEditorAdapter document={document} revisionKey={editorRevisionKey} disabled={working}
-          onChange={handleDocumentChange} onPublish={() => publish()} />
+          onDirty={handleEditorDirty} onChange={handleDocumentChange} onPublish={() => publish()} />
       )}
 
       {!loading && !document && (
@@ -587,6 +635,27 @@ function EditorShell({
               <span>직접 수정은 지원하지 않습니다. 편집은 캔버스와 안전한 설정에서만 수행합니다.</span>
               <button type="button" className="g7pb-button g7pb-button--quiet" onClick={() => setDiagnosticsOpen(false)}>닫기</button>
             </footer>
+          </section>
+        </div>
+      )}
+
+      {leaveHref && (
+        <div className="g7pb-dialog-backdrop g7pb-dialog-backdrop--confirm" data-testid="page-builder-unsaved-dialog">
+          <section className="g7pb-dialog g7pb-leave-dialog" role="alertdialog" aria-modal="true"
+            aria-labelledby="g7pb-leave-heading" aria-describedby="g7pb-leave-description">
+            <p className="g7pb-kicker">저장하지 않은 변경</p>
+            <h2 id="g7pb-leave-heading">편집 내용을 저장하고 나갈까요?</h2>
+            <p id="g7pb-leave-description">저장하지 않고 나가면 마지막 자동 저장 이후 변경이 사라집니다.</p>
+            <div className="g7pb-dialog__actions g7pb-leave-dialog__actions">
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                data-testid="page-builder-unsaved-cancel" onClick={() => setLeaveHref(null)}>계속 편집</button>
+              <button type="button" className="g7pb-button g7pb-button--danger"
+                data-testid="page-builder-unsaved-discard" onClick={() => navigateTo(leaveHref)}>저장 안 함</button>
+              <button type="button" className="g7pb-button g7pb-button--primary"
+                data-testid="page-builder-unsaved-save" disabled={saveState === 'saving'} onClick={() => void saveAndLeave()}>
+                저장하고 나가기
+              </button>
+            </div>
           </section>
         </div>
       )}

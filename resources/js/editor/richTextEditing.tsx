@@ -204,6 +204,18 @@ export function createRichTextField(label: string, initialHeight = 150, headings
   };
 }
 
+export function RichTextCanvasField({
+  fieldPath,
+  children,
+  className = 'g7pb-preview-richtext',
+}: {
+  fieldPath: string;
+  children: React.ReactNode;
+  className?: string;
+}): React.ReactElement {
+  return <div className={className} data-g7pb-inline-field={fieldPath} data-g7pb-richtext-field="true">{children}</div>;
+}
+
 export const RICH_TEXT_ALLOWED_VALUES = Object.freeze({
   fonts: FONT_VALUES,
   sizes: SIZE_VALUES,

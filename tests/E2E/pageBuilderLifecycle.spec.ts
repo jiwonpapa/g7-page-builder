@@ -986,7 +986,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         }
         throw new Error(`Rich text selection target was not found: ${target}`);
       }, selectedText);
-      const rangeToolbar = page.getByTestId('page-builder-richtext-inline-toolbar');
+      const rangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(rangeToolbar).toBeVisible();
       await rangeToolbar.getByTestId('page-builder-richtext-font').selectOption('serif');
       await rangeToolbar.getByTestId('page-builder-richtext-size').selectOption('large');

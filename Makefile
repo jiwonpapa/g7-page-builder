@@ -6,7 +6,7 @@ BASE_REF ?= HEAD
 
 .NOTPARALLEL:
 
-.PHONY: coord-start coord-status coord-check coord-release task-submit task-resubmit task-integrate integration-verify integration-finish runtime-guard release-guard quality-coordination dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
+.PHONY: coord-start coord-status coord-check coord-release task-submit task-resubmit task-integrate integration-verify integration-finish runtime-guard release-guard check-agent-policy quality-coordination dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
 
 coord-start:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
@@ -52,7 +52,13 @@ release-guard:
 	@test -n "$(TASK)" || { echo 'TASK is required for release.' >&2; exit 2; }
 	@$(COORD_HARNESS) release-guard --task "$(TASK)"
 
-quality-coordination:
+check-agent-policy:
+	@grep -Fq '<!-- policy:cleanup-approval-orchestration:v1:start -->' AGENTS.md || { echo 'Cleanup approval policy start marker missing.' >&2; exit 2; }
+	@grep -Fq '요청 결과와 필수 검증을 끝내는 데 필요하지 않은 임시파일·중간 산출물 삭제는 작업 중간에 실행하거나 승인 요청하지 않는다.' AGENTS.md || { echo 'Cleanup approval deferral rule missing.' >&2; exit 2; }
+	@grep -Fq '비차단 정리 승인이 없거나 응답이 지연돼도 요청 결과와 필수 검증이 끝났다면 정리를 보류한 채 완료 보고하며, 정리 승인을 기다리느라 task를 대기 상태로 남기지 않는다.' AGENTS.md || { echo 'Non-blocking cleanup completion rule missing.' >&2; exit 2; }
+	@grep -Fq '<!-- policy:cleanup-approval-orchestration:v1:end -->' AGENTS.md || { echo 'Cleanup approval policy end marker missing.' >&2; exit 2; }
+
+quality-coordination: check-agent-policy
 	bash tests/Harness/coord-harness.test.sh
 
 dev-bootstrap: runtime-guard

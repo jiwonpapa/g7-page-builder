@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-08-24
+
 ### Added
 
 - Elementor·Webflow·Squarespace·Tailwind Plus·daisyUI 공식 카탈로그의 공통 정보 구조를 기준으로 구분선, 인용문, 알림, 카드 그리드, 경로, 앵커 메뉴, 소셜 링크, 이미지 캐러셀 8종을 추가했습니다.

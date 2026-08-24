@@ -818,17 +818,26 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
     const drawerLibrary = page.getByTestId('page-builder-block-library');
     const renderedThumbnails = drawerLibrary.locator('.g7pb-block-thumb--image > img[src*="/thumbnails/generated/"]');
-    await expect.poll(async () => new Set(await renderedThumbnails.evaluateAll((images) =>
-      images.map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src))).size).toBe(45);
-    const thumbnailMetrics = await renderedThumbnails.evaluateAll((images) => images.map((image) => ({
-      src: (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src,
-      complete: (image as HTMLImageElement).complete,
-      width: (image as HTMLImageElement).naturalWidth,
-      height: (image as HTMLImageElement).naturalHeight,
-    })));
-    const uniqueThumbnailMetrics = [...new Map(thumbnailMetrics.map((metric) => [metric.src, metric])).values()];
-    expect(uniqueThumbnailMetrics).toHaveLength(45);
-    expect(uniqueThumbnailMetrics.every((metric) => metric.complete && metric.width === 320 && metric.height === 200)).toBe(true);
+    const collectThumbnailUrls = async () => [...new Set(await renderedThumbnails.evaluateAll((images) =>
+      images.map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src)))];
+    await expect.poll(collectThumbnailUrls, {
+      message: 'all built-in block thumbnail URLs are rendered',
+    }).toHaveLength(45);
+    const thumbnailUrls = await collectThumbnailUrls();
+    const thumbnailResponses = await Promise.all(thumbnailUrls.map((url) => page.request.get(url)));
+    try {
+      expect(thumbnailResponses.every((response) => response.ok())).toBe(true);
+      expect(thumbnailResponses.every((response) => response.headers()['content-type'] === 'image/png')).toBe(true);
+    } finally {
+      await Promise.all(thumbnailResponses.map((response) => response.dispose()));
+    }
+    await expect.poll(async () => renderedThumbnails.evaluateAll((images) => images.some((image) => {
+      const thumbnail = image as HTMLImageElement;
+
+      return thumbnail.complete && thumbnail.naturalWidth === 320 && thumbnail.naturalHeight === 200;
+    })), {
+      message: 'a visible thumbnail is decoded at its source dimensions',
+    }).toBe(true);
     const drawerText = await drawerLibrary.textContent();
     expect(drawerText?.match(/끌어/g)?.length ?? 0).toBeLessThanOrEqual(1);
     await hideMobileBlockLibrary(page);

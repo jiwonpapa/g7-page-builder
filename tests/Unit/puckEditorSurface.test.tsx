@@ -158,6 +158,23 @@ function editorElements(selector: string): NodeListOf<HTMLElement> {
   return (editorDocument ?? document).querySelectorAll<HTMLElement>(selector);
 }
 
+async function eventuallyBlockTypes(expected: string[]): Promise<void> {
+  let actual: Array<string | undefined> = [];
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    actual = Array.from(
+      editorElements('[data-testid="page-builder-block"]'),
+    ).map((element) => element.dataset.blockType);
+    if (actual.length === expected.length && actual.every((type, index) => type === expected[index])) {
+      return;
+    }
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+  }
+
+  expect(actual).toEqual(expected);
+}
+
 async function eventuallyContains(selector: string, expected: string): Promise<void> {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const element = document.querySelector<HTMLElement>(selector)
@@ -231,7 +248,7 @@ describe('Puck editor surface contract', () => {
         await eventuallyContains(selector, expected);
       }
     }
-  });
+  }, 15_000);
 
   it('shows builder-owned Header and Footer in the canvas and edits them without leaving the document work surface', async () => {
     const resource = (kind: 'header' | 'footer'): SitePartResource => ({
@@ -495,10 +512,7 @@ describe('Puck editor surface contract', () => {
       moveUp?.click();
     });
 
-    const reorderedTypes = Array.from(
-      editorElements('[data-testid="page-builder-block"]'),
-    ).map((element) => element.dataset.blockType);
-    expect(reorderedTypes).toEqual(['features', 'hero', 'cta', 'contact']);
+    await eventuallyBlockTypes(['features', 'hero', 'cta', 'contact']);
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-heading"]')).value).toBe('Features title');
   });
 

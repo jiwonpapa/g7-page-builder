@@ -1174,8 +1174,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(heroSubtitle);
     if (testInfo.project.name === 'desktop') {
       await expect(await revealInspectorField(page, 'page-builder-hero-primary-url')).toHaveValue('/register');
-      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);
-      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--large/);
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--xlarge/);
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
     }
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
@@ -1207,9 +1207,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectBlockOrder(renderedBlocks(previewPage), PUBLISHED_BLOCK_ORDER);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
     if (testInfo.project.name === 'desktop') {
-      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-size--large/);
+      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-size--xlarge/);
       await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-align--right/);
-      await expect(previewPage.locator('[data-block-type="hero"] .g7pb-hero__body')).not.toHaveClass(/g7pb-element-size--large/);
+      await expect(previewPage.locator('[data-block-type="hero"] .g7pb-hero__body')).not.toHaveClass(/g7pb-element-size--xlarge/);
     }
     await expect(previewPage.getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();

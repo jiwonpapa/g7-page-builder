@@ -963,7 +963,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const richTextBlock = editorBlock(page, 'rich-text');
       const richTextEditor = richTextBlock.locator('[contenteditable="true"]').first();
       const selectedText = '이해해야 할 내용';
-      await richTextEditor.focus();
+      await richTextEditor.click();
       await expect(richTextEditor).toBeFocused();
       await richTextEditor.evaluate((element, target) => {
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);

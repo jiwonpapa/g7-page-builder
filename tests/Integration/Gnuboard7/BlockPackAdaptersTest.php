@@ -267,6 +267,7 @@ final class BlockPackAdaptersTest extends TestCase
             $contents = match ($path) {
                 'runtime/provider.php' => '<?php return null;',
                 'dist/editor.js' => 'window.vendorPack=true;',
+                'dist/preview.png' => 'PNG fixture',
                 default => '.vendor-notice{color:navy}',
             };
             self::assertSame($digest, hash('sha256', $contents));
@@ -311,10 +312,31 @@ final class BlockPackAdaptersTest extends TestCase
         $editor = $assets->show('vendor', 'runtime-assets', '1.0.0', 'dist/editor.js');
         self::assertInstanceOf(BinaryFileResponse::class, $editor);
         self::assertSame('text/javascript; charset=utf-8', $editor->headers->get('Content-Type'));
+        $thumbnail = $assets->show('vendor', 'runtime-assets', '1.0.0', 'dist/preview.png');
+        self::assertInstanceOf(BinaryFileResponse::class, $thumbnail);
+        self::assertSame('image/png', $thumbnail->headers->get('Content-Type'));
         self::assertSame(404, $assets->show('vendor', 'runtime-assets', '1.0.0', 'runtime/provider.php')->getStatusCode());
+        self::assertSame(
+            404,
+            $assets->show('vendor', 'runtime-assets', '1.0.0', 'dist/unlisted.png')->getStatusCode(),
+        );
         file_put_contents($source.'/dist/editor.js', 'tampered');
         self::assertSame(404, $assets->show('vendor', 'runtime-assets', '1.0.0', 'dist/editor.js')->getStatusCode());
         self::assertSame(404, $assets->show('../bad', 'runtime-assets', '1.0.0', 'dist/editor.js')->getStatusCode());
+
+        $builtIn = $assets->show(
+            'jiwonpapa',
+            'builtin-core',
+            '0.14.0',
+            'thumbnails/generated/block-01-hero.png',
+        );
+        self::assertInstanceOf(BinaryFileResponse::class, $builtIn);
+        self::assertSame('image/png', $builtIn->headers->get('Content-Type'));
+        self::assertSame(
+            404,
+            $assets->show('jiwonpapa', 'builtin-core', '0.13.0', 'thumbnails/generated/block-01-hero.png')
+                ->getStatusCode(),
+        );
     }
 
     private function dataManifest(): BlockPackManifest
@@ -331,6 +353,7 @@ final class BlockPackAdaptersTest extends TestCase
             'runtime/provider.php' => '<?php return null;',
             'dist/editor.js' => 'window.vendorPack=true;',
             'dist/style.css' => '.vendor-notice{color:navy}',
+            'dist/preview.png' => 'PNG fixture',
         ];
 
         return BlockPackManifest::fromArray([
@@ -343,7 +366,7 @@ final class BlockPackAdaptersTest extends TestCase
             'blocks' => [[
                 'block_id' => 'vendor.notice-01', 'block_version' => 1, 'category' => 'content',
                 'label' => ['ko' => '외부 알림'], 'description' => ['ko' => '외부 알림 블록'],
-                'thumbnail' => 'dist/style.css', 'schema_ref' => 'vendor:notice',
+                'thumbnail' => 'dist/preview.png', 'schema_ref' => 'vendor:notice',
                 'editor_component' => 'VendorNotice', 'compiler' => 'vendor.notice-01', 'capabilities' => [],
             ]],
             'presets' => [],

@@ -214,7 +214,7 @@ test('official free store previews and applies a Page Kit as a separate draft', 
       expect(new Set(importedImages).size).toBe(6);
       expect(payload.data?.status).toBe('draft');
       await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-      const importedEditorImages = page.locator('[data-testid="page-builder-block"] img');
+      const importedEditorImages = page.frameLocator('iframe').locator('[data-testid="page-builder-block"] img');
       await expect(importedEditorImages).toHaveCount(6);
       for (const image of await importedEditorImages.all()) {
         expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);

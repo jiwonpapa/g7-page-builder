@@ -1,4 +1,5 @@
 import Ajv2020 from 'ajv/dist/2020';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -39,8 +40,12 @@ describe('Block Pack manifest v1 schema', () => {
       expect(contents.subarray(1, 4).toString('ascii')).toBe('PNG');
       expect(contents.readUInt32BE(16)).toBe(320);
       expect(contents.readUInt32BE(20)).toBe(200);
+      expect(builtinManifest.files[thumbnail as keyof typeof builtinManifest.files]).toBe(
+        createHash('sha256').update(contents).digest('hex'),
+      );
       thumbnailContents.push(contents);
     });
+    expect(Object.keys(builtinManifest.files).sort()).toEqual([...thumbnails].sort());
     expect(new Set(thumbnailContents.map((contents) => contents.toString('base64'))).size).toBeGreaterThanOrEqual(55);
     const generatedIndex = JSON.parse(readFileSync(resolve(
       'resources/block-packs/builtin-core/thumbnails/generated/index.json',

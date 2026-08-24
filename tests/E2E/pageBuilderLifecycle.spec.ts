@@ -817,7 +817,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(page.getByTestId(`drawer-item:${component}`)).toHaveCount(1);
     }
     const drawerLibrary = page.getByTestId('page-builder-block-library');
-    const renderedThumbnails = drawerLibrary.locator('.g7pb-block-thumb--image > img');
+    const renderedThumbnails = drawerLibrary.locator('.g7pb-block-thumb--image > img[src*="/thumbnails/generated/"]');
     await expect(renderedThumbnails).toHaveCount(45);
     for (const image of (await renderedThumbnails.all()).slice(0, 8)) {
       await expect(image).toHaveJSProperty('complete', true);

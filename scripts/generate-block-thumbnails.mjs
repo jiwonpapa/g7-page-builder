@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -63,6 +64,11 @@ for (const preset of manifest.presets) {
   preset.thumbnail = paths.get(catalogId);
 }
 manifest.pack_version = '0.14.0';
+manifest.files = Object.fromEntries(await Promise.all(index.map(async (item) => {
+  const path = `thumbnails/generated/${item.filename}`;
+  const contents = await readFile(resolve(thumbnailRoot, item.filename));
+  return [path, createHash('sha256').update(contents).digest('hex')];
+})));
 await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 await writeFile(resolve(thumbnailRoot, 'index.json'), `${JSON.stringify({
   viewport: '960px',

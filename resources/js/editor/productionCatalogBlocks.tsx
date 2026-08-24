@@ -4,6 +4,7 @@ import type { Config } from '@puckeditor/core';
 import { createMotionField, DEFAULT_BLOCK_MOTION, motionPreviewAttributes, normalizeBlockMotion } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
+import { createRichTextField, RichTextCanvasField } from './richTextEditing';
 import {
   decorateCanvasElementStyles,
   normalizeElementAppearanceMap,
@@ -300,7 +301,7 @@ function DividerPreview(props: DividerEditorProps & { id: string }): React.React
 function BlockquotePreview(props: BlockquoteEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="blockquote" motion={props.motion} elementStyles={props.elementStyles}>
     <blockquote className={`g7pb-preview-blockquote g7pb-preview-blockquote--${props.variant} g7pb-preview-blockquote--${props.alignment} ${surfaceClass(props)}`}>
-      <p data-g7pb-inline-field="quote">{props.quote}</p><footer><cite data-g7pb-inline-field="citation">{props.citation}</cite>{props.role ? <span data-g7pb-inline-field="role">{props.role}</span> : null}</footer>
+      <RichTextCanvasField fieldPath="quote" className="g7pb-preview-richtext g7pb-preview-blockquote__quote">{props.quote}</RichTextCanvasField><footer><cite data-g7pb-inline-field="citation">{props.citation}</cite>{props.role ? <span data-g7pb-inline-field="role">{props.role}</span> : null}</footer>
     </blockquote>
   </Frame>;
 }
@@ -308,7 +309,7 @@ function BlockquotePreview(props: BlockquoteEditorProps & { id: string }): React
 function NoticePreview(props: NoticeEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="notice" motion={props.motion} elementStyles={props.elementStyles}>
     <aside className={`g7pb-preview-notice g7pb-preview-notice--${props.tone} ${surfaceClass(props)}`} role={props.tone === 'critical' ? 'alert' : 'note'}>
-      <i aria-hidden="true" /><div><strong data-g7pb-inline-field="title">{props.title}</strong><p data-g7pb-inline-field="body">{props.body}</p></div>
+      <i aria-hidden="true" /><div><strong data-g7pb-inline-field="title">{props.title}</strong><RichTextCanvasField fieldPath="body" className="g7pb-preview-richtext g7pb-preview-notice__body">{props.body}</RichTextCanvasField></div>
       {props.actionLabel ? <a href={safeLink(props.actionUrl)} data-g7pb-action-field="actionLabel" onClick={(event) => event.preventDefault()}>{props.actionLabel} →</a> : null}
     </aside>
   </Frame>;
@@ -318,7 +319,7 @@ function CardGridPreview(props: CardGridEditorProps & { id: string }): React.Rea
   return <Frame id={props.id} type="card-grid" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-card-grid g7pb-preview-card-grid--${props.columns} g7pb-preview-card-grid--${props.variant} ${surfaceClass(props)}`}>
       <header>{props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}<h2 data-g7pb-inline-field="heading">{props.heading}</h2></header>
-      <div>{normalizeCards(props.items).map((item, index) => <article key={`${item.title}-${index}`}><small data-g7pb-inline-field={`items.${index}.kicker`}>{inlineArrayContent(props.items, index, 'kicker', item.kicker)}</small><h3 data-g7pb-inline-field={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</h3><p data-g7pb-inline-field={`items.${index}.body`}>{inlineArrayContent(props.items, index, 'body', item.body)}</p>{item.linkLabel ? <a href={safeLink(item.linkUrl)} data-g7pb-action-field={`items.${index}.linkLabel`} onClick={(event) => event.preventDefault()}>{inlineArrayContent(props.items, index, 'linkLabel', item.linkLabel)} →</a> : null}</article>)}</div>
+      <div>{normalizeCards(props.items).map((item, index) => <article key={`${item.title}-${index}`}><small data-g7pb-inline-field={`items.${index}.kicker`}>{inlineArrayContent(props.items, index, 'kicker', item.kicker)}</small><h3 data-g7pb-inline-field={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</h3><RichTextCanvasField fieldPath={`items.${index}.body`} className="g7pb-preview-richtext g7pb-preview-card-grid__body">{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField>{item.linkLabel ? <a href={safeLink(item.linkUrl)} data-g7pb-action-field={`items.${index}.linkLabel`} onClick={(event) => event.preventDefault()}>{inlineArrayContent(props.items, index, 'linkLabel', item.linkLabel)} →</a> : null}</article>)}</div>
     </div>
   </Frame>;
 }
@@ -368,17 +369,17 @@ export const productionCatalogComponentConfigs: Config<ProductionCatalogEditorCo
   },
   Blockquote: {
     label: '인용문', defaultProps: DEFAULT_BLOCKQUOTE,
-    fields: { quote: { type: 'textarea', label: '인용문', contentEditable: true }, citation: { type: 'text', label: '인용자', contentEditable: true }, role: { type: 'text', label: '역할·소속', contentEditable: true }, alignment: { type: 'radio', label: '정렬', options: alignmentOptions }, variant: { type: 'radio', label: '표현', options: [{ label: '선', value: 'line' }, { label: '큰 따옴표', value: 'mark' }] }, ...appearanceFields, motion: createMotionField(['none', 'reveal']) },
+    fields: { quote: createRichTextField('인용문', 150), citation: { type: 'text', label: '인용자', contentEditable: true }, role: { type: 'text', label: '역할·소속', contentEditable: true }, alignment: { type: 'radio', label: '정렬', options: alignmentOptions }, variant: { type: 'radio', label: '표현', options: [{ label: '선', value: 'line' }, { label: '큰 따옴표', value: 'mark' }] }, ...appearanceFields, motion: createMotionField(['none', 'reveal']) },
     render: (props) => <BlockquotePreview {...props} />,
   },
   Notice: {
     label: '알림·안내', defaultProps: DEFAULT_NOTICE,
-    fields: { tone: { type: 'select', label: '안내 성격', options: [{ label: '정보', value: 'info' }, { label: '완료', value: 'success' }, { label: '주의', value: 'warning' }, { label: '중요', value: 'critical' }] }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '내용', contentEditable: true }, actionLabel: { type: 'text', label: '링크 문구', contentEditable: true }, actionUrl: createRouteUrlField('안내 연결'), ...appearanceFields, motion: createMotionField(['none', 'reveal']) },
+    fields: { tone: { type: 'select', label: '안내 성격', options: [{ label: '정보', value: 'info' }, { label: '완료', value: 'success' }, { label: '주의', value: 'warning' }, { label: '중요', value: 'critical' }] }, title: { type: 'text', label: '제목', contentEditable: true }, body: createRichTextField('내용', 130), actionLabel: { type: 'text', label: '링크 문구', contentEditable: true }, actionUrl: createRouteUrlField('안내 연결'), ...appearanceFields, motion: createMotionField(['none', 'reveal']) },
     render: (props) => <NoticePreview {...props} />,
   },
   CardGrid: {
     label: '카드 그리드', defaultProps: DEFAULT_CARD_GRID,
-    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, items: { type: 'array', label: '카드', min: 2, max: 6, defaultItemProps: (index) => ({ kicker: String(index + 1).padStart(2, '0'), title: `카드 ${index + 1}`, body: '카드 설명을 입력하세요.', linkLabel: '자세히 보기', linkUrl: '/' }), getItemSummary: (item) => item.title, arrayFields: { kicker: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '설명', contentEditable: true }, linkLabel: { type: 'text', label: '링크 문구', contentEditable: true }, linkUrl: createRouteUrlField('카드 연결') } }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }] }, variant: { type: 'radio', label: '카드 표현', options: [{ label: '여백 중심', value: 'plain' }, { label: '테두리', value: 'outlined' }] }, ...appearanceFields, motion: createMotionField(['none', 'reveal', 'stagger']) },
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, items: { type: 'array', label: '카드', min: 2, max: 6, defaultItemProps: (index) => ({ kicker: String(index + 1).padStart(2, '0'), title: `카드 ${index + 1}`, body: '카드 설명을 입력하세요.', linkLabel: '자세히 보기', linkUrl: '/' }), getItemSummary: (item) => item.title, arrayFields: { kicker: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: createRichTextField('설명', 130), linkLabel: { type: 'text', label: '링크 문구', contentEditable: true }, linkUrl: createRouteUrlField('카드 연결') } }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }] }, variant: { type: 'radio', label: '카드 표현', options: [{ label: '여백 중심', value: 'plain' }, { label: '테두리', value: 'outlined' }] }, ...appearanceFields, motion: createMotionField(['none', 'reveal', 'stagger']) },
     render: (props) => <CardGridPreview {...props} />,
   },
   Breadcrumbs: {

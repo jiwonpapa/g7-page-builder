@@ -296,7 +296,9 @@ describe('Page Builder manager surface', () => {
     await act(async () => { button.click(); });
 
     const dialog = await eventually<HTMLElement>('[data-testid="page-builder-block-packs-dialog"]');
-    expect(dialog.textContent).toContain('블록 팩 설치·사용·제거');
+    expect(dialog.textContent).toContain('추가 블록·완성 섹션 관리');
+    expect(dialog.textContent).toContain('각 페이지 편집기 상단 블록 추가에 합쳐집니다.');
+    expect(dialog.textContent).toContain('편집기 → 블록 추가 → content pack');
     expect(dialog.textContent).toContain('문서 1 · 리비전 4 사용 중');
     expect(dialog.textContent).toContain('GitHub Release에서 확인');
     expect(dialog.querySelector<HTMLButtonElement>('.g7pb-button--danger')?.disabled).toBe(true);

@@ -582,7 +582,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         $roleMarkup = $role === '' ? '' : '<span class="g7pb-blockquote__role">'.$this->escape($role).'</span>';
 
-        return '<section class="g7pb-block g7pb-blockquote g7pb-blockquote--'.$alignment.' g7pb-blockquote--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="blockquote"><blockquote><p class="g7pb-blockquote__quote">'.$this->formatText($quote).'</p><footer><cite>'.$this->escape($citation).'</cite>'.$roleMarkup.'</footer></blockquote></section>';
+        $quoteMarkup = $this->hasRichTextMarkup($quote)
+            ? '<div class="g7pb-blockquote__quote">'.$this->sanitizeRichText($quote).'</div>'
+            : '<p class="g7pb-blockquote__quote">'.$this->formatText($quote).'</p>';
+
+        return '<section class="g7pb-block g7pb-blockquote g7pb-blockquote--'.$alignment.' g7pb-blockquote--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="blockquote"><blockquote>'.$quoteMarkup.'<footer><cite>'.$this->escape($citation).'</cite>'.$roleMarkup.'</footer></blockquote></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -608,7 +612,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         $role = $tone === 'critical' ? 'alert' : 'note';
 
-        return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->escape($title).'</h2><p class="g7pb-content-notice__body">'.$this->formatText($body).'</p></div>'.$action.'</section>';
+        $bodyMarkup = $this->hasRichTextMarkup($body)
+            ? '<div class="g7pb-content-notice__body">'.$this->sanitizeRichText($body).'</div>'
+            : '<p class="g7pb-content-notice__body">'.$this->formatText($body).'</p>';
+
+        return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->escape($title).'</h2>'.$bodyMarkup.'</div>'.$action.'</section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -646,7 +654,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $this->assertAllowedUrl($linkUrl, "Card grid item {$index}");
                 $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).'<span aria-hidden="true"> →</span></a>';
             }
-            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->escape($title).'</h3>'.($body === '' ? '' : '<p class="g7pb-card-grid__body">'.$this->formatText($body).'</p>').$link.'</article>';
+            $bodyMarkup = $body === '' ? '' : ($this->hasRichTextMarkup($body)
+                ? '<div class="g7pb-card-grid__body">'.$this->sanitizeRichText($body).'</div>'
+                : '<p class="g7pb-card-grid__body">'.$this->formatText($body).'</p>');
+            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->escape($title).'</h3>'.$bodyMarkup.$link.'</article>';
         }
 
         return '<section class="g7pb-block g7pb-card-grid g7pb-card-grid--'.$columns.' g7pb-card-grid--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="card-grid">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-card-grid__items">'.implode('', $compiled).'</div></section>';
@@ -973,7 +984,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         $copy[] = '<h1>'.$this->escape($title).'</h1>';
         if ($body !== null && $body !== '') {
-            $copy[] = '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
+            $copy[] = $this->hasRichTextMarkup($body)
+                ? '<div class="g7pb-hero-split__body">'.$this->sanitizeRichText($body).'</div>'
+                : '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
         }
 
         $cta = $this->optionalMap($props, 'primaryCta');
@@ -1041,7 +1054,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
             $copy .= '<h2>'.$this->escape($title).'</h2>';
             if ($body !== null && $body !== '') {
-                $copy .= '<p>'.$this->formatText($body).'</p>';
+                $copy .= $this->hasRichTextMarkup($body)
+                    ? '<div class="g7pb-hero-slider__body">'.$this->sanitizeRichText($body).'</div>'
+                    : '<p>'.$this->formatText($body).'</p>';
             }
             $copy .= '<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a>';
             $media = $this->compileCatalogImage(
@@ -1541,7 +1556,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $this->assertAllowedUrl($linkUrl, "Process step {$index}");
                 $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).' <span aria-hidden="true">→</span></a>';
             }
-            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->escape($title).'</h3><p>'.$this->formatText($body).'</p>'.$link.'</li>';
+            $bodyMarkup = $this->hasRichTextMarkup($body)
+                ? '<div class="g7pb-process__body">'.$this->sanitizeRichText($body).'</div>'
+                : '<p>'.$this->formatText($body).'</p>';
+            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->escape($title).'</h3>'.$bodyMarkup.$link.'</li>';
         }
 
         return '<section class="g7pb-block g7pb-process g7pb-process--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="process-timeline">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
@@ -1579,7 +1597,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $body = $this->requiredString($item, 'body', 4000);
             $selected = $initialTab === $index;
             $buttons[] = '<button type="button" role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</button>';
-            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->escape($itemHeading).'</h3><p>'.$this->formatText($body).'</p></article>';
+            $bodyMarkup = $this->hasRichTextMarkup($body)
+                ? '<div class="g7pb-tabs__body">'.$this->sanitizeRichText($body).'</div>'
+                : '<p>'.$this->formatText($body).'</p>';
+            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->escape($itemHeading).'</h3>'.$bodyMarkup.'</article>';
         }
 
         return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escapeAttribute($heading).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
@@ -1675,7 +1696,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $category === '' ? '' : '<span>'.$this->escape($category).'</span>',
                 $date === '' ? '' : '<time datetime="'.$this->escapeAttribute($date).'">'.$this->escape($date).'</time>',
             ]);
-            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->escape($title).'</a></h3><p>'.$this->formatText($summary).'</p><a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
+            $summaryMarkup = $this->hasRichTextMarkup($summary)
+                ? '<div class="g7pb-articles__summary">'.$this->sanitizeRichText($summary).'</div>'
+                : '<p>'.$this->formatText($summary).'</p>';
+            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->escape($title).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
         }
 
         return '<section class="g7pb-block g7pb-articles g7pb-articles--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="article-list">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-articles__items">'.implode('', $compiled).'</div></section>';
@@ -1773,7 +1797,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
                 .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
-            $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonial-slider__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
+            $quoteMarkup = $this->hasRichTextMarkup($quote)
+                ? '<div class="g7pb-testimonial-slider__quote">'.$this->sanitizeRichText($quote).'</div>'
+                : '<p class="g7pb-testimonial-slider__quote">“'.$this->formatText($quote).'”</p>';
+            $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p>'.$quoteMarkup.'<footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
         return '<section class="g7pb-block g7pb-testimonial-slider g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonial-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($heading).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
@@ -1813,7 +1840,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $this->assertAllowedUrl($buttonUrl, "Event item {$index}");
                 $action = '<a href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).' <span aria-hidden="true">→</span></a>';
             }
-            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->escape($title).'</h3><p>'.$this->formatText($description).'</p>'.$action.'</article></li>';
+            $descriptionMarkup = $this->hasRichTextMarkup($description)
+                ? '<div class="g7pb-events__description">'.$this->sanitizeRichText($description).'</div>'
+                : '<p>'.$this->formatText($description).'</p>';
+            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->escape($title).'</h3>'.$descriptionMarkup.$action.'</article></li>';
         }
 
         return '<section class="g7pb-block g7pb-events g7pb-events--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="event-schedule">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
@@ -1846,7 +1876,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $this->assertAllowedUrl($url, "Download resource {$index}");
             $fileMeta = '<span class="g7pb-downloads__file-type">'.$this->escape($fileType).'</span>'
                 .($fileSize === '' ? '' : '<i aria-hidden="true"> · </i><span class="g7pb-downloads__file-size">'.$this->escape($fileSize).'</span>');
-            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->escape($title).'</h3>'.($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'" download>'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
+            $descriptionMarkup = $description === '' ? '' : ($this->hasRichTextMarkup($description)
+                ? '<div class="g7pb-downloads__description">'.$this->sanitizeRichText($description).'</div>'
+                : '<p>'.$this->formatText($description).'</p>');
+            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->escape($title).'</h3>'.$descriptionMarkup.'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'" download>'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
         }
 
         return '<section class="g7pb-block g7pb-downloads '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="download-resources">'.$this->compileSectionHeading($eyebrow, $heading).'<ul>'.implode('', $compiled).'</ul></section>';
@@ -2300,7 +2333,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             self::HERO_SLIDER_TYPE => $collection === 'slides' ? match ($leaf) {
                 'eyebrow' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//*['.$hasClass('g7pb-section-eyebrow').']',
                 'title' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//h2',
-                'body' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//div['.$hasClass('g7pb-hero-slider__copy').']/p[not('.$hasClass('g7pb-section-eyebrow').')]',
+                'body' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//*['.$hasClass('g7pb-hero-slider__copy').']/*[('.$hasClass('g7pb-hero-slider__body').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))]',
                 'buttonLabel' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//a',
                 default => null,
             } : null,
@@ -2337,14 +2370,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             } : null,
             self::PROCESS_TIMELINE_TYPE => $collection === 'items' ? match ($leaf) {
                 'title' => '(.//ol/li)['.$index.']/h3',
-                'body' => '(.//ol/li)['.$index.']/p',
+                'body' => '(.//ol/li)['.$index.']/*[('.$hasClass('g7pb-process__body').') or self::p]',
                 'linkLabel' => '(.//ol/li)['.$index.']/a',
                 default => null,
             } : null,
             self::TABS_TYPE => $collection === 'items' ? match ($leaf) {
                 'label' => '(.//*['.$hasClass('g7pb-tabs__list').']/button)['.$index.']',
                 'heading' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/h3',
-                'body' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/p',
+                'body' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/*[('.$hasClass('g7pb-tabs__body').') or self::p]',
                 default => null,
             } : null,
             self::COMPARISON_TABLE_TYPE => match ($collection) {
@@ -2360,7 +2393,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 'category' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//*['.$hasClass('g7pb-articles__meta').']/span',
                 'date' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//*['.$hasClass('g7pb-articles__meta').']/time',
                 'title' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//h3',
-                'summary' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//h3/following-sibling::p[1]',
+                'summary' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//h3/following-sibling::*[1][('.$hasClass('g7pb-articles__summary').') or self::p]',
                 default => null,
             } : null,
             self::EVENT_SCHEDULE_TYPE => $collection === 'items' ? match ($leaf) {
@@ -2368,13 +2401,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 'time' => '(.//ol/li)['.$index.']/time/span',
                 'location' => '(.//ol/li)['.$index.']//*['.$hasClass('g7pb-events__location').']',
                 'title' => '(.//ol/li)['.$index.']//h3',
-                'description' => '(.//ol/li)['.$index.']//article/p[not('.$hasClass('g7pb-events__location').')]',
+                'description' => '(.//ol/li)['.$index.']//article/*[('.$hasClass('g7pb-events__description').') or (self::p and not('.$hasClass('g7pb-events__location').'))]',
                 'buttonLabel' => '(.//ol/li)['.$index.']//article/a',
                 default => null,
             } : null,
             self::DOWNLOAD_RESOURCES_TYPE => $collection === 'items' ? match ($leaf) {
                 'title' => '(.//ul/li)['.$index.']//h3',
-                'description' => '(.//ul/li)['.$index.']//h3/following-sibling::p[1]',
+                'description' => '(.//ul/li)['.$index.']//h3/following-sibling::*[1][('.$hasClass('g7pb-downloads__description').') or self::p]',
                 'fileType' => '(.//ul/li)['.$index.']//*['.$hasClass('g7pb-downloads__file-type').']',
                 'fileSize' => '(.//ul/li)['.$index.']//*['.$hasClass('g7pb-downloads__file-size').']',
                 'buttonLabel' => '(.//ul/li)['.$index.']/a',
@@ -2636,6 +2669,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private function formatText(string $value): string
     {
         return nl2br($this->escape($value), false);
+    }
+
+    private function hasRichTextMarkup(string $value): bool
+    {
+        return preg_match('/<\/?[a-z][^>]*>/i', $value) === 1;
     }
 
     private function sanitizeRichText(string $html): string

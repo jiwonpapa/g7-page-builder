@@ -258,6 +258,7 @@ interface PuckEditorAdapterProps {
   revisionKey: number;
   disabled?: boolean;
   iframeEnabled?: boolean;
+  onDirty?: () => void;
   onChange: (document: PageBuilderDocument) => void;
   onPublish: (document: PageBuilderDocument) => void | Promise<void>;
 }
@@ -959,6 +960,9 @@ function StableSelectField<TValue extends string>({
   label?: string;
   help?: string;
 }): React.ReactElement {
+  const [draftValue, setDraftValue] = useState(value);
+  useEffect(() => setDraftValue(value), [value]);
+
   return (
     <label className={label ? 'g7pb-design-field' : undefined}>
       {label ? <span>{label}</span> : null}
@@ -966,9 +970,13 @@ function StableSelectField<TValue extends string>({
       <select
         className="g7pb-field-control"
         data-testid={testId}
-        value={value}
+        value={draftValue}
         disabled={readOnly}
-        onChange={(event) => onChange(event.target.value as TValue)}
+        onChange={(event) => {
+          const nextValue = event.target.value as TValue;
+          setDraftValue(nextValue);
+          onChange(nextValue);
+        }}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
@@ -1653,6 +1661,8 @@ interface BlockGalleryItem {
   favorite: boolean;
   presetProps: Record<string, unknown> | null;
   thumbnail: string;
+  packId: string;
+  packLabel: string;
 }
 
 function blockPackAssetUrl(packId: string, packVersion: string, path: string): string {
@@ -1679,6 +1689,12 @@ const BLOCK_SEARCH_ALIASES: Readonly<Record<string, string>> = Object.freeze({
 
 const BLOCK_CATEGORY_ORDER = ['기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터'] as const;
 const QUICK_ADD_COMPONENTS = ['Heading', 'RichText', 'Image', 'Buttons', 'Hero', 'Cta'] as const;
+const OPEN_BLOCK_GALLERY_EVENT = 'g7pb:open-block-gallery';
+
+function blockPackLabel(packId: string): string {
+  if (packId === BUILTIN_CORE_MANIFEST.pack_id) return '기본 제공';
+  return packId.split('/').at(-1)?.replace(/[-_]+/g, ' ') || packId;
+}
 
 const BUILTIN_DEFINITION_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_DEFINITIONS.map((definition) => {
   const type = definition.editor_component;
@@ -1700,6 +1716,8 @@ const BUILTIN_DEFINITION_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTI
     favorite: false,
     presetProps: null,
     thumbnail: blockPackAssetUrl(BUILTIN_CORE_MANIFEST.pack_id, BUILTIN_CORE_MANIFEST.pack_version, definition.thumbnail),
+    packId: BUILTIN_CORE_MANIFEST.pack_id,
+    packLabel: blockPackLabel(BUILTIN_CORE_MANIFEST.pack_id),
   };
 });
 
@@ -1728,6 +1746,8 @@ const BUILTIN_PRESET_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BL
     favorite: false,
     presetProps: preset.props,
     thumbnail: blockPackAssetUrl(BUILTIN_CORE_MANIFEST.pack_id, BUILTIN_CORE_MANIFEST.pack_version, preset.thumbnail),
+    packId: BUILTIN_CORE_MANIFEST.pack_id,
+    packLabel: blockPackLabel(BUILTIN_CORE_MANIFEST.pack_id),
   };
 });
 
@@ -1768,6 +1788,8 @@ function apiCatalogItemToGalleryItem(item: BlockCatalogItem, locale: string): Bl
     favorite: item.favorite,
     presetProps: item.preset_props,
     thumbnail: blockPackAssetUrl(item.pack_id, item.pack_version, item.thumbnail),
+    packId: staticItem?.packId ?? item.pack_id,
+    packLabel: staticItem?.packLabel ?? blockPackLabel(item.pack_id),
   };
 }
 
@@ -1776,7 +1798,6 @@ function BlockGalleryThumbnail({ item }: { item: BlockGalleryItem }): React.Reac
   if (item.thumbnail && !failed) {
     return <span className="g7pb-block-thumb g7pb-block-thumb--image" data-block-preview={item.type} aria-hidden="true">
       <img src={item.thumbnail} alt="" loading="lazy" onError={() => setFailed(true)} />
-      <span className="g7pb-block-thumb__zoom"><img src={item.thumbnail} alt="" /></span>
     </span>;
   }
 
@@ -1800,6 +1821,8 @@ function StableAddBlockControls({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [packId, setPackId] = useState('');
+  const [kind, setKind] = useState<'all' | 'definition' | 'preset'>('all');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const firstItemRef = useRef<HTMLButtonElement>(null);
   const categories = useMemo(() => Array.from(new Set(items.map((item) => item.category))).sort((left, right) => {
@@ -1808,16 +1831,25 @@ function StableAddBlockControls({
     if (leftIndex === -1 || rightIndex === -1) return left.localeCompare(right, 'ko');
     return leftIndex - rightIndex;
   }), [items]);
+  const packs = useMemo(() => Array.from(new Map(items.map((item) => [item.packId, item.packLabel])).entries()), [items]);
   const quickItems = useMemo(() => QUICK_ADD_COMPONENTS.map((component) => items.find((item) => item.kind === 'definition' && item.type === component)).filter((item): item is BlockGalleryItem => Boolean(item)), [items]);
   const visibleItems = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('ko');
     return items.filter((item) => {
       if (favoritesOnly && !item.favorite) return false;
       if (category && item.category !== category) return false;
+      if (packId && item.packId !== packId) return false;
+      if (kind !== 'all' && item.kind !== kind) return false;
       if (!normalizedQuery) return true;
       return item.searchText.toLocaleLowerCase('ko').includes(normalizedQuery);
     });
-  }, [category, favoritesOnly, items, query]);
+  }, [category, favoritesOnly, items, kind, packId, query]);
+
+  useEffect(() => {
+    const openGallery = (): void => setOpen(true);
+    window.addEventListener(OPEN_BLOCK_GALLERY_EVENT, openGallery);
+    return () => window.removeEventListener(OPEN_BLOCK_GALLERY_EVENT, openGallery);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -1915,6 +1947,12 @@ function StableAddBlockControls({
               <button type="button" className="g7pb-block-gallery__close" aria-label="블록 갤러리 닫기"
                 onClick={() => setOpen(false)}>×</button>
             </header>
+            <div className="g7pb-block-gallery__tabs" role="tablist" aria-label="블록 라이브러리 형식">
+              {([['all', '전체'], ['definition', '블록 종류'], ['preset', '완성 섹션']] as const).map(([value, label]) => (
+                <button type="button" role="tab" key={value} aria-selected={kind === value}
+                  onClick={() => setKind(value)}>{label}<span>{value === 'all' ? items.length : items.filter((item) => item.kind === value).length}</span></button>
+              ))}
+            </div>
             <div className="g7pb-block-gallery__tools" aria-label="블록 찾기">
               <input
                 type="search"
@@ -1927,11 +1965,15 @@ function StableAddBlockControls({
                 <option value="">전체 분류</option>
                 {categories.map((itemCategory) => <option key={itemCategory} value={itemCategory}>{itemCategory}</option>)}
               </select>
+              <select value={packId} aria-label="블록 팩" onChange={(event) => setPackId(event.target.value)}>
+                <option value="">모든 출처</option>
+                {packs.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
               <button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}>
                 ★ 즐겨찾기
               </button>
             </div>
-            {!query.trim() && !category && !favoritesOnly ? <section className="g7pb-block-gallery__quick" aria-labelledby="g7pb-quick-add-title">
+            {!query.trim() && !category && !packId && kind === 'all' && !favoritesOnly ? <section className="g7pb-block-gallery__quick" aria-labelledby="g7pb-quick-add-title">
               <div><small>QUICK ADD</small><h3 id="g7pb-quick-add-title">자주 쓰는 기본 블록</h3></div>
               <div>{quickItems.map((item) => <button key={item.catalogId} type="button" data-testid={`page-builder-quick-add-${String(item.type).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`} onClick={() => insert(item)}><span aria-hidden="true">+</span>{item.title}</button>)}</div>
             </section> : null}
@@ -1943,7 +1985,7 @@ function StableAddBlockControls({
                     data-testid={item.testId} onClick={() => insert(item)}>
                     <BlockGalleryThumbnail item={item} />
                     <span className="g7pb-block-gallery__copy">
-                      <small>{item.kind === 'preset' ? `${item.category} · 프리셋` : item.category}</small>
+                      <small>{item.category} · {item.packLabel}{item.kind === 'preset' ? ' · 완성 섹션' : ''}</small>
                       <strong>{item.title}</strong>
                       <span>{item.description}</span>
                       <em>이 블록 추가 →</em>
@@ -2492,7 +2534,8 @@ function PuckDrawerLibrary({ children }: { children: React.ReactNode }): React.R
     <div className="g7pb-puck-drawer-library" data-testid="page-builder-block-library">
       <header className="g7pb-puck-drawer-library__header">
         <strong>블록 라이브러리</strong>
-        <p>미리보기를 끌어 캔버스의 원하는 위치에 놓으세요.</p>
+        <p>실제 화면을 확인하고 블록을 선택하세요.</p>
+        <button type="button" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_BLOCK_GALLERY_EVENT))}>완성 섹션과 모든 출처 보기</button>
       </header>
       {children}
     </div>
@@ -2519,7 +2562,6 @@ function PuckDrawerItem({ children, name }: { children: React.ReactNode; name: s
         <span>{item.description}</span>
         {item.favorite ? <em>★ 즐겨찾기</em> : null}
       </div>
-      <span className="g7pb-puck-drawer-card__handle" aria-hidden="true">⠿</span>
     </div>
   );
 }
@@ -2529,6 +2571,7 @@ export function PuckEditorAdapter({
   revisionKey,
   disabled = false,
   iframeEnabled = true,
+  onDirty,
   onChange,
   onPublish,
 }: PuckEditorAdapterProps): React.ReactElement {
@@ -2543,6 +2586,8 @@ export function PuckEditorAdapter({
   const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);
+  const latestDataRef = useRef(initialSession.data);
+  const canonicalFrameRef = useRef<number | null>(null);
   const [catalogItems, setCatalogItems] = useState<ReadonlyArray<BlockGalleryItem>>(BLOCK_GALLERY_ITEMS);
   const [siteParts, setSiteParts] = useState<{ header: SitePartResource | null; footer: SitePartResource | null }>({ header: null, footer: null });
   const [sitePartMode, setSitePartMode] = useState<'header' | 'footer' | null>(null);
@@ -2577,7 +2622,7 @@ export function PuckEditorAdapter({
       setCanvasElementSelection(selection);
       setCanvasMediaDialogOpen(false);
       setCanvasRouteDialogOpen(false);
-      if (selection.role === 'text' || selection.role === 'action') {
+      if ((selection.role === 'text' || selection.role === 'action') && !selection.rangeEditing) {
         window.requestAnimationFrame(() => setCanvasTextToolsOpen(true));
       } else {
         setCanvasTextToolsOpen(false);
@@ -2599,8 +2644,36 @@ export function PuckEditorAdapter({
   }, []);
 
   useEffect(() => {
+    const closeOnPointerDown = (event: PointerEvent): void => {
+      if (!(event.target instanceof Element) || event.target.closest('[data-testid="page-builder-context-panel"]')) return;
+      setCanvasTextToolsOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      setCanvasTextToolsOpen(false);
+      setCanvasMediaDialogOpen(false);
+      setCanvasRouteDialogOpen(false);
+    };
+    globalThis.document?.addEventListener('pointerdown', closeOnPointerDown, true);
+    globalThis.document?.addEventListener('keydown', closeOnEscape);
+    return () => {
+      globalThis.document?.removeEventListener('pointerdown', closeOnPointerDown, true);
+      globalThis.document?.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
+
+  useEffect(() => () => {
+    if (canonicalFrameRef.current !== null) window.cancelAnimationFrame(canonicalFrameRef.current);
+  }, []);
+
+  useEffect(() => {
     const session = canonicalToPuck(document);
     contextRef.current = session.context;
+    latestDataRef.current = session.data;
+    if (canonicalFrameRef.current !== null) {
+      window.cancelAnimationFrame(canonicalFrameRef.current);
+      canonicalFrameRef.current = null;
+    }
     setData(session.data);
   }, [document.document_id, revisionKey]);
 
@@ -2669,11 +2742,29 @@ export function PuckEditorAdapter({
     ),
   }), [disabled]);
 
-  const updateCanonical = (nextData: PuckEditorData): PageBuilderDocument => {
-    setData(nextData);
+  const emitCanonical = (nextData: PuckEditorData): PageBuilderDocument => {
+    latestDataRef.current = nextData;
     const nextDocument = puckToCanonical(nextData, contextRef.current);
     onChange(nextDocument);
     return nextDocument;
+  };
+  const flushCanonical = (nextData = latestDataRef.current): PageBuilderDocument => {
+    if (canonicalFrameRef.current !== null) {
+      window.cancelAnimationFrame(canonicalFrameRef.current);
+      canonicalFrameRef.current = null;
+    }
+    setData(nextData);
+    return emitCanonical(nextData);
+  };
+  const updateCanonical = (nextData: PuckEditorData): void => {
+    latestDataRef.current = nextData;
+    setData(nextData);
+    onDirty?.();
+    if (canonicalFrameRef.current !== null) return;
+    canonicalFrameRef.current = window.requestAnimationFrame(() => {
+      canonicalFrameRef.current = null;
+      emitCanonical(latestDataRef.current);
+    });
   };
 
   const fullSiteCanvas = useMemo(() => ({
@@ -2750,7 +2841,7 @@ export function PuckEditorAdapter({
           headerTitle="페이지 블록"
           headerPath={document.slug}
           onChange={updateCanonical}
-          onPublish={(nextData) => onPublish(updateCanonical(nextData))}
+          onPublish={(nextData) => onPublish(flushCanonical(nextData))}
         />
         </CanvasElementStylesContext.Provider>
         </CanvasEditingUiContext.Provider>

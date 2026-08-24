@@ -8,6 +8,7 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
+import { createRichTextField, RichTextCanvasField } from './richTextEditing';
 import { decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasElementStyles } from './canvasEditingContract';
 import {
   canonicalPhase2BlockToPuck,
@@ -556,11 +557,11 @@ function surfaceClass(surface: string, spacing: string, textScale = 'balanced', 
   return `g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`;
 }
 
-function HeroSplitPreview(props: HeroSplitEditorProps & { id: string }): React.ReactElement {
+function HeroSplitPreview(props: Omit<HeroSplitEditorProps, 'body'> & { id: string; body: React.ReactNode }): React.ReactElement {
   return (
     <BlockFrame id={props.id} type="hero-split" motion={props.motion} elementStyles={props.elementStyles}>
       <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${props.mediaPosition} ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
-        <div className="g7pb-preview-hero-split__copy"><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h1 data-g7pb-inline-field="title">{props.title}</h1><p data-g7pb-inline-field="body">{props.body}</p>{props.primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
+        <div className="g7pb-preview-hero-split__copy"><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h1 data-g7pb-inline-field="title">{props.title}</h1><RichTextCanvasField fieldPath="body">{props.body}</RichTextCanvasField>{props.primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
         <figure data-g7pb-media-field="imageSrc"><ImageOrPlaceholder src={props.imageSrc} alt={props.imageAlt} label="대표" /></figure>
       </div>
     </BlockFrame>
@@ -592,7 +593,7 @@ function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React
       <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
         <div className="g7pb-preview-hero-slider__viewport">
           <div className="g7pb-preview-hero-slider__track">
-            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}><div><small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small><h2 data-g7pb-inline-field={`slides.${index}.title`}>{slide.title}</h2><p data-g7pb-inline-field={`slides.${index}.body`}>{slide.body}</p>{inlineArrayText(props.slides, index, 'buttonLabel', slide.buttonLabel as string) && <span data-g7pb-inline-field={`slides.${index}.buttonLabel`}>{slide.buttonLabel} →</span>}</div><span data-g7pb-media-field={`slides.${index}.imageSrc`}><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></span></article>)}
+            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}><div><small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small><h2 data-g7pb-inline-field={`slides.${index}.title`}>{slide.title}</h2><RichTextCanvasField fieldPath={`slides.${index}.body`}>{slide.body}</RichTextCanvasField>{inlineArrayText(props.slides, index, 'buttonLabel', slide.buttonLabel as string) && <span data-g7pb-inline-field={`slides.${index}.buttonLabel`}>{slide.buttonLabel} →</span>}</div><span data-g7pb-media-field={`slides.${index}.imageSrc`}><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></span></article>)}
           </div>
         </div>
         <div
@@ -669,7 +670,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   HeroSplit: {
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
-      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true },
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: createRichTextField('본문', 160, true),
       primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결', 'page-builder-hero-split-primary-url'), imageSrc: createMediaField('대표 이미지', 'hero-split-image'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
       elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS },
@@ -679,7 +680,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   HeroSlider: {
     label: '슬라이더 히어로', defaultProps: DEFAULT_HERO_SLIDER,
     fields: {
-      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: { type: 'textarea', label: '본문', contentEditable: true }, buttonLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, buttonUrl: createRouteUrlField('버튼 연결'), imageSrc: createMediaField('슬라이드 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
+      slides: { type: 'array', label: '슬라이드', min: 2, max: 5, defaultItemProps: (index) => ({ eyebrow: `슬라이드 ${index + 1}`, title: '새로운 메시지', body: '슬라이드 설명을 입력하세요.', buttonLabel: '자세히 보기', buttonUrl: '/', imageSrc: '', imageAlt: '' }), getItemSummary: (item, index) => item.title || `슬라이드 ${(index ?? 0) + 1}`, arrayFields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: createRichTextField('본문', 150), buttonLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, buttonUrl: createRouteUrlField('버튼 연결'), imageSrc: createMediaField('슬라이드 이미지'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' } } },
       autoplay: { type: 'radio', label: '자동 재생', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },
       interval: { type: 'select', label: '자동 재생 간격', options: [{ label: '3초', value: '3000' }, { label: '5초', value: '5000' }, { label: '7초', value: '7000' }] },
       loop: { type: 'radio', label: '무한 반복', options: [{ label: '사용', value: 'yes' }, { label: '사용 안 함', value: 'no' }] },

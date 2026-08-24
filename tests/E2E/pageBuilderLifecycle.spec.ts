@@ -7,12 +7,16 @@ import {
   type Page,
   type TestInfo,
 } from '@playwright/test';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const MANAGER_PATH = '/modules/jiwonpapa-page_builder/admin';
 const NATIVE_MANAGER_PATH = '/admin/page-builder';
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const E2E_OWNERSHIP_DIRECTORY = join(process.cwd(), 'output', 'playwright', 'ownership');
+const E2E_DOCUMENT_SLUG_PATTERN = /^(?:managed-)?g7pb-e2e-[a-z0-9-]+-\d{13}-[a-z0-9]{6}(?:-copy)?$|^g7pb-template-e2e-\d{13}-[a-z0-9]{6}$/;
 
 type BlockType =
   | 'article-list'
@@ -142,6 +146,55 @@ interface CleanupDocumentListResponse {
     };
   };
   success?: unknown;
+}
+
+interface E2eOwnershipJournal {
+  version: 1;
+  slugs: string[];
+  uploadedMediaId: string | null;
+}
+
+function assertOwnedE2eJournal(value: unknown): asserts value is E2eOwnershipJournal {
+  if (!value || typeof value !== 'object') throw new Error('Page Builder E2E ownership journal is invalid.');
+  const journal = value as Partial<E2eOwnershipJournal>;
+  if (journal.version !== 1 || !Array.isArray(journal.slugs) || journal.slugs.length === 0
+    || journal.slugs.some((slug) => typeof slug !== 'string' || !E2E_DOCUMENT_SLUG_PATTERN.test(slug))
+    || (journal.uploadedMediaId !== null
+      && (typeof journal.uploadedMediaId !== 'string' || !DOCUMENT_ID_PATTERN.test(journal.uploadedMediaId)))) {
+    throw new Error('Page Builder E2E ownership journal contains an unowned artifact.');
+  }
+}
+
+async function writeE2eOwnershipJournal(
+  fileName: string,
+  slugs: string[],
+  uploadedMediaId: string | null = null,
+): Promise<string> {
+  const journal: E2eOwnershipJournal = { version: 1, slugs, uploadedMediaId };
+  assertOwnedE2eJournal(journal);
+  await mkdir(E2E_OWNERSHIP_DIRECTORY, { recursive: true });
+  const path = join(E2E_OWNERSHIP_DIRECTORY, fileName.replace(/[^a-z0-9.-]+/gi, '-') + '.json');
+  await writeFile(path, JSON.stringify(journal, null, 2), 'utf8');
+  return path;
+}
+
+async function updateE2eOwnershipJournal(path: string, uploadedMediaId: string | null): Promise<void> {
+  const journal = JSON.parse(await readFile(path, 'utf8')) as unknown;
+  assertOwnedE2eJournal(journal);
+  await writeFile(path, JSON.stringify({ ...journal, uploadedMediaId }, null, 2), 'utf8');
+}
+
+async function recoverOwnedE2eArtifacts(authToken: string): Promise<void> {
+  await mkdir(E2E_OWNERSHIP_DIRECTORY, { recursive: true });
+  const entries = await readdir(E2E_OWNERSHIP_DIRECTORY, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+    const path = join(E2E_OWNERSHIP_DIRECTORY, entry.name);
+    const journal = JSON.parse(await readFile(path, 'utf8')) as unknown;
+    assertOwnedE2eJournal(journal);
+    await cleanupE2eArtifacts(authToken, journal.slugs, journal.uploadedMediaId);
+    await unlink(path);
+  }
 }
 
 /*
@@ -702,6 +755,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
   test.setTimeout(300_000);
 
   const authToken = await authenticateAdmin(context);
+  await recoverOwnedE2eArtifacts(authToken);
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const projectSlug = testInfo.project.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
@@ -725,6 +779,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
   const contactHeading = `Contact our team ${runId}`;
   const contactAddress = `Seoul office ${runId}`;
   const contactEmail = `e2e-${runId}@example.com`;
+  const ownershipJournalPath = await writeE2eOwnershipJournal(
+    `${projectSlug}-${runId}`,
+    [slug, managedSlug, duplicateSlug],
+  );
 
   let previewPage: Page | undefined;
   let publicContext: BrowserContext | undefined;
@@ -743,7 +801,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
     await expect(blockPackDialog).toBeVisible();
     await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
-    await expect(blockPackDialog).toContainText('블록 45 / 프리셋 55');
+    await expect(blockPackDialog).toContainText('블록 45 / 완성 섹션 55');
+    await expect(blockPackDialog).toContainText('편집기 상단 블록 추가');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
     await expect(blockPackDialog.getByRole('button', { name: '최신 버전 확인' })).toBeVisible();
     await blockPackDialog.getByRole('button', { name: '닫기' }).click();
@@ -839,7 +898,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       message: 'a visible thumbnail is decoded at its source dimensions',
     }).toBe(true);
     const drawerText = await drawerLibrary.textContent();
-    expect(drawerText?.match(/끌어/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    expect(drawerText?.match(/끌어/g)?.length ?? 0).toBe(0);
+    await expect(drawerLibrary.locator('.g7pb-block-thumb__zoom')).toHaveCount(0);
     await hideMobileBlockLibrary(page);
 
     await revealEditorHeaderActions(page);
@@ -865,6 +925,18 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
+    const blockGallery = page.getByTestId('page-builder-block-gallery');
+    await expect(blockGallery.getByRole('tab', { name: /블록 종류/ })).toBeVisible();
+    await expect(blockGallery.getByRole('tab', { name: /완성 섹션/ })).toBeVisible();
+    await expect(blockGallery.getByLabel('블록 팩')).toContainText('기본 제공');
+    await expect(blockGallery.locator('.g7pb-block-thumb__zoom')).toHaveCount(0);
+    const firstGalleryPreview = blockGallery.locator('[data-block-preview]').first();
+    await expect(firstGalleryPreview).toBeVisible();
+    const firstGalleryPreviewBox = await firstGalleryPreview.boundingBox();
+    expect(firstGalleryPreviewBox).not.toBeNull();
+    if (firstGalleryPreviewBox) {
+      expect(firstGalleryPreviewBox.width / firstGalleryPreviewBox.height).toBeCloseTo(1.6, 1);
+    }
     const blockSearch = page.getByLabel('블록 검색');
     await blockSearch.fill('막대그래프');
     await expect(page.getByTestId('page-builder-block-option-bar-chart')).toBeVisible();
@@ -1010,11 +1082,19 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         expect(elementPanelBox.y).toBeGreaterThanOrEqual(0);
         expect(elementPanelBox.y + elementPanelBox.height).toBeLessThanOrEqual(editorViewport.height);
       }
-      await elementPanel.getByTestId('page-builder-text-scale').selectOption('large');
+      await elementPanel.getByTestId('page-builder-text-scale').selectOption('xlarge');
       await elementPanel.getByTestId('page-builder-text-align-right').click();
-      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--xlarge/);
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-align--right/);
-      await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--large/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
+      await page.getByTestId('page-builder-app').dispatchEvent('pointerdown');
+      await expect(elementPanel).toBeHidden();
+
+      await page.getByTestId('page-builder-manager-link').click();
+      const unsavedDialog = page.getByTestId('page-builder-unsaved-dialog');
+      await expect(unsavedDialog).toContainText('저장하지 않고 나가면');
+      await unsavedDialog.getByTestId('page-builder-unsaved-cancel').click();
+      await expect(unsavedDialog).toHaveCount(0);
 
       const heroUrl = await revealInspectorField(page, 'page-builder-hero-primary-url');
       await visibleTestId(page, 'page-builder-route-picker-open').click();
@@ -1049,6 +1129,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const mediaPayload = await mediaResponse.json() as { data?: { id?: unknown } };
     uploadedMediaId = typeof mediaPayload.data?.id === 'string' ? mediaPayload.data.id : null;
     expect(uploadedMediaId).toMatch(DOCUMENT_ID_PATTERN);
+    await updateE2eOwnershipJournal(ownershipJournalPath, uploadedMediaId);
     await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel, testInfo.project.name === 'desktop');
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
@@ -1093,8 +1174,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(heroSubtitle);
     if (testInfo.project.name === 'desktop') {
       await expect(await revealInspectorField(page, 'page-builder-hero-primary-url')).toHaveValue('/register');
-      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);
-      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--large/);
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--xlarge/);
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
     }
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
@@ -1126,9 +1207,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectBlockOrder(renderedBlocks(previewPage), PUBLISHED_BLOCK_ORDER);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
     if (testInfo.project.name === 'desktop') {
-      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-size--large/);
+      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-size--xlarge/);
       await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-align--right/);
-      await expect(previewPage.locator('[data-block-type="hero"] .g7pb-hero__body')).not.toHaveClass(/g7pb-element-size--large/);
+      await expect(previewPage.locator('[data-block-type="hero"] .g7pb-hero__body')).not.toHaveClass(/g7pb-element-size--xlarge/);
     }
     await expect(previewPage.getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
@@ -1437,6 +1518,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       }, uploadedMediaId);
       expect(deleted).toBe(true);
       uploadedMediaId = null;
+      await updateE2eOwnershipJournal(ownershipJournalPath, null);
     }
   } catch (error) {
     lifecycleError = error;
@@ -1452,6 +1534,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         await page.close();
       }
       await cleanupE2eArtifacts(authToken, [slug, managedSlug, duplicateSlug], uploadedMediaId);
+      await unlink(ownershipJournalPath);
     }
     if (lifecycleError) throw lifecycleError;
     if (siteShellRestoreError) throw siteShellRestoreError;
@@ -1466,6 +1549,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
   test.setTimeout(120_000);
 
   const authToken = await authenticateAdmin(context);
+  await recoverOwnedE2eArtifacts(authToken);
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const slug = `g7pb-template-e2e-${runId}`;
   const title = `Template Integration ${runId}`;
@@ -1480,6 +1564,10 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     },
   });
   let previousHomeId: string | null = null;
+  const ownershipJournalPath = await writeE2eOwnershipJournal(
+    `template-${testInfo.project.name}-${runId}`,
+    [slug],
+  );
 
   try {
     const listResponse = await api.get('/api/modules/jiwonpapa-page_builder/admin/documents?status=active&per_page=100');
@@ -1578,6 +1666,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     await expect(page.locator('.g7pb-template-page')).toBeVisible();
   } finally {
     await cleanupE2eArtifacts(authToken, [slug], null);
+    await unlink(ownershipJournalPath);
     if (previousHomeId) {
       const previousResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${previousHomeId}`);
       if (previousResponse.ok()) {

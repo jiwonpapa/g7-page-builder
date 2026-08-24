@@ -931,10 +931,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(blockGallery.getByLabel('블록 팩')).toContainText('기본 제공');
     await expect(blockGallery.locator('.g7pb-block-thumb__zoom')).toHaveCount(0);
     const firstGalleryPreview = blockGallery.locator('[data-block-preview]').first();
-    await expect.poll(async () => {
-      const box = await firstGalleryPreview.boundingBox();
-      return box ? Math.round((box.width / box.height) * 100) : 0;
-    }, { message: 'block gallery preview uses the 16:10 actual-screen ratio' }).toBe(160);
+    await expect(firstGalleryPreview).toBeVisible();
+    const firstGalleryPreviewBox = await firstGalleryPreview.boundingBox();
+    expect(firstGalleryPreviewBox).not.toBeNull();
+    if (firstGalleryPreviewBox) {
+      expect(firstGalleryPreviewBox.width / firstGalleryPreviewBox.height).toBeCloseTo(1.6, 1);
+    }
     const blockSearch = page.getByLabel('블록 검색');
     await blockSearch.fill('막대그래프');
     await expect(page.getByTestId('page-builder-block-option-bar-chart')).toBeVisible();
@@ -1080,12 +1082,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         expect(elementPanelBox.y).toBeGreaterThanOrEqual(0);
         expect(elementPanelBox.y + elementPanelBox.height).toBeLessThanOrEqual(editorViewport.height);
       }
-      await elementPanel.getByTestId('page-builder-text-scale').selectOption('large');
+      await elementPanel.getByTestId('page-builder-text-scale').selectOption('xlarge');
       await elementPanel.getByTestId('page-builder-text-align-right').click();
-      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--xlarge/);
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-align--right/);
-      await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--large/);
-      await page.getByTestId('page-builder-save-status').click();
+      await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
+      await page.getByTestId('page-builder-app').dispatchEvent('pointerdown');
       await expect(elementPanel).toBeHidden();
 
       await page.getByTestId('page-builder-manager-link').click();

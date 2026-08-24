@@ -30,6 +30,8 @@ jobs:
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: npm ci
       - run: npm run check
+        env:
+          TZ: Asia/Seoul
       - uses: actions/upload-artifact@v4
         with:
           name: module-dist

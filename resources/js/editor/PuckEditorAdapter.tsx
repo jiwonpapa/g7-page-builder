@@ -53,6 +53,7 @@ import {
 } from './blockMotion';
 import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
 import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
+import { createRichTextField } from './richTextEditing';
 import {
   CANVAS_ELEMENT_MESSAGE,
   collectionLimit,
@@ -862,7 +863,7 @@ export function sanitizeRichTextForPreview(value: string): string {
   }
 
   const allowedTags = new Set([
-    'P', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'A', 'OL', 'UL', 'LI', 'BLOCKQUOTE', 'BR',
+    'P', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'U', 'SPAN', 'A', 'OL', 'UL', 'LI', 'BLOCKQUOTE', 'BR',
   ]);
   const parser = new DOMParser();
   const parsed = parser.parseFromString(`<div>${value}</div>`, 'text/html');
@@ -880,12 +881,22 @@ export function sanitizeRichTextForPreview(value: string): string {
       }
 
       const href = child.tagName === 'A' ? child.getAttribute('href') ?? '' : '';
+      const typedMarks = child.tagName === 'SPAN' ? {
+        font: child.getAttribute('data-g7pb-font') ?? '',
+        size: child.getAttribute('data-g7pb-size') ?? '',
+        tone: child.getAttribute('data-g7pb-tone') ?? '',
+      } : null;
       for (const attribute of Array.from(child.attributes)) {
         child.removeAttribute(attribute.name);
       }
       if (child.tagName === 'A' && safeLink(href) !== '#') {
         child.setAttribute('href', safeLink(href));
         child.setAttribute('rel', 'noopener noreferrer');
+      }
+      if (typedMarks) {
+        if (['modern', 'serif', 'mono'].includes(typedMarks.font)) child.setAttribute('data-g7pb-font', typedMarks.font);
+        if (['small', 'large', 'xlarge'].includes(typedMarks.size)) child.setAttribute('data-g7pb-size', typedMarks.size);
+        if (['muted', 'accent', 'contrast'].includes(typedMarks.tone)) child.setAttribute('data-g7pb-tone', typedMarks.tone);
       }
     }
   };
@@ -1289,21 +1300,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             />
           ),
         },
-        body: {
-          type: 'richtext',
-          label: '본문',
-          contentEditable: true,
-          initialHeight: 150,
-          options: {
-            code: false,
-            codeBlock: false,
-            horizontalRule: false,
-            strike: false,
-            textAlign: {},
-            underline: {},
-            heading: { levels: [2, 3, 4] },
-          },
-        },
+        body: createRichTextField('본문', 150, true),
         primaryLabel: {
           type: 'custom', label: '버튼 문구', contentEditable: true,
           render: ({ value, onChange, readOnly }) => (
@@ -1655,6 +1652,16 @@ interface BlockGalleryItem {
   blockVersion: number;
   favorite: boolean;
   presetProps: Record<string, unknown> | null;
+  thumbnail: string;
+}
+
+function blockPackAssetUrl(packId: string, packVersion: string, path: string): string {
+  const [publisher, pack] = packId.split('/', 2);
+  if (!publisher || !pack || !path || path.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')) {
+    return '';
+  }
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  return `/modules/jiwonpapa-page_builder/block-packs/${encodeURIComponent(publisher)}/${encodeURIComponent(pack)}/${encodeURIComponent(packVersion)}/${encodedPath}`;
 }
 
 const BLOCK_SEARCH_ALIASES: Readonly<Record<string, string>> = Object.freeze({
@@ -1692,6 +1699,7 @@ const BUILTIN_DEFINITION_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTI
     blockVersion: definition.block_version,
     favorite: false,
     presetProps: null,
+    thumbnail: blockPackAssetUrl(BUILTIN_CORE_MANIFEST.pack_id, BUILTIN_CORE_MANIFEST.pack_version, definition.thumbnail),
   };
 });
 
@@ -1719,6 +1727,7 @@ const BUILTIN_PRESET_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BL
     blockVersion: preset.block_version,
     favorite: false,
     presetProps: preset.props,
+    thumbnail: blockPackAssetUrl(BUILTIN_CORE_MANIFEST.pack_id, BUILTIN_CORE_MANIFEST.pack_version, preset.thumbnail),
   };
 });
 
@@ -1758,24 +1767,20 @@ function apiCatalogItemToGalleryItem(item: BlockCatalogItem, locale: string): Bl
     blockVersion: item.block_version,
     favorite: item.favorite,
     presetProps: item.preset_props,
+    thumbnail: blockPackAssetUrl(item.pack_id, item.pack_version, item.thumbnail),
   };
 }
 
-function BlockGalleryThumbnail({ type }: { type: keyof EditorComponents }): React.ReactElement {
-  if (type === 'Hero') {
-    return <div className="g7pb-block-thumb g7pb-block-thumb--hero" data-block-preview="hero" aria-hidden="true"><i /><b /><span /><em /></div>;
-  }
-  if (type === 'Features') {
-    return <div className="g7pb-block-thumb g7pb-block-thumb--features" data-block-preview="features" aria-hidden="true"><b /><span><i /><i /><i /></span></div>;
-  }
-  if (type === 'Cta') {
-    return <div className="g7pb-block-thumb g7pb-block-thumb--cta" data-block-preview="cta" aria-hidden="true"><span><i /><b /></span><em /></div>;
-  }
-  if (type === 'Contact') {
-    return <div className="g7pb-block-thumb g7pb-block-thumb--contact" data-block-preview="contact" aria-hidden="true"><span><i /><b /></span><em><i /><i /><i /></em></div>;
+function BlockGalleryThumbnail({ item }: { item: BlockGalleryItem }): React.ReactElement {
+  const [failed, setFailed] = useState(false);
+  if (item.thumbnail && !failed) {
+    return <span className="g7pb-block-thumb g7pb-block-thumb--image" data-block-preview={item.type} aria-hidden="true">
+      <img src={item.thumbnail} alt="" loading="lazy" onError={() => setFailed(true)} />
+      <span className="g7pb-block-thumb__zoom"><img src={item.thumbnail} alt="" /></span>
+    </span>;
   }
 
-  return <CatalogGalleryThumbnail type={type as keyof CatalogEditorComponents} />;
+  return <CatalogGalleryThumbnail type={item.type as keyof CatalogEditorComponents} />;
 }
 
 function StableAddBlockControls({
@@ -1905,7 +1910,7 @@ function StableAddBlockControls({
               <div>
                 <p>블록 라이브러리</p>
                 <h2 id="g7pb-block-gallery-title">화면을 보고 블록을 선택하세요</h2>
-                <span>선택하면 현재 블록 바로 뒤에 추가됩니다. 정확한 위치는 좌측 라이브러리에서 끌어 놓으세요.</span>
+                <span>선택하면 현재 블록 바로 뒤에 추가됩니다.</span>
               </div>
               <button type="button" className="g7pb-block-gallery__close" aria-label="블록 갤러리 닫기"
                 onClick={() => setOpen(false)}>×</button>
@@ -1936,7 +1941,7 @@ function StableAddBlockControls({
                   <button type="button" className="g7pb-block-gallery__add"
                     ref={index === 0 ? firstItemRef : undefined}
                     data-testid={item.testId} onClick={() => insert(item)}>
-                    <BlockGalleryThumbnail type={item.type} />
+                    <BlockGalleryThumbnail item={item} />
                     <span className="g7pb-block-gallery__copy">
                       <small>{item.kind === 'preset' ? `${item.category} · 프리셋` : item.category}</small>
                       <strong>{item.title}</strong>
@@ -2194,38 +2199,41 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
     )}px`,
     '--g7pb-balloon-top': `${balloonPlacement === 'above'
       ? anchor.top - 12
-      : Math.max(12, Math.min(anchor.bottom + 12, globalThis.innerHeight - 340))}px`,
+      : Math.max(12, Math.min(anchor.bottom + 12, globalThis.innerHeight - 156))}px`,
   } as React.CSSProperties : undefined;
 
   return createPortal(
     <section className={`g7pb-context-panel${isTextElement ? ` g7pb-element-balloon g7pb-element-balloon--${balloonPlacement}` : ''}`} style={balloonStyle}
       role="dialog" aria-label={isTextElement ? '선택 요소 스타일' : '선택 블록 스타일'} data-testid="page-builder-context-panel">
-      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '선택한 요소에만 적용됩니다.' : '블록 배경·여백·표시 대상을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
+      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '요소 전체 · 부분 선택은 글자 위 툴바' : '블록 배경·여백·표시 대상을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
       {isTextElement ? <>
-        <div className="g7pb-context-panel__row"><span>글꼴</span><div role="group" aria-label="선택 요소 글꼴">
-          {([['inherit', '기본'], ['modern', '모던'], ['serif', '명조'], ['mono', '고정폭']] as const).map(([font, text]) => <button type="button" key={font} disabled={disabled}
-            aria-pressed={(currentElement.font ?? 'inherit') === font} onClick={() => updateElement({ font })}
-            data-testid={`page-builder-element-font-${font}`}>{text}</button>)}
-        </div></div>
-        <div className="g7pb-context-panel__row"><span>크기</span><div role="group" aria-label="선택 요소 글자 크기">
-          {([['small', 'S'], ['base', 'M'], ['large', 'L'], ['xlarge', 'XL']] as const).map(([size, text]) => <button type="button" key={size} disabled={disabled}
-            aria-pressed={(currentElement.size ?? 'base') === size} onClick={() => updateElement({ size })}
-            data-testid={size === 'large' ? 'page-builder-text-scale' : `page-builder-element-size-${size}`}>{text}</button>)}
-        </div></div>
-        <div className="g7pb-context-panel__row"><span>굵기</span><div role="group" aria-label="선택 요소 글자 굵기">
-          {([['regular', '보통'], ['semibold', '굵게'], ['bold', '매우 굵게']] as const).map(([weight, text]) => <button type="button" key={weight} disabled={disabled}
-            aria-pressed={(currentElement.weight ?? 'regular') === weight} onClick={() => updateElement({ weight })}>{text}</button>)}
-        </div></div>
-        <div className="g7pb-context-panel__row"><span>정렬</span><div role="group" aria-label="선택 요소 글자 정렬">
+        <div className="g7pb-element-balloon__controls">
+          <label><span>글꼴</span><select disabled={disabled} value={currentElement.font ?? 'inherit'}
+            data-testid="page-builder-element-font"
+            onChange={(event) => updateElement({ font: event.currentTarget.value as ElementAppearance['font'] })}>
+            <option value="inherit">기본</option><option value="modern">모던</option><option value="serif">명조</option><option value="mono">고정폭</option>
+          </select></label>
+          <label><span>크기</span><select disabled={disabled} value={currentElement.size ?? 'base'}
+            data-testid="page-builder-text-scale"
+            onChange={(event) => updateElement({ size: event.currentTarget.value as ElementAppearance['size'] })}>
+            <option value="small">S</option><option value="base">M</option><option value="large">L</option><option value="xlarge">XL</option>
+          </select></label>
+          <label><span>굵기</span><select disabled={disabled} value={currentElement.weight ?? 'regular'}
+            data-testid="page-builder-element-weight"
+            onChange={(event) => updateElement({ weight: event.currentTarget.value as ElementAppearance['weight'] })}>
+            <option value="regular">보통</option><option value="semibold">굵게</option><option value="bold">매우 굵게</option>
+          </select></label>
+          <div className="g7pb-element-balloon__align" role="group" aria-label="요소 전체 글자 정렬">
           <button type="button" disabled={disabled} aria-label="왼쪽 정렬" aria-pressed={(currentElement.align ?? 'left') === 'left'} onClick={() => updateElement({ align: 'left' })}><AlignLeft size={16} data-testid="page-builder-text-align-left" /></button>
           <button type="button" disabled={disabled} aria-label="가운데 정렬" aria-pressed={currentElement.align === 'center'} onClick={() => updateElement({ align: 'center' })}><AlignCenter size={16} data-testid="page-builder-text-align-center" /></button>
           <button type="button" disabled={disabled} aria-label="오른쪽 정렬" aria-pressed={currentElement.align === 'right'} onClick={() => updateElement({ align: 'right' })}><AlignRight size={16} data-testid="page-builder-text-align-right" /></button>
-        </div></div>
-        <div className="g7pb-context-panel__row"><span>색상</span><div role="group" aria-label="선택 요소 글자 색상">
-          {([['default', '기본'], ['muted', '보조'], ['accent', '강조'], ['contrast', '반전']] as const).map(([tone, text]) => <button type="button" key={tone} disabled={disabled}
-            aria-pressed={(currentElement.tone ?? 'default') === tone} onClick={() => updateElement({ tone })}
-            data-testid={`page-builder-element-tone-${tone}`}>{text}</button>)}
-        </div></div>
+          </div>
+          <label><span>색상</span><select disabled={disabled} value={currentElement.tone ?? 'default'}
+            data-testid="page-builder-element-tone"
+            onChange={(event) => updateElement({ tone: event.currentTarget.value as ElementAppearance['tone'] })}>
+            <option value="default">기본</option><option value="muted">보조</option><option value="accent">강조</option><option value="contrast">반전</option>
+          </select></label>
+        </div>
         <div className="g7pb-element-balloon__footer">
           {routeFieldPath ? <button type="button" disabled={disabled} data-testid="page-builder-element-route-open"
             onClick={() => canvasUi.setRouteDialogOpen(true)}><Link2 size={15} /> 연결 설정</button> : null}
@@ -2503,13 +2511,13 @@ function PuckDrawerItem({ children, name }: { children: React.ReactNode; name: s
   return (
     <div className="g7pb-puck-drawer-card" data-library-block={item.type}>
       <div className="g7pb-puck-drawer-card__preview">
-        <BlockGalleryThumbnail type={item.type} />
+        <BlockGalleryThumbnail item={item} />
       </div>
       <div className="g7pb-puck-drawer-card__copy">
         <small>{item.category}</small>
         <strong>{item.title}</strong>
         <span>{item.description}</span>
-        <em>{item.favorite ? '★ 즐겨찾기 · 끌어서 배치' : '끌어서 배치'}</em>
+        {item.favorite ? <em>★ 즐겨찾기</em> : null}
       </div>
       <span className="g7pb-puck-drawer-card__handle" aria-hidden="true">⠿</span>
     </div>

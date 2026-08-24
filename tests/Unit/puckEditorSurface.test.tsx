@@ -385,18 +385,20 @@ describe('Puck editor surface contract', () => {
       heroTitle?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    const textScaleMarker = await eventually<HTMLElement>('[data-testid="page-builder-text-scale"]');
+    const textScaleMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-text-scale"]');
     await act(async () => {
-      textScaleMarker.closest('button')?.click();
+      textScaleMarker.value = 'large';
+      textScaleMarker.dispatchEvent(new Event('change', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.size === 'large'
       && changed.blocks[0].props.appearance?.textScale === undefined)).toBe(true);
     expect(await eventually('[data-block-type="hero"] [data-g7pb-inline-field="title"].g7pb-element-size--large')).not.toBeNull();
     expect(editorElements('[data-block-type="hero"] [data-g7pb-inline-field="body"]')[0]?.classList.contains('g7pb-element-size--large')).toBe(false);
-    const serifMarker = await eventually<HTMLButtonElement>('[data-testid="page-builder-element-font-serif"]');
+    const serifMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-element-font"]');
     await act(async () => {
-      serifMarker.click();
+      serifMarker.value = 'serif';
+      serifMarker.dispatchEvent(new Event('change', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.font === 'serif')).toBe(true);

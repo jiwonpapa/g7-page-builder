@@ -101,10 +101,17 @@ final class OfficialStoreContractTest extends TestCase
             'jiwonpapa/event-launch' => 7,
             'jiwonpapa/editorial-community' => 5,
         ];
+        $expectedMedia = [
+            'jiwonpapa/company-launch' => 6,
+            'jiwonpapa/service-conversion' => 4,
+            'jiwonpapa/local-business' => 4,
+            'jiwonpapa/event-launch' => 9,
+            'jiwonpapa/editorial-community' => 4,
+        ];
         $adapter = new ZipPageKitArchiveAdapter;
 
         foreach ($expectedBlocks as $productId => $blockCount) {
-            $product = $catalog->find($productId, '1.0.0');
+            $product = $catalog->find($productId, '1.1.0');
             self::assertCount(3, $product->preview['screenshots']);
             self::assertSame($product->preview['screenshots'][0], $product->preview['thumbnail_url']);
             self::assertIsString($product->preview['demo_url']);
@@ -125,10 +132,7 @@ final class OfficialStoreContractTest extends TestCase
             self::assertStringNotContainsString('g7pb-media://', $demo);
             self::assertStringNotContainsString('g7pb-route://', $demo);
             self::assertStringNotContainsString('data-g7pb-inquiry-form', $demo);
-            self::assertStringContainsString(
-                'src="/modules/jiwonpapa-page_builder/store/previews/'.basename($product->preview['demo_url']).'-hero.webp"',
-                $demo,
-            );
+            self::assertSame($expectedMedia[$productId], substr_count($demo, '/store/previews/'.basename($product->preview['demo_url']).'-'));
 
             $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
             $bundle = $adapter->read(new StoreArtifact(
@@ -140,18 +144,24 @@ final class OfficialStoreContractTest extends TestCase
             ));
 
             self::assertSame($productId, $bundle->kitId);
-            self::assertSame('1.0.0', $bundle->kitVersion);
+            self::assertSame('1.1.0', $bundle->kitVersion);
             self::assertCount($blockCount, $bundle->document->blocks);
-            self::assertCount(1, $bundle->media);
+            self::assertCount($expectedMedia[$productId], $bundle->media);
             self::assertSame('image-1', $bundle->media[0]->id);
             self::assertSame('image/webp', $bundle->media[0]->mimeType);
             self::assertSame(1600, $bundle->media[0]->width);
             self::assertSame(900, $bundle->media[0]->height);
+            foreach ($bundle->media as $index => $media) {
+                self::assertSame('image-'.($index + 1), $media->id);
+                self::assertGreaterThan(0, $media->width);
+                self::assertGreaterThan(0, $media->height);
+                self::assertStringStartsWith('image/', $media->mimeType);
+            }
 
             $resolved = $bundle->document->toArray();
             array_walk_recursive($resolved, static function (mixed &$value): void {
-                if ($value === 'g7pb-media://image-1') {
-                    $value = 'https://g7pb.test/storage/g7-page-builder/page-kit.webp';
+                if (is_string($value) && preg_match('#^g7pb-media://image-(\d+)$#', $value, $matches) === 1) {
+                    $value = 'https://g7pb.test/storage/g7-page-builder/page-kit-'.$matches[1].'.webp';
                 } elseif ($value === 'g7pb-route://auth.login') {
                     $value = '/login';
                 }
@@ -169,7 +179,7 @@ final class OfficialStoreContractTest extends TestCase
             );
         }
 
-        $company = $catalog->find('jiwonpapa/company-launch', '1.0.0');
+        $company = $catalog->find('jiwonpapa/company-launch', '1.1.0');
         $companyBundle = $adapter->read(new StoreArtifact(
             dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($company->artifact['url']),
             $company->artifact['url'],
@@ -205,7 +215,7 @@ final class OfficialStoreContractTest extends TestCase
         );
         self::assertIsString($png);
         $catalog = OfficialStoreCatalog::fromArray($this->catalogValue());
-        $product = $catalog->find('jiwonpapa/company-launch', '1.0.0');
+        $product = $catalog->find('jiwonpapa/company-launch', '1.1.0');
         $source = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
         $sourceArtifact = new StoreArtifact(
             $source,

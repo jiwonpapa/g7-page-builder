@@ -99,7 +99,14 @@ $pageKitDefinitions = [
         ],
         'category' => 'company',
         'tags' => ['회사소개', '랜딩', '팀', '고객후기'],
-        'media' => 'media/hero-team.webp',
+        'media' => [
+            'media/hero-team.webp',
+            'media/team-product.webp',
+            'media/team-design.webp',
+            'media/team-engineering.webp',
+            'media/customer-operations.webp',
+            'media/customer-founder.webp',
+        ],
     ],
     [
         'slug' => 'service-conversion',
@@ -110,7 +117,12 @@ $pageKitDefinitions = [
         ],
         'category' => 'services',
         'tags' => ['전문서비스', '상담', '고객후기', 'FAQ'],
-        'media' => 'media/hero-consultation.webp',
+        'media' => [
+            'media/hero-consultation.webp',
+            'media/customer-operations.webp',
+            'media/customer-founder.webp',
+            'media/customer-brand.webp',
+        ],
     ],
     [
         'slug' => 'local-business',
@@ -121,7 +133,12 @@ $pageKitDefinitions = [
         ],
         'category' => 'local-business',
         'tags' => ['매장', '예약', '오시는길', '지역서비스'],
-        'media' => 'media/hero-space.webp',
+        'media' => [
+            'media/hero-space.webp',
+            'media/customer-neighbor.webp',
+            'media/customer-parent.webp',
+            'media/customer-longtime.webp',
+        ],
     ],
     [
         'slug' => 'event-launch',
@@ -132,7 +149,17 @@ $pageKitDefinitions = [
         ],
         'category' => 'events',
         'tags' => ['행사', '컨퍼런스', '일정', '참가신청'],
-        'media' => 'media/hero-event.webp',
+        'media' => [
+            'media/hero-event.webp',
+            'media/speaker-founder.webp',
+            'media/speaker-design.webp',
+            'media/speaker-platform.webp',
+            'media/speaker-creative.webp',
+            'media/partner-northstar.png',
+            'media/partner-orbit.png',
+            'media/partner-morrow.png',
+            'media/partner-vertex.png',
+        ],
     ],
     [
         'slug' => 'editorial-community',
@@ -143,11 +170,17 @@ $pageKitDefinitions = [
         ],
         'category' => 'editorial',
         'tags' => ['에디토리얼', '커뮤니티', '기사', '뉴스레터'],
-        'media' => 'media/hero-editorial.webp',
+        'media' => [
+            'media/hero-editorial.webp',
+            'media/story-shop.webp',
+            'media/story-park.webp',
+            'media/story-gathering.webp',
+        ],
     ],
 ];
 
 $pageKits = new ZipPageKitArchiveAdapter;
+$pageKitVersion = '1.1.0';
 $blockRegistry = new BlockRegistry;
 $blockRegistry->register((new BuiltInBlockPackLoader)->load($root), enabled: true);
 $compiler = new HtmlDocumentCompiler($blockRegistry);
@@ -162,43 +195,51 @@ foreach ($pageKitDefinitions as $definition) {
         JSON_THROW_ON_ERROR,
     );
     $document = PageBuilderDocument::fromArray($documentValue);
-    $mediaPath = "{$kitSource}/{$definition['media']}";
-    $contents = (string) file_get_contents($mediaPath);
-    /** @var array<int|string, mixed>|false $image */
-    $image = @getimagesizefromstring($contents);
-    if ($image === false
-        || ! is_int($image[0] ?? null)
-        || ! is_int($image[1] ?? null)
-        || ! is_string($image['mime'] ?? null)) {
-        throw new RuntimeException("Page Kit image is invalid: {$mediaPath}");
+    $portableMedia = [];
+    $demoMediaUrls = [];
+    foreach ($definition['media'] as $index => $relativeMediaPath) {
+        $mediaPath = "{$kitSource}/{$relativeMediaPath}";
+        $contents = (string) file_get_contents($mediaPath);
+        /** @var array<int|string, mixed>|false $image */
+        $image = @getimagesizefromstring($contents);
+        if ($image === false
+            || ! is_int($image[0] ?? null)
+            || ! is_int($image[1] ?? null)
+            || ! is_string($image['mime'] ?? null)) {
+            throw new RuntimeException("Page Kit image is invalid: {$mediaPath}");
+        }
+        $mediaId = 'image-'.($index + 1);
+        $portableMedia[] = new PortableMedia(
+            new MediaAsset(
+                id: "official-{$slug}-{$mediaId}",
+                url: "official-store://{$slug}/{$relativeMediaPath}",
+                originalName: basename($mediaPath),
+                mimeType: $image['mime'],
+                bytes: strlen($contents),
+                width: $image[0],
+                height: $image[1],
+                createdAt: $generatedAt,
+            ),
+            $contents,
+        );
+        $previewName = "{$slug}-".basename($mediaPath);
+        $copy($mediaPath, "{$dist}/previews/{$previewName}");
+        $demoMediaUrls["g7pb-media://{$mediaId}"] = "{$storeBasePath}/previews/{$previewName}";
     }
-    $portableMedia = new PortableMedia(
-        new MediaAsset(
-            id: "official-{$slug}-hero",
-            url: "official-store://{$slug}/{$definition['media']}",
-            originalName: basename($mediaPath),
-            mimeType: $image['mime'],
-            bytes: strlen($contents),
-            width: $image[0],
-            height: $image[1],
-            createdAt: $generatedAt,
-        ),
-        $contents,
-    );
     $pageArtifact = $pageKits->write(
         "jiwonpapa/{$slug}",
-        '1.0.0',
+        $pageKitVersion,
         $definition['title']['ko'],
         $definition['description']['ko'],
         $document,
-        [$portableMedia],
+        $portableMedia,
     );
-    $pageArtifactName = "jiwonpapa-{$slug}-1.0.0.zip";
+    $pageArtifactName = "jiwonpapa-{$slug}-{$pageKitVersion}.zip";
     $pageArtifactPath = "{$dist}/artifacts/{$pageArtifactName}";
     $copy($pageArtifact->path, $pageArtifactPath);
     $pageKits->release($pageArtifact);
     $copy("{$source}/previews/{$slug}.svg", "{$dist}/previews/{$slug}.svg");
-    $copy($mediaPath, "{$dist}/previews/{$slug}-hero.webp");
+    $copy("{$kitSource}/{$definition['media'][0]}", "{$dist}/previews/{$slug}-hero.webp");
 
     $screenshotUrls = [];
     foreach (['desktop', 'tablet', 'mobile'] as $viewport) {
@@ -212,12 +253,12 @@ foreach ($pageKitDefinitions as $definition) {
     }
 
     $demoValue = $documentValue;
-    array_walk_recursive($demoValue, static function (mixed &$value) use ($slug, $storeBasePath): void {
+    array_walk_recursive($demoValue, static function (mixed &$value) use ($demoMediaUrls): void {
         if (! is_string($value)) {
             return;
         }
-        if ($value === 'g7pb-media://image-1') {
-            $value = "{$storeBasePath}/previews/{$slug}-hero.webp";
+        if (isset($demoMediaUrls[$value])) {
+            $value = $demoMediaUrls[$value];
         } elseif ($value === '/' || str_starts_with($value, 'g7pb-route://')) {
             $value = '/demo-action';
         }
@@ -266,7 +307,7 @@ foreach ($pageKitDefinitions as $definition) {
     $pageProducts[] = [
         'product_id' => "jiwonpapa/{$slug}",
         'product_type' => 'page_kit',
-        'product_version' => '1.0.0',
+        'product_version' => $pageKitVersion,
         'title' => $definition['title'],
         'description' => $definition['description'],
         'category' => $definition['category'],

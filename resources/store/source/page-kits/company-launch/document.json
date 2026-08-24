@@ -70,9 +70,9 @@
         "eyebrow": "팀",
         "heading": "문제를 끝까지 해결하는 사람들",
         "members": [
-          { "name": "김기획", "role": "Product", "bio": "고객의 문제를 제품 언어로 정리합니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
-          { "name": "이디자인", "role": "Design", "bio": "복잡한 흐름을 분명한 경험으로 만듭니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
-          { "name": "박개발", "role": "Engineering", "bio": "안정적으로 확장되는 서비스를 구현합니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" }
+          { "name": "김기획", "role": "Product", "bio": "고객의 문제를 제품 언어로 정리합니다.", "imageSrc": "g7pb-media://image-2", "imageAlt": "밝은 스튜디오의 제품 전략가", "profileUrl": "" },
+          { "name": "이디자인", "role": "Design", "bio": "복잡한 흐름을 분명한 경험으로 만듭니다.", "imageSrc": "g7pb-media://image-3", "imageAlt": "밝은 스튜디오의 제품 디자이너", "profileUrl": "" },
+          { "name": "박개발", "role": "Engineering", "bio": "안정적으로 확장되는 서비스를 구현합니다.", "imageSrc": "g7pb-media://image-4", "imageAlt": "밝은 스튜디오의 소프트웨어 엔지니어", "profileUrl": "" }
         ],
         "appearance": { "surface": "soft", "spacing": "normal" }
       },
@@ -87,8 +87,8 @@
         "eyebrow": "함께 만든 변화",
         "heading": "팀 안에 실행 기준이 남았습니다",
         "items": [
-          { "quote": "기획과 제작을 따로 설명하지 않아도 한 흐름으로 정리돼 의사결정이 빨라졌습니다.", "name": "최민서", "role": "브랜드 리드", "company": "리테일 팀", "avatarSrc": "", "avatarAlt": "", "rating": 5 },
-          { "quote": "출시 이후 운영까지 고려한 기준을 함께 받아 내부 팀이 직접 개선할 수 있었습니다.", "name": "정현우", "role": "사업 책임자", "company": "B2B 서비스", "avatarSrc": "", "avatarAlt": "", "rating": 5 }
+          { "quote": "기획과 제작을 따로 설명하지 않아도 한 흐름으로 정리돼 의사결정이 빨라졌습니다.", "name": "최민서", "role": "브랜드 리드", "company": "리테일 팀", "avatarSrc": "g7pb-media://image-5", "avatarAlt": "고객 최민서의 프로필 사진", "rating": 5 },
+          { "quote": "출시 이후 운영까지 고려한 기준을 함께 받아 내부 팀이 직접 개선할 수 있었습니다.", "name": "정현우", "role": "사업 책임자", "company": "B2B 서비스", "avatarSrc": "g7pb-media://image-6", "avatarAlt": "고객 정현우의 프로필 사진", "rating": 5 }
         ],
         "layout": "grid",
         "appearance": { "surface": "default", "spacing": "normal" }

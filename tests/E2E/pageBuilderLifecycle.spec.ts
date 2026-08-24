@@ -816,6 +816,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     ]) {
       await expect(page.getByTestId(`drawer-item:${component}`)).toHaveCount(1);
     }
+    const drawerLibrary = page.getByTestId('page-builder-block-library');
+    const renderedThumbnails = drawerLibrary.locator('.g7pb-block-thumb--image > img');
+    await expect(renderedThumbnails).toHaveCount(45);
+    for (const image of (await renderedThumbnails.all()).slice(0, 8)) {
+      await expect(image).toHaveJSProperty('complete', true);
+      expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(320);
+      expect(await image.evaluate((element) => (element as HTMLImageElement).naturalHeight)).toBe(200);
+    }
+    const drawerText = await drawerLibrary.textContent();
+    expect(drawerText?.match(/끌어/g)?.length ?? 0).toBeLessThanOrEqual(1);
     await hideMobileBlockLibrary(page);
 
     await revealEditorHeaderActions(page);
@@ -935,12 +945,47 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await page.getByTestId(`page-builder-block-option-${option}`).click();
     }
 
+    if (testInfo.project.name === 'desktop') {
+      const richTextBlock = editorBlock(page, 'rich-text');
+      const richTextEditor = richTextBlock.locator('[contenteditable="true"]').first();
+      const selectedText = '이해해야 할 내용';
+      await richTextEditor.evaluate((element, target) => {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        let node = walker.nextNode();
+        while (node) {
+          const text = node.textContent ?? '';
+          const start = text.indexOf(target);
+          if (start >= 0) {
+            const range = document.createRange();
+            range.setStart(node, start);
+            range.setEnd(node, start + target.length);
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+            document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
+            element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+            return;
+          }
+          node = walker.nextNode();
+        }
+        throw new Error(`Rich text selection target was not found: ${target}`);
+      }, selectedText);
+      const rangeToolbar = page.getByTestId('page-builder-richtext-inline-toolbar');
+      await expect(rangeToolbar).toBeVisible();
+      await rangeToolbar.getByTestId('page-builder-richtext-font').selectOption('serif');
+      await rangeToolbar.getByTestId('page-builder-richtext-size').selectOption('large');
+      await rangeToolbar.getByTestId('page-builder-richtext-tone').selectOption('accent');
+      const selectedMark = richTextBlock.locator('span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="accent"]');
+      await expect(selectedMark).toHaveText(selectedText);
+      await expect(richTextBlock.locator('[contenteditable="true"]')).toContainText('방문자가 이해해야 할 내용을 읽기 편한 문단');
+    }
+
     await selectAndEditHero(page, heroTitle, heroSubtitle, heroButtonLabel, testInfo.project.name === 'desktop');
     if (testInfo.project.name === 'desktop') {
       const heroBlock = editorBlock(page, 'hero');
       await heroBlock.locator('[data-g7pb-inline-field="title"]').dispatchEvent('pointerdown');
       const elementPanel = page.getByTestId('page-builder-context-panel');
-      await expect(elementPanel).toContainText('선택한 요소에만 적용됩니다.');
+      await expect(elementPanel).toContainText('요소 전체 · 부분 선택은 글자 위 툴바');
       const elementPanelBox = await elementPanel.boundingBox();
       const editorViewport = page.viewportSize();
       expect(elementPanelBox).not.toBeNull();
@@ -949,7 +994,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         expect(elementPanelBox.y).toBeGreaterThanOrEqual(0);
         expect(elementPanelBox.y + elementPanelBox.height).toBeLessThanOrEqual(editorViewport.height);
       }
-      await elementPanel.getByTestId('page-builder-text-scale').click();
+      await elementPanel.getByTestId('page-builder-text-scale').selectOption('large');
       await elementPanel.getByTestId('page-builder-text-align-right').click();
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--large/);
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-align--right/);

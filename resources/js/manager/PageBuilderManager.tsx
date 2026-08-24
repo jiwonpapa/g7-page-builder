@@ -16,7 +16,6 @@ import {
   PanelTop,
   Pencil,
   Settings,
-  ShoppingBag,
 } from 'lucide-react';
 
 import {
@@ -154,6 +153,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [storeBusy, setStoreBusy] = useState<string | null>(null);
   const [storeQuery, setStoreQuery] = useState('');
   const [storeType, setStoreType] = useState<'all' | OfficialStoreProduct['product_type']>('all');
+  const pageKitDeepLinkHandled = useRef(false);
   const [pageKitProduct, setPageKitProduct] = useState<OfficialStoreProduct | null>(null);
   const [pageKitTitle, setPageKitTitle] = useState('');
   const [pageKitSlug, setPageKitSlug] = useState('');
@@ -241,6 +241,23 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
       active = false;
     };
   }, [api, documentFilter]);
+
+  useEffect(() => {
+    if (pageKitDeepLinkHandled.current
+      || new URLSearchParams(window.location.search).get('view') !== 'page-kits') {
+      return;
+    }
+    pageKitDeepLinkHandled.current = true;
+    setStoreOpen(true);
+    setStoreType('page_kit');
+    setStoreQuery('');
+    setStoreLoading(true);
+    setMessage(null);
+    void api.getOfficialStoreCatalog()
+      .then(setStoreCatalog)
+      .catch((error: unknown) => setMessage(errorMessage(error)))
+      .finally(() => setStoreLoading(false));
+  }, [api]);
 
   useEffect(() => {
     if (actionMenuDocumentId === null) {
@@ -472,10 +489,10 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     }
   };
 
-  const openOfficialStore = (): void => {
+  const openPageKits = (): void => {
     setStoreOpen(true);
     setStoreQuery('');
-    setStoreType('all');
+    setStoreType('page_kit');
     void loadOfficialStore();
   };
 
@@ -860,9 +877,9 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
         </div>
         <div className="g7pb-manager-header__actions">
           <a className="g7pb-button g7pb-button--quiet" href="/admin">G7 관리자</a>
-          <button className="g7pb-button g7pb-button--quiet" type="button"
-            data-testid="page-builder-manager-store" onClick={openOfficialStore}>
-            <ShoppingBag size={17} aria-hidden="true" /> 무료 마켓
+          <button className="g7pb-button g7pb-button--primary" type="button"
+            data-testid="page-builder-manager-page-kits" onClick={openPageKits}>
+            <LayoutTemplate size={17} aria-hidden="true" /> 기본 페이지
           </button>
           <button className="g7pb-button g7pb-button--quiet" type="button" data-testid="page-builder-manager-inbox" onClick={() => void openInbox()}>
             <Inbox size={17} aria-hidden="true" /> 문의함
@@ -875,9 +892,9 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             href="/modules/jiwonpapa-page_builder/admin/site-parts/header"><PanelTop size={17} /> Header 편집</a>
           <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-site-footer"
             href="/modules/jiwonpapa-page_builder/admin/site-parts/footer"><PanelBottom size={17} /> Footer 편집</a>
-          <button className="g7pb-button g7pb-button--primary" type="button"
+          <button className="g7pb-button g7pb-button--quiet" type="button"
             data-testid="page-builder-manager-create" onClick={() => setCreateDialogOpen(true)}>
-            새 페이지
+            빈 페이지
           </button>
         </div>
       </header>
@@ -1044,6 +1061,13 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
           <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-manager-create-heading">
             <p className="g7pb-kicker">새 문서</p>
             <h2 id="g7pb-manager-create-heading">페이지 기본 정보</h2>
+            <div className="g7pb-create-choice">
+              <div><strong>기본 페이지에서 시작</strong><span>샘플 이미지와 완성된 블록 구성을 선택합니다.</span></div>
+              <button type="button" className="g7pb-button g7pb-button--primary"
+                data-testid="page-builder-manager-create-page-kit"
+                onClick={() => { setCreateDialogOpen(false); openPageKits(); }}>기본 페이지 보기</button>
+            </div>
+            <p className="g7pb-dialog__divider"><span>또는 빈 페이지</span></p>
             <form onSubmit={(event) => void createDocument(event)}>
               <label>
                 페이지 제목
@@ -1339,21 +1363,23 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             aria-labelledby="g7pb-store-heading">
             <div className="g7pb-dialog__heading-row">
               <div>
-                <p className="g7pb-kicker">지원소프트 공식 배포</p>
-                <h2 id="g7pb-store-heading">무료 Block Pack · Page Kit</h2>
-                <p>검증된 공식 자산과 실제 PC·태블릿·모바일 적용 화면만 표시합니다. 제3자 업로드와 판매자 기능은 없습니다.</p>
+                <p className="g7pb-kicker">지원소프트 기본 제공</p>
+                <h2 id="g7pb-store-heading">{storeType === 'page_kit' ? '기본 페이지' : '무료 블록 팩 · 기본 페이지'}</h2>
+                <p>{storeType === 'page_kit'
+                  ? '샘플 이미지와 블록 구성이 완성된 페이지를 선택하면 즉시 편집기로 이동합니다.'
+                  : '검증된 공식 자산과 실제 PC·태블릿·모바일 적용 화면만 표시합니다.'}</p>
               </div>
               <button type="button" className="g7pb-button g7pb-button--quiet"
                 onClick={() => setStoreOpen(false)}>닫기</button>
             </div>
             <div className="g7pb-store-tools">
               <label className="g7pb-manager-search">
-                <span className="sr-only">마켓 검색</span>
+                <span className="sr-only">기본 제공 항목 검색</span>
                 <input type="search" value={storeQuery} placeholder="이름·설명·태그 검색"
                   data-testid="page-builder-store-search"
                   onChange={(event) => setStoreQuery(event.target.value)} />
               </label>
-              <div className="g7pb-manager-tabs" role="tablist" aria-label="마켓 상품 종류">
+              <div className="g7pb-manager-tabs" role="tablist" aria-label="기본 제공 항목 종류">
                 {([['all', '전체'], ['block_pack', '블록 팩'], ['page_kit', '완성 페이지']] as const).map(([value, label]) => (
                   <button type="button" role="tab" key={value} aria-selected={storeType === value}
                     data-testid={`page-builder-store-filter-${value}`}
@@ -1362,7 +1388,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
               </div>
             </div>
             {storeLoading ? (
-              <div className="g7pb-manager-loading" role="status">공식 마켓을 불러오는 중입니다.</div>
+              <div className="g7pb-manager-loading" role="status">기본 제공 항목을 불러오는 중입니다.</div>
             ) : visibleStoreProducts.length === 0 ? (
               <div className="g7pb-manager-empty"><h3>표시할 무료 상품이 없습니다.</h3><p>검색 조건을 바꾸거나 잠시 뒤 다시 확인해 주세요.</p></div>
             ) : (
@@ -1427,10 +1453,10 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
               <strong>발행 전에 교체할 항목</strong>
               <ul>
                 <li>버튼·기사·자료의 샘플 링크를 실제 경로로 연결합니다.</li>
-                <li>팀·연사·기사의 보조 이미지 자리에는 운영 이미지를 넣거나 의도적인 텍스트형으로 유지합니다.</li>
+                <li>포함된 샘플 이미지는 그대로 편집할 수 있으며, 실제 운영 이미지가 있으면 교체합니다.</li>
                 <li>문의 폼·위치·일정 등 실제 운영 정보를 최종 확인합니다.</li>
               </ul>
-              <p>전용 Hero 이미지는 Page Kit에 포함됩니다.</p>
+              <p>Hero·팀·후기·연사·기사에 필요한 샘플 이미지가 Page Kit에 포함됩니다.</p>
             </div>
             <form onSubmit={(event) => void applyPageKit(event)}>
               <label>새 페이지 제목

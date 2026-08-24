@@ -280,7 +280,7 @@ final class OfficialStoreServiceTest extends TestCase
 
         $created = $service->applyPageKit(
             'jiwonpapa/company-launch',
-            '1.0.0',
+            '1.1.0',
             ' 새 회사 페이지 ',
             'company-from-store',
             7,
@@ -295,7 +295,14 @@ final class OfficialStoreServiceTest extends TestCase
             'https://g7pb.test/storage/g7-page-builder/imported.png',
             $created->document->blocks[0]['props']['image']['src'],
         );
-        self::assertSame(['hero-team.webp'], $media->stored);
+        self::assertSame([
+            'hero-team.webp',
+            'team-product.webp',
+            'team-design.webp',
+            'team-engineering.webp',
+            'customer-operations.webp',
+            'customer-founder.webp',
+        ], $media->stored);
         self::assertNotSame('81000000-0000-4000-8000-000000000001', $created->document->blocks[0]['instance_id']);
         self::assertNull($created->activeArtifactSha256);
         self::assertSame(1, $source->releases);
@@ -334,7 +341,7 @@ final class OfficialStoreServiceTest extends TestCase
         );
         $bundle = new PageKitBundle(
             'jiwonpapa/company-launch',
-            '1.0.0',
+            '1.1.0',
             '회사 소개 랜딩',
             '미디어 롤백 fixture',
             [
@@ -358,7 +365,7 @@ final class OfficialStoreServiceTest extends TestCase
         );
 
         try {
-            $service->applyPageKit('jiwonpapa/company-launch', '1.0.0', '실패', 'failed-kit', 7);
+            $service->applyPageKit('jiwonpapa/company-launch', '1.1.0', '실패', 'failed-kit', 7);
             self::fail('A Page Kit draft was created after compile failure.');
         } catch (DocumentCompileException $exception) {
             self::assertSame('fixture failure', $exception->getMessage());
@@ -447,7 +454,7 @@ final class OfficialStoreServiceTest extends TestCase
         );
         self::assertFalse($incompatible->catalog()['products'][1]['compatible']);
         try {
-            $incompatible->applyPageKit('jiwonpapa/company-launch', '1.0.0', '차단', 'blocked-kit', 7);
+            $incompatible->applyPageKit('jiwonpapa/company-launch', '1.1.0', '차단', 'blocked-kit', 7);
             self::fail('An incompatible Page Kit was applied.');
         } catch (\DomainException $exception) {
             self::assertStringContainsString('호환되지 않습니다', $exception->getMessage());
@@ -466,7 +473,7 @@ final class OfficialStoreServiceTest extends TestCase
             compiler: $this->builtInCompiler(),
         );
         try {
-            $missingRoute->applyPageKit('jiwonpapa/company-launch', '1.0.0', '경로 없음', 'missing-route', 7);
+            $missingRoute->applyPageKit('jiwonpapa/company-launch', '1.1.0', '경로 없음', 'missing-route', 7);
             self::fail('A Page Kit with an unresolved route was applied.');
         } catch (\DomainException $exception) {
             self::assertStringContainsString('사이트 경로', $exception->getMessage());

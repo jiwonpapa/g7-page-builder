@@ -926,6 +926,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-add-block').click();
     const blockGallery = page.getByTestId('page-builder-block-gallery');
+    const galleryLayer = Number(await blockGallery.evaluate((element) => getComputedStyle(element).zIndex));
+    const commandBarLayer = Number(await page.locator('.g7pb-command-bar').evaluate((element) =>
+      getComputedStyle(element).zIndex));
+    expect(galleryLayer).toBeGreaterThan(commandBarLayer);
     await expect(blockGallery.getByRole('tab', { name: /블록 종류/ })).toBeVisible();
     await expect(blockGallery.getByRole('tab', { name: /완성 섹션/ })).toBeVisible();
     await expect(blockGallery.getByLabel('블록 팩')).toContainText('기본 제공');

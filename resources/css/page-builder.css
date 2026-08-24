@@ -1852,7 +1852,7 @@ body.g7pb-manager-shell {
 
 .g7pb-block-gallery-backdrop {
   position: fixed;
-  z-index: 10000;
+  z-index: 15000;
   inset: 0;
   display: grid;
   place-items: center;

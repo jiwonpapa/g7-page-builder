@@ -9,6 +9,7 @@ const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const fixtureRoot = resolve(root, 'output/block-thumbnail-fixtures');
 const thumbnailRoot = resolve(root, 'resources/block-packs/builtin-core/thumbnails/generated');
 const manifestPath = resolve(root, 'resources/block-packs/builtin-core/manifest.json');
+const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 
 await mkdir(fixtureRoot, { recursive: true });
 await mkdir(thumbnailRoot, { recursive: true });
@@ -23,8 +24,9 @@ if (fixtureBuild.status !== 0) {
 }
 
 const index = JSON.parse(await readFile(resolve(fixtureRoot, 'index.json'), 'utf8'));
-if (!Array.isArray(index) || index.length !== 100) {
-  throw new Error(`Expected 100 thumbnail fixtures, received ${Array.isArray(index) ? index.length : 'invalid index'}.`);
+const expectedCount = manifest.blocks.length + manifest.presets.length;
+if (!Array.isArray(index) || index.length !== expectedCount) {
+  throw new Error(`Expected ${expectedCount} thumbnail fixtures, received ${Array.isArray(index) ? index.length : 'invalid index'}.`);
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -38,10 +40,11 @@ try {
       const stage = document.querySelector('.g7pb-thumbnail-stage');
       if (!(stage instanceof HTMLElement)) throw new Error('Thumbnail stage is missing.');
       const width = 960;
+      const cropHeight = 600;
       const height = Math.max(stage.scrollHeight, 1);
-      const scale = Math.min(320 / width, 200 / height);
-      const offsetX = Math.max(0, (320 - width * scale) / 2);
-      const offsetY = Math.max(0, (200 - height * scale) / 2);
+      const scale = 320 / width;
+      const offsetX = 0;
+      const offsetY = Math.max(0, (cropHeight - height) * scale / 2);
       stage.style.transformOrigin = 'top left';
       stage.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
       document.body.style.width = '320px';
@@ -53,7 +56,6 @@ try {
   await browser.close();
 }
 
-const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const paths = new Map(index.map((item) => [item.catalog_id, `thumbnails/generated/${item.filename}`]));
 for (const definition of manifest.blocks) {
   const catalogId = `block:${definition.block_id}@${definition.block_version}`;
@@ -63,7 +65,7 @@ for (const preset of manifest.presets) {
   const catalogId = `preset:${manifest.pack_id}:${preset.preset_id}`;
   preset.thumbnail = paths.get(catalogId);
 }
-manifest.pack_version = '0.14.0';
+manifest.pack_version = '0.15.0';
 manifest.files = Object.fromEntries(await Promise.all(index.map(async (item) => {
   const path = `thumbnails/generated/${item.filename}`;
   const contents = await readFile(resolve(thumbnailRoot, item.filename));
@@ -72,7 +74,7 @@ manifest.files = Object.fromEntries(await Promise.all(index.map(async (item) => 
 await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 await writeFile(resolve(thumbnailRoot, 'index.json'), `${JSON.stringify({
   viewport: '960px',
-  output: '320x200 PNG',
+  output: '320x200 PNG from a fixed 960x600 public-renderer crop',
   count: index.length,
   sources: Object.fromEntries(index.map((item) => [item.catalog_id, item.source_hash])),
 }, null, 2)}\n`);

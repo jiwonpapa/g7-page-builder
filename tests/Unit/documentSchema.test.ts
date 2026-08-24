@@ -72,7 +72,7 @@ describe('PageBuilderDocument v1 schema', () => {
   });
 
   it('accepts every bundled preset as a complete one-block document', () => {
-    expect(builtinManifest.presets).toHaveLength(55);
+    expect(builtinManifest.presets).toHaveLength(95);
     builtinManifest.presets.forEach((preset, index) => {
       const document = {
         ...structuredClone(fixture),

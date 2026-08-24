@@ -67,7 +67,7 @@ test.use({ screenshot: 'off', trace: 'off', video: 'off' });
 test('publishes all 45 catalog blocks and keeps 30 responsive visual baselines', async ({ page }, testInfo) => {
   test.setTimeout(240_000);
   expect(builtinManifest.blocks).toHaveLength(45);
-  expect(builtinManifest.presets).toHaveLength(55);
+  expect(builtinManifest.presets).toHaveLength(95);
 
   const login = await playwrightRequest.newContext({
     baseURL: BASE_URL,

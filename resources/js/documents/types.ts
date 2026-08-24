@@ -94,6 +94,7 @@ export interface HeroBlockProps {
   primaryCta?: PageBuilderCallToAction;
   image?: PageBuilderImage;
   alignment: 'left' | 'center';
+  layout?: 'poster' | 'product' | 'backdrop' | 'editorial' | 'device';
   appearance?: BlockAppearance;
 }
 
@@ -106,6 +107,7 @@ export interface FeatureItem {
 export interface FeaturesBlockProps {
   title: string;
   items: FeatureItem[];
+  layout?: 'grid' | 'bento' | 'editorial' | 'panel' | 'list';
   appearance?: BlockAppearance;
 }
 
@@ -116,6 +118,7 @@ export interface CtaBlockProps {
   primaryLink?: PageBuilderLink;
   secondaryLink?: PageBuilderLink;
   theme: 'light' | 'dark';
+  layout?: 'split' | 'centered' | 'banner' | 'panel';
   appearance?: BlockAppearance;
 }
 
@@ -136,6 +139,7 @@ export interface HeroSplitBlockProps {
   primaryCta?: PageBuilderLink;
   image?: PageBuilderImage;
   mediaPosition: 'left' | 'right';
+  layout?: 'balanced' | 'screenshot' | 'overlap' | 'offset';
   appearance?: BlockAppearance;
 }
 
@@ -167,6 +171,7 @@ export interface LogoItem {
 export interface LogoCloudBlockProps {
   heading: string;
   logos: LogoItem[];
+  layout?: 'strip' | 'grid' | 'panel';
   appearance?: BlockAppearance;
 }
 
@@ -181,6 +186,7 @@ export interface StatsBlockProps {
   eyebrow: string;
   heading: string;
   items: StatItem[];
+  layout?: 'grid' | 'strip' | 'split' | 'editorial';
   appearance?: BlockAppearance;
 }
 
@@ -199,6 +205,7 @@ export interface PricingBlockProps {
   eyebrow: string;
   heading: string;
   plans: PricingPlanItem[];
+  layout?: 'cards' | 'featured' | 'compact' | 'editorial';
   appearance?: BlockAppearance;
 }
 
@@ -215,6 +222,7 @@ export interface TeamBlockProps {
   eyebrow: string;
   heading: string;
   members: TeamMemberItem[];
+  layout?: 'grid' | 'portraits' | 'editorial' | 'featured';
   appearance?: BlockAppearance;
 }
 
@@ -229,6 +237,7 @@ export interface GalleryBlockProps {
   heading: string;
   images: GalleryImageItem[];
   columns: 2 | 3 | 4;
+  layout?: 'grid' | 'bento' | 'masonry' | 'filmstrip';
   appearance?: BlockAppearance;
 }
 
@@ -324,7 +333,7 @@ export interface TestimonialsBlockProps {
   eyebrow: string;
   heading: string;
   items: TestimonialItem[];
-  layout: 'grid' | 'spotlight';
+  layout: 'grid' | 'spotlight' | 'split' | 'wall' | 'quote-hero';
   appearance?: BlockAppearance;
 }
 
@@ -405,7 +414,7 @@ export interface ArticleListBlockProps {
   eyebrow: string;
   heading: string;
   items: ArticleListItem[];
-  layout: 'list' | 'grid';
+  layout: 'list' | 'grid' | 'featured' | 'magazine' | 'editorial';
   appearance?: BlockAppearance;
 }
 
@@ -621,6 +630,7 @@ export interface CardGridBlockProps {
   items: CardGridItem[];
   columns: 2 | 3;
   variant: 'plain' | 'outlined';
+  layout?: 'grid' | 'bento' | 'rail' | 'editorial' | 'numbered';
   appearance?: BlockAppearance;
 }
 

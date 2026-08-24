@@ -75,7 +75,7 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 
 첫 수직 slice에서 확인한 항목:
 
-1. 45종 제품 카탈로그와 55개 내장 프리셋의 좌측 축소 미리보기, 원하는 위치 DnD, typed 편집과 선택 block 정렬을 지원합니다.
+1. 45종 제품 카탈로그와 95개 내장 프리셋의 좌측 축소 미리보기, 원하는 위치 DnD, typed 편집과 선택 block 정렬을 지원합니다.
 2. Puck ↔ `PageBuilderDocument` 왕복 Fixture가 통과합니다.
 3. 저장 후 reload와 Puck undo/redo 표면이 동작합니다.
 4. 편집기 모바일·태블릿·PC iframe 전환과 preview/public 제품 E2E가 통과합니다.

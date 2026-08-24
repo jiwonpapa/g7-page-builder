@@ -378,6 +378,7 @@ describe('Puck PageBuilderDocument adapter', () => {
       heading: '행동 안내',
       body: '',
       theme: 'light',
+      layout: 'split',
     });
     expect(restored.blocks[1].props).toEqual({
       heading: '문의 안내',
@@ -406,6 +407,7 @@ describe('Puck PageBuilderDocument adapter', () => {
             imageSrc: '',
             imageAlt: '',
             alignment: 'left',
+            layout: 'product',
           },
         },
       ],
@@ -423,6 +425,7 @@ describe('Puck PageBuilderDocument adapter', () => {
           title: '새 Hero',
           body: '<p>본문</p>',
           alignment: 'left',
+          layout: 'product',
         },
         slots: {},
       },

@@ -21,12 +21,27 @@
         "eyebrow": "동네에서 만나는 공간",
         "title": "처음 방문해도 편안한 안내",
         "body": "서비스, 운영 시간, 위치와 예약 방법을 한 페이지에서 확인할 수 있습니다.",
-        "primaryCta": { "label": "방문 예약하기", "url": "/" },
-        "image": { "src": "g7pb-media://image-1", "alt": "따뜻한 나무와 식물로 꾸며진 지역 매장 안내 공간" },
+        "primaryCta": {
+          "label": "방문 예약하기",
+          "url": "/"
+        },
+        "image": {
+          "src": "g7pb-media://image-1",
+          "alt": "따뜻한 나무와 식물로 꾸며진 지역 매장 안내 공간"
+        },
         "mediaPosition": "left",
-        "appearance": { "surface": "default", "spacing": "spacious" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "spacious"
+        },
+        "layout": "balanced"
       },
-      "motion": { "preset": "parallax-soft", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "parallax-soft",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -36,13 +51,34 @@
       "props": {
         "title": "방문 전에 알아두면 좋은 점",
         "items": [
-          { "icon": "heart", "title": "차분한 상담", "body": "현재 필요한 내용을 먼저 듣고 맞는 방법을 안내합니다." },
-          { "icon": "check", "title": "명확한 예약", "body": "가능한 시간과 준비 사항을 확인한 뒤 방문 일정을 확정합니다." },
-          { "icon": "mobile", "title": "쉬운 연락", "body": "전화와 온라인 문의 중 편한 방법으로 연락할 수 있습니다." }
+          {
+            "icon": "heart",
+            "title": "차분한 상담",
+            "body": "현재 필요한 내용을 먼저 듣고 맞는 방법을 안내합니다."
+          },
+          {
+            "icon": "check",
+            "title": "명확한 예약",
+            "body": "가능한 시간과 준비 사항을 확인한 뒤 방문 일정을 확정합니다."
+          },
+          {
+            "icon": "mobile",
+            "title": "쉬운 연락",
+            "body": "전화와 온라인 문의 중 편한 방법으로 연락할 수 있습니다."
+          }
         ],
-        "appearance": { "surface": "soft", "spacing": "normal" }
+        "appearance": {
+          "surface": "soft",
+          "spacing": "normal"
+        },
+        "layout": "panel"
       },
-      "motion": { "preset": "stagger", "intensity": "normal", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -53,14 +89,37 @@
         "eyebrow": "이용 순서",
         "heading": "문의부터 방문까지 세 단계",
         "items": [
-          { "title": "문의", "body": "원하는 서비스와 방문 희망 시간을 남겨주세요.", "linkLabel": "", "linkUrl": "" },
-          { "title": "확인", "body": "담당자가 가능한 시간과 준비 사항을 안내합니다.", "linkLabel": "", "linkUrl": "" },
-          { "title": "방문", "body": "예약 시간에 맞춰 편안하게 방문해 주세요.", "linkLabel": "길찾기", "linkUrl": "https://www.openstreetmap.org/" }
+          {
+            "title": "문의",
+            "body": "원하는 서비스와 방문 희망 시간을 남겨주세요.",
+            "linkLabel": "",
+            "linkUrl": ""
+          },
+          {
+            "title": "확인",
+            "body": "담당자가 가능한 시간과 준비 사항을 안내합니다.",
+            "linkLabel": "",
+            "linkUrl": ""
+          },
+          {
+            "title": "방문",
+            "body": "예약 시간에 맞춰 편안하게 방문해 주세요.",
+            "linkLabel": "길찾기",
+            "linkUrl": "https://www.openstreetmap.org/"
+          }
         ],
         "layout": "horizontal",
-        "appearance": { "surface": "default", "spacing": "normal" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "normal"
+        }
       },
-      "motion": { "preset": "stagger", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -71,14 +130,46 @@
         "eyebrow": "방문 후기",
         "heading": "다시 찾고 싶은 이유",
         "items": [
-          { "quote": "처음 문의할 때부터 설명이 친절해서 안심하고 방문했습니다.", "name": "김민지", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "g7pb-media://image-2", "avatarAlt": "방문 고객 김민지의 프로필 사진", "rating": 5 },
-          { "quote": "예약 시간과 준비물을 미리 알려줘서 기다리지 않고 이용할 수 있었어요.", "name": "이현우", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "g7pb-media://image-3", "avatarAlt": "방문 고객 이현우의 프로필 사진", "rating": 5 },
-          { "quote": "공간이 편안하고 필요한 내용만 차분하게 안내해 주셨습니다.", "name": "박서연", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "g7pb-media://image-4", "avatarAlt": "방문 고객 박서연의 프로필 사진", "rating": 5 }
+          {
+            "quote": "처음 문의할 때부터 설명이 친절해서 안심하고 방문했습니다.",
+            "name": "김민지",
+            "role": "방문 고객",
+            "company": "지역 고객",
+            "avatarSrc": "g7pb-media://image-2",
+            "avatarAlt": "방문 고객 김민지의 프로필 사진",
+            "rating": 5
+          },
+          {
+            "quote": "예약 시간과 준비물을 미리 알려줘서 기다리지 않고 이용할 수 있었어요.",
+            "name": "이현우",
+            "role": "방문 고객",
+            "company": "지역 고객",
+            "avatarSrc": "g7pb-media://image-3",
+            "avatarAlt": "방문 고객 이현우의 프로필 사진",
+            "rating": 5
+          },
+          {
+            "quote": "공간이 편안하고 필요한 내용만 차분하게 안내해 주셨습니다.",
+            "name": "박서연",
+            "role": "방문 고객",
+            "company": "지역 고객",
+            "avatarSrc": "g7pb-media://image-4",
+            "avatarAlt": "방문 고객 박서연의 프로필 사진",
+            "rating": 5
+          }
         ],
-        "layout": "grid",
-        "appearance": { "surface": "soft", "spacing": "normal" }
+        "layout": "split",
+        "appearance": {
+          "surface": "soft",
+          "spacing": "normal"
+        }
       },
-      "motion": { "preset": "stagger", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "stagger",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -99,9 +190,17 @@
         "phone": "02-0000-0000",
         "hours": "월–금 10:00–19:00\n토요일 10:00–16:00",
         "parking": "건물 내 방문객 주차 가능",
-        "appearance": { "surface": "default", "spacing": "normal" }
+        "appearance": {
+          "surface": "default",
+          "spacing": "normal"
+        }
       },
-      "motion": { "preset": "reveal", "intensity": "subtle", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "reveal",
+        "intensity": "subtle",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     },
     {
@@ -118,9 +217,17 @@
         "privacyLabel": "예약 확인을 위한 개인정보 수집 및 이용에 동의합니다.",
         "showPhone": true,
         "showSubject": false,
-        "appearance": { "surface": "contrast", "spacing": "spacious" }
+        "appearance": {
+          "surface": "contrast",
+          "spacing": "spacious"
+        }
       },
-      "motion": { "preset": "reveal", "intensity": "normal", "trigger": "once", "stagger_ms": 100 },
+      "motion": {
+        "preset": "reveal",
+        "intensity": "normal",
+        "trigger": "once",
+        "stagger_ms": 100
+      },
       "slots": {}
     }
   ]

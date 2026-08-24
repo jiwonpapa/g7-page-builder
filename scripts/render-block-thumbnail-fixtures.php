@@ -27,7 +27,11 @@ if (! is_array($manifest) || ! is_array($manifest['blocks'] ?? null) || ! is_arr
 $registry = new BlockRegistry;
 $registry->register((new BuiltInBlockPackLoader)->load($root), enabled: true);
 $compiler = new HtmlDocumentCompiler($registry);
-$css = (string) file_get_contents($root.'/resources/css/page-builder.css');
+$viewer = (string) file_get_contents($root.'/resources/views/viewer.blade.php');
+if (preg_match('/<style>(.*?)<\/style>/s', $viewer, $viewerStyle) !== 1) {
+    throw new RuntimeException('Public viewer CSS is missing.');
+}
+$css = $viewerStyle[1];
 $slugify = static function (string $value): string {
     $kebab = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $value) ?? $value;
 
@@ -95,10 +99,15 @@ foreach ($catalog as $position => $item) {
         ]],
     ]);
     $artifact = $compiler->compile($document, 1, 'html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION);
+    $artifactHtml = str_replace(
+        '/modules/jiwonpapa-page_builder/store/previews/',
+        'file://'.$root.'/resources/store/dist/previews/',
+        $artifact->artifact,
+    );
     $html = '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         .'<style>html,body{margin:0;background:#f6f7f9}*{box-sizing:border-box}body{width:960px;overflow:hidden}.g7pb-thumbnail-stage{width:960px;background:#fff}'.$css.'</style>'
         .'</head><body><main class="g7pb-public-shell g7pb-theme-mode-light g7pb-theme-palette-blue g7pb-theme-font-system g7pb-theme-radius-soft g7pb-theme-width-standard g7pb-theme-scale-balanced"><div class="g7pb-thumbnail-stage">'
-        .$artifact->artifact.'</div></main></body></html>';
+        .$artifactHtml.'</div></main></body></html>';
     $fixtureName = str_replace('.png', '.html', $item['filename']);
     if (file_put_contents($output.'/'.$fixtureName, $html, LOCK_EX) === false) {
         throw new RuntimeException("Cannot write thumbnail fixture: {$fixtureName}");
@@ -107,7 +116,7 @@ foreach ($catalog as $position => $item) {
         'catalog_id' => $item['catalog_id'],
         'filename' => $item['filename'],
         'fixture' => $fixtureName,
-        'source_hash' => hash('sha256', $item['catalog_id']."\n".json_encode($item['props'], JSON_THROW_ON_ERROR)."\n".$artifact->artifact."\n".hash('sha256', $css)),
+        'source_hash' => hash('sha256', $item['catalog_id']."\n".json_encode($item['props'], JSON_THROW_ON_ERROR)."\n".$artifactHtml."\n".hash('sha256', $css)),
     ];
 }
 

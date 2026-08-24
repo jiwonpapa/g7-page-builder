@@ -56,7 +56,7 @@
         {
             "product_id": "jiwonpapa/company-launch",
             "product_type": "page_kit",
-            "product_version": "1.0.0",
+            "product_version": "1.1.0",
             "title": {
                 "ko": "회사 소개 랜딩",
                 "en": "Company launch page"
@@ -88,9 +88,9 @@
                 "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/company-launch"
             },
             "artifact": {
-                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-company-launch-1.0.0.zip",
-                "sha256": "c342c0e983ce369eca96a88e8cf53a2ddac39723035428583ced6025e4a1e7d6",
-                "bytes": 77628
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-company-launch-1.1.0.zip",
+                "sha256": "fa5af66f3a13f450464c91a15a28e476c81cb77c4d4657d224ea2a063c15f336",
+                "bytes": 207406
             },
             "requirements": {
                 "blocks": [
@@ -124,7 +124,7 @@
         {
             "product_id": "jiwonpapa/service-conversion",
             "product_type": "page_kit",
-            "product_version": "1.0.0",
+            "product_version": "1.1.0",
             "title": {
                 "ko": "전문 서비스 상담 랜딩",
                 "en": "Professional service landing"
@@ -156,9 +156,9 @@
                 "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/service-conversion"
             },
             "artifact": {
-                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-service-conversion-1.0.0.zip",
-                "sha256": "407e1a3900b7aafb46f0964ddd6bc07028866a59f7a27140ff70afd71f6ef544",
-                "bytes": 74713
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-service-conversion-1.1.0.zip",
+                "sha256": "fce4660d2e17153eb9d65fabe777b0d387507872b92a05fb3046713a5e11d170",
+                "bytes": 121058
             },
             "requirements": {
                 "blocks": [
@@ -192,7 +192,7 @@
         {
             "product_id": "jiwonpapa/local-business",
             "product_type": "page_kit",
-            "product_version": "1.0.0",
+            "product_version": "1.1.0",
             "title": {
                 "ko": "로컬 비즈니스 방문 안내",
                 "en": "Local business visit page"
@@ -224,9 +224,9 @@
                 "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/local-business"
             },
             "artifact": {
-                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-local-business-1.0.0.zip",
-                "sha256": "fdd0459d93b4e10e213d0e04d5d5eca0362a9b3fb4f87946dd62e7e78de1f4b6",
-                "bytes": 110257
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-local-business-1.1.0.zip",
+                "sha256": "582cf73926a54acec99082e4eb22435a9e3e16709b61346e7151a065b742353a",
+                "bytes": 191313
             },
             "requirements": {
                 "blocks": [
@@ -260,7 +260,7 @@
         {
             "product_id": "jiwonpapa/event-launch",
             "product_type": "page_kit",
-            "product_version": "1.0.0",
+            "product_version": "1.1.0",
             "title": {
                 "ko": "컨퍼런스·행사 랜딩",
                 "en": "Conference and event landing"
@@ -292,9 +292,9 @@
                 "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/event-launch"
             },
             "artifact": {
-                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-event-launch-1.0.0.zip",
-                "sha256": "d15a389b3d085466f3debd8cea7d36c9b5e3f029685bcac93e9ecda1ee5146c0",
-                "bytes": 51043
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-event-launch-1.1.0.zip",
+                "sha256": "1c863ed1aa4d1fc4a648f4e1b88a072c1722b74e5efa8aef12c4d36fd788a9d6",
+                "bytes": 232299
             },
             "requirements": {
                 "blocks": [
@@ -332,7 +332,7 @@
         {
             "product_id": "jiwonpapa/editorial-community",
             "product_type": "page_kit",
-            "product_version": "1.0.0",
+            "product_version": "1.1.0",
             "title": {
                 "ko": "에디토리얼·커뮤니티 홈",
                 "en": "Editorial community home"
@@ -364,9 +364,9 @@
                 "demo_url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/demos/editorial-community"
             },
             "artifact": {
-                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-editorial-community-1.0.0.zip",
-                "sha256": "758e4c7d5f19a158916521b4f2ef4928f3751ed2b92d89d3818be2bdce3000cb",
-                "bytes": 108806
+                "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-editorial-community-1.1.0.zip",
+                "sha256": "80f9bd332f2372776a29f52081e86c489263af50e2e9d7a451def4e33014899b",
+                "bytes": 860208
             },
             "requirements": {
                 "blocks": [

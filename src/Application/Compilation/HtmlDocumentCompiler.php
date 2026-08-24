@@ -14,7 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.13.0';
+    public const COMPILER_VERSION = '0.14.0';
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
@@ -1470,7 +1470,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
                 .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
-            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><p class="g7pb-testimonials__quote">“'.$this->formatText($quote).'”</p><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
+            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><div class="g7pb-testimonials__quote">'.$this->sanitizeRichText($quote).'</div><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
         return '<section class="g7pb-block g7pb-testimonials g7pb-testimonials--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonials">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-testimonials__items">'.implode('', $compiled).'</div></section>';
@@ -1501,7 +1501,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $this->assertOnlyKeys($item, ['question', 'answer'], "FAQ item {$index}");
             $question = $this->requiredString($item, 'question', 300);
             $answer = $this->requiredString($item, 'answer', 4000);
-            $compiled[] = '<details'.($openFirst && $index === 0 ? ' open' : '').'><summary><span>'.$this->escape($question).'</span><i aria-hidden="true">+</i></summary><div>'.$this->formatText($answer).'</div></details>';
+            $compiled[] = '<details'.($openFirst && $index === 0 ? ' open' : '').'><summary><span>'.$this->escape($question).'</span><i aria-hidden="true">+</i></summary><div class="g7pb-faq__answer">'.$this->sanitizeRichText($answer).'</div></details>';
         }
 
         return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
@@ -2690,7 +2690,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private function sanitizeRichTextNode(\DOMNode $parent): void
     {
-        $allowed = ['p', 'h2', 'h3', 'h4', 'strong', 'em', 'a', 'ol', 'ul', 'li', 'blockquote', 'br'];
+        $allowed = ['p', 'h2', 'h3', 'h4', 'strong', 'em', 'u', 'span', 'a', 'ol', 'ul', 'li', 'blockquote', 'br'];
 
         for ($child = $parent->firstChild; $child !== null;) {
             $next = $child->nextSibling;
@@ -2724,8 +2724,25 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 }
 
                 foreach ($attributes as $attribute) {
-                    if ($tag !== 'a' || $attribute !== 'href') {
+                    $isLinkHref = $tag === 'a' && $attribute === 'href';
+                    $isTypedTextMark = $tag === 'span'
+                        && in_array($attribute, ['data-g7pb-font', 'data-g7pb-size', 'data-g7pb-tone'], true);
+                    if (! $isLinkHref && ! $isTypedTextMark) {
                         $child->removeAttribute($attribute);
+                    }
+                }
+
+                if ($tag === 'span') {
+                    $allowedValues = [
+                        'data-g7pb-font' => ['modern', 'serif', 'mono'],
+                        'data-g7pb-size' => ['small', 'large', 'xlarge'],
+                        'data-g7pb-tone' => ['muted', 'accent', 'contrast'],
+                    ];
+                    foreach ($allowedValues as $attribute => $values) {
+                        if ($child->hasAttribute($attribute)
+                            && ! in_array($child->getAttribute($attribute), $values, true)) {
+                            throw new DocumentCompileException('Rich text contains an unsupported typed mark.');
+                        }
                     }
                 }
 

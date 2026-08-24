@@ -1,7 +1,7 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.13.0",
+  "pack_version": "0.14.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
@@ -25,7 +25,7 @@
         "ko": "핵심 제목, 설명, 버튼과 대표 이미지를 배치합니다.",
         "en": "Center a primary message and action."
       },
-      "thumbnail": "thumbnails/catalog-hero.svg",
+      "thumbnail": "thumbnails/generated/block-01-hero.png",
       "schema_ref": "builtin:heroProps",
       "editor_component": "Hero",
       "compiler": "builtin.hero-centered-01",
@@ -43,7 +43,7 @@
         "ko": "메시지와 대표 이미지를 좌우로 나눠 소개합니다.",
         "en": "Place a message beside a primary image."
       },
-      "thumbnail": "thumbnails/catalog-hero-split.svg",
+      "thumbnail": "thumbnails/generated/block-02-hero-split.png",
       "schema_ref": "builtin:heroSplitProps",
       "editor_component": "HeroSplit",
       "compiler": "builtin.hero-split-01",
@@ -61,7 +61,7 @@
         "ko": "여러 캠페인 장면을 스크롤 가능한 흐름으로 보여줍니다.",
         "en": "Present multiple primary scenes as slides."
       },
-      "thumbnail": "thumbnails/catalog-hero-slider.svg",
+      "thumbnail": "thumbnails/generated/block-03-hero-slider.png",
       "schema_ref": "builtin:heroSliderProps",
       "editor_component": "HeroSlider",
       "compiler": "builtin.hero-slider-01",
@@ -81,7 +81,7 @@
         "ko": "섹션 제목과 보조 문구를 독립적으로 배치합니다.",
         "en": "Add a standalone section heading and eyebrow."
       },
-      "thumbnail": "thumbnails/catalog-heading.svg",
+      "thumbnail": "thumbnails/generated/block-04-heading.png",
       "schema_ref": "builtin:headingProps",
       "editor_component": "Heading",
       "compiler": "builtin.heading-01",
@@ -99,7 +99,7 @@
         "ko": "문단, 소제목, 목록과 안전한 링크가 있는 긴 본문을 작성합니다.",
         "en": "Write long-form copy with paragraphs, headings, lists, and safe links."
       },
-      "thumbnail": "thumbnails/catalog-rich-text.svg",
+      "thumbnail": "thumbnails/generated/block-05-rich-text.png",
       "schema_ref": "builtin:richTextProps",
       "editor_component": "RichText",
       "compiler": "builtin.rich-text-01",
@@ -117,7 +117,7 @@
         "ko": "대표 이미지 한 장을 비율, 대체 텍스트, 캡션과 함께 배치합니다.",
         "en": "Place one image with a typed ratio, alt text, caption, and optional link."
       },
-      "thumbnail": "thumbnails/catalog-image.svg",
+      "thumbnail": "thumbnails/generated/block-06-image.png",
       "schema_ref": "builtin:imageBlockProps",
       "editor_component": "Image",
       "compiler": "builtin.image-01",
@@ -135,7 +135,7 @@
         "ko": "주요·보조·텍스트 행동을 최대 3개까지 한 줄로 안내합니다.",
         "en": "Group up to three primary, secondary, or text actions."
       },
-      "thumbnail": "thumbnails/catalog-buttons.svg",
+      "thumbnail": "thumbnails/generated/block-07-buttons.png",
       "schema_ref": "builtin:buttonsProps",
       "editor_component": "Buttons",
       "compiler": "builtin.buttons-01",
@@ -153,7 +153,7 @@
         "ko": "이미지와 리치텍스트 설명, 주요 행동을 좌우 구성으로 연결합니다.",
         "en": "Pair an image with rich text and a primary action."
       },
-      "thumbnail": "thumbnails/catalog-image-text.svg",
+      "thumbnail": "thumbnails/generated/block-08-image-text.png",
       "schema_ref": "builtin:imageTextProps",
       "editor_component": "ImageText",
       "compiler": "builtin.image-text-01",
@@ -171,7 +171,7 @@
         "ko": "장점, 조건, 체크 항목을 아이콘이 있는 1열 또는 2열 목록으로 정리합니다.",
         "en": "Organize benefits, requirements, or checks in a one- or two-column list."
       },
-      "thumbnail": "thumbnails/catalog-icon-list.svg",
+      "thumbnail": "thumbnails/generated/block-09-icon-list.png",
       "schema_ref": "builtin:iconListProps",
       "editor_component": "IconList",
       "compiler": "builtin.icon-list-01",
@@ -189,7 +189,7 @@
         "ko": "장점과 기능을 아이콘이 있는 항목으로 설명합니다.",
         "en": "Explain features and benefits in a grid."
       },
-      "thumbnail": "thumbnails/catalog-features.svg",
+      "thumbnail": "thumbnails/generated/block-10-features.png",
       "schema_ref": "builtin:featuresProps",
       "editor_component": "Features",
       "compiler": "builtin.features-grid-01",
@@ -207,7 +207,7 @@
         "ko": "주요 행동과 보조 링크를 선명하게 안내합니다.",
         "en": "Guide visitors to primary and secondary actions."
       },
-      "thumbnail": "thumbnails/catalog-cta.svg",
+      "thumbnail": "thumbnails/generated/block-11-cta.png",
       "schema_ref": "builtin:ctaProps",
       "editor_component": "Cta",
       "compiler": "builtin.cta-split-01",
@@ -225,7 +225,7 @@
         "ko": "주소, 전화, 이메일과 문의 동선을 제공합니다.",
         "en": "Show address, phone, email, and contact actions."
       },
-      "thumbnail": "thumbnails/catalog-contact.svg",
+      "thumbnail": "thumbnails/generated/block-12-contact.png",
       "schema_ref": "builtin:contactProps",
       "editor_component": "Contact",
       "compiler": "builtin.contact-info-01",
@@ -243,7 +243,7 @@
         "ko": "고객사와 파트너 이름 또는 로고를 정돈해 보여줍니다.",
         "en": "Display customer and partner logos."
       },
-      "thumbnail": "thumbnails/catalog-logo-cloud.svg",
+      "thumbnail": "thumbnails/generated/block-13-logo-cloud.png",
       "schema_ref": "builtin:logoCloudProps",
       "editor_component": "LogoCloud",
       "compiler": "builtin.logo-cloud-01",
@@ -261,7 +261,7 @@
         "ko": "핵심 수치와 설명을 아이콘 조합으로 강조합니다.",
         "en": "Highlight key metrics with icons."
       },
-      "thumbnail": "thumbnails/catalog-stats.svg",
+      "thumbnail": "thumbnails/generated/block-14-stats.png",
       "schema_ref": "builtin:statsProps",
       "editor_component": "Stats",
       "compiler": "builtin.stats-icons-01",
@@ -279,7 +279,7 @@
         "ko": "2~4개 플랜의 가격, 기능과 추천안을 비교합니다.",
         "en": "Compare prices and features across plans."
       },
-      "thumbnail": "thumbnails/catalog-pricing.svg",
+      "thumbnail": "thumbnails/generated/block-15-pricing.png",
       "schema_ref": "builtin:pricingProps",
       "editor_component": "Pricing",
       "compiler": "builtin.pricing-tiers-01",
@@ -297,7 +297,7 @@
         "ko": "구성원의 사진, 역할과 전문성을 소개합니다.",
         "en": "Introduce team members, roles, and profiles."
       },
-      "thumbnail": "thumbnails/catalog-team.svg",
+      "thumbnail": "thumbnails/generated/block-16-team.png",
       "schema_ref": "builtin:teamProps",
       "editor_component": "Team",
       "compiler": "builtin.team-grid-01",
@@ -315,7 +315,7 @@
         "ko": "2~4열 이미지와 캡션으로 프로젝트를 전시합니다.",
         "en": "Display images and captions in a responsive grid."
       },
-      "thumbnail": "thumbnails/catalog-gallery.svg",
+      "thumbnail": "thumbnails/generated/block-17-gallery.png",
       "schema_ref": "builtin:galleryProps",
       "editor_component": "Gallery",
       "compiler": "builtin.gallery-grid-01",
@@ -333,7 +333,7 @@
         "ko": "0~100 범위의 데이터를 접근 가능한 그래프로 비교합니다.",
         "en": "Compare values from zero to one hundred."
       },
-      "thumbnail": "thumbnails/catalog-bar-chart.svg",
+      "thumbnail": "thumbnails/generated/block-18-bar-chart.png",
       "schema_ref": "builtin:barChartProps",
       "editor_component": "BarChart",
       "compiler": "builtin.bar-chart-01",
@@ -351,7 +351,7 @@
         "ko": "G7 공개 게시판 API의 최신글 또는 인기글을 자동 표시합니다.",
         "en": "Load recent or popular posts from the public G7 board API."
       },
-      "thumbnail": "thumbnails/catalog-g7-recent-posts.svg",
+      "thumbnail": "thumbnails/generated/block-19-g7-recent-posts.png",
       "schema_ref": "builtin:g7RecentPostsProps",
       "editor_component": "G7RecentPosts",
       "compiler": "builtin.g7-board-recent-posts-01",
@@ -372,7 +372,7 @@
         "ko": "G7 쇼핑몰 공개 API의 최신·신규·인기 상품을 자동 표시합니다.",
         "en": "Load products from the public G7 ecommerce API."
       },
-      "thumbnail": "thumbnails/catalog-g7-product-grid.svg",
+      "thumbnail": "thumbnails/generated/block-20-g7-product-grid.png",
       "schema_ref": "builtin:g7ProductGridProps",
       "editor_component": "G7ProductGrid",
       "compiler": "builtin.g7-ecommerce-product-grid-01",
@@ -393,7 +393,7 @@
         "ko": "문의, 견적, 예약, 신청 내용을 안전하게 접수하고 관리자 문의함에 보존합니다.",
         "en": "Collect and retain inquiries, quotes, reservations, and applications."
       },
-      "thumbnail": "thumbnails/catalog-inquiry-form.svg",
+      "thumbnail": "thumbnails/generated/block-21-inquiry-form.png",
       "schema_ref": "builtin:inquiryFormProps",
       "editor_component": "InquiryForm",
       "compiler": "builtin.inquiry-form-01",
@@ -413,7 +413,7 @@
         "ko": "주소, 운영 정보, 길찾기와 키 없는 지도 임베드를 함께 제공합니다.",
         "en": "Show an address, visit details, directions, and a keyless map."
       },
-      "thumbnail": "thumbnails/catalog-map-directions.svg",
+      "thumbnail": "thumbnails/generated/block-22-map-directions.png",
       "schema_ref": "builtin:mapDirectionsProps",
       "editor_component": "MapDirections",
       "compiler": "builtin.map-directions-01",
@@ -433,7 +433,7 @@
         "ko": "고객 평가, 역할, 회사와 프로필을 신뢰 요소로 보여줍니다.",
         "en": "Present customer quotes, ratings, and identities."
       },
-      "thumbnail": "thumbnails/catalog-testimonials.svg",
+      "thumbnail": "thumbnails/generated/block-23-testimonials.png",
       "schema_ref": "builtin:testimonialsProps",
       "editor_component": "Testimonials",
       "compiler": "builtin.testimonials-01",
@@ -451,7 +451,7 @@
         "ko": "질문과 답변을 접근 가능한 접이식 목록으로 제공합니다.",
         "en": "Organize questions and answers in an accessible accordion."
       },
-      "thumbnail": "thumbnails/catalog-faq-accordion.svg",
+      "thumbnail": "thumbnails/generated/block-24-faq-accordion.png",
       "schema_ref": "builtin:faqAccordionProps",
       "editor_component": "FaqAccordion",
       "compiler": "builtin.faq-accordion-01",
@@ -471,7 +471,7 @@
         "ko": "절차와 이력을 순서가 있는 단계로 설명합니다.",
         "en": "Explain a process or history as ordered steps."
       },
-      "thumbnail": "thumbnails/catalog-process-timeline.svg",
+      "thumbnail": "thumbnails/generated/block-25-process-timeline.png",
       "schema_ref": "builtin:processTimelineProps",
       "editor_component": "ProcessTimeline",
       "compiler": "builtin.process-timeline-01",
@@ -489,7 +489,7 @@
         "ko": "관련 내용을 키보드로 탐색 가능한 탭으로 구분합니다.",
         "en": "Group related content into keyboard-accessible tabs."
       },
-      "thumbnail": "thumbnails/catalog-tabs.svg",
+      "thumbnail": "thumbnails/generated/block-26-tabs.png",
       "schema_ref": "builtin:tabsProps",
       "editor_component": "Tabs",
       "compiler": "builtin.tabs-01",
@@ -509,7 +509,7 @@
         "ko": "제품이나 플랜의 차이를 접근 가능한 표로 비교합니다.",
         "en": "Compare products or plans in an accessible table."
       },
-      "thumbnail": "thumbnails/catalog-comparison-table.svg",
+      "thumbnail": "thumbnails/generated/block-27-comparison-table.png",
       "schema_ref": "builtin:comparisonTableProps",
       "editor_component": "ComparisonTable",
       "compiler": "builtin.comparison-table-01",
@@ -527,7 +527,7 @@
         "ko": "선별한 글, 사례, 소식을 이미지와 링크가 있는 목록으로 구성합니다.",
         "en": "Curate articles, cases, or news with images and links."
       },
-      "thumbnail": "thumbnails/catalog-article-list.svg",
+      "thumbnail": "thumbnails/generated/block-28-article-list.png",
       "schema_ref": "builtin:articleListProps",
       "editor_component": "ArticleList",
       "compiler": "builtin.article-list-01",
@@ -545,7 +545,7 @@
         "ko": "YouTube 또는 Vimeo 영상을 안전한 식별자 방식으로 삽입합니다.",
         "en": "Embed a YouTube or Vimeo video by safe identifier."
       },
-      "thumbnail": "thumbnails/catalog-video-embed.svg",
+      "thumbnail": "thumbnails/generated/block-29-video-embed.png",
       "schema_ref": "builtin:videoEmbedProps",
       "editor_component": "VideoEmbed",
       "compiler": "builtin.video-embed-01",
@@ -565,7 +565,7 @@
         "ko": "파트너 로고를 접근 가능한 가로 캐러셀로 보여줍니다.",
         "en": "Present partner logos in an accessible carousel."
       },
-      "thumbnail": "thumbnails/catalog-logo-carousel.svg",
+      "thumbnail": "thumbnails/generated/block-30-logo-carousel.png",
       "schema_ref": "builtin:logoCarouselProps",
       "editor_component": "LogoCarousel",
       "compiler": "builtin.logo-carousel-01",
@@ -585,7 +585,7 @@
         "ko": "고객 경험을 한 장면씩 집중해서 전달합니다.",
         "en": "Focus attention on one customer story at a time."
       },
-      "thumbnail": "thumbnails/catalog-testimonial-slider.svg",
+      "thumbnail": "thumbnails/generated/block-31-testimonial-slider.png",
       "schema_ref": "builtin:testimonialSliderProps",
       "editor_component": "TestimonialSlider",
       "compiler": "builtin.testimonial-slider-01",
@@ -605,7 +605,7 @@
         "ko": "행사 날짜, 장소, 설명과 신청 동선을 일정표로 구성합니다.",
         "en": "Arrange event dates, locations, details, and actions."
       },
-      "thumbnail": "thumbnails/catalog-event-schedule.svg",
+      "thumbnail": "thumbnails/generated/block-32-event-schedule.png",
       "schema_ref": "builtin:eventScheduleProps",
       "editor_component": "EventSchedule",
       "compiler": "builtin.event-schedule-01",
@@ -623,7 +623,7 @@
         "ko": "소개서, 가이드, 에셋 등 자료 파일의 다운로드 동선을 제공합니다.",
         "en": "Offer guides, brochures, and assets as typed download links."
       },
-      "thumbnail": "thumbnails/catalog-download-resources.svg",
+      "thumbnail": "thumbnails/generated/block-33-download-resources.png",
       "schema_ref": "builtin:downloadResourcesProps",
       "editor_component": "DownloadResources",
       "compiler": "builtin.download-resources-01",
@@ -641,7 +641,7 @@
         "ko": "공개 게시글을 제목 검색과 게시판 필터가 있는 아카이브로 표시합니다.",
         "en": "Show public board posts in a searchable and filterable archive."
       },
-      "thumbnail": "thumbnails/catalog-g7-board-archive.svg",
+      "thumbnail": "thumbnails/generated/block-34-g7-board-archive.png",
       "schema_ref": "builtin:g7BoardArchiveProps",
       "editor_component": "G7BoardArchive",
       "compiler": "builtin.g7-board-content-archive-01",
@@ -663,7 +663,7 @@
         "ko": "공개 상품을 대표 상품 강조 또는 가로 목록으로 연결합니다.",
         "en": "Connect public products in featured or horizontal showcase layouts."
       },
-      "thumbnail": "thumbnails/catalog-g7-product-showcase.svg",
+      "thumbnail": "thumbnails/generated/block-35-g7-product-showcase.png",
       "schema_ref": "builtin:g7ProductShowcaseProps",
       "editor_component": "G7ProductShowcase",
       "compiler": "builtin.g7-ecommerce-product-showcase-01",
@@ -684,7 +684,7 @@
         "ko": "지정한 게시글의 제목, 작성 정보, 본문 요약을 공개 API로 표시합니다.",
         "en": "Load a selected post summary from the public G7 board API."
       },
-      "thumbnail": "thumbnails/catalog-g7-post-detail.svg",
+      "thumbnail": "thumbnails/generated/block-36-g7-post-detail.png",
       "schema_ref": "builtin:g7PostDetailProps",
       "editor_component": "G7PostDetail",
       "compiler": "builtin.g7-board-post-detail-01",
@@ -705,7 +705,7 @@
         "ko": "지정한 상품의 이미지, 가격과 설명을 공개 API로 표시합니다.",
         "en": "Load a selected product summary from the public G7 ecommerce API."
       },
-      "thumbnail": "thumbnails/catalog-g7-product-detail.svg",
+      "thumbnail": "thumbnails/generated/block-37-g7-product-detail.png",
       "schema_ref": "builtin:g7ProductDetailProps",
       "editor_component": "G7ProductDetail",
       "compiler": "builtin.g7-ecommerce-product-detail-01",
@@ -725,7 +725,7 @@
       "description": {
         "ko": "섹션 사이의 흐름을 선, 여백, 선택 문구로 정돈합니다."
       },
-      "thumbnail": "thumbnails/catalog-divider.svg",
+      "thumbnail": "thumbnails/generated/block-38-divider.png",
       "schema_ref": "builtin:dividerProps",
       "editor_component": "Divider",
       "compiler": "builtin.divider-01",
@@ -742,7 +742,7 @@
       "description": {
         "ko": "고객의 말이나 핵심 메시지를 출처와 함께 강조합니다."
       },
-      "thumbnail": "thumbnails/catalog-blockquote.svg",
+      "thumbnail": "thumbnails/generated/block-39-blockquote.png",
       "schema_ref": "builtin:blockquoteProps",
       "editor_component": "Blockquote",
       "compiler": "builtin.blockquote-01",
@@ -759,7 +759,7 @@
       "description": {
         "ko": "정보, 완료, 주의, 중요 안내를 선택 링크와 함께 전달합니다."
       },
-      "thumbnail": "thumbnails/catalog-notice.svg",
+      "thumbnail": "thumbnails/generated/block-40-notice.png",
       "schema_ref": "builtin:noticeProps",
       "editor_component": "Notice",
       "compiler": "builtin.notice-01",
@@ -776,7 +776,7 @@
       "description": {
         "ko": "서비스와 콘텐츠를 독립된 카드 묶음으로 비교·탐색하게 합니다."
       },
-      "thumbnail": "thumbnails/catalog-card-grid.svg",
+      "thumbnail": "thumbnails/generated/block-41-card-grid.png",
       "schema_ref": "builtin:cardGridProps",
       "editor_component": "CardGrid",
       "compiler": "builtin.card-grid-01",
@@ -793,7 +793,7 @@
       "description": {
         "ko": "현재 페이지의 계층과 상위 이동 경로를 보여줍니다."
       },
-      "thumbnail": "thumbnails/catalog-breadcrumbs.svg",
+      "thumbnail": "thumbnails/generated/block-42-breadcrumbs.png",
       "schema_ref": "builtin:breadcrumbsProps",
       "editor_component": "Breadcrumbs",
       "compiler": "builtin.breadcrumbs-01",
@@ -810,7 +810,7 @@
       "description": {
         "ko": "긴 페이지의 주요 섹션으로 바로 이동하는 메뉴를 제공합니다."
       },
-      "thumbnail": "thumbnails/catalog-anchor-menu.svg",
+      "thumbnail": "thumbnails/generated/block-43-anchor-menu.png",
       "schema_ref": "builtin:anchorMenuProps",
       "editor_component": "AnchorMenu",
       "compiler": "builtin.anchor-menu-01",
@@ -827,7 +827,7 @@
       "description": {
         "ko": "브랜드의 공식 소셜 채널과 외부 웹사이트를 연결합니다."
       },
-      "thumbnail": "thumbnails/catalog-social-links.svg",
+      "thumbnail": "thumbnails/generated/block-44-social-links.png",
       "schema_ref": "builtin:socialLinksProps",
       "editor_component": "SocialLinks",
       "compiler": "builtin.social-links-01",
@@ -844,7 +844,7 @@
       "description": {
         "ko": "여러 이미지를 캡션과 탐색 컨트롤이 있는 슬라이드로 보여줍니다."
       },
-      "thumbnail": "thumbnails/catalog-image-carousel.svg",
+      "thumbnail": "thumbnails/generated/block-45-image-carousel.png",
       "schema_ref": "builtin:imageCarouselProps",
       "editor_component": "ImageCarousel",
       "compiler": "builtin.image-carousel-01",
@@ -867,7 +867,7 @@
         "ko": "큰 제목과 짧은 보조 문구로 새 섹션을 시작합니다.",
         "en": "Open a new section with a large heading and eyebrow."
       },
-      "thumbnail": "thumbnails/catalog-heading.svg",
+      "thumbnail": "thumbnails/generated/preset-01-heading-section-intro.png",
       "props": {
         "eyebrow": "핵심 안내",
         "heading": "방문자가 먼저 알아야 할 내용",
@@ -888,7 +888,7 @@
         "ko": "본문 사이를 구분하는 간결한 H3 제목입니다.",
         "en": "Add a compact H3 between body sections."
       },
-      "thumbnail": "thumbnails/catalog-heading.svg",
+      "thumbnail": "thumbnails/generated/preset-02-heading-compact-title.png",
       "props": {
         "eyebrow": "",
         "heading": "조금 더 자세히 살펴보기",
@@ -913,7 +913,7 @@
         "ko": "서비스나 회사 소개에 바로 쓰는 2문단 본문입니다.",
         "en": "Start service or company copy with two readable paragraphs."
       },
-      "thumbnail": "thumbnails/catalog-rich-text.svg",
+      "thumbnail": "thumbnails/generated/preset-03-rich-text-article-intro.png",
       "props": {
         "content": "<p>고객이 겪는 문제와 우리가 제공하는 해결 방법을 구체적으로 설명해 주세요.</p><p><strong>핵심 차이</strong>와 기대할 수 있는 결과를 짧은 문장으로 이어가면 이해가 빨라집니다.</p>",
         "measure": "standard"
@@ -932,7 +932,7 @@
         "ko": "운영 안내, 이용 방법, 정책을 목록과 함께 설명합니다.",
         "en": "Explain guidance, usage, or policy with a structured list."
       },
-      "thumbnail": "thumbnails/catalog-rich-text.svg",
+      "thumbnail": "thumbnails/generated/preset-04-rich-text-policy.png",
       "props": {
         "content": "<h3>이용 전 확인해 주세요</h3><ul><li>적용 범위와 일정을 확인합니다.</li><li>필요한 자료를 미리 준비합니다.</li><li>문의 사항은 안내된 경로로 전달합니다.</li></ul>",
         "measure": "narrow",
@@ -955,7 +955,7 @@
         "ko": "제품 화면이나 공간 사진을 16:9 비율로 강조합니다.",
         "en": "Feature a product or space image in a 16:9 ratio."
       },
-      "thumbnail": "thumbnails/catalog-image.svg",
+      "thumbnail": "thumbnails/generated/preset-05-image-landscape.png",
       "props": {
         "src": "",
         "alt": "",
@@ -977,7 +977,7 @@
         "ko": "작품, 상품, 인물 이미지를 정사각 비율로 배치합니다.",
         "en": "Place artwork, product, or portrait imagery in a square ratio."
       },
-      "thumbnail": "thumbnails/catalog-image.svg",
+      "thumbnail": "thumbnails/generated/preset-06-image-square.png",
       "props": {
         "src": "",
         "alt": "",
@@ -1003,7 +1003,7 @@
         "ko": "주요 행동과 보조 확인 경로를 함께 안내합니다.",
         "en": "Pair one primary action with a secondary route."
       },
-      "thumbnail": "thumbnails/catalog-buttons.svg",
+      "thumbnail": "thumbnails/generated/preset-07-buttons-primary-secondary.png",
       "props": {
         "items": [
           {
@@ -1033,7 +1033,7 @@
         "ko": "섹션 끝에서 두 가지 다음 행동을 가운데 정렬합니다.",
         "en": "Center two next-step actions at the end of a section."
       },
-      "thumbnail": "thumbnails/catalog-buttons.svg",
+      "thumbnail": "thumbnails/generated/preset-08-buttons-centered-actions.png",
       "props": {
         "items": [
           {
@@ -1067,7 +1067,7 @@
         "ko": "제품 이미지 옆에 기능과 효과를 설명합니다.",
         "en": "Explain a product feature beside its image."
       },
-      "thumbnail": "thumbnails/catalog-image-text.svg",
+      "thumbnail": "thumbnails/generated/preset-09-image-text-product-story.png",
       "props": {
         "eyebrow": "제품 기능",
         "heading": "복잡한 작업을 더 단순하게",
@@ -1096,7 +1096,7 @@
         "ko": "팀 또는 공간 이미지와 회사의 관점을 함께 전달합니다.",
         "en": "Pair team or place imagery with the company's point of view."
       },
-      "thumbnail": "thumbnails/catalog-image-text.svg",
+      "thumbnail": "thumbnails/generated/preset-10-image-text-company-story.png",
       "props": {
         "eyebrow": "우리가 일하는 방식",
         "heading": "좋은 결과는 분명한 과정에서 시작됩니다",
@@ -1129,7 +1129,7 @@
         "ko": "서비스의 주요 장점을 2열 목록으로 설명합니다.",
         "en": "Explain primary service benefits in two columns."
       },
-      "thumbnail": "thumbnails/catalog-icon-list.svg",
+      "thumbnail": "thumbnails/generated/preset-11-icon-list-benefits.png",
       "props": {
         "eyebrow": "선택 이유",
         "heading": "운영에 필요한 핵심 장점",
@@ -1171,7 +1171,7 @@
         "ko": "준비물이나 지원 범위를 한 줄씩 명확하게 안내합니다.",
         "en": "Present requirements or included items as a clear checklist."
       },
-      "thumbnail": "thumbnails/catalog-icon-list.svg",
+      "thumbnail": "thumbnails/generated/preset-12-icon-list-checklist.png",
       "props": {
         "eyebrow": "포함 사항",
         "heading": "시작 전에 확인해 주세요",
@@ -1212,7 +1212,7 @@
         "ko": "서비스 가치와 첫 행동을 선명하게 제시합니다.",
         "en": "Present a service value proposition and first action."
       },
-      "thumbnail": "thumbnails/catalog-hero.svg",
+      "thumbnail": "thumbnails/generated/preset-13-hero-service-intro.png",
       "props": {
         "eyebrow": "새로운 시작",
         "title": "고객의 다음 행동을 더 분명하게",
@@ -1237,7 +1237,7 @@
         "ko": "가장 중요한 기능 세 가지를 짧게 설명합니다.",
         "en": "Explain the three most important capabilities."
       },
-      "thumbnail": "thumbnails/catalog-features.svg",
+      "thumbnail": "thumbnails/generated/preset-14-features-core-benefits.png",
       "props": {
         "title": "필요한 기능을 한눈에",
         "items": [
@@ -1272,7 +1272,7 @@
         "ko": "페이지 끝에서 상담과 상세 안내로 연결합니다.",
         "en": "Close a page with consultation and detail routes."
       },
-      "thumbnail": "thumbnails/catalog-cta.svg",
+      "thumbnail": "thumbnails/generated/preset-15-cta-contact.png",
       "props": {
         "eyebrow": "다음 단계",
         "heading": "필요한 구성을 함께 정리하세요",
@@ -1301,7 +1301,7 @@
         "ko": "주소, 전화, 이메일과 문의 경로를 제공합니다.",
         "en": "Provide address, phone, email, and contact routes."
       },
-      "thumbnail": "thumbnails/catalog-contact.svg",
+      "thumbnail": "thumbnails/generated/preset-16-contact-office.png",
       "props": {
         "heading": "문의와 방문 안내",
         "address": "서울특별시 중구 세종대로 110",
@@ -1330,7 +1330,7 @@
         "ko": "구매와 이용 전에 자주 묻는 질문을 시작합니다.",
         "en": "Start common pre-purchase and usage questions."
       },
-      "thumbnail": "thumbnails/catalog-faq-accordion.svg",
+      "thumbnail": "thumbnails/generated/preset-17-faq-basic.png",
       "props": {
         "eyebrow": "자주 묻는 질문",
         "heading": "궁금한 점을 확인하세요",
@@ -1365,7 +1365,7 @@
         "ko": "상담부터 완료까지의 흐름을 네 단계로 설명합니다.",
         "en": "Explain a journey from consultation to completion in four steps."
       },
-      "thumbnail": "thumbnails/catalog-process-timeline.svg",
+      "thumbnail": "thumbnails/generated/preset-18-process-four-step.png",
       "props": {
         "eyebrow": "진행 과정",
         "heading": "네 단계로 완성합니다",
@@ -1409,7 +1409,7 @@
       "description": {
         "ko": "메시지와 제품 이미지를 좌우로 배치합니다."
       },
-      "thumbnail": "thumbnails/catalog-hero-split.svg",
+      "thumbnail": "thumbnails/generated/preset-19-hero-split-product-focus.png",
       "props": {
         "eyebrow": "PRODUCT",
         "title": "제품의 핵심 가치를 한 장면에",
@@ -1432,7 +1432,7 @@
       "description": {
         "ko": "두 개 이상의 대표 메시지를 순서대로 소개합니다."
       },
-      "thumbnail": "thumbnails/catalog-hero-slider.svg",
+      "thumbnail": "thumbnails/generated/preset-20-hero-slider-campaign.png",
       "props": {
         "slides": [
           {
@@ -1470,7 +1470,7 @@
       "description": {
         "ko": "함께하는 고객사와 파트너를 한눈에 보여줍니다."
       },
-      "thumbnail": "thumbnails/catalog-logo-cloud.svg",
+      "thumbnail": "thumbnails/generated/preset-21-logo-cloud-partners.png",
       "props": {
         "heading": "함께하는 브랜드와 파트너",
         "logos": [
@@ -1512,7 +1512,7 @@
       "description": {
         "ko": "성과를 설명하는 세 가지 숫자를 강조합니다."
       },
-      "thumbnail": "thumbnails/catalog-stats.svg",
+      "thumbnail": "thumbnails/generated/preset-22-stats-business-proof.png",
       "props": {
         "eyebrow": "RESULTS",
         "heading": "숫자로 확인하는 변화",
@@ -1549,7 +1549,7 @@
       "description": {
         "ko": "규모에 맞는 세 가지 플랜을 비교합니다."
       },
-      "thumbnail": "thumbnails/catalog-pricing.svg",
+      "thumbnail": "thumbnails/generated/preset-23-pricing-three-tier.png",
       "props": {
         "eyebrow": "PRICING",
         "heading": "필요한 규모에 맞는 플랜",
@@ -1596,7 +1596,7 @@
       "description": {
         "ko": "핵심 구성원의 역할과 전문성을 소개합니다."
       },
-      "thumbnail": "thumbnails/catalog-team.svg",
+      "thumbnail": "thumbnails/generated/preset-24-team-leadership.png",
       "props": {
         "eyebrow": "TEAM",
         "heading": "문제를 해결하는 사람들",
@@ -1631,7 +1631,7 @@
       "description": {
         "ko": "프로젝트의 주요 장면을 3열로 보여줍니다."
       },
-      "thumbnail": "thumbnails/catalog-gallery.svg",
+      "thumbnail": "thumbnails/generated/preset-25-gallery-project-scenes.png",
       "props": {
         "eyebrow": "PROJECT",
         "heading": "장면으로 살펴보는 작업",
@@ -1666,7 +1666,7 @@
       "description": {
         "ko": "분기별 핵심 지표를 막대로 비교합니다."
       },
-      "thumbnail": "thumbnails/catalog-bar-chart.svg",
+      "thumbnail": "thumbnails/generated/preset-26-bar-chart-quarterly.png",
       "props": {
         "eyebrow": "DATA",
         "heading": "분기별 핵심 지표",
@@ -1707,7 +1707,7 @@
       "description": {
         "ko": "최근 게시글을 페이지 단위로 불러옵니다."
       },
-      "thumbnail": "thumbnails/catalog-g7-recent-posts.svg",
+      "thumbnail": "thumbnails/generated/preset-27-g7-posts-latest.png",
       "props": {
         "eyebrow": "NEWS",
         "heading": "최근 게시글",
@@ -1730,7 +1730,7 @@
       "description": {
         "ko": "새로운 상품을 4열 그리드로 불러옵니다."
       },
-      "thumbnail": "thumbnails/catalog-g7-product-grid.svg",
+      "thumbnail": "thumbnails/generated/preset-28-g7-products-new.png",
       "props": {
         "eyebrow": "SHOP",
         "heading": "새로운 상품",
@@ -1754,7 +1754,7 @@
       "description": {
         "ko": "이름, 연락처, 제목과 내용을 받습니다."
       },
-      "thumbnail": "thumbnails/catalog-inquiry-form.svg",
+      "thumbnail": "thumbnails/generated/preset-29-inquiry-general.png",
       "props": {
         "eyebrow": "CONTACT",
         "heading": "무엇을 도와드릴까요?",
@@ -1778,7 +1778,7 @@
       "description": {
         "ko": "주소, 운영 시간과 길찾기 지도를 제공합니다."
       },
-      "thumbnail": "thumbnails/catalog-map-directions.svg",
+      "thumbnail": "thumbnails/generated/preset-30-map-office.png",
       "props": {
         "eyebrow": "LOCATION",
         "heading": "방문을 환영합니다",
@@ -1806,7 +1806,7 @@
       "description": {
         "ko": "실제 고객의 변화와 역할을 함께 보여줍니다."
       },
-      "thumbnail": "thumbnails/catalog-testimonials.svg",
+      "thumbnail": "thumbnails/generated/preset-31-testimonials-customer-proof.png",
       "props": {
         "eyebrow": "REVIEWS",
         "heading": "고객이 경험한 변화",
@@ -1844,7 +1844,7 @@
       "description": {
         "ko": "기획, 제작, 운영 안내를 탭으로 나눕니다."
       },
-      "thumbnail": "thumbnails/catalog-tabs.svg",
+      "thumbnail": "thumbnails/generated/preset-32-tabs-service-guide.png",
       "props": {
         "eyebrow": "SERVICES",
         "heading": "필요한 정보를 나눠 확인하세요",
@@ -1880,7 +1880,7 @@
       "description": {
         "ko": "두 가지 플랜의 제공 범위를 행별로 비교합니다."
       },
-      "thumbnail": "thumbnails/catalog-comparison-table.svg",
+      "thumbnail": "thumbnails/generated/preset-33-comparison-plans.png",
       "props": {
         "eyebrow": "COMPARE",
         "heading": "상황에 맞는 구성을 비교하세요",
@@ -1924,7 +1924,7 @@
       "description": {
         "ko": "세 개의 글을 날짜와 요약으로 소개합니다."
       },
-      "thumbnail": "thumbnails/catalog-article-list.svg",
+      "thumbnail": "thumbnails/generated/preset-34-articles-insights.png",
       "props": {
         "eyebrow": "INSIGHTS",
         "heading": "새로운 소식과 이야기",
@@ -1962,7 +1962,7 @@
       "description": {
         "ko": "영상의 목적과 캡션을 함께 제공합니다."
       },
-      "thumbnail": "thumbnails/catalog-video-embed.svg",
+      "thumbnail": "thumbnails/generated/preset-35-video-product-tour.png",
       "props": {
         "eyebrow": "VIDEO",
         "heading": "제품을 2분 안에 살펴보세요",
@@ -1983,7 +1983,7 @@
       "description": {
         "ko": "여러 고객사 로고를 자동으로 넘겨 보여줍니다."
       },
-      "thumbnail": "thumbnails/catalog-logo-carousel.svg",
+      "thumbnail": "thumbnails/generated/preset-36-logo-carousel-customers.png",
       "props": {
         "eyebrow": "CUSTOMERS",
         "heading": "신뢰받는 팀이 선택했습니다",
@@ -2028,7 +2028,7 @@
       "description": {
         "ko": "후기를 한 장씩 집중해 보여줍니다."
       },
-      "thumbnail": "thumbnails/catalog-testimonial-slider.svg",
+      "thumbnail": "thumbnails/generated/preset-37-testimonial-slider-spotlight.png",
       "props": {
         "eyebrow": "STORIES",
         "heading": "운영 현장에서 확인한 변화",
@@ -2067,7 +2067,7 @@
       "description": {
         "ko": "웨비나와 워크숍 일정을 시간순으로 안내합니다."
       },
-      "thumbnail": "thumbnails/catalog-event-schedule.svg",
+      "thumbnail": "thumbnails/generated/preset-38-events-upcoming.png",
       "props": {
         "eyebrow": "EVENTS",
         "heading": "만나고 배우는 시간",
@@ -2105,7 +2105,7 @@
       "description": {
         "ko": "소개서와 체크리스트를 파일 정보와 함께 제공합니다."
       },
-      "thumbnail": "thumbnails/catalog-download-resources.svg",
+      "thumbnail": "thumbnails/generated/preset-39-downloads-resource-center.png",
       "props": {
         "eyebrow": "RESOURCES",
         "heading": "필요한 자료를 받아보세요",
@@ -2140,7 +2140,7 @@
       "description": {
         "ko": "검색과 게시판 필터가 있는 글 목록을 제공합니다."
       },
-      "thumbnail": "thumbnails/catalog-g7-board-archive.svg",
+      "thumbnail": "thumbnails/generated/preset-40-g7-archive-searchable.png",
       "props": {
         "eyebrow": "ARCHIVE",
         "heading": "관심 있는 이야기를 찾아보세요",
@@ -2165,7 +2165,7 @@
       "description": {
         "ko": "대표 상품을 강조한 레일로 불러옵니다."
       },
-      "thumbnail": "thumbnails/catalog-g7-product-showcase.svg",
+      "thumbnail": "thumbnails/generated/preset-41-g7-showcase-featured.png",
       "props": {
         "eyebrow": "FEATURED",
         "heading": "지금 주목할 상품",
@@ -2189,7 +2189,7 @@
       "description": {
         "ko": "지정한 게시글의 제목과 본문 요약을 불러옵니다."
       },
-      "thumbnail": "thumbnails/catalog-g7-post-detail.svg",
+      "thumbnail": "thumbnails/generated/preset-42-g7-post-detail-featured.png",
       "props": {
         "eyebrow": "POST",
         "heading": "선택한 게시글",
@@ -2213,7 +2213,7 @@
       "description": {
         "ko": "지정한 상품의 이미지와 가격, 설명을 불러옵니다."
       },
-      "thumbnail": "thumbnails/catalog-g7-product-detail.svg",
+      "thumbnail": "thumbnails/generated/preset-43-g7-product-detail-featured.png",
       "props": {
         "eyebrow": "PRODUCT",
         "heading": "선택한 상품",
@@ -2236,7 +2236,7 @@
       "description": {
         "ko": "긴 페이지의 주제가 바뀌는 지점을 정돈합니다."
       },
-      "thumbnail": "thumbnails/catalog-divider.svg",
+      "thumbnail": "thumbnails/generated/preset-44-divider-section-break.png",
       "props": {
         "variant": "gradient",
         "width": "standard",
@@ -2254,7 +2254,7 @@
       "description": {
         "ko": "고객 인용문과 출처를 강조합니다."
       },
-      "thumbnail": "thumbnails/catalog-blockquote.svg",
+      "thumbnail": "thumbnails/generated/preset-45-blockquote-customer-voice.png",
       "props": {
         "quote": "복잡했던 운영이 한결 단순해졌습니다.",
         "citation": "김민서",
@@ -2274,7 +2274,7 @@
       "description": {
         "ko": "방문자가 놓치면 안 되는 정보를 링크와 함께 알립니다."
       },
-      "thumbnail": "thumbnails/catalog-notice.svg",
+      "thumbnail": "thumbnails/generated/preset-46-notice-service-info.png",
       "props": {
         "tone": "info",
         "title": "이용 전에 확인해 주세요",
@@ -2294,7 +2294,7 @@
       "description": {
         "ko": "세 가지 서비스를 독립된 카드로 소개합니다."
       },
-      "thumbnail": "thumbnails/catalog-card-grid.svg",
+      "thumbnail": "thumbnails/generated/preset-47-card-grid-services.png",
       "props": {
         "eyebrow": "SERVICES",
         "heading": "필요한 서비스를 선택하세요",
@@ -2336,7 +2336,7 @@
       "description": {
         "ko": "홈부터 현재 상세 페이지까지의 계층을 표시합니다."
       },
-      "thumbnail": "thumbnails/catalog-breadcrumbs.svg",
+      "thumbnail": "thumbnails/generated/preset-48-breadcrumbs-detail-page.png",
       "props": {
         "items": [
           {
@@ -2362,7 +2362,7 @@
       "description": {
         "ko": "소개, 서비스, 문의 섹션으로 바로 이동합니다."
       },
-      "thumbnail": "thumbnails/catalog-anchor-menu.svg",
+      "thumbnail": "thumbnails/generated/preset-49-anchor-menu-long-page.png",
       "props": {
         "label": "이 페이지에서",
         "items": [
@@ -2394,7 +2394,7 @@
       "description": {
         "ko": "브랜드가 운영하는 공식 채널을 연결합니다."
       },
-      "thumbnail": "thumbnails/catalog-social-links.svg",
+      "thumbnail": "thumbnails/generated/preset-50-social-links-official.png",
       "props": {
         "heading": "공식 채널",
         "items": [
@@ -2429,7 +2429,7 @@
       "description": {
         "ko": "세 장의 이미지와 캡션으로 공간을 소개합니다."
       },
-      "thumbnail": "thumbnails/catalog-image-carousel.svg",
+      "thumbnail": "thumbnails/generated/preset-51-image-carousel-space-tour.png",
       "props": {
         "eyebrow": "GALLERY",
         "heading": "공간을 미리 만나보세요",
@@ -2467,7 +2467,7 @@
       "description": {
         "ko": "예산과 요청 내용을 받는 견적 문의 폼입니다."
       },
-      "thumbnail": "thumbnails/catalog-inquiry-form.svg",
+      "thumbnail": "thumbnails/generated/preset-52-inquiry-quote.png",
       "props": {
         "eyebrow": "CONTACT",
         "heading": "프로젝트 견적을 요청하세요",
@@ -2491,7 +2491,7 @@
       "description": {
         "ko": "방문 또는 상담 예약 정보를 받습니다."
       },
-      "thumbnail": "thumbnails/catalog-inquiry-form.svg",
+      "thumbnail": "thumbnails/generated/preset-53-inquiry-reservation.png",
       "props": {
         "eyebrow": "CONTACT",
         "heading": "상담 시간을 예약하세요",
@@ -2515,7 +2515,7 @@
       "description": {
         "ko": "프로그램이나 행사 참가 신청을 받습니다."
       },
-      "thumbnail": "thumbnails/catalog-inquiry-form.svg",
+      "thumbnail": "thumbnails/generated/preset-54-inquiry-application.png",
       "props": {
         "eyebrow": "CONTACT",
         "heading": "참가 신청을 남겨주세요",
@@ -2539,7 +2539,7 @@
       "description": {
         "ko": "이메일 중심의 간단한 구독 폼입니다."
       },
-      "thumbnail": "thumbnails/catalog-inquiry-form.svg",
+      "thumbnail": "thumbnails/generated/preset-55-inquiry-newsletter.png",
       "props": {
         "eyebrow": "CONTACT",
         "heading": "새 소식을 받아보세요",
@@ -2560,5 +2560,106 @@
       "dist/css/page-builder.css"
     ]
   },
-  "files": {}
+  "files": {
+    "thumbnails/generated/block-01-hero.png": "9bd2ebf2c07bbeba80f18ffc2c7fe52d1f49f0beff7104ee4040d9827aa493f7",
+    "thumbnails/generated/block-02-hero-split.png": "34cacd113f3774091a12d8e7b4d542b4ca19a17fa8a6a263e8a6a61033a022f2",
+    "thumbnails/generated/block-03-hero-slider.png": "2897c427c3e047d62d53d857d9a144753e3c030e7f0c8e47e8c0d6478536efd9",
+    "thumbnails/generated/block-04-heading.png": "271ad78c045a6bb53bef3040a528da0887623db2682797953bb2c9c192cf0deb",
+    "thumbnails/generated/block-05-rich-text.png": "7733e3b1ed779bcf0f8cbf2d9555b13d56b5bd9a1093ad979348c111614b475f",
+    "thumbnails/generated/block-06-image.png": "1248b7f237da5f4b4872f2a8157c35459ced28a08881d8f34b95ae1e88ddd07e",
+    "thumbnails/generated/block-07-buttons.png": "867b644eae2eadf039b7cacf935d436c55aaf181e27ac294e2879f18c8b18591",
+    "thumbnails/generated/block-08-image-text.png": "dabacfc1795c423cf5a9ee208550e21545ae08c99ece5396af526ca59b7daf2e",
+    "thumbnails/generated/block-09-icon-list.png": "f86fca2d75b735c948eebfbde74cd6a64836e3c1a7dd2ef7c6e7f7e62201e926",
+    "thumbnails/generated/block-10-features.png": "ba1f506a07c18a8d1f62e0882409f24698f34ee339c245d9bc946f126e9396bb",
+    "thumbnails/generated/block-11-cta.png": "d8cdf3f18347904e0778ab51ccf70dda062e38d7da8311f7f770e35e56531a72",
+    "thumbnails/generated/block-12-contact.png": "c94931a275ebb4cc177a74fb49d68645a37bb009d34a7f0c2685675e4704181a",
+    "thumbnails/generated/block-13-logo-cloud.png": "6b89a6a7041039f0c28cbf43ab8fa516cf9ef23dfe6d9034e048f45e0f14c2a7",
+    "thumbnails/generated/block-14-stats.png": "ac31ff7185f85e53a604dd869d84854cdff086bcc17215b01ab27b54109cb25f",
+    "thumbnails/generated/block-15-pricing.png": "4697d4882b034f1036cb5eba49354fadb841cd4d8382822bf27f82f36faaaabc",
+    "thumbnails/generated/block-16-team.png": "51d11e4c97810214ef7b55102af005ff6b54f1b248ae08a87b35aab14d8d6b9b",
+    "thumbnails/generated/block-17-gallery.png": "39cfc7632af61c82764747cafe261bc5190f023119356abda123e7c26e6b7f32",
+    "thumbnails/generated/block-18-bar-chart.png": "24a94acf2dc9fdfbc407d5e69b8ec7a8c58688d543ea2f41e62a20070a73e706",
+    "thumbnails/generated/block-19-g7-recent-posts.png": "7372bec2cafcad1171b0515594ab65196301419237cd360cc2a26f380acea8f6",
+    "thumbnails/generated/block-20-g7-product-grid.png": "4d6e104f56c6e8c1b0aa337b9ce635b4541d07459d0c5ec552b47715a55c8c63",
+    "thumbnails/generated/block-21-inquiry-form.png": "49db70818273e101391c448914e2e9e375251d9e83e7280237980dc9d545b6fc",
+    "thumbnails/generated/block-22-map-directions.png": "ff79785200ea275ce0c6191e2cc08ff70d45ccd90a7cce1ddd8c1e39268baa4a",
+    "thumbnails/generated/block-23-testimonials.png": "f779ff0e7b97ba769dee249782bd7135b9a8172ca44d49d0e1695fa418884532",
+    "thumbnails/generated/block-24-faq-accordion.png": "1038823518e9634cd2bb65bca4326374074a7c60dea428761706d8f1f88b993b",
+    "thumbnails/generated/block-25-process-timeline.png": "132d8eaad74942ed1c9521e689881e3d605861744d7805d1a46f336262403268",
+    "thumbnails/generated/block-26-tabs.png": "d08d00aa6fa077f58804e76c05f67632b49e863fe8d2d9de2787056f62c2455a",
+    "thumbnails/generated/block-27-comparison-table.png": "c2aaf20ccc7672c80feb81995fa10362d629c8f069bab2b279263924b8156f4c",
+    "thumbnails/generated/block-28-article-list.png": "04cbd82dd40a15dbf61aaee5a6857ba5b9119dca1c04d50a13a569462c383339",
+    "thumbnails/generated/block-29-video-embed.png": "e84fe8ddbae2f220004b4561d8253857896ec9a5a121b4e54bf298f72406069b",
+    "thumbnails/generated/block-30-logo-carousel.png": "1f1f842a0d82262636c93eae2f79329b9ba3a7d844db60ccdde18a8c490b2511",
+    "thumbnails/generated/block-31-testimonial-slider.png": "0deafc8742723a73fea0485b9221ff7285307dbbec341c0f87cb7ad670345b8d",
+    "thumbnails/generated/block-32-event-schedule.png": "c75d3ad09674aaf280d6b0ed5e309e81fce7662efeff149272d67285c9630432",
+    "thumbnails/generated/block-33-download-resources.png": "b8310b2beaec68759a2f510898d19f07855cae09afeb6c4521ac66d02750bacd",
+    "thumbnails/generated/block-34-g7-board-archive.png": "a26fd145d1d9e9f425fbbccddd78e923897071abcb79b87c8f3cab8f863e2e65",
+    "thumbnails/generated/block-35-g7-product-showcase.png": "66c1fca03303eb684044560cb544c82395c0382916a959e82b4a11483d981219",
+    "thumbnails/generated/block-36-g7-post-detail.png": "3cad3f7cf5cb72dbe9a8499f5d86e661c7a1111a6c2356d3620471b29d59ea46",
+    "thumbnails/generated/block-37-g7-product-detail.png": "0c57c0a7e894f5d411562b602b3261a827eccf2f21be5463550e4828bce50686",
+    "thumbnails/generated/block-38-divider.png": "66dd12aed31039676f7491d16550c35a7f52be9f79ff1388d6ad2ddba0d55211",
+    "thumbnails/generated/block-39-blockquote.png": "ee19d1b834d71a936aff9b56a8281a04d1bcf06b5fcf6cbbff04e85f8edd9e61",
+    "thumbnails/generated/block-40-notice.png": "8b5091efe6ef4f807d9a90570150b5daebe957a6b0b88c61e139739e11d8b7b4",
+    "thumbnails/generated/block-41-card-grid.png": "61c9dbe7e70f4b8da2ed58bfa39f4a8636f9acc549e3ed527b83b43041836fd9",
+    "thumbnails/generated/block-42-breadcrumbs.png": "bd06ac76aef581efec61a9b24da361b94c07c056854fde1e0b81d741cc674116",
+    "thumbnails/generated/block-43-anchor-menu.png": "27752f366063cf87aa9ef2f8714ce44ecd2d655dc258c388fdab7a2347fd640b",
+    "thumbnails/generated/block-44-social-links.png": "ec7638eedb2ceea9a665c0f2d2bb33bf569c92dd87d05ea043d0e88ceab6a4cb",
+    "thumbnails/generated/block-45-image-carousel.png": "297cb0e663ff2e521cb6a7c05e2cfa7c7db02daa1c7387d2f27e7f1895334ec3",
+    "thumbnails/generated/preset-01-heading-section-intro.png": "271ad78c045a6bb53bef3040a528da0887623db2682797953bb2c9c192cf0deb",
+    "thumbnails/generated/preset-02-heading-compact-title.png": "23f5b070b7aee42d177c8c0c0f39129416248da7d7ea444e9d46d6c82492242a",
+    "thumbnails/generated/preset-03-rich-text-article-intro.png": "7733e3b1ed779bcf0f8cbf2d9555b13d56b5bd9a1093ad979348c111614b475f",
+    "thumbnails/generated/preset-04-rich-text-policy.png": "74cca0260885c5f876d1ef8c32009a44880d88a56fb080c355a5b5b58e35421c",
+    "thumbnails/generated/preset-05-image-landscape.png": "1248b7f237da5f4b4872f2a8157c35459ced28a08881d8f34b95ae1e88ddd07e",
+    "thumbnails/generated/preset-06-image-square.png": "e4f9960b6654e465cfc6a078620b569a857296206ca5c21d6b2d7d94ecbb1d4e",
+    "thumbnails/generated/preset-07-buttons-primary-secondary.png": "867b644eae2eadf039b7cacf935d436c55aaf181e27ac294e2879f18c8b18591",
+    "thumbnails/generated/preset-08-buttons-centered-actions.png": "e500592a60ad2af15811eadc5b5b5de70e1b3a4650cceacea37431b59269fa7f",
+    "thumbnails/generated/preset-09-image-text-product-story.png": "dabacfc1795c423cf5a9ee208550e21545ae08c99ece5396af526ca59b7daf2e",
+    "thumbnails/generated/preset-10-image-text-company-story.png": "33f1c1eafde6970ea70aa0856cbc01ea3c0fd4d61e09c55ea9a0815a638c5276",
+    "thumbnails/generated/preset-11-icon-list-benefits.png": "f86fca2d75b735c948eebfbde74cd6a64836e3c1a7dd2ef7c6e7f7e62201e926",
+    "thumbnails/generated/preset-12-icon-list-checklist.png": "10b9e9c1c6f495afc14cc99462ec48f143c8f77952039091295c70c1f00e649f",
+    "thumbnails/generated/preset-13-hero-service-intro.png": "9bd2ebf2c07bbeba80f18ffc2c7fe52d1f49f0beff7104ee4040d9827aa493f7",
+    "thumbnails/generated/preset-14-features-core-benefits.png": "ba1f506a07c18a8d1f62e0882409f24698f34ee339c245d9bc946f126e9396bb",
+    "thumbnails/generated/preset-15-cta-contact.png": "d8cdf3f18347904e0778ab51ccf70dda062e38d7da8311f7f770e35e56531a72",
+    "thumbnails/generated/preset-16-contact-office.png": "c94931a275ebb4cc177a74fb49d68645a37bb009d34a7f0c2685675e4704181a",
+    "thumbnails/generated/preset-17-faq-basic.png": "1038823518e9634cd2bb65bca4326374074a7c60dea428761706d8f1f88b993b",
+    "thumbnails/generated/preset-18-process-four-step.png": "132d8eaad74942ed1c9521e689881e3d605861744d7805d1a46f336262403268",
+    "thumbnails/generated/preset-19-hero-split-product-focus.png": "34cacd113f3774091a12d8e7b4d542b4ca19a17fa8a6a263e8a6a61033a022f2",
+    "thumbnails/generated/preset-20-hero-slider-campaign.png": "2897c427c3e047d62d53d857d9a144753e3c030e7f0c8e47e8c0d6478536efd9",
+    "thumbnails/generated/preset-21-logo-cloud-partners.png": "6b89a6a7041039f0c28cbf43ab8fa516cf9ef23dfe6d9034e048f45e0f14c2a7",
+    "thumbnails/generated/preset-22-stats-business-proof.png": "ac31ff7185f85e53a604dd869d84854cdff086bcc17215b01ab27b54109cb25f",
+    "thumbnails/generated/preset-23-pricing-three-tier.png": "4697d4882b034f1036cb5eba49354fadb841cd4d8382822bf27f82f36faaaabc",
+    "thumbnails/generated/preset-24-team-leadership.png": "51d11e4c97810214ef7b55102af005ff6b54f1b248ae08a87b35aab14d8d6b9b",
+    "thumbnails/generated/preset-25-gallery-project-scenes.png": "39cfc7632af61c82764747cafe261bc5190f023119356abda123e7c26e6b7f32",
+    "thumbnails/generated/preset-26-bar-chart-quarterly.png": "24a94acf2dc9fdfbc407d5e69b8ec7a8c58688d543ea2f41e62a20070a73e706",
+    "thumbnails/generated/preset-27-g7-posts-latest.png": "7372bec2cafcad1171b0515594ab65196301419237cd360cc2a26f380acea8f6",
+    "thumbnails/generated/preset-28-g7-products-new.png": "4d6e104f56c6e8c1b0aa337b9ce635b4541d07459d0c5ec552b47715a55c8c63",
+    "thumbnails/generated/preset-29-inquiry-general.png": "49db70818273e101391c448914e2e9e375251d9e83e7280237980dc9d545b6fc",
+    "thumbnails/generated/preset-30-map-office.png": "ff79785200ea275ce0c6191e2cc08ff70d45ccd90a7cce1ddd8c1e39268baa4a",
+    "thumbnails/generated/preset-31-testimonials-customer-proof.png": "f779ff0e7b97ba769dee249782bd7135b9a8172ca44d49d0e1695fa418884532",
+    "thumbnails/generated/preset-32-tabs-service-guide.png": "d08d00aa6fa077f58804e76c05f67632b49e863fe8d2d9de2787056f62c2455a",
+    "thumbnails/generated/preset-33-comparison-plans.png": "c2aaf20ccc7672c80feb81995fa10362d629c8f069bab2b279263924b8156f4c",
+    "thumbnails/generated/preset-34-articles-insights.png": "04cbd82dd40a15dbf61aaee5a6857ba5b9119dca1c04d50a13a569462c383339",
+    "thumbnails/generated/preset-35-video-product-tour.png": "e84fe8ddbae2f220004b4561d8253857896ec9a5a121b4e54bf298f72406069b",
+    "thumbnails/generated/preset-36-logo-carousel-customers.png": "1f1f842a0d82262636c93eae2f79329b9ba3a7d844db60ccdde18a8c490b2511",
+    "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "0deafc8742723a73fea0485b9221ff7285307dbbec341c0f87cb7ad670345b8d",
+    "thumbnails/generated/preset-38-events-upcoming.png": "c75d3ad09674aaf280d6b0ed5e309e81fce7662efeff149272d67285c9630432",
+    "thumbnails/generated/preset-39-downloads-resource-center.png": "b8310b2beaec68759a2f510898d19f07855cae09afeb6c4521ac66d02750bacd",
+    "thumbnails/generated/preset-40-g7-archive-searchable.png": "a26fd145d1d9e9f425fbbccddd78e923897071abcb79b87c8f3cab8f863e2e65",
+    "thumbnails/generated/preset-41-g7-showcase-featured.png": "66c1fca03303eb684044560cb544c82395c0382916a959e82b4a11483d981219",
+    "thumbnails/generated/preset-42-g7-post-detail-featured.png": "3cad3f7cf5cb72dbe9a8499f5d86e661c7a1111a6c2356d3620471b29d59ea46",
+    "thumbnails/generated/preset-43-g7-product-detail-featured.png": "0c57c0a7e894f5d411562b602b3261a827eccf2f21be5463550e4828bce50686",
+    "thumbnails/generated/preset-44-divider-section-break.png": "66dd12aed31039676f7491d16550c35a7f52be9f79ff1388d6ad2ddba0d55211",
+    "thumbnails/generated/preset-45-blockquote-customer-voice.png": "ee19d1b834d71a936aff9b56a8281a04d1bcf06b5fcf6cbbff04e85f8edd9e61",
+    "thumbnails/generated/preset-46-notice-service-info.png": "8b5091efe6ef4f807d9a90570150b5daebe957a6b0b88c61e139739e11d8b7b4",
+    "thumbnails/generated/preset-47-card-grid-services.png": "61c9dbe7e70f4b8da2ed58bfa39f4a8636f9acc549e3ed527b83b43041836fd9",
+    "thumbnails/generated/preset-48-breadcrumbs-detail-page.png": "bd06ac76aef581efec61a9b24da361b94c07c056854fde1e0b81d741cc674116",
+    "thumbnails/generated/preset-49-anchor-menu-long-page.png": "27752f366063cf87aa9ef2f8714ce44ecd2d655dc258c388fdab7a2347fd640b",
+    "thumbnails/generated/preset-50-social-links-official.png": "ec7638eedb2ceea9a665c0f2d2bb33bf569c92dd87d05ea043d0e88ceab6a4cb",
+    "thumbnails/generated/preset-51-image-carousel-space-tour.png": "297cb0e663ff2e521cb6a7c05e2cfa7c7db02daa1c7387d2f27e7f1895334ec3",
+    "thumbnails/generated/preset-52-inquiry-quote.png": "e2a281427f7f9518109a119dbc2fae93ed3761301302c0a6ea608fb33faa6fcf",
+    "thumbnails/generated/preset-53-inquiry-reservation.png": "4e8c8a1ef1b8dcf719e9f7ad966047d42a4771f8636f0935011b60dde73d8bfc",
+    "thumbnails/generated/preset-54-inquiry-application.png": "c82a90510577c79e8443e494b10bb718d9ac28352e21eabfac390ba5d5e99caf",
+    "thumbnails/generated/preset-55-inquiry-newsletter.png": "ae2bdb6e1d3599b6b5a5d2cb3e7400c049c0a022fbdc31f93c484fa5b2b6dfe9"
+  }
 }

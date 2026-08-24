@@ -9,6 +9,7 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
+import { createRichTextField } from './richTextEditing';
 import {
   decorateCanvasElementStyles,
   normalizeElementAppearanceMap,
@@ -357,11 +358,6 @@ const appearanceFields = {
   spacing: { type: 'select' as const, label: '세로 여백', options: SPACING_OPTIONS },
 };
 
-const richTextOptions = {
-  code: false as const, codeBlock: false as const, horizontalRule: false as const, strike: false as const,
-  textAlign: {}, underline: {}, heading: { levels: [2, 3, 4] as [2, 3, 4] },
-};
-
 export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorComponents>['components'] = {
   Heading: {
     label: '제목', defaultProps: DEFAULT_HEADING,
@@ -377,7 +373,7 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
   RichText: {
     label: '리치텍스트', defaultProps: DEFAULT_RICH_TEXT,
     fields: {
-      content: { type: 'richtext', label: '본문', contentEditable: true, initialHeight: 220, options: richTextOptions },
+      content: createRichTextField('본문', 220, true),
       measure: { type: 'radio', label: '본문 폭', options: [{ label: '좁게', value: 'narrow' }, { label: '기본', value: 'standard' }, { label: '넓게', value: 'wide' }] },
       ...appearanceFields, motion: createMotionField(['none', 'reveal']),
     },
@@ -414,7 +410,7 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true },
       heading: { type: 'text', label: '제목', contentEditable: true },
-      body: { type: 'richtext', label: '본문', contentEditable: true, initialHeight: 170, options: richTextOptions },
+      body: createRichTextField('본문', 170, true),
       imageSrc: createMediaField('대표 이미지', 'foundation-image-text'), imageAlt: { type: 'text', label: '대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
       primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결'),

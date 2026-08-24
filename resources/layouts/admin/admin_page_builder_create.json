@@ -38,6 +38,50 @@
             "type": "basic",
             "name": "Div",
             "props": {
+              "className": "p-5 mb-6 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950"
+            },
+            "children": [
+              {
+                "type": "basic",
+                "name": "H2",
+                "props": {
+                  "className": "section-heading text-blue-950 dark:text-blue-100"
+                },
+                "text": "완성된 기본 페이지가 필요하신가요?"
+              },
+              {
+                "type": "basic",
+                "name": "P",
+                "props": {
+                  "className": "mt-2 mb-4 text-sm text-blue-800 dark:text-blue-200"
+                },
+                "text": "샘플 이미지와 블록 구성이 포함된 페이지를 선택한 뒤 편집기에서 바로 수정할 수 있습니다."
+              },
+              {
+                "type": "basic",
+                "name": "Button",
+                "props": {
+                  "type": "button",
+                  "className": "inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-semibold transition-colors"
+                },
+                "actions": [
+                  {
+                    "type": "click",
+                    "handler": "openWindow",
+                    "params": {
+                      "path": "/modules/jiwonpapa-page_builder/admin?view=page-kits",
+                      "target": "_self"
+                    }
+                  }
+                ],
+                "text": "기본 페이지에서 시작"
+              }
+            ]
+          },
+          {
+            "type": "basic",
+            "name": "Div",
+            "props": {
               "className": "mb-6"
             },
             "children": [

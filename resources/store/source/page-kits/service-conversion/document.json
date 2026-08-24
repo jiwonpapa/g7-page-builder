@@ -75,9 +75,9 @@
         "eyebrow": "고객 경험",
         "heading": "설명보다 결과가 먼저 보였습니다",
         "items": [
-          { "quote": "해야 할 일이 많았는데 우선순위가 분명해져 팀이 바로 움직일 수 있었습니다.", "name": "김지현", "role": "운영 책임자", "company": "로컬 브랜드", "avatarSrc": "", "avatarAlt": "", "rating": 5 },
-          { "quote": "회의가 길어지는 대신 결정 근거와 다음 행동이 한 장에 정리됐습니다.", "name": "박준호", "role": "대표", "company": "전문 서비스 기업", "avatarSrc": "", "avatarAlt": "", "rating": 5 },
-          { "quote": "구축 이후에도 스스로 운영할 수 있는 기준을 남겨준 점이 좋았습니다.", "name": "이서윤", "role": "브랜드 매니저", "company": "성장 기업", "avatarSrc": "", "avatarAlt": "", "rating": 5 }
+          { "quote": "해야 할 일이 많았는데 우선순위가 분명해져 팀이 바로 움직일 수 있었습니다.", "name": "김지현", "role": "운영 책임자", "company": "로컬 브랜드", "avatarSrc": "g7pb-media://image-2", "avatarAlt": "고객 김지현의 프로필 사진", "rating": 5 },
+          { "quote": "회의가 길어지는 대신 결정 근거와 다음 행동이 한 장에 정리됐습니다.", "name": "박준호", "role": "대표", "company": "전문 서비스 기업", "avatarSrc": "g7pb-media://image-3", "avatarAlt": "고객 박준호의 프로필 사진", "rating": 5 },
+          { "quote": "구축 이후에도 스스로 운영할 수 있는 기준을 남겨준 점이 좋았습니다.", "name": "이서윤", "role": "브랜드 매니저", "company": "성장 기업", "avatarSrc": "g7pb-media://image-4", "avatarAlt": "고객 이서윤의 프로필 사진", "rating": 5 }
         ],
         "layout": "spotlight",
         "appearance": { "surface": "contrast", "spacing": "normal" }

@@ -71,9 +71,9 @@
         "eyebrow": "방문 후기",
         "heading": "다시 찾고 싶은 이유",
         "items": [
-          { "quote": "처음 문의할 때부터 설명이 친절해서 안심하고 방문했습니다.", "name": "김민지", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "", "avatarAlt": "", "rating": 5 },
-          { "quote": "예약 시간과 준비물을 미리 알려줘서 기다리지 않고 이용할 수 있었어요.", "name": "이현우", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "", "avatarAlt": "", "rating": 5 },
-          { "quote": "공간이 편안하고 필요한 내용만 차분하게 안내해 주셨습니다.", "name": "박서연", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "", "avatarAlt": "", "rating": 5 }
+          { "quote": "처음 문의할 때부터 설명이 친절해서 안심하고 방문했습니다.", "name": "김민지", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "g7pb-media://image-2", "avatarAlt": "방문 고객 김민지의 프로필 사진", "rating": 5 },
+          { "quote": "예약 시간과 준비물을 미리 알려줘서 기다리지 않고 이용할 수 있었어요.", "name": "이현우", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "g7pb-media://image-3", "avatarAlt": "방문 고객 이현우의 프로필 사진", "rating": 5 },
+          { "quote": "공간이 편안하고 필요한 내용만 차분하게 안내해 주셨습니다.", "name": "박서연", "role": "방문 고객", "company": "지역 고객", "avatarSrc": "g7pb-media://image-4", "avatarAlt": "방문 고객 박서연의 프로필 사진", "rating": 5 }
         ],
         "layout": "grid",
         "appearance": { "surface": "soft", "spacing": "normal" }

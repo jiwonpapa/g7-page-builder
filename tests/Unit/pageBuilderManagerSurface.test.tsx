@@ -23,6 +23,7 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
   window.localStorage.clear();
   document.body.replaceChildren();
+  window.history.replaceState({}, '', '/');
   vi.restoreAllMocks();
 });
 
@@ -41,6 +42,34 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
 }
 
 describe('Page Builder manager surface', () => {
+  it('opens the editable Page Kit catalog from the canonical deep link', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    window.history.replaceState({}, '', '/modules/jiwonpapa-page_builder/admin?view=page-kits');
+    const emptyList = { items: [], pagination: { total: 0, page: 1, per_page: 100 } };
+    const catalog = {
+      catalog_version: 'g7pb-store/v1', publisher: { id: 'jiwonpapa', name: '지원소프트' },
+      generated_at: '2026-08-24T00:00:00+09:00', products: [],
+    };
+    globalThis.fetch = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: emptyList }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, message: 'ok', data: catalog }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      }));
+
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
+
+    const dialog = await eventually<HTMLElement>('[data-testid="page-builder-store-dialog"]');
+    expect(dialog.textContent).toContain('기본 페이지');
+    expect(dialog.querySelector('[data-testid="page-builder-store-filter-page_kit"]')?.getAttribute('aria-selected')).toBe('true');
+
+    await act(async () => { root.unmount(); });
+  });
+
   it('lists only module-owned documents and links them to the independent editor', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
     globalThis.fetch = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
@@ -313,7 +342,7 @@ describe('Page Builder manager surface', () => {
     document.body.append(container);
     const root = createRoot(container);
     await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
-    const button = await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-store"]');
+    const button = await eventually<HTMLButtonElement>('[data-testid="page-builder-manager-page-kits"]');
     await act(async () => { button.click(); });
 
     const product = await eventually<HTMLElement>('[data-testid="page-builder-store-product"]');
@@ -329,6 +358,7 @@ describe('Page Builder manager surface', () => {
     expect(dialog.textContent).toContain('기존 페이지는 바꾸지 않습니다.');
     expect(dialog.textContent).toContain('발행 전에 교체할 항목');
     expect(dialog.textContent).toContain('샘플 링크를 실제 경로로 연결합니다.');
+    expect(dialog.textContent).toContain('샘플 이미지가 Page Kit에 포함됩니다.');
     expect(dialog.querySelector<HTMLInputElement>('[data-testid="page-builder-store-page-kit-slug"]')?.value)
       .toBe('company-launch');
 

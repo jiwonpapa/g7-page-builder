@@ -37,9 +37,9 @@
         "eyebrow": "FEATURED STORIES",
         "heading": "이번 주에 오래 읽힌 이야기",
         "items": [
-          { "category": "사람", "title": "한 자리를 오래 지켜온 가게의 시간", "summary": "세대가 바뀌어도 동네 사람들이 다시 찾는 이유를 들었습니다.", "date": "2026-08-21", "imageSrc": "", "imageAlt": "", "url": "/" },
-          { "category": "장소", "title": "골목 끝 작은 공원이 달라진 풍경", "summary": "주민이 함께 만든 변화가 하루의 동선을 어떻게 바꿨는지 살펴봅니다.", "date": "2026-08-18", "imageSrc": "", "imageAlt": "", "url": "/" },
-          { "category": "생활", "title": "주말 아침을 여는 동네 모임 세 곳", "summary": "배움과 취미를 나누며 새로운 관계를 만드는 사람들을 소개합니다.", "date": "2026-08-15", "imageSrc": "", "imageAlt": "", "url": "/" }
+          { "category": "사람", "title": "한 자리를 오래 지켜온 가게의 시간", "summary": "세대가 바뀌어도 동네 사람들이 다시 찾는 이유를 들었습니다.", "date": "2026-08-21", "imageSrc": "g7pb-media://image-2", "imageAlt": "아침 문을 연 오래된 동네 가게", "url": "/" },
+          { "category": "장소", "title": "골목 끝 작은 공원이 달라진 풍경", "summary": "주민이 함께 만든 변화가 하루의 동선을 어떻게 바꿨는지 살펴봅니다.", "date": "2026-08-18", "imageSrc": "g7pb-media://image-3", "imageAlt": "비 온 뒤 동네 공원의 산책길", "url": "/" },
+          { "category": "생활", "title": "주말 아침을 여는 동네 모임 세 곳", "summary": "배움과 취미를 나누며 새로운 관계를 만드는 사람들을 소개합니다.", "date": "2026-08-15", "imageSrc": "g7pb-media://image-4", "imageAlt": "긴 테이블에서 꽃을 다듬는 동네 모임", "url": "/" }
         ],
         "layout": "grid",
         "appearance": { "surface": "soft", "spacing": "spacious" }

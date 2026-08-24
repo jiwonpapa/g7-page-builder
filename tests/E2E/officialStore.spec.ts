@@ -120,11 +120,11 @@ test('official free store previews and applies a Page Kit as a separate draft', 
     await removeStaleStoreDrafts(token);
     await removeOfficialTestPack(token);
     await page.goto(MANAGER_PATH);
-    await page.getByTestId('page-builder-manager-store').click();
+    await page.getByTestId('page-builder-manager-page-kits').click();
     const dialog = page.getByTestId('page-builder-store-dialog');
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText('제3자 업로드와 판매자 기능은 없습니다.');
-    await expect(page.getByTestId('page-builder-store-product')).toHaveCount(6);
+    await expect(dialog).toContainText('샘플 이미지와 블록 구성이 완성된 페이지');
+    await expect(page.getByTestId('page-builder-store-product')).toHaveCount(5);
     await page.getByTestId('page-builder-store-filter-block_pack').click();
     const pack = page.getByTestId('page-builder-store-product');
     await expect(pack).toHaveCount(1);
@@ -197,15 +197,41 @@ test('official free store previews and applies a Page Kit as a separate draft', 
         data?: {
           document?: {
             shell_mode?: unknown;
-            blocks?: Array<{ props?: { image?: { src?: unknown } } }>;
+            blocks?: Array<{ props?: Record<string, unknown> }>;
           };
           status?: unknown;
         };
       };
       expect(payload.data?.document?.shell_mode).toBe('template');
       expect(payload.data?.document?.blocks ?? []).toHaveLength(6);
-      expect(payload.data?.document?.blocks?.[0]?.props?.image?.src).toMatch(/\/storage\/g7-page-builder\//);
+      const importedImages: string[] = [];
+      const collectImages = (value: unknown): void => {
+        if (typeof value === 'string' && value.includes('/storage/g7-page-builder/')) importedImages.push(value);
+        else if (Array.isArray(value)) value.forEach(collectImages);
+        else if (value && typeof value === 'object') Object.values(value).forEach(collectImages);
+      };
+      collectImages(payload.data?.document?.blocks);
+      expect(new Set(importedImages).size).toBe(6);
       expect(payload.data?.status).toBe('draft');
+      await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+      const importedEditorImages = page.frameLocator('iframe').locator('[data-testid="page-builder-block"] img');
+      await expect(importedEditorImages).toHaveCount(6);
+      await importedEditorImages.evaluateAll(async (elements) => {
+        await Promise.all(elements.map(async (element) => {
+          const image = element as HTMLImageElement;
+          image.loading = 'eager';
+          image.scrollIntoView({ block: 'nearest' });
+          if (!image.complete) {
+            await new Promise<void>((resolve, reject) => {
+              image.addEventListener('load', () => resolve(), { once: true });
+              image.addEventListener('error', () => reject(new Error(`Page Kit image failed: ${image.src}`)), { once: true });
+            });
+          }
+          await image.decode();
+        }));
+      });
+      expect(await importedEditorImages.evaluateAll((images) =>
+        images.every((image) => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
 
       const exportQuery = new URLSearchParams({
         kit_id: 'jiwonpapa/e2e-export',

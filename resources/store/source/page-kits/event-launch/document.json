@@ -74,10 +74,10 @@
         "eyebrow": "SPEAKERS",
         "heading": "현장에서 답을 만들어온 연사",
         "members": [
-          { "name": "김하늘", "role": "제품 전략", "bio": "고객 문제를 지속 가능한 제품 운영으로 연결합니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
-          { "name": "이로운", "role": "서비스 디자인", "bio": "복잡한 서비스를 사람들이 이해할 수 있는 경험으로 바꿉니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
-          { "name": "박지수", "role": "기술 운영", "bio": "확장 과정에서 안정성과 속도를 함께 지키는 방법을 다룹니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" },
-          { "name": "최윤서", "role": "브랜드 커뮤니티", "bio": "일회성 관심을 오래 가는 관계로 만드는 실험을 이어갑니다.", "imageSrc": "", "imageAlt": "", "profileUrl": "" }
+          { "name": "김하늘", "role": "제품 전략", "bio": "고객 문제를 지속 가능한 제품 운영으로 연결합니다.", "imageSrc": "g7pb-media://image-2", "imageAlt": "제품 전략 연사 김하늘", "profileUrl": "" },
+          { "name": "이로운", "role": "서비스 디자인", "bio": "복잡한 서비스를 사람들이 이해할 수 있는 경험으로 바꿉니다.", "imageSrc": "g7pb-media://image-3", "imageAlt": "서비스 디자인 연사 이로운", "profileUrl": "" },
+          { "name": "박지수", "role": "기술 운영", "bio": "확장 과정에서 안정성과 속도를 함께 지키는 방법을 다룹니다.", "imageSrc": "g7pb-media://image-4", "imageAlt": "기술 운영 연사 박지수", "profileUrl": "" },
+          { "name": "최윤서", "role": "브랜드 커뮤니티", "bio": "일회성 관심을 오래 가는 관계로 만드는 실험을 이어갑니다.", "imageSrc": "g7pb-media://image-5", "imageAlt": "브랜드 커뮤니티 연사 최윤서", "profileUrl": "" }
         ],
         "appearance": { "surface": "default", "spacing": "normal" }
       },
@@ -91,10 +91,10 @@
       "props": {
         "heading": "행사를 함께 만드는 파트너",
         "logos": [
-          { "name": "Northstar", "imageSrc": "", "imageAlt": "", "url": "" },
-          { "name": "Orbit", "imageSrc": "", "imageAlt": "", "url": "" },
-          { "name": "Morrow", "imageSrc": "", "imageAlt": "", "url": "" },
-          { "name": "Vertex", "imageSrc": "", "imageAlt": "", "url": "" }
+          { "name": "Northstar", "imageSrc": "g7pb-media://image-6", "imageAlt": "샘플 파트너 Northstar", "url": "" },
+          { "name": "Orbit", "imageSrc": "g7pb-media://image-7", "imageAlt": "샘플 파트너 Orbit", "url": "" },
+          { "name": "Morrow", "imageSrc": "g7pb-media://image-8", "imageAlt": "샘플 파트너 Morrow", "url": "" },
+          { "name": "Vertex", "imageSrc": "g7pb-media://image-9", "imageAlt": "샘플 파트너 Vertex", "url": "" }
         ],
         "appearance": { "surface": "soft", "spacing": "compact" }
       },

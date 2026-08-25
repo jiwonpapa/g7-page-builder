@@ -101,7 +101,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
 19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
-20. PC·태블릿·모바일에서 활성 canvas iframe의 contenteditable 내부 문자 좌표를 표시 축척이 적용된 Locator 좌표로 변환해 `hover(start) → mouse.down → hover(end) → mouse.up`만으로 목표 문자열과 정확히 같은 글자 범위를 선택하고, Locator 좌표 `click`으로 선택을 해제합니다. Tiptap의 active/inactive 단일 범위 상태가 요소 전체 벌룬과 동기화되는지, cross-realm 안전한 target 판정과 툴바 pointer/mouse down이 범위 북마크와 editor focus를 보존하는지, 실제 굵게 button과 글꼴·크기·색상·굵기 option click 뒤에도 툴바가 유지되는지 확인합니다. 이어서 태블릿 header 100px 예산, 같은 필드 반복 선택, 바깥 클릭 닫힘, 저장·reload·preview·public DOM 보존을 확인합니다.
+20. PC·태블릿·모바일에서 활성 canvas iframe의 contenteditable 내부 문자 좌표를 표시 축척이 적용된 Locator 좌표로 변환해 `hover(start) → mouse.down → hover(end, force) → mouse.up`만으로 목표 문자열과 정확히 같은 글자 범위를 선택합니다. 종료 hover의 `force`는 드래그 중 Puck DnD overlay의 actionability 가로채기만 우회하며 실제 pointer event는 그대로 전송합니다. Locator 좌표 `click`으로 선택을 해제하고, Tiptap의 active/inactive 단일 범위 상태가 요소 전체 벌룬과 동기화되는지, cross-realm 안전한 target 판정과 툴바 pointer/mouse down이 범위 북마크와 editor focus를 보존하는지, 실제 굵게 button과 글꼴·크기·색상·굵기 option click 뒤에도 툴바가 유지되는지 확인합니다. 이어서 태블릿 header 100px 예산, 같은 필드 반복 선택, 바깥 클릭 닫힘, 저장·reload·preview·public DOM 보존을 확인합니다.
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 

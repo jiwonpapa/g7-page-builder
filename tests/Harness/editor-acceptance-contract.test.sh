@@ -79,9 +79,9 @@ perl -0pi -e "s/#puck-canvas-root iframe/iframe/" \
 expect_failure 'Puck canvas 고유 iframe selector를 고정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/field\.hover\(\{ position: pointer\.end \}\)/field.focus()/g' \
+perl -0pi -e 's/field\.hover\(\{ position: pointer\.end, force: true \}\)/field.focus()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'iframe 축척을 반영한 locator pointer 범위 드래그가 필요합니다.'
+expect_failure 'DnD overlay 중에도 실제 pointer 종료 이동을 보내는 forced locator hover가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/await field\.focus\(\);/await page.keyboard.press("Tab");/' \

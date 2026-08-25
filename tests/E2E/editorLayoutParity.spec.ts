@@ -442,6 +442,8 @@ async function assertScenario(
     expect(response?.ok()).toBe(true);
     const previewBlocks = preview.getByTestId('page-builder-rendered-block');
     await expect(previewBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
+    await expect(previewBlocks.first()).toBeVisible({ timeout: 60_000 });
+    await expect(previewBlocks.last()).toBeVisible({ timeout: 60_000 });
     const standalonePreviewRoot = preview.getByTestId('page-builder-preview-root');
     const previewRoot = await standalonePreviewRoot.count() === 1
       ? standalonePreviewRoot

@@ -316,14 +316,27 @@ async function cleanupE2eArtifacts(
     for (const [documentId, target] of targets) {
       let lockVersion = target.lockVersion;
       if (!target.archived) {
-        const archiveResponse = await cleanupRequest.post(
+        let archiveResponse = await cleanupRequest.post(
           `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/archive`,
           { data: { expected_lock_version: lockVersion } },
         );
+        if (archiveResponse.status() === 409) {
+          const currentResponse = await cleanupRequest.get(
+            `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`,
+          );
+          const currentPayload = await currentResponse.json() as { data?: { lock_version?: unknown } };
+          if (!currentResponse.ok() || typeof currentPayload.data?.lock_version !== 'number') {
+            throw new Error(`Page Builder E2E cleanup refresh failed with HTTP ${currentResponse.status()}.`);
+          }
+          lockVersion = currentPayload.data.lock_version;
+          archiveResponse = await cleanupRequest.post(
+            `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/archive`,
+            { data: { expected_lock_version: lockVersion } },
+          );
+        }
         if (!archiveResponse.ok()) {
           throw new Error(`Page Builder E2E cleanup archive failed with HTTP ${archiveResponse.status()}.`);
         }
-
         const archivePayload = await archiveResponse.json() as {
           data?: { lock_version?: unknown };
           success?: unknown;
@@ -390,7 +403,13 @@ async function revealEditorHeaderActions(page: Page): Promise<void> {
   const contextPanel = page.getByTestId('page-builder-context-panel');
 
   if (await contextPanel.isVisible()) {
-    await contextPanel.getByRole('button', { name: '스타일 도구 닫기' }).click();
+    const closeButton = contextPanel.getByRole('button', { name: '스타일 도구 닫기' });
+    await expect.poll(() => closeButton.evaluate((button) => {
+      const rect = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return hit === button || button.contains(hit);
+    }), { message: 'the element balloon close button remains the topmost pointer target' }).toBe(true);
+    await closeButton.click();
     await expect(contextPanel).toBeHidden();
   }
 

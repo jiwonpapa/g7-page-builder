@@ -117,22 +117,44 @@ describe('canvas editing contract', () => {
     expect(frameDocument).not.toBeNull();
     frameDocument!.body.innerHTML = '<section><h2 data-g7pb-inline-field="title">프레임 제목</h2></section>';
     const title = frameDocument!.querySelector<HTMLElement>('h2');
+    expect(title).not.toBeNull();
+    Object.defineProperty(frame.contentWindow, 'innerWidth', { configurable: true, value: 400 });
+    Object.defineProperty(frame.contentWindow, 'innerHeight', { configurable: true, value: 300 });
+    frame.getBoundingClientRect = () => ({
+      bottom: 700, height: 600, left: 50, right: 850, top: 100, width: 800,
+      x: 50, y: 100, toJSON: () => ({}),
+    });
+    title!.getBoundingClientRect = () => ({
+      bottom: 60, height: 40, left: 20, right: 120, top: 20, width: 100,
+      x: 20, y: 20, toJSON: () => ({}),
+    });
     let selection: CanvasElementSelection | null = null;
     const receive = (event: Event): void => {
       selection = (event as CustomEvent<CanvasElementSelection>).detail;
     };
     window.addEventListener(CANVAS_ELEMENT_MESSAGE, receive);
-
-    notifyCanvasElementSelection(
-      { target: title } as unknown as Parameters<typeof notifyCanvasElementSelection>[0],
-      'block-id',
-      'hero',
-    );
+    const nativeHTMLElement = globalThis.HTMLElement;
+    Object.defineProperty(globalThis, 'HTMLElement', {
+      configurable: true,
+      value: class ForeignRealmHTMLElement {},
+    });
+    try {
+      notifyCanvasElementSelection(
+        { target: title } as unknown as Parameters<typeof notifyCanvasElementSelection>[0],
+        'block-id',
+        'hero',
+      );
+    } finally {
+      Object.defineProperty(globalThis, 'HTMLElement', { configurable: true, value: nativeHTMLElement });
+    }
 
     window.removeEventListener(CANVAS_ELEMENT_MESSAGE, receive);
     frame.remove();
     expect(title?.dataset.g7pbCanvasSelected).toBe('true');
     expect(selection).toMatchObject({ fieldPath: 'title', role: 'text', label: '제목' });
+    expect(selection).toMatchObject({
+      anchor: { bottom: 220, height: 80, left: 90, right: 290, top: 140, width: 200 },
+    });
   });
 
   it('leaves rich-text range activation to the dedicated Tiptap state contract', () => {

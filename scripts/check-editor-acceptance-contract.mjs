@@ -122,6 +122,7 @@ export async function validateEditorAcceptanceContract(root) {
     [richTextSource, /setTextSelection\(bookmark\)/, '툴바 명령 전에 저장한 선택 범위를 복원해야 합니다.'],
     [richTextSource, /onPointerDownCapture=\{preserveRangeBeforeToolbarAction\}/, '툴바 pointer down에서 선택 범위를 보존해야 합니다.'],
     [richTextSource, /onMouseDownCapture=\{preserveRangeBeforeToolbarAction\}/, '툴바 mouse down에서 선택 범위 붕괴를 차단해야 합니다.'],
+    [richTextSource, /aria-label="선택한 글자 굵게"[\s\S]{0,220}onPointerDown=\{\(event\) => runPointerAction\(event, \(\) => toggleNativeMark\(['"]bold['"]\)\)\}/, '굵게 명령은 click 전에 실제 pointer down에서 실행해야 합니다.'],
     [richTextSource, /toggleNativeMark\(['"]bold['"]\)/, '선택 범위 굵게 명령을 제품 툴바가 직접 실행해야 합니다.'],
     [adapterSource, /event\.data\?\.type === RICH_TEXT_RANGE_STATE_MESSAGE/, '호스트가 선택 범위 상태 메시지를 수신해야 합니다.'],
     [adapterSource, /acceptRangeState\(event\.data\.active === true\)/, '호스트 UI는 active와 inactive를 같은 상태 처리기로 동기화해야 합니다.'],

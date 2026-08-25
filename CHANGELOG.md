@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.23.2] - 2026-08-25
+
 ### Added
 
 - 45종 전체 블록을 포함한 95개 완성 섹션과 내장 Page Kit 5종을 PC·태블릿·모바일에서 편집 iframe과 컴파일 미리보기로 나란히 측정해 가로 넘침과 좌우 content edge 불일치를 차단하는 Playwright gate를 추가했습니다.

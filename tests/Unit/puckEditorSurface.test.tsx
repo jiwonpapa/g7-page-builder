@@ -61,7 +61,7 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { PuckEditorAdapter, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
-const { RichTextCanvasField, isRichTextRangeActive } = await import('../../resources/js/editor/richTextEditing');
+const { createRichTextField, RichTextCanvasField, isRichTextRangeActive } = await import('../../resources/js/editor/richTextEditing');
 
 const fixture: PageBuilderDocument = {
   schema_version: 'g7-page-builder/v1',
@@ -222,6 +222,63 @@ describe('Puck editor surface contract', () => {
     expect(isRichTextRangeActive(null)).toBe(false);
     expect(isRichTextRangeActive(editor(true))).toBe(false);
     expect(isRichTextRangeActive(editor(false))).toBe(true);
+  });
+
+  it('reacts to Tiptap selection updates without waiting for a content update', async () => {
+    type EditorEvent = 'selectionUpdate' | 'transaction';
+    const selection = { empty: true, from: 4, to: 4 };
+    let selectedFont = 'inherit';
+    const handlers = new Map<EditorEvent, Set<() => void>>();
+    const editor = {
+      state: { selection },
+      getAttributes: vi.fn((mark: string) => mark === 'g7TextStyle' ? { font: selectedFont } : {}),
+      isActive: vi.fn(() => false),
+      on: vi.fn((event: EditorEvent, handler: () => void) => {
+        const eventHandlers = handlers.get(event) ?? new Set();
+        eventHandlers.add(handler);
+        handlers.set(event, eventHandlers);
+        return editor;
+      }),
+      off: vi.fn((event: EditorEvent, handler: () => void) => {
+        handlers.get(event)?.delete(handler);
+        return editor;
+      }),
+    } as never;
+    const emit = (event: EditorEvent): void => handlers.get(event)?.forEach((handler) => handler());
+    const InlineMenu = createRichTextField('본문').renderInlineMenu;
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    let unmounted = false;
+    mounted.push(() => {
+      if (!unmounted) act(() => root.unmount());
+    });
+
+    await act(async () => {
+      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>
+        <button type="button">기본 서식</button>
+      </InlineMenu>);
+    });
+    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
+
+    selection.empty = false;
+    selection.to = 12;
+    await act(async () => emit('selectionUpdate'));
+    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).not.toBeNull();
+
+    selectedFont = 'modern';
+    await act(async () => emit('transaction'));
+    expect(container.querySelector<HTMLSelectElement>('[data-testid="page-builder-richtext-font"]')?.value).toBe('modern');
+
+    selection.empty = true;
+    selection.from = 12;
+    await act(async () => emit('selectionUpdate'));
+    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
+
+    await act(async () => root.unmount());
+    unmounted = true;
+    expect(handlers.get('selectionUpdate')).toHaveLength(0);
+    expect(handlers.get('transaction')).toHaveLength(0);
   });
 
   it('provides stable container controls to every built-in block', () => {

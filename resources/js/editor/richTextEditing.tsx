@@ -60,6 +60,25 @@ export function isRichTextRangeActive(editor: Editor | null): boolean {
   return Boolean(editor && !editor.state.selection.empty);
 }
 
+function useRichTextEditorRevision(editor: Editor | null): number {
+  const [revision, setRevision] = useState(0);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const syncEditorState = (): void => setRevision((revision) => revision + 1);
+    editor.on('selectionUpdate', syncEditorState);
+    editor.on('transaction', syncEditorState);
+
+    return () => {
+      editor.off('selectionUpdate', syncEditorState);
+      editor.off('transaction', syncEditorState);
+    };
+  }, [editor]);
+
+  return revision;
+}
+
 function safeEditorLink(value: string): string | null {
   const trimmed = value.trim();
   if (/^\/(?!\/)[^\s\\]*$/.test(trimmed)) return trimmed;
@@ -85,22 +104,27 @@ function G7RichTextInlineMenu({
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [linkError, setLinkError] = useState(false);
-  const mark = useMemo(() => selectedMark(editor), [editor, editor?.state.selection.from, editor?.state.selection.to]);
+  const editorRevision = useRichTextEditorRevision(editor);
+  const selection = editor?.state.selection;
+  const selectionFrom = selection?.from;
+  const selectionTo = selection?.to;
+  const selectionEmpty = selection?.empty ?? true;
+  const mark = useMemo(() => selectedMark(editor), [editor, editorRevision, selectionFrom, selectionTo]);
 
   useEffect(() => {
     if (!editor) return;
     setLinkValue(String(editor.getAttributes('link').href ?? ''));
     setLinkError(false);
-  }, [editor, editor?.state.selection.from, editor?.state.selection.to]);
+  }, [editor, editorRevision, selectionFrom, selectionTo]);
 
   useEffect(() => {
-    if (!isRichTextRangeActive(editor)) return;
+    if (selectionEmpty) return;
     const message = { type: RICH_TEXT_RANGE_ACTIVE_MESSAGE };
     if (window.parent !== window) window.parent.postMessage(message, window.location.origin);
     window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_ACTIVE_MESSAGE));
-  }, [editor, editor?.state.selection.from, editor?.state.selection.to]);
+  }, [selectionEmpty, selectionFrom, selectionTo]);
 
-  if (!isRichTextRangeActive(editor)) return <></>;
+  if (selectionEmpty) return <></>;
 
   const updateMark = (patch: Partial<{ font: FontValue; size: SizeValue; weight: WeightValue; tone: ToneValue }>): void => {
     if (!editor || readOnly) return;

@@ -324,7 +324,17 @@ async function assertScenario(
   const previewLink = page.getByTestId('page-builder-preview-link');
   await expect(previewLink).toBeVisible();
   if (await previewLink.evaluate((element) => element.tagName === 'BUTTON')) {
+    const previewResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'POST'
+      && new URL(response.url()).pathname === `${API}/documents/${owned.documentId}/preview`
+    ));
     await previewLink.click();
+    const previewResponse = await previewResponsePromise;
+    const previewResponseBody = await previewResponse.text();
+    expect(
+      previewResponse.ok(),
+      `${scenario.label} preview creation failed (${previewResponse.status()}): ${previewResponseBody}`,
+    ).toBe(true);
   }
   await expect(previewLink).toHaveAttribute('href', /\/modules\/jiwonpapa-page_builder\/preview\/[a-f0-9]{64}/);
   const previewUrl = await previewLink.getAttribute('href');

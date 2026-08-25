@@ -90,9 +90,11 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
         const start = startRange.getBoundingClientRect();
         const end = endRange.getBoundingClientRect();
         return {
-          startX: start.left - fieldRect.left + Math.max(1, start.width * 0.2),
+          fieldHeight: fieldRect.height,
+          fieldWidth: fieldRect.width,
+          startX: start.left - fieldRect.left + Math.max(0.25, start.width * 0.05),
           startY: start.top - fieldRect.top + start.height / 2,
-          endX: end.right - fieldRect.left - Math.max(1, end.width * 0.2),
+          endX: end.right - fieldRect.left - Math.max(0.25, end.width * 0.05),
           endY: end.top - fieldRect.top + end.height / 2,
         };
       }
@@ -100,18 +102,24 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
     }
     throw new Error(`Pointer selection target was not found: ${selected}`);
   }, target);
+  const box = await field.boundingBox();
+  if (!box || geometry.fieldWidth <= 0 || geometry.fieldHeight <= 0) {
+    throw new Error('Rich-text pointer geometry is unavailable.');
+  }
+  const scaleX = box.width / geometry.fieldWidth;
+  const scaleY = box.height / geometry.fieldHeight;
   return {
-    start: { x: geometry.startX, y: geometry.startY },
-    end: { x: geometry.endX, y: geometry.endY },
+    start: { x: box.x + geometry.startX * scaleX, y: box.y + geometry.startY * scaleY },
+    end: { x: box.x + geometry.endX * scaleX, y: box.y + geometry.endY * scaleY },
   };
 }
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
   const pointer = await textPointerGeometry(field, target);
-  await field.hover({ position: pointer.start });
+  await page.mouse.move(pointer.start.x, pointer.start.y);
   await page.mouse.down();
   try {
-    await field.hover({ position: pointer.end });
+    await page.mouse.move(pointer.end.x, pointer.end.y, { steps: 8 });
   } finally {
     await page.mouse.up();
   }
@@ -120,7 +128,7 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
   const pointer = await textPointerGeometry(field, target);
-  await field.click({ position: pointer.end });
+  await page.mouse.click(pointer.end.x, pointer.end.y);
   await expect.poll(() => selectedText(field)).toBe('');
 }
 

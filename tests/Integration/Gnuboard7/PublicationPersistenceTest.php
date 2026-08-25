@@ -34,6 +34,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\OfficialStoreDistributionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockFavoriteAdapter;
@@ -238,6 +239,31 @@ final class PublicationPersistenceTest extends TestCase
         $idempotent = $siteParts->bootstrap('header', 'ko', $savedShell->shell, 3);
         self::assertSame($published->document->sitePartId, $idempotent->document->sitePartId);
         self::assertSame(2, $idempotent->revision);
+    }
+
+    public function test_public_site_shell_is_atomic_and_exposes_only_both_last_good_revisions(): void
+    {
+        $service = new SitePartService(new EloquentSitePartRepository, new SitePartHtmlCompiler);
+        $shell = $this->siteShellService()->get('ko')->shell;
+        $header = $service->bootstrap('header', 'ko', $shell, 1);
+        $footer = $service->bootstrap('footer', 'ko', $shell, 1);
+        $service->publish('header', 'ko', $header->lockVersion, 1);
+        $controller = new PublicSiteShellController($service, new SitePartHtmlCompiler);
+
+        $partial = $controller->show(Request::create('/public/site-shell?locale=ko', 'GET'));
+        self::assertFalse($partial->getData(true)['data']['shell']['enabled']);
+        self::assertSame('no-store', $partial->headers->get('Cache-Control'));
+
+        $service->publish('footer', 'ko', $footer->lockVersion, 1);
+        $active = $controller->show(Request::create('/public/site-shell?locale=ko', 'GET'));
+        $payload = $active->getData(true)['data']['shell'];
+        self::assertTrue($payload['enabled']);
+        self::assertSame(1, $payload['header_revision']);
+        self::assertSame(1, $payload['footer_revision']);
+        self::assertStringContainsString('data-g7pb-system-controls', $payload['header_html']);
+        self::assertStringContainsString('g7pb-site-footer', $payload['footer_html']);
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $payload['artifact_sha256']);
+        self::assertNotNull($active->headers->get('ETag'));
     }
 
     public function test_published_metadata_and_public_slug_do_not_follow_later_draft_changes(): void

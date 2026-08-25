@@ -2045,7 +2045,7 @@
 .g7pb-site-header { position: relative; z-index: 50; width: 100%; border-bottom: 1px solid #e3e7ee; color: #172033; background: rgb(255 255 255 / 96%); backdrop-filter: blur(16px); }
 .g7pb-site-header.is-sticky { position: sticky; top: 0; }
 .g7pb-site-header.is-transparent { color: #fff; border-color: rgb(255 255 255 / 24%); background: linear-gradient(180deg, rgb(10 18 32 / 78%), rgb(10 18 32 / 42%)); }
-.g7pb-site-header__inner { display: grid; width: min(calc(100% - 2.5rem), 72rem); min-height: 4.75rem; grid-template-columns: auto 1fr auto auto; gap: 2rem; align-items: center; margin: 0 auto; }
+.g7pb-site-header__inner { display: grid; width: min(calc(100% - 2.5rem), 72rem); min-height: 4.75rem; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2rem; align-items: center; margin: 0 auto; }
 .g7pb-site-brand { display: inline-flex; min-width: 0; align-items: center; gap: .75rem; color: inherit; font-size: 1.05rem; font-weight: 850; letter-spacing: -.02em; text-decoration: none; }
 .g7pb-site-brand img { display: block; width: auto; max-width: 10rem; height: 2.25rem; object-fit: contain; }
 .g7pb-site-nav { justify-self: center; }
@@ -2059,6 +2059,17 @@
 .g7pb-site-nav li:hover > .g7pb-site-subnav, .g7pb-site-nav li:focus-within > .g7pb-site-subnav { visibility: visible; opacity: 1; transform: translate(-50%, 0); }
 .g7pb-site-header__cta { display: inline-flex; min-height: 2.75rem; align-items: center; padding: .6rem 1rem; border-radius: 999px; color: #fff; background: #2456df; font-size: .88rem; font-weight: 800; text-decoration: none; }
 .g7pb-site-header.is-transparent .g7pb-site-header__cta { color: #172033; background: #fff; }
+.g7pb-site-header__actions, .g7pb-system-controls { display: flex; min-width: 0; align-items: center; gap: .45rem; }
+.g7pb-system-controls { justify-content: flex-end; }
+.g7pb-system-controls a, .g7pb-system-controls button, .g7pb-system-controls input, .g7pb-system-controls select { min-height: 2.35rem; border: 1px solid #d8dee8; border-radius: .55rem; color: inherit; background: #fff; font: inherit; font-size: .78rem; }
+.g7pb-system-controls a, .g7pb-system-controls button { display: inline-flex; position: relative; align-items: center; padding: .45rem .65rem; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.g7pb-system-search { display: flex; align-items: center; }
+.g7pb-system-search input { width: clamp(7rem, 10vw, 10rem); padding: .45rem .65rem; border-start-end-radius: 0; border-end-end-radius: 0; }
+.g7pb-system-search button { border-inline-start: 0; border-start-start-radius: 0; border-end-start-radius: 0; }
+.g7pb-system-select { display: inline-flex; align-items: center; gap: .25rem; }
+.g7pb-system-select > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.g7pb-system-select select { max-width: 5.5rem; padding: .35rem .4rem; }
+.g7pb-site-header.is-transparent .g7pb-system-controls a, .g7pb-site-header.is-transparent .g7pb-system-controls button, .g7pb-site-header.is-transparent .g7pb-system-controls input, .g7pb-site-header.is-transparent .g7pb-system-controls select { border-color: rgb(255 255 255 / 40%); color: #fff; background: rgb(10 18 32 / 38%); }
 .g7pb-menu-toggle { display: none; width: 2.75rem; height: 2.75rem; padding: .65rem; border: 1px solid currentColor; border-radius: 999px; color: inherit; background: transparent; }
 .g7pb-menu-toggle::before, .g7pb-menu-toggle::after, .g7pb-menu-toggle span { display: block; width: 100%; height: 2px; margin: .25rem 0; background: currentColor; content: ''; }
 .g7pb-mobile-menu { position: absolute; top: 100%; right: 0; left: 0; padding: 1rem 1.25rem 1.4rem; color: #172033; background: #fff; box-shadow: 0 1.2rem 2.5rem rgb(15 23 42 / 14%); }
@@ -2475,7 +2486,8 @@
 
 @media (max-width: 899px) {
   .g7pb-site-header__inner { width: min(calc(100% - 2rem), 72rem); min-height: 4.25rem; grid-template-columns: 1fr auto; }
-  .g7pb-site-nav, .g7pb-site-header__inner > .g7pb-site-header__cta { display: none; }
+  .g7pb-site-nav, .g7pb-site-header__actions > .g7pb-site-header__cta, .g7pb-system-search, .g7pb-system-select { display: none; }
+  .g7pb-system-controls a, .g7pb-system-controls button { min-height: 2.2rem; padding: .4rem .5rem; font-size: .72rem; }
   .g7pb-menu-toggle { display: block; }
   .g7pb-mobile-menu.g7pb-mobile-menu--preview { position: static; display: block; width: auto; padding: .8rem 1.25rem 1.1rem; border-top: 1px solid #e4e8ef; box-shadow: none; }
   .g7pb-mobile-menu--preview .g7pb-mobile-menu__navigation { display: block; }

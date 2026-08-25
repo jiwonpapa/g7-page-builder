@@ -11,6 +11,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 
 Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:sanctum', 'throttle:300,1'])->name('admin.')->group(function (): void {
@@ -193,6 +194,10 @@ Route::get('public/pages/{slug}', [PublicPageController::class, 'show'])
 Route::get('public/home', [PublicPageController::class, 'home'])
     ->middleware('throttle:120,1')
     ->name('public.home');
+
+Route::get('public/site-shell', [PublicSiteShellController::class, 'show'])
+    ->middleware('throttle:120,1')
+    ->name('public.site-shell.show');
 
 Route::get('public/previews/{token}', [PublicPageController::class, 'preview'])
     ->where('token', '[a-f0-9]{64}')

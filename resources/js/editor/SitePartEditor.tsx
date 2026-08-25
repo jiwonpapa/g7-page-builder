@@ -48,6 +48,20 @@ const VIEWPORTS: Viewports = [
   { width: 1280, height: 'auto', label: 'PC', icon: 'Monitor' },
 ];
 
+export function HeaderSystemControlsPreview(): React.ReactElement {
+  const prevent = (event: React.SyntheticEvent): void => event.preventDefault();
+  return <nav className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls>
+    <form className="g7pb-system-search" action="/search" onSubmit={prevent}>
+      <input name="q" aria-label="통합 검색" placeholder="통합 검색" readOnly />
+      <button type="submit">검색</button>
+    </form>
+    <a href="/shop/cart" onClick={prevent}>장바구니</a>
+    <button type="button">화면 모드</button>
+    <label className="g7pb-system-select"><span>언어</span><select aria-label="언어" value="ko" disabled><option value="ko">한국어</option></select></label>
+    <a href="/login" onClick={prevent}>로그인</a>
+  </nav>;
+}
+
 export function HeaderNavigationPreview(props: HeaderNavigationProps): React.ReactElement {
   const navigation = (className: string, label: string): React.ReactElement => <nav className={className} aria-label={label}><ul>{props.navigation.map((item, index) => (
     <li key={`${item.label}-${index}`} className={item.children.length > 0 ? 'has-children' : undefined}>
@@ -64,8 +78,11 @@ export function HeaderNavigationPreview(props: HeaderNavigationProps): React.Rea
           {props.logoUrl ? <img src={props.logoUrl} alt={props.brandName} /> : <span data-g7pb-inline-field="brandName">{props.brandName}</span>}
         </a>
         {navigation('g7pb-site-nav', '주 메뉴')}
-        {props.ctaLabel ? <a className="g7pb-site-header__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
-        {props.mobileMenu ? <button className="g7pb-menu-toggle" type="button" aria-label={`${props.mobileMenuStyle === 'drawer-left' ? '왼쪽' : props.mobileMenuStyle === 'drawer-right' ? '오른쪽' : '아래'} 모바일 메뉴`}><span /></button> : null}
+        <div className="g7pb-site-header__actions">
+          {props.ctaLabel ? <a className="g7pb-site-header__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
+          <HeaderSystemControlsPreview />
+          {props.mobileMenu ? <button className="g7pb-menu-toggle" type="button" aria-label={`${props.mobileMenuStyle === 'drawer-left' ? '왼쪽' : props.mobileMenuStyle === 'drawer-right' ? '오른쪽' : '아래'} 모바일 메뉴`}><span /></button> : null}
+        </div>
       </div>
       {props.mobileMenu ? <div className={`g7pb-mobile-menu g7pb-mobile-menu--preview g7pb-mobile-menu--${props.mobileMenuStyle}`}>{navigation('g7pb-mobile-menu__navigation', '모바일 메뉴')}{props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}</div> : null}
     </header>

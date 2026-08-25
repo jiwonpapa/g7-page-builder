@@ -44,6 +44,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Form
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Layout\UserTemplateSiteShellDecorator;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Media\LaravelMediaAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockFavoriteAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockPackRepository;
@@ -52,6 +53,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentP
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7RouteCatalogAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7SiteShellLayoutBridge;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\LaravelOfficialStoreSourceAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\ZipPageKitArchiveAdapter;
@@ -63,9 +65,12 @@ final class PageBuilderServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/block-packs.php', 'g7-page-builder.block-packs');
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/official-store.php', 'g7-page-builder.official-store');
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/forms.php', 'g7-page-builder.forms');
+        $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/site-shell.php', 'g7-page-builder.site-shell');
         $this->app->bind(PageBuilderRepository::class, EloquentPageBuilderRepository::class);
         $this->app->bind(RouteCatalogPort::class, G7RouteCatalogAdapter::class);
         $this->app->singleton(G7TemplateRouteBridge::class);
+        $this->app->singleton(UserTemplateSiteShellDecorator::class);
+        $this->app->singleton(G7SiteShellLayoutBridge::class);
         $this->app->bind(BlockFavoritePort::class, EloquentBlockFavoriteAdapter::class);
         $this->app->bind(BlockPackRepository::class, EloquentBlockPackRepository::class);
         $this->app->singleton(
@@ -191,6 +196,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom($moduleRoot.'/resources/views', 'g7-page-builder');
         $this->app->make(G7TemplateRouteBridge::class)->register();
+        $this->app->make(G7SiteShellLayoutBridge::class)->register();
 
         $router = $this->app->make(Router::class);
         $router->prependMiddlewareToGroup('web', PageBuilderHomeOverride::class);

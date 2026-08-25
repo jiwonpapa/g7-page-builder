@@ -14,6 +14,16 @@ type MotionWindow = Window & {
   IntersectionObserver?: typeof IntersectionObserver;
 };
 
+type G7ShellWindow = MotionWindow & {
+  G7Core?: {
+    state?: {
+      get?: () => unknown;
+      subscribe?: (listener: () => void) => (() => void) | void;
+    };
+    dispatch?: (action: Record<string, unknown>) => Promise<unknown> | unknown;
+  };
+};
+
 type DynamicAudience = 'all' | 'guest' | 'member';
 
 interface DynamicPayload {
@@ -535,6 +545,8 @@ function installParallax(blocks: HTMLElement[], view: MotionWindow): void {
 }
 
 export function bootPageEffects(root: Document = document, view: MotionWindow = window as MotionWindow): void {
+  ensureSiteShellButtons(root);
+  bootG7SystemControls(root, view as G7ShellWindow);
   bootSiteShellMenu(root, view);
   bootServiceActions(root, view);
   bootAccordions(root);
@@ -585,6 +597,201 @@ export function bootPageEffects(root: Document = document, view: MotionWindow = 
   blocks.forEach((block) => {
     observer.observe(block);
   });
+}
+
+export function ensureSiteShellButtons(root: Document = document): void {
+  const selectors = [
+    '[data-g7pb-menu-toggle]',
+    '[data-g7pb-menu-backdrop]',
+    '[data-g7pb-menu-close]',
+    '[data-g7pb-submenu-toggle]',
+  ];
+  root.querySelectorAll<HTMLElement>(selectors.join(',')).forEach((marker) => {
+    if (marker instanceof HTMLButtonElement) return;
+    const button = root.createElement('button');
+    button.type = 'button';
+    for (const attribute of Array.from(marker.attributes)) {
+      button.setAttribute(attribute.name, attribute.value);
+    }
+    button.replaceChildren(...Array.from(marker.childNodes));
+    marker.replaceWith(button);
+  });
+}
+
+function systemState(view: G7ShellWindow): Record<string, unknown> {
+  try {
+    return asRecord(view.G7Core?.state?.get?.()) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function storageValue(view: Window, key: string): string {
+  try {
+    return view.localStorage.getItem(key) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function replaceSelectOptions(select: HTMLSelectElement, values: Array<{ value: string; label: string }>, selected: string): void {
+  const signature = values.map((value) => `${value.value}:${value.label}`).join('|');
+  if (select.dataset.g7pbSystemOptions !== signature) {
+    select.replaceChildren(...values.map((value) => new Option(value.label, value.value)));
+    select.dataset.g7pbSystemOptions = signature;
+  }
+  select.value = selected;
+}
+
+function ensureG7SystemControlElements(root: Document): void {
+  root.querySelectorAll<HTMLElement>('[data-g7pb-system-search-host]').forEach((host) => {
+    if (host.querySelector('form')) return;
+    const form = root.createElement('form');
+    form.className = 'g7pb-system-search';
+    form.action = '/search';
+    form.method = 'get';
+    form.role = 'search';
+    const label = root.createElement('label');
+    label.className = 'g7pb-visually-hidden';
+    label.textContent = host.dataset.g7pbLabel || '검색';
+    const input = root.createElement('input');
+    input.name = 'q';
+    input.type = 'search';
+    input.placeholder = host.dataset.g7pbPlaceholder || label.textContent;
+    label.append(input);
+    const submit = root.createElement('button');
+    submit.type = 'submit';
+    submit.textContent = host.dataset.g7pbLabel || '검색';
+    form.append(label, submit);
+    host.append(form);
+  });
+
+  const ensureSelect = (hostSelector: string, wrapAttribute: string, selectAttribute: string): void => {
+    root.querySelectorAll<HTMLElement>(hostSelector).forEach((host) => {
+      if (host.querySelector('select')) return;
+      const label = root.createElement('label');
+      label.className = 'g7pb-system-select';
+      label.setAttribute(wrapAttribute, '');
+      label.hidden = true;
+      const text = root.createElement('span');
+      text.textContent = host.dataset.g7pbLabel || '';
+      const select = root.createElement('select');
+      select.setAttribute(selectAttribute, '');
+      label.append(text, select);
+      host.append(label);
+    });
+  };
+  ensureSelect('[data-g7pb-system-locale-host]', 'data-g7pb-system-locale-wrap', 'data-g7pb-system-locale');
+  ensureSelect('[data-g7pb-system-currency-host]', 'data-g7pb-system-currency-wrap', 'data-g7pb-system-currency');
+}
+
+export function renderG7SystemControls(root: Document = document, view: G7ShellWindow = window as G7ShellWindow): void {
+  ensureG7SystemControlElements(root);
+  const controls = Array.from(root.querySelectorAll<HTMLElement>('[data-g7pb-system-controls]'));
+  if (controls.length === 0) return;
+
+  const state = systemState(view);
+  const user = asRecord(state.currentUser);
+  const isMember = typeof user?.uuid === 'string' && user.uuid !== '';
+  const cartCount = Math.max(0, Number(state.cartCount) || 0);
+  const notificationCount = Math.max(0, Number(state.notificationCount) || 0);
+  const shopBase = typeof state.shopBase === 'string' ? state.shopBase.replace(/\/$/u, '') : '/shop';
+  const appConfig = asRecord(state.appConfig);
+  const locales = Array.isArray(appConfig?.supportedLocales)
+    ? appConfig.supportedLocales.filter((locale): locale is string => typeof locale === 'string' && /^[a-z]{2,3}(?:-[A-Z]{2})?$/u.test(locale))
+    : [];
+  const localeNames = asRecord(appConfig?.localeNames);
+  const currentLocale = storageValue(view, 'g7_locale') || root.documentElement.lang || locales[0] || '';
+  const currencies = Array.isArray(state.availableCurrencies)
+    ? state.availableCurrencies.map(asRecord).filter((currency): currency is Record<string, unknown> => currency !== null)
+    : [];
+  const preferredCurrency = typeof state.preferredCurrency === 'string'
+    ? state.preferredCurrency
+    : typeof state.defaultCurrency === 'string' ? state.defaultCurrency : '';
+
+  controls.forEach((control) => {
+    control.querySelectorAll<HTMLElement>('[data-g7pb-system-member]').forEach((item) => { item.hidden = !isMember; });
+    control.querySelectorAll<HTMLElement>('[data-g7pb-system-guest]').forEach((item) => { item.hidden = isMember; });
+    const cart = control.querySelector<HTMLAnchorElement>('[data-g7pb-system-cart]');
+    if (cart) cart.href = `${shopBase || ''}/cart`;
+
+    const paintBadge = (selector: string, count: number): void => {
+      const badge = control.querySelector<HTMLElement>(selector);
+      if (!badge) return;
+      badge.hidden = count <= 0;
+      badge.textContent = count > 99 ? '99+' : String(count);
+    };
+    paintBadge('[data-g7pb-system-cart-count]', cartCount);
+    paintBadge('[data-g7pb-system-notification-count]', notificationCount);
+
+    const localeWrap = control.querySelector<HTMLElement>('[data-g7pb-system-locale-wrap]');
+    const localeSelect = control.querySelector<HTMLSelectElement>('[data-g7pb-system-locale]');
+    if (localeWrap && localeSelect) {
+      localeWrap.hidden = locales.length < 2;
+      replaceSelectOptions(localeSelect, locales.map((locale) => ({
+        value: locale,
+        label: asText(localeNames?.[locale]) || locale.toUpperCase(),
+      })), currentLocale);
+    }
+
+    const currencyWrap = control.querySelector<HTMLElement>('[data-g7pb-system-currency-wrap]');
+    const currencySelect = control.querySelector<HTMLSelectElement>('[data-g7pb-system-currency]');
+    if (currencyWrap && currencySelect) {
+      const options = currencies.map((currency) => ({
+        value: asText(currency.code),
+        label: [asText(currency.symbol), asText(currency.code)].filter(Boolean).join(' '),
+      })).filter((currency) => /^[A-Z]{3}$/u.test(currency.value));
+      currencyWrap.hidden = options.length < 2;
+      replaceSelectOptions(currencySelect, options, preferredCurrency);
+    }
+  });
+}
+
+export function bootG7SystemControls(root: Document = document, view: G7ShellWindow = window as G7ShellWindow): void {
+  renderG7SystemControls(root, view);
+  if (root.documentElement.dataset.g7pbSystemControlsReady === 'true') return;
+
+  root.addEventListener('click', (event) => {
+    const button = (event.target as Element | null)?.closest<HTMLElement>('[data-g7pb-system-theme]');
+    if (!button) return;
+    event.preventDefault();
+    const current = storageValue(view, 'g7_color_scheme') || 'auto';
+    const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+    try {
+      const dispatched = view.G7Core?.dispatch?.({ handler: 'setTheme', target: next });
+      if (dispatched === undefined) {
+        view.localStorage.setItem('g7_color_scheme', next);
+        const resolved = next === 'auto' && typeof view.matchMedia === 'function'
+          ? (view.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : next;
+        root.documentElement.dataset.theme = resolved;
+        root.documentElement.classList.toggle('dark', resolved === 'dark');
+      }
+    } catch {
+      // G7가 초기화되지 않은 순간에는 기존 템플릿 상태를 바꾸지 않습니다.
+    }
+  });
+
+  root.addEventListener('change', (event) => {
+    const select = event.target as HTMLSelectElement | null;
+    if (!select) return;
+    if (select.matches('[data-g7pb-system-locale]') && /^[a-z]{2,3}(?:-[A-Z]{2})?$/u.test(select.value)) {
+      void view.G7Core?.dispatch?.({ handler: 'setLocale', target: select.value });
+    }
+    if (select.matches('[data-g7pb-system-currency]') && /^[A-Z]{3}$/u.test(select.value)) {
+      void view.G7Core?.dispatch?.({
+        handler: 'sirsoft-basic.savePreferredCurrency',
+        params: { currencyCode: select.value },
+      });
+    }
+  });
+
+  try {
+    view.G7Core?.state?.subscribe?.(() => renderG7SystemControls(root, view));
+  } catch {
+    // 구형 호스트는 subscribe 없이도 MutationObserver 재부트로 현재 상태를 반영합니다.
+  }
+  root.documentElement.dataset.g7pbSystemControlsReady = 'true';
 }
 
 export function bootAccordions(root: Document = document): void {

@@ -5,7 +5,7 @@
 
 ## 결론
 
-G7 코어와 번들 템플릿을 수정하지 않습니다. Page Builder는 문서·리비전·마지막 정상 발행본을 자체 소유하고, 기본 출력에서만 활성 User Template의 공개 route/layout merge 계약을 사용해 콘텐츠를 연결합니다.
+G7 코어와 번들 템플릿을 수정하지 않습니다. Page Builder는 문서·리비전·마지막 정상 발행본을 자체 소유하고, 활성 User Template의 공개 route/layout merge 계약과 공식 post-apply filter로 콘텐츠와 선택형 공통 셸을 연결합니다.
 
 G7 7.0.8에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계약이 없습니다. 따라서 MVP public artifact는 서버에서 정화한 HTML이며, G7 JSON UI compiler는 향후 선택형 target입니다.
 
@@ -21,6 +21,7 @@ G7 7.0.8에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계
 | 활성 User Template 식별·merged route 조회 | 기본 template shell과 링크 route catalog |
 | 모듈 `resources/routes/user.json`, `resources/layouts/user/**` | `/pages/:slug`, preview, 선택형 홈 콘텐츠를 `_user_base`에 연결 |
 | `core.routes.filter_merged` hook | template 발행본이 홈일 때만 `/` layout 교체·해제 시 원복 |
+| `core.layout_extension.after_apply` hook | 호환되는 활성 User Template 전체 사용자 layout에 Site Part를 fail-safe로 연결 |
 | `module.json` asset manifest, public asset route | scope된 공개 CSS/effects만 G7 shell에 전역 등록; editor bundle은 직접 로드 |
 
 위 항목 외 G7 기능은 기본 제품 의존성이 아닙니다. 특히 `module.json`의 `dependencies.modules`와 `dependencies.plugins`는 빈 객체를 유지합니다.
@@ -28,7 +29,7 @@ G7 7.0.8에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계
 기본 제품에서 제외:
 
 - 기존 User Template route/layout 파일·DB row의 수정 또는 복제
-- Layout Extension·Layout Editor
+- Layout Extension 저장소·overlay·Layout Editor
 - `sirsoft-page`와 번들 모듈의 내부 PHP 구현·DB 저장소
 - G7 Model·Repository·Service·DB table
 - G7 Attachment/Media Model
@@ -56,8 +57,8 @@ G7 7.0.8에는 독립 JSON UI 문서를 mount/load/save/publish하는 공개 계
 | slug, title, SEO, 공개 여부 | Page Builder |
 | builder document, draft lock, revision | Page Builder |
 | prepared publication, active publication, compiled HTML | Page Builder |
-| 활성 template Header·Footer·navigation | G7 User Template |
-| `builder` shell Header·Footer Site Part 원본·revision·active 발행본 | Page Builder |
+| Site Part 미발행·장애 시 활성 template Header·Footer·navigation | G7 User Template |
+| `builder` 및 호환 User Template 공통 Header·Footer Site Part 원본·revision·active 발행본 | Page Builder |
 | editor selection/history/sidebar | 브라우저 임시 상태 |
 | 기존 G7 Layout JSON | G7 template/module, Page Builder 수정 금지 |
 | `page_builder_{public|home|preview}` Layout JSON | Page Builder 모듈 |
@@ -95,6 +96,7 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 | POST | `/api/modules/jiwonpapa-page_builder/admin/publications/{token}/commit` | 후보를 active publication으로 원자 전환 |
 | GET | `/api/modules/jiwonpapa-page_builder/public/pages/{slug}` | active snapshot만 반환 |
 | GET | `/api/modules/jiwonpapa-page_builder/public/home` | template home active snapshot만 반환 |
+| GET | `/api/modules/jiwonpapa-page_builder/public/site-shell?locale={locale}` | 두 active Site Part가 모두 정상일 때만 원자적 Header·Footer HTML 반환 |
 | GET | `/api/modules/jiwonpapa-page_builder/public/previews/{token}` | User Template preview용 만료 token snapshot 반환 |
 
 관리자 Web 진입점은 G7 네이티브 문서함 `/admin/page-builder`, 페이지 편집기 `/modules/jiwonpapa-page_builder/admin/editor?document={uuid}`, Site Part 편집기 `/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}`로 분리합니다. G7 기본 페이지 관리와 연결하지 않습니다.
@@ -110,7 +112,7 @@ Admin API route에는 `auth:sanctum`, 모듈 permission, 분당 300회 throttle 
 - canonical 공개 route `/pages/{slug}`는 `template` 발행본이면 G7 app을 시작하고 모듈 user layout이 active artifact를 `HtmlContent`로 렌더합니다. `builder`·`none`은 자체 viewer가 직접 응답합니다.
 - 과거 `/modules/jiwonpapa-page_builder/p/{slug}`는 공개본이 있을 때 `/pages/{slug}`로 HTTP 301 이동합니다.
 - `template` 발행 문서 하나를 홈으로 지정하면 merged user route의 `/` layout만 Page Builder home으로 교체합니다. 지정·공개를 해제하거나 조회가 실패하면 원래 G7 템플릿 홈으로 fail-through 합니다.
-- 기본 `shell_mode=template`은 활성 User Template의 `_user_base` Header·Footer·navigation을 사용합니다. `builder`는 Page Builder Site Part, `none`은 콘텐츠 canvas만 렌더합니다.
+- 기본 `shell_mode=template`은 활성 User Template의 `_user_base`를 사용합니다. 두 Site Part가 모두 발행되고 호환 프로필이 일치하면 공통 셸만 Page Builder 것으로 전환하고, 실패 시 원본 템플릿 셸로 복귀합니다. `builder`는 자체 viewer의 Page Builder Site Part, `none`은 콘텐츠 canvas만 렌더합니다.
 - G7 Layout Editor는 전혀 사용하지 않으며 같은 문서를 소유하지 않습니다.
 - module Provider가 `resources/views`를 `loadViewsFrom`으로 등록하고 자체 Controller가 editor/viewer shell을 렌더합니다. G7 `getViews()` 자동 등록을 가정하지 않습니다.
 - `module.json` global asset에는 `.g7pb-page`로 scope된 public CSS와 가벼운 effects IIFE만 등록합니다. Puck·React editor bundle은 editor shell이 직접 링크하며 다른 G7 화면에 전역 주입하지 않습니다.

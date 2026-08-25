@@ -4,11 +4,13 @@ import {
   bootAccordions,
   bootBlockVisibility,
   bootDynamicData,
+  bootG7SystemControls,
   bootInquiryForms,
   bootPageEffects,
   bootServiceActions,
   bootTabs,
   ensureSliderControls,
+  ensureSiteShellButtons,
   parseCounterText,
 } from '../../resources/js/public/pageEffects';
 
@@ -16,6 +18,9 @@ afterEach(() => {
   document.head.innerHTML = '';
   document.body.innerHTML = '';
   delete document.documentElement.dataset.g7pbServiceActionsReady;
+  delete document.documentElement.dataset.g7pbSystemControlsReady;
+  delete (window as unknown as { G7Core?: unknown }).G7Core;
+  window.localStorage.clear();
   vi.restoreAllMocks();
 });
 
@@ -116,6 +121,23 @@ describe('published page effects runtime', () => {
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(menu?.hidden).toBe(true);
     expect(document.activeElement).toBe(toggle);
+  });
+
+  it('restores fixed menu buttons removed by the G7 HtmlContent sanitizer', () => {
+    document.body.innerHTML = `
+      <span class="g7pb-menu-toggle" data-g7pb-menu-toggle aria-expanded="false"><span></span></span>
+      <span data-g7pb-menu-backdrop hidden></span>
+      <nav data-g7pb-mobile-menu><span data-g7pb-menu-close>×</span>
+        <span data-g7pb-submenu-toggle aria-expanded="false"><span>⌄</span></span>
+      </nav>`;
+
+    ensureSiteShellButtons(document);
+
+    expect(document.querySelector('[data-g7pb-menu-toggle]')?.tagName).toBe('BUTTON');
+    expect(document.querySelector('[data-g7pb-menu-backdrop]')?.tagName).toBe('BUTTON');
+    expect(document.querySelector('[data-g7pb-menu-close]')?.tagName).toBe('BUTTON');
+    expect(document.querySelector('[data-g7pb-submenu-toggle]')?.tagName).toBe('BUTTON');
+    expect(document.querySelector('[data-g7pb-menu-toggle]')?.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('traps keyboard focus inside a drawer menu and restores it when the backdrop closes', () => {
@@ -239,6 +261,61 @@ describe('published page effects runtime', () => {
     }));
     expect(token).toBeNull();
     expect(navigate).toHaveBeenCalledWith('/');
+  });
+
+  it('keeps fixed G7 account, cart, locale, currency, and theme controls outside the editable document', () => {
+    document.documentElement.lang = 'ko';
+    document.body.innerHTML = `
+      <nav data-g7pb-system-controls>
+        <a data-g7pb-system-member hidden>회원</a><a data-g7pb-system-guest>비회원</a>
+        <a data-g7pb-system-cart><span data-g7pb-system-cart-count hidden></span></a>
+        <span data-g7pb-system-notification-count hidden></span>
+        <button data-g7pb-system-theme>테마</button>
+        <label data-g7pb-system-locale-wrap hidden><select data-g7pb-system-locale></select></label>
+        <label data-g7pb-system-currency-wrap hidden><select data-g7pb-system-currency></select></label>
+      </nav>`;
+    const dispatch = vi.fn();
+    const subscribe = vi.fn();
+    (window as unknown as { G7Core: unknown }).G7Core = {
+      state: {
+        get: () => ({
+          currentUser: { uuid: 'member-1' }, cartCount: 3, notificationCount: 2,
+          shopBase: '/store', preferredCurrency: 'KRW',
+          availableCurrencies: [{ code: 'KRW', symbol: '₩' }, { code: 'USD', symbol: '$' }],
+          appConfig: { supportedLocales: ['ko', 'en'], localeNames: { ko: '한국어', en: 'English' } },
+        }),
+        subscribe,
+      },
+      dispatch,
+    };
+
+    bootG7SystemControls(document, window as never);
+
+    expect(document.querySelector<HTMLElement>('[data-g7pb-system-member]')?.hidden).toBe(false);
+    expect(document.querySelector<HTMLElement>('[data-g7pb-system-guest]')?.hidden).toBe(true);
+    expect(document.querySelector<HTMLAnchorElement>('[data-g7pb-system-cart]')?.getAttribute('href')).toBe('/store/cart');
+    expect(document.querySelector('[data-g7pb-system-cart-count]')?.textContent).toBe('3');
+    expect(document.querySelector('[data-g7pb-system-notification-count]')?.textContent).toBe('2');
+    expect(document.querySelector<HTMLElement>('[data-g7pb-system-locale-wrap]')?.hidden).toBe(false);
+    expect(document.querySelectorAll('[data-g7pb-system-locale] option')).toHaveLength(2);
+    expect(document.querySelector<HTMLElement>('[data-g7pb-system-currency-wrap]')?.hidden).toBe(false);
+
+    const locale = document.querySelector<HTMLSelectElement>('[data-g7pb-system-locale]')!;
+    locale.value = 'en';
+    locale.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(dispatch).toHaveBeenCalledWith({ handler: 'setLocale', target: 'en' });
+
+    const currency = document.querySelector<HTMLSelectElement>('[data-g7pb-system-currency]')!;
+    currency.value = 'USD';
+    currency.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(dispatch).toHaveBeenCalledWith({
+      handler: 'sirsoft-basic.savePreferredCurrency',
+      params: { currencyCode: 'USD' },
+    });
+
+    document.querySelector<HTMLButtonElement>('[data-g7pb-system-theme]')?.click();
+    expect(dispatch).toHaveBeenCalledWith({ handler: 'setTheme', target: 'light' });
+    expect(subscribe).toHaveBeenCalledOnce();
   });
 
   it('renders G7 posts and products through public APIs without injecting response HTML', async () => {

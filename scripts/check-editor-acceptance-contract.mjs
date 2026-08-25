@@ -62,6 +62,10 @@ export async function validateEditorAcceptanceContract(root) {
     [/page\.mouse\.down\s*\(/, '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'],
     [/page\.mouse\.move\s*\(/, '실제 pointer 선택을 위한 page.mouse.move가 필요합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
+    [/frameLocator\(['"]iframe['"]\)\.first\(\)/, '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'],
+    [/await field\.boundingBox\(\)/, '변환된 viewport에서도 실제 필드 좌표를 사용해야 합니다.'],
+    [/fieldBox\.width\s*\/\s*geometry\.fieldWidth/, 'viewport transform의 가로 배율을 실제 포인터 좌표에 반영해야 합니다.'],
+    [/fieldBox\.height\s*\/\s*geometry\.fieldHeight/, 'viewport transform의 세로 배율을 실제 포인터 좌표에 반영해야 합니다.'],
     [/REAL_POINTER_SELECTION_GATE/, '실제 포인터 선택 gate가 필요합니다.'],
     [/RANGE_TOOLBAR_EXCLUSIVE_GATE/, '범위 툴바와 요소 벌룬 상호배타 gate가 필요합니다.'],
     [/COLLAPSED_SELECTION_GATE/, '선택 해제 시 툴바 닫힘 gate가 필요합니다.'],
@@ -79,6 +83,10 @@ export async function validateEditorAcceptanceContract(root) {
     [/page-builder-public-link/, '공개 출력 검증이 필요합니다.'],
   ];
   for (const [pattern, message] of requiredEvidence) requirePattern(errors, spec, pattern, message);
+
+  if (/page\.locator\(['"]iframe['"]\)\.boundingBox\(\)/.test(spec)) {
+    errors.push('iframe 원점과 내부 CSS 좌표를 단순 합산하면 viewport transform을 놓칩니다.');
+  }
 
   if (/\btest\.(?:skip|fixme)\s*\(/.test(spec) || /testInfo\.project\.name\s*!==/.test(spec)) {
     errors.push('전용 편집 E2E는 viewport를 skip/fixme로 우회하면 안 됩니다.');

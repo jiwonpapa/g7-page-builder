@@ -281,7 +281,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
 }
 
 export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePartDocument): SitePartDocument {
-  const blocks = data.content.map((block): PageBuilderBlock => {
+  const blocks = data.content.map((block, index): PageBuilderBlock => {
     const props = block.props as Record<string, unknown>;
     const component = block.type as keyof SitePartComponents;
     let canonicalProps: Record<string, unknown>;
@@ -320,7 +320,7 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
       };
     }
     return {
-      instance_id: stableUuid(text(props.id, `${component}:${JSON.stringify(canonicalProps)}`)),
+      instance_id: stableUuid(text(props.id, `${source.site_part_id}:${component}:${index}`)),
       type: TYPE_BY_COMPONENT[component],
       block_version: 1,
       props: canonicalProps,

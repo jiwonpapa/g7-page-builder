@@ -13,6 +13,17 @@ class TestResizeObserver {
 
 globalThis.ResizeObserver = TestResizeObserver;
 
+const storageValues = new Map<string, string>();
+const testStorage: Storage = {
+  get length() { return storageValues.size; },
+  clear: () => storageValues.clear(),
+  getItem: (key) => storageValues.get(key) ?? null,
+  key: (index) => Array.from(storageValues.keys())[index] ?? null,
+  removeItem: (key) => { storageValues.delete(key); },
+  setItem: (key, value) => { storageValues.set(key, String(value)); },
+};
+Object.defineProperty(window, 'localStorage', { configurable: true, value: testStorage });
+
 vi.mock('../../resources/js/editor/PuckEditorAdapter', () => ({
   PuckEditorAdapter: ({ document, onDirty, onChange }: {
     document: PageBuilderDocument;
@@ -27,7 +38,7 @@ vi.mock('../../resources/js/editor/PuckEditorAdapter', () => ({
 }));
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
-const { AUTO_SAVE_IDLE_MS, mountPageBuilderEditor } = await import('../../resources/js/editor/main');
+const { AUTO_SAVE_IDLE_MS, DRAFT_JOURNAL_BATCH_MS, mountPageBuilderEditor } = await import('../../resources/js/editor/main');
 
 const resource: DocumentResource = {
   title: '이탈 방지 시험',
@@ -96,7 +107,7 @@ describe('editor unsaved navigation guard', () => {
     await act(async () => { unmount(); });
   });
 
-  it('journals immediately, saves after the short idle window, and clears the accepted journal', async () => {
+  it('batches the browser journal, saves after the short idle window, and clears the accepted journal', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
     vi.spyOn(PageBuilderApiClient.prototype, 'listBlockPacks').mockResolvedValue({ items: [] });
     vi.spyOn(PageBuilderApiClient.prototype, 'getDocument').mockResolvedValue(resource);
@@ -115,9 +126,20 @@ describe('editor unsaved navigation guard', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    await act(async () => { (await eventually<HTMLButtonElement>('[data-testid="mock-editor-dirty"]')).click(); });
+    const journalWrites = vi.spyOn(window.localStorage, 'setItem');
+    journalWrites.mockClear();
+    await act(async () => {
+      const editor = await eventually<HTMLButtonElement>('[data-testid="mock-editor-dirty"]');
+      editor.click();
+      editor.click();
+      editor.click();
+    });
     const journalKey = `g7pb:draft-journal:v1:${resource.document.document_id}`;
+    expect(window.localStorage.getItem(journalKey)).toBeNull();
+    expect(journalWrites).not.toHaveBeenCalled();
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, DRAFT_JOURNAL_BATCH_MS + 25)); });
     expect(window.localStorage.getItem(journalKey)).toContain('navigation-guard-changed');
+    expect(journalWrites).toHaveBeenCalledTimes(1);
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, AUTO_SAVE_IDLE_MS + 100)); });
 
     expect(saveDraft).toHaveBeenCalledTimes(1);
@@ -145,12 +167,11 @@ describe('editor unsaved navigation guard', () => {
     await act(async () => { (await eventually<HTMLButtonElement>('[data-testid="mock-editor-dirty"]')).click(); });
     expect((await eventually<HTMLElement>('[data-testid="page-builder-save-status"]')).dataset.state).toBe('dirty');
     expect(AUTO_SAVE_IDLE_MS).toBeLessThanOrEqual(750);
-    expect(window.localStorage.getItem(`g7pb:draft-journal:v1:${resource.document.document_id}`))
-      .toContain('navigation-guard-changed');
-
     const unload = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(true);
+    expect(window.localStorage.getItem(`g7pb:draft-journal:v1:${resource.document.document_id}`))
+      .toContain('navigation-guard-changed');
 
     await act(async () => { (await eventually<HTMLAnchorElement>('[data-testid="page-builder-manager-link"]')).click(); });
     const dialog = await eventually<HTMLElement>('[data-testid="page-builder-unsaved-dialog"]');

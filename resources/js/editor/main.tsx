@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client';
 import { Braces, FileCode2 } from 'lucide-react';
 
-import '../../css/page-builder.css';
+import '../../css/page-builder-editor.css';
 import {
   ADMIN_AUTH_TOKEN_KEY,
   PAGE_BUILDER_EDITOR_PATH,
@@ -13,9 +13,7 @@ import {
 } from '../api/pageBuilderApi';
 import type { DocumentResource, PageBuilderDocument } from '../documents/types';
 import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';
-import { discoverPageBuilderManagers, mountPageBuilderManager } from '../manager/PageBuilderManager';
 import { PuckEditorAdapter } from './PuckEditorAdapter';
-import { SitePartEditor } from './SitePartEditor';
 import { clearDraftJournal, readDraftJournal, writeDraftJournal } from './draftJournal';
 
 export interface PageBuilderEditorOptions {
@@ -25,16 +23,12 @@ export interface PageBuilderEditorOptions {
   slug?: string;
 }
 
-interface SitePartEditorOptions {
-  kind: 'header' | 'footer';
-  locale: string;
-}
-
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'conflict' | 'error';
 type PublishState = 'idle' | 'preparing' | 'publishing' | 'published' | 'error';
 
 const roots = new WeakMap<Element, Root>();
 export const AUTO_SAVE_IDLE_MS = 750;
+export const DRAFT_JOURNAL_BATCH_MS = 200;
 
 const saveLabels: Record<SaveState, string> = {
   idle: '초안 없음',
@@ -127,6 +121,28 @@ function EditorShell({
   const loadedDocumentIdRef = useRef<string | null>(null);
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const navigationBypassRef = useRef(false);
+  const autoSaveTimerRef = useRef<number | null>(null);
+  const draftJournalTimerRef = useRef<number | null>(null);
+
+  const cancelAutoSave = useCallback((): void => {
+    if (autoSaveTimerRef.current === null) return;
+    window.clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = null;
+  }, []);
+
+  const flushDraftJournal = useCallback((): void => {
+    if (draftJournalTimerRef.current !== null) {
+      window.clearTimeout(draftJournalTimerRef.current);
+      draftJournalTimerRef.current = null;
+    }
+    const current = documentRef.current;
+    if (current && dirtyRef.current) writeDraftJournal(current, lockVersionRef.current);
+  }, []);
+
+  const scheduleDraftJournal = useCallback((): void => {
+    if (draftJournalTimerRef.current !== null) return;
+    draftJournalTimerRef.current = window.setTimeout(flushDraftJournal, DRAFT_JOURNAL_BATCH_MS);
+  }, [flushDraftJournal]);
 
   const applyResource = useCallback((
     resource: DocumentResource,
@@ -223,10 +239,11 @@ function EditorShell({
   }, [api]);
 
   const saveDraft = useCallback(async function persistDraft(flushLatest = false): Promise<boolean> {
+    cancelAutoSave();
     if (savePromiseRef.current) {
       const saved = await savePromiseRef.current;
-      if (saved && flushLatest && dirtyRef.current) {
-        return persistDraft(true);
+      if (saved && dirtyRef.current) {
+        return persistDraft(flushLatest);
       }
       return saved;
     }
@@ -254,6 +271,10 @@ function EditorShell({
         setPublicUrl(resource.public_url);
         await refreshPreviewTicket(resource.document.document_id, resource.lock_version);
         if (editVersionRef.current === snapshotEditVersion) {
+          if (draftJournalTimerRef.current !== null) {
+            window.clearTimeout(draftJournalTimerRef.current);
+            draftJournalTimerRef.current = null;
+          }
           documentRef.current = resource.document;
           dirtyRef.current = false;
           setDocument(resource.document);
@@ -261,7 +282,13 @@ function EditorShell({
           clearDraftJournal(resource.document.document_id);
         } else {
           const latestDocument = documentRef.current;
-          if (latestDocument) writeDraftJournal(latestDocument, resource.lock_version);
+          if (latestDocument) {
+            if (draftJournalTimerRef.current !== null) {
+              window.clearTimeout(draftJournalTimerRef.current);
+              draftJournalTimerRef.current = null;
+            }
+            writeDraftJournal(latestDocument, resource.lock_version);
+          }
           setSaveState('dirty');
         }
         return true;
@@ -286,32 +313,28 @@ function EditorShell({
       return persistDraft(true);
     }
     return saved;
-  }, [api, refreshPreviewTicket]);
+  }, [api, cancelAutoSave, refreshPreviewTicket]);
 
-  useEffect(() => {
-    if (saveState !== 'dirty') {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
+  const scheduleAutoSave = useCallback((): void => {
+    cancelAutoSave();
+    autoSaveTimerRef.current = window.setTimeout(() => {
+      autoSaveTimerRef.current = null;
       void saveDraft(false);
     }, AUTO_SAVE_IDLE_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [document, saveDraft, saveState]);
+  }, [cancelAutoSave, saveDraft]);
 
   const handleDocumentChange = useCallback((nextDocument: PageBuilderDocument): void => {
     documentRef.current = nextDocument;
     dirtyRef.current = true;
     editVersionRef.current += 1;
-    writeDraftJournal(nextDocument, lockVersionRef.current);
-    setDocument(nextDocument);
+    scheduleDraftJournal();
+    scheduleAutoSave();
     setSaveState('dirty');
     setPublishState('idle');
     setPreviewUrl(null);
     setPreviewExpiresAt(null);
     setMessage(null);
-  }, []);
+  }, [scheduleAutoSave, scheduleDraftJournal]);
 
   const handleEditorDirty = useCallback((): void => {
     dirtyRef.current = true;
@@ -326,21 +349,30 @@ function EditorShell({
       if (navigationBypassRef.current || (!dirtyRef.current && saveState !== 'saving' && saveState !== 'error' && saveState !== 'conflict')) {
         return undefined;
       }
+      flushDraftJournal();
       event.preventDefault();
       event.returnValue = '';
       return '';
     };
     window.addEventListener('beforeunload', warnBeforeUnload);
     return () => window.removeEventListener('beforeunload', warnBeforeUnload);
-  }, [saveState]);
+  }, [flushDraftJournal, saveState]);
 
   useEffect(() => {
     const saveWhenHidden = (): void => {
-      if (globalThis.document?.visibilityState === 'hidden' && dirtyRef.current) void saveDraft(false);
+      if (globalThis.document?.visibilityState === 'hidden' && dirtyRef.current) {
+        flushDraftJournal();
+        void saveDraft(false);
+      }
     };
     globalThis.document?.addEventListener('visibilitychange', saveWhenHidden);
     return () => globalThis.document?.removeEventListener('visibilitychange', saveWhenHidden);
-  }, [saveDraft]);
+  }, [flushDraftJournal, saveDraft]);
+
+  useEffect(() => () => {
+    cancelAutoSave();
+    flushDraftJournal();
+  }, [cancelAutoSave, flushDraftJournal]);
 
   const navigateTo = (href: string): void => {
     navigationBypassRef.current = true;
@@ -708,36 +740,10 @@ export function discoverPageBuilderEditors(scope: ParentNode = document): Elemen
   return Array.from(scope.querySelectorAll('[data-g7pb-editor], #g7pb-editor'));
 }
 
-function discoverSitePartEditors(scope: ParentNode = document): Element[] {
-  return Array.from(scope.querySelectorAll('[data-g7pb-site-part-editor]'));
-}
-
-function mountSitePartEditor(element: Element): void {
-  const htmlElement = element as HTMLElement;
-  const kind = htmlElement.dataset.kind === 'footer' ? 'footer' : 'header';
-  roots.get(element)?.unmount();
-  const root = createRoot(element);
-  roots.set(element, root);
-  root.render(<SitePartEditor kind={kind} locale={htmlElement.dataset.locale ?? 'ko'} />);
-}
-
 function autoMountEditors(): void {
-  for (const element of discoverPageBuilderManagers()) {
-    mountPageBuilderManager(element, {
-      locale: (element as HTMLElement).dataset.locale ?? 'ko',
-    });
-  }
-
   for (const element of discoverPageBuilderEditors()) {
     if (!roots.has(element)) {
       mountPageBuilderEditor(element);
-    }
-  }
-
-
-  for (const element of discoverSitePartEditors()) {
-    if (!roots.has(element)) {
-      mountSitePartEditor(element);
     }
   }
 }

@@ -1806,6 +1806,7 @@ const BLOCK_SEARCH_ALIASES: Readonly<Record<string, string>> = Object.freeze({
 const BLOCK_CATEGORY_ORDER = ['기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터'] as const;
 const QUICK_ADD_COMPONENTS = ['Heading', 'RichText', 'Image', 'Buttons', 'Hero', 'Cta'] as const;
 const OPEN_BLOCK_GALLERY_EVENT = 'g7pb:open-block-gallery';
+export const BLOCK_GALLERY_WINDOW_SIZE = 24;
 
 function blockPackLabel(packId: string): string {
   if (packId === BUILTIN_CORE_MANIFEST.pack_id) return '기본 제공';
@@ -1940,7 +1941,9 @@ function StableAddBlockControls({
   const [packId, setPackId] = useState('');
   const [kind, setKind] = useState<'all' | 'definition' | 'preset'>('all');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [renderLimit, setRenderLimit] = useState(BLOCK_GALLERY_WINDOW_SIZE);
   const firstItemRef = useRef<HTMLButtonElement>(null);
+  const loadMoreRef = useRef<HTMLButtonElement>(null);
   const categories = useMemo(() => Array.from(new Set(items.map((item) => item.category))).sort((left, right) => {
     const leftIndex = BLOCK_CATEGORY_ORDER.indexOf(left as typeof BLOCK_CATEGORY_ORDER[number]);
     const rightIndex = BLOCK_CATEGORY_ORDER.indexOf(right as typeof BLOCK_CATEGORY_ORDER[number]);
@@ -1960,6 +1963,25 @@ function StableAddBlockControls({
       return item.searchText.toLocaleLowerCase('ko').includes(normalizedQuery);
     });
   }, [category, favoritesOnly, items, kind, packId, query]);
+  const renderedItems = visibleItems.slice(0, renderLimit);
+
+  useEffect(() => {
+    setRenderLimit(BLOCK_GALLERY_WINDOW_SIZE);
+  }, [category, favoritesOnly, kind, open, packId, query]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!open || !target || renderLimit >= visibleItems.length || typeof IntersectionObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setRenderLimit((current) => Math.min(current + BLOCK_GALLERY_WINDOW_SIZE, visibleItems.length));
+      }
+    }, { root: target.closest('.g7pb-block-gallery'), rootMargin: '240px' });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [open, renderLimit, visibleItems.length]);
 
   useEffect(() => {
     const openGallery = (): void => setOpen(true);
@@ -2093,8 +2115,10 @@ function StableAddBlockControls({
               <div><small>QUICK ADD</small><h3 id="g7pb-quick-add-title">자주 쓰는 기본 블록</h3></div>
               <div>{quickItems.map((item) => <button key={item.catalogId} type="button" data-testid={`page-builder-quick-add-${String(item.type).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`} onClick={() => insert(item)}><span aria-hidden="true">+</span>{item.title}</button>)}</div>
             </section> : null}
-            <div className="g7pb-block-gallery__grid">
-              {visibleItems.map((item, index) => (
+            <div className="g7pb-block-gallery__grid"
+              data-total-items={visibleItems.length}
+              data-rendered-items={renderedItems.length}>
+              {renderedItems.map((item, index) => (
                 <article key={item.catalogId} className="g7pb-block-gallery__item">
                   <button type="button" className="g7pb-block-gallery__add"
                     ref={index === 0 ? firstItemRef : undefined}
@@ -2119,6 +2143,17 @@ function StableAddBlockControls({
                 </article>
               ))}
               {visibleItems.length === 0 && <p className="g7pb-block-gallery__empty">조건에 맞는 블록이 없습니다.</p>}
+              {renderedItems.length < visibleItems.length && (
+                <button
+                  ref={loadMoreRef}
+                  type="button"
+                  className="g7pb-block-gallery__load-more"
+                  data-testid="page-builder-gallery-load-more"
+                  onClick={() => setRenderLimit((current) => Math.min(current + BLOCK_GALLERY_WINDOW_SIZE, visibleItems.length))}
+                >
+                  더 보기 <span>{renderedItems.length} / {visibleItems.length}</span>
+                </button>
+              )}
             </div>
           </section>
         </div>,

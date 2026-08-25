@@ -8,12 +8,17 @@
 
 ### Added
 
+- 100블록 문서 준비·연속 타이핑·드래그·140개 블록 갤러리 열기·Long Task를 수치 예산으로 강제하는 desktop Chromium 성능 gate를 추가했습니다.
+- Stylelint와 소스·빌드 CSS 및 Manager·Editor·Site Part·공개 효과 번들의 gzip 크기 예산을 품질 gate에 추가했습니다.
 - 선택한 제목 글자 범위에만 글꼴·크기·굵기·색상·링크를 적용하고, 라이트·다크 모드별 사용자 색상 4개를 typed 디자인 토큰으로 지정할 수 있게 했습니다.
 - 모든 내장 블록에 콘텐츠 폭·가로 배치·최소 높이·세로 배치 설정을 추가하고 편집기와 공개 컴파일 결과에 동일하게 반영합니다.
 - 변경 즉시 브라우저 복구본을 기록하고 750ms 유휴 후 서버에 자동 저장해 비정상 이탈과 연속 편집의 유실 범위를 줄였습니다.
 
 ### Changed
 
+- Manager·Editor·Site Part 진입 번들을 분리해 Puck·Tiptap을 편집 화면에서만 로드하고, 빌드 모듈 inventory가 이 경계를 자동 검사하도록 변경했습니다.
+- 블록 갤러리는 최초 24개만 렌더하고 가시 구간에 따라 24개씩 추가하며, canonical 변환은 animation frame당 1회, 브라우저 복구본 직렬화는 200ms 단위로 합칩니다.
+- 공통·Manager·Editor·Site Part·공개 CSS를 분리하고 공개 CSS를 Blade inline style에서 정적 asset으로 이동했습니다.
 - 미디어 라이브러리를 고정 4:3 썸네일 그리드로 정리하고 Inspector 선택 값을 먼저 반영한 뒤 문서 변환을 animation frame 단위로 합쳐 연속 설정 응답성을 높였습니다.
 - 공식 Page Kit 5종을 PC·태블릿·모바일 15개 전체 화면에서 콘솔 오류·가로 넘침·블록 겹침·깨진 이미지·제목 붕괴까지 검사하도록 Chromium 검증을 강화했습니다.
 

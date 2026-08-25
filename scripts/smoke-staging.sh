@@ -14,9 +14,13 @@ status() {
 [[ "$(status "$base_url/up")" == 200 ]] || { echo 'Staging /up failed.' >&2; exit 1; }
 [[ "$(status "$base_url/admin/login")" == 200 ]] || { echo 'Staging admin login failed.' >&2; exit 1; }
 [[ "$(status "$base_url/admin/page-builder")" == 200 ]] || { echo 'Staging native manager shell failed.' >&2; exit 1; }
-[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder.iife.js")" == 200 ]] || { echo 'Staging Page Builder JS failed.' >&2; exit 1; }
+[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-editor.iife.js")" == 200 ]] || { echo 'Staging Page Builder editor JS failed.' >&2; exit 1; }
+[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-manager.iife.js")" == 200 ]] || { echo 'Staging Page Builder manager JS failed.' >&2; exit 1; }
+[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-site-part.iife.js")" == 200 ]] || { echo 'Staging Page Builder Site Part JS failed.' >&2; exit 1; }
 [[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js")" == 200 ]] || { echo 'Staging Page Effects JS failed.' >&2; exit 1; }
-[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder.css")" == 200 ]] || { echo 'Staging Page Builder CSS failed.' >&2; exit 1; }
+[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-editor.css")" == 200 ]] || { echo 'Staging Page Builder editor CSS failed.' >&2; exit 1; }
+[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-manager.css")" == 200 ]] || { echo 'Staging Page Builder manager CSS failed.' >&2; exit 1; }
+[[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-site-part.css")" == 200 ]] || { echo 'Staging Page Builder Site Part CSS failed.' >&2; exit 1; }
 [[ "$(status "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-public.css")" == 200 ]] || { echo 'Staging Page Builder public CSS failed.' >&2; exit 1; }
 
 store_catalog_url="$base_url/modules/jiwonpapa-page_builder/store/catalog.json"

@@ -92,18 +92,26 @@ else
   fail "HTTPS routes home=$home_status up=$up_status admin=$admin_status page-builder=$page_builder_manager_status native-manager=$page_builder_native_manager_status header-editor=$page_builder_header_editor_status footer-editor=$page_builder_footer_editor_status install=$install_status"
 fi
 
-asset_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
-  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder.iife.js")"
+editor_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-editor.iife.js")"
+manager_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-manager.iife.js")"
+site_part_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-site-part.iife.js")"
 effects_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js")"
-asset_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
-  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder.css")"
+editor_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-editor.css")"
+manager_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-manager.css")"
+site_part_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-site-part.css")"
 public_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-public.css")"
-if [[ "$asset_js_status" == 200 && "$effects_js_status" == 200 && "$asset_css_status" == 200 && "$public_css_status" == 200 ]]; then
-  ok 'Editor, public effects, editor CSS, and scoped public CSS asset serving'
+if [[ "$editor_js_status" == 200 && "$manager_js_status" == 200 && "$site_part_js_status" == 200 && "$effects_js_status" == 200 && "$editor_css_status" == 200 && "$manager_css_status" == 200 && "$site_part_css_status" == 200 && "$public_css_status" == 200 ]]; then
+  ok 'Split manager, editor, Site Part, and public assets serving'
 else
-  fail "Module asset serving editor_js=$asset_js_status effects_js=$effects_js_status editor_css=$asset_css_status public_css=$public_css_status"
+  fail "Module asset serving editor_js=$editor_js_status manager_js=$manager_js_status site_part_js=$site_part_js_status effects_js=$effects_js_status editor_css=$editor_css_status manager_css=$manager_css_status site_part_css=$site_part_css_status public_css=$public_css_status"
 fi
 
 store_catalog_url="$base_url/modules/jiwonpapa-page_builder/store/catalog.json"

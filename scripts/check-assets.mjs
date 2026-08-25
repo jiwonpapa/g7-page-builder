@@ -8,8 +8,16 @@ const manifest = JSON.parse(readFileSync(join(root, 'module.json'), 'utf8'));
 const outputs = [
   manifest.assets?.js?.output,
   manifest.assets?.css?.output,
-  'dist/js/page-builder.iife.js',
-  'dist/css/page-builder.css',
+  'dist/js/page-builder-editor.iife.js',
+  'dist/js/page-builder-manager.iife.js',
+  'dist/js/page-builder-site-part.iife.js',
+  'dist/css/page-builder-editor.css',
+  'dist/css/page-builder-manager.css',
+  'dist/css/page-builder-site-part.css',
+  'dist/meta/editor-modules.json',
+  'dist/meta/manager-modules.json',
+  'dist/meta/site-part-modules.json',
+  'dist/meta/public-effects-modules.json',
 ];
 
 for (const output of outputs) {
@@ -21,6 +29,25 @@ for (const output of outputs) {
   if (!path.startsWith(join(root, 'dist')) || !existsSync(path) || statSync(path).size === 0) {
     throw new Error(`Missing or empty module asset: ${output}`);
   }
+}
+
+const readInventory = (name) => JSON.parse(readFileSync(join(root, `dist/meta/${name}-modules.json`), 'utf8')).modules;
+const editorModules = readInventory('editor');
+const managerModules = readInventory('manager');
+const sitePartModules = readInventory('site-part');
+const forbiddenEditorDependencies = /(?:^|\/)(?:@puckeditor|@tiptap)(?:\/|$)/;
+
+if (!editorModules.some((id) => forbiddenEditorDependencies.test(id))) {
+  throw new Error('Editor bundle inventory is missing Puck/Tiptap dependencies.');
+}
+if (!sitePartModules.some((id) => forbiddenEditorDependencies.test(id))) {
+  throw new Error('Site Part bundle inventory is missing its editor-only Puck/Tiptap dependencies.');
+}
+const managerBoundaryLeaks = managerModules.filter((id) =>
+  forbiddenEditorDependencies.test(id) || id.includes('/resources/js/editor/'),
+);
+if (managerBoundaryLeaks.length > 0) {
+  throw new Error(`Manager bundle crossed the editor dependency boundary: ${managerBoundaryLeaks.join(', ')}`);
 }
 
 const walk = (directory) => readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

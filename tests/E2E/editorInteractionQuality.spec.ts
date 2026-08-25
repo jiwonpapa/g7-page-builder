@@ -10,7 +10,7 @@ import {
 } from './support/editorInteractionFixture';
 
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
-const FIRST_TARGET = '중요한 문장은';
+const FIRST_TARGET = '굵게 강조하고';
 const SECOND_TARGET = '목록이나 링크';
 
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
@@ -27,6 +27,23 @@ async function richTextField(page: Page): Promise<Locator> {
 
 async function selectedText(field: Locator): Promise<string> {
   return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
+}
+
+async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
+  const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
+  const button = page.getByTestId(`page-builder-viewport-${width}`);
+  if (!(await button.isVisible())) {
+    await page.getByRole('button', { name: 'Toggle menu bar' }).click();
+  }
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(
+    () => page.locator('#puck-canvas-root').evaluate((element) => element.style.width),
+  ).toBe(`${width}px`);
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
 }
 
 interface PointerGeometry {
@@ -131,6 +148,9 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
     owned = await createOwnedEditorInteractionDocument(api, testInfo.project.name);
     await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    await test.step('CANVAS_VIEWPORT_GATE', async () => {
+      await setCanvasViewport(page, testInfo.project.name);
+    });
     let field = await richTextField(page);
     const rangeToolbar = page.frameLocator('iframe').first().getByTestId('page-builder-richtext-inline-toolbar');
     const elementPanel = page.getByTestId('page-builder-context-panel');

@@ -2786,11 +2786,13 @@ export function PuckEditorAdapter({
       }
     };
     const acceptRangeState = (active: boolean): void => {
+      const wasActive = rangeEditingActiveRef.current;
       rangeEditingActiveRef.current = active;
       if (active) {
         setCanvasTextToolsOpen(false);
         return;
       }
+      if (!wasActive) return;
       const selection = canvasElementSelectionRef.current;
       if (selection?.role !== 'text' && selection?.role !== 'action') return;
       window.requestAnimationFrame(() => {

@@ -829,9 +829,11 @@
 }
 
 .g7pb-context-panel {
+  --g7pb-context-panel-safe-top: 5.25rem;
+
   position: fixed;
   z-index: 10000;
-  top: 5.25rem;
+  top: var(--g7pb-context-panel-safe-top);
   left: 50%;
   width: min(31rem, calc(100vw - 2rem));
   transform: translateX(-50%);
@@ -870,6 +872,7 @@
   box-shadow: 0 14px 38px rgb(15 23 42 / 24%);
 }
 .g7pb-element-balloon--above { transform: translate(-50%, -100%); }
+.g7pb-element-balloon--below { top: max(var(--g7pb-context-panel-safe-top), var(--g7pb-balloon-top, var(--g7pb-context-panel-safe-top))); }
 .g7pb-element-balloon::after {
   content: '';
   position: absolute;

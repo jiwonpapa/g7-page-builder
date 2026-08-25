@@ -51,17 +51,10 @@ interface PointerGeometry {
   start: { x: number; y: number };
 }
 
-async function textPointerGeometry(page: Page, field: Locator, target: string): Promise<PointerGeometry> {
+async function textPointerGeometry(field: Locator, target: string): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
-  const frame = page.locator('iframe').first();
-  const frameBox = await frame.boundingBox();
-  const frameGeometry = await frame.evaluate((element) => ({
-    borderBoxHeight: (element as HTMLIFrameElement).offsetHeight,
-    borderBoxWidth: (element as HTMLIFrameElement).offsetWidth,
-    contentLeft: (element as HTMLIFrameElement).clientLeft,
-    contentTop: (element as HTMLIFrameElement).clientTop,
-  }));
   const geometry = await field.evaluate((element, selected) => {
+    const fieldRect = element.getBoundingClientRect();
     const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
     while (node) {
@@ -77,47 +70,37 @@ async function textPointerGeometry(page: Page, field: Locator, target: string): 
         const start = startRange.getBoundingClientRect();
         const end = endRange.getBoundingClientRect();
         return {
-          startX: start.left + Math.max(1, start.width * 0.2),
-          startY: start.top + start.height / 2,
-          endX: end.right - Math.max(1, end.width * 0.2),
-          endY: end.top + end.height / 2,
+          startX: start.left - fieldRect.left + Math.max(1, start.width * 0.2),
+          startY: start.top - fieldRect.top + start.height / 2,
+          endX: end.right - fieldRect.left - Math.max(1, end.width * 0.2),
+          endY: end.top - fieldRect.top + end.height / 2,
         };
       }
       node = walker.nextNode();
     }
     throw new Error(`Pointer selection target was not found: ${selected}`);
   }, target);
-  if (!frameBox || frameGeometry.borderBoxWidth <= 0 || frameGeometry.borderBoxHeight <= 0) {
-    throw new Error('Editor canvas iframe geometry is unavailable.');
-  }
-  const scaleX = frameBox.width / frameGeometry.borderBoxWidth;
-  const scaleY = frameBox.height / frameGeometry.borderBoxHeight;
   return {
-    start: {
-      x: frameBox.x + (frameGeometry.contentLeft + geometry.startX) * scaleX,
-      y: frameBox.y + (frameGeometry.contentTop + geometry.startY) * scaleY,
-    },
-    end: {
-      x: frameBox.x + (frameGeometry.contentLeft + geometry.endX) * scaleX,
-      y: frameBox.y + (frameGeometry.contentTop + geometry.endY) * scaleY,
-    },
+    start: { x: geometry.startX, y: geometry.startY },
+    end: { x: geometry.endX, y: geometry.endY },
   };
 }
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
-  const pointer = await textPointerGeometry(page, field, target);
-  await page.mouse.move(pointer.start.x, pointer.start.y);
+  const pointer = await textPointerGeometry(field, target);
+  await field.hover({ position: pointer.start });
   await page.mouse.down();
-  await page.waitForTimeout(60);
-  await page.mouse.move(pointer.end.x, pointer.end.y, { steps: 18 });
-  await page.waitForTimeout(80);
-  await page.mouse.up();
+  try {
+    await field.hover({ position: pointer.end });
+  } finally {
+    await page.mouse.up();
+  }
   await expect.poll(() => selectedText(field)).toBe(target);
 }
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
-  const pointer = await textPointerGeometry(page, field, target);
-  await page.mouse.click(pointer.end.x, pointer.end.y);
+  const pointer = await textPointerGeometry(field, target);
+  await field.click({ position: pointer.end });
   await expect.poll(() => selectedText(field)).toBe('');
 }
 

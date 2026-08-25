@@ -38,6 +38,11 @@ perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \
 expect_failure 'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'
 
 copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-block > \* \{ width: 100%; max-width: 100%; )margin-inline: 0;/${1}margin-inline: auto;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집 block wrapper가 공개 block과 다른 inline margin으로 자식을 재배치하면 안 됩니다.'
+
+copy_fixture
 perl -0pi -e 's/ALL_95_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure '95개 프리셋 편집/미리보기 gate가 필요합니다.'

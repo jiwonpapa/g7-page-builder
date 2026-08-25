@@ -536,6 +536,14 @@ describe('Puck editor surface contract', () => {
       window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail: { active: false } }));
     });
     expect(await eventually<HTMLElement>('[data-testid="page-builder-context-panel"]')).not.toBeNull();
+
+    await act(async () => { outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    expect(document.querySelector('[data-testid="page-builder-context-panel"]')).toBeNull();
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail: { active: false } }));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    });
+    expect(document.querySelector('[data-testid="page-builder-context-panel"]')).toBeNull();
   });
 
   it('keeps structured inline copy visible in every official Page Kit', async () => {

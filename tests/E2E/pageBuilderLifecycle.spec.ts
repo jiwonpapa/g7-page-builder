@@ -421,6 +421,14 @@ async function revealEditorHeaderActions(page: Page): Promise<void> {
   await expect(addBlock).toBeVisible();
 }
 
+async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: string): Promise<void> {
+  const trigger = rangeToolbar.getByTestId(testId);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await rangeToolbar.getByRole('option', { name: option, exact: true }).click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+}
+
 async function expandBlockGallery(page: Page): Promise<void> {
   const gallery = page.getByTestId('page-builder-block-gallery');
   const grid = gallery.locator('.g7pb-block-gallery__grid');
@@ -1162,9 +1170,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       }, selectedText);
       const rangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(rangeToolbar).toBeVisible();
-      await rangeToolbar.getByTestId('page-builder-richtext-font').selectOption('serif');
-      await rangeToolbar.getByTestId('page-builder-richtext-size').selectOption('large');
-      await rangeToolbar.getByTestId('page-builder-richtext-tone').selectOption('accent');
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-font', '명조');
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-size', 'L');
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-tone', '강조');
       const selectedMark = richTextBlock.locator('span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="accent"]');
       await expect(selectedMark).toHaveText(selectedText);
       await expect(richTextBlock.locator('[contenteditable="true"]')).toContainText('방문자가 이해해야 할 내용을 읽기 편한 문단');
@@ -1198,8 +1206,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const headingRangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(headingRangeToolbar).toBeVisible();
       await expect(page.getByTestId('page-builder-context-panel')).toBeHidden();
-      await headingRangeToolbar.getByTestId('page-builder-richtext-weight').selectOption('bold');
-      await headingRangeToolbar.getByTestId('page-builder-richtext-tone').selectOption('custom1');
+      await chooseRangeOption(headingRangeToolbar, 'page-builder-richtext-weight', '매우 굵게');
+      await chooseRangeOption(headingRangeToolbar, 'page-builder-richtext-tone', '사용자색 1');
       await expect(heroTitleField.locator('span[data-g7pb-weight="bold"][data-g7pb-tone="custom1"]'))
         .toHaveText(selectedHeadingText);
       await heroTitleField.evaluate((element) => {

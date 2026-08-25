@@ -264,6 +264,8 @@ final class PublicationPersistenceTest extends TestCase
         self::assertStringContainsString('g7pb-site-footer', $payload['footer_html']);
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $payload['artifact_sha256']);
         self::assertNotNull($active->headers->get('ETag'));
+        self::assertStringContainsString('max-age=30', (string) $active->headers->get('Cache-Control'));
+        self::assertStringContainsString('stale-while-revalidate=300', (string) $active->headers->get('Cache-Control'));
     }
 
     public function test_published_metadata_and_public_slug_do_not_follow_later_draft_changes(): void

@@ -53,7 +53,7 @@ final class PublicSiteShellController
                     ],
                 ],
             ], 200, [
-                'Cache-Control' => 'public, no-cache, must-revalidate',
+                'Cache-Control' => 'public, max-age=30, stale-while-revalidate=300',
                 'ETag' => '"'.$representation.'"',
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\Throwable $exception) {

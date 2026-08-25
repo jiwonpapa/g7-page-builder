@@ -276,6 +276,13 @@ function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: Layou
   }
 }
 
+function expectBlockContainment(metrics: LayoutMetric[], surface: string): void {
+  for (const metric of metrics) {
+    expect(metric.overflow, `${surface} ${metric.blockType} (${metric.blockId}) overflow`)
+      .toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
+  }
+}
+
 async function assertScenario(
   context: BrowserContext,
   page: Page,
@@ -289,10 +296,11 @@ async function assertScenario(
   await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
   const editorBlocks = page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-block');
   await expect(editorBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
+  const editorMetrics = await layoutMetrics(editorBlocks, true);
+  expectBlockContainment(editorMetrics, `${scenario.label} editor`);
   const editorRoot = page.frameLocator(CANVAS_IFRAME).locator('.g7pb-preview-page');
   await expect(editorRoot).toBeVisible();
   await expectDocumentContained(editorRoot, `${scenario.label} editor product root overflow`);
-  const editorMetrics = await layoutMetrics(editorBlocks, true);
 
   const previewLink = page.getByTestId('page-builder-preview-link');
   await expect(previewLink).toHaveAttribute('href', /\/modules\/jiwonpapa-page_builder\/preview\/[a-f0-9]{64}/);

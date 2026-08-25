@@ -232,9 +232,10 @@ async function documentOverflow(locator: Locator): Promise<{
   outliers: Array<{ className: string; left: number; right: number; tag: string; testId: string }>;
 }> {
   return locator.evaluate((element, tolerance) => {
-    const root = element.ownerDocument.documentElement;
+    const root = element as HTMLElement;
+    const rootRect = root.getBoundingClientRect();
     const overflow = Math.max(0, root.scrollWidth - root.clientWidth);
-    const outliers = Array.from(element.ownerDocument.body.querySelectorAll<HTMLElement>('*'))
+    const outliers = Array.from(root.querySelectorAll<HTMLElement>('*'))
       .map((candidate) => {
         const rect = candidate.getBoundingClientRect();
         return {
@@ -245,10 +246,10 @@ async function documentOverflow(locator: Locator): Promise<{
           testId: candidate.dataset.testid ?? '',
         };
       })
-      .filter((candidate) => candidate.left < -tolerance
-        || candidate.right > root.clientWidth + tolerance)
-      .sort((left, right) => Math.max(Math.abs(right.left), right.right - root.clientWidth)
-        - Math.max(Math.abs(left.left), left.right - root.clientWidth))
+      .filter((candidate) => candidate.left < rootRect.left - tolerance
+        || candidate.right > rootRect.right + tolerance)
+      .sort((left, right) => Math.max(rootRect.left - right.left, right.right - rootRect.right)
+        - Math.max(rootRect.left - left.left, left.right - rootRect.right))
       .slice(0, 8);
     return { overflow, outliers };
   }, LAYOUT_TOLERANCE_PX);
@@ -288,7 +289,9 @@ async function assertScenario(
   await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
   const editorBlocks = page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-block');
   await expect(editorBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
-  await expectDocumentContained(editorBlocks.first(), `${scenario.label} editor document overflow`);
+  const editorRoot = page.frameLocator(CANVAS_IFRAME).locator('.g7pb-preview-page');
+  await expect(editorRoot).toBeVisible();
+  await expectDocumentContained(editorRoot, `${scenario.label} editor product root overflow`);
   const editorMetrics = await layoutMetrics(editorBlocks, true);
 
   const previewLink = page.getByTestId('page-builder-preview-link');
@@ -300,10 +303,11 @@ async function assertScenario(
     await preview.setViewportSize({ width, height: 900 });
     const response = await preview.goto(previewUrl);
     expect(response?.ok()).toBe(true);
-    await expect(preview.getByTestId('page-builder-preview-root')).toBeVisible();
+    const previewRoot = preview.getByTestId('page-builder-preview-root');
+    await expect(previewRoot).toBeVisible();
     const previewBlocks = preview.getByTestId('page-builder-rendered-block');
     await expect(previewBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
-    await expectDocumentContained(previewBlocks.first(), `${scenario.label} preview document overflow`);
+    await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
     const previewMetrics = await layoutMetrics(previewBlocks, false);
     expectLayoutParity(editorMetrics, previewMetrics);
   } finally {

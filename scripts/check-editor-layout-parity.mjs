@@ -66,6 +66,14 @@ export async function validateEditorLayoutParity(root) {
       '편집기 template shell은 G7 기본 Container의 데스크톱 여백을 재현해야 합니다.'],
     [/@container\s*\(max-width:\s*800px\)[\s\S]*\.g7pb-preview-hero-split\s*\{\s*grid-template-columns:\s*1fr;/,
       '편집기 Hero Split은 768px 경계에서 단일 열로 접혀야 합니다.'],
+    [/\.g7pb-preview-gallery__grid--4\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/,
+      '편집기 Gallery grid 열은 이미지 고유 폭보다 작아질 수 있어야 합니다.'],
+    [/\.g7pb-preview-gallery figure\s*\{\s*min-width:\s*0;/,
+      '편집기 Gallery item은 모바일에서 최소 콘텐츠 폭을 강제하면 안 됩니다.'],
+    [/\.g7pb-preview-hero-split--layout-overlap\s*\{[^}]*repeat\(12,\s*minmax\(0,\s*1fr\)\)/,
+      '편집기 overlap Hero grid는 최소 콘텐츠 폭으로 캔버스를 밀면 안 됩니다.'],
+    [/\.g7pb-preview-logo-cloud--layout-grid\s*>\s*div\s*\{[^}]*repeat\(4,\s*minmax\(0,\s*1fr\)\)/,
+      '편집기 Logo grid 열은 로고 고유 폭보다 작아질 수 있어야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
   if (/100cqw\s*-\s*var\(--g7pb-theme-content-width\)/.test(css)) {
@@ -80,6 +88,15 @@ export async function validateEditorLayoutParity(root) {
   requirePattern(errors, publicCss,
     /@media\s*\(max-width:\s*800px\)[\s\S]*\.g7pb-hero-split\s*\{\s*grid-template-columns:\s*1fr;/,
     '공개 Hero Split도 768px 경계에서 편집기와 동일하게 단일 열로 접혀야 합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-gallery__grid--4\s*\{\s*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/,
+    '공개 Gallery grid 열도 이미지 고유 폭보다 작아질 수 있어야 합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-hero-split--layout-overlap\s*\{[^}]*repeat\(12,\s*minmax\(0,\s*1fr\)\)/,
+    '공개 overlap Hero grid도 최소 콘텐츠 폭으로 화면을 밀면 안 됩니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-logo-cloud--layout-grid ul\s*\{[^}]*repeat\(4,\s*minmax\(0,\s*1fr\)\)/,
+    '공개 Logo grid 열도 로고 고유 폭보다 작아질 수 있어야 합니다.');
 
   const requiredEvidence = [
     [/test\.describe\.configure\(\{\s*retries:\s*0\s*\}\)/, '레이아웃 E2E는 retries: 0으로 실행해야 합니다.'],

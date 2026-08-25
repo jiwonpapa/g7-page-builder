@@ -62,6 +62,21 @@ perl -0pi -e 's/(@media \(max-width: )800px/${1}767px/' \
 expect_failure '공개 Hero Split도 768px 경계에서 편집기와 동일하게 단일 열로 접혀야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-gallery__grid--4 \{ grid-template-columns: repeat\(4, )minmax\(0, 1fr\)/${1}1fr/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Gallery grid 열은 이미지 고유 폭보다 작아질 수 있어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-hero-split--layout-overlap \{ grid-template-columns: repeat\(12, )minmax\(0, 1fr\)/${1}1fr/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 overlap Hero grid는 최소 콘텐츠 폭으로 캔버스를 밀면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-logo-cloud--layout-grid ul \{ display: grid; grid-template-columns: repeat\(4, )minmax\(0, 1fr\)/${1}1fr/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure '공개 Logo grid 열도 로고 고유 폭보다 작아질 수 있어야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/ALL_95_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure '95개 프리셋 편집/미리보기 gate가 필요합니다.'

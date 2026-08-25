@@ -293,11 +293,11 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-team article > strong { color: var(--g7pb-theme-accent); font-size: .85rem; }
 .g7pb-team article p { color: var(--g7pb-page-muted, #526071); line-height: 1.65; }
 .g7pb-gallery__grid { display: grid; gap: .8rem; }
-.g7pb-gallery__grid--2 { grid-template-columns: repeat(2, 1fr); }
-.g7pb-gallery__grid--3 { grid-template-columns: repeat(3, 1fr); }
-.g7pb-gallery__grid--4 { grid-template-columns: repeat(4, 1fr); }
-.g7pb-gallery figure { margin: 0; }
-.g7pb-gallery__image { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: .7rem; }
+.g7pb-gallery__grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g7pb-gallery__grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g7pb-gallery__grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g7pb-gallery figure { min-width: 0; margin: 0; }
+.g7pb-gallery__image { width: 100%; max-width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: .7rem; }
 .g7pb-gallery figcaption { padding: .65rem .15rem; color: var(--g7pb-page-muted, #526071); font-size: .85rem; }
 .g7pb-bar-chart figure { margin: 0; }
 .g7pb-bar-chart figcaption > p:last-child { color: var(--g7pb-page-muted, #526071); line-height: 1.7; }
@@ -547,14 +547,14 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-cta--layout-panel { width: min(calc(100% - 2rem), 76rem); margin-block: clamp(2rem, 5vw, 5rem); border-radius: calc(var(--g7pb-theme-radius) * 1.8); box-shadow: 0 2rem 5rem rgb(15 23 42 / 12%); }
 .g7pb-hero-split--layout-screenshot { grid-template-columns: minmax(16rem, .7fr) minmax(28rem, 1.3fr); }
 .g7pb-hero-split--layout-screenshot .g7pb-hero-split__media { aspect-ratio: 16 / 10; padding: .65rem; border: 1px solid var(--g7pb-page-border, #dfe2e8); background: #111827; box-shadow: 0 2rem 4rem rgb(15 23 42 / 15%); }
-.g7pb-hero-split--layout-overlap { position: relative; grid-template-columns: repeat(12, 1fr); min-height: 42rem; }
-.g7pb-hero-split--layout-overlap .g7pb-hero-split__copy { z-index: 2; grid-column: 1 / span 7; padding: clamp(2rem, 5vw, 4rem); background: color-mix(in srgb, var(--g7pb-page-bg, #fff) 92%, transparent); box-shadow: 0 2rem 5rem rgb(15 23 42 / 12%); backdrop-filter: blur(14px); }
-.g7pb-hero-split--layout-overlap .g7pb-hero-split__media { grid-column: 6 / -1; grid-row: 1; height: 38rem; }
+.g7pb-hero-split--layout-overlap { position: relative; grid-template-columns: repeat(12, minmax(0, 1fr)); min-height: 42rem; }
+.g7pb-hero-split--layout-overlap .g7pb-hero-split__copy { z-index: 2; min-width: 0; grid-column: 1 / span 7; padding: clamp(2rem, 5vw, 4rem); background: color-mix(in srgb, var(--g7pb-page-bg, #fff) 92%, transparent); box-shadow: 0 2rem 5rem rgb(15 23 42 / 12%); backdrop-filter: blur(14px); }
+.g7pb-hero-split--layout-overlap .g7pb-hero-split__media { min-width: 0; grid-column: 6 / -1; grid-row: 1; height: 38rem; }
 .g7pb-hero-split--layout-offset { align-items: end; }
 .g7pb-hero-split--layout-offset .g7pb-hero-split__copy { align-self: start; padding-top: clamp(3rem, 8vw, 8rem); }
 .g7pb-hero-split--layout-offset .g7pb-hero-split__media { aspect-ratio: 3 / 4; transform: translateY(clamp(1rem, 4vw, 4rem)); }
-.g7pb-logo-cloud--layout-grid ul { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--g7pb-page-border, #dfe2e8); }
-.g7pb-logo-cloud--layout-grid li { min-height: 7rem; border: 1px solid var(--g7pb-page-border, #dfe2e8); }
+.g7pb-logo-cloud--layout-grid ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--g7pb-page-border, #dfe2e8); }
+.g7pb-logo-cloud--layout-grid li { min-width: 0; min-height: 7rem; border: 1px solid var(--g7pb-page-border, #dfe2e8); }
 .g7pb-logo-cloud--layout-panel { display: grid; grid-template-columns: minmax(12rem, .45fr) minmax(0, 1.55fr); gap: 2rem; align-items: center; border-radius: calc(var(--g7pb-theme-radius) * 1.5); }
 .g7pb-logo-cloud--layout-panel h2 { margin: 0; text-align: left; }
 .g7pb-stats--layout-strip .g7pb-stats__grid { border-block: 1px solid var(--g7pb-page-border, #dfe2e8); }

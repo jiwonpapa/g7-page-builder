@@ -7,12 +7,19 @@ trap 'rm -rf "$fixture_root"' EXIT
 
 copy_fixture() {
   rm -rf "$fixture_root/fixture"
-  mkdir -p "$fixture_root/fixture/scripts" "$fixture_root/fixture/tests/E2E"
+  mkdir -p "$fixture_root/fixture/scripts" "$fixture_root/fixture/tests/E2E" \
+    "$fixture_root/fixture/resources/js/editor"
   cp "$repo_root/package.json" "$fixture_root/fixture/package.json"
   cp "$repo_root/Makefile" "$fixture_root/fixture/Makefile"
   cp "$repo_root/scripts/coord-harness.sh" "$fixture_root/fixture/scripts/coord-harness.sh"
   cp "$repo_root/tests/E2E/editorInteractionQuality.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+  cp "$repo_root/resources/js/editor/richTextEditing.tsx" \
+    "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  cp "$repo_root/resources/js/editor/PuckEditorAdapter.tsx" \
+    "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  cp "$repo_root/resources/js/editor/canvasEditingContract.ts" \
+    "$fixture_root/fixture/resources/js/editor/canvasEditingContract.ts"
 }
 
 expect_failure() {
@@ -103,6 +110,35 @@ expect_failure '전용 E2E에 임시 진단 로그를 남기면 안 됩니다.'
 copy_fixture
 printf '\nselection.addRange(range);\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'Selection.addRange로 선택 범위를 합성하면 안 됩니다.'
+
+copy_fixture
+printf '\nnormalizePointerRangeWithKeyboard();\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'pointer 범위를 키보드로 보정하면 안 됩니다.'
+
+copy_fixture
+printf '\nrangeToolbar.getByTestId("page-builder-richtext-font").selectOption("serif");\n' \
+  >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 툴바는 selectOption 직접 주입이 아니라 실제 사용자 조작으로 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/expect.poll(() => selectedText(field)).toContain(target)/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/g7pb:richtext-range-state/g7pb:richtext-range-active/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/setTextSelection\(bookmark\)/setTextSelection(editor.state.selection.to)/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '툴바 명령 전에 저장한 선택 범위를 복원해야 합니다.'
+
+copy_fixture
+printf '\nconst rangeEditing = window.getSelection();\n' \
+  >>"$fixture_root/fixture/resources/js/editor/canvasEditingContract.ts"
+expect_failure '요소 선택 계약에서 DOM Selection으로 범위 상태를 중복 추론하면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/PUBLIC_SELECTION_MARK_GATE/PUBLIC_MARK_REMOVED/' \

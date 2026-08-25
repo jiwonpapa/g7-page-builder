@@ -61,7 +61,12 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { PuckEditorAdapter, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
-const { createRichTextField, RichTextCanvasField, isRichTextRangeActive } = await import('../../resources/js/editor/richTextEditing');
+const {
+  createRichTextField,
+  RichTextCanvasField,
+  isRichTextRangeActive,
+  RICH_TEXT_RANGE_STATE_MESSAGE,
+} = await import('../../resources/js/editor/richTextEditing');
 
 const fixture: PageBuilderDocument = {
   schema_version: 'g7-page-builder/v1',
@@ -276,7 +281,8 @@ describe('Puck editor surface contract', () => {
 
     selectedFont = 'modern';
     await act(async () => emit('transaction'));
-    expect(container.querySelector<HTMLSelectElement>('[data-testid="page-builder-richtext-font"]')?.value).toBe('modern');
+    expect(container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]')?.getAttribute('aria-label'))
+      .toBe('선택한 글자 글꼴: 모던');
 
     selection.empty = true;
     selection.from = 12;
@@ -287,6 +293,118 @@ describe('Puck editor surface contract', () => {
     unmounted = true;
     expect(handlers.get('selectionUpdate')).toHaveLength(0);
     expect(handlers.get('transaction')).toHaveLength(0);
+  });
+
+  it('restores the bookmarked text range before an actual toolbar click applies a mark', async () => {
+    type EditorEvent = 'selectionUpdate' | 'transaction';
+    const selection = { empty: false, from: 4, to: 10 };
+    const handlers = new Map<EditorEvent, Set<() => void>>();
+    const editorDom = document.createElement('div');
+    document.body.append(editorDom);
+    const operations: Array<[string, unknown?]> = [];
+    const chain = {
+      focus: vi.fn(() => { operations.push(['focus']); return chain; }),
+      setTextSelection: vi.fn((range: { from: number; to: number }) => {
+        operations.push(['setTextSelection', range]);
+        selection.empty = range.from === range.to;
+        selection.from = range.from;
+        selection.to = range.to;
+        return chain;
+      }),
+      toggleBold: vi.fn(() => { operations.push(['toggleBold']); return chain; }),
+      run: vi.fn(() => { operations.push(['run']); return true; }),
+    };
+    const editor = {
+      state: { selection },
+      view: { dom: editorDom },
+      getAttributes: vi.fn(() => ({})),
+      isActive: vi.fn(() => false),
+      chain: vi.fn(() => chain),
+      on: vi.fn((event: EditorEvent, handler: () => void) => {
+        const eventHandlers = handlers.get(event) ?? new Set();
+        eventHandlers.add(handler);
+        handlers.set(event, eventHandlers);
+        return editor;
+      }),
+      off: vi.fn((event: EditorEvent, handler: () => void) => {
+        handlers.get(event)?.delete(handler);
+        return editor;
+      }),
+    } as never;
+    const InlineMenu = createRichTextField('본문').renderInlineMenu;
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>기존 서식</InlineMenu>);
+    });
+    const bold = container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]');
+    expect(bold).not.toBeNull();
+
+    bold?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    selection.empty = true;
+    selection.from = 10;
+    selection.to = 10;
+    await act(async () => bold?.click());
+
+    expect(operations).toEqual([
+      ['focus'],
+      ['setTextSelection', { from: 4, to: 10 }],
+      ['toggleBold'],
+      ['run'],
+    ]);
+  });
+
+  it('broadcasts both active and inactive rich-text range state transitions', async () => {
+    type EditorEvent = 'selectionUpdate' | 'transaction';
+    const selection = { empty: true, from: 2, to: 2 };
+    const handlers = new Map<EditorEvent, Set<() => void>>();
+    const editorDom = document.createElement('div');
+    document.body.append(editorDom);
+    const editor = {
+      state: { selection },
+      view: { dom: editorDom },
+      getAttributes: vi.fn(() => ({})),
+      isActive: vi.fn(() => false),
+      on: vi.fn((event: EditorEvent, handler: () => void) => {
+        const eventHandlers = handlers.get(event) ?? new Set();
+        eventHandlers.add(handler);
+        handlers.set(event, eventHandlers);
+        return editor;
+      }),
+      off: vi.fn((event: EditorEvent, handler: () => void) => {
+        handlers.get(event)?.delete(handler);
+        return editor;
+      }),
+    } as never;
+    const emit = (event: EditorEvent): void => handlers.get(event)?.forEach((handler) => handler());
+    const states: boolean[] = [];
+    const receive = (event: Event): void => {
+      states.push(Boolean((event as CustomEvent).detail?.active));
+    };
+    window.addEventListener(RICH_TEXT_RANGE_STATE_MESSAGE, receive);
+    const InlineMenu = createRichTextField('본문').renderInlineMenu;
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => {
+      window.removeEventListener(RICH_TEXT_RANGE_STATE_MESSAGE, receive);
+      act(() => root.unmount());
+    });
+
+    await act(async () => {
+      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>서식</InlineMenu>);
+    });
+    selection.empty = false;
+    selection.to = 7;
+    await act(async () => emit('selectionUpdate'));
+    selection.empty = true;
+    selection.from = 7;
+    await act(async () => emit('selectionUpdate'));
+
+    expect(states).toEqual([false, true, false]);
   });
 
   it('subscribes safely before the Tiptap view is mounted', async () => {
@@ -365,7 +483,7 @@ describe('Puck editor surface contract', () => {
     }
   });
 
-  it('closes the element-wide balloon on outside click and keeps it closed for rich-text ranges', async () => {
+  it('closes the element-wide balloon on outside click and follows the canonical rich-text range state', async () => {
     const container = document.createElement('div');
     document.body.append(container);
     const outside = document.createElement('button');
@@ -400,10 +518,15 @@ describe('Puck editor surface contract', () => {
         fieldPath: 'body',
         role: 'text',
         label: '본문',
-        rangeEditing: true,
       } }));
+      window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail: { active: true } }));
     });
     expect(document.querySelector('[data-testid="page-builder-context-panel"]')).toBeNull();
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail: { active: false } }));
+    });
+    expect(await eventually<HTMLElement>('[data-testid="page-builder-context-panel"]')).not.toBeNull();
   });
 
   it('keeps structured inline copy visible in every official Page Kit', async () => {

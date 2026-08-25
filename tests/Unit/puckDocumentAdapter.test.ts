@@ -205,11 +205,30 @@ describe('Puck PageBuilderDocument adapter', () => {
       fields: Record<string, { type: string }>;
     };
 
-    expect(Object.keys(root.fields)).toEqual(['colorMode', 'palette', 'font', 'radius', 'width', 'scale']);
+    expect(Object.keys(root.fields)).toEqual([
+      'colorMode', 'palette', 'font', 'radius', 'width', 'scale',
+      'customColor1Light', 'customColor1Dark', 'customColor2Light', 'customColor2Dark',
+      'customColor3Light', 'customColor3Dark', 'customColor4Light', 'customColor4Dark',
+    ]);
     expect(Object.values(root.fields).every((field) => field.type === 'custom')).toBe(true);
     expect(root.fields).not.toHaveProperty('css');
     expect(root.fields).not.toHaveProperty('className');
     expect(root.fields).not.toHaveProperty('style');
+  });
+
+  it('uses selected-range rich text fields for primary headings', () => {
+    const components = pageBuilderPuckConfig.components as unknown as Record<string, {
+      fields: Record<string, { type?: string; contentEditable?: boolean }>;
+    }>;
+
+    for (const [component, field] of [
+      ['Hero', 'title'], ['Features', 'title'], ['Cta', 'heading'], ['Contact', 'heading'],
+      ['Heading', 'heading'], ['HeroSplit', 'title'], ['CardGrid', 'heading'],
+    ]) {
+      expect(components[component]?.fields[field], `${component}.${field}`).toMatchObject({
+        type: 'richtext', contentEditable: true,
+      });
+    }
   });
 
   it('round-trips all eight catalog blocks through the Puck adapter', () => {

@@ -367,6 +367,12 @@ function editorBlock(page: Page, type: BlockType): Locator {
   );
 }
 
+function editorInlineField(page: Page, type: BlockType, field: string): Locator {
+  return editorBlock(page, type).locator(
+    `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
+  );
+}
+
 function editorBlocks(page: Page): Locator {
   return page.frameLocator('iframe').getByTestId('page-builder-block');
 }
@@ -577,11 +583,10 @@ async function selectAndEditHero(
   await expect(inlineSubtitle).toHaveCount(1);
   await expect(inlineBody).toHaveCount(1);
   await expect(inlineButton).toHaveCount(1);
+  await inlineTitle.dispatchEvent('pointerdown');
+  await expect(inlineTitle).toBeEditable();
+  await inlineTitle.fill(title);
   if (directCanvas) {
-    await inlineTitle.dispatchEvent('pointerdown');
-    await inlineTitle.hover();
-    await expect(inlineTitle).toHaveAttribute('contenteditable', 'plaintext-only');
-    await inlineTitle.fill(title);
     await inlineSubtitle.dispatchEvent('pointerdown');
     await inlineSubtitle.hover();
     await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
@@ -592,11 +597,10 @@ async function selectAndEditHero(
     await inlineButton.fill(buttonLabel);
     await inlineSubtitle.press('Tab');
   } else {
-    await (await revealInspectorField(page, 'page-builder-hero-title')).fill(title);
     await (await revealInspectorField(page, 'page-builder-hero-subtitle')).fill(subtitle);
     await (await revealInspectorField(page, 'page-builder-hero-primary-label')).fill(buttonLabel);
   }
-  await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(title);
+  await expect(inlineTitle).toContainText(title);
   await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(subtitle);
 }
 
@@ -609,7 +613,10 @@ async function selectAndEditFeatures(
   const features = editorBlock(page, 'features');
   await expect(features).toHaveCount(1);
   await selectEditorBlock(page, 'features');
-  await (await revealInspectorField(page, 'page-builder-features-heading')).fill(heading);
+  const headingField = editorInlineField(page, 'features', 'title');
+  await headingField.dispatchEvent('pointerdown');
+  await expect(headingField).toBeEditable();
+  await headingField.fill(heading);
   await (await revealInspectorField(page, 'page-builder-features-item-0-title')).fill(itemTitle);
   await (await revealInspectorField(page, 'page-builder-features-item-0-body')).fill(itemBody);
 }
@@ -627,10 +634,14 @@ async function selectAndEditCta(
   const inline = (field: string): Locator => cta.locator(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
   );
+  const headingField = inline('heading');
+  await headingField.dispatchEvent('pointerdown');
+  await expect(headingField).toBeEditable();
+  await headingField.fill(heading);
   if (directCanvas) {
     await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
     await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
-    for (const [field, value] of [['heading', heading], ['body', body], ['primaryLabel', primaryLabel]] as const) {
+    for (const [field, value] of [['body', body], ['primaryLabel', primaryLabel]] as const) {
       const target = inline(field);
       await target.dispatchEvent('pointerdown');
       await target.hover({ force: true });
@@ -638,7 +649,6 @@ async function selectAndEditCta(
       await target.fill(value);
     }
   } else {
-    await (await revealInspectorField(page, 'page-builder-cta-heading')).fill(heading);
     await (await revealInspectorField(page, 'page-builder-cta-body')).fill(body);
     await (await revealInspectorField(page, 'page-builder-cta-primary-label')).fill(primaryLabel);
     await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
@@ -655,7 +665,10 @@ async function selectAndEditContact(
   const contact = editorBlock(page, 'contact');
   await expect(contact).toHaveCount(1);
   await selectEditorBlock(page, 'contact');
-  await (await revealInspectorField(page, 'page-builder-contact-heading')).fill(heading);
+  const headingField = editorInlineField(page, 'contact', 'heading');
+  await headingField.dispatchEvent('pointerdown');
+  await expect(headingField).toBeEditable();
+  await headingField.fill(heading);
   await (await revealInspectorField(page, 'page-builder-contact-address')).fill(address);
   await (await revealInspectorField(page, 'page-builder-contact-phone')).fill('02-9876-5432');
   await (await revealInspectorField(page, 'page-builder-contact-email')).fill(email);
@@ -921,6 +934,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await (await revealInspectorField(page, 'page-builder-design-radius')).selectOption('round');
     await (await revealInspectorField(page, 'page-builder-design-width')).selectOption('wide');
     await (await revealInspectorField(page, 'page-builder-design-scale')).selectOption('large');
+    await (await revealInspectorField(page, 'page-builder-design-custom-1-light')).fill('#13579b');
+    await (await revealInspectorField(page, 'page-builder-design-custom-1-dark')).fill('#b3d4ff');
     await expect(page.frameLocator('iframe').locator('.g7pb-document-theme')).toHaveClass(/g7pb-theme-palette-emerald/);
 
     await revealEditorHeaderActions(page);
@@ -1075,6 +1090,44 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await selectAndEditHero(page, heroTitle, heroSubtitle, heroButtonLabel, testInfo.project.name === 'desktop');
     if (testInfo.project.name === 'desktop') {
       const heroBlock = editorBlock(page, 'hero');
+      const heroTitleField = editorInlineField(page, 'hero', 'title');
+      const selectedHeadingText = 'Hero';
+      await heroTitleField.evaluate((element, target) => {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        let node = walker.nextNode();
+        while (node) {
+          const start = (node.textContent ?? '').indexOf(target);
+          if (start >= 0) {
+            const range = document.createRange();
+            range.setStart(node, start);
+            range.setEnd(node, start + target.length);
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+            document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
+            element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+            return;
+          }
+          node = walker.nextNode();
+        }
+        throw new Error(`Heading selection target was not found: ${target}`);
+      }, selectedHeadingText);
+      const headingRangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
+      await expect(headingRangeToolbar).toBeVisible();
+      await expect(page.getByTestId('page-builder-context-panel')).toBeHidden();
+      await headingRangeToolbar.getByTestId('page-builder-richtext-weight').selectOption('bold');
+      await headingRangeToolbar.getByTestId('page-builder-richtext-tone').selectOption('custom1');
+      await expect(heroTitleField.locator('span[data-g7pb-weight="bold"][data-g7pb-tone="custom1"]'))
+        .toHaveText(selectedHeadingText);
+      await heroTitleField.evaluate((element) => {
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        selection?.addRange(range);
+        document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
+      });
       await heroBlock.locator('[data-g7pb-inline-field="title"]').dispatchEvent('pointerdown');
       const elementPanel = page.getByTestId('page-builder-context-panel');
       await expect(elementPanel).toContainText('요소 전체 · 부분 선택은 글자 위 툴바');
@@ -1093,6 +1146,27 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
       await page.getByTestId('page-builder-app').dispatchEvent('pointerdown');
       await expect(elementPanel).toBeHidden();
+
+      const containerWidth = await revealInspectorField(page, 'page-builder-block-container-width');
+      const containerAlign = await revealInspectorField(page, 'page-builder-block-container-align');
+      const containerHeight = await revealInspectorField(page, 'page-builder-block-min-height');
+      const verticalAlign = await revealInspectorField(page, 'page-builder-block-vertical-align');
+      await containerWidth.selectOption('full');
+      await containerAlign.selectOption('right');
+      await containerHeight.selectOption('viewport');
+      await verticalAlign.selectOption('center');
+      await expect(containerWidth).toHaveValue('full');
+      await expect(containerAlign).toHaveValue('right');
+      await expect(containerHeight).toHaveValue('viewport');
+      await expect(verticalAlign).toHaveValue('center');
+      await expect(heroBlock).toHaveClass(/g7pb-container-width--full/);
+      await expect(heroBlock).toHaveClass(/g7pb-container-align--right/);
+      await expect(heroBlock).toHaveClass(/g7pb-container-height--viewport/);
+      await expect(heroBlock).toHaveClass(/g7pb-container-vertical--center/);
+      await containerWidth.selectOption('inherit');
+      await containerAlign.selectOption('center');
+      await containerHeight.selectOption('auto');
+      await verticalAlign.selectOption('start');
 
       await page.getByTestId('page-builder-manager-link').click();
       const unsavedDialog = page.getByTestId('page-builder-unsaved-dialog');
@@ -1123,6 +1197,15 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const mediaField = page.locator('.g7pb-media-field:visible');
     await (await revealInspectorField(page, 'page-builder-media-open')).click();
     await expect(mediaField.getByTestId('page-builder-media-library')).toBeVisible();
+    const mediaItems = mediaField.getByTestId('page-builder-media-item');
+    await expect(mediaItems.first()).toBeVisible();
+    const mediaItemBoxes = await mediaItems.evaluateAll((items) => items.slice(0, 12).map((item) => {
+      const rect = item.getBoundingClientRect();
+      return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height };
+    }));
+    expect(mediaItemBoxes.every((box) => box.width >= 80 && box.height >= 80)).toBe(true);
+    expect(mediaItemBoxes.every((box, index) => mediaItemBoxes.slice(index + 1).every((other) =>
+      box.right <= other.left + 1 || other.right <= box.left + 1 || box.bottom <= other.top + 1 || other.bottom <= box.top + 1))).toBe(true);
     await mediaField.getByTestId('page-builder-media-file').setInputFiles({
       name: 'e2e-pixel.png',
       mimeType: 'image/png',
@@ -1172,9 +1255,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(await revealInspectorField(page, 'page-builder-design-radius')).toHaveValue('round');
     await expect(await revealInspectorField(page, 'page-builder-design-width')).toHaveValue('wide');
     await expect(await revealInspectorField(page, 'page-builder-design-scale')).toHaveValue('large');
+    await expect(await revealInspectorField(page, 'page-builder-design-custom-1-light')).toHaveValue('#13579b');
+    await expect(await revealInspectorField(page, 'page-builder-design-custom-1-dark')).toHaveValue('#b3d4ff');
 
     await selectEditorBlock(page, 'hero');
-    await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(heroTitle);
+    await expect(editorInlineField(page, 'hero', 'title')).toContainText(heroTitle);
     await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(heroSubtitle);
     if (testInfo.project.name === 'desktop') {
       await expect(await revealInspectorField(page, 'page-builder-hero-primary-url')).toHaveValue('/register');
@@ -1183,16 +1268,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
-    await expect(await revealInspectorField(page, 'page-builder-features-heading')).toHaveValue(featuresHeading);
+    await expect(editorInlineField(page, 'features', 'title')).toContainText(featuresHeading);
     await expect(await revealInspectorField(page, 'page-builder-features-item-0-title')).toHaveValue(featureTitle);
     await expect(await revealInspectorField(page, 'page-builder-features-item-0-body')).toHaveValue(featureBody);
     await selectEditorBlock(page, 'cta');
-    await expect(await revealInspectorField(page, 'page-builder-cta-heading')).toHaveValue(ctaHeading);
+    await expect(editorInlineField(page, 'cta', 'heading')).toContainText(ctaHeading);
     await expect(await revealInspectorField(page, 'page-builder-cta-body')).toHaveValue(ctaBody);
     await expect(await revealInspectorField(page, 'page-builder-cta-primary-label')).toHaveValue(ctaPrimaryLabel);
     await expect(await revealInspectorField(page, 'page-builder-cta-theme')).toHaveValue('dark');
     await selectEditorBlock(page, 'contact');
-    await expect(await revealInspectorField(page, 'page-builder-contact-heading')).toHaveValue(contactHeading);
+    await expect(editorInlineField(page, 'contact', 'heading')).toContainText(contactHeading);
     await expect(await revealInspectorField(page, 'page-builder-contact-address')).toHaveValue(contactAddress);
     await expect(await revealInspectorField(page, 'page-builder-contact-email')).toHaveValue(contactEmail);
 
@@ -1297,7 +1382,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await saveDraft(page);
     await page.reload();
     await selectEditorBlock(page, 'hero');
-    await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(revisedHeroTitle);
+    await expect(editorInlineField(page, 'hero', 'title')).toContainText(revisedHeroTitle);
 
     await publicPage.reload();
     await expect(publicPage.getByText(heroTitle, { exact: true })).toBeVisible();
@@ -1356,7 +1441,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(page).toHaveURL(new RegExp(`${EDITOR_PATH}\\?document=${duplicateDocumentId}$`));
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
     await selectEditorBlock(page, 'hero');
-    await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(revisedHeroTitle);
+    await expect(editorInlineField(page, 'hero', 'title')).toContainText(revisedHeroTitle);
     await page.goto(MANAGER_PATH);
     const duplicateRow = page.locator(
       `[data-testid="page-builder-document-row"][data-document-id="${duplicateDocumentId}"]`,
@@ -1408,7 +1493,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await documentRow.getByTestId('page-builder-manager-edit-link').click();
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
     await selectEditorBlock(page, 'hero');
-    await expect(await revealInspectorField(page, 'page-builder-hero-title')).toHaveValue(heroTitle);
+    await expect(editorInlineField(page, 'hero', 'title')).toContainText(heroTitle);
     await publish(page);
     await publicPage.reload();
     await expect(publicPage.getByText(heroTitle, { exact: true })).toBeVisible();

@@ -224,7 +224,8 @@ describe('PageBuilderDocument v1 schema', () => {
       blocks: Array<{ props: Record<string, unknown> }>;
     };
     styled.blocks[0].props.appearance = {
-      surface: 'default', spacing: 'spacious',
+      surface: 'default', spacing: 'spacious', containerWidth: 'full', containerAlign: 'right',
+      minHeight: 'viewport', verticalAlign: 'center',
       elements: { title: { font: 'serif', size: 'large', weight: 'bold', align: 'right', tone: 'accent' } },
     };
     expect(validate(styled), JSON.stringify(validate.errors)).toBe(true);

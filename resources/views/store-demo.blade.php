@@ -1,11 +1,18 @@
 <!doctype html>
 <html lang="ko">
 <head>
+    @php
+        $moduleDist = base_path('modules/jiwonpapa-page_builder/dist');
+        $cssPath = $moduleDist.'/css/page-builder-public.css';
+        $effectsPath = $moduleDist.'/js/page-effects.iife.js';
+        $cssVersion = is_file($cssPath) ? substr((string) hash_file('sha256', $cssPath), 0, 12) : 'dev';
+        $effectsVersion = is_file($effectsPath) ? substr((string) hash_file('sha256', $effectsPath), 0, 12) : 'dev';
+    @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
     <title>{{ $title }} · G7 Page Builder 데모</title>
-    <link rel="stylesheet" href="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-public.css') }}">
+    <link rel="stylesheet" href="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-public.css') }}?v={{ $cssVersion }}">
     <style>
         :root { color-scheme: light; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         * { box-sizing: border-box; }
@@ -19,6 +26,6 @@
         <span><strong>Page Kit 실제 화면</strong>{{ $title }} · 샘플 링크와 폼은 데모에서 작동하지 않습니다.</span>
     </header>
     <main class="g7pb-page" data-testid="page-builder-store-demo-root">{!! $html !!}</main>
-    <script src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}" defer></script>
+    <script src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}?v={{ $effectsVersion }}" defer></script>
 </body>
 </html>

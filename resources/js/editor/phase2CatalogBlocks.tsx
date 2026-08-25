@@ -10,7 +10,7 @@ import {
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createRichTextField, RichTextCanvasField } from './richTextEditing';
-import { decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasElementStyles } from './canvasEditingContract';
+import { CanvasCurrentElementStylesContext, decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasBlockAppearanceClass, useCanvasElementStyles } from './canvasEditingContract';
 import {
   ARTICLE_LIST_BLOCK_TYPE,
   COMPARISON_TABLE_BLOCK_TYPE,
@@ -310,9 +310,10 @@ function surfaceClass(props: AppearanceEditorProps): string {
 
 function Frame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
   const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
-  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
+  const containerClassName = useCanvasBlockAppearanceClass(id);
+  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
     onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
-    {...motionPreviewAttributes(motion)}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</section>;
+    {...motionPreviewAttributes(motion)}><CanvasCurrentElementStylesContext.Provider value={resolvedElementStyles}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</CanvasCurrentElementStylesContext.Provider></section>;
 }
 
 function TestimonialsPreview(props: TestimonialsEditorProps & { id: string }): React.ReactElement {

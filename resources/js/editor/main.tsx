@@ -16,6 +16,7 @@ import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';
 import { discoverPageBuilderManagers, mountPageBuilderManager } from '../manager/PageBuilderManager';
 import { PuckEditorAdapter } from './PuckEditorAdapter';
 import { SitePartEditor } from './SitePartEditor';
+import { clearDraftJournal, readDraftJournal, writeDraftJournal } from './draftJournal';
 
 export interface PageBuilderEditorOptions {
   documentId?: string;
@@ -33,6 +34,7 @@ type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'conflict' | 'error';
 type PublishState = 'idle' | 'preparing' | 'publishing' | 'published' | 'error';
 
 const roots = new WeakMap<Element, Root>();
+export const AUTO_SAVE_IDLE_MS = 750;
 
 const saveLabels: Record<SaveState, string> = {
   idle: '초안 없음',
@@ -126,17 +128,25 @@ function EditorShell({
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const navigationBypassRef = useRef(false);
 
-  const applyResource = useCallback((resource: DocumentResource, resetEditor: boolean): void => {
-    documentRef.current = resource.document;
+  const applyResource = useCallback((
+    resource: DocumentResource,
+    resetEditor: boolean,
+    restoreJournal = false,
+  ): void => {
+    const journal = restoreJournal
+      ? readDraftJournal(resource.document.document_id, resource.lock_version)
+      : null;
+    const nextDocument = journal?.document ?? resource.document;
+    documentRef.current = nextDocument;
     lockVersionRef.current = resource.lock_version;
-    dirtyRef.current = false;
+    dirtyRef.current = journal !== null;
     editVersionRef.current += 1;
     loadedDocumentIdRef.current = resource.document.document_id;
-    setDocument(resource.document);
+    setDocument(nextDocument);
     setDocumentTitle(resource.title);
     setPublicUrl(resource.public_url);
-    setSaveState('saved');
-    setMessage(null);
+    setSaveState(journal ? 'dirty' : 'saved');
+    setMessage(journal ? '저장되지 않은 브라우저 복구본을 불러왔습니다.' : null);
     if (resetEditor) {
       setEditorRevisionKey((value) => value + 1);
     }
@@ -168,7 +178,7 @@ function EditorShell({
     })()
       .then(async (resource) => {
         if (active) {
-          applyResource(resource, true);
+          applyResource(resource, true, true);
           try {
             const preview = await api.createPreview(
               resource.document.document_id,
@@ -248,7 +258,10 @@ function EditorShell({
           dirtyRef.current = false;
           setDocument(resource.document);
           setSaveState('saved');
+          clearDraftJournal(resource.document.document_id);
         } else {
+          const latestDocument = documentRef.current;
+          if (latestDocument) writeDraftJournal(latestDocument, resource.lock_version);
           setSaveState('dirty');
         }
         return true;
@@ -282,7 +295,7 @@ function EditorShell({
 
     const timer = window.setTimeout(() => {
       void saveDraft(false);
-    }, 2_000);
+    }, AUTO_SAVE_IDLE_MS);
 
     return () => window.clearTimeout(timer);
   }, [document, saveDraft, saveState]);
@@ -291,6 +304,7 @@ function EditorShell({
     documentRef.current = nextDocument;
     dirtyRef.current = true;
     editVersionRef.current += 1;
+    writeDraftJournal(nextDocument, lockVersionRef.current);
     setDocument(nextDocument);
     setSaveState('dirty');
     setPublishState('idle');
@@ -362,6 +376,7 @@ function EditorShell({
     setMessage(null);
     try {
       const resource = await api.createDocument({ title, slug, locale });
+      clearDraftJournal(resource.document.document_id);
       applyResource(resource, true);
       setRequestedDocumentId(resource.document.document_id);
       setCreateDialogOpen(false);
@@ -387,6 +402,7 @@ function EditorShell({
     setMessage(null);
     try {
       const resource = await api.getDocument(current.document_id);
+      clearDraftJournal(current.document_id);
       applyResource(resource, true);
     } catch (error) {
       setMessage(formatError(error));

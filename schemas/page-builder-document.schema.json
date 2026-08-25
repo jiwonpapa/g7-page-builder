@@ -284,6 +284,18 @@
         "textAlign": {
           "enum": ["left", "center", "right"]
         },
+        "containerWidth": {
+          "enum": ["inherit", "narrow", "standard", "wide", "full"]
+        },
+        "containerAlign": {
+          "enum": ["left", "center", "right", "stretch"]
+        },
+        "minHeight": {
+          "enum": ["auto", "compact", "medium", "large", "viewport"]
+        },
+        "verticalAlign": {
+          "enum": ["start", "center", "end"]
+        },
         "elements": {
           "type": "object",
           "maxProperties": 100,
@@ -308,7 +320,7 @@
         "size": { "enum": ["small", "base", "large", "xlarge"] },
         "weight": { "enum": ["regular", "medium", "semibold", "bold"] },
         "align": { "enum": ["left", "center", "right"] },
-        "tone": { "enum": ["default", "muted", "accent", "contrast"] }
+        "tone": { "enum": ["default", "muted", "accent", "contrast", "custom1", "custom2", "custom3", "custom4"] }
       }
     },
     "motion": {

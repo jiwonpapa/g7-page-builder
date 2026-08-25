@@ -387,6 +387,12 @@ function visibleTestId(page: Page, testId: string): Locator {
 
 async function revealEditorHeaderActions(page: Page): Promise<void> {
   const addBlock = page.getByTestId('page-builder-add-block');
+  const contextPanel = page.getByTestId('page-builder-context-panel');
+
+  if (await contextPanel.isVisible()) {
+    await contextPanel.getByRole('button', { name: '스타일 도구 닫기' }).click();
+    await expect(contextPanel).toBeHidden();
+  }
 
   if (await addBlock.isVisible()) {
     return;
@@ -526,6 +532,10 @@ async function dragLibraryBlockBefore(
 ): Promise<void> {
   const source = page.getByTestId(`drawer-item:${component}`);
   const target = editorBlock(page, targetType);
+  const blocks = editorBlocks(page);
+  const initialBlockCount = await blocks.count();
+  const canvasEntry = page.frameLocator('iframe').locator('[data-puck-entry]');
+  const linePlaceholder = page.frameLocator('iframe').locator('[data-puck-line-placeholder]');
   await source.scrollIntoViewIfNeeded();
   await target.scrollIntoViewIfNeeded();
 
@@ -540,15 +550,19 @@ async function dragLibraryBlockBefore(
     sourceBox.y + sourceBox.height / 2,
   );
   await page.mouse.down();
-  await page.waitForTimeout(120);
-  await page.mouse.move(
-    sourceBox.x + sourceBox.width / 2 + 12,
-    sourceBox.y + sourceBox.height / 2,
-    { steps: 4 },
-  );
-  await page.mouse.move(targetBox.x + 24, targetBox.y + 4, { steps: 24 });
-  await page.waitForTimeout(180);
-  await page.mouse.up();
+  try {
+    await page.mouse.move(
+      sourceBox.x + sourceBox.width / 2 + 12,
+      sourceBox.y + sourceBox.height / 2,
+      { steps: 4 },
+    );
+    await expect(canvasEntry).toHaveAttribute('data-puck-dragging', 'true');
+    await page.mouse.move(targetBox.x + 24, targetBox.y + Math.min(24, targetBox.height * 0.15), { steps: 24 });
+    await expect(linePlaceholder).toHaveCount(1);
+  } finally {
+    await page.mouse.up();
+  }
+  await expect(blocks).toHaveCount(initialBlockCount + 1);
 }
 
 async function expectCanvasWidth(page: Page, width: number): Promise<void> {

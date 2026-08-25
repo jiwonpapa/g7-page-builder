@@ -125,9 +125,12 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
 }
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
-  const pointer = await textPointerGeometry(field, target);
   await field.focus();
   await expect.poll(() => selectedText(field)).toBe('');
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  const pointer = await textPointerGeometry(field, target);
   await page.mouse.move(pointer.start.x, pointer.start.y);
   await page.mouse.down();
   try {

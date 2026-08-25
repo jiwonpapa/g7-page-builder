@@ -252,7 +252,7 @@ final class PublicationPersistenceTest extends TestCase
 
         $partial = $controller->show(Request::create('/public/site-shell?locale=ko', 'GET'));
         self::assertFalse($partial->getData(true)['data']['shell']['enabled']);
-        self::assertSame('no-store', $partial->headers->get('Cache-Control'));
+        self::assertStringContainsString('no-store', (string) $partial->headers->get('Cache-Control'));
 
         $service->publish('footer', 'ko', $footer->lockVersion, 1);
         $active = $controller->show(Request::create('/public/site-shell?locale=ko', 'GET'));

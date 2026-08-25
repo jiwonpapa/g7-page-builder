@@ -229,8 +229,11 @@ describe('Puck editor surface contract', () => {
     const selection = { empty: true, from: 4, to: 4 };
     let selectedFont = 'inherit';
     const handlers = new Map<EditorEvent, Set<() => void>>();
+    const editorDom = document.createElement('div');
+    document.body.append(editorDom);
     const editor = {
       state: { selection },
+      view: { dom: editorDom },
       getAttributes: vi.fn((mark: string) => mark === 'g7TextStyle' ? { font: selectedFont } : {}),
       isActive: vi.fn(() => false),
       on: vi.fn((event: EditorEvent, handler: () => void) => {
@@ -263,7 +266,12 @@ describe('Puck editor surface contract', () => {
 
     selection.empty = false;
     selection.to = 12;
+    editorDom.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     await act(async () => emit('selectionUpdate'));
+    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
+    await act(async () => {
+      editorDom.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    });
     expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).not.toBeNull();
 
     selectedFont = 'modern';

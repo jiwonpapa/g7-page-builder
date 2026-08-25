@@ -159,7 +159,9 @@ async function purgePerformanceDocument(api: APIRequestContext, documentId: stri
 async function measureTyping(page: Page): Promise<number[]> {
   const firstHeading = page.frameLocator('iframe').locator(
     '[data-testid="page-builder-block"][data-block-type="heading"]',
-  ).first().locator('[data-g7pb-inline-field="heading"]');
+  ).first().locator(
+    '[data-g7pb-inline-field="heading"][contenteditable], [data-g7pb-inline-field="heading"] [contenteditable]',
+  );
   await firstHeading.scrollIntoViewIfNeeded();
   await firstHeading.dispatchEvent('pointerdown');
   await expect(firstHeading).toBeEditable();

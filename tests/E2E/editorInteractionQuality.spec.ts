@@ -17,7 +17,7 @@ test.use({ screenshot: 'off', trace: 'off', video: 'off' });
 test.describe.configure({ retries: 0 });
 
 async function richTextField(page: Page): Promise<Locator> {
-  const field = page.frameLocator('iframe').locator(
+  const field = page.frameLocator('iframe').first().locator(
     '[data-testid="page-builder-block"][data-block-type="rich-text"] [contenteditable="true"]',
   );
   await expect(field).toHaveCount(1);
@@ -31,8 +31,9 @@ async function selectedText(field: Locator): Promise<string> {
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
   await field.scrollIntoViewIfNeeded();
-  const frameBox = await page.locator('iframe').boundingBox();
+  const fieldBox = await field.boundingBox();
   const geometry = await field.evaluate((element, selected) => {
+    const fieldRect = element.getBoundingClientRect();
     const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
     while (node) {
@@ -48,21 +49,34 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
         const start = startRange.getBoundingClientRect();
         const end = endRange.getBoundingClientRect();
         return {
-          startX: start.left + Math.max(1, start.width * 0.2),
-          startY: start.top + start.height / 2,
-          endX: end.right - Math.max(1, end.width * 0.2),
-          endY: end.top + end.height / 2,
+          fieldWidth: fieldRect.width,
+          fieldHeight: fieldRect.height,
+          startX: start.left - fieldRect.left + Math.max(1, start.width * 0.2),
+          startY: start.top - fieldRect.top + start.height / 2,
+          endX: end.right - fieldRect.left - Math.max(1, end.width * 0.2),
+          endY: end.top - fieldRect.top + end.height / 2,
         };
       }
       node = walker.nextNode();
     }
     throw new Error(`Pointer selection target was not found: ${selected}`);
   }, target);
-  if (!frameBox) throw new Error('Editor iframe geometry is unavailable.');
-  await page.mouse.move(frameBox.x + geometry.startX, frameBox.y + geometry.startY);
+  if (!fieldBox || geometry.fieldWidth <= 0 || geometry.fieldHeight <= 0) {
+    throw new Error('Editor rich-text field geometry is unavailable.');
+  }
+  const scaleX = fieldBox.width / geometry.fieldWidth;
+  const scaleY = fieldBox.height / geometry.fieldHeight;
+  await page.mouse.move(
+    fieldBox.x + geometry.startX * scaleX,
+    fieldBox.y + geometry.startY * scaleY,
+  );
   await page.mouse.down();
   await page.waitForTimeout(60);
-  await page.mouse.move(frameBox.x + geometry.endX, frameBox.y + geometry.endY, { steps: 18 });
+  await page.mouse.move(
+    fieldBox.x + geometry.endX * scaleX,
+    fieldBox.y + geometry.endY * scaleY,
+    { steps: 18 },
+  );
   await page.waitForTimeout(80);
   await page.mouse.up();
   await expect.poll(() => selectedText(field)).toBe(target);
@@ -106,7 +120,7 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
     await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
     let field = await richTextField(page);
-    const rangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
+    const rangeToolbar = page.frameLocator('iframe').first().getByTestId('page-builder-richtext-inline-toolbar');
     const elementPanel = page.getByTestId('page-builder-context-panel');
 
     await test.step('REAL_POINTER_SELECTION_GATE', async () => {

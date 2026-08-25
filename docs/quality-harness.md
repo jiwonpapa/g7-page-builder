@@ -20,7 +20,7 @@
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
 - `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
-- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`를 실행합니다. 전용 E2E가 실제 `mouse.down/move/up`, 재시도 0회, 세 viewport, 툴바 상호배타, 저장·미리보기·공개 DOM 서식 증거를 잃거나 합성 Selection으로 바뀌면 제출을 거부합니다.
+- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`를 실행합니다. 전용 E2E가 실제 `mouse.down/move/up`, 활성 canvas iframe 고정, viewport transform을 반영한 필드 좌표, 재시도 0회, 세 viewport, 툴바 상호배타, 저장·미리보기·공개 DOM 서식 증거를 잃거나 합성 Selection으로 바뀌면 제출을 거부합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
 - `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.
@@ -101,7 +101,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
 19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
-20. PC·태블릿·모바일에서 실제 `mouse.down → move → up`으로 글자 범위를 선택하고, 범위 툴바와 요소 전체 벌룬의 상호배타·선택 해제·반복 선택을 확인한 뒤 부분 글꼴·크기·색상·굵기가 저장·reload·preview·public DOM까지 유지되는지 확인
+20. PC·태블릿·모바일에서 활성 canvas iframe과 변환된 필드 bounding box를 기준으로 실제 `mouse.down → move → up` 글자 범위를 선택하고, 범위 툴바와 요소 전체 벌룬의 상호배타·선택 해제·반복 선택을 확인한 뒤 부분 글꼴·크기·색상·굵기가 저장·reload·preview·public DOM까지 유지되는지 확인
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 

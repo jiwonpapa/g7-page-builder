@@ -1,6 +1,6 @@
 import { expect, request as playwrightRequest, test, type APIRequestContext, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const API = '/api/modules/jiwonpapa-page_builder/admin';
@@ -16,6 +16,14 @@ interface CatalogManifest {
     block_id: string;
     block_version: number;
     props: Record<string, unknown>;
+  }>;
+}
+
+interface StoreCatalog {
+  products: Array<{
+    product_id: string;
+    product_type: string;
+    product_version: string;
   }>;
 }
 
@@ -40,28 +48,61 @@ interface LayoutMetric {
 }
 
 interface Scenario {
-  document: Record<string, unknown>;
   expectedBlockCount: number;
   label: string;
+}
+
+interface DraftScenario extends Scenario {
+  document: Record<string, unknown>;
+}
+
+interface PageKitScenario extends Scenario {
+  productId: string;
+  productVersion: string;
+  slug: string;
+}
+
+interface OwnedDocument {
+  document: Record<string, unknown>;
+  documentId: string;
+  lockVersion: number;
+  mediaIds: string[];
+  slug: string;
+}
+
+interface MediaResource {
+  data?: {
+    items?: Array<{ id?: unknown; url?: unknown }>;
+  };
 }
 
 const builtinManifest = JSON.parse(
   readFileSync(resolve('resources/block-packs/builtin-core/manifest.json'), 'utf8'),
 ) as CatalogManifest;
+const storeCatalog = JSON.parse(
+  readFileSync(resolve('resources/store/dist/catalog.json'), 'utf8'),
+) as StoreCatalog;
 
 const pageKitScenarios = readdirSync(resolve('resources/store/source/page-kits'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .sort((left, right) => left.name.localeCompare(right.name))
-  .map((entry): Scenario => {
+  .map((entry): PageKitScenario => {
     const source = JSON.parse(readFileSync(
       resolve('resources/store/source/page-kits', entry.name, 'document.json'),
       'utf8',
     )) as Record<string, unknown>;
     const blocks = source.blocks as Array<Record<string, unknown>>;
+    const productId = `jiwonpapa/${entry.name}`;
+    const product = storeCatalog.products.find((candidate) => (
+      candidate.product_type === 'page_kit' && candidate.product_id === productId
+    ));
+    if (!product) throw new Error(`Official Page Kit catalog entry is missing: ${productId}`);
     return {
-      document: source,
       expectedBlockCount: blocks.length,
-      label: `PAGE_KIT_LAYOUT_GATE:${basename(entry.name)}`,
+      label: `PAGE_KIT_LAYOUT_GATE:${entry.name}`,
+      productId,
+      productVersion: product.product_version,
+      slug: entry.name,
     };
   });
 
@@ -80,7 +121,7 @@ function rekeyBlocks(blocks: Array<Record<string, unknown>>): Array<Record<strin
   return blocks.map((block, index) => ({ ...structuredClone(block), instance_id: instanceId(index) }));
 }
 
-function presetScenario(): Scenario {
+function presetScenario(): DraftScenario {
   const blocks = builtinManifest.presets.map((preset, index) => ({
     instance_id: instanceId(index),
     type: preset.block_id,
@@ -140,12 +181,7 @@ async function authenticate(context: BrowserContext): Promise<{ api: APIRequestC
   }
 }
 
-async function createDocument(api: APIRequestContext, projectName: string): Promise<{
-  document: Record<string, unknown>;
-  documentId: string;
-  lockVersion: number;
-  slug: string;
-}> {
+async function createDocument(api: APIRequestContext, projectName: string): Promise<OwnedDocument> {
   const slug = `g7pb-layout-${projectName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const response = await api.post(`${API}/documents`, {
     data: { title: '편집 미리보기 레이아웃 계약', slug, locale: 'ko', mode: 'canvas', shell_mode: 'none' },
@@ -158,13 +194,13 @@ async function createDocument(api: APIRequestContext, projectName: string): Prom
   if (!document || typeof documentId !== 'string' || typeof lockVersion !== 'number') {
     throw new Error('Editor layout document creation returned an invalid resource.');
   }
-  return { document, documentId, lockVersion, slug };
+  return { document, documentId, lockVersion, mediaIds: [], slug };
 }
 
 async function putScenario(
   api: APIRequestContext,
-  owned: { document: Record<string, unknown>; documentId: string; lockVersion: number; slug: string },
-  scenario: Scenario,
+  owned: OwnedDocument,
+  scenario: DraftScenario,
 ): Promise<void> {
   const sourceBlocks = scenario.document.blocks as Array<Record<string, unknown>>;
   const document = {
@@ -185,6 +221,66 @@ async function putScenario(
   }
   owned.document = payload.data.document;
   owned.lockVersion = payload.data.lock_version;
+}
+
+function collectStoredMediaUrls(value: unknown, urls: Set<string>): void {
+  if (typeof value === 'string') {
+    if (value.includes('/storage/g7-page-builder/')) urls.add(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectStoredMediaUrls(item, urls);
+    return;
+  }
+  if (value && typeof value === 'object') {
+    for (const item of Object.values(value)) collectStoredMediaUrls(item, urls);
+  }
+}
+
+async function applyPageKit(
+  api: APIRequestContext,
+  scenario: PageKitScenario,
+  projectName: string,
+  ownedDocuments: OwnedDocument[],
+): Promise<OwnedDocument> {
+  const slug = `g7pb-layout-${projectName}-${scenario.slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const response = await api.post(`${API}/store/page-kits/apply`, {
+    data: {
+      product_id: scenario.productId,
+      product_version: scenario.productVersion,
+      slug,
+      title: `레이아웃 계약 ${scenario.slug}`,
+    },
+  });
+  if (response.status() !== 201) {
+    throw new Error(`${scenario.label} apply failed (${response.status()}): ${await response.text()}`);
+  }
+  const payload = await response.json() as DocumentResource;
+  const document = payload.data?.document;
+  const lockVersion = payload.data?.lock_version;
+  const documentId = document?.document_id;
+  if (!document || typeof documentId !== 'string' || typeof lockVersion !== 'number') {
+    throw new Error(`${scenario.label} apply returned an invalid document resource.`);
+  }
+  const owned: OwnedDocument = { document, documentId, lockVersion, mediaIds: [], slug };
+  ownedDocuments.push(owned);
+  expect(JSON.stringify(document), `${scenario.label} retained unresolved portable media`).not.toContain('g7pb-media://');
+  expect(document.blocks).toHaveLength(scenario.expectedBlockCount);
+
+  const mediaUrls = new Set<string>();
+  collectStoredMediaUrls(document, mediaUrls);
+  expect(mediaUrls.size, `${scenario.label} resolved no owned Page Kit media`).toBeGreaterThan(0);
+  const mediaResponse = await api.get(`${API}/media?kind=image`);
+  expect(mediaResponse.ok()).toBe(true);
+  const mediaPayload = await mediaResponse.json() as MediaResource;
+  const mediaIds = (mediaPayload.data?.items ?? [])
+    .filter((item) => typeof item.url === 'string' && mediaUrls.has(item.url))
+    .map((item) => item.id)
+    .filter((id): id is string => typeof id === 'string');
+  owned.mediaIds.push(...mediaIds);
+  expect(new Set(mediaIds).size, `${scenario.label} owned media cleanup inventory is incomplete`).toBe(mediaUrls.size);
+
+  return owned;
 }
 
 async function setCanvasViewport(page: Page, projectName: string): Promise<number> {
@@ -305,7 +401,7 @@ function expectBlockContainment(metrics: LayoutMetric[], surface: string): void 
 async function assertScenario(
   context: BrowserContext,
   page: Page,
-  owned: { documentId: string },
+  owned: OwnedDocument,
   scenario: Scenario,
   projectName: string,
 ): Promise<void> {
@@ -358,27 +454,32 @@ async function assertScenario(
 
 async function purgeDocument(
   api: APIRequestContext,
-  owned: { documentId: string; lockVersion: number; slug: string },
+  owned: OwnedDocument,
 ): Promise<void> {
   const currentResponse = await api.get(`${API}/documents/${owned.documentId}`);
-  if (currentResponse.status() === 404) return;
-  expect(currentResponse.ok()).toBe(true);
-  const current = await currentResponse.json() as DocumentResource;
-  if (typeof current.data?.lock_version !== 'number') throw new Error('Layout cleanup returned no lock version.');
-  let lockVersion = current.data.lock_version;
-  if (typeof current.data.archived_at !== 'string') {
-    const archiveResponse = await api.post(`${API}/documents/${owned.documentId}/archive`, {
-      data: { expected_lock_version: lockVersion },
+  if (currentResponse.status() !== 404) {
+    expect(currentResponse.ok()).toBe(true);
+    const current = await currentResponse.json() as DocumentResource;
+    if (typeof current.data?.lock_version !== 'number') throw new Error('Layout cleanup returned no lock version.');
+    let lockVersion = current.data.lock_version;
+    if (typeof current.data.archived_at !== 'string') {
+      const archiveResponse = await api.post(`${API}/documents/${owned.documentId}/archive`, {
+        data: { expected_lock_version: lockVersion },
+      });
+      expect(archiveResponse.ok()).toBe(true);
+      const archived = await archiveResponse.json() as DocumentResource;
+      if (typeof archived.data?.lock_version !== 'number') throw new Error('Layout archive returned no lock version.');
+      lockVersion = archived.data.lock_version;
+    }
+    const purgeResponse = await api.delete(`${API}/documents/${owned.documentId}`, {
+      data: { expected_lock_version: lockVersion, confirmation_slug: owned.slug },
     });
-    expect(archiveResponse.ok()).toBe(true);
-    const archived = await archiveResponse.json() as DocumentResource;
-    if (typeof archived.data?.lock_version !== 'number') throw new Error('Layout archive returned no lock version.');
-    lockVersion = archived.data.lock_version;
+    expect(purgeResponse.ok()).toBe(true);
   }
-  const purgeResponse = await api.delete(`${API}/documents/${owned.documentId}`, {
-    data: { expected_lock_version: lockVersion, confirmation_slug: owned.slug },
-  });
-  expect(purgeResponse.ok()).toBe(true);
+  for (const mediaId of owned.mediaIds) {
+    const mediaResponse = await api.delete(`${API}/media/${mediaId}`);
+    expect(mediaResponse.ok(), `Layout media cleanup failed for ${mediaId}`).toBe(true);
+  }
 }
 
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
@@ -394,18 +495,25 @@ test('keeps 45 block types, all 95 presets, and every built-in Page Kit inside t
   );
 
   const { api } = await authenticate(context);
-  const owned = await createDocument(api, testInfo.project.name);
+  const ownedDocuments: OwnedDocument[] = [];
   await context.route(/^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//, (route) => route.abort());
   try {
-    for (const scenario of [presetScenario(), ...pageKitScenarios]) {
+    const preset = presetScenario();
+    const presetDocument = await createDocument(api, testInfo.project.name);
+    ownedDocuments.push(presetDocument);
+    await test.step(preset.label, async () => {
+      await putScenario(api, presetDocument, preset);
+      await assertScenario(context, page, presetDocument, preset, testInfo.project.name);
+    });
+    for (const scenario of pageKitScenarios) {
+      const pageKitDocument = await applyPageKit(api, scenario, testInfo.project.name, ownedDocuments);
       await test.step(scenario.label, async () => {
-        await putScenario(api, owned, scenario);
-        await assertScenario(context, page, owned, scenario, testInfo.project.name);
+        await assertScenario(context, page, pageKitDocument, scenario, testInfo.project.name);
       });
     }
   } finally {
     await page.close();
-    await purgeDocument(api, owned);
+    for (const owned of ownedDocuments.reverse()) await purgeDocument(api, owned);
     await api.dispose();
   }
 });

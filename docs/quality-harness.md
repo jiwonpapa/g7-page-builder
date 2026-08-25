@@ -20,7 +20,7 @@
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
 - `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
-- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`와 `check:editor-layout-parity`를 실행합니다. 기존 상호작용 증거와 함께 Puck iframe의 scoped `border-box`, 공개 출력과 같은 content-width 공식, 45종을 모두 포함하는 95개 프리셋과 Page Kit 5종의 가로 overflow·좌우 content edge 비교가 빠지면 제출을 거부합니다.
+- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`와 `check:editor-layout-parity`를 실행합니다. 기존 상호작용 증거와 함께 Puck iframe의 scoped `border-box`, 공개 출력과 같은 content-width 공식, 45종을 모두 포함하는 95개 프리셋과 공식 마켓 적용 API로 미디어까지 해소한 Page Kit 5종의 가로 overflow·좌우 content edge 비교가 빠지면 제출을 거부합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
 - `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.

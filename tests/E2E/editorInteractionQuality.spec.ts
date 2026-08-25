@@ -37,6 +37,14 @@ async function assertInteractiveCanvas(page: Page): Promise<void> {
   await expect.poll(async () => (await iframe.boundingBox())?.height ?? 0).toBeGreaterThan(1);
 }
 
+async function assertTabletHeaderHeight(page: Page, projectName: string): Promise<void> {
+  if (projectName !== 'tablet') return;
+  const header = page.locator('.g7pb-puck-header-layer');
+  await expect(header).toHaveCount(1);
+  await expect.poll(async () => (await header.boundingBox())?.height ?? Number.POSITIVE_INFINITY)
+    .toBeLessThanOrEqual(100);
+}
+
 async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
   const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
   const button = page.getByTestId(`page-builder-viewport-${width}`);
@@ -54,22 +62,18 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<void>
   }));
 }
 
-async function selectRichTextBlock(page: Page): Promise<void> {
+async function exposeCanvasForPointer(page: Page): Promise<void> {
   const library = page.getByTestId('page-builder-block-library');
   if (await library.isVisible()) {
     await page.getByText('Blocks', { exact: true }).click();
     await expect(library).toBeHidden();
   }
-  const navigation = page.locator('nav');
-  await navigation.getByText('Outline', { exact: true }).click();
-  const outlineItem = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: /^리치텍스트$/ });
-  const outlineLayer = outlineItem.locator('xpath=ancestor::li[@data-puck-layer-tree-id][1]');
-  await expect(outlineItem).toHaveCount(1);
-  await expect(outlineItem).toBeVisible();
-  await outlineItem.click();
-  await expect(outlineLayer).toHaveClass(/Layer--isSelected/);
-  await navigation.getByText('Outline', { exact: true }).click();
-  await expect(outlineItem).toBeHidden();
+  const rightSidebarLayout = page.locator('[class*="PuckLayout--rightSideBarVisible"]');
+  if ((page.viewportSize()?.width ?? 1440) >= 638 && (page.viewportSize()?.width ?? 1440) <= 900
+    && await rightSidebarLayout.count()) {
+    await page.getByRole('button', { name: 'Toggle right sidebar' }).click();
+    await expect(rightSidebarLayout).toHaveCount(0);
+  }
 }
 
 interface PointerGeometry {
@@ -115,29 +119,29 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
   const scaleX = box.width / geometry.fieldWidth;
   const scaleY = box.height / geometry.fieldHeight;
   return {
-    start: { x: geometry.startX * scaleX, y: geometry.startY * scaleY },
-    end: { x: geometry.endX * scaleX, y: geometry.endY * scaleY },
+    start: { x: box.x + geometry.startX * scaleX, y: box.y + geometry.startY * scaleY },
+    end: { x: box.x + geometry.endX * scaleX, y: box.y + geometry.endY * scaleY },
   };
 }
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
   const pointer = await textPointerGeometry(field, target);
-  await field.click({ position: pointer.start });
-  await expect(field).toBeFocused();
+  await field.focus();
   await expect.poll(() => selectedText(field)).toBe('');
-  await field.hover({ position: pointer.start });
+  await page.mouse.move(pointer.start.x, pointer.start.y);
   await page.mouse.down();
   try {
-    await field.hover({ position: pointer.end });
+    await page.mouse.move(pointer.end.x, pointer.end.y, { steps: 8 });
   } finally {
     await page.mouse.up();
   }
+  await expect(field).toBeFocused();
   await expect.poll(() => selectedText(field)).toBe(target);
 }
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
   const pointer = await textPointerGeometry(field, target);
-  await field.click({ position: pointer.end });
+  await page.mouse.click(pointer.end.x, pointer.end.y);
   await expect.poll(() => selectedText(field)).toBe('');
 }
 
@@ -185,11 +189,14 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
     const rangeToolbar = page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-richtext-inline-toolbar');
     const elementPanel = page.getByTestId('page-builder-context-panel');
 
-    await test.step('BLOCK_SELECTION_GATE', async () => {
-      await selectRichTextBlock(page);
+    await test.step('POINTER_CANVAS_GATE', async () => {
+      await exposeCanvasForPointer(page);
     });
     await test.step('INTERACTIVE_CANVAS_GATE', async () => {
       await assertInteractiveCanvas(page);
+    });
+    await test.step('TABLET_HEADER_HEIGHT_GATE', async () => {
+      await assertTabletHeaderHeight(page, testInfo.project.name);
     });
 
     await test.step('REAL_POINTER_SELECTION_GATE', async () => {

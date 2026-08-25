@@ -37,9 +37,9 @@ perl -0pi -e 's/page\.mouse\.down\s*\(/page.mouse.click(/' \
 expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.mouse\.click\s*\(/field.click(/' \
+perl -0pi -e 's/field\.click\(\{ position: pointer\.end \}\)/field.focus()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제도 실제 pointer click으로 검증해야 합니다.'
+expect_failure '선택 해제도 iframe 내부 실제 pointer click으로 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
@@ -57,9 +57,9 @@ perl -0pi -e "s/frameLocator\\('iframe'\\)\\.first\\(\\)/frameLocator('iframe')/
 expect_failure '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/await frame\.boundingBox\(\)/await field.boundingBox()/g' \
+perl -0pi -e 's/field\.hover\(\{ position: pointer\.end \}\)/field.focus()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '변환된 iframe의 실제 화면 좌표를 사용해야 합니다.'
+expect_failure 'iframe 내부 선택 끝점에 실제 pointer hover가 필요합니다.'
 
 copy_fixture
 printf '\nselection.addRange(range);\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"

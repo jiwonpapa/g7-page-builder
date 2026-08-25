@@ -22,9 +22,11 @@ function requirePattern(errors, value, pattern, message) {
 
 export async function validateEditorLayoutParity(root) {
   const errors = [];
-  const [packageSource, css, spec] = await Promise.all([
+  const [packageSource, css, publicCss, adapter, spec] = await Promise.all([
     source(root, 'package.json'),
     source(root, 'resources/css/page-builder-editor.css'),
+    source(root, 'resources/css/page-builder-public.css'),
+    source(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
     source(root, REQUIRED_SPEC),
   ]);
   const packageJson = JSON.parse(packageSource);
@@ -58,6 +60,12 @@ export async function validateEditorLayoutParity(root) {
       '오른쪽 container alignment 최종 override가 필요합니다.'],
     [/\.g7pb-preview-block\.g7pb-container-width--full\s*>\s*\*\s*\{\s*padding-inline:\s*0;/,
       'full-width container의 최종 padding reset이 필요합니다.'],
+    [/\.g7pb-full-site-page--template\s*\{[^}]*max-width:\s*80rem;[^}]*padding-inline:\s*1rem;/,
+      '편집기 template shell은 G7 기본 Container의 모바일 여백과 최대 폭을 재현해야 합니다.'],
+    [/@container\s*\(min-width:\s*1024px\)\s*\{\s*\.g7pb-full-site-page--template\s*\{\s*padding-inline:\s*2rem;/,
+      '편집기 template shell은 G7 기본 Container의 데스크톱 여백을 재현해야 합니다.'],
+    [/@container\s*\(max-width:\s*800px\)[\s\S]*\.g7pb-preview-hero-split\s*\{\s*grid-template-columns:\s*1fr;/,
+      '편집기 Hero Split은 768px 경계에서 단일 열로 접혀야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
   if (/100cqw\s*-\s*var\(--g7pb-theme-content-width\)/.test(css)) {
@@ -66,6 +74,12 @@ export async function validateEditorLayoutParity(root) {
   if (/\.g7pb-preview-block\.g7pb-container-align--(?:center|left|right)\s*>\s*\*\s*\{[^}]*margin-(?:inline|left|right)/s.test(css)) {
     errors.push('container alignment는 공개 출력처럼 padding으로 처리하고 편집 child margin으로 재배치하면 안 됩니다.');
   }
+  requirePattern(errors, adapter,
+    /template\s*\?\s*['"] g7pb-full-site-page--template['"]\s*:\s*['"]['"]/,
+    'template shell 전용 G7 Container envelope class를 편집 page root에 적용해야 합니다.');
+  requirePattern(errors, publicCss,
+    /@media\s*\(max-width:\s*800px\)[\s\S]*\.g7pb-hero-split\s*\{\s*grid-template-columns:\s*1fr;/,
+    '공개 Hero Split도 768px 경계에서 편집기와 동일하게 단일 열로 접혀야 합니다.');
 
   const requiredEvidence = [
     [/test\.describe\.configure\(\{\s*retries:\s*0\s*\}\)/, '레이아웃 E2E는 retries: 0으로 실행해야 합니다.'],

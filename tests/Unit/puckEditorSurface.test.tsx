@@ -605,6 +605,31 @@ describe('Puck editor surface contract', () => {
     }
   }, 15_000);
 
+  it('mirrors the active G7 template content envelope only in template shell mode', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<PuckEditorAdapter document={{ ...fixture, shell_mode: 'template' }} revisionKey={0} iframeEnabled={false}
+        onChange={() => undefined} onPublish={() => undefined} />);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-canvas-page"]')).classList)
+      .toContain('g7pb-full-site-page--template');
+
+    await act(async () => {
+      root.render(<PuckEditorAdapter document={{ ...fixture, shell_mode: 'builder' }} revisionKey={1} iframeEnabled={false}
+        onChange={() => undefined} onPublish={() => undefined} />);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-canvas-page"]')).classList)
+      .not.toContain('g7pb-full-site-page--template');
+  });
+
   it('shows builder-owned Header and Footer in the canvas and edits them without leaving the document work surface', async () => {
     const resource = (kind: 'header' | 'footer'): SitePartResource => ({
       title: kind === 'header' ? '사이트 Header' : '사이트 Footer',

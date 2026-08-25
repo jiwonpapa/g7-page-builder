@@ -230,7 +230,7 @@ function FullSiteRoot({ children, design }: { children: React.ReactNode; design:
   return <div className={`g7pb-preview-page ${pageDesignClassName(design)}`}>
     <style data-g7pb-custom-palette="true">{pageDesignCustomCss(design)}</style>
     {(template || builder) ? <FullSiteCanvasPart kind="header" resource={builder ? canvas.header : null} template={template} /> : null}
-    <div className="g7pb-full-site-page" data-testid="page-builder-canvas-page">{children}</div>
+    <div className={`g7pb-full-site-page${template ? ' g7pb-full-site-page--template' : ''}`} data-testid="page-builder-canvas-page">{children}</div>
     {(template || builder) ? <FullSiteCanvasPart kind="footer" resource={builder ? canvas.footer : null} template={template} /> : null}
   </div>;
 }

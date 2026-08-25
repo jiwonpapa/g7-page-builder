@@ -13,6 +13,7 @@ import type { PageBuilderDocument } from '../../resources/js/documents/types';
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const BLOCK_COUNT = 100;
+const PERFORMANCE_SLUG_PATTERN = /^g7pb-perf-\d{13}-[a-z0-9]{6}$/;
 
 const budget = (name: string, fallback: number): number => {
   const configured = Number(process.env[name] ?? fallback);
@@ -187,6 +188,35 @@ async function purgePerformanceDocument(api: APIRequestContext, documentId: stri
   throw new Error('Performance cleanup could not acquire a stable document lock after four attempts.');
 }
 
+async function recoverStalePerformanceDocuments(api: APIRequestContext): Promise<void> {
+  const owned: Array<{ documentId: string; slug: string }> = [];
+  for (let pageNumber = 1; ; pageNumber += 1) {
+    const response = await api.get(
+      `/api/modules/jiwonpapa-page_builder/admin/documents?page=${pageNumber}&per_page=100&status=all`,
+    );
+    if (!response.ok()) throw new Error(`Performance recovery list failed with HTTP ${response.status()}.`);
+    const payload = await response.json() as {
+      data?: {
+        items?: Array<{ title?: unknown; document?: { document_id?: unknown; slug?: unknown } }>;
+        pagination?: { total?: unknown };
+      };
+    };
+    const items = Array.isArray(payload.data?.items) ? payload.data.items : [];
+    for (const item of items) {
+      const documentId = item.document?.document_id;
+      const slug = item.document?.slug;
+      if (typeof documentId === 'string' && typeof slug === 'string'
+        && PERFORMANCE_SLUG_PATTERN.test(slug)
+        && item.title === `100 Block Performance ${slug.replace('g7pb-perf-', '')}`) {
+        owned.push({ documentId, slug });
+      }
+    }
+    const total = payload.data?.pagination?.total;
+    if (typeof total !== 'number' || pageNumber * 100 >= total) break;
+  }
+  for (const item of owned) await purgePerformanceDocument(api, item.documentId, item.slug);
+}
+
 async function measureTyping(page: Page): Promise<number[]> {
   const hero = page.frameLocator('iframe').locator(
     '[data-testid="page-builder-block"][data-block-type="hero"]',
@@ -273,6 +303,7 @@ test('100-block editing stays inside hard interaction and Long Task budgets', as
   let resource: CreatedResource | null = null;
 
   try {
+    await recoverStalePerformanceDocuments(api);
     resource = await createPerformanceDocument(api, runId);
     await page.goto(`${EDITOR_PATH}?document=${resource.document.document_id}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('page-builder-app')).toHaveAttribute('aria-busy', 'false', { timeout: 30_000 });

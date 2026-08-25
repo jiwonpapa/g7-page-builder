@@ -11,6 +11,7 @@ import {
 
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
+const RICH_TEXT_SELECTOR = '[data-testid="page-builder-block"][data-block-type="rich-text"] [contenteditable="true"]';
 const FIRST_TARGET = '굵게 강조하고';
 const SECOND_TARGET = '목록이나 링크';
 
@@ -19,9 +20,7 @@ test.describe.configure({ retries: 0 });
 
 async function richTextField(page: Page): Promise<Locator> {
   await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
-  const fields = page.frameLocator(CANVAS_IFRAME).locator(
-    '[data-testid="page-builder-block"][data-block-type="rich-text"] [contenteditable="true"]:visible',
-  );
+  const fields = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:visible`);
   await expect(fields.first()).toBeVisible();
   const field = fields.first();
   await expect(field).toBeVisible();
@@ -197,6 +196,8 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
   } finally {
     await page.mouse.up();
   }
+  field = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:focus`);
+  await expect(field).toHaveCount(1);
   await expect(field).toBeFocused();
   await expect.poll(async () => (await selectedText(field)).length).toBeGreaterThan(0);
   await normalizePointerRangeWithKeyboard(page, field, target);

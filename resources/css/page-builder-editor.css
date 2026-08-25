@@ -911,10 +911,15 @@
 .g7pb-richtext-inline-toolbar { position: relative; display: flex; max-width: min(46rem, calc(100vw - 1rem)); align-items: center; gap: .2rem; padding: .3rem; border: 1px solid #c7d3e7; border-radius: .65rem; color: #172033; background: #fff; box-shadow: 0 .7rem 2rem rgb(15 23 42 / 18%); }
 .g7pb-richtext-inline-toolbar__marks { display: flex; align-items: center; gap: .1rem; padding-right: .18rem; border-right: 1px solid #e2e8f0; }
 .g7pb-richtext-inline-toolbar :is(button, select, input) { min-height: 1.9rem; border: 1px solid transparent; border-radius: .4rem; color: #334155; background: #f8fafc; font: 750 .68rem/1 inherit; }
-.g7pb-richtext-inline-toolbar select { max-width: 6.3rem; padding: .3rem 1.45rem .3rem .42rem; }
 .g7pb-richtext-inline-toolbar button { min-width: 1.9rem; padding: .32rem .4rem; }
-.g7pb-richtext-inline-toolbar button:hover, .g7pb-richtext-inline-toolbar select:hover { border-color: #b9c8ed; color: #1d4ed8; }
+.g7pb-richtext-inline-toolbar button:hover { border-color: #b9c8ed; color: #1d4ed8; }
+.g7pb-richtext-inline-toolbar button[aria-pressed='true'], .g7pb-richtext-inline-toolbar button[aria-expanded='true'] { border-color: #9db5ef; color: #1d4ed8; background: #eef4ff; }
 .g7pb-richtext-inline-toolbar__icon { display: grid; place-items: center; }
+.g7pb-richtext-inline-toolbar__choice { position: relative; }
+.g7pb-richtext-inline-toolbar__choice > button { display: flex; min-width: 3.2rem; max-width: 6.7rem; align-items: center; justify-content: space-between; gap: .25rem; white-space: nowrap; }
+.g7pb-richtext-inline-toolbar__options { position: absolute; z-index: 4; top: calc(100% + .35rem); left: 0; display: grid; min-width: 7.4rem; gap: .1rem; padding: .3rem; border: 1px solid #c7d3e7; border-radius: .55rem; background: #fff; box-shadow: 0 .7rem 2rem rgb(15 23 42 / 18%); }
+.g7pb-richtext-inline-toolbar__options button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: .5rem; text-align: left; }
+.g7pb-richtext-inline-toolbar__options button[aria-selected='true'] { color: #1d4ed8; background: #eef4ff; }
 .g7pb-richtext-inline-toolbar__link { position: absolute; z-index: 3; top: calc(100% + .4rem); right: 0; display: flex; flex-wrap: wrap; gap: .3rem; width: min(22rem, calc(100vw - 1rem)); padding: .45rem; border: 1px solid #c7d3e7; border-radius: .55rem; background: #fff; box-shadow: 0 .7rem 2rem rgb(15 23 42 / 18%); }
 .g7pb-richtext-inline-toolbar__link label { flex: 1; }
 .g7pb-richtext-inline-toolbar__link input { width: 100%; padding: .35rem .5rem; border-color: #cbd5e1; }

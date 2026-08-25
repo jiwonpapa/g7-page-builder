@@ -53,7 +53,7 @@ import {
 } from './blockMotion';
 import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
 import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
-import { createInlineRichTextField, createRichTextField, RICH_TEXT_RANGE_ACTIVE_MESSAGE, RichTextCanvasField } from './richTextEditing';
+import { createInlineRichTextField, createRichTextField, RICH_TEXT_RANGE_STATE_MESSAGE, RichTextCanvasField } from './richTextEditing';
 import {
   CANVAS_ELEMENT_MESSAGE,
   collectionLimit,
@@ -2744,6 +2744,8 @@ export function PuckEditorAdapter({
   const [siteParts, setSiteParts] = useState<{ header: SitePartResource | null; footer: SitePartResource | null }>({ header: null, footer: null });
   const [sitePartMode, setSitePartMode] = useState<'header' | 'footer' | null>(null);
   const [canvasElementSelection, setCanvasElementSelection] = useState<CanvasElementSelection | null>(null);
+  const canvasElementSelectionRef = useRef<CanvasElementSelection | null>(null);
+  const rangeEditingActiveRef = useRef(false);
   const [canvasMediaDialogOpen, setCanvasMediaDialogOpen] = useState(false);
   const [canvasRouteDialogOpen, setCanvasRouteDialogOpen] = useState(false);
   const [canvasTextToolsOpen, setCanvasTextToolsOpen] = useState(false);
@@ -2771,19 +2773,34 @@ export function PuckEditorAdapter({
 
   useEffect(() => {
     const accept = (selection: CanvasElementSelection): void => {
+      canvasElementSelectionRef.current = selection;
       setCanvasElementSelection(selection);
       setCanvasMediaDialogOpen(false);
       setCanvasRouteDialogOpen(false);
-      if ((selection.role === 'text' || selection.role === 'action') && !selection.rangeEditing) {
-        window.requestAnimationFrame(() => setCanvasTextToolsOpen(true));
+      if (selection.role === 'text' || selection.role === 'action') {
+        window.requestAnimationFrame(() => {
+          if (!rangeEditingActiveRef.current) setCanvasTextToolsOpen(true);
+        });
       } else {
         setCanvasTextToolsOpen(false);
       }
     };
+    const acceptRangeState = (active: boolean): void => {
+      rangeEditingActiveRef.current = active;
+      if (active) {
+        setCanvasTextToolsOpen(false);
+        return;
+      }
+      const selection = canvasElementSelectionRef.current;
+      if (selection?.role !== 'text' && selection?.role !== 'action') return;
+      window.requestAnimationFrame(() => {
+        if (!rangeEditingActiveRef.current) setCanvasTextToolsOpen(true);
+      });
+    };
     const fromMessage = (event: MessageEvent): void => {
       if (event.origin !== window.location.origin) return;
-      if (event.data?.type === RICH_TEXT_RANGE_ACTIVE_MESSAGE) {
-        setCanvasTextToolsOpen(false);
+      if (event.data?.type === RICH_TEXT_RANGE_STATE_MESSAGE) {
+        acceptRangeState(event.data.active === true);
         return;
       }
       if (event.data?.type !== CANVAS_ELEMENT_MESSAGE) return;
@@ -2792,14 +2809,16 @@ export function PuckEditorAdapter({
     const fromCustomEvent = (event: Event): void => {
       if (event instanceof CustomEvent) accept(event.detail as CanvasElementSelection);
     };
-    const closeForRange = (): void => setCanvasTextToolsOpen(false);
+    const fromRangeEvent = (event: Event): void => {
+      if (event instanceof CustomEvent) acceptRangeState(event.detail?.active === true);
+    };
     window.addEventListener('message', fromMessage);
     window.addEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);
-    window.addEventListener(RICH_TEXT_RANGE_ACTIVE_MESSAGE, closeForRange);
+    window.addEventListener(RICH_TEXT_RANGE_STATE_MESSAGE, fromRangeEvent);
     return () => {
       window.removeEventListener('message', fromMessage);
       window.removeEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);
-      window.removeEventListener(RICH_TEXT_RANGE_ACTIVE_MESSAGE, closeForRange);
+      window.removeEventListener(RICH_TEXT_RANGE_STATE_MESSAGE, fromRangeEvent);
     };
   }, []);
 

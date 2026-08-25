@@ -40,7 +40,6 @@ export interface CanvasElementSelection {
     width: number;
     height: number;
   } | null;
-  rangeEditing?: boolean;
 }
 
 interface CollectionLimit {
@@ -399,24 +398,16 @@ export function notifyCanvasElementSelection(
     : null;
   if (!target) return;
 
-  // Puck's Tiptap rich-text surface owns selection-range editing and its own
-  // compact toolbar. Notify the host so an older element-wide balloon closes,
-  // but keep the field selection for the action bar and collection controls.
+  // Tiptap owns range state and reports both activation and collapse through
+  // the dedicated rich-text range contract. This message only identifies the
+  // element, so the host never infers range state from a stale DOM Selection.
   const richText = target.closest<HTMLElement>('[data-g7pb-richtext-field], [data-puck-richtext]');
   if (richText) {
     const fieldPath = richText.dataset.g7pbInlineField ?? target.closest<HTMLElement>('[data-g7pb-inline-field]')?.dataset.g7pbInlineField;
     if (!fieldPath) return;
-    const documentSelection = richText.ownerDocument.getSelection();
-    const rangeEditing = Boolean(
-      documentSelection
-      && !documentSelection.isCollapsed
-      && documentSelection.anchorNode
-      && richText.contains(documentSelection.anchorNode),
-    );
     const selection = {
       ...selectionFromPath(blockId, blockType, fieldPath, 'text'),
       anchor: parentViewportRect(richText),
-      rangeEditing,
     } satisfies CanvasElementSelection;
     const message = { type: CANVAS_ELEMENT_MESSAGE, selection };
     if (window.parent !== window) window.parent.postMessage(message, window.location.origin);

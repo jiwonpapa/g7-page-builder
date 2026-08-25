@@ -135,7 +135,7 @@ describe('canvas editing contract', () => {
     expect(selection).toMatchObject({ fieldPath: 'title', role: 'text', label: '제목' });
   });
 
-  it('distinguishes a rich-text field click from an actual selected text range', () => {
+  it('leaves rich-text range activation to the dedicated Tiptap state contract', () => {
     const frame = document.createElement('iframe');
     document.body.append(frame);
     const frameDocument = frame.contentDocument;
@@ -157,8 +157,8 @@ describe('canvas editing contract', () => {
     expect(selection).toMatchObject({
       fieldPath: 'items.0.body',
       role: 'text',
-      rangeEditing: false,
     });
+    expect(selection).not.toHaveProperty('rangeEditing');
 
     const text = paragraph?.firstChild;
     expect(text).not.toBeNull();
@@ -178,7 +178,7 @@ describe('canvas editing contract', () => {
     expect(selection).toMatchObject({
       fieldPath: 'items.0.body',
       role: 'text',
-      rangeEditing: true,
     });
+    expect(selection).not.toHaveProperty('rangeEditing');
   });
 });

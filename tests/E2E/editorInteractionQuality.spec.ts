@@ -31,43 +31,6 @@ async function selectedText(field: Locator): Promise<string> {
   return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
 }
 
-async function caretTextOffset(field: Locator): Promise<number> {
-  return field.evaluate((element) => {
-    const selection = element.ownerDocument.defaultView?.getSelection();
-    const focusNode = selection?.focusNode;
-    if (!selection?.isCollapsed || !focusNode || !element.contains(focusNode)) return -1;
-    const range = element.ownerDocument.createRange();
-    range.selectNodeContents(element);
-    range.setEnd(focusNode, selection.focusOffset);
-    return range.toString().length;
-  });
-}
-
-async function normalizePointerRangeWithKeyboard(page: Page, field: Locator, target: string): Promise<void> {
-  if (await selectedText(field) === target) return;
-  const desiredStart = await field.evaluate((element, selected) => (element.textContent ?? '').indexOf(selected), target);
-  if (desiredStart < 0) throw new Error(`Keyboard selection target was not found: ${target}`);
-
-  await page.keyboard.press('ArrowLeft');
-  await expect.poll(() => selectedText(field)).toBe('');
-  const currentStart = await caretTextOffset(field);
-  if (currentStart < 0) throw new Error('Pointer selection did not collapse inside the rich-text field.');
-
-  const adjustmentKey = currentStart > desiredStart ? 'ArrowLeft' : 'ArrowRight';
-  for (let offset = 0; offset < Math.abs(currentStart - desiredStart); offset += 1) {
-    await page.keyboard.press(adjustmentKey);
-  }
-  await expect.poll(() => caretTextOffset(field)).toBe(desiredStart);
-
-  await page.keyboard.down('Shift');
-  try {
-    for (let offset = 0; offset < target.length; offset += 1) await page.keyboard.press('ArrowRight');
-  } finally {
-    await page.keyboard.up('Shift');
-  }
-  await expect.poll(() => selectedText(field)).toBe(target);
-}
-
 async function assertInteractiveCanvas(page: Page): Promise<void> {
   const iframe = page.locator(CANVAS_IFRAME);
   await expect.poll(async () => (await iframe.boundingBox())?.width ?? 0).toBeGreaterThan(1);
@@ -199,8 +162,15 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
   field = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:focus`);
   await expect(field).toHaveCount(1);
   await expect(field).toBeFocused();
-  await expect.poll(async () => (await selectedText(field)).length).toBeGreaterThan(0);
-  await normalizePointerRangeWithKeyboard(page, field, target);
+  await expect.poll(() => selectedText(field)).toBe(target);
+}
+
+async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: string): Promise<void> {
+  const trigger = rangeToolbar.getByTestId(testId);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await rangeToolbar.getByRole('option', { name: option, exact: true }).click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 }
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
@@ -269,9 +239,15 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
     });
     await test.step('RANGE_TOOLBAR_EXCLUSIVE_GATE', async () => {
       await expect(elementPanel).toBeHidden();
-      await rangeToolbar.getByTestId('page-builder-richtext-font').selectOption('serif');
-      await rangeToolbar.getByTestId('page-builder-richtext-size').selectOption('large');
-      await rangeToolbar.getByTestId('page-builder-richtext-tone').selectOption('custom1');
+      await rangeToolbar.getByRole('button', { name: '선택한 글자 굵게', exact: true }).click();
+      await expect(field.locator('strong')).toHaveText(FIRST_TARGET);
+      await expect(rangeToolbar).toBeVisible();
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-font', '명조');
+      await expect(rangeToolbar).toBeVisible();
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-size', 'L');
+      await expect(rangeToolbar).toBeVisible();
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-tone', '사용자색 1');
+      await expect(rangeToolbar).toBeVisible();
       const mark = field.locator('span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="custom1"]');
       await expect(mark).toHaveText(FIRST_TARGET);
       await expect(field.locator('span[data-g7pb-font], span[data-g7pb-size], span[data-g7pb-tone]')).toHaveCount(1);
@@ -288,7 +264,8 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
       await dragSelectText(page, field, SECOND_TARGET);
       await expect(rangeToolbar).toBeVisible();
       await expect(elementPanel).toBeHidden();
-      await rangeToolbar.getByTestId('page-builder-richtext-weight').selectOption('bold');
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-weight', '매우 굵게');
+      await expect(rangeToolbar).toBeVisible();
       await expect(field.locator('span[data-g7pb-weight="bold"]')).toHaveText(SECOND_TARGET);
     });
 

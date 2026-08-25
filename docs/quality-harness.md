@@ -20,7 +20,7 @@
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
 - `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
-- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`를 실행합니다. 전용 E2E가 `#puck-canvas-root iframe` 단일성과 0이 아닌 실제 iframe 크기, 좁은 화면의 블록 라이브러리 닫힘, 태블릿 Puck header 100px 높이 예산, contenteditable focus 뒤 iframe 내부 글자 좌표를 실제 page 좌표와 표시 축척으로 변환한 `page.mouse.move → mouse.down → mouse.move → mouse.up` 선택 및 실제 좌표 `click` 해제, browser project와 360/768/1280 내부 canvas 일치, 재시도 0회, 세 viewport, 툴바 상호배타, 저장·미리보기·공개 DOM 서식 증거를 잃거나 합성 Selection으로 바뀌면 제출을 거부합니다.
+- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`를 실행합니다. 전용 E2E가 `#puck-canvas-root iframe` 단일성과 0이 아닌 실제 iframe 크기, 좁은 화면의 블록 라이브러리 닫힘, 태블릿 Puck header 100px 높이 예산, contenteditable focus 뒤 iframe 내부 글자 좌표를 실제 page 좌표와 표시 축척으로 변환한 `page.mouse.move → mouse.down → mouse.move → mouse.up` 선택 및 실제 좌표 `click` 해제, mouse up 직후 정확한 선택 문자열, 실제 툴바 button·option click, browser project와 360/768/1280 내부 canvas 일치, 재시도 0회, 세 viewport, 툴바 상호배타, 저장·미리보기·공개 DOM 서식 증거를 잃으면 제출을 거부합니다. 합성 Selection, Shift·방향키 범위 보정, `selectOption` 직접 주입도 금지합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
 - `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.
@@ -101,7 +101,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
 19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
-20. PC·태블릿·모바일에서 활성 canvas iframe의 contenteditable 내부 문자 좌표를 실제 page 좌표로 변환해 `page.mouse.move → mouse.down → mouse.move → mouse.up` 글자 범위를 선택하고, 실제 page 좌표 `click`으로 선택을 해제합니다. 이때 태블릿 header 100px 예산, 범위 툴바와 요소 전체 벌룬의 상호배타·선택 해제·반복 선택을 확인한 뒤 부분 글꼴·크기·색상·굵기가 저장·reload·preview·public DOM까지 유지되는지 확인
+20. PC·태블릿·모바일에서 활성 canvas iframe의 contenteditable 내부 문자 좌표를 실제 page 좌표로 변환해 `page.mouse.move → mouse.down → mouse.move → mouse.up`만으로 목표 문자열과 정확히 같은 글자 범위를 선택하고, 실제 page 좌표 `click`으로 선택을 해제합니다. Tiptap의 active/inactive 단일 범위 상태가 요소 전체 벌룬과 동기화되는지, 툴바 pointer down이 범위 북마크를 보존하는지, 실제 굵게 button과 글꼴·크기·색상·굵기 option click 뒤에도 툴바가 유지되는지 확인합니다. 이어서 태블릿 header 100px 예산, 같은 필드 반복 선택, 바깥 클릭 닫힘, 저장·reload·preview·public DOM 보존을 확인합니다.
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 
@@ -109,7 +109,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
 
-`scripts/check-editor-acceptance-contract.mjs`는 위 20번을 정적 계약으로도 잠급니다. 전용 spec을 제품 E2E 목록에서 빼거나, retry/viewport skip을 추가하거나, `Selection.addRange`·합성 `selectionchange`로 실제 포인터 순서를 우회하면 `quality-coordination`, `quality-frontend`, `task-submit`, `dev-product-e2e`가 모두 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
+`scripts/check-editor-acceptance-contract.mjs`는 위 20번을 정적 계약으로도 잠급니다. 전용 spec을 제품 E2E 목록에서 빼거나, retry/viewport skip을 추가하거나, `Selection.addRange`·합성 `selectionchange`·Shift 방향키 보정·range toolbar의 `selectOption`으로 실제 포인터와 툴바 조작을 우회하면 `quality-coordination`, `quality-frontend`, `task-submit`, `dev-product-e2e`가 모두 실패합니다. 범위 메시지를 active 전용으로 되돌리거나 툴바 명령 전에 북마크를 복원하지 않아도 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
 
 ## 자동화와 로컬 통합
 

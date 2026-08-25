@@ -2,15 +2,15 @@
 
 ## 결론
 
-G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목록·생성은 G7 공개 admin route/layout으로 기존 관리자 외형을 사용하고, 편집 화면은 G7 Layout Editor와 분리해 Puck을 편집기 커널로 사용합니다. 기본 공개 출력은 활성 User Template의 `_user_base`를 재사용하되 템플릿 파일·layout JSON·DB row는 수정하지 않고, 모듈 소유 user route/layout과 공개 route merge filter로 콘텐츠만 연결합니다.
+G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목록·생성은 G7 공개 admin route/layout으로 기존 관리자 외형을 사용하고, 편집 화면은 G7 Layout Editor와 분리해 Puck을 편집기 커널로 사용합니다. 기본 공개 출력은 활성 User Template의 `_user_base`를 재사용합니다. 선택한 Header·Footer 두 Site Part가 모두 정상 발행되면 공식 post-apply filter가 활성 User Template의 사용자 라우트 전체에 연결하며, 템플릿 파일·layout JSON·DB row는 수정하지 않습니다.
 
 ## 소유권
 
 | 영역 | 소유자 |
 |---|---|
 | `canvas` 콘텐츠 전체 | G7 Page Builder |
-| 기본 site Header·Footer·navigation | 활성 G7 User Template |
-| 선택형 builder shell의 Header·Footer Site Part 문서·리비전·발행본 | G7 Page Builder |
+| Site Part 미발행·장애 시 기본 Header·Footer·navigation | 활성 G7 User Template |
+| 선택형 builder shell과 호환 User Template 공통 Header·Footer Site Part 문서·리비전·발행본 | G7 Page Builder |
 | 기존 HTML 본문 | HtmlEditor/CKEditor |
 | PageBuilderDocument | G7 Page Builder |
 | Block Pack manifest·설치 상태·관리자 즐겨찾기 | G7 Page Builder |
@@ -65,9 +65,11 @@ G7 module-owned canonical route
 - 문서 스키마 v1은 `canvas`만 허용합니다.
 - 기본 `shell_mode=template`의 `/pages/{slug}`는 모듈 user route와 layout을 통해 활성 User Template의 `_user_base` 안에 발행 artifact를 `HtmlContent`로 삽입합니다.
 - `template` 문서를 홈으로 지정한 경우에만 공개 route merge filter가 `/`의 layout을 모듈 home layout으로 교체합니다. 홈 해제·공개 해제·조회 실패 시 원래 G7 템플릿 홈으로 되돌아갑니다.
-- 템플릿 Header·Footer·navigation은 활성 User Template이 소유합니다. Page Builder는 기존 템플릿 파일과 layout을 복사하거나 수정하지 않습니다.
+- Header·Footer Site Part가 모두 발행되고 `sirsoft-basic 1.x (>=1.1)` 호환 프로필이 일치하면 `core.layout_extension.after_apply` 결과에 progressive Site Shell data source와 `HtmlContent` 두 노드를 런타임 주입합니다. 원본 Header·Footer 노드는 삭제하지 않고 셸 조회 전과 `enabled=false` fallback에서 계속 보존하므로 G7 라우트 렌더링을 차단하지 않습니다.
+- 공통 셸 API·컴파일·호환성 중 하나라도 실패하거나 모듈이 비활성화되면 원본 템플릿 Header·Footer·navigation을 사용합니다. admin 템플릿에는 적용하지 않습니다.
 - `shell_mode=builder`에서만 모듈 전용 Header·Footer `SitePartDocument`를 같은 Puck 캔버스에서 편집하고 각각 독립 revision으로 발행합니다.
 - Site Part는 `site.header.*`, `site.footer.*` 블록만 허용하며 발행 시 PHP compiler와 URL allowlist를 통과한 active revision만 공개합니다.
+- 검색·인증·마이페이지·알림·장바구니·테마·언어·통화는 Site Part 문서 필드가 아닙니다. compiler가 고정 마커를 만들고 사전 빌드된 G7 runtime adapter가 공개 state/action/API로만 컨트롤을 구성합니다.
 - 0.6.x의 `SiteShellPort` 값은 최초 Site Part bootstrap 입력과 미발행 fallback으로만 유지하며 전환 후 편집 진입점으로 사용하지 않습니다.
 - 문서는 기본 `shell_mode=template`입니다. Page Builder 자체 shell이 필요한 캠페인은 `builder`, 공통영역 없는 인트로는 `none`을 선택합니다. 구형 `global`은 읽을 때 `builder`로 호환하며 저장 시 정규화합니다. 이 값은 revision과 publication에 함께 snapshot됩니다.
 - 활성 템플릿 route catalog를 G7 공개 service로 읽어 로그인·회원가입·게시판·쇼핑몰·마이페이지·Page Builder 링크를 선택합니다. route parameter는 공개 API 목록 또는 관리자 선택값으로 채우고 최종 문서에는 검증된 URL만 저장합니다.

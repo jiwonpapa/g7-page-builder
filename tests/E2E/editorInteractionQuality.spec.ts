@@ -146,18 +146,26 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
 }
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
-  await field.focus();
-  await expect.poll(() => selectedText(field)).toBe('');
-  await page.evaluate(() => new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-  }));
-  const pointer = await textPointerGeometry(field, target);
-  await field.hover({ position: pointer.start });
-  await page.mouse.down();
-  try {
-    await field.hover({ position: pointer.end, force: true });
-  } finally {
-    await page.mouse.up();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt > 0) {
+      const collapse = await textPointerGeometry(field, target);
+      await field.click({ position: collapse.start });
+    }
+    await field.focus();
+    await expect.poll(() => selectedText(field)).toBe('');
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+    const pointer = await textPointerGeometry(field, target);
+    await field.hover({ position: pointer.start });
+    await page.mouse.down();
+    try {
+      await field.hover({ position: pointer.end, force: true });
+    } finally {
+      await page.mouse.up();
+    }
+    const activeField = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:focus`);
+    if (await activeField.count() === 1 && await selectedText(activeField) === target) break;
   }
   field = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:focus`);
   await expect(field).toHaveCount(1);

@@ -6,6 +6,21 @@
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-08-25
+
+### Added
+
+- Page Builder Header·Footer의 마지막 정상 발행본을 G7 코어·템플릿 파일·DB row 수정 없이 활성 `sirsoft-basic` User Template 전체 사용자 라우트에 적용하는 공식 post-apply bridge를 추가했습니다.
+- 검색·로그인·회원가입·로그아웃·마이페이지·알림·장바구니·테마·언어·통화 기능을 편집 문서와 분리한 고정 G7 runtime control adapter와 기본 라우트 표본 Playwright gate를 추가했습니다.
+
+### Changed
+
+- Header·Footer 두 발행본이 모두 정상이고 템플릿 식별자·버전·필수 shell target이 일치할 때만 공통 셸을 원자적으로 활성화합니다.
+
+### Fixed
+
+- Site Shell API·컴파일·템플릿 호환성 실패 시 원본 G7 Header·Footer·모바일 overlay·drawer가 즉시 유지되도록 fail-safe fallback을 적용했습니다.
+
 ## [0.23.2] - 2026-08-25
 
 ### Added

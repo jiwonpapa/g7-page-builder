@@ -2,7 +2,7 @@
 
 ## 결론
 
-Page Builder는 사이트 템플릿을 대체하지 않습니다. 기본 출력은 현재 활성 G7 User Template이 Header·Footer·navigation·로그인 상태 UI를 맡고, Page Builder는 콘텐츠 artifact만 제공합니다.
+Page Builder는 사이트 템플릿 파일을 대체하지 않습니다. 기본 출력은 현재 활성 G7 User Template이 route·본문·상태·action을 맡고 Page Builder는 콘텐츠 artifact와 선택형 공통 Header·Footer를 제공합니다.
 
 연동은 G7 코어나 기존 템플릿 파일을 수정하지 않고 다음 모듈 소유 선언으로 제한합니다.
 
@@ -11,8 +11,11 @@ Page Builder는 사이트 템플릿을 대체하지 않습니다. 기본 출력�
 - `resources/layouts/user/page_builder_home.json`: 선택형 홈 콘텐츠 layout
 - `resources/layouts/user/page_builder_preview.json`: noindex preview layout
 - `core.routes.filter_merged`: `template` 공개본이 홈으로 지정된 동안에만 `/` layout 교체
+- `core.layout_extension.after_apply`: 지원 User Template의 런타임 병합 결과에만 fail-safe Header·Footer 연결
 
 세 layout은 활성 템플릿의 `_user_base`를 `extends`하고 G7 `HtmlContent`에 서버가 검증한 마지막 정상 발행 HTML만 전달합니다. Puck·React·compiler는 공개 요청에서 실행하지 않습니다.
+
+공통 셸 연결은 route allowlist가 아니라 활성 User Template의 공통 layout 구조를 검사합니다. `sirsoft-basic >=1.1,<2.0`에서 필수 shell ID가 정확히 한 번씩 있을 때만 적용하며, 사용자 기본 route 39개가 공유하는 병합 결과를 대상으로 합니다. admin template, 비활성 template, 미지원 버전, 구조가 바뀐 layout은 원본 그대로 반환합니다.
 
 ## 공개 주소와 홈
 
@@ -57,6 +60,7 @@ Page Builder Site Part의 Header 1·2차 메뉴, CTA, Footer 기본 메뉴와 �
 - user route/layout은 모듈 namespace로만 선언하며 설치·upgrade 시 G7가 sync합니다.
 - 템플릿 변경 후에는 새 active template catalog를 다시 읽습니다. 이미 저장된 URL은 관리자가 명시적으로 바꾸기 전까지 유지합니다.
 - public CSS와 effects는 `.g7pb-page` 아래로 scope하며 활성 템플릿의 전역 typography·layout selector를 덮지 않습니다.
+- Site Shell CSS와 runtime은 `.g7pb-*` 및 `data-g7pb-*` 표면만 사용합니다. `G7Core.__runtime`이나 코어 프론트엔드 내부 경로는 사용하지 않습니다.
 
 ## 회귀 게이트
 
@@ -64,4 +68,5 @@ Page Builder Site Part의 Header 1·2차 메뉴, CTA, Footer 기본 메뉴와 �
 - PHP: route 정규화·동적 shop prefix·admin route 제거·URL/action allowlist
 - Vitest: 검색·parameter 해석·게시판·카테고리·상품 target 변환·logout runtime
 - Playwright: 활성 template 확인, 로그인 route 선택, `/pages/{slug}` template render, 임시 `/` home 연결과 원상 복구
+- 공통 셸 route matrix: `/`, 로그인·회원가입, 게시판, 인기글, 쇼핑, 검색, 오류 route에서 Header·Footer 단일 렌더와 검색·장바구니·인증 링크 확인
 - 로컬·스테이징 smoke: route catalog/public APIs, module user route/layout sync, public CSS asset 확인

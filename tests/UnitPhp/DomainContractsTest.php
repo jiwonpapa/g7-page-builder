@@ -271,6 +271,12 @@ final class DomainContractsTest extends TestCase
         self::assertStringContainsString('class="g7pb-site-subnav"', $artifact->html);
         self::assertStringContainsString('data-g7pb-submenu-toggle', $artifact->html);
         self::assertStringContainsString('data-g7pb-mobile-submenu', $artifact->html);
+        self::assertStringContainsString('data-g7pb-system-controls', $artifact->html);
+        self::assertStringContainsString('data-g7pb-system-theme', $artifact->html);
+        self::assertStringContainsString('data-g7pb-system-search-host', $artifact->html);
+        self::assertStringNotContainsString('<form', $artifact->html);
+        self::assertStringNotContainsString('<select', $artifact->html);
+        self::assertStringContainsString('href="#g7-action-logout"', $artifact->html);
         self::assertStringContainsString('/pages/team', $artifact->html);
         self::assertSame(3, $artifact->sourceRevision);
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $artifact->artifactSha256);

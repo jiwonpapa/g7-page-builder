@@ -1395,7 +1395,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(ctaHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(contactHeading, { exact: true })).toBeVisible();
-    await expect(previewPage.locator('form')).toHaveCount(0);
+    await expect(previewPage.locator('form:not(.g7pb-system-search)')).toHaveCount(0);
     await expect(previewPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
     await expect(previewPage.locator('[data-block-type="hero"]')).toHaveAttribute('data-g7pb-motion', 'parallax-soft');
     await expect(previewPage.locator('[data-block-type="features"]')).toHaveAttribute('data-g7pb-motion', 'stagger');
@@ -1449,7 +1449,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(publicPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(ctaHeading, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(contactHeading, { exact: true })).toBeVisible();
-    await expect(publicPage.locator('form')).toHaveCount(0);
+    await expect(publicPage.locator('form:not(.g7pb-system-search)')).toHaveCount(0);
     await expect(publicPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
     await expect(publicPage.locator('[data-g7pb-slider]')).toHaveCount(3);
     await expect(publicPage.locator('[data-g7pb-slider]').first()).toHaveAttribute('data-g7pb-slider-ready', 'true');
@@ -1814,7 +1814,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     await expect(page.locator('#app')).toBeVisible();
     await expect(page.locator('.g7pb-template-page')).toBeVisible();
     await expect(page.getByText(heroTitle, { exact: true })).toBeVisible();
-    await expect(page.getByTestId('page-builder-site-header')).toHaveCount(0);
+    await expect(page.getByTestId('page-builder-site-header')).toBeVisible();
     await expect(page.locator('[data-block-type="hero"]')).toHaveClass(/is-inview/);
     await expect.poll(() => page.evaluate(() => {
       const config = (window as typeof window & { G7Config?: { moduleAssets?: Record<string, { css?: string; js?: string }> } }).G7Config;

@@ -8,7 +8,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 
 final class SitePartHtmlCompiler
 {
-    public const COMPILER_VERSION = '0.3.0';
+    public const COMPILER_VERSION = '0.4.0';
 
     public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
     {
@@ -21,7 +21,7 @@ final class SitePartHtmlCompiler
             }
 
             $sections[] = match ($type) {
-                'site.header.navigation-01' => $this->compileHeaderNavigation($props),
+                'site.header.navigation-01' => $this->compileHeaderNavigation($props, $document->locale),
                 'site.header.announcement-01' => $this->compileAnnouncement($props),
                 'site.footer.simple-01' => $this->compileSimpleFooter($props),
                 'site.footer.columns-01' => $this->compileColumnsFooter($props),
@@ -41,7 +41,7 @@ final class SitePartHtmlCompiler
     }
 
     /** @param array<string, mixed> $props */
-    private function compileHeaderNavigation(array $props): string
+    private function compileHeaderNavigation(array $props, string $locale): string
     {
         $brand = $this->requiredString($props, 'brand_name', 120);
         $logo = $this->optionalString($props, 'logo_url', 2048) ?? '';
@@ -71,20 +71,51 @@ final class SitePartHtmlCompiler
             : '<img src="'.$this->attribute($logo).'" alt="'.$this->attribute($brand).'">';
         $navigationHtml = $this->navigation($navigation, '주 메뉴', 'g7pb-site-nav');
         $ctaHtml = $ctaLink === null ? '' : '<a class="g7pb-site-header__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
+        $systemControls = $this->systemControls($locale);
         $mobileHtml = '';
         if ($mobileMenu && ($navigation !== [] || $ctaLink !== null)) {
             $mobileLinks = $this->mobileNavigation($navigation);
             $mobileCta = $ctaLink === null ? '' : '<a class="g7pb-mobile-menu__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
-            $close = $mobileMenuStyle === 'dropdown' ? '' : '<button class="g7pb-mobile-menu__close" type="button" aria-label="메뉴 닫기" data-g7pb-menu-close>&times;</button>';
-            $backdrop = $mobileMenuStyle === 'dropdown' ? '' : '<button class="g7pb-mobile-menu__backdrop" type="button" aria-label="메뉴 닫기" data-g7pb-menu-backdrop hidden></button>';
-            $mobileHtml = '<button class="g7pb-menu-toggle" type="button" aria-expanded="false" aria-controls="g7pb-mobile-navigation" aria-label="메뉴 열기" data-g7pb-menu-toggle><span></span></button>'
+            $close = $mobileMenuStyle === 'dropdown' ? '' : '<span class="g7pb-mobile-menu__close" aria-label="메뉴 닫기" data-g7pb-menu-close>&times;</span>';
+            $backdrop = $mobileMenuStyle === 'dropdown' ? '' : '<span class="g7pb-mobile-menu__backdrop" aria-label="메뉴 닫기" data-g7pb-menu-backdrop hidden></span>';
+            $mobileHtml = '<span class="g7pb-menu-toggle" aria-expanded="false" aria-controls="g7pb-mobile-navigation" aria-label="메뉴 열기" data-g7pb-menu-toggle><span></span></span>'
                 .$backdrop.'<nav class="g7pb-mobile-menu g7pb-mobile-menu--'.$mobileMenuStyle.'" id="g7pb-mobile-navigation" aria-label="모바일 메뉴" data-g7pb-mobile-menu data-g7pb-menu-style="'.$mobileMenuStyle.'" hidden>'.$close.'<ul>'.$mobileLinks.'</ul>'.$mobileCta.'</nav>';
         }
 
         $classes = 'g7pb-site-header'.($sticky ? ' is-sticky' : '').($variant === 'transparent' ? ' is-transparent' : '');
+        $actionsHtml = '<div class="g7pb-site-header__actions">'.$ctaHtml.$systemControls.$mobileHtml.'</div>';
 
         return '<header class="'.$classes.'" data-g7pb-site-header data-testid="page-builder-site-header"><div class="g7pb-site-header__inner">'
-            .'<a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$brandContent.'</a>'.$navigationHtml.$ctaHtml.$mobileHtml.'</div></header>';
+            .'<a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$brandContent.'</a>'.$navigationHtml.$actionsHtml.'</div></header>';
+    }
+
+    private function systemControls(string $locale): string
+    {
+        $english = str_starts_with(strtolower($locale), 'en');
+        $labels = $english ? [
+            'controls' => 'Site tools', 'search' => 'Search', 'search_placeholder' => 'Search',
+            'notifications' => 'Notifications', 'cart' => 'Cart', 'theme' => 'Theme',
+            'language' => 'Language', 'currency' => 'Currency', 'login' => 'Log in',
+            'register' => 'Register', 'mypage' => 'My page', 'logout' => 'Log out',
+        ] : [
+            'controls' => '사이트 기능', 'search' => '검색', 'search_placeholder' => '통합 검색',
+            'notifications' => '알림', 'cart' => '장바구니', 'theme' => '화면 모드',
+            'language' => '언어', 'currency' => '통화', 'login' => '로그인',
+            'register' => '회원가입', 'mypage' => '마이페이지', 'logout' => '로그아웃',
+        ];
+
+        return '<nav class="g7pb-system-controls" aria-label="'.$this->attribute($labels['controls']).'" data-g7pb-system-controls>'
+            .'<span data-g7pb-system-search-host data-g7pb-label="'.$this->attribute($labels['search']).'" data-g7pb-placeholder="'.$this->attribute($labels['search_placeholder']).'"></span>'
+            .'<a href="/mypage/notifications" data-g7pb-system-member hidden>'.$this->escape($labels['notifications']).'<span class="g7pb-system-badge" data-g7pb-system-notification-count hidden></span></a>'
+            .'<a href="/shop/cart" data-g7pb-system-cart>'.$this->escape($labels['cart']).'<span class="g7pb-system-badge" data-g7pb-system-cart-count hidden></span></a>'
+            .'<a href="#g7-action-theme" data-g7pb-system-theme>'.$this->escape($labels['theme']).'</a>'
+            .'<span data-g7pb-system-locale-host data-g7pb-label="'.$this->attribute($labels['language']).'"></span>'
+            .'<span data-g7pb-system-currency-host data-g7pb-label="'.$this->attribute($labels['currency']).'"></span>'
+            .'<a href="/login" data-g7pb-system-guest>'.$this->escape($labels['login']).'</a>'
+            .'<a href="/register" data-g7pb-system-guest data-g7pb-system-register>'.$this->escape($labels['register']).'</a>'
+            .'<a href="/mypage" data-g7pb-system-member hidden>'.$this->escape($labels['mypage']).'</a>'
+            .'<a href="#g7-action-logout" data-g7pb-system-member hidden>'.$this->escape($labels['logout']).'</a>'
+            .'</nav>';
     }
 
     /** @param array<string, mixed> $props */
@@ -230,7 +261,7 @@ final class SitePartHtmlCompiler
                 $children,
             ));
             $items[] = '<li class="has-children"><div class="g7pb-mobile-menu__row"><a href="'.$this->attribute($link['url']).'">'.$this->escape($link['label']).'</a>'
-                .'<button type="button" aria-expanded="false" aria-controls="'.$submenuId.'" aria-label="'.$this->attribute($link['label'].' 하위 메뉴 열기').'" data-g7pb-submenu-toggle><span aria-hidden="true">⌄</span></button></div>'
+                .'<span aria-expanded="false" aria-controls="'.$submenuId.'" aria-label="'.$this->attribute($link['label'].' 하위 메뉴 열기').'" data-g7pb-submenu-toggle><span aria-hidden="true">⌄</span></span></div>'
                 .'<ul class="g7pb-mobile-subnav" id="'.$submenuId.'" data-g7pb-mobile-submenu hidden>'.$submenuItems.'</ul></li>';
         }
 

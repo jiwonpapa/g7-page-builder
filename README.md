@@ -11,7 +11,7 @@
 - 이 저장소는 페이지 문서, 리비전, 발행본, 블록 프리셋과 공개 렌더 결과를 소유합니다.
 - `PageBuilderDocument`를 MVP에서는 안전한 HTML로 컴파일하며 G7 JSON UI 출력은 공개 렌더 계약이 생긴 뒤 추가합니다.
 - 기본 모듈은 G7 코어의 lifecycle·Provider·route·migration·admin permission·모듈 소유 admin menu/layout, 활성 User Template의 공개 route/layout merge와 asset serving 표면만 사용합니다.
-- 기본 출력은 현재 활성 User Template의 Header·Footer·navigation을 그대로 사용하고 Page Builder 발행 HTML만 콘텐츠 영역에 삽입합니다. 템플릿 파일·layout JSON·DB row는 수정하지 않습니다.
+- 기본 출력은 활성 User Template의 content 영역에 Page Builder 발행 HTML을 삽입합니다. Header·Footer Site Part 두 발행본을 준비하면 공식 post-apply filter가 활성 User Template 전체 사용자 라우트의 공통 셸에도 적용하며, 실패 시 원본 템플릿 셸로 자동 복귀합니다. 템플릿 파일·layout JSON·DB row는 수정하지 않습니다.
 - `sirsoft-page`와 Layout Editor는 사용하지 않습니다. `sirsoft-board`·`sirsoft-ecommerce`는 공개 route/API가 있을 때 링크 선택기와 데이터 블록에서만 사용하며 hard dependency가 아닙니다.
 - G7의 기존 `페이지 관리`는 메뉴·데이터·URL까지 그대로 보존하고, 별도 `페이지 빌더` 메뉴에서 자체 문서함과 편집기로 진입합니다.
 
@@ -31,7 +31,7 @@ Sanitized published artifact
 
 ## 현재 상태
 
-현재 모듈 버전은 `0.18.0`입니다. 37개 내장 블록·18개 실무 프리셋과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 2단 메뉴·좌우 모바일 drawer·Site Part 프리셋, 반응형·테마·폼·지도·G7 공개 데이터 목록·상세 블록, 공통 로그인 전후 표시 조건, SEO 스냅샷, 미리보기·발행·복구 흐름을 제공합니다.
+현재 모듈 버전은 `0.24.0`입니다. 45개 내장 블록·95개 완성 섹션과 독립 문서함·편집기, Page Builder 소유 Header·Footer, 활성 User Template 전체 사용자 라우트의 fail-safe 공통 셸, 2단 메뉴·좌우 모바일 drawer·Site Part 프리셋, 반응형·테마·폼·지도·G7 공개 데이터 목록·상세 블록, 공통 로그인 전후 표시 조건, SEO 스냅샷, 미리보기·발행·복구 흐름을 제공합니다.
 
 현재 화면의 `무료 마켓`은 독립 마켓이 아니라 공식 무료 Block Pack 1개와 목적별 Page Kit 5개를 담은 정적 catalog로 설치·적용 계약을 검증하는 내부 배포 시험 하네스입니다. Page Kit은 회사 소개, 전문 서비스 상담, 로컬 비즈니스 방문, 컨퍼런스·행사, 에디토리얼·커뮤니티 유형을 제공하며 모두 새 미발행 초안으로만 적용됩니다. 별도 마켓 모듈, DB, 상품 관리자, 업로드·검증·게시 기능은 아직 없습니다. Page Builder 본체와 상품 규격이 안정된 뒤 [Market 모듈 스펙 주도 개발 명세](docs/market-module-spec.md)에 따라 `g7devops.com` 전용 단일 발행자 모듈로 분리합니다. 기존 소비자·무결성 계약은 [공식 무료 배포 프로토타입 계약](docs/official-store-contract.md)에 기록합니다.
 

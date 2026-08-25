@@ -37,18 +37,20 @@
 - 모든 G7 연동은 `src/Infrastructure/Gnuboard7` Adapter에서만 수행한다.
 - 루트 `module.php`는 G7 공개 `AbstractModule`을 연결하는 Composition Root 예외다. 여기에는 비즈니스 로직·DB 접근을 두지 않는다.
 - `src/Providers/*ServiceProvider.php`는 Adapter binding, View·공개 route·middleware 등록만 수행하는 Laravel Composition Root 예외다.
-- 기본 제품의 G7 의존성은 모듈 lifecycle·Provider 발견, API·Web route, migration, admin auth·permission, 모듈 소유 admin menu와 admin route/layout 2개, 활성 User Template route 조회·모듈 소유 user route 2개/layout 3개, route merge filter, 정적 asset serving으로 제한한다.
+- 기본 제품의 G7 의존성은 모듈 lifecycle·Provider 발견, API·Web route, migration, admin auth·permission, 모듈 소유 admin menu와 admin route/layout 2개, 활성 User Template route 조회·모듈 소유 user route 2개/layout 3개, route merge filter, 공식 `core.layout_extension.after_apply` 후처리 filter, 정적 asset serving으로 제한한다.
 - custom role은 등록하지 않는다. `페이지 빌더` 전용 admin menu 하나만 별도 등록한다.
 - G7 기본 `페이지 관리` 메뉴·slug·URL·데이터를 재사용·수정·숨김·대체하지 않는다.
-- 기본 출력은 활성 User Template의 `_user_base`를 사용하되 기존 템플릿 파일·layout JSON·DB row는 수정하지 않는다. Page Builder 모듈이 선언한 정확히 2개 user route와 3개 user layout만 merge한다.
-- `sirsoft-page`, Layout Extension, Layout Editor는 사용하지 않는다. `sirsoft-board`와 `sirsoft-ecommerce`는 route/data 선택기의 공개 API capability로만 조회하며 모듈 hard dependency로 만들지 않는다.
+- 기본 출력은 활성 User Template의 `_user_base`를 사용하되 기존 템플릿 파일·layout JSON·DB row는 수정하지 않는다. Page Builder 모듈이 선언한 정확히 2개 user route와 3개 user layout만 merge하고, 호환 프로필이 일치할 때만 공식 post-apply filter로 발행 Site Part를 런타임 결과에 연결한다.
+- `sirsoft-page`, Layout Extension 저장소·overlay·Layout Editor는 사용하지 않는다. `sirsoft-board`와 `sirsoft-ecommerce`는 route/data 선택기의 공개 API capability로만 조회하며 모듈 hard dependency로 만들지 않는다.
 - 선택형 G7 Adapter와 Block Pack은 capability가 없으면 해당 선택지만 비활성화하고 문서 저장·독립 shell 발행·마지막 정상 발행본에 영향을 주지 않는다.
 - G7 내부 프론트엔드 경로(`resources/js/core/**`)와 `G7Core.__runtime`을 사용하지 않는다.
 - G7 또는 번들 모듈의 Model·Repository·DB 테이블을 직접 참조하지 않는다.
-- 기존 템플릿 파일과 레이아웃 파일을 수정하지 않는다. User Template 연결은 이 모듈의 `resources/routes/user.json`, `resources/layouts/user/**`와 공개 route merge filter로만 수행한다.
+- 기존 템플릿 파일과 레이아웃 파일을 수정하지 않는다. User Template 연결은 이 모듈의 `resources/routes/user.json`, `resources/layouts/user/**`, 공개 route merge filter와 공식 post-apply filter로만 수행한다.
 - 페이지 빌더는 자기 모듈의 문서·리비전·발행본 테이블만 소유한다.
 - 기본 `shell_mode=template` 공개 페이지는 활성 User Template이 site header·footer·navigation을 소유하고, Page Builder layout의 `HtmlContent` 영역에 마지막 정상 발행본만 삽입한다.
 - `shell_mode=builder`는 Page Builder가 소유한 Header·Footer Site Part를 포함한 독립 viewer, `shell_mode=none`은 공통영역 없는 독립 viewer를 사용한다. 구형 `global`은 읽을 때 `builder`로 호환한다.
+- Header·Footer Site Part 두 발행본이 모두 정상이고 활성 User Template 호환 프로필이 일치하면 사용자 기본 라우트 전체에 Page Builder 셸을 적용한다. API·컴파일·호환성 실패 시 원본 G7 Header·Footer를 렌더하며 admin route는 적용 대상이 아니다.
+- 검색·로그인·회원가입·로그아웃·마이페이지·알림·장바구니·테마·언어·통화 컨트롤은 편집 문서 필드가 아니라 모듈 소유 고정 G7 runtime adapter가 제공한다. 문서는 endpoint·handler·인증 동작을 소유하거나 수정하지 않는다.
 - 페이지 빌더 원본은 `PageBuilderDocument`이며 HTML과 G7 JSON UI는 교체 가능한 생성 결과물이다.
 - 생성된 HTML·JSON UI와 편집기 벤더 상태를 원본처럼 직접 수정하거나 저장하지 않는다.
 

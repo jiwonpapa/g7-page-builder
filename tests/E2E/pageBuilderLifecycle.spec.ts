@@ -1172,7 +1172,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(rangeToolbar).toBeVisible();
       await chooseRangeOption(rangeToolbar, 'page-builder-richtext-font', '명조');
       await chooseRangeOption(rangeToolbar, 'page-builder-richtext-size', 'L');
-      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-tone', '강조');
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-tone', '강조색');
       const selectedMark = richTextBlock.locator('span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="accent"]');
       await expect(selectedMark).toHaveText(selectedText);
       await expect(richTextBlock.locator('[contenteditable="true"]')).toContainText('방문자가 이해해야 할 내용을 읽기 편한 문단');

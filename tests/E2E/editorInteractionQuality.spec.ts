@@ -45,6 +45,7 @@ async function caretTextOffset(field: Locator): Promise<number> {
 }
 
 async function normalizePointerRangeWithKeyboard(page: Page, field: Locator, target: string): Promise<void> {
+  if (await selectedText(field) === target) return;
   const desiredStart = await field.evaluate((element, selected) => (element.textContent ?? '').indexOf(selected), target);
   if (desiredStart < 0) throw new Error(`Keyboard selection target was not found: ${target}`);
 

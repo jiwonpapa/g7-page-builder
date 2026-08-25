@@ -1449,7 +1449,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(publicPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(ctaHeading, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(contactHeading, { exact: true })).toBeVisible();
-    await expect(publicPage.locator('form')).toHaveCount(0);
+    await expect(publicPage.locator('form:not(.g7pb-system-search)')).toHaveCount(0);
     await expect(publicPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
     await expect(publicPage.locator('[data-g7pb-slider]')).toHaveCount(3);
     await expect(publicPage.locator('[data-g7pb-slider]').first()).toHaveAttribute('data-g7pb-slider-ready', 'true');

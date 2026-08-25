@@ -155,7 +155,7 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
   await field.hover({ position: pointer.start });
   await page.mouse.down();
   try {
-    await field.hover({ position: pointer.end });
+    await field.hover({ position: pointer.end, force: true });
   } finally {
     await page.mouse.up();
   }

@@ -69,7 +69,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/test\.describe\.configure\(\{\s*retries:\s*0\s*\}\)/, '전용 E2E는 retries: 0으로 실행해야 합니다.'],
     [/page\.mouse\.down\s*\(/, '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'],
     [/field\.hover\(\{\s*position:\s*pointer\.start\s*\}\)/, 'iframe 축척을 반영한 locator pointer 시작 이동이 필요합니다.'],
-    [/field\.hover\(\{\s*position:\s*pointer\.end\s*\}\)/, 'iframe 축척을 반영한 locator pointer 범위 드래그가 필요합니다.'],
+    [/field\.hover\(\{\s*position:\s*pointer\.end,\s*force:\s*true\s*\}\)/, 'DnD overlay 중에도 실제 pointer 종료 이동을 보내는 forced locator hover가 필요합니다.'],
     [/field\.focus\(\)/, '범위 선택 전 contenteditable focus가 필요합니다.'],
     [/expect\(field\)\.toBeFocused\(\)/, '실제 pointer 드래그 뒤 contenteditable focus를 확인해야 합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],

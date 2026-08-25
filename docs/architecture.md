@@ -65,7 +65,7 @@ G7 module-owned canonical route
 - 문서 스키마 v1은 `canvas`만 허용합니다.
 - 기본 `shell_mode=template`의 `/pages/{slug}`는 모듈 user route와 layout을 통해 활성 User Template의 `_user_base` 안에 발행 artifact를 `HtmlContent`로 삽입합니다.
 - `template` 문서를 홈으로 지정한 경우에만 공개 route merge filter가 `/`의 layout을 모듈 home layout으로 교체합니다. 홈 해제·공개 해제·조회 실패 시 원래 G7 템플릿 홈으로 되돌아갑니다.
-- Header·Footer Site Part가 모두 발행되고 `sirsoft-basic 1.x (>=1.1)` 호환 프로필이 일치하면 `core.layout_extension.after_apply` 결과에 blocking Site Shell data source와 `HtmlContent` 두 노드를 런타임 주입합니다. 원본 Header·Footer 노드는 삭제하지 않고 `enabled=false` fallback 조건으로 보존합니다.
+- Header·Footer Site Part가 모두 발행되고 `sirsoft-basic 1.x (>=1.1)` 호환 프로필이 일치하면 `core.layout_extension.after_apply` 결과에 progressive Site Shell data source와 `HtmlContent` 두 노드를 런타임 주입합니다. 원본 Header·Footer 노드는 삭제하지 않고 셸 조회 전과 `enabled=false` fallback에서 계속 보존하므로 G7 라우트 렌더링을 차단하지 않습니다.
 - 공통 셸 API·컴파일·호환성 중 하나라도 실패하거나 모듈이 비활성화되면 원본 템플릿 Header·Footer·navigation을 사용합니다. admin 템플릿에는 적용하지 않습니다.
 - `shell_mode=builder`에서만 모듈 전용 Header·Footer `SitePartDocument`를 같은 Puck 캔버스에서 편집하고 각각 독립 revision으로 발행합니다.
 - Site Part는 `site.header.*`, `site.footer.*` 블록만 허용하며 발행 시 PHP compiler와 URL allowlist를 통과한 active revision만 공개합니다.

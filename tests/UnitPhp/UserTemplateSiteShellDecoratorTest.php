@@ -18,7 +18,7 @@ final class UserTemplateSiteShellDecoratorTest extends TestCase
         self::assertFalse($decorator->supports('custom-user', '1.1.1', 'user'));
     }
 
-    public function test_it_injects_one_blocking_shell_source_and_preserves_native_nodes_as_fallback(): void
+    public function test_it_injects_one_progressive_shell_source_and_preserves_native_nodes_as_fallback(): void
     {
         $decorated = (new UserTemplateSiteShellDecorator)->decorate($this->layout());
 
@@ -28,7 +28,7 @@ final class UserTemplateSiteShellDecoratorTest extends TestCase
             "/api/modules/jiwonpapa-page_builder/public/site-shell?locale={{_global.locale ?? 'ko'}}",
             $decorated['data_sources'][1]['endpoint'],
         );
-        self::assertSame('blocking', $decorated['data_sources'][1]['loading_strategy']);
+        self::assertSame('progressive', $decorated['data_sources'][1]['loading_strategy']);
         self::assertFalse($decorated['data_sources'][1]['fallback']['data']['shell']['enabled']);
 
         $ids = $this->ids($decorated);

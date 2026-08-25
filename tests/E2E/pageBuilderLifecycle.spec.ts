@@ -1814,7 +1814,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     await expect(page.locator('#app')).toBeVisible();
     await expect(page.locator('.g7pb-template-page')).toBeVisible();
     await expect(page.getByText(heroTitle, { exact: true })).toBeVisible();
-    await expect(page.getByTestId('page-builder-site-header')).toHaveCount(0);
+    await expect(page.getByTestId('page-builder-site-header')).toBeVisible();
     await expect(page.locator('[data-block-type="hero"]')).toHaveClass(/is-inview/);
     await expect.poll(() => page.evaluate(() => {
       const config = (window as typeof window & { G7Config?: { moduleAssets?: Record<string, { css?: string; js?: string }> } }).G7Config;

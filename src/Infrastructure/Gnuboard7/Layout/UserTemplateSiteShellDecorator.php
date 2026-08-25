@@ -6,7 +6,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Layout;
  * 활성 User Template의 병합 결과에 Page Builder Site Part를 fail-safe로 연결합니다.
  *
  * 원본 노드는 삭제하지 않고 조건만 추가합니다. 공개 API가 실패하거나 두 Site Part 중
- * 하나라도 없으면 blocking data source의 fallback이 enabled=false가 되어 원본 셸이 렌더됩니다.
+ * 하나라도 없으면 progressive data source의 fallback이 enabled=false가 되어 원본 셸이 유지됩니다.
  */
 final class UserTemplateSiteShellDecorator
 {
@@ -228,7 +228,7 @@ final class UserTemplateSiteShellDecorator
             'method' => 'GET',
             'auto_fetch' => true,
             'auth_required' => false,
-            'loading_strategy' => 'blocking',
+            'loading_strategy' => 'progressive',
             'fallback' => [
                 'data' => [
                     'shell' => [

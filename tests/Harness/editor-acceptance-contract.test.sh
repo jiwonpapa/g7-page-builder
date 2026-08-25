@@ -47,6 +47,11 @@ perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
 expect_failure 'browser project와 내부 canvas viewport 일치 gate가 필요합니다.'
 
 copy_fixture
+perl -0pi -e 's/BLOCK_SELECTION_GATE/BLOCK_SELECTION_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '실제 글자 드래그 전에 편집 블록 선택 gate가 필요합니다.'
+
+copy_fixture
 perl -0pi -e "s/projectName === 'mobile' \? 360 : projectName === 'tablet' \? 768 : 1280/1280/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'

@@ -32,6 +32,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\OfficialStoreDistributionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
@@ -645,6 +646,18 @@ final class PublicationPersistenceTest extends TestCase
         self::assertStringNotContainsString("'unsafe-eval'", $contentSecurityPolicy);
         self::assertStringNotContainsString("script-src 'self' 'unsafe-inline'", $contentSecurityPolicy);
         self::assertSame(304, $notModifiedResponse->getStatusCode());
+    }
+
+    public function test_official_store_demo_allows_only_supported_embedded_media_frames(): void
+    {
+        $response = (new OfficialStoreDistributionController)->demo('local-business');
+        $contentSecurityPolicy = (string) $response->headers->get('Content-Security-Policy');
+
+        self::assertStringContainsString(
+            'frame-src https://www.openstreetmap.org https://www.google.com https://www.youtube-nocookie.com https://player.vimeo.com',
+            $contentSecurityPolicy,
+        );
+        self::assertStringNotContainsString('frame-src *', $contentSecurityPolicy);
     }
 
     public function test_metadata_only_republish_changes_the_representation_etag(): void

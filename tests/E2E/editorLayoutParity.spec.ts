@@ -380,6 +380,25 @@ async function expectStableVisibleGeometry(blocks: Locator, expectedCount: numbe
   }, { timeout: 60_000, intervals: [100, 150, 250, 500] }).toBe(true);
 }
 
+async function expectProductCanvasStyles(root: Locator): Promise<void> {
+  await expect.poll(() => root.evaluate((element) => {
+    const style = element.ownerDocument.defaultView?.getComputedStyle(element);
+    return style?.getPropertyValue('container-type') === 'inline-size'
+      && style.getPropertyValue('--g7pb-theme-content-width').trim() !== '';
+  }), { timeout: 60_000 }).toBe(true);
+}
+
+async function expectProductPublicStyles(blocks: Locator): Promise<void> {
+  await expect.poll(() => blocks.first().evaluate((element) => {
+    const theme = element.closest('.g7pb-document-theme');
+    if (!theme) return false;
+    const themeStyle = element.ownerDocument.defaultView?.getComputedStyle(theme);
+    const blockStyle = element.ownerDocument.defaultView?.getComputedStyle(element);
+    return themeStyle?.getPropertyValue('--g7pb-theme-content-width').trim() !== ''
+      && blockStyle?.boxSizing === 'border-box';
+  }), { timeout: 60_000 }).toBe(true);
+}
+
 function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: LayoutMetric[]): void {
   expect(editorMetrics.map((metric) => metric.blockId)).toEqual(previewMetrics.map((metric) => metric.blockId));
   expect(editorMetrics.map((metric) => metric.blockType)).toEqual(previewMetrics.map((metric) => metric.blockType));
@@ -428,10 +447,12 @@ async function assertScenario(
   await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
   const editorBlocks = page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-block');
   await expect(editorBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
-  const editorMetrics = await layoutMetrics(editorBlocks, true);
-  expectBlockContainment(editorMetrics, `${scenario.label} editor`);
   const editorRoot = page.frameLocator(CANVAS_IFRAME).locator('.g7pb-preview-page');
   await expect(editorRoot).toBeVisible();
+  await expectProductCanvasStyles(editorRoot);
+  await expectStableVisibleGeometry(editorBlocks, scenario.expectedBlockCount);
+  const editorMetrics = await layoutMetrics(editorBlocks, true);
+  expectBlockContainment(editorMetrics, `${scenario.label} editor`);
   await expectDocumentContained(editorRoot, `${scenario.label} editor product root overflow`);
 
   const previewLink = page.getByTestId('page-builder-preview-link');
@@ -455,20 +476,13 @@ async function assertScenario(
   const preview = await context.newPage();
   try {
     await preview.setViewportSize({ width, height: 900 });
-    const templateLayoutResponsePromise = owned.document.shell_mode === 'template'
-      ? preview.waitForResponse((candidate) => new URL(candidate.url()).pathname.startsWith('/api/layouts/preview/'), { timeout: 60_000 })
-      : Promise.resolve(null);
     const response = await preview.goto(previewUrl);
     expect(response?.ok()).toBe(true);
-    const templateLayoutResponse = await templateLayoutResponsePromise;
-    if (templateLayoutResponse) {
-      expect(templateLayoutResponse.ok()).toBe(true);
-      await templateLayoutResponse.finished();
-    }
     const previewBlocks = preview.getByTestId('page-builder-rendered-block');
     await expect(previewBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
     await expect(previewBlocks.first()).toBeVisible({ timeout: 60_000 });
     await expect(previewBlocks.last()).toBeVisible({ timeout: 60_000 });
+    await expectProductPublicStyles(previewBlocks);
     await expectStableVisibleGeometry(previewBlocks, scenario.expectedBlockCount);
     const standalonePreviewRoot = preview.getByTestId('page-builder-preview-root');
     const previewRoot = await standalonePreviewRoot.count() === 1

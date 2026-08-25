@@ -117,9 +117,14 @@ perl -0pi -e 's/expect\(previewBlocks\.first\(\)\)\.toBeVisible/expect(previewBl
 expect_failure 'G7 template route 전환 중 숨은 slot을 측정하지 않도록 preview block 가시 상태를 기다려야 합니다.'
 
 copy_fixture
-perl -0pi -e "s#/api/layouts/preview/#/api/layouts/bypassed/#" \
+perl -0pi -e 's/expectProductCanvasStyles\(editorRoot\)/Promise.resolve()/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
-expect_failure 'template shell은 실제 G7 preview layout API 응답 뒤에 geometry를 측정해야 합니다.'
+expect_failure 'Puck iframe은 제품 CSS 적용과 geometry 안정화 뒤에 측정해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/expectProductPublicStyles\(previewBlocks\)/Promise.resolve()/' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure 'preview는 제품 공개 CSS 적용과 geometry 안정화 뒤에 측정해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's# ?tests/E2E/editorLayoutParity\.spec\.ts##' "$fixture_root/fixture/package.json"

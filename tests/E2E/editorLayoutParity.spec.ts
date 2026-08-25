@@ -440,10 +440,13 @@ async function assertScenario(
     await preview.setViewportSize({ width, height: 900 });
     const response = await preview.goto(previewUrl);
     expect(response?.ok()).toBe(true);
-    const previewRoot = preview.getByTestId('page-builder-preview-root');
-    await expect(previewRoot).toBeVisible();
     const previewBlocks = preview.getByTestId('page-builder-rendered-block');
     await expect(previewBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
+    const standalonePreviewRoot = preview.getByTestId('page-builder-preview-root');
+    const previewRoot = await standalonePreviewRoot.count() === 1
+      ? standalonePreviewRoot
+      : preview.locator('html');
+    await expect(previewRoot).toBeVisible();
     await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
     const previewMetrics = await layoutMetrics(previewBlocks, false);
     expectLayoutParity(editorMetrics, previewMetrics);

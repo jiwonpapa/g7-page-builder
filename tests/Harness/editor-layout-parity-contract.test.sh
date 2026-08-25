@@ -68,6 +68,11 @@ perl -0pi -e 's/root\.scrollWidth - root\.clientWidth/0/' \
 expect_failure 'iframe/preview document 가로 overflow 측정이 필요합니다.'
 
 copy_fixture
+perl -0pi -e "s/preview\.locator\('html'\)/preview.locator('body')/" \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure 'template shell 미리보기는 G7 문서 root까지 가로 overflow를 검사해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's# ?tests/E2E/editorLayoutParity\.spec\.ts##' "$fixture_root/fixture/package.json"
 expect_failure 'test:e2e:product가 tests/E2E/editorLayoutParity.spec.ts를 반드시 실행해야 합니다.'
 

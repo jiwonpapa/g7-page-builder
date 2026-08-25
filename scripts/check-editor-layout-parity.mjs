@@ -88,6 +88,8 @@ export async function validateEditorLayoutParity(root) {
     [/previewLink\.evaluate\(\(element\)\s*=>\s*element\.tagName\s*===\s*['"]BUTTON['"]\)[\s\S]*await previewLink\.click\(\)/,
       '초안 변경으로 미리보기 ticket이 무효화되면 실제 생성 버튼 흐름을 실행해야 합니다.'],
     [/page-builder-rendered-block/, '실제 컴파일 결과 block 검증이 필요합니다.'],
+    [/standalonePreviewRoot\.count\(\)\s*===\s*1[\s\S]*preview\.locator\(['"]html['"]\)/,
+      'template shell 미리보기는 G7 문서 root까지 가로 overflow를 검사해야 합니다.'],
   ];
   for (const [pattern, message] of requiredEvidence) requirePattern(errors, spec, pattern, message);
 

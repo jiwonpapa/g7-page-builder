@@ -4,6 +4,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controller
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\EmbeddedFramePolicy;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class OfficialStoreDistributionController
@@ -118,7 +119,7 @@ final class OfficialStoreDistributionController
             ->header('X-Robots-Tag', 'noindex, nofollow')
             ->header(
                 'Content-Security-Policy',
-                "default-src 'none'; img-src 'self' https: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'",
+                "default-src 'none'; img-src 'self' https: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; ".EmbeddedFramePolicy::directive()."; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'",
             );
     }
 

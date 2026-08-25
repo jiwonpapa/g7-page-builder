@@ -196,7 +196,6 @@ Route::get('public/home', [PublicPageController::class, 'home'])
     ->name('public.home');
 
 Route::get('public/site-shell', [PublicSiteShellController::class, 'show'])
-    ->middleware('throttle:120,1')
     ->name('public.site-shell.show');
 
 Route::get('public/previews/{token}', [PublicPageController::class, 'preview'])

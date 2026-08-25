@@ -73,6 +73,13 @@ test('applies one fail-safe Page Builder Header and Footer across representative
     const shellPayload = await shell.json() as { data?: { shell?: { enabled?: unknown } } };
     expect(shellPayload.data?.shell?.enabled).toBe(true);
 
+    if (!READ_ONLY) {
+      for (let requestNumber = 1; requestNumber <= 121; requestNumber += 1) {
+        const repeated = await api.get(`/api/modules/jiwonpapa-page_builder/public/site-shell?locale=${encodeURIComponent(locale)}`);
+        expect(repeated.status(), `public Site Shell request ${requestNumber}`).toBe(200);
+      }
+    }
+
     for (const route of ['/', '/login', '/register', '/boards', '/boards/popular', '/shop/products', '/search?q=page-builder', '/404']) {
       const response = await page.goto(route);
       if (route === '/404') expect([200, 404], route).toContain(response?.status());

@@ -961,6 +961,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(page.getByTestId('page-builder-block-option-bar-chart')).toBeVisible();
     await expect(page.getByTestId('page-builder-block-option-hero')).toHaveCount(0);
     await blockSearch.fill('');
+    await blockGallery.getByRole('tab', { name: /블록 종류/ }).click();
+    const galleryGrid = blockGallery.locator('.g7pb-block-gallery__grid');
+    await expect(galleryGrid).toHaveAttribute('data-total-items', '45');
+    await expect(galleryGrid).toHaveAttribute('data-rendered-items', '24');
+    await blockGallery.getByTestId('page-builder-gallery-load-more').click();
+    await expect(galleryGrid).toHaveAttribute('data-rendered-items', '45');
     for (const option of [
       'hero',
       'heading',

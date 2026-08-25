@@ -35,4 +35,14 @@ if (/<style(?:\s|>)/i.test(viewer)) {
   throw new Error('Public viewer CSS must not be embedded in Blade.');
 }
 
+const managerCss = readFileSync(join(root, 'resources/css/page-builder-manager.css'), 'utf8');
+const editorCss = readFileSync(join(root, 'resources/css/page-builder-editor.css'), 'utf8');
+if (!managerCss.includes('@media (max-width: 720px)')
+  || !managerCss.includes('.g7pb-store-card {')) {
+  throw new Error('Manager responsive CSS must stay in the Manager bundle.');
+}
+if (/\.g7pb-(?:store|manager|document-(?:row|list)|revision-row)/.test(editorCss)) {
+  throw new Error('Manager-only selectors must not leak into the Editor CSS bundle.');
+}
+
 console.log(`Frontend budgets: OK\n${report.join('\n')}`);

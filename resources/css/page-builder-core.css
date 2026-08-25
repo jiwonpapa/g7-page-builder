@@ -639,3 +639,21 @@ body.g7pb-manager-shell {
 .g7pb-dialog .g7pb-choice-row span {
   grid-column: 2;
 }
+
+@keyframes g7pb-pulse {
+  50% { opacity: .35; }
+}
+
+@keyframes g7pb-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes g7pb-dialog-enter {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+}
+
+@media (max-width: 720px) {
+  .g7pb-dialog {
+    padding: 22px;
+  }
+}

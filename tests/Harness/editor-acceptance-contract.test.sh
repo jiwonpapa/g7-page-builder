@@ -44,9 +44,9 @@ perl -0pi -e 's/page\.mouse\.down\s*\(/page.mouse.click(/' \
 expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.mouse\.click\(pointer\.end\.x, pointer\.end\.y\)/field.focus()/' \
+perl -0pi -e 's/field\.click\(\{ position: pointer\.end \}\)/field.focus()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제도 실제 화면 좌표의 pointer click으로 검증해야 합니다.'
+expect_failure '선택 해제도 실제 locator 좌표의 pointer click으로 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
@@ -79,9 +79,9 @@ perl -0pi -e "s/#puck-canvas-root iframe/iframe/" \
 expect_failure 'Puck canvas 고유 iframe selector를 고정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: 8 \}\)/field.focus()/g' \
+perl -0pi -e 's/field\.hover\(\{ position: pointer\.end \}\)/field.focus()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'iframe 축척을 반영한 실제 pointer 범위 드래그가 필요합니다.'
+expect_failure 'iframe 축척을 반영한 locator pointer 범위 드래그가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/await field\.focus\(\);/await page.keyboard.press("Tab");/' \
@@ -99,9 +99,9 @@ perl -0pi -e 's/const scaleX = box\.width \/ geometry\.fieldWidth;/const scaleX 
 expect_failure 'iframe의 실제 가로 축척을 pointer 좌표에 반영해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/box\.x \+ geometry\.startX \* scaleX/geometry.startX * scaleX/' \
+perl -0pi -e 's/x: geometry\.startX \* scaleX/x: geometry.startX/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 시작점을 실제 page 좌표로 변환해야 합니다.'
+expect_failure '선택 시작점을 실제 locator 좌표로 변환해야 합니다.'
 
 copy_fixture
 printf '\nconsole.log("temporary geometry");\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
@@ -134,6 +134,11 @@ copy_fixture
 perl -0pi -e 's/setTextSelection\(bookmark\)/setTextSelection(editor.state.selection.to)/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '툴바 명령 전에 저장한 선택 범위를 복원해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/onMouseDownCapture=\{preserveRangeBeforeToolbarAction\}//' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '툴바 mouse down에서 선택 범위 붕괴를 차단해야 합니다.'
 
 copy_fixture
 printf '\nconst rangeEditing = window.getSelection();\n' \

@@ -234,11 +234,16 @@ function G7RichTextInlineMenu({ editor, readOnly }: {
     if (!editor || !bookmark || bookmark.from === bookmark.to) return null;
     return editor.chain().focus().setTextSelection(bookmark);
   };
-  const preserveRangeOnPointerDown = (event: React.PointerEvent<HTMLDivElement>): void => {
+  const preserveRangeBeforeToolbarAction = (
+    event: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>,
+  ): void => {
     if (editor && !editor.state.selection.empty) {
       bookmarkRef.current = { from: editor.state.selection.from, to: editor.state.selection.to };
     }
-    if (event.target instanceof Element && event.target.closest('button')) event.preventDefault();
+    if (event.target instanceof Element && event.target.closest('button')) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   };
   const updateMark = (patch: Partial<{ font: FontValue; size: SizeValue; weight: WeightValue; tone: ToneValue }>): void => {
     if (!editor || readOnly) return;
@@ -278,7 +283,9 @@ function G7RichTextInlineMenu({ editor, readOnly }: {
 
   return (
     <div className="g7pb-richtext-inline-toolbar" role="toolbar" aria-label="선택한 글자 서식"
-      data-testid="page-builder-richtext-inline-toolbar" onPointerDownCapture={preserveRangeOnPointerDown}>
+      data-testid="page-builder-richtext-inline-toolbar"
+      onPointerDownCapture={preserveRangeBeforeToolbarAction}
+      onMouseDownCapture={preserveRangeBeforeToolbarAction}>
       <div className="g7pb-richtext-inline-toolbar__marks">
         <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="선택한 글자 굵게"
           aria-pressed={editor?.isActive('bold') ?? false} disabled={readOnly} onClick={() => toggleNativeMark('bold')}>

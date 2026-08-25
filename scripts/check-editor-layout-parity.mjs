@@ -48,6 +48,8 @@ export async function validateEditorLayoutParity(root) {
       'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'],
     [/--g7pb-preview-content-width:\s*var\(--g7pb-theme-content-width\)/,
       '편집기와 공개 출력이 공유하는 content-width 변수가 필요합니다.'],
+    [/\.g7pb-preview-block\s*>\s*\*\s*\{\s*width:\s*100%;\s*max-width:\s*100%;\s*margin-inline:\s*0;/,
+      '편집 block wrapper가 공개 block과 다른 inline margin으로 자식을 재배치하면 안 됩니다.'],
     [/padding-inline:\s*max\(1\.25rem,\s*calc\(\(100vw\s*-\s*var\(--g7pb-preview-content-width,\s*var\(--g7pb-theme-content-width\)\)\)\s*\/\s*2\)\)/,
       '편집기 centered content edge는 공개 출력의 100vw 공식을 사용해야 합니다.'],
     [/\.g7pb-preview-block\.g7pb-container-align--left:not\(\.g7pb-container-width--full\)\s*>\s*\*/,
@@ -60,6 +62,9 @@ export async function validateEditorLayoutParity(root) {
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
   if (/100cqw\s*-\s*var\(--g7pb-theme-content-width\)/.test(css)) {
     errors.push('편집 root padding에 공개 출력과 다른 100cqw theme-width 공식을 사용하면 안 됩니다.');
+  }
+  if (/\.g7pb-preview-block\.g7pb-container-align--(?:center|left|right)\s*>\s*\*\s*\{[^}]*margin-(?:inline|left|right)/s.test(css)) {
+    errors.push('container alignment는 공개 출력처럼 padding으로 처리하고 편집 child margin으로 재배치하면 안 됩니다.');
   }
 
   const requiredEvidence = [

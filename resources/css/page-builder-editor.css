@@ -777,10 +777,7 @@
 .g7pb-preview-block.g7pb-container-width--narrow { --g7pb-preview-content-width: 48rem; }
 .g7pb-preview-block.g7pb-container-width--standard { --g7pb-preview-content-width: 72rem; }
 .g7pb-preview-block.g7pb-container-width--wide { --g7pb-preview-content-width: 88rem; }
-.g7pb-preview-block > * { width: 100%; max-width: 100%; }
-.g7pb-preview-block.g7pb-container-align--center > * { margin-inline: auto; }
-.g7pb-preview-block.g7pb-container-align--left > * { margin-right: auto; margin-left: 0; }
-.g7pb-preview-block.g7pb-container-align--right > * { margin-right: 0; margin-left: auto; }
+.g7pb-preview-block > * { width: 100%; max-width: 100%; margin-inline: 0; }
 .g7pb-preview-block.g7pb-container-align--stretch > *,
 .g7pb-preview-block.g7pb-container-width--full > * { width: 100%; }
 .g7pb-preview-block.g7pb-container-height--compact { min-height: 18rem; }

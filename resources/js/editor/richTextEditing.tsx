@@ -246,7 +246,7 @@ export function RichTextCanvasField({
   fieldPath,
   children,
   className = 'g7pb-preview-richtext',
-  as: Component = 'div',
+  as: requestedElement = 'div',
 }: {
   fieldPath: string;
   children: React.ReactNode;
@@ -255,6 +255,18 @@ export function RichTextCanvasField({
 }): React.ReactElement {
   const elementStyles = React.useContext(CanvasCurrentElementStylesContext);
   const resolvedClassName = [className, elementAppearanceClassName(elementStyles, fieldPath)].filter(Boolean).join(' ');
+  const headingLevel = /^h([1-4])$/.exec(requestedElement)?.[1];
+  if (headingLevel) {
+    return <div
+      className={resolvedClassName}
+      role="heading"
+      aria-level={Number(headingLevel)}
+      data-g7pb-heading-level={headingLevel}
+      data-g7pb-inline-field={fieldPath}
+      data-g7pb-richtext-field="true"
+    >{children}</div>;
+  }
+  const Component = requestedElement;
   return <Component className={resolvedClassName} data-g7pb-inline-field={fieldPath} data-g7pb-richtext-field="true">{children}</Component>;
 }
 

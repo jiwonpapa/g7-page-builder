@@ -17,7 +17,13 @@ final class PublicSiteShellController
 
     public function show(Request $request): JsonResponse
     {
-        $locale = $request->query('locale', app()->getLocale());
+        $locale = $request->query('locale');
+        if ($locale === null) {
+            $application = app();
+            $locale = method_exists($application, 'getLocale')
+                ? $application->getLocale()
+                : $request->getLocale();
+        }
         if (! is_string($locale) || preg_match('/^[a-z]{2,3}(?:-[A-Z]{2})?$/', $locale) !== 1) {
             return $this->disabled('invalid-locale');
         }

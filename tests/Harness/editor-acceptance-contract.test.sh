@@ -57,10 +57,9 @@ perl -0pi -e "s/frameLocator\\('iframe'\\)\\.first\\(\\)/frameLocator('iframe')/
 expect_failure '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/await field\.boundingBox\(\)/await page.locator('\''iframe'\'').boundingBox()/g' \
+perl -0pi -e 's/await frame\.boundingBox\(\)/await field.boundingBox()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '변환된 viewport에서도 실제 필드 좌표를 사용해야 합니다.'
-expect_failure 'iframe 원점과 내부 CSS 좌표를 단순 합산하면 viewport transform을 놓칩니다.'
+expect_failure '변환된 iframe의 실제 화면 좌표를 사용해야 합니다.'
 
 copy_fixture
 printf '\nselection.addRange(range);\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"

@@ -142,30 +142,49 @@ async function createPerformanceDocument(api: APIRequestContext, runId: string):
 }
 
 async function purgePerformanceDocument(api: APIRequestContext, documentId: string, slug: string): Promise<void> {
-  const currentResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`);
-  if (currentResponse.status() === 404) return;
-  expect(currentResponse.ok()).toBe(true);
-  const current = await currentResponse.json() as {
-    data?: { archived_at?: unknown; lock_version?: unknown; document?: { slug?: unknown } };
-  };
-  if (current.data?.document?.slug !== slug || typeof current.data.lock_version !== 'number') {
-    throw new Error('Refusing to clean up a performance document without exact ownership proof.');
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const currentResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`);
+    if (currentResponse.status() === 404) return;
+    if (!currentResponse.ok()) {
+      throw new Error(`Performance cleanup read failed with HTTP ${currentResponse.status()}: ${await currentResponse.text()}`);
+    }
+    const current = await currentResponse.json() as {
+      data?: { archived_at?: unknown; lock_version?: unknown; document?: { slug?: unknown } };
+    };
+    if (current.data?.document?.slug !== slug || typeof current.data.lock_version !== 'number') {
+      throw new Error('Refusing to clean up a performance document without exact ownership proof.');
+    }
+    let lockVersion = current.data.lock_version;
+    if (typeof current.data.archived_at !== 'string') {
+      const archivedResponse = await api.post(
+        `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/archive`,
+        { data: { expected_lock_version: lockVersion } },
+      );
+      if (archivedResponse.status() === 409) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        continue;
+      }
+      if (!archivedResponse.ok()) {
+        throw new Error(`Performance cleanup archive failed with HTTP ${archivedResponse.status()}: ${await archivedResponse.text()}`);
+      }
+      const archived = await archivedResponse.json() as { data?: { lock_version?: unknown } };
+      if (typeof archived.data?.lock_version !== 'number') throw new Error('Performance cleanup archive returned no lock.');
+      lockVersion = archived.data.lock_version;
+    }
+    const purged = await api.delete(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`, {
+      data: { confirmation_slug: slug, expected_lock_version: lockVersion },
+    });
+    if (purged.status() === 404) return;
+    if (purged.status() === 409) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      continue;
+    }
+    if (!purged.ok()) {
+      throw new Error(`Performance cleanup purge failed with HTTP ${purged.status()}: ${await purged.text()}`);
+    }
+    return;
   }
-  let lockVersion = current.data.lock_version;
-  if (typeof current.data.archived_at !== 'string') {
-    const archivedResponse = await api.post(
-      `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/archive`,
-      { data: { expected_lock_version: lockVersion } },
-    );
-    expect(archivedResponse.ok()).toBe(true);
-    const archived = await archivedResponse.json() as { data?: { lock_version?: unknown } };
-    if (typeof archived.data?.lock_version !== 'number') throw new Error('Performance cleanup archive returned no lock.');
-    lockVersion = archived.data.lock_version;
-  }
-  const purged = await api.delete(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`, {
-    data: { confirmation_slug: slug, expected_lock_version: lockVersion },
-  });
-  expect(purged.ok()).toBe(true);
+  throw new Error('Performance cleanup could not acquire a stable document lock after four attempts.');
 }
 
 async function measureTyping(page: Page): Promise<number[]> {
@@ -289,6 +308,7 @@ test('100-block editing stays inside hard interaction and Long Task budgets', as
       body: Buffer.from(JSON.stringify(metrics, null, 2)),
       contentType: 'application/json',
     });
+    console.info(`G7PB_EDITOR_PERFORMANCE ${JSON.stringify(metrics)}`);
 
     expect(documentReadyMs, JSON.stringify(metrics)).toBeLessThanOrEqual(BUDGETS.documentReadyMs);
     expect(typingP95Ms, JSON.stringify(metrics)).toBeLessThanOrEqual(BUDGETS.typingP95Ms);
@@ -298,6 +318,7 @@ test('100-block editing stays inside hard interaction and Long Task budgets', as
     expect(longTasks.length, JSON.stringify(metrics)).toBeLessThanOrEqual(BUDGETS.longTaskCount);
     expect(longTaskMaxMs, JSON.stringify(metrics)).toBeLessThanOrEqual(BUDGETS.longTaskMaxMs);
     expect(longTaskTotalMs, JSON.stringify(metrics)).toBeLessThanOrEqual(BUDGETS.longTaskTotalMs);
+    await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved', { timeout: 10_000 });
   } finally {
     await page.close();
     if (resource) await purgePerformanceDocument(api, resource.document.document_id, resource.document.slug);

@@ -66,11 +66,38 @@ function useRichTextEditorRevision(editor: Editor | null): number {
   useEffect(() => {
     if (!editor) return;
 
-    const syncEditorState = (): void => setRevision((revision) => revision + 1);
+    const editorDocument = editor.view.dom.ownerDocument;
+    let pointerRangeInProgress = false;
+    let pendingRevision = false;
+    const commitRevision = (): void => setRevision((revision) => revision + 1);
+    const syncEditorState = (): void => {
+      if (pointerRangeInProgress) {
+        pendingRevision = true;
+        return;
+      }
+      commitRevision();
+    };
+    const beginPointerRange = (event: PointerEvent): void => {
+      if (event.composedPath().includes(editor.view.dom)) pointerRangeInProgress = true;
+    };
+    const finishPointerRange = (): void => {
+      if (!pointerRangeInProgress) return;
+      pointerRangeInProgress = false;
+      if (!pendingRevision) return;
+      pendingRevision = false;
+      commitRevision();
+    };
+
+    editorDocument.addEventListener('pointerdown', beginPointerRange, true);
+    editorDocument.addEventListener('pointerup', finishPointerRange, true);
+    editorDocument.addEventListener('pointercancel', finishPointerRange, true);
     editor.on('selectionUpdate', syncEditorState);
     editor.on('transaction', syncEditorState);
 
     return () => {
+      editorDocument.removeEventListener('pointerdown', beginPointerRange, true);
+      editorDocument.removeEventListener('pointerup', finishPointerRange, true);
+      editorDocument.removeEventListener('pointercancel', finishPointerRange, true);
       editor.off('selectionUpdate', syncEditorState);
       editor.off('transaction', syncEditorState);
     };

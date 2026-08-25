@@ -343,7 +343,12 @@ describe('Puck editor surface contract', () => {
     const bold = container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]');
     expect(bold).not.toBeNull();
 
-    bold?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    const pointerDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
+    const mouseDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    bold?.dispatchEvent(pointerDown);
+    bold?.dispatchEvent(mouseDown);
+    expect(pointerDown.defaultPrevented).toBe(true);
+    expect(mouseDown.defaultPrevented).toBe(true);
     selection.empty = true;
     selection.from = 10;
     selection.to = 10;

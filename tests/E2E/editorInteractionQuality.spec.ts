@@ -140,8 +140,8 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
   const scaleX = box.width / geometry.fieldWidth;
   const scaleY = box.height / geometry.fieldHeight;
   return {
-    start: { x: box.x + geometry.startX * scaleX, y: box.y + geometry.startY * scaleY },
-    end: { x: box.x + geometry.endX * scaleX, y: box.y + geometry.endY * scaleY },
+    start: { x: geometry.startX * scaleX, y: geometry.startY * scaleY },
+    end: { x: geometry.endX * scaleX, y: geometry.endY * scaleY },
   };
 }
 
@@ -152,10 +152,10 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));
   const pointer = await textPointerGeometry(field, target);
-  await page.mouse.move(pointer.start.x, pointer.start.y);
+  await field.hover({ position: pointer.start });
   await page.mouse.down();
   try {
-    await page.mouse.move(pointer.end.x, pointer.end.y, { steps: 8 });
+    await field.hover({ position: pointer.end });
   } finally {
     await page.mouse.up();
   }
@@ -175,7 +175,7 @@ async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: 
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
   const pointer = await textPointerGeometry(field, target);
-  await page.mouse.click(pointer.end.x, pointer.end.y);
+  await field.click({ position: pointer.end });
   await expect.poll(() => selectedText(field)).toBe('');
 }
 

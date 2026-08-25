@@ -39,8 +39,11 @@ describe('editor quality contracts', () => {
       'default', 'muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4',
     ]);
     expect(renderToStaticMarkup(
-      <RichTextCanvasField as="h2" fieldPath="heading">부분 선택 제목</RichTextCanvasField>,
-    )).toContain('<h2');
+      <RichTextCanvasField as="h2" fieldPath="heading"><div>부분 선택 제목</div></RichTextCanvasField>,
+    )).toContain('role="heading" aria-level="2"');
+    expect(renderToStaticMarkup(
+      <RichTextCanvasField as="h2" fieldPath="heading"><div>부분 선택 제목</div></RichTextCanvasField>,
+    )).not.toContain('<h2><div');
   });
 
   it('round-trips four user colors for light and dark themes without accepting arbitrary CSS', () => {

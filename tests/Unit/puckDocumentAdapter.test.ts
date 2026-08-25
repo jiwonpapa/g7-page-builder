@@ -229,6 +229,7 @@ describe('Puck PageBuilderDocument adapter', () => {
         type: 'richtext', contentEditable: true,
       });
     }
+    expect(components.LogoCloud?.fields.heading).toMatchObject({ type: 'text' });
   });
 
   it('round-trips all eight catalog blocks through the Puck adapter', () => {

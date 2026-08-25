@@ -1106,9 +1106,6 @@ function withBlockContainerFields<TComponents extends Record<string, { fields?: 
     ...component,
     fields: {
       ...(component.fields ?? {}),
-      ...((component.fields?.heading as { type?: unknown } | undefined)?.type === 'text'
-        ? { heading: createInlineRichTextField('제목') }
-        : {}),
       ...stableFields,
     },
   }])) as unknown as TComponents;

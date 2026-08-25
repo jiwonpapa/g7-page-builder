@@ -22,8 +22,11 @@ function runPointerAction(event: React.PointerEvent<HTMLButtonElement>, action: 
   action();
 }
 
-function runKeyboardAction(event: React.MouseEvent<HTMLButtonElement>, action: () => void): void {
-  if (event.detail === 0) action();
+function runKeyboardAction(event: React.KeyboardEvent<HTMLButtonElement>, action: () => void): void {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  event.stopPropagation();
+  action();
 }
 
 function enumAttribute<T extends string>(key: 'font' | 'size' | 'weight' | 'tone', values: readonly T[], fallback: T) {
@@ -101,7 +104,8 @@ function useRichTextEditorRevision(editor: Editor | null): number {
     };
     const closeRangeOutsideEditor = (event: PointerEvent): void => {
       if (!editorDom || event.composedPath().includes(editorDom)) return;
-      if (event.target instanceof Element && event.target.closest('[data-testid="page-builder-richtext-inline-toolbar"]')) return;
+      const target = event.target as { closest?: (selector: string) => Element | null } | null;
+      if (typeof target?.closest === 'function' && target.closest('[data-testid="page-builder-richtext-inline-toolbar"]')) return;
       const selection = editor.state.selection;
       if (!selection.empty) editor.commands.setTextSelection(selection.to);
     };
@@ -165,14 +169,14 @@ function RangeChoiceMenu<T extends string>({
     <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
       aria-label={`선택한 글자 ${label}: ${current.label}`}
       onPointerDown={(event) => runPointerAction(event, () => onToggle(name))}
-      onClick={(event) => runKeyboardAction(event, () => onToggle(name))}>
+      onKeyDown={(event) => runKeyboardAction(event, () => onToggle(name))}>
       <span>{current.label}</span><ChevronDown size={13} aria-hidden="true" />
     </button>
     {open ? <div className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
       {values.map((option) => <button type="button" role="option" aria-selected={option.value === value}
         key={option.value}
         onPointerDown={(event) => runPointerAction(event, () => onChange(option.value))}
-        onClick={(event) => runKeyboardAction(event, () => onChange(option.value))}>
+        onKeyDown={(event) => runKeyboardAction(event, () => onChange(option.value))}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}
       </button>)}
     </div> : null}
@@ -254,7 +258,8 @@ function G7RichTextInlineMenu({ editor, readOnly }: {
     if (editor && !editor.state.selection.empty) {
       bookmarkRef.current = { from: editor.state.selection.from, to: editor.state.selection.to };
     }
-    if (event.target instanceof Element && event.target.closest('button')) {
+    const target = event.target as { closest?: (selector: string) => Element | null } | null;
+    if (typeof target?.closest === 'function' && target.closest('button')) {
       event.preventDefault();
     }
   };
@@ -303,19 +308,19 @@ function G7RichTextInlineMenu({ editor, readOnly }: {
         <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="선택한 글자 굵게"
           aria-pressed={editor?.isActive('bold') ?? false} disabled={readOnly}
           onPointerDown={(event) => runPointerAction(event, () => toggleNativeMark('bold'))}
-          onClick={(event) => runKeyboardAction(event, () => toggleNativeMark('bold'))}>
+          onKeyDown={(event) => runKeyboardAction(event, () => toggleNativeMark('bold'))}>
           <Bold size={15} aria-hidden="true" />
         </button>
         <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="선택한 글자 기울임"
           aria-pressed={editor?.isActive('italic') ?? false} disabled={readOnly}
           onPointerDown={(event) => runPointerAction(event, () => toggleNativeMark('italic'))}
-          onClick={(event) => runKeyboardAction(event, () => toggleNativeMark('italic'))}>
+          onKeyDown={(event) => runKeyboardAction(event, () => toggleNativeMark('italic'))}>
           <Italic size={15} aria-hidden="true" />
         </button>
         <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="선택한 글자 밑줄"
           aria-pressed={editor?.isActive('underline') ?? false} disabled={readOnly}
           onPointerDown={(event) => runPointerAction(event, () => toggleNativeMark('underline'))}
-          onClick={(event) => runKeyboardAction(event, () => toggleNativeMark('underline'))}>
+          onKeyDown={(event) => runKeyboardAction(event, () => toggleNativeMark('underline'))}>
           <Underline size={15} aria-hidden="true" />
         </button>
       </div>
@@ -348,19 +353,19 @@ function G7RichTextInlineMenu({ editor, readOnly }: {
       <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="링크 편집"
         aria-pressed={linkOpen} disabled={readOnly}
         onPointerDown={(event) => runPointerAction(event, () => setLinkOpen((open) => !open))}
-        onClick={(event) => runKeyboardAction(event, () => setLinkOpen((open) => !open))}>
+        onKeyDown={(event) => runKeyboardAction(event, () => setLinkOpen((open) => !open))}>
         <Link2 size={15} aria-hidden="true" />
       </button>
       {editor?.isActive('link') ? <button type="button" className="g7pb-richtext-inline-toolbar__icon"
         aria-label="링크 제거" disabled={readOnly}
         onPointerDown={(event) => runPointerAction(event, () => { restoreRange()?.extendMarkRange('link').unsetLink().run(); })}
-        onClick={(event) => runKeyboardAction(event, () => { restoreRange()?.extendMarkRange('link').unsetLink().run(); })}>
+        onKeyDown={(event) => runKeyboardAction(event, () => { restoreRange()?.extendMarkRange('link').unsetLink().run(); })}>
         <Unlink size={15} aria-hidden="true" />
       </button> : null}
       <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="부분 서식 초기화"
         disabled={readOnly}
         onPointerDown={(event) => runPointerAction(event, () => { restoreRange()?.unsetAllMarks().run(); })}
-        onClick={(event) => runKeyboardAction(event, () => { restoreRange()?.unsetAllMarks().run(); })}>
+        onKeyDown={(event) => runKeyboardAction(event, () => { restoreRange()?.unsetAllMarks().run(); })}>
         <RotateCcw size={15} aria-hidden="true" />
       </button>
       {linkOpen ? <form className="g7pb-richtext-inline-toolbar__link" onSubmit={applyLink}>

@@ -299,8 +299,11 @@ describe('Puck editor surface contract', () => {
     type EditorEvent = 'selectionUpdate' | 'transaction';
     const selection = { empty: false, from: 4, to: 10 };
     const handlers = new Map<EditorEvent, Set<() => void>>();
-    const editorDom = document.createElement('div');
-    document.body.append(editorDom);
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const frameDocument = frame.contentDocument!;
+    const editorDom = frameDocument.createElement('div');
+    frameDocument.body.append(editorDom);
     const operations: Array<[string, unknown?]> = [];
     const chain = {
       focus: vi.fn(() => { operations.push(['focus']); return chain; }),
@@ -332,8 +335,8 @@ describe('Puck editor surface contract', () => {
       }),
     } as never;
     const InlineMenu = createRichTextField('본문').renderInlineMenu;
-    const container = document.createElement('div');
-    document.body.append(container);
+    const container = frameDocument.createElement('div');
+    frameDocument.body.append(container);
     const root = createRoot(container);
     mounted.push(() => act(() => root.unmount()));
 

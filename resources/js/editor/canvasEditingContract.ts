@@ -276,7 +276,7 @@ function parentViewportRect(element: HTMLElement | null): CanvasElementSelection
   if (!element) return null;
   const rect = element.getBoundingClientRect();
   const frame = element.ownerDocument.defaultView?.frameElement;
-  if (!(frame instanceof HTMLElement)) {
+  if (!frame || typeof frame.getBoundingClientRect !== 'function') {
     return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left, width: rect.width, height: rect.height };
   }
   const frameRect = frame.getBoundingClientRect();

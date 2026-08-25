@@ -5,12 +5,21 @@ import type { ElementAppearance, ElementAppearanceMap } from '../documents/types
 export const CANVAS_ELEMENT_MESSAGE = 'g7pb:canvas-element-selected';
 
 export const CanvasElementStylesContext = React.createContext<Record<string, ElementAppearanceMap>>({});
+export const CanvasBlockAppearanceContext = React.createContext<Record<string, string>>({});
+export const CanvasCurrentElementStylesContext = React.createContext<ElementAppearanceMap | undefined>(undefined);
 
 export function useCanvasElementStyles(blockId: string, fallback?: ElementAppearanceMap): ElementAppearanceMap | undefined {
   const styles = React.useContext(CanvasElementStylesContext);
   if (styles[blockId]) return styles[blockId];
   const uuid = blockId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i)?.[0]?.toLowerCase();
   return (uuid ? styles[uuid] : undefined) ?? fallback;
+}
+
+export function useCanvasBlockAppearanceClass(blockId: string): string {
+  const classes = React.useContext(CanvasBlockAppearanceContext);
+  if (classes[blockId]) return classes[blockId];
+  const uuid = blockId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i)?.[0]?.toLowerCase();
+  return (uuid ? classes[uuid] : undefined) ?? '';
 }
 
 export type CanvasElementRole = 'block' | 'text' | 'action' | 'media';
@@ -295,7 +304,9 @@ export function normalizeElementAppearance(value: unknown): ElementAppearance {
     ...(record.size === 'small' || record.size === 'large' || record.size === 'xlarge' ? { size: record.size } : {}),
     ...(record.weight === 'medium' || record.weight === 'semibold' || record.weight === 'bold' ? { weight: record.weight } : {}),
     ...(record.align === 'center' || record.align === 'right' ? { align: record.align } : {}),
-    ...(record.tone === 'muted' || record.tone === 'accent' || record.tone === 'contrast' ? { tone: record.tone } : {}),
+    ...(record.tone === 'muted' || record.tone === 'accent' || record.tone === 'contrast'
+      || record.tone === 'custom1' || record.tone === 'custom2' || record.tone === 'custom3' || record.tone === 'custom4'
+      ? { tone: record.tone } : {}),
   };
 }
 
@@ -395,10 +406,17 @@ export function notifyCanvasElementSelection(
   if (richText) {
     const fieldPath = richText.dataset.g7pbInlineField ?? target.closest<HTMLElement>('[data-g7pb-inline-field]')?.dataset.g7pbInlineField;
     if (!fieldPath) return;
+    const documentSelection = richText.ownerDocument.getSelection();
+    const rangeEditing = Boolean(
+      documentSelection
+      && !documentSelection.isCollapsed
+      && documentSelection.anchorNode
+      && richText.contains(documentSelection.anchorNode),
+    );
     const selection = {
       ...selectionFromPath(blockId, blockType, fieldPath, 'text'),
       anchor: parentViewportRect(richText),
-      rangeEditing: true,
+      rangeEditing,
     } satisfies CanvasElementSelection;
     const message = { type: CANVAS_ELEMENT_MESSAGE, selection };
     if (window.parent !== window) window.parent.postMessage(message, window.location.origin);

@@ -9,11 +9,13 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
-import { createRichTextField } from './richTextEditing';
+import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import {
   decorateCanvasElementStyles,
+  CanvasCurrentElementStylesContext,
   normalizeElementAppearanceMap,
   notifyCanvasElementSelection,
+  useCanvasBlockAppearanceClass,
   useCanvasElementStyles,
 } from './canvasEditingContract';
 import {
@@ -271,9 +273,10 @@ function surfaceClass(props: AppearanceEditorProps): string {
 
 function Frame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
   const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
-  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
+  const containerClassName = useCanvasBlockAppearanceClass(id);
+  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
     onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
-    {...motionPreviewAttributes(motion)}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</section>;
+    {...motionPreviewAttributes(motion)}><CanvasCurrentElementStylesContext.Provider value={resolvedElementStyles}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</CanvasCurrentElementStylesContext.Provider></section>;
 }
 
 function Media({ src, alt, label }: { src: string; alt: string; label: string }): React.ReactElement {
@@ -288,7 +291,7 @@ function HeadingPreview(props: HeadingEditorProps & { id: string }): React.React
   return <Frame id={props.id} type="heading" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-heading ${surfaceClass(props)}`}>
       {props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}
-      <Tag data-g7pb-inline-field="heading">{props.heading}</Tag>
+      <RichTextCanvasField as={Tag} className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField>
     </div>
   </Frame>;
 }
@@ -363,7 +366,7 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
     label: '제목', defaultProps: DEFAULT_HEADING,
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true },
-      heading: { type: 'text', label: '제목', contentEditable: true },
+      heading: createInlineRichTextField('제목'),
       level: { type: 'select', label: '제목 단계', options: [{ label: 'H2', value: '2' }, { label: 'H3', value: '3' }, { label: 'H4', value: '4' }] },
       anchor: { type: 'text', label: '섹션 앵커' }, ...appearanceFields,
       motion: createMotionField(['none', 'reveal']),

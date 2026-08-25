@@ -4,11 +4,13 @@ import type { Config } from '@puckeditor/core';
 import { createMotionField, DEFAULT_BLOCK_MOTION, motionPreviewAttributes, normalizeBlockMotion } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
-import { createRichTextField, RichTextCanvasField } from './richTextEditing';
+import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import {
   decorateCanvasElementStyles,
+  CanvasCurrentElementStylesContext,
   normalizeElementAppearanceMap,
   notifyCanvasElementSelection,
+  useCanvasBlockAppearanceClass,
   useCanvasElementStyles,
 } from './canvasEditingContract';
 import {
@@ -285,9 +287,10 @@ function surfaceClass(props: AppearanceEditorProps): string {
 
 function Frame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
   const resolved = useCanvasElementStyles(id, elementStyles);
-  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
+  const containerClassName = useCanvasBlockAppearanceClass(id);
+  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
     onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)} {...motionPreviewAttributes(motion)}>
-    {decorateCanvasElementStyles(children, resolved)}
+    <CanvasCurrentElementStylesContext.Provider value={resolved}>{decorateCanvasElementStyles(children, resolved)}</CanvasCurrentElementStylesContext.Provider>
   </section>;
 }
 
@@ -319,7 +322,7 @@ function NoticePreview(props: NoticeEditorProps & { id: string }): React.ReactEl
 function CardGridPreview(props: CardGridEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="card-grid" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-card-grid g7pb-preview-card-grid--${props.columns} g7pb-preview-card-grid--${props.variant} g7pb-preview-card-grid--layout-${props.layout} ${surfaceClass(props)}`}>
-      <header>{props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}<h2 data-g7pb-inline-field="heading">{props.heading}</h2></header>
+      <header>{props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}<RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
       <div>{normalizeCards(props.items).map((item, index) => <article key={`${item.title}-${index}`}><small data-g7pb-inline-field={`items.${index}.kicker`}>{inlineArrayContent(props.items, index, 'kicker', item.kicker)}</small><h3 data-g7pb-inline-field={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</h3><RichTextCanvasField fieldPath={`items.${index}.body`} className="g7pb-preview-richtext g7pb-preview-card-grid__body">{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField>{item.linkLabel ? <a href={safeLink(item.linkUrl)} data-g7pb-action-field={`items.${index}.linkLabel`} onClick={(event) => event.preventDefault()}>{inlineArrayContent(props.items, index, 'linkLabel', item.linkLabel)} →</a> : null}</article>)}</div>
     </div>
   </Frame>;
@@ -380,7 +383,7 @@ export const productionCatalogComponentConfigs: Config<ProductionCatalogEditorCo
   },
   CardGrid: {
     label: '카드 그리드', defaultProps: DEFAULT_CARD_GRID,
-    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true }, items: { type: 'array', label: '카드', min: 2, max: 6, defaultItemProps: (index) => ({ kicker: String(index + 1).padStart(2, '0'), title: `카드 ${index + 1}`, body: '카드 설명을 입력하세요.', linkLabel: '자세히 보기', linkUrl: '/' }), getItemSummary: (item) => item.title, arrayFields: { kicker: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: createRichTextField('설명', 130), linkLabel: { type: 'text', label: '링크 문구', contentEditable: true }, linkUrl: createRouteUrlField('카드 연결') } }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }] }, variant: { type: 'radio', label: '카드 표현', options: [{ label: '여백 중심', value: 'plain' }, { label: '테두리', value: 'outlined' }] }, layout: { type: 'select', label: '레이아웃', options: [{ label: '벤토', value: 'bento' }, { label: '균등 그리드', value: 'grid' }, { label: '가로 레일', value: 'rail' }, { label: '에디토리얼', value: 'editorial' }, { label: '번호 목록', value: 'numbered' }] }, ...appearanceFields, motion: createMotionField(['none', 'reveal', 'stagger']) },
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: createInlineRichTextField('제목'), items: { type: 'array', label: '카드', min: 2, max: 6, defaultItemProps: (index) => ({ kicker: String(index + 1).padStart(2, '0'), title: `카드 ${index + 1}`, body: '카드 설명을 입력하세요.', linkLabel: '자세히 보기', linkUrl: '/' }), getItemSummary: (item) => item.title, arrayFields: { kicker: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: createRichTextField('설명', 130), linkLabel: { type: 'text', label: '링크 문구', contentEditable: true }, linkUrl: createRouteUrlField('카드 연결') } }, columns: { type: 'radio', label: '열 수', options: [{ label: '2열', value: '2' }, { label: '3열', value: '3' }] }, variant: { type: 'radio', label: '카드 표현', options: [{ label: '여백 중심', value: 'plain' }, { label: '테두리', value: 'outlined' }] }, layout: { type: 'select', label: '레이아웃', options: [{ label: '벤토', value: 'bento' }, { label: '균등 그리드', value: 'grid' }, { label: '가로 레일', value: 'rail' }, { label: '에디토리얼', value: 'editorial' }, { label: '번호 목록', value: 'numbered' }] }, ...appearanceFields, motion: createMotionField(['none', 'reveal', 'stagger']) },
     render: (props) => <CardGridPreview {...props} />,
   },
   Breadcrumbs: {

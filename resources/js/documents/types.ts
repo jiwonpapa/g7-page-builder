@@ -65,6 +65,10 @@ export interface BlockAppearance {
   spacing: 'compact' | 'normal' | 'spacious';
   textScale?: 'compact' | 'balanced' | 'large';
   textAlign?: 'left' | 'center' | 'right';
+  containerWidth?: 'inherit' | 'narrow' | 'standard' | 'wide' | 'full';
+  containerAlign?: 'left' | 'center' | 'right' | 'stretch';
+  minHeight?: 'auto' | 'compact' | 'medium' | 'large' | 'viewport';
+  verticalAlign?: 'start' | 'center' | 'end';
   elements?: ElementAppearanceMap;
 }
 
@@ -73,7 +77,7 @@ export interface ElementAppearance {
   size?: 'small' | 'base' | 'large' | 'xlarge';
   weight?: 'regular' | 'medium' | 'semibold' | 'bold';
   align?: 'left' | 'center' | 'right';
-  tone?: 'default' | 'muted' | 'accent' | 'contrast';
+  tone?: 'default' | 'muted' | 'accent' | 'contrast' | 'custom1' | 'custom2' | 'custom3' | 'custom4';
 }
 
 export type ElementAppearanceMap = Record<string, ElementAppearance>;

@@ -127,9 +127,9 @@
         .g7pb-theme-width-wide { --g7pb-theme-content-width: 88rem; }
         .g7pb-theme-scale-compact { --g7pb-theme-body-size: .9375rem; }
         .g7pb-theme-scale-large { --g7pb-theme-body-size: 1.125rem; }
-        .g7pb-theme-mode-light { color-scheme: light; --g7pb-page-bg: #fff; --g7pb-page-text: #172033; --g7pb-page-muted: #526071; --g7pb-page-panel: #f3f1ed; --g7pb-page-border: #dfe2e8; }
-        .g7pb-theme-mode-dark { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
-        @media (prefers-color-scheme: dark) { .g7pb-theme-mode-system { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; background: var(--g7pb-page-bg); color: var(--g7pb-page-text); } }
+        .g7pb-theme-mode-light, .g7pb-theme-mode-system { color-scheme: light; --g7pb-page-bg: #fff; --g7pb-page-text: #172033; --g7pb-page-muted: #526071; --g7pb-page-panel: #f3f1ed; --g7pb-page-border: #dfe2e8; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-light); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-light); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-light); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-light); }
+        .g7pb-theme-mode-dark { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
+        @media (prefers-color-scheme: dark) { .g7pb-theme-mode-system { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); } }
         .g7pb-theme-mode-dark .g7pb-surface--default { background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
         .g7pb-theme-mode-dark .g7pb-surface--soft { background: var(--g7pb-page-panel); color: var(--g7pb-page-text); }
         .g7pb-text-scale--compact { font-size: .9375em; }
@@ -151,7 +151,37 @@
         .g7pb-element-tone--muted { color: var(--g7pb-page-muted, #64748b); }
         .g7pb-element-tone--accent { color: var(--g7pb-theme-accent, #2456df); }
         .g7pb-element-tone--contrast { color: var(--g7pb-page-bg, #fff); }
+        .g7pb-element-tone--custom1, [data-g7pb-tone='custom1'] { color: var(--g7pb-custom-tone-1); }
+        .g7pb-element-tone--custom2, [data-g7pb-tone='custom2'] { color: var(--g7pb-custom-tone-2); }
+        .g7pb-element-tone--custom3, [data-g7pb-tone='custom3'] { color: var(--g7pb-custom-tone-3); }
+        .g7pb-element-tone--custom4, [data-g7pb-tone='custom4'] { color: var(--g7pb-custom-tone-4); }
+        [data-g7pb-font='modern'] { font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        [data-g7pb-font='serif'] { font-family: Georgia, "Noto Serif KR", "Times New Roman", serif; }
+        [data-g7pb-font='mono'] { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        [data-g7pb-size='small'] { font-size: .875em; }
+        [data-g7pb-size='large'] { font-size: 1.2em; }
+        [data-g7pb-size='xlarge'] { font-size: 1.45em; line-height: 1.25; }
+        [data-g7pb-weight='medium'] { font-weight: 500; }
+        [data-g7pb-weight='semibold'] { font-weight: 650; }
+        [data-g7pb-weight='bold'] { font-weight: 800; }
+        [data-g7pb-tone='muted'] { color: var(--g7pb-page-muted, #64748b); }
+        [data-g7pb-tone='accent'] { color: var(--g7pb-theme-accent, #2456df); }
+        [data-g7pb-tone='contrast'] { color: var(--g7pb-page-bg, #fff); }
         .g7pb-block { padding: clamp(3.5rem, 8vw, 8rem) max(1.25rem, calc((100vw - var(--g7pb-theme-content-width)) / 2)); }
+        .g7pb-container-width--narrow { --g7pb-block-content-width: 48rem; }
+        .g7pb-container-width--standard { --g7pb-block-content-width: 72rem; }
+        .g7pb-container-width--wide { --g7pb-block-content-width: 88rem; }
+        .g7pb-container-width--inherit { --g7pb-block-content-width: var(--g7pb-theme-content-width); }
+        .g7pb-block:not(.g7pb-container-width--full) { padding-inline: max(1.25rem, calc((100vw - var(--g7pb-block-content-width)) / 2)); }
+        .g7pb-block.g7pb-container-align--left:not(.g7pb-container-width--full) { padding-right: max(1.25rem, calc(100vw - var(--g7pb-block-content-width) - 1.25rem)); padding-left: 1.25rem; }
+        .g7pb-block.g7pb-container-align--right:not(.g7pb-container-width--full) { padding-right: 1.25rem; padding-left: max(1.25rem, calc(100vw - var(--g7pb-block-content-width) - 1.25rem)); }
+        .g7pb-block.g7pb-container-width--full { padding-inline: 0; }
+        .g7pb-container-height--compact { min-height: 18rem; }
+        .g7pb-container-height--medium { min-height: 32rem; }
+        .g7pb-container-height--large { min-height: 44rem; }
+        .g7pb-container-height--viewport { min-height: 100svh; }
+        .g7pb-container-vertical--center { display: grid; align-content: center; }
+        .g7pb-container-vertical--end { display: grid; align-content: end; }
         .g7pb-surface--default { background: #fff; color: #172033; }
         .g7pb-surface--soft { background: #f3f1ed; color: #172033; }
         .g7pb-surface--contrast { --g7pb-page-muted: #cbd3df; background: #172033; color: #fff; }
@@ -692,6 +722,10 @@
         .g7pb-element-tone--muted { color: var(--g7pb-page-muted, #64748b) !important; }
         .g7pb-element-tone--accent { color: var(--g7pb-theme-accent, #2456df) !important; }
         .g7pb-element-tone--contrast { color: var(--g7pb-page-bg, #fff) !important; }
+        .g7pb-element-tone--custom1 { color: var(--g7pb-custom-tone-1) !important; }
+        .g7pb-element-tone--custom2 { color: var(--g7pb-custom-tone-2) !important; }
+        .g7pb-element-tone--custom3 { color: var(--g7pb-custom-tone-3) !important; }
+        .g7pb-element-tone--custom4 { color: var(--g7pb-custom-tone-4) !important; }
         .g7pb-motion-active .g7pb-block[data-g7pb-motion] { --g7pb-motion-distance: 1.5rem; --g7pb-motion-duration: 680ms; }
         .g7pb-motion-active .g7pb-block[data-g7pb-motion-intensity='subtle'] { --g7pb-motion-distance: .8rem; --g7pb-motion-duration: 520ms; }
         .g7pb-motion-active .g7pb-block[data-g7pb-motion-intensity='strong'] { --g7pb-motion-distance: 2.5rem; --g7pb-motion-duration: 880ms; }

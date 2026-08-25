@@ -135,7 +135,7 @@ describe('canvas editing contract', () => {
     expect(selection).toMatchObject({ fieldPath: 'title', role: 'text', label: '제목' });
   });
 
-  it('marks rich-text canvas selections as range editing so the element-wide balloon stays closed', () => {
+  it('distinguishes a rich-text field click from an actual selected text range', () => {
     const frame = document.createElement('iframe');
     document.body.append(frame);
     const frameDocument = frame.contentDocument;
@@ -148,6 +148,25 @@ describe('canvas editing contract', () => {
     };
     window.addEventListener(CANVAS_ELEMENT_MESSAGE, receive);
 
+    notifyCanvasElementSelection(
+      { target: paragraph } as unknown as Parameters<typeof notifyCanvasElementSelection>[0],
+      'block-id',
+      'card-grid',
+    );
+
+    expect(selection).toMatchObject({
+      fieldPath: 'items.0.body',
+      role: 'text',
+      rangeEditing: false,
+    });
+
+    const text = paragraph?.firstChild;
+    expect(text).not.toBeNull();
+    const range = frameDocument!.createRange();
+    range.setStart(text!, 3);
+    range.setEnd(text!, 5);
+    frame.contentWindow!.getSelection()?.removeAllRanges();
+    frame.contentWindow!.getSelection()?.addRange(range);
     notifyCanvasElementSelection(
       { target: paragraph } as unknown as Parameters<typeof notifyCanvasElementSelection>[0],
       'block-id',

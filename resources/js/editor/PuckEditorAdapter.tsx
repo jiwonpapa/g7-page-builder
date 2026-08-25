@@ -53,7 +53,7 @@ import {
 } from './blockMotion';
 import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
 import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
-import { createRichTextField } from './richTextEditing';
+import { createInlineRichTextField, createRichTextField, RICH_TEXT_RANGE_ACTIVE_MESSAGE, RichTextCanvasField } from './richTextEditing';
 import {
   CANVAS_ELEMENT_MESSAGE,
   collectionLimit,
@@ -64,7 +64,10 @@ import {
   normalizeElementAppearance,
   normalizeElementAppearanceMap,
   remapCollectionElementAppearanceMap,
+  CanvasBlockAppearanceContext,
+  CanvasCurrentElementStylesContext,
   CanvasElementStylesContext,
+  useCanvasBlockAppearanceClass,
   useCanvasElementStyles,
   setValueAtPath,
   valueAtPath,
@@ -74,10 +77,17 @@ import { SitePartEditor, AnnouncementPreview, FooterColumnsPreview, FooterSimple
 import { sitePartCanonicalToPuck, type SitePartComponents } from './sitePartDocumentAdapter';
 import {
   pageDesignClassName,
+  pageDesignCustomCss,
   pageDesignToTokens,
   tokensToPageDesign,
   type PageDesignProps,
 } from './pageDesignTokens';
+import {
+  BLOCK_CONTAINER_FIELDS,
+  blockContainerClassName,
+  blockContainerEditorProps,
+  mergeBlockContainerAppearance,
+} from './blockAppearance';
 
 import {
   CONTACT_BLOCK_TYPE,
@@ -218,6 +228,7 @@ function FullSiteRoot({ children, design }: { children: React.ReactNode; design:
   const builder = canvas.shellMode === 'builder' || canvas.shellMode === 'global';
 
   return <div className={`g7pb-preview-page ${pageDesignClassName(design)}`}>
+    <style data-g7pb-custom-palette="true">{pageDesignCustomCss(design)}</style>
     {(template || builder) ? <FullSiteCanvasPart kind="header" resource={builder ? canvas.header : null} template={template} /> : null}
     <div className="g7pb-full-site-page" data-testid="page-builder-canvas-page">{children}</div>
     {(template || builder) ? <FullSiteCanvasPart kind="footer" resource={builder ? canvas.footer : null} template={template} /> : null}
@@ -637,6 +648,7 @@ export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSessio
           ...puckBlock,
           props: {
             ...puckBlock.props,
+            ...blockContainerEditorProps(block.props.appearance),
             __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',
           },
         } as unknown as PuckEditorData['content'][number];
@@ -677,6 +689,7 @@ function puckBlockToCanonical(
   };
   let type: string;
   let blockVersion = metadata.blockVersion;
+  let supportsContainerAppearance = true;
   let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps | Record<string, unknown>;
 
   if (block.type === 'Hero') {
@@ -785,6 +798,7 @@ function puckBlockToCanonical(
       delete externalProps.__g7pbVisibilityAudience;
       type = externalBlock.block_id;
       blockVersion = externalBlock.block_version;
+      supportsContainerAppearance = false;
       props = externalProps;
     } else {
       type = catalogBlock.type;
@@ -798,6 +812,12 @@ function puckBlockToCanonical(
     block_version: blockVersion,
     props: props as unknown as Record<string, unknown>,
   };
+
+  if (supportsContainerAppearance) {
+    const appearance = mergeBlockContainerAppearance(canonical.props.appearance, block.props as Record<string, unknown>);
+    if (appearance) canonical.props.appearance = appearance;
+    else delete canonical.props.appearance;
+  }
 
   if (!metadata.hadPageSize) {
     delete canonical.props.pageSize;
@@ -923,6 +943,7 @@ export function sanitizeRichTextForPreview(value: string): string {
       const typedMarks = child.tagName === 'SPAN' ? {
         font: child.getAttribute('data-g7pb-font') ?? '',
         size: child.getAttribute('data-g7pb-size') ?? '',
+        weight: child.getAttribute('data-g7pb-weight') ?? '',
         tone: child.getAttribute('data-g7pb-tone') ?? '',
       } : null;
       for (const attribute of Array.from(child.attributes)) {
@@ -935,7 +956,8 @@ export function sanitizeRichTextForPreview(value: string): string {
       if (typedMarks) {
         if (['modern', 'serif', 'mono'].includes(typedMarks.font)) child.setAttribute('data-g7pb-font', typedMarks.font);
         if (['small', 'large', 'xlarge'].includes(typedMarks.size)) child.setAttribute('data-g7pb-size', typedMarks.size);
-        if (['muted', 'accent', 'contrast'].includes(typedMarks.tone)) child.setAttribute('data-g7pb-tone', typedMarks.tone);
+        if (['medium', 'semibold', 'bold'].includes(typedMarks.weight)) child.setAttribute('data-g7pb-weight', typedMarks.weight);
+        if (['muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4'].includes(typedMarks.tone)) child.setAttribute('data-g7pb-tone', typedMarks.tone);
       }
     }
   };
@@ -1022,6 +1044,74 @@ function StableSelectField<TValue extends string>({
       </select>
     </label>
   );
+}
+
+function StableColorField({
+  value,
+  onChange,
+  readOnly,
+  testId,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  readOnly?: boolean;
+  testId: string;
+  label: string;
+}): React.ReactElement {
+  const [draftValue, setDraftValue] = useState(value);
+  useEffect(() => setDraftValue(value), [value]);
+  return <label className="g7pb-design-field g7pb-design-field--color">
+    <span>{label}</span>
+    <input className="g7pb-field-control" type="color" value={draftValue} disabled={readOnly}
+      data-testid={testId} onChange={(event) => {
+        const next = event.currentTarget.value.toLowerCase();
+        setDraftValue(next);
+        onChange(next);
+      }} />
+  </label>;
+}
+
+function createPageColorField(label: string, testId: string) {
+  return {
+    type: 'custom' as const,
+    label,
+    render: ({ value, onChange, readOnly }: {
+      value: string;
+      onChange: (value: string) => void;
+      readOnly?: boolean;
+    }) => <StableColorField value={value} onChange={onChange} readOnly={readOnly} testId={testId} label={label} />,
+  };
+}
+
+function withBlockContainerFields<TComponents extends Record<string, { fields?: Record<string, unknown> }>>(
+  components: TComponents,
+): TComponents {
+  const stableFields = Object.fromEntries(Object.entries(BLOCK_CONTAINER_FIELDS).map(([name, field]) => [name, {
+    type: 'custom' as const,
+    label: field.label,
+    render: ({ value, onChange, readOnly }: {
+      value: string;
+      onChange: (value: string) => void;
+      readOnly?: boolean;
+    }) => <StableSelectField
+      value={value}
+      onChange={onChange}
+      readOnly={readOnly}
+      testId={`page-builder-block-${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`}
+      options={field.options}
+    />,
+  }]));
+  return Object.fromEntries(Object.entries(components).map(([name, component]) => [name, {
+    ...component,
+    fields: {
+      ...(component.fields ?? {}),
+      ...((component.fields?.heading as { type?: unknown } | undefined)?.type === 'text'
+        ? { heading: createInlineRichTextField('제목') }
+        : {}),
+      ...stableFields,
+    },
+  }])) as unknown as TComponents;
 }
 
 function FeaturesItemsField({
@@ -1113,16 +1203,19 @@ function BlockFrame({
   children: React.ReactNode;
 }): React.ReactElement {
   const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
+  const containerClassName = useCanvasBlockAppearanceClass(id);
   return (
     <section
-      className="g7pb-preview-block"
+      className={`g7pb-preview-block ${containerClassName}`.trim()}
       data-testid="page-builder-block"
       data-block-id={idToUuid(id)}
       data-block-type={type}
       onPointerDownCapture={(event) => notifyCanvasElementSelection(event, idToUuid(id), type)}
       {...motionPreviewAttributes(motion)}
     >
-      {decorateCanvasElementStyles(children, resolvedElementStyles)}
+      <CanvasCurrentElementStylesContext.Provider value={resolvedElementStyles}>
+        {decorateCanvasElementStyles(children, resolvedElementStyles)}
+      </CanvasCurrentElementStylesContext.Provider>
     </section>
   );
 }
@@ -1144,7 +1237,7 @@ function HeroPreview({
   textAlign = 'left',
   elementStyles,
   motion,
-}: Omit<HeroEditorProps, 'body'> & { id: string; body: React.ReactNode }): React.ReactElement {
+}: Omit<HeroEditorProps, 'body' | 'title'> & { id: string; body: React.ReactNode; title: React.ReactNode }): React.ReactElement {
   const image = safeImage(imageSrc);
 
   return (
@@ -1152,7 +1245,7 @@ function HeroPreview({
       <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-hero--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-hero__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
-          <h1 data-g7pb-inline-field="title">{title}</h1>
+          <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
           <div className="g7pb-preview-richtext" data-g7pb-inline-field="body">{body}</div>
           {primaryLabel && (
             <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
@@ -1170,7 +1263,7 @@ function HeroPreview({
   );
 }
 
-function FeaturesPreview({ id, title, items, layout, surface, spacing, textScale = 'balanced', textAlign = 'left', elementStyles, motion }: FeaturesEditorProps & { id: string }): React.ReactElement {
+function FeaturesPreview({ id, title, items, layout, surface, spacing, textScale = 'balanced', textAlign = 'left', elementStyles, motion }: Omit<FeaturesEditorProps, 'title'> & { id: string; title: React.ReactNode }): React.ReactElement {
   const glyphs: Record<string, string> = {
     sparkles: '✦',
     shield: '◆',
@@ -1181,7 +1274,7 @@ function FeaturesPreview({ id, title, items, layout, surface, spacing, textScale
   return (
     <BlockFrame id={id} type="features" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-features g7pb-preview-features--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
-        <h2 data-g7pb-inline-field="title">{title}</h2>
+        <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="title">{title}</RichTextCanvasField>
         <div className="g7pb-preview-features__grid">
           {normalizeFeatureItems(items).map((item, index) => (
             <article key={`${item.title}-${index}`}>
@@ -1213,13 +1306,13 @@ function CtaPreview({
   textAlign = 'left',
   elementStyles,
   motion,
-}: CtaEditorProps & { id: string }): React.ReactElement {
+}: Omit<CtaEditorProps, 'heading'> & { id: string; heading: React.ReactNode }): React.ReactElement {
   return (
     <BlockFrame id={id} type="cta" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-cta-split--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-cta-split__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
-          <h2 data-g7pb-inline-field="heading">{heading}</h2>
+          <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{heading}</RichTextCanvasField>
           {body && <p data-g7pb-inline-field="body">{body}</p>}
         </div>
         {(primaryLabel || secondaryLabel) && (
@@ -1257,13 +1350,13 @@ function ContactPreview({
   textAlign = 'left',
   elementStyles,
   motion,
-}: ContactEditorProps & { id: string }): React.ReactElement {
+}: Omit<ContactEditorProps, 'heading'> & { id: string; heading: React.ReactNode }): React.ReactElement {
   return (
     <BlockFrame id={id} type="contact" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-contact g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-contact__heading">
           <p className="g7pb-preview-eyebrow">Contact</p>
-          <h2 data-g7pb-inline-field="heading">{heading}</h2>
+          <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{heading}</RichTextCanvasField>
         </div>
         <address className="g7pb-preview-contact__details">
           {address && <p data-g7pb-inline-field="address">{address}</p>}
@@ -1316,7 +1409,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       defaultExpanded: true,
     },
   },
-  components: {
+  components: withBlockContainerFields({
     ...catalogComponentConfigs,
     Hero: {
       label: 'Hero',
@@ -1335,19 +1428,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             />
           ),
         },
-        title: {
-          type: 'custom',
-          label: '제목',
-          contentEditable: true,
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField
-              value={value}
-              onChange={onChange}
-              readOnly={readOnly}
-              testId="page-builder-hero-title"
-            />
-          ),
-        },
+        title: createInlineRichTextField('제목'),
         body: createRichTextField('본문', 150, true),
         primaryLabel: {
           type: 'custom', label: '버튼 문구', contentEditable: true,
@@ -1418,19 +1499,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       label: 'Features',
       defaultProps: DEFAULT_FEATURES,
       fields: {
-        title: {
-          type: 'custom',
-          label: '제목',
-          contentEditable: true,
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField
-              value={value}
-              onChange={onChange}
-              readOnly={readOnly}
-              testId="page-builder-features-heading"
-            />
-          ),
-        },
+        title: createInlineRichTextField('제목'),
         items: {
           type: 'custom',
           label: '항목',
@@ -1479,15 +1548,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
               testId="page-builder-cta-eyebrow" />
           ),
         },
-        heading: {
-          type: 'custom',
-          label: '제목',
-          contentEditable: true,
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
-              testId="page-builder-cta-heading" />
-          ),
-        },
+        heading: createInlineRichTextField('제목'),
         body: {
           type: 'custom',
           label: '본문',
@@ -1562,15 +1623,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       label: 'Contact',
       defaultProps: DEFAULT_CONTACT,
       fields: {
-        heading: {
-          type: 'custom',
-          label: '제목',
-          contentEditable: true,
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly}
-              testId="page-builder-contact-heading" />
-          ),
-        },
+        heading: createInlineRichTextField('제목'),
         address: {
           type: 'custom',
           label: '주소',
@@ -1639,7 +1692,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       },
       render: (props) => <ContactPreview {...props} />,
     },
-  },
+  }),
   root: {
     fields: {
       colorMode: {
@@ -1698,6 +1751,14 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             ]} />
         ),
       },
+      customColor1Light: createPageColorField('사용자색 1 · 라이트', 'page-builder-design-custom-1-light'),
+      customColor1Dark: createPageColorField('사용자색 1 · 다크', 'page-builder-design-custom-1-dark'),
+      customColor2Light: createPageColorField('사용자색 2 · 라이트', 'page-builder-design-custom-2-light'),
+      customColor2Dark: createPageColorField('사용자색 2 · 다크', 'page-builder-design-custom-2-dark'),
+      customColor3Light: createPageColorField('사용자색 3 · 라이트', 'page-builder-design-custom-3-light'),
+      customColor3Dark: createPageColorField('사용자색 3 · 다크', 'page-builder-design-custom-3-dark'),
+      customColor4Light: createPageColorField('사용자색 4 · 라이트', 'page-builder-design-custom-4-light'),
+      customColor4Dark: createPageColorField('사용자색 4 · 다크', 'page-builder-design-custom-4-dark'),
     },
     render: ({ children, ...design }) => <FullSiteRoot design={design}>{children}</FullSiteRoot>,
   },
@@ -2332,6 +2393,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
             data-testid="page-builder-element-tone"
             onChange={(event) => updateElement({ tone: event.currentTarget.value as ElementAppearance['tone'] })}>
             <option value="default">기본</option><option value="muted">보조</option><option value="accent">강조</option><option value="contrast">반전</option>
+            <option value="custom1">사용자 1</option><option value="custom2">사용자 2</option><option value="custom3">사용자 3</option><option value="custom4">사용자 4</option>
           </select></label>
         </div>
         <div className="g7pb-element-balloon__footer">
@@ -2687,17 +2749,25 @@ export function PuckEditorAdapter({
       }
     };
     const fromMessage = (event: MessageEvent): void => {
-      if (event.origin !== window.location.origin || event.data?.type !== CANVAS_ELEMENT_MESSAGE) return;
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === RICH_TEXT_RANGE_ACTIVE_MESSAGE) {
+        setCanvasTextToolsOpen(false);
+        return;
+      }
+      if (event.data?.type !== CANVAS_ELEMENT_MESSAGE) return;
       accept(event.data.selection as CanvasElementSelection);
     };
     const fromCustomEvent = (event: Event): void => {
       if (event instanceof CustomEvent) accept(event.detail as CanvasElementSelection);
     };
+    const closeForRange = (): void => setCanvasTextToolsOpen(false);
     window.addEventListener('message', fromMessage);
     window.addEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);
+    window.addEventListener(RICH_TEXT_RANGE_ACTIVE_MESSAGE, closeForRange);
     return () => {
       window.removeEventListener('message', fromMessage);
       window.removeEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);
+      window.removeEventListener(RICH_TEXT_RANGE_ACTIVE_MESSAGE, closeForRange);
     };
   }, []);
 
@@ -2816,11 +2886,11 @@ export function PuckEditorAdapter({
   };
   const updateCanonical = (nextData: PuckEditorData): void => {
     latestDataRef.current = nextData;
-    setData(nextData);
     onDirty?.();
     if (canonicalFrameRef.current !== null) return;
     canonicalFrameRef.current = window.requestAnimationFrame(() => {
       canonicalFrameRef.current = null;
+      setData(latestDataRef.current);
       emitCanonical(latestDataRef.current);
     });
   };
@@ -2841,15 +2911,21 @@ export function PuckEditorAdapter({
     textToolsOpen: canvasTextToolsOpen,
     setTextToolsOpen: setCanvasTextToolsOpen,
   }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen]);
-  const canvasElementStylesJson = JSON.stringify(Object.fromEntries(data.content.flatMap((block) => {
-    const rawId = asString(block.props.id);
-    const styles = normalizeElementAppearanceMap(block.props.elementStyles);
-    return [[rawId, styles], [idToUuid(rawId), styles]];
-  })));
-  const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(
-    () => JSON.parse(canvasElementStylesJson) as Record<string, ElementAppearanceMap>,
-    [canvasElementStylesJson],
-  );
+  const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(() => Object.fromEntries(
+    data.content.flatMap((block) => {
+      const rawId = asString(block.props.id);
+      const styles = normalizeElementAppearanceMap(block.props.elementStyles);
+      return [[rawId, styles], [idToUuid(rawId), styles]];
+    }),
+  ), [data.content]);
+  const canvasBlockAppearances = useMemo<Record<string, string>>(() => Object.fromEntries(
+    data.content.flatMap((block) => {
+      const rawId = asString(block.props.id);
+      const appearance = mergeBlockContainerAppearance(undefined, block.props as Record<string, unknown>);
+      const className = blockContainerClassName(appearance ?? { surface: 'default', spacing: 'normal' });
+      return [[rawId, className], [idToUuid(rawId), className]];
+    }),
+  ), [data.content]);
 
   if (sitePartMode) {
     return <SitePartEditor
@@ -2880,6 +2956,7 @@ export function PuckEditorAdapter({
       <BlockCatalogContext.Provider value={blockCatalogContext}>
         <FullSiteCanvasContext.Provider value={fullSiteCanvas}>
         <CanvasEditingUiContext.Provider value={canvasEditingUi}>
+        <CanvasBlockAppearanceContext.Provider value={canvasBlockAppearances}>
         <CanvasElementStylesContext.Provider value={canvasElementStyles}>
         <Puck
           config={runtimePuckConfig}
@@ -2902,6 +2979,7 @@ export function PuckEditorAdapter({
           onPublish={(nextData) => onPublish(flushCanonical(nextData))}
         />
         </CanvasElementStylesContext.Provider>
+        </CanvasBlockAppearanceContext.Provider>
         </CanvasEditingUiContext.Provider>
         </FullSiteCanvasContext.Provider>
       </BlockCatalogContext.Provider>

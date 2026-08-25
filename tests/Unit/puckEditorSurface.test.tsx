@@ -192,6 +192,17 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('provides stable container controls to every built-in block', () => {
+    for (const [component, config] of Object.entries(pageBuilderPuckConfig.components)) {
+      expect(config.fields, component).toMatchObject({
+        containerWidth: { type: 'custom' },
+        containerAlign: { type: 'custom' },
+        minHeight: { type: 'custom' },
+        verticalAlign: { type: 'custom' },
+      });
+    }
+  });
+
   it('provides selected-range rich text editing across all long-copy product families', () => {
     const components = pageBuilderPuckConfig.components as Record<string, { fields: Record<string, any> }>;
     const field = (component: string, path: string[]): any => path.reduce(
@@ -469,7 +480,7 @@ describe('Puck editor surface contract', () => {
     await act(async () => {
       hero.click();
     });
-    expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-title"]')).value).toBe('Hero title');
+    expect(hero.querySelector('[data-g7pb-inline-field="title"]')?.textContent).toContain('Hero title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-subtitle"]')).value).toBe('Hero eyebrow');
 
     const heroTitle = hero.querySelector<HTMLElement>('[data-g7pb-inline-field="title"]');
@@ -545,7 +556,7 @@ describe('Puck editor surface contract', () => {
     await act(async () => {
       features.click();
     });
-    expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-heading"]')).value).toBe('Features title');
+    expect(features.querySelector('[data-g7pb-inline-field="title"]')?.textContent).toContain('Features title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-item-0-title"]')).value).toBe('First title');
     expect((await eventually<HTMLTextAreaElement>('[data-testid="page-builder-features-item-0-body"]')).value).toBe('First body');
     const firstFeatureTitle = features.querySelector<HTMLElement>('[data-g7pb-inline-field="items.0.title"]');
@@ -564,14 +575,14 @@ describe('Puck editor surface contract', () => {
     await act(async () => {
       cta.click();
     });
-    expect((await eventually<HTMLInputElement>('[data-testid="page-builder-cta-heading"]')).value).toBe('CTA heading');
+    expect(cta.querySelector('[data-g7pb-inline-field="heading"]')?.textContent).toContain('CTA heading');
     expect((await eventually<HTMLTextAreaElement>('[data-testid="page-builder-cta-body"]')).value).toBe('CTA body');
     expect((await eventually<HTMLSelectElement>('[data-testid="page-builder-cta-theme"]')).value).toBe('dark');
 
     await act(async () => {
       contact.click();
     });
-    expect((await eventually<HTMLInputElement>('[data-testid="page-builder-contact-heading"]')).value).toBe('Contact heading');
+    expect(contact.querySelector('[data-g7pb-inline-field="heading"]')?.textContent).toContain('Contact heading');
     expect((await eventually<HTMLTextAreaElement>('[data-testid="page-builder-contact-address"]')).value).toBe('Seoul address');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-contact-email"]')).value).toBe('hello@example.com');
 
@@ -588,7 +599,7 @@ describe('Puck editor surface contract', () => {
     });
 
     await eventuallyBlockTypes(['features', 'hero', 'cta', 'contact']);
-    expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-heading"]')).value).toBe('Features title');
+    expect(features.querySelector('[data-g7pb-inline-field="title"]')?.textContent).toContain('Features title');
   });
 
   it('shows descriptive previews before a block is inserted', async () => {

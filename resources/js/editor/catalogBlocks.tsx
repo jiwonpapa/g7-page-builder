@@ -8,8 +8,8 @@ import {
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
-import { createRichTextField, RichTextCanvasField } from './richTextEditing';
-import { decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasElementStyles } from './canvasEditingContract';
+import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
+import { CanvasCurrentElementStylesContext, decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasBlockAppearanceClass, useCanvasElementStyles } from './canvasEditingContract';
 import {
   canonicalPhase2BlockToPuck,
   phase2CatalogComponentConfigs,
@@ -570,9 +570,10 @@ function normalizeBars(value: unknown): BarChartItem[] {
 
 function BlockFrame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
   const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
-  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
+  const containerClassName = useCanvasBlockAppearanceClass(id);
+  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
     onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
-    {...motionPreviewAttributes(motion)}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</section>;
+    {...motionPreviewAttributes(motion)}><CanvasCurrentElementStylesContext.Provider value={resolvedElementStyles}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</CanvasCurrentElementStylesContext.Provider></section>;
 }
 
 function ImageOrPlaceholder({ src, alt, label }: { src: string; alt: string; label: string }): React.ReactElement {
@@ -590,7 +591,7 @@ function HeroSplitPreview(props: Omit<HeroSplitEditorProps, 'body'> & { id: stri
   return (
     <BlockFrame id={props.id} type="hero-split" motion={props.motion} elementStyles={props.elementStyles}>
       <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${props.mediaPosition} g7pb-preview-hero-split--layout-${props.layout} ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
-        <div className="g7pb-preview-hero-split__copy"><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h1 data-g7pb-inline-field="title">{props.title}</h1><RichTextCanvasField fieldPath="body">{props.body}</RichTextCanvasField>{props.primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
+        <div className="g7pb-preview-hero-split__copy"><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h1" className="g7pb-preview-richtext" fieldPath="title">{props.title}</RichTextCanvasField><RichTextCanvasField fieldPath="body">{props.body}</RichTextCanvasField>{props.primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeUrl(props.primaryUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a>}</div>
         <figure data-g7pb-media-field="imageSrc"><ImageOrPlaceholder src={props.imageSrc} alt={props.imageAlt} label="대표" /></figure>
       </div>
     </BlockFrame>
@@ -699,7 +700,7 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   HeroSplit: {
     label: '분할 히어로', defaultProps: DEFAULT_HERO_SPLIT,
     fields: {
-      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: { type: 'text', label: '제목', contentEditable: true }, body: createRichTextField('본문', 160, true),
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, title: createInlineRichTextField('제목'), body: createRichTextField('본문', 160, true),
       primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결', 'page-builder-hero-split-primary-url'), imageSrc: createMediaField('대표 이미지', 'hero-split-image'), imageAlt: { type: 'text', label: '이미지 대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
       layout: { type: 'select', label: '레이아웃', options: HERO_SPLIT_LAYOUT_OPTIONS },

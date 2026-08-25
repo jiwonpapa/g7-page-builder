@@ -4,8 +4,10 @@ import type { Config } from '@puckeditor/core';
 import { createRouteUrlField } from './RouteUrlField';
 import {
   decorateCanvasElementStyles,
+  CanvasCurrentElementStylesContext,
   normalizeElementAppearanceMap,
   notifyCanvasElementSelection,
+  useCanvasBlockAppearanceClass,
   useCanvasElementStyles,
 } from './canvasEditingContract';
 import {
@@ -126,9 +128,10 @@ function surfaceClass(props: AppearanceEditorProps): string {
 }
 function Frame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
   const resolved = useCanvasElementStyles(id, elementStyles);
-  return <section className="g7pb-preview-block" data-testid="page-builder-block" data-block-id={id} data-block-type={type}
+  const containerClassName = useCanvasBlockAppearanceClass(id);
+  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
     onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)} {...motionPreviewAttributes(motion)}>
-    {decorateCanvasElementStyles(children, resolved)}
+    <CanvasCurrentElementStylesContext.Provider value={resolved}>{decorateCanvasElementStyles(children, resolved)}</CanvasCurrentElementStylesContext.Provider>
   </section>;
 }
 

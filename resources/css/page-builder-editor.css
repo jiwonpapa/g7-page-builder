@@ -1626,6 +1626,24 @@
   }
 }
 
+@media (min-width: 721px) and (max-width: 1050px) {
+  .g7pb-puck-header-layer > header > div {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .g7pb-puck-header-layer > header > div > :nth-child(2) {
+    display: none;
+  }
+
+  .g7pb-puck-header-layer > header > div > :last-child {
+    grid-column: 2;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+}
+
 @media (max-width: 720px) {
   .g7pb-header-controls {
     position: fixed;

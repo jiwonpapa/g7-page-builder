@@ -417,13 +417,35 @@ async function expandBlockGallery(page: Page): Promise<void> {
   throw new Error('Block gallery did not render every requested window.');
 }
 
+async function selectDefinitionGalleryTab(gallery: Locator): Promise<void> {
+  const tab = gallery.getByRole('tab', { name: /블록 종류/ });
+  if (await tab.getAttribute('aria-selected') !== 'true') {
+    await tab.evaluateAll((tabs) => {
+      (tabs[0] as HTMLButtonElement | undefined)?.click();
+    });
+  }
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}
+
+async function activateGalleryOption(gallery: Locator, option: string): Promise<void> {
+  const button = gallery.getByTestId(`page-builder-block-option-${option}`);
+  await expect(button).toBeVisible();
+  await button.evaluateAll((buttons) => {
+    (buttons[0] as HTMLButtonElement | undefined)?.click();
+  });
+  await expect(gallery).toBeHidden();
+}
+
 async function addBlockFromGallery(page: Page, option: string): Promise<void> {
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
   await revealEditorHeaderActions(page);
   await page.getByTestId('page-builder-add-block').click();
   const gallery = page.getByTestId('page-builder-block-gallery');
-  await gallery.getByRole('tab', { name: /블록 종류/ }).click();
+  await selectDefinitionGalleryTab(gallery);
   await expandBlockGallery(page);
-  await gallery.getByTestId(`page-builder-block-option-${option}`).click();
+  await activateGalleryOption(gallery, option);
 }
 
 async function revealBlockLibrary(page: Page): Promise<void> {
@@ -991,7 +1013,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(page.getByTestId('page-builder-block-option-bar-chart')).toBeVisible();
     await expect(page.getByTestId('page-builder-block-option-hero')).toHaveCount(0);
     await blockSearch.fill('');
-    await blockGallery.getByRole('tab', { name: /블록 종류/ }).click();
+    await selectDefinitionGalleryTab(blockGallery);
     const galleryGrid = blockGallery.locator('.g7pb-block-gallery__grid');
     await expect(galleryGrid).toHaveAttribute('data-total-items', '45');
     await expect(galleryGrid).toHaveAttribute('data-rendered-items', '24');
@@ -1046,7 +1068,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     ]) {
       await expect(page.getByTestId(`page-builder-block-option-${option}`)).toBeVisible();
     }
-    await page.getByTestId('page-builder-block-option-hero').click();
+    await activateGalleryOption(blockGallery, 'hero');
     await addBlockFromGallery(page, 'hero-slider');
     await expect(page.getByTestId('page-builder-hero-warning')).toContainText('Hero 계열 블록이 2개');
     await page.getByTestId('page-builder-hero-warning-dismiss').click();

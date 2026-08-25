@@ -16,19 +16,20 @@
     "check:store": "bash scripts/check-official-store-build.sh",
     "check:version": "node scripts/check-version-policy.mjs",
     "check:editor-acceptance": "node scripts/check-editor-acceptance-contract.mjs",
+    "check:editor-layout-parity": "node scripts/check-editor-layout-parity.mjs",
     "lint:css": "stylelint \"resources/css/**/*.css\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:unit": "vitest run",
+    "test:unit": "npm run check:editor-layout-parity && vitest run",
     "test:e2e:infra": "playwright test tests/E2E/infrastructure.spec.ts",
     "test:e2e:performance": "playwright test tests/E2E/editorPerformance.spec.ts --project=desktop",
-    "test:e2e:product": "playwright test tests/E2E/pageBuilderLifecycle.spec.ts tests/E2E/sitePartLifecycle.spec.ts tests/E2E/officialStore.spec.ts tests/E2E/publicQuality.spec.ts tests/E2E/blockCatalogQuality.spec.ts tests/E2E/editorPerformance.spec.ts tests/E2E/editorInteractionQuality.spec.ts",
+    "test:e2e:product": "playwright test tests/E2E/pageBuilderLifecycle.spec.ts tests/E2E/sitePartLifecycle.spec.ts tests/E2E/officialStore.spec.ts tests/E2E/publicQuality.spec.ts tests/E2E/blockCatalogQuality.spec.ts tests/E2E/editorPerformance.spec.ts tests/E2E/editorInteractionQuality.spec.ts tests/E2E/editorLayoutParity.spec.ts",
     "check:g7-budget": "node scripts/check-g7-dependency-budget.mjs",
     "check:boundaries": "bash scripts/check-boundaries.sh",
     "check:assets": "node scripts/check-assets.mjs",
     "check:frontend-budgets": "node scripts/check-frontend-budgets.mjs",
-    "check": "npm run check:version && npm run check:store && npm run check:editor-acceptance && npm run typecheck && npm run lint:css && npm run test:coverage && npm run check:g7-budget && npm run check:boundaries && npm run build && npm run check:assets && npm run check:frontend-budgets"
+    "check": "npm run check:version && npm run check:store && npm run check:editor-acceptance && npm run check:editor-layout-parity && npm run typecheck && npm run lint:css && npm run test:coverage && npm run check:g7-budget && npm run check:boundaries && npm run build && npm run check:assets && npm run check:frontend-budgets"
   },
   "dependencies": {
     "@puckeditor/core": "0.23.0",

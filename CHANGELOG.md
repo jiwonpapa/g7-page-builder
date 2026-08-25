@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- 45종 전체 블록을 포함한 95개 완성 섹션과 내장 Page Kit 5종을 PC·태블릿·모바일에서 편집 iframe과 컴파일 미리보기로 나란히 측정해 가로 넘침과 좌우 content edge 불일치를 차단하는 Playwright gate를 추가했습니다.
+
+### Fixed
+
+- Puck iframe에 제품 box-model reset이 전달되지 않아 100% 폭 블록의 좌우 padding이 canvas 밖으로 더해지던 문제를 수정하고, 편집기 컨테이너 폭·정렬 계산을 공개 출력과 같은 기준으로 통일했습니다.
+
 ## [0.23.1] - 2026-08-25
 
 ### Changed

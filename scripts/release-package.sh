@@ -22,8 +22,10 @@ fi
 for required in \
   CHANGELOG.md module.json module.php composer.json composer.lock package.json package-lock.json \
   config/block-packs.php config/official-store.php \
-  dist/js/page-builder.iife.js dist/js/page-effects.iife.js \
-  dist/css/page-builder.css dist/css/page-builder-public.css \
+  dist/js/page-builder-editor.iife.js dist/js/page-builder-manager.iife.js \
+  dist/js/page-builder-site-part.iife.js dist/js/page-effects.iife.js \
+  dist/css/page-builder-editor.css dist/css/page-builder-manager.css \
+  dist/css/page-builder-site-part.css dist/css/page-builder-public.css \
   resources/store/dist/catalog.json \
   resources/store/dist/artifacts/jiwonpapa-marketing-presets-1.0.0.zip \
   resources/store/dist/artifacts/jiwonpapa-company-launch-1.0.0.zip \

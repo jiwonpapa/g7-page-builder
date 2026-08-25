@@ -4213,9 +4213,9 @@
   ],
   "runtime": {
     "provider": "builtin.core",
-    "editor": "dist/js/page-builder.iife.js",
+    "editor": "dist/js/page-builder-editor.iife.js",
     "styles": [
-      "dist/css/page-builder.css"
+      "dist/css/page-builder-editor.css"
     ]
   },
   "files": {

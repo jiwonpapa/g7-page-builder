@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
     <title>G7 Page Builder</title>
-    <link rel="stylesheet" href="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder.css') }}">
+    <link rel="stylesheet" href="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-manager.css') }}">
 </head>
 <body class="g7pb-manager-shell">
     <div id="g7pb-manager"
@@ -21,6 +21,6 @@
             }
         })();
     </script>
-    <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder.iife.js') }}"></script>
+    <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-manager.iife.js') }}"></script>
 </body>
 </html>

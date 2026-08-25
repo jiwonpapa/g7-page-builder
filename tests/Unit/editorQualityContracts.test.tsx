@@ -17,6 +17,19 @@ import {
 import { clearDraftJournal, readDraftJournal, writeDraftJournal } from '../../resources/js/editor/draftJournal';
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
 
+const storageValues = new Map<string, string>();
+Object.defineProperty(window, 'localStorage', {
+  configurable: true,
+  value: {
+    clear: () => storageValues.clear(),
+    getItem: (key: string) => storageValues.get(key) ?? null,
+    key: (index: number) => Array.from(storageValues.keys())[index] ?? null,
+    get length() { return storageValues.size; },
+    removeItem: (key: string) => storageValues.delete(key),
+    setItem: (key: string, value: string) => storageValues.set(key, value),
+  },
+});
+
 const documentFixture: PageBuilderDocument = {
   schema_version: 'g7-page-builder/v1',
   document_id: '123e4567-e89b-42d3-a456-426614174000',

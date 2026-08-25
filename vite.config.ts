@@ -1,8 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { bundleInventory } from './vite.bundle-inventory';
 
 export default defineConfig(({ command }) => ({
-  plugins: [react()],
+  plugins: [react(), bundleInventory('editor')],
   define: command === 'build'
     ? {
         'process.env.NODE_ENV': JSON.stringify('production'),
@@ -13,8 +14,8 @@ export default defineConfig(({ command }) => ({
       entry: 'resources/js/editor/main.tsx',
       name: 'JiwonpapaPageBuilder',
       formats: ['iife'],
-      fileName: () => 'js/page-builder.iife.js',
-      cssFileName: 'css/page-builder',
+      fileName: () => 'js/page-builder-editor.iife.js',
+      cssFileName: 'css/page-builder-editor',
     },
     outDir: 'dist',
     emptyOutDir: true,

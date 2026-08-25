@@ -25,7 +25,7 @@
       "output": "dist/js/page-effects.iife.js"
     },
     "css": {
-      "entry": "resources/views/viewer.blade.php",
+      "entry": "resources/css/page-builder-public.css",
       "output": "dist/css/page-builder-public.css"
     },
     "handlers": false

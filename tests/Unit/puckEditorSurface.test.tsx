@@ -686,6 +686,15 @@ describe('Puck editor surface contract', () => {
     expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
       .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공']);
     expect(gallery.querySelector('.g7pb-block-thumb__zoom')).toBeNull();
+    expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-total-items')).toBe('140');
+    expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-rendered-items')).toBe('24');
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(24);
+    for (let batch = 0; batch < 5; batch += 1) {
+      await act(async () => {
+        gallery.querySelector<HTMLButtonElement>('[data-testid="page-builder-gallery-load-more"]')?.click();
+      });
+    }
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(140);
     expect(gallery.textContent).toContain('히어로');
     expect(gallery.textContent).toContain('제목');
     expect(gallery.textContent).toContain('리치텍스트');
@@ -734,7 +743,6 @@ describe('Puck editor surface contract', () => {
     expect(Array.from(categorySelect?.options ?? []).map((option) => option.textContent)).toEqual([
       '전체 분류', '기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터',
     ]);
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(140);
     builtinManifest.presets.forEach((preset) => {
       const slug = preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
       const button = gallery.querySelector<HTMLButtonElement>(`[data-testid="page-builder-preset-${slug}"]`);
@@ -748,6 +756,61 @@ describe('Puck editor surface contract', () => {
     });
     expect((await eventually<HTMLElement>('[data-block-type="heading"]')).textContent)
       .toContain('방문자가 먼저 알아야 할 내용');
+  });
+
+  it('coalesces rapid inspector typing into one canonical conversion per animation frame', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    const onChange = vi.fn();
+    const onDirty = vi.fn();
+    mounted.push(() => { act(() => root.unmount()); });
+
+    await act(async () => {
+      root.render(
+        <PuckEditorAdapter
+          document={fixture}
+          revisionKey={0}
+          iframeEnabled={false}
+          onDirty={onDirty}
+          onChange={onChange}
+          onPublish={() => undefined}
+        />,
+      );
+    });
+    const hero = await eventually<HTMLElement>('[data-testid="page-builder-block"][data-block-type="hero"]');
+    await act(async () => { hero.click(); });
+    const subtitle = await eventually<HTMLInputElement>('[data-testid="page-builder-hero-subtitle"]');
+
+    const frames = new Map<number, FrameRequestCallback>();
+    let frameId = 0;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frameId += 1;
+      frames.set(frameId, callback);
+      return frameId;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => { frames.delete(id); });
+    onChange.mockClear();
+    onDirty.mockClear();
+
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    await act(async () => {
+      for (const value of ['첫', '첫 화', '첫 화면']) {
+        setValue?.call(subtitle, value);
+        subtitle.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+
+    expect(onDirty).toHaveBeenCalledTimes(3);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(frames.size).toBeGreaterThanOrEqual(1);
+    await act(async () => {
+      const queuedFrames = Array.from(frames.values());
+      frames.clear();
+      for (const callback of queuedFrames) callback(16);
+    });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.lastCall?.[0].blocks[0].props.eyebrow).toBe('첫 화면');
   });
 
   it('uses the actor catalog for search, categories, favorites, and preset insertion', async () => {

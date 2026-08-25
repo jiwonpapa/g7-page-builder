@@ -30,9 +30,13 @@ interface DocumentResource {
 interface LayoutMetric {
   blockId: string;
   blockType: string;
+  blockScrollOverflow: number;
   contentLeft: number;
   contentRight: number;
+  measuredScrollOverflow: number;
   overflow: number;
+  rectLeftOverflow: number;
+  rectRightOverflow: number;
 }
 
 interface Scenario {
@@ -211,18 +215,20 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
     const paddingLeft = Number.parseFloat(style?.paddingLeft ?? '0') || 0;
     const paddingRight = Number.parseFloat(style?.paddingRight ?? '0') || 0;
     const viewportWidth = documentElement.clientWidth;
+    const rectLeftOverflow = Math.max(0, -rect.left);
+    const rectRightOverflow = Math.max(0, rect.right - viewportWidth);
+    const blockScrollOverflow = Math.max(0, block.scrollWidth - block.clientWidth);
+    const measuredScrollOverflow = Math.max(0, measured.scrollWidth - measured.clientWidth);
     return {
       blockId: block.dataset.blockId ?? '',
       blockType: block.dataset.blockType ?? '',
+      blockScrollOverflow,
       contentLeft: rect.left + paddingLeft,
       contentRight: rect.right - paddingRight,
-      overflow: Math.max(
-        0,
-        -rect.left,
-        rect.right - viewportWidth,
-        block.scrollWidth - block.clientWidth,
-        measured.scrollWidth - measured.clientWidth,
-      ),
+      measuredScrollOverflow,
+      overflow: Math.max(rectLeftOverflow, rectRightOverflow, blockScrollOverflow, measuredScrollOverflow),
+      rectLeftOverflow,
+      rectRightOverflow,
     };
   }), editor);
 }
@@ -278,7 +284,7 @@ function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: Layou
 
 function expectBlockContainment(metrics: LayoutMetric[], surface: string): void {
   for (const metric of metrics) {
-    expect(metric.overflow, `${surface} ${metric.blockType} (${metric.blockId}) overflow`)
+    expect(metric.overflow, `${surface} ${metric.blockType} overflow: ${JSON.stringify(metric)}`)
       .toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
   }
 }

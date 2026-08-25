@@ -10,6 +10,7 @@ import {
 } from './support/editorInteractionFixture';
 
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
+const CANVAS_IFRAME = '#puck-canvas-root iframe';
 const FIRST_TARGET = '굵게 강조하고';
 const SECOND_TARGET = '목록이나 링크';
 
@@ -17,7 +18,8 @@ test.use({ screenshot: 'off', trace: 'off', video: 'off' });
 test.describe.configure({ retries: 0 });
 
 async function richTextField(page: Page): Promise<Locator> {
-  const field = page.frameLocator('iframe').first().locator(
+  await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
+  const field = page.frameLocator(CANVAS_IFRAME).locator(
     '[data-testid="page-builder-block"][data-block-type="rich-text"] [contenteditable="true"]',
   );
   await expect(field).toHaveCount(1);
@@ -47,7 +49,7 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<void>
 }
 
 async function selectRichTextBlock(page: Page): Promise<void> {
-  const block = page.frameLocator('iframe').first().locator(
+  const block = page.frameLocator(CANVAS_IFRAME).locator(
     '[data-testid="page-builder-block"][data-block-type="rich-text"]',
   );
   const selectedWrapper = block.locator('xpath=ancestor::*[@data-puck-component][1]');
@@ -166,7 +168,7 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
       await setCanvasViewport(page, testInfo.project.name);
     });
     let field = await richTextField(page);
-    const rangeToolbar = page.frameLocator('iframe').first().getByTestId('page-builder-richtext-inline-toolbar');
+    const rangeToolbar = page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-richtext-inline-toolbar');
     const elementPanel = page.getByTestId('page-builder-context-panel');
 
     await test.step('BLOCK_SELECTION_GATE', async () => {

@@ -51,24 +51,20 @@ async function selectRichTextBlock(page: Page): Promise<void> {
     '[data-testid="page-builder-block"][data-block-type="rich-text"]',
   );
   const selectedWrapper = block.locator('xpath=ancestor::*[@data-puck-component][1]');
-  const viewport = page.viewportSize();
-  if (viewport && viewport.width <= 900) {
-    const library = page.getByTestId('page-builder-block-library');
-    if (await library.isVisible()) {
-      await page.getByText('Blocks', { exact: true }).click();
-      await expect(library).toBeHidden();
-    }
-    const navigation = page.locator('nav');
-    await navigation.getByText('Outline', { exact: true }).click();
-    const outlineItem = page.getByRole('button', { name: '리치텍스트', exact: true });
-    await expect(outlineItem).toBeVisible();
-    await outlineItem.click();
-    await navigation.getByText('Outline', { exact: true }).click();
-    await expect(outlineItem).toBeHidden();
-  } else {
-    await block.click({ position: { x: 4, y: 4 } });
+  const library = page.getByTestId('page-builder-block-library');
+  if (await library.isVisible()) {
+    await page.getByText('Blocks', { exact: true }).click();
+    await expect(library).toBeHidden();
   }
+  const navigation = page.locator('nav');
+  await navigation.getByText('Outline', { exact: true }).click();
+  const outlineItem = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: /^리치텍스트$/ });
+  await expect(outlineItem).toHaveCount(1);
+  await expect(outlineItem).toBeVisible();
+  await outlineItem.click();
   await expect(selectedWrapper).toHaveAttribute('aria-pressed', 'true');
+  await navigation.getByText('Outline', { exact: true }).click();
+  await expect(outlineItem).toBeHidden();
 }
 
 interface PointerGeometry {

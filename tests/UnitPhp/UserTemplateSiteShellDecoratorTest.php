@@ -24,6 +24,10 @@ final class UserTemplateSiteShellDecoratorTest extends TestCase
 
         self::assertSame('native-content', $decorated['components'][0]['children'][5]['text']);
         self::assertSame('g7pb_site_shell', $decorated['data_sources'][1]['id']);
+        self::assertSame(
+            "/api/modules/jiwonpapa-page_builder/public/site-shell?locale={{_global.locale ?? 'ko'}}",
+            $decorated['data_sources'][1]['endpoint'],
+        );
         self::assertSame('blocking', $decorated['data_sources'][1]['loading_strategy']);
         self::assertFalse($decorated['data_sources'][1]['fallback']['data']['shell']['enabled']);
 

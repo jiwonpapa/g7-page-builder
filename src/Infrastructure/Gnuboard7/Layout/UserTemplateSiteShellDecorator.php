@@ -224,7 +224,7 @@ final class UserTemplateSiteShellDecorator
         return [
             'id' => self::DATA_SOURCE_ID,
             'type' => 'api',
-            'endpoint' => '/api/modules/jiwonpapa-page_builder/public/site-shell?locale={{$locale}}',
+            'endpoint' => "/api/modules/jiwonpapa-page_builder/public/site-shell?locale={{_global.locale ?? 'ko'}}",
             'method' => 'GET',
             'auto_fetch' => true,
             'auth_required' => false,

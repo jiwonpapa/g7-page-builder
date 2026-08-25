@@ -33,20 +33,20 @@ async function authenticatedApi(): Promise<APIRequestContext> {
   });
 }
 
-async function readOrBootstrap(api: APIRequestContext, kind: SitePartKind): Promise<SitePartResource> {
+async function readOrBootstrap(api: APIRequestContext, kind: SitePartKind, locale: string): Promise<SitePartResource> {
   const path = `/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}`;
-  let response = await api.get(`${path}?locale=ko`);
-  if (response.status() === 404) response = await api.post(`${path}/bootstrap`, { data: { locale: 'ko' } });
+  let response = await api.get(`${path}?locale=${encodeURIComponent(locale)}`);
+  if (response.status() === 404) response = await api.post(`${path}/bootstrap`, { data: { locale } });
   expect(response.ok()).toBe(true);
   const payload = await response.json() as { data?: SitePartResource };
   if (!payload.data) throw new Error(`${kind} Site Part API returned no resource.`);
   return payload.data;
 }
 
-async function publishCurrent(api: APIRequestContext, kind: SitePartKind, resource: SitePartResource): Promise<SitePartResource> {
+async function publishCurrent(api: APIRequestContext, kind: SitePartKind, locale: string, resource: SitePartResource): Promise<SitePartResource> {
   if (resource.status === 'published') return resource;
   const response = await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}/publish`, {
-    data: { locale: 'ko', expected_lock_version: resource.lock_version },
+    data: { locale, expected_lock_version: resource.lock_version },
   });
   expect(response.ok()).toBe(true);
   const payload = await response.json() as { data?: SitePartResource };
@@ -56,16 +56,19 @@ async function publishCurrent(api: APIRequestContext, kind: SitePartKind, resour
 
 test('applies one fail-safe Page Builder Header and Footer across representative G7 user routes', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'The route matrix is structural and runs once on desktop.');
+  const initialResponse = await page.goto('/');
+  expect(initialResponse?.ok()).toBe(true);
+  const locale = ((await page.locator('html').getAttribute('lang')) || 'ko').split('-')[0];
   const api = READ_ONLY
     ? await playwrightRequest.newContext({ baseURL: BASE_URL, ignoreHTTPSErrors: true, extraHTTPHeaders: { Accept: 'application/json' } })
     : await authenticatedApi();
   try {
     if (!READ_ONLY) {
-      await publishCurrent(api, 'header', await readOrBootstrap(api, 'header'));
-      await publishCurrent(api, 'footer', await readOrBootstrap(api, 'footer'));
+      await publishCurrent(api, 'header', locale, await readOrBootstrap(api, 'header', locale));
+      await publishCurrent(api, 'footer', locale, await readOrBootstrap(api, 'footer', locale));
     }
 
-    const shell = await api.get('/api/modules/jiwonpapa-page_builder/public/site-shell?locale=ko');
+    const shell = await api.get(`/api/modules/jiwonpapa-page_builder/public/site-shell?locale=${encodeURIComponent(locale)}`);
     expect(shell.ok()).toBe(true);
     const shellPayload = await shell.json() as { data?: { shell?: { enabled?: unknown } } };
     expect(shellPayload.data?.shell?.enabled).toBe(true);

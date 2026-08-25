@@ -1395,7 +1395,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(ctaHeading, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(contactHeading, { exact: true })).toBeVisible();
-    await expect(previewPage.locator('form')).toHaveCount(0);
+    await expect(previewPage.locator('form:not(.g7pb-system-search)')).toHaveCount(0);
     await expect(previewPage.locator('script[src*="page-effects.iife.js"]')).toHaveCount(1);
     await expect(previewPage.locator('[data-block-type="hero"]')).toHaveAttribute('data-g7pb-motion', 'parallax-soft');
     await expect(previewPage.locator('[data-block-type="features"]')).toHaveAttribute('data-g7pb-motion', 'stagger');

@@ -71,12 +71,15 @@ final class BlockPackContractTest extends TestCase
 
     public function test_icon_list_glyph_css_does_not_leak_into_feature_icons(): void
     {
-        $viewer = file_get_contents(dirname(__DIR__, 2).'/resources/views/viewer.blade.php');
-        self::assertIsString($viewer);
+        $publicCss = file_get_contents(dirname(__DIR__, 2).'/resources/css/page-builder-public.css');
+        self::assertIsString($publicCss);
 
         foreach (['bolt', 'code', 'globe', 'heart', 'layers', 'mobile', 'palette', 'shield', 'sparkles', 'star'] as $icon) {
-            self::assertStringContainsString(".g7pb-icon-list__icon.g7pb-icon--{$icon}::before", $viewer);
-            self::assertStringNotContainsString("        .g7pb-icon--{$icon}::before", $viewer);
+            self::assertStringContainsString(".g7pb-icon-list__icon.g7pb-icon--{$icon}::before", $publicCss);
+            self::assertDoesNotMatchRegularExpression(
+                "/(?<![\\w-])\\.g7pb-icon--{$icon}::before/",
+                str_replace(".g7pb-icon-list__icon.g7pb-icon--{$icon}::before", '', $publicCss),
+            );
         }
     }
 

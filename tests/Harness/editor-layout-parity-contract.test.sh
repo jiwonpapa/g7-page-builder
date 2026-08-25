@@ -53,6 +53,11 @@ perl -0pi -e 's/editor\.contentLeft - preview\.contentLeft/editor.contentLeft - 
 expect_failure '편집기/미리보기 왼쪽 content edge 비교가 필요합니다.'
 
 copy_fixture
+perl -0pi -e 's/await previewLink\.click\(\)/await previewLink.isVisible()/' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '초안 변경으로 미리보기 ticket이 무효화되면 실제 생성 버튼 흐름을 실행해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/root\.scrollWidth - root\.clientWidth/0/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure 'iframe/preview document 가로 overflow 측정이 필요합니다.'

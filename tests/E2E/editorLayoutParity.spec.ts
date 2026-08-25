@@ -322,6 +322,10 @@ async function assertScenario(
   await expectDocumentContained(editorRoot, `${scenario.label} editor product root overflow`);
 
   const previewLink = page.getByTestId('page-builder-preview-link');
+  await expect(previewLink).toBeVisible();
+  if (await previewLink.evaluate((element) => element.tagName === 'BUTTON')) {
+    await previewLink.click();
+  }
   await expect(previewLink).toHaveAttribute('href', /\/modules\/jiwonpapa-page_builder\/preview\/[a-f0-9]{64}/);
   const previewUrl = await previewLink.getAttribute('href');
   if (!previewUrl) throw new Error(`${scenario.label} preview URL is unavailable.`);

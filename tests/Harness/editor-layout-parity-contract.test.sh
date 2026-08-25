@@ -8,10 +8,14 @@ trap 'rm -rf "$fixture_root"' EXIT
 copy_fixture() {
   rm -rf "$fixture_root/fixture"
   mkdir -p "$fixture_root/fixture/scripts" "$fixture_root/fixture/tests/E2E" \
-    "$fixture_root/fixture/resources/css"
+    "$fixture_root/fixture/resources/css" "$fixture_root/fixture/resources/js/editor"
   cp "$repo_root/package.json" "$fixture_root/fixture/package.json"
   cp "$repo_root/resources/css/page-builder-editor.css" \
     "$fixture_root/fixture/resources/css/page-builder-editor.css"
+  cp "$repo_root/resources/css/page-builder-public.css" \
+    "$fixture_root/fixture/resources/css/page-builder-public.css"
+  cp "$repo_root/resources/js/editor/PuckEditorAdapter.tsx" \
+    "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
   cp "$repo_root/tests/E2E/editorLayoutParity.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 }
@@ -41,6 +45,21 @@ copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-block > \* \{ width: 100%; max-width: 100%; )margin-inline: 0;/${1}margin-inline: auto;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '편집 block wrapper가 공개 block과 다른 inline margin으로 자식을 재배치하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e "s/ g7pb-full-site-page--template/ g7pb-full-site-page--removed/" \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure 'template shell 전용 G7 Container envelope class를 편집 page root에 적용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(@container \(max-width: )800px/${1}767px/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Hero Split은 768px 경계에서 단일 열로 접혀야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(@media \(max-width: )800px/${1}767px/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure '공개 Hero Split도 768px 경계에서 편집기와 동일하게 단일 열로 접혀야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/ALL_95_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \

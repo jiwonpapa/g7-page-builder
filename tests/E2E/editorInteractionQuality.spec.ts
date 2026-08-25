@@ -91,21 +91,42 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
       const content = node.textContent ?? '';
       const startOffset = content.indexOf(selected);
       if (startOffset >= 0) {
+        const caretDocument = element.ownerDocument as Document & {
+          caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+          caretRangeFromPoint?: (x: number, y: number) => Range | null;
+        };
+        const caretOffsetAtPoint = (x: number, y: number): number | null => {
+          const position = caretDocument.caretPositionFromPoint?.(x, y);
+          if (position) return position.offsetNode === node ? position.offset : null;
+          const range = caretDocument.caretRangeFromPoint?.(x, y);
+          return range?.startContainer === node ? range.startOffset : null;
+        };
+        const resolveCaretPoint = (rect: DOMRect, expectedOffset: number): { left: number; right: number; top: number } => {
+          const top = rect.top + rect.height / 2;
+          const candidates: Array<{ left: number; right: number; top: number }> = [];
+          for (let sample = 1; sample < 20; sample += 1) {
+            const left = rect.left + rect.width * sample / 20;
+            if (caretOffsetAtPoint(left, top) === expectedOffset) candidates.push({ left, right: left, top });
+          }
+          const point = candidates[Math.floor(candidates.length / 2)];
+          if (!point) throw new Error(`No pointer point resolves to caret offset ${expectedOffset}.`);
+          return point;
+        };
         const startRange = element.ownerDocument.createRange();
         startRange.setStart(node, startOffset);
         startRange.setEnd(node, startOffset + 1);
         const endRange = element.ownerDocument.createRange();
         endRange.setStart(node, startOffset + selected.length - 1);
         endRange.setEnd(node, startOffset + selected.length);
-        const start = startRange.getBoundingClientRect();
-        const end = endRange.getBoundingClientRect();
+        const start = resolveCaretPoint(startRange.getBoundingClientRect(), startOffset);
+        const end = resolveCaretPoint(endRange.getBoundingClientRect(), startOffset + selected.length);
         return {
           fieldHeight: fieldRect.height,
           fieldWidth: fieldRect.width,
-          startX: start.left - fieldRect.left + Math.max(0.25, start.width * 0.05),
-          startY: start.top - fieldRect.top + start.height / 2,
-          endX: end.right - fieldRect.left - Math.max(0.25, end.width * 0.05),
-          endY: end.top - fieldRect.top + end.height / 2,
+          startX: start.left - fieldRect.left,
+          startY: start.top - fieldRect.top,
+          endX: end.right - fieldRect.left,
+          endY: end.top - fieldRect.top,
         };
       }
       node = walker.nextNode();

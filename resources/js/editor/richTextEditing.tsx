@@ -66,7 +66,13 @@ function useRichTextEditorRevision(editor: Editor | null): number {
   useEffect(() => {
     if (!editor) return;
 
-    const editorDocument = editor.view.dom.ownerDocument;
+    let editorDom: HTMLElement | null = null;
+    try {
+      editorDom = editor.view.dom;
+    } catch {
+      // Tiptap can expose the Editor before its ProseMirror view is mounted.
+    }
+    const editorDocument = editorDom?.ownerDocument ?? null;
     let pointerRangeInProgress = false;
     let pendingRevision = false;
     const commitRevision = (): void => setRevision((revision) => revision + 1);
@@ -78,7 +84,7 @@ function useRichTextEditorRevision(editor: Editor | null): number {
       commitRevision();
     };
     const beginPointerRange = (event: PointerEvent): void => {
-      if (event.composedPath().includes(editor.view.dom)) pointerRangeInProgress = true;
+      if (editorDom && event.composedPath().includes(editorDom)) pointerRangeInProgress = true;
     };
     const finishPointerRange = (): void => {
       if (!pointerRangeInProgress) return;
@@ -88,16 +94,16 @@ function useRichTextEditorRevision(editor: Editor | null): number {
       commitRevision();
     };
 
-    editorDocument.addEventListener('pointerdown', beginPointerRange, true);
-    editorDocument.addEventListener('pointerup', finishPointerRange, true);
-    editorDocument.addEventListener('pointercancel', finishPointerRange, true);
+    editorDocument?.addEventListener('pointerdown', beginPointerRange, true);
+    editorDocument?.addEventListener('pointerup', finishPointerRange, true);
+    editorDocument?.addEventListener('pointercancel', finishPointerRange, true);
     editor.on('selectionUpdate', syncEditorState);
     editor.on('transaction', syncEditorState);
 
     return () => {
-      editorDocument.removeEventListener('pointerdown', beginPointerRange, true);
-      editorDocument.removeEventListener('pointerup', finishPointerRange, true);
-      editorDocument.removeEventListener('pointercancel', finishPointerRange, true);
+      editorDocument?.removeEventListener('pointerdown', beginPointerRange, true);
+      editorDocument?.removeEventListener('pointerup', finishPointerRange, true);
+      editorDocument?.removeEventListener('pointercancel', finishPointerRange, true);
       editor.off('selectionUpdate', syncEditorState);
       editor.off('transaction', syncEditorState);
     };

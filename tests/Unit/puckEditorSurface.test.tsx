@@ -289,6 +289,38 @@ describe('Puck editor surface contract', () => {
     expect(handlers.get('transaction')).toHaveLength(0);
   });
 
+  it('subscribes safely before the Tiptap view is mounted', async () => {
+    const on = vi.fn();
+    const off = vi.fn();
+    const editor = {
+      state: { selection: { empty: true, from: 1, to: 1 } },
+      get view() { throw new Error('view is not mounted'); },
+      getAttributes: vi.fn(() => ({})),
+      isActive: vi.fn(() => false),
+      on,
+      off,
+    } as never;
+    const InlineMenu = createRichTextField('본문').renderInlineMenu;
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    let unmounted = false;
+    mounted.push(() => {
+      if (!unmounted) act(() => root.unmount());
+    });
+
+    await act(async () => {
+      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>서식</InlineMenu>);
+    });
+    expect(on).toHaveBeenCalledWith('selectionUpdate', expect.any(Function));
+    expect(on).toHaveBeenCalledWith('transaction', expect.any(Function));
+
+    await act(async () => root.unmount());
+    unmounted = true;
+    expect(off).toHaveBeenCalledWith('selectionUpdate', expect.any(Function));
+    expect(off).toHaveBeenCalledWith('transaction', expect.any(Function));
+  });
+
   it('provides stable container controls to every built-in block', () => {
     for (const [component, config] of Object.entries(pageBuilderPuckConfig.components)) {
       expect(config.fields, component).toMatchObject({

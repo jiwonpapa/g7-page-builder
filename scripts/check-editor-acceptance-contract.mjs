@@ -65,9 +65,11 @@ export async function validateEditorAcceptanceContract(root) {
     [/page\.mouse\.click\s*\(/, '선택 해제도 실제 pointer click으로 검증해야 합니다.'],
     [/projectName\s*===\s*['"]mobile['"]\s*\?\s*360\s*:\s*projectName\s*===\s*['"]tablet['"]\s*\?\s*768\s*:\s*1280/, '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'],
     [/frameLocator\(['"]iframe['"]\)\.first\(\)/, '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'],
-    [/await field\.boundingBox\(\)/, '변환된 viewport에서도 실제 필드 좌표를 사용해야 합니다.'],
-    [/fieldBox\.width\s*\/\s*geometry\.fieldWidth/, 'viewport transform의 가로 배율을 실제 포인터 좌표에 반영해야 합니다.'],
-    [/fieldBox\.height\s*\/\s*geometry\.fieldHeight/, 'viewport transform의 세로 배율을 실제 포인터 좌표에 반영해야 합니다.'],
+    [/page\.locator\(['"]iframe['"]\)\.first\(\)/, '실제 포인터 좌표의 활성 iframe border box가 필요합니다.'],
+    [/await frame\.boundingBox\(\)/, '변환된 iframe의 실제 화면 좌표를 사용해야 합니다.'],
+    [/frameBox\.width\s*\/\s*frameGeometry\.borderBoxWidth/, 'iframe transform의 가로 배율을 실제 포인터 좌표에 반영해야 합니다.'],
+    [/frameBox\.height\s*\/\s*frameGeometry\.borderBoxHeight/, 'iframe transform의 세로 배율을 실제 포인터 좌표에 반영해야 합니다.'],
+    [/frameGeometry\.contentLeft\s*\+\s*geometry\.startX/, 'iframe border와 content 원점을 포인터 좌표에 반영해야 합니다.'],
     [/REAL_POINTER_SELECTION_GATE/, '실제 포인터 선택 gate가 필요합니다.'],
     [/CANVAS_VIEWPORT_GATE/, 'browser project와 내부 canvas viewport 일치 gate가 필요합니다.'],
     [/RANGE_TOOLBAR_EXCLUSIVE_GATE/, '범위 툴바와 요소 벌룬 상호배타 gate가 필요합니다.'],
@@ -86,10 +88,6 @@ export async function validateEditorAcceptanceContract(root) {
     [/page-builder-public-link/, '공개 출력 검증이 필요합니다.'],
   ];
   for (const [pattern, message] of requiredEvidence) requirePattern(errors, spec, pattern, message);
-
-  if (/page\.locator\(['"]iframe['"]\)\.boundingBox\(\)/.test(spec)) {
-    errors.push('iframe 원점과 내부 CSS 좌표를 단순 합산하면 viewport transform을 놓칩니다.');
-  }
 
   if (/\btest\.(?:skip|fixme)\s*\(/.test(spec) || /testInfo\.project\.name\s*!==/.test(spec)) {
     errors.push('전용 편집 E2E는 viewport를 skip/fixme로 우회하면 안 됩니다.');

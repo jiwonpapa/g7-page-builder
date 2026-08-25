@@ -51,11 +51,17 @@ interface PointerGeometry {
   start: { x: number; y: number };
 }
 
-async function textPointerGeometry(field: Locator, target: string): Promise<PointerGeometry> {
+async function textPointerGeometry(page: Page, field: Locator, target: string): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
-  const fieldBox = await field.boundingBox();
+  const frame = page.locator('iframe').first();
+  const frameBox = await frame.boundingBox();
+  const frameGeometry = await frame.evaluate((element) => ({
+    borderBoxHeight: (element as HTMLIFrameElement).offsetHeight,
+    borderBoxWidth: (element as HTMLIFrameElement).offsetWidth,
+    contentLeft: (element as HTMLIFrameElement).clientLeft,
+    contentTop: (element as HTMLIFrameElement).clientTop,
+  }));
   const geometry = await field.evaluate((element, selected) => {
-    const fieldRect = element.getBoundingClientRect();
     const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
     while (node) {
@@ -71,31 +77,35 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
         const start = startRange.getBoundingClientRect();
         const end = endRange.getBoundingClientRect();
         return {
-          fieldWidth: fieldRect.width,
-          fieldHeight: fieldRect.height,
-          startX: start.left - fieldRect.left + Math.max(1, start.width * 0.2),
-          startY: start.top - fieldRect.top + start.height / 2,
-          endX: end.right - fieldRect.left - Math.max(1, end.width * 0.2),
-          endY: end.top - fieldRect.top + end.height / 2,
+          startX: start.left + Math.max(1, start.width * 0.2),
+          startY: start.top + start.height / 2,
+          endX: end.right - Math.max(1, end.width * 0.2),
+          endY: end.top + end.height / 2,
         };
       }
       node = walker.nextNode();
     }
     throw new Error(`Pointer selection target was not found: ${selected}`);
   }, target);
-  if (!fieldBox || geometry.fieldWidth <= 0 || geometry.fieldHeight <= 0) {
-    throw new Error('Editor rich-text field geometry is unavailable.');
+  if (!frameBox || frameGeometry.borderBoxWidth <= 0 || frameGeometry.borderBoxHeight <= 0) {
+    throw new Error('Editor canvas iframe geometry is unavailable.');
   }
-  const scaleX = fieldBox.width / geometry.fieldWidth;
-  const scaleY = fieldBox.height / geometry.fieldHeight;
+  const scaleX = frameBox.width / frameGeometry.borderBoxWidth;
+  const scaleY = frameBox.height / frameGeometry.borderBoxHeight;
   return {
-    start: { x: fieldBox.x + geometry.startX * scaleX, y: fieldBox.y + geometry.startY * scaleY },
-    end: { x: fieldBox.x + geometry.endX * scaleX, y: fieldBox.y + geometry.endY * scaleY },
+    start: {
+      x: frameBox.x + (frameGeometry.contentLeft + geometry.startX) * scaleX,
+      y: frameBox.y + (frameGeometry.contentTop + geometry.startY) * scaleY,
+    },
+    end: {
+      x: frameBox.x + (frameGeometry.contentLeft + geometry.endX) * scaleX,
+      y: frameBox.y + (frameGeometry.contentTop + geometry.endY) * scaleY,
+    },
   };
 }
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
-  const pointer = await textPointerGeometry(field, target);
+  const pointer = await textPointerGeometry(page, field, target);
   await page.mouse.move(pointer.start.x, pointer.start.y);
   await page.mouse.down();
   await page.waitForTimeout(60);
@@ -106,7 +116,7 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
 }
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
-  const pointer = await textPointerGeometry(field, target);
+  const pointer = await textPointerGeometry(page, field, target);
   await page.mouse.click(pointer.end.x, pointer.end.y);
   await expect.poll(() => selectedText(field)).toBe('');
 }

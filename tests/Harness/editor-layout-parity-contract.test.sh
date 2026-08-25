@@ -48,6 +48,11 @@ perl -0pi -e 's/ALL_95_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \
 expect_failure '95개 프리셋 편집/미리보기 gate가 필요합니다.'
 
 copy_fixture
+perl -0pi -e 's#\$\{API\}/store/page-kits/apply#\$\{API\}/store/page-kits/bypassed#' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure 'Page Kit은 실제 공식 마켓 적용 API로 생성해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/editor\.contentLeft - preview\.contentLeft/editor.contentLeft - editor.contentLeft/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure '편집기/미리보기 왼쪽 content edge 비교가 필요합니다.'

@@ -141,6 +141,11 @@ perl -0pi -e 's/onMouseDownCapture=\{preserveRangeBeforeToolbarAction\}//' \
 expect_failure '툴바 mouse down에서 선택 범위 붕괴를 차단해야 합니다.'
 
 copy_fixture
+perl -0pi -e "s/typeof target\?\.closest === 'function'/event.target instanceof Element/" \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure 'iframe 툴바 target을 부모 realm Element instanceof로 판정하면 안 됩니다.'
+
+copy_fixture
 perl -0pi -e 's/onPointerDown=\{\(event\) => runPointerAction\(event, \(\) => toggleNativeMark\('\''bold'\''\)\)\}//' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '굵게 명령은 click 전에 실제 pointer down에서 실행해야 합니다.'

@@ -50,6 +50,7 @@ async function selectRichTextBlock(page: Page): Promise<void> {
   const block = page.frameLocator('iframe').first().locator(
     '[data-testid="page-builder-block"][data-block-type="rich-text"]',
   );
+  const selectedWrapper = block.locator('xpath=ancestor::*[@data-puck-component][1]');
   const viewport = page.viewportSize();
   if (viewport && viewport.width <= 900) {
     const library = page.getByTestId('page-builder-block-library');
@@ -59,7 +60,7 @@ async function selectRichTextBlock(page: Page): Promise<void> {
     }
     const navigation = page.locator('nav');
     await navigation.getByText('Outline', { exact: true }).click();
-    const outlineItem = page.getByText('리치텍스트', { exact: true }).last();
+    const outlineItem = page.getByRole('button', { name: '리치텍스트', exact: true });
     await expect(outlineItem).toBeVisible();
     await outlineItem.click();
     await navigation.getByText('Outline', { exact: true }).click();
@@ -67,7 +68,7 @@ async function selectRichTextBlock(page: Page): Promise<void> {
   } else {
     await block.click({ position: { x: 4, y: 4 } });
   }
-  await expect(page.getByTestId('page-builder-context-panel')).toBeVisible();
+  await expect(selectedWrapper).toHaveAttribute('aria-pressed', 'true');
 }
 
 interface PointerGeometry {

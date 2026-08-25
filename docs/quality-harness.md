@@ -20,7 +20,7 @@
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
 - `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
-- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`를 실행합니다. 전용 E2E가 실제 블록 선택(좁은 화면은 Outline), iframe 내부 locator의 실제 `hover → mouse.down → hover → mouse.up` 선택과 실제 `click` 해제, browser project와 360/768/1280 내부 canvas 일치, 활성 canvas iframe 고정, 재시도 0회, 세 viewport, 툴바 상호배타, 저장·미리보기·공개 DOM 서식 증거를 잃거나 합성 Selection으로 바뀌면 제출을 거부합니다.
+- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`를 실행합니다. 전용 E2E가 실제 블록 선택(좁은 화면은 Outline 버튼, `aria-pressed=true` 확인), iframe 내부 locator의 실제 `hover → mouse.down → hover → mouse.up` 선택과 실제 `click` 해제, browser project와 360/768/1280 내부 canvas 일치, 활성 canvas iframe 고정, 재시도 0회, 세 viewport, 툴바 상호배타, 저장·미리보기·공개 DOM 서식 증거를 잃거나 합성 Selection으로 바뀌면 제출을 거부합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
 - `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.

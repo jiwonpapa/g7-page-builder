@@ -634,6 +634,8 @@ function storageValue(view: Window, key: string): string {
   }
 }
 
+const systemSearchQueries = new WeakMap<Document, string>();
+
 function replaceSelectOptions(select: HTMLSelectElement, values: Array<{ value: string; label: string }>, selected: string): void {
   const signature = values.map((value) => `${value.value}:${value.label}`).join('|');
   if (select.dataset.g7pbSystemOptions !== signature) {
@@ -658,6 +660,7 @@ function ensureG7SystemControlElements(root: Document): void {
     input.name = 'q';
     input.type = 'search';
     input.placeholder = host.dataset.g7pbPlaceholder || label.textContent;
+    input.value = systemSearchQueries.get(root) ?? '';
     label.append(input);
     const submit = root.createElement('button');
     submit.type = 'submit';
@@ -753,6 +756,13 @@ export function renderG7SystemControls(root: Document = document, view: G7ShellW
 export function bootG7SystemControls(root: Document = document, view: G7ShellWindow = window as G7ShellWindow): void {
   renderG7SystemControls(root, view);
   if (root.documentElement.dataset.g7pbSystemControlsReady === 'true') return;
+
+  root.addEventListener('input', (event) => {
+    const input = event.target as HTMLInputElement | null;
+    if (input?.matches('[data-g7pb-system-search-host] input[name="q"]')) {
+      systemSearchQueries.set(root, input.value);
+    }
+  });
 
   root.addEventListener('click', (event) => {
     const button = (event.target as Element | null)?.closest<HTMLElement>('[data-g7pb-system-theme]');

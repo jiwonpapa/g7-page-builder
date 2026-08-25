@@ -267,6 +267,7 @@ describe('published page effects runtime', () => {
     document.documentElement.lang = 'ko';
     document.body.innerHTML = `
       <nav data-g7pb-system-controls>
+        <span data-g7pb-system-search-host data-g7pb-label="검색" data-g7pb-placeholder="통합 검색"></span>
         <a data-g7pb-system-member hidden>회원</a><a data-g7pb-system-guest>비회원</a>
         <a data-g7pb-system-cart><span data-g7pb-system-cart-count hidden></span></a>
         <span data-g7pb-system-notification-count hidden></span>
@@ -300,6 +301,11 @@ describe('published page effects runtime', () => {
     expect(document.querySelectorAll('[data-g7pb-system-locale] option')).toHaveLength(2);
     expect(document.querySelector<HTMLElement>('[data-g7pb-system-currency-wrap]')?.hidden).toBe(false);
 
+    const search = document.querySelector<HTMLInputElement>('[data-g7pb-system-search-host] input[name="q"]')!;
+    search.value = '통합 셸';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    search.closest('form')?.remove();
+
     const cartBadgeText = document.querySelector('[data-g7pb-system-cart-count]')?.firstChild;
     const notificationBadgeText = document.querySelector('[data-g7pb-system-notification-count]')?.firstChild;
     const firstLocaleOption = document.querySelector('[data-g7pb-system-locale] option');
@@ -307,6 +313,7 @@ describe('published page effects runtime', () => {
     expect(document.querySelector('[data-g7pb-system-cart-count]')?.firstChild).toBe(cartBadgeText);
     expect(document.querySelector('[data-g7pb-system-notification-count]')?.firstChild).toBe(notificationBadgeText);
     expect(document.querySelector('[data-g7pb-system-locale] option')).toBe(firstLocaleOption);
+    expect(document.querySelector<HTMLInputElement>('[data-g7pb-system-search-host] input[name="q"]')?.value).toBe('통합 셸');
 
     const locale = document.querySelector<HTMLSelectElement>('[data-g7pb-system-locale]')!;
     locale.value = 'en';

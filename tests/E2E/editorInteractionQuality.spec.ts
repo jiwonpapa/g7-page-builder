@@ -49,10 +49,6 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<void>
 }
 
 async function selectRichTextBlock(page: Page): Promise<void> {
-  const block = page.frameLocator(CANVAS_IFRAME).locator(
-    '[data-testid="page-builder-block"][data-block-type="rich-text"]',
-  );
-  const selectedWrapper = block.locator('xpath=ancestor::*[@data-puck-component][1]');
   const library = page.getByTestId('page-builder-block-library');
   if (await library.isVisible()) {
     await page.getByText('Blocks', { exact: true }).click();
@@ -61,10 +57,11 @@ async function selectRichTextBlock(page: Page): Promise<void> {
   const navigation = page.locator('nav');
   await navigation.getByText('Outline', { exact: true }).click();
   const outlineItem = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: /^리치텍스트$/ });
+  const outlineLayer = outlineItem.locator('xpath=ancestor::li[@data-puck-layer-tree-id][1]');
   await expect(outlineItem).toHaveCount(1);
   await expect(outlineItem).toBeVisible();
   await outlineItem.click();
-  await expect(selectedWrapper).toHaveAttribute('aria-pressed', 'true');
+  await expect(outlineLayer).toHaveClass(/Layer--isSelected/);
   await navigation.getByText('Outline', { exact: true }).click();
   await expect(outlineItem).toBeHidden();
 }

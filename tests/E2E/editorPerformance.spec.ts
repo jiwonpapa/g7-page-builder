@@ -42,6 +42,7 @@ interface LongTaskMetric {
 }
 
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
+test.describe.configure({ retries: 0 });
 
 function credentials(): { email: string; password: string } {
   const email = process.env.G7PB_ADMIN_EMAIL;
@@ -104,7 +105,18 @@ async function createPerformanceDocument(api: APIRequestContext, runId: string):
   const document: PageBuilderDocument = {
     ...payload.data.document,
     shell_mode: 'none',
-    blocks: Array.from({ length: BLOCK_COUNT }, (_, index) => ({
+    blocks: Array.from({ length: BLOCK_COUNT }, (_, index) => index === 0 ? {
+      instance_id: crypto.randomUUID(),
+      type: 'content.hero-centered-01',
+      block_version: 1,
+      props: {
+        eyebrow: 'PERFORMANCE 001',
+        title: '100블록 편집 성능 기준',
+        body: '<p>실제 편집 반응성을 수치로 검증합니다.</p>',
+        alignment: 'center',
+      },
+      slots: {},
+    } : {
       instance_id: crypto.randomUUID(),
       type: 'content.heading-01',
       block_version: 1,
@@ -115,7 +127,7 @@ async function createPerformanceDocument(api: APIRequestContext, runId: string):
         anchor: `performance-${index + 1}`,
       },
       slots: {},
-    })),
+    }),
   };
   const draftResponse = await api.put(
     `/api/modules/jiwonpapa-page_builder/admin/documents/${document.document_id}/draft`,
@@ -157,29 +169,27 @@ async function purgePerformanceDocument(api: APIRequestContext, documentId: stri
 }
 
 async function measureTyping(page: Page): Promise<number[]> {
-  const firstHeading = page.frameLocator('iframe').locator(
-    '[data-testid="page-builder-block"][data-block-type="heading"]',
-  ).first().locator(
-    '[data-g7pb-inline-field="heading"][contenteditable], [data-g7pb-inline-field="heading"] [contenteditable]',
+  const hero = page.frameLocator('iframe').locator(
+    '[data-testid="page-builder-block"][data-block-type="hero"]',
   );
-  await firstHeading.scrollIntoViewIfNeeded();
-  await firstHeading.dispatchEvent('pointerdown');
-  await expect(firstHeading).toBeEditable();
-  await firstHeading.click();
+  await hero.scrollIntoViewIfNeeded();
+  await hero.click({ position: { x: 4, y: 4 } });
+  const input = page.getByTestId('page-builder-hero-subtitle');
+  await expect(input).toBeVisible();
+  await input.fill('PERFORMANCE');
+  await input.focus();
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 
   const samples: number[] = [];
+  let expectedValue = 'PERFORMANCE';
   for (const character of ' typing-gate') {
-    const measurement = page.evaluate(() => new Promise<number>((resolve) => {
-      const frameDocument = document.querySelector('iframe')?.contentDocument;
-      const start = performance.now();
-      frameDocument?.addEventListener('input', () => {
-        requestAnimationFrame(() => resolve(performance.now() - start));
-      }, { capture: true, once: true });
-    }));
+    const start = await page.evaluate(() => performance.now());
     await page.keyboard.insertText(character);
-    samples.push(await measurement);
+    expectedValue += character;
+    await expect(input).toHaveValue(expectedValue);
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    samples.push(await page.evaluate((startedAt) => performance.now() - startedAt, start));
   }
-  await expect(firstHeading).toContainText('typing-gate');
   return samples;
 }
 
@@ -211,24 +221,16 @@ async function measureDrag(page: Page): Promise<number> {
 }
 
 async function measureGallery(page: Page): Promise<number> {
-  const measurement = page.evaluate(() => new Promise<number>((resolve) => {
-    const start = performance.now();
-    const observer = new MutationObserver(() => {
-      if (!document.querySelector('[data-testid="page-builder-block-gallery"]')) return;
-      observer.disconnect();
-      requestAnimationFrame(() => resolve(performance.now() - start));
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }));
+  const start = await page.evaluate(() => performance.now());
   await page.getByTestId('page-builder-add-block').click();
-  const duration = await measurement;
   const gallery = page.getByTestId('page-builder-block-gallery');
   await expect(gallery).toBeVisible();
   const grid = gallery.locator('.g7pb-block-gallery__grid');
   await expect(grid).toHaveAttribute('data-total-items', '140');
   await expect(grid).toHaveAttribute('data-rendered-items', '24');
   await expect(grid.locator('[data-block-preview]')).toHaveCount(24);
-  return duration;
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  return await page.evaluate((startedAt) => performance.now() - startedAt, start);
 }
 
 function percentile95(values: number[]): number {

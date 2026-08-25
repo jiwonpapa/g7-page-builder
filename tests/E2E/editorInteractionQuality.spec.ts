@@ -31,6 +31,12 @@ async function selectedText(field: Locator): Promise<string> {
   return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
 }
 
+async function assertInteractiveCanvas(page: Page): Promise<void> {
+  const iframe = page.locator(CANVAS_IFRAME);
+  await expect.poll(async () => (await iframe.boundingBox())?.width ?? 0).toBeGreaterThan(1);
+  await expect.poll(async () => (await iframe.boundingBox())?.height ?? 0).toBeGreaterThan(1);
+}
+
 async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
   const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
   const button = page.getByTestId(`page-builder-viewport-${width}`);
@@ -109,17 +115,20 @@ async function textPointerGeometry(field: Locator, target: string): Promise<Poin
   const scaleX = box.width / geometry.fieldWidth;
   const scaleY = box.height / geometry.fieldHeight;
   return {
-    start: { x: box.x + geometry.startX * scaleX, y: box.y + geometry.startY * scaleY },
-    end: { x: box.x + geometry.endX * scaleX, y: box.y + geometry.endY * scaleY },
+    start: { x: geometry.startX * scaleX, y: geometry.startY * scaleY },
+    end: { x: geometry.endX * scaleX, y: geometry.endY * scaleY },
   };
 }
 
 async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
   const pointer = await textPointerGeometry(field, target);
-  await page.mouse.move(pointer.start.x, pointer.start.y);
+  await field.click({ position: pointer.start });
+  await expect(field).toBeFocused();
+  await expect.poll(() => selectedText(field)).toBe('');
+  await field.hover({ position: pointer.start });
   await page.mouse.down();
   try {
-    await page.mouse.move(pointer.end.x, pointer.end.y, { steps: 8 });
+    await field.hover({ position: pointer.end });
   } finally {
     await page.mouse.up();
   }
@@ -128,7 +137,7 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
   const pointer = await textPointerGeometry(field, target);
-  await page.mouse.click(pointer.end.x, pointer.end.y);
+  await field.click({ position: pointer.end });
   await expect.poll(() => selectedText(field)).toBe('');
 }
 
@@ -178,6 +187,9 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
 
     await test.step('BLOCK_SELECTION_GATE', async () => {
       await selectRichTextBlock(page);
+    });
+    await test.step('INTERACTIVE_CANVAS_GATE', async () => {
+      await assertInteractiveCanvas(page);
     });
 
     await test.step('REAL_POINTER_SELECTION_GATE', async () => {

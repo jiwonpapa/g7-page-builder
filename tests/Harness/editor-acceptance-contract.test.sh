@@ -37,7 +37,7 @@ perl -0pi -e 's/page\.mouse\.down\s*\(/page.mouse.click(/' \
 expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.mouse\.click\(pointer\.end\.x, pointer\.end\.y\)/field.focus()/' \
+perl -0pi -e 's/field\.click\(\{ position: pointer\.end \}\)/field.focus()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 해제도 iframe 축척을 반영한 실제 pointer click으로 검증해야 합니다.'
 
@@ -67,9 +67,19 @@ perl -0pi -e "s/#puck-canvas-root iframe/iframe/" \
 expect_failure 'Puck canvas 고유 iframe selector를 고정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: 8 \}\)/field.focus()/g' \
+perl -0pi -e 's/field\.hover\(\{ position: pointer\.end \}\)/field.focus()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'iframe 축척을 반영한 실제 pointer 범위 드래그가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/field\.click\(\{ position: pointer\.start \}\)/field.focus()/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '범위 선택 전 contenteditable을 실제 pointer click으로 활성화해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/INTERACTIVE_CANVAS_GATE/INTERACTIVE_CANVAS_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '실제 iframe의 상호작용 가능 크기 gate가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/const scaleX = box\.width \/ geometry\.fieldWidth;/const scaleX = 1;/' \

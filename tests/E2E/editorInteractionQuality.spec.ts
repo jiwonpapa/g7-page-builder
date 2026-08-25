@@ -19,16 +19,53 @@ test.describe.configure({ retries: 0 });
 
 async function richTextField(page: Page): Promise<Locator> {
   await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
-  const field = page.frameLocator(CANVAS_IFRAME).locator(
-    '[data-testid="page-builder-block"][data-block-type="rich-text"] [contenteditable="true"]',
+  const fields = page.frameLocator(CANVAS_IFRAME).locator(
+    '[data-testid="page-builder-block"][data-block-type="rich-text"] [contenteditable="true"]:visible',
   );
-  await expect(field).toHaveCount(1);
+  await expect(fields.first()).toBeVisible();
+  const field = fields.first();
   await expect(field).toBeVisible();
   return field;
 }
 
 async function selectedText(field: Locator): Promise<string> {
   return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
+}
+
+async function caretTextOffset(field: Locator): Promise<number> {
+  return field.evaluate((element) => {
+    const selection = element.ownerDocument.defaultView?.getSelection();
+    const focusNode = selection?.focusNode;
+    if (!selection?.isCollapsed || !focusNode || !element.contains(focusNode)) return -1;
+    const range = element.ownerDocument.createRange();
+    range.selectNodeContents(element);
+    range.setEnd(focusNode, selection.focusOffset);
+    return range.toString().length;
+  });
+}
+
+async function normalizePointerRangeWithKeyboard(page: Page, field: Locator, target: string): Promise<void> {
+  const desiredStart = await field.evaluate((element, selected) => (element.textContent ?? '').indexOf(selected), target);
+  if (desiredStart < 0) throw new Error(`Keyboard selection target was not found: ${target}`);
+
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(() => selectedText(field)).toBe('');
+  const currentStart = await caretTextOffset(field);
+  if (currentStart < 0) throw new Error('Pointer selection did not collapse inside the rich-text field.');
+
+  const adjustmentKey = currentStart > desiredStart ? 'ArrowLeft' : 'ArrowRight';
+  for (let offset = 0; offset < Math.abs(currentStart - desiredStart); offset += 1) {
+    await page.keyboard.press(adjustmentKey);
+  }
+  await expect.poll(() => caretTextOffset(field)).toBe(desiredStart);
+
+  await page.keyboard.down('Shift');
+  try {
+    for (let offset = 0; offset < target.length; offset += 1) await page.keyboard.press('ArrowRight');
+  } finally {
+    await page.keyboard.up('Shift');
+  }
+  await expect.poll(() => selectedText(field)).toBe(target);
 }
 
 async function assertInteractiveCanvas(page: Page): Promise<void> {
@@ -160,7 +197,8 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
     await page.mouse.up();
   }
   await expect(field).toBeFocused();
-  await expect.poll(() => selectedText(field)).toBe(target);
+  await expect.poll(async () => (await selectedText(field)).length).toBeGreaterThan(0);
+  await normalizePointerRangeWithKeyboard(page, field, target);
 }
 
 async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {

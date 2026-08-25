@@ -62,6 +62,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/page\.mouse\.down\s*\(/, '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'],
     [/page\.mouse\.move\s*\(/, '실제 pointer 선택을 위한 page.mouse.move가 필요합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
+    [/page\.mouse\.click\s*\(/, '선택 해제도 실제 pointer click으로 검증해야 합니다.'],
     [/frameLocator\(['"]iframe['"]\)\.first\(\)/, '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'],
     [/await field\.boundingBox\(\)/, '변환된 viewport에서도 실제 필드 좌표를 사용해야 합니다.'],
     [/fieldBox\.width\s*\/\s*geometry\.fieldWidth/, 'viewport transform의 가로 배율을 실제 포인터 좌표에 반영해야 합니다.'],

@@ -101,7 +101,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
 19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
-20. PC·태블릿·모바일에서 활성 canvas iframe과 변환된 필드 bounding box를 기준으로 실제 `mouse.down → move → up` 글자 범위를 선택하고, 범위 툴바와 요소 전체 벌룬의 상호배타·선택 해제·반복 선택을 확인한 뒤 부분 글꼴·크기·색상·굵기가 저장·reload·preview·public DOM까지 유지되는지 확인
+20. PC·태블릿·모바일에서 활성 canvas iframe과 변환된 필드 bounding box를 기준으로 실제 `mouse.down → move → up` 글자 범위를 선택하고, 본문 위 실제 `mouse.click`으로 선택을 해제해 범위 툴바와 요소 전체 벌룬의 상호배타·선택 해제·반복 선택을 확인한 뒤 부분 글꼴·크기·색상·굵기가 저장·reload·preview·public DOM까지 유지되는지 확인
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 

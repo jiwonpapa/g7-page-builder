@@ -37,6 +37,11 @@ perl -0pi -e 's/page\.mouse\.down\s*\(/page.mouse.click(/' \
 expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'
 
 copy_fixture
+perl -0pi -e 's/page\.mouse\.click\s*\(/field.click(/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 해제도 실제 pointer click으로 검증해야 합니다.'
+
+copy_fixture
 perl -0pi -e "s/frameLocator\\('iframe'\\)\\.first\\(\\)/frameLocator('iframe')/g" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'

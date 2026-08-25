@@ -174,7 +174,7 @@ async function measureTyping(page: Page): Promise<number[]> {
   );
   await hero.scrollIntoViewIfNeeded();
   await hero.click({ position: { x: 4, y: 4 } });
-  const input = page.getByTestId('page-builder-hero-subtitle');
+  const input = page.locator('[data-testid="page-builder-hero-subtitle"]:visible').first();
   await expect(input).toBeVisible();
   await input.fill('PERFORMANCE');
   await input.focus();

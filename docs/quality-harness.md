@@ -6,13 +6,13 @@
 
 | Gate | 목적 | 실패 시 |
 |---|---|---|
-| `quality-coordination` | path lease·범위 차단·제출·통합·runtime/release guard 회귀시험 | 병렬 작업·merge 금지 |
+| `quality-coordination` | path lease·범위 차단·제출·통합·runtime/release guard와 편집 상호작용 계약 회귀시험 | 병렬 작업·merge 금지 |
 | `quality-php` | Composer validate, Pint, PHPStan, PHPUnit | merge 금지 |
 | `quality-php-coverage` | Xdebug 기반 Unit+G7 integration PHP line coverage | merge 금지 |
 | `quality-frontend` | SemVer/changelog, TS strict, Vitest+V8 coverage, G7 dependency budget, boundary, production build, asset 검사 | merge 금지 |
 | `quality-g7` | module 설치·활성·migration·TLS·DB·Redis·관리자 인증 | 통합 merge 금지 |
 | `dev-browser-smoke` | home/login/runtime 기본 assertion | 환경 완료 아님 |
-| `dev-product-e2e` | 생성→편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
+| `dev-product-e2e` | 생성→실제 포인터 편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
 
 ## Worktree coordination
 
@@ -20,6 +20,7 @@
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
 - `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
+- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`를 실행합니다. 전용 E2E가 실제 `mouse.down/move/up`, 재시도 0회, 세 viewport, 툴바 상호배타, 저장·미리보기·공개 DOM 서식 증거를 잃거나 합성 Selection으로 바뀌면 제출을 거부합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
 - `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.
@@ -100,12 +101,15 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
 19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
+20. PC·태블릿·모바일에서 실제 `mouse.down → move → up`으로 글자 범위를 선택하고, 범위 툴바와 요소 전체 벌룬의 상호배타·선택 해제·반복 선택을 확인한 뒤 부분 글꼴·크기·색상·굵기가 저장·reload·preview·public DOM까지 유지되는지 확인
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 
 최소 G7 fixture는 `module.json`의 module/plugin 의존성이 0개인지 확인하고, `sirsoft-board`·`sirsoft-ecommerce` 구현 클래스를 import하지 않은 상태에서 선택형 공개 API placeholder가 컴파일되는지 검사합니다. capability endpoint 실패는 공개 경량 runtime의 빈 상태로 끝나며 문서 저장·독립 shell 발행을 중단하지 않습니다.
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
+
+`scripts/check-editor-acceptance-contract.mjs`는 위 20번을 정적 계약으로도 잠급니다. 전용 spec을 제품 E2E 목록에서 빼거나, retry/viewport skip을 추가하거나, `Selection.addRange`·합성 `selectionchange`로 실제 포인터 순서를 우회하면 `quality-coordination`, `quality-frontend`, `task-submit`, `dev-product-e2e`가 모두 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
 
 ## 자동화와 로컬 통합
 

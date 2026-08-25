@@ -60,6 +60,8 @@ check-agent-policy:
 
 quality-coordination: check-agent-policy
 	bash tests/Harness/coord-harness.test.sh
+	npm run check:editor-acceptance
+	bash tests/Harness/editor-acceptance-contract.test.sh
 
 dev-bootstrap: runtime-guard
 	./scripts/dev-bootstrap.sh
@@ -148,7 +150,7 @@ dev-product-e2e: runtime-guard dev-deps
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
-		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm run test:e2e:product'
+		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm run check:editor-acceptance && npm run test:e2e:product'
 
 dev-e2e: dev-product-e2e
 

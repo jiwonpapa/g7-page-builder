@@ -129,7 +129,7 @@ G7 전체 checkout의 기존 사용자 변경을 수정하거나 정리하지 �
 | 명령 | 책임 |
 |---|---|
 | `make staging-doctor` | 대상·버전·접속·상태 확인 |
-| `make integration-verify TASK=<id>` | 전체 로컬 품질 게이트와 3 viewport 제품 E2E, 검증 SHA 기록 |
+| `make integration-verify TASK=<id>` | 전체 로컬 품질 게이트, 실제 포인터 편집을 포함한 3 viewport 제품 E2E, 검증 SHA 기록 |
 | `make release-package TASK=<id>` | 검증 SHA와 clean 상태 확인 후 버전 아티팩트·체크섬 생성 |
 | `make deploy-staging TASK=<id>` | release guard 재확인, 임시 파일 rollback을 둔 단일 스테이징 배포 |
 | `make smoke-staging TASK=<id>` | release guard 재확인, 공개·관리자 shell·asset·route·migration 스모크 |
@@ -147,7 +147,7 @@ G7 전체 checkout의 기존 사용자 변경을 수정하거나 정리하지 �
 3. 배포 중 임시 파일 rollback 동작과 성공 후 정리
 4. 모듈 설치·활성 버전 확인
 5. 공개 HTTPS 스모크
-6. 로컬 인증 E2E 생성→편집→미리보기→발행 결과와 온라인 route·asset 스모크
+6. 로컬 인증 E2E 생성→실제 포인터 범위 편집→저장·재로드→미리보기→발행 결과와 온라인 route·asset 스모크
 7. 신규 서버 오류 없음
 8. 실패 시 롤백 재검증
 

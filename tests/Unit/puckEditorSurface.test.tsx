@@ -295,7 +295,7 @@ describe('Puck editor surface contract', () => {
     expect(handlers.get('transaction')).toHaveLength(0);
   });
 
-  it('restores the bookmarked text range before an actual toolbar click applies a mark', async () => {
+  it('restores the bookmarked text range during pointer activation before focus can collapse it', async () => {
     type EditorEvent = 'selectionUpdate' | 'transaction';
     const selection = { empty: false, from: 4, to: 10 };
     const handlers = new Map<EditorEvent, Set<() => void>>();
@@ -345,14 +345,15 @@ describe('Puck editor surface contract', () => {
 
     const pointerDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
     const mouseDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-    bold?.dispatchEvent(pointerDown);
-    bold?.dispatchEvent(mouseDown);
-    expect(pointerDown.defaultPrevented).toBe(true);
-    expect(mouseDown.defaultPrevented).toBe(true);
     selection.empty = true;
     selection.from = 10;
     selection.to = 10;
-    await act(async () => bold?.click());
+    await act(async () => {
+      bold?.dispatchEvent(pointerDown);
+      bold?.dispatchEvent(mouseDown);
+    });
+    expect(pointerDown.defaultPrevented).toBe(true);
+    expect(mouseDown.defaultPrevented).toBe(true);
 
     expect(operations).toEqual([
       ['focus'],

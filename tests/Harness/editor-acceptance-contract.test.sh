@@ -141,6 +141,11 @@ perl -0pi -e 's/onMouseDownCapture=\{preserveRangeBeforeToolbarAction\}//' \
 expect_failure '툴바 mouse down에서 선택 범위 붕괴를 차단해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/onPointerDown=\{\(event\) => runPointerAction\(event, \(\) => toggleNativeMark\('\''bold'\''\)\)\}//' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '굵게 명령은 click 전에 실제 pointer down에서 실행해야 합니다.'
+
+copy_fixture
 printf '\nconst rangeEditing = window.getSelection();\n' \
   >>"$fixture_root/fixture/resources/js/editor/canvasEditingContract.ts"
 expect_failure '요소 선택 계약에서 DOM Selection으로 범위 상태를 중복 추론하면 안 됩니다.'

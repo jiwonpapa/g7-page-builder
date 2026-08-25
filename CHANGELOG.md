@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-08-25
+
 ### Added
 
 - 100블록 문서 준비·연속 타이핑·드래그·140개 블록 갤러리 열기·Long Task를 수치 예산으로 강제하는 desktop Chromium 성능 gate를 추가했습니다.

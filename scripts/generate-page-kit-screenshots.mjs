@@ -108,6 +108,25 @@ try {
           await image.decode().catch(() => undefined);
         }
       });
+      const motionBlocks = page.locator('.g7pb-block[data-g7pb-motion]');
+      for (let index = 0; index < await motionBlocks.count(); index += 1) {
+        const block = motionBlocks.nth(index);
+        await block.scrollIntoViewIfNeeded();
+        const handle = await block.elementHandle();
+        if (!handle) throw new Error('Motion block disappeared during Page Kit audit.');
+        await page.waitForFunction((element) => {
+          const pageRoot = element.closest('.g7pb-page');
+          return !pageRoot?.classList.contains('g7pb-motion-active')
+            || pageRoot.dataset.g7pbMotionReduced === 'true'
+            || element.classList.contains('is-inview');
+        }, handle);
+        await block.evaluate(async (element) => {
+          const animations = element.getAnimations({ subtree: true })
+            .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity);
+          await Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)));
+        });
+      }
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       const layout = await page.evaluate(() => {
         const root = document.querySelector('[data-testid="page-builder-store-demo-root"], main.g7pb-page');
         if (!(root instanceof HTMLElement)) throw new Error('Page Kit root is missing.');
@@ -156,6 +175,18 @@ try {
             ? [`${previous.type} -> ${block.type}: ${Math.round(previous.bottom - block.top)}px`]
             : [];
         });
+        const motionReduced = root.dataset.g7pbMotionReduced === 'true';
+        const hiddenMotion = !root.classList.contains('g7pb-motion-active') || motionReduced
+          ? []
+          : [...root.querySelectorAll('.g7pb-block[data-g7pb-motion]')].flatMap((block) => {
+            if (block.dataset.g7pbMotionTrigger === 'repeat') return [];
+            const targets = block.dataset.g7pbMotion === 'stagger'
+              ? [...block.querySelectorAll('[data-g7pb-motion-item]')]
+              : [block];
+            return targets.some((target) => Number.parseFloat(getComputedStyle(target).opacity) < 0.99)
+              ? [block.getAttribute('data-block-type') ?? 'unknown']
+              : [];
+          });
         return {
           blockCount: blocks.length,
           imageCount: images.length,
@@ -165,6 +196,7 @@ try {
           invalidBlocks: blocks.filter((block) => !Number.isFinite(block.width) || block.width < 1 || block.height < 1),
           overlaps,
           brokenImages: images.filter((image) => !image.complete || image.naturalWidth < 1 || image.naturalHeight < 1),
+          hiddenMotion,
           overflowingElements,
           collapsedHeadings: headings.filter((heading) =>
             heading.writingMode !== 'horizontal-tb'
@@ -182,6 +214,7 @@ try {
         ...layout.invalidBlocks.map((block) => `invalid block geometry: ${block.type}`),
         ...layout.overlaps.map((overlap) => `block overlap: ${overlap}`),
         ...layout.brokenImages.map((image) => `broken image: ${image.src}`),
+        ...layout.hiddenMotion.map((type) => `motion content remained hidden: ${type}`),
         ...layout.collapsedHeadings.map((heading) => `collapsed heading: ${heading.text} (${Math.round(heading.width)}px)`),
       ];
       const png = resolve(output, `${slug}-${viewport.name}.png`);

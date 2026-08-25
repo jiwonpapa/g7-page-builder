@@ -327,6 +327,7 @@ run_submission_profile() {
   case "$profile" in
     frontend)
       require_node_24
+      npm run check:editor-acceptance
       npm run typecheck
       npm run test:unit
       ;;

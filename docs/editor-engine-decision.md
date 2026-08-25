@@ -80,6 +80,6 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 3. 저장 후 reload와 Puck undo/redo 표면이 동작합니다.
 4. 편집기 모바일·태블릿·PC iframe 전환과 preview/public 제품 E2E가 통과합니다.
 5. Puck을 import하지 않는 PHP compiler가 같은 45종 block을 결정적으로 컴파일합니다.
-6. Hero-family 경고 닫기, Hero 직접 입력, Slider 장면 선택·인라인 필드, 요소별 style token과 route 적용 후 저장·재로드를 실제 브라우저 E2E로 검사합니다.
+6. Hero-family 경고 닫기, Hero 직접 입력, Slider 장면 선택·인라인 필드, 요소별 style token과 route 적용 후 저장·재로드를 실제 브라우저 E2E로 검사합니다. 글자 범위 편집은 합성 Selection을 금지하고 실제 포인터 드래그, 범위 툴바·요소 벌룬 상호배타, 선택 해제·반복 선택, preview/public DOM 영속성을 세 viewport에서 통과해야 합니다.
 
 아직 남은 채택 검증은 100개 block 성능 측정과 nested slot입니다. 현재 nested slot은 Adapter와 compiler에서 fail-closed하며, 이 두 항목이 실제 제품 요구가 될 때 기준을 통과하지 못하면 다른 엔진으로 자동 전환하지 않고 원인을 기록한 뒤 결정을 다시 엽니다.

@@ -42,6 +42,16 @@ perl -0pi -e 's/page\.mouse\.click\s*\(/field.click(/' \
 expect_failure '선택 해제도 실제 pointer click으로 검증해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'browser project와 내부 canvas viewport 일치 gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e "s/projectName === 'mobile' \? 360 : projectName === 'tablet' \? 768 : 1280/1280/" \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'
+
+copy_fixture
 perl -0pi -e "s/frameLocator\\('iframe'\\)\\.first\\(\\)/frameLocator('iframe')/g" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'

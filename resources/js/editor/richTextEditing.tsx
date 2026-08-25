@@ -56,6 +56,10 @@ function selectedMark(editor: Editor | null): { font: FontValue; size: SizeValue
   };
 }
 
+export function isRichTextRangeActive(editor: Editor | null): boolean {
+  return Boolean(editor && !editor.state.selection.empty);
+}
+
 function safeEditorLink(value: string): string | null {
   const trimmed = value.trim();
   if (/^\/(?!\/)[^\s\\]*$/.test(trimmed)) return trimmed;
@@ -90,11 +94,13 @@ function G7RichTextInlineMenu({
   }, [editor, editor?.state.selection.from, editor?.state.selection.to]);
 
   useEffect(() => {
-    if (!editor || editor.state.selection.empty) return;
+    if (!isRichTextRangeActive(editor)) return;
     const message = { type: RICH_TEXT_RANGE_ACTIVE_MESSAGE };
     if (window.parent !== window) window.parent.postMessage(message, window.location.origin);
     window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_ACTIVE_MESSAGE));
   }, [editor, editor?.state.selection.from, editor?.state.selection.to]);
+
+  if (!isRichTextRangeActive(editor)) return <></>;
 
   const updateMark = (patch: Partial<{ font: FontValue; size: SizeValue; weight: WeightValue; tone: ToneValue }>): void => {
     if (!editor || readOnly) return;
@@ -264,10 +270,13 @@ export function RichTextCanvasField({
       data-g7pb-heading-level={headingLevel}
       data-g7pb-inline-field={fieldPath}
       data-g7pb-richtext-field="true"
+      data-puck-overlay-portal="true"
+      onPointerDown={(event) => event.stopPropagation()}
     >{children}</div>;
   }
   const Component = requestedElement;
-  return <Component className={resolvedClassName} data-g7pb-inline-field={fieldPath} data-g7pb-richtext-field="true">{children}</Component>;
+  return <Component className={resolvedClassName} data-g7pb-inline-field={fieldPath} data-g7pb-richtext-field="true"
+    data-puck-overlay-portal="true" onPointerDown={(event) => event.stopPropagation()}>{children}</Component>;
 }
 
 export const RICH_TEXT_ALLOWED_VALUES = Object.freeze({

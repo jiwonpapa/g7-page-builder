@@ -61,6 +61,7 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { PuckEditorAdapter, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { RichTextCanvasField, isRichTextRangeActive } = await import('../../resources/js/editor/richTextEditing');
 
 const fixture: PageBuilderDocument = {
   schema_version: 'g7-page-builder/v1',
@@ -192,6 +193,37 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('keeps rich-text pointer selection out of the parent block drag sensor', async () => {
+    const parentPointerDown = vi.fn();
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    await act(async () => {
+      root.render(<div onPointerDown={parentPointerDown}>
+        <RichTextCanvasField fieldPath="content">
+          <div contentEditable suppressContentEditableWarning>실제 글자 범위 선택</div>
+        </RichTextCanvasField>
+      </div>);
+    });
+
+    const field = container.querySelector<HTMLElement>('[contenteditable="true"]');
+    const pointerDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
+    field?.dispatchEvent(pointerDown);
+
+    expect(parentPointerDown).not.toHaveBeenCalled();
+    expect(pointerDown.defaultPrevented).toBe(false);
+    expect(field?.parentElement?.getAttribute('data-puck-overlay-portal')).toBe('true');
+  });
+
+  it('treats only a non-collapsed Tiptap selection as an active text range', () => {
+    const editor = (empty: boolean) => ({ state: { selection: { empty } } }) as never;
+
+    expect(isRichTextRangeActive(null)).toBe(false);
+    expect(isRichTextRangeActive(editor(true))).toBe(false);
+    expect(isRichTextRangeActive(editor(false))).toBe(true);
+  });
+
   it('provides stable container controls to every built-in block', () => {
     for (const [component, config] of Object.entries(pageBuilderPuckConfig.components)) {
       expect(config.fields, component).toMatchObject({

@@ -270,23 +270,36 @@ async function expectDocumentContained(locator: Locator, label: string): Promise
 function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: LayoutMetric[]): void {
   expect(editorMetrics.map((metric) => metric.blockId)).toEqual(previewMetrics.map((metric) => metric.blockId));
   expect(editorMetrics.map((metric) => metric.blockType)).toEqual(previewMetrics.map((metric) => metric.blockType));
+  const mismatches: Array<Record<string, unknown>> = [];
   for (let index = 0; index < editorMetrics.length; index += 1) {
     const editor = editorMetrics[index];
     const preview = previewMetrics[index];
-    expect(editor.overflow, `${editor.blockType} editor overflow`).toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
-    expect(preview.overflow, `${preview.blockType} preview overflow`).toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
-    expect(Math.abs(editor.contentLeft - preview.contentLeft), `${editor.blockType} left content edge`)
-      .toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
-    expect(Math.abs(editor.contentRight - preview.contentRight), `${editor.blockType} right content edge`)
-      .toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
+    const leftDelta = Math.abs(editor.contentLeft - preview.contentLeft);
+    const rightDelta = Math.abs(editor.contentRight - preview.contentRight);
+    if (
+      editor.overflow > LAYOUT_TOLERANCE_PX
+      || preview.overflow > LAYOUT_TOLERANCE_PX
+      || leftDelta > LAYOUT_TOLERANCE_PX
+      || rightDelta > LAYOUT_TOLERANCE_PX
+    ) {
+      mismatches.push({
+        blockId: editor.blockId,
+        blockType: editor.blockType,
+        editorOverflow: editor.overflow,
+        previewOverflow: preview.overflow,
+        leftDelta,
+        rightDelta,
+        editor,
+        preview,
+      });
+    }
   }
+  expect(mismatches, `editor/preview layout mismatches: ${JSON.stringify(mismatches)}`).toEqual([]);
 }
 
 function expectBlockContainment(metrics: LayoutMetric[], surface: string): void {
-  for (const metric of metrics) {
-    expect(metric.overflow, `${surface} ${metric.blockType} overflow: ${JSON.stringify(metric)}`)
-      .toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
-  }
+  const overflows = metrics.filter((metric) => metric.overflow > LAYOUT_TOLERANCE_PX);
+  expect(overflows, `${surface} block overflows: ${JSON.stringify(overflows)}`).toEqual([]);
 }
 
 async function assertScenario(

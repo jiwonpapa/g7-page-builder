@@ -2244,8 +2244,8 @@
 .g7pb-preview-divider--dashed > span { height: 0; border-top: 1px dashed var(--g7pb-theme-border); background: transparent; }
 .g7pb-preview-divider--gradient > span:first-child { background: linear-gradient(90deg, transparent, var(--g7pb-theme-accent)); }
 .g7pb-preview-divider--gradient > span:last-child { background: linear-gradient(90deg, var(--g7pb-theme-accent), transparent); }
-.g7pb-preview-divider--narrow { width: min(70%, 48rem); margin-inline: auto; }
-.g7pb-preview-divider--standard { width: min(84%, 64rem); margin-inline: auto; }
+.g7pb-preview-divider--narrow { width: min(70%, 48rem); margin-inline: 0; }
+.g7pb-preview-divider--standard { width: min(84%, 64rem); margin-inline: 0; }
 .g7pb-preview-divider small { color: var(--g7pb-theme-muted); font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .g7pb-preview-blockquote { position: relative; margin: 0; }
 .g7pb-preview-blockquote--line { border-inline-start: 4px solid var(--g7pb-theme-accent); }

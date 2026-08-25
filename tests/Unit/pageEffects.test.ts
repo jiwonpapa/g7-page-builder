@@ -300,6 +300,14 @@ describe('published page effects runtime', () => {
     expect(document.querySelectorAll('[data-g7pb-system-locale] option')).toHaveLength(2);
     expect(document.querySelector<HTMLElement>('[data-g7pb-system-currency-wrap]')?.hidden).toBe(false);
 
+    const cartBadgeText = document.querySelector('[data-g7pb-system-cart-count]')?.firstChild;
+    const notificationBadgeText = document.querySelector('[data-g7pb-system-notification-count]')?.firstChild;
+    const firstLocaleOption = document.querySelector('[data-g7pb-system-locale] option');
+    bootG7SystemControls(document, window as never);
+    expect(document.querySelector('[data-g7pb-system-cart-count]')?.firstChild).toBe(cartBadgeText);
+    expect(document.querySelector('[data-g7pb-system-notification-count]')?.firstChild).toBe(notificationBadgeText);
+    expect(document.querySelector('[data-g7pb-system-locale] option')).toBe(firstLocaleOption);
+
     const locale = document.querySelector<HTMLSelectElement>('[data-g7pb-system-locale]')!;
     locale.value = 'en';
     locale.dispatchEvent(new Event('change', { bubbles: true }));

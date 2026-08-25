@@ -719,7 +719,10 @@ export function renderG7SystemControls(root: Document = document, view: G7ShellW
       const badge = control.querySelector<HTMLElement>(selector);
       if (!badge) return;
       badge.hidden = count <= 0;
-      badge.textContent = count > 99 ? '99+' : String(count);
+      const text = count > 99 ? '99+' : String(count);
+      // MutationObserver가 bootPageEffects를 다시 호출하므로 같은 텍스트 노드를
+      // 매번 교체하면 microtask가 영구 반복된다. 실제 값이 바뀔 때만 DOM을 갱신한다.
+      if (badge.textContent !== text) badge.textContent = text;
     };
     paintBadge('[data-g7pb-system-cart-count]', cartCount);
     paintBadge('[data-g7pb-system-notification-count]', notificationCount);

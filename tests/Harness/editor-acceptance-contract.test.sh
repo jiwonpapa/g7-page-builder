@@ -57,9 +57,9 @@ perl -0pi -e "s/projectName === 'mobile' \? 360 : projectName === 'tablet' \? 76
 expect_failure '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'
 
 copy_fixture
-perl -0pi -e "s/frameLocator\\('iframe'\\)\\.first\\(\\)/frameLocator('iframe')/g" \
+perl -0pi -e "s/#puck-canvas-root iframe/iframe/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '활성 편집 canvas iframe을 명시적으로 고정해야 합니다.'
+expect_failure 'Puck canvas 고유 iframe selector를 고정해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/field\.hover\(\{ position: pointer\.end \}\)/field.focus()/g' \

@@ -10,7 +10,7 @@ import {
 } from './support/editorInteractionFixture';
 
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
-const FIRST_TARGET = '이해해야 할 내용';
+const FIRST_TARGET = '중요한 문장은';
 const SECOND_TARGET = '목록이나 링크';
 
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
@@ -29,7 +29,12 @@ async function selectedText(field: Locator): Promise<string> {
   return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
 }
 
-async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
+interface PointerGeometry {
+  end: { x: number; y: number };
+  start: { x: number; y: number };
+}
+
+async function textPointerGeometry(field: Locator, target: string): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
   const fieldBox = await field.boundingBox();
   const geometry = await field.evaluate((element, selected) => {
@@ -66,20 +71,27 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
   }
   const scaleX = fieldBox.width / geometry.fieldWidth;
   const scaleY = fieldBox.height / geometry.fieldHeight;
-  await page.mouse.move(
-    fieldBox.x + geometry.startX * scaleX,
-    fieldBox.y + geometry.startY * scaleY,
-  );
+  return {
+    start: { x: fieldBox.x + geometry.startX * scaleX, y: fieldBox.y + geometry.startY * scaleY },
+    end: { x: fieldBox.x + geometry.endX * scaleX, y: fieldBox.y + geometry.endY * scaleY },
+  };
+}
+
+async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
+  const pointer = await textPointerGeometry(field, target);
+  await page.mouse.move(pointer.start.x, pointer.start.y);
   await page.mouse.down();
   await page.waitForTimeout(60);
-  await page.mouse.move(
-    fieldBox.x + geometry.endX * scaleX,
-    fieldBox.y + geometry.endY * scaleY,
-    { steps: 18 },
-  );
+  await page.mouse.move(pointer.end.x, pointer.end.y, { steps: 18 });
   await page.waitForTimeout(80);
   await page.mouse.up();
   await expect.poll(() => selectedText(field)).toBe(target);
+}
+
+async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
+  const pointer = await textPointerGeometry(field, target);
+  await page.mouse.click(pointer.end.x, pointer.end.y);
+  await expect.poll(() => selectedText(field)).toBe('');
 }
 
 async function saveDraft(page: Page): Promise<void> {
@@ -137,8 +149,7 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
       await expect(field.locator('span[data-g7pb-font], span[data-g7pb-size], span[data-g7pb-tone]')).toHaveCount(1);
     });
     await test.step('COLLAPSED_SELECTION_GATE', async () => {
-      await field.click();
-      await expect.poll(() => selectedText(field)).toBe('');
+      await collapseSelectionWithPointer(page, field, FIRST_TARGET);
       await expect(rangeToolbar).toBeHidden();
       await expect(elementPanel).toBeVisible();
       await page.getByTestId('page-builder-editor').click({ position: { x: 8, y: 8 } });

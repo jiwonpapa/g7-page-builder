@@ -363,6 +363,23 @@ async function expectDocumentContained(locator: Locator, label: string): Promise
     .toBeLessThanOrEqual(LAYOUT_TOLERANCE_PX);
 }
 
+async function expectStableVisibleGeometry(blocks: Locator, expectedCount: number): Promise<void> {
+  let previousSignature = '';
+  let stableSamples = 0;
+  await expect.poll(async () => {
+    const rectangles = await blocks.evaluateAll((elements) => elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+      return [Math.round(rect.left * 100), Math.round(rect.top * 100), Math.round(rect.width * 100), Math.round(rect.height * 100)];
+    }));
+    const signature = JSON.stringify(rectangles);
+    const visible = rectangles.length === expectedCount
+      && rectangles.every(([, , width, height]) => width > 0 && height > 0);
+    stableSamples = visible && signature === previousSignature ? stableSamples + 1 : 0;
+    previousSignature = signature;
+    return stableSamples >= 2;
+  }, { timeout: 60_000, intervals: [100, 150, 250, 500] }).toBe(true);
+}
+
 function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: LayoutMetric[]): void {
   expect(editorMetrics.map((metric) => metric.blockId)).toEqual(previewMetrics.map((metric) => metric.blockId));
   expect(editorMetrics.map((metric) => metric.blockType)).toEqual(previewMetrics.map((metric) => metric.blockType));
@@ -438,12 +455,21 @@ async function assertScenario(
   const preview = await context.newPage();
   try {
     await preview.setViewportSize({ width, height: 900 });
+    const templateLayoutResponsePromise = owned.document.shell_mode === 'template'
+      ? preview.waitForResponse((candidate) => new URL(candidate.url()).pathname.startsWith('/api/layouts/preview/'), { timeout: 60_000 })
+      : Promise.resolve(null);
     const response = await preview.goto(previewUrl);
     expect(response?.ok()).toBe(true);
+    const templateLayoutResponse = await templateLayoutResponsePromise;
+    if (templateLayoutResponse) {
+      expect(templateLayoutResponse.ok()).toBe(true);
+      await templateLayoutResponse.finished();
+    }
     const previewBlocks = preview.getByTestId('page-builder-rendered-block');
     await expect(previewBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
     await expect(previewBlocks.first()).toBeVisible({ timeout: 60_000 });
     await expect(previewBlocks.last()).toBeVisible({ timeout: 60_000 });
+    await expectStableVisibleGeometry(previewBlocks, scenario.expectedBlockCount);
     const standalonePreviewRoot = preview.getByTestId('page-builder-preview-root');
     const previewRoot = await standalonePreviewRoot.count() === 1
       ? standalonePreviewRoot

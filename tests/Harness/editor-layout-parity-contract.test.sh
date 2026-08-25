@@ -67,6 +67,11 @@ perl -0pi -e 's/(\.g7pb-preview-gallery__grid--4 \{ grid-template-columns: repea
 expect_failure '편집기 Gallery grid 열은 이미지 고유 폭보다 작아질 수 있어야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-gallery figure > span \{ )display: block/${1}display: inline/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Gallery media wrapper는 width가 적용되는 block formatting context여야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-hero-split--layout-overlap \{ grid-template-columns: repeat\(12, )minmax\(0, 1fr\)/${1}1fr/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '편집기 overlap Hero grid는 최소 콘텐츠 폭으로 캔버스를 밀면 안 됩니다.'
@@ -110,6 +115,11 @@ copy_fixture
 perl -0pi -e 's/expect\(previewBlocks\.first\(\)\)\.toBeVisible/expect(previewBlocks.first()).toHaveCount/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure 'G7 template route 전환 중 숨은 slot을 측정하지 않도록 preview block 가시 상태를 기다려야 합니다.'
+
+copy_fixture
+perl -0pi -e "s#/api/layouts/preview/#/api/layouts/bypassed/#" \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure 'template shell은 실제 G7 preview layout API 응답 뒤에 geometry를 측정해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's# ?tests/E2E/editorLayoutParity\.spec\.ts##' "$fixture_root/fixture/package.json"

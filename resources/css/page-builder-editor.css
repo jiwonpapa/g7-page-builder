@@ -1127,6 +1127,8 @@
 }
 
 .g7pb-preview-hero__media {
+  width: 100%;
+  min-width: 0;
   aspect-ratio: 4 / 3;
   overflow: hidden;
   margin: 0;

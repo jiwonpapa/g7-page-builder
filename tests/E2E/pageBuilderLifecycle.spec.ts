@@ -396,6 +396,36 @@ async function revealEditorHeaderActions(page: Page): Promise<void> {
   await expect(addBlock).toBeVisible();
 }
 
+async function expandBlockGallery(page: Page): Promise<void> {
+  const gallery = page.getByTestId('page-builder-block-gallery');
+  const grid = gallery.locator('.g7pb-block-gallery__grid');
+
+  for (let batch = 0; batch < 8; batch += 1) {
+    const total = Number(await grid.getAttribute('data-total-items') ?? '0');
+    const rendered = Number(await grid.getAttribute('data-rendered-items') ?? '0');
+    if (total > 0 && rendered >= total) return;
+
+    await gallery.getByTestId('page-builder-gallery-load-more').evaluateAll((buttons) => {
+      (buttons[0] as HTMLButtonElement | undefined)?.click();
+    });
+    await expect.poll(
+      async () => Number(await grid.getAttribute('data-rendered-items') ?? '0'),
+      { message: 'the next gallery window renders' },
+    ).toBeGreaterThan(rendered);
+  }
+
+  throw new Error('Block gallery did not render every requested window.');
+}
+
+async function addBlockFromGallery(page: Page, option: string): Promise<void> {
+  await revealEditorHeaderActions(page);
+  await page.getByTestId('page-builder-add-block').click();
+  const gallery = page.getByTestId('page-builder-block-gallery');
+  await gallery.getByRole('tab', { name: /블록 종류/ }).click();
+  await expandBlockGallery(page);
+  await gallery.getByTestId(`page-builder-block-option-${option}`).click();
+}
+
 async function revealBlockLibrary(page: Page): Promise<void> {
   const library = page.getByTestId('page-builder-block-library');
   if (await library.isVisible()) {
@@ -965,7 +995,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const galleryGrid = blockGallery.locator('.g7pb-block-gallery__grid');
     await expect(galleryGrid).toHaveAttribute('data-total-items', '45');
     await expect(galleryGrid).toHaveAttribute('data-rendered-items', '24');
-    await blockGallery.getByTestId('page-builder-gallery-load-more').click();
+    await expandBlockGallery(page);
     await expect(galleryGrid).toHaveAttribute('data-rendered-items', '45');
     for (const option of [
       'hero',
@@ -1017,9 +1047,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(page.getByTestId(`page-builder-block-option-${option}`)).toBeVisible();
     }
     await page.getByTestId('page-builder-block-option-hero').click();
-    await revealEditorHeaderActions(page);
-    await page.getByTestId('page-builder-add-block').click();
-    await page.getByTestId('page-builder-block-option-hero-slider').click();
+    await addBlockFromGallery(page, 'hero-slider');
     await expect(page.getByTestId('page-builder-hero-warning')).toContainText('Hero 계열 블록이 2개');
     await page.getByTestId('page-builder-hero-warning-dismiss').click();
     await expect(page.getByTestId('page-builder-hero-warning')).toBeHidden();
@@ -1038,22 +1066,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(slider.locator('[data-slide-index="1"]')).toBeVisible();
       await expect(slider.locator('[data-slide-index="0"]')).toBeHidden();
     }
-    await revealEditorHeaderActions(page);
-    await page.getByTestId('page-builder-add-block').click();
-    await page.getByTestId('page-builder-block-option-cta').click();
+    await addBlockFromGallery(page, 'cta');
     await revealBlockLibrary(page);
     await dragLibraryBlockBefore(page, 'Features', 'hero');
     await expectBlockOrder(editorBlocks(page), ['features', 'hero', 'hero-slider', 'cta']);
     await hideMobileBlockLibrary(page);
 
     await selectEditorBlock(page, 'cta');
-    await revealEditorHeaderActions(page);
-    await page.getByTestId('page-builder-add-block').click();
-    await page.getByTestId('page-builder-block-option-contact').click();
+    await addBlockFromGallery(page, 'contact');
     for (const option of ['heading', 'rich-text', 'image', 'buttons', 'image-text', 'icon-list', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart', 'g7-recent-posts', 'g7-product-grid', 'testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed', 'logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase']) {
-      await revealEditorHeaderActions(page);
-      await page.getByTestId('page-builder-add-block').click();
-      await page.getByTestId(`page-builder-block-option-${option}`).click();
+      await addBlockFromGallery(page, option);
     }
 
     if (testInfo.project.name === 'desktop') {

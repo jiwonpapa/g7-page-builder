@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -253,6 +255,56 @@ describe('Puck editor surface contract', () => {
     expect(container.querySelectorAll('[data-testid="page-builder-block"]')).toHaveLength(content.length);
     const consoleErrors = consoleError.mock.calls.map((call) => call.map(String).join(' '));
     expect(consoleErrors).toEqual([]);
+  });
+
+  it('keeps rich-text visual blocks full width while measuring only their content', async () => {
+    const measures = ['narrow', 'standard', 'wide'] as const;
+    const richTextConfig = pageBuilderPuckConfig.components.RichText;
+    const content = measures.map((measure, index) => ({
+      type: 'RichText',
+      props: {
+        ...richTextConfig.defaultProps,
+        id: `rich-text-measure-${index}`,
+        content: `<p>${measure}</p>`,
+        measure,
+      },
+    }));
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<Puck
+        config={pageBuilderPuckConfig}
+        data={{ content, root: { props: {} } } as never}
+        iframe={{ enabled: false }}
+        onChange={() => undefined}
+        onPublish={() => undefined}
+      />);
+    });
+    await eventuallyBlockTypes(measures.map(() => 'rich-text'));
+
+    const blocks = Array.from(editorElements('[data-block-type="rich-text"]'));
+    expect(blocks).toHaveLength(measures.length);
+    blocks.forEach((block, index) => {
+      const measure = measures[index];
+      const visualBlock = block.querySelector<HTMLElement>(':scope > .g7pb-preview-rich-text');
+      const richContent = visualBlock?.querySelector<HTMLElement>(
+        ':scope > [data-g7pb-richtext-field="true"]',
+      );
+
+      expect(visualBlock).not.toBeNull();
+      expect(visualBlock?.classList.contains(`g7pb-preview-rich-text--${measure}`)).toBe(false);
+      expect(richContent?.classList.contains('g7pb-preview-rich-text__content')).toBe(true);
+      expect(richContent?.classList.contains(`g7pb-preview-rich-text__content--${measure}`)).toBe(true);
+    });
+
+    const editorCss = readFileSync(resolve(process.cwd(), 'resources/css/page-builder-editor.css'), 'utf8');
+    expect(editorCss).toContain('.g7pb-preview-rich-text__content--narrow { max-width: 48ch; }');
+    expect(editorCss).toContain('.g7pb-preview-rich-text__content--standard { max-width: 65ch; }');
+    expect(editorCss).toContain('.g7pb-preview-rich-text__content--wide { max-width: 80ch; }');
+    expect(editorCss).not.toMatch(/\.g7pb-preview-rich-text--(?:narrow|standard|wide)\s*>\s*\*/);
   });
 
   it('delegates rich-text drag isolation to the native Puck inline wrapper', async () => {

@@ -413,41 +413,103 @@ async function dismissContextPanel(page: Page): Promise<void> {
   }
 }
 
+async function waitForStableLayout(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+}
+
+async function mobileFieldsPanelIsOpen(page: Page): Promise<boolean> {
+  const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+  if (!(await fieldsTab.isVisible())) return false;
+
+  const fieldsItem = fieldsTab.locator('xpath=ancestor::li[1]');
+  const fieldsActive = await fieldsItem.evaluate((item) => item.className.includes('NavItem--active'));
+  const leftSidebarOpen = await page.locator('[class*="PuckLayout--leftSideBarVisible"]').count() > 0;
+
+  return fieldsActive && leftSidebarOpen;
+}
+
+async function pointerHitEvidence(button: Locator) {
+  return button.evaluate((target) => {
+    const rect = target.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    const controls = target.closest('.g7pb-header-controls');
+    const controlsRect = controls?.getBoundingClientRect();
+
+    return {
+      ariaExpanded: target.getAttribute('aria-expanded'),
+      button: {
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      },
+      controls: controls && controlsRect
+        ? {
+            bottom: controlsRect.bottom,
+            display: getComputedStyle(controls).display,
+            height: controlsRect.height,
+            left: controlsRect.left,
+            position: getComputedStyle(controls).position,
+            right: controlsRect.right,
+            top: controlsRect.top,
+            width: controlsRect.width,
+          }
+        : null,
+      hit: hit
+        ? {
+            ariaLabel: hit.getAttribute('aria-label'),
+            className: hit.getAttribute('class'),
+            id: hit.id || null,
+            tagName: hit.tagName,
+            testId: hit.getAttribute('data-testid'),
+            text: hit.textContent?.trim().slice(0, 80) || null,
+          }
+        : null,
+      topmost: hit === target || target.contains(hit),
+      viewport: {
+        height: window.innerHeight,
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+        width: window.innerWidth,
+      },
+    };
+  });
+}
+
 async function revealEditorHeaderActions(page: Page): Promise<void> {
   const addBlock = page.getByTestId('page-builder-add-block');
   await dismissContextPanel(page);
+
+  if (await mobileFieldsPanelIsOpen(page)) {
+    const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+    await fieldsTab.click();
+    await expect(page.locator('[class*="PuckLayout--leftSideBarVisible"]')).toHaveCount(0);
+    await waitForStableLayout(page);
+  }
 
   if (!(await addBlock.isVisible())) {
     const menuToggle = page.getByRole('button', { name: 'Toggle menu bar' });
     await expect(menuToggle).toBeVisible();
     await menuToggle.click();
+    await waitForStableLayout(page);
   }
 
   await expect(addBlock).toBeVisible();
   await addBlock.scrollIntoViewIfNeeded();
-  await expect.poll(() => addBlock.evaluate((button) => {
-    const rect = button.getBoundingClientRect();
-    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    return {
-      button: {
-        bottom: Math.round(rect.bottom),
-        left: Math.round(rect.left),
-        right: Math.round(rect.right),
-        top: Math.round(rect.top),
-      },
-      hit: hit
-        ? {
-            ariaLabel: hit.getAttribute('aria-label'),
-            className: typeof hit.className === 'string' ? hit.className : null,
-            tagName: hit.tagName,
-            testId: hit.getAttribute('data-testid'),
-          }
-        : null,
-      topmost: hit === button || button.contains(hit),
-      viewport: { height: window.innerHeight, width: window.innerWidth },
-    };
-  }), { message: 'the add-block control remains the topmost pointer target; received value records the actual hit target' })
-    .toMatchObject({ topmost: true });
+  await waitForStableLayout(page);
+  let evidence = await pointerHitEvidence(addBlock);
+  try {
+    await expect.poll(async () => {
+      evidence = await pointerHitEvidence(addBlock);
+      return evidence.topmost;
+    }, { message: 'the add-block control remains the topmost pointer target' }).toBe(true);
+  } catch {
+    throw new Error(`The add-block control is not the topmost pointer target: ${JSON.stringify(evidence)}`);
+  }
 }
 
 async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: string): Promise<void> {
@@ -604,14 +666,21 @@ async function revealInspectorField(page: Page, testId: string): Promise<Locator
 
   if (!(await field.isVisible())) {
     const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
-    if (!(await fieldsTab.isVisible())) {
-      const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
-      await expect(sidebarToggle).toBeVisible();
-      await sidebarToggle.click();
-      await expect(fieldsTab).toBeVisible();
-    }
-    if (!(await field.isVisible())) {
-      await fieldsTab.click();
+    if (await fieldsTab.isVisible()) {
+      if (!(await mobileFieldsPanelIsOpen(page))) {
+        await fieldsTab.click();
+        await expect(page.locator('[class*="PuckLayout--leftSideBarVisible"]')).toHaveCount(1);
+        await waitForStableLayout(page);
+      }
+    } else {
+      const rightSidebarOpen = await page.locator('[class*="PuckLayout--rightSideBarVisible"]').count() > 0;
+      if (!rightSidebarOpen) {
+        const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
+        await expect(sidebarToggle).toBeVisible();
+        await sidebarToggle.click();
+        await expect(page.locator('[class*="PuckLayout--rightSideBarVisible"]')).toHaveCount(1);
+        await waitForStableLayout(page);
+      }
     }
   }
 

@@ -685,12 +685,7 @@
   font-size: var(--g7pb-theme-body-size);
 }
 
-/*
- * Puck copies the host styles into an about:srcdoc iframe, but the iframe does
- * not contain the host `.g7pb-root` ancestor used by the core box-model reset.
- * Keep the reset scoped to the product canvas so a 100% wide block includes
- * its responsive padding instead of extending past the iframe viewport.
- */
+/* Puck's iframe lacks .g7pb-root; scope the reset so responsive padding stays inside the canvas width. */
 .g7pb-preview-page,
 .g7pb-preview-page *,
 .g7pb-preview-page *::before,
@@ -942,84 +937,18 @@
 .g7pb-richtext-inline-toolbar__link [role='alert'] { width: 100%; color: #b91c1c; font-size: .65rem; }
 .g7pb-richtext-inline-toolbar__options.g7pb-richtext-floating-layer,
 .g7pb-richtext-inline-toolbar__advanced.g7pb-richtext-floating-layer,
-.g7pb-richtext-inline-toolbar__link.g7pb-richtext-floating-layer {
-  position: fixed;
-  z-index: 9999;
-  inset: var(--g7pb-richtext-floating-top, 0) auto auto var(--g7pb-richtext-floating-left, 0);
-  box-sizing: border-box;
-  max-width: var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem));
-  max-height: var(--g7pb-richtext-floating-max-height, calc(100vh - 1rem));
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-.g7pb-richtext-inline-toolbar__advanced.g7pb-richtext-floating-layer {
-  width: min(20rem, var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem)));
-  padding: .5rem;
-  border: 1px solid #c7d3e7;
-  border-radius: .65rem;
-  color: #334155;
-  background: #fff;
-  box-shadow: 0 .7rem 2rem rgb(15 23 42 / 18%);
-}
-.g7pb-richtext-inline-toolbar__advanced > .g7pb-richtext-inline-toolbar__advanced-controls {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: .35rem;
-}
-.g7pb-richtext-inline-toolbar__advanced .g7pb-richtext-inline-toolbar__choice > button {
-  width: 100%;
-  min-width: 0;
-  max-width: none;
-  border-color: #d5deeb;
-  color: #334155;
-  background: #f8fafc;
-}
-.g7pb-richtext-inline-toolbar__link.g7pb-richtext-floating-layer {
-  width: min(22rem, var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem)));
-}
-.g7pb-selected-block-actionbar {
-  box-sizing: border-box;
-  display: block;
-  width: max-content;
-  max-width: var(--g7pb-selected-actionbar-max-width, calc(100vw - 1rem));
-  min-width: 0;
-  overflow: auto hidden;
-  pointer-events: auto;
-  transform: translate(
-    var(--g7pb-selected-actionbar-translate-x, 0),
-    var(--g7pb-selected-actionbar-translate-y, 0)
-  );
-  visibility: hidden;
-  scrollbar-width: thin;
-  touch-action: pan-x;
-}
-
-.g7pb-selected-block-actionbar[data-g7pb-safe-zone-ready='true'] {
-  visibility: visible;
-}
-
+.g7pb-richtext-inline-toolbar__link.g7pb-richtext-floating-layer { position: fixed; z-index: 9999; inset: var(--g7pb-richtext-floating-top, 0) auto auto var(--g7pb-richtext-floating-left, 0); box-sizing: border-box; max-width: var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem)); max-height: var(--g7pb-richtext-floating-max-height, calc(100vh - 1rem)); overflow: auto; overscroll-behavior: contain; }
+.g7pb-richtext-inline-toolbar__advanced.g7pb-richtext-floating-layer { width: min(20rem, var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem))); padding: .5rem; border: 1px solid #c7d3e7; border-radius: .65rem; color: #334155; background: #fff; box-shadow: 0 .7rem 2rem rgb(15 23 42 / 18%); }
+.g7pb-richtext-inline-toolbar__advanced > .g7pb-richtext-inline-toolbar__advanced-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem; }
+.g7pb-richtext-inline-toolbar__advanced .g7pb-richtext-inline-toolbar__choice > button { width: 100%; min-width: 0; max-width: none; border-color: #d5deeb; color: #334155; background: #f8fafc; }
+.g7pb-richtext-inline-toolbar__link.g7pb-richtext-floating-layer { width: min(22rem, var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem))); }
+.g7pb-selected-block-actionbar { box-sizing: border-box; display: block; width: max-content; max-width: var(--g7pb-selected-actionbar-max-width, calc(100vw - 1rem)); min-width: 0; overflow: auto hidden; pointer-events: auto; transform: translate(var(--g7pb-selected-actionbar-translate-x, 0), var(--g7pb-selected-actionbar-translate-y, 0)); visibility: hidden; scrollbar-width: thin; touch-action: pan-x; }
+.g7pb-selected-block-actionbar[data-g7pb-safe-zone-ready='true'] { visibility: visible; }
 .g7pb-selected-block-actionbar,
-.g7pb-selected-block-actionbar * {
-  pointer-events: auto;
-}
-
-div:has(> .g7pb-selected-block-actionbar) {
-  pointer-events: none;
-}
-
-.g7pb-selected-block-actionbar > div {
-  width: max-content;
-  min-width: max-content;
-  flex-wrap: nowrap;
-}
-
-.g7pb-selected-block-actionbar > div > div {
-  width: max-content;
-  min-width: max-content;
-  height: auto;
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
-}
+.g7pb-selected-block-actionbar * { pointer-events: auto; }
+div:has(> .g7pb-selected-block-actionbar) { pointer-events: none; }
+.g7pb-selected-block-actionbar > div { width: max-content; min-width: max-content; flex-wrap: nowrap; }
+.g7pb-selected-block-actionbar > div > div { width: max-content; min-width: max-content; height: auto; flex: 0 0 auto; flex-wrap: nowrap; }
 
 body:has(.g7pb-selected-block-actionbar) {
   scroll-padding-block: 3.25rem;
@@ -2666,12 +2595,7 @@ body:has(.g7pb-selected-block-actionbar) {
   .g7pb-preview-image-carousel figure:not(:first-child) { display: none; }
 }
 
-/*
- * Container appearance is part of the editor/public layout contract. Keep
- * these final overrides after component and responsive rules so a preset
- * cannot accidentally restore centered padding or make a full-width block
- * wider than the Puck iframe.
- */
+/* Final editor/public container overrides prevent presets from exceeding the Puck iframe. */
 .g7pb-preview-block.g7pb-container-align--left:not(.g7pb-container-width--full) > * {
   padding-right: max(1.25rem, calc(100vw - var(--g7pb-preview-content-width) - 1.25rem));
   padding-left: 1.25rem;

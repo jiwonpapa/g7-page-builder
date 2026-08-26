@@ -150,7 +150,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/PREVIEW_SELECTION_MARK_GATE/, '미리보기 부분 서식 gate가 필요합니다.'],
     [/PUBLIC_SELECTION_MARK_GATE/, '공개 출력 부분 서식 gate가 필요합니다.'],
     [/page-builder-richtext-inline-toolbar/, '글자 범위 툴바 assertion이 필요합니다.'],
-    [/locator\(['"]\[data-puck-rte-menu\]:visible['"]\)/, '공식 Puck data-puck-rte-menu root locator가 필요합니다.'],
+    [/locator\(['"]\[data-puck-rte-menu=[\\]?['"]true[\\]?['"]\]:visible['"]\)/, '공식 Puck 원본 data-puck-rte-menu root locator가 필요합니다.'],
     [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 굵게['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 굵게 버튼 검증이 필요합니다.'],
     [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 기울임['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 기울임 버튼 검증이 필요합니다.'],
     [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 밑줄['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 밑줄 버튼 검증이 필요합니다.'],

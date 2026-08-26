@@ -530,7 +530,7 @@ async function dragSelectText(
 }
 
 async function officialPuckMenuRoot(page: Page): Promise<Locator> {
-  const menuRoot = page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible');
+  const menuRoot = page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu="true"]:visible');
   await expect(menuRoot).toHaveCount(1);
   await expect(menuRoot).toBeVisible();
   await expect(menuRoot.getByTestId('page-builder-richtext-inline-toolbar')).toBeVisible();

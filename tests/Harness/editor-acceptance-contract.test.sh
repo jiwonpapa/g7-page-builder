@@ -237,9 +237,9 @@ perl -0pi -e 's/data-g7pb-richtext-field/data-g7pb-text-field/g' \
 expect_failure 'rich-text canvas selector는 중앙 rich-text marker를 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/\[data-puck-rte-menu\]:visible/\[data-testid="legacy-range-toolbar"\]:visible/g' \
+perl -0pi -e 's/\[data-puck-rte-menu="true"\]:visible/\[data-testid="legacy-range-toolbar"\]:visible/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '공식 Puck data-puck-rte-menu root locator가 필요합니다.'
+expect_failure '공식 Puck 원본 data-puck-rte-menu root locator가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/ROOT_INLINE_RICH_GATE/ROOT_INLINE_RICH_REMOVED/' \

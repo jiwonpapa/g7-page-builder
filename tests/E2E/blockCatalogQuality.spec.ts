@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, request as playwrightRequest, test } from '@playwright/test';
+import { expect, request as playwrightRequest, test, type Locator } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -35,6 +35,63 @@ const VISUAL_BLOCKS = [
   'image-carousel',
   'inquiry-form',
 ] as const;
+
+const VISUAL_STABLE_FRAME_COUNT = 4;
+const VISUAL_STABILITY_FRAME_LIMIT = 240;
+
+async function waitForVisualBlockStability(block: Locator): Promise<void> {
+  await block.scrollIntoViewIfNeeded();
+  await block.evaluate(async (element, options) => {
+    await document.fonts.ready;
+    const nextFrame = (): Promise<void> => new Promise((resolveFrame) => {
+      requestAnimationFrame(() => resolveFrame());
+    });
+    const images = Array.from(element.querySelectorAll('img'));
+    for (let frame = 0; images.some((image) => !image.complete) && frame < options.frameLimit; frame += 1) {
+      await nextFrame();
+    }
+    if (images.some((image) => !image.complete)) {
+      throw new Error(`Visual block images did not settle within ${options.frameLimit} animation frames.`);
+    }
+    await Promise.all(images.filter((image) => image.complete && image.naturalWidth > 0).map(async (image) => {
+      try {
+        await image.decode();
+      } catch {
+        // Broken optional media is still covered by the geometry and screenshot assertions.
+      }
+    }));
+
+    const signature = (): string => {
+      const rect = element.getBoundingClientRect();
+      const root = document.documentElement;
+      const viewport = window.visualViewport;
+      return JSON.stringify({
+        block: [rect.left, rect.top, rect.width, rect.height, element.scrollWidth, element.scrollHeight],
+        document: [root.scrollWidth, root.scrollHeight],
+        fontStatus: document.fonts.status,
+        scroll: [window.scrollX, window.scrollY],
+        viewport: viewport
+          ? [viewport.offsetLeft, viewport.offsetTop, viewport.pageLeft, viewport.pageTop, viewport.width, viewport.height]
+          : null,
+      });
+    };
+
+    let previous = '';
+    let stableFrames = 0;
+    for (let frame = 0; frame < options.frameLimit; frame += 1) {
+      await nextFrame();
+      const current = signature();
+      stableFrames = current === previous ? stableFrames + 1 : 1;
+      previous = current;
+      if (stableFrames >= options.stableFrameCount) return;
+    }
+
+    throw new Error(`Visual block geometry did not stabilize within ${options.frameLimit} animation frames.`);
+  }, {
+    frameLimit: VISUAL_STABILITY_FRAME_LIMIT,
+    stableFrameCount: VISUAL_STABLE_FRAME_COUNT,
+  });
+}
 
 function adminCredentials(): { email: string; password: string } {
   const email = process.env.G7PB_ADMIN_EMAIL;
@@ -205,6 +262,7 @@ test('publishes all 45 catalog blocks and keeps 30 responsive visual baselines',
     for (const blockType of VISUAL_BLOCKS) {
       const block = publicRoot.locator(`[data-block-type="${blockType}"]`);
       await expect(block).toHaveCount(1);
+      await waitForVisualBlockStability(block);
       await expect.soft(block).toHaveScreenshot(`catalog-${blockType}-${testInfo.project.name}.png`, {
         animations: 'disabled',
         caret: 'hide',

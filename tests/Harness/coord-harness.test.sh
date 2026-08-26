@@ -894,12 +894,23 @@ assert_submitted_batch_rollback 'competing integration lock rejection'
   cd "$batch_repo"
   expect_fail env \
     G7PB_COORD_TESTING=1 \
-    G7PB_COORD_TEST_TERMINATE_AFTER_TASK_LOCK_COUNT=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_TASK_LOCK_COUNT=2 \
     "$harness" integrate-batch \
       --tasks second-task,first-task \
       --integration-task integration-task
 )
 assert_submitted_batch_rollback 'partial-lock termination'
+
+(
+  cd "$batch_repo"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_TASK_LOCK_COUNT=3 \
+    "$harness" integrate-batch \
+      --tasks second-task,first-task \
+      --integration-task integration-task
+)
+assert_submitted_batch_rollback 'all-lock termination'
 
 (
   cd "$batch_repo"

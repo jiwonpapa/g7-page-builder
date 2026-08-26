@@ -40,7 +40,9 @@ const VISUAL_STABLE_FRAME_COUNT = 4;
 const VISUAL_STABILITY_FRAME_LIMIT = 240;
 
 async function waitForVisualBlockStability(block: Locator): Promise<void> {
-  await block.scrollIntoViewIfNeeded();
+  await block.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+  });
   await block.evaluate(async (element, options) => {
     await document.fonts.ready;
     const nextFrame = (): Promise<void> => new Promise((resolveFrame) => {

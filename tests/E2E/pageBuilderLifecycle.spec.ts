@@ -977,7 +977,8 @@ async function selectAndEditHero(
 
 async function revealFirstFeaturesItemEditors(page: Page): Promise<{ title: Locator; body: Locator }> {
   await revealInspectorField(page, 'page-builder-block-container-width');
-  await expect(page.getByRole('heading', { name: 'Features', exact: true, level: 2 })).toBeVisible();
+  const inspectorItemsLabel = page.getByText('항목', { exact: true }).filter({ visible: true });
+  await expect(inspectorItemsLabel).toHaveCount(1);
 
   const summary = page.locator(`${PUCK_ARRAY_ITEM_SUMMARY}:visible`).first();
   await expect(summary).toBeVisible();
@@ -1620,7 +1621,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(restoredFeatureEditors.body).toHaveText(featureBody);
     await selectEditorBlock(page, 'cta');
     await expect(editorInlineField(page, 'cta', 'heading')).toContainText(ctaHeading);
-    await expect(await revealInspectorField(page, 'page-builder-cta-body')).toHaveValue(ctaBody);
+    await expect(editorInlineField(page, 'cta', 'body')).toContainText(ctaBody);
     await expect(await revealInspectorField(page, 'page-builder-cta-primary-label')).toHaveValue(ctaPrimaryLabel);
     await expect(await revealInspectorField(page, 'page-builder-cta-theme')).toHaveValue('dark');
     await selectEditorBlock(page, 'contact');

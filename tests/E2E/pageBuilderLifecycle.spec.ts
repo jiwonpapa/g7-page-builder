@@ -590,7 +590,24 @@ async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: 
   const trigger = rangeToolbar.getByTestId(testId);
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await rangeToolbar.locator('xpath=ancestor::body').getByRole('option', { name: option, exact: true }).click();
+  const optionControl = rangeToolbar.locator('xpath=ancestor::body').getByRole('option', { name: option, exact: true });
+  const samples = await optionControl.evaluate(async (element) => {
+    const frames: Array<{ height: number; left: number; top: number; width: number }> = [];
+    for (let index = 0; index < 3; index += 1) {
+      await new Promise<void>((resolve) => element.ownerDocument.defaultView?.requestAnimationFrame(() => resolve()));
+      const rect = element.getBoundingClientRect();
+      frames.push({ height: rect.height, left: rect.left, top: rect.top, width: rect.width });
+    }
+    return frames;
+  });
+  const baseline = samples[0];
+  for (const sample of samples.slice(1)) {
+    expect(Math.abs(sample.left - baseline.left), `range option left must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.top - baseline.top), `range option top must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.width - baseline.width), `range option width must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.height - baseline.height), `range option height must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+  }
+  await optionControl.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 }
 

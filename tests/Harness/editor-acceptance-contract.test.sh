@@ -337,9 +337,9 @@ perl -0pi -e 's/onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.val
 expect_failure '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/onChange\(nextValue\);\n    onClose\(\);/onChange(nextValue);/' \
+perl -0pi -e 's/scheduleCloseAfterPointer\(\);/onClose();/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 즉시 닫혀야 합니다.'
+expect_failure '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 compatibility click까지 portal을 유지한 뒤 닫혀야 합니다.'
 
 copy_fixture
 perl -0pi -e "s/control\\.tap\\(\\{ scroll: 'none' \\}\\)/control.click({ scroll: 'none' })/" \

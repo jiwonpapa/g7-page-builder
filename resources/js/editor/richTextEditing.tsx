@@ -10,6 +10,7 @@ const SIZE_VALUES = ['base', 'small', 'large', 'xlarge'] as const;
 const WEIGHT_VALUES = ['regular', 'medium', 'semibold', 'bold'] as const;
 const TONE_VALUES = ['default', 'muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4'] as const;
 const FLOATING_LAYER_STABLE_FRAMES = 3;
+const RANGE_OPTION_COMPATIBILITY_CLICK_WINDOW_MS = 50;
 export const RICH_TEXT_RANGE_STATE_MESSAGE = 'g7pb:richtext-range-state';
 
 type FontValue = typeof FONT_VALUES[number];
@@ -319,13 +320,31 @@ function RangeChoiceMenu<T extends string>({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const suppressCompatibilityClick = React.useRef(false);
   const pendingOptionPointer = React.useRef<{ pointerId: number; value: T } | null>(null);
+  const pendingCloseTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearScheduledClose = (): void => {
+    if (pendingCloseTimer.current === null) return;
+    clearTimeout(pendingCloseTimer.current);
+    pendingCloseTimer.current = null;
+  };
   const markPointerActivation = (): void => {
+    clearScheduledClose();
     suppressCompatibilityClick.current = true;
   };
   const clearPointerActivation = (): void => {
+    clearScheduledClose();
     suppressCompatibilityClick.current = false;
     pendingOptionPointer.current = null;
   };
+  const scheduleCloseAfterPointer = (): void => {
+    clearScheduledClose();
+    pendingCloseTimer.current = setTimeout(() => {
+      pendingCloseTimer.current = null;
+      suppressCompatibilityClick.current = false;
+      pendingOptionPointer.current = null;
+      onClose();
+    }, RANGE_OPTION_COMPATIBILITY_CLICK_WINDOW_MS);
+  };
+  React.useEffect(() => clearScheduledClose, []);
   const clearPointerActivationFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
     if (event.key === 'Enter' || event.key === ' ') clearPointerActivation();
   };
@@ -359,7 +378,7 @@ function RangeChoiceMenu<T extends string>({
     if (!pending || pending.pointerId !== event.pointerId || pending.value !== nextValue) return;
     pendingOptionPointer.current = null;
     onChange(nextValue);
-    onClose();
+    scheduleCloseAfterPointer();
   };
   const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
     event.preventDefault();

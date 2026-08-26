@@ -284,7 +284,7 @@ describe('Puck-native rich-text editing', () => {
     expect(createInlineRichTextField('독립 제목').options.link).not.toBe(false);
   });
 
-  it('keeps a range option mounted through touch down, applies once, and closes on pointer up without a compatibility click', async () => {
+  it('keeps a touch range option mounted through the compatibility click and applies once', async () => {
     const chain = {
       focus: vi.fn(() => chain),
       setMark: vi.fn(() => chain),
@@ -352,8 +352,8 @@ describe('Puck-native rich-text editing', () => {
       tone: 'default',
     });
     expect(chain.run).toHaveBeenCalledOnce();
-    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
-    expect(serif?.isConnected).toBe(false);
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+    expect(serif?.isConnected).toBe(true);
 
     await act(async () => {
       serif?.dispatchEvent(new MouseEvent('click', {
@@ -372,6 +372,57 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('closes a touch range option after pointer up when no compatibility click is emitted', async () => {
+    const chain = {
+      focus: vi.fn(() => chain),
+      setMark: vi.fn(() => chain),
+      unsetMark: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 7 } },
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+    await rerender(editorState());
+
+    const trigger = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]');
+    await act(async () => {
+      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerType: 'touch',
+      }));
+    });
+    const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
+      .find((option) => option.textContent?.includes('명조'));
+    await act(async () => {
+      serif?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerId: 13,
+        pointerType: 'touch',
+      }));
+      serif?.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerId: 13,
+        pointerType: 'touch',
+      }));
+    });
+
+    expect(chain.setMark).toHaveBeenCalledOnce();
+    expect(chain.run).toHaveBeenCalledOnce();
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+    expect(serif?.isConnected).toBe(true);
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 75)));
+    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+    expect(serif?.isConnected).toBe(false);
   });
 
   it('applies each native mark on pointer down without duplicating the compatibility click', async () => {

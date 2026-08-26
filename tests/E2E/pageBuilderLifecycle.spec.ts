@@ -632,7 +632,42 @@ async function expandBlockGallery(page: Page): Promise<void> {
     if (total > 0 && rendered >= total) return;
 
     const loadMore = gallery.locator('[data-testid="page-builder-gallery-load-more"]:visible');
-    await activatePointerTarget(page, loadMore, 'block gallery load-more button');
+    await expect(loadMore, 'block gallery load-more button must exist while items remain').toBeVisible();
+    await loadMore.scrollIntoViewIfNeeded();
+    await waitForStableLayout(page);
+
+    const renderedAfterScroll = Number(await grid.getAttribute('data-rendered-items') ?? '0');
+    if (renderedAfterScroll > rendered) {
+      continue;
+    }
+
+    if (await loadMore.count() === 0) {
+      await expect.poll(
+        async () => Number(await grid.getAttribute('data-rendered-items') ?? '0'),
+        { message: 'the observer-driven gallery window renders after the load-more control leaves the DOM' },
+      ).toBeGreaterThan(rendered);
+      continue;
+    }
+
+    let evidence: Awaited<ReturnType<typeof pointerHitEvidence>>;
+    try {
+      evidence = await pointerHitEvidence(loadMore);
+    } catch (error) {
+      if (await loadMore.count() > 0) throw error;
+      await expect.poll(
+        async () => Number(await grid.getAttribute('data-rendered-items') ?? '0'),
+        { message: 'the observer-driven gallery window renders after pointer evidence becomes detached' },
+      ).toBeGreaterThan(rendered);
+      continue;
+    }
+    if (!evidence.topmost) {
+      throw new Error(`block gallery load-more button is not the topmost pointer target: ${JSON.stringify(evidence)}`);
+    }
+    try {
+      await loadMore.click();
+    } catch (error) {
+      if (await loadMore.count() > 0) throw error;
+    }
     await expect.poll(
       async () => Number(await grid.getAttribute('data-rendered-items') ?? '0'),
       { message: 'the next gallery window renders' },

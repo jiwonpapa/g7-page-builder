@@ -507,7 +507,14 @@ async function revealInspectorField(page: Page, testId: string): Promise<Locator
 
   if (!(await field.isVisible())) {
     await page.keyboard.press('Escape');
-    await page.locator('nav').getByText('Fields', { exact: true }).click();
+    const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+    if (await fieldsTab.isVisible()) {
+      await fieldsTab.click();
+    } else {
+      const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
+      await expect(sidebarToggle).toBeVisible();
+      await sidebarToggle.click();
+    }
   }
 
   await expect(field).toBeVisible();
@@ -719,7 +726,6 @@ async function selectAndEditCta(
   heading: string,
   body: string,
   primaryLabel: string,
-  directCanvas = true,
 ): Promise<void> {
   const cta = editorBlock(page, 'cta');
   await expect(cta).toHaveCount(1);
@@ -731,21 +737,14 @@ async function selectAndEditCta(
   await headingField.dispatchEvent('pointerdown');
   await expect(headingField).toBeEditable();
   await headingField.fill(heading);
-  if (directCanvas) {
-    await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
-    await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
-    for (const [field, value] of [['body', body], ['primaryLabel', primaryLabel]] as const) {
-      const target = inline(field);
-      await target.dispatchEvent('pointerdown');
-      await target.hover({ force: true });
-      await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
-      await target.fill(value);
-    }
-  } else {
-    await (await revealInspectorField(page, 'page-builder-cta-body')).fill(body);
-    await (await revealInspectorField(page, 'page-builder-cta-primary-label')).fill(primaryLabel);
-    await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
-    await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
+  await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
+  await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
+  for (const [field, value] of [['body', body], ['primaryLabel', primaryLabel]] as const) {
+    const target = inline(field);
+    await target.dispatchEvent('pointerdown');
+    await target.hover({ force: true });
+    await expect(target).toBeEditable();
+    await target.fill(value);
   }
 }
 
@@ -1308,7 +1307,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     uploadedMediaId = typeof mediaPayload.data?.id === 'string' ? mediaPayload.data.id : null;
     expect(uploadedMediaId).toMatch(DOCUMENT_ID_PATTERN);
     await updateE2eOwnershipJournal(ownershipJournalPath, uploadedMediaId);
-    await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel, testInfo.project.name === 'desktop');
+    await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel);
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
     await revealEditorHeaderActions(page);

@@ -818,7 +818,7 @@ async function chooseRangeOption(
   await assertPointerReachable(page, optionControl);
   await expect.poll(() => selectedText(field)).toBe(target);
   await activateControl(projectName, optionControl);
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(optionControl).toBeHidden();
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   const appliedMark = field.locator(`span[data-g7pb-${markAttribute}="${markValue}"]`);

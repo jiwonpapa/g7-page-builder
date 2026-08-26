@@ -354,7 +354,12 @@ expect_failure '선택 글자 portal option은 iframe body에서 도달성 확�
 copy_fixture
 perl -0pi -e 's#(await assertPointerReachable\(page, optionControl\);\n)  await expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\);#$1  await expect(field).toBeVisible();#' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.'
+expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/expect\(optionControl\)\.toBeHidden\(\)/expect(optionControl).toBeVisible()/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(function assertPointerReachable[\s\S]*?)hit: stack\[0\] === iframe/$1hit: true/' \

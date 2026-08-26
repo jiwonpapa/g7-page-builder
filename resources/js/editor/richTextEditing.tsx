@@ -9,6 +9,7 @@ const FONT_VALUES = ['inherit', 'modern', 'serif', 'mono'] as const;
 const SIZE_VALUES = ['base', 'small', 'large', 'xlarge'] as const;
 const WEIGHT_VALUES = ['regular', 'medium', 'semibold', 'bold'] as const;
 const TONE_VALUES = ['default', 'muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4'] as const;
+const FLOATING_LAYER_STABLE_FRAMES = 3;
 export const RICH_TEXT_RANGE_STATE_MESSAGE = 'g7pb:richtext-range-state';
 
 type FontValue = typeof FONT_VALUES[number];
@@ -66,6 +67,7 @@ function RichTextFloatingLayer({
     if (!layer || !currentAnchor || !currentDocument || !ownerWindow) return undefined;
     let animationFrame = 0;
     let pendingPlacement: string | null = null;
+    let stablePlacementFrames = 0;
     let revealed = false;
     const observedSizes = new WeakMap<Element, { height: number; width: number }>();
     const actionBar = currentAnchor.closest<HTMLElement>('.g7pb-selected-block-actionbar');
@@ -114,12 +116,17 @@ function RichTextFloatingLayer({
       ].map((value) => stableOverlayPixel(value, ownerWindow.devicePixelRatio)).join('|');
       if (!revealed) {
         if (pendingPlacement === placement) {
+          stablePlacementFrames += 1;
+        } else {
+          pendingPlacement = placement;
+          stablePlacementFrames = 1;
+        }
+        if (stablePlacementFrames >= FLOATING_LAYER_STABLE_FRAMES) {
           revealed = true;
           layer.setAttribute('data-g7pb-floating-ready', 'true');
           if (layer.style.visibility !== 'visible') layer.style.visibility = 'visible';
           return;
         }
-        pendingPlacement = placement;
         layer.removeAttribute('data-g7pb-floating-ready');
         if (layer.style.visibility !== 'hidden') layer.style.visibility = 'hidden';
         schedule();
@@ -129,6 +136,14 @@ function RichTextFloatingLayer({
     };
     const schedule = (): void => {
       if (animationFrame === 0) animationFrame = ownerWindow.requestAnimationFrame(position);
+    };
+    const invalidatePlacement = (): void => {
+      revealed = false;
+      pendingPlacement = null;
+      stablePlacementFrames = 0;
+      layer.removeAttribute('data-g7pb-floating-ready');
+      if (layer.style.visibility !== 'hidden') layer.style.visibility = 'hidden';
+      schedule();
     };
     const contentBoxSize = (element: HTMLElement): { height: number; width: number } => {
       const style = ownerWindow.getComputedStyle(element);
@@ -152,13 +167,13 @@ function RichTextFloatingLayer({
         observedSizes.set(entry.target, { width, height });
         return !previous || previous.width !== width || previous.height !== height;
       });
-      if (changed) schedule();
+      if (changed) invalidatePlacement();
     });
     observedSizes.set(currentAnchor, contentBoxSize(currentAnchor));
     observedSizes.set(layer, contentBoxSize(layer));
     resizeObserver.observe(currentAnchor);
     resizeObserver.observe(layer);
-    const safeClipObserver = actionBar ? new ownerWindow.MutationObserver(schedule) : null;
+    const safeClipObserver = actionBar ? new ownerWindow.MutationObserver(invalidatePlacement) : null;
     safeClipObserver?.observe(actionBar as HTMLElement, {
       attributes: true,
       attributeFilter: [
@@ -169,17 +184,17 @@ function RichTextFloatingLayer({
     });
     const scheduleFromScroll = (event: Event): void => {
       if (event.target instanceof ownerWindow.Node && layer.contains(event.target)) return;
-      schedule();
+      invalidatePlacement();
     };
     currentDocument.addEventListener('scroll', scheduleFromScroll, true);
-    ownerWindow.addEventListener('resize', schedule);
+    ownerWindow.addEventListener('resize', invalidatePlacement);
     position();
     return () => {
       if (animationFrame !== 0) ownerWindow.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
       safeClipObserver?.disconnect();
       currentDocument.removeEventListener('scroll', scheduleFromScroll, true);
-      ownerWindow.removeEventListener('resize', schedule);
+      ownerWindow.removeEventListener('resize', invalidatePlacement);
     };
   }, [align, anchorRef, ownerDocument]);
 

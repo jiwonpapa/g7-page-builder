@@ -213,8 +213,10 @@ export async function validateEditorAcceptanceContract(root) {
     [richTextSource, /import\s*\{\s*createPortal\s*\}\s*from\s*['"]react-dom['"]/, '선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.'],
     [richTextSource, /function RichTextFloatingLayer[\s\S]*anchorRef\.current[\s\S]*data-g7pb-safe-clip-left[\s\S]*data-g7pb-safe-clip-bottom[\s\S]*ResizeObserver[\s\S]*MutationObserver[\s\S]*createPortal\([\s\S]*ownerDocument\.body/,
       '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip 계약으로 배치되어야 합니다.'],
-    [richTextSource, /let pendingPlacement: string \| null = null;[\s\S]*let revealed = false;[\s\S]*const placement = \[[\s\S]*pendingPlacement === placement[\s\S]*data-g7pb-floating-ready[\s\S]*visibility !== ['"]visible['"][\s\S]*pendingPlacement = placement[\s\S]*schedule\(\)/,
-      '선택 글자 floating layer는 연속 두 프레임의 배치가 같을 때만 노출되어야 합니다.'],
+    [richTextSource, /const FLOATING_LAYER_STABLE_FRAMES = 3;[\s\S]*let pendingPlacement: string \| null = null;[\s\S]*let stablePlacementFrames = 0;[\s\S]*pendingPlacement === placement[\s\S]*stablePlacementFrames \+= 1[\s\S]*stablePlacementFrames >= FLOATING_LAYER_STABLE_FRAMES[\s\S]*data-g7pb-floating-ready/,
+      '선택 글자 floating layer는 연속 세 프레임의 배치가 같을 때만 노출되어야 합니다.'],
+    [richTextSource, /const invalidatePlacement = \(\): void => \{[\s\S]*revealed = false;[\s\S]*pendingPlacement = null;[\s\S]*stablePlacementFrames = 0;[\s\S]*removeAttribute\(['"]data-g7pb-floating-ready['"]\)[\s\S]*visibility !== ['"]hidden['"][\s\S]*new ownerWindow\.MutationObserver\(invalidatePlacement\)/,
+      '선택 글자 floating layer는 safe-zone 변경 시 즉시 숨기고 안정 배치를 다시 계산해야 합니다.'],
     [richTextSource, /g7pb-richtext-floating-layer[\s\S]*<RichTextFloatingLayer anchorRef=\{triggerRef\}[\s\S]*role="listbox"[\s\S]*<RichTextFloatingLayer anchorRef=\{ref\} align="end"/,
       '글꼴·크기·굵기·색상 option과 링크 form 모두 같은 floating portal 계약을 사용해야 합니다.'],
     [richTextSource, /const rangeActive = Boolean\(editorState\?\.g7HasSelection\)/, 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'],
@@ -234,7 +236,7 @@ export async function validateEditorAcceptanceContract(root) {
     '선택 글자 control은 Playwright가 현재 변환을 반영한 중심점에 실제 touch 또는 mouse를 보내야 합니다.');
   requirePattern(errors, spec, /function activateCanvasPoint\([\s\S]{0,260}page\.touchscreen\.tap\(point\.x, point\.y\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)[\s\S]*?dismissContextPanelWithPointer[\s\S]{0,900}activateCanvasPoint\(page, point, projectName\)/,
     '요소 벌룬 닫기는 검증된 캔버스 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.');
-  requirePattern(errors, spec, /function expectStableControlGeometry[\s\S]{0,220}expect\(control\)\.toBeVisible\(\)[\s\S]{0,360}g7pb-richtext-floating-layer[\s\S]{0,240}toHaveAttribute\(['"]data-g7pb-floating-ready['"], ['"]true['"]\)[\s\S]{0,520}index < 3/,
+  requirePattern(errors, spec, /function expectStableControlGeometry[\s\S]*?expect\(control\)\.toBeVisible\(\)[\s\S]*?g7pb-richtext-floating-layer[\s\S]*?toHaveAttribute\(['"]data-g7pb-floating-ready['"], ['"]true['"]\)[\s\S]*?index < 3[\s\S]*?sample\.ready/,
     '선택 글자 control은 안정 배치가 노출된 뒤 세 프레임의 geometry를 검증해야 합니다.');
   requirePattern(errors, spec, /const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(projectName, optionControl\)[\s\S]{0,260}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
     '선택 글자 portal option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.');

@@ -711,15 +711,28 @@ async function expectStableControlGeometry(control: Locator): Promise<void> {
   const floatingLayer = control.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " g7pb-richtext-floating-layer ")][1]');
   if (await floatingLayer.count()) await expect(floatingLayer).toHaveAttribute('data-g7pb-floating-ready', 'true');
   const samples = await control.evaluate(async (element) => {
-    const frames: Array<{ height: number; left: number; top: number; width: number }> = [];
+    const frames: Array<{ height: number; left: number; ready: boolean; top: number; width: number }> = [];
     for (let index = 0; index < 3; index += 1) {
       await new Promise<void>((resolve) => element.ownerDocument.defaultView?.requestAnimationFrame(() => resolve()));
       const rect = element.getBoundingClientRect();
-      frames.push({ height: rect.height, left: rect.left, top: rect.top, width: rect.width });
+      const floating = element.closest<HTMLElement>('.g7pb-richtext-floating-layer');
+      frames.push({
+        height: rect.height,
+        left: rect.left,
+        ready: !floating || (
+          floating.getAttribute('data-g7pb-floating-ready') === 'true'
+          && floating.style.visibility === 'visible'
+        ),
+        top: rect.top,
+        width: rect.width,
+      });
     }
     return frames;
   });
   const baseline = samples[0];
+  for (const sample of samples) {
+    expect(sample.ready, `floating readiness must remain stable: ${JSON.stringify(samples)}`).toBe(true);
+  }
   for (const sample of samples.slice(1)) {
     expect(Math.abs(sample.left - baseline.left), `control left must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
     expect(Math.abs(sample.top - baseline.top), `control top must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);

@@ -170,6 +170,10 @@ describe('Puck-native rich-text editing', () => {
       expect(advanced?.hasAttribute('data-g7pb-floating-ready')).toBe(false);
       expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
       await flushFrame();
+      expect(advanced?.style.visibility).toBe('hidden');
+      expect(advanced?.hasAttribute('data-g7pb-floating-ready')).toBe(false);
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
+      await flushFrame();
       expect(advanced?.style.visibility).toBe('visible');
       expect(advanced?.getAttribute('data-g7pb-floating-ready')).toBe('true');
       expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');

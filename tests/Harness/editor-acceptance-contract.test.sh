@@ -417,9 +417,14 @@ perl -0pi -e 's/data-g7pb-safe-clip-left/data-g7pb-unsafe-left/' \
 expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip 계약으로 배치되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/pendingPlacement === placement/pendingPlacement === "never-stable"/' \
+perl -0pi -e 's/FLOATING_LAYER_STABLE_FRAMES = 3/FLOATING_LAYER_STABLE_FRAMES = 1/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '선택 글자 floating layer는 연속 두 프레임의 배치가 같을 때만 노출되어야 합니다.'
+expect_failure '선택 글자 floating layer는 연속 세 프레임의 배치가 같을 때만 노출되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/new ownerWindow\.MutationObserver\(invalidatePlacement\)/new ownerWindow.MutationObserver(schedule)/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 floating layer는 safe-zone 변경 시 즉시 숨기고 안정 배치를 다시 계산해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{ref\} align="end"/<div/' \

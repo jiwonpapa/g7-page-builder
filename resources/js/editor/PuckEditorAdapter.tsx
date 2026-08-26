@@ -89,6 +89,14 @@ import {
   blockContainerEditorProps,
   mergeBlockContainerAppearance,
 } from './blockAppearance';
+import {
+  intersectOverlayRects,
+  inverseScaledTranslation,
+  mapHostClipToFrameViewport,
+  placeEditorOverlay,
+  type OverlayRect,
+  type OverlayRectEdges,
+} from './editorOverlaySafeZone';
 
 import {
   CONTACT_BLOCK_TYPE,
@@ -2440,6 +2448,138 @@ function ConnectedCanvasDialogs(): React.ReactElement | null {
 const NARROW_CANVAS_MAX_WIDTH = 900;
 const SELECTED_ACTION_BAR_SAFE_INSET_PX = 8;
 
+function viewportRect(ownerDocument: Document): OverlayRect {
+  const ownerWindow = ownerDocument.defaultView;
+  const width = ownerDocument.documentElement.clientWidth || ownerWindow?.innerWidth || 0;
+  const height = ownerDocument.documentElement.clientHeight || ownerWindow?.innerHeight || 0;
+  return { left: 0, top: 0, right: width, bottom: height, width, height };
+}
+
+function clientBoxRect(element: HTMLElement): OverlayRect {
+  const rect = element.getBoundingClientRect();
+  const layoutWidth = element.offsetWidth || element.clientWidth || rect.width;
+  const layoutHeight = element.offsetHeight || element.clientHeight || rect.height;
+  const scaleX = layoutWidth > 0 ? rect.width / layoutWidth : 1;
+  const scaleY = layoutHeight > 0 ? rect.height / layoutHeight : 1;
+  const left = rect.left + element.clientLeft * scaleX;
+  const top = rect.top + element.clientTop * scaleY;
+  const width = element.clientWidth > 0 ? element.clientWidth * scaleX : rect.width;
+  const height = element.clientHeight > 0 ? element.clientHeight * scaleY : rect.height;
+  return { left, top, right: left + width, bottom: top + height, width, height };
+}
+
+function clipsOverflow(value: string): boolean {
+  return value === 'auto' || value === 'clip' || value === 'hidden' || value === 'scroll';
+}
+
+function clipByOverflowAncestor(
+  current: OverlayRectEdges,
+  ancestor: HTMLElement,
+  hostWindow: Window,
+): OverlayRect | null {
+  const style = hostWindow.getComputedStyle(ancestor);
+  const clipX = clipsOverflow(style.overflowX);
+  const clipY = clipsOverflow(style.overflowY);
+  if (!clipX && !clipY) return intersectOverlayRects([current]);
+  const ancestorRect = clientBoxRect(ancestor);
+  return intersectOverlayRects([current, {
+    left: clipX ? ancestorRect.left : current.left,
+    right: clipX ? ancestorRect.right : current.right,
+    top: clipY ? ancestorRect.top : current.top,
+    bottom: clipY ? ancestorRect.bottom : current.bottom,
+  }]);
+}
+
+function visibleOwnerViewport(actionBar: HTMLElement): OverlayRect | null {
+  const ownerDocument = actionBar.ownerDocument;
+  const ownerWindow = ownerDocument.defaultView;
+  const localViewport = viewportRect(ownerDocument);
+  if (!ownerWindow?.frameElement) return localViewport;
+
+  try {
+    const frameElement = ownerWindow.frameElement as HTMLElement;
+    const hostDocument = frameElement.ownerDocument;
+    const hostWindow = hostDocument.defaultView;
+    if (!hostWindow) return localViewport;
+    const frameContentRect = clientBoxRect(frameElement);
+    let hostClip = intersectOverlayRects([viewportRect(hostDocument), frameContentRect]);
+    if (!hostClip) return null;
+    for (let ancestor = frameElement.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      hostClip = clipByOverflowAncestor(hostClip, ancestor, hostWindow);
+      if (!hostClip) return null;
+    }
+    const mappedHostClip = mapHostClipToFrameViewport(hostClip, frameContentRect, {
+      width: localViewport.width,
+      height: localViewport.height,
+    });
+    return mappedHostClip ? intersectOverlayRects([localViewport, mappedHostClip]) : localViewport;
+  } catch {
+    return localViewport;
+  }
+}
+
+function renderedAncestorScale(element: HTMLElement, rect: DOMRect): { x: number; y: number } {
+  const x = element.offsetWidth > 0 ? rect.width / element.offsetWidth : 1;
+  const y = element.offsetHeight > 0 ? rect.height / element.offsetHeight : 1;
+  return {
+    x: x > 0 && Number.isFinite(x) ? x : 1,
+    y: y > 0 && Number.isFinite(y) ? y : 1,
+  };
+}
+
+const SAFE_CLIP_FIELDS = ['left', 'top', 'right', 'bottom', 'width', 'height'] as const;
+
+function clearVisibleClipContract(actionBar: HTMLElement): void {
+  for (const field of SAFE_CLIP_FIELDS) {
+    actionBar.removeAttribute(`data-g7pb-safe-clip-${field}`);
+    actionBar.style.removeProperty(`--g7pb-selected-actionbar-safe-${field}`);
+  }
+}
+
+function exposeVisibleClipContract(actionBar: HTMLElement, clip: OverlayRect): void {
+  for (const field of SAFE_CLIP_FIELDS) {
+    const value = clip[field];
+    actionBar.setAttribute(`data-g7pb-safe-clip-${field}`, String(value));
+    actionBar.style.setProperty(`--g7pb-selected-actionbar-safe-${field}`, `${value}px`);
+  }
+}
+
+function currentInteractionRects(actionBar: HTMLElement): OverlayRectEdges[] {
+  const ownerDocument = actionBar.ownerDocument;
+  const ownerWindow = ownerDocument.defaultView;
+  const rects: OverlayRectEdges[] = [];
+  const addRect = (rect: DOMRect | DOMRectReadOnly): void => {
+    if (rect.width <= 0 || rect.height <= 0) return;
+    rects.push({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+  };
+
+  try {
+    const selection = ownerWindow?.getSelection();
+    if (selection && !selection.isCollapsed) {
+      for (let rangeIndex = 0; rangeIndex < selection.rangeCount; rangeIndex += 1) {
+        const range = selection.getRangeAt(rangeIndex);
+        const rangeRects = range.getClientRects();
+        if (rangeRects.length === 0) addRect(range.getBoundingClientRect());
+        else for (let rectIndex = 0; rectIndex < rangeRects.length; rectIndex += 1) addRect(rangeRects[rectIndex]);
+      }
+    }
+  } catch {
+    // Selection can detach while Puck replaces a block; the active element remains a safe fallback.
+  }
+
+  const activeElement = ownerDocument.activeElement;
+  if (
+    activeElement
+    && activeElement !== ownerDocument.body
+    && activeElement !== ownerDocument.documentElement
+    && !actionBar.contains(activeElement)
+    && 'getBoundingClientRect' in activeElement
+  ) {
+    addRect(activeElement.getBoundingClientRect());
+  }
+  return rects;
+}
+
 function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDivElement | null> {
   const actionBarRef = useRef<HTMLDivElement>(null);
 
@@ -2450,7 +2590,10 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
     const clearPosition = (): void => {
       actionBar.style.removeProperty('--g7pb-selected-actionbar-translate-x');
       actionBar.style.removeProperty('--g7pb-selected-actionbar-translate-y');
+      actionBar.style.removeProperty('--g7pb-selected-actionbar-max-width');
       actionBar.removeAttribute('data-g7pb-safe-zone-ready');
+      actionBar.removeAttribute('data-g7pb-safe-zone-placement');
+      clearVisibleClipContract(actionBar);
     };
     if (!enabled) {
       clearPosition();
@@ -2471,31 +2614,47 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
       actionBar.style.setProperty('--g7pb-selected-actionbar-translate-x', '0px');
       actionBar.style.setProperty('--g7pb-selected-actionbar-translate-y', '0px');
 
+      const visibleClip = visibleOwnerViewport(actionBar);
+      if (!visibleClip) {
+        actionBar.removeAttribute('data-g7pb-safe-zone-ready');
+        clearVisibleClipContract(actionBar);
+        return;
+      }
+      exposeVisibleClipContract(actionBar, visibleClip);
+      const initialRect = actionBar.getBoundingClientRect();
+      const initialScale = renderedAncestorScale(actionBar, initialRect);
+      const renderedMaxWidth = Math.max(0, visibleClip.width - SELECTED_ACTION_BAR_SAFE_INSET_PX * 2);
+      actionBar.style.setProperty(
+        '--g7pb-selected-actionbar-max-width',
+        `${renderedMaxWidth / initialScale.x}px`,
+      );
+
       const actionBarRect = actionBar.getBoundingClientRect();
       const selectedRect = selectedOverlay.getBoundingClientRect();
-      const viewportWidth = ownerDocument.documentElement.clientWidth;
-      const viewportHeight = ownerDocument.documentElement.clientHeight;
-      const maxLeft = Math.max(
-        SELECTED_ACTION_BAR_SAFE_INSET_PX,
-        viewportWidth - actionBarRect.width - SELECTED_ACTION_BAR_SAFE_INSET_PX,
-      );
-      const maxTop = Math.max(
-        SELECTED_ACTION_BAR_SAFE_INSET_PX,
-        viewportHeight - actionBarRect.height - SELECTED_ACTION_BAR_SAFE_INSET_PX,
-      );
-      const preferredLeft = selectedRect.right - actionBarRect.width;
-      const preferredTop = selectedRect.top - actionBarRect.height - SELECTED_ACTION_BAR_SAFE_INSET_PX;
-      const safeLeft = Math.min(maxLeft, Math.max(SELECTED_ACTION_BAR_SAFE_INSET_PX, preferredLeft));
-      const safeTop = Math.min(maxTop, Math.max(SELECTED_ACTION_BAR_SAFE_INSET_PX, preferredTop));
+      const renderedScale = renderedAncestorScale(actionBar, actionBarRect);
+      const placement = placeEditorOverlay({
+        anchorRect: selectedRect,
+        overlaySize: actionBarRect,
+        visibleClip,
+        avoidRects: currentInteractionRects(actionBar),
+        gap: SELECTED_ACTION_BAR_SAFE_INSET_PX,
+        inset: SELECTED_ACTION_BAR_SAFE_INSET_PX,
+      });
+      const translation = inverseScaledTranslation({
+        currentRect: actionBarRect,
+        target: placement,
+        renderedScale,
+      });
 
       actionBar.style.setProperty(
         '--g7pb-selected-actionbar-translate-x',
-        `${safeLeft - actionBarRect.left}px`,
+        `${translation.x}px`,
       );
       actionBar.style.setProperty(
         '--g7pb-selected-actionbar-translate-y',
-        `${safeTop - actionBarRect.top}px`,
+        `${translation.y}px`,
       );
+      actionBar.setAttribute('data-g7pb-safe-zone-placement', placement.placement);
       actionBar.setAttribute('data-g7pb-safe-zone-ready', 'true');
     };
     const schedulePosition = (): void => {
@@ -2508,19 +2667,35 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
     resizeObserver.observe(selectedOverlay);
     const positionObserver = new ownerWindow.MutationObserver(schedulePosition);
     positionObserver.observe(selectedOverlay, { attributes: true, attributeFilter: ['style'] });
+    positionObserver.observe(actionBar, { childList: true, characterData: true, subtree: true });
     if (actionBar.parentElement) {
       positionObserver.observe(actionBar.parentElement, { attributes: true, attributeFilter: ['style'] });
     }
     ownerDocument.addEventListener('scroll', schedulePosition, true);
     ownerWindow.addEventListener('resize', schedulePosition);
+    const hostFrame = ownerWindow.frameElement as HTMLElement | null;
+    const hostDocument = hostFrame?.ownerDocument ?? null;
+    const hostWindow = hostDocument?.defaultView ?? null;
+    const hostResizeObserver = hostWindow && hostFrame ? new hostWindow.ResizeObserver(schedulePosition) : null;
+    if (hostResizeObserver && hostFrame) {
+      hostResizeObserver.observe(hostFrame);
+      for (let ancestor = hostFrame.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        hostResizeObserver.observe(ancestor);
+      }
+    }
+    hostDocument?.addEventListener('scroll', schedulePosition, true);
+    hostWindow?.addEventListener('resize', schedulePosition);
     syncPosition();
 
     return () => {
       if (animationFrame !== 0) ownerWindow.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
+      hostResizeObserver?.disconnect();
       positionObserver.disconnect();
       ownerDocument.removeEventListener('scroll', schedulePosition, true);
       ownerWindow.removeEventListener('resize', schedulePosition);
+      hostDocument?.removeEventListener('scroll', schedulePosition, true);
+      hostWindow?.removeEventListener('resize', schedulePosition);
       clearPosition();
     };
   }, [enabled]);
@@ -2546,7 +2721,7 @@ function SelectedBlockActionBar({
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const currentViewportWidth = usePageBuilderPuck((state) => state.appState.ui.viewports.current.width);
   const narrowCanvas = typeof currentViewportWidth === 'number' && currentViewportWidth <= NARROW_CANVAS_MAX_WIDTH;
-  const actionBarRef = useSelectedActionBarSafeZone(narrowCanvas);
+  const actionBarRef = useSelectedActionBarSafeZone(true);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null
     ? data.content[selectedIndex]
     : null;

@@ -79,32 +79,62 @@ expect_failure '선택 블록 ActionBar는 Puck 실제 canvas viewport 상태를
 copy_fixture
 perl -0pi -e 's/actionBar\.ownerDocument/globalThis.document/' \
   "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
-expect_failure '좁은 canvas ActionBar는 iframe ownerDocument geometry와 선택 블록 기준으로 실제 포인터 안전영역에 clamp되어야 합니다.'
+expect_failure 'ActionBar 안전영역은 iframe뿐 아니라 host viewport와 모든 overflow clipping ancestor의 실제 가시 영역을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(body:has\(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\]\) div:has\(> \.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\]\) \{\n  height:) 0;/$1 auto;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '좁은 캔버스의 선택 블록 ActionBar host는 이동 후 빈 hit box를 남기면 안 됩니다.'
+perl -0pi -e 's/const frameElement = ownerWindow\.frameElement as HTMLElement;/const frameElement = ownerDocument.documentElement;/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure 'ActionBar 안전영역은 iframe뿐 아니라 host viewport와 모든 overflow clipping ancestor의 실제 가시 영역을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\] \{[^}]*overflow:) auto hidden;/$1 hidden;/s' \
+perl -0pi -e 's/const translation = inverseScaledTranslation/const translation = directTranslation/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure 'ActionBar 좌표는 host/canvas/Puck 렌더 scale을 측정하고 역보정해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/avoidRects: currentInteractionRects\(actionBar\)/avoidRects: []/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure '공간이 부족한 ActionBar는 현재 글자 범위와 활성 편집 요소를 피하는 공통 배치 규칙을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/useSelectedActionBarSafeZone\(true\)/useSelectedActionBarSafeZone(narrowCanvas)/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure 'ActionBar 안전영역은 PC·태블릿·모바일 모든 canvas에서 공통 적용되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{\n)/$1  height: 0;\n  min-height: 0;\n/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '좁은 캔버스 ActionBar는 줄바꿈 대신 가로 스크롤 strip을 사용해야 합니다.'
+expect_failure 'ActionBar host 높이를 0으로 만들어 실제 컨트롤의 세로 hit area를 잘라내면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{\n  pointer-events:) none;/$1 auto;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '이동 전 ActionBar host의 빈 hit box는 캔버스 포인터를 가로채면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-selected-block-actionbar \{[^}]*overflow:) auto hidden;/$1 hidden;/s' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure 'ActionBar는 다중 행 줄바꿈 대신 실제 높이를 가진 가로 스크롤 strip을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/var\(--g7pb-selected-actionbar-translate-y, 0\)/0px/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '좁은 캔버스 ActionBar는 계산된 iframe 안전영역 위치가 준비된 뒤에만 노출되어야 합니다.'
+expect_failure 'ActionBar는 계산된 host 안전영역 위치가 준비된 뒤 실제 포인터 hit area로 노출되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(data-g7pb-safe-zone-ready=\x27true\x27\] \{\n  visibility:) visible;/$1 hidden;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '좁은 캔버스 ActionBar는 안전영역 계산 완료 상태에서만 표시되어야 합니다.'
+expect_failure 'ActionBar는 안전영역 계산 완료 상태에서만 표시되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\] > div \{[^}]*flex-wrap:) nowrap;/$1 wrap;/s' \
+perl -0pi -e 's/(\.g7pb-selected-block-actionbar > div \{[^}]*flex-wrap:) nowrap;/$1 wrap;/s' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '좁은 캔버스 ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.'
+expect_failure 'ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar__options\.g7pb-richtext-floating-layer,[^}]*position:) fixed;/$1 absolute;/s' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '부분 글자 선택·링크 패널은 ActionBar overflow 밖의 host 안전영역 portal layer로 열려야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar \{ width:) max-content;/${1} 100%;/' \

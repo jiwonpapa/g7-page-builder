@@ -124,59 +124,83 @@ export async function validateEditorLayoutParity(root) {
     /usePageBuilderPuck\(\(state\)\s*=>\s*state\.appState\.ui\.viewports\.current\.width\)[\s\S]*data-g7pb-selected-block-actionbar=['"]true['"][\s\S]*data-g7pb-canvas-layout=\{narrowCanvas\s*\?\s*['"]narrow['"]\s*:\s*['"]wide['"]\}/,
     '선택 블록 ActionBar는 Puck 실제 canvas viewport 상태를 안정적인 제품 래퍼 계약으로 내려야 합니다.');
   requirePattern(errors, adapter,
-    /function useSelectedActionBarSafeZone[\s\S]*actionBar\.ownerDocument[\s\S]*closest<HTMLElement>\(['"]\[data-puck-overlay\]['"]\)[\s\S]*selectedRect\.top\s*-\s*actionBarRect\.height[\s\S]*Math\.max\(SELECTED_ACTION_BAR_SAFE_INSET_PX,\s*preferredTop\)[\s\S]*ResizeObserver[\s\S]*addEventListener\(['"]scroll['"],\s*schedulePosition,\s*true\)/,
-    '좁은 canvas ActionBar는 iframe ownerDocument geometry와 선택 블록 기준으로 실제 포인터 안전영역에 clamp되어야 합니다.');
-  const mobileSelectedActionHost = css.match(
-    /body:has\(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\)\s+div:has\(>\s*\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\)\s*\{([^}]*)\}/s,
+    /function visibleOwnerViewport[\s\S]*actionBar\.ownerDocument[\s\S]*ownerWindow\.frameElement[\s\S]*clipByOverflowAncestor[\s\S]*mapHostClipToFrameViewport[\s\S]*intersectOverlayRects/,
+    'ActionBar 안전영역은 iframe뿐 아니라 host viewport와 모든 overflow clipping ancestor의 실제 가시 영역을 사용해야 합니다.');
+  requirePattern(errors, adapter,
+    /function renderedAncestorScale[\s\S]*offsetWidth[\s\S]*rect\.width[\s\S]*function useSelectedActionBarSafeZone[\s\S]*placeEditorOverlay[\s\S]*inverseScaledTranslation/,
+    'ActionBar 좌표는 host/canvas/Puck 렌더 scale을 측정하고 역보정해야 합니다.');
+  requirePattern(errors, adapter,
+    /function currentInteractionRects[\s\S]*getSelection\(\)[\s\S]*!selection\.isCollapsed[\s\S]*activeElement[\s\S]*avoidRects:\s*currentInteractionRects\(actionBar\)/,
+    '공간이 부족한 ActionBar는 현재 글자 범위와 활성 편집 요소를 피하는 공통 배치 규칙을 사용해야 합니다.');
+  requirePattern(errors, adapter,
+    /function useSelectedActionBarSafeZone[\s\S]*visibleOwnerViewport\(actionBar\)[\s\S]*data-g7pb-safe-zone-placement[\s\S]*data-g7pb-safe-zone-ready[\s\S]*hostDocument\?\.addEventListener\(['"]scroll['"],\s*schedulePosition,\s*true\)/,
+    'ActionBar는 host 가시영역 변화를 관찰하고 계산 완료 상태와 배치 결과를 명시해야 합니다.');
+  requirePattern(errors, adapter,
+    /const actionBarRef\s*=\s*useSelectedActionBarSafeZone\(true\)/,
+    'ActionBar 안전영역은 PC·태블릿·모바일 모든 canvas에서 공통 적용되어야 합니다.');
+  const selectedActionHost = css.match(
+    /div:has\(>\s*\.g7pb-selected-block-actionbar\)\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
-  requirePattern(errors, mobileSelectedActionHost,
-    /height:\s*0;[\s\S]*min-height:\s*0;/,
-    '좁은 캔버스의 선택 블록 ActionBar host는 이동 후 빈 hit box를 남기면 안 됩니다.');
-  const mobileSelectedActionStrip = css.match(
-    /\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\s*\{([^}]*)\}/s,
+  requirePattern(errors, selectedActionHost,
+    /pointer-events:\s*none;/,
+    '이동 전 ActionBar host의 빈 hit box는 캔버스 포인터를 가로채면 안 됩니다.');
+  if (/height:\s*0;|min-height:\s*0;/.test(selectedActionHost)) {
+    errors.push('ActionBar host 높이를 0으로 만들어 실제 컨트롤의 세로 hit area를 잘라내면 안 됩니다.');
+  }
+  const selectedActionStrip = css.match(
+    /\.g7pb-selected-block-actionbar\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
-  if (!mobileSelectedActionStrip) {
-    errors.push('좁은 캔버스 선택 블록 ActionBar의 전용 안전 영역이 필요합니다.');
+  if (!selectedActionStrip) {
+    errors.push('선택 블록 ActionBar의 공통 안전 영역이 필요합니다.');
   } else {
-    requirePattern(errors, mobileSelectedActionStrip,
-      /width:\s*max-content;[\s\S]*max-width:\s*calc\(100vw\s*-\s*1rem\);[\s\S]*min-width:\s*0;/,
-      '좁은 캔버스 ActionBar는 컨트롤 폭을 유지하되 viewport 안쪽으로 제한되어야 합니다.');
-    requirePattern(errors, mobileSelectedActionStrip,
+    requirePattern(errors, selectedActionStrip,
+      /width:\s*max-content;[\s\S]*max-width:\s*var\(--g7pb-selected-actionbar-max-width,[\s\S]*min-width:\s*0;/,
+      'ActionBar는 컨트롤 폭을 유지하되 측정된 host 가시 폭 안쪽으로 제한되어야 합니다.');
+    requirePattern(errors, selectedActionStrip,
       /overflow:\s*auto\s+hidden;/,
-      '좁은 캔버스 ActionBar는 줄바꿈 대신 가로 스크롤 strip을 사용해야 합니다.');
-    requirePattern(errors, mobileSelectedActionStrip,
-      /transform:\s*translate\(\s*var\(--g7pb-selected-actionbar-translate-x,\s*0\),\s*var\(--g7pb-selected-actionbar-translate-y,\s*0\)\s*\);[\s\S]*visibility:\s*hidden;/,
-      '좁은 캔버스 ActionBar는 계산된 iframe 안전영역 위치가 준비된 뒤에만 노출되어야 합니다.');
+      'ActionBar는 다중 행 줄바꿈 대신 실제 높이를 가진 가로 스크롤 strip을 사용해야 합니다.');
+    requirePattern(errors, selectedActionStrip,
+      /pointer-events:\s*auto;[\s\S]*transform:\s*translate\(\s*var\(--g7pb-selected-actionbar-translate-x,\s*0\),\s*var\(--g7pb-selected-actionbar-translate-y,\s*0\)\s*\);[\s\S]*visibility:\s*hidden;/,
+      'ActionBar는 계산된 host 안전영역 위치가 준비된 뒤 실제 포인터 hit area로 노출되어야 합니다.');
   }
   requirePattern(errors, css,
-    /\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\[data-g7pb-safe-zone-ready=['"]true['"]\]\s*\{[^}]*visibility:\s*visible;/,
-    '좁은 캔버스 ActionBar는 안전영역 계산 완료 상태에서만 표시되어야 합니다.');
-  const mobileSelectedActionContent = css.match(
-    /\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\s*>\s*div\s*\{([^}]*)\}/s,
+    /\.g7pb-selected-block-actionbar\[data-g7pb-safe-zone-ready=['"]true['"]\]\s*\{[^}]*visibility:\s*visible;/,
+    'ActionBar는 안전영역 계산 완료 상태에서만 표시되어야 합니다.');
+  requirePattern(errors, css,
+    /\.g7pb-selected-block-actionbar,\s*\.g7pb-selected-block-actionbar \*\s*\{[^}]*pointer-events:\s*auto;/,
+    'ActionBar와 실제 자식 컨트롤은 ghost host와 달리 포인터 입력을 받아야 합니다.');
+  const selectedActionContent = css.match(
+    /\.g7pb-selected-block-actionbar\s*>\s*div\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
-  requirePattern(errors, mobileSelectedActionContent,
+  requirePattern(errors, selectedActionContent,
     /width:\s*max-content;[\s\S]*min-width:\s*max-content;[\s\S]*flex-wrap:\s*nowrap;/,
-    '좁은 캔버스 ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.');
+    'ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.');
+  const floatingLayer = css.match(
+    /\.g7pb-richtext-inline-toolbar__options\.g7pb-richtext-floating-layer,\s*\.g7pb-richtext-inline-toolbar__link\.g7pb-richtext-floating-layer\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  requirePattern(errors, floatingLayer,
+    /position:\s*fixed;[\s\S]*z-index:\s*9999;[\s\S]*--g7pb-richtext-floating-top[\s\S]*--g7pb-richtext-floating-left[\s\S]*max-width:\s*var\(--g7pb-richtext-floating-max-width[\s\S]*max-height:\s*var\(--g7pb-richtext-floating-max-height[\s\S]*overflow:\s*auto;/,
+    '부분 글자 선택·링크 패널은 ActionBar overflow 밖의 host 안전영역 portal layer로 열려야 합니다.');
   const mobileRichTextMenu = css.match(
-    /body:has\(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\)[\s\S]*?\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\s*\{([^}]*)\}/s,
+    /body:has\(\.g7pb-selected-block-actionbar\)[\s\S]*?\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
   requirePattern(errors, mobileRichTextMenu,
     /width:\s*max-content;[\s\S]*max-width:\s*none;[\s\S]*min-width:\s*max-content;[\s\S]*flex:\s*0\s+0\s+auto;[\s\S]*flex-wrap:\s*nowrap;/,
     '모바일 Puck RichTextMenu는 가로 스크롤 안의 단일 행 고정 폭 메뉴여야 합니다.');
   const mobileRichTextToolbar = css.match(
-    /body:has\(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\)[\s\S]*?\.g7pb-richtext-inline-toolbar\s*\{([^}]*)\}/s,
+    /body:has\(\.g7pb-selected-block-actionbar\)[\s\S]*?\.g7pb-richtext-inline-toolbar\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
   requirePattern(errors, mobileRichTextToolbar,
     /width:\s*max-content;[\s\S]*max-width:\s*none;[\s\S]*min-width:\s*max-content;[\s\S]*flex-wrap:\s*nowrap;/,
     '모바일 부분 글자 추가 서식은 한 줄 고정 폭 toolbar여야 합니다.');
   const mobileRichTextChoice = css.match(
-    /body:has\(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\)[\s\S]*?\.g7pb-richtext-inline-toolbar__choice\s*\{([^}]*)\}/s,
+    /body:has\(\.g7pb-selected-block-actionbar\)[\s\S]*?\.g7pb-richtext-inline-toolbar__choice\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
   requirePattern(errors, mobileRichTextChoice,
     /min-width:\s*0;[\s\S]*flex:\s*0\s+0\s+auto;/,
     '모바일 부분 글자 선택기는 늘어나거나 줄바꿈하지 않는 항목이어야 합니다.');
   const mobileRichTextChoiceButton = css.match(
-    /body:has\(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=['"]narrow['"]\]\)[\s\S]*?\.g7pb-richtext-inline-toolbar__choice\s*>\s*button\s*\{([^}]*)\}/s,
+    /body:has\(\.g7pb-selected-block-actionbar\)[\s\S]*?\.g7pb-richtext-inline-toolbar__choice\s*>\s*button\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
   requirePattern(errors, mobileRichTextChoiceButton,
     /width:\s*auto;[\s\S]*min-width:\s*3\.2rem;[\s\S]*max-width:\s*6\.7rem;/,

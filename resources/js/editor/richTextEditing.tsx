@@ -358,6 +358,7 @@ function RangeChoiceMenu<T extends string>({
     if (!pending || pending.pointerId !== event.pointerId || pending.value !== nextValue) return;
     pendingOptionPointer.current = null;
     onChange(nextValue);
+    onClose();
   };
   const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
     event.preventDefault();

@@ -202,12 +202,12 @@ export async function validateEditorAcceptanceContract(root) {
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
     [richTextSource, /const armOptionFromPointer[\s\S]{0,500}pendingOptionPointer\.current = \{ pointerId: event\.pointerId, value: nextValue \}/,
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
-    [richTextSource, /const chooseFromPointer[\s\S]{0,500}pending\.pointerId !== event\.pointerId \|\| pending\.value !== nextValue[\s\S]{0,200}onChange\(nextValue\)/,
-      '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
+    [richTextSource, /const chooseFromPointer[\s\S]{0,500}pending\.pointerId !== event\.pointerId \|\| pending\.value !== nextValue[\s\S]{0,200}onChange\(nextValue\);[\s\S]{0,80}onClose\(\)/,
+      '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 즉시 닫혀야 합니다.'],
     [richTextSource, /onPointerDown=\{\(event\) => armOptionFromPointer\(event, option\.value\)\}[\s\S]{0,180}onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.value\)\}/,
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
     [richTextSource, /if \(suppressCompatibilityClick\.current\) \{[\s\S]{0,140}clearPointerActivation\(\);[\s\S]{0,80}onClose\(\);[\s\S]{0,80}return;/,
-      '선택 글자 옵션은 실제 compatibility click까지 타깃을 유지해 click을 소비한 뒤 메뉴를 닫아야 합니다.'],
+      '선택 글자 옵션은 compatibility click이 발생해도 중복 적용하지 않아야 합니다.'],
     [richTextSource, /toggleBold\(\)\.run\(\)[\s\S]{0,900}toggleItalic\(\)\.run\(\)[\s\S]{0,900}toggleUnderline\(\)\.run\(\)/, '부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.'],
     [richTextSource, /<RichTextMenu\.Control[\s\S]{0,600}title="링크 편집"/, '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'],
     [richTextSource, /import\s*\{\s*createPortal\s*\}\s*from\s*['"]react-dom['"]/, '선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.'],
@@ -228,7 +228,7 @@ export async function validateEditorAcceptanceContract(root) {
   for (const [source, pattern, message] of requiredRangeState) requirePattern(errors, source, pattern, message);
   const updateMarkSource = richTextSource.match(/const updateMark = [\s\S]*?\n  };/)?.[0] ?? '';
   if (!updateMarkSource || /setOpenMenu\(/.test(updateMarkSource)) {
-    errors.push('선택 글자 mark 적용 중 option을 제거하지 말고 compatibility click 소비 뒤 닫아야 합니다.');
+    errors.push('선택 글자 mark 명령은 메뉴 상태를 직접 바꾸지 않고 pointerup 수명주기에서 닫혀야 합니다.');
   }
   requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,160}control\.tap\(\{ scroll: ['"]none['"] \}\)/,
     'mobile 편집 E2E는 변형된 iframe의 검증된 control을 실제 locator touch tap해야 합니다.');

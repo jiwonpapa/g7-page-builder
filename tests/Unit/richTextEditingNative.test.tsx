@@ -282,7 +282,7 @@ describe('Puck-native rich-text editing', () => {
     expect(createInlineRichTextField('독립 제목').options.link).not.toBe(false);
   });
 
-  it('keeps a range option mounted through pointer down and applies exactly once on pointer up', async () => {
+  it('keeps a range option mounted through touch down, applies once, and closes on pointer up without a compatibility click', async () => {
     const chain = {
       focus: vi.fn(() => chain),
       setMark: vi.fn(() => chain),
@@ -303,7 +303,7 @@ describe('Puck-native rich-text editing', () => {
         cancelable: true,
         button: 0,
         isPrimary: true,
-        pointerType: 'mouse',
+        pointerType: 'touch',
       }));
     });
     await new Promise((resolve) => setTimeout(resolve, 5));
@@ -325,7 +325,7 @@ describe('Puck-native rich-text editing', () => {
         button: 0,
         isPrimary: true,
         pointerId: 7,
-        pointerType: 'mouse',
+        pointerType: 'touch',
       }));
     });
     expect(chain.setMark).not.toHaveBeenCalled();
@@ -340,7 +340,7 @@ describe('Puck-native rich-text editing', () => {
         button: 0,
         isPrimary: true,
         pointerId: 7,
-        pointerType: 'mouse',
+        pointerType: 'touch',
       }));
     });
     expect(chain.setMark).toHaveBeenCalledWith('g7TextStyle', {
@@ -350,8 +350,8 @@ describe('Puck-native rich-text editing', () => {
       tone: 'default',
     });
     expect(chain.run).toHaveBeenCalledOnce();
-    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
-    expect(serif?.isConnected).toBe(true);
+    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+    expect(serif?.isConnected).toBe(false);
 
     await act(async () => {
       serif?.dispatchEvent(new MouseEvent('click', {

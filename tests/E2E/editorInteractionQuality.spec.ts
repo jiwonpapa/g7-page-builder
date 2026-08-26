@@ -865,7 +865,7 @@ test('keeps ActionBar and rich-text controls pointer-reachable across the host a
 
   try {
     await recoverOwnedEditorInteractionDocuments(api);
-    owned = await createOwnedEditorInteractionDocument(api, `${testInfo.project.name}-matrix`);
+    owned = await createOwnedEditorInteractionDocument(api, testInfo.project.name);
     await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
     await exposeCanvasForPointer(page);

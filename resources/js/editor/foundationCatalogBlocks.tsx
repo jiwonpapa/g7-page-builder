@@ -298,10 +298,12 @@ function HeadingPreview(props: HeadingEditorProps & { id: string }): React.React
 
 function RichTextPreview(props: Omit<RichTextEditorProps, 'content'> & { id: string; content: React.ReactNode }): React.ReactElement {
   return <Frame id={props.id} type="rich-text" motion={props.motion} elementStyles={props.elementStyles}>
-    <RichTextCanvasField fieldPath="content"
-      className={`g7pb-preview-richtext g7pb-preview-rich-text g7pb-preview-rich-text--${props.measure} ${surfaceClass(props)}`}>
-      {props.content}
-    </RichTextCanvasField>
+    <div className={`g7pb-preview-rich-text ${surfaceClass(props)}`}>
+      <RichTextCanvasField fieldPath="content"
+        className={`g7pb-preview-richtext g7pb-preview-rich-text__content g7pb-preview-rich-text__content--${props.measure}`}>
+        {props.content}
+      </RichTextCanvasField>
+    </div>
   </Frame>;
 }
 

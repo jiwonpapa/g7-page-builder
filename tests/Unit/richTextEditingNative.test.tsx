@@ -209,6 +209,11 @@ describe('Puck-native rich-text editing', () => {
         cancelable: true,
         pointerType: 'mouse',
       }));
+      trigger?.dispatchEvent(new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        detail: 0,
+      }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
 
@@ -219,6 +224,11 @@ describe('Puck-native rich-text editing', () => {
         bubbles: true,
         cancelable: true,
         pointerType: 'mouse',
+      }));
+      serif?.dispatchEvent(new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        detail: 0,
       }));
     });
     expect(chain.setMark).toHaveBeenCalledWith('g7TextStyle', {

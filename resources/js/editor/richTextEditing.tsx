@@ -102,22 +102,37 @@ function RangeChoiceMenu<T extends string>({
   onChange: (value: T) => void;
 }): React.ReactElement {
   const current = values.find((option) => option.value === value) ?? values[0];
+  const suppressCompatibilityClick = React.useRef(false);
+  const markPointerActivation = (): void => {
+    suppressCompatibilityClick.current = true;
+    globalThis.setTimeout(() => { suppressCompatibilityClick.current = false; }, 0);
+  };
   const toggleFromPointer = (event: React.PointerEvent<HTMLButtonElement>): void => {
     event.preventDefault();
     event.stopPropagation();
+    markPointerActivation();
     onToggle(name);
   };
   const toggleFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
+    if (suppressCompatibilityClick.current) {
+      suppressCompatibilityClick.current = false;
+      return;
+    }
     if (event.detail === 0) onToggle(name);
   };
   const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
     event.preventDefault();
     event.stopPropagation();
+    markPointerActivation();
     onChange(nextValue);
   };
   const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
     event.stopPropagation();
+    if (suppressCompatibilityClick.current) {
+      suppressCompatibilityClick.current = false;
+      return;
+    }
     if (event.detail === 0) onChange(nextValue);
   };
   return <div className="g7pb-richtext-inline-toolbar__choice">

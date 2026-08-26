@@ -124,6 +124,26 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
     Math.max(MIN_POINTER_EDGE_INSET_PX, (first.right - first.left) / 4));
   const endInset = Math.min(POINTER_EDGE_INSET_PX,
     Math.max(MIN_POINTER_EDGE_INSET_PX, (last.right - last.left) / 4));
+  if (fragments.length === 1) {
+    return {
+      start: {
+        x: Math.max(MIN_POINTER_EDGE_INSET_PX,
+          Math.min(fieldBox.width - MIN_POINTER_EDGE_INSET_PX,
+            targetLeft + MIN_POINTER_EDGE_INSET_PX)),
+        y: Math.max(MIN_POINTER_EDGE_INSET_PX,
+          Math.min(fieldBox.height - MIN_POINTER_EDGE_INSET_PX,
+            targetTop + targetBox.height / 2)),
+      },
+      end: {
+        x: Math.max(MIN_POINTER_EDGE_INSET_PX,
+          Math.min(fieldBox.width - MIN_POINTER_EDGE_INSET_PX,
+            targetLeft + targetBox.width - MIN_POINTER_EDGE_INSET_PX)),
+        y: Math.max(MIN_POINTER_EDGE_INSET_PX,
+          Math.min(fieldBox.height - MIN_POINTER_EDGE_INSET_PX,
+            targetTop + targetBox.height / 2)),
+      },
+    };
+  }
   return {
     start: {
       x: Math.max(0.25, Math.min(fieldBox.width - 0.25,

@@ -141,14 +141,14 @@ perl -0pi -e 's/targetNode\.boundingBox\(\)/field.boundingBox()/g' \
 expect_failure '선택 대상의 실제 렌더링 box를 측정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/range\.selectNodeContents\(element\)/range.selectNode(element)/' \
+perl -0pi -e 's/firstCharacter\.getClientRects\(\)/[]/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 시작·끝은 타겟 글자의 실제 Range rect로 측정해야 합니다.'
+expect_failure '선택 시작·끝은 실제 글자 rect와 정확한 caret offset으로 측정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/first\.left - fieldRect\.left/0/' \
+perl -0pi -e 's/startCandidate\.x - fieldRect\.left/0/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '글자 Range rect를 current contenteditable 내부 좌표로 변환해야 합니다.'
+expect_failure '검증된 caret 좌표를 current contenteditable 내부 좌표로 변환해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/fieldBox\.width \/ fieldRect\.width/1/' \
@@ -403,7 +403,7 @@ perl -0pi -e 's/data-g7pb-safe-clip-left/data-g7pb-unsafe-left/' \
 expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip 계약으로 배치되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{toolbarRef\} align="end"/<div/' \
+perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{ref\} align="end"/<div/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '글꼴·크기·굵기·색상 option과 링크 form 모두 같은 floating portal 계약을 사용해야 합니다.'
 

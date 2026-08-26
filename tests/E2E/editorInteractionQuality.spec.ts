@@ -14,7 +14,6 @@ const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const API = '/api/modules/jiwonpapa-page_builder/admin';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
 const CANVAS_VIEWPORT_WIDTHS = [360, 768, 1280] as const;
-const POINTER_EDGE_INSET_PX = 2;
 const MIN_POINTER_EDGE_INSET_PX = 0.25;
 const POINTER_DRAG_STEPS = 8;
 
@@ -170,10 +169,10 @@ async function resolveRichTextSelection(page: Page, selection: RichTextSelection
   return { field, targetNode };
 }
 
-async function textPointerGeometry(field: Locator, targetNode: Locator): Promise<PointerGeometry> {
+async function textPointerGeometry(field: Locator, targetNode: Locator, attempt: number): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
   await expect(targetNode).toHaveCount(1);
-  const [fieldBox, targetBox, fieldRect, fragments] = await Promise.all([
+  const [fieldBox, targetBox, fieldRect, pointerCandidates] = await Promise.all([
     field.boundingBox(),
     targetNode.boundingBox(),
     field.evaluate((element) => {
@@ -181,38 +180,94 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
       return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
     }),
     targetNode.evaluate((element) => {
-      const range = element.ownerDocument.createRange();
-      range.selectNodeContents(element);
-      return Array.from(range.getClientRects())
-        .filter((rect) => rect.width > 0 && rect.height > 0)
-        .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, height: rect.height }));
+      const ownerDocument = element.ownerDocument;
+      const fieldRoot = element.closest<HTMLElement>('[contenteditable="true"]');
+      if (!fieldRoot) return { end: [], start: [], targetEnd: -1, targetStart: -1 };
+      const targetWalker = ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const targetTextNodes: Text[] = [];
+      let targetNode = targetWalker.nextNode();
+      while (targetNode) {
+        if ((targetNode.textContent ?? '').length > 0) targetTextNodes.push(targetNode as Text);
+        targetNode = targetWalker.nextNode();
+      }
+      if (targetTextNodes.length === 0) return { end: [], start: [], targetEnd: -1, targetStart: -1 };
+      const firstNode = targetTextNodes[0];
+      const lastNode = targetTextNodes[targetTextNodes.length - 1];
+      const fieldOffset = (node: Node, offset: number): number => {
+        const range = ownerDocument.createRange();
+        range.selectNodeContents(fieldRoot);
+        range.setEnd(node, offset);
+        return range.toString().length;
+      };
+      const targetStart = fieldOffset(firstNode, 0);
+      const targetEnd = fieldOffset(lastNode, lastNode.length);
+      const firstCharacter = ownerDocument.createRange();
+      firstCharacter.setStart(firstNode, 0);
+      firstCharacter.setEnd(firstNode, Math.min(1, firstNode.length));
+      const lastCharacter = ownerDocument.createRange();
+      lastCharacter.setStart(lastNode, Math.max(0, lastNode.length - 1));
+      lastCharacter.setEnd(lastNode, lastNode.length);
+      const firstRect = firstCharacter.getClientRects()[0];
+      const lastRects = lastCharacter.getClientRects();
+      const lastRect = lastRects[lastRects.length - 1];
+      if (!firstRect || !lastRect) return { end: [], start: [], targetEnd, targetStart };
+      const caretOffsetAt = (x: number, y: number): number | null => {
+        const caretDocument = ownerDocument as Document & {
+          caretPositionFromPoint?: (clientX: number, clientY: number) => { offsetNode: Node; offset: number } | null;
+          caretRangeFromPoint?: (clientX: number, clientY: number) => Range | null;
+        };
+        const position = caretDocument.caretPositionFromPoint?.(x, y);
+        const range = position ? null : caretDocument.caretRangeFromPoint?.(x, y);
+        const node = position?.offsetNode ?? range?.startContainer ?? null;
+        const offset = position?.offset ?? range?.startOffset ?? -1;
+        if (!node || offset < 0 || !(node === fieldRoot || fieldRoot.contains(node))) return null;
+        return fieldOffset(node, offset);
+      };
+      const candidates = (
+        rect: DOMRect,
+        fractions: readonly number[],
+        expectedOffset: number,
+      ): Array<{ x: number; y: number }> => {
+        const verticalFractions = [0.5, 0.35, 0.65];
+        return verticalFractions.flatMap((vertical) => fractions.map((horizontal) => ({
+          x: rect.left + rect.width * horizontal,
+          y: rect.top + rect.height * vertical,
+        }))).filter((point) => caretOffsetAt(point.x, point.y) === expectedOffset);
+      };
+      return {
+        start: candidates(firstRect, [0.05, 0.15, 0.25, 0.35, 0.45], targetStart),
+        end: candidates(lastRect, [0.95, 0.85, 0.75, 0.65, 0.55], targetEnd),
+        targetEnd,
+        targetStart,
+      };
     }),
   ]);
   if (!fieldBox || !targetBox || fieldBox.width <= 0 || fieldBox.height <= 0
     || targetBox.width <= 0 || targetBox.height <= 0 || fieldRect.width <= 0 || fieldRect.height <= 0
-    || fragments.length === 0) {
-    throw new Error('Rich-text pointer geometry is unavailable.');
+    || pointerCandidates.start.length === 0 || pointerCandidates.end.length === 0) {
+    throw new Error(`Rich-text exact caret geometry is unavailable: ${JSON.stringify({
+      fieldBox,
+      targetBox,
+      fieldRect,
+      pointerCandidates,
+    })}`);
   }
   const scaleX = fieldBox.width / fieldRect.width;
   const scaleY = fieldBox.height / fieldRect.height;
-  const first = fragments[0];
-  const last = fragments[fragments.length - 1];
-  const startInset = Math.min(POINTER_EDGE_INSET_PX,
-    Math.max(MIN_POINTER_EDGE_INSET_PX, (first.right - first.left) / 4));
-  const endInset = Math.min(POINTER_EDGE_INSET_PX,
-    Math.max(MIN_POINTER_EDGE_INSET_PX, (last.right - last.left) / 4));
+  const startCandidate = pointerCandidates.start[attempt % pointerCandidates.start.length];
+  const endCandidate = pointerCandidates.end[attempt % pointerCandidates.end.length];
   const local = {
     start: {
       x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-        first.left - fieldRect.left + startInset)),
+        startCandidate.x - fieldRect.left)),
       y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-        first.top - fieldRect.top + first.height / 2)),
+        startCandidate.y - fieldRect.top)),
     },
     end: {
       x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-        last.right - fieldRect.left - endInset)),
+        endCandidate.x - fieldRect.left)),
       y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-        last.top - fieldRect.top + last.height / 2)),
+        endCandidate.y - fieldRect.top)),
     },
   };
   return {
@@ -434,7 +489,7 @@ async function dragSelectText(
     try {
       if (attempt > 0) await collapseSelectionWithPointer(page, selection);
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
-      const pointer = await textPointerGeometry(field, targetNode);
+      const pointer = await textPointerGeometry(field, targetNode, attempt);
       await assertTextPointerReachable(page, field, pointer);
       await expect.poll(() => selectedText(field)).toBe('');
       await field.focus();
@@ -630,6 +685,42 @@ async function activateControl(page: Page, point: PointerPoint, projectName: str
   await page.mouse.click(point.x, point.y);
 }
 
+async function expectStableControlGeometry(control: Locator): Promise<void> {
+  const samples = await control.evaluate(async (element) => {
+    const frames: Array<{ height: number; left: number; top: number; width: number }> = [];
+    for (let index = 0; index < 3; index += 1) {
+      await new Promise<void>((resolve) => element.ownerDocument.defaultView?.requestAnimationFrame(() => resolve()));
+      const rect = element.getBoundingClientRect();
+      frames.push({ height: rect.height, left: rect.left, top: rect.top, width: rect.width });
+    }
+    return frames;
+  });
+  const baseline = samples[0];
+  for (const sample of samples.slice(1)) {
+    expect(Math.abs(sample.left - baseline.left), `control left must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.top - baseline.top), `control top must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.width - baseline.width), `control width must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.height - baseline.height), `control height must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+  }
+}
+
+async function openResponsiveAdvancedControls(
+  page: Page,
+  menuRoot: Locator,
+  projectName: string,
+): Promise<Locator> {
+  const frame = page.frameLocator(CANVAS_IFRAME);
+  const advanced = frame.getByTestId('page-builder-richtext-advanced-panel');
+  if (await advanced.count()) return advanced;
+  const more = menuRoot.getByTestId('page-builder-richtext-more');
+  await expect(more).toHaveCount(1);
+  const point = await assertPointerReachable(page, more);
+  await activateControl(page, point, projectName);
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+  await expect(advanced).toBeVisible();
+  return advanced;
+}
+
 async function dismissContextPanelWithPointer(page: Page, projectName: string): Promise<void> {
   const editor = page.getByTestId('page-builder-editor');
   const editorBox = await editor.boundingBox();
@@ -676,11 +767,16 @@ async function chooseRangeOption(
   markValue: string,
   projectName: string,
 ): Promise<void> {
-  const trigger = menuRoot.getByTestId(testId);
+  let trigger = menuRoot.getByTestId(testId);
+  if (await trigger.count() === 0) {
+    const advanced = await openResponsiveAdvancedControls(page, menuRoot, projectName);
+    trigger = advanced.getByTestId(testId);
+  }
   const triggerPoint = await assertPointerReachable(page, trigger);
   await activateControl(page, triggerPoint, projectName);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   const optionControl = page.frameLocator(CANVAS_IFRAME).getByRole('option', { name: option, exact: true });
+  await expectStableControlGeometry(optionControl);
   const optionPoint = await assertPointerReachable(page, optionControl);
   await expect.poll(() => selectedText(field)).toBe(target);
   await activateControl(page, optionPoint, projectName);
@@ -999,7 +1095,11 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       };
       await dragSelectText(page, articleSelection, EDITOR_INTERACTION_COPY.articleTitle);
       const articleMenuRoot = await officialPuckMenuRoot(page);
-      await expect(articleMenuRoot.getByRole('button', { name: '링크 편집', exact: true })).toHaveCount(0);
+      const articleHasMore = await articleMenuRoot.getByTestId('page-builder-richtext-more').count() > 0;
+      const articleControlScope = articleHasMore
+        ? await openResponsiveAdvancedControls(page, articleMenuRoot, testInfo.project.name)
+        : articleMenuRoot;
+      await expect(articleControlScope.getByRole('button', { name: '링크 편집', exact: true })).toHaveCount(0);
       await expect(articleMenuRoot.getByRole('button', { name: 'Link', exact: true })).toHaveCount(0);
       await expect(articleMenuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true })).toBeVisible();
       await collapseSelectionWithPointer(page, articleSelection);

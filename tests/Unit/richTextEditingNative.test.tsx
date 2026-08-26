@@ -95,6 +95,47 @@ describe('Puck-native rich-text editing', () => {
     expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
   });
 
+  it('keeps only the compact range entry visible in a narrow canvas and portals advanced controls', async () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    const chain = {
+      focus: vi.fn(() => chain),
+      setMark: vi.fn(() => chain),
+      unsetMark: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 9 } },
+      getAttributes: vi.fn(() => ({})),
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+
+    try {
+      await rerender(editorState());
+      const more = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-more"]');
+      expect(more).not.toBeNull();
+      expect(container.querySelector('[data-testid="page-builder-richtext-font"]')).toBeNull();
+
+      await act(async () => {
+        more?.dispatchEvent(new PointerEvent('pointerdown', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          pointerType: 'touch',
+        }));
+      });
+      const advanced = document.body.querySelector<HTMLElement>('.g7pb-richtext-inline-toolbar__advanced');
+      expect(advanced).not.toBeNull();
+      expect(advanced?.querySelector('[data-testid="page-builder-richtext-font"]')).not.toBeNull();
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-max-width')).not.toBe('0px');
+      expect(more?.getAttribute('aria-expanded')).toBe('true');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+      window.dispatchEvent(new Event('resize'));
+    }
+  });
+
   it('portals the link input outside the clipped Puck action strip and applies to the retained editor selection', async () => {
     const operations: string[] = [];
     const chain = {

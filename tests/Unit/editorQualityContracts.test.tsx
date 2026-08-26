@@ -4,11 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 import { blockAppearanceClassName, normalizeBlockAppearance } from '../../resources/js/editor/blockAppearance';
 import {
-  createInlineRichTextField,
-  RICH_TEXT_ALLOWED_VALUES,
-  RichTextCanvasField,
-} from '../../resources/js/editor/richTextEditing';
-import {
   DEFAULT_PAGE_DESIGN,
   pageDesignCustomCss,
   pageDesignToTokens,
@@ -16,6 +11,20 @@ import {
 } from '../../resources/js/editor/pageDesignTokens';
 import { clearDraftJournal, readDraftJournal, writeDraftJournal } from '../../resources/js/editor/draftJournal';
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
+
+class TestResizeObserver {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
+globalThis.ResizeObserver = TestResizeObserver;
+
+const {
+  createInlineRichTextField,
+  RICH_TEXT_ALLOWED_VALUES,
+  RichTextCanvasField,
+} = await import('../../resources/js/editor/richTextEditing');
 
 const storageValues = new Map<string, string>();
 Object.defineProperty(window, 'localStorage', {

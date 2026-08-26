@@ -131,24 +131,54 @@ perl -0pi -e 's/g7pb:richtext-range-state/g7pb:richtext-range-active/' \
 expect_failure '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/setTextSelection\(bookmark\)/setTextSelection(editor.state.selection.to)/' \
+perl -0pi -e 's/RichTextMenu/RichTextToolbar/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '툴바 명령 전에 저장한 선택 범위를 복원해야 합니다.'
+expect_failure '공식 Puck RichTextMenu를 직접 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/onMouseDownCapture=\{preserveRangeBeforeToolbarAction\}//' \
+perl -0pi -e 's/\{children\}/\{null\}/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '툴바 mouse down에서 선택 범위 붕괴를 차단해야 합니다.'
+expect_failure 'Puck가 전달한 기본 inline controls를 RichTextMenu와 Group 안에 유지해야 합니다.'
 
 copy_fixture
-perl -0pi -e "s/typeof target\?\.closest === 'function'/event.target instanceof Element/" \
+perl -0pi -e 's/title="링크 편집"/title="주소 편집"/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure 'iframe 툴바 target을 부모 realm Element instanceof로 판정하면 안 됩니다.'
+expect_failure '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/onPointerDown=\{\(event\) => runPointerAction\(event, \(\) => toggleNativeMark\('\''bold'\''\)\)\}//' \
+perl -0pi -e 's/editorState\?\.g7HasSelection/editorState?.legacySelection/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '굵게 명령은 click 전에 실제 pointer down에서 실행해야 합니다.'
+expect_failure 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'
+
+copy_fixture
+printf '\nconst bookmarkRef = { current: { from: 1, to: 2 } };\n' \
+  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure 'Puck selection 외 별도 bookmark 상태를 두면 안 됩니다.'
+
+copy_fixture
+printf '\neditor.chain().setTextSelection({ from: 1, to: 2 }).run();\n' \
+  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '툴바 명령에서 선택 범위를 수동 복원하면 안 됩니다.'
+
+copy_fixture
+printf '\neditor.on("selectionUpdate", () => undefined);\n' \
+  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure 'inline menu가 Tiptap selection/transaction을 직접 구독하면 안 됩니다.'
+
+copy_fixture
+printf '\nwindow.addEventListener("blur", () => undefined);\n' \
+  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure 'inline menu가 window blur로 선택 범위를 접으면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/data-g7pb-richtext-field="true"/data-g7pb-richtext-field="true" data-puck-overlay-portal="true"/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '제품 rich-text wrapper가 Puck의 overlay portal 속성을 복제하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/data-g7pb-richtext-field="true"/data-g7pb-richtext-field="true" onPointerDown={(event) => event.stopPropagation()}/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '제품 rich-text wrapper가 Puck의 drag isolation을 복제하면 안 됩니다.'
 
 copy_fixture
 printf '\nconst rangeEditing = window.getSelection();\n' \

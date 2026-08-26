@@ -118,19 +118,33 @@ export async function validateEditorAcceptanceContract(root) {
   for (const [pattern, message] of requiredEvidence) requirePattern(errors, spec, pattern, message);
 
   const requiredRangeState = [
+    [richTextSource, /import\s*\{[^}]*RichTextMenu[^}]*\}\s*from\s*['"]@puckeditor\/core['"]/, '공식 Puck RichTextMenu를 직접 사용해야 합니다.'],
+    [richTextSource, /<RichTextMenu>[\s\S]*\{children\}[\s\S]*<RichTextMenu\.Group>/, 'Puck가 전달한 기본 inline controls를 RichTextMenu와 Group 안에 유지해야 합니다.'],
+    [richTextSource, /<RichTextMenu\.Control[\s\S]{0,600}title="링크 편집"/, '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'],
+    [richTextSource, /const rangeActive = Boolean\(editorState\?\.g7HasSelection\)/, 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'],
+    [richTextSource, /g7HasSelection:\s*isRichTextRangeActive\(context\.editor\)/, 'Puck selector가 선택 범위 상태를 파생해야 합니다.'],
     [richTextSource, /RICH_TEXT_RANGE_STATE_MESSAGE\s*=\s*['"]g7pb:richtext-range-state['"]/, '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'],
-    [richTextSource, /setTextSelection\(bookmark\)/, '툴바 명령 전에 저장한 선택 범위를 복원해야 합니다.'],
-    [richTextSource, /onPointerDownCapture=\{preserveRangeBeforeToolbarAction\}/, '툴바 pointer down에서 선택 범위를 보존해야 합니다.'],
-    [richTextSource, /onMouseDownCapture=\{preserveRangeBeforeToolbarAction\}/, '툴바 mouse down에서 선택 범위 붕괴를 차단해야 합니다.'],
-    [richTextSource, /typeof target\?\.closest === ['"]function['"]/, 'iframe DOM도 처리하는 cross-realm closest 판정이 필요합니다.'],
-    [richTextSource, /aria-label="선택한 글자 굵게"[\s\S]{0,220}onPointerDown=\{\(event\) => runPointerAction\(event, \(\) => toggleNativeMark\(['"]bold['"]\)\)\}/, '굵게 명령은 click 전에 실제 pointer down에서 실행해야 합니다.'],
-    [richTextSource, /toggleNativeMark\(['"]bold['"]\)/, '선택 범위 굵게 명령을 제품 툴바가 직접 실행해야 합니다.'],
     [adapterSource, /event\.data\?\.type === RICH_TEXT_RANGE_STATE_MESSAGE/, '호스트가 선택 범위 상태 메시지를 수신해야 합니다.'],
     [adapterSource, /acceptRangeState\(event\.data\.active === true\)/, '호스트 UI는 active와 inactive를 같은 상태 처리기로 동기화해야 합니다.'],
   ];
   for (const [source, pattern, message] of requiredRangeState) requirePattern(errors, source, pattern, message);
-  if (/event\.target instanceof Element/.test(richTextSource)) {
-    errors.push('iframe 툴바 target을 부모 realm Element instanceof로 판정하면 안 됩니다.');
+  const forbiddenDuplicateRangeState = [
+    [/\bTextRangeBookmark\b|\bbookmarkRef\b/, 'Puck selection 외 별도 bookmark 상태를 두면 안 됩니다.'],
+    [/\buseRichTextEditorRevision\b/, 'Puck editorState와 별도 revision 구독을 두면 안 됩니다.'],
+    [/\.setTextSelection\s*\(/, '툴바 명령에서 선택 범위를 수동 복원하면 안 됩니다.'],
+    [/\.on\(\s*['"](?:selectionUpdate|transaction)['"]/, 'inline menu가 Tiptap selection/transaction을 직접 구독하면 안 됩니다.'],
+    [/addEventListener\(\s*['"]blur['"]/, 'inline menu가 window blur로 선택 범위를 접으면 안 됩니다.'],
+    [/on(?:Pointer|Mouse)DownCapture=\{preserveRangeBeforeToolbarAction\}/, '툴바 capture handler로 선택 범위를 수동 보존하면 안 됩니다.'],
+  ];
+  for (const [pattern, message] of forbiddenDuplicateRangeState) {
+    if (pattern.test(richTextSource)) errors.push(message);
+  }
+  const forbiddenPuckInlineOwnership = [
+    [/data-puck-overlay-portal/, '제품 rich-text wrapper가 Puck의 overlay portal 속성을 복제하면 안 됩니다.'],
+    [/onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/, '제품 rich-text wrapper가 Puck의 drag isolation을 복제하면 안 됩니다.'],
+  ];
+  for (const [pattern, message] of forbiddenPuckInlineOwnership) {
+    if (pattern.test(richTextSource)) errors.push(message);
   }
   if (/rangeEditing|getSelection\(\)/.test(canvasSource.slice(canvasSource.indexOf('export function notifyCanvasElementSelection')))) {
     errors.push('요소 선택 계약에서 DOM Selection으로 범위 상태를 중복 추론하면 안 됩니다.');

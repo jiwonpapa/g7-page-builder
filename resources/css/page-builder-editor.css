@@ -938,11 +938,13 @@
 .g7pb-richtext-inline-toolbar__link button { padding: .35rem .55rem; border: 1px solid #9db5ef; color: #1d4ed8; background: #eef4ff; }
 .g7pb-richtext-inline-toolbar__link [role='alert'] { width: 100%; color: #b91c1c; font-size: .65rem; }
 
-@media (max-width: 640px) {
-  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) { box-sizing: border-box; width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); flex-wrap: wrap; }
-  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) > :has(> .g7pb-richtext-inline-toolbar) { width: 100%; flex: 1 0 100%; }
+@media (max-width: 900px) {
+  div:has(> div > [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar)) { box-sizing: border-box; width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); height: auto; flex-wrap: wrap; }
+  div:has(> [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar)) { box-sizing: border-box; width: 100%; height: auto; flex: 1 0 100%; order: 99; border-inline-start: 0; }
+  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) { width: 100%; max-width: 100%; flex-wrap: wrap; }
+  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) > :has(> .g7pb-richtext-inline-toolbar) { width: 100%; min-width: 0; flex: 1 0 100%; }
   .g7pb-richtext-inline-toolbar { width: 100%; max-width: 100%; flex-wrap: wrap; }
-  .g7pb-richtext-inline-toolbar__choice { min-width: 0; flex: 1 1 4.5rem; }
+  .g7pb-richtext-inline-toolbar__choice { min-width: 0; flex: 1 1 4rem; }
   .g7pb-richtext-inline-toolbar__choice > button { width: 100%; min-width: 0; max-width: none; }
 }
 

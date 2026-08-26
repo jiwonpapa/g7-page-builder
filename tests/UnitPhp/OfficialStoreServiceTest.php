@@ -140,6 +140,9 @@ final class OfficialStoreMediaFixture implements MediaPort
     /** @var list<string> */
     public array $stored = [];
 
+    /** @var list<string> */
+    public array $exportLookups = [];
+
     /** @param array<string, PortableMedia> $exports */
     public function __construct(private readonly array $exports = []) {}
 
@@ -177,6 +180,8 @@ final class OfficialStoreMediaFixture implements MediaPort
 
     public function exportByUrl(string $url): ?PortableMedia
     {
+        $this->exportLookups[] = $url;
+
         return $this->exports[$url] ?? null;
     }
 }
@@ -396,18 +401,32 @@ final class OfficialStoreServiceTest extends TestCase
             'canvas',
             'ko',
             [],
-            [[
-                'instance_id' => '00000000-0000-4000-8000-000000000002',
-                'type' => 'content.hero-split-01',
-                'block_version' => 1,
-                'props' => [
-                    'eyebrow' => 'EXPORT', 'title' => '내보내기', 'body' => '외부 링크 유지',
-                    'image' => ['src' => $localUrl, 'alt' => '내보낼 이미지'],
-                    'primaryCta' => ['label' => '외부', 'url' => 'https://example.com'],
-                    'mediaPosition' => 'right',
+            [
+                [
+                    'instance_id' => '00000000-0000-4000-8000-000000000002',
+                    'type' => 'content.hero-split-01',
+                    'block_version' => 1,
+                    'props' => [
+                        'eyebrow' => 'EXPORT', 'title' => '내보내기', 'body' => '외부 링크 유지',
+                        'image' => ['src' => $localUrl, 'alt' => '내보낼 이미지'],
+                        'primaryCta' => ['label' => '외부', 'url' => 'https://example.com'],
+                        'mediaPosition' => 'right',
+                    ],
+                    'slots' => [],
                 ],
-                'slots' => [],
-            ]],
+                [
+                    'instance_id' => '00000000-0000-4000-8000-000000000003',
+                    'type' => 'content.hero-split-01',
+                    'block_version' => 1,
+                    'props' => [
+                        'eyebrow' => 'DUPLICATE', 'title' => '중복 미디어', 'body' => '동일 미디어 재사용',
+                        'image' => ['src' => $localUrl, 'alt' => '같은 이미지'],
+                        'primaryCta' => ['label' => '외부', 'url' => 'https://example.org'],
+                        'mediaPosition' => 'left',
+                    ],
+                    'slots' => [],
+                ],
+            ],
             shellMode: 'none',
         );
         $repository = $this->createStub(PageBuilderRepository::class);
@@ -417,10 +436,11 @@ final class OfficialStoreServiceTest extends TestCase
             $this->bundledPageKit(),
             $this->artifacts()['jiwonpapa/company-launch'],
         );
+        $media = new OfficialStoreMediaFixture([$localUrl => new PortableMedia($asset, $png)]);
         [$service] = $this->service(
             $source,
             $pageKits,
-            new OfficialStoreMediaFixture([$localUrl => new PortableMedia($asset, $png)]),
+            $media,
             $this->routes(),
             pageRepository: $repository,
         );
@@ -435,7 +455,9 @@ final class OfficialStoreServiceTest extends TestCase
         $service->releaseExport($artifact);
 
         self::assertSame('g7pb-media://image-1', $pageKits->writtenDocument?->blocks[0]['props']['image']['src']);
+        self::assertSame('g7pb-media://image-1', $pageKits->writtenDocument?->blocks[1]['props']['image']['src']);
         self::assertSame('https://example.com', $pageKits->writtenDocument?->blocks[0]['props']['primaryCta']['url']);
+        self::assertSame([$localUrl], $media->exportLookups);
         self::assertSame('template', $pageKits->writtenDocument?->shellMode);
         self::assertCount(1, $pageKits->writtenMedia);
         self::assertSame(1, $pageKits->releases);

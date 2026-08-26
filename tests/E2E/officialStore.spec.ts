@@ -13,6 +13,12 @@ function credentials(): { email: string; password: string } {
   return { email, password };
 }
 
+function collectStoredMediaUrls(value: unknown, urls: Set<string>): void {
+  if (typeof value === 'string' && value.includes('/storage/g7-page-builder/')) urls.add(value);
+  else if (Array.isArray(value)) value.forEach((item) => collectStoredMediaUrls(item, urls));
+  else if (value && typeof value === 'object') Object.values(value).forEach((item) => collectStoredMediaUrls(item, urls));
+}
+
 async function authenticate(context: BrowserContext): Promise<string> {
   const api = await playwrightRequest.newContext({ baseURL: BASE_URL, ignoreHTTPSErrors: true });
   try {
@@ -87,6 +93,54 @@ async function removeOfficialTestPack(token: string): Promise<void> {
   }
 }
 
+async function removeMedia(token: string, mediaIds: string[]): Promise<void> {
+  const api = await playwrightRequest.newContext({
+    baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  try {
+    for (const mediaId of new Set(mediaIds)) {
+      const response = await api.delete(`/api/modules/jiwonpapa-page_builder/admin/media/${mediaId}`);
+      expect(response.ok(), `Official Store media cleanup failed for ${mediaId}`).toBe(true);
+    }
+  } finally {
+    await api.dispose();
+  }
+}
+
+async function documentMediaIds(token: string, documentId: string): Promise<string[]> {
+  const api = await playwrightRequest.newContext({
+    baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  try {
+    const documentResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`);
+    if (documentResponse.status() === 404) return [];
+    expect(documentResponse.ok()).toBe(true);
+    const documentPayload = await documentResponse.json() as { data?: { document?: unknown } };
+    const urls = new Set<string>();
+    collectStoredMediaUrls(documentPayload.data?.document, urls);
+    if (urls.size === 0) return [];
+
+    const mediaResponse = await api.get('/api/modules/jiwonpapa-page_builder/admin/media?kind=image');
+    expect(mediaResponse.ok()).toBe(true);
+    const mediaPayload = await mediaResponse.json() as {
+      data?: { items?: Array<{ id?: unknown; url?: unknown }> };
+    };
+    const ids = (mediaPayload.data?.items ?? [])
+      .filter((item) => typeof item.url === 'string' && urls.has(item.url))
+      .map((item) => item.id)
+      .filter((id): id is string => typeof id === 'string');
+    expect(new Set(ids).size, 'Official Store media cleanup inventory is incomplete').toBe(urls.size);
+
+    return ids;
+  } finally {
+    await api.dispose();
+  }
+}
+
 async function removeStaleStoreDrafts(token: string): Promise<void> {
   const api = await playwrightRequest.newContext({
     baseURL: BASE_URL,
@@ -103,7 +157,9 @@ async function removeStaleStoreDrafts(token: string): Promise<void> {
       const id = item.document?.document_id;
       const slug = item.document?.slug;
       if (typeof id === 'string' && typeof slug === 'string' && slug.startsWith('store-e2e-')) {
+        const mediaIds = await documentMediaIds(token, id);
         await removeDraft(token, id, slug);
+        await removeMedia(token, mediaIds);
       }
     }
   } finally {
@@ -115,6 +171,7 @@ test('official free store previews and applies a Page Kit as a separate draft', 
   const token = await authenticate(context);
   const slug = `store-e2e-${testInfo.project.name}-${Date.now()}`.toLowerCase();
   let documentId: string | null = null;
+  const mediaIds: string[] = [];
 
   try {
     await removeStaleStoreDrafts(token);
@@ -182,9 +239,13 @@ test('official free store previews and applies a Page Kit as a separate draft', 
     await applyDialog.getByTestId('page-builder-store-page-kit-confirm').click();
     const response = await responsePromise;
     expect(response.status()).toBe(201);
-    await expect(page).toHaveURL(/\/modules\/jiwonpapa-page_builder\/admin\/editor\?document=[0-9a-f-]+$/);
-    documentId = new URL(page.url()).searchParams.get('document');
+    const applied = await response.json() as { data?: { document?: { document_id?: unknown } } };
+    documentId = typeof applied.data?.document?.document_id === 'string'
+      ? applied.data.document.document_id
+      : null;
     expect(documentId).not.toBeNull();
+    await expect(page).toHaveURL(/\/modules\/jiwonpapa-page_builder\/admin\/editor\?document=[0-9a-f-]+$/);
+    expect(new URL(page.url()).searchParams.get('document')).toBe(documentId);
     const api = await playwrightRequest.newContext({
       baseURL: BASE_URL,
       ignoreHTTPSErrors: true,
@@ -204,14 +265,20 @@ test('official free store previews and applies a Page Kit as a separate draft', 
       };
       expect(payload.data?.document?.shell_mode).toBe('template');
       expect(payload.data?.document?.blocks ?? []).toHaveLength(6);
-      const importedImages: string[] = [];
-      const collectImages = (value: unknown): void => {
-        if (typeof value === 'string' && value.includes('/storage/g7-page-builder/')) importedImages.push(value);
-        else if (Array.isArray(value)) value.forEach(collectImages);
-        else if (value && typeof value === 'object') Object.values(value).forEach(collectImages);
+      const importedImageUrls = new Set<string>();
+      collectStoredMediaUrls(payload.data?.document?.blocks, importedImageUrls);
+      expect(importedImageUrls.size).toBe(6);
+      const mediaResponse = await api.get('/api/modules/jiwonpapa-page_builder/admin/media?kind=image');
+      expect(mediaResponse.ok()).toBe(true);
+      const mediaPayload = await mediaResponse.json() as {
+        data?: { items?: Array<{ id?: unknown; url?: unknown }> };
       };
-      collectImages(payload.data?.document?.blocks);
-      expect(new Set(importedImages).size).toBe(6);
+      const importedMediaIds = (mediaPayload.data?.items ?? [])
+        .filter((item) => typeof item.url === 'string' && importedImageUrls.has(item.url))
+        .map((item) => item.id)
+        .filter((id): id is string => typeof id === 'string');
+      expect(new Set(importedMediaIds).size).toBe(importedImageUrls.size);
+      mediaIds.push(...importedMediaIds);
       expect(payload.data?.status).toBe('draft');
       await expect(page.getByTestId('page-builder-editor')).toBeVisible();
       const importedEditorImages = page.frameLocator('iframe').locator('[data-testid="page-builder-block"] img');
@@ -248,7 +315,11 @@ test('official free store previews and applies a Page Kit as a separate draft', 
       await api.dispose();
     }
   } finally {
-    if (documentId) await removeDraft(token, documentId, slug);
+    if (documentId) {
+      mediaIds.push(...await documentMediaIds(token, documentId));
+      await removeDraft(token, documentId, slug);
+    }
+    await removeMedia(token, mediaIds);
     await removeOfficialTestPack(token);
   }
 });

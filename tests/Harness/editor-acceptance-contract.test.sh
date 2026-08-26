@@ -337,24 +337,24 @@ perl -0pi -e 's/onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.val
 expect_failure '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/control\.tap\(\{ position: point\.controlOffset \}\)/page.mouse.click(point.x, point.y)/' \
+perl -0pi -e "s/control\\.tap\\(\\{ scroll: 'none' \\}\\)/control.click({ scroll: 'none' })/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'mobile 편집 E2E는 검증된 iframe 내부 픽셀을 실제 locator touch tap해야 합니다.'
+expect_failure 'mobile 편집 E2E는 변형된 iframe의 검증된 control을 실제 locator touch tap해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/activateControl\(optionPoint, projectName, optionControl\)/optionControl.focus()/' \
+perl -0pi -e 's/activateControl\(projectName, optionControl\)/optionControl.focus()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 글자 portal option은 iframe body에서 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's#(const optionPoint = await assertPointerReachable\(page, optionControl\);\n)  await expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\);#$1  await expect(field).toBeVisible();#' \
+perl -0pi -e 's#(await assertPointerReachable\(page, optionControl\);\n)  await expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\);#$1  await expect(field).toBeVisible();#' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(function assertPointerReachable[\s\S]*?)hit: stack\[0\] === iframe/$1hit: true/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '편집 E2E는 iframe 내부 child hit부터 border·scale 변환과 상위 iframe hit까지 같은 실제 픽셀을 검증해야 합니다.'
+expect_failure '편집 E2E는 iframe 내부 control 중심 hit부터 border·scale 변환과 상위 iframe hit까지 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await page.waitForTimeout(750);/' \
@@ -362,19 +362,24 @@ perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await page
 expect_failure 'control 도달성은 autosave pointer 차단이 풀리기를 기다려 우회하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/control\.click\(\{ position: point\.controlOffset \}\)/control.click({ position: { x: point.controlOffset.x + 1, y: point.controlOffset.y } })/' \
+perl -0pi -e "s/control\\.click\\(\\{ scroll: 'none' \\}\\)/control.click({ force: true })/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 control은 검증된 같은 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.'
+expect_failure '선택 글자 control은 Playwright가 현재 변환을 반영한 중심점에 실제 touch 또는 mouse를 보내야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/ - localReachability\.controlRect\.borderLeft//' \
+perl -0pi -e 's/contentOrigin\.x \+ localCenter\.x \* contentScale\.x/contentOrigin.x + 1/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '편집 E2E는 iframe 내부 child hit부터 border·scale 변환과 상위 iframe hit까지 같은 실제 픽셀을 검증해야 합니다.'
+expect_failure '편집 E2E는 iframe 내부 control 중심 hit부터 border·scale 변환과 상위 iframe hit까지 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(async function activateControl\([\s\S]*?control): Locator/$1?: Locator/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 글자 control은 필수 locator의 실제 tap/click만 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await expect\(control\)\.toBeVisible\(\);/await expect(control).toBeAttached();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 control은 안정 배치가 노출된 뒤 세 프레임의 geometry를 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await control.scrollIntoViewIfNeeded();/' \
@@ -410,6 +415,11 @@ copy_fixture
 perl -0pi -e 's/data-g7pb-safe-clip-left/data-g7pb-unsafe-left/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip 계약으로 배치되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/pendingPlacement === placement/pendingPlacement === "never-stable"/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 floating layer는 연속 두 프레임의 배치가 같을 때만 노출되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{ref\} align="end"/<div/' \

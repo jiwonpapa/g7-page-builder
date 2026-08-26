@@ -65,6 +65,8 @@ function RichTextFloatingLayer({
     const ownerWindow = currentDocument?.defaultView;
     if (!layer || !currentAnchor || !currentDocument || !ownerWindow) return undefined;
     let animationFrame = 0;
+    let pendingPlacement: string | null = null;
+    let revealed = false;
     const observedSizes = new WeakMap<Element, { height: number; width: number }>();
     const actionBar = currentAnchor.closest<HTMLElement>('.g7pb-selected-block-actionbar');
     const position = (): void => {
@@ -105,10 +107,42 @@ function RichTextFloatingLayer({
       const top = stableOverlayPixel(rawTop, ownerWindow.devicePixelRatio);
       writeVariable('--g7pb-richtext-floating-left', `${left}px`);
       writeVariable('--g7pb-richtext-floating-top', `${top}px`);
+      const placement = [
+        clipLeft, clipTop, clipRight, clipBottom,
+        anchorRect.left, anchorRect.top, anchorRect.right, anchorRect.bottom,
+        layerRect.width, layerRect.height, maxWidth, maxHeight, left, top,
+      ].map((value) => stableOverlayPixel(value, ownerWindow.devicePixelRatio)).join('|');
+      if (!revealed) {
+        if (pendingPlacement === placement) {
+          revealed = true;
+          layer.setAttribute('data-g7pb-floating-ready', 'true');
+          if (layer.style.visibility !== 'visible') layer.style.visibility = 'visible';
+          return;
+        }
+        pendingPlacement = placement;
+        layer.removeAttribute('data-g7pb-floating-ready');
+        if (layer.style.visibility !== 'hidden') layer.style.visibility = 'hidden';
+        schedule();
+        return;
+      }
       if (layer.style.visibility !== 'visible') layer.style.visibility = 'visible';
     };
     const schedule = (): void => {
       if (animationFrame === 0) animationFrame = ownerWindow.requestAnimationFrame(position);
+    };
+    const contentBoxSize = (element: HTMLElement): { height: number; width: number } => {
+      const style = ownerWindow.getComputedStyle(element);
+      const pixel = (value: string): number => Number.parseFloat(value) || 0;
+      return {
+        width: stableOverlayPixel(
+          Math.max(0, element.clientWidth - pixel(style.paddingLeft) - pixel(style.paddingRight)),
+          ownerWindow.devicePixelRatio,
+        ),
+        height: stableOverlayPixel(
+          Math.max(0, element.clientHeight - pixel(style.paddingTop) - pixel(style.paddingBottom)),
+          ownerWindow.devicePixelRatio,
+        ),
+      };
     };
     const resizeObserver = new ownerWindow.ResizeObserver((entries) => {
       const changed = entries.some((entry) => {
@@ -120,6 +154,8 @@ function RichTextFloatingLayer({
       });
       if (changed) schedule();
     });
+    observedSizes.set(currentAnchor, contentBoxSize(currentAnchor));
+    observedSizes.set(layer, contentBoxSize(layer));
     resizeObserver.observe(currentAnchor);
     resizeObserver.observe(layer);
     const safeClipObserver = actionBar ? new ownerWindow.MutationObserver(schedule) : null;

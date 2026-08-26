@@ -98,13 +98,35 @@ describe('Puck-native rich-text editing', () => {
   it('keeps only the compact range entry visible in a narrow canvas and portals advanced controls', async () => {
     const originalWidth = window.innerWidth;
     const firstFloatingMeasurement: string[] = [];
+    const pendingFrames = new Map<number, FrameRequestCallback>();
+    let nextFrame = 1;
+    let trackAdvancedAnchor = false;
+    let advancedAnchorRead = 0;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      const frame = nextFrame++;
+      pendingFrames.set(frame, callback);
+      return frame;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frame) => {
+      pendingFrames.delete(frame);
+    });
+    const flushFrame = async (): Promise<void> => {
+      const callbacks = [...pendingFrames.values()];
+      pendingFrames.clear();
+      await act(async () => {
+        for (const callback of callbacks) callback(performance.now());
+      });
+    };
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       if (this.classList.contains('g7pb-richtext-floating-layer')) {
         firstFloatingMeasurement.push(this.style.getPropertyValue('--g7pb-richtext-floating-max-width'));
       }
+      const anchorTop = trackAdvancedAnchor && this.dataset.testid === 'page-builder-richtext-more'
+        ? [40, 37, 37][Math.min(advancedAnchorRead++, 2)]
+        : 40;
       return {
-        bottom: 80, height: 40, left: 10, right: 130, top: 40, width: 120,
-        x: 10, y: 40, toJSON: () => ({}),
+        bottom: anchorTop + 40, height: 40, left: 10, right: 130, top: anchorTop, width: 120,
+        x: 10, y: anchorTop, toJSON: () => ({}),
       };
     });
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
@@ -127,6 +149,7 @@ describe('Puck-native rich-text editing', () => {
       expect(more).not.toBeNull();
       expect(container.querySelector('[data-testid="page-builder-richtext-font"]')).toBeNull();
 
+      trackAdvancedAnchor = true;
       await act(async () => {
         more?.dispatchEvent(new PointerEvent('pointerdown', {
           bubbles: true,
@@ -140,6 +163,16 @@ describe('Puck-native rich-text editing', () => {
       expect(advanced?.querySelector('[data-testid="page-builder-richtext-font"]')).not.toBeNull();
       expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-max-width')).not.toBe('0px');
       expect(Number.parseFloat(firstFloatingMeasurement[0] ?? '0')).toBeGreaterThan(0);
+      expect(advanced?.style.visibility).toBe('hidden');
+      expect(advanced?.hasAttribute('data-g7pb-floating-ready')).toBe(false);
+      await flushFrame();
+      expect(advanced?.style.visibility).toBe('hidden');
+      expect(advanced?.hasAttribute('data-g7pb-floating-ready')).toBe(false);
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
+      await flushFrame();
+      expect(advanced?.style.visibility).toBe('visible');
+      expect(advanced?.getAttribute('data-g7pb-floating-ready')).toBe('true');
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
       expect(more?.getAttribute('aria-expanded')).toBe('true');
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });

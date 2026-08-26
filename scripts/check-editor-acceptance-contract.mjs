@@ -157,7 +157,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/expect\(bold\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(italic\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(underline\)\.toHaveCount\(1\)/,
       '부분 글자 B/I/U control은 공식 Puck menu 안에 각각 하나만 있어야 합니다.'],
     [/getByRole\(['"]button['"],\s*\{\s*name:\s*['"]링크 편집['"],\s*exact:\s*true\s*\}\)\)\.toHaveCount\(0\)/, 'ArticleList title에서 링크 편집 control 부재를 검증해야 합니다.'],
-    [/const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)[\s\S]{0,180}const optionPoint = await assertPointerReachable\(page, optionControl\)[\s\S]{0,180}activateControl\(optionPoint, projectName, optionControl\)/,
+    [/const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)[\s\S]{0,180}await assertPointerReachable\(page, optionControl\)[\s\S]{0,180}activateControl\(projectName, optionControl\)/,
       '선택 글자 portal option은 iframe body에서 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'],
     [/const appliedMark = field\.locator\(`span\[data-g7pb-\$\{markAttribute\}="\$\{markValue\}"\]`\)[\s\S]{0,300}expect\(appliedMark\)\.toHaveText\(target\)/,
       '각 선택 글자 option은 다음 tap 전에 해당 범위에 즉시 적용됐는지 검증해야 합니다.'],
@@ -213,6 +213,8 @@ export async function validateEditorAcceptanceContract(root) {
     [richTextSource, /import\s*\{\s*createPortal\s*\}\s*from\s*['"]react-dom['"]/, '선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.'],
     [richTextSource, /function RichTextFloatingLayer[\s\S]*anchorRef\.current[\s\S]*data-g7pb-safe-clip-left[\s\S]*data-g7pb-safe-clip-bottom[\s\S]*ResizeObserver[\s\S]*MutationObserver[\s\S]*createPortal\([\s\S]*ownerDocument\.body/,
       '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip 계약으로 배치되어야 합니다.'],
+    [richTextSource, /let pendingPlacement: string \| null = null;[\s\S]*let revealed = false;[\s\S]*const placement = \[[\s\S]*pendingPlacement === placement[\s\S]*data-g7pb-floating-ready[\s\S]*visibility !== ['"]visible['"][\s\S]*pendingPlacement = placement[\s\S]*schedule\(\)/,
+      '선택 글자 floating layer는 연속 두 프레임의 배치가 같을 때만 노출되어야 합니다.'],
     [richTextSource, /g7pb-richtext-floating-layer[\s\S]*<RichTextFloatingLayer anchorRef=\{triggerRef\}[\s\S]*role="listbox"[\s\S]*<RichTextFloatingLayer anchorRef=\{ref\} align="end"/,
       '글꼴·크기·굵기·색상 option과 링크 form 모두 같은 floating portal 계약을 사용해야 합니다.'],
     [richTextSource, /const rangeActive = Boolean\(editorState\?\.g7HasSelection\)/, 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'],
@@ -226,16 +228,18 @@ export async function validateEditorAcceptanceContract(root) {
   if (!updateMarkSource || /setOpenMenu\(/.test(updateMarkSource)) {
     errors.push('선택 글자 mark 적용 중 option을 제거하지 말고 compatibility click 소비 뒤 닫아야 합니다.');
   }
-  requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,180}control\.tap\(\{ position: point\.controlOffset \}\)/,
-    'mobile 편집 E2E는 검증된 iframe 내부 픽셀을 실제 locator touch tap해야 합니다.');
-  requirePattern(errors, spec, /function activateControl\([\s\S]{0,400}control\.tap\(\{ position: point\.controlOffset \}\)[\s\S]{0,180}control\.click\(\{ position: point\.controlOffset \}\)/,
-    '선택 글자 control은 검증된 같은 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.');
+  requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,160}control\.tap\(\{ scroll: ['"]none['"] \}\)/,
+    'mobile 편집 E2E는 변형된 iframe의 검증된 control을 실제 locator touch tap해야 합니다.');
+  requirePattern(errors, spec, /function activateControl\([\s\S]{0,300}control\.tap\(\{ scroll: ['"]none['"] \}\)[\s\S]{0,180}control\.click\(\{ scroll: ['"]none['"] \}\)/,
+    '선택 글자 control은 Playwright가 현재 변환을 반영한 중심점에 실제 touch 또는 mouse를 보내야 합니다.');
   requirePattern(errors, spec, /function activateCanvasPoint\([\s\S]{0,260}page\.touchscreen\.tap\(point\.x, point\.y\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)[\s\S]*?dismissContextPanelWithPointer[\s\S]{0,900}activateCanvasPoint\(page, point, projectName\)/,
     '요소 벌룬 닫기는 검증된 캔버스 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.');
-  requirePattern(errors, spec, /const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(optionPoint, projectName, optionControl\)[\s\S]{0,260}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
+  requirePattern(errors, spec, /function expectStableControlGeometry[\s\S]{0,220}expect\(control\)\.toBeVisible\(\)[\s\S]{0,360}g7pb-richtext-floating-layer[\s\S]{0,240}toHaveAttribute\(['"]data-g7pb-floating-ready['"], ['"]true['"]\)[\s\S]{0,520}index < 3/,
+    '선택 글자 control은 안정 배치가 노출된 뒤 세 프레임의 geometry를 검증해야 합니다.');
+  requirePattern(errors, spec, /const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(projectName, optionControl\)[\s\S]{0,260}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
     '선택 글자 portal option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.');
-  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]*?control\.evaluate[\s\S]*?borderLeftWidth[\s\S]*?borderTopWidth[\s\S]*?element\.ownerDocument\.elementFromPoint[\s\S]*?clientLeft:[\s\S]*?borderScaleX[\s\S]*?contentOrigin[\s\S]*?contentScale[\s\S]*?getComputedStyle\(iframe\)\.pointerEvents[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?data-puck-outline-dragging[\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?hit: stack\[0\] === iframe[\s\S]*?controlOffset:\s*\{[\s\S]*?localPoint\.x - localReachability\.controlRect\.left - localReachability\.controlRect\.borderLeft[\s\S]*?localPoint\.y - localReachability\.controlRect\.top - localReachability\.controlRect\.borderTop/,
-    '편집 E2E는 iframe 내부 child hit부터 border·scale 변환과 상위 iframe hit까지 같은 실제 픽셀을 검증해야 합니다.');
+  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]*?control\.evaluate[\s\S]*?element\.ownerDocument\.elementFromPoint[\s\S]*?const localCenter = localReachability\.points\[0\][\s\S]*?clientLeft:[\s\S]*?borderScaleX[\s\S]*?contentOrigin[\s\S]*?contentScale[\s\S]*?contentOrigin\.x \+ localCenter\.x \* contentScale\.x[\s\S]*?contentOrigin\.y \+ localCenter\.y \* contentScale\.y[\s\S]*?getComputedStyle\(iframe\)\.pointerEvents[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?data-puck-outline-dragging[\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?hit: stack\[0\] === iframe[\s\S]*?topDocumentReachability\.points\[0\]\?\.hit === true\) return/,
+    '편집 E2E는 iframe 내부 control 중심 hit부터 border·scale 변환과 상위 iframe hit까지 검증해야 합니다.');
   const pointerReachabilitySource = spec.match(/async function assertPointerReachable[\s\S]*?\n}\n\nasync function activateControl/)?.[0] ?? '';
   if (!pointerReachabilitySource || /requestAnimationFrame|waitForTimeout|setTimeout/.test(pointerReachabilitySource)) {
     errors.push('control 도달성은 autosave pointer 차단이 풀리기를 기다려 우회하면 안 됩니다.');
@@ -244,7 +248,7 @@ export async function validateEditorAcceptanceContract(root) {
     errors.push('control 도달성 검증이 레이아웃을 이동시키거나 frame 변환을 Playwright bbox로 대체하면 안 됩니다.');
   }
   const activateControlSource = spec.match(/async function activateControl[\s\S]*?\n}\n\nasync function activateCanvasPoint/)?.[0] ?? '';
-  if (!activateControlSource || /page\.(?:touchscreen|mouse)/.test(activateControlSource) || !/control:\s*Locator/.test(activateControlSource)) {
+  if (!activateControlSource || /page\.(?:touchscreen|mouse)|force\s*:|position\s*:|scroll:\s*['"]auto['"]/.test(activateControlSource) || !/control:\s*Locator/.test(activateControlSource)) {
     errors.push('선택 글자 control은 필수 locator의 실제 tap/click만 사용해야 합니다.');
   }
   requirePattern(errors, spec, /const CANVAS_VIEWPORT_WIDTHS\s*=\s*\[360,\s*768,\s*1280\][\s\S]*keeps ActionBar and rich-text controls pointer-reachable across the host and canvas matrix[\s\S]*for \(const width of CANVAS_VIEWPORT_WIDTHS\)/,

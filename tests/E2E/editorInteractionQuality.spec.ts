@@ -74,8 +74,8 @@ async function openElementPanelFromActionBar(page: Page, projectName: string): P
     .locator('xpath=ancestor::button[1]');
   await expect(textToolsButton).toHaveCount(1);
   await expect(textToolsButton).toBeVisible();
-  const point = await assertPointerReachable(page, textToolsButton);
-  await activateControl(point, projectName, textToolsButton);
+  await assertPointerReachable(page, textToolsButton);
+  await activateControl(projectName, textToolsButton);
 }
 
 async function setCanvasViewportWidth(
@@ -158,10 +158,6 @@ interface PointerGeometry {
 interface PointerPoint {
   x: number;
   y: number;
-}
-
-interface ControlPointerPoint extends PointerPoint {
-  controlOffset: PointerPoint;
 }
 
 interface RichTextSelectionLocator {
@@ -541,7 +537,7 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
   return menuRoot;
 }
 
-async function assertPointerReachable(page: Page, control: Locator): Promise<ControlPointerPoint> {
+async function assertPointerReachable(page: Page, control: Locator): Promise<void> {
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('Range control viewport geometry is unavailable.');
   const localReachability = await control.evaluate((element) => {
@@ -550,9 +546,6 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Con
       return { controlRect: null, points: [], viewport: null };
     }
     const rect = element.getBoundingClientRect();
-    const style = view.getComputedStyle(element);
-    const borderLeft = Number.parseFloat(style.borderLeftWidth) || 0;
-    const borderTop = Number.parseFloat(style.borderTopWidth) || 0;
     const visible = {
       left: Math.max(0, rect.left),
       top: Math.max(0, rect.top),
@@ -562,8 +555,6 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Con
     if (visible.right <= visible.left || visible.bottom <= visible.top) {
       return {
         controlRect: {
-          borderLeft,
-          borderTop,
           bottom: rect.bottom,
           height: rect.height,
           left: rect.left,
@@ -586,8 +577,6 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Con
     ];
     return {
       controlRect: {
-        borderLeft,
-        borderTop,
         bottom: rect.bottom,
         height: rect.height,
         left: rect.left,
@@ -607,9 +596,9 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Con
       viewport: { height: view.innerHeight, width: view.innerWidth },
     };
   });
-  const localCandidates = localReachability.points.filter((point) => point.hit);
-  if (!localReachability.viewport || localCandidates.length === 0) {
-    throw new Error(`range control has no pointer-reachable iframe pixel: ${JSON.stringify({
+  const localCenter = localReachability.points[0];
+  if (!localReachability.viewport || !localCenter?.hit) {
+    throw new Error(`range control center is not pointer-reachable inside the iframe: ${JSON.stringify({
       localReachability,
       viewport,
     })}`);
@@ -653,10 +642,10 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Con
       viewport,
     })}`);
   }
-  const candidates = localCandidates.map((point) => ({
-    x: contentOrigin.x + point.x * contentScale.x,
-    y: contentOrigin.y + point.y * contentScale.y,
-  }));
+  const center = {
+    x: contentOrigin.x + localCenter.x * contentScale.x,
+    y: contentOrigin.y + localCenter.y * contentScale.y,
+  };
   const topDocumentReachability = await page.evaluate(({ points, iframeSelector }) => {
       const iframe = document.querySelector<HTMLIFrameElement>(iframeSelector);
       const editor = document.querySelector<HTMLElement>('[data-testid="page-builder-editor"]');
@@ -685,22 +674,10 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Con
           };
         }),
       };
-  }, { points: candidates, iframeSelector: CANVAS_IFRAME });
-  const reachableIndex = candidates.findIndex((_, index) => (
-    topDocumentReachability.points[index]?.hit === true
-  ));
-  if (reachableIndex >= 0 && localReachability.controlRect) {
-    const localPoint = localCandidates[reachableIndex];
-    return {
-      ...candidates[reachableIndex],
-      controlOffset: {
-        x: localPoint.x - localReachability.controlRect.left - localReachability.controlRect.borderLeft,
-        y: localPoint.y - localReachability.controlRect.top - localReachability.controlRect.borderTop,
-      },
-    };
-  }
-  throw new Error(`range control has no pointer-reachable top-document pixel: ${JSON.stringify({
-    candidates,
+  }, { points: [center], iframeSelector: CANVAS_IFRAME });
+  if (topDocumentReachability.points[0]?.hit === true) return;
+  throw new Error(`range control center is not pointer-reachable through the iframe: ${JSON.stringify({
+    center,
     contentOrigin,
     contentScale,
     frameGeometry,
@@ -711,15 +688,14 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Con
 }
 
 async function activateControl(
-  point: ControlPointerPoint,
   projectName: string,
   control: Locator,
 ): Promise<void> {
   if (projectName === 'mobile') {
-    await control.tap({ position: point.controlOffset });
+    await control.tap({ scroll: 'none' });
     return;
   }
-  await control.click({ position: point.controlOffset });
+  await control.click({ scroll: 'none' });
 }
 
 async function activateCanvasPoint(page: Page, point: PointerPoint, projectName: string): Promise<void> {
@@ -731,6 +707,9 @@ async function activateCanvasPoint(page: Page, point: PointerPoint, projectName:
 }
 
 async function expectStableControlGeometry(control: Locator): Promise<void> {
+  await expect(control).toBeVisible();
+  const floatingLayer = control.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " g7pb-richtext-floating-layer ")][1]');
+  if (await floatingLayer.count()) await expect(floatingLayer).toHaveAttribute('data-g7pb-floating-ready', 'true');
   const samples = await control.evaluate(async (element) => {
     const frames: Array<{ height: number; left: number; top: number; width: number }> = [];
     for (let index = 0; index < 3; index += 1) {
@@ -759,8 +738,8 @@ async function openResponsiveAdvancedControls(
   if (await advanced.count()) return advanced;
   const more = menuRoot.getByTestId('page-builder-richtext-more');
   await expect(more).toHaveCount(1);
-  const point = await assertPointerReachable(page, more);
-  await activateControl(point, projectName, more);
+  await assertPointerReachable(page, more);
+  await activateControl(projectName, more);
   await expect(more).toHaveAttribute('aria-expanded', 'true');
   await expect(advanced).toBeVisible();
   return advanced;
@@ -793,8 +772,8 @@ async function clickNativeControl(
   tag: 'em' | 'strong' | 'u',
   projectName: string,
 ): Promise<void> {
-  const point = await assertPointerReachable(page, control);
-  await activateControl(point, projectName, control);
+  await assertPointerReachable(page, control);
+  await activateControl(projectName, control);
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   await expect(field.locator(tag), `${tag} must apply immediately to the pointer-selected copy`).toHaveCount(1);
@@ -818,14 +797,14 @@ async function chooseRangeOption(
     trigger = advanced.getByTestId(testId);
   }
   await expectStableControlGeometry(trigger);
-  const triggerPoint = await assertPointerReachable(page, trigger);
-  await activateControl(triggerPoint, projectName, trigger);
+  await assertPointerReachable(page, trigger);
+  await activateControl(projectName, trigger);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   const optionControl = page.frameLocator(CANVAS_IFRAME).getByRole('option', { name: option, exact: true });
   await expectStableControlGeometry(optionControl);
-  const optionPoint = await assertPointerReachable(page, optionControl);
+  await assertPointerReachable(page, optionControl);
   await expect.poll(() => selectedText(field)).toBe(target);
-  await activateControl(optionPoint, projectName, optionControl);
+  await activateControl(projectName, optionControl);
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
@@ -1029,8 +1008,8 @@ test('keeps ActionBar and rich-text controls pointer-reachable across the host a
           hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.rootTarget}$`),
         });
         const beforeCount = await targetMark.count();
-        const boldPoint = await assertPointerReachable(page, bold);
-        await activateControl(boldPoint, testInfo.project.name, bold);
+        await assertPointerReachable(page, bold);
+        await activateControl(testInfo.project.name, bold);
         await expect.poll(() => selectedText(field)).toBe(EDITOR_INTERACTION_COPY.rootTarget);
         await expect.poll(() => targetMark.count()).toBe(beforeCount === 0 ? 1 : 0);
         await collapseSelectionWithPointer(page, rootSelection);

@@ -72,6 +72,36 @@ printf '\n._MenuBar--menuOpen_deadbeef { position: static; }\n' \
 expect_failure 'Puck vendor 해시 class를 모바일 메뉴 레이아웃 계약으로 사용하면 안 됩니다.'
 
 copy_fixture
+perl -0pi -e 's/(div:has\(> div > \[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\) \{[^}]*overflow:) auto hidden;/${1} hidden;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 부분 글자 ActionBar는 세로 확장 대신 가로 스크롤 strip을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(div:has\(> div > \[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\) \{[^}]*flex-wrap:) nowrap;/${1} wrap;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 부분 글자 ActionBar는 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/(div:has\(> \[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\) \{[^}]*flex:) 0 0 auto;/${1} 1 0 100%;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 부분 글자 ActionBar group은 새 행을 차지하지 않는 고정 폭 항목이어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar \{ width:) max-content;/${1} 100%;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 부분 글자 추가 서식은 한 줄 고정 폭 toolbar여야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar__choice \{ min-width: 0; flex:) 0 0 auto;/${1} 1 1 4rem;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 부분 글자 선택기는 늘어나거나 줄바꿈하지 않는 항목이어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar__choice > button \{ width: auto; min-width:) 3\.2rem;/${1} 0;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 부분 글자 선택 버튼은 읽을 수 있는 고정 폭 범위를 유지해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure 'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'

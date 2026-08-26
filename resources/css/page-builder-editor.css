@@ -939,13 +939,13 @@
 .g7pb-richtext-inline-toolbar__link [role='alert'] { width: 100%; color: #b91c1c; font-size: .65rem; }
 
 @media (max-width: 900px) {
-  div:has(> div > [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar)) { box-sizing: border-box; width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); height: auto; flex-wrap: wrap; }
-  div:has(> [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar)) { box-sizing: border-box; width: 100%; height: auto; flex: 1 0 100%; order: 99; border-inline-start: 0; }
-  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) { width: 100%; max-width: 100%; flex-wrap: wrap; }
-  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) > :has(> .g7pb-richtext-inline-toolbar) { width: 100%; min-width: 0; flex: 1 0 100%; }
-  .g7pb-richtext-inline-toolbar { width: 100%; max-width: 100%; flex-wrap: wrap; }
-  .g7pb-richtext-inline-toolbar__choice { min-width: 0; flex: 1 1 4rem; }
-  .g7pb-richtext-inline-toolbar__choice > button { width: 100%; min-width: 0; max-width: none; }
+  div:has(> div > [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar)) { box-sizing: border-box; width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); min-width: 0; height: auto; overflow: auto hidden; flex-wrap: nowrap; scrollbar-width: thin; }
+  div:has(> [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar)) { box-sizing: border-box; width: max-content; min-width: max-content; height: auto; flex: 0 0 auto; }
+  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) { width: max-content; max-width: none; min-width: max-content; flex: 0 0 auto; flex-wrap: nowrap; }
+  [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) > :has(> .g7pb-richtext-inline-toolbar) { width: auto; min-width: 0; flex: 0 0 auto; }
+  .g7pb-richtext-inline-toolbar { width: max-content; max-width: none; min-width: max-content; flex-wrap: nowrap; }
+  .g7pb-richtext-inline-toolbar__choice { min-width: 0; flex: 0 0 auto; }
+  .g7pb-richtext-inline-toolbar__choice > button { width: auto; min-width: 3.2rem; max-width: 6.7rem; }
 }
 
 :is(.g7pb-preview-richtext, .g7pb-blockquote__quote, .g7pb-content-notice__body, .g7pb-card-grid__body,

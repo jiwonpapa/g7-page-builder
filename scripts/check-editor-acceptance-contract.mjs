@@ -139,6 +139,13 @@ export async function validateEditorAcceptanceContract(root) {
   for (const [pattern, message] of forbiddenDuplicateRangeState) {
     if (pattern.test(richTextSource)) errors.push(message);
   }
+  const forbiddenPuckInlineOwnership = [
+    [/data-puck-overlay-portal/, '제품 rich-text wrapper가 Puck의 overlay portal 속성을 복제하면 안 됩니다.'],
+    [/onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/, '제품 rich-text wrapper가 Puck의 drag isolation을 복제하면 안 됩니다.'],
+  ];
+  for (const [pattern, message] of forbiddenPuckInlineOwnership) {
+    if (pattern.test(richTextSource)) errors.push(message);
+  }
   if (/rangeEditing|getSelection\(\)/.test(canvasSource.slice(canvasSource.indexOf('export function notifyCanvasElementSelection')))) {
     errors.push('요소 선택 계약에서 DOM Selection으로 범위 상태를 중복 추론하면 안 됩니다.');
   }

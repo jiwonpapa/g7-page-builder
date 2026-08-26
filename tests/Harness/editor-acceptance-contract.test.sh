@@ -171,6 +171,16 @@ printf '\nwindow.addEventListener("blur", () => undefined);\n' \
 expect_failure 'inline menu가 window blur로 선택 범위를 접으면 안 됩니다.'
 
 copy_fixture
+perl -0pi -e 's/data-g7pb-richtext-field="true"/data-g7pb-richtext-field="true" data-puck-overlay-portal="true"/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '제품 rich-text wrapper가 Puck의 overlay portal 속성을 복제하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/data-g7pb-richtext-field="true"/data-g7pb-richtext-field="true" onPointerDown={(event) => event.stopPropagation()}/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '제품 rich-text wrapper가 Puck의 drag isolation을 복제하면 안 됩니다.'
+
+copy_fixture
 printf '\nconst rangeEditing = window.getSelection();\n' \
   >>"$fixture_root/fixture/resources/js/editor/canvasEditingContract.ts"
 expect_failure '요소 선택 계약에서 DOM Selection으로 범위 상태를 중복 추론하면 안 됩니다.'

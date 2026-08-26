@@ -401,13 +401,14 @@ export function RichTextCanvasField({
       data-g7pb-heading-level={headingLevel}
       data-g7pb-inline-field={fieldPath}
       data-g7pb-richtext-field="true"
-      data-puck-overlay-portal="true"
-      onPointerDown={(event) => event.stopPropagation()}
     >{children}</div>;
   }
   const Component = requestedElement;
-  return <Component className={resolvedClassName} data-g7pb-inline-field={fieldPath} data-g7pb-richtext-field="true"
-    data-puck-overlay-portal="true" onPointerDown={(event) => event.stopPropagation()}>{children}</Component>;
+  return <Component
+    className={resolvedClassName}
+    data-g7pb-inline-field={fieldPath}
+    data-g7pb-richtext-field="true"
+  >{children}</Component>;
 }
 
 export const RICH_TEXT_ALLOWED_VALUES = Object.freeze({

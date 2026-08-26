@@ -198,7 +198,7 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
-  it('keeps rich-text pointer selection out of the parent block drag sensor', async () => {
+  it('delegates rich-text drag isolation to the native Puck inline wrapper', async () => {
     const parentPointerDown = vi.fn();
     const container = document.createElement('div');
     document.body.append(container);
@@ -216,9 +216,9 @@ describe('Puck editor surface contract', () => {
     const pointerDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
     field?.dispatchEvent(pointerDown);
 
-    expect(parentPointerDown).not.toHaveBeenCalled();
+    expect(parentPointerDown).toHaveBeenCalledTimes(1);
     expect(pointerDown.defaultPrevented).toBe(false);
-    expect(field?.parentElement?.getAttribute('data-puck-overlay-portal')).toBe('true');
+    expect(field?.parentElement?.hasAttribute('data-puck-overlay-portal')).toBe(false);
   });
 
   it('treats only a non-collapsed Tiptap selection as an active text range', () => {

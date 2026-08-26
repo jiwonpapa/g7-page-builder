@@ -173,7 +173,7 @@ perl -0pi -e 's/expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/ex
 expect_failure 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/range\.getClientRects\(\)/[]/' \
+perl -0pi -e 's/(function findFieldCollapsePoints[\s\S]*?)range\.getClientRects\(\)/${1}[]/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 해제 좌표는 선택 substring 바깥 prefix/suffix Range rect이면서 field 내부·툴바 밖인 실제 픽셀이어야 합니다.'
 

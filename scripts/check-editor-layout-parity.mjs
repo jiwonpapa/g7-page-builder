@@ -120,6 +120,55 @@ export async function validateEditorLayoutParity(root) {
     ],
   ];
   for (const [pattern, message] of compactMenuFlow) requirePattern(errors, css, pattern, message);
+  const mobileRichTextActionStrip = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?div:has\(>\s*div\s*>\s*\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\)\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  if (!mobileRichTextActionStrip) {
+    errors.push('모바일 부분 글자 ActionBar의 전용 한 줄 strip이 필요합니다.');
+  } else {
+    requirePattern(errors, mobileRichTextActionStrip,
+      /width:\s*calc\(100vw\s*-\s*1rem\);[\s\S]*max-width:\s*calc\(100vw\s*-\s*1rem\);[\s\S]*min-width:\s*0;/,
+      '모바일 부분 글자 ActionBar는 viewport 안쪽 폭과 축소 가능한 최소 폭을 유지해야 합니다.');
+    requirePattern(errors, mobileRichTextActionStrip,
+      /overflow:\s*auto\s+hidden;/,
+      '모바일 부분 글자 ActionBar는 세로 확장 대신 가로 스크롤 strip을 사용해야 합니다.');
+    requirePattern(errors, mobileRichTextActionStrip,
+      /flex-wrap:\s*nowrap;/,
+      '모바일 부분 글자 ActionBar는 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.');
+  }
+  const mobileRichTextActionGroup = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?div:has\(>\s*\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\)\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  requirePattern(errors, mobileRichTextActionGroup,
+    /width:\s*max-content;[\s\S]*min-width:\s*max-content;[\s\S]*flex:\s*0\s+0\s+auto;/,
+    '모바일 부분 글자 ActionBar group은 새 행을 차지하지 않는 고정 폭 항목이어야 합니다.');
+  if (/order:\s*99;/.test(mobileRichTextActionGroup)) {
+    errors.push('모바일 부분 글자 ActionBar group을 전체 폭 후행 행으로 보내면 안 됩니다.');
+  }
+  const mobileRichTextMenu = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  requirePattern(errors, mobileRichTextMenu,
+    /width:\s*max-content;[\s\S]*max-width:\s*none;[\s\S]*min-width:\s*max-content;[\s\S]*flex:\s*0\s+0\s+auto;[\s\S]*flex-wrap:\s*nowrap;/,
+    '모바일 Puck RichTextMenu는 가로 스크롤 안의 단일 행 고정 폭 메뉴여야 합니다.');
+  const mobileRichTextToolbar = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?\.g7pb-richtext-inline-toolbar\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  requirePattern(errors, mobileRichTextToolbar,
+    /width:\s*max-content;[\s\S]*max-width:\s*none;[\s\S]*min-width:\s*max-content;[\s\S]*flex-wrap:\s*nowrap;/,
+    '모바일 부분 글자 추가 서식은 한 줄 고정 폭 toolbar여야 합니다.');
+  const mobileRichTextChoice = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?\.g7pb-richtext-inline-toolbar__choice\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  requirePattern(errors, mobileRichTextChoice,
+    /min-width:\s*0;[\s\S]*flex:\s*0\s+0\s+auto;/,
+    '모바일 부분 글자 선택기는 늘어나거나 줄바꿈하지 않는 항목이어야 합니다.');
+  const mobileRichTextChoiceButton = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?\.g7pb-richtext-inline-toolbar__choice\s*>\s*button\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  requirePattern(errors, mobileRichTextChoiceButton,
+    /width:\s*auto;[\s\S]*min-width:\s*3\.2rem;[\s\S]*max-width:\s*6\.7rem;/,
+    '모바일 부분 글자 선택 버튼은 읽을 수 있는 고정 폭 범위를 유지해야 합니다.');
   if (/_[A-Za-z]*MenuBar(?:--[A-Za-z]+)?_[A-Za-z0-9]+/.test(css)) {
     errors.push('Puck vendor 해시 class를 모바일 메뉴 레이아웃 계약으로 사용하면 안 됩니다.');
   }

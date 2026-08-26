@@ -26,7 +26,7 @@ interface FormattingExpectation {
   weight: 'bold' | 'semibold';
 }
 
-test.use({ screenshot: 'off', trace: 'off', video: 'off' });
+test.use({ screenshot: 'only-on-failure', trace: 'off', video: 'off' });
 test.describe.configure({ retries: 0 });
 
 function canvasRichTextSelector(blockType: RichTextBlockType, fieldPath: string): string {
@@ -130,6 +130,11 @@ interface PointerGeometry {
   start: { x: number; y: number };
 }
 
+interface PointerPoint {
+  x: number;
+  y: number;
+}
+
 interface RichTextSelectionLocator {
   blockType: RichTextBlockType;
   fieldPath: string;
@@ -183,7 +188,7 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
       start: {
         x: Math.max(MIN_POINTER_EDGE_INSET_PX,
           Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-            targetLeft + MIN_POINTER_EDGE_INSET_PX)),
+            targetLeft + startInset)),
         y: Math.max(MIN_POINTER_EDGE_INSET_PX,
           Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
             targetTop + targetBox.height / scaleY / 2)),
@@ -191,7 +196,7 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
       end: {
         x: Math.max(MIN_POINTER_EDGE_INSET_PX,
           Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-            targetLeft + targetBox.width / scaleX - MIN_POINTER_EDGE_INSET_PX)),
+            targetLeft + targetBox.width / scaleX - endInset)),
         y: Math.max(MIN_POINTER_EDGE_INSET_PX,
           Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
             targetTop + targetBox.height / scaleY / 2)),
@@ -252,22 +257,55 @@ async function assertTextPointerReachable(page: Page, field: Locator, pointer: P
   expect(canvasHits.end, 'pointer end must hit the current rich-text field').toBe(true);
 }
 
-async function assertTextPointerEndReachable(page: Page, field: Locator, pointer: PointerGeometry): Promise<void> {
-  const topDocumentHit = await page.evaluate(({ end, iframeSelector }) => {
+async function findTextPointerEnd(page: Page, field: Locator, pointer: PointerGeometry): Promise<PointerPoint> {
+  const ratios = [0, 0.125, 0.25, 0.5, 0.75];
+  const candidates = ratios.map((ratio) => ({
+    page: {
+      x: pointer.end.x + (pointer.start.x - pointer.end.x) * ratio,
+      y: pointer.end.y + (pointer.start.y - pointer.end.y) * ratio,
+    },
+    local: {
+      x: pointer.localEnd.x + (pointer.localStart.x - pointer.localEnd.x) * ratio,
+      y: pointer.localEnd.y + (pointer.localStart.y - pointer.localEnd.y) * ratio,
+    },
+  }));
+  const topDocumentHits = await page.evaluate(({ points, iframeSelector }) => {
     const iframe = document.querySelector(iframeSelector);
-    return document.elementFromPoint(end.x, end.y) === iframe;
-  }, { end: pointer.end, iframeSelector: CANVAS_IFRAME });
-  expect(topDocumentHit, 'pointer end must hit the Puck canvas iframe').toBe(true);
+    return points.map((point) => {
+      const hit = document.elementFromPoint(point.x, point.y);
+      return {
+        hit: hit === iframe,
+        tag: hit?.tagName ?? '',
+        className: hit instanceof HTMLElement ? hit.className : '',
+      };
+    });
+  }, { points: candidates.map((candidate) => candidate.page), iframeSelector: CANVAS_IFRAME });
 
-  const canvasHit = await field.evaluate((element, point) => {
+  const canvasHits = await field.evaluate((element, points) => {
     const rect = element.getBoundingClientRect();
-    const hit = element.ownerDocument.elementFromPoint(
-      rect.left + point.x,
-      rect.top + point.y,
-    );
-    return hit === element || element.contains(hit);
-  }, pointer.localEnd);
-  expect(canvasHit, 'pointer end must hit the current rich-text field').toBe(true);
+    return points.map((point) => {
+      const hit = element.ownerDocument.elementFromPoint(
+        rect.left + point.x,
+        rect.top + point.y,
+      );
+      return {
+        hit: hit === element || element.contains(hit),
+        tag: hit?.tagName ?? '',
+        className: hit instanceof HTMLElement ? hit.className : '',
+      };
+    });
+  }, candidates.map((candidate) => candidate.local));
+  const reachableIndex = candidates.findIndex((_, index) => (
+    topDocumentHits[index]?.hit === true && canvasHits[index]?.hit === true
+  ));
+  if (reachableIndex < 0) {
+    throw new Error(`no current rich-text field pixel is pointer-reachable: ${JSON.stringify({
+      candidates,
+      topDocumentHits,
+      canvasHits,
+    })}`);
+  }
+  return candidates[reachableIndex].page;
 }
 
 async function dragSelectText(
@@ -316,61 +354,83 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
   return menuRoot;
 }
 
-async function assertPointerReachable(page: Page, control: Locator): Promise<void> {
+async function assertPointerReachable(page: Page, control: Locator): Promise<PointerPoint> {
   await control.scrollIntoViewIfNeeded();
   const [controlBox, iframeBox] = await Promise.all([
     control.boundingBox(),
     page.locator(CANVAS_IFRAME).boundingBox(),
   ]);
   if (!controlBox || !iframeBox) throw new Error('Range control frame geometry is unavailable.');
-  const center = {
-    x: controlBox.x + controlBox.width / 2,
-    y: controlBox.y + controlBox.height / 2,
+  const viewport = page.viewportSize();
+  if (!viewport) throw new Error('Range control viewport geometry is unavailable.');
+  const visible = {
+    left: Math.max(0, iframeBox.x, controlBox.x),
+    top: Math.max(0, iframeBox.y, controlBox.y),
+    right: Math.min(viewport.width, iframeBox.x + iframeBox.width, controlBox.x + controlBox.width),
+    bottom: Math.min(viewport.height, iframeBox.y + iframeBox.height, controlBox.y + controlBox.height),
   };
-  const topDocumentReachability = await page.evaluate(({ x, y, iframeSelector }) => {
+  if (visible.right <= visible.left || visible.bottom <= visible.top) {
+    throw new Error(`range control has no visible iframe intersection: ${JSON.stringify({ controlBox, iframeBox, viewport })}`);
+  }
+  const insetX = Math.min(4, (visible.right - visible.left) / 2);
+  const insetY = Math.min(4, (visible.bottom - visible.top) / 2);
+  const candidates = [
+    { x: (visible.left + visible.right) / 2, y: (visible.top + visible.bottom) / 2 },
+    { x: visible.left + insetX, y: visible.top + insetY },
+    { x: visible.right - insetX, y: visible.top + insetY },
+    { x: visible.left + insetX, y: visible.bottom - insetY },
+    { x: visible.right - insetX, y: visible.bottom - insetY },
+  ];
+  const topDocumentReachability = await page.evaluate(({ points, iframeSelector }) => {
     const iframe = document.querySelector(iframeSelector);
-    const hit = document.elementFromPoint(x, y);
-    return {
-      frameHit: hit === iframe,
-      hitClass: hit instanceof HTMLElement ? hit.className : '',
-      hitTag: hit?.tagName ?? '',
-    };
-  }, { ...center, iframeSelector: CANVAS_IFRAME });
-  expect(
-    topDocumentReachability.frameHit,
-    `range control is covered above the iframe: ${JSON.stringify(topDocumentReachability)}`,
-  ).toBe(true);
-  expect(center.x).toBeGreaterThanOrEqual(iframeBox.x);
-  expect(center.x).toBeLessThanOrEqual(iframeBox.x + iframeBox.width);
-  expect(center.y).toBeGreaterThanOrEqual(iframeBox.y);
-  expect(center.y).toBeLessThanOrEqual(iframeBox.y + iframeBox.height);
-  const reachability = await control.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const hit = element.ownerDocument.elementFromPoint(centerX, centerY);
-    return {
-      centerHit: hit === element || element.contains(hit),
-      fullyVisible: rect.left >= 0 && rect.top >= 0
-        && rect.right <= element.ownerDocument.defaultView!.innerWidth
-        && rect.bottom <= element.ownerDocument.defaultView!.innerHeight,
-      rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
-      viewport: {
-        width: element.ownerDocument.defaultView!.innerWidth,
-        height: element.ownerDocument.defaultView!.innerHeight,
-      },
-    };
-  });
-  expect(reachability.fullyVisible, `range control is clipped: ${JSON.stringify(reachability)}`).toBe(true);
-  expect(reachability.centerHit, `range control is not pointer-reachable: ${JSON.stringify(reachability)}`).toBe(true);
+    return points.map((point) => {
+      const hit = document.elementFromPoint(point.x, point.y);
+      return {
+        hit: hit === iframe,
+        tag: hit?.tagName ?? '',
+        className: hit instanceof HTMLElement ? hit.className : '',
+      };
+    });
+  }, { points: candidates, iframeSelector: CANVAS_IFRAME });
+  const canvasReachability = await control.evaluate((element, geometry) => {
+    const view = element.ownerDocument.defaultView;
+    if (!view || view.innerWidth <= 0 || view.innerHeight <= 0) return [];
+    const scaleX = geometry.iframeBox.width / view.innerWidth;
+    const scaleY = geometry.iframeBox.height / view.innerHeight;
+    return geometry.points.map((point) => {
+      const hit = element.ownerDocument.elementFromPoint(
+        (point.x - geometry.iframeBox.x) / scaleX,
+        (point.y - geometry.iframeBox.y) / scaleY,
+      );
+      return {
+        hit: hit === element || element.contains(hit),
+        tag: hit?.tagName ?? '',
+        className: hit instanceof HTMLElement ? hit.className : '',
+      };
+    });
+  }, { points: candidates, iframeBox });
+  const reachableIndex = candidates.findIndex((_, index) => (
+    topDocumentReachability[index]?.hit === true && canvasReachability[index]?.hit === true
+  ));
+  if (reachableIndex < 0) {
+    throw new Error(`range control has no pointer-reachable pixel: ${JSON.stringify({
+      controlBox,
+      iframeBox,
+      viewport,
+      candidates,
+      topDocumentReachability,
+      canvasReachability,
+    })}`);
+  }
+  return candidates[reachableIndex];
 }
 
-async function activateControl(control: Locator, projectName: string): Promise<void> {
+async function activateControl(page: Page, point: PointerPoint, projectName: string): Promise<void> {
   if (projectName === 'mobile') {
-    await control.tap();
+    await page.touchscreen.tap(point.x, point.y);
     return;
   }
-  await control.click();
+  await page.mouse.click(point.x, point.y);
 }
 
 async function clickNativeControl(
@@ -382,8 +442,8 @@ async function clickNativeControl(
   tag: 'em' | 'strong' | 'u',
   projectName: string,
 ): Promise<void> {
-  await assertPointerReachable(page, control);
-  await activateControl(control, projectName);
+  const point = await assertPointerReachable(page, control);
+  await activateControl(page, point, projectName);
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   await expect(field.locator(tag), `${tag} must apply immediately to the pointer-selected copy`).toHaveCount(1);
@@ -402,13 +462,13 @@ async function chooseRangeOption(
   projectName: string,
 ): Promise<void> {
   const trigger = menuRoot.getByTestId(testId);
-  await assertPointerReachable(page, trigger);
-  await activateControl(trigger, projectName);
+  const triggerPoint = await assertPointerReachable(page, trigger);
+  await activateControl(page, triggerPoint, projectName);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   const optionControl = menuRoot.getByRole('option', { name: option, exact: true });
-  await assertPointerReachable(page, optionControl);
+  const optionPoint = await assertPointerReachable(page, optionControl);
   await expect.poll(() => selectedText(field)).toBe(target);
-  await activateControl(optionControl, projectName);
+  await activateControl(page, optionPoint, projectName);
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
@@ -472,8 +532,8 @@ async function collapseSelectionWithPointer(
     try {
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
       const pointer = await textPointerGeometry(field, targetNode);
-      await assertTextPointerEndReachable(page, field, pointer);
-      await page.mouse.click(pointer.end.x, pointer.end.y);
+      const point = await findTextPointerEnd(page, field, pointer);
+      await page.mouse.click(point.x, point.y);
       await expect.poll(() => selectedText(field)).toBe('');
       return;
     } catch (error) {
@@ -520,11 +580,9 @@ async function publish(page: Page): Promise<void> {
       && /^\/api\/modules\/jiwonpapa-page_builder\/admin\/publications\/[^/]+\/commit$/.test(path);
   });
   const publishButton = page.getByTestId('page-builder-publish');
-  if ((page.viewportSize()?.width ?? 1440) <= 720) {
-    await publishButton.evaluate((element) => (element as HTMLButtonElement).click());
-  } else {
-    await publishButton.click();
-  }
+  await publishButton.scrollIntoViewIfNeeded();
+  await expect(publishButton).toBeEnabled();
+  await publishButton.click();
   expect((await response).ok()).toBe(true);
   await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute('data-state', 'published');
 }

@@ -66,6 +66,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/console\.log\s*\(/, '전용 E2E에 임시 진단 로그를 남기면 안 됩니다.'],
     [/page\.evaluate\([\s\S]{0,500}\b(?:fetch|XMLHttpRequest|execCommand|setContent|setMark|toggleBold|toggleItalic|toggleUnderline)\b/, 'evaluate 안에서 편집 API를 직접 주입하면 안 됩니다.'],
     [/\.evaluate\([\s\S]{0,300}(?:innerHTML|textContent)\s*=/, 'evaluate로 편집 DOM 값을 직접 주입하면 안 됩니다.'],
+    [/\.evaluate\([^\n]{0,300}\.click\s*\(/, 'evaluate click으로 실제 포인터 경로를 우회하면 안 됩니다.'],
     [/dispatchEvent\s*\([^\n]*(?:beforeinput|input)/, '합성 input 이벤트로 편집 결과를 주입하면 안 됩니다.'],
     [/force\s*:\s*true/, '전용 편집 E2E는 force click/hover로 실제 hit target 검증을 우회하면 안 됩니다.'],
   ];
@@ -87,16 +88,17 @@ export async function validateEditorAcceptanceContract(root) {
 
   const requiredEvidence = [
     [/test\.describe\.configure\(\{\s*retries:\s*0\s*\}\)/, '전용 E2E는 retries: 0으로 실행해야 합니다.'],
+    [/test\.use\(\{\s*screenshot:\s*['"]only-on-failure['"]/, '전용 E2E 실패에는 실제 픽셀 상태를 확인할 스크린샷을 남겨야 합니다.'],
     [/page\.mouse\.down\s*\(/, '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'],
     [/page\.mouse\.move\(pointer\.start\.x, pointer\.start\.y\)/, 'topmost 검증을 통과한 실제 page mouse로 pointer 시작점에 이동해야 합니다.'],
     [/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: POINTER_DRAG_STEPS \}\)/, 'force 없이 여러 실제 mouse move 단계로 pointer 종료점에 이동해야 합니다.'],
     [/function dragSelectText\([\s\S]{0,1100}assertTextPointerReachable\(page, field, pointer\)/, 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'],
-    [/function collapseSelectionWithPointer\([\s\S]{0,600}assertTextPointerEndReachable\(page, field, pointer\)/, '선택 해제 click 전에는 실제 클릭하는 end가 상위 문서와 iframe 내부의 현재 field에 도달하는지 검증해야 합니다.'],
+    [/function collapseSelectionWithPointer\([\s\S]{0,700}findTextPointerEnd\(page, field, pointer\)[\s\S]{0,120}page\.mouse\.click\(point\.x, point\.y\)/, '선택 해제 click 전에는 현재 field에서 실제 도달 가능한 end 픽셀을 찾아 같은 좌표를 클릭해야 합니다.'],
     [/field\.focus\(\)/, '범위 선택 전 contenteditable focus가 필요합니다.'],
     [/expect\(field\)\.toBeFocused\(\)/, '실제 pointer 드래그 뒤 contenteditable focus를 확인해야 합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
     [/expect\.poll\(\(\)\s*=>\s*selectedText\(field\)\)\.toBe\(target\)/, 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'],
-    [/page\.mouse\.click\(pointer\.end\.x, pointer\.end\.y\)/, '선택 해제도 검증된 실제 page mouse 좌표로 클릭해야 합니다.'],
+    [/function findTextPointerEnd\([\s\S]*?document\.elementFromPoint\(point\.x, point\.y\)[\s\S]*?element\.contains\(hit\)[\s\S]*?return candidates\[reachableIndex\]\.page/, '선택 해제 좌표는 상위 문서 iframe과 현재 rich-text field를 모두 맞는 실제 픽셀이어야 합니다.'],
     [/projectName\s*===\s*['"]mobile['"]\s*\?\s*360\s*:\s*projectName\s*===\s*['"]tablet['"]\s*\?\s*768\s*:\s*1280/, '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'],
     [/const CANVAS_IFRAME\s*=\s*['"]#puck-canvas-root iframe['"]/, 'Puck canvas 고유 iframe selector를 고정해야 합니다.'],
     [/frameLocator\(CANVAS_IFRAME\)/, '모든 편집 상호작용은 Puck canvas iframe을 사용해야 합니다.'],
@@ -147,7 +149,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/expect\(bold\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(italic\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(underline\)\.toHaveCount\(1\)/,
       '부분 글자 B/I/U control은 공식 Puck menu 안에 각각 하나만 있어야 합니다.'],
     [/getByRole\(['"]button['"],\s*\{\s*name:\s*['"]링크 편집['"],\s*exact:\s*true\s*\}\)\)\.toHaveCount\(0\)/, 'ArticleList title에서 링크 편집 control 부재를 검증해야 합니다.'],
-    [/const optionControl = menuRoot\.getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)[\s\S]{0,180}assertPointerReachable\(page, optionControl\)[\s\S]{0,180}activateControl\(optionControl, projectName\)/,
+    [/const optionControl = menuRoot\.getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)[\s\S]{0,180}const optionPoint = await assertPointerReachable\(page, optionControl\)[\s\S]{0,180}activateControl\(page, optionPoint, projectName\)/,
       '선택 글자 메뉴 option은 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'],
     [/const appliedMark = field\.locator\(`span\[data-g7pb-\$\{markAttribute\}="\$\{markValue\}"\]`\)[\s\S]{0,300}expect\(appliedMark\)\.toHaveText\(target\)/,
       '각 선택 글자 option은 다음 tap 전에 해당 범위에 즉시 적용됐는지 검증해야 합니다.'],
@@ -211,12 +213,14 @@ export async function validateEditorAcceptanceContract(root) {
   if (!updateMarkSource || /setOpenMenu\(/.test(updateMarkSource)) {
     errors.push('선택 글자 mark 적용 중 option을 제거하지 말고 compatibility click 소비 뒤 닫아야 합니다.');
   }
-  requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,100}control\.tap\(\)/,
-    'mobile 편집 E2E는 선택 글자 control을 실제 touch tap으로 검증해야 합니다.');
-  requirePattern(errors, spec, /const optionControl = menuRoot\.getByRole\(['"]option['"][\s\S]{0,260}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(optionControl, projectName\)[\s\S]{0,260}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
+  requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,100}page\.touchscreen\.tap\(point\.x, point\.y\)/,
+    'mobile 편집 E2E는 검증된 실제 픽셀을 touch tap해야 합니다.');
+  requirePattern(errors, spec, /function activateControl\([\s\S]{0,300}page\.touchscreen\.tap\(point\.x, point\.y\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)/,
+    '선택 글자 control은 검증된 같은 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.');
+  requirePattern(errors, spec, /const optionControl = menuRoot\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(page, optionPoint, projectName\)[\s\S]{0,260}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
     '선택 글자 option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.');
-  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,1400}document\.elementFromPoint\(x, y\)[\s\S]{0,300}frameHit: hit === iframe/,
-    '편집 E2E는 상위 문서에서 control 중심점이 canvas iframe에 도달하는지 검증해야 합니다.');
+  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,2500}document\.elementFromPoint\(point\.x, point\.y\)[\s\S]{0,300}hit: hit === iframe[\s\S]{0,1500}element\.contains\(hit\)[\s\S]{0,700}return candidates\[reachableIndex\]/,
+    '편집 E2E는 control 가시 영역에서 상위 iframe과 내부 control을 모두 맞는 실제 픽셀을 찾아야 합니다.');
   requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,200}control\.scrollIntoViewIfNeeded\(\)[\s\S]{0,240}control\.boundingBox\(\)/,
     '편집 E2E는 control을 실제 scroll into view한 뒤 현재 bbox와 topmost를 다시 검증해야 합니다.');
   requirePattern(errors, spec, /mobile viewport switcher must not overlap the Puck menu toggle[\s\S]{0,900}mobile Puck menu toggle must remain pointer-reachable[\s\S]{0,300}menuToggle\.click\(\)[\s\S]{0,200}viewportSwitcher\)\.toBeHidden\(\)/,

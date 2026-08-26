@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Mark, mergeAttributes, type Editor } from '@tiptap/core';
-import { Bold, Check, ChevronDown, Italic, Link2, RotateCcw, Underline, Unlink } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { RichTextMenu } from '@puckeditor/core';
+import { Extension, Mark, Node as TiptapNode, mergeAttributes, type Editor } from '@tiptap/core';
+import { Check, ChevronDown, Link2, RotateCcw, Unlink } from 'lucide-react';
 import { CanvasCurrentElementStylesContext, elementAppearanceClassName } from './canvasEditingContract';
 
 const FONT_VALUES = ['inherit', 'modern', 'serif', 'mono'] as const;
@@ -13,21 +14,9 @@ type FontValue = typeof FONT_VALUES[number];
 type SizeValue = typeof SIZE_VALUES[number];
 type WeightValue = typeof WEIGHT_VALUES[number];
 type ToneValue = typeof TONE_VALUES[number];
-type TextRangeBookmark = { from: number; to: number };
 type RangeMenu = 'font' | 'weight' | 'size' | 'tone';
-
-function runPointerAction(event: React.PointerEvent<HTMLButtonElement>, action: () => void): void {
-  event.preventDefault();
-  event.stopPropagation();
-  action();
-}
-
-function runKeyboardAction(event: React.KeyboardEvent<HTMLButtonElement>, action: () => void): void {
-  if (event.key !== 'Enter' && event.key !== ' ') return;
-  event.preventDefault();
-  event.stopPropagation();
-  action();
-}
+type RichTextEditorState = Record<string, boolean | undefined>;
+type InlineRichTextOptions = { allowLink?: boolean };
 
 function enumAttribute<T extends string>(key: 'font' | 'size' | 'weight' | 'tone', values: readonly T[], fallback: T) {
   return {
@@ -61,6 +50,22 @@ export const G7TextStyleMark = Mark.create({
   },
 });
 
+export const G7SingleLineDocument = TiptapNode.create({
+  name: 'doc',
+  topNode: true,
+  content: 'paragraph',
+});
+
+export const G7SingleLineRichText = Extension.create({
+  name: 'g7SingleLineRichText',
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => true,
+      'Shift-Enter': () => true,
+    };
+  },
+});
+
 function selectedMark(editor: Editor | null): { font: FontValue; size: SizeValue; weight: WeightValue; tone: ToneValue } {
   const attributes = editor?.getAttributes('g7TextStyle') ?? {};
   return {
@@ -73,74 +78,6 @@ function selectedMark(editor: Editor | null): { font: FontValue; size: SizeValue
 
 export function isRichTextRangeActive(editor: Editor | null): boolean {
   return Boolean(editor && !editor.state.selection.empty);
-}
-
-function useRichTextEditorRevision(editor: Editor | null): number {
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    if (!editor) return;
-
-    let editorDom: HTMLElement | null = null;
-    try {
-      editorDom = editor.view.dom;
-    } catch {
-      // Tiptap can expose the Editor before its ProseMirror view is mounted.
-    }
-    const editorDocument = editorDom?.ownerDocument ?? null;
-    const editorWindow = editorDocument?.defaultView ?? null;
-    let pointerRangeInProgress = false;
-    let pendingRevision = false;
-    const commitRevision = (): void => setRevision((revision) => revision + 1);
-    const syncEditorState = (): void => {
-      if (pointerRangeInProgress) {
-        pendingRevision = true;
-        return;
-      }
-      commitRevision();
-    };
-    const beginPointerRange = (event: PointerEvent): void => {
-      if (editorDom && event.composedPath().includes(editorDom)) pointerRangeInProgress = true;
-    };
-    const closeRangeOutsideEditor = (event: PointerEvent): void => {
-      if (!editorDom || event.composedPath().includes(editorDom)) return;
-      const target = event.target as { closest?: (selector: string) => Element | null } | null;
-      if (typeof target?.closest === 'function' && target.closest('[data-testid="page-builder-richtext-inline-toolbar"]')) return;
-      const selection = editor.state.selection;
-      if (!selection.empty) editor.commands.setTextSelection(selection.to);
-    };
-    const closeRangeWhenCanvasLosesFocus = (): void => {
-      const selection = editor.state.selection;
-      if (!selection.empty) editor.commands.setTextSelection(selection.to);
-    };
-    const finishPointerRange = (): void => {
-      if (!pointerRangeInProgress) return;
-      pointerRangeInProgress = false;
-      if (!pendingRevision) return;
-      pendingRevision = false;
-      commitRevision();
-    };
-
-    editorDocument?.addEventListener('pointerdown', beginPointerRange, true);
-    editorDocument?.addEventListener('pointerdown', closeRangeOutsideEditor, true);
-    editorDocument?.addEventListener('pointerup', finishPointerRange, true);
-    editorDocument?.addEventListener('pointercancel', finishPointerRange, true);
-    editorWindow?.addEventListener('blur', closeRangeWhenCanvasLosesFocus);
-    editor.on('selectionUpdate', syncEditorState);
-    editor.on('transaction', syncEditorState);
-
-    return () => {
-      editorDocument?.removeEventListener('pointerdown', beginPointerRange, true);
-      editorDocument?.removeEventListener('pointerdown', closeRangeOutsideEditor, true);
-      editorDocument?.removeEventListener('pointerup', finishPointerRange, true);
-      editorDocument?.removeEventListener('pointercancel', finishPointerRange, true);
-      editorWindow?.removeEventListener('blur', closeRangeWhenCanvasLosesFocus);
-      editor.off('selectionUpdate', syncEditorState);
-      editor.off('transaction', syncEditorState);
-    };
-  }, [editor]);
-
-  return revision;
 }
 
 function RangeChoiceMenu<T extends string>({
@@ -168,15 +105,13 @@ function RangeChoiceMenu<T extends string>({
   return <div className="g7pb-richtext-inline-toolbar__choice">
     <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
       aria-label={`선택한 글자 ${label}: ${current.label}`}
-      onPointerDown={(event) => runPointerAction(event, () => onToggle(name))}
-      onKeyDown={(event) => runKeyboardAction(event, () => onToggle(name))}>
+      onClick={(event) => { event.stopPropagation(); onToggle(name); }}>
       <span>{current.label}</span><ChevronDown size={13} aria-hidden="true" />
     </button>
     {open ? <div className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
       {values.map((option) => <button type="button" role="option" aria-selected={option.value === value}
         key={option.value}
-        onPointerDown={(event) => runPointerAction(event, () => onChange(option.value))}
-        onKeyDown={(event) => runKeyboardAction(event, () => onChange(option.value))}>
+        onClick={(event) => { event.stopPropagation(); onChange(option.value); }}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}
       </button>)}
     </div> : null}
@@ -195,187 +130,169 @@ function safeEditorLink(value: string): string | null {
   }
 }
 
-function G7RichTextInlineMenu({ editor, readOnly }: {
+function markFromEditorState(editorState: RichTextEditorState | null): {
+  font: FontValue;
+  size: SizeValue;
+  weight: WeightValue;
+  tone: ToneValue;
+} {
+  return {
+    font: editorState?.g7FontModern ? 'modern'
+      : editorState?.g7FontSerif ? 'serif'
+        : editorState?.g7FontMono ? 'mono' : 'inherit',
+    size: editorState?.g7SizeSmall ? 'small'
+      : editorState?.g7SizeLarge ? 'large'
+        : editorState?.g7SizeXlarge ? 'xlarge' : 'base',
+    weight: editorState?.g7WeightMedium ? 'medium'
+      : editorState?.g7WeightSemibold ? 'semibold'
+        : editorState?.g7WeightBold ? 'bold' : 'regular',
+    tone: editorState?.g7ToneMuted ? 'muted'
+      : editorState?.g7ToneAccent ? 'accent'
+        : editorState?.g7ToneContrast ? 'contrast'
+          : editorState?.g7ToneCustom1 ? 'custom1'
+            : editorState?.g7ToneCustom2 ? 'custom2'
+              : editorState?.g7ToneCustom3 ? 'custom3'
+                : editorState?.g7ToneCustom4 ? 'custom4' : 'default',
+  };
+}
+
+function dispatchRichTextRangeState(active: boolean): void {
+  const detail = { active, range: null };
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: RICH_TEXT_RANGE_STATE_MESSAGE, ...detail }, window.location.origin);
+  }
+  window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail }));
+}
+
+function RichTextRangeStateSignal({ active }: { active: boolean }): null {
+  useEffect(() => {
+    dispatchRichTextRangeState(active);
+  }, [active]);
+
+  useEffect(() => () => dispatchRichTextRangeState(false), []);
+
+  return null;
+}
+
+function G7RichTextInlineMenu({ children, editor, editorState, readOnly, allowLink = true }: {
   children: React.ReactNode;
   editor: Editor | null;
-  editorState: Record<string, boolean | undefined> | null;
+  editorState: RichTextEditorState | null;
   readOnly: boolean;
+  allowLink?: boolean;
 }): React.ReactElement {
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkValue, setLinkValue] = useState('');
   const [linkError, setLinkError] = useState(false);
   const [openMenu, setOpenMenu] = useState<RangeMenu | null>(null);
-  const bookmarkRef = useRef<TextRangeBookmark | null>(null);
-  const rangeActiveRef = useRef(false);
-  const editorRevision = useRichTextEditorRevision(editor);
-  const selection = editor?.state.selection;
-  const selectionFrom = selection?.from;
-  const selectionTo = selection?.to;
-  const selectionEmpty = selection?.empty ?? true;
-  const mark = useMemo(() => selectedMark(editor), [editor, editorRevision, selectionFrom, selectionTo]);
+  const rangeActive = Boolean(editorState?.g7HasSelection);
+  const mark = markFromEditorState(editorState);
 
-  if (!selectionEmpty && selectionFrom !== undefined && selectionTo !== undefined) {
-    bookmarkRef.current = { from: selectionFrom, to: selectionTo };
-  }
-
-  useEffect(() => {
-    if (!editor) return;
-    setLinkValue(String(editor.getAttributes('link').href ?? ''));
-    setLinkError(false);
-  }, [editor, editorRevision, selectionFrom, selectionTo]);
-
-  useEffect(() => {
-    const active = !selectionEmpty;
-    rangeActiveRef.current = active;
-    const detail = {
-      active,
-      range: active && selectionFrom !== undefined && selectionTo !== undefined
-        ? { from: selectionFrom, to: selectionTo }
-        : null,
-    };
-    const message = { type: RICH_TEXT_RANGE_STATE_MESSAGE, ...detail };
-    if (window.parent !== window) window.parent.postMessage(message, window.location.origin);
-    window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail }));
-  }, [selectionEmpty, selectionFrom, selectionTo]);
-
-  useEffect(() => () => {
-    if (!rangeActiveRef.current) return;
-    const detail = { active: false, range: null };
-    if (window.parent !== window) window.parent.postMessage({ type: RICH_TEXT_RANGE_STATE_MESSAGE, ...detail }, window.location.origin);
-    window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail }));
-  }, []);
-
-  if (selectionEmpty) return <></>;
-
-  const restoreRange = () => {
-    const bookmark = bookmarkRef.current;
-    if (!editor || !bookmark || bookmark.from === bookmark.to) return null;
-    return editor.chain().focus().setTextSelection(bookmark);
-  };
-  const preserveRangeBeforeToolbarAction = (
-    event: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>,
-  ): void => {
-    if (editor && !editor.state.selection.empty) {
-      bookmarkRef.current = { from: editor.state.selection.from, to: editor.state.selection.to };
-    }
-    const target = event.target as { closest?: (selector: string) => Element | null } | null;
-    if (typeof target?.closest === 'function' && target.closest('button')) {
-      event.preventDefault();
-    }
-  };
   const updateMark = (patch: Partial<{ font: FontValue; size: SizeValue; weight: WeightValue; tone: ToneValue }>): void => {
-    if (!editor || readOnly) return;
-    const chain = restoreRange();
-    if (!chain) return;
+    if (!editor || readOnly || !rangeActive) return;
+    const chain = editor.chain().focus();
     const next = { ...mark, ...patch };
     if (next.font === 'inherit' && next.size === 'base' && next.weight === 'regular' && next.tone === 'default') {
       chain.unsetMark('g7TextStyle').run();
-      return;
+    } else {
+      chain.setMark('g7TextStyle', next).run();
     }
-    chain.setMark('g7TextStyle', next).run();
     setOpenMenu(null);
   };
-  const toggleNativeMark = (name: 'bold' | 'italic' | 'underline'): void => {
-    if (!editor || readOnly) return;
-    const chain = restoreRange();
-    if (!chain) return;
-    if (name === 'bold') chain.toggleBold().run();
-    else if (name === 'italic') chain.toggleItalic().run();
-    else chain.toggleUnderline().run();
+
+  const toggleLinkEditor = (): void => {
+    if (!editor || readOnly || !rangeActive) return;
+    if (!linkOpen) setLinkValue(String(editor.getAttributes('link').href ?? ''));
+    setLinkError(false);
+    setLinkOpen((open) => !open);
   };
 
   const applyLink = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    if (!editor || readOnly) return;
+    event.stopPropagation();
+    if (!editor || readOnly || !allowLink || !rangeActive) return;
     const safe = safeEditorLink(linkValue);
     if (!safe) {
       setLinkError(true);
       return;
     }
-    const chain = restoreRange();
-    if (!chain) return;
-    chain.extendMarkRange('link').setLink({ href: safe }).run();
+    const chain = editor.chain().focus();
+    if (editorState?.isLink) chain.extendMarkRange('link');
+    chain.setLink({ href: safe }).run();
     setLinkError(false);
     setLinkOpen(false);
   };
 
   return (
-    <div className="g7pb-richtext-inline-toolbar" role="toolbar" aria-label="선택한 글자 서식"
-      data-testid="page-builder-richtext-inline-toolbar"
-      onPointerDownCapture={preserveRangeBeforeToolbarAction}
-      onMouseDownCapture={preserveRangeBeforeToolbarAction}>
-      <div className="g7pb-richtext-inline-toolbar__marks">
-        <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="선택한 글자 굵게"
-          aria-pressed={editor?.isActive('bold') ?? false} disabled={readOnly}
-          onPointerDown={(event) => runPointerAction(event, () => toggleNativeMark('bold'))}
-          onKeyDown={(event) => runKeyboardAction(event, () => toggleNativeMark('bold'))}>
-          <Bold size={15} aria-hidden="true" />
-        </button>
-        <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="선택한 글자 기울임"
-          aria-pressed={editor?.isActive('italic') ?? false} disabled={readOnly}
-          onPointerDown={(event) => runPointerAction(event, () => toggleNativeMark('italic'))}
-          onKeyDown={(event) => runKeyboardAction(event, () => toggleNativeMark('italic'))}>
-          <Italic size={15} aria-hidden="true" />
-        </button>
-        <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="선택한 글자 밑줄"
-          aria-pressed={editor?.isActive('underline') ?? false} disabled={readOnly}
-          onPointerDown={(event) => runPointerAction(event, () => toggleNativeMark('underline'))}
-          onKeyDown={(event) => runKeyboardAction(event, () => toggleNativeMark('underline'))}>
-          <Underline size={15} aria-hidden="true" />
-        </button>
-      </div>
-      <RangeChoiceMenu name="font" label="글꼴" value={mark.font} disabled={readOnly} open={openMenu === 'font'}
-        testId="page-builder-richtext-font" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-        onChange={(font) => updateMark({ font })} values={[
-          { value: 'inherit', label: '기본 글꼴' }, { value: 'modern', label: '모던' },
-          { value: 'serif', label: '명조' }, { value: 'mono', label: '고정폭' },
-        ]} />
-      <RangeChoiceMenu name="weight" label="굵기" value={mark.weight} disabled={readOnly} open={openMenu === 'weight'}
-        testId="page-builder-richtext-weight" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-        onChange={(weight) => updateMark({ weight })} values={[
-          { value: 'regular', label: '보통' }, { value: 'medium', label: '중간' },
-          { value: 'semibold', label: '굵게' }, { value: 'bold', label: '매우 굵게' },
-        ]} />
-      <RangeChoiceMenu name="size" label="크기" value={mark.size} disabled={readOnly} open={openMenu === 'size'}
-        testId="page-builder-richtext-size" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-        onChange={(size) => updateMark({ size })} values={[
-          { value: 'small', label: 'S' }, { value: 'base', label: 'M' },
-          { value: 'large', label: 'L' }, { value: 'xlarge', label: 'XL' },
-        ]} />
-      <RangeChoiceMenu name="tone" label="색상" value={mark.tone} disabled={readOnly} open={openMenu === 'tone'}
-        testId="page-builder-richtext-tone" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-        onChange={(tone) => updateMark({ tone })} values={[
-          { value: 'default', label: '기본색' }, { value: 'muted', label: '보조색' },
-          { value: 'accent', label: '강조색' }, { value: 'contrast', label: '반전색' },
-          { value: 'custom1', label: '사용자색 1' }, { value: 'custom2', label: '사용자색 2' },
-          { value: 'custom3', label: '사용자색 3' }, { value: 'custom4', label: '사용자색 4' },
-        ]} />
-      <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="링크 편집"
-        aria-pressed={linkOpen} disabled={readOnly}
-        onPointerDown={(event) => runPointerAction(event, () => setLinkOpen((open) => !open))}
-        onKeyDown={(event) => runKeyboardAction(event, () => setLinkOpen((open) => !open))}>
-        <Link2 size={15} aria-hidden="true" />
-      </button>
-      {editor?.isActive('link') ? <button type="button" className="g7pb-richtext-inline-toolbar__icon"
-        aria-label="링크 제거" disabled={readOnly}
-        onPointerDown={(event) => runPointerAction(event, () => { restoreRange()?.extendMarkRange('link').unsetLink().run(); })}
-        onKeyDown={(event) => runKeyboardAction(event, () => { restoreRange()?.extendMarkRange('link').unsetLink().run(); })}>
-        <Unlink size={15} aria-hidden="true" />
-      </button> : null}
-      <button type="button" className="g7pb-richtext-inline-toolbar__icon" aria-label="부분 서식 초기화"
-        disabled={readOnly}
-        onPointerDown={(event) => runPointerAction(event, () => { restoreRange()?.unsetAllMarks().run(); })}
-        onKeyDown={(event) => runKeyboardAction(event, () => { restoreRange()?.unsetAllMarks().run(); })}>
-        <RotateCcw size={15} aria-hidden="true" />
-      </button>
-      {linkOpen ? <form className="g7pb-richtext-inline-toolbar__link" onSubmit={applyLink}>
-        <label><span className="sr-only">링크 주소</span><input type="text" inputMode="url" value={linkValue}
-          aria-invalid={linkError} placeholder="https:// 또는 /페이지" autoFocus
-          onChange={(event) => { setLinkValue(event.target.value); setLinkError(false); }} /></label>
-        <button type="submit">적용</button>
-        {linkError ? <span role="alert">안전한 HTTPS 또는 내부 주소를 입력하세요.</span> : null}
-      </form> : null}
-    </div>
+    <>
+      <RichTextRangeStateSignal active={rangeActive} />
+      {rangeActive ? <RichTextMenu>
+        {children}
+        <RichTextMenu.Group>
+          <div className="g7pb-richtext-inline-toolbar" role="group" aria-label="선택한 글자 추가 서식"
+            data-testid="page-builder-richtext-inline-toolbar">
+            <RangeChoiceMenu name="font" label="글꼴" value={mark.font} disabled={readOnly} open={openMenu === 'font'}
+              testId="page-builder-richtext-font" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
+              onChange={(font) => updateMark({ font })} values={[
+                { value: 'inherit', label: '기본 글꼴' }, { value: 'modern', label: '모던' },
+                { value: 'serif', label: '명조' }, { value: 'mono', label: '고정폭' },
+              ]} />
+            <RangeChoiceMenu name="weight" label="굵기" value={mark.weight} disabled={readOnly} open={openMenu === 'weight'}
+              testId="page-builder-richtext-weight" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
+              onChange={(weight) => updateMark({ weight })} values={[
+                { value: 'regular', label: '보통' }, { value: 'medium', label: '중간' },
+                { value: 'semibold', label: '굵게' }, { value: 'bold', label: '매우 굵게' },
+              ]} />
+            <RangeChoiceMenu name="size" label="크기" value={mark.size} disabled={readOnly} open={openMenu === 'size'}
+              testId="page-builder-richtext-size" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
+              onChange={(size) => updateMark({ size })} values={[
+                { value: 'small', label: 'S' }, { value: 'base', label: 'M' },
+                { value: 'large', label: 'L' }, { value: 'xlarge', label: 'XL' },
+              ]} />
+            <RangeChoiceMenu name="tone" label="색상" value={mark.tone} disabled={readOnly} open={openMenu === 'tone'}
+              testId="page-builder-richtext-tone" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
+              onChange={(tone) => updateMark({ tone })} values={[
+                { value: 'default', label: '기본색' }, { value: 'muted', label: '보조색' },
+                { value: 'accent', label: '강조색' }, { value: 'contrast', label: '반전색' },
+                { value: 'custom1', label: '사용자색 1' }, { value: 'custom2', label: '사용자색 2' },
+                { value: 'custom3', label: '사용자색 3' }, { value: 'custom4', label: '사용자색 4' },
+              ]} />
+            {allowLink ? <RichTextMenu.Control
+              title="링크 편집"
+              icon={<Link2 size={15} aria-hidden="true" />}
+              active={linkOpen}
+              disabled={!editorState?.g7CanLink || !editor}
+              onClick={(event) => { event.stopPropagation(); toggleLinkEditor(); }}
+            /> : null}
+            {allowLink && editorState?.isLink ? <RichTextMenu.Control
+              title="링크 제거"
+              icon={<Unlink size={15} aria-hidden="true" />}
+              disabled={readOnly || !editor}
+              onClick={(event) => {
+                event.stopPropagation();
+                editor?.chain().focus().extendMarkRange('link').unsetLink().run();
+              }}
+            /> : null}
+            <RichTextMenu.Control
+              title="부분 서식 초기화"
+              icon={<RotateCcw size={15} aria-hidden="true" />}
+              disabled={readOnly || !editor}
+              onClick={(event) => {
+                event.stopPropagation();
+                editor?.chain().focus().unsetAllMarks().run();
+              }}
+            />
+            {allowLink && linkOpen ? <form className="g7pb-richtext-inline-toolbar__link" onSubmit={applyLink}>
+              <label><span className="sr-only">링크 주소</span><input type="text" inputMode="url" value={linkValue}
+                aria-label="링크 주소" aria-invalid={linkError} placeholder="https:// 또는 /페이지" autoFocus
+                onChange={(event) => { setLinkValue(event.target.value); setLinkError(false); }} /></label>
+              <button type="submit">적용</button>
+              {linkError ? <span role="alert">안전한 HTTPS 또는 내부 주소를 입력하세요.</span> : null}
+            </form> : null}
+          </div>
+        </RichTextMenu.Group>
+      </RichTextMenu> : null}
+    </>
   );
 }
 
@@ -400,18 +317,24 @@ export function createRichTextField(label: string, initialHeight = 150, headings
     },
     tiptap: {
       extensions: [G7TextStyleMark],
-      selector: (context: { editor: Editor | null }) => {
+      selector: (context: { editor: Editor | null }, readOnly: boolean) => {
         const current = selectedMark(context.editor);
         return {
+          g7HasSelection: isRichTextRangeActive(context.editor),
+          g7CanLink: !readOnly && isRichTextRangeActive(context.editor),
+          g7FontInherit: current.font === 'inherit',
           g7FontModern: current.font === 'modern',
           g7FontSerif: current.font === 'serif',
           g7FontMono: current.font === 'mono',
+          g7SizeBase: current.size === 'base',
           g7SizeSmall: current.size === 'small',
           g7SizeLarge: current.size === 'large',
           g7SizeXlarge: current.size === 'xlarge',
+          g7WeightRegular: current.weight === 'regular',
           g7WeightMedium: current.weight === 'medium',
           g7WeightSemibold: current.weight === 'semibold',
           g7WeightBold: current.weight === 'bold',
+          g7ToneDefault: current.tone === 'default',
           g7ToneMuted: current.tone === 'muted',
           g7ToneAccent: current.tone === 'accent',
           g7ToneContrast: current.tone === 'contrast',
@@ -419,6 +342,7 @@ export function createRichTextField(label: string, initialHeight = 150, headings
           g7ToneCustom2: current.tone === 'custom2',
           g7ToneCustom3: current.tone === 'custom3',
           g7ToneCustom4: current.tone === 'custom4',
+          isLink: context.editor?.isActive('link') ?? false,
         };
       },
     },
@@ -426,8 +350,33 @@ export function createRichTextField(label: string, initialHeight = 150, headings
   };
 }
 
-export function createInlineRichTextField(label: string) {
-  return createRichTextField(label, 64, false);
+export function createInlineRichTextField(label: string, options: InlineRichTextOptions = {}) {
+  const allowLink = options.allowLink ?? true;
+  const field = createRichTextField(label, 64, false);
+
+  return {
+    ...field,
+    options: {
+      ...field.options,
+      blockquote: false as const,
+      bulletList: false as const,
+      document: false as const,
+      hardBreak: false as const,
+      heading: false as const,
+      link: allowLink ? {} : false as const,
+      listItem: false as const,
+      listKeymap: false as const,
+      orderedList: false as const,
+      textAlign: false as const,
+    },
+    tiptap: {
+      ...field.tiptap,
+      extensions: [G7SingleLineDocument, G7TextStyleMark, G7SingleLineRichText],
+    },
+    renderInlineMenu: (props: React.ComponentProps<typeof G7RichTextInlineMenu>) => (
+      <G7RichTextInlineMenu {...props} allowLink={allowLink} />
+    ),
+  };
 }
 
 export function RichTextCanvasField({

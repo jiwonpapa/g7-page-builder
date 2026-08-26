@@ -229,166 +229,39 @@ describe('Puck editor surface contract', () => {
     expect(isRichTextRangeActive(editor(false))).toBe(true);
   });
 
-  it('reacts to Tiptap selection updates without waiting for a content update', async () => {
-    type EditorEvent = 'selectionUpdate' | 'transaction';
-    const selection = { empty: true, from: 4, to: 4 };
-    let selectedFont = 'inherit';
-    const handlers = new Map<EditorEvent, Set<() => void>>();
-    const editorDom = document.createElement('div');
-    document.body.append(editorDom);
-    const editor = {
-      state: { selection },
-      view: { dom: editorDom },
-      getAttributes: vi.fn((mark: string) => mark === 'g7TextStyle' ? { font: selectedFont } : {}),
-      isActive: vi.fn(() => false),
-      on: vi.fn((event: EditorEvent, handler: () => void) => {
-        const eventHandlers = handlers.get(event) ?? new Set();
-        eventHandlers.add(handler);
-        handlers.set(event, eventHandlers);
-        return editor;
-      }),
-      off: vi.fn((event: EditorEvent, handler: () => void) => {
-        handlers.get(event)?.delete(handler);
-        return editor;
-      }),
-    } as never;
-    const emit = (event: EditorEvent): void => handlers.get(event)?.forEach((handler) => handler());
+  it('uses Puck editorState for inline menu visibility without direct editor subscriptions', async () => {
+    const editor = { on: vi.fn(), off: vi.fn() };
     const InlineMenu = createRichTextField('본문').renderInlineMenu;
     const container = document.createElement('div');
     document.body.append(container);
     const root = createRoot(container);
-    let unmounted = false;
-    mounted.push(() => {
-      if (!unmounted) act(() => root.unmount());
-    });
-
-    await act(async () => {
-      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>
-        <button type="button">기본 서식</button>
-      </InlineMenu>);
-    });
-    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
-
-    selection.empty = false;
-    selection.to = 12;
-    editorDom.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-    await act(async () => emit('selectionUpdate'));
-    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
-    await act(async () => {
-      editorDom.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-    });
-    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).not.toBeNull();
-
-    selectedFont = 'modern';
-    await act(async () => emit('transaction'));
-    expect(container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]')?.getAttribute('aria-label'))
-      .toBe('선택한 글자 글꼴: 모던');
-
-    selection.empty = true;
-    selection.from = 12;
-    await act(async () => emit('selectionUpdate'));
-    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
-
-    await act(async () => root.unmount());
-    unmounted = true;
-    expect(handlers.get('selectionUpdate')).toHaveLength(0);
-    expect(handlers.get('transaction')).toHaveLength(0);
-  });
-
-  it('restores the bookmarked text range during pointer activation before focus can collapse it', async () => {
-    type EditorEvent = 'selectionUpdate' | 'transaction';
-    const selection = { empty: false, from: 4, to: 10 };
-    const handlers = new Map<EditorEvent, Set<() => void>>();
-    const frame = document.createElement('iframe');
-    document.body.append(frame);
-    const frameDocument = frame.contentDocument!;
-    const editorDom = frameDocument.createElement('div');
-    frameDocument.body.append(editorDom);
-    const operations: Array<[string, unknown?]> = [];
-    const chain = {
-      focus: vi.fn(() => { operations.push(['focus']); return chain; }),
-      setTextSelection: vi.fn((range: { from: number; to: number }) => {
-        operations.push(['setTextSelection', range]);
-        selection.empty = range.from === range.to;
-        selection.from = range.from;
-        selection.to = range.to;
-        return chain;
-      }),
-      toggleBold: vi.fn(() => { operations.push(['toggleBold']); return chain; }),
-      run: vi.fn(() => { operations.push(['run']); return true; }),
-    };
-    const editor = {
-      state: { selection },
-      view: { dom: editorDom },
-      getAttributes: vi.fn(() => ({})),
-      isActive: vi.fn(() => false),
-      chain: vi.fn(() => chain),
-      on: vi.fn((event: EditorEvent, handler: () => void) => {
-        const eventHandlers = handlers.get(event) ?? new Set();
-        eventHandlers.add(handler);
-        handlers.set(event, eventHandlers);
-        return editor;
-      }),
-      off: vi.fn((event: EditorEvent, handler: () => void) => {
-        handlers.get(event)?.delete(handler);
-        return editor;
-      }),
-    } as never;
-    const InlineMenu = createRichTextField('본문').renderInlineMenu;
-    const container = frameDocument.createElement('div');
-    frameDocument.body.append(container);
-    const root = createRoot(container);
     mounted.push(() => act(() => root.unmount()));
 
     await act(async () => {
-      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>기존 서식</InlineMenu>);
+      root.render(<InlineMenu editor={editor as never} editorState={{
+        g7HasSelection: true,
+        g7FontModern: true,
+      }} readOnly={false}>
+        <button type="button" data-testid="puck-native-controls">Puck B/I/U</button>
+      </InlineMenu>);
     });
-    const bold = container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]');
-    expect(bold).not.toBeNull();
+    const toolbar = container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]');
+    expect(toolbar?.closest('[data-puck-rte-menu]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="puck-native-controls"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="page-builder-richtext-font"]')?.getAttribute('aria-label'))
+      .toBe('선택한 글자 글꼴: 모던');
+    expect(editor.on).not.toHaveBeenCalled();
+    expect(editor.off).not.toHaveBeenCalled();
 
-    const pointerDown = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
-    const mouseDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-    selection.empty = true;
-    selection.from = 10;
-    selection.to = 10;
     await act(async () => {
-      bold?.dispatchEvent(pointerDown);
-      bold?.dispatchEvent(mouseDown);
+      root.render(<InlineMenu editor={editor as never} editorState={{ g7HasSelection: false }} readOnly={false}>
+        <button type="button">Puck B/I/U</button>
+      </InlineMenu>);
     });
-    expect(pointerDown.defaultPrevented).toBe(true);
-    expect(mouseDown.defaultPrevented).toBe(true);
-
-    expect(operations).toEqual([
-      ['focus'],
-      ['setTextSelection', { from: 4, to: 10 }],
-      ['toggleBold'],
-      ['run'],
-    ]);
+    expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
   });
 
-  it('broadcasts both active and inactive rich-text range state transitions', async () => {
-    type EditorEvent = 'selectionUpdate' | 'transaction';
-    const selection = { empty: true, from: 2, to: 2 };
-    const handlers = new Map<EditorEvent, Set<() => void>>();
-    const editorDom = document.createElement('div');
-    document.body.append(editorDom);
-    const editor = {
-      state: { selection },
-      view: { dom: editorDom },
-      getAttributes: vi.fn(() => ({})),
-      isActive: vi.fn(() => false),
-      on: vi.fn((event: EditorEvent, handler: () => void) => {
-        const eventHandlers = handlers.get(event) ?? new Set();
-        eventHandlers.add(handler);
-        handlers.set(event, eventHandlers);
-        return editor;
-      }),
-      off: vi.fn((event: EditorEvent, handler: () => void) => {
-        handlers.get(event)?.delete(handler);
-        return editor;
-      }),
-    } as never;
-    const emit = (event: EditorEvent): void => handlers.get(event)?.forEach((handler) => handler());
+  it('broadcasts the Puck-derived active and inactive range state transitions', async () => {
     const states: boolean[] = [];
     const receive = (event: Event): void => {
       states.push(Boolean((event as CustomEvent).detail?.active));
@@ -403,49 +276,13 @@ describe('Puck editor surface contract', () => {
       act(() => root.unmount());
     });
 
-    await act(async () => {
-      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>서식</InlineMenu>);
-    });
-    selection.empty = false;
-    selection.to = 7;
-    await act(async () => emit('selectionUpdate'));
-    selection.empty = true;
-    selection.from = 7;
-    await act(async () => emit('selectionUpdate'));
+    for (const active of [false, true, false]) {
+      await act(async () => {
+        root.render(<InlineMenu editor={null} editorState={{ g7HasSelection: active }} readOnly={false}>서식</InlineMenu>);
+      });
+    }
 
     expect(states).toEqual([false, true, false]);
-  });
-
-  it('subscribes safely before the Tiptap view is mounted', async () => {
-    const on = vi.fn();
-    const off = vi.fn();
-    const editor = {
-      state: { selection: { empty: true, from: 1, to: 1 } },
-      get view() { throw new Error('view is not mounted'); },
-      getAttributes: vi.fn(() => ({})),
-      isActive: vi.fn(() => false),
-      on,
-      off,
-    } as never;
-    const InlineMenu = createRichTextField('본문').renderInlineMenu;
-    const container = document.createElement('div');
-    document.body.append(container);
-    const root = createRoot(container);
-    let unmounted = false;
-    mounted.push(() => {
-      if (!unmounted) act(() => root.unmount());
-    });
-
-    await act(async () => {
-      root.render(<InlineMenu editor={editor} editorState={null} readOnly={false}>서식</InlineMenu>);
-    });
-    expect(on).toHaveBeenCalledWith('selectionUpdate', expect.any(Function));
-    expect(on).toHaveBeenCalledWith('transaction', expect.any(Function));
-
-    await act(async () => root.unmount());
-    unmounted = true;
-    expect(off).toHaveBeenCalledWith('selectionUpdate', expect.any(Function));
-    expect(off).toHaveBeenCalledWith('transaction', expect.any(Function));
   });
 
   it('provides stable container controls to every built-in block', () => {

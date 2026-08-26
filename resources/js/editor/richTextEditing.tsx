@@ -253,7 +253,7 @@ function NativeRangeControl({
       if (event.key === 'Enter' || event.key === ' ') suppressCompatibilityClick.current = false;
     }}
     onPointerCancel={() => { suppressCompatibilityClick.current = false; }}
-    onPointerDown={applyFromPointer}
+    onPointerDownCapture={applyFromPointer}
   >
     <RichTextMenu.Control title={label} icon={icon} active={active} disabled={disabled} onClick={applyFromClick} />
   </span>;

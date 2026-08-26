@@ -255,6 +255,11 @@ async function revealSidebarRichTextField(page: Page, label: string): Promise<Lo
   let sidebarField = page.locator('[contenteditable="true"]:visible');
   if (await sidebarField.count() !== 1) {
     const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+    if (!(await fieldsTab.isVisible())) {
+      const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
+      await expect(sidebarToggle).toBeVisible();
+      await sidebarToggle.click();
+    }
     await expect(fieldsTab).toBeVisible();
     await fieldsTab.click();
     sidebarField = page.locator('[contenteditable="true"]:visible');
@@ -298,7 +303,9 @@ async function preparePreview(page: Page, documentId: string): Promise<string> {
     const responsePromise = page.waitForResponse((response) => response.request().method() === 'POST'
       && new URL(response.url()).pathname === `${API}/documents/${documentId}/preview`);
     await previewLink.click();
-    expect((await responsePromise).ok()).toBe(true);
+    const response = await responsePromise;
+    const body = await response.text();
+    expect(response.ok(), `preview creation failed (${response.status()}): ${body}`).toBe(true);
   }
   await expect(previewLink).toHaveAttribute('href', /\/modules\/jiwonpapa-page_builder\/preview\/[a-f0-9]{64}/);
   const previewUrl = await previewLink.getAttribute('href');

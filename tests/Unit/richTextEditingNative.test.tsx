@@ -209,6 +209,9 @@ describe('Puck-native rich-text editing', () => {
         cancelable: true,
         pointerType: 'mouse',
       }));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await act(async () => {
       trigger?.dispatchEvent(new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
@@ -225,6 +228,9 @@ describe('Puck-native rich-text editing', () => {
         cancelable: true,
         pointerType: 'mouse',
       }));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await act(async () => {
       serif?.dispatchEvent(new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
@@ -241,6 +247,7 @@ describe('Puck-native rich-text editing', () => {
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
 
     await act(async () => {
+      trigger?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');

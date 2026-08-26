@@ -15,6 +15,7 @@ const API = '/api/modules/jiwonpapa-page_builder/admin';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
 const POINTER_EDGE_INSET_PX = 2;
 const MIN_POINTER_EDGE_INSET_PX = 0.25;
+const POINTER_DRAG_STEPS = 8;
 
 type RichTextBlockType = 'heading' | 'features' | 'rich-text' | 'article-list';
 
@@ -124,6 +125,8 @@ async function exposeCanvasForPointer(page: Page): Promise<void> {
 
 interface PointerGeometry {
   end: { x: number; y: number };
+  localEnd: { x: number; y: number };
+  localStart: { x: number; y: number };
   start: { x: number; y: number };
 }
 
@@ -147,19 +150,26 @@ async function resolveRichTextSelection(page: Page, selection: RichTextSelection
 async function textPointerGeometry(field: Locator, targetNode: Locator): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
   await expect(targetNode).toHaveCount(1);
-  const [fieldBox, targetBox, fragments] = await Promise.all([
+  const [fieldBox, targetBox, fieldRect, fragments] = await Promise.all([
     field.boundingBox(),
     targetNode.boundingBox(),
+    field.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { width: rect.width, height: rect.height };
+    }),
     targetNode.evaluate((element) => Array.from(element.getClientRects())
       .filter((rect) => rect.width > 0 && rect.height > 0)
       .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, height: rect.height }))),
   ]);
   if (!fieldBox || !targetBox || fieldBox.width <= 0 || fieldBox.height <= 0
-    || targetBox.width <= 0 || targetBox.height <= 0 || fragments.length === 0) {
+    || targetBox.width <= 0 || targetBox.height <= 0 || fieldRect.width <= 0 || fieldRect.height <= 0
+    || fragments.length === 0) {
     throw new Error('Rich-text pointer geometry is unavailable.');
   }
-  const targetLeft = targetBox.x - fieldBox.x;
-  const targetTop = targetBox.y - fieldBox.y;
+  const scaleX = fieldBox.width / fieldRect.width;
+  const scaleY = fieldBox.height / fieldRect.height;
+  const targetLeft = (targetBox.x - fieldBox.x) / scaleX;
+  const targetTop = (targetBox.y - fieldBox.y) / scaleY;
   const fragmentLeft = Math.min(...fragments.map((fragment) => fragment.left));
   const fragmentTop = Math.min(...fragments.map((fragment) => fragment.top));
   const first = fragments[0];
@@ -168,40 +178,78 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
     Math.max(MIN_POINTER_EDGE_INSET_PX, (first.right - first.left) / 4));
   const endInset = Math.min(POINTER_EDGE_INSET_PX,
     Math.max(MIN_POINTER_EDGE_INSET_PX, (last.right - last.left) / 4));
-  if (fragments.length === 1) {
-    return {
+  const local = fragments.length === 1
+    ? {
       start: {
         x: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldBox.width - MIN_POINTER_EDGE_INSET_PX,
+          Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
             targetLeft + MIN_POINTER_EDGE_INSET_PX)),
         y: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldBox.height - MIN_POINTER_EDGE_INSET_PX,
-            targetTop + targetBox.height / 2)),
+          Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
+            targetTop + targetBox.height / scaleY / 2)),
       },
       end: {
         x: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldBox.width - MIN_POINTER_EDGE_INSET_PX,
-            targetLeft + targetBox.width - MIN_POINTER_EDGE_INSET_PX)),
+          Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
+            targetLeft + targetBox.width / scaleX - MIN_POINTER_EDGE_INSET_PX)),
         y: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldBox.height - MIN_POINTER_EDGE_INSET_PX,
-            targetTop + targetBox.height / 2)),
+          Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
+            targetTop + targetBox.height / scaleY / 2)),
+      },
+    }
+    : {
+      start: {
+        x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
+          targetLeft + first.left - fragmentLeft + startInset)),
+        y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
+          targetTop + first.top - fragmentTop + first.height / 2)),
+      },
+      end: {
+        x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
+          targetLeft + last.right - fragmentLeft - endInset)),
+        y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
+          targetTop + last.top - fragmentTop + last.height / 2)),
       },
     };
-  }
   return {
-    start: {
-      x: Math.max(0.25, Math.min(fieldBox.width - 0.25,
-        targetLeft + first.left - fragmentLeft + startInset)),
-      y: Math.max(0.25, Math.min(fieldBox.height - 0.25,
-        targetTop + first.top - fragmentTop + first.height / 2)),
-    },
+    localStart: local.start,
+    localEnd: local.end,
+    start: { x: fieldBox.x + local.start.x * scaleX, y: fieldBox.y + local.start.y * scaleY },
     end: {
-      x: Math.max(0.25, Math.min(fieldBox.width - 0.25,
-        targetLeft + last.right - fragmentLeft - endInset)),
-      y: Math.max(0.25, Math.min(fieldBox.height - 0.25,
-        targetTop + last.top - fragmentTop + last.height / 2)),
+      x: fieldBox.x + local.end.x * scaleX,
+      y: fieldBox.y + local.end.y * scaleY,
     },
   };
+}
+
+async function assertTextPointerReachable(page: Page, field: Locator, pointer: PointerGeometry): Promise<void> {
+  const topDocumentHits = await page.evaluate(({ start, end, iframeSelector }) => {
+    const iframe = document.querySelector(iframeSelector);
+    return {
+      start: document.elementFromPoint(start.x, start.y) === iframe,
+      end: document.elementFromPoint(end.x, end.y) === iframe,
+    };
+  }, { start: pointer.start, end: pointer.end, iframeSelector: CANVAS_IFRAME });
+  expect(topDocumentHits.start, 'pointer start must hit the Puck canvas iframe').toBe(true);
+  expect(topDocumentHits.end, 'pointer end must hit the Puck canvas iframe').toBe(true);
+
+  const canvasHits = await field.evaluate((element, points) => {
+    const rect = element.getBoundingClientRect();
+    const startHit = element.ownerDocument.elementFromPoint(
+      rect.left + points.start.x,
+      rect.top + points.start.y,
+    );
+    const endHit = element.ownerDocument.elementFromPoint(
+      rect.left + points.end.x,
+      rect.top + points.end.y,
+    );
+    return {
+      start: startHit === element || element.contains(startHit),
+      end: endHit === element || element.contains(endHit),
+    };
+  }, { start: pointer.localStart, end: pointer.localEnd });
+  expect(canvasHits.start, 'pointer start must hit the current rich-text field').toBe(true);
+  expect(canvasHits.end, 'pointer end must hit the current rich-text field').toBe(true);
 }
 
 async function dragSelectText(
@@ -215,13 +263,14 @@ async function dragSelectText(
     try {
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
       const pointer = await textPointerGeometry(field, targetNode);
-      if (attempt > 0) await field.click({ position: pointer.end });
+      await assertTextPointerReachable(page, field, pointer);
+      if (attempt > 0) await page.mouse.click(pointer.end.x, pointer.end.y);
       await field.focus();
       await expect.poll(() => selectedText(field)).toBe('');
-      await field.hover({ position: pointer.start });
+      await page.mouse.move(pointer.start.x, pointer.start.y);
       await page.mouse.down();
       pointerDown = true;
-      await field.hover({ position: pointer.end, force: true });
+      await page.mouse.move(pointer.end.x, pointer.end.y, { steps: POINTER_DRAG_STEPS });
       await page.mouse.up();
       pointerDown = false;
       const actual = await selectedText(field);
@@ -329,6 +378,8 @@ async function chooseRangeOption(
   target: string,
   testId: string,
   option: string,
+  markAttribute: keyof FormattingExpectation,
+  markValue: string,
   projectName: string,
 ): Promise<void> {
   const trigger = menuRoot.getByTestId(testId);
@@ -342,6 +393,9 @@ async function chooseRangeOption(
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
+  const appliedMark = field.locator(`span[data-g7pb-${markAttribute}="${markValue}"]`);
+  await expect(appliedMark, `${markAttribute} must apply before the next range option tap`).toHaveCount(1);
+  await expect(appliedMark).toHaveText(target);
 }
 
 async function applySelectedFormatting(
@@ -350,6 +404,7 @@ async function applySelectedFormatting(
   field: Locator,
   target: string,
   choices: { font: string; size: string; tone: string; weight: string },
+  expected: FormattingExpectation,
   projectName: string,
 ): Promise<void> {
   const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
@@ -361,10 +416,14 @@ async function applySelectedFormatting(
   await clickNativeControl(page, bold, menuRoot, field, target, 'strong', projectName);
   await clickNativeControl(page, italic, menuRoot, field, target, 'em', projectName);
   await clickNativeControl(page, underline, menuRoot, field, target, 'u', projectName);
-  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-font', choices.font, projectName);
-  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-size', choices.size, projectName);
-  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-weight', choices.weight, projectName);
-  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-tone', choices.tone, projectName);
+  await chooseRangeOption(page, menuRoot, field, target,
+    'page-builder-richtext-font', choices.font, 'font', expected.font, projectName);
+  await chooseRangeOption(page, menuRoot, field, target,
+    'page-builder-richtext-size', choices.size, 'size', expected.size, projectName);
+  await chooseRangeOption(page, menuRoot, field, target,
+    'page-builder-richtext-weight', choices.weight, 'weight', expected.weight, projectName);
+  await chooseRangeOption(page, menuRoot, field, target,
+    'page-builder-richtext-tone', choices.tone, 'tone', expected.tone, projectName);
 }
 
 async function assertSelectedFormatting(
@@ -394,7 +453,8 @@ async function collapseSelectionWithPointer(
     try {
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
       const pointer = await textPointerGeometry(field, targetNode);
-      await field.click({ position: pointer.end });
+      await assertTextPointerReachable(page, field, pointer);
+      await page.mouse.click(pointer.end.x, pointer.end.y);
       await expect.poll(() => selectedText(field)).toBe('');
       return;
     } catch (error) {
@@ -542,7 +602,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       menuRoot = await officialPuckMenuRoot(page);
       await applySelectedFormatting(page, menuRoot, rootField, EDITOR_INTERACTION_COPY.rootTarget, {
         font: '명조', size: 'L', weight: '매우 굵게', tone: '사용자색 1',
-      }, testInfo.project.name);
+      }, ROOT_FORMATTING, testInfo.project.name);
       await assertSelectedFormatting(rootField, EDITOR_INTERACTION_COPY.rootTarget,
         EDITOR_INTERACTION_COPY.rootPrefix, EDITOR_INTERACTION_COPY.rootSuffix, ROOT_FORMATTING);
     });
@@ -577,7 +637,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await expect(elementPanel).toBeHidden();
       await applySelectedFormatting(page, nestedMenuRoot, nestedField, EDITOR_INTERACTION_COPY.nestedTarget, {
         font: '고정폭', size: 'XL', weight: '굵게', tone: '강조색',
-      }, testInfo.project.name);
+      }, NESTED_FORMATTING, testInfo.project.name);
       await assertSelectedFormatting(nestedField, EDITOR_INTERACTION_COPY.nestedTarget,
         EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);
       await collapseSelectionWithPointer(page, nestedSelection);

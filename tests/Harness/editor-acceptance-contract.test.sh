@@ -47,9 +47,9 @@ perl -0pi -e 's/page\.mouse\.down\s*\(/page.mouse.click(/' \
 expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/field\.click\(\{ position: pointer\.end \}\)/field.focus()/g' \
+perl -0pi -e 's/page\.mouse\.click\(pointer\.end\.x, pointer\.end\.y\)/field.focus()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제도 실제 locator 좌표의 pointer click으로 검증해야 합니다.'
+expect_failure '선택 해제도 검증된 실제 page mouse 좌표로 클릭해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
@@ -82,9 +82,23 @@ perl -0pi -e "s/#puck-canvas-root iframe/iframe/" \
 expect_failure 'Puck canvas 고유 iframe selector를 고정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/field\.hover\(\{ position: pointer\.end, force: true \}\)/field.focus()/g' \
+perl -0pi -e 's/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: POINTER_DRAG_STEPS \}\)/field.focus()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'DnD overlay 중에도 실제 pointer 종료 이동을 보내는 forced locator hover가 필요합니다.'
+expect_failure 'force 없이 여러 실제 mouse move 단계로 pointer 종료점에 이동해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await field.focus();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await assertTextPointerReachable\(page, field, pointer\);/$1await field.focus();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 해제 click 전에도 현재 field의 start/end hit target을 검증해야 합니다.'
+
+copy_fixture
+printf '\nfield.click({ force: true });\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '전용 편집 E2E는 force click/hover로 실제 hit target 검증을 우회하면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/await field\.focus\(\);/await page.keyboard.press("Tab");/' \
@@ -105,6 +119,11 @@ copy_fixture
 perl -0pi -e 's/targetBox\.x - fieldBox\.x/0/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 대상을 contenteditable 내부 실제 좌표로 변환해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/fieldBox\.width \/ fieldRect\.width/1/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'Puck iframe transform scale을 X/Y 좌표에 각각 반영해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/resolveRichTextSelection\(page, selection\)/selection.cachedLocators/' \

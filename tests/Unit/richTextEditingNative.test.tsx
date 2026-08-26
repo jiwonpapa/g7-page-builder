@@ -260,11 +260,11 @@ describe('Puck-native rich-text editing', () => {
       tone: 'default',
     });
     expect(chain.run).toHaveBeenCalledOnce();
-    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
-    expect(serif?.isConnected).toBe(false);
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+    expect(serif?.isConnected).toBe(true);
 
     await act(async () => {
-      trigger?.dispatchEvent(new MouseEvent('click', {
+      serif?.dispatchEvent(new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
         detail: 1,
@@ -273,6 +273,7 @@ describe('Puck-native rich-text editing', () => {
     expect(chain.setMark).toHaveBeenCalledOnce();
     expect(chain.run).toHaveBeenCalledOnce();
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+    expect(serif?.isConnected).toBe(false);
 
     await act(async () => {
       trigger?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));

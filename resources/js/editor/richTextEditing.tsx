@@ -90,6 +90,7 @@ function RangeChoiceMenu<T extends string>({
   testId,
   onToggle,
   onChange,
+  onClose,
 }: {
   name: RangeMenu;
   label: string;
@@ -100,6 +101,7 @@ function RangeChoiceMenu<T extends string>({
   testId: string;
   onToggle: (menu: RangeMenu) => void;
   onChange: (value: T) => void;
+  onClose: () => void;
 }): React.ReactElement {
   const current = values.find((option) => option.value === value) ?? values[0];
   const suppressCompatibilityClick = React.useRef(false);
@@ -146,12 +148,17 @@ function RangeChoiceMenu<T extends string>({
     onChange(nextValue);
   };
   const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
+    event.preventDefault();
     event.stopPropagation();
     if (suppressCompatibilityClick.current) {
-      suppressCompatibilityClick.current = false;
+      clearPointerActivation();
+      onClose();
       return;
     }
-    if (event.detail === 0) onChange(nextValue);
+    if (event.detail === 0) {
+      onChange(nextValue);
+      onClose();
+    }
   };
   return <div className="g7pb-richtext-inline-toolbar__choice">
     <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
@@ -294,7 +301,6 @@ function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true 
     } else {
       chain.setMark('g7TextStyle', next).run();
     }
-    setOpenMenu(null);
   };
 
   const toggleLinkEditor = (): void => {
@@ -361,25 +367,25 @@ function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true 
             data-testid="page-builder-richtext-inline-toolbar">
             <RangeChoiceMenu name="font" label="글꼴" value={mark.font} disabled={readOnly} open={openMenu === 'font'}
               testId="page-builder-richtext-font" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(font) => updateMark({ font })} values={[
+              onChange={(font) => updateMark({ font })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'inherit', label: '기본 글꼴' }, { value: 'modern', label: '모던' },
                 { value: 'serif', label: '명조' }, { value: 'mono', label: '고정폭' },
               ]} />
             <RangeChoiceMenu name="weight" label="굵기" value={mark.weight} disabled={readOnly} open={openMenu === 'weight'}
               testId="page-builder-richtext-weight" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(weight) => updateMark({ weight })} values={[
+              onChange={(weight) => updateMark({ weight })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'regular', label: '보통' }, { value: 'medium', label: '중간' },
                 { value: 'semibold', label: '굵게' }, { value: 'bold', label: '매우 굵게' },
               ]} />
             <RangeChoiceMenu name="size" label="크기" value={mark.size} disabled={readOnly} open={openMenu === 'size'}
               testId="page-builder-richtext-size" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(size) => updateMark({ size })} values={[
+              onChange={(size) => updateMark({ size })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'small', label: 'S' }, { value: 'base', label: 'M' },
                 { value: 'large', label: 'L' }, { value: 'xlarge', label: 'XL' },
               ]} />
             <RangeChoiceMenu name="tone" label="색상" value={mark.tone} disabled={readOnly} open={openMenu === 'tone'}
               testId="page-builder-richtext-tone" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(tone) => updateMark({ tone })} values={[
+              onChange={(tone) => updateMark({ tone })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'default', label: '기본색' }, { value: 'muted', label: '보조색' },
                 { value: 'accent', label: '강조색' }, { value: 'contrast', label: '반전색' },
                 { value: 'custom1', label: '사용자색 1' }, { value: 'custom2', label: '사용자색 2' },

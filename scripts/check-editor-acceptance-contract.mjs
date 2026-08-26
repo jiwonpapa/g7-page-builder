@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 
 const REQUIRED_SPEC = 'tests/E2E/editorInteractionQuality.spec.ts';
+const REQUIRED_FIXTURE = 'tests/E2E/support/editorInteractionFixture.ts';
 
 async function text(root, path) {
   try {
@@ -22,11 +23,13 @@ function requirePattern(errors, source, pattern, message) {
 
 export async function validateEditorAcceptanceContract(root) {
   const errors = [];
-  const [packageSource, makefile, coordinationHarness, spec, richTextSource, adapterSource, canvasSource] = await Promise.all([
+  const [packageSource, makefile, coordinationHarness, spec, fixture, playwrightConfig, richTextSource, adapterSource, canvasSource] = await Promise.all([
     text(root, 'package.json'),
     text(root, 'Makefile'),
     text(root, 'scripts/coord-harness.sh'),
     text(root, REQUIRED_SPEC),
+    text(root, REQUIRED_FIXTURE),
+    text(root, 'playwright.config.ts'),
     text(root, 'resources/js/editor/richTextEditing.tsx'),
     text(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
     text(root, 'resources/js/editor/canvasEditingContract.ts'),
@@ -57,12 +60,28 @@ export async function validateEditorAcceptanceContract(root) {
     [/dispatchEvent\s*\([^\n]*(?:selectionchange|MouseEvent)/, '합성 selectionchange/mouse 이벤트를 사용하면 안 됩니다.'],
     [/normalizePointerRangeWithKeyboard/, 'pointer 범위를 키보드로 보정하면 안 됩니다.'],
     [/caretTextOffset/, 'pointer 선택을 caret offset 키보드 보정으로 대체하면 안 됩니다.'],
+    [/(?:\.createRange|\bnew\s+Range)\s*\(/, 'DOM Range를 evaluate로 계산하거나 선택에 주입하면 안 됩니다.'],
     [/page\.keyboard\.(?:down|press)\(\s*['"](?:Shift|ArrowLeft|ArrowRight)/, 'Shift/방향키로 선택 범위를 재구성하면 안 됩니다.'],
     [/rangeToolbar[\s\S]{0,180}\.selectOption\s*\(/, '선택 글자 툴바는 selectOption 직접 주입이 아니라 실제 사용자 조작으로 검증해야 합니다.'],
     [/console\.log\s*\(/, '전용 E2E에 임시 진단 로그를 남기면 안 됩니다.'],
+    [/page\.evaluate\([\s\S]{0,500}\b(?:fetch|XMLHttpRequest|execCommand|setContent|setMark|toggleBold|toggleItalic|toggleUnderline)\b/, 'evaluate 안에서 편집 API를 직접 주입하면 안 됩니다.'],
+    [/\.evaluate\([\s\S]{0,300}(?:innerHTML|textContent)\s*=/, 'evaluate로 편집 DOM 값을 직접 주입하면 안 됩니다.'],
+    [/dispatchEvent\s*\([^\n]*(?:beforeinput|input)/, '합성 input 이벤트로 편집 결과를 주입하면 안 됩니다.'],
   ];
   for (const [pattern, message] of forbiddenSyntheticSelection) {
     if (pattern.test(spec)) errors.push(message);
+  }
+
+  const requiredFixtureBlocks = [
+    [/type:\s*['"]content\.heading-01['"]/, '대표 fixture에 root inline-rich Heading 블록이 필요합니다.'],
+    [/type:\s*['"]content\.features-grid-01['"]/, '대표 fixture에 nested array rich-text Features 블록이 필요합니다.'],
+    [/type:\s*['"]content\.rich-text-01['"]/, '대표 fixture에 block-rich RichText 블록이 필요합니다.'],
+    [/type:\s*['"]content\.article-list-01['"]/, '대표 fixture에 no-link ArticleList 블록이 필요합니다.'],
+  ];
+  for (const [pattern, message] of requiredFixtureBlocks) requirePattern(errors, fixture, pattern, message);
+  for (const project of ['desktop', 'tablet', 'mobile']) {
+    requirePattern(errors, playwrightConfig, new RegExp(`name:\\s*['"]${project}['"]`),
+      `Playwright ${project} project가 필요합니다.`);
   }
 
   const requiredEvidence = [
@@ -79,13 +98,11 @@ export async function validateEditorAcceptanceContract(root) {
     [/const CANVAS_IFRAME\s*=\s*['"]#puck-canvas-root iframe['"]/, 'Puck canvas 고유 iframe selector를 고정해야 합니다.'],
     [/frameLocator\(CANVAS_IFRAME\)/, '모든 편집 상호작용은 Puck canvas iframe을 사용해야 합니다.'],
     [/page\.locator\(CANVAS_IFRAME\)\)\.toHaveCount\(1\)/, 'Puck canvas iframe이 정확히 하나인지 확인해야 합니다.'],
-    [/start\.left\s*-\s*fieldRect\.left/, '선택 시작점을 contenteditable 내부 좌표로 계산해야 합니다.'],
-    [/end\.right\s*-\s*fieldRect\.left/, '선택 끝점을 contenteditable 내부 좌표로 계산해야 합니다.'],
     [/field\.boundingBox\(\)/, 'iframe 내부 좌표를 실제 화면 좌표로 변환해야 합니다.'],
-    [/box\.width\s*\/\s*geometry\.fieldWidth/, 'iframe의 실제 가로 축척을 pointer 좌표에 반영해야 합니다.'],
-    [/box\.height\s*\/\s*geometry\.fieldHeight/, 'iframe의 실제 세로 축척을 pointer 좌표에 반영해야 합니다.'],
-    [/x:\s*geometry\.startX\s*\*\s*scaleX/, '선택 시작점을 실제 locator 좌표로 변환해야 합니다.'],
-    [/y:\s*geometry\.endY\s*\*\s*scaleY/, '선택 끝점을 실제 locator 좌표로 변환해야 합니다.'],
+    [/targetNode\.boundingBox\(\)/, '선택 대상의 실제 렌더링 box를 측정해야 합니다.'],
+    [/targetBox\.x\s*-\s*fieldBox\.x/, '선택 대상을 contenteditable 내부 실제 좌표로 변환해야 합니다.'],
+    [/data-g7pb-richtext-field/, 'rich-text canvas selector는 중앙 rich-text marker를 사용해야 합니다.'],
+    [/data-g7pb-inline-field/, 'rich-text canvas selector는 정확한 fieldPath marker를 사용해야 합니다.'],
     [/REAL_POINTER_SELECTION_GATE/, '실제 포인터 선택 gate가 필요합니다.'],
     [/CANVAS_VIEWPORT_GATE/, 'browser project와 내부 canvas viewport 일치 gate가 필요합니다.'],
     [/INTERACTIVE_CANVAS_GATE/, '실제 iframe의 상호작용 가능 크기 gate가 필요합니다.'],
@@ -99,14 +116,27 @@ export async function validateEditorAcceptanceContract(root) {
     [/g7pb-puck-header-layer/, '태블릿 Puck header의 안정 selector가 필요합니다.'],
     [/toBeLessThanOrEqual\(100\)/, '태블릿 Puck header 높이 예산을 100px 이하로 강제해야 합니다.'],
     [/RANGE_TOOLBAR_EXCLUSIVE_GATE/, '범위 툴바와 요소 벌룬 상호배타 gate가 필요합니다.'],
+    [/OFFICIAL_PUCK_MENU_ROOT_GATE/, '공식 Puck menu root 범위 gate가 필요합니다.'],
+    [/ROOT_INLINE_RICH_GATE/, 'root inline-rich 실제 편집 gate가 필요합니다.'],
+    [/NESTED_INLINE_RICH_GATE/, 'nested array inline-rich 실제 편집 gate가 필요합니다.'],
+    [/BLOCK_RICH_GATE/, 'block-rich 실제 편집 gate가 필요합니다.'],
+    [/NO_LINK_INLINE_GATE/, '외부 action 내부 inline-rich의 no-link gate가 필요합니다.'],
+    [/BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE/, 'sidebar richtext에서 canvas로 즉시 반영되는 gate가 필요합니다.'],
+    [/BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE/, 'canvas richtext에서 sidebar로 즉시 반영되는 gate가 필요합니다.'],
     [/COLLAPSED_SELECTION_GATE/, '선택 해제 시 툴바 닫힘 gate가 필요합니다.'],
     [/REPEATED_SELECTION_GATE/, '반복 선택 상태 경쟁 gate가 필요합니다.'],
     [/PERSISTED_SELECTION_MARK_GATE/, '저장·재로드 부분 서식 gate가 필요합니다.'],
     [/PREVIEW_SELECTION_MARK_GATE/, '미리보기 부분 서식 gate가 필요합니다.'],
     [/PUBLIC_SELECTION_MARK_GATE/, '공개 출력 부분 서식 gate가 필요합니다.'],
     [/page-builder-richtext-inline-toolbar/, '글자 범위 툴바 assertion이 필요합니다.'],
-    [/getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 굵게['"],\s*exact:\s*true\s*\}\)\.click\(\)/, '실제 굵게 버튼 click과 결과 검증이 필요합니다.'],
+    [/locator\(['"]\[data-puck-rte-menu\]:visible['"]\)/, '공식 Puck data-puck-rte-menu root locator가 필요합니다.'],
+    [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 굵게['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 굵게 버튼 검증이 필요합니다.'],
+    [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 기울임['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 기울임 버튼 검증이 필요합니다.'],
+    [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 밑줄['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 밑줄 버튼 검증이 필요합니다.'],
+    [/getByRole\(['"]button['"],\s*\{\s*name:\s*['"]링크 편집['"],\s*exact:\s*true\s*\}\)\)\.toHaveCount\(0\)/, 'ArticleList title에서 링크 편집 control 부재를 검증해야 합니다.'],
     [/getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)\.click\(\)/, '선택 글자 메뉴의 실제 option click이 필요합니다.'],
+    [/sidebarField\.fill\(/, 'sidebar richtext를 실제 입력으로 변경해야 합니다.'],
+    [/page\.keyboard\.type\(/, 'canvas 선택 범위를 실제 키 입력으로 변경해야 합니다.'],
     [/page-builder-context-panel/, '요소 전체 벌룬 assertion이 필요합니다.'],
     [/data-g7pb-font/, '선택 글꼴 DOM assertion이 필요합니다.'],
     [/data-g7pb-size/, '선택 크기 DOM assertion이 필요합니다.'],
@@ -116,6 +146,26 @@ export async function validateEditorAcceptanceContract(root) {
     [/page-builder-public-link/, '공개 출력 검증이 필요합니다.'],
   ];
   for (const [pattern, message] of requiredEvidence) requirePattern(errors, spec, pattern, message);
+
+  const scopedRichTextEvidence = [
+    [/ROOT_INLINE_RICH_GATE[\s\S]{0,1200}applySelectedFormatting\(/,
+      'root inline-rich gate가 공식 B/I/U와 G7 선택 서식을 실제 적용해야 합니다.'],
+    [/NESTED_INLINE_RICH_GATE[\s\S]{0,1400}applySelectedFormatting\(/,
+      'nested inline-rich gate가 공식 B/I/U와 G7 선택 서식을 실제 적용해야 합니다.'],
+    [/NO_LINK_INLINE_GATE[\s\S]{0,1200}getByRole\(['"]button['"],\s*\{\s*name:\s*['"]링크 편집['"],\s*exact:\s*true\s*\}\)\)\.toHaveCount\(0\)/,
+      'no-link gate 안에서 링크 편집 control 부재를 검증해야 합니다.'],
+    [/BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE[\s\S]{0,900}sidebarField\.fill\([\s\S]{0,300}expect\(blockField\)\.toHaveText/,
+      'sidebar-to-canvas gate가 저장 전 즉시 반영을 검증해야 합니다.'],
+    [/BLOCK_RICH_GATE[\s\S]{0,1000}dragSelectText\([\s\S]{0,500}page\.keyboard\.type\(/,
+      'block-rich gate가 실제 pointer 선택 뒤 실제 키 입력을 사용해야 합니다.'],
+    [/BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE[\s\S]{0,500}expect\(sidebarField\)\.toHaveText/,
+      'canvas-to-sidebar gate가 저장 전 즉시 반영을 검증해야 합니다.'],
+    [/PREVIEW_SELECTION_MARK_GATE[\s\S]{0,200}assertPublishedState\(preview\)/,
+      '미리보기에서 root, nested, block-rich와 no-link 출력 상태를 함께 검증해야 합니다.'],
+    [/PUBLIC_SELECTION_MARK_GATE[\s\S]{0,200}assertPublishedState\(published\)/,
+      '공개 화면에서 root, nested, block-rich와 no-link 출력 상태를 함께 검증해야 합니다.'],
+  ];
+  for (const [pattern, message] of scopedRichTextEvidence) requirePattern(errors, spec, pattern, message);
 
   const requiredRangeState = [
     [richTextSource, /import\s*\{[^}]*RichTextMenu[^}]*\}\s*from\s*['"]@puckeditor\/core['"]/, '공식 Puck RichTextMenu를 직접 사용해야 합니다.'],

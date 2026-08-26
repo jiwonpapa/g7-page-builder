@@ -9,6 +9,19 @@ const OWNERSHIP_DIRECTORY = join(process.cwd(), 'output', 'playwright', 'ownersh
 const SLUG_PATTERN = /^g7pb-interaction-(?:desktop|tablet|mobile)-\d{13}-[a-z0-9]{6}$/;
 const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+export const EDITOR_INTERACTION_COPY = Object.freeze({
+  rootPrefix: '루트 앞 문구',
+  rootTarget: '루트 선택 부분',
+  rootSuffix: '루트 뒤 문구',
+  nestedPrefix: '중첩 앞 문구',
+  nestedTarget: '중첩 선택 부분',
+  nestedSuffix: '중첩 뒤 문구',
+  blockInitial: '사이드바 양방향 편집을 확인하는 최초 본문입니다.',
+  sidebarToCanvas: '사이드바 입력이 캔버스에 즉시 반영됩니다.',
+  canvasToSidebar: '캔버스 입력이 사이드바에 즉시 반영됩니다.',
+  articleTitle: '링크 도구가 없는 기사 제목',
+});
+
 interface DocumentResource {
   document: PageBuilderDocument;
   lock_version: number;
@@ -155,16 +168,83 @@ export async function createOwnedEditorInteractionDocument(
   const document: PageBuilderDocument = {
     ...payload.data.document,
     shell_mode: 'none',
-    blocks: [{
-      instance_id: crypto.randomUUID(),
-      type: 'content.rich-text-01',
-      block_version: 1,
-      props: {
-        content: '<p>방문자가 이해해야 할 내용을 읽기 편한 문단으로 작성해 주세요.</p><p>중요한 문장은 굵게 강조하고 목록이나 링크를 활용할 수 있습니다.</p>',
-        measure: 'standard',
+    blocks: [
+      {
+        instance_id: crypto.randomUUID(),
+        type: 'content.heading-01',
+        block_version: 1,
+        props: {
+          eyebrow: 'ROOT INLINE RICH',
+          heading: `${EDITOR_INTERACTION_COPY.rootPrefix} <a href="/richtext-root">${EDITOR_INTERACTION_COPY.rootTarget}</a> ${EDITOR_INTERACTION_COPY.rootSuffix}`,
+          level: 2,
+          anchor: 'richtext-root',
+        },
+        slots: {},
       },
-      slots: {},
-    }],
+      {
+        instance_id: crypto.randomUUID(),
+        type: 'content.features-grid-01',
+        block_version: 1,
+        props: {
+          title: '중첩 배열 리치텍스트 검증',
+          items: [
+            {
+              icon: 'sparkles',
+              title: `${EDITOR_INTERACTION_COPY.nestedPrefix} <a href="/richtext-nested">${EDITOR_INTERACTION_COPY.nestedTarget}</a> ${EDITOR_INTERACTION_COPY.nestedSuffix}`,
+              body: '<p>첫 번째 중첩 block-rich 본문입니다.</p>',
+            },
+            {
+              icon: 'shield',
+              title: '두 번째 기능 제목',
+              body: '<p>두 번째 기능 본문입니다.</p>',
+            },
+          ],
+          layout: 'grid',
+        },
+        slots: {},
+      },
+      {
+        instance_id: crypto.randomUUID(),
+        type: 'content.rich-text-01',
+        block_version: 1,
+        props: {
+          content: `<p>${EDITOR_INTERACTION_COPY.blockInitial}</p>`,
+          measure: 'standard',
+        },
+        slots: {},
+      },
+      {
+        instance_id: crypto.randomUUID(),
+        type: 'content.article-list-01',
+        block_version: 1,
+        props: {
+          eyebrow: 'NO LINK INLINE RICH',
+          heading: '외부 링크 안 제목은 링크 mark를 만들지 않습니다',
+          items: [
+            {
+              category: '안전성',
+              title: EDITOR_INTERACTION_COPY.articleTitle,
+              summary: '<p>외부 action 안에서는 제목 링크 도구를 제공하지 않습니다.</p>',
+              date: '2026-08-26',
+              imageSrc: '',
+              imageAlt: '',
+              url: '/articles/no-nested-link',
+            },
+            {
+              category: '회귀',
+              title: '두 번째 기사 제목',
+              summary: '<p>배열 최소 개수와 공개 컴파일 계약을 함께 지킵니다.</p>',
+              date: '2026-08-25',
+              imageSrc: '',
+              imageAlt: '',
+              url: '/articles/second',
+            },
+          ],
+          layout: 'list',
+        },
+        slots: {},
+      },
+    ],
   };
   const draft = await api.put(
     `/api/modules/jiwonpapa-page_builder/admin/documents/${document.document_id}/draft`,

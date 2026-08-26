@@ -418,15 +418,36 @@ async function revealEditorHeaderActions(page: Page): Promise<void> {
   await dismissContextPanel(page);
 
   if (!(await addBlock.isVisible())) {
-    await page.getByRole('button', { name: 'Toggle menu bar' }).click();
+    const menuToggle = page.getByRole('button', { name: 'Toggle menu bar' });
+    await expect(menuToggle).toBeVisible();
+    await menuToggle.click();
   }
 
   await expect(addBlock).toBeVisible();
+  await addBlock.scrollIntoViewIfNeeded();
   await expect.poll(() => addBlock.evaluate((button) => {
     const rect = button.getBoundingClientRect();
     const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    return hit === button || button.contains(hit);
-  }), { message: 'the add-block control remains the topmost pointer target' }).toBe(true);
+    return {
+      button: {
+        bottom: Math.round(rect.bottom),
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        top: Math.round(rect.top),
+      },
+      hit: hit
+        ? {
+            ariaLabel: hit.getAttribute('aria-label'),
+            className: typeof hit.className === 'string' ? hit.className : null,
+            tagName: hit.tagName,
+            testId: hit.getAttribute('data-testid'),
+          }
+        : null,
+      topmost: hit === button || button.contains(hit),
+      viewport: { height: window.innerHeight, width: window.innerWidth },
+    };
+  }), { message: 'the add-block control remains the topmost pointer target; received value records the actual hit target' })
+    .toMatchObject({ topmost: true });
 }
 
 async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: string): Promise<void> {
@@ -449,19 +470,28 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
     while (node) {
       const startOffset = (node.textContent ?? '').indexOf(selectedCopy);
       if (startOffset >= 0) {
-        const range = document.createRange();
-        range.setStart(node, startOffset);
-        range.setEnd(node, startOffset + selectedCopy.length);
-        const rangeRect = range.getBoundingClientRect();
+        const startCharacter = document.createRange();
+        startCharacter.setStart(node, startOffset);
+        startCharacter.setEnd(node, startOffset + 1);
+        const endCharacter = document.createRange();
+        endCharacter.setStart(node, startOffset + selectedCopy.length - 1);
+        endCharacter.setEnd(node, startOffset + selectedCopy.length);
+        const startRect = startCharacter.getClientRects()[0];
+        const endRects = endCharacter.getClientRects();
+        const endRect = endRects[endRects.length - 1];
+        if (!startRect || !endRect) {
+          throw new Error(`Pointer selection target has no rendered character geometry: ${selectedCopy}`);
+        }
         const fieldRect = element.getBoundingClientRect();
         return {
+          field: { height: fieldRect.height, width: fieldRect.width },
           start: {
-            x: rangeRect.left - fieldRect.left + Math.min(2, rangeRect.width / 4),
-            y: rangeRect.top - fieldRect.top + rangeRect.height / 2,
+            x: startRect.left - fieldRect.left + Math.max(1, startRect.width * .1),
+            y: startRect.top - fieldRect.top + startRect.height / 2,
           },
           end: {
-            x: rangeRect.right - fieldRect.left - Math.min(2, rangeRect.width / 4),
-            y: rangeRect.bottom - fieldRect.top - rangeRect.height / 2,
+            x: endRect.right - fieldRect.left - Math.max(1, endRect.width * .1),
+            y: endRect.top - fieldRect.top + endRect.height / 2,
           },
         };
       }
@@ -470,11 +500,25 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
     throw new Error(`Pointer selection target was not found: ${selectedCopy}`);
   }, target);
 
-  await field.focus();
-  await field.hover({ position: geometry.start });
+  const fieldBox = await field.boundingBox();
+  expect(fieldBox).not.toBeNull();
+  if (!fieldBox) {
+    throw new Error('The editable field has no pointer geometry.');
+  }
+  const scaleX = fieldBox.width / geometry.field.width;
+  const scaleY = fieldBox.height / geometry.field.height;
+  const start = {
+    x: fieldBox.x + geometry.start.x * scaleX,
+    y: fieldBox.y + geometry.start.y * scaleY,
+  };
+  const end = {
+    x: fieldBox.x + geometry.end.x * scaleX,
+    y: fieldBox.y + geometry.end.y * scaleY,
+  };
+  await page.mouse.move(start.x, start.y);
   await page.mouse.down();
   try {
-    await field.hover({ position: geometry.end, force: true });
+    await page.mouse.move(end.x, end.y, { steps: 12 });
   } finally {
     await page.mouse.up();
   }

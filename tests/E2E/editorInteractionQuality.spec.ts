@@ -319,7 +319,10 @@ async function findFieldCollapsePoints(
       ...rectsFor(0, selectedIndex).map((rect) => ({ rect, source: 'prefix' as const })),
       ...rectsFor(selectedEnd, text.length).map((rect) => ({ rect, source: 'suffix' as const })),
     ];
-    const candidates = segmentRects.flatMap(({ rect, source }) => {
+    const candidateRects = segmentRects.length > 0
+      ? segmentRects
+      : selectedRects.map((rect) => ({ rect, source: 'selected-fallback' as const }));
+    const candidates = candidateRects.flatMap(({ rect, source }) => {
       const inset = Math.min(2, (rect.right - rect.left) / 4);
       const verticalInset = Math.min(2, (rect.bottom - rect.top) / 4);
       const xs = [rect.left + inset, (rect.left + rect.right) / 2, rect.right - inset];
@@ -329,7 +332,7 @@ async function findFieldCollapsePoints(
     return { candidates, selectedRects, text, selectedIndex };
   }, selectedCopy);
   if (rangeGeometry.candidates.length === 0) {
-    throw new Error(`current rich-text target has no prefix/suffix range rect: ${JSON.stringify({
+    throw new Error(`current rich-text target has no collapse range rect: ${JSON.stringify({
       selectedCopy,
       rangeGeometry,
       fieldBox,
@@ -381,7 +384,9 @@ async function findFieldCollapsePoints(
   const reachable = candidates.filter((_, index) => (
     topDocumentHits[index]?.hit === true
     && canvasHits[index]?.fieldHit === true
-    && canvasHits[index]?.selectedRectHit === false
+    && (candidates[index]?.local.source === 'selected-fallback'
+      ? canvasHits[index]?.selectedRectHit === true
+      : canvasHits[index]?.selectedRectHit === false)
     && canvasHits[index]?.toolbarHit === false
   )).map((candidate) => candidate.page);
   if (reachable.length === 0) {

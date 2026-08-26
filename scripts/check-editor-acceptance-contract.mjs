@@ -102,6 +102,8 @@ export async function validateEditorAcceptanceContract(root) {
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
     [/expect\.poll\(\(\)\s*=>\s*selectedText\(field\)\)\.toBe\(target\)/, 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'],
     [/function findFieldCollapsePoints\([\s\S]*?document\.createRange\(\)[\s\S]*?range\.getClientRects\(\)[\s\S]*?source: ['"]prefix['"][\s\S]*?source: ['"]suffix['"][\s\S]*?document\.elementFromPoint\(point\.x, point\.y\)[\s\S]*?fieldHit: hit === fieldRoot \|\| fieldRoot\.contains\(hit\)[\s\S]*?selectedRectHit:[\s\S]*?toolbarHit: Boolean\(hit\?\.closest\(['"]\[data-puck-rte-menu\]['"]\)\)[\s\S]*?canvasHits\[index\]\?\.selectedRectHit === false[\s\S]*?return reachable/, '선택 해제 좌표는 선택 substring 바깥 prefix/suffix Range rect이면서 field 내부·툴바 밖인 실제 픽셀이어야 합니다.'],
+    [/segmentRects\.length > 0[\s\S]{0,120}\? segmentRects[\s\S]{0,180}selectedRects\.map\(\(rect\) => \(\{ rect, source: ['"]selected-fallback['"][\s\S]*?candidates\[index\]\?\.local\.source === ['"]selected-fallback['"][\s\S]{0,140}canvasHits\[index\]\?\.selectedRectHit === true/,
+      '필드 전체 선택은 prefix/suffix가 없을 때만 선택 Range 내부의 실제 문자 픽셀 클릭으로 접어야 합니다.'],
     [/projectName\s*===\s*['"]mobile['"]\s*\?\s*360\s*:\s*projectName\s*===\s*['"]tablet['"]\s*\?\s*768\s*:\s*1280/, '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'],
     [/const CANVAS_IFRAME\s*=\s*['"]#puck-canvas-root iframe['"]/, 'Puck canvas 고유 iframe selector를 고정해야 합니다.'],
     [/frameLocator\(CANVAS_IFRAME\)/, '모든 편집 상호작용은 Puck canvas iframe을 사용해야 합니다.'],

@@ -112,9 +112,14 @@ perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await findFieldCo
 expect_failure '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/&& canvasHits\[index\]\?\.selectedRectHit === false/&& canvasHits[index]?.selectedRectHit === true/' \
+perl -0pi -e 's/: canvasHits\[index\]\?\.selectedRectHit === false/: canvasHits[index]?.selectedRectHit === true/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 해제 좌표는 선택 substring 바깥 prefix/suffix Range rect이면서 field 내부·툴바 밖인 실제 픽셀이어야 합니다.'
+
+copy_fixture
+perl -0pi -e "s/source: 'selected-fallback' as const/source: 'suffix' as const/" \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '필드 전체 선택은 prefix/suffix가 없을 때만 선택 Range 내부의 실제 문자 픽셀 클릭으로 접어야 합니다.'
 
 copy_fixture
 printf '\nfield.click({ force: true });\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"

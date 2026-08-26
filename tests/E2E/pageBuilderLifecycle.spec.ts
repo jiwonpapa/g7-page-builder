@@ -398,8 +398,7 @@ function visibleTestId(page: Page, testId: string): Locator {
   return page.locator(`[data-testid="${testId}"]:visible`);
 }
 
-async function revealEditorHeaderActions(page: Page): Promise<void> {
-  const addBlock = page.getByTestId('page-builder-add-block');
+async function dismissContextPanel(page: Page): Promise<void> {
   const contextPanel = page.getByTestId('page-builder-context-panel');
 
   if (await contextPanel.isVisible()) {
@@ -412,6 +411,11 @@ async function revealEditorHeaderActions(page: Page): Promise<void> {
     await closeButton.click();
     await expect(contextPanel).toBeHidden();
   }
+}
+
+async function revealEditorHeaderActions(page: Page): Promise<void> {
+  const addBlock = page.getByTestId('page-builder-add-block');
+  await dismissContextPanel(page);
 
   if (await addBlock.isVisible()) {
     return;
@@ -504,9 +508,9 @@ async function hideMobileBlockLibrary(page: Page): Promise<void> {
 
 async function revealInspectorField(page: Page, testId: string): Promise<Locator> {
   const field = visibleTestId(page, testId);
+  await dismissContextPanel(page);
 
   if (!(await field.isVisible())) {
-    await page.keyboard.press('Escape');
     const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
     if (await fieldsTab.isVisible()) {
       await fieldsTab.click();
@@ -522,6 +526,7 @@ async function revealInspectorField(page: Page, testId: string): Promise<Locator
 }
 
 async function selectEditorBlock(page: Page, type: BlockType): Promise<void> {
+  await dismissContextPanel(page);
   const viewport = page.viewportSize();
   const visibleField = page.locator('.g7pb-field-control:visible').first();
 

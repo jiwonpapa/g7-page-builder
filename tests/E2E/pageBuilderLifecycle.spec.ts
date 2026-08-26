@@ -417,12 +417,16 @@ async function revealEditorHeaderActions(page: Page): Promise<void> {
   const addBlock = page.getByTestId('page-builder-add-block');
   await dismissContextPanel(page);
 
-  if (await addBlock.isVisible()) {
-    return;
+  if (!(await addBlock.isVisible())) {
+    await page.getByRole('button', { name: 'Toggle menu bar' }).click();
   }
 
-  await page.getByRole('button', { name: 'Toggle menu bar' }).click();
   await expect(addBlock).toBeVisible();
+  await expect.poll(() => addBlock.evaluate((button) => {
+    const rect = button.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return hit === button || button.contains(hit);
+  }), { message: 'the add-block control remains the topmost pointer target' }).toBe(true);
 }
 
 async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: string): Promise<void> {
@@ -431,6 +435,50 @@ async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: 
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   await rangeToolbar.getByRole('option', { name: option, exact: true }).click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+}
+
+async function selectedText(field: Locator): Promise<string> {
+  return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
+}
+
+async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
+  await field.scrollIntoViewIfNeeded();
+  const geometry = await field.evaluate((element, selectedCopy) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      const startOffset = (node.textContent ?? '').indexOf(selectedCopy);
+      if (startOffset >= 0) {
+        const range = document.createRange();
+        range.setStart(node, startOffset);
+        range.setEnd(node, startOffset + selectedCopy.length);
+        const rangeRect = range.getBoundingClientRect();
+        const fieldRect = element.getBoundingClientRect();
+        return {
+          start: {
+            x: rangeRect.left - fieldRect.left + Math.min(2, rangeRect.width / 4),
+            y: rangeRect.top - fieldRect.top + rangeRect.height / 2,
+          },
+          end: {
+            x: rangeRect.right - fieldRect.left - Math.min(2, rangeRect.width / 4),
+            y: rangeRect.bottom - fieldRect.top - rangeRect.height / 2,
+          },
+        };
+      }
+      node = walker.nextNode();
+    }
+    throw new Error(`Pointer selection target was not found: ${selectedCopy}`);
+  }, target);
+
+  await field.focus();
+  await field.hover({ position: geometry.start });
+  await page.mouse.down();
+  try {
+    await field.hover({ position: geometry.end, force: true });
+  } finally {
+    await page.mouse.up();
+  }
+  await expect.poll(() => selectedText(field)).toBe(target);
 }
 
 async function expandBlockGallery(page: Page): Promise<void> {
@@ -512,12 +560,14 @@ async function revealInspectorField(page: Page, testId: string): Promise<Locator
 
   if (!(await field.isVisible())) {
     const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
-    if (await fieldsTab.isVisible()) {
-      await fieldsTab.click();
-    } else {
+    if (!(await fieldsTab.isVisible())) {
       const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
       await expect(sidebarToggle).toBeVisible();
       await sidebarToggle.click();
+      await expect(fieldsTab).toBeVisible();
+    }
+    if (!(await field.isVisible())) {
+      await fieldsTab.click();
     }
   }
 
@@ -547,7 +597,7 @@ async function selectEditorBlock(page: Page, type: BlockType): Promise<void> {
   }
 
   if (viewport && viewport.width <= 900) {
-    await editorBlock(page, type).evaluate((element) => (element as HTMLElement).click());
+    await editorBlock(page, type).click({ position: { x: 4, y: 4 } });
     return;
   }
 
@@ -1149,29 +1199,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const richTextBlock = editorBlock(page, 'rich-text');
       const richTextEditor = richTextBlock.locator('[contenteditable="true"]').first();
       const selectedText = '이해해야 할 내용';
-      await richTextEditor.click();
-      await expect(richTextEditor).toBeFocused();
-      await richTextEditor.evaluate((element, target) => {
-        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-        let node = walker.nextNode();
-        while (node) {
-          const text = node.textContent ?? '';
-          const start = text.indexOf(target);
-          if (start >= 0) {
-            const range = document.createRange();
-            range.setStart(node, start);
-            range.setEnd(node, start + target.length);
-            const selection = window.getSelection();
-            selection?.removeAllRanges();
-            selection?.addRange(range);
-            document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
-            element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-            return;
-          }
-          node = walker.nextNode();
-        }
-        throw new Error(`Rich text selection target was not found: ${target}`);
-      }, selectedText);
+      await dragSelectText(page, richTextEditor, selectedText);
       const rangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(rangeToolbar).toBeVisible();
       await chooseRangeOption(rangeToolbar, 'page-builder-richtext-font', '명조');
@@ -1187,26 +1215,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const heroBlock = editorBlock(page, 'hero');
       const heroTitleField = editorInlineField(page, 'hero', 'title');
       const selectedHeadingText = 'Hero';
-      await heroTitleField.evaluate((element, target) => {
-        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-        let node = walker.nextNode();
-        while (node) {
-          const start = (node.textContent ?? '').indexOf(target);
-          if (start >= 0) {
-            const range = document.createRange();
-            range.setStart(node, start);
-            range.setEnd(node, start + target.length);
-            const selection = window.getSelection();
-            selection?.removeAllRanges();
-            selection?.addRange(range);
-            document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
-            element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-            return;
-          }
-          node = walker.nextNode();
-        }
-        throw new Error(`Heading selection target was not found: ${target}`);
-      }, selectedHeadingText);
+      await dragSelectText(page, heroTitleField, selectedHeadingText);
       const headingRangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(headingRangeToolbar).toBeVisible();
       await expect(page.getByTestId('page-builder-context-panel')).toBeHidden();
@@ -1214,16 +1223,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await chooseRangeOption(headingRangeToolbar, 'page-builder-richtext-tone', '사용자색 1');
       await expect(heroTitleField.locator('span[data-g7pb-weight="bold"][data-g7pb-tone="custom1"]'))
         .toHaveText(selectedHeadingText);
-      await heroTitleField.evaluate((element) => {
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        range.collapse(false);
-        selection?.addRange(range);
-        document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
-      });
-      await heroBlock.locator('[data-g7pb-inline-field="title"]').dispatchEvent('pointerdown');
+      await heroTitleField.click({ position: { x: 4, y: 4 } });
+      await expect.poll(() => selectedText(heroTitleField)).toBe('');
+      await expect(headingRangeToolbar).toBeHidden();
       const elementPanel = page.getByTestId('page-builder-context-panel');
       await expect(elementPanel).toContainText('요소 전체 · 부분 선택은 글자 위 툴바');
       const elementPanelBox = await elementPanel.boundingBox();

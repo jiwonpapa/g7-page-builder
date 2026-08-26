@@ -20,6 +20,8 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Store\StoreArtifact;
 
 final readonly class OfficialStoreService
 {
+    private const LOCAL_MEDIA_URL_PATH = '/storage/g7-page-builder/';
+
     public function __construct(
         private OfficialStoreSourcePort $source,
         private PageKitArchivePort $pageKits,
@@ -170,16 +172,15 @@ final readonly class OfficialStoreService
         $portable = [];
         $mediaReferences = [];
         $data = $this->mapStrings($data, function (string $value) use (&$portable, &$mediaReferences): string {
+            if (! str_contains($value, self::LOCAL_MEDIA_URL_PATH)) {
+                return $value;
+            }
             if (isset($mediaReferences[$value])) {
                 return 'g7pb-media://'.$mediaReferences[$value];
             }
             $export = $this->media->exportByUrl($value);
             if (! $export instanceof PortableMedia) {
-                if (str_contains($value, '/storage/g7-page-builder/')) {
-                    throw new \DomainException('페이지가 참조하는 로컬 이미지를 Page Kit에 포함하지 못했습니다.');
-                }
-
-                return $value;
+                throw new \DomainException('페이지가 참조하는 로컬 이미지를 Page Kit에 포함하지 못했습니다.');
             }
             $id = 'image-'.(count($portable) + 1);
             $portable[] = $export;

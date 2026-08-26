@@ -13,7 +13,7 @@ import {
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const API = '/api/modules/jiwonpapa-page_builder/admin';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
-const POINTER_EDGE_INSET_PX = 2;
+const CANVAS_VIEWPORT_WIDTHS = [360, 768, 1280] as const;
 const MIN_POINTER_EDGE_INSET_PX = 0.25;
 const POINTER_DRAG_STEPS = 8;
 
@@ -43,7 +43,15 @@ async function richTextField(page: Page, blockType: RichTextBlockType, fieldPath
 }
 
 async function selectedText(field: Locator): Promise<string> {
-  return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
+  return field.evaluate((element) => {
+    const selection = element.ownerDocument.defaultView?.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) return '';
+    const belongsToField = (node: Node | null): boolean => (
+      node !== null && (node === element || element.contains(node))
+    );
+    if (!belongsToField(selection.anchorNode) || !belongsToField(selection.focusNode)) return '';
+    return selection.toString();
+  });
 }
 
 async function assertInteractiveCanvas(page: Page): Promise<void> {
@@ -60,8 +68,20 @@ async function assertTabletHeaderHeight(page: Page, projectName: string): Promis
     .toBeLessThanOrEqual(100);
 }
 
-async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
-  const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
+async function openElementPanelFromActionBar(page: Page, projectName: string): Promise<void> {
+  const textToolsButton = page.frameLocator(CANVAS_IFRAME)
+    .getByTestId('page-builder-text-tools-open')
+    .locator('xpath=ancestor::button[1]');
+  await expect(textToolsButton).toHaveCount(1);
+  await expect(textToolsButton).toBeVisible();
+  await assertPointerReachable(page, textToolsButton);
+  await activateControl(projectName, textToolsButton);
+}
+
+async function setCanvasViewportWidth(
+  page: Page,
+  width: typeof CANVAS_VIEWPORT_WIDTHS[number],
+): Promise<void> {
   const button = page.getByTestId(`page-builder-viewport-${width}`);
   const menuToggle = page.getByRole('button', { name: 'Toggle menu bar' });
   let openedMenu = false;
@@ -102,6 +122,11 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<void>
     await menuToggle.click();
     await expect(viewportSwitcher).toBeHidden();
   }
+}
+
+async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
+  const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
+  await setCanvasViewportWidth(page, width);
 }
 
 async function exposeCanvasForPointer(page: Page): Promise<void> {
@@ -152,10 +177,10 @@ async function resolveRichTextSelection(page: Page, selection: RichTextSelection
   return { field, targetNode };
 }
 
-async function textPointerGeometry(field: Locator, targetNode: Locator): Promise<PointerGeometry> {
+async function textPointerGeometry(field: Locator, targetNode: Locator, attempt: number): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
   await expect(targetNode).toHaveCount(1);
-  const [fieldBox, targetBox, fieldRect, fragments] = await Promise.all([
+  const [fieldBox, targetBox, fieldRect, pointerCandidates] = await Promise.all([
     field.boundingBox(),
     targetNode.boundingBox(),
     field.evaluate((element) => {
@@ -163,38 +188,94 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
       return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
     }),
     targetNode.evaluate((element) => {
-      const range = element.ownerDocument.createRange();
-      range.selectNodeContents(element);
-      return Array.from(range.getClientRects())
-        .filter((rect) => rect.width > 0 && rect.height > 0)
-        .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, height: rect.height }));
+      const ownerDocument = element.ownerDocument;
+      const fieldRoot = element.closest<HTMLElement>('[contenteditable="true"]');
+      if (!fieldRoot) return { end: [], start: [], targetEnd: -1, targetStart: -1 };
+      const targetWalker = ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const targetTextNodes: Text[] = [];
+      let targetNode = targetWalker.nextNode();
+      while (targetNode) {
+        if ((targetNode.textContent ?? '').length > 0) targetTextNodes.push(targetNode as Text);
+        targetNode = targetWalker.nextNode();
+      }
+      if (targetTextNodes.length === 0) return { end: [], start: [], targetEnd: -1, targetStart: -1 };
+      const firstNode = targetTextNodes[0];
+      const lastNode = targetTextNodes[targetTextNodes.length - 1];
+      const fieldOffset = (node: Node, offset: number): number => {
+        const range = ownerDocument.createRange();
+        range.selectNodeContents(fieldRoot);
+        range.setEnd(node, offset);
+        return range.toString().length;
+      };
+      const targetStart = fieldOffset(firstNode, 0);
+      const targetEnd = fieldOffset(lastNode, lastNode.length);
+      const firstCharacter = ownerDocument.createRange();
+      firstCharacter.setStart(firstNode, 0);
+      firstCharacter.setEnd(firstNode, Math.min(1, firstNode.length));
+      const lastCharacter = ownerDocument.createRange();
+      lastCharacter.setStart(lastNode, Math.max(0, lastNode.length - 1));
+      lastCharacter.setEnd(lastNode, lastNode.length);
+      const firstRect = firstCharacter.getClientRects()[0];
+      const lastRects = lastCharacter.getClientRects();
+      const lastRect = lastRects[lastRects.length - 1];
+      if (!firstRect || !lastRect) return { end: [], start: [], targetEnd, targetStart };
+      const caretOffsetAt = (x: number, y: number): number | null => {
+        const caretDocument = ownerDocument as Document & {
+          caretPositionFromPoint?: (clientX: number, clientY: number) => { offsetNode: Node; offset: number } | null;
+          caretRangeFromPoint?: (clientX: number, clientY: number) => Range | null;
+        };
+        const position = caretDocument.caretPositionFromPoint?.(x, y);
+        const range = position ? null : caretDocument.caretRangeFromPoint?.(x, y);
+        const node = position?.offsetNode ?? range?.startContainer ?? null;
+        const offset = position?.offset ?? range?.startOffset ?? -1;
+        if (!node || offset < 0 || !(node === fieldRoot || fieldRoot.contains(node))) return null;
+        return fieldOffset(node, offset);
+      };
+      const candidates = (
+        rect: DOMRect,
+        fractions: readonly number[],
+        expectedOffset: number,
+      ): Array<{ x: number; y: number }> => {
+        const verticalFractions = [0.5, 0.35, 0.65];
+        return verticalFractions.flatMap((vertical) => fractions.map((horizontal) => ({
+          x: rect.left + rect.width * horizontal,
+          y: rect.top + rect.height * vertical,
+        }))).filter((point) => caretOffsetAt(point.x, point.y) === expectedOffset);
+      };
+      return {
+        start: candidates(firstRect, [0.05, 0.15, 0.25, 0.35, 0.45], targetStart),
+        end: candidates(lastRect, [0.95, 0.85, 0.75, 0.65, 0.55], targetEnd),
+        targetEnd,
+        targetStart,
+      };
     }),
   ]);
   if (!fieldBox || !targetBox || fieldBox.width <= 0 || fieldBox.height <= 0
     || targetBox.width <= 0 || targetBox.height <= 0 || fieldRect.width <= 0 || fieldRect.height <= 0
-    || fragments.length === 0) {
-    throw new Error('Rich-text pointer geometry is unavailable.');
+    || pointerCandidates.start.length === 0 || pointerCandidates.end.length === 0) {
+    throw new Error(`Rich-text exact caret geometry is unavailable: ${JSON.stringify({
+      fieldBox,
+      targetBox,
+      fieldRect,
+      pointerCandidates,
+    })}`);
   }
   const scaleX = fieldBox.width / fieldRect.width;
   const scaleY = fieldBox.height / fieldRect.height;
-  const first = fragments[0];
-  const last = fragments[fragments.length - 1];
-  const startInset = Math.min(POINTER_EDGE_INSET_PX,
-    Math.max(MIN_POINTER_EDGE_INSET_PX, (first.right - first.left) / 4));
-  const endInset = Math.min(POINTER_EDGE_INSET_PX,
-    Math.max(MIN_POINTER_EDGE_INSET_PX, (last.right - last.left) / 4));
+  const startCandidate = pointerCandidates.start[attempt % pointerCandidates.start.length];
+  const endCandidate = pointerCandidates.end[attempt % pointerCandidates.end.length];
   const local = {
     start: {
       x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-        first.left - fieldRect.left + startInset)),
+        startCandidate.x - fieldRect.left)),
       y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-        first.top - fieldRect.top + first.height / 2)),
+        startCandidate.y - fieldRect.top)),
     },
     end: {
       x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-        last.right - fieldRect.left - endInset)),
+        endCandidate.x - fieldRect.left)),
       y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-        last.top - fieldRect.top + last.height / 2)),
+        endCandidate.y - fieldRect.top)),
     },
   };
   return {
@@ -416,10 +497,15 @@ async function dragSelectText(
     try {
       if (attempt > 0) await collapseSelectionWithPointer(page, selection);
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
-      const pointer = await textPointerGeometry(field, targetNode);
+      let pointer = await textPointerGeometry(field, targetNode, attempt);
       await assertTextPointerReachable(page, field, pointer);
       await expect.poll(() => selectedText(field)).toBe('');
-      await field.focus();
+      await page.mouse.move(pointer.start.x, pointer.start.y);
+      await page.evaluate(() => new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }));
+      pointer = await textPointerGeometry(field, targetNode, attempt);
+      await assertTextPointerReachable(page, field, pointer);
       await page.mouse.move(pointer.start.x, pointer.start.y);
       await page.mouse.down();
       pointerDown = true;
@@ -444,35 +530,41 @@ async function dragSelectText(
 }
 
 async function officialPuckMenuRoot(page: Page): Promise<Locator> {
-  const menuRoot = page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible');
+  const menuRoot = page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu="true"]:visible');
   await expect(menuRoot).toHaveCount(1);
   await expect(menuRoot).toBeVisible();
   await expect(menuRoot.getByTestId('page-builder-richtext-inline-toolbar')).toBeVisible();
   return menuRoot;
 }
 
-async function assertPointerReachable(page: Page, control: Locator): Promise<PointerPoint> {
-  await control.scrollIntoViewIfNeeded();
+async function assertPointerReachable(page: Page, control: Locator): Promise<void> {
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('Range control viewport geometry is unavailable.');
-  const [controlBox, iframeBox] = await Promise.all([
-      control.boundingBox(),
-      page.locator(CANVAS_IFRAME).boundingBox(),
-    ]);
-    if (!controlBox || !iframeBox) throw new Error('Range control frame geometry is unavailable.');
+  const localReachability = await control.evaluate((element) => {
+    const view = element.ownerDocument.defaultView;
+    if (!view || view.innerWidth <= 0 || view.innerHeight <= 0) {
+      return { controlRect: null, points: [], viewport: null };
+    }
+    const rect = element.getBoundingClientRect();
     const visible = {
-      left: Math.max(0, iframeBox.x, controlBox.x),
-      top: Math.max(0, iframeBox.y, controlBox.y),
-      right: Math.min(viewport.width, iframeBox.x + iframeBox.width, controlBox.x + controlBox.width),
-      bottom: Math.min(viewport.height, iframeBox.y + iframeBox.height, controlBox.y + controlBox.height),
+      left: Math.max(0, rect.left),
+      top: Math.max(0, rect.top),
+      right: Math.min(view.innerWidth, rect.right),
+      bottom: Math.min(view.innerHeight, rect.bottom),
     };
     if (visible.right <= visible.left || visible.bottom <= visible.top) {
-      throw new Error(`range control has no visible iframe intersection: ${JSON.stringify({
-        controlBox,
-        iframeBox,
-        viewport,
-        visible,
-      })}`);
+      return {
+        controlRect: {
+          bottom: rect.bottom,
+          height: rect.height,
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          width: rect.width,
+        },
+        points: [],
+        viewport: { height: view.innerHeight, width: view.innerWidth },
+      };
     }
     const insetX = Math.min(4, (visible.right - visible.left) / 2);
     const insetY = Math.min(4, (visible.bottom - visible.top) / 2);
@@ -483,7 +575,78 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
       { x: visible.left + insetX, y: visible.bottom - insetY },
       { x: visible.right - insetX, y: visible.bottom - insetY },
     ];
-    const topDocumentReachability = await page.evaluate(({ points, iframeSelector }) => {
+    return {
+      controlRect: {
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      },
+      points: candidates.map((point) => {
+        const hit = element.ownerDocument.elementFromPoint(point.x, point.y);
+        return {
+          ...point,
+          hit: hit === element || (hit !== null && element.contains(hit)),
+          hitClassName: hit instanceof HTMLElement ? hit.className : '',
+          hitTag: hit?.tagName ?? '',
+        };
+      }),
+      viewport: { height: view.innerHeight, width: view.innerWidth },
+    };
+  });
+  const localCenter = localReachability.points[0];
+  if (!localReachability.viewport || !localCenter?.hit) {
+    throw new Error(`range control center is not pointer-reachable inside the iframe: ${JSON.stringify({
+      localReachability,
+      viewport,
+    })}`);
+  }
+  const frameGeometry = await page.locator(CANVAS_IFRAME).evaluate((iframe) => {
+    const frame = iframe as HTMLIFrameElement;
+    const rect = frame.getBoundingClientRect();
+    const borderScaleX = frame.offsetWidth > 0 ? rect.width / frame.offsetWidth : 0;
+    const borderScaleY = frame.offsetHeight > 0 ? rect.height / frame.offsetHeight : 0;
+    return {
+      borderScaleX,
+      borderScaleY,
+      clientHeight: frame.clientHeight,
+      clientLeft: frame.clientLeft,
+      clientTop: frame.clientTop,
+      clientWidth: frame.clientWidth,
+      rect: {
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      },
+    };
+  });
+  const contentOrigin = {
+    x: frameGeometry.rect.left + frameGeometry.clientLeft * frameGeometry.borderScaleX,
+    y: frameGeometry.rect.top + frameGeometry.clientTop * frameGeometry.borderScaleY,
+  };
+  const contentScale = {
+    x: frameGeometry.clientWidth * frameGeometry.borderScaleX / localReachability.viewport.width,
+    y: frameGeometry.clientHeight * frameGeometry.borderScaleY / localReachability.viewport.height,
+  };
+  if (contentScale.x <= 0 || contentScale.y <= 0) {
+    throw new Error(`range control frame content geometry is unavailable: ${JSON.stringify({
+      contentOrigin,
+      contentScale,
+      frameGeometry,
+      localReachability,
+      viewport,
+    })}`);
+  }
+  const center = {
+    x: contentOrigin.x + localCenter.x * contentScale.x,
+    y: contentOrigin.y + localCenter.y * contentScale.y,
+  };
+  const topDocumentReachability = await page.evaluate(({ points, iframeSelector }) => {
       const iframe = document.querySelector<HTMLIFrameElement>(iframeSelector);
       const editor = document.querySelector<HTMLElement>('[data-testid="page-builder-editor"]');
       const saveStatus = document.querySelector<HTMLElement>('[data-testid="page-builder-save-status"]');
@@ -511,44 +674,106 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
           };
         }),
       };
-    }, { points: candidates, iframeSelector: CANVAS_IFRAME });
-    const canvasReachability = await control.evaluate((element, geometry) => {
-      const view = element.ownerDocument.defaultView;
-      if (!view || view.innerWidth <= 0 || view.innerHeight <= 0) return [];
-      const scaleX = geometry.iframeBox.width / view.innerWidth;
-      const scaleY = geometry.iframeBox.height / view.innerHeight;
-      return geometry.points.map((point) => {
-        const hit = element.ownerDocument.elementFromPoint(
-          (point.x - geometry.iframeBox.x) / scaleX,
-          (point.y - geometry.iframeBox.y) / scaleY,
-        );
-        return {
-          hit: hit === element || element.contains(hit),
-          tag: hit?.tagName ?? '',
-          className: hit instanceof HTMLElement ? hit.className : '',
-        };
-      });
-    }, { points: candidates, iframeBox });
-    const reachableIndex = candidates.findIndex((_, index) => (
-      topDocumentReachability.points[index]?.hit === true && canvasReachability[index]?.hit === true
-    ));
-    if (reachableIndex >= 0) return candidates[reachableIndex];
-    throw new Error(`range control has no pointer-reachable pixel: ${JSON.stringify({
-      controlBox,
-      iframeBox,
-      viewport,
-      candidates,
-      topDocumentReachability,
-      canvasReachability,
-    })}`);
+  }, { points: [center], iframeSelector: CANVAS_IFRAME });
+  if (topDocumentReachability.points[0]?.hit === true) return;
+  throw new Error(`range control center is not pointer-reachable through the iframe: ${JSON.stringify({
+    center,
+    contentOrigin,
+    contentScale,
+    frameGeometry,
+    localReachability,
+    topDocumentReachability,
+    viewport,
+  })}`);
 }
 
-async function activateControl(page: Page, point: PointerPoint, projectName: string): Promise<void> {
+async function activateControl(
+  projectName: string,
+  control: Locator,
+): Promise<void> {
+  if (projectName === 'mobile') {
+    await control.tap({ scroll: 'none' });
+    return;
+  }
+  await control.click({ scroll: 'none' });
+}
+
+async function activateCanvasPoint(page: Page, point: PointerPoint, projectName: string): Promise<void> {
   if (projectName === 'mobile') {
     await page.touchscreen.tap(point.x, point.y);
     return;
   }
   await page.mouse.click(point.x, point.y);
+}
+
+async function expectStableControlGeometry(control: Locator): Promise<void> {
+  await expect(control).toBeVisible();
+  const floatingLayer = control.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " g7pb-richtext-floating-layer ")][1]');
+  if (await floatingLayer.count()) await expect(floatingLayer).toHaveAttribute('data-g7pb-floating-ready', 'true');
+  const samples = await control.evaluate(async (element) => {
+    const frames: Array<{ height: number; left: number; ready: boolean; top: number; width: number }> = [];
+    for (let index = 0; index < 3; index += 1) {
+      await new Promise<void>((resolve) => element.ownerDocument.defaultView?.requestAnimationFrame(() => resolve()));
+      const rect = element.getBoundingClientRect();
+      const floating = element.closest<HTMLElement>('.g7pb-richtext-floating-layer');
+      frames.push({
+        height: rect.height,
+        left: rect.left,
+        ready: !floating || (
+          floating.getAttribute('data-g7pb-floating-ready') === 'true'
+          && floating.style.visibility === 'visible'
+        ),
+        top: rect.top,
+        width: rect.width,
+      });
+    }
+    return frames;
+  });
+  const baseline = samples[0];
+  for (const sample of samples) {
+    expect(sample.ready, `floating readiness must remain stable: ${JSON.stringify(samples)}`).toBe(true);
+  }
+  for (const sample of samples.slice(1)) {
+    expect(Math.abs(sample.left - baseline.left), `control left must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.top - baseline.top), `control top must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.width - baseline.width), `control width must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+    expect(Math.abs(sample.height - baseline.height), `control height must converge: ${JSON.stringify(samples)}`).toBeLessThanOrEqual(.5);
+  }
+}
+
+async function openResponsiveAdvancedControls(
+  page: Page,
+  menuRoot: Locator,
+  projectName: string,
+): Promise<Locator> {
+  const frame = page.frameLocator(CANVAS_IFRAME);
+  const advanced = frame.getByTestId('page-builder-richtext-advanced-panel');
+  if (await advanced.count()) return advanced;
+  const more = menuRoot.getByTestId('page-builder-richtext-more');
+  await expect(more).toHaveCount(1);
+  await assertPointerReachable(page, more);
+  await activateControl(projectName, more);
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+  await expect(advanced).toBeVisible();
+  return advanced;
+}
+
+async function dismissContextPanelWithPointer(page: Page, projectName: string): Promise<void> {
+  const editor = page.getByTestId('page-builder-editor');
+  const editorBox = await editor.boundingBox();
+  if (!editorBox) throw new Error('Editor pointer-dismiss geometry is unavailable.');
+  const point: PointerPoint = {
+    x: editorBox.x + Math.min(8, editorBox.width / 2),
+    y: editorBox.y + Math.min(8, editorBox.height / 2),
+  };
+  const hitIsEditor = await page.evaluate(({ x, y }) => {
+    const editorRoot = document.querySelector<HTMLElement>('[data-testid="page-builder-editor"]');
+    const hit = document.elementFromPoint(x, y);
+    return hit !== null && editorRoot !== null && (hit === editorRoot || editorRoot.contains(hit));
+  }, point);
+  expect(hitIsEditor, 'context-panel dismiss point must hit the editor').toBe(true);
+  await activateCanvasPoint(page, point, projectName);
+  await expect(page.getByTestId('page-builder-context-panel')).toBeHidden();
 }
 
 async function clickNativeControl(
@@ -560,8 +785,8 @@ async function clickNativeControl(
   tag: 'em' | 'strong' | 'u',
   projectName: string,
 ): Promise<void> {
-  const point = await assertPointerReachable(page, control);
-  await activateControl(page, point, projectName);
+  await assertPointerReachable(page, control);
+  await activateControl(projectName, control);
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   await expect(field.locator(tag), `${tag} must apply immediately to the pointer-selected copy`).toHaveCount(1);
@@ -579,15 +804,21 @@ async function chooseRangeOption(
   markValue: string,
   projectName: string,
 ): Promise<void> {
-  const trigger = menuRoot.getByTestId(testId);
-  const triggerPoint = await assertPointerReachable(page, trigger);
-  await activateControl(page, triggerPoint, projectName);
+  let trigger = menuRoot.getByTestId(testId);
+  if (await trigger.count() === 0) {
+    const advanced = await openResponsiveAdvancedControls(page, menuRoot, projectName);
+    trigger = advanced.getByTestId(testId);
+  }
+  await expectStableControlGeometry(trigger);
+  await assertPointerReachable(page, trigger);
+  await activateControl(projectName, trigger);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  const optionControl = menuRoot.getByRole('option', { name: option, exact: true });
-  const optionPoint = await assertPointerReachable(page, optionControl);
+  const optionControl = page.frameLocator(CANVAS_IFRAME).getByRole('option', { name: option, exact: true });
+  await expectStableControlGeometry(optionControl);
+  await assertPointerReachable(page, optionControl);
   await expect.poll(() => selectedText(field)).toBe(target);
-  await activateControl(page, optionPoint, projectName);
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await activateControl(projectName, optionControl);
+  await expect(optionControl).toBeHidden();
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   const appliedMark = field.locator(`span[data-g7pb-${markAttribute}="${markValue}"]`);
@@ -760,6 +991,53 @@ async function assertPublishedState(page: Page): Promise<void> {
   await expect(articleHeading.locator('a a')).toHaveCount(0);
 }
 
+test('keeps ActionBar and rich-text controls pointer-reachable across the host and canvas matrix', async ({ context, page }, testInfo) => {
+  test.setTimeout(300_000);
+  const token = await authenticateEditorInteractionAdmin(context);
+  const api = await editorInteractionApi(token);
+  let owned: OwnedEditorInteractionDocument | null = null;
+
+  try {
+    await recoverOwnedEditorInteractionDocuments(api);
+    owned = await createOwnedEditorInteractionDocument(api, testInfo.project.name);
+    await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
+    await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    await exposeCanvasForPointer(page);
+    const rootSelection: RichTextSelectionLocator = {
+      blockType: 'heading',
+      fieldPath: 'heading',
+      locateTarget: (field) => field.locator('a[href="/richtext-root"]'),
+    };
+
+    for (const width of CANVAS_VIEWPORT_WIDTHS) {
+      await test.step(`POINTER_CONTROL_MATRIX_${testInfo.project.name}_${width}`, async () => {
+        await setCanvasViewportWidth(page, width);
+        await exposeCanvasForPointer(page);
+        await assertInteractiveCanvas(page);
+        const field = await dragSelectText(page, rootSelection, EDITOR_INTERACTION_COPY.rootTarget);
+        const menuRoot = await officialPuckMenuRoot(page);
+        const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
+        const targetMark = field.locator('strong').filter({
+          hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.rootTarget}$`),
+        });
+        const beforeCount = await targetMark.count();
+        await assertPointerReachable(page, bold);
+        await activateControl(testInfo.project.name, bold);
+        await expect.poll(() => selectedText(field)).toBe(EDITOR_INTERACTION_COPY.rootTarget);
+        await expect.poll(() => targetMark.count()).toBe(beforeCount === 0 ? 1 : 0);
+        await collapseSelectionWithPointer(page, rootSelection);
+        await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
+        await openElementPanelFromActionBar(page, testInfo.project.name);
+        await expect(page.getByTestId('page-builder-context-panel')).toBeVisible();
+        await dismissContextPanelWithPointer(page, testInfo.project.name);
+      });
+    }
+  } finally {
+    if (owned) await cleanupOwnedEditorInteractionDocument(api, owned);
+    await api.dispose();
+  }
+});
+
 test('keeps root, nested, block, and no-link rich text pointer editing persistent and publishable', async ({ context, page }, testInfo) => {
   test.setTimeout(240_000);
   const token = await authenticateEditorInteractionAdmin(context);
@@ -816,6 +1094,8 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('COLLAPSED_SELECTION_GATE', async () => {
       await collapseSelectionWithPointer(page, rootSelection);
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
+      await expect(elementPanel).toBeHidden();
+      await openElementPanelFromActionBar(page, testInfo.project.name);
       await expect(elementPanel).toBeVisible();
       await page.getByTestId('page-builder-editor').click({ position: { x: 8, y: 8 } });
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
@@ -853,7 +1133,11 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       };
       await dragSelectText(page, articleSelection, EDITOR_INTERACTION_COPY.articleTitle);
       const articleMenuRoot = await officialPuckMenuRoot(page);
-      await expect(articleMenuRoot.getByRole('button', { name: '링크 편집', exact: true })).toHaveCount(0);
+      const articleHasMore = await articleMenuRoot.getByTestId('page-builder-richtext-more').count() > 0;
+      const articleControlScope = articleHasMore
+        ? await openResponsiveAdvancedControls(page, articleMenuRoot, testInfo.project.name)
+        : articleMenuRoot;
+      await expect(articleControlScope.getByRole('button', { name: '링크 편집', exact: true })).toHaveCount(0);
       await expect(articleMenuRoot.getByRole('button', { name: 'Link', exact: true })).toHaveCount(0);
       await expect(articleMenuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true })).toBeVisible();
       await collapseSelectionWithPointer(page, articleSelection);

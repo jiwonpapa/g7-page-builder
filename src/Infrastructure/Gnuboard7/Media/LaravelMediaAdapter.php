@@ -13,6 +13,8 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\Re
 
 final class LaravelMediaAdapter implements MediaPort
 {
+    private const PUBLIC_MEDIA_PATH_PREFIX = 'g7-page-builder/';
+
     /** @var array<string, list<string>> */
     private const DOWNLOAD_MIME_TYPES = [
         'pdf' => ['application/pdf'],
@@ -101,21 +103,39 @@ final class LaravelMediaAdapter implements MediaPort
 
     public function exportByUrl(string $url): ?PortableMedia
     {
-        /** @var Collection<int, MediaRecord> $records */
-        $records = MediaRecord::query()->get();
-        foreach ($records as $record) {
-            if ($this->publicUrl($record->disk, $record->path) !== $url) {
-                continue;
-            }
-            $contents = Storage::disk($record->disk)->get($record->path);
-            if (! is_string($contents)) {
-                throw new \RuntimeException('내보낼 미디어 파일을 읽지 못했습니다.');
-            }
-
-            return new PortableMedia($this->asset($record), $contents);
+        $publicPrefix = rtrim((string) url('/storage/'.self::PUBLIC_MEDIA_PATH_PREFIX), '/').'/';
+        if (! str_starts_with($url, $publicPrefix)) {
+            return null;
+        }
+        $relativePath = substr($url, strlen($publicPrefix));
+        $segments = explode('/', $relativePath);
+        if ($relativePath === ''
+            || str_starts_with($relativePath, '/')
+            || str_ends_with($relativePath, '/')
+            || str_contains($relativePath, '//')
+            || str_contains($relativePath, '\\')
+            || str_contains($relativePath, "\0")
+            || str_contains($relativePath, '%')
+            || str_contains($relativePath, '?')
+            || str_contains($relativePath, '#')
+            || in_array('.', $segments, true)
+            || in_array('..', $segments, true)) {
+            return null;
+        }
+        /** @var MediaRecord|null $record */
+        $record = MediaRecord::query()
+            ->where('path', self::PUBLIC_MEDIA_PATH_PREFIX.$relativePath)
+            ->where('disk', 'public')
+            ->first();
+        if (! $record instanceof MediaRecord || $this->publicUrl($record->disk, $record->path) !== $url) {
+            return null;
+        }
+        $contents = Storage::disk($record->disk)->get($record->path);
+        if (! is_string($contents)) {
+            throw new \RuntimeException('내보낼 미디어 파일을 읽지 못했습니다.');
         }
 
-        return null;
+        return new PortableMedia($this->asset($record), $contents);
     }
 
     private function asset(MediaRecord $record): MediaAsset

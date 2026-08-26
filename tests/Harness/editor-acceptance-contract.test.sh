@@ -92,7 +92,7 @@ perl -0pi -e 's/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: P
 expect_failure 'force 없이 여러 실제 mouse move 단계로 pointer 종료점에 이동해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await field.focus();/' \
+perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await Promise.resolve();/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'
 
@@ -126,9 +126,8 @@ printf '\nfield.click({ force: true });\n' >>"$fixture_root/fixture/tests/E2E/ed
 expect_failure '전용 편집 E2E는 force click/hover로 실제 hit target 검증을 우회하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/await field\.focus\(\);/await page.keyboard.press("Tab");/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '범위 선택 전 contenteditable focus가 필요합니다.'
+printf '\nfield.focus();\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '전용 편집 E2E는 프로그램식 focus가 아니라 실제 pointerdown으로 contenteditable focus를 만들어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/INTERACTIVE_CANVAS_GATE/INTERACTIVE_CANVAS_REMOVED/' \
@@ -141,14 +140,14 @@ perl -0pi -e 's/targetNode\.boundingBox\(\)/field.boundingBox()/g' \
 expect_failure '선택 대상의 실제 렌더링 box를 측정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/range\.selectNodeContents\(element\)/range.selectNode(element)/' \
+perl -0pi -e 's/firstCharacter\.getClientRects\(\)/[]/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 시작·끝은 타겟 글자의 실제 Range rect로 측정해야 합니다.'
+expect_failure '선택 시작·끝은 실제 글자 rect와 정확한 caret offset으로 측정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/first\.left - fieldRect\.left/0/' \
+perl -0pi -e 's/startCandidate\.x - fieldRect\.left/0/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '글자 Range rect를 current contenteditable 내부 좌표로 변환해야 합니다.'
+expect_failure '검증된 caret 좌표를 current contenteditable 내부 좌표로 변환해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/fieldBox\.width \/ fieldRect\.width/1/' \
@@ -238,9 +237,9 @@ perl -0pi -e 's/data-g7pb-richtext-field/data-g7pb-text-field/g' \
 expect_failure 'rich-text canvas selector는 중앙 rich-text marker를 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/\[data-puck-rte-menu\]:visible/\[data-testid="legacy-range-toolbar"\]:visible/g' \
+perl -0pi -e 's/\[data-puck-rte-menu="true"\]:visible/\[data-testid="legacy-range-toolbar"\]:visible/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '공식 Puck data-puck-rte-menu root locator가 필요합니다.'
+expect_failure '공식 Puck 원본 data-puck-rte-menu root locator가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/ROOT_INLINE_RICH_GATE/ROOT_INLINE_RICH_REMOVED/' \
@@ -338,24 +337,39 @@ perl -0pi -e 's/onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.val
 expect_failure '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.touchscreen\.tap\(point\.x, point\.y\)/page.mouse.click(point.x, point.y)/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'mobile 편집 E2E는 검증된 실제 픽셀을 touch tap해야 합니다.'
+perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{triggerRef\} preserveSelectionOnTouch/<RichTextFloatingLayer anchorRef={triggerRef}/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '모바일 선택 글자 옵션은 touch 기본 포커스가 현재 범위를 접지 못하게 해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/activateControl\(page, optionPoint, projectName\)/optionControl.focus()/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 메뉴 option은 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'
+perl -0pi -e 's/scheduleCloseAfterPointer\(\);/onClose();/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 compatibility click까지 portal을 유지한 뒤 닫혀야 합니다.'
 
 copy_fixture
-perl -0pi -e 's#(const optionPoint = await assertPointerReachable\(page, optionControl\);\n)  await expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\);#$1  await expect(field).toBeVisible();#' \
+perl -0pi -e "s/control\\.tap\\(\\{ scroll: 'none' \\}\\)/control.click({ scroll: 'none' })/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.'
+expect_failure 'mobile 편집 E2E는 변형된 iframe의 검증된 control을 실제 locator touch tap해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/activateControl\(projectName, optionControl\)/optionControl.focus()/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 portal option은 iframe body에서 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's#(await assertPointerReachable\(page, optionControl\);\n)  await expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\);#$1  await expect(field).toBeVisible();#' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/expect\(optionControl\)\.toBeHidden\(\)/expect(optionControl).toBeVisible()/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(function assertPointerReachable[\s\S]*?)hit: stack\[0\] === iframe/$1hit: true/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '편집 E2E는 control 가시 영역에서 상위 iframe과 내부 control을 모두 맞는 실제 픽셀을 찾아야 합니다.'
+expect_failure '편집 E2E는 iframe 내부 control 중심 hit부터 border·scale 변환과 상위 iframe hit까지 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await page.waitForTimeout(750);/' \
@@ -363,14 +377,34 @@ perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await page
 expect_failure 'control 도달성은 autosave pointer 차단이 풀리기를 기다려 우회하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.mouse\.click\(point\.x, point\.y\)/page.mouse.click(point.x + 1, point.y)/' \
+perl -0pi -e "s/control\\.click\\(\\{ scroll: 'none' \\}\\)/control.click({ force: true })/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 control은 검증된 같은 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.'
+expect_failure '선택 글자 control은 Playwright가 현재 변환을 반영한 중심점에 실제 touch 또는 mouse를 보내야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/await control\.scrollIntoViewIfNeeded\(\);/await control.waitFor();/' \
+perl -0pi -e 's/contentOrigin\.x \+ localCenter\.x \* contentScale\.x/contentOrigin.x + 1/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '편집 E2E는 control을 실제 scroll into view한 뒤 현재 bbox와 topmost를 다시 검증해야 합니다.'
+expect_failure '편집 E2E는 iframe 내부 control 중심 hit부터 border·scale 변환과 상위 iframe hit까지 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(async function activateControl\([\s\S]*?control): Locator/$1?: Locator/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 control은 필수 locator의 실제 tap/click만 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await expect\(control\)\.toBeVisible\(\);/await expect(control).toBeAttached();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 control은 안정 배치가 노출된 뒤 세 프레임의 geometry를 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await control.scrollIntoViewIfNeeded();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'control 도달성 검증이 레이아웃을 이동시키거나 frame 변환을 Playwright bbox로 대체하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/const CANVAS_VIEWPORT_WIDTHS = \[360, 768, 1280\] as const;/const CANVAS_VIEWPORT_WIDTHS = [360] as const;/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '모든 browser project에서 360·768·1280 내부 canvas 조합을 실제 포인터로 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/await expect\(viewportSwitcher\)\.toBeHidden\(\);/await expect(viewportSwitcher).toBeVisible();/' \
@@ -386,6 +420,36 @@ copy_fixture
 perl -0pi -e 's/title="링크 편집"/title="주소 편집"/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e "s/import \{ createPortal \} from 'react-dom';//" \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/data-g7pb-safe-clip-left/data-g7pb-unsafe-left/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/data-puck-rte-menu="portal"/data-g7pb-rte-menu="portal"/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/FLOATING_LAYER_STABLE_FRAMES = 3/FLOATING_LAYER_STABLE_FRAMES = 1/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 floating layer는 연속 세 프레임의 배치가 같을 때만 노출되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/new ownerWindow\.MutationObserver\(invalidatePlacement\)/new ownerWindow.MutationObserver(schedule)/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 floating layer는 safe-zone 변경 시 즉시 숨기고 안정 배치를 다시 계산해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{ref\} align="end"/<div/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '글꼴·크기·굵기·색상 option과 링크 form 모두 같은 floating portal 계약을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/editorState\?\.g7HasSelection/editorState?.legacySelection/' \

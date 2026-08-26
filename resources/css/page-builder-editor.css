@@ -685,12 +685,7 @@
   font-size: var(--g7pb-theme-body-size);
 }
 
-/*
- * Puck copies the host styles into an about:srcdoc iframe, but the iframe does
- * not contain the host `.g7pb-root` ancestor used by the core box-model reset.
- * Keep the reset scoped to the product canvas so a 100% wide block includes
- * its responsive padding instead of extending past the iframe viewport.
- */
+/* Puck's iframe lacks .g7pb-root; scope the reset so responsive padding stays inside the canvas width. */
 .g7pb-preview-page,
 .g7pb-preview-page *,
 .g7pb-preview-page *::before,
@@ -925,6 +920,8 @@
 
 .g7pb-richtext-inline-toolbar { position: relative; display: flex; max-width: min(36rem, calc(100vw - 8rem)); align-items: center; gap: .2rem; color: inherit; }
 .g7pb-richtext-inline-toolbar :is(button, input) { min-height: 1.9rem; border-radius: .4rem; font: 750 .68rem/1 inherit; }
+.g7pb-richtext-inline-toolbar__advanced-controls { display: flex; align-items: center; gap: .2rem; }
+.g7pb-richtext-inline-toolbar__more { display: grid; width: 2rem; min-width: 2rem; padding: 0; place-items: center; border: 1px solid rgb(255 255 255 / 30%); color: inherit; background: rgb(255 255 255 / 10%); }
 .g7pb-richtext-inline-toolbar__choice { position: relative; }
 .g7pb-richtext-inline-toolbar__choice > button { display: flex; min-width: 3.2rem; max-width: 6.7rem; align-items: center; justify-content: space-between; gap: .25rem; padding: .32rem .4rem; border: 1px solid transparent; color: inherit; background: transparent; white-space: nowrap; }
 .g7pb-richtext-inline-toolbar__choice > button:hover, .g7pb-richtext-inline-toolbar__choice > button[aria-expanded='true'] { border-color: rgb(255 255 255 / 35%); background: rgb(255 255 255 / 12%); }
@@ -933,54 +930,29 @@
 .g7pb-richtext-inline-toolbar__options button:hover { border-color: #b9c8ed; color: #1d4ed8; }
 .g7pb-richtext-inline-toolbar__options button[aria-selected='true'] { color: #1d4ed8; background: #eef4ff; }
 .g7pb-richtext-inline-toolbar__link { position: absolute; z-index: 3; top: calc(100% + .4rem); right: 0; display: flex; flex-wrap: wrap; gap: .3rem; width: min(22rem, calc(100vw - 1rem)); padding: .45rem; border: 1px solid #c7d3e7; border-radius: .55rem; background: #fff; box-shadow: 0 .7rem 2rem rgb(15 23 42 / 18%); }
+.g7pb-richtext-inline-toolbar__link > form { display: contents; }
 .g7pb-richtext-inline-toolbar__link label { flex: 1; }
 .g7pb-richtext-inline-toolbar__link input { width: 100%; padding: .35rem .5rem; border: 1px solid #cbd5e1; color: #334155; background: #fff; }
 .g7pb-richtext-inline-toolbar__link button { padding: .35rem .55rem; border: 1px solid #9db5ef; color: #1d4ed8; background: #eef4ff; }
 .g7pb-richtext-inline-toolbar__link [role='alert'] { width: 100%; color: #b91c1c; font-size: .65rem; }
-.g7pb-selected-block-actionbar { display: contents; }
+.g7pb-richtext-inline-toolbar__options.g7pb-richtext-floating-layer,
+.g7pb-richtext-inline-toolbar__advanced.g7pb-richtext-floating-layer,
+.g7pb-richtext-inline-toolbar__link.g7pb-richtext-floating-layer { position: fixed; z-index: 9999; inset: var(--g7pb-richtext-floating-top, 0) auto auto var(--g7pb-richtext-floating-left, 0); box-sizing: border-box; max-width: var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem)); max-height: var(--g7pb-richtext-floating-max-height, calc(100vh - 1rem)); overflow: auto; overscroll-behavior: contain; }
+.g7pb-richtext-inline-toolbar__advanced.g7pb-richtext-floating-layer { width: min(20rem, var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem))); padding: .5rem; border: 1px solid #c7d3e7; border-radius: .65rem; color: #334155; background: #fff; box-shadow: 0 .7rem 2rem rgb(15 23 42 / 18%); }
+.g7pb-richtext-inline-toolbar__advanced > .g7pb-richtext-inline-toolbar__advanced-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem; }
+.g7pb-richtext-inline-toolbar__advanced .g7pb-richtext-inline-toolbar__choice > button { width: 100%; min-width: 0; max-width: none; border-color: #d5deeb; color: #334155; background: #f8fafc; }
+.g7pb-richtext-inline-toolbar__link.g7pb-richtext-floating-layer { width: min(22rem, var(--g7pb-richtext-floating-max-width, calc(100vw - 1rem))); }
+.g7pb-selected-block-actionbar { box-sizing: border-box; display: block; width: max-content; max-width: var(--g7pb-selected-actionbar-max-width, calc(100vw - 1rem)); min-width: 0; overflow: auto hidden; pointer-events: auto; transform: translate(var(--g7pb-selected-actionbar-translate-x, 0), var(--g7pb-selected-actionbar-translate-y, 0)); visibility: hidden; scrollbar-width: thin; touch-action: pan-x; }
+.g7pb-selected-block-actionbar[data-g7pb-safe-zone-ready='true'] { visibility: visible; }
+.g7pb-selected-block-actionbar,
+.g7pb-selected-block-actionbar * { pointer-events: auto; }
+div:has(> .g7pb-selected-block-actionbar) { pointer-events: none; }
+.g7pb-selected-block-actionbar > div { width: max-content; min-width: max-content; flex-wrap: nowrap; }
+.g7pb-selected-block-actionbar > div > div { width: max-content; min-width: max-content; height: auto; flex: 0 0 auto; flex-wrap: nowrap; }
 
-body:has(.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) {
+body:has(.g7pb-selected-block-actionbar) {
   scroll-padding-block: 3.25rem;
-}
 
-body:has(.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) div:has(> .g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) {
-  height: 0;
-  min-height: 0;
-}
-
-.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'] {
-  box-sizing: border-box;
-  display: block;
-  width: max-content;
-  max-width: calc(100vw - 1rem);
-  min-width: 0;
-  overflow: auto hidden;
-  transform: translate(
-    var(--g7pb-selected-actionbar-translate-x, 0),
-    var(--g7pb-selected-actionbar-translate-y, 0)
-  );
-  visibility: hidden;
-  scrollbar-width: thin;
-}
-
-.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'][data-g7pb-safe-zone-ready='true'] {
-  visibility: visible;
-}
-
-.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'] > div {
-  width: max-content;
-  min-width: max-content;
-  flex-wrap: nowrap;
-}
-
-.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'] > div > div {
-  width: max-content;
-  min-width: max-content;
-  height: auto;
-  flex: 0 0 auto;
-}
-
-body:has(.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) {
   [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) { width: max-content; max-width: none; min-width: max-content; flex: 0 0 auto; flex-wrap: nowrap; }
   [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) > :has(> .g7pb-richtext-inline-toolbar) { width: auto; min-width: 0; flex: 0 0 auto; }
   .g7pb-richtext-inline-toolbar { width: max-content; max-width: none; min-width: max-content; flex-wrap: nowrap; }
@@ -2623,12 +2595,7 @@ body:has(.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) {
   .g7pb-preview-image-carousel figure:not(:first-child) { display: none; }
 }
 
-/*
- * Container appearance is part of the editor/public layout contract. Keep
- * these final overrides after component and responsive rules so a preset
- * cannot accidentally restore centered padding or make a full-width block
- * wider than the Puck iframe.
- */
+/* Final editor/public container overrides prevent presets from exceeding the Puck iframe. */
 .g7pb-preview-block.g7pb-container-align--left:not(.g7pb-container-width--full) > * {
   padding-right: max(1.25rem, calc(100vw - var(--g7pb-preview-content-width) - 1.25rem));
   padding-left: 1.25rem;

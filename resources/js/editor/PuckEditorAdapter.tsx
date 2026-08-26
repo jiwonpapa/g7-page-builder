@@ -89,6 +89,16 @@ import {
   blockContainerEditorProps,
   mergeBlockContainerAppearance,
 } from './blockAppearance';
+import {
+  clearVisibleClipContract,
+  currentInteractionRects,
+  exposeVisibleClipContract,
+  inverseScaledTranslation,
+  placeEditorOverlay,
+  quantizeOverlayPixel,
+  renderedElementScale,
+  visibleOwnerViewport,
+} from './editorOverlaySafeZone';
 
 import {
   CONTACT_BLOCK_TYPE,
@@ -194,6 +204,7 @@ const FullSiteCanvasContext = React.createContext<FullSiteCanvasValue>({ shellMo
 interface CanvasEditingUiValue {
   selection: CanvasElementSelection | null;
   setSelection: React.Dispatch<React.SetStateAction<CanvasElementSelection | null>>;
+  rangeEditingActive: boolean;
   mediaDialogOpen: boolean;
   setMediaDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   routeDialogOpen: boolean;
@@ -2450,7 +2461,10 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
     const clearPosition = (): void => {
       actionBar.style.removeProperty('--g7pb-selected-actionbar-translate-x');
       actionBar.style.removeProperty('--g7pb-selected-actionbar-translate-y');
+      actionBar.style.removeProperty('--g7pb-selected-actionbar-max-width');
       actionBar.removeAttribute('data-g7pb-safe-zone-ready');
+      actionBar.removeAttribute('data-g7pb-safe-zone-placement');
+      clearVisibleClipContract(actionBar);
     };
     if (!enabled) {
       clearPosition();
@@ -2466,37 +2480,66 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
     }
 
     let animationFrame = 0;
+    const styleNumber = (name: string): number => {
+      const value = Number.parseFloat(actionBar.style.getPropertyValue(name));
+      return Number.isFinite(value) ? value : 0;
+    };
+    const writeStyle = (name: string, value: string): void => {
+      if (actionBar.style.getPropertyValue(name) !== value) actionBar.style.setProperty(name, value);
+    };
     const syncPosition = (): void => {
       animationFrame = 0;
-      actionBar.style.setProperty('--g7pb-selected-actionbar-translate-x', '0px');
-      actionBar.style.setProperty('--g7pb-selected-actionbar-translate-y', '0px');
+
+      const visibleClip = visibleOwnerViewport(actionBar);
+      if (!visibleClip) {
+        actionBar.removeAttribute('data-g7pb-safe-zone-ready');
+        clearVisibleClipContract(actionBar);
+        return;
+      }
+      exposeVisibleClipContract(actionBar, visibleClip);
+      const initialRect = actionBar.getBoundingClientRect();
+      const initialScale = renderedElementScale(actionBar, initialRect);
+      const renderedMaxWidth = quantizeOverlayPixel(
+        Math.max(0, visibleClip.width - SELECTED_ACTION_BAR_SAFE_INSET_PX * 2),
+        ownerWindow.devicePixelRatio,
+      );
+      writeStyle(
+        '--g7pb-selected-actionbar-max-width',
+        `${quantizeOverlayPixel(renderedMaxWidth / initialScale.x, ownerWindow.devicePixelRatio)}px`,
+      );
 
       const actionBarRect = actionBar.getBoundingClientRect();
       const selectedRect = selectedOverlay.getBoundingClientRect();
-      const viewportWidth = ownerDocument.documentElement.clientWidth;
-      const viewportHeight = ownerDocument.documentElement.clientHeight;
-      const maxLeft = Math.max(
-        SELECTED_ACTION_BAR_SAFE_INSET_PX,
-        viewportWidth - actionBarRect.width - SELECTED_ACTION_BAR_SAFE_INSET_PX,
+      const renderedScale = renderedElementScale(actionBar, actionBarRect);
+      const placement = placeEditorOverlay({
+        anchorRect: selectedRect,
+        overlaySize: actionBarRect,
+        visibleClip,
+        avoidRects: currentInteractionRects(actionBar),
+        gap: SELECTED_ACTION_BAR_SAFE_INSET_PX,
+        inset: SELECTED_ACTION_BAR_SAFE_INSET_PX,
+      });
+      const translation = inverseScaledTranslation({
+        currentRect: actionBarRect,
+        target: placement,
+        renderedScale,
+      });
+      const translatedX = quantizeOverlayPixel(
+        styleNumber('--g7pb-selected-actionbar-translate-x') + translation.x,
+        ownerWindow.devicePixelRatio,
       );
-      const maxTop = Math.max(
-        SELECTED_ACTION_BAR_SAFE_INSET_PX,
-        viewportHeight - actionBarRect.height - SELECTED_ACTION_BAR_SAFE_INSET_PX,
+      const translatedY = quantizeOverlayPixel(
+        styleNumber('--g7pb-selected-actionbar-translate-y') + translation.y,
+        ownerWindow.devicePixelRatio,
       );
-      const preferredLeft = selectedRect.right - actionBarRect.width;
-      const preferredTop = selectedRect.top - actionBarRect.height - SELECTED_ACTION_BAR_SAFE_INSET_PX;
-      const safeLeft = Math.min(maxLeft, Math.max(SELECTED_ACTION_BAR_SAFE_INSET_PX, preferredLeft));
-      const safeTop = Math.min(maxTop, Math.max(SELECTED_ACTION_BAR_SAFE_INSET_PX, preferredTop));
-
-      actionBar.style.setProperty(
-        '--g7pb-selected-actionbar-translate-x',
-        `${safeLeft - actionBarRect.left}px`,
-      );
-      actionBar.style.setProperty(
-        '--g7pb-selected-actionbar-translate-y',
-        `${safeTop - actionBarRect.top}px`,
-      );
-      actionBar.setAttribute('data-g7pb-safe-zone-ready', 'true');
+      writeStyle('--g7pb-selected-actionbar-translate-x', `${translatedX}px`);
+      writeStyle('--g7pb-selected-actionbar-translate-y', `${translatedY}px`);
+      if (actionBar.getAttribute('data-g7pb-safe-zone-placement') !== placement.placement) {
+        actionBar.setAttribute('data-g7pb-safe-zone-placement', placement.placement);
+      }
+      if (actionBar.getAttribute('data-g7pb-safe-zone-ready') !== 'true') {
+        actionBar.setAttribute('data-g7pb-safe-zone-ready', 'true');
+      }
     };
     const schedulePosition = (): void => {
       if (animationFrame !== 0) return;
@@ -2508,19 +2551,35 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
     resizeObserver.observe(selectedOverlay);
     const positionObserver = new ownerWindow.MutationObserver(schedulePosition);
     positionObserver.observe(selectedOverlay, { attributes: true, attributeFilter: ['style'] });
+    positionObserver.observe(actionBar, { childList: true, characterData: true, subtree: true });
     if (actionBar.parentElement) {
       positionObserver.observe(actionBar.parentElement, { attributes: true, attributeFilter: ['style'] });
     }
     ownerDocument.addEventListener('scroll', schedulePosition, true);
     ownerWindow.addEventListener('resize', schedulePosition);
+    const hostFrame = ownerWindow.frameElement as HTMLElement | null;
+    const hostDocument = hostFrame?.ownerDocument ?? null;
+    const hostWindow = hostDocument?.defaultView ?? null;
+    const hostResizeObserver = hostWindow && hostFrame ? new hostWindow.ResizeObserver(schedulePosition) : null;
+    if (hostResizeObserver && hostFrame) {
+      hostResizeObserver.observe(hostFrame);
+      for (let ancestor = hostFrame.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        hostResizeObserver.observe(ancestor);
+      }
+    }
+    hostDocument?.addEventListener('scroll', schedulePosition, true);
+    hostWindow?.addEventListener('resize', schedulePosition);
     syncPosition();
 
     return () => {
       if (animationFrame !== 0) ownerWindow.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
+      hostResizeObserver?.disconnect();
       positionObserver.disconnect();
       ownerDocument.removeEventListener('scroll', schedulePosition, true);
       ownerWindow.removeEventListener('resize', schedulePosition);
+      hostDocument?.removeEventListener('scroll', schedulePosition, true);
+      hostWindow?.removeEventListener('resize', schedulePosition);
       clearPosition();
     };
   }, [enabled]);
@@ -2546,7 +2605,7 @@ function SelectedBlockActionBar({
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const currentViewportWidth = usePageBuilderPuck((state) => state.appState.ui.viewports.current.width);
   const narrowCanvas = typeof currentViewportWidth === 'number' && currentViewportWidth <= NARROW_CANVAS_MAX_WIDTH;
-  const actionBarRef = useSelectedActionBarSafeZone(narrowCanvas);
+  const actionBarRef = useSelectedActionBarSafeZone(true);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null
     ? data.content[selectedIndex]
     : null;
@@ -2554,6 +2613,7 @@ function SelectedBlockActionBar({
   if (!canvasUi) throw new Error('Canvas editing UI provider is unavailable.');
   const {
     selection: elementSelection,
+    rangeEditingActive,
     setSelection: setElementSelection,
     setMediaDialogOpen,
     setRouteDialogOpen,
@@ -2661,15 +2721,16 @@ function SelectedBlockActionBar({
       className="g7pb-selected-block-actionbar"
       data-g7pb-selected-block-actionbar="true"
       data-g7pb-canvas-layout={narrowCanvas ? 'narrow' : 'wide'}
+      data-g7pb-range-editing-active={rangeEditingActive ? 'true' : 'false'}
     >
       <ActionBar>
-        <ActionBar.Group>
+        {!rangeEditingActive && <ActionBar.Group>
           {parentAction}
           {label && <ActionBar.Label label={label} />}
           {selectedBlock && <ActionBar.Label label={`${elementSelection?.label ?? '블록 전체'} · ${roleLabel}`} />}
-        </ActionBar.Group>
+        </ActionBar.Group>}
         <ActionBar.Group>
-          {mediaFieldPath && (
+          {!rangeEditingActive && mediaFieldPath && (
             <>
               <ActionBar.Action label="선택 이미지 변경" disabled={disabled} onClick={() => setMediaDialogOpen(true)}>
                 <ImagePlus size={16} data-testid="page-builder-canvas-media-open" aria-hidden="true" />
@@ -2680,34 +2741,34 @@ function SelectedBlockActionBar({
               </ActionBar.Action>
             </>
           )}
-          {routeFieldPath ? <ActionBar.Action label="선택 버튼 연결 편집" disabled={disabled} onClick={() => setRouteDialogOpen(true)}>
+          {!rangeEditingActive && routeFieldPath ? <ActionBar.Action label="선택 버튼 연결 편집" disabled={disabled} onClick={() => setRouteDialogOpen(true)}>
             <Link2 size={16} data-testid="page-builder-canvas-route-open" aria-hidden="true" />
           </ActionBar.Action> : null}
-          {selectedBlock ? <ActionBar.Action
+          {!rangeEditingActive && selectedBlock ? <ActionBar.Action
             label={elementSelection?.fieldPath ? `${elementSelection.label} 스타일` : '블록 배경·여백'}
             disabled={disabled} onClick={() => setTextToolsOpen((open) => !open)}>
             <Type size={16} data-testid="page-builder-text-tools-open" aria-hidden="true" />
           </ActionBar.Action> : null}
-          {selectedCollection && itemIndex !== null && limits ? <>
+          {!rangeEditingActive && selectedCollection && itemIndex !== null && limits ? <>
             <ActionBar.Action label="선택 항목 위로" disabled={disabled || itemIndex === 0} onClick={() => updateCollection('up')}><span data-testid="page-builder-item-move-up" aria-hidden="true">⇡</span></ActionBar.Action>
             <ActionBar.Action label="선택 항목 아래로" disabled={disabled || itemIndex >= selectedCollection.length - 1} onClick={() => updateCollection('down')}><span data-testid="page-builder-item-move-down" aria-hidden="true">⇣</span></ActionBar.Action>
             <ActionBar.Action label="선택 항목 복제" disabled={disabled || selectedCollection.length >= limits.max} onClick={() => updateCollection('duplicate')}><span data-testid="page-builder-item-duplicate" aria-hidden="true">⧉</span></ActionBar.Action>
             <ActionBar.Action label={`선택 항목 삭제${selectedCollection.length <= limits.min ? ` (최소 ${limits.min}개)` : ''}`} disabled={disabled || selectedCollection.length <= limits.min} onClick={() => updateCollection('delete')}><span data-testid="page-builder-item-delete" aria-hidden="true">⌫</span></ActionBar.Action>
           </> : null}
-          <ActionBar.Action
+          {!rangeEditingActive && <ActionBar.Action
             label="블록 위로 이동"
             disabled={disabled || selectedIndex === null || selectedIndex === 0}
             onClick={() => move((selectedIndex ?? 0) - 1)}
           >
             <span data-testid="page-builder-block-move-up" aria-hidden="true">↑</span>
-          </ActionBar.Action>
-          <ActionBar.Action
+          </ActionBar.Action>}
+          {!rangeEditingActive && <ActionBar.Action
             label="블록 아래로 이동"
             disabled={disabled || selectedIndex === null || selectedIndex >= contentLength - 1}
             onClick={() => move((selectedIndex ?? -1) + 1)}
           >
             <span data-testid="page-builder-block-move-down" aria-hidden="true">↓</span>
-          </ActionBar.Action>
+          </ActionBar.Action>}
           {children}
         </ActionBar.Group>
       </ActionBar>
@@ -2784,6 +2845,7 @@ export function PuckEditorAdapter({
   const [canvasElementSelection, setCanvasElementSelection] = useState<CanvasElementSelection | null>(null);
   const canvasElementSelectionRef = useRef<CanvasElementSelection | null>(null);
   const rangeEditingActiveRef = useRef(false);
+  const [rangeEditingActive, setRangeEditingActive] = useState(false);
   const [canvasMediaDialogOpen, setCanvasMediaDialogOpen] = useState(false);
   const [canvasRouteDialogOpen, setCanvasRouteDialogOpen] = useState(false);
   const [canvasTextToolsOpen, setCanvasTextToolsOpen] = useState(false);
@@ -2826,6 +2888,7 @@ export function PuckEditorAdapter({
     const acceptRangeState = (active: boolean): void => {
       const wasActive = rangeEditingActiveRef.current;
       rangeEditingActiveRef.current = active;
+      setRangeEditingActive(active);
       if (!shouldAutoOpenCanvasTextTools(canvasElementSelectionRef.current, active ? 'range-active' : 'range-inactive')) {
         setCanvasTextToolsOpen(false);
         return;
@@ -2993,13 +3056,14 @@ export function PuckEditorAdapter({
   const canvasEditingUi = useMemo<CanvasEditingUiValue>(() => ({
     selection: canvasElementSelection,
     setSelection: setCanvasElementSelection,
+    rangeEditingActive,
     mediaDialogOpen: canvasMediaDialogOpen,
     setMediaDialogOpen: setCanvasMediaDialogOpen,
     routeDialogOpen: canvasRouteDialogOpen,
     setRouteDialogOpen: setCanvasRouteDialogOpen,
     textToolsOpen: canvasTextToolsOpen,
     setTextToolsOpen: setCanvasTextToolsOpen,
-  }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen]);
+  }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen, rangeEditingActive]);
   const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(() => Object.fromEntries(
     data.content.flatMap((block) => {
       const rawId = asString(block.props.id);

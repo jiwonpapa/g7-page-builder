@@ -89,98 +89,65 @@ $artifact = static function (string $path, string $url): array {
     return ['url' => $url, 'sha256' => $sha256, 'bytes' => $bytes];
 };
 
-$pageKitDefinitions = [
-    [
-        'slug' => 'company-launch',
-        'title' => ['ko' => '회사 소개 랜딩', 'en' => 'Company launch page'],
-        'description' => [
-            'ko' => '회사 소개, 일하는 방식, 성과, 팀, 고객 후기와 문의 CTA로 구성된 완성 페이지입니다.',
-            'en' => 'A complete company introduction and trust-building page.',
-        ],
-        'category' => 'company',
-        'tags' => ['회사소개', '랜딩', '팀', '고객후기'],
-        'media' => [
-            'media/hero-team.webp',
-            'media/team-product.webp',
-            'media/team-design.webp',
-            'media/team-engineering.webp',
-            'media/customer-operations.webp',
-            'media/customer-founder.webp',
-        ],
-    ],
-    [
-        'slug' => 'service-conversion',
-        'title' => ['ko' => '전문 서비스 상담 랜딩', 'en' => 'Professional service landing'],
-        'description' => [
-            'ko' => '서비스 가치, 진행 방식, 고객 후기, FAQ와 상담 요청으로 구성된 전환 페이지입니다.',
-            'en' => 'A service conversion page with proof, process, FAQ, and inquiry.',
-        ],
-        'category' => 'services',
-        'tags' => ['전문서비스', '상담', '고객후기', 'FAQ'],
-        'media' => [
-            'media/hero-consultation.webp',
-            'media/customer-operations.webp',
-            'media/customer-founder.webp',
-            'media/customer-brand.webp',
-        ],
-    ],
-    [
-        'slug' => 'local-business',
-        'title' => ['ko' => '로컬 비즈니스 방문 안내', 'en' => 'Local business visit page'],
-        'description' => [
-            'ko' => '서비스, 이용 순서, 후기, 위치와 방문 예약을 한 페이지에 안내합니다.',
-            'en' => 'A local business page for services, directions, and reservations.',
-        ],
-        'category' => 'local-business',
-        'tags' => ['매장', '예약', '오시는길', '지역서비스'],
-        'media' => [
-            'media/hero-space.webp',
-            'media/customer-neighbor.webp',
-            'media/customer-parent.webp',
-            'media/customer-longtime.webp',
-        ],
-    ],
-    [
-        'slug' => 'event-launch',
-        'title' => ['ko' => '컨퍼런스·행사 랜딩', 'en' => 'Conference and event landing'],
-        'description' => [
-            'ko' => '행사 개요, 일정, 연사, 파트너, FAQ와 참가 신청을 연결합니다.',
-            'en' => 'A conference page with agenda, speakers, partners, FAQ, and signup.',
-        ],
-        'category' => 'events',
-        'tags' => ['행사', '컨퍼런스', '일정', '참가신청'],
-        'media' => [
-            'media/hero-event.webp',
-            'media/speaker-founder.webp',
-            'media/speaker-design.webp',
-            'media/speaker-platform.webp',
-            'media/speaker-creative.webp',
-            'media/partner-northstar.png',
-            'media/partner-orbit.png',
-            'media/partner-morrow.png',
-            'media/partner-vertex.png',
-        ],
-    ],
-    [
-        'slug' => 'editorial-community',
-        'title' => ['ko' => '에디토리얼·커뮤니티 홈', 'en' => 'Editorial community home'],
-        'description' => [
-            'ko' => '대표 기사, 지역 일정, 자료와 뉴스레터 신청을 묶은 콘텐츠 홈입니다.',
-            'en' => 'An editorial home for stories, events, resources, and newsletter signup.',
-        ],
-        'category' => 'editorial',
-        'tags' => ['에디토리얼', '커뮤니티', '기사', '뉴스레터'],
-        'media' => [
-            'media/hero-editorial.webp',
-            'media/story-shop.webp',
-            'media/story-park.webp',
-            'media/story-gathering.webp',
-        ],
-    ],
-];
+$pageKitManifest = json_decode(
+    (string) file_get_contents("{$source}/page-kits/manifest.json"),
+    true,
+    128,
+    JSON_THROW_ON_ERROR,
+);
+if (! is_array($pageKitManifest)
+    || ($pageKitManifest['manifest_version'] ?? null) !== 'g7pb-page-kits/v1'
+    || ! is_string($pageKitManifest['page_kit_version'] ?? null)
+    || ! is_array($pageKitManifest['kits'] ?? null)
+    || $pageKitManifest['kits'] === []) {
+    throw new RuntimeException('Official Page Kit manifest is invalid.');
+}
+$pageKitDefinitions = $pageKitManifest['kits'];
+$pageKitVersion = $pageKitManifest['page_kit_version'];
+$seenPageKitSlugs = [];
+$declaredPageKitSlugs = [];
+foreach ($pageKitDefinitions as $definition) {
+    if (! is_array($definition)
+        || ! is_string($definition['slug'] ?? null)
+        || preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $definition['slug']) !== 1
+        || ! is_string($definition['category'] ?? null)
+        || $definition['category'] === ''
+        || ! is_array($definition['title'] ?? null)
+        || ! is_string($definition['title']['ko'] ?? null)
+        || trim($definition['title']['ko']) === ''
+        || ! is_string($definition['title']['en'] ?? null)
+        || trim($definition['title']['en']) === ''
+        || ! is_array($definition['description'] ?? null)
+        || ! is_string($definition['description']['ko'] ?? null)
+        || trim($definition['description']['ko']) === ''
+        || ! is_string($definition['description']['en'] ?? null)
+        || trim($definition['description']['en']) === ''
+        || ! is_array($definition['tags'] ?? null)
+        || $definition['tags'] === []
+        || array_filter($definition['tags'], static fn (mixed $tag): bool => ! is_string($tag) || $tag === '') !== []
+        || ! is_array($definition['media'] ?? null)
+        || $definition['media'] === []
+        || array_filter($definition['media'], static fn (mixed $path): bool => ! is_string($path) || preg_match('#^media/[a-z0-9][a-z0-9._-]*$#', $path) !== 1) !== []) {
+        throw new RuntimeException('Official Page Kit definition is invalid.');
+    }
+    $slug = $definition['slug'];
+    if (isset($seenPageKitSlugs[$slug])) {
+        throw new RuntimeException("Official Page Kit slug is duplicated: {$slug}");
+    }
+    $seenPageKitSlugs[$slug] = true;
+    $declaredPageKitSlugs[] = $slug;
+}
+$sourcePageKitSlugs = array_values(array_filter(
+    scandir("{$source}/page-kits") ?: [],
+    static fn (string $entry): bool => $entry !== '.' && $entry !== '..' && is_dir("{$source}/page-kits/{$entry}"),
+));
+sort($declaredPageKitSlugs);
+sort($sourcePageKitSlugs);
+if ($declaredPageKitSlugs !== $sourcePageKitSlugs) {
+    throw new RuntimeException('Official Page Kit manifest and source directories are out of sync.');
+}
 
 $pageKits = new ZipPageKitArchiveAdapter;
-$pageKitVersion = '1.1.0';
 $blockRegistry = new BlockRegistry;
 $blockRegistry->register((new BuiltInBlockPackLoader)->load($root), enabled: true);
 $compiler = new HtmlDocumentCompiler($blockRegistry);

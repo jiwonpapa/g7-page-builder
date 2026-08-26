@@ -25,20 +25,13 @@ status() {
 
 store_catalog_url="$base_url/modules/jiwonpapa-page_builder/store/catalog.json"
 store_catalog="$(curl --fail --silent --show-error "$store_catalog_url")"
-jq -e --arg origin "$base_url" '
+jq -e --arg origin "$base_url" --slurpfile inventory "$root/resources/store/source/page-kits/manifest.json" '
   (.catalog_version == "g7pb-store/v1")
   and (.publisher.id == "jiwonpapa")
-  and (.products | length == 6)
-  and ([.products[].product_id] | sort == ([
-    "jiwonpapa/company-launch",
-    "jiwonpapa/editorial-community",
-    "jiwonpapa/event-launch",
-    "jiwonpapa/local-business",
-    "jiwonpapa/marketing-presets",
-    "jiwonpapa/service-conversion"
-  ] | sort))
+  and (.products | length == (($inventory[0].kits | length) + 1))
+  and ([.products[].product_id] | sort == (["jiwonpapa/marketing-presets"] + [$inventory[0].kits[].slug | "jiwonpapa/" + .] | sort))
   and ([.products[] | select(.product_type == "block_pack" and .license == "free")] | length == 1)
-  and ([.products[] | select(.product_type == "page_kit" and .license == "free")] | length == 5)
+  and ([.products[] | select(.product_type == "page_kit" and .license == "free")] | length == ($inventory[0].kits | length))
   and (.products | all(.artifact.url | startswith($origin + "/modules/jiwonpapa-page_builder/store/artifacts/")))
 ' <<<"$store_catalog" >/dev/null || { echo 'Staging Official Store catalog contract failed.' >&2; exit 1; }
 

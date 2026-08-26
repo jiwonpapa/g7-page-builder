@@ -33,20 +33,21 @@ final class OfficialStoreContractTest extends TestCase
     public function test_bundled_catalog_contains_only_official_free_products_with_valid_artifacts(): void
     {
         $catalog = OfficialStoreCatalog::fromArray($this->catalogValue());
+        $manifest = $this->pageKitManifest();
+        $pageKitIds = array_map(
+            static fn (array $kit): string => 'jiwonpapa/'.$kit['slug'],
+            $manifest['kits'],
+        );
 
-        self::assertCount(6, $catalog->products);
+        self::assertCount(count($pageKitIds) + 1, $catalog->products);
         self::assertSame(
-            ['block_pack', 'page_kit', 'page_kit', 'page_kit', 'page_kit', 'page_kit'],
+            ['block_pack', ...array_fill(0, count($pageKitIds), 'page_kit')],
             array_column($catalog->toArray()['products'], 'product_type'),
         );
-        self::assertSame([
-            'jiwonpapa/marketing-presets',
-            'jiwonpapa/company-launch',
-            'jiwonpapa/service-conversion',
-            'jiwonpapa/local-business',
-            'jiwonpapa/event-launch',
-            'jiwonpapa/editorial-community',
-        ], array_column($catalog->toArray()['products'], 'product_id'));
+        self::assertSame(
+            ['jiwonpapa/marketing-presets', ...$pageKitIds],
+            array_column($catalog->toArray()['products'], 'product_id'),
+        );
         foreach ($catalog->products as $product) {
             $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
             self::assertFileExists($path);
@@ -94,24 +95,21 @@ final class OfficialStoreContractTest extends TestCase
     public function test_page_kit_archives_round_trip_and_compile_every_bundled_document(): void
     {
         $catalog = OfficialStoreCatalog::fromArray($this->catalogValue());
-        $expectedBlocks = [
-            'jiwonpapa/company-launch' => 6,
-            'jiwonpapa/service-conversion' => 6,
-            'jiwonpapa/local-business' => 6,
-            'jiwonpapa/event-launch' => 7,
-            'jiwonpapa/editorial-community' => 5,
-        ];
-        $expectedMedia = [
-            'jiwonpapa/company-launch' => 6,
-            'jiwonpapa/service-conversion' => 4,
-            'jiwonpapa/local-business' => 4,
-            'jiwonpapa/event-launch' => 9,
-            'jiwonpapa/editorial-community' => 4,
-        ];
+        $manifest = $this->pageKitManifest();
         $adapter = new ZipPageKitArchiveAdapter;
 
-        foreach ($expectedBlocks as $productId => $blockCount) {
-            $product = $catalog->find($productId, '1.1.0');
+        foreach ($manifest['kits'] as $definition) {
+            $productId = 'jiwonpapa/'.$definition['slug'];
+            $sourceDocument = json_decode(
+                (string) file_get_contents(dirname(__DIR__, 2).'/resources/store/source/page-kits/'.$definition['slug'].'/document.json'),
+                true,
+                128,
+                JSON_THROW_ON_ERROR,
+            );
+            self::assertIsArray($sourceDocument);
+            $blockCount = count($sourceDocument['blocks']);
+            $mediaCount = count($definition['media']);
+            $product = $catalog->find($productId, $manifest['page_kit_version']);
             self::assertCount(3, $product->preview['screenshots']);
             self::assertSame($product->preview['screenshots'][0], $product->preview['thumbnail_url']);
             self::assertIsString($product->preview['demo_url']);
@@ -132,7 +130,7 @@ final class OfficialStoreContractTest extends TestCase
             self::assertStringNotContainsString('g7pb-media://', $demo);
             self::assertStringNotContainsString('g7pb-route://', $demo);
             self::assertStringNotContainsString('data-g7pb-inquiry-form', $demo);
-            self::assertSame($expectedMedia[$productId], substr_count($demo, '/store/previews/'.basename($product->preview['demo_url']).'-'));
+            self::assertSame($mediaCount, substr_count($demo, '/store/previews/'.basename($product->preview['demo_url']).'-'));
 
             $path = dirname(__DIR__, 2).'/resources/store/dist/artifacts/'.basename($product->artifact['url']);
             $bundle = $adapter->read(new StoreArtifact(
@@ -144,9 +142,9 @@ final class OfficialStoreContractTest extends TestCase
             ));
 
             self::assertSame($productId, $bundle->kitId);
-            self::assertSame('1.1.0', $bundle->kitVersion);
+            self::assertSame($manifest['page_kit_version'], $bundle->kitVersion);
             self::assertCount($blockCount, $bundle->document->blocks);
-            self::assertCount($expectedMedia[$productId], $bundle->media);
+            self::assertCount($mediaCount, $bundle->media);
             self::assertSame('image-1', $bundle->media[0]->id);
             self::assertSame('image/webp', $bundle->media[0]->mimeType);
             self::assertSame(1600, $bundle->media[0]->width);
@@ -301,6 +299,21 @@ final class OfficialStoreContractTest extends TestCase
             JSON_THROW_ON_ERROR,
         );
         self::assertIsArray($value);
+
+        return $value;
+    }
+
+    /** @return array{page_kit_version: string, kits: list<array{slug: string, media: list<string>}>} */
+    private function pageKitManifest(): array
+    {
+        $value = json_decode(
+            (string) file_get_contents(dirname(__DIR__, 2).'/resources/store/source/page-kits/manifest.json'),
+            true,
+            128,
+            JSON_THROW_ON_ERROR,
+        );
+        self::assertIsArray($value);
+        self::assertNotEmpty($value['kits'] ?? []);
 
         return $value;
     }

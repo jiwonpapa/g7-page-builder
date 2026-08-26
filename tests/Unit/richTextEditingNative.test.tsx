@@ -95,7 +95,96 @@ describe('Puck-native rich-text editing', () => {
     expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
   });
 
-  it('keeps link input inside the Puck menu and applies to the retained editor selection', async () => {
+  it('keeps only the compact range entry visible in a narrow canvas and portals advanced controls', async () => {
+    const originalWidth = window.innerWidth;
+    const firstFloatingMeasurement: string[] = [];
+    const pendingFrames = new Map<number, FrameRequestCallback>();
+    let nextFrame = 1;
+    let trackAdvancedAnchor = false;
+    let advancedAnchorRead = 0;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      const frame = nextFrame++;
+      pendingFrames.set(frame, callback);
+      return frame;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frame) => {
+      pendingFrames.delete(frame);
+    });
+    const flushFrame = async (): Promise<void> => {
+      const callbacks = [...pendingFrames.values()];
+      pendingFrames.clear();
+      await act(async () => {
+        for (const callback of callbacks) callback(performance.now());
+      });
+    };
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains('g7pb-richtext-floating-layer')) {
+        firstFloatingMeasurement.push(this.style.getPropertyValue('--g7pb-richtext-floating-max-width'));
+      }
+      const anchorTop = trackAdvancedAnchor && this.dataset.testid === 'page-builder-richtext-more'
+        ? [40, 37, 37][Math.min(advancedAnchorRead++, 2)]
+        : 40;
+      return {
+        bottom: anchorTop + 40, height: 40, left: 10, right: 130, top: anchorTop, width: 120,
+        x: 10, y: anchorTop, toJSON: () => ({}),
+      };
+    });
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    const chain = {
+      focus: vi.fn(() => chain),
+      setMark: vi.fn(() => chain),
+      unsetMark: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 9 } },
+      getAttributes: vi.fn(() => ({})),
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+
+    try {
+      await rerender(editorState());
+      const more = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-more"]');
+      expect(more).not.toBeNull();
+      expect(container.querySelector('[data-testid="page-builder-richtext-font"]')).toBeNull();
+
+      trackAdvancedAnchor = true;
+      await act(async () => {
+        more?.dispatchEvent(new PointerEvent('pointerdown', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          pointerType: 'touch',
+        }));
+      });
+      const advanced = document.body.querySelector<HTMLElement>('.g7pb-richtext-inline-toolbar__advanced');
+      expect(advanced).not.toBeNull();
+      expect(advanced?.querySelector('[data-testid="page-builder-richtext-font"]')).not.toBeNull();
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-max-width')).not.toBe('0px');
+      expect(Number.parseFloat(firstFloatingMeasurement[0] ?? '0')).toBeGreaterThan(0);
+      expect(advanced?.style.visibility).toBe('hidden');
+      expect(advanced?.hasAttribute('data-g7pb-floating-ready')).toBe(false);
+      await flushFrame();
+      expect(advanced?.style.visibility).toBe('hidden');
+      expect(advanced?.hasAttribute('data-g7pb-floating-ready')).toBe(false);
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
+      await flushFrame();
+      expect(advanced?.style.visibility).toBe('hidden');
+      expect(advanced?.hasAttribute('data-g7pb-floating-ready')).toBe(false);
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
+      await flushFrame();
+      expect(advanced?.style.visibility).toBe('visible');
+      expect(advanced?.getAttribute('data-g7pb-floating-ready')).toBe('true');
+      expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
+      expect(more?.getAttribute('aria-expanded')).toBe('true');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+      window.dispatchEvent(new Event('resize'));
+    }
+  });
+
+  it('portals the link input outside the clipped Puck action strip and applies to the retained editor selection', async () => {
     const operations: string[] = [];
     const chain = {
       focus: vi.fn(() => { operations.push('focus'); return chain; }),
@@ -113,9 +202,12 @@ describe('Puck-native rich-text editing', () => {
 
     const linkButton = container.querySelector<HTMLButtonElement>('[aria-label="링크 편집"]');
     await act(async () => linkButton?.click());
-    const input = container.querySelector<HTMLInputElement>('input[aria-label="링크 주소"]');
+    const input = document.body.querySelector<HTMLInputElement>('input[aria-label="링크 주소"]');
     expect(input).not.toBeNull();
-    expect(input?.closest('[data-puck-rte-menu]')).not.toBeNull();
+    const floatingLayer = input?.closest<HTMLElement>('.g7pb-richtext-floating-layer');
+    expect(floatingLayer).not.toBeNull();
+    expect(floatingLayer?.getAttribute('data-puck-rte-menu')).toBe('portal');
+    expect(floatingLayer?.parentElement).toBe(document.body);
 
     await act(async () => {
       input?.focus();
@@ -127,7 +219,7 @@ describe('Puck-native rich-text editing', () => {
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }
     });
-    const form = container.querySelector<HTMLFormElement>('form');
+    const form = document.body.querySelector<HTMLFormElement>('.g7pb-richtext-floating-layer form');
     await act(async () => form?.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true })));
 
     expect(operations).toEqual(['focus', 'setLink', 'run']);
@@ -192,7 +284,7 @@ describe('Puck-native rich-text editing', () => {
     expect(createInlineRichTextField('독립 제목').options.link).not.toBe(false);
   });
 
-  it('keeps a range option mounted through pointer down and applies exactly once on pointer up', async () => {
+  it('keeps a touch range option mounted through the compatibility click and applies once', async () => {
     const chain = {
       focus: vi.fn(() => chain),
       setMark: vi.fn(() => chain),
@@ -213,7 +305,7 @@ describe('Puck-native rich-text editing', () => {
         cancelable: true,
         button: 0,
         isPrimary: true,
-        pointerType: 'mouse',
+        pointerType: 'touch',
       }));
     });
     await new Promise((resolve) => setTimeout(resolve, 5));
@@ -226,18 +318,21 @@ describe('Puck-native rich-text editing', () => {
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
 
-    const serif = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="option"]'))
+    const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
       .find((option) => option.textContent?.includes('명조'));
+    const touchStart = new Event('touchstart', { bubbles: true, cancelable: true });
     await act(async () => {
+      serif?.dispatchEvent(touchStart);
       serif?.dispatchEvent(new PointerEvent('pointerdown', {
         bubbles: true,
         cancelable: true,
         button: 0,
         isPrimary: true,
         pointerId: 7,
-        pointerType: 'mouse',
+        pointerType: 'touch',
       }));
     });
+    expect(touchStart.defaultPrevented).toBe(true);
     expect(chain.setMark).not.toHaveBeenCalled();
     expect(chain.run).not.toHaveBeenCalled();
     expect(serif?.isConnected).toBe(true);
@@ -250,7 +345,7 @@ describe('Puck-native rich-text editing', () => {
         button: 0,
         isPrimary: true,
         pointerId: 7,
-        pointerType: 'mouse',
+        pointerType: 'touch',
       }));
     });
     expect(chain.setMark).toHaveBeenCalledWith('g7TextStyle', {
@@ -280,6 +375,60 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('closes a touch range option after pointer up when no compatibility click is emitted', async () => {
+    const chain = {
+      focus: vi.fn(() => chain),
+      setMark: vi.fn(() => chain),
+      unsetMark: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 7 } },
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+    await rerender(editorState());
+
+    const trigger = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]');
+    await act(async () => {
+      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerType: 'touch',
+      }));
+    });
+    const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
+      .find((option) => option.textContent?.includes('명조'));
+    const touchStart = new Event('touchstart', { bubbles: true, cancelable: true });
+    await act(async () => {
+      serif?.dispatchEvent(touchStart);
+      serif?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerId: 13,
+        pointerType: 'touch',
+      }));
+      serif?.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerId: 13,
+        pointerType: 'touch',
+      }));
+    });
+    expect(touchStart.defaultPrevented).toBe(true);
+
+    expect(chain.setMark).toHaveBeenCalledOnce();
+    expect(chain.run).toHaveBeenCalledOnce();
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+    expect(serif?.isConnected).toBe(true);
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 75)));
+    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+    expect(serif?.isConnected).toBe(false);
   });
 
   it('applies each native mark on pointer down without duplicating the compatibility click', async () => {
@@ -418,7 +567,7 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
-    const serif = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="option"]'))
+    const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
       .find((option) => option.textContent?.includes('명조'));
     await act(async () => {
       serif?.dispatchEvent(new PointerEvent('pointerdown', {

@@ -68,6 +68,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/\.evaluate\([^\n]{0,300}\.click\s*\(/, 'evaluate click으로 실제 포인터 경로를 우회하면 안 됩니다.'],
     [/dispatchEvent\s*\([^\n]*(?:beforeinput|input)/, '합성 input 이벤트로 편집 결과를 주입하면 안 됩니다.'],
     [/force\s*:\s*true/, '전용 편집 E2E는 force click/hover로 실제 hit target 검증을 우회하면 안 됩니다.'],
+    [/field\.focus\(\)/, '전용 편집 E2E는 프로그램식 focus가 아니라 실제 pointerdown으로 contenteditable focus를 만들어야 합니다.'],
   ];
   for (const [pattern, message] of forbiddenSyntheticSelection) {
     if (pattern.test(spec)) errors.push(message);
@@ -97,7 +98,6 @@ export async function validateEditorAcceptanceContract(root) {
     [/function assertTextPointerReachable\([\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?outlineDragging:[\s\S]*?pointerEvents:[\s\S]*?canvasHits/,
       '텍스트 포인터 실패는 editor·iframe pointer 상태와 실제 hit stack·canvas hit를 보고해야 합니다.'],
     [/function collapseSelectionWithPointer\([\s\S]{0,900}findFieldCollapsePoints\(page, field, targetNode, currentSelection\)[\s\S]{0,180}for \(const point of points\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)[\s\S]{0,300}selectedText\(field\) === ['"]['"]/, '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'],
-    [/field\.focus\(\)/, '범위 선택 전 contenteditable focus가 필요합니다.'],
     [/expect\(field\)\.toBeFocused\(\)/, '실제 pointer 드래그 뒤 contenteditable focus를 확인해야 합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
     [/expect\.poll\(\(\)\s*=>\s*selectedText\(field\)\)\.toBe\(target\)/, 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'],
@@ -110,10 +110,10 @@ export async function validateEditorAcceptanceContract(root) {
     [/page\.locator\(CANVAS_IFRAME\)\)\.toHaveCount\(1\)/, 'Puck canvas iframe이 정확히 하나인지 확인해야 합니다.'],
     [/field\.boundingBox\(\)/, 'iframe 내부 좌표를 실제 화면 좌표로 변환해야 합니다.'],
     [/targetNode\.boundingBox\(\)/, '선택 대상의 실제 렌더링 box를 측정해야 합니다.'],
-    [/targetNode\.evaluate\(\(element\)\s*=>\s*\{[\s\S]{0,220}element\.ownerDocument\.createRange\(\)[\s\S]{0,160}range\.selectNodeContents\(element\)[\s\S]{0,180}range\.getClientRects\(\)/,
-      '선택 시작·끝은 타겟 글자의 실제 Range rect로 측정해야 합니다.'],
-    [/first\.left\s*-\s*fieldRect\.left[\s\S]{0,360}last\.right\s*-\s*fieldRect\.left/,
-      '글자 Range rect를 current contenteditable 내부 좌표로 변환해야 합니다.'],
+    [/targetNode\.evaluate\(\(element\)\s*=>\s*\{[\s\S]*?firstCharacter\.getClientRects\(\)[\s\S]*?lastCharacter\.getClientRects\(\)[\s\S]*?caretPositionFromPoint[\s\S]*?targetStart[\s\S]*?targetEnd/,
+      '선택 시작·끝은 실제 글자 rect와 정확한 caret offset으로 측정해야 합니다.'],
+    [/startCandidate\.x\s*-\s*fieldRect\.left[\s\S]{0,360}endCandidate\.x\s*-\s*fieldRect\.left/,
+      '검증된 caret 좌표를 current contenteditable 내부 좌표로 변환해야 합니다.'],
     [/const scaleX = fieldBox\.width \/ fieldRect\.width[\s\S]{0,180}const scaleY = fieldBox\.height \/ fieldRect\.height/,
       'Puck iframe transform scale을 X/Y 좌표에 각각 반영해야 합니다.'],
     [/fieldBox\.x \+ local\.start\.x \* scaleX[\s\S]{0,180}fieldBox\.y \+ local\.end\.y \* scaleY/,
@@ -150,15 +150,15 @@ export async function validateEditorAcceptanceContract(root) {
     [/PREVIEW_SELECTION_MARK_GATE/, '미리보기 부분 서식 gate가 필요합니다.'],
     [/PUBLIC_SELECTION_MARK_GATE/, '공개 출력 부분 서식 gate가 필요합니다.'],
     [/page-builder-richtext-inline-toolbar/, '글자 범위 툴바 assertion이 필요합니다.'],
-    [/locator\(['"]\[data-puck-rte-menu\]:visible['"]\)/, '공식 Puck data-puck-rte-menu root locator가 필요합니다.'],
+    [/locator\(['"]\[data-puck-rte-menu=[\\]?['"]true[\\]?['"]\]:visible['"]\)/, '공식 Puck 원본 data-puck-rte-menu root locator가 필요합니다.'],
     [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 굵게['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 굵게 버튼 검증이 필요합니다.'],
     [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 기울임['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 기울임 버튼 검증이 필요합니다.'],
     [/menuRoot\.getByRole\(['"]button['"],\s*\{\s*name:\s*['"]선택한 글자 밑줄['"],\s*exact:\s*true\s*\}\)/, '공식 Puck menu root 안 밑줄 버튼 검증이 필요합니다.'],
     [/expect\(bold\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(italic\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(underline\)\.toHaveCount\(1\)/,
       '부분 글자 B/I/U control은 공식 Puck menu 안에 각각 하나만 있어야 합니다.'],
     [/getByRole\(['"]button['"],\s*\{\s*name:\s*['"]링크 편집['"],\s*exact:\s*true\s*\}\)\)\.toHaveCount\(0\)/, 'ArticleList title에서 링크 편집 control 부재를 검증해야 합니다.'],
-    [/const optionControl = menuRoot\.getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)[\s\S]{0,180}const optionPoint = await assertPointerReachable\(page, optionControl\)[\s\S]{0,180}activateControl\(page, optionPoint, projectName\)/,
-      '선택 글자 메뉴 option은 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'],
+    [/const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)[\s\S]{0,180}await assertPointerReachable\(page, optionControl\)[\s\S]{0,180}activateControl\(projectName, optionControl\)/,
+      '선택 글자 portal option은 iframe body에서 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'],
     [/const appliedMark = field\.locator\(`span\[data-g7pb-\$\{markAttribute\}="\$\{markValue\}"\]`\)[\s\S]{0,300}expect\(appliedMark\)\.toHaveText\(target\)/,
       '각 선택 글자 option은 다음 tap 전에 해당 범위에 즉시 적용됐는지 검증해야 합니다.'],
     [/sidebarField\.fill\(/, 'sidebar richtext를 실제 입력으로 변경해야 합니다.'],
@@ -202,14 +202,27 @@ export async function validateEditorAcceptanceContract(root) {
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
     [richTextSource, /const armOptionFromPointer[\s\S]{0,500}pendingOptionPointer\.current = \{ pointerId: event\.pointerId, value: nextValue \}/,
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
-    [richTextSource, /const chooseFromPointer[\s\S]{0,500}pending\.pointerId !== event\.pointerId \|\| pending\.value !== nextValue[\s\S]{0,200}onChange\(nextValue\)/,
-      '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
+    [richTextSource, /const scheduleCloseAfterPointer[\s\S]{0,500}setTimeout\([\s\S]{0,240}onClose\(\)/,
+      '선택 글자 옵션은 compatibility click이 없을 때도 제한된 유예 뒤 닫혀야 합니다.'],
+    [richTextSource, /const chooseFromPointer[\s\S]{0,500}pending\.pointerId !== event\.pointerId \|\| pending\.value !== nextValue[\s\S]{0,200}onChange\(nextValue\);[\s\S]{0,80}scheduleCloseAfterPointer\(\)/,
+      '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 compatibility click까지 portal을 유지한 뒤 닫혀야 합니다.'],
     [richTextSource, /onPointerDown=\{\(event\) => armOptionFromPointer\(event, option\.value\)\}[\s\S]{0,180}onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.value\)\}/,
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
+    [richTextSource, /preserveSelectionOnTouch[\s\S]{0,1200}addEventListener\(['"]touchstart['"], retainSelectionFromTouch, \{ passive: false \}\)[\s\S]*<RichTextFloatingLayer anchorRef=\{triggerRef\} preserveSelectionOnTouch[\s\S]{0,500}onPointerDown=\{\(event\) => armOptionFromPointer/,
+      '모바일 선택 글자 옵션은 touch 기본 포커스가 현재 범위를 접지 못하게 해야 합니다.'],
     [richTextSource, /if \(suppressCompatibilityClick\.current\) \{[\s\S]{0,140}clearPointerActivation\(\);[\s\S]{0,80}onClose\(\);[\s\S]{0,80}return;/,
-      '선택 글자 옵션은 실제 compatibility click까지 타깃을 유지해 click을 소비한 뒤 메뉴를 닫아야 합니다.'],
+      '선택 글자 옵션은 compatibility click이 발생해도 중복 적용하지 않아야 합니다.'],
     [richTextSource, /toggleBold\(\)\.run\(\)[\s\S]{0,900}toggleItalic\(\)\.run\(\)[\s\S]{0,900}toggleUnderline\(\)\.run\(\)/, '부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.'],
     [richTextSource, /<RichTextMenu\.Control[\s\S]{0,600}title="링크 편집"/, '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'],
+    [richTextSource, /import\s*\{\s*createPortal\s*\}\s*from\s*['"]react-dom['"]/, '선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.'],
+    [richTextSource, /function RichTextFloatingLayer[\s\S]*anchorRef\.current[\s\S]*data-g7pb-safe-clip-left[\s\S]*data-g7pb-safe-clip-bottom[\s\S]*ResizeObserver[\s\S]*MutationObserver[\s\S]*createPortal\([\s\S]*data-puck-rte-menu="portal"[\s\S]*ownerDocument\.body/,
+      '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'],
+    [richTextSource, /const FLOATING_LAYER_STABLE_FRAMES = 3;[\s\S]*let pendingPlacement: string \| null = null;[\s\S]*let stablePlacementFrames = 0;[\s\S]*pendingPlacement === placement[\s\S]*stablePlacementFrames \+= 1[\s\S]*stablePlacementFrames >= FLOATING_LAYER_STABLE_FRAMES[\s\S]*data-g7pb-floating-ready/,
+      '선택 글자 floating layer는 연속 세 프레임의 배치가 같을 때만 노출되어야 합니다.'],
+    [richTextSource, /const invalidatePlacement = \(\): void => \{[\s\S]*revealed = false;[\s\S]*pendingPlacement = null;[\s\S]*stablePlacementFrames = 0;[\s\S]*removeAttribute\(['"]data-g7pb-floating-ready['"]\)[\s\S]*visibility !== ['"]hidden['"][\s\S]*new ownerWindow\.MutationObserver\(invalidatePlacement\)/,
+      '선택 글자 floating layer는 safe-zone 변경 시 즉시 숨기고 안정 배치를 다시 계산해야 합니다.'],
+    [richTextSource, /g7pb-richtext-floating-layer[\s\S]*<RichTextFloatingLayer anchorRef=\{triggerRef\}[\s\S]*role="listbox"[\s\S]*<RichTextFloatingLayer anchorRef=\{ref\} align="end"/,
+      '글꼴·크기·굵기·색상 option과 링크 form 모두 같은 floating portal 계약을 사용해야 합니다.'],
     [richTextSource, /const rangeActive = Boolean\(editorState\?\.g7HasSelection\)/, 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'],
     [richTextSource, /g7HasSelection:\s*isRichTextRangeActive\(context\.editor\)/, 'Puck selector가 선택 범위 상태를 파생해야 합니다.'],
     [richTextSource, /RICH_TEXT_RANGE_STATE_MESSAGE\s*=\s*['"]g7pb:richtext-range-state['"]/, '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'],
@@ -219,22 +232,33 @@ export async function validateEditorAcceptanceContract(root) {
   for (const [source, pattern, message] of requiredRangeState) requirePattern(errors, source, pattern, message);
   const updateMarkSource = richTextSource.match(/const updateMark = [\s\S]*?\n  };/)?.[0] ?? '';
   if (!updateMarkSource || /setOpenMenu\(/.test(updateMarkSource)) {
-    errors.push('선택 글자 mark 적용 중 option을 제거하지 말고 compatibility click 소비 뒤 닫아야 합니다.');
+    errors.push('선택 글자 mark 명령은 메뉴 상태를 직접 바꾸지 않고 pointerup 수명주기에서 닫혀야 합니다.');
   }
-  requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,100}page\.touchscreen\.tap\(point\.x, point\.y\)/,
-    'mobile 편집 E2E는 검증된 실제 픽셀을 touch tap해야 합니다.');
-  requirePattern(errors, spec, /function activateControl\([\s\S]{0,300}page\.touchscreen\.tap\(point\.x, point\.y\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)/,
-    '선택 글자 control은 검증된 같은 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.');
-  requirePattern(errors, spec, /const optionControl = menuRoot\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(page, optionPoint, projectName\)[\s\S]{0,260}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
-    '선택 글자 option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.');
-  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]*?getComputedStyle\(iframe\)\.pointerEvents[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?data-puck-outline-dragging[\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?hit: stack\[0\] === iframe[\s\S]*?element\.contains\(hit\)[\s\S]*?return candidates\[reachableIndex\]/,
-    '편집 E2E는 control 가시 영역에서 상위 iframe과 내부 control을 모두 맞는 실제 픽셀을 찾아야 합니다.');
+  requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,160}control\.tap\(\{ scroll: ['"]none['"] \}\)/,
+    'mobile 편집 E2E는 변형된 iframe의 검증된 control을 실제 locator touch tap해야 합니다.');
+  requirePattern(errors, spec, /function activateControl\([\s\S]{0,300}control\.tap\(\{ scroll: ['"]none['"] \}\)[\s\S]{0,180}control\.click\(\{ scroll: ['"]none['"] \}\)/,
+    '선택 글자 control은 Playwright가 현재 변환을 반영한 중심점에 실제 touch 또는 mouse를 보내야 합니다.');
+  requirePattern(errors, spec, /function activateCanvasPoint\([\s\S]{0,260}page\.touchscreen\.tap\(point\.x, point\.y\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)[\s\S]*?dismissContextPanelWithPointer[\s\S]{0,900}activateCanvasPoint\(page, point, projectName\)/,
+    '요소 벌룬 닫기는 검증된 캔버스 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.');
+  requirePattern(errors, spec, /function expectStableControlGeometry[\s\S]*?expect\(control\)\.toBeVisible\(\)[\s\S]*?g7pb-richtext-floating-layer[\s\S]*?toHaveAttribute\(['"]data-g7pb-floating-ready['"], ['"]true['"]\)[\s\S]*?index < 3[\s\S]*?sample\.ready/,
+    '선택 글자 control은 안정 배치가 노출된 뒤 세 프레임의 geometry를 검증해야 합니다.');
+  requirePattern(errors, spec, /const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(projectName, optionControl\)[\s\S]{0,180}expect\(optionControl\)\.toBeHidden\(\)[\s\S]{0,180}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
+    '선택 글자 portal option의 실제 click 또는 touch tap 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.');
+  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]*?control\.evaluate[\s\S]*?element\.ownerDocument\.elementFromPoint[\s\S]*?const localCenter = localReachability\.points\[0\][\s\S]*?clientLeft:[\s\S]*?borderScaleX[\s\S]*?contentOrigin[\s\S]*?contentScale[\s\S]*?contentOrigin\.x \+ localCenter\.x \* contentScale\.x[\s\S]*?contentOrigin\.y \+ localCenter\.y \* contentScale\.y[\s\S]*?getComputedStyle\(iframe\)\.pointerEvents[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?data-puck-outline-dragging[\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?hit: stack\[0\] === iframe[\s\S]*?topDocumentReachability\.points\[0\]\?\.hit === true\) return/,
+    '편집 E2E는 iframe 내부 control 중심 hit부터 border·scale 변환과 상위 iframe hit까지 검증해야 합니다.');
   const pointerReachabilitySource = spec.match(/async function assertPointerReachable[\s\S]*?\n}\n\nasync function activateControl/)?.[0] ?? '';
   if (!pointerReachabilitySource || /requestAnimationFrame|waitForTimeout|setTimeout/.test(pointerReachabilitySource)) {
     errors.push('control 도달성은 autosave pointer 차단이 풀리기를 기다려 우회하면 안 됩니다.');
   }
-  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,200}control\.scrollIntoViewIfNeeded\(\)[\s\S]{0,240}control\.boundingBox\(\)/,
-    '편집 E2E는 control을 실제 scroll into view한 뒤 현재 bbox와 topmost를 다시 검증해야 합니다.');
+  if (!pointerReachabilitySource || /scrollIntoViewIfNeeded|control\.boundingBox\(\)/.test(pointerReachabilitySource)) {
+    errors.push('control 도달성 검증이 레이아웃을 이동시키거나 frame 변환을 Playwright bbox로 대체하면 안 됩니다.');
+  }
+  const activateControlSource = spec.match(/async function activateControl[\s\S]*?\n}\n\nasync function activateCanvasPoint/)?.[0] ?? '';
+  if (!activateControlSource || /page\.(?:touchscreen|mouse)|force\s*:|position\s*:|scroll:\s*['"]auto['"]/.test(activateControlSource) || !/control:\s*Locator/.test(activateControlSource)) {
+    errors.push('선택 글자 control은 필수 locator의 실제 tap/click만 사용해야 합니다.');
+  }
+  requirePattern(errors, spec, /const CANVAS_VIEWPORT_WIDTHS\s*=\s*\[360,\s*768,\s*1280\][\s\S]*keeps ActionBar and rich-text controls pointer-reachable across the host and canvas matrix[\s\S]*for \(const width of CANVAS_VIEWPORT_WIDTHS\)/,
+    '모든 browser project에서 360·768·1280 내부 canvas 조합을 실제 포인터로 검증해야 합니다.');
   requirePattern(errors, spec, /mobile viewport switcher must not overlap the Puck menu toggle[\s\S]{0,900}mobile Puck menu toggle must remain pointer-reachable[\s\S]{0,300}menuToggle\.click\(\)[\s\S]{0,200}viewportSwitcher\)\.toBeHidden\(\)/,
     'mobile 편집 E2E는 viewport switcher 비겹침과 실제 menu 닫기를 검증해야 합니다.');
   const forbiddenDuplicateRangeState = [

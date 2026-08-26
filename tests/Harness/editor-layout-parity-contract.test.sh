@@ -72,19 +72,29 @@ printf '\n._MenuBar--menuOpen_deadbeef { position: static; }\n' \
 expect_failure 'Puck vendor 해시 class를 모바일 메뉴 레이아웃 계약으로 사용하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> div > \[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\) \{[^}]*overflow:) auto hidden;/${1} hidden;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '모바일 부분 글자 ActionBar는 세로 확장 대신 가로 스크롤 strip을 사용해야 합니다.'
+perl -0pi -e 's/className="g7pb-selected-block-actionbar"/className="g7pb-selected-block-actions"/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure '선택 블록 ActionBar는 Puck 해시 class와 무관한 제품 래퍼 계약이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> div > \[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\) \{[^}]*flex-wrap:) nowrap;/${1} wrap;/' \
+perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{ height:) 0;/${1} auto;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '모바일 부분 글자 ActionBar는 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.'
+expect_failure '좁은 캔버스의 선택 블록 ActionBar host는 이동 후 빈 hit box를 남기면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> \[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\) \{[^}]*flex:) 0 0 auto;/${1} 1 0 100%;/' \
+perl -0pi -e 's/(\.g7pb-selected-block-actionbar \{[^}]*overflow:) auto hidden;/${1} hidden;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '모바일 부분 글자 ActionBar group은 새 행을 차지하지 않는 고정 폭 항목이어야 합니다.'
+expect_failure '좁은 캔버스 ActionBar는 줄바꿈 대신 가로 스크롤 strip을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-selected-block-actionbar \{[^}]*translateY\(calc\(-100% - )var\(--g7pb-selected-actionbar-gap\)/${1}0px/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '좁은 캔버스 ActionBar는 선택 콘텐츠 위쪽으로 자신의 높이와 간격만큼 이동해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-selected-block-actionbar > div \{[^}]*flex-wrap:) nowrap;/${1} wrap;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '좁은 캔버스 ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar \{ width:) max-content;/${1} 100%;/' \

@@ -120,31 +120,37 @@ export async function validateEditorLayoutParity(root) {
     ],
   ];
   for (const [pattern, message] of compactMenuFlow) requirePattern(errors, css, pattern, message);
-  const mobileRichTextActionStrip = css.match(
-    /@media\s*\(max-width:\s*900px\)[\s\S]*?div:has\(>\s*div\s*>\s*\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\)\s*\{([^}]*)\}/s,
+  requirePattern(errors, adapter,
+    /<div\s+className=['"]g7pb-selected-block-actionbar['"]\s+data-g7pb-selected-block-actionbar=['"]true['"]>\s*<ActionBar>/,
+    '선택 블록 ActionBar는 Puck 해시 class와 무관한 제품 래퍼 계약이 필요합니다.');
+  const mobileSelectedActionHost = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?div:has\(>\s*\.g7pb-selected-block-actionbar\)\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
-  if (!mobileRichTextActionStrip) {
-    errors.push('모바일 부분 글자 ActionBar의 전용 한 줄 strip이 필요합니다.');
+  requirePattern(errors, mobileSelectedActionHost,
+    /height:\s*0;[\s\S]*min-height:\s*0;/,
+    '좁은 캔버스의 선택 블록 ActionBar host는 이동 후 빈 hit box를 남기면 안 됩니다.');
+  const mobileSelectedActionStrip = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?\.g7pb-selected-block-actionbar\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  if (!mobileSelectedActionStrip) {
+    errors.push('좁은 캔버스 선택 블록 ActionBar의 전용 안전 영역이 필요합니다.');
   } else {
-    requirePattern(errors, mobileRichTextActionStrip,
-      /width:\s*calc\(100vw\s*-\s*1rem\);[\s\S]*max-width:\s*calc\(100vw\s*-\s*1rem\);[\s\S]*min-width:\s*0;/,
-      '모바일 부분 글자 ActionBar는 viewport 안쪽 폭과 축소 가능한 최소 폭을 유지해야 합니다.');
-    requirePattern(errors, mobileRichTextActionStrip,
+    requirePattern(errors, mobileSelectedActionStrip,
+      /width:\s*max-content;[\s\S]*max-width:\s*calc\(100vw\s*-\s*1rem\);[\s\S]*min-width:\s*0;/,
+      '좁은 캔버스 ActionBar는 컨트롤 폭을 유지하되 viewport 안쪽으로 제한되어야 합니다.');
+    requirePattern(errors, mobileSelectedActionStrip,
       /overflow:\s*auto\s+hidden;/,
-      '모바일 부분 글자 ActionBar는 세로 확장 대신 가로 스크롤 strip을 사용해야 합니다.');
-    requirePattern(errors, mobileRichTextActionStrip,
-      /flex-wrap:\s*nowrap;/,
-      '모바일 부분 글자 ActionBar는 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.');
+      '좁은 캔버스 ActionBar는 줄바꿈 대신 가로 스크롤 strip을 사용해야 합니다.');
+    requirePattern(errors, mobileSelectedActionStrip,
+      /--g7pb-selected-actionbar-gap:\s*\.5rem;[\s\S]*transform:\s*translateY\(calc\(-100%\s*-\s*var\(--g7pb-selected-actionbar-gap\)\)\);/,
+      '좁은 캔버스 ActionBar는 선택 콘텐츠 위쪽으로 자신의 높이와 간격만큼 이동해야 합니다.');
   }
-  const mobileRichTextActionGroup = css.match(
-    /@media\s*\(max-width:\s*900px\)[\s\S]*?div:has\(>\s*\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\)\s*\{([^}]*)\}/s,
+  const mobileSelectedActionContent = css.match(
+    /@media\s*\(max-width:\s*900px\)[\s\S]*?\.g7pb-selected-block-actionbar\s*>\s*div\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
-  requirePattern(errors, mobileRichTextActionGroup,
-    /width:\s*max-content;[\s\S]*min-width:\s*max-content;[\s\S]*flex:\s*0\s+0\s+auto;/,
-    '모바일 부분 글자 ActionBar group은 새 행을 차지하지 않는 고정 폭 항목이어야 합니다.');
-  if (/order:\s*99;/.test(mobileRichTextActionGroup)) {
-    errors.push('모바일 부분 글자 ActionBar group을 전체 폭 후행 행으로 보내면 안 됩니다.');
-  }
+  requirePattern(errors, mobileSelectedActionContent,
+    /width:\s*max-content;[\s\S]*min-width:\s*max-content;[\s\S]*flex-wrap:\s*nowrap;/,
+    '좁은 캔버스 ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.');
   const mobileRichTextMenu = css.match(
     /@media\s*\(max-width:\s*900px\)[\s\S]*?\[data-puck-rte-menu\]:has\(\.g7pb-richtext-inline-toolbar\)\s*\{([^}]*)\}/s,
   )?.[1] ?? '';

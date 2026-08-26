@@ -342,7 +342,7 @@ final class HtmlDocumentCompilerTest extends TestCase
     public function test_rich_text_length_uses_visible_text_and_rejects_visible_overflow(): void
     {
         $withinLimit = $this->productionLibraryDocument()->toArray();
-        $withinLimit['blocks'][2]['props']['title'] = '<p>'.str_repeat('<span data-g7pb-weight="bold">가</span>', 20).'</p>';
+        $withinLimit['blocks'][3]['props']['heading'] = '<p>'.str_repeat('<span data-g7pb-weight="bold">가</span>', 20).'</p>';
 
         $artifact = (string) $this->builtInCompiler()->compile(
             PageBuilderDocument::fromArray($withinLimit),
@@ -353,8 +353,93 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertSame(20, substr_count($artifact, 'data-g7pb-weight="bold"'));
 
         $overLimit = $this->productionLibraryDocument()->toArray();
-        $overLimit['blocks'][2]['props']['title'] = '<p>'.str_repeat('가', 201).'</p>';
+        $overLimit['blocks'][3]['props']['heading'] = '<p>'.str_repeat('가', 201).'</p>';
         $this->assertCompileRejected(PageBuilderDocument::fromArray($overLimit));
+    }
+
+    public function test_root_inline_rich_text_fields_use_visible_length_across_the_builtin_catalog(): void
+    {
+        /** @var array<string, string> $rootInlineFields */
+        $rootInlineFields = [
+            'content.heading-01' => 'heading',
+            'media.image-text-01' => 'heading',
+            'content.icon-list-01' => 'heading',
+            'content.hero-centered-01' => 'title',
+            'content.hero-split-01' => 'title',
+            'content.features-grid-01' => 'title',
+            'content.cta-split-01' => 'heading',
+            'content.contact-info-01' => 'heading',
+            'content.faq-accordion-01' => 'heading',
+            'content.process-timeline-01' => 'heading',
+            'content.tabs-01' => 'heading',
+            'content.article-list-01' => 'heading',
+            'content.event-schedule-01' => 'heading',
+            'content.download-resources-01' => 'heading',
+            'form.inquiry-01' => 'heading',
+            'location.map-directions-01' => 'heading',
+            'trust.logo-cloud-01' => 'heading',
+            'trust.logo-carousel-01' => 'heading',
+            'trust.testimonials-01' => 'heading',
+            'trust.testimonial-slider-01' => 'heading',
+            'commerce.pricing-tiers-01' => 'heading',
+            'commerce.comparison-table-01' => 'heading',
+            'company.team-grid-01' => 'heading',
+            'data.stats-icons-01' => 'heading',
+            'data.bar-chart-01' => 'heading',
+            'media.gallery-grid-01' => 'heading',
+            'media.video-embed-01' => 'heading',
+            'g7.board-recent-posts-01' => 'heading',
+            'g7.board-content-archive-01' => 'heading',
+            'g7.board-post-detail-01' => 'heading',
+            'g7.ecommerce-product-grid-01' => 'heading',
+            'g7.ecommerce-product-showcase-01' => 'heading',
+            'g7.ecommerce-product-detail-01' => 'heading',
+            'content.notice-01' => 'title',
+            'content.card-grid-01' => 'heading',
+            'navigation.social-links-01' => 'heading',
+            'media.image-carousel-01' => 'heading',
+        ];
+        $documents = [
+            $this->document('<p>본문</p>'),
+            $this->foundationDocument(),
+            PageBuilderDocument::fromArray($this->catalogPayload()),
+            $this->dynamicDocument(),
+            $this->formAndMapDocument(),
+            $this->phaseTwoDocument(),
+            $this->phaseThreeDocument(),
+            $this->phaseFourDocument(),
+            $this->productionLibraryDocument(),
+        ];
+        $longMarkup = '<p>'.str_repeat('<span data-g7pb-weight="bold">가</span>', 20).'</p>';
+        self::assertGreaterThan(200, mb_strlen($longMarkup));
+        $coveredTypes = [];
+
+        foreach ($documents as $document) {
+            $payload = $document->toArray();
+            foreach ($payload['blocks'] as &$block) {
+                $type = $block['type'];
+                $field = $rootInlineFields[$type] ?? null;
+                if ($field === null) {
+                    continue;
+                }
+                $block['props'][$field] = $longMarkup;
+                $coveredTypes[$type] = true;
+            }
+            unset($block);
+
+            $this->builtInCompiler()->compile(
+                PageBuilderDocument::fromArray($payload),
+                1,
+                'html',
+                'g7-7.0.7',
+            );
+        }
+
+        $expectedTypes = array_keys($rootInlineFields);
+        $actualTypes = array_keys($coveredTypes);
+        sort($expectedTypes);
+        sort($actualTypes);
+        self::assertSame($expectedTypes, $actualTypes);
     }
 
     public function test_article_title_marks_do_not_leak_tags_into_image_alternative_text(): void
@@ -909,6 +994,9 @@ final class HtmlDocumentCompilerTest extends TestCase
     {
         /** @var array<string, callable(array<string, mixed>&): void> $mutations */
         $mutations = [
+            'heading unsafe inline markup' => static function (array &$payload): void {
+                $payload['blocks'][0]['props']['heading'] = '<p onclick="alert(1)">위험</p>';
+            },
             'heading anchor' => static function (array &$payload): void {
                 $payload['blocks'][0]['props']['anchor'] = 'javascript:alert';
             },

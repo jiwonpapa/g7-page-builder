@@ -449,7 +449,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'level', 'anchor', 'appearance'], 'Heading');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $level = $this->requiredIntegerChoice($props, 'level', [2, 3, 4]);
         $anchor = $this->optionalString($props, 'anchor', 80) ?? '';
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
@@ -539,7 +539,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'body', 'image', 'mediaPosition', 'primaryLink', 'appearance'], 'Image text');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $body = $this->optionalString($props, 'body', 10000) ?? '';
         $image = $this->optionalMap($props, 'image');
         $mediaPosition = $this->requiredString($props, 'mediaPosition', 16);
@@ -568,7 +568,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Icon list');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->requiredString($props, 'layout', 24);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
@@ -675,7 +675,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'columns', 'variant', 'layout', 'appearance'], 'Card grid');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $columns = $this->requiredIntegerChoice($props, 'columns', [2, 3]);
         $variant = $this->requiredString($props, 'variant', 16);
@@ -783,7 +783,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private function compileSocialLinks(array $props): string
     {
         $this->assertOnlyKeys($props, ['heading', 'items', 'variant', 'alignment', 'appearance'], 'Social links');
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $variant = $this->requiredString($props, 'variant', 16);
         $alignment = $this->requiredString($props, 'alignment', 16);
@@ -819,7 +819,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'autoplay', 'interval', 'controls', 'aspectRatio', 'appearance'], 'Image carousel');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $images = $props['images'] ?? null;
         $autoplay = $this->requiredBoolean($props, 'autoplay');
         $interval = $this->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
@@ -854,7 +854,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private function compileHero(array $props): string
     {
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $title = $this->requiredString($props, 'title', 200);
+        $title = $this->requiredInlineRichTextString($props, 'title', 200);
         $body = $this->optionalString($props, 'body', 4000);
         $alignment = $this->optionalString($props, 'alignment', 16) ?? 'center';
         $layout = $this->optionalString($props, 'layout', 16);
@@ -905,7 +905,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileFeatures(array $props): string
     {
-        $title = $this->requiredString($props, 'title', 200);
+        $title = $this->requiredInlineRichTextString($props, 'title', 200);
         $items = $props['items'] ?? null;
         $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
@@ -955,7 +955,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         );
 
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $body = $this->optionalRichTextString($props, 'body', 2000);
         $theme = $this->requiredString($props, 'theme', 16);
         $layout = $this->optionalString($props, 'layout', 16);
@@ -1009,7 +1009,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'Contact',
         );
 
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $address = $this->requiredString($props, 'address', 1000);
         $phone = $this->requiredString($props, 'phone', 40);
         $email = $this->requiredString($props, 'email', 320);
@@ -1049,7 +1049,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         );
 
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $title = $this->requiredString($props, 'title', 200);
+        $title = $this->requiredInlineRichTextString($props, 'title', 200);
         $body = $this->optionalString($props, 'body', 2000);
         $mediaPosition = $this->requiredString($props, 'mediaPosition', 16);
         $layout = $this->optionalString($props, 'layout', 16);
@@ -1164,7 +1164,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private function compileLogoCloud(array $props): string
     {
         $this->assertOnlyKeys($props, ['heading', 'logos', 'layout', 'appearance'], 'Logo Cloud');
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $logos = $props['logos'] ?? null;
         $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
@@ -1208,7 +1208,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Stats');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
@@ -1252,7 +1252,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'plans', 'layout', 'appearance'], 'Pricing');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $plans = $props['plans'] ?? null;
         $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
@@ -1316,7 +1316,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'members', 'layout', 'appearance'], 'Team');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $members = $props['members'] ?? null;
         $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
@@ -1364,7 +1364,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'columns', 'layout', 'appearance'], 'Gallery');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $images = $props['images'] ?? null;
         $columns = $props['columns'] ?? null;
         $layout = $this->optionalString($props, 'layout', 16);
@@ -1406,7 +1406,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'unit', 'items', 'appearance'], 'Bar Chart');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
         $unit = $this->optionalString($props, 'unit', 20) ?? '';
         $items = $props['items'] ?? null;
@@ -1447,7 +1447,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'emptyMessage', 'appearance'], 'G7 recent posts');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $source = $this->requiredString($props, 'source', 16);
         $period = $this->requiredString($props, 'period', 16);
         $limit = $this->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8, 12]);
@@ -1477,7 +1477,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'columns', 'pageSize', 'audience', 'detailBasePath', 'emptyMessage', 'appearance'], 'G7 product grid');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $source = $this->requiredString($props, 'source', 16);
         $limit = $this->requiredIntegerChoice($props, 'limit', [2, 3, 4, 6, 8, 12]);
         $columns = $this->requiredIntegerChoice($props, 'columns', [2, 3, 4]);
@@ -1508,7 +1508,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'formKind', 'submitLabel', 'successMessage', 'privacyLabel', 'showPhone', 'showSubject', 'appearance'], 'Inquiry form');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
         $kind = $this->requiredString($props, 'formKind', 24);
         $submitLabel = $this->requiredString($props, 'submitLabel', 80);
@@ -1542,7 +1542,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
         $address = $this->requiredString($props, 'address', 500);
         $latitude = $this->requiredNumber($props, 'latitude', -90, 90);
@@ -1590,7 +1590,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Testimonials');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
@@ -1629,7 +1629,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'behavior', 'openFirst', 'appearance'], 'FAQ accordion');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $behavior = $this->requiredString($props, 'behavior', 16);
         $openFirst = $this->requiredBoolean($props, 'openFirst');
@@ -1660,7 +1660,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Process timeline');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
@@ -1703,7 +1703,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'initialTab', 'style', 'appearance'], 'Tabs');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $initialTab = $props['initialTab'] ?? null;
         $style = $this->requiredString($props, 'style', 16);
@@ -1744,7 +1744,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'columns', 'rows', 'highlightColumn', 'appearance'], 'Comparison table');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $columns = $props['columns'] ?? null;
         $rows = $props['rows'] ?? null;
         $highlight = $props['highlightColumn'] ?? null;
@@ -1799,7 +1799,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Article list');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
@@ -1844,7 +1844,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'caption', 'provider', 'videoId', 'ratio', 'appearance'], 'Video embed');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $caption = $this->optionalRichTextString($props, 'caption', 1000) ?? '';
         $provider = $this->requiredString($props, 'provider', 16);
         $videoId = $this->requiredString($props, 'videoId', 32);
@@ -1870,7 +1870,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'logos', 'autoplay', 'interval', 'appearance'], 'Logo carousel');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $logos = $props['logos'] ?? null;
         $autoplay = $this->requiredBoolean($props, 'autoplay');
         $interval = $this->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
@@ -1907,7 +1907,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'autoplay', 'interval', 'appearance'], 'Testimonial slider');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $autoplay = $this->requiredBoolean($props, 'autoplay');
         $interval = $this->requiredIntegerChoice($props, 'interval', [5000, 7000, 9000]);
@@ -1947,7 +1947,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Event schedule');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
@@ -1990,7 +1990,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'appearance'], 'Download resources');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! is_array($items) || count($items) < 1 || count($items) > 12) {
@@ -2026,7 +2026,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'showSearch', 'showBoardFilter', 'emptyMessage', 'appearance'], 'G7 board archive');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $source = $this->requiredString($props, 'source', 16);
         $period = $this->requiredString($props, 'period', 16);
         $limit = $this->requiredIntegerChoice($props, 'limit', [6, 8, 12]);
@@ -2053,7 +2053,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'pageSize', 'audience', 'detailBasePath', 'layout', 'emptyMessage', 'appearance'], 'G7 product showcase');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $source = $this->requiredString($props, 'source', 16);
         $limit = $this->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8]);
         $pageSize = array_key_exists('pageSize', $props) ? $this->requiredIntegerChoice($props, 'pageSize', [3, 4]) : 3;
@@ -2080,7 +2080,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'boardSlug', 'postId', 'detailUrl', 'linkLabel', 'audience', 'showContent', 'emptyMessage', 'appearance'], 'G7 post detail');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $boardSlug = $this->requiredString($props, 'boardSlug', 80);
         $postId = $props['postId'] ?? null;
         $detailUrl = $this->requiredString($props, 'detailUrl', 2048);
@@ -2107,7 +2107,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'productKey', 'detailUrl', 'buttonLabel', 'audience', 'showDescription', 'emptyMessage', 'appearance'], 'G7 product detail');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredString($props, 'heading', 200);
+        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $productKey = $this->requiredString($props, 'productKey', 100);
         $detailUrl = $this->requiredString($props, 'detailUrl', 2048);
         $buttonLabel = $this->requiredString($props, 'buttonLabel', 120);

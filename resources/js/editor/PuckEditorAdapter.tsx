@@ -2562,57 +2562,57 @@ function SelectedBlockActionBar({
     : elementSelection?.role === 'action' ? '버튼·링크'
       : elementSelection?.role === 'text' ? '텍스트' : '블록';
   return (
-    <>
-    <ActionBar>
-      <ActionBar.Group>
-        {parentAction}
-        {label && <ActionBar.Label label={label} />}
-        {selectedBlock && <ActionBar.Label label={`${elementSelection?.label ?? '블록 전체'} · ${roleLabel}`} />}
-      </ActionBar.Group>
-      <ActionBar.Group>
-        {mediaFieldPath && (
-          <>
-            <ActionBar.Action label="선택 이미지 변경" disabled={disabled} onClick={() => setMediaDialogOpen(true)}>
-              <ImagePlus size={16} data-testid="page-builder-canvas-media-open" aria-hidden="true" />
-            </ActionBar.Action>
-            <ActionBar.Action label="선택 이미지 비우기" disabled={disabled || !selectedBlock || !valueAtPath(selectedBlock.props, mediaFieldPath)}
-              onClick={clearDirectMedia}>
-              <ImageOff size={16} data-testid="page-builder-canvas-media-clear" aria-hidden="true" />
-            </ActionBar.Action>
-          </>
-        )}
-        {routeFieldPath ? <ActionBar.Action label="선택 버튼 연결 편집" disabled={disabled} onClick={() => setRouteDialogOpen(true)}>
-          <Link2 size={16} data-testid="page-builder-canvas-route-open" aria-hidden="true" />
-        </ActionBar.Action> : null}
-        {selectedBlock ? <ActionBar.Action
-          label={elementSelection?.fieldPath ? `${elementSelection.label} 스타일` : '블록 배경·여백'}
-          disabled={disabled} onClick={() => setTextToolsOpen((open) => !open)}>
-          <Type size={16} data-testid="page-builder-text-tools-open" aria-hidden="true" />
-        </ActionBar.Action> : null}
-        {selectedCollection && itemIndex !== null && limits ? <>
-          <ActionBar.Action label="선택 항목 위로" disabled={disabled || itemIndex === 0} onClick={() => updateCollection('up')}><span data-testid="page-builder-item-move-up" aria-hidden="true">⇡</span></ActionBar.Action>
-          <ActionBar.Action label="선택 항목 아래로" disabled={disabled || itemIndex >= selectedCollection.length - 1} onClick={() => updateCollection('down')}><span data-testid="page-builder-item-move-down" aria-hidden="true">⇣</span></ActionBar.Action>
-          <ActionBar.Action label="선택 항목 복제" disabled={disabled || selectedCollection.length >= limits.max} onClick={() => updateCollection('duplicate')}><span data-testid="page-builder-item-duplicate" aria-hidden="true">⧉</span></ActionBar.Action>
-          <ActionBar.Action label={`선택 항목 삭제${selectedCollection.length <= limits.min ? ` (최소 ${limits.min}개)` : ''}`} disabled={disabled || selectedCollection.length <= limits.min} onClick={() => updateCollection('delete')}><span data-testid="page-builder-item-delete" aria-hidden="true">⌫</span></ActionBar.Action>
-        </> : null}
-        <ActionBar.Action
-          label="블록 위로 이동"
-          disabled={disabled || selectedIndex === null || selectedIndex === 0}
-          onClick={() => move((selectedIndex ?? 0) - 1)}
-        >
-          <span data-testid="page-builder-block-move-up" aria-hidden="true">↑</span>
-        </ActionBar.Action>
-        <ActionBar.Action
-          label="블록 아래로 이동"
-          disabled={disabled || selectedIndex === null || selectedIndex >= contentLength - 1}
-          onClick={() => move((selectedIndex ?? -1) + 1)}
-        >
-          <span data-testid="page-builder-block-move-down" aria-hidden="true">↓</span>
-        </ActionBar.Action>
-        {children}
-      </ActionBar.Group>
-    </ActionBar>
-    </>
+    <div className="g7pb-selected-block-actionbar" data-g7pb-selected-block-actionbar="true">
+      <ActionBar>
+        <ActionBar.Group>
+          {parentAction}
+          {label && <ActionBar.Label label={label} />}
+          {selectedBlock && <ActionBar.Label label={`${elementSelection?.label ?? '블록 전체'} · ${roleLabel}`} />}
+        </ActionBar.Group>
+        <ActionBar.Group>
+          {mediaFieldPath && (
+            <>
+              <ActionBar.Action label="선택 이미지 변경" disabled={disabled} onClick={() => setMediaDialogOpen(true)}>
+                <ImagePlus size={16} data-testid="page-builder-canvas-media-open" aria-hidden="true" />
+              </ActionBar.Action>
+              <ActionBar.Action label="선택 이미지 비우기" disabled={disabled || !selectedBlock || !valueAtPath(selectedBlock.props, mediaFieldPath)}
+                onClick={clearDirectMedia}>
+                <ImageOff size={16} data-testid="page-builder-canvas-media-clear" aria-hidden="true" />
+              </ActionBar.Action>
+            </>
+          )}
+          {routeFieldPath ? <ActionBar.Action label="선택 버튼 연결 편집" disabled={disabled} onClick={() => setRouteDialogOpen(true)}>
+            <Link2 size={16} data-testid="page-builder-canvas-route-open" aria-hidden="true" />
+          </ActionBar.Action> : null}
+          {selectedBlock ? <ActionBar.Action
+            label={elementSelection?.fieldPath ? `${elementSelection.label} 스타일` : '블록 배경·여백'}
+            disabled={disabled} onClick={() => setTextToolsOpen((open) => !open)}>
+            <Type size={16} data-testid="page-builder-text-tools-open" aria-hidden="true" />
+          </ActionBar.Action> : null}
+          {selectedCollection && itemIndex !== null && limits ? <>
+            <ActionBar.Action label="선택 항목 위로" disabled={disabled || itemIndex === 0} onClick={() => updateCollection('up')}><span data-testid="page-builder-item-move-up" aria-hidden="true">⇡</span></ActionBar.Action>
+            <ActionBar.Action label="선택 항목 아래로" disabled={disabled || itemIndex >= selectedCollection.length - 1} onClick={() => updateCollection('down')}><span data-testid="page-builder-item-move-down" aria-hidden="true">⇣</span></ActionBar.Action>
+            <ActionBar.Action label="선택 항목 복제" disabled={disabled || selectedCollection.length >= limits.max} onClick={() => updateCollection('duplicate')}><span data-testid="page-builder-item-duplicate" aria-hidden="true">⧉</span></ActionBar.Action>
+            <ActionBar.Action label={`선택 항목 삭제${selectedCollection.length <= limits.min ? ` (최소 ${limits.min}개)` : ''}`} disabled={disabled || selectedCollection.length <= limits.min} onClick={() => updateCollection('delete')}><span data-testid="page-builder-item-delete" aria-hidden="true">⌫</span></ActionBar.Action>
+          </> : null}
+          <ActionBar.Action
+            label="블록 위로 이동"
+            disabled={disabled || selectedIndex === null || selectedIndex === 0}
+            onClick={() => move((selectedIndex ?? 0) - 1)}
+          >
+            <span data-testid="page-builder-block-move-up" aria-hidden="true">↑</span>
+          </ActionBar.Action>
+          <ActionBar.Action
+            label="블록 아래로 이동"
+            disabled={disabled || selectedIndex === null || selectedIndex >= contentLength - 1}
+            onClick={() => move((selectedIndex ?? -1) + 1)}
+          >
+            <span data-testid="page-builder-block-move-down" aria-hidden="true">↓</span>
+          </ActionBar.Action>
+          {children}
+        </ActionBar.Group>
+      </ActionBar>
+    </div>
   );
 }
 

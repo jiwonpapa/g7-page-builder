@@ -590,7 +590,7 @@ async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: 
   const trigger = rangeToolbar.getByTestId(testId);
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await rangeToolbar.getByRole('option', { name: option, exact: true }).click();
+  await rangeToolbar.locator('xpath=ancestor::body').getByRole('option', { name: option, exact: true }).click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 }
 

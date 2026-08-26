@@ -1679,19 +1679,14 @@
 
 @media (max-width: 720px) {
   .g7pb-header-controls {
-    position: fixed;
-    z-index: 80;
-    top: 112px;
-    right: 8px;
-    left: 8px;
-    justify-content: center;
+    position: static;
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 4px;
-    padding: 6px;
-    border: 1px solid var(--g7pb-border);
-    border-radius: 10px;
-    background: rgb(255 255 255 / 96%);
-    box-shadow: 0 8px 24px rgb(23 32 51 / 14%);
-    backdrop-filter: blur(10px);
+    padding: 0;
   }
 
   .g7pb-motion-batch button,
@@ -1712,10 +1707,6 @@
     min-height: 25px;
     padding-inline: 6px;
     font-size: 9px;
-  }
-
-  .g7pb-editor-warning {
-    top: 164px;
   }
 
   .g7pb-block-gallery-backdrop {

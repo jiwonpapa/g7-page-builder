@@ -320,7 +320,9 @@ describe('Puck-native rich-text editing', () => {
 
     const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
       .find((option) => option.textContent?.includes('명조'));
+    const touchStart = new Event('touchstart', { bubbles: true, cancelable: true });
     await act(async () => {
+      serif?.dispatchEvent(touchStart);
       serif?.dispatchEvent(new PointerEvent('pointerdown', {
         bubbles: true,
         cancelable: true,
@@ -330,6 +332,7 @@ describe('Puck-native rich-text editing', () => {
         pointerType: 'touch',
       }));
     });
+    expect(touchStart.defaultPrevented).toBe(true);
     expect(chain.setMark).not.toHaveBeenCalled();
     expect(chain.run).not.toHaveBeenCalled();
     expect(serif?.isConnected).toBe(true);
@@ -399,7 +402,9 @@ describe('Puck-native rich-text editing', () => {
     });
     const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
       .find((option) => option.textContent?.includes('명조'));
+    const touchStart = new Event('touchstart', { bubbles: true, cancelable: true });
     await act(async () => {
+      serif?.dispatchEvent(touchStart);
       serif?.dispatchEvent(new PointerEvent('pointerdown', {
         bubbles: true,
         cancelable: true,
@@ -415,6 +420,7 @@ describe('Puck-native rich-text editing', () => {
         pointerType: 'touch',
       }));
     });
+    expect(touchStart.defaultPrevented).toBe(true);
 
     expect(chain.setMark).toHaveBeenCalledOnce();
     expect(chain.run).toHaveBeenCalledOnce();

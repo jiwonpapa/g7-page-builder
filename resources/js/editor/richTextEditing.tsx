@@ -42,12 +42,14 @@ function stableOverlayPixel(value: number, devicePixelRatio: number): number {
 function RichTextFloatingLayer({
   anchorRef,
   align = 'start',
+  preserveSelectionOnTouch = false,
   className,
   children,
   ...attributes
 }: React.HTMLAttributes<HTMLDivElement> & {
   anchorRef: React.RefObject<HTMLElement | null>;
   align?: 'start' | 'end';
+  preserveSelectionOnTouch?: boolean;
 }): React.ReactElement | null {
   const layerRef = useRef<HTMLDivElement>(null);
   const initialStyle = useRef<FloatingLayerStyle>({
@@ -189,6 +191,13 @@ function RichTextFloatingLayer({
     };
     currentDocument.addEventListener('scroll', scheduleFromScroll, true);
     ownerWindow.addEventListener('resize', invalidatePlacement);
+    const retainSelectionFromTouch = (event: TouchEvent): void => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    if (preserveSelectionOnTouch) {
+      layer.addEventListener('touchstart', retainSelectionFromTouch, { passive: false });
+    }
     position();
     return () => {
       if (animationFrame !== 0) ownerWindow.cancelAnimationFrame(animationFrame);
@@ -196,8 +205,9 @@ function RichTextFloatingLayer({
       safeClipObserver?.disconnect();
       currentDocument.removeEventListener('scroll', scheduleFromScroll, true);
       ownerWindow.removeEventListener('resize', invalidatePlacement);
+      if (preserveSelectionOnTouch) layer.removeEventListener('touchstart', retainSelectionFromTouch);
     };
-  }, [align, anchorRef, ownerDocument]);
+  }, [align, anchorRef, ownerDocument, preserveSelectionOnTouch]);
 
   if (!ownerDocument?.body) return null;
   return createPortal(
@@ -400,7 +410,7 @@ function RangeChoiceMenu<T extends string>({
       onPointerDown={toggleFromPointer} onClick={toggleFromKeyboard}>
       <span>{current.label}</span><ChevronDown size={13} aria-hidden="true" />
     </button>
-    {open ? <RichTextFloatingLayer anchorRef={triggerRef}
+    {open ? <RichTextFloatingLayer anchorRef={triggerRef} preserveSelectionOnTouch
       className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
       {values.map((option) => <button type="button" role="option" aria-selected={option.value === value}
         key={option.value}

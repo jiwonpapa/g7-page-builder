@@ -208,6 +208,8 @@ export async function validateEditorAcceptanceContract(root) {
       '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 compatibility click까지 portal을 유지한 뒤 닫혀야 합니다.'],
     [richTextSource, /onPointerDown=\{\(event\) => armOptionFromPointer\(event, option\.value\)\}[\s\S]{0,180}onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.value\)\}/,
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
+    [richTextSource, /preserveSelectionOnTouch[\s\S]{0,1200}addEventListener\(['"]touchstart['"], retainSelectionFromTouch, \{ passive: false \}\)[\s\S]*<RichTextFloatingLayer anchorRef=\{triggerRef\} preserveSelectionOnTouch[\s\S]{0,500}onPointerDown=\{\(event\) => armOptionFromPointer/,
+      '모바일 선택 글자 옵션은 touch 기본 포커스가 현재 범위를 접지 못하게 해야 합니다.'],
     [richTextSource, /if \(suppressCompatibilityClick\.current\) \{[\s\S]{0,140}clearPointerActivation\(\);[\s\S]{0,80}onClose\(\);[\s\S]{0,80}return;/,
       '선택 글자 옵션은 compatibility click이 발생해도 중복 적용하지 않아야 합니다.'],
     [richTextSource, /toggleBold\(\)\.run\(\)[\s\S]{0,900}toggleItalic\(\)\.run\(\)[\s\S]{0,900}toggleUnderline\(\)\.run\(\)/, '부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.'],

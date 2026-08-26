@@ -60,6 +60,7 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 });
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
+const { Puck } = await import('@puckeditor/core');
 const { PuckEditorAdapter, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
 const {
   createRichTextField,
@@ -198,6 +199,62 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('uses valid flow containers for every rich-text visual semantic', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<>
+        <RichTextCanvasField as="p" fieldPath="paragraph"><div>본문</div></RichTextCanvasField>
+        <RichTextCanvasField as="span" fieldPath="inline"><div>인라인</div></RichTextCanvasField>
+        <RichTextCanvasField as="strong" fieldPath="strong"><div>강조</div></RichTextCanvasField>
+        <RichTextCanvasField as="h3" fieldPath="heading"><div>제목</div></RichTextCanvasField>
+      </>);
+    });
+
+    const wrappers = Array.from(container.querySelectorAll<HTMLElement>('[data-g7pb-richtext-field="true"]'));
+    expect(wrappers.map((wrapper) => wrapper.tagName)).toEqual(['DIV', 'DIV', 'DIV', 'DIV']);
+    expect(wrappers.map((wrapper) => wrapper.dataset.g7pbRichtextDisplay)).toEqual(['p', 'span', 'strong', 'h3']);
+    expect(wrappers[0]).toHaveProperty('role', 'paragraph');
+    expect(wrappers[1].hasAttribute('role')).toBe(false);
+    expect(wrappers[2]).toHaveProperty('role', 'strong');
+    expect(wrappers[2].classList.contains('g7pb-element-weight--bold')).toBe(true);
+    expect(wrappers[3]).toHaveProperty('role', 'heading');
+    expect(wrappers[3].getAttribute('aria-level')).toBe('3');
+  });
+
+  it('renders every built-in block without rich-text DOM nesting errors', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const content = Object.entries(pageBuilderPuckConfig.components).map(([type, config], index) => ({
+      type,
+      props: {
+        ...config.defaultProps,
+        id: `dom-safety-${index}`,
+      },
+    }));
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<Puck
+        config={pageBuilderPuckConfig}
+        data={{ content, root: { props: {} } } as never}
+        iframe={{ enabled: false }}
+        onChange={() => undefined}
+        onPublish={() => undefined}
+      />);
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    });
+
+    expect(container.querySelectorAll('[data-testid="page-builder-block"]')).toHaveLength(content.length);
+    const consoleErrors = consoleError.mock.calls.map((call) => call.map(String).join(' '));
+    expect(consoleErrors).toEqual([]);
+  });
+
   it('delegates rich-text drag isolation to the native Puck inline wrapper', async () => {
     const parentPointerDown = vi.fn();
     const container = document.createElement('div');

@@ -22,6 +22,7 @@ const { pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEd
 interface InspectableField {
   type?: string;
   contentEditable?: boolean;
+  options?: Record<string, unknown>;
   arrayFields?: Record<string, InspectableField>;
 }
 
@@ -85,6 +86,13 @@ describe('builtin text field capability matrix', () => {
         }
       }
     }
+
+    const articleTitle = editorField('ArticleList', {
+      path: 'items.*.title',
+      kind: 'inline-rich',
+      allowLink: false,
+    });
+    expect(articleTitle.options?.link).toBe(false);
   });
 
   it('renders every root and collection rich path through RichTextCanvasField', () => {

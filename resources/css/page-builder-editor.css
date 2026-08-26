@@ -939,11 +939,48 @@
 .g7pb-richtext-inline-toolbar__link [role='alert'] { width: 100%; color: #b91c1c; font-size: .65rem; }
 .g7pb-selected-block-actionbar { display: contents; }
 
-@media (max-width: 900px) {
-  div:has(> .g7pb-selected-block-actionbar) { height: 0; min-height: 0; }
-  .g7pb-selected-block-actionbar { --g7pb-selected-actionbar-gap: .5rem; box-sizing: border-box; display: block; width: max-content; max-width: calc(100vw - 1rem); min-width: 0; overflow: auto hidden; transform: translateY(calc(-100% - var(--g7pb-selected-actionbar-gap))); scrollbar-width: thin; }
-  .g7pb-selected-block-actionbar > div { width: max-content; min-width: max-content; flex-wrap: nowrap; }
-  .g7pb-selected-block-actionbar > div > div { width: max-content; min-width: max-content; height: auto; flex: 0 0 auto; }
+body:has(.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) {
+  scroll-padding-block: 3.25rem;
+}
+
+body:has(.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) div:has(> .g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) {
+  height: 0;
+  min-height: 0;
+}
+
+.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'] {
+  box-sizing: border-box;
+  display: block;
+  width: max-content;
+  max-width: calc(100vw - 1rem);
+  min-width: 0;
+  overflow: auto hidden;
+  transform: translate(
+    var(--g7pb-selected-actionbar-translate-x, 0),
+    var(--g7pb-selected-actionbar-translate-y, 0)
+  );
+  visibility: hidden;
+  scrollbar-width: thin;
+}
+
+.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'][data-g7pb-safe-zone-ready='true'] {
+  visibility: visible;
+}
+
+.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'] > div {
+  width: max-content;
+  min-width: max-content;
+  flex-wrap: nowrap;
+}
+
+.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow'] > div > div {
+  width: max-content;
+  min-width: max-content;
+  height: auto;
+  flex: 0 0 auto;
+}
+
+body:has(.g7pb-selected-block-actionbar[data-g7pb-canvas-layout='narrow']) {
   [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) { width: max-content; max-width: none; min-width: max-content; flex: 0 0 auto; flex-wrap: nowrap; }
   [data-puck-rte-menu]:has(.g7pb-richtext-inline-toolbar) > :has(> .g7pb-richtext-inline-toolbar) { width: auto; min-width: 0; flex: 0 0 auto; }
   .g7pb-richtext-inline-toolbar { width: max-content; max-width: none; min-width: max-content; flex-wrap: nowrap; }

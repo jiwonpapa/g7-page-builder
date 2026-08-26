@@ -136,7 +136,8 @@ export async function validateEditorAcceptanceContract(root) {
     [/expect\(bold\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(italic\)\.toHaveCount\(1\)[\s\S]{0,160}expect\(underline\)\.toHaveCount\(1\)/,
       '부분 글자 B/I/U control은 공식 Puck menu 안에 각각 하나만 있어야 합니다.'],
     [/getByRole\(['"]button['"],\s*\{\s*name:\s*['"]링크 편집['"],\s*exact:\s*true\s*\}\)\)\.toHaveCount\(0\)/, 'ArticleList title에서 링크 편집 control 부재를 검증해야 합니다.'],
-    [/getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)\.click\(\)/, '선택 글자 메뉴의 실제 option click이 필요합니다.'],
+    [/const optionControl = menuRoot\.getByRole\(['"]option['"],\s*\{\s*name:\s*option,\s*exact:\s*true\s*\}\)[\s\S]{0,180}assertPointerReachable\(page, optionControl\)[\s\S]{0,180}activateControl\(optionControl, projectName\)/,
+      '선택 글자 메뉴 option은 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'],
     [/sidebarField\.fill\(/, 'sidebar richtext를 실제 입력으로 변경해야 합니다.'],
     [/page\.keyboard\.type\(/, 'canvas 선택 범위를 실제 키 입력으로 변경해야 합니다.'],
     [/page-builder-context-panel/, '요소 전체 벌룬 assertion이 필요합니다.'],
@@ -172,8 +173,8 @@ export async function validateEditorAcceptanceContract(root) {
   const requiredRangeState = [
     [richTextSource, /import\s*\{[^}]*RichTextMenu[^}]*\}\s*from\s*['"]@puckeditor\/core['"]/, '공식 Puck RichTextMenu를 직접 사용해야 합니다.'],
     [richTextSource, /function G7RichTextInlineMenu\(\{\s*editor,\s*editorState,\s*readOnly,/, '이동 중 click을 잃는 Puck 기본 inline B\/I\/U children을 중복 렌더하면 안 됩니다.'],
-    [richTextSource, /function NativeRangeControl[\s\S]{0,2200}<RichTextMenu\.Control/, '부분 글자 B/I/U는 공식 Puck Control을 사용하는 press-first control이어야 합니다.'],
-    [richTextSource, /onMouseDownCapture=\{applyFromMouse\}[\s\S]{0,240}onTouchStartCapture=\{applyFromTouch\}/, '부분 글자 B/I/U는 Puck의 pointerdown 격리 이후에도 도달하는 mouse·touch capture 경로에서 적용해야 합니다.'],
+    [richTextSource, /function NativeRangeControl[\s\S]{0,1800}<RichTextMenu\.Control/, '부분 글자 B/I/U는 공식 Puck Control을 사용하는 pointer-first control이어야 합니다.'],
+    [richTextSource, /onPointerDownCapture=\{applyFromPointer\}/, '부분 글자 B/I/U는 이동하는 Puck ActionBar의 click 유실 전 pointerdown capture에서 적용해야 합니다.'],
     [richTextSource, /toggleBold\(\)\.run\(\)[\s\S]{0,900}toggleItalic\(\)\.run\(\)[\s\S]{0,900}toggleUnderline\(\)\.run\(\)/, '부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.'],
     [richTextSource, /<RichTextMenu\.Control[\s\S]{0,600}title="링크 편집"/, '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'],
     [richTextSource, /const rangeActive = Boolean\(editorState\?\.g7HasSelection\)/, 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'],
@@ -183,6 +184,12 @@ export async function validateEditorAcceptanceContract(root) {
     [adapterSource, /acceptRangeState\(event\.data\.active === true\)/, '호스트 UI는 active와 inactive를 같은 상태 처리기로 동기화해야 합니다.'],
   ];
   for (const [source, pattern, message] of requiredRangeState) requirePattern(errors, source, pattern, message);
+  requirePattern(errors, spec, /projectName === ['"]mobile['"][\s\S]{0,100}control\.tap\(\)/,
+    'mobile 편집 E2E는 선택 글자 control을 실제 touch tap으로 검증해야 합니다.');
+  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,1400}document\.elementFromPoint\(x, y\)[\s\S]{0,300}frameHit: hit === iframe/,
+    '편집 E2E는 상위 문서에서 control 중심점이 canvas iframe에 도달하는지 검증해야 합니다.');
+  requirePattern(errors, spec, /mobile viewport switcher must not overlap the Puck menu toggle[\s\S]{0,900}mobile Puck menu toggle must remain pointer-reachable[\s\S]{0,300}menuToggle\.click\(\)[\s\S]{0,200}viewportSwitcher\)\.toBeHidden\(\)/,
+    'mobile 편집 E2E는 viewport switcher 비겹침과 실제 menu 닫기를 검증해야 합니다.');
   const forbiddenDuplicateRangeState = [
     [/\bTextRangeBookmark\b|\bbookmarkRef\b/, 'Puck selection 외 별도 bookmark 상태를 두면 안 됩니다.'],
     [/\buseRichTextEditorRevision\b/, 'Puck editorState와 별도 revision 구독을 두면 안 됩니다.'],

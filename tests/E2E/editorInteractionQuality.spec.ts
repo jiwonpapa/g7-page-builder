@@ -62,8 +62,11 @@ async function assertTabletHeaderHeight(page: Page, projectName: string): Promis
 async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
   const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
   const button = page.getByTestId(`page-builder-viewport-${width}`);
+  const menuToggle = page.getByRole('button', { name: 'Toggle menu bar' });
+  let openedMenu = false;
   if (!(await button.isVisible())) {
-    await page.getByRole('button', { name: 'Toggle menu bar' }).click();
+    await menuToggle.click();
+    openedMenu = true;
   }
   await expect(button).toBeVisible();
   await button.click();
@@ -74,6 +77,30 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<void>
   await page.evaluate(() => new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));
+  if (openedMenu) {
+    const viewportSwitcher = page.locator('.g7pb-viewport-switcher');
+    const [toggleBox, switcherBox] = await Promise.all([
+      menuToggle.boundingBox(),
+      viewportSwitcher.boundingBox(),
+    ]);
+    if (!toggleBox || !switcherBox) throw new Error('Mobile header control geometry is unavailable.');
+    const overlaps = toggleBox.x < switcherBox.x + switcherBox.width
+      && toggleBox.x + toggleBox.width > switcherBox.x
+      && toggleBox.y < switcherBox.y + switcherBox.height
+      && toggleBox.y + toggleBox.height > switcherBox.y;
+    expect(overlaps, 'mobile viewport switcher must not overlap the Puck menu toggle').toBe(false);
+    const toggleReachable = await menuToggle.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const hit = element.ownerDocument.elementFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+      );
+      return hit === element || element.contains(hit);
+    });
+    expect(toggleReachable, 'mobile Puck menu toggle must remain pointer-reachable').toBe(true);
+    await menuToggle.click();
+    await expect(viewportSwitcher).toBeHidden();
+  }
 }
 
 async function exposeCanvasForPointer(page: Page): Promise<void> {
@@ -187,7 +214,33 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
   return menuRoot;
 }
 
-async function assertPointerReachable(control: Locator): Promise<void> {
+async function assertPointerReachable(page: Page, control: Locator): Promise<void> {
+  const [controlBox, iframeBox] = await Promise.all([
+    control.boundingBox(),
+    page.locator(CANVAS_IFRAME).boundingBox(),
+  ]);
+  if (!controlBox || !iframeBox) throw new Error('Range control frame geometry is unavailable.');
+  const center = {
+    x: controlBox.x + controlBox.width / 2,
+    y: controlBox.y + controlBox.height / 2,
+  };
+  const topDocumentReachability = await page.evaluate(({ x, y, iframeSelector }) => {
+    const iframe = document.querySelector(iframeSelector);
+    const hit = document.elementFromPoint(x, y);
+    return {
+      frameHit: hit === iframe,
+      hitClass: hit instanceof HTMLElement ? hit.className : '',
+      hitTag: hit?.tagName ?? '',
+    };
+  }, { ...center, iframeSelector: CANVAS_IFRAME });
+  expect(
+    topDocumentReachability.frameHit,
+    `range control is covered above the iframe: ${JSON.stringify(topDocumentReachability)}`,
+  ).toBe(true);
+  expect(center.x).toBeGreaterThanOrEqual(iframeBox.x);
+  expect(center.x).toBeLessThanOrEqual(iframeBox.x + iframeBox.width);
+  expect(center.y).toBeGreaterThanOrEqual(iframeBox.y);
+  expect(center.y).toBeLessThanOrEqual(iframeBox.y + iframeBox.height);
   const reachability = await control.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -209,15 +262,25 @@ async function assertPointerReachable(control: Locator): Promise<void> {
   expect(reachability.centerHit, `range control is not pointer-reachable: ${JSON.stringify(reachability)}`).toBe(true);
 }
 
+async function activateControl(control: Locator, projectName: string): Promise<void> {
+  if (projectName === 'mobile') {
+    await control.tap();
+    return;
+  }
+  await control.click();
+}
+
 async function clickNativeControl(
+  page: Page,
   control: Locator,
   menuRoot: Locator,
   field: Locator,
   target: string,
   tag: 'em' | 'strong' | 'u',
+  projectName: string,
 ): Promise<void> {
-  await assertPointerReachable(control);
-  await control.click();
+  await assertPointerReachable(page, control);
+  await activateControl(control, projectName);
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   await expect(field.locator(tag), `${tag} must apply immediately to the pointer-selected copy`).toHaveCount(1);
@@ -225,27 +288,33 @@ async function clickNativeControl(
 }
 
 async function chooseRangeOption(
+  page: Page,
   menuRoot: Locator,
   field: Locator,
   target: string,
   testId: string,
   option: string,
+  projectName: string,
 ): Promise<void> {
   const trigger = menuRoot.getByTestId(testId);
-  await assertPointerReachable(trigger);
-  await trigger.click();
+  await assertPointerReachable(page, trigger);
+  await activateControl(trigger, projectName);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await menuRoot.getByRole('option', { name: option, exact: true }).click();
+  const optionControl = menuRoot.getByRole('option', { name: option, exact: true });
+  await assertPointerReachable(page, optionControl);
+  await activateControl(optionControl, projectName);
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
 }
 
 async function applySelectedFormatting(
+  page: Page,
   menuRoot: Locator,
   field: Locator,
   target: string,
   choices: { font: string; size: string; tone: string; weight: string },
+  projectName: string,
 ): Promise<void> {
   const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
   const italic = menuRoot.getByRole('button', { name: '선택한 글자 기울임', exact: true });
@@ -253,13 +322,13 @@ async function applySelectedFormatting(
   await expect(bold).toHaveCount(1);
   await expect(italic).toHaveCount(1);
   await expect(underline).toHaveCount(1);
-  await clickNativeControl(bold, menuRoot, field, target, 'strong');
-  await clickNativeControl(italic, menuRoot, field, target, 'em');
-  await clickNativeControl(underline, menuRoot, field, target, 'u');
-  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-font', choices.font);
-  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-size', choices.size);
-  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-weight', choices.weight);
-  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-tone', choices.tone);
+  await clickNativeControl(page, bold, menuRoot, field, target, 'strong', projectName);
+  await clickNativeControl(page, italic, menuRoot, field, target, 'em', projectName);
+  await clickNativeControl(page, underline, menuRoot, field, target, 'u', projectName);
+  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-font', choices.font, projectName);
+  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-size', choices.size, projectName);
+  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-weight', choices.weight, projectName);
+  await chooseRangeOption(page, menuRoot, field, target, 'page-builder-richtext-tone', choices.tone, projectName);
 }
 
 async function assertSelectedFormatting(
@@ -287,7 +356,7 @@ async function collapseSelectionWithPointer(field: Locator, targetNode: Locator)
 }
 
 async function revealSidebarRichTextField(page: Page, expectedText: string): Promise<Locator> {
-  const locateField = (): Locator => page.locator('[contenteditable="true"]:visible').filter({ hasText: expectedText });
+  const locateField = (): Locator => page.locator('[contenteditable="true"]:visible');
   let sidebarField = locateField();
   if (await sidebarField.count() === 0) {
     const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
@@ -302,6 +371,7 @@ async function revealSidebarRichTextField(page: Page, expectedText: string): Pro
   }
   await expect(sidebarField).toHaveCount(1);
   await expect(sidebarField).toBeEditable();
+  await expect(sidebarField).toHaveText(expectedText);
   return sidebarField;
 }
 
@@ -418,9 +488,9 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     });
     await test.step('ROOT_INLINE_RICH_GATE', async () => {
       menuRoot = await officialPuckMenuRoot(page);
-      await applySelectedFormatting(menuRoot, rootField, EDITOR_INTERACTION_COPY.rootTarget, {
+      await applySelectedFormatting(page, menuRoot, rootField, EDITOR_INTERACTION_COPY.rootTarget, {
         font: '명조', size: 'L', weight: '매우 굵게', tone: '사용자색 1',
-      });
+      }, testInfo.project.name);
       await assertSelectedFormatting(rootField, EDITOR_INTERACTION_COPY.rootTarget,
         EDITOR_INTERACTION_COPY.rootPrefix, EDITOR_INTERACTION_COPY.rootSuffix, ROOT_FORMATTING);
     });
@@ -452,9 +522,9 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await dragSelectText(page, nestedField, nestedTarget, EDITOR_INTERACTION_COPY.nestedTarget);
       const nestedMenuRoot = await officialPuckMenuRoot(page);
       await expect(elementPanel).toBeHidden();
-      await applySelectedFormatting(nestedMenuRoot, nestedField, EDITOR_INTERACTION_COPY.nestedTarget, {
+      await applySelectedFormatting(page, nestedMenuRoot, nestedField, EDITOR_INTERACTION_COPY.nestedTarget, {
         font: '고정폭', size: 'XL', weight: '굵게', tone: '강조색',
-      });
+      }, testInfo.project.name);
       await assertSelectedFormatting(nestedField, EDITOR_INTERACTION_COPY.nestedTarget,
         EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);
       await collapseSelectionWithPointer(nestedField, nestedTarget);

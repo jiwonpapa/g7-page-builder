@@ -184,7 +184,7 @@ perl -0pi -e 's/ROOT_INLINE_RICH_GATE/ROOT_INLINE_RICH_REMOVED/' \
 expect_failure 'root inline-rich 실제 편집 gate가 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/await applySelectedFormatting\(menuRoot/await assertSelectedFormatting(menuRoot/' \
+perl -0pi -e 's/await applySelectedFormatting\(page, menuRoot/await assertSelectedFormatting(page, menuRoot/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'root inline-rich gate가 공식 B/I/U와 G7 선택 서식을 실제 적용해야 합니다.'
 
@@ -194,7 +194,7 @@ perl -0pi -e 's/NESTED_INLINE_RICH_GATE/NESTED_INLINE_RICH_REMOVED/' \
 expect_failure 'nested array inline-rich 실제 편집 gate가 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/await applySelectedFormatting\(nestedMenuRoot/await assertSelectedFormatting(nestedMenuRoot/' \
+perl -0pi -e 's/await applySelectedFormatting\(page, nestedMenuRoot/await assertSelectedFormatting(page, nestedMenuRoot/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'nested inline-rich gate가 공식 B/I/U와 G7 선택 서식을 실제 적용해야 합니다.'
 
@@ -264,14 +264,29 @@ perl -0pi -e 's/function G7RichTextInlineMenu\(\{ editor,/function G7RichTextInl
 expect_failure '이동 중 click을 잃는 Puck 기본 inline B/I/U children을 중복 렌더하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/onMouseDownCapture=\{applyFromMouse\}/onClick={applyFromMouse}/' \
+perl -0pi -e 's/onPointerDownCapture=\{applyFromPointer\}/onClick={applyFromPointer}/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '부분 글자 B/I/U는 Puck의 pointerdown 격리 이후에도 도달하는 mouse·touch capture 경로에서 적용해야 합니다.'
+expect_failure '부분 글자 B/I/U는 이동하는 Puck ActionBar의 click 유실 전 pointerdown capture에서 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/onTouchStartCapture=\{applyFromTouch\}/onClick={applyFromTouch}/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '부분 글자 B/I/U는 Puck의 pointerdown 격리 이후에도 도달하는 mouse·touch capture 경로에서 적용해야 합니다.'
+perl -0pi -e 's/control\.tap\(\)/control.click()/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'mobile 편집 E2E는 선택 글자 control을 실제 touch tap으로 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/activateControl\(optionControl, projectName\)/optionControl.focus()/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 메뉴 option은 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/frameHit: hit === iframe/frameHit: true/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '편집 E2E는 상위 문서에서 control 중심점이 canvas iframe에 도달하는지 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await expect\(viewportSwitcher\)\.toBeHidden\(\);/await expect(viewportSwitcher).toBeVisible();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'mobile 편집 E2E는 viewport switcher 비겹침과 실제 menu 닫기를 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/toggleBold\(\)\.run\(\)/toggleStrike().run()/' \

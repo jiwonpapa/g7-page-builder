@@ -731,6 +731,18 @@ describe('Puck editor surface contract', () => {
       heroTitle?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
+    const textToolsWereOpen = document.querySelector('[data-testid="page-builder-text-scale"]') !== null;
+    const textToolsIcon = await eventually<SVGElement>('[data-testid="page-builder-text-tools-open"]');
+    const textToolsAction = textToolsIcon.closest<HTMLButtonElement>('button');
+    expect(textToolsAction).not.toBeNull();
+    await act(async () => {
+      textToolsAction?.click();
+    });
+    if (textToolsWereOpen) {
+      await act(async () => {
+        textToolsAction?.click();
+      });
+    }
     const textScaleMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-text-scale"]');
     await act(async () => {
       textScaleMarker.value = 'large';

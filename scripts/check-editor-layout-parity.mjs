@@ -6,6 +6,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const REQUIRED_SPEC = 'tests/E2E/editorLayoutParity.spec.ts';
+const CATALOG_VISUAL_SPEC = 'tests/E2E/blockCatalogQuality.spec.ts';
 
 async function source(root, path) {
   try {
@@ -22,13 +23,14 @@ function requirePattern(errors, value, pattern, message) {
 
 export async function validateEditorLayoutParity(root) {
   const errors = [];
-  const [packageSource, css, publicCss, adapter, overlaySource, spec] = await Promise.all([
+  const [packageSource, css, publicCss, adapter, overlaySource, spec, catalogVisualSpec] = await Promise.all([
     source(root, 'package.json'),
     source(root, 'resources/css/page-builder-editor.css'),
     source(root, 'resources/css/page-builder-public.css'),
     source(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
     source(root, 'resources/js/editor/editorOverlaySafeZone.ts'),
     source(root, REQUIRED_SPEC),
+    source(root, CATALOG_VISUAL_SPEC),
   ]);
   const packageJson = JSON.parse(packageSource);
   const scripts = packageJson.scripts ?? {};
@@ -270,6 +272,32 @@ export async function validateEditorLayoutParity(root) {
 
   if (/\btest\.(?:skip|fixme)\s*\(/.test(spec) || /testInfo\.project\.name\s*!==/.test(spec)) {
     errors.push('레이아웃 E2E는 viewport나 시나리오를 skip/fixme로 우회하면 안 됩니다.');
+  }
+
+  const catalogVisualEvidence = [
+    [/test\.describe\.configure\(\{\s*retries:\s*0\s*\}\)/,
+      '블록 카탈로그 시각 회귀는 전역 retry로 실패를 숨기면 안 됩니다.'],
+    [/window\.visualViewport[\s\S]*window\.devicePixelRatio[\s\S]*Math\.round\([\s\S]*window\.scrollTo\(\{[\s\S]*behavior:\s*['"]auto['"]/,
+      '블록 카탈로그 캡처 전에 요소 원점을 device-pixel grid에 고정해야 합니다.'],
+    [/await prepareVisualDocument\(publicRoot\)/,
+      '블록 카탈로그 시각 비교 전에 전체 문서 media 준비 단계를 실행해야 합니다.'],
+    [/const firstCapture\s*=\s*await block\.screenshot[\s\S]*waitForVisualBlockStability\(block\)[\s\S]*const secondCapture\s*=\s*await block\.screenshot[\s\S]*firstCapture\.equals\(secondCapture\)[\s\S]*toMatchSnapshot\(snapshotName\)/,
+      '블록 카탈로그 baseline 비교 전에 동일 요소의 연속 캡처가 일치해야 합니다.'],
+  ];
+  for (const [pattern, message] of catalogVisualEvidence) {
+    requirePattern(errors, catalogVisualSpec, pattern, message);
+  }
+  const visualDocumentPreparation = catalogVisualSpec.match(
+    /async function prepareVisualDocument[\s\S]*?\n}\n\nasync function waitForVisualBlockStability/,
+  )?.[0] ?? '';
+  requirePattern(
+    errors,
+    visualDocumentPreparation,
+    /root\.locator\(['"]img['"]\)\.evaluateAll[\s\S]*for \(const image of images\)[\s\S]*image\.scrollIntoView[\s\S]*if \(image\.naturalWidth > 0\)[\s\S]*await image\.decode\(\)/,
+    '블록 카탈로그 캡처 전에 전체 문서 lazy media를 로드하고 decode해야 합니다.',
+  );
+  if (/\b(?:maxDiffPixels|maxDiffPixelRatio|threshold)\s*:/.test(catalogVisualSpec)) {
+    errors.push('블록 카탈로그 시각 회귀의 허용치 완화는 금지됩니다.');
   }
   return errors;
 }

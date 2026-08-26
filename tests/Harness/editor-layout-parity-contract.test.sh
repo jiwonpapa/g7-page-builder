@@ -20,6 +20,8 @@ copy_fixture() {
     "$fixture_root/fixture/resources/js/editor/editorOverlaySafeZone.ts"
   cp "$repo_root/tests/E2E/editorLayoutParity.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+  cp "$repo_root/tests/E2E/blockCatalogQuality.spec.ts" \
+    "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
 }
 
 expect_failure() {
@@ -104,12 +106,12 @@ perl -0pi -e 's/useSelectedActionBarSafeZone\(true\)/useSelectedActionBarSafeZon
 expect_failure 'ActionBar 안전영역은 PC·태블릿·모바일 모든 canvas에서 공통 적용되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{\n)/$1  height: 0;\n  min-height: 0;\n/' \
+perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{)/$1 height: 0; min-height: 0;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure 'ActionBar host 높이를 0으로 만들어 실제 컨트롤의 세로 hit area를 잘라내면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{\n  pointer-events:) none;/$1 auto;/' \
+perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{ pointer-events:) none;/$1 auto;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '이동 전 ActionBar host의 빈 hit box는 캔버스 포인터를 가로채면 안 됩니다.'
 
@@ -124,7 +126,7 @@ perl -0pi -e 's/var\(--g7pb-selected-actionbar-translate-y, 0\)/0px/' \
 expect_failure 'ActionBar는 계산된 host 안전영역 위치가 준비된 뒤 실제 포인터 hit area로 노출되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(data-g7pb-safe-zone-ready=\x27true\x27\] \{\n  visibility:) visible;/$1 hidden;/' \
+perl -0pi -e 's/(data-g7pb-safe-zone-ready=\x27true\x27\] \{ visibility:) visible;/$1 hidden;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure 'ActionBar는 안전영역 계산 완료 상태에서만 표시되어야 합니다.'
 
@@ -246,5 +248,35 @@ expect_failure 'preview는 제품 공개 CSS 적용과 geometry 안정화 뒤에
 copy_fixture
 perl -0pi -e 's# ?tests/E2E/editorLayoutParity\.spec\.ts##' "$fixture_root/fixture/package.json"
 expect_failure 'test:e2e:product가 tests/E2E/editorLayoutParity.spec.ts를 반드시 실행해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/test\.describe\.configure\(\{ retries: 0 \}\);/test.describe.configure({ retries: 1 });/' \
+  "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+expect_failure '블록 카탈로그 시각 회귀는 전역 retry로 실패를 숨기면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/window\.devicePixelRatio/1/' \
+  "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+expect_failure '블록 카탈로그 캡처 전에 요소 원점을 device-pixel grid에 고정해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await image\.decode\(\)/await Promise.resolve()/' \
+  "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+expect_failure '블록 카탈로그 캡처 전에 전체 문서 lazy media를 로드하고 decode해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await prepareVisualDocument\(publicRoot\)/await Promise.resolve()/' \
+  "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+expect_failure '블록 카탈로그 시각 비교 전에 전체 문서 media 준비 단계를 실행해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/firstCapture\.equals\(secondCapture\)/true/g' \
+  "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+expect_failure '블록 카탈로그 baseline 비교 전에 동일 요소의 연속 캡처가 일치해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/caret: '\''hide'\'',/caret: '\''hide'\'', threshold: 0.2,/' \
+  "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+expect_failure '블록 카탈로그 시각 회귀의 허용치 완화는 금지됩니다.'
 
 echo 'editor-layout-parity-contract: PASS'

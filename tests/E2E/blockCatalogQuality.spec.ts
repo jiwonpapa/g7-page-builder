@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, request as playwrightRequest, test, type Locator } from '@playwright/test';
+import { expect, request as playwrightRequest, test, type Locator, type TestInfo } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -38,11 +38,57 @@ const VISUAL_BLOCKS = [
 
 const VISUAL_STABLE_FRAME_COUNT = 4;
 const VISUAL_STABILITY_FRAME_LIMIT = 240;
+const VISUAL_CAPTURE_OPTIONS = {
+  animations: 'disabled',
+  caret: 'hide',
+  scale: 'css',
+} as const;
+
+async function prepareVisualDocument(root: Locator): Promise<void> {
+  await root.locator('img').evaluateAll(async (elements, options) => {
+    const images = elements as HTMLImageElement[];
+    const nextFrame = (): Promise<void> => new Promise((resolveFrame) => {
+      requestAnimationFrame(() => resolveFrame());
+    });
+    for (const image of images) {
+      image.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+      for (let frame = 0; !image.complete && frame < options.frameLimit; frame += 1) {
+        await nextFrame();
+      }
+      if (!image.complete) {
+        throw new Error(`Visual document image did not settle within ${options.frameLimit} animation frames.`);
+      }
+      if (image.naturalWidth > 0) {
+        try {
+          await image.decode();
+        } catch {
+          // A decoded frame is preferred, while a completed optional image remains covered below.
+        }
+      }
+    }
+
+    let previous = '';
+    let stableFrames = 0;
+    for (let frame = 0; frame < options.frameLimit; frame += 1) {
+      await nextFrame();
+      const documentRoot = document.documentElement;
+      const current = JSON.stringify([
+        documentRoot.scrollWidth,
+        documentRoot.scrollHeight,
+        images.map((image) => [image.complete, image.naturalWidth, image.naturalHeight]),
+      ]);
+      stableFrames = current === previous ? stableFrames + 1 : 1;
+      previous = current;
+      if (stableFrames >= options.stableFrameCount) return;
+    }
+    throw new Error(`Visual document media did not stabilize within ${options.frameLimit} animation frames.`);
+  }, {
+    frameLimit: VISUAL_STABILITY_FRAME_LIMIT,
+    stableFrameCount: VISUAL_STABLE_FRAME_COUNT,
+  });
+}
 
 async function waitForVisualBlockStability(block: Locator): Promise<void> {
-  await block.evaluate((element) => {
-    element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
-  });
   await block.evaluate(async (element, options) => {
     await document.fonts.ready;
     const nextFrame = (): Promise<void> => new Promise((resolveFrame) => {
@@ -63,15 +109,42 @@ async function waitForVisualBlockStability(block: Locator): Promise<void> {
       }
     }));
 
-    const signature = (): string => {
+    const canonicalScrollTarget = (): { left: number; top: number } => {
+      const rect = element.getBoundingClientRect();
+      const scrollingElement = document.scrollingElement ?? document.documentElement;
+      const viewport = window.visualViewport;
+      const pixelRatio = window.devicePixelRatio || 1;
+      const snap = (value: number): number => Math.round(value * pixelRatio) / pixelRatio;
+      const viewportWidth = viewport?.width ?? window.innerWidth;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const desiredLeft = (viewport?.offsetLeft ?? 0) + ((viewportWidth - rect.width) / 2);
+      const desiredTop = (viewport?.offsetTop ?? 0) + ((viewportHeight - rect.height) / 2);
+      const documentLeft = window.scrollX + rect.left;
+      const documentTop = window.scrollY + rect.top;
+      const maxLeft = Math.max(0, scrollingElement.scrollWidth - window.innerWidth);
+      const maxTop = Math.max(0, scrollingElement.scrollHeight - window.innerHeight);
+      const clamp = (value: number, maximum: number): number => Math.min(maximum, Math.max(0, value));
+      return {
+        left: Math.round(clamp(snap(documentLeft - desiredLeft), maxLeft)),
+        top: Math.round(clamp(snap(documentTop - desiredTop), maxTop)),
+      };
+    };
+
+    const signature = (target: { left: number; top: number }): string => {
       const rect = element.getBoundingClientRect();
       const root = document.documentElement;
       const viewport = window.visualViewport;
+      const pixelRatio = window.devicePixelRatio || 1;
       return JSON.stringify({
         block: [rect.left, rect.top, rect.width, rect.height, element.scrollWidth, element.scrollHeight],
+        captureOrigin: [
+          (rect.left - (viewport?.offsetLeft ?? 0)) * pixelRatio,
+          (rect.top - (viewport?.offsetTop ?? 0)) * pixelRatio,
+        ],
         document: [root.scrollWidth, root.scrollHeight],
         fontStatus: document.fonts.status,
         scroll: [window.scrollX, window.scrollY],
+        target: [target.left, target.top],
         viewport: viewport
           ? [viewport.offsetLeft, viewport.offsetTop, viewport.pageLeft, viewport.pageTop, viewport.width, viewport.height]
           : null,
@@ -81,9 +154,13 @@ async function waitForVisualBlockStability(block: Locator): Promise<void> {
     let previous = '';
     let stableFrames = 0;
     for (let frame = 0; frame < options.frameLimit; frame += 1) {
+      const target = canonicalScrollTarget();
+      window.scrollTo({ left: target.left, top: target.top, behavior: 'auto' });
       await nextFrame();
-      const current = signature();
-      stableFrames = current === previous ? stableFrames + 1 : 1;
+      const settledTarget = canonicalScrollTarget();
+      const current = signature(settledTarget);
+      const targetReached = window.scrollX === settledTarget.left && window.scrollY === settledTarget.top;
+      stableFrames = targetReached && current === previous ? stableFrames + 1 : 1;
       previous = current;
       if (stableFrames >= options.stableFrameCount) return;
     }
@@ -93,6 +170,42 @@ async function waitForVisualBlockStability(block: Locator): Promise<void> {
     frameLimit: VISUAL_STABILITY_FRAME_LIMIT,
     stableFrameCount: VISUAL_STABLE_FRAME_COUNT,
   });
+}
+
+async function expectDeterministicVisualBlock(
+  block: Locator,
+  snapshotName: string,
+  testInfo: TestInfo,
+): Promise<void> {
+  const captureState = (): Promise<Record<string, unknown>> => block.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    return {
+      rect: [rect.left, rect.top, rect.width, rect.height],
+      scroll: [window.scrollX, window.scrollY],
+      viewport: viewport
+        ? [viewport.offsetLeft, viewport.offsetTop, viewport.pageLeft, viewport.pageTop, viewport.width, viewport.height]
+        : null,
+    };
+  });
+  const beforeFirstCapture = await captureState();
+  const firstCapture = await block.screenshot(VISUAL_CAPTURE_OPTIONS);
+  const afterFirstCapture = await captureState();
+  await waitForVisualBlockStability(block);
+  const beforeSecondCapture = await captureState();
+  const secondCapture = await block.screenshot(VISUAL_CAPTURE_OPTIONS);
+  const afterSecondCapture = await captureState();
+  if (!firstCapture.equals(secondCapture)) {
+    await testInfo.attach(`${snapshotName}-first-capture`, { body: firstCapture, contentType: 'image/png' });
+    await testInfo.attach(`${snapshotName}-second-capture`, { body: secondCapture, contentType: 'image/png' });
+  }
+  expect(firstCapture.equals(secondCapture), `${snapshotName} 연속 캡처가 일치해야 합니다: ${JSON.stringify({
+    afterFirstCapture,
+    afterSecondCapture,
+    beforeFirstCapture,
+    beforeSecondCapture,
+  })}`).toBe(true);
+  expect.soft(secondCapture).toMatchSnapshot(snapshotName);
 }
 
 function adminCredentials(): { email: string; password: string } {
@@ -122,6 +235,7 @@ function allCatalogBlocks(): Array<Record<string, unknown>> {
 }
 
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
+test.describe.configure({ retries: 0 });
 
 test('publishes every catalog block and keeps the responsive visual baselines', async ({ page }, testInfo) => {
   test.setTimeout(240_000);
@@ -247,6 +361,7 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
     await comparisonScroller.focus();
     await expect(comparisonScroller).toBeFocused();
     await page.evaluate(() => document.fonts.ready);
+    await prepareVisualDocument(publicRoot);
 
     const accessibility = await new AxeBuilder({ page })
       .include('[data-testid="page-builder-public-root"]')
@@ -265,11 +380,7 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
       const block = publicRoot.locator(`[data-block-type="${blockType}"]`);
       await expect(block).toHaveCount(1);
       await waitForVisualBlockStability(block);
-      await expect.soft(block).toHaveScreenshot(`catalog-${blockType}-${testInfo.project.name}.png`, {
-        animations: 'disabled',
-        caret: 'hide',
-        scale: 'css',
-      });
+      await expectDeterministicVisualBlock(block, `catalog-${blockType}-${testInfo.project.name}.png`, testInfo);
     }
   } finally {
     if (documentId) {

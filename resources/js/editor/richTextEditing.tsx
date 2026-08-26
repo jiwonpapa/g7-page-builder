@@ -48,13 +48,13 @@ function RichTextFloatingLayer({
   align?: 'start' | 'end';
 }): React.ReactElement | null {
   const layerRef = useRef<HTMLDivElement>(null);
-  const [style, setStyle] = useState<FloatingLayerStyle>(() => ({
+  const initialStyle = useRef<FloatingLayerStyle>({
     '--g7pb-richtext-floating-left': '0px',
     '--g7pb-richtext-floating-top': '0px',
     '--g7pb-richtext-floating-max-width': 'calc(100vw - 1rem)',
     '--g7pb-richtext-floating-max-height': 'calc(100vh - 1rem)',
     visibility: 'hidden',
-  }));
+  });
   const anchor = anchorRef.current;
   const ownerDocument = anchor?.ownerDocument ?? null;
 
@@ -81,10 +81,15 @@ function RichTextFloatingLayer({
       const safeTop = Math.min(clipBottom, clipTop + inset);
       const safeRight = Math.max(safeLeft, clipRight - inset);
       const safeBottom = Math.max(safeTop, clipBottom - inset);
-      const anchorRect = currentAnchor.getBoundingClientRect();
-      const layerRect = layer.getBoundingClientRect();
       const maxWidth = stableOverlayPixel(Math.max(0, safeRight - safeLeft), ownerWindow.devicePixelRatio);
       const maxHeight = stableOverlayPixel(Math.max(0, safeBottom - safeTop), ownerWindow.devicePixelRatio);
+      const writeVariable = (name: string, value: string): void => {
+        if (layer.style.getPropertyValue(name) !== value) layer.style.setProperty(name, value);
+      };
+      writeVariable('--g7pb-richtext-floating-max-width', `${maxWidth}px`);
+      writeVariable('--g7pb-richtext-floating-max-height', `${maxHeight}px`);
+      const anchorRect = currentAnchor.getBoundingClientRect();
+      const layerRect = layer.getBoundingClientRect();
       const width = Math.min(layerRect.width, maxWidth);
       const height = Math.min(layerRect.height, maxHeight);
       const preferredLeft = align === 'end' ? anchorRect.right - width : anchorRect.left;
@@ -98,16 +103,9 @@ function RichTextFloatingLayer({
         ? below
         : above >= safeTop ? above : Math.min(Math.max(safeTop, below), Math.max(safeTop, safeBottom - height));
       const top = stableOverlayPixel(rawTop, ownerWindow.devicePixelRatio);
-      const next: FloatingLayerStyle = {
-        '--g7pb-richtext-floating-left': `${left}px`,
-        '--g7pb-richtext-floating-top': `${top}px`,
-        '--g7pb-richtext-floating-max-width': `${maxWidth}px`,
-        '--g7pb-richtext-floating-max-height': `${maxHeight}px`,
-        visibility: 'visible',
-      };
-      setStyle((current) => Object.keys(next).every((key) => (
-        current[key as keyof FloatingLayerStyle] === next[key as keyof FloatingLayerStyle]
-      )) ? current : next);
+      writeVariable('--g7pb-richtext-floating-left', `${left}px`);
+      writeVariable('--g7pb-richtext-floating-top', `${top}px`);
+      if (layer.style.visibility !== 'visible') layer.style.visibility = 'visible';
     };
     const schedule = (): void => {
       if (animationFrame === 0) animationFrame = ownerWindow.requestAnimationFrame(position);
@@ -151,7 +149,7 @@ function RichTextFloatingLayer({
   if (!ownerDocument?.body) return null;
   return createPortal(
     <div {...attributes} ref={layerRef}
-      className={`${className ?? ''} g7pb-richtext-floating-layer`.trim()} style={style}>
+      className={`${className ?? ''} g7pb-richtext-floating-layer`.trim()} style={initialStyle.current}>
       {children}
     </div>,
     ownerDocument.body,

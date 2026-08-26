@@ -7,13 +7,16 @@ trap 'rm -rf "$fixture_root"' EXIT
 
 copy_fixture() {
   rm -rf "$fixture_root/fixture"
-  mkdir -p "$fixture_root/fixture/scripts" "$fixture_root/fixture/tests/E2E" \
+  mkdir -p "$fixture_root/fixture/scripts" "$fixture_root/fixture/tests/E2E/support" \
     "$fixture_root/fixture/resources/js/editor"
   cp "$repo_root/package.json" "$fixture_root/fixture/package.json"
+  cp "$repo_root/playwright.config.ts" "$fixture_root/fixture/playwright.config.ts"
   cp "$repo_root/Makefile" "$fixture_root/fixture/Makefile"
   cp "$repo_root/scripts/coord-harness.sh" "$fixture_root/fixture/scripts/coord-harness.sh"
   cp "$repo_root/tests/E2E/editorInteractionQuality.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+  cp "$repo_root/tests/E2E/support/editorInteractionFixture.ts" \
+    "$fixture_root/fixture/tests/E2E/support/editorInteractionFixture.ts"
   cp "$repo_root/resources/js/editor/richTextEditing.tsx" \
     "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
   cp "$repo_root/resources/js/editor/PuckEditorAdapter.tsx" \
@@ -44,7 +47,7 @@ perl -0pi -e 's/page\.mouse\.down\s*\(/page.mouse.click(/' \
 expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/field\.click\(\{ position: pointer\.end \}\)/field.focus()/' \
+perl -0pi -e 's/field\.click\(\{ position: pointer\.end \}\)/field.focus()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 해제도 실제 locator 좌표의 pointer click으로 검증해야 합니다.'
 
@@ -94,14 +97,14 @@ perl -0pi -e 's/INTERACTIVE_CANVAS_GATE/INTERACTIVE_CANVAS_REMOVED/' \
 expect_failure '실제 iframe의 상호작용 가능 크기 gate가 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/const scaleX = box\.width \/ geometry\.fieldWidth;/const scaleX = 1;/' \
+perl -0pi -e 's/targetNode\.boundingBox\(\)/field.boundingBox()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'iframe의 실제 가로 축척을 pointer 좌표에 반영해야 합니다.'
+expect_failure '선택 대상의 실제 렌더링 box를 측정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/x: geometry\.startX \* scaleX/x: geometry.startX/' \
+perl -0pi -e 's/targetBox\.x - fieldBox\.x/0/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 시작점을 실제 locator 좌표로 변환해야 합니다.'
+expect_failure '선택 대상을 contenteditable 내부 실제 좌표로 변환해야 합니다.'
 
 copy_fixture
 printf '\nconsole.log("temporary geometry");\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
@@ -121,9 +124,129 @@ printf '\nrangeToolbar.getByTestId("page-builder-richtext-font").selectOption("s
 expect_failure '선택 글자 툴바는 selectOption 직접 주입이 아니라 실제 사용자 조작으로 검증해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/expect.poll(() => selectedText(field)).toContain(target)/' \
+perl -0pi -e 's/expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/expect.poll(() => selectedText(field)).toContain(target)/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'
+
+copy_fixture
+printf '\nfield.evaluate(() => document.createRange());\n' \
+  >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'DOM Range를 evaluate로 계산하거나 선택에 주입하면 안 됩니다.'
+
+copy_fixture
+printf '\npage.evaluate(() => document.execCommand("bold"));\n' \
+  >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'evaluate 안에서 편집 API를 직접 주입하면 안 됩니다.'
+
+copy_fixture
+printf '\npage.evaluate(() => { document.body.innerHTML = "injected"; });\n' \
+  >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'evaluate로 편집 DOM 값을 직접 주입하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e "s/test\('/test.skip('/" \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '전용 편집 E2E는 viewport를 skip/fixme로 우회하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/content\.heading-01/content.heading-removed/' \
+  "$fixture_root/fixture/tests/E2E/support/editorInteractionFixture.ts"
+expect_failure '대표 fixture에 root inline-rich Heading 블록이 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/content\.features-grid-01/content.features-removed/' \
+  "$fixture_root/fixture/tests/E2E/support/editorInteractionFixture.ts"
+expect_failure '대표 fixture에 nested array rich-text Features 블록이 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/content\.rich-text-01/content.rich-text-removed/' \
+  "$fixture_root/fixture/tests/E2E/support/editorInteractionFixture.ts"
+expect_failure '대표 fixture에 block-rich RichText 블록이 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/content\.article-list-01/content.article-list-removed/' \
+  "$fixture_root/fixture/tests/E2E/support/editorInteractionFixture.ts"
+expect_failure '대표 fixture에 no-link ArticleList 블록이 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/data-g7pb-richtext-field/data-g7pb-text-field/g' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'rich-text canvas selector는 중앙 rich-text marker를 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/\[data-puck-rte-menu\]:visible/\[data-testid="legacy-range-toolbar"\]:visible/g' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '공식 Puck data-puck-rte-menu root locator가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/ROOT_INLINE_RICH_GATE/ROOT_INLINE_RICH_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'root inline-rich 실제 편집 gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/await applySelectedFormatting\(menuRoot/await assertSelectedFormatting(menuRoot/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'root inline-rich gate가 공식 B/I/U와 G7 선택 서식을 실제 적용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/NESTED_INLINE_RICH_GATE/NESTED_INLINE_RICH_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'nested array inline-rich 실제 편집 gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/await applySelectedFormatting\(nestedMenuRoot/await assertSelectedFormatting(nestedMenuRoot/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'nested inline-rich gate가 공식 B/I/U와 G7 선택 서식을 실제 적용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/BLOCK_RICH_GATE/BLOCK_RICH_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'block-rich 실제 편집 gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/NO_LINK_INLINE_GATE/NO_LINK_INLINE_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '외부 action 내부 inline-rich의 no-link gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE/BIDIRECTIONAL_SIDEBAR_TO_CANVAS_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'sidebar richtext에서 canvas로 즉시 반영되는 gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE/BIDIRECTIONAL_CANVAS_TO_SIDEBAR_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'canvas richtext에서 sidebar로 즉시 반영되는 gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/expect\(sidebarField\)\.toHaveText\(EDITOR_INTERACTION_COPY\.canvasToSidebar\)/expect(sidebarField).toContainText(EDITOR_INTERACTION_COPY.canvasToSidebar)/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'canvas-to-sidebar gate가 저장 전 즉시 반영을 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e "s/선택한 글자 기울임/선택한 글자 회전/g" \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '공식 Puck menu root 안 기울임 버튼 검증이 필요합니다.'
+
+copy_fixture
+perl -0pi -e "s/name: '링크 편집'/name: '주소 편집'/" \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'ArticleList title에서 링크 편집 control 부재를 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/sidebarField\.fill\(/sidebarField.pressSequentially(/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'sidebar richtext를 실제 입력으로 변경해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/page\.keyboard\.type\(/page.keyboard.insertText(/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'canvas 선택 범위를 실제 키 입력으로 변경해야 합니다.'
+
+copy_fixture
+perl -0pi -e "s/name: 'mobile'/name: 'handheld'/" \
+  "$fixture_root/fixture/playwright.config.ts"
+expect_failure 'Playwright mobile project가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/g7pb:richtext-range-state/g7pb:richtext-range-active/' \

@@ -4,6 +4,7 @@ import {
   authenticateEditorInteractionAdmin,
   cleanupOwnedEditorInteractionDocument,
   createOwnedEditorInteractionDocument,
+  EDITOR_INTERACTION_COPY,
   editorInteractionApi,
   recoverOwnedEditorInteractionDocuments,
   type OwnedEditorInteractionDocument,
@@ -11,18 +12,28 @@ import {
 
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
-const RICH_TEXT_SELECTOR = '[data-testid="page-builder-block"][data-block-type="rich-text"] [contenteditable="true"]';
-const FIRST_TARGET = '굵게 강조하고';
-const SECOND_TARGET = '목록이나 링크';
+
+type RichTextBlockType = 'heading' | 'features' | 'rich-text' | 'article-list';
+
+interface FormattingExpectation {
+  font: 'mono' | 'serif';
+  size: 'large' | 'xlarge';
+  tone: 'accent' | 'custom1';
+  weight: 'bold' | 'semibold';
+}
 
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
 test.describe.configure({ retries: 0 });
 
-async function richTextField(page: Page): Promise<Locator> {
+function canvasRichTextSelector(blockType: RichTextBlockType, fieldPath: string): string {
+  return `[data-testid="page-builder-block"][data-block-type="${blockType}"] `
+    + `[data-g7pb-richtext-field="true"][data-g7pb-inline-field="${fieldPath}"] [contenteditable="true"]`;
+}
+
+async function richTextField(page: Page, blockType: RichTextBlockType, fieldPath: string): Promise<Locator> {
   await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
-  const fields = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:visible`);
-  await expect(fields.first()).toBeVisible();
-  const field = fields.first();
+  const field = page.frameLocator(CANVAS_IFRAME).locator(`${canvasRichTextSelector(blockType, fieldPath)}:visible`);
+  await expect(field).toHaveCount(1);
   await expect(field).toBeVisible();
   return field;
 }
@@ -68,9 +79,14 @@ async function exposeCanvasForPointer(page: Page): Promise<void> {
     await page.getByText('Blocks', { exact: true }).click();
     await expect(library).toBeHidden();
   }
+  const viewportWidth = page.viewportSize()?.width ?? 1440;
+  const sidebarEditor = page.locator('[contenteditable="true"]:visible');
+  if (viewportWidth <= 720 && await sidebarEditor.count()) {
+    await page.locator('nav').getByText('Fields', { exact: true }).click();
+    await expect(sidebarEditor).toBeHidden();
+  }
   const rightSidebarLayout = page.locator('[class*="PuckLayout--rightSideBarVisible"]');
-  if ((page.viewportSize()?.width ?? 1440) >= 638 && (page.viewportSize()?.width ?? 1440) <= 900
-    && await rightSidebarLayout.count()) {
+  if (viewportWidth >= 638 && viewportWidth <= 900 && await rightSidebarLayout.count()) {
     await page.getByRole('button', { name: 'Toggle right sidebar' }).click();
     await expect(rightSidebarLayout).toHaveCount(0);
   }
@@ -81,82 +97,34 @@ interface PointerGeometry {
   start: { x: number; y: number };
 }
 
-async function textPointerGeometry(field: Locator, target: string): Promise<PointerGeometry> {
+async function textPointerGeometry(field: Locator, targetNode: Locator): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
-  const geometry = await field.evaluate((element, selected) => {
-    const fieldRect = element.getBoundingClientRect();
-    const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-    let node = walker.nextNode();
-    while (node) {
-      const content = node.textContent ?? '';
-      const startOffset = content.indexOf(selected);
-      if (startOffset >= 0) {
-        const caretDocument = element.ownerDocument as Document & {
-          caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
-          caretRangeFromPoint?: (x: number, y: number) => Range | null;
-        };
-        const caretOffsetAtPoint = (x: number, y: number): number | null => {
-          const position = caretDocument.caretPositionFromPoint?.(x, y);
-          if (position) return position.offsetNode === node ? position.offset : null;
-          const range = caretDocument.caretRangeFromPoint?.(x, y);
-          return range?.startContainer === node ? range.startOffset : null;
-        };
-        const resolveCaretPoint = (rect: DOMRect, expectedOffset: number): { left: number; right: number; top: number } => {
-          const top = rect.top + rect.height / 2;
-          const candidates: Array<{ left: number; right: number; top: number }> = [];
-          for (let sample = 1; sample < 20; sample += 1) {
-            const left = rect.left + rect.width * sample / 20;
-            if (caretOffsetAtPoint(left, top) === expectedOffset) candidates.push({ left, right: left, top });
-          }
-          const point = candidates[Math.floor(candidates.length / 2)];
-          if (!point) throw new Error(`No pointer point resolves to caret offset ${expectedOffset}.`);
-          return point;
-        };
-        const startRange = element.ownerDocument.createRange();
-        startRange.setStart(node, startOffset);
-        startRange.setEnd(node, startOffset + 1);
-        const endRange = element.ownerDocument.createRange();
-        endRange.setStart(node, startOffset + selected.length - 1);
-        endRange.setEnd(node, startOffset + selected.length);
-        const start = resolveCaretPoint(startRange.getBoundingClientRect(), startOffset);
-        const end = resolveCaretPoint(endRange.getBoundingClientRect(), startOffset + selected.length);
-        return {
-          fieldHeight: fieldRect.height,
-          fieldWidth: fieldRect.width,
-          startX: start.left - fieldRect.left,
-          startY: start.top - fieldRect.top,
-          endX: end.right - fieldRect.left,
-          endY: end.top - fieldRect.top,
-        };
-      }
-      node = walker.nextNode();
-    }
-    throw new Error(`Pointer selection target was not found: ${selected}`);
-  }, target);
-  const box = await field.boundingBox();
-  if (!box || geometry.fieldWidth <= 0 || geometry.fieldHeight <= 0) {
+  await expect(targetNode).toHaveCount(1);
+  const [fieldBox, targetBox] = await Promise.all([field.boundingBox(), targetNode.boundingBox()]);
+  if (!fieldBox || !targetBox || fieldBox.width <= 0 || fieldBox.height <= 0
+    || targetBox.width <= 0 || targetBox.height <= 0) {
     throw new Error('Rich-text pointer geometry is unavailable.');
   }
-  const scaleX = box.width / geometry.fieldWidth;
-  const scaleY = box.height / geometry.fieldHeight;
+  const targetLeft = targetBox.x - fieldBox.x;
+  const targetTop = targetBox.y - fieldBox.y;
   return {
-    start: { x: geometry.startX * scaleX, y: geometry.startY * scaleY },
-    end: { x: geometry.endX * scaleX, y: geometry.endY * scaleY },
+    start: {
+      x: Math.max(0.25, Math.min(fieldBox.width - 0.25, targetLeft + 0.25)),
+      y: Math.max(0.25, Math.min(fieldBox.height - 0.25, targetTop + targetBox.height / 2)),
+    },
+    end: {
+      x: Math.max(0.25, Math.min(fieldBox.width - 0.25, targetLeft + targetBox.width - 0.25)),
+      y: Math.max(0.25, Math.min(fieldBox.height - 0.25, targetTop + targetBox.height / 2)),
+    },
   };
 }
 
-async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    if (attempt > 0) {
-      const collapse = await textPointerGeometry(field, target);
-      await field.click({ position: collapse.start });
-    }
+async function dragSelectText(page: Page, field: Locator, targetNode: Locator, target: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const pointer = await textPointerGeometry(field, targetNode);
+    if (attempt > 0) await field.click({ position: pointer.end });
     await field.focus();
     await expect.poll(() => selectedText(field)).toBe('');
-    await page.evaluate(() => new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    }));
-    const pointer = await textPointerGeometry(field, target);
     await field.hover({ position: pointer.start });
     await page.mouse.down();
     try {
@@ -164,27 +132,96 @@ async function dragSelectText(page: Page, field: Locator, target: string): Promi
     } finally {
       await page.mouse.up();
     }
-    const activeField = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:focus`);
-    if (await activeField.count() === 1 && await selectedText(activeField) === target) break;
+    if (await selectedText(field) === target) break;
   }
-  field = page.frameLocator(CANVAS_IFRAME).locator(`${RICH_TEXT_SELECTOR}:focus`);
-  await expect(field).toHaveCount(1);
   await expect(field).toBeFocused();
   await expect.poll(() => selectedText(field)).toBe(target);
 }
 
-async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: string): Promise<void> {
-  const trigger = rangeToolbar.getByTestId(testId);
-  await trigger.click();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await rangeToolbar.getByRole('option', { name: option, exact: true }).click();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+async function officialPuckMenuRoot(page: Page): Promise<Locator> {
+  const menuRoot = page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible');
+  await expect(menuRoot).toHaveCount(1);
+  await expect(menuRoot).toBeVisible();
+  await expect(menuRoot.getByTestId('page-builder-richtext-inline-toolbar')).toBeVisible();
+  return menuRoot;
 }
 
-async function collapseSelectionWithPointer(page: Page, field: Locator, target: string): Promise<void> {
-  const pointer = await textPointerGeometry(field, target);
+async function clickNativeControl(control: Locator, menuRoot: Locator, field: Locator, target: string): Promise<void> {
+  await control.click();
+  await expect(menuRoot).toBeVisible();
+  await expect.poll(() => selectedText(field)).toBe(target);
+}
+
+async function chooseRangeOption(
+  menuRoot: Locator,
+  field: Locator,
+  target: string,
+  testId: string,
+  option: string,
+): Promise<void> {
+  const trigger = menuRoot.getByTestId(testId);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await menuRoot.getByRole('option', { name: option, exact: true }).click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(menuRoot).toBeVisible();
+  await expect.poll(() => selectedText(field)).toBe(target);
+}
+
+async function applySelectedFormatting(
+  menuRoot: Locator,
+  field: Locator,
+  target: string,
+  choices: { font: string; size: string; tone: string; weight: string },
+): Promise<void> {
+  const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
+  const italic = menuRoot.getByRole('button', { name: '선택한 글자 기울임', exact: true });
+  const underline = menuRoot.getByRole('button', { name: '선택한 글자 밑줄', exact: true });
+  await clickNativeControl(bold, menuRoot, field, target);
+  await clickNativeControl(italic, menuRoot, field, target);
+  await clickNativeControl(underline, menuRoot, field, target);
+  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-font', choices.font);
+  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-size', choices.size);
+  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-weight', choices.weight);
+  await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-tone', choices.tone);
+}
+
+async function assertSelectedFormatting(
+  scope: Locator,
+  target: string,
+  prefix: string,
+  suffix: string,
+  expected: FormattingExpectation,
+): Promise<void> {
+  for (const tag of ['strong', 'em', 'u']) {
+    await expect(scope.locator(tag), `${tag} must apply only to the pointer-selected copy`).toHaveCount(1);
+    await expect(scope.locator(tag)).toHaveText(target);
+  }
+  const g7Mark = scope.locator(`span[data-g7pb-font="${expected.font}"][data-g7pb-size="${expected.size}"][data-g7pb-weight="${expected.weight}"][data-g7pb-tone="${expected.tone}"]`);
+  await expect(g7Mark).toHaveCount(1);
+  await expect(g7Mark).toHaveText(target);
+  await expect(scope).toContainText(prefix);
+  await expect(scope).toContainText(suffix);
+}
+
+async function collapseSelectionWithPointer(field: Locator, targetNode: Locator): Promise<void> {
+  const pointer = await textPointerGeometry(field, targetNode);
   await field.click({ position: pointer.end });
   await expect.poll(() => selectedText(field)).toBe('');
+}
+
+async function revealSidebarRichTextField(page: Page, label: string): Promise<Locator> {
+  let sidebarField = page.locator('[contenteditable="true"]:visible');
+  if (await sidebarField.count() !== 1) {
+    const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+    await expect(fieldsTab).toBeVisible();
+    await fieldsTab.click();
+    sidebarField = page.locator('[contenteditable="true"]:visible');
+  }
+  await expect(page.getByText(label, { exact: true }).last()).toBeVisible();
+  await expect(sidebarField).toHaveCount(1);
+  await expect(sidebarField).toBeEditable();
+  return sidebarField;
 }
 
 async function saveDraft(page: Page): Promise<void> {
@@ -213,8 +250,40 @@ async function publish(page: Page): Promise<void> {
   await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute('data-state', 'published');
 }
 
-test('keeps real pointer range editing exclusive, persistent, and publishable', async ({ context, page }, testInfo) => {
-  test.setTimeout(180_000);
+const ROOT_FORMATTING: FormattingExpectation = {
+  font: 'serif', size: 'large', weight: 'bold', tone: 'custom1',
+};
+const NESTED_FORMATTING: FormattingExpectation = {
+  font: 'mono', size: 'xlarge', weight: 'semibold', tone: 'accent',
+};
+
+async function assertPersistedEditorState(page: Page): Promise<void> {
+  const rootField = await richTextField(page, 'heading', 'heading');
+  await assertSelectedFormatting(rootField, EDITOR_INTERACTION_COPY.rootTarget,
+    EDITOR_INTERACTION_COPY.rootPrefix, EDITOR_INTERACTION_COPY.rootSuffix, ROOT_FORMATTING);
+  const nestedField = await richTextField(page, 'features', 'items.0.title');
+  await assertSelectedFormatting(nestedField, EDITOR_INTERACTION_COPY.nestedTarget,
+    EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);
+  await expect(await richTextField(page, 'rich-text', 'content')).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
+  await expect(await richTextField(page, 'article-list', 'items.0.title')).toHaveText(EDITOR_INTERACTION_COPY.articleTitle);
+}
+
+async function assertPublishedState(page: Page): Promise<void> {
+  const root = page.locator('[data-block-type="heading"]');
+  await assertSelectedFormatting(root, EDITOR_INTERACTION_COPY.rootTarget,
+    EDITOR_INTERACTION_COPY.rootPrefix, EDITOR_INTERACTION_COPY.rootSuffix, ROOT_FORMATTING);
+  const nested = page.locator('[data-block-type="features"] h3').first();
+  await assertSelectedFormatting(nested, EDITOR_INTERACTION_COPY.nestedTarget,
+    EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);
+  await expect(page.locator('[data-block-type="rich-text"]')).toContainText(EDITOR_INTERACTION_COPY.canvasToSidebar);
+  const articleHeading = page.locator('[data-block-type="article-list"] h3').first();
+  await expect(articleHeading.locator('a')).toHaveCount(1);
+  await expect(articleHeading.locator('a')).toHaveText(EDITOR_INTERACTION_COPY.articleTitle);
+  await expect(articleHeading.locator('a a')).toHaveCount(0);
+}
+
+test('keeps root, nested, block, and no-link rich text pointer editing persistent and publishable', async ({ context, page }, testInfo) => {
+  test.setTimeout(240_000);
   const token = await authenticateEditorInteractionAdmin(context);
   const api = await editorInteractionApi(token);
   let owned: OwnedEditorInteractionDocument | null = null;
@@ -227,10 +296,6 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
     await test.step('CANVAS_VIEWPORT_GATE', async () => {
       await setCanvasViewport(page, testInfo.project.name);
     });
-    let field = await richTextField(page);
-    const rangeToolbar = page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-richtext-inline-toolbar');
-    const elementPanel = page.getByTestId('page-builder-context-panel');
-
     await test.step('POINTER_CANVAS_GATE', async () => {
       await exposeCanvasForPointer(page);
     });
@@ -241,50 +306,101 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
       await assertTabletHeaderHeight(page, testInfo.project.name);
     });
 
+    let rootField = await richTextField(page, 'heading', 'heading');
+    let rootTarget = rootField.locator('a[href="/richtext-root"]');
     await test.step('REAL_POINTER_SELECTION_GATE', async () => {
-      await dragSelectText(page, field, FIRST_TARGET);
-      await expect(rangeToolbar).toBeVisible();
+      await dragSelectText(page, rootField, rootTarget, EDITOR_INTERACTION_COPY.rootTarget);
     });
+    let menuRoot: Locator;
+    await test.step('OFFICIAL_PUCK_MENU_ROOT_GATE', async () => {
+      menuRoot = await officialPuckMenuRoot(page);
+      await expect(menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true })).toBeVisible();
+      await expect(menuRoot.getByRole('button', { name: '선택한 글자 기울임', exact: true })).toBeVisible();
+      await expect(menuRoot.getByRole('button', { name: '선택한 글자 밑줄', exact: true })).toBeVisible();
+    });
+    await test.step('ROOT_INLINE_RICH_GATE', async () => {
+      menuRoot = await officialPuckMenuRoot(page);
+      await applySelectedFormatting(menuRoot, rootField, EDITOR_INTERACTION_COPY.rootTarget, {
+        font: '명조', size: 'L', weight: '매우 굵게', tone: '사용자색 1',
+      });
+      await assertSelectedFormatting(rootField, EDITOR_INTERACTION_COPY.rootTarget,
+        EDITOR_INTERACTION_COPY.rootPrefix, EDITOR_INTERACTION_COPY.rootSuffix, ROOT_FORMATTING);
+    });
+    const elementPanel = page.getByTestId('page-builder-context-panel');
     await test.step('RANGE_TOOLBAR_EXCLUSIVE_GATE', async () => {
+      menuRoot = await officialPuckMenuRoot(page);
       await expect(elementPanel).toBeHidden();
-      await rangeToolbar.getByRole('button', { name: '선택한 글자 굵게', exact: true }).click();
-      await expect(field.locator('strong')).toHaveText(FIRST_TARGET);
-      await expect(rangeToolbar).toBeVisible();
-      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-font', '명조');
-      await expect(rangeToolbar).toBeVisible();
-      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-size', 'L');
-      await expect(rangeToolbar).toBeVisible();
-      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-tone', '사용자색 1');
-      await expect(rangeToolbar).toBeVisible();
-      const mark = field.locator('span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="custom1"]');
-      await expect(mark).toHaveText(FIRST_TARGET);
-      await expect(field.locator('span[data-g7pb-font], span[data-g7pb-size], span[data-g7pb-tone]')).toHaveCount(1);
+      await expect.poll(() => selectedText(rootField)).toBe(EDITOR_INTERACTION_COPY.rootTarget);
     });
     await test.step('COLLAPSED_SELECTION_GATE', async () => {
-      await collapseSelectionWithPointer(page, field, FIRST_TARGET);
-      await expect(rangeToolbar).toBeHidden();
+      await collapseSelectionWithPointer(rootField, rootTarget);
+      await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
       await expect(elementPanel).toBeVisible();
       await page.getByTestId('page-builder-editor').click({ position: { x: 8, y: 8 } });
-      await expect(rangeToolbar).toBeHidden();
+      await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
       await expect(elementPanel).toBeHidden();
     });
     await test.step('REPEATED_SELECTION_GATE', async () => {
-      await dragSelectText(page, field, SECOND_TARGET);
-      await expect(rangeToolbar).toBeVisible();
+      rootField = await richTextField(page, 'heading', 'heading');
+      rootTarget = rootField.locator('a[href="/richtext-root"]');
+      await dragSelectText(page, rootField, rootTarget, EDITOR_INTERACTION_COPY.rootTarget);
+      await expect(await officialPuckMenuRoot(page)).toBeVisible();
+      await collapseSelectionWithPointer(rootField, rootTarget);
+    });
+
+    await test.step('NESTED_INLINE_RICH_GATE', async () => {
+      const nestedField = await richTextField(page, 'features', 'items.0.title');
+      const nestedTarget = nestedField.locator('a[href="/richtext-nested"]');
+      await dragSelectText(page, nestedField, nestedTarget, EDITOR_INTERACTION_COPY.nestedTarget);
+      const nestedMenuRoot = await officialPuckMenuRoot(page);
       await expect(elementPanel).toBeHidden();
-      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-weight', '매우 굵게');
-      await expect(rangeToolbar).toBeVisible();
-      await expect(field.locator('span[data-g7pb-weight="bold"]')).toHaveText(SECOND_TARGET);
+      await applySelectedFormatting(nestedMenuRoot, nestedField, EDITOR_INTERACTION_COPY.nestedTarget, {
+        font: '고정폭', size: 'XL', weight: '굵게', tone: '강조색',
+      });
+      await assertSelectedFormatting(nestedField, EDITOR_INTERACTION_COPY.nestedTarget,
+        EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);
+      await collapseSelectionWithPointer(nestedField, nestedTarget);
+    });
+
+    await test.step('NO_LINK_INLINE_GATE', async () => {
+      const articleField = await richTextField(page, 'article-list', 'items.0.title');
+      const articleTarget = articleField.locator('p').filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.articleTitle}$`) });
+      await dragSelectText(page, articleField, articleTarget, EDITOR_INTERACTION_COPY.articleTitle);
+      const articleMenuRoot = await officialPuckMenuRoot(page);
+      await expect(articleMenuRoot.getByRole('button', { name: '링크 편집', exact: true })).toHaveCount(0);
+      await expect(articleMenuRoot.getByRole('button', { name: 'Link', exact: true })).toHaveCount(0);
+      await expect(articleMenuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true })).toBeVisible();
+      await collapseSelectionWithPointer(articleField, articleTarget);
+    });
+
+    await test.step('BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE', async () => {
+      const blockField = await richTextField(page, 'rich-text', 'content');
+      await blockField.click({ position: { x: 4, y: 4 } });
+      const sidebarField = await revealSidebarRichTextField(page, '본문');
+      await expect(sidebarField).toContainText(EDITOR_INTERACTION_COPY.blockInitial);
+      await sidebarField.fill(EDITOR_INTERACTION_COPY.sidebarToCanvas);
+      await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.sidebarToCanvas);
+    });
+    await test.step('BLOCK_RICH_GATE', async () => {
+      await exposeCanvasForPointer(page);
+      const blockField = await richTextField(page, 'rich-text', 'content');
+      const blockTarget = blockField.locator('p').filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.sidebarToCanvas}$`) });
+      await dragSelectText(page, blockField, blockTarget, EDITOR_INTERACTION_COPY.sidebarToCanvas);
+      await expect(await officialPuckMenuRoot(page)).toBeVisible();
+      await expect(elementPanel).toBeHidden();
+      await page.keyboard.type(EDITOR_INTERACTION_COPY.canvasToSidebar);
+      await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
+    });
+    await test.step('BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE', async () => {
+      const sidebarField = await revealSidebarRichTextField(page, '본문');
+      await expect(sidebarField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
     });
 
     await saveDraft(page);
     await test.step('PERSISTED_SELECTION_MARK_GATE', async () => {
       await page.reload();
       await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-      field = await richTextField(page);
-      await expect(field.locator('span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="custom1"]'))
-        .toHaveText(FIRST_TARGET);
-      await expect(field.locator('span[data-g7pb-weight="bold"]')).toHaveText(SECOND_TARGET);
+      await assertPersistedEditorState(page);
     });
 
     const previewUrl = await page.getByTestId('page-builder-preview-link').getAttribute('href');
@@ -292,9 +408,7 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
     const preview = await context.newPage();
     await preview.goto(previewUrl);
     await test.step('PREVIEW_SELECTION_MARK_GATE', async () => {
-      await expect(preview.locator('[data-block-type="rich-text"] span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="custom1"]'))
-        .toHaveText(FIRST_TARGET);
-      await expect(preview.locator('[data-block-type="rich-text"] span[data-g7pb-weight="bold"]')).toHaveText(SECOND_TARGET);
+      await assertPublishedState(preview);
     });
     await preview.close();
 
@@ -304,9 +418,7 @@ test('keeps real pointer range editing exclusive, persistent, and publishable', 
     const published = await context.newPage();
     await published.goto(publicUrl);
     await test.step('PUBLIC_SELECTION_MARK_GATE', async () => {
-      await expect(published.locator('[data-block-type="rich-text"] span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="custom1"]'))
-        .toHaveText(FIRST_TARGET);
-      await expect(published.locator('[data-block-type="rich-text"] span[data-g7pb-weight="bold"]')).toHaveText(SECOND_TARGET);
+      await assertPublishedState(published);
     });
     await published.close();
   } finally {

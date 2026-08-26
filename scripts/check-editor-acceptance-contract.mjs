@@ -91,7 +91,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/page\.mouse\.move\(pointer\.start\.x, pointer\.start\.y\)/, 'topmost 검증을 통과한 실제 page mouse로 pointer 시작점에 이동해야 합니다.'],
     [/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: POINTER_DRAG_STEPS \}\)/, 'force 없이 여러 실제 mouse move 단계로 pointer 종료점에 이동해야 합니다.'],
     [/function dragSelectText\([\s\S]{0,1100}assertTextPointerReachable\(page, field, pointer\)/, 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'],
-    [/function collapseSelectionWithPointer\([\s\S]{0,600}assertTextPointerReachable\(page, field, pointer\)/, '선택 해제 click 전에도 현재 field의 start/end hit target을 검증해야 합니다.'],
+    [/function collapseSelectionWithPointer\([\s\S]{0,600}assertTextPointerEndReachable\(page, field, pointer\)/, '선택 해제 click 전에는 실제 클릭하는 end가 상위 문서와 iframe 내부의 현재 field에 도달하는지 검증해야 합니다.'],
     [/field\.focus\(\)/, '범위 선택 전 contenteditable focus가 필요합니다.'],
     [/expect\(field\)\.toBeFocused\(\)/, '실제 pointer 드래그 뒤 contenteditable focus를 확인해야 합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
@@ -217,6 +217,8 @@ export async function validateEditorAcceptanceContract(root) {
     '선택 글자 option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.');
   requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,1400}document\.elementFromPoint\(x, y\)[\s\S]{0,300}frameHit: hit === iframe/,
     '편집 E2E는 상위 문서에서 control 중심점이 canvas iframe에 도달하는지 검증해야 합니다.');
+  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,200}control\.scrollIntoViewIfNeeded\(\)[\s\S]{0,240}control\.boundingBox\(\)/,
+    '편집 E2E는 control을 실제 scroll into view한 뒤 현재 bbox와 topmost를 다시 검증해야 합니다.');
   requirePattern(errors, spec, /mobile viewport switcher must not overlap the Puck menu toggle[\s\S]{0,900}mobile Puck menu toggle must remain pointer-reachable[\s\S]{0,300}menuToggle\.click\(\)[\s\S]{0,200}viewportSwitcher\)\.toBeHidden\(\)/,
     'mobile 편집 E2E는 viewport switcher 비겹침과 실제 menu 닫기를 검증해야 합니다.');
   const forbiddenDuplicateRangeState = [

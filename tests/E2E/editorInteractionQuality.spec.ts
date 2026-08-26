@@ -252,6 +252,24 @@ async function assertTextPointerReachable(page: Page, field: Locator, pointer: P
   expect(canvasHits.end, 'pointer end must hit the current rich-text field').toBe(true);
 }
 
+async function assertTextPointerEndReachable(page: Page, field: Locator, pointer: PointerGeometry): Promise<void> {
+  const topDocumentHit = await page.evaluate(({ end, iframeSelector }) => {
+    const iframe = document.querySelector(iframeSelector);
+    return document.elementFromPoint(end.x, end.y) === iframe;
+  }, { end: pointer.end, iframeSelector: CANVAS_IFRAME });
+  expect(topDocumentHit, 'pointer end must hit the Puck canvas iframe').toBe(true);
+
+  const canvasHit = await field.evaluate((element, point) => {
+    const rect = element.getBoundingClientRect();
+    const hit = element.ownerDocument.elementFromPoint(
+      rect.left + point.x,
+      rect.top + point.y,
+    );
+    return hit === element || element.contains(hit);
+  }, pointer.localEnd);
+  expect(canvasHit, 'pointer end must hit the current rich-text field').toBe(true);
+}
+
 async function dragSelectText(
   page: Page,
   selection: RichTextSelectionLocator,
@@ -299,6 +317,7 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
 }
 
 async function assertPointerReachable(page: Page, control: Locator): Promise<void> {
+  await control.scrollIntoViewIfNeeded();
   const [controlBox, iframeBox] = await Promise.all([
     control.boundingBox(),
     page.locator(CANVAS_IFRAME).boundingBox(),
@@ -453,7 +472,7 @@ async function collapseSelectionWithPointer(
     try {
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
       const pointer = await textPointerGeometry(field, targetNode);
-      await assertTextPointerReachable(page, field, pointer);
+      await assertTextPointerEndReachable(page, field, pointer);
       await page.mouse.click(pointer.end.x, pointer.end.y);
       await expect.poll(() => selectedText(field)).toBe('');
       return;

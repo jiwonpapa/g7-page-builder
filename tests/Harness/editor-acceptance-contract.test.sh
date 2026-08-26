@@ -92,9 +92,9 @@ perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await 
 expect_failure 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await assertTextPointerReachable\(page, field, pointer\);/$1await field.focus();/' \
+perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await assertTextPointerEndReachable\(page, field, pointer\);/$1await field.focus();/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제 click 전에도 현재 field의 start/end hit target을 검증해야 합니다.'
+expect_failure '선택 해제 click 전에는 실제 클릭하는 end가 상위 문서와 iframe 내부의 현재 field에 도달하는지 검증해야 합니다.'
 
 copy_fixture
 printf '\nfield.click({ force: true });\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
@@ -321,6 +321,11 @@ copy_fixture
 perl -0pi -e 's/frameHit: hit === iframe/frameHit: true/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '편집 E2E는 상위 문서에서 control 중심점이 canvas iframe에 도달하는지 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await control\.scrollIntoViewIfNeeded\(\);/await control.waitFor();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '편집 E2E는 control을 실제 scroll into view한 뒤 현재 bbox와 topmost를 다시 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/await expect\(viewportSwitcher\)\.toBeHidden\(\);/await expect(viewportSwitcher).toBeVisible();/' \

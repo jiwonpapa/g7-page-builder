@@ -103,11 +103,13 @@ function RangeChoiceMenu<T extends string>({
 }): React.ReactElement {
   const current = values.find((option) => option.value === value) ?? values[0];
   const suppressCompatibilityClick = React.useRef(false);
+  const pendingOptionPointer = React.useRef<{ pointerId: number; value: T } | null>(null);
   const markPointerActivation = (): void => {
     suppressCompatibilityClick.current = true;
   };
   const clearPointerActivation = (): void => {
     suppressCompatibilityClick.current = false;
+    pendingOptionPointer.current = null;
   };
   const clearPointerActivationFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
     if (event.key === 'Enter' || event.key === ' ') clearPointerActivation();
@@ -127,11 +129,20 @@ function RangeChoiceMenu<T extends string>({
     }
     if (event.detail === 0) onToggle(name);
   };
-  const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
+  const armOptionFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     markPointerActivation();
+    pendingOptionPointer.current = { pointerId: event.pointerId, value: nextValue };
+  };
+  const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const pending = pendingOptionPointer.current;
+    if (!pending || pending.pointerId !== event.pointerId || pending.value !== nextValue) return;
+    pendingOptionPointer.current = null;
     onChange(nextValue);
   };
   const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
@@ -154,7 +165,8 @@ function RangeChoiceMenu<T extends string>({
         key={option.value}
         onKeyDown={clearPointerActivationFromKeyboard}
         onPointerCancel={clearPointerActivation}
-        onPointerDown={(event) => chooseFromPointer(event, option.value)}
+        onPointerDown={(event) => armOptionFromPointer(event, option.value)}
+        onPointerUp={(event) => chooseFromPointer(event, option.value)}
         onClick={(event) => chooseFromKeyboard(event, option.value)}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}
       </button>)}

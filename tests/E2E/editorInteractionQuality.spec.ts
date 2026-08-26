@@ -302,6 +302,7 @@ async function chooseRangeOption(
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   const optionControl = menuRoot.getByRole('option', { name: option, exact: true });
   await assertPointerReachable(page, optionControl);
+  await expect.poll(() => selectedText(field)).toBe(target);
   await activateControl(optionControl, projectName);
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(menuRoot).toBeVisible();

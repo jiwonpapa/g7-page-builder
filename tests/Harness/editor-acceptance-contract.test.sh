@@ -269,6 +269,11 @@ perl -0pi -e 's/onPointerDownCapture=\{applyFromPointer\}/onClick={applyFromPoin
 expect_failure '부분 글자 B/I/U는 이동하는 Puck ActionBar의 click 유실 전 pointerdown capture에서 적용해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.value\)\}/onClick={(event) => chooseFromPointer(event, option.value)}/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/control\.tap\(\)/control.click()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'mobile 편집 E2E는 선택 글자 control을 실제 touch tap으로 검증해야 합니다.'
@@ -277,6 +282,11 @@ copy_fixture
 perl -0pi -e 's/activateControl\(optionControl, projectName\)/optionControl.focus()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 글자 메뉴 option은 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's#(const optionControl = menuRoot\.getByRole\([^\n]+\);\n  await assertPointerReachable\(page, optionControl\);\n)  await expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\);#$1  await expect(field).toBeVisible();#' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/frameHit: hit === iframe/frameHit: true/' \

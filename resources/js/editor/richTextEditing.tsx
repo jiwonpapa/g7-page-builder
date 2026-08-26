@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RichTextMenu } from '@puckeditor/core';
 import { Extension, Mark, Node as TiptapNode, mergeAttributes, type Editor } from '@tiptap/core';
-import { Check, ChevronDown, Link2, RotateCcw, Unlink } from 'lucide-react';
+import { Bold, Check, ChevronDown, Italic, Link2, RotateCcw, Underline, Unlink } from 'lucide-react';
 import { CanvasCurrentElementStylesContext, elementAppearanceClassName } from './canvasEditingContract';
 
 const FONT_VALUES = ['inherit', 'modern', 'serif', 'mono'] as const;
@@ -218,7 +218,48 @@ function RichTextRangeStateSignal({ active }: { active: boolean }): null {
   return null;
 }
 
-function G7RichTextInlineMenu({ children, editor, editorState, readOnly, allowLink = true }: {
+function NativeRangeControl({
+  label,
+  icon,
+  active,
+  disabled,
+  onApply,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  active: boolean;
+  disabled: boolean;
+  onApply: () => void;
+}): React.ReactElement {
+  const suppressCompatibilityClick = useRef(false);
+  const applyFromPointer = (event: React.PointerEvent<HTMLSpanElement>): void => {
+    if (event.button !== 0 || disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressCompatibilityClick.current = true;
+    onApply();
+  };
+  const applyFromClick = (event: React.SyntheticEvent): void => {
+    event.stopPropagation();
+    if (suppressCompatibilityClick.current) {
+      suppressCompatibilityClick.current = false;
+      return;
+    }
+    if ((event.nativeEvent as MouseEvent).detail === 0 && !disabled) onApply();
+  };
+
+  return <span
+    onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') suppressCompatibilityClick.current = false;
+    }}
+    onPointerCancel={() => { suppressCompatibilityClick.current = false; }}
+    onPointerDown={applyFromPointer}
+  >
+    <RichTextMenu.Control title={label} icon={icon} active={active} disabled={disabled} onClick={applyFromClick} />
+  </span>;
+}
+
+function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true }: {
   children: React.ReactNode;
   editor: Editor | null;
   editorState: RichTextEditorState | null;
@@ -271,7 +312,38 @@ function G7RichTextInlineMenu({ children, editor, editorState, readOnly, allowLi
     <>
       <RichTextRangeStateSignal active={rangeActive} />
       {rangeActive ? <RichTextMenu>
-        {children}
+        <RichTextMenu.Group>
+          <NativeRangeControl
+            label="선택한 글자 굵게"
+            icon={<Bold size={15} aria-hidden="true" />}
+            active={Boolean(editorState?.isBold)}
+            disabled={readOnly || !editor || !editorState?.canBold}
+            onApply={() => {
+              editor?.chain().focus().toggleBold().run();
+              setOpenMenu(null);
+            }}
+          />
+          <NativeRangeControl
+            label="선택한 글자 기울임"
+            icon={<Italic size={15} aria-hidden="true" />}
+            active={Boolean(editorState?.isItalic)}
+            disabled={readOnly || !editor || !editorState?.canItalic}
+            onApply={() => {
+              editor?.chain().focus().toggleItalic().run();
+              setOpenMenu(null);
+            }}
+          />
+          <NativeRangeControl
+            label="선택한 글자 밑줄"
+            icon={<Underline size={15} aria-hidden="true" />}
+            active={Boolean(editorState?.isUnderline)}
+            disabled={readOnly || !editor || !editorState?.canUnderline}
+            onApply={() => {
+              editor?.chain().focus().toggleUnderline().run();
+              setOpenMenu(null);
+            }}
+          />
+        </RichTextMenu.Group>
         <RichTextMenu.Group>
           <div className="g7pb-richtext-inline-toolbar" role="group" aria-label="선택한 글자 추가 서식"
             data-testid="page-builder-richtext-inline-toolbar">

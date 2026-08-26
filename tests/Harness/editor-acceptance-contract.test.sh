@@ -259,9 +259,19 @@ perl -0pi -e 's/RichTextMenu/RichTextToolbar/' \
 expect_failure '공식 Puck RichTextMenu를 직접 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/\{children\}/\{null\}/' \
+perl -0pi -e 's/function G7RichTextInlineMenu\(\{ editor,/function G7RichTextInlineMenu({ children, editor,/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure 'Puck가 전달한 기본 inline controls를 RichTextMenu와 Group 안에 유지해야 합니다.'
+expect_failure '이동 중 click을 잃는 Puck 기본 inline B/I/U children을 중복 렌더하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/onPointerDown=\{applyFromPointer\}/onClick={applyFromPointer}/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '부분 글자 B/I/U는 이동 전 pointerdown에서 적용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/toggleBold\(\)\.run\(\)/toggleStrike().run()/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/title="링크 편집"/title="주소 편집"/' \

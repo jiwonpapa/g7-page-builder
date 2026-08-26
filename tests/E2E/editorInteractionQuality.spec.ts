@@ -250,6 +250,9 @@ async function applySelectedFormatting(
   const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
   const italic = menuRoot.getByRole('button', { name: '선택한 글자 기울임', exact: true });
   const underline = menuRoot.getByRole('button', { name: '선택한 글자 밑줄', exact: true });
+  await expect(bold).toHaveCount(1);
+  await expect(italic).toHaveCount(1);
+  await expect(underline).toHaveCount(1);
   await clickNativeControl(bold, menuRoot, field, target, 'strong');
   await clickNativeControl(italic, menuRoot, field, target, 'em');
   await clickNativeControl(underline, menuRoot, field, target, 'u');

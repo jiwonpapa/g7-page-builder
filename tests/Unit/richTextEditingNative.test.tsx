@@ -47,6 +47,7 @@ function editorState(overrides: Record<string, boolean> = {}): Record<string, bo
 function renderInlineMenu(
   field: ReturnType<typeof createRichTextField>,
   editor: unknown,
+  readOnly = false,
 ): { container: HTMLDivElement; rerender: (nextState: Record<string, boolean>) => Promise<void> } {
   const InlineMenu = field.renderInlineMenu;
   const container = document.createElement('div');
@@ -59,7 +60,7 @@ function renderInlineMenu(
     rerender: async (nextState: Record<string, boolean>): Promise<void> => {
       await act(async () => {
         root.render(
-          <InlineMenu editor={editor as never} editorState={nextState as never} readOnly={false}>
+          <InlineMenu editor={editor as never} editorState={nextState as never} readOnly={readOnly}>
             <span data-testid="puck-default-inline-controls">기본 B/I/U</span>
           </InlineMenu>,
         );
@@ -81,7 +82,10 @@ describe('Puck-native rich-text editing', () => {
     const toolbar = container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]');
     expect(toolbar).not.toBeNull();
     expect(toolbar?.closest('[data-puck-rte-menu]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="puck-default-inline-controls"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="puck-default-inline-controls"]')).toBeNull();
+    expect(container.querySelectorAll('[aria-label="선택한 글자 굵게"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[aria-label="선택한 글자 기울임"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[aria-label="선택한 글자 밑줄"]')).toHaveLength(1);
     expect(container.querySelector('[data-testid="page-builder-richtext-font"]')?.getAttribute('aria-label'))
       .toBe('선택한 글자 글꼴: 모던');
     expect(editor.on).not.toHaveBeenCalled();
@@ -255,6 +259,94 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('applies each native mark on pointer down without duplicating the compatibility click', async () => {
+    const operations: string[] = [];
+    const chain = {
+      focus: vi.fn(() => { operations.push('focus'); return chain; }),
+      toggleBold: vi.fn(() => { operations.push('toggleBold'); return chain; }),
+      toggleItalic: vi.fn(() => { operations.push('toggleItalic'); return chain; }),
+      toggleUnderline: vi.fn(() => { operations.push('toggleUnderline'); return chain; }),
+      run: vi.fn(() => { operations.push('run'); return true; }),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 7 } },
+      getAttributes: vi.fn(() => ({})),
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+    await rerender(editorState());
+
+    for (const [label, command] of [
+      ['선택한 글자 굵게', 'toggleBold'],
+      ['선택한 글자 기울임', 'toggleItalic'],
+      ['선택한 글자 밑줄', 'toggleUnderline'],
+    ] as const) {
+      const control = container.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
+      await act(async () => {
+        control?.dispatchEvent(new PointerEvent('pointerdown', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          pointerType: 'mouse',
+        }));
+        control?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+      });
+      expect(operations.splice(0)).toEqual(['focus', command, 'run']);
+    }
+
+    const bold = container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]');
+    await act(async () => {
+      bold?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
+      bold?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
+    });
+    expect(operations).toEqual(['focus', 'toggleBold', 'run']);
+  });
+
+  it('ignores non-left native pointers and disables commands when editing is unavailable', async () => {
+    const chain = {
+      focus: vi.fn(() => chain),
+      toggleBold: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 7 } },
+      getAttributes: vi.fn(() => ({})),
+      chain: vi.fn(() => chain),
+    };
+    const rendered = renderInlineMenu(createRichTextField('본문'), editor);
+    await rendered.rerender(editorState());
+    const bold = rendered.container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]');
+    await act(async () => {
+      bold?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        pointerType: 'mouse',
+      }));
+    });
+    expect(chain.toggleBold).not.toHaveBeenCalled();
+
+    await act(async () => {
+      bold?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerType: 'touch',
+      }));
+      bold?.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerType: 'touch' }));
+      bold?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
+      bold?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
+    });
+    expect(chain.toggleBold).toHaveBeenCalledTimes(2);
+
+    await rendered.rerender(editorState({ canBold: false }));
+    expect(rendered.container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]')?.disabled).toBe(true);
+
+    const readOnly = renderInlineMenu(createRichTextField('본문'), editor, true);
+    await readOnly.rerender(editorState());
+    expect(readOnly.container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]')?.disabled).toBe(true);
   });
 
   it('ignores non-left range-menu pointers and clears a canceled pointer before keyboard activation', async () => {

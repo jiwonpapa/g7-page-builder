@@ -356,7 +356,10 @@ describe('Puck editor surface contract', () => {
     });
     const toolbar = container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]');
     expect(toolbar?.closest('[data-puck-rte-menu]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="puck-native-controls"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="puck-native-controls"]')).toBeNull();
+    expect(container.querySelectorAll('[aria-label="선택한 글자 굵게"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[aria-label="선택한 글자 기울임"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[aria-label="선택한 글자 밑줄"]')).toHaveLength(1);
     expect(container.querySelector('[data-testid="page-builder-richtext-font"]')?.getAttribute('aria-label'))
       .toBe('선택한 글자 글꼴: 모던');
     expect(editor.on).not.toHaveBeenCalled();

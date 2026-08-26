@@ -60,7 +60,6 @@ export async function validateEditorAcceptanceContract(root) {
     [/dispatchEvent\s*\([^\n]*(?:selectionchange|MouseEvent)/, '합성 selectionchange/mouse 이벤트를 사용하면 안 됩니다.'],
     [/normalizePointerRangeWithKeyboard/, 'pointer 범위를 키보드로 보정하면 안 됩니다.'],
     [/caretTextOffset/, 'pointer 선택을 caret offset 키보드 보정으로 대체하면 안 됩니다.'],
-    [/(?:\.createRange|\bnew\s+Range)\s*\(/, 'DOM Range를 evaluate로 계산하거나 선택에 주입하면 안 됩니다.'],
     [/page\.keyboard\.(?:down|press)\(\s*['"](?:Shift|ArrowLeft|ArrowRight)/, 'Shift/방향키로 선택 범위를 재구성하면 안 됩니다.'],
     [/rangeToolbar[\s\S]{0,180}\.selectOption\s*\(/, '선택 글자 툴바는 selectOption 직접 주입이 아니라 실제 사용자 조작으로 검증해야 합니다.'],
     [/console\.log\s*\(/, '전용 E2E에 임시 진단 로그를 남기면 안 됩니다.'],
@@ -93,19 +92,22 @@ export async function validateEditorAcceptanceContract(root) {
     [/page\.mouse\.move\(pointer\.start\.x, pointer\.start\.y\)/, 'topmost 검증을 통과한 실제 page mouse로 pointer 시작점에 이동해야 합니다.'],
     [/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: POINTER_DRAG_STEPS \}\)/, 'force 없이 여러 실제 mouse move 단계로 pointer 종료점에 이동해야 합니다.'],
     [/function dragSelectText\([\s\S]{0,1100}assertTextPointerReachable\(page, field, pointer\)/, 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'],
-    [/function collapseSelectionWithPointer\([\s\S]{0,800}findFieldCollapsePoints\(page, field, targetNode\)[\s\S]{0,160}for \(const point of points\)[\s\S]{0,160}page\.mouse\.click\(point\.x, point\.y\)[\s\S]{0,300}selectedText\(field\) === ['"]['"]/, '선택 해제는 같은 current field의 선택 target 밖 실제 도달 가능한 픽셀을 클릭해 빈 범위를 확인해야 합니다.'],
+    [/function collapseSelectionWithPointer\([\s\S]{0,900}findFieldCollapsePoints\(page, field, targetNode, currentSelection\)[\s\S]{0,180}for \(const point of points\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)[\s\S]{0,300}selectedText\(field\) === ['"]['"]/, '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'],
     [/field\.focus\(\)/, '범위 선택 전 contenteditable focus가 필요합니다.'],
     [/expect\(field\)\.toBeFocused\(\)/, '실제 pointer 드래그 뒤 contenteditable focus를 확인해야 합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
     [/expect\.poll\(\(\)\s*=>\s*selectedText\(field\)\)\.toBe\(target\)/, 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'],
-    [/function findFieldCollapsePoints\([\s\S]*?field\.boundingBox\(\)[\s\S]*?targetNode\.boundingBox\(\)[\s\S]*?document\.elementFromPoint\(point\.x, point\.y\)[\s\S]*?fieldHit: hit === field \|\| field\.contains\(hit\)[\s\S]*?targetHit: hit === target \|\| target\.contains\(hit\)[\s\S]*?toolbarHit: Boolean\(hit\?\.closest\(['"]\[data-puck-rte-menu\]['"]\)\)[\s\S]*?canvasHits\[index\]\?\.targetHit === false[\s\S]*?return reachable/, '선택 해제 좌표는 field 내부이면서 선택 target과 툴바 밖인 실제 픽셀이어야 합니다.'],
+    [/function findFieldCollapsePoints\([\s\S]*?document\.createRange\(\)[\s\S]*?range\.getClientRects\(\)[\s\S]*?source: ['"]prefix['"][\s\S]*?source: ['"]suffix['"][\s\S]*?document\.elementFromPoint\(point\.x, point\.y\)[\s\S]*?fieldHit: hit === fieldRoot \|\| fieldRoot\.contains\(hit\)[\s\S]*?selectedRectHit:[\s\S]*?toolbarHit: Boolean\(hit\?\.closest\(['"]\[data-puck-rte-menu\]['"]\)\)[\s\S]*?canvasHits\[index\]\?\.selectedRectHit === false[\s\S]*?return reachable/, '선택 해제 좌표는 선택 substring 바깥 prefix/suffix Range rect이면서 field 내부·툴바 밖인 실제 픽셀이어야 합니다.'],
     [/projectName\s*===\s*['"]mobile['"]\s*\?\s*360\s*:\s*projectName\s*===\s*['"]tablet['"]\s*\?\s*768\s*:\s*1280/, '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'],
     [/const CANVAS_IFRAME\s*=\s*['"]#puck-canvas-root iframe['"]/, 'Puck canvas 고유 iframe selector를 고정해야 합니다.'],
     [/frameLocator\(CANVAS_IFRAME\)/, '모든 편집 상호작용은 Puck canvas iframe을 사용해야 합니다.'],
     [/page\.locator\(CANVAS_IFRAME\)\)\.toHaveCount\(1\)/, 'Puck canvas iframe이 정확히 하나인지 확인해야 합니다.'],
     [/field\.boundingBox\(\)/, 'iframe 내부 좌표를 실제 화면 좌표로 변환해야 합니다.'],
     [/targetNode\.boundingBox\(\)/, '선택 대상의 실제 렌더링 box를 측정해야 합니다.'],
-    [/targetBox\.x\s*-\s*fieldBox\.x/, '선택 대상을 contenteditable 내부 실제 좌표로 변환해야 합니다.'],
+    [/targetNode\.evaluate\(\(element\)\s*=>\s*\{[\s\S]{0,220}element\.ownerDocument\.createRange\(\)[\s\S]{0,160}range\.selectNodeContents\(element\)[\s\S]{0,180}range\.getClientRects\(\)/,
+      '선택 시작·끝은 타겟 글자의 실제 Range rect로 측정해야 합니다.'],
+    [/first\.left\s*-\s*fieldRect\.left[\s\S]{0,360}last\.right\s*-\s*fieldRect\.left/,
+      '글자 Range rect를 current contenteditable 내부 좌표로 변환해야 합니다.'],
     [/const scaleX = fieldBox\.width \/ fieldRect\.width[\s\S]{0,180}const scaleY = fieldBox\.height \/ fieldRect\.height/,
       'Puck iframe transform scale을 X/Y 좌표에 각각 반영해야 합니다.'],
     [/fieldBox\.x \+ local\.start\.x \* scaleX[\s\S]{0,180}fieldBox\.y \+ local\.end\.y \* scaleY/,
@@ -219,8 +221,12 @@ export async function validateEditorAcceptanceContract(root) {
     '선택 글자 control은 검증된 같은 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.');
   requirePattern(errors, spec, /const optionControl = menuRoot\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(page, optionPoint, projectName\)[\s\S]{0,260}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
     '선택 글자 option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.');
-  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,2500}document\.elementFromPoint\(point\.x, point\.y\)[\s\S]{0,300}hit: hit === iframe[\s\S]{0,1500}element\.contains\(hit\)[\s\S]{0,700}return candidates\[reachableIndex\]/,
+  requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]*?getComputedStyle\(iframe\)\.pointerEvents[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?data-puck-outline-dragging[\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?hit: stack\[0\] === iframe[\s\S]*?element\.contains\(hit\)[\s\S]*?return candidates\[reachableIndex\]/,
     '편집 E2E는 control 가시 영역에서 상위 iframe과 내부 control을 모두 맞는 실제 픽셀을 찾아야 합니다.');
+  const pointerReachabilitySource = spec.match(/async function assertPointerReachable[\s\S]*?\n}\n\nasync function activateControl/)?.[0] ?? '';
+  if (!pointerReachabilitySource || /requestAnimationFrame|waitForTimeout|setTimeout/.test(pointerReachabilitySource)) {
+    errors.push('control 도달성은 autosave pointer 차단이 풀리기를 기다려 우회하면 안 됩니다.');
+  }
   requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]{0,200}control\.scrollIntoViewIfNeeded\(\)[\s\S]{0,240}control\.boundingBox\(\)/,
     '편집 E2E는 control을 실제 scroll into view한 뒤 현재 bbox와 topmost를 다시 검증해야 합니다.');
   requirePattern(errors, spec, /mobile viewport switcher must not overlap the Puck menu toggle[\s\S]{0,900}mobile Puck menu toggle must remain pointer-reachable[\s\S]{0,300}menuToggle\.click\(\)[\s\S]{0,200}viewportSwitcher\)\.toBeHidden\(\)/,

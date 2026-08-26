@@ -160,11 +160,15 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
     targetNode.boundingBox(),
     field.evaluate((element) => {
       const rect = element.getBoundingClientRect();
-      return { width: rect.width, height: rect.height };
+      return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
     }),
-    targetNode.evaluate((element) => Array.from(element.getClientRects())
-      .filter((rect) => rect.width > 0 && rect.height > 0)
-      .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, height: rect.height }))),
+    targetNode.evaluate((element) => {
+      const range = element.ownerDocument.createRange();
+      range.selectNodeContents(element);
+      return Array.from(range.getClientRects())
+        .filter((rect) => rect.width > 0 && rect.height > 0)
+        .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, height: rect.height }));
+    }),
   ]);
   if (!fieldBox || !targetBox || fieldBox.width <= 0 || fieldBox.height <= 0
     || targetBox.width <= 0 || targetBox.height <= 0 || fieldRect.width <= 0 || fieldRect.height <= 0
@@ -173,49 +177,26 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
   }
   const scaleX = fieldBox.width / fieldRect.width;
   const scaleY = fieldBox.height / fieldRect.height;
-  const targetLeft = (targetBox.x - fieldBox.x) / scaleX;
-  const targetTop = (targetBox.y - fieldBox.y) / scaleY;
-  const fragmentLeft = Math.min(...fragments.map((fragment) => fragment.left));
-  const fragmentTop = Math.min(...fragments.map((fragment) => fragment.top));
   const first = fragments[0];
   const last = fragments[fragments.length - 1];
   const startInset = Math.min(POINTER_EDGE_INSET_PX,
     Math.max(MIN_POINTER_EDGE_INSET_PX, (first.right - first.left) / 4));
   const endInset = Math.min(POINTER_EDGE_INSET_PX,
     Math.max(MIN_POINTER_EDGE_INSET_PX, (last.right - last.left) / 4));
-  const local = fragments.length === 1
-    ? {
-      start: {
-        x: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-            targetLeft + startInset)),
-        y: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-            targetTop + targetBox.height / scaleY / 2)),
-      },
-      end: {
-        x: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-            targetLeft + targetBox.width / scaleX - endInset)),
-        y: Math.max(MIN_POINTER_EDGE_INSET_PX,
-          Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-            targetTop + targetBox.height / scaleY / 2)),
-      },
-    }
-    : {
-      start: {
-        x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-          targetLeft + first.left - fragmentLeft + startInset)),
-        y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-          targetTop + first.top - fragmentTop + first.height / 2)),
-      },
-      end: {
-        x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
-          targetLeft + last.right - fragmentLeft - endInset)),
-        y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
-          targetTop + last.top - fragmentTop + last.height / 2)),
-      },
-    };
+  const local = {
+    start: {
+      x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
+        first.left - fieldRect.left + startInset)),
+      y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
+        first.top - fieldRect.top + first.height / 2)),
+    },
+    end: {
+      x: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.width - MIN_POINTER_EDGE_INSET_PX,
+        last.right - fieldRect.left - endInset)),
+      y: Math.max(MIN_POINTER_EDGE_INSET_PX, Math.min(fieldRect.height - MIN_POINTER_EDGE_INSET_PX,
+        last.top - fieldRect.top + last.height / 2)),
+    },
+  };
   return {
     localStart: local.start,
     localEnd: local.end,
@@ -261,6 +242,7 @@ async function findFieldCollapsePoints(
   page: Page,
   field: Locator,
   targetNode: Locator,
+  selectedCopy: string,
 ): Promise<PointerPoint[]> {
   await field.scrollIntoViewIfNeeded();
   const [fieldBox, targetBox, iframeBox] = await Promise.all([
@@ -272,42 +254,84 @@ async function findFieldCollapsePoints(
   if (!fieldBox || !targetBox || !iframeBox || !viewport) {
     throw new Error('Collapse pointer geometry is unavailable.');
   }
-  const visible = {
-    left: Math.max(0, iframeBox.x, fieldBox.x),
-    top: Math.max(0, iframeBox.y, fieldBox.y),
-    right: Math.min(viewport.width, iframeBox.x + iframeBox.width, fieldBox.x + fieldBox.width),
-    bottom: Math.min(viewport.height, iframeBox.y + iframeBox.height, fieldBox.y + fieldBox.height),
-  };
-  if (visible.right <= visible.left || visible.bottom <= visible.top) {
-    throw new Error(`current rich-text field has no visible iframe intersection: ${JSON.stringify({
+  const rangeGeometry = await field.evaluate((fieldRoot, copy) => {
+    const document = fieldRoot.ownerDocument;
+    const view = document.defaultView;
+    if (!view) return { candidates: [], selectedRects: [], text: '', selectedIndex: -1 };
+    const walker = document.createTreeWalker(fieldRoot, NodeFilter.SHOW_TEXT);
+    const textNodes: Text[] = [];
+    let node = walker.nextNode();
+    while (node) {
+      textNodes.push(node as Text);
+      node = walker.nextNode();
+    }
+    const text = textNodes.map((textNode) => textNode.data).join('');
+    const selectedIndex = text.indexOf(copy);
+    if (selectedIndex < 0 || copy.length === 0 || textNodes.length === 0) {
+      return { candidates: [], selectedRects: [], text, selectedIndex };
+    }
+    const boundary = (offset: number): { node: Text; offset: number } => {
+      let consumed = 0;
+      for (const textNode of textNodes) {
+        const next = consumed + textNode.length;
+        if (offset <= next) return { node: textNode, offset: offset - consumed };
+        consumed = next;
+      }
+      const last = textNodes[textNodes.length - 1];
+      return { node: last, offset: last.length };
+    };
+    const rectsFor = (start: number, end: number): Array<{ bottom: number; left: number; right: number; top: number }> => {
+      if (end <= start) return [];
+      const startBoundary = boundary(start);
+      const endBoundary = boundary(end);
+      const range = document.createRange();
+      range.setStart(startBoundary.node, startBoundary.offset);
+      range.setEnd(endBoundary.node, endBoundary.offset);
+      return Array.from(range.getClientRects())
+        .filter((rect) => rect.width > 1 && rect.height > 1)
+        .map((rect) => ({ bottom: rect.bottom, left: rect.left, right: rect.right, top: rect.top }));
+    };
+    const selectedEnd = selectedIndex + copy.length;
+    const selectedRects = rectsFor(selectedIndex, selectedEnd);
+    const segmentRects = [
+      ...rectsFor(0, selectedIndex).map((rect) => ({ rect, source: 'prefix' as const })),
+      ...rectsFor(selectedEnd, text.length).map((rect) => ({ rect, source: 'suffix' as const })),
+    ];
+    const candidates = segmentRects.flatMap(({ rect, source }) => {
+      const inset = Math.min(2, (rect.right - rect.left) / 4);
+      const y = (rect.top + rect.bottom) / 2;
+      return [
+        { x: (rect.left + rect.right) / 2, y, source },
+        { x: rect.left + inset, y, source },
+        { x: rect.right - inset, y, source },
+      ];
+    });
+    return { candidates, selectedRects, text, selectedIndex };
+  }, selectedCopy);
+  if (rangeGeometry.candidates.length === 0) {
+    throw new Error(`current rich-text target has no prefix/suffix range rect: ${JSON.stringify({
+      selectedCopy,
+      rangeGeometry,
       fieldBox,
       targetBox,
-      iframeBox,
-      viewport,
     })}`);
   }
-  const insetX = Math.min(8, (visible.right - visible.left) / 2);
-  const insetY = Math.min(4, (visible.bottom - visible.top) / 2);
-  const xs = [
-    visible.right - insetX,
-    visible.left + insetX,
-    visible.left + (visible.right - visible.left) * 0.75,
-    (visible.left + visible.right) / 2,
-    visible.left + (visible.right - visible.left) * 0.25,
-  ];
-  const ys = [
-    (visible.top + visible.bottom) / 2,
-    visible.bottom - insetY,
-    visible.top + insetY,
-  ];
-  const candidates = xs.flatMap((x) => ys.map((y) => ({ x, y })))
-    .filter((point, index, points) => points.findIndex((candidate) => (
-      Math.abs(candidate.x - point.x) < 0.5 && Math.abs(candidate.y - point.y) < 0.5
-    )) === index)
-    .filter((point) => !(
-      point.x >= targetBox.x && point.x <= targetBox.x + targetBox.width
-      && point.y >= targetBox.y && point.y <= targetBox.y + targetBox.height
-    ));
+  const iframeViewport = await field.evaluate((fieldRoot) => ({
+    height: fieldRoot.ownerDocument.defaultView?.innerHeight ?? 0,
+    width: fieldRoot.ownerDocument.defaultView?.innerWidth ?? 0,
+  }));
+  if (iframeViewport.width <= 0 || iframeViewport.height <= 0) {
+    throw new Error('Collapse iframe viewport geometry is unavailable.');
+  }
+  const scaleX = iframeBox.width / iframeViewport.width;
+  const scaleY = iframeBox.height / iframeViewport.height;
+  const candidates = rangeGeometry.candidates.map((candidate) => ({
+    local: candidate,
+    page: {
+      x: iframeBox.x + candidate.x * scaleX,
+      y: iframeBox.y + candidate.y * scaleY,
+    },
+  }));
   const topDocumentHits = await page.evaluate(({ points, iframeSelector }) => {
     const iframe = document.querySelector(iframeSelector);
     return points.map((point) => {
@@ -318,40 +342,36 @@ async function findFieldCollapsePoints(
         className: hit instanceof HTMLElement ? hit.className : '',
       };
     });
-  }, { points: candidates, iframeSelector: CANVAS_IFRAME });
+  }, { points: candidates.map((candidate) => candidate.page), iframeSelector: CANVAS_IFRAME });
 
-  const canvasHits = await targetNode.evaluate((target, geometry) => {
-    const view = target.ownerDocument.defaultView;
-    const field = target.closest('[contenteditable="true"]');
-    if (!view || !field || view.innerWidth <= 0 || view.innerHeight <= 0) return [];
-    const scaleX = geometry.iframeBox.width / view.innerWidth;
-    const scaleY = geometry.iframeBox.height / view.innerHeight;
+  const canvasHits = await field.evaluate((fieldRoot, geometry) => {
     return geometry.points.map((point) => {
-      const hit = target.ownerDocument.elementFromPoint(
-        (point.x - geometry.iframeBox.x) / scaleX,
-        (point.y - geometry.iframeBox.y) / scaleY,
-      );
+      const hit = fieldRoot.ownerDocument.elementFromPoint(point.x, point.y);
       return {
-        fieldHit: hit === field || field.contains(hit),
-        targetHit: hit === target || target.contains(hit),
+        fieldHit: hit === fieldRoot || fieldRoot.contains(hit),
+        selectedRectHit: geometry.selectedRects.some((rect) => (
+          point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom
+        )),
         toolbarHit: Boolean(hit?.closest('[data-puck-rte-menu]')),
         tag: hit?.tagName ?? '',
         className: hit instanceof HTMLElement ? hit.className : '',
       };
     });
-  }, { points: candidates, iframeBox });
+  }, { points: rangeGeometry.candidates, selectedRects: rangeGeometry.selectedRects });
   const reachable = candidates.filter((_, index) => (
     topDocumentHits[index]?.hit === true
     && canvasHits[index]?.fieldHit === true
-    && canvasHits[index]?.targetHit === false
+    && canvasHits[index]?.selectedRectHit === false
     && canvasHits[index]?.toolbarHit === false
-  ));
+  )).map((candidate) => candidate.page);
   if (reachable.length === 0) {
-    throw new Error(`no unselected current rich-text field pixel is pointer-reachable: ${JSON.stringify({
+    throw new Error(`no prefix/suffix current rich-text pixel is pointer-reachable: ${JSON.stringify({
+      selectedCopy,
       fieldBox,
       targetBox,
       iframeBox,
       viewport,
+      rangeGeometry,
       candidates,
       topDocumentHits,
       canvasHits,
@@ -408,63 +428,86 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
 
 async function assertPointerReachable(page: Page, control: Locator): Promise<PointerPoint> {
   await control.scrollIntoViewIfNeeded();
-  const [controlBox, iframeBox] = await Promise.all([
-    control.boundingBox(),
-    page.locator(CANVAS_IFRAME).boundingBox(),
-  ]);
-  if (!controlBox || !iframeBox) throw new Error('Range control frame geometry is unavailable.');
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('Range control viewport geometry is unavailable.');
-  const visible = {
-    left: Math.max(0, iframeBox.x, controlBox.x),
-    top: Math.max(0, iframeBox.y, controlBox.y),
-    right: Math.min(viewport.width, iframeBox.x + iframeBox.width, controlBox.x + controlBox.width),
-    bottom: Math.min(viewport.height, iframeBox.y + iframeBox.height, controlBox.y + controlBox.height),
-  };
-  if (visible.right <= visible.left || visible.bottom <= visible.top) {
-    throw new Error(`range control has no visible iframe intersection: ${JSON.stringify({ controlBox, iframeBox, viewport })}`);
-  }
-  const insetX = Math.min(4, (visible.right - visible.left) / 2);
-  const insetY = Math.min(4, (visible.bottom - visible.top) / 2);
-  const candidates = [
-    { x: (visible.left + visible.right) / 2, y: (visible.top + visible.bottom) / 2 },
-    { x: visible.left + insetX, y: visible.top + insetY },
-    { x: visible.right - insetX, y: visible.top + insetY },
-    { x: visible.left + insetX, y: visible.bottom - insetY },
-    { x: visible.right - insetX, y: visible.bottom - insetY },
-  ];
-  const topDocumentReachability = await page.evaluate(({ points, iframeSelector }) => {
-    const iframe = document.querySelector(iframeSelector);
-    return points.map((point) => {
-      const hit = document.elementFromPoint(point.x, point.y);
+  const [controlBox, iframeBox] = await Promise.all([
+      control.boundingBox(),
+      page.locator(CANVAS_IFRAME).boundingBox(),
+    ]);
+    if (!controlBox || !iframeBox) throw new Error('Range control frame geometry is unavailable.');
+    const visible = {
+      left: Math.max(0, iframeBox.x, controlBox.x),
+      top: Math.max(0, iframeBox.y, controlBox.y),
+      right: Math.min(viewport.width, iframeBox.x + iframeBox.width, controlBox.x + controlBox.width),
+      bottom: Math.min(viewport.height, iframeBox.y + iframeBox.height, controlBox.y + controlBox.height),
+    };
+    if (visible.right <= visible.left || visible.bottom <= visible.top) {
+      throw new Error(`range control has no visible iframe intersection: ${JSON.stringify({
+        controlBox,
+        iframeBox,
+        viewport,
+        visible,
+      })}`);
+    }
+    const insetX = Math.min(4, (visible.right - visible.left) / 2);
+    const insetY = Math.min(4, (visible.bottom - visible.top) / 2);
+    const candidates = [
+      { x: (visible.left + visible.right) / 2, y: (visible.top + visible.bottom) / 2 },
+      { x: visible.left + insetX, y: visible.top + insetY },
+      { x: visible.right - insetX, y: visible.top + insetY },
+      { x: visible.left + insetX, y: visible.bottom - insetY },
+      { x: visible.right - insetX, y: visible.bottom - insetY },
+    ];
+    const topDocumentReachability = await page.evaluate(({ points, iframeSelector }) => {
+      const iframe = document.querySelector<HTMLIFrameElement>(iframeSelector);
+      const editor = document.querySelector<HTMLElement>('[data-testid="page-builder-editor"]');
+      const saveStatus = document.querySelector<HTMLElement>('[data-testid="page-builder-save-status"]');
+      const pointerEvents = iframe ? getComputedStyle(iframe).pointerEvents : '';
       return {
-        hit: hit === iframe,
-        tag: hit?.tagName ?? '',
-        className: hit instanceof HTMLElement ? hit.className : '',
+        editor: {
+          ariaBusy: editor?.getAttribute('aria-busy') ?? '',
+          pointerEvents: editor ? getComputedStyle(editor).pointerEvents : '',
+          saveState: saveStatus?.getAttribute('data-state') ?? '',
+          saveText: saveStatus?.textContent ?? '',
+        },
+        frame: {
+          outlineDragging: iframe?.hasAttribute('data-puck-outline-dragging') ?? false,
+          pointerEvents,
+        },
+        points: points.map((point) => {
+          const stack = document.elementsFromPoint(point.x, point.y).slice(0, 6);
+          return {
+            hit: stack[0] === iframe,
+            stack: stack.map((element) => ({
+              tag: element.tagName,
+              className: element instanceof HTMLElement ? element.className : '',
+              id: element.id,
+            })),
+          };
+        }),
       };
-    });
-  }, { points: candidates, iframeSelector: CANVAS_IFRAME });
-  const canvasReachability = await control.evaluate((element, geometry) => {
-    const view = element.ownerDocument.defaultView;
-    if (!view || view.innerWidth <= 0 || view.innerHeight <= 0) return [];
-    const scaleX = geometry.iframeBox.width / view.innerWidth;
-    const scaleY = geometry.iframeBox.height / view.innerHeight;
-    return geometry.points.map((point) => {
-      const hit = element.ownerDocument.elementFromPoint(
-        (point.x - geometry.iframeBox.x) / scaleX,
-        (point.y - geometry.iframeBox.y) / scaleY,
-      );
-      return {
-        hit: hit === element || element.contains(hit),
-        tag: hit?.tagName ?? '',
-        className: hit instanceof HTMLElement ? hit.className : '',
-      };
-    });
-  }, { points: candidates, iframeBox });
-  const reachableIndex = candidates.findIndex((_, index) => (
-    topDocumentReachability[index]?.hit === true && canvasReachability[index]?.hit === true
-  ));
-  if (reachableIndex < 0) {
+    }, { points: candidates, iframeSelector: CANVAS_IFRAME });
+    const canvasReachability = await control.evaluate((element, geometry) => {
+      const view = element.ownerDocument.defaultView;
+      if (!view || view.innerWidth <= 0 || view.innerHeight <= 0) return [];
+      const scaleX = geometry.iframeBox.width / view.innerWidth;
+      const scaleY = geometry.iframeBox.height / view.innerHeight;
+      return geometry.points.map((point) => {
+        const hit = element.ownerDocument.elementFromPoint(
+          (point.x - geometry.iframeBox.x) / scaleX,
+          (point.y - geometry.iframeBox.y) / scaleY,
+        );
+        return {
+          hit: hit === element || element.contains(hit),
+          tag: hit?.tagName ?? '',
+          className: hit instanceof HTMLElement ? hit.className : '',
+        };
+      });
+    }, { points: candidates, iframeBox });
+    const reachableIndex = candidates.findIndex((_, index) => (
+      topDocumentReachability.points[index]?.hit === true && canvasReachability[index]?.hit === true
+    ));
+    if (reachableIndex >= 0) return candidates[reachableIndex];
     throw new Error(`range control has no pointer-reachable pixel: ${JSON.stringify({
       controlBox,
       iframeBox,
@@ -473,8 +516,6 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
       topDocumentReachability,
       canvasReachability,
     })}`);
-  }
-  return candidates[reachableIndex];
 }
 
 async function activateControl(page: Page, point: PointerPoint, projectName: string): Promise<void> {
@@ -583,7 +624,9 @@ async function collapseSelectionWithPointer(
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
-      const points = await findFieldCollapsePoints(page, field, targetNode);
+      const currentSelection = await selectedText(field);
+      if (currentSelection === '') return;
+      const points = await findFieldCollapsePoints(page, field, targetNode, currentSelection);
       for (const point of points) {
         await page.mouse.click(point.x, point.y);
         await page.evaluate(() => new Promise<void>((resolve) => {

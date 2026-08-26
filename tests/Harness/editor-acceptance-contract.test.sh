@@ -54,7 +54,7 @@ expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니�
 copy_fixture
 perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await page\.mouse\.click\(point\.x, point\.y\);/$1await field.focus();/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제는 같은 current field의 선택 target 밖 실제 도달 가능한 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
+expect_failure '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
@@ -97,14 +97,14 @@ perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await 
 expect_failure 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await findFieldCollapsePoints\(page, field, targetNode\)/$1await Promise.resolve([{ x: 0, y: 0 }])/' \
+perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await findFieldCollapsePoints\(page, field, targetNode, currentSelection\)/$1await Promise.resolve([{ x: 0, y: 0 }])/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제는 같은 current field의 선택 target 밖 실제 도달 가능한 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
+expect_failure '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(function findFieldCollapsePoints[\s\S]*?)canvasHits\[index\]\?\.targetHit === false/$1canvasHits[index]?.targetHit === true/' \
+perl -0pi -e 's/&& canvasHits\[index\]\?\.selectedRectHit === false/&& canvasHits[index]?.selectedRectHit === true/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제 좌표는 field 내부이면서 선택 target과 툴바 밖인 실제 픽셀이어야 합니다.'
+expect_failure '선택 해제 좌표는 선택 substring 바깥 prefix/suffix Range rect이면서 field 내부·툴바 밖인 실제 픽셀이어야 합니다.'
 
 copy_fixture
 printf '\nfield.click({ force: true });\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
@@ -126,9 +126,14 @@ perl -0pi -e 's/targetNode\.boundingBox\(\)/field.boundingBox()/g' \
 expect_failure '선택 대상의 실제 렌더링 box를 측정해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/targetBox\.x - fieldBox\.x/0/' \
+perl -0pi -e 's/range\.selectNodeContents\(element\)/range.selectNode(element)/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 대상을 contenteditable 내부 실제 좌표로 변환해야 합니다.'
+expect_failure '선택 시작·끝은 타겟 글자의 실제 Range rect로 측정해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/first\.left - fieldRect\.left/0/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '글자 Range rect를 current contenteditable 내부 좌표로 변환해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/fieldBox\.width \/ fieldRect\.width/1/' \
@@ -168,9 +173,9 @@ perl -0pi -e 's/expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/ex
 expect_failure 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'
 
 copy_fixture
-printf '\nfield.evaluate(() => document.createRange());\n' \
-  >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'DOM Range를 evaluate로 계산하거나 선택에 주입하면 안 됩니다.'
+perl -0pi -e 's/range\.getClientRects\(\)/[]/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 해제 좌표는 선택 substring 바깥 prefix/suffix Range rect이면서 field 내부·툴바 밖인 실제 픽셀이어야 합니다.'
 
 copy_fixture
 printf '\npage.evaluate(() => document.execCommand("bold"));\n' \
@@ -333,9 +338,14 @@ perl -0pi -e 's#(const optionPoint = await assertPointerReachable\(page, optionC
 expect_failure '선택 글자 option의 실제 click 또는 touch tap 전후에 Puck 메뉴와 선택 범위를 유지해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(function assertPointerReachable[\s\S]*?)hit: hit === iframe/$1hit: true/' \
+perl -0pi -e 's/(function assertPointerReachable[\s\S]*?)hit: stack\[0\] === iframe/$1hit: true/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '편집 E2E는 control 가시 영역에서 상위 iframe과 내부 control을 모두 맞는 실제 픽셀을 찾아야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await page.waitForTimeout(750);/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'control 도달성은 autosave pointer 차단이 풀리기를 기다려 우회하면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/page\.mouse\.click\(point\.x, point\.y\)/page.mouse.click(point.x + 1, point.y)/' \

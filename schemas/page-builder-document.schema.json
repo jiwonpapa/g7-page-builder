@@ -74,6 +74,14 @@
     }
   },
   "$defs": {
+    "inlineRichTextString": {
+      "type": "string",
+      "maxLength": 10000
+    },
+    "blockRichTextString": {
+      "type": "string",
+      "maxLength": 100000
+    },
     "block": {
       "type": "object",
       "additionalProperties": false,
@@ -247,6 +255,287 @@
         {
           "if": { "properties": { "type": { "const": "media.image-carousel-01" } }, "required": ["type"] },
           "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/imageCarouselProps" } } }
+        },
+        {
+          "$ref": "#/$defs/richTextEnvelopeOverlay"
+        }
+      ]
+    },
+    "richTextEnvelopeOverlay": {
+      "type": "object",
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "content.hero-centered-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "title": { "$ref": "#/$defs/inlineRichTextString" },
+                  "body": { "$ref": "#/$defs/blockRichTextString" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.features-grid-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "title": { "$ref": "#/$defs/inlineRichTextString" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "$ref": "#/$defs/inlineRichTextString" },
+                        "body": { "$ref": "#/$defs/blockRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": { "enum": ["form.inquiry-01", "location.map-directions-01"] }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "description": { "$ref": "#/$defs/blockRichTextString" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": { "enum": ["trust.testimonials-01", "trust.testimonial-slider-01"] }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "quote": { "$ref": "#/$defs/blockRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.faq-accordion-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "question": { "$ref": "#/$defs/inlineRichTextString" },
+                        "answer": { "$ref": "#/$defs/blockRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.process-timeline-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "$ref": "#/$defs/inlineRichTextString" },
+                        "body": { "$ref": "#/$defs/blockRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.tabs-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                        "body": { "$ref": "#/$defs/blockRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "commerce.comparison-table-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "columns": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "$ref": "#/$defs/inlineRichTextString" },
+                        "description": { "$ref": "#/$defs/inlineRichTextString" }
+                      }
+                    }
+                  },
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "feature": { "$ref": "#/$defs/inlineRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "content.article-list-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "$ref": "#/$defs/inlineRichTextString" },
+                        "summary": { "$ref": "#/$defs/blockRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "media.video-embed-01" } }, "required": ["type"] },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "caption": { "$ref": "#/$defs/blockRichTextString" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "trust.logo-carousel-01",
+                  "g7.board-content-archive-01",
+                  "g7.ecommerce-product-showcase-01"
+                ]
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": { "enum": ["content.event-schedule-01", "content.download-resources-01"] }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "props": {
+                "type": "object",
+                "properties": {
+                  "heading": { "$ref": "#/$defs/inlineRichTextString" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": { "$ref": "#/$defs/inlineRichTextString" },
+                        "description": { "$ref": "#/$defs/blockRichTextString" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       ]
     },
@@ -365,7 +654,7 @@
       "required": ["eyebrow", "heading", "level", "anchor"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "level": { "enum": [2, 3, 4] },
         "anchor": { "type": "string", "maxLength": 80, "pattern": "^(?:$|[a-z][a-z0-9-]{0,79})$" },
         "appearance": { "$ref": "#/$defs/appearance" }
@@ -376,7 +665,7 @@
       "additionalProperties": false,
       "required": ["content", "measure"],
       "properties": {
-        "content": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "content": { "$ref": "#/$defs/blockRichTextString", "type": "string", "minLength": 1 },
         "measure": { "enum": ["narrow", "standard", "wide"] },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
@@ -428,8 +717,8 @@
       "required": ["eyebrow", "heading", "body", "image", "mediaPosition"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "body": { "type": "string", "maxLength": 10000 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+        "body": { "$ref": "#/$defs/blockRichTextString" },
         "image": {
           "type": "object",
           "additionalProperties": false,
@@ -454,7 +743,7 @@
       "required": ["eyebrow", "heading", "items", "layout"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "items": {
           "type": "array",
           "minItems": 2,
@@ -465,8 +754,8 @@
             "required": ["icon", "title", "body"],
             "properties": {
               "icon": { "enum": ["bolt", "check", "code", "globe", "heart", "layers", "mobile", "palette", "shield", "sparkles", "star"] },
-              "title": { "type": "string", "minLength": 1, "maxLength": 160 },
-              "body": { "type": "string", "maxLength": 2000 }
+              "title": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+              "body": { "$ref": "#/$defs/blockRichTextString" }
             }
           }
         },
@@ -480,8 +769,8 @@
       "required": ["eyebrow", "title", "body", "mediaPosition"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "body": { "type": "string", "maxLength": 2000 },
+        "title": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+        "body": { "$ref": "#/$defs/blockRichTextString" },
         "primaryCta": { "$ref": "#/$defs/link" },
         "image": { "$ref": "#/$defs/image" },
         "mediaPosition": { "enum": ["left", "right"] },
@@ -501,8 +790,8 @@
             "required": ["eyebrow", "title", "body", "buttonLabel", "buttonUrl", "imageSrc", "imageAlt"],
             "properties": {
               "eyebrow": { "type": "string", "maxLength": 120 },
-              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
-              "body": { "type": "string", "maxLength": 2000 },
+              "title": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+              "body": { "$ref": "#/$defs/blockRichTextString" },
               "buttonLabel": { "type": "string", "minLength": 1, "maxLength": 120 },
               "buttonUrl": { "type": "string", "minLength": 1, "maxLength": 2048 },
               "imageSrc": { "type": "string", "maxLength": 2048 },
@@ -519,7 +808,7 @@
     "logoCloudProps": {
       "type": "object", "additionalProperties": false, "required": ["heading", "logos"],
       "properties": {
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "logos": { "type": "array", "minItems": 2, "maxItems": 12, "items": { "type": "object", "additionalProperties": false, "required": ["name", "imageSrc", "imageAlt", "url"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 120 }, "imageSrc": { "type": "string", "maxLength": 2048 }, "imageAlt": { "type": "string", "maxLength": 300 }, "url": { "type": "string", "maxLength": 2048 } } } },
         "layout": { "enum": ["strip", "grid", "panel"] },
         "appearance": { "$ref": "#/$defs/appearance" }
@@ -528,8 +817,8 @@
     "statsProps": {
       "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "items"],
       "properties": {
-        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "items": { "type": "array", "minItems": 2, "maxItems": 6, "items": { "type": "object", "additionalProperties": false, "required": ["icon", "value", "label", "detail"], "properties": { "icon": { "enum": ["trend", "users", "target", "chart"] }, "value": { "type": "string", "minLength": 1, "maxLength": 80 }, "label": { "type": "string", "minLength": 1, "maxLength": 120 }, "detail": { "type": "string", "maxLength": 500 } } } },
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+        "items": { "type": "array", "minItems": 2, "maxItems": 6, "items": { "type": "object", "additionalProperties": false, "required": ["icon", "value", "label", "detail"], "properties": { "icon": { "enum": ["trend", "users", "target", "chart"] }, "value": { "type": "string", "minLength": 1, "maxLength": 80 }, "label": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 }, "detail": { "$ref": "#/$defs/blockRichTextString" } } } },
         "layout": { "enum": ["grid", "strip", "split", "editorial"] },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
@@ -537,8 +826,8 @@
     "pricingProps": {
       "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "plans"],
       "properties": {
-        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "plans": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "type": "object", "additionalProperties": false, "required": ["name", "price", "period", "description", "features", "buttonLabel", "buttonUrl", "featured"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 120 }, "price": { "type": "string", "minLength": 1, "maxLength": 80 }, "period": { "type": "string", "maxLength": 40 }, "description": { "type": "string", "maxLength": 500 }, "features": { "type": "array", "minItems": 1, "maxItems": 12, "items": { "type": "string", "minLength": 1, "maxLength": 200 } }, "buttonLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "buttonUrl": { "type": "string", "minLength": 1, "maxLength": 2048 }, "featured": { "type": "boolean" } } } },
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+        "plans": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "type": "object", "additionalProperties": false, "required": ["name", "price", "period", "description", "features", "buttonLabel", "buttonUrl", "featured"], "properties": { "name": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 }, "price": { "type": "string", "minLength": 1, "maxLength": 80 }, "period": { "type": "string", "maxLength": 40 }, "description": { "$ref": "#/$defs/blockRichTextString" }, "features": { "type": "array", "minItems": 1, "maxItems": 12, "items": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 } }, "buttonLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "buttonUrl": { "type": "string", "minLength": 1, "maxLength": 2048 }, "featured": { "type": "boolean" } } } },
         "layout": { "enum": ["cards", "featured", "compact", "editorial"] },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
@@ -546,8 +835,8 @@
     "teamProps": {
       "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "members"],
       "properties": {
-        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "members": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "required": ["name", "role", "bio", "imageSrc", "imageAlt", "profileUrl"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 120 }, "role": { "type": "string", "minLength": 1, "maxLength": 160 }, "bio": { "type": "string", "maxLength": 1000 }, "imageSrc": { "type": "string", "maxLength": 2048 }, "imageAlt": { "type": "string", "maxLength": 300 }, "profileUrl": { "type": "string", "maxLength": 2048 } } } },
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+        "members": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "required": ["name", "role", "bio", "imageSrc", "imageAlt", "profileUrl"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 120 }, "role": { "type": "string", "minLength": 1, "maxLength": 160 }, "bio": { "$ref": "#/$defs/blockRichTextString" }, "imageSrc": { "type": "string", "maxLength": 2048 }, "imageAlt": { "type": "string", "maxLength": 300 }, "profileUrl": { "type": "string", "maxLength": 2048 } } } },
         "layout": { "enum": ["grid", "portraits", "editorial", "featured"] },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
@@ -555,7 +844,7 @@
     "galleryProps": {
       "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "images", "columns"],
       "properties": {
-        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 }, "columns": { "enum": [2, 3, 4] },
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 }, "columns": { "enum": [2, 3, 4] },
         "images": { "type": "array", "minItems": 2, "maxItems": 12, "items": { "type": "object", "additionalProperties": false, "required": ["src", "alt", "caption"], "properties": { "src": { "type": "string", "maxLength": 2048 }, "alt": { "type": "string", "minLength": 1, "maxLength": 300 }, "caption": { "type": "string", "maxLength": 300 } } } },
         "layout": { "enum": ["grid", "bento", "masonry", "filmstrip"] },
         "appearance": { "$ref": "#/$defs/appearance" }
@@ -564,7 +853,7 @@
     "barChartProps": {
       "type": "object", "additionalProperties": false, "required": ["eyebrow", "heading", "description", "unit", "items"],
       "properties": {
-        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "type": "string", "minLength": 1, "maxLength": 200 }, "description": { "type": "string", "maxLength": 1000 }, "unit": { "type": "string", "maxLength": 20 },
+        "eyebrow": { "type": "string", "maxLength": 120 }, "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 }, "description": { "$ref": "#/$defs/blockRichTextString" }, "unit": { "type": "string", "maxLength": 20 },
         "items": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "required": ["label", "value", "tone"], "properties": { "label": { "type": "string", "minLength": 1, "maxLength": 120 }, "value": { "type": "number", "minimum": 0, "maximum": 100 }, "tone": { "enum": ["blue", "indigo", "emerald", "amber"] } } } },
         "appearance": { "$ref": "#/$defs/appearance" }
       }
@@ -575,7 +864,7 @@
       "required": ["eyebrow", "heading", "source", "period", "limit", "audience", "emptyMessage"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "source": { "enum": ["recent", "popular"] },
         "period": { "enum": ["today", "week", "month", "year"] },
         "limit": { "enum": [3, 4, 6, 8, 12] },
@@ -591,7 +880,7 @@
       "required": ["eyebrow", "heading", "source", "limit", "columns", "audience", "detailBasePath", "emptyMessage"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "source": { "enum": ["latest", "new", "popular"] },
         "limit": { "enum": [2, 3, 4, 6, 8, 12] },
         "columns": { "enum": [2, 3, 4] },
@@ -613,7 +902,7 @@
       "required": ["eyebrow", "heading", "boardSlug", "postId", "detailUrl", "linkLabel", "audience", "showContent", "emptyMessage"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "boardSlug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,79}$" },
         "postId": { "type": "integer", "minimum": 1 },
         "detailUrl": { "type": "string", "minLength": 1, "maxLength": 2048 },
@@ -630,7 +919,7 @@
       "required": ["eyebrow", "heading", "productKey", "detailUrl", "buttonLabel", "audience", "showDescription", "emptyMessage"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "productKey": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$" },
         "detailUrl": { "type": "string", "minLength": 1, "maxLength": 2048 },
         "buttonLabel": { "type": "string", "minLength": 1, "maxLength": 120 },
@@ -656,7 +945,7 @@
       "additionalProperties": false,
       "required": ["quote", "citation", "role", "alignment", "variant"],
       "properties": {
-        "quote": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "quote": { "$ref": "#/$defs/blockRichTextString", "type": "string", "minLength": 1 },
         "citation": { "type": "string", "minLength": 1, "maxLength": 120 },
         "role": { "type": "string", "maxLength": 160 },
         "alignment": { "enum": ["left", "center"] },
@@ -670,8 +959,8 @@
       "required": ["tone", "title", "body", "actionLabel", "actionUrl"],
       "properties": {
         "tone": { "enum": ["info", "success", "warning", "critical"] },
-        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "body": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "title": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+        "body": { "$ref": "#/$defs/blockRichTextString", "type": "string", "minLength": 1 },
         "actionLabel": { "type": "string", "maxLength": 120 },
         "actionUrl": { "type": "string", "maxLength": 2048, "pattern": "^(?:$|/[^\\s]*|https://[^\\s]+|mailto:[^\\s]+|tel:[^\\s]+)$" },
         "appearance": { "$ref": "#/$defs/appearance" }
@@ -683,7 +972,7 @@
       "required": ["eyebrow", "heading", "items", "columns", "variant"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "items": {
           "type": "array", "minItems": 2, "maxItems": 6,
           "items": {
@@ -691,8 +980,8 @@
             "required": ["kicker", "title", "body", "linkLabel", "linkUrl"],
             "properties": {
               "kicker": { "type": "string", "maxLength": 80 },
-              "title": { "type": "string", "minLength": 1, "maxLength": 160 },
-              "body": { "type": "string", "maxLength": 1000 },
+              "title": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
+              "body": { "$ref": "#/$defs/blockRichTextString" },
               "linkLabel": { "type": "string", "maxLength": 120 },
               "linkUrl": { "type": "string", "maxLength": 2048, "pattern": "^(?:$|/[^\\s]*|https://[^\\s]+|mailto:[^\\s]+|tel:[^\\s]+)$" }
             }
@@ -749,7 +1038,7 @@
       "additionalProperties": false,
       "required": ["heading", "items", "variant", "alignment"],
       "properties": {
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "items": {
           "type": "array", "minItems": 1, "maxItems": 8,
           "items": {
@@ -772,7 +1061,7 @@
       "required": ["eyebrow", "heading", "images", "autoplay", "interval", "controls", "aspectRatio"],
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
-        "heading": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
         "images": {
           "type": "array", "minItems": 2, "maxItems": 8,
           "items": {
@@ -801,13 +1090,12 @@
           "maxLength": 120
         },
         "heading": {
+          "$ref": "#/$defs/inlineRichTextString",
           "type": "string",
-          "minLength": 1,
-          "maxLength": 200
+          "minLength": 1
         },
         "body": {
-          "type": "string",
-          "maxLength": 2000
+          "$ref": "#/$defs/blockRichTextString"
         },
         "primaryLink": {
           "$ref": "#/$defs/link"
@@ -832,9 +1120,9 @@
       "required": ["heading", "address", "phone", "email"],
       "properties": {
         "heading": {
+          "$ref": "#/$defs/inlineRichTextString",
           "type": "string",
-          "minLength": 1,
-          "maxLength": 200
+          "minLength": 1
         },
         "address": {
           "type": "string",

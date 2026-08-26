@@ -16,6 +16,98 @@ import officialLocalBusinessPageKit from '../../resources/store/source/page-kits
 import officialServicePageKit from '../../resources/store/source/page-kits/service-conversion/document.json';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
 
+interface RichTextFieldContract {
+  blockId: string;
+  inline: string[];
+  block: string[];
+}
+
+const richTextFieldMatrix: RichTextFieldContract[] = [
+  { blockId: 'content.heading-01', inline: ['heading'], block: [] },
+  { blockId: 'content.rich-text-01', inline: [], block: ['content'] },
+  { blockId: 'media.image-01', inline: [], block: [] },
+  { blockId: 'action.buttons-01', inline: [], block: [] },
+  { blockId: 'media.image-text-01', inline: ['heading'], block: ['body'] },
+  { blockId: 'content.icon-list-01', inline: ['heading', 'items.*.title'], block: ['items.*.body'] },
+  { blockId: 'content.hero-centered-01', inline: ['title'], block: ['body'] },
+  { blockId: 'content.hero-split-01', inline: ['title'], block: ['body'] },
+  { blockId: 'content.hero-slider-01', inline: ['slides.*.title'], block: ['slides.*.body'] },
+  { blockId: 'content.features-grid-01', inline: ['title', 'items.*.title'], block: ['items.*.body'] },
+  { blockId: 'content.cta-split-01', inline: ['heading'], block: ['body'] },
+  { blockId: 'content.contact-info-01', inline: ['heading'], block: [] },
+  { blockId: 'content.faq-accordion-01', inline: ['heading', 'items.*.question'], block: ['items.*.answer'] },
+  { blockId: 'content.process-timeline-01', inline: ['heading', 'items.*.title'], block: ['items.*.body'] },
+  { blockId: 'content.tabs-01', inline: ['heading', 'items.*.heading'], block: ['items.*.body'] },
+  { blockId: 'content.article-list-01', inline: ['heading', 'items.*.title'], block: ['items.*.summary'] },
+  { blockId: 'content.event-schedule-01', inline: ['heading', 'items.*.title'], block: ['items.*.description'] },
+  { blockId: 'content.download-resources-01', inline: ['heading', 'items.*.title'], block: ['items.*.description'] },
+  { blockId: 'form.inquiry-01', inline: ['heading'], block: ['description'] },
+  { blockId: 'location.map-directions-01', inline: ['heading'], block: ['description'] },
+  { blockId: 'trust.logo-cloud-01', inline: ['heading'], block: [] },
+  { blockId: 'trust.logo-carousel-01', inline: ['heading'], block: [] },
+  { blockId: 'trust.testimonials-01', inline: ['heading'], block: ['items.*.quote'] },
+  { blockId: 'trust.testimonial-slider-01', inline: ['heading'], block: ['items.*.quote'] },
+  { blockId: 'commerce.pricing-tiers-01', inline: ['heading', 'plans.*.name', 'plans.*.features.*'], block: ['plans.*.description'] },
+  { blockId: 'commerce.comparison-table-01', inline: ['heading', 'columns.*.title', 'columns.*.description', 'rows.*.feature'], block: [] },
+  { blockId: 'company.team-grid-01', inline: ['heading'], block: ['members.*.bio'] },
+  { blockId: 'data.stats-icons-01', inline: ['heading', 'items.*.label'], block: ['items.*.detail'] },
+  { blockId: 'data.bar-chart-01', inline: ['heading'], block: ['description'] },
+  { blockId: 'media.gallery-grid-01', inline: ['heading'], block: [] },
+  { blockId: 'media.video-embed-01', inline: ['heading'], block: ['caption'] },
+  { blockId: 'g7.board-recent-posts-01', inline: ['heading'], block: [] },
+  { blockId: 'g7.board-content-archive-01', inline: ['heading'], block: [] },
+  { blockId: 'g7.board-post-detail-01', inline: ['heading'], block: [] },
+  { blockId: 'g7.ecommerce-product-grid-01', inline: ['heading'], block: [] },
+  { blockId: 'g7.ecommerce-product-showcase-01', inline: ['heading'], block: [] },
+  { blockId: 'g7.ecommerce-product-detail-01', inline: ['heading'], block: [] },
+  { blockId: 'content.divider-01', inline: [], block: [] },
+  { blockId: 'content.blockquote-01', inline: [], block: ['quote'] },
+  { blockId: 'content.notice-01', inline: ['title'], block: ['body'] },
+  { blockId: 'content.card-grid-01', inline: ['heading', 'items.*.title'], block: ['items.*.body'] },
+  { blockId: 'navigation.breadcrumbs-01', inline: [], block: [] },
+  { blockId: 'navigation.anchor-menu-01', inline: [], block: [] },
+  { blockId: 'navigation.social-links-01', inline: ['heading'], block: [] },
+  { blockId: 'media.image-carousel-01', inline: ['heading'], block: [] },
+];
+
+function replaceRichTextPath(target: unknown, path: string, value: string): void {
+  const [segment, ...remaining] = path.split('.');
+  if (segment === undefined) throw new Error(`Invalid rich-text path: ${path}`);
+  if (segment === '*') {
+    if (!Array.isArray(target)) throw new Error(`Expected collection at rich-text path: ${path}`);
+    target.forEach((item, index) => {
+      if (remaining.length === 0) target[index] = value;
+      else replaceRichTextPath(item, remaining.join('.'), value);
+    });
+    return;
+  }
+  if (typeof target !== 'object' || target === null || Array.isArray(target)) {
+    throw new Error(`Expected object at rich-text path: ${path}`);
+  }
+  const record = target as Record<string, unknown>;
+  if (remaining.length === 0) {
+    record[segment] = value;
+    return;
+  }
+  replaceRichTextPath(record[segment], remaining.join('.'), value);
+}
+
+function documentForBlock(blockId: string, index: number): typeof fixture {
+  const preset = builtinManifest.presets.find((candidate) => candidate.block_id === blockId);
+  if (!preset) throw new Error(`${blockId}: bundled preset이 없습니다.`);
+  return {
+    ...structuredClone(fixture),
+    slug: `rich-text-envelope-${index + 1}`,
+    blocks: [{
+      instance_id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      type: blockId,
+      block_version: preset.block_version,
+      props: structuredClone(preset.props),
+      slots: {},
+    }],
+  } as typeof fixture;
+}
+
 describe('PageBuilderDocument v1 schema', () => {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
   addFormats(ajv);
@@ -87,6 +179,61 @@ describe('PageBuilderDocument v1 schema', () => {
       };
       expect(validate(document), `${preset.preset_id}: ${JSON.stringify(validate.errors)}`).toBe(true);
     });
+  });
+
+  it('accepts typed-mark serialization across the approved 53 inline and 26 block-rich paths', () => {
+    const typedMark = '<span data-g7pb-font="serif" data-g7pb-size="large" data-g7pb-tone="accent"><strong><em><u>가</u></em></strong></span>';
+    const inlineMarkup = `<p>${typedMark.repeat(40)}</p>`;
+    const blockMarkup = `<p>${typedMark.repeat(400)}</p>`;
+    expect(richTextFieldMatrix).toHaveLength(45);
+    expect(richTextFieldMatrix.flatMap((entry) => entry.inline)).toHaveLength(53);
+    expect(richTextFieldMatrix.flatMap((entry) => entry.block)).toHaveLength(26);
+    expect(inlineMarkup.length).toBeGreaterThan(300);
+    expect(blockMarkup.length).toBeGreaterThan(2000);
+
+    richTextFieldMatrix.forEach((entry, index) => {
+      const document = documentForBlock(entry.blockId, index);
+      const props = document.blocks[0]!.props;
+      entry.inline.forEach((path) => replaceRichTextPath(props, path, inlineMarkup));
+      entry.block.forEach((path) => replaceRichTextPath(props, path, blockMarkup));
+      expect(validate(document), `${entry.blockId}: ${JSON.stringify(validate.errors)}`).toBe(true);
+    });
+  });
+
+  it('rejects oversized serialized rich-text payloads on every approved path', () => {
+    const oversizedInlineMarkup = `<p>${'가'.repeat(10_000)}</p>`;
+    const oversizedBlockMarkup = `<p>${'가'.repeat(100_000)}</p>`;
+
+    richTextFieldMatrix.forEach((entry, index) => {
+      entry.inline.forEach((path) => {
+        const document = documentForBlock(entry.blockId, index);
+        replaceRichTextPath(document.blocks[0]!.props, path, oversizedInlineMarkup);
+        expect(validate(document), `${entry.blockId}.${path} must reject oversized inline markup`).toBe(false);
+      });
+      entry.block.forEach((path) => {
+        const document = documentForBlock(entry.blockId, index);
+        replaceRichTextPath(document.blocks[0]!.props, path, oversizedBlockMarkup);
+        expect(validate(document), `${entry.blockId}.${path} must reject oversized block markup`).toBe(false);
+      });
+    });
+  });
+
+  it('keeps plain labels, URLs and accessibility text on their original limits', () => {
+    const buttons = documentForBlock('action.buttons-01', 100) as unknown as {
+      blocks: Array<{ props: { items: Array<{ label: string; url: string }> } }>;
+    };
+    buttons.blocks[0]!.props.items[0]!.label = '가'.repeat(121);
+    expect(validate(buttons)).toBe(false);
+    buttons.blocks[0]!.props.items[0]!.label = '버튼';
+    buttons.blocks[0]!.props.items[0]!.url = `/${'a'.repeat(2048)}`;
+    expect(validate(buttons)).toBe(false);
+
+    const image = documentForBlock('media.image-01', 101) as unknown as {
+      blocks: Array<{ props: { alt: string } }>;
+    };
+    image.blocks[0]!.props.alt = '대체 텍스트'.repeat(51);
+    expect(image.blocks[0]!.props.alt.length).toBeGreaterThan(300);
+    expect(validate(image)).toBe(false);
   });
 
   it('rejects malformed foundation block props', () => {

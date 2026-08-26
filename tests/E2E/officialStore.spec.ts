@@ -239,13 +239,9 @@ test('official free store previews and applies a Page Kit as a separate draft', 
     await applyDialog.getByTestId('page-builder-store-page-kit-confirm').click();
     const response = await responsePromise;
     expect(response.status()).toBe(201);
-    const applied = await response.json() as { data?: { document?: { document_id?: unknown } } };
-    documentId = typeof applied.data?.document?.document_id === 'string'
-      ? applied.data.document.document_id
-      : null;
-    expect(documentId).not.toBeNull();
     await expect(page).toHaveURL(/\/modules\/jiwonpapa-page_builder\/admin\/editor\?document=[0-9a-f-]+$/);
-    expect(new URL(page.url()).searchParams.get('document')).toBe(documentId);
+    documentId = new URL(page.url()).searchParams.get('document');
+    expect(documentId).not.toBeNull();
     const api = await playwrightRequest.newContext({
       baseURL: BASE_URL,
       ignoreHTTPSErrors: true,

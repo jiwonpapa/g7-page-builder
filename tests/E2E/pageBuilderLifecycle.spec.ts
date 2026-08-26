@@ -551,6 +551,14 @@ async function activatePuckInlineTextField(page: Page, field: Locator, label: st
   await expect(field).toBeEditable();
 }
 
+async function openSelectedElementTextTools(page: Page): Promise<void> {
+  const textToolsAction = page.frameLocator('iframe')
+    .getByTestId('page-builder-text-tools-open')
+    .locator('xpath=ancestor::button[1]');
+  await activatePointerTarget(page, textToolsAction, 'selected element text tools');
+  await expect(page.getByTestId('page-builder-context-panel')).toBeVisible();
+}
+
 async function revealEditorHeaderActions(page: Page): Promise<void> {
   const addBlock = page.getByTestId('page-builder-add-block');
   await dismissContextPanel(page);
@@ -1456,6 +1464,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await heroTitleField.click({ position: { x: 4, y: 4 } });
       await expect.poll(() => selectedText(heroTitleField)).toBe('');
       await expect(headingRangeToolbar).toBeHidden();
+      await openSelectedElementTextTools(page);
       const elementPanel = page.getByTestId('page-builder-context-panel');
       await expect(elementPanel).toContainText('요소 전체 · 부분 선택은 글자 위 툴바');
       const elementPanelBox = await elementPanel.boundingBox();
@@ -1520,6 +1529,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         heroBlock.locator('[data-g7pb-inline-field="primaryLabel"]'),
         'Hero primary action label',
       );
+      await openSelectedElementTextTools(page);
       await page.getByTestId('page-builder-element-route-open').click();
       await expect(routePicker).toBeVisible();
       await routePicker.getByPlaceholder('로그인, 게시판, 상품…').fill('회원가입');

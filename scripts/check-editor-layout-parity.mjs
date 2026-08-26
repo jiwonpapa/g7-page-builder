@@ -180,7 +180,7 @@ export async function validateEditorLayoutParity(root) {
     /width:\s*max-content;[\s\S]*min-width:\s*max-content;[\s\S]*flex-wrap:\s*nowrap;/,
     'ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.');
   const floatingLayer = css.match(
-    /\.g7pb-richtext-inline-toolbar__options\.g7pb-richtext-floating-layer,\s*\.g7pb-richtext-inline-toolbar__link\.g7pb-richtext-floating-layer\s*\{([^}]*)\}/s,
+    /\.g7pb-richtext-inline-toolbar__options\.g7pb-richtext-floating-layer,\s*\.g7pb-richtext-inline-toolbar__advanced\.g7pb-richtext-floating-layer,\s*\.g7pb-richtext-inline-toolbar__link\.g7pb-richtext-floating-layer\s*\{([^}]*)\}/s,
   )?.[1] ?? '';
   requirePattern(errors, floatingLayer,
     /position:\s*fixed;[\s\S]*z-index:\s*9999;[\s\S]*--g7pb-richtext-floating-top[\s\S]*--g7pb-richtext-floating-left[\s\S]*max-width:\s*var\(--g7pb-richtext-floating-max-width[\s\S]*max-height:\s*var\(--g7pb-richtext-floating-max-height[\s\S]*overflow:\s*auto;/,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   clearVisibleClipContract,
@@ -9,6 +9,7 @@ import {
   inverseScaledTranslation,
   mapHostClipToFrameViewport,
   placeEditorOverlay,
+  quantizeOverlayPixel,
   renderedElementScale,
   viewportRect,
   visibleOwnerViewport,
@@ -170,6 +171,21 @@ describe('editor overlay safe zone geometry', () => {
     expect(actionBar.style.getPropertyValue('--g7pb-selected-actionbar-safe-bottom')).toBe('');
   });
 
+  it('quantizes subpixel jitter and does not rewrite an unchanged portal clip contract', () => {
+    expect(quantizeOverlayPixel(12.24, 2)).toBe(12);
+    expect(quantizeOverlayPixel(12.26, 2)).toBe(12.5);
+
+    const actionBar = document.createElement('div');
+    const setAttribute = vi.spyOn(actionBar, 'setAttribute');
+    const setProperty = vi.spyOn(actionBar.style, 'setProperty');
+    const clip = { left: 8.1, top: 12.1, right: 408.1, bottom: 312.1, width: 400.1, height: 300.1 };
+    exposeVisibleClipContract(actionBar, clip);
+    exposeVisibleClipContract(actionBar, { ...clip, left: 8.2, top: 12.2 });
+
+    expect(setAttribute).toHaveBeenCalledTimes(6);
+    expect(setProperty).toHaveBeenCalledTimes(6);
+  });
+
   it('uses the focused editor element as an avoid rectangle but ignores ActionBar descendants', () => {
     const actionBar = document.createElement('div');
     const actionButton = document.createElement('button');
@@ -186,7 +202,16 @@ describe('editor overlay safe zone geometry', () => {
     expect(currentInteractionRects(actionBar)).toEqual([{ left: 30, top: 40, right: 130, bottom: 70 }]);
     actionButton.focus();
     expect(currentInteractionRects(actionBar)).toEqual([]);
+
+    const portal = document.createElement('div');
+    portal.className = 'g7pb-richtext-floating-layer';
+    const portalButton = document.createElement('button');
+    portal.append(portalButton);
+    document.body.append(portal);
+    portalButton.focus();
+    expect(currentInteractionRects(actionBar)).toEqual([]);
     actionBar.remove();
     editorButton.remove();
+    portal.remove();
   });
 });

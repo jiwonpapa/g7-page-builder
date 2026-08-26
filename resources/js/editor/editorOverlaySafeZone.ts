@@ -27,6 +27,11 @@ function finite(value: number, fallback = 0): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
+export function quantizeOverlayPixel(value: number, devicePixelRatio = 1): number {
+  const scale = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0 ? devicePixelRatio : 1;
+  return Math.round(finite(value) * scale) / scale;
+}
+
 function rectFromEdges(rect: OverlayRectEdges): OverlayRect {
   const left = finite(rect.left);
   const top = finite(rect.top);
@@ -254,10 +259,19 @@ export function clearVisibleClipContract(actionBar: HTMLElement): void {
 }
 
 export function exposeVisibleClipContract(actionBar: HTMLElement, clip: OverlayRect): void {
+  const devicePixelRatio = actionBar.ownerDocument.defaultView?.devicePixelRatio ?? 1;
   for (const field of SAFE_CLIP_FIELDS) {
-    const value = clip[field];
-    actionBar.setAttribute(`data-g7pb-safe-clip-${field}`, String(value));
-    actionBar.style.setProperty(`--g7pb-selected-actionbar-safe-${field}`, `${value}px`);
+    const value = quantizeOverlayPixel(clip[field], devicePixelRatio);
+    const attributeName = `data-g7pb-safe-clip-${field}`;
+    const propertyName = `--g7pb-selected-actionbar-safe-${field}`;
+    const attributeValue = String(value);
+    const propertyValue = `${value}px`;
+    if (actionBar.getAttribute(attributeName) !== attributeValue) {
+      actionBar.setAttribute(attributeName, attributeValue);
+    }
+    if (actionBar.style.getPropertyValue(propertyName) !== propertyValue) {
+      actionBar.style.setProperty(propertyName, propertyValue);
+    }
   }
 }
 
@@ -290,6 +304,7 @@ export function currentInteractionRects(actionBar: HTMLElement): OverlayRectEdge
     && activeElement !== ownerDocument.body
     && activeElement !== ownerDocument.documentElement
     && !actionBar.contains(activeElement)
+    && !activeElement.closest('.g7pb-richtext-floating-layer')
     && 'getBoundingClientRect' in activeElement
   ) {
     addRect(activeElement.getBoundingClientRect());

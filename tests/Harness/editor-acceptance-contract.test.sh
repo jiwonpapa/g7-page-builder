@@ -424,7 +424,12 @@ expect_failure '선택 글자 option과 링크 편집기는 ActionBar overflow �
 copy_fixture
 perl -0pi -e 's/data-g7pb-safe-clip-left/data-g7pb-unsafe-left/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip 계약으로 배치되어야 합니다.'
+expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/data-puck-rte-menu="portal"/data-g7pb-rte-menu="portal"/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/FLOATING_LAYER_STABLE_FRAMES = 3/FLOATING_LAYER_STABLE_FRAMES = 1/' \

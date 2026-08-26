@@ -201,6 +201,7 @@ function RichTextFloatingLayer({
   if (!ownerDocument?.body) return null;
   return createPortal(
     <div {...attributes} ref={layerRef}
+      data-puck-rte-menu="portal"
       className={`${className ?? ''} g7pb-richtext-floating-layer`.trim()} style={initialStyle.current}>
       {children}
     </div>,

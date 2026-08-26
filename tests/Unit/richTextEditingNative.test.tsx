@@ -204,8 +204,10 @@ describe('Puck-native rich-text editing', () => {
     await act(async () => linkButton?.click());
     const input = document.body.querySelector<HTMLInputElement>('input[aria-label="링크 주소"]');
     expect(input).not.toBeNull();
-    expect(input?.closest('[data-puck-rte-menu]')).toBeNull();
-    expect(input?.closest('.g7pb-richtext-floating-layer')).not.toBeNull();
+    const floatingLayer = input?.closest<HTMLElement>('.g7pb-richtext-floating-layer');
+    expect(floatingLayer).not.toBeNull();
+    expect(floatingLayer?.getAttribute('data-puck-rte-menu')).toBe('portal');
+    expect(floatingLayer?.parentElement).toBe(document.body);
 
     await act(async () => {
       input?.focus();

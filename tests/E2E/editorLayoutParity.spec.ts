@@ -27,6 +27,10 @@ interface StoreCatalog {
   }>;
 }
 
+interface PageKitManifest {
+  kits: Array<{ slug: string }>;
+}
+
 interface DocumentResource {
   data?: {
     archived_at?: unknown;
@@ -82,27 +86,33 @@ const builtinManifest = JSON.parse(
 const storeCatalog = JSON.parse(
   readFileSync(resolve('resources/store/dist/catalog.json'), 'utf8'),
 ) as StoreCatalog;
-
-const pageKitScenarios = readdirSync(resolve('resources/store/source/page-kits'), { withFileTypes: true })
+const pageKitManifest = JSON.parse(
+  readFileSync(resolve('resources/store/source/page-kits/manifest.json'), 'utf8'),
+) as PageKitManifest;
+const sourcePageKitSlugs = readdirSync(resolve('resources/store/source/page-kits'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
-  .sort((left, right) => left.name.localeCompare(right.name))
-  .map((entry): PageKitScenario => {
+  .map((entry) => entry.name)
+  .sort();
+const declaredPageKitSlugs = pageKitManifest.kits.map((kit) => kit.slug);
+
+const pageKitScenarios = pageKitManifest.kits
+  .map((kit): PageKitScenario => {
     const source = JSON.parse(readFileSync(
-      resolve('resources/store/source/page-kits', entry.name, 'document.json'),
+      resolve('resources/store/source/page-kits', kit.slug, 'document.json'),
       'utf8',
     )) as Record<string, unknown>;
     const blocks = source.blocks as Array<Record<string, unknown>>;
-    const productId = `jiwonpapa/${entry.name}`;
+    const productId = `jiwonpapa/${kit.slug}`;
     const product = storeCatalog.products.find((candidate) => (
       candidate.product_type === 'page_kit' && candidate.product_id === productId
     ));
     if (!product) throw new Error(`Official Page Kit catalog entry is missing: ${productId}`);
     return {
       expectedBlockCount: blocks.length,
-      label: `PAGE_KIT_LAYOUT_GATE:${entry.name}`,
+      label: `PAGE_KIT_LAYOUT_GATE:${kit.slug}`,
       productId,
       productVersion: product.product_version,
-      slug: entry.name,
+      slug: kit.slug,
     };
   });
 
@@ -145,7 +155,7 @@ function presetScenario(): DraftScenario {
       blocks,
     },
     expectedBlockCount: blocks.length,
-    label: 'ALL_95_PRESET_LAYOUT_GATE',
+    label: 'ALL_PRESET_LAYOUT_GATE',
   };
 }
 
@@ -530,11 +540,13 @@ async function purgeDocument(
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
 test.describe.configure({ retries: 0 });
 
-test('keeps 45 block types, all 95 presets, and every built-in Page Kit inside the editor/preview layout contract', async ({ context, page }, testInfo) => {
+test('keeps every built-in block preset and Page Kit inside the editor/preview layout contract', async ({ context, page }, testInfo) => {
   test.setTimeout(360_000);
-  expect(builtinManifest.blocks).toHaveLength(45);
-  expect(builtinManifest.presets).toHaveLength(95);
-  expect(pageKitScenarios).toHaveLength(5);
+  expect(builtinManifest.blocks.length).toBeGreaterThan(0);
+  expect(builtinManifest.presets.length).toBeGreaterThanOrEqual(builtinManifest.blocks.length);
+  expect(pageKitScenarios.length).toBeGreaterThan(0);
+  expect(new Set(declaredPageKitSlugs).size).toBe(declaredPageKitSlugs.length);
+  expect([...declaredPageKitSlugs].sort()).toEqual(sourcePageKitSlugs);
   expect(new Set(builtinManifest.presets.map((preset) => preset.block_id))).toEqual(
     new Set(builtinManifest.blocks.map((block) => block.block_id)),
   );

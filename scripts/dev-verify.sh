@@ -116,20 +116,13 @@ fi
 
 store_catalog_url="$base_url/modules/jiwonpapa-page_builder/store/catalog.json"
 store_catalog="$(curl "${curl_common[@]}" "$store_catalog_url" || true)"
-if jq -e --arg origin "$base_url" '
+if jq -e --arg origin "$base_url" --slurpfile inventory "$root/resources/store/source/page-kits/manifest.json" '
   (.catalog_version == "g7pb-store/v1")
   and (.publisher.id == "jiwonpapa")
-  and (.products | length == 6)
+  and (.products | length == (($inventory[0].kits | length) + 1))
   and ([.products[] | select(.product_type == "block_pack" and .license == "free")] | length == 1)
-  and ([.products[] | select(.product_type == "page_kit" and .license == "free")] | length == 5)
-  and ([.products[].product_id] == [
-    "jiwonpapa/marketing-presets",
-    "jiwonpapa/company-launch",
-    "jiwonpapa/service-conversion",
-    "jiwonpapa/local-business",
-    "jiwonpapa/event-launch",
-    "jiwonpapa/editorial-community"
-  ])
+  and ([.products[] | select(.product_type == "page_kit" and .license == "free")] | length == ($inventory[0].kits | length))
+  and ([.products[].product_id] == (["jiwonpapa/marketing-presets"] + [$inventory[0].kits[].slug | "jiwonpapa/" + .]))
   and (.products | all(.artifact.url | startswith($origin + "/modules/jiwonpapa-page_builder/store/artifacts/")))
 ' <<<"$store_catalog" >/dev/null 2>&1; then
   store_asset_failures=0
@@ -292,12 +285,12 @@ if jq -e '(.success == true) and (.data.user.is_admin == true)' <<<"$login_respo
     --header 'Accept: application/json' \
     --header "Authorization: Bearer $auth_token" \
     "$base_url/api/modules/jiwonpapa-page_builder/admin/store/catalog" || true)"
-  if jq -e '
+  if jq -e --slurpfile inventory "$root/resources/store/source/page-kits/manifest.json" '
     (.success == true)
     and (.data.publisher.id == "jiwonpapa")
-    and (.data.products | length == 6)
+    and (.data.products | length == (($inventory[0].kits | length) + 1))
     and ([.data.products[] | select(.product_type == "block_pack")] | length == 1)
-    and ([.data.products[] | select(.product_type == "page_kit")] | length == 5)
+    and ([.data.products[] | select(.product_type == "page_kit")] | length == ($inventory[0].kits | length))
     and (.data.products | all(.license == "free"))
   ' <<<"$official_store_response" >/dev/null 2>&1; then
     ok 'Official Store protected catalog and compatibility adapter'

@@ -167,9 +167,9 @@ perl -0pi -e 's/(\.g7pb-logo-cloud--layout-grid ul \{ display: grid; grid-templa
 expect_failure '공개 Logo grid 열도 로고 고유 폭보다 작아질 수 있어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/ALL_95_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \
+perl -0pi -e 's/ALL_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
-expect_failure '95개 프리셋 편집/미리보기 gate가 필요합니다.'
+expect_failure '전체 프리셋 편집/미리보기 gate가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's#\$\{API\}/store/page-kits/apply#\$\{API\}/store/page-kits/bypassed#' \

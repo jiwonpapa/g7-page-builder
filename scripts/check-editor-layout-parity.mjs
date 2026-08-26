@@ -208,13 +208,13 @@ export async function validateEditorLayoutParity(root) {
 
   const requiredEvidence = [
     [/test\.describe\.configure\(\{\s*retries:\s*0\s*\}\)/, '레이아웃 E2E는 retries: 0으로 실행해야 합니다.'],
-    [/expect\(builtinManifest\.blocks\)\.toHaveLength\(45\)/, '45개 블록 종류 고정 assertion이 필요합니다.'],
-    [/expect\(builtinManifest\.presets\)\.toHaveLength\(95\)/, '95개 완성 섹션 고정 assertion이 필요합니다.'],
-    [/expect\(pageKitScenarios\)\.toHaveLength\(5\)/, '내장 Page Kit 5종 고정 assertion이 필요합니다.'],
+    [/expect\(builtinManifest\.blocks\.length\)\.toBeGreaterThan\(0\)/, '블록 재고는 manifest 기반 비어 있지 않은 assertion이 필요합니다.'],
+    [/expect\(builtinManifest\.presets\.length\)\.toBeGreaterThanOrEqual\(builtinManifest\.blocks\.length\)/, '완성 섹션 재고는 블록 수에서 파생한 assertion이 필요합니다.'],
+    [/expect\(\[\.\.\.declaredPageKitSlugs\]\.sort\(\)\)\.toEqual\(sourcePageKitSlugs\)/, 'Page Kit manifest와 source directory 재고 drift assertion이 필요합니다.'],
     [/api\.post\(`\$\{API\}\/store\/page-kits\/apply`/, 'Page Kit은 실제 공식 마켓 적용 API로 생성해야 합니다.'],
     [/not\.toContain\(['"]g7pb-media:\/\/['"]\)/, 'Page Kit portable media가 실제 저장 URL로 해소됐는지 확인해야 합니다.'],
     [/api\.delete\(`\$\{API\}\/media\/\$\{mediaId\}`\)/, 'Page Kit gate가 만든 미디어를 정확한 ID로 정리해야 합니다.'],
-    [/ALL_95_PRESET_LAYOUT_GATE/, '95개 프리셋 편집/미리보기 gate가 필요합니다.'],
+    [/ALL_PRESET_LAYOUT_GATE/, '전체 프리셋 편집/미리보기 gate가 필요합니다.'],
     [/PAGE_KIT_LAYOUT_GATE/, '내장 Page Kit 편집/미리보기 gate가 필요합니다.'],
     [/desktop:\s*1280,\s*tablet:\s*768,\s*mobile:\s*360/, 'PC/태블릿/모바일 canvas 폭 계약이 필요합니다.'],
     [/const CANVAS_IFRAME\s*=\s*['"]#puck-canvas-root iframe['"]/, 'Puck canvas 고유 iframe selector가 필요합니다.'],

@@ -28,20 +28,16 @@ for required in \
   dist/css/page-builder-site-part.css dist/css/page-builder-public.css \
   resources/store/dist/catalog.json \
   resources/store/dist/artifacts/jiwonpapa-marketing-presets-1.0.0.zip \
-  resources/store/dist/artifacts/jiwonpapa-company-launch-1.0.0.zip \
-  resources/store/dist/artifacts/jiwonpapa-service-conversion-1.0.0.zip \
-  resources/store/dist/artifacts/jiwonpapa-local-business-1.0.0.zip \
-  resources/store/dist/artifacts/jiwonpapa-event-launch-1.0.0.zip \
-  resources/store/dist/artifacts/jiwonpapa-editorial-community-1.0.0.zip \
   resources/store/dist/previews/marketing-presets.svg \
-  resources/store/dist/previews/company-launch.svg \
-  resources/store/dist/previews/service-conversion.svg \
-  resources/store/dist/previews/local-business.svg \
-  resources/store/dist/previews/event-launch.svg \
-  resources/store/dist/previews/editorial-community.svg \
   schemas/official-store-catalog.schema.json schemas/page-kit-manifest.schema.json; do
   [[ -f "$root/$required" ]] || { echo "Missing release input: $required" >&2; exit 2; }
 done
+
+while IFS= read -r required; do
+  [[ -f "$root/resources/store/dist/$required" ]] \
+    || { echo "Missing Page Kit release input: resources/store/dist/$required" >&2; exit 2; }
+done < <(jq -r '.products[] | select(.product_type == "page_kit") | "artifacts/" + (.artifact.url | split("/")[-1]), "previews/" + (.preview.thumbnail_url | split("/")[-1]), (.preview.screenshots[] | "previews/" + (split("/")[-1]))' \
+  "$root/resources/store/dist/catalog.json")
 
 release_id="g7-page-builder-v${version}-${commit}"
 if [[ "$dirty" == true ]]; then

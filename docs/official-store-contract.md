@@ -12,6 +12,14 @@ Status: **Prototype consumer/distribution contract for `0.10.0`**
 The Page Builder Store is a **single-publisher distribution channel** owned by
 `jiwonpapa` (지원소프트). It is not a multi-vendor marketplace.
 
+`resources/store/source/page-kits/manifest.json` is the canonical bundled Page
+Kit inventory. Each entry declares its slug, localized title and description,
+category, tags, and portable media files. Store build, screenshot capture,
+source validation, layout E2E, release packaging, and local/staging smoke checks
+derive their Page Kit inventory from this manifest. A source directory without
+a manifest entry, or an entry without a matching source directory, is an
+inventory error.
+
 Included in the first release:
 
 - free Block Packs published by 지원소프트;

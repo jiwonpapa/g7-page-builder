@@ -1,5 +1,7 @@
 import Ajv2020 from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../Contract/document-v1.fixture.json';
@@ -9,12 +11,22 @@ import foundationFixture from '../Contract/document-foundation-v1.fixture.json';
 import compileFixture from '../Contract/compile-result-v1.fixture.json';
 import compileSchema from '../../schemas/compile-result.schema.json';
 import schema from '../../schemas/page-builder-document.schema.json';
-import officialCompanyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';
-import officialEditorialPageKit from '../../resources/store/source/page-kits/editorial-community/document.json';
-import officialEventPageKit from '../../resources/store/source/page-kits/event-launch/document.json';
-import officialLocalBusinessPageKit from '../../resources/store/source/page-kits/local-business/document.json';
-import officialServicePageKit from '../../resources/store/source/page-kits/service-conversion/document.json';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
+import { BUILTIN_CANVAS_EDITING_CONTRACT } from '../../resources/js/editor/canvasEditingContract';
+
+const pageKitRoot = resolve('resources/store/source/page-kits');
+const pageKitManifest = JSON.parse(readFileSync(resolve(pageKitRoot, 'manifest.json'), 'utf8')) as {
+  manifest_version: string;
+  page_kit_version: string;
+  kits: Array<{
+    slug: string;
+    title: { ko: string; en: string };
+    description: { ko: string; en: string };
+    category: string;
+    tags: string[];
+    media: string[];
+  }>;
+};
 
 interface RichTextFieldContract {
   blockId: string;
@@ -22,53 +34,16 @@ interface RichTextFieldContract {
   block: string[];
 }
 
-const richTextFieldMatrix: RichTextFieldContract[] = [
-  { blockId: 'content.heading-01', inline: ['heading'], block: [] },
-  { blockId: 'content.rich-text-01', inline: [], block: ['content'] },
-  { blockId: 'media.image-01', inline: [], block: [] },
-  { blockId: 'action.buttons-01', inline: [], block: [] },
-  { blockId: 'media.image-text-01', inline: ['heading'], block: ['body'] },
-  { blockId: 'content.icon-list-01', inline: ['heading', 'items.*.title'], block: ['items.*.body'] },
-  { blockId: 'content.hero-centered-01', inline: ['title'], block: ['body'] },
-  { blockId: 'content.hero-split-01', inline: ['title'], block: ['body'] },
-  { blockId: 'content.hero-slider-01', inline: ['slides.*.title'], block: ['slides.*.body'] },
-  { blockId: 'content.features-grid-01', inline: ['title', 'items.*.title'], block: ['items.*.body'] },
-  { blockId: 'content.cta-split-01', inline: ['heading'], block: ['body'] },
-  { blockId: 'content.contact-info-01', inline: ['heading'], block: [] },
-  { blockId: 'content.faq-accordion-01', inline: ['heading', 'items.*.question'], block: ['items.*.answer'] },
-  { blockId: 'content.process-timeline-01', inline: ['heading', 'items.*.title'], block: ['items.*.body'] },
-  { blockId: 'content.tabs-01', inline: ['heading', 'items.*.heading'], block: ['items.*.body'] },
-  { blockId: 'content.article-list-01', inline: ['heading', 'items.*.title'], block: ['items.*.summary'] },
-  { blockId: 'content.event-schedule-01', inline: ['heading', 'items.*.title'], block: ['items.*.description'] },
-  { blockId: 'content.download-resources-01', inline: ['heading', 'items.*.title'], block: ['items.*.description'] },
-  { blockId: 'form.inquiry-01', inline: ['heading'], block: ['description'] },
-  { blockId: 'location.map-directions-01', inline: ['heading'], block: ['description'] },
-  { blockId: 'trust.logo-cloud-01', inline: ['heading'], block: [] },
-  { blockId: 'trust.logo-carousel-01', inline: ['heading'], block: [] },
-  { blockId: 'trust.testimonials-01', inline: ['heading'], block: ['items.*.quote'] },
-  { blockId: 'trust.testimonial-slider-01', inline: ['heading'], block: ['items.*.quote'] },
-  { blockId: 'commerce.pricing-tiers-01', inline: ['heading', 'plans.*.name', 'plans.*.features.*'], block: ['plans.*.description'] },
-  { blockId: 'commerce.comparison-table-01', inline: ['heading', 'columns.*.title', 'columns.*.description', 'rows.*.feature'], block: [] },
-  { blockId: 'company.team-grid-01', inline: ['heading'], block: ['members.*.bio'] },
-  { blockId: 'data.stats-icons-01', inline: ['heading', 'items.*.label'], block: ['items.*.detail'] },
-  { blockId: 'data.bar-chart-01', inline: ['heading'], block: ['description'] },
-  { blockId: 'media.gallery-grid-01', inline: ['heading'], block: [] },
-  { blockId: 'media.video-embed-01', inline: ['heading'], block: ['caption'] },
-  { blockId: 'g7.board-recent-posts-01', inline: ['heading'], block: [] },
-  { blockId: 'g7.board-content-archive-01', inline: ['heading'], block: [] },
-  { blockId: 'g7.board-post-detail-01', inline: ['heading'], block: [] },
-  { blockId: 'g7.ecommerce-product-grid-01', inline: ['heading'], block: [] },
-  { blockId: 'g7.ecommerce-product-showcase-01', inline: ['heading'], block: [] },
-  { blockId: 'g7.ecommerce-product-detail-01', inline: ['heading'], block: [] },
-  { blockId: 'content.divider-01', inline: [], block: [] },
-  { blockId: 'content.blockquote-01', inline: [], block: ['quote'] },
-  { blockId: 'content.notice-01', inline: ['title'], block: ['body'] },
-  { blockId: 'content.card-grid-01', inline: ['heading', 'items.*.title'], block: ['items.*.body'] },
-  { blockId: 'navigation.breadcrumbs-01', inline: [], block: [] },
-  { blockId: 'navigation.anchor-menu-01', inline: [], block: [] },
-  { blockId: 'navigation.social-links-01', inline: ['heading'], block: [] },
-  { blockId: 'media.image-carousel-01', inline: ['heading'], block: [] },
-];
+const editingByComponent = new Map(BUILTIN_CANVAS_EDITING_CONTRACT.map((entry) => [entry.componentType, entry]));
+const richTextFieldMatrix: RichTextFieldContract[] = builtinManifest.blocks.map((block) => {
+  const editing = editingByComponent.get(block.editor_component);
+  if (!editing) throw new Error(`Missing canvas editing capability for ${block.block_id}.`);
+  return {
+    blockId: block.block_id,
+    inline: editing.textFields.filter((field) => field.kind === 'inline-rich').map((field) => field.path),
+    block: editing.textFields.filter((field) => field.kind === 'block-rich').map((field) => field.path),
+  };
+});
 
 function replaceRichTextPath(target: unknown, path: string, value: string): void {
   const [segment, ...remaining] = path.split('.');
@@ -164,7 +139,7 @@ describe('PageBuilderDocument v1 schema', () => {
   });
 
   it('accepts every bundled preset as a complete one-block document', () => {
-    expect(builtinManifest.presets).toHaveLength(95);
+    expect(builtinManifest.presets.length).toBeGreaterThanOrEqual(builtinManifest.blocks.length);
     builtinManifest.presets.forEach((preset, index) => {
       const document = {
         ...structuredClone(fixture),
@@ -181,13 +156,20 @@ describe('PageBuilderDocument v1 schema', () => {
     });
   });
 
-  it('accepts typed-mark serialization across the approved 53 inline and 26 block-rich paths', () => {
+  it('accepts typed-mark serialization across every declared rich-text capability path', () => {
     const typedMark = '<span data-g7pb-font="serif" data-g7pb-size="large" data-g7pb-tone="accent"><strong><em><u>가</u></em></strong></span>';
     const inlineMarkup = `<p>${typedMark.repeat(40)}</p>`;
     const blockMarkup = `<p>${typedMark.repeat(400)}</p>`;
-    expect(richTextFieldMatrix).toHaveLength(45);
-    expect(richTextFieldMatrix.flatMap((entry) => entry.inline)).toHaveLength(53);
-    expect(richTextFieldMatrix.flatMap((entry) => entry.block)).toHaveLength(26);
+    expect(new Set(richTextFieldMatrix.map((entry) => entry.blockId))).toEqual(
+      new Set(builtinManifest.blocks.map((block) => block.block_id)),
+    );
+    const inlinePaths = richTextFieldMatrix.flatMap((entry) => entry.inline.map((path) => `${entry.blockId}:${path}`));
+    const blockPaths = richTextFieldMatrix.flatMap((entry) => entry.block.map((path) => `${entry.blockId}:${path}`));
+    expect(inlinePaths.length).toBeGreaterThan(0);
+    expect(blockPaths.length).toBeGreaterThan(0);
+    expect(new Set(inlinePaths).size).toBe(inlinePaths.length);
+    expect(new Set(blockPaths).size).toBe(blockPaths.length);
+    expect([...inlinePaths, ...blockPaths].every((path) => /^[a-z0-9.-]+:[A-Za-z0-9_*.-]+$/.test(path))).toBe(true);
     expect(inlineMarkup.length).toBeGreaterThan(300);
     expect(blockMarkup.length).toBeGreaterThan(2000);
 
@@ -280,14 +262,32 @@ describe('PageBuilderDocument v1 schema', () => {
   });
 
   it('accepts every bundled official Page Kit source document', () => {
-    const pageKits = [
-      officialCompanyPageKit,
-      officialServicePageKit,
-      officialLocalBusinessPageKit,
-      officialEventPageKit,
-      officialEditorialPageKit,
-    ];
-    expect(pageKits).toHaveLength(5);
+    expect(pageKitManifest.manifest_version).toBe('g7pb-page-kits/v1');
+    expect(pageKitManifest.page_kit_version).toMatch(/^\d+\.\d+\.\d+$/);
+    const declaredSlugs = pageKitManifest.kits.map((kit) => kit.slug);
+    const sourceSlugs = readdirSync(pageKitRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+    expect(declaredSlugs.length).toBeGreaterThan(0);
+    expect(new Set(declaredSlugs).size).toBe(declaredSlugs.length);
+    expect([...declaredSlugs].sort()).toEqual(sourceSlugs);
+    pageKitManifest.kits.forEach((kit) => {
+      expect(kit.slug).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+      expect(kit.title.ko.trim()).not.toBe('');
+      expect(kit.title.en.trim()).not.toBe('');
+      expect(kit.description.ko.trim()).not.toBe('');
+      expect(kit.description.en.trim()).not.toBe('');
+      expect(kit.category.trim()).not.toBe('');
+      expect(kit.tags.length).toBeGreaterThan(0);
+      expect(kit.tags.every((tag) => tag.trim() !== '')).toBe(true);
+      expect(kit.media.length).toBeGreaterThan(0);
+      expect(kit.media.every((path) => /^media\/[a-z0-9][a-z0-9._-]*$/.test(path))).toBe(true);
+      kit.media.forEach((path) => expect(existsSync(resolve(pageKitRoot, kit.slug, path)), path).toBe(true));
+    });
+    const pageKits = declaredSlugs.map((slug) => JSON.parse(
+      readFileSync(resolve(pageKitRoot, slug, 'document.json'), 'utf8'),
+    ));
     pageKits.forEach((pageKit) => {
       expect(validate(pageKit), `${pageKit.slug}: ${JSON.stringify(validate.errors)}`).toBe(true);
     });

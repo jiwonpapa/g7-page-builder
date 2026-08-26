@@ -16,14 +16,13 @@ const evidenceOutput = resolve(
   process.env.G7PB_PAGE_KIT_REPORT ?? 'output/playwright/page-kit-layout-report.json',
 );
 const externalBaseUrl = process.env.G7PB_BASE_URL?.replace(/\/$/, '');
-const slugs = ['company-launch', 'service-conversion', 'local-business', 'event-launch', 'editorial-community'];
-const titles = {
-  'company-launch': '회사 소개 랜딩',
-  'service-conversion': '전문 서비스 상담 랜딩',
-  'local-business': '로컬 비즈니스 방문 안내',
-  'event-launch': '컨퍼런스·행사 랜딩',
-  'editorial-community': '에디토리얼·커뮤니티 홈',
-};
+const pageKitManifest = JSON.parse(await readFile(resolve(root, 'resources/store/source/page-kits/manifest.json'), 'utf8'));
+if (pageKitManifest.manifest_version !== 'g7pb-page-kits/v1'
+  || !Array.isArray(pageKitManifest.kits) || pageKitManifest.kits.length === 0) {
+  throw new Error('Official Page Kit manifest is invalid.');
+}
+const slugs = pageKitManifest.kits.map((kit) => kit.slug);
+const titles = Object.fromEntries(pageKitManifest.kits.map((kit) => [kit.slug, kit.title.ko]));
 const viewports = [
   { name: 'desktop', width: 1425, height: 1000 },
   { name: 'tablet', width: 805, height: 1000 },

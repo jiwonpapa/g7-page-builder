@@ -2,6 +2,7 @@ import React from 'react';
 import type { Config } from '@puckeditor/core';
 
 import { createRouteUrlField } from './RouteUrlField';
+import { createInlineRichTextField, RichTextCanvasField } from './richTextEditing';
 import {
   decorateCanvasElementStyles,
   CanvasCurrentElementStylesContext,
@@ -138,7 +139,7 @@ function Frame({ id, type, motion, elementStyles, children }: { id: string; type
 function G7PostDetailPreview(props: G7PostDetailEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="g7-post-detail" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-data-detail g7pb-preview-data-detail--post ${surfaceClass(props)}`}>
-      <header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header>
+      <header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
       <article><p className="g7pb-preview-data-detail__meta">공지사항 · 2026.08.22 · 조회 128</p><h3>새로운 소식을 전합니다</h3>
         {props.showContent ? <p>공개 화면에서는 지정한 게시글의 제목, 작성 정보와 본문 요약을 안전한 텍스트로 불러옵니다.</p> : null}
         <b data-g7pb-inline-field="linkLabel">{props.linkLabel} →</b></article>
@@ -150,7 +151,7 @@ function G7PostDetailPreview(props: G7PostDetailEditorProps & { id: string }): R
 function G7ProductDetailPreview(props: G7ProductDetailEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="g7-product-detail" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-data-detail g7pb-preview-data-detail--product ${surfaceClass(props)}`}>
-      <header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><h2 data-g7pb-inline-field="heading">{props.heading}</h2></header>
+      <header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
       <article><span className="g7pb-preview-data-detail__media">상품 이미지</span><div><small>PRODUCT · {props.productKey}</small><h3>시그니처 상품</h3><strong>39,000원</strong>
         {props.showDescription ? <p>공개 화면에서는 지정한 상품의 이미지, 가격과 설명을 G7 공개 API에서 불러옵니다.</p> : null}
         <b data-g7pb-inline-field="buttonLabel">{props.buttonLabel} →</b></div></article>
@@ -162,7 +163,7 @@ export const phase4CatalogComponentConfigs: Config<Phase4CatalogEditorComponents
   G7PostDetail: {
     label: 'G7 게시글 상세', defaultProps: DEFAULT_POST_DETAIL,
     fields: {
-      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true },
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: createInlineRichTextField('제목'),
       boardSlug: { type: 'text', label: '게시판 Slug' }, postId: { type: 'number', label: '게시글 번호', min: 1 },
       detailUrl: createRouteUrlField('게시글 연결'), linkLabel: { type: 'text', label: '링크 문구', contentEditable: true },
       audience: { type: 'select', label: '데이터 노출 대상', options: AUDIENCE_OPTIONS },
@@ -174,7 +175,7 @@ export const phase4CatalogComponentConfigs: Config<Phase4CatalogEditorComponents
   G7ProductDetail: {
     label: 'G7 상품 상세', defaultProps: DEFAULT_PRODUCT_DETAIL,
     fields: {
-      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: { type: 'text', label: '제목', contentEditable: true },
+      eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: createInlineRichTextField('제목'),
       productKey: { type: 'text', label: '상품 코드 또는 ID' }, detailUrl: createRouteUrlField('상품 연결'),
       buttonLabel: { type: 'text', label: '버튼 문구', contentEditable: true },
       audience: { type: 'select', label: '데이터 노출 대상', options: AUDIENCE_OPTIONS },

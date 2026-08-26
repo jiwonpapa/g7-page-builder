@@ -224,12 +224,12 @@ describe('Puck PageBuilderDocument adapter', () => {
     for (const [component, field] of [
       ['Hero', 'title'], ['Features', 'title'], ['Cta', 'heading'], ['Contact', 'heading'],
       ['Heading', 'heading'], ['HeroSplit', 'title'], ['CardGrid', 'heading'],
+      ['LogoCloud', 'heading'],
     ]) {
       expect(components[component]?.fields[field], `${component}.${field}`).toMatchObject({
         type: 'richtext', contentEditable: true,
       });
     }
-    expect(components.LogoCloud?.fields.heading).toMatchObject({ type: 'text' });
   });
 
   it('round-trips all eight catalog blocks through the Puck adapter', () => {

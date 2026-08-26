@@ -298,8 +298,10 @@ function HeadingPreview(props: HeadingEditorProps & { id: string }): React.React
 
 function RichTextPreview(props: Omit<RichTextEditorProps, 'content'> & { id: string; content: React.ReactNode }): React.ReactElement {
   return <Frame id={props.id} type="rich-text" motion={props.motion} elementStyles={props.elementStyles}>
-    <div className={`g7pb-preview-rich-text g7pb-preview-rich-text--${props.measure} ${surfaceClass(props)}`}
-      data-g7pb-inline-field="content">{props.content}</div>
+    <RichTextCanvasField fieldPath="content"
+      className={`g7pb-preview-richtext g7pb-preview-rich-text g7pb-preview-rich-text--${props.measure} ${surfaceClass(props)}`}>
+      {props.content}
+    </RichTextCanvasField>
   </Frame>;
 }
 
@@ -332,8 +334,8 @@ function ImageTextPreview(props: Omit<ImageTextEditorProps, 'body'> & { id: stri
       <figure data-g7pb-media-field="imageSrc"><Media src={props.imageSrc} alt={props.imageAlt} label="대표 이미지를 선택하세요" /></figure>
       <div className="g7pb-preview-image-text__copy">
         {props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}
-        <h2 data-g7pb-inline-field="heading">{props.heading}</h2>
-        <div className="g7pb-preview-richtext" data-g7pb-inline-field="body">{props.body}</div>
+        <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField>
+        <RichTextCanvasField fieldPath="body">{props.body}</RichTextCanvasField>
         {props.primaryLabel ? <a className="g7pb-preview-button g7pb-preview-button--primary" href={safeLink(props.primaryUrl)}
           data-g7pb-action-field="primaryLabel" onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a> : null}
       </div>
@@ -345,11 +347,11 @@ function IconListPreview(props: IconListEditorProps & { id: string }): React.Rea
   return <Frame id={props.id} type="icon-list" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-icon-list g7pb-preview-icon-list--${props.layout} ${surfaceClass(props)}`}>
       <header>{props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}
-        <h2 data-g7pb-inline-field="heading">{props.heading}</h2></header>
+        <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
       <ul>{normalizeIconItems(props.items).map((item, index) => <li key={`${item.title}-${index}`}>
         <i aria-hidden="true">{ICON_GLYPHS[item.icon] ?? ICON_GLYPHS.check}</i>
-        <div><h3 data-g7pb-inline-field={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</h3>
-          <p data-g7pb-inline-field={`items.${index}.body`}>{inlineArrayContent(props.items, index, 'body', item.body)}</p></div>
+        <div><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</RichTextCanvasField>
+          <RichTextCanvasField fieldPath={`items.${index}.body`}>{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField></div>
       </li>)}</ul>
     </div>
   </Frame>;
@@ -412,7 +414,7 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
     label: '이미지 + 텍스트', defaultProps: DEFAULT_IMAGE_TEXT,
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true },
-      heading: { type: 'text', label: '제목', contentEditable: true },
+      heading: createInlineRichTextField('제목'),
       body: createRichTextField('본문', 170, true),
       imageSrc: createMediaField('대표 이미지', 'foundation-image-text'), imageAlt: { type: 'text', label: '대체 텍스트' },
       mediaPosition: { type: 'radio', label: '이미지 위치', options: [{ label: '왼쪽', value: 'left' }, { label: '오른쪽', value: 'right' }] },
@@ -425,14 +427,14 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
     label: '아이콘 목록', defaultProps: DEFAULT_ICON_LIST,
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true },
-      heading: { type: 'text', label: '제목', contentEditable: true },
+      heading: createInlineRichTextField('제목'),
       items: { type: 'array', label: '항목', min: 2, max: 8,
         defaultItemProps: (index) => ({ icon: 'check', title: `항목 ${index + 1}`, body: '항목 설명을 입력하세요.' }),
         getItemSummary: (item) => item.title,
         arrayFields: {
           icon: { type: 'select', label: '아이콘', options: ICON_OPTIONS },
-          title: { type: 'text', label: '제목', contentEditable: true },
-          body: { type: 'textarea', label: '설명', contentEditable: true },
+          title: createInlineRichTextField('제목'),
+          body: createRichTextField('설명', 130),
         } },
       layout: { type: 'radio', label: '배치', options: [{ label: '1열', value: 'single' }, { label: '2열', value: 'two-column' }] },
       ...appearanceFields, motion: createMotionField(['none', 'reveal', 'stagger']),

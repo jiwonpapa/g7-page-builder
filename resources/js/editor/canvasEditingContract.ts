@@ -50,58 +50,209 @@ interface CollectionLimit {
 export interface CanvasBlockEditingCapability {
   componentType: string;
   directText: boolean;
+  textFields: CanvasTextFieldCapability[];
   collections: string[];
   directMedia: boolean;
   directRoute: boolean;
   dynamicData: boolean;
 }
 
+export type CanvasTextFieldKind = 'plain' | 'inline-rich' | 'block-rich' | 'structural';
+
+export interface CanvasTextFieldCapability {
+  path: string;
+  kind: CanvasTextFieldKind;
+  /** Puck-only path when the canonical field is represented by an editor wrapper object. */
+  editorPath?: string;
+  /** False when the rendered field already participates in an outer route/action. */
+  allowLink?: boolean;
+}
+
+type CanvasTextFieldPath = string | Omit<CanvasTextFieldCapability, 'kind'>;
+type CanvasBlockEditingCapabilityDefinition = Omit<CanvasBlockEditingCapability, 'directText'>;
+
+function classified(kind: CanvasTextFieldKind, ...paths: CanvasTextFieldPath[]): CanvasTextFieldCapability[] {
+  return paths.map((path) => typeof path === 'string' ? { path, kind } : { ...path, kind });
+}
+
+const plain = (...paths: CanvasTextFieldPath[]): CanvasTextFieldCapability[] => classified('plain', ...paths);
+const inlineRich = (...paths: CanvasTextFieldPath[]): CanvasTextFieldCapability[] => classified('inline-rich', ...paths);
+const blockRich = (...paths: CanvasTextFieldPath[]): CanvasTextFieldCapability[] => classified('block-rich', ...paths);
+const structural = (...paths: CanvasTextFieldPath[]): CanvasTextFieldCapability[] => classified('structural', ...paths);
+
+function defineCanvasBlockCapability(definition: CanvasBlockEditingCapabilityDefinition): CanvasBlockEditingCapability {
+  return {
+    ...definition,
+    directText: definition.textFields.some((field) => field.kind !== 'structural'),
+  };
+}
+
 export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
-  { componentType: 'Heading', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'RichText', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'Image', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'Buttons', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'ImageText', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'IconList', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'Hero', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'HeroSplit', directText: true, collections: [], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'HeroSlider', directText: true, collections: ['slides'], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'Features', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'Cta', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'Contact', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'FaqAccordion', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'ProcessTimeline', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'Tabs', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'ArticleList', directText: true, collections: ['items'], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'EventSchedule', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'DownloadResources', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'InquiryForm', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'MapDirections', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'LogoCloud', directText: true, collections: ['logos'], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'LogoCarousel', directText: true, collections: ['logos'], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'Testimonials', directText: true, collections: ['items'], directMedia: true, directRoute: false, dynamicData: false },
-  { componentType: 'TestimonialSlider', directText: true, collections: ['items'], directMedia: true, directRoute: false, dynamicData: false },
-  { componentType: 'Pricing', directText: true, collections: ['plans'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'ComparisonTable', directText: true, collections: ['columns', 'rows'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'Team', directText: true, collections: ['members'], directMedia: true, directRoute: true, dynamicData: false },
-  { componentType: 'Stats', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'BarChart', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'Gallery', directText: true, collections: ['images'], directMedia: true, directRoute: false, dynamicData: false },
-  { componentType: 'VideoEmbed', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'G7RecentPosts', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
-  { componentType: 'G7BoardArchive', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
-  { componentType: 'G7PostDetail', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: true },
-  { componentType: 'G7ProductGrid', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
-  { componentType: 'G7ProductShowcase', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: true },
-  { componentType: 'G7ProductDetail', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: true },
-  { componentType: 'Divider', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'Blockquote', directText: true, collections: [], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'Notice', directText: true, collections: [], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'CardGrid', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'Breadcrumbs', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'AnchorMenu', directText: true, collections: ['items'], directMedia: false, directRoute: false, dynamicData: false },
-  { componentType: 'SocialLinks', directText: true, collections: ['items'], directMedia: false, directRoute: true, dynamicData: false },
-  { componentType: 'ImageCarousel', directText: true, collections: ['images'], directMedia: true, directRoute: false, dynamicData: false },
+  defineCanvasBlockCapability({ componentType: 'Heading', textFields: [
+    ...plain('eyebrow'), ...inlineRich('heading'), ...structural('level', 'anchor'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'RichText', textFields: [
+    ...blockRich('content'), ...structural('measure'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Image', textFields: [
+    ...plain('caption'), ...structural('src', 'alt', 'linkUrl', 'aspectRatio'),
+  ], collections: [], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Buttons', textFields: [
+    ...plain('items.*.label'), ...structural('items.*.url', 'items.*.variant', 'alignment'),
+  ], collections: ['items'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'ImageText', textFields: [
+    ...plain('eyebrow', 'primaryLabel'), ...inlineRich('heading'), ...blockRich('body'),
+    ...structural('imageSrc', 'imageAlt', 'mediaPosition', 'primaryUrl'),
+  ], collections: [], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'IconList', textFields: [
+    ...plain('eyebrow'), ...inlineRich('heading', 'items.*.title'), ...blockRich('items.*.body'),
+    ...structural('items.*.icon', 'layout'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Hero', textFields: [
+    ...plain('eyebrow', 'primaryLabel'), ...inlineRich('title'), ...blockRich('body'),
+    ...structural('primaryUrl', 'imageSrc', 'imageAlt', 'alignment', 'layout'),
+  ], collections: [], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'HeroSplit', textFields: [
+    ...plain('eyebrow', 'primaryLabel'), ...inlineRich('title'), ...blockRich('body'),
+    ...structural('primaryUrl', 'imageSrc', 'imageAlt', 'mediaPosition', 'layout'),
+  ], collections: [], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'HeroSlider', textFields: [
+    ...plain('slides.*.eyebrow', 'slides.*.buttonLabel'), ...inlineRich('slides.*.title'),
+    ...blockRich('slides.*.body'), ...structural('slides.*.buttonUrl', 'slides.*.imageSrc', 'slides.*.imageAlt', 'autoplay', 'interval', 'loop'),
+  ], collections: ['slides'], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Features', textFields: [
+    ...inlineRich('title', 'items.*.title'), ...blockRich('items.*.body'), ...structural('items.*.icon', 'layout'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Cta', textFields: [
+    ...plain('eyebrow', 'primaryLabel', 'secondaryLabel'), ...inlineRich('heading'), ...blockRich('body'),
+    ...structural('primaryUrl', 'secondaryUrl', 'theme', 'layout'),
+  ], collections: [], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Contact', textFields: [
+    ...plain('address', 'phone', 'email', 'ctaLabel', 'mapLabel'), ...inlineRich('heading'),
+    ...structural('ctaUrl', 'mapUrl'),
+  ], collections: [], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'FaqAccordion', textFields: [
+    ...plain('eyebrow'), ...inlineRich('heading', 'items.*.question'), ...blockRich('items.*.answer'),
+    ...structural('behavior', 'openFirst'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'ProcessTimeline', textFields: [
+    ...plain('eyebrow', 'items.*.linkLabel'), ...inlineRich('heading', 'items.*.title'), ...blockRich('items.*.body'),
+    ...structural('layout', 'items.*.linkUrl'),
+  ], collections: ['items'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Tabs', textFields: [
+    ...plain('eyebrow', 'items.*.label'), ...inlineRich('heading', 'items.*.heading'), ...blockRich('items.*.body'),
+    ...structural('tabVariant', 'initialTab'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'ArticleList', textFields: [
+    ...plain('eyebrow', 'items.*.category', 'items.*.date'), ...inlineRich('heading', { path: 'items.*.title', allowLink: false }), ...blockRich('items.*.summary'),
+    ...structural('layout', 'items.*.imageSrc', 'items.*.imageAlt', 'items.*.url'),
+  ], collections: ['items'], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'EventSchedule', textFields: [
+    ...plain('eyebrow', 'items.*.date', 'items.*.time', 'items.*.location', 'items.*.buttonLabel'),
+    ...inlineRich('heading', 'items.*.title'), ...blockRich('items.*.description'), ...structural('layout', 'items.*.buttonUrl'),
+  ], collections: ['items'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'DownloadResources', textFields: [
+    ...plain('eyebrow', 'items.*.fileType', 'items.*.fileSize', 'items.*.buttonLabel'),
+    ...inlineRich('heading', 'items.*.title'), ...blockRich('items.*.description'), ...structural('items.*.url'),
+  ], collections: ['items'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'InquiryForm', textFields: [
+    ...plain('eyebrow', 'submitLabel', 'successMessage', 'privacyLabel'), ...inlineRich('heading'), ...blockRich('description'),
+    ...structural('formKind', 'showPhone', 'showSubject'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'MapDirections', textFields: [
+    ...plain('eyebrow', 'address', 'directionsLabel', 'phone', 'hours', 'parking'), ...inlineRich('heading'), ...blockRich('description'),
+    ...structural('latitude', 'longitude', 'zoom', 'provider', 'directionsUrl'),
+  ], collections: [], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'LogoCloud', textFields: [
+    ...plain('logos.*.name'), ...inlineRich('heading'), ...structural('logos.*.imageSrc', 'logos.*.imageAlt', 'logos.*.url', 'layout'),
+  ], collections: ['logos'], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'LogoCarousel', textFields: [
+    ...plain('eyebrow', 'logos.*.name'), ...inlineRich('heading'),
+    ...structural('logos.*.imageSrc', 'logos.*.imageAlt', 'logos.*.url', 'autoplay', 'interval'),
+  ], collections: ['logos'], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Testimonials', textFields: [
+    ...plain('eyebrow', 'items.*.name', 'items.*.role', 'items.*.company'), ...inlineRich('heading'), ...blockRich('items.*.quote'),
+    ...structural('layout', 'items.*.avatarSrc', 'items.*.avatarAlt', 'items.*.rating'),
+  ], collections: ['items'], directMedia: true, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'TestimonialSlider', textFields: [
+    ...plain('eyebrow', 'items.*.name', 'items.*.role', 'items.*.company'), ...inlineRich('heading'), ...blockRich('items.*.quote'),
+    ...structural('items.*.avatarSrc', 'items.*.avatarAlt', 'items.*.rating', 'autoplay', 'interval'),
+  ], collections: ['items'], directMedia: true, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Pricing', textFields: [
+    ...plain('eyebrow', 'plans.*.price', 'plans.*.period', 'plans.*.buttonLabel'), ...inlineRich('heading', 'plans.*.name', { path: 'plans.*.features.*', editorPath: 'plans.*.features.*.text' }),
+    ...blockRich('plans.*.description'), ...structural('plans.*.buttonUrl', 'plans.*.featured', 'layout'),
+  ], collections: ['plans'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'ComparisonTable', textFields: [
+    ...plain('eyebrow', { path: 'rows.*.values.*', editorPath: 'rows.*.valuesText' }),
+    ...inlineRich('heading', 'columns.*.title', 'columns.*.description', 'rows.*.feature'), ...structural('highlightColumn'),
+  ], collections: ['columns', 'rows'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Team', textFields: [
+    ...plain('eyebrow', 'members.*.name', 'members.*.role'), ...inlineRich('heading'), ...blockRich('members.*.bio'),
+    ...structural('members.*.imageSrc', 'members.*.imageAlt', 'members.*.profileUrl', 'layout'),
+  ], collections: ['members'], directMedia: true, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Stats', textFields: [
+    ...plain('eyebrow', 'items.*.value'), ...inlineRich('heading', 'items.*.label'), ...blockRich('items.*.detail'),
+    ...structural('items.*.icon', 'layout'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'BarChart', textFields: [
+    ...plain('eyebrow', 'unit', 'items.*.label'), ...inlineRich('heading'), ...blockRich('description'),
+    ...structural('items.*.value', 'items.*.tone'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Gallery', textFields: [
+    ...plain('eyebrow', 'images.*.caption'), ...inlineRich('heading'), ...structural('columns', 'images.*.src', 'images.*.alt', 'layout'),
+  ], collections: ['images'], directMedia: true, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'VideoEmbed', textFields: [
+    ...plain('eyebrow'), ...inlineRich('heading'), ...blockRich('caption'), ...structural('provider', 'videoId', 'ratio'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'G7RecentPosts', textFields: [
+    ...plain('eyebrow', 'emptyMessage'), ...inlineRich('heading'), ...structural('source', 'period', 'limit', 'pageSize', 'audience'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: true }),
+  defineCanvasBlockCapability({ componentType: 'G7BoardArchive', textFields: [
+    ...plain('eyebrow', 'emptyMessage'), ...inlineRich('heading'),
+    ...structural('source', 'period', 'limit', 'pageSize', 'audience', 'showSearch', 'showBoardFilter'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: true }),
+  defineCanvasBlockCapability({ componentType: 'G7PostDetail', textFields: [
+    ...plain('eyebrow', 'linkLabel', 'emptyMessage'), ...inlineRich('heading'),
+    ...structural('boardSlug', 'postId', 'detailUrl', 'audience', 'showContent'),
+  ], collections: [], directMedia: false, directRoute: true, dynamicData: true }),
+  defineCanvasBlockCapability({ componentType: 'G7ProductGrid', textFields: [
+    ...plain('eyebrow', 'emptyMessage'), ...inlineRich('heading'),
+    ...structural('source', 'limit', 'columns', 'pageSize', 'audience', 'detailBasePath'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: true }),
+  defineCanvasBlockCapability({ componentType: 'G7ProductShowcase', textFields: [
+    ...plain('eyebrow', 'emptyMessage'), ...inlineRich('heading'),
+    ...structural('source', 'limit', 'pageSize', 'audience', 'detailBasePath', 'layout'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: true }),
+  defineCanvasBlockCapability({ componentType: 'G7ProductDetail', textFields: [
+    ...plain('eyebrow', 'buttonLabel', 'emptyMessage'), ...inlineRich('heading'),
+    ...structural('productKey', 'detailUrl', 'audience', 'showDescription'),
+  ], collections: [], directMedia: false, directRoute: true, dynamicData: true }),
+  defineCanvasBlockCapability({ componentType: 'Divider', textFields: [
+    ...plain('label'), ...structural('variant', 'width'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Blockquote', textFields: [
+    ...plain('citation', 'role'), ...blockRich('quote'), ...structural('alignment', 'variant'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Notice', textFields: [
+    ...plain('actionLabel'), ...inlineRich('title'), ...blockRich('body'), ...structural('tone', 'actionUrl'),
+  ], collections: [], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'CardGrid', textFields: [
+    ...plain('eyebrow', 'items.*.kicker', 'items.*.linkLabel'), ...inlineRich('heading', 'items.*.title'), ...blockRich('items.*.body'),
+    ...structural('items.*.linkUrl', 'columns', 'variant', 'layout'),
+  ], collections: ['items'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Breadcrumbs', textFields: [
+    ...plain('items.*.label', 'currentLabel'), ...structural('items.*.url'),
+  ], collections: ['items'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'AnchorMenu', textFields: [
+    ...plain('label', 'items.*.label'), ...structural('items.*.anchor', 'sticky', 'alignment'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'SocialLinks', textFields: [
+    ...plain('items.*.label'), ...inlineRich('heading'), ...structural('items.*.network', 'items.*.url', 'variant', 'alignment'),
+  ], collections: ['items'], directMedia: false, directRoute: true, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'ImageCarousel', textFields: [
+    ...plain('eyebrow', 'images.*.caption'), ...inlineRich('heading'),
+    ...structural('images.*.src', 'images.*.alt', 'autoplay', 'interval', 'controls', 'aspectRatio'),
+  ], collections: ['images'], directMedia: true, directRoute: false, dynamicData: false }),
 ];
 
 const COLLECTION_LIMITS: Record<string, Record<string, CollectionLimit>> = {

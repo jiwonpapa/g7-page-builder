@@ -688,9 +688,12 @@ describe('Puck editor surface contract', () => {
       features.click();
     });
     expect(features.querySelector('[data-g7pb-inline-field="title"]')?.textContent).toContain('Features title');
-    expect((await eventually<HTMLInputElement>('[data-testid="page-builder-features-item-0-title"]')).value).toBe('First title');
-    expect((await eventually<HTMLTextAreaElement>('[data-testid="page-builder-features-item-0-body"]')).value).toBe('First body');
     const firstFeatureTitle = features.querySelector<HTMLElement>('[data-g7pb-inline-field="items.0.title"]');
+    const firstFeatureBody = features.querySelector<HTMLElement>('[data-g7pb-inline-field="items.0.body"]');
+    expect(firstFeatureTitle?.dataset.g7pbRichtextField).toBe('true');
+    expect(firstFeatureTitle?.textContent).toContain('First title');
+    expect(firstFeatureBody?.dataset.g7pbRichtextField).toBe('true');
+    expect(firstFeatureBody?.textContent).toContain('First body');
     await act(async () => {
       firstFeatureTitle?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
@@ -707,7 +710,9 @@ describe('Puck editor surface contract', () => {
       cta.click();
     });
     expect(cta.querySelector('[data-g7pb-inline-field="heading"]')?.textContent).toContain('CTA heading');
-    expect((await eventually<HTMLTextAreaElement>('[data-testid="page-builder-cta-body"]')).value).toBe('CTA body');
+    const ctaBody = cta.querySelector<HTMLElement>('[data-g7pb-inline-field="body"]');
+    expect(ctaBody?.dataset.g7pbRichtextField).toBe('true');
+    expect(ctaBody?.textContent).toContain('CTA body');
     expect((await eventually<HTMLSelectElement>('[data-testid="page-builder-cta-theme"]')).value).toBe('dark');
 
     await act(async () => {

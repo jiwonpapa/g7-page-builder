@@ -97,6 +97,16 @@ describe('Puck-native rich-text editing', () => {
 
   it('keeps only the compact range entry visible in a narrow canvas and portals advanced controls', async () => {
     const originalWidth = window.innerWidth;
+    const firstFloatingMeasurement: string[] = [];
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains('g7pb-richtext-floating-layer')) {
+        firstFloatingMeasurement.push(this.style.getPropertyValue('--g7pb-richtext-floating-max-width'));
+      }
+      return {
+        bottom: 80, height: 40, left: 10, right: 130, top: 40, width: 120,
+        x: 10, y: 40, toJSON: () => ({}),
+      };
+    });
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
     const chain = {
       focus: vi.fn(() => chain),
@@ -129,6 +139,7 @@ describe('Puck-native rich-text editing', () => {
       expect(advanced).not.toBeNull();
       expect(advanced?.querySelector('[data-testid="page-builder-richtext-font"]')).not.toBeNull();
       expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-max-width')).not.toBe('0px');
+      expect(firstFloatingMeasurement[0]).toBe('calc(100vw - 1rem)');
       expect(more?.getAttribute('aria-expanded')).toBe('true');
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });

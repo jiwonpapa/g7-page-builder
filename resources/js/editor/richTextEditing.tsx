@@ -51,8 +51,8 @@ function RichTextFloatingLayer({
   const [style, setStyle] = useState<FloatingLayerStyle>(() => ({
     '--g7pb-richtext-floating-left': '0px',
     '--g7pb-richtext-floating-top': '0px',
-    '--g7pb-richtext-floating-max-width': '0px',
-    '--g7pb-richtext-floating-max-height': '0px',
+    '--g7pb-richtext-floating-max-width': 'calc(100vw - 1rem)',
+    '--g7pb-richtext-floating-max-height': 'calc(100vh - 1rem)',
     visibility: 'hidden',
   }));
   const anchor = anchorRef.current;

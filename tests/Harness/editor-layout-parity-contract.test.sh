@@ -72,27 +72,37 @@ printf '\n._MenuBar--menuOpen_deadbeef { position: static; }\n' \
 expect_failure 'Puck vendor 해시 class를 모바일 메뉴 레이아웃 계약으로 사용하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/className="g7pb-selected-block-actionbar"/className="g7pb-selected-block-actions"/' \
+perl -0pi -e "s/data-g7pb-canvas-layout=\{narrowCanvas \? 'narrow' : 'wide'\}/data-g7pb-canvas-layout='wide'/" \
   "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
-expect_failure '선택 블록 ActionBar는 Puck 해시 class와 무관한 제품 래퍼 계약이 필요합니다.'
+expect_failure '선택 블록 ActionBar는 Puck 실제 canvas viewport 상태를 안정적인 제품 래퍼 계약으로 내려야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{ height:) 0;/${1} auto;/' \
+perl -0pi -e 's/actionBar\.ownerDocument/globalThis.document/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure '좁은 canvas ActionBar는 iframe ownerDocument geometry와 선택 블록 기준으로 실제 포인터 안전영역에 clamp되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(body:has\(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\]\) div:has\(> \.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\]\) \{\n  height:) 0;/$1 auto;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '좁은 캔버스의 선택 블록 ActionBar host는 이동 후 빈 hit box를 남기면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-selected-block-actionbar \{[^}]*overflow:) auto hidden;/${1} hidden;/' \
+perl -0pi -e 's/(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\] \{[^}]*overflow:) auto hidden;/$1 hidden;/s' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '좁은 캔버스 ActionBar는 줄바꿈 대신 가로 스크롤 strip을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-selected-block-actionbar \{[^}]*translateY\(calc\(-100% - )var\(--g7pb-selected-actionbar-gap\)/${1}0px/' \
+perl -0pi -e 's/var\(--g7pb-selected-actionbar-translate-y, 0\)/0px/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '좁은 캔버스 ActionBar는 선택 콘텐츠 위쪽으로 자신의 높이와 간격만큼 이동해야 합니다.'
+expect_failure '좁은 캔버스 ActionBar는 계산된 iframe 안전영역 위치가 준비된 뒤에만 노출되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-selected-block-actionbar > div \{[^}]*flex-wrap:) nowrap;/${1} wrap;/' \
+perl -0pi -e 's/(data-g7pb-safe-zone-ready=\x27true\x27\] \{\n  visibility:) visible;/$1 hidden;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '좁은 캔버스 ActionBar는 안전영역 계산 완료 상태에서만 표시되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-selected-block-actionbar\[data-g7pb-canvas-layout=\x27narrow\x27\] > div \{[^}]*flex-wrap:) nowrap;/$1 wrap;/s' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '좁은 캔버스 ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.'
 

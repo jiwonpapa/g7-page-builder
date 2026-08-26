@@ -2437,6 +2437,97 @@ function ConnectedCanvasDialogs(): React.ReactElement | null {
   </>;
 }
 
+const NARROW_CANVAS_MAX_WIDTH = 900;
+const SELECTED_ACTION_BAR_SAFE_INSET_PX = 8;
+
+function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDivElement | null> {
+  const actionBarRef = useRef<HTMLDivElement>(null);
+
+  React.useLayoutEffect(() => {
+    const actionBar = actionBarRef.current;
+    if (!actionBar) return undefined;
+
+    const clearPosition = (): void => {
+      actionBar.style.removeProperty('--g7pb-selected-actionbar-translate-x');
+      actionBar.style.removeProperty('--g7pb-selected-actionbar-translate-y');
+      actionBar.removeAttribute('data-g7pb-safe-zone-ready');
+    };
+    if (!enabled) {
+      clearPosition();
+      return undefined;
+    }
+
+    const ownerDocument = actionBar.ownerDocument;
+    const ownerWindow = ownerDocument.defaultView;
+    const selectedOverlay = actionBar.closest<HTMLElement>('[data-puck-overlay]');
+    if (!ownerWindow || !selectedOverlay) {
+      clearPosition();
+      return undefined;
+    }
+
+    let animationFrame = 0;
+    const syncPosition = (): void => {
+      animationFrame = 0;
+      actionBar.style.setProperty('--g7pb-selected-actionbar-translate-x', '0px');
+      actionBar.style.setProperty('--g7pb-selected-actionbar-translate-y', '0px');
+
+      const actionBarRect = actionBar.getBoundingClientRect();
+      const selectedRect = selectedOverlay.getBoundingClientRect();
+      const viewportWidth = ownerDocument.documentElement.clientWidth;
+      const viewportHeight = ownerDocument.documentElement.clientHeight;
+      const maxLeft = Math.max(
+        SELECTED_ACTION_BAR_SAFE_INSET_PX,
+        viewportWidth - actionBarRect.width - SELECTED_ACTION_BAR_SAFE_INSET_PX,
+      );
+      const maxTop = Math.max(
+        SELECTED_ACTION_BAR_SAFE_INSET_PX,
+        viewportHeight - actionBarRect.height - SELECTED_ACTION_BAR_SAFE_INSET_PX,
+      );
+      const preferredLeft = selectedRect.right - actionBarRect.width;
+      const preferredTop = selectedRect.top - actionBarRect.height - SELECTED_ACTION_BAR_SAFE_INSET_PX;
+      const safeLeft = Math.min(maxLeft, Math.max(SELECTED_ACTION_BAR_SAFE_INSET_PX, preferredLeft));
+      const safeTop = Math.min(maxTop, Math.max(SELECTED_ACTION_BAR_SAFE_INSET_PX, preferredTop));
+
+      actionBar.style.setProperty(
+        '--g7pb-selected-actionbar-translate-x',
+        `${safeLeft - actionBarRect.left}px`,
+      );
+      actionBar.style.setProperty(
+        '--g7pb-selected-actionbar-translate-y',
+        `${safeTop - actionBarRect.top}px`,
+      );
+      actionBar.setAttribute('data-g7pb-safe-zone-ready', 'true');
+    };
+    const schedulePosition = (): void => {
+      if (animationFrame !== 0) return;
+      animationFrame = ownerWindow.requestAnimationFrame(syncPosition);
+    };
+
+    const resizeObserver = new ownerWindow.ResizeObserver(schedulePosition);
+    resizeObserver.observe(actionBar);
+    resizeObserver.observe(selectedOverlay);
+    const positionObserver = new ownerWindow.MutationObserver(schedulePosition);
+    positionObserver.observe(selectedOverlay, { attributes: true, attributeFilter: ['style'] });
+    if (actionBar.parentElement) {
+      positionObserver.observe(actionBar.parentElement, { attributes: true, attributeFilter: ['style'] });
+    }
+    ownerDocument.addEventListener('scroll', schedulePosition, true);
+    ownerWindow.addEventListener('resize', schedulePosition);
+    syncPosition();
+
+    return () => {
+      if (animationFrame !== 0) ownerWindow.cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      positionObserver.disconnect();
+      ownerDocument.removeEventListener('scroll', schedulePosition, true);
+      ownerWindow.removeEventListener('resize', schedulePosition);
+      clearPosition();
+    };
+  }, [enabled]);
+
+  return actionBarRef;
+}
+
 function SelectedBlockActionBar({
   children,
   label,
@@ -2453,6 +2544,9 @@ function SelectedBlockActionBar({
   const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
+  const currentViewportWidth = usePageBuilderPuck((state) => state.appState.ui.viewports.current.width);
+  const narrowCanvas = typeof currentViewportWidth === 'number' && currentViewportWidth <= NARROW_CANVAS_MAX_WIDTH;
+  const actionBarRef = useSelectedActionBarSafeZone(narrowCanvas);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null
     ? data.content[selectedIndex]
     : null;
@@ -2562,7 +2656,12 @@ function SelectedBlockActionBar({
     : elementSelection?.role === 'action' ? '버튼·링크'
       : elementSelection?.role === 'text' ? '텍스트' : '블록';
   return (
-    <div className="g7pb-selected-block-actionbar" data-g7pb-selected-block-actionbar="true">
+    <div
+      ref={actionBarRef}
+      className="g7pb-selected-block-actionbar"
+      data-g7pb-selected-block-actionbar="true"
+      data-g7pb-canvas-layout={narrowCanvas ? 'narrow' : 'wide'}
+    >
       <ActionBar>
         <ActionBar.Group>
           {parentAction}

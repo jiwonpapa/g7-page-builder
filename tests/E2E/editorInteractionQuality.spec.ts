@@ -201,6 +201,25 @@ async function chooseRangeOption(
   option: string,
 ): Promise<void> {
   const trigger = menuRoot.getByTestId(testId);
+  const reachability = await trigger.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const hit = element.ownerDocument.elementFromPoint(centerX, centerY);
+    return {
+      centerHit: hit === element || element.contains(hit),
+      fullyVisible: rect.left >= 0 && rect.top >= 0
+        && rect.right <= element.ownerDocument.defaultView!.innerWidth
+        && rect.bottom <= element.ownerDocument.defaultView!.innerHeight,
+      rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
+      viewport: {
+        width: element.ownerDocument.defaultView!.innerWidth,
+        height: element.ownerDocument.defaultView!.innerHeight,
+      },
+    };
+  });
+  expect(reachability.fullyVisible, `range control is clipped: ${JSON.stringify(reachability)}`).toBe(true);
+  expect(reachability.centerHit, `range control is not pointer-reachable: ${JSON.stringify(reachability)}`).toBe(true);
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   await menuRoot.getByRole('option', { name: option, exact: true }).click();
@@ -251,18 +270,19 @@ async function collapseSelectionWithPointer(field: Locator, targetNode: Locator)
   await expect.poll(() => selectedText(field)).toBe('');
 }
 
-async function revealSidebarRichTextField(page: Page, label: string): Promise<Locator> {
-  let sidebarField = page.locator('[contenteditable="true"]:visible');
-  if (await sidebarField.count() !== 1) {
+async function revealSidebarRichTextField(page: Page, label: string, expectedText: string): Promise<Locator> {
+  const locateField = (): Locator => page.locator('[contenteditable="true"]:visible').filter({ hasText: expectedText });
+  let sidebarField = locateField();
+  if (await sidebarField.count() === 0) {
     const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
-    if (!(await fieldsTab.isVisible())) {
+    if (await fieldsTab.isVisible()) {
+      await fieldsTab.click();
+    } else {
       const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
       await expect(sidebarToggle).toBeVisible();
       await sidebarToggle.click();
     }
-    await expect(fieldsTab).toBeVisible();
-    await fieldsTab.click();
-    sidebarField = page.locator('[contenteditable="true"]:visible');
+    sidebarField = locateField();
   }
   await expect(page.getByText(label, { exact: true }).last()).toBeVisible();
   await expect(sidebarField).toHaveCount(1);
@@ -439,7 +459,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE', async () => {
       const blockField = await richTextField(page, 'rich-text', 'content');
       await blockField.click({ position: { x: 4, y: 4 } });
-      const sidebarField = await revealSidebarRichTextField(page, '본문');
+      const sidebarField = await revealSidebarRichTextField(page, '본문', EDITOR_INTERACTION_COPY.blockInitial);
       await expect(sidebarField).toContainText(EDITOR_INTERACTION_COPY.blockInitial);
       await sidebarField.fill(EDITOR_INTERACTION_COPY.sidebarToCanvas);
       await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.sidebarToCanvas);
@@ -455,7 +475,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
     });
     await test.step('BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE', async () => {
-      const sidebarField = await revealSidebarRichTextField(page, '본문');
+      const sidebarField = await revealSidebarRichTextField(page, '본문', EDITOR_INTERACTION_COPY.canvasToSidebar);
       await expect(sidebarField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
     });
 

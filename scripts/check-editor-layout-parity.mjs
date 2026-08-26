@@ -22,11 +22,12 @@ function requirePattern(errors, value, pattern, message) {
 
 export async function validateEditorLayoutParity(root) {
   const errors = [];
-  const [packageSource, css, publicCss, adapter, spec] = await Promise.all([
+  const [packageSource, css, publicCss, adapter, overlaySource, spec] = await Promise.all([
     source(root, 'package.json'),
     source(root, 'resources/css/page-builder-editor.css'),
     source(root, 'resources/css/page-builder-public.css'),
     source(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
+    source(root, 'resources/js/editor/editorOverlaySafeZone.ts'),
     source(root, REQUIRED_SPEC),
   ]);
   const packageJson = JSON.parse(packageSource);
@@ -123,17 +124,20 @@ export async function validateEditorLayoutParity(root) {
   requirePattern(errors, adapter,
     /usePageBuilderPuck\(\(state\)\s*=>\s*state\.appState\.ui\.viewports\.current\.width\)[\s\S]*data-g7pb-selected-block-actionbar=['"]true['"][\s\S]*data-g7pb-canvas-layout=\{narrowCanvas\s*\?\s*['"]narrow['"]\s*:\s*['"]wide['"]\}/,
     '선택 블록 ActionBar는 Puck 실제 canvas viewport 상태를 안정적인 제품 래퍼 계약으로 내려야 합니다.');
-  requirePattern(errors, adapter,
+  requirePattern(errors, overlaySource,
     /function visibleOwnerViewport[\s\S]*actionBar\.ownerDocument[\s\S]*ownerWindow\.frameElement[\s\S]*clipByOverflowAncestor[\s\S]*mapHostClipToFrameViewport[\s\S]*intersectOverlayRects/,
     'ActionBar 안전영역은 iframe뿐 아니라 host viewport와 모든 overflow clipping ancestor의 실제 가시 영역을 사용해야 합니다.');
-  requirePattern(errors, adapter,
-    /function renderedAncestorScale[\s\S]*offsetWidth[\s\S]*rect\.width[\s\S]*function useSelectedActionBarSafeZone[\s\S]*placeEditorOverlay[\s\S]*inverseScaledTranslation/,
+  requirePattern(errors, overlaySource,
+    /function renderedElementScale[\s\S]*offsetWidth[\s\S]*rect\.width[\s\S]*function clearVisibleClipContract[\s\S]*function exposeVisibleClipContract/,
     'ActionBar 좌표는 host/canvas/Puck 렌더 scale을 측정하고 역보정해야 합니다.');
-  requirePattern(errors, adapter,
-    /function currentInteractionRects[\s\S]*getSelection\(\)[\s\S]*!selection\.isCollapsed[\s\S]*activeElement[\s\S]*avoidRects:\s*currentInteractionRects\(actionBar\)/,
+  requirePattern(errors, overlaySource,
+    /function currentInteractionRects[\s\S]*getSelection\(\)[\s\S]*!selection\.isCollapsed[\s\S]*activeElement/,
     '공간이 부족한 ActionBar는 현재 글자 범위와 활성 편집 요소를 피하는 공통 배치 규칙을 사용해야 합니다.');
   requirePattern(errors, adapter,
-    /function useSelectedActionBarSafeZone[\s\S]*visibleOwnerViewport\(actionBar\)[\s\S]*data-g7pb-safe-zone-placement[\s\S]*data-g7pb-safe-zone-ready[\s\S]*hostDocument\?\.addEventListener\(['"]scroll['"],\s*schedulePosition,\s*true\)/,
+    /placeEditorOverlay\([\s\S]*avoidRects:\s*currentInteractionRects\(actionBar\)/,
+    '공간이 부족한 ActionBar는 현재 글자 범위와 활성 편집 요소를 피하는 공통 배치 규칙을 사용해야 합니다.');
+  requirePattern(errors, adapter,
+    /function useSelectedActionBarSafeZone[\s\S]*visibleOwnerViewport\(actionBar\)[\s\S]*inverseScaledTranslation[\s\S]*data-g7pb-safe-zone-placement[\s\S]*data-g7pb-safe-zone-ready[\s\S]*hostDocument\?\.addEventListener\(['"]scroll['"],\s*schedulePosition,\s*true\)/,
     'ActionBar는 host 가시영역 변화를 관찰하고 계산 완료 상태와 배치 결과를 명시해야 합니다.');
   requirePattern(errors, adapter,
     /const actionBarRef\s*=\s*useSelectedActionBarSafeZone\(true\)/,

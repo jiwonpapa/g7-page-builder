@@ -164,3 +164,135 @@ export function inverseScaledTranslation({
     y: (finite(target.top) - finite(currentRect.top)) / scaleY,
   };
 }
+
+export function viewportRect(ownerDocument: Document): OverlayRect {
+  const ownerWindow = ownerDocument.defaultView;
+  const width = ownerDocument.documentElement.clientWidth || ownerWindow?.innerWidth || 0;
+  const height = ownerDocument.documentElement.clientHeight || ownerWindow?.innerHeight || 0;
+  return { left: 0, top: 0, right: width, bottom: height, width, height };
+}
+
+export function clientBoxRect(element: HTMLElement): OverlayRect {
+  const rect = element.getBoundingClientRect();
+  const layoutWidth = element.offsetWidth || element.clientWidth || rect.width;
+  const layoutHeight = element.offsetHeight || element.clientHeight || rect.height;
+  const scaleX = layoutWidth > 0 ? rect.width / layoutWidth : 1;
+  const scaleY = layoutHeight > 0 ? rect.height / layoutHeight : 1;
+  const left = rect.left + element.clientLeft * scaleX;
+  const top = rect.top + element.clientTop * scaleY;
+  const width = element.clientWidth > 0 ? element.clientWidth * scaleX : rect.width;
+  const height = element.clientHeight > 0 ? element.clientHeight * scaleY : rect.height;
+  return { left, top, right: left + width, bottom: top + height, width, height };
+}
+
+function clipsOverflow(value: string): boolean {
+  return value === 'auto' || value === 'clip' || value === 'hidden' || value === 'scroll';
+}
+
+function clipByOverflowAncestor(
+  current: OverlayRectEdges,
+  ancestor: HTMLElement,
+  hostWindow: Window,
+): OverlayRect | null {
+  const style = hostWindow.getComputedStyle(ancestor);
+  const clipX = clipsOverflow(style.overflowX);
+  const clipY = clipsOverflow(style.overflowY);
+  if (!clipX && !clipY) return intersectOverlayRects([current]);
+  const ancestorRect = clientBoxRect(ancestor);
+  return intersectOverlayRects([current, {
+    left: clipX ? ancestorRect.left : current.left,
+    right: clipX ? ancestorRect.right : current.right,
+    top: clipY ? ancestorRect.top : current.top,
+    bottom: clipY ? ancestorRect.bottom : current.bottom,
+  }]);
+}
+
+export function visibleOwnerViewport(actionBar: HTMLElement): OverlayRect | null {
+  const ownerDocument = actionBar.ownerDocument;
+  const ownerWindow = ownerDocument.defaultView;
+  const localViewport = viewportRect(ownerDocument);
+  if (!ownerWindow?.frameElement) return localViewport;
+
+  try {
+    const frameElement = ownerWindow.frameElement as HTMLElement;
+    const hostDocument = frameElement.ownerDocument;
+    const hostWindow = hostDocument.defaultView;
+    if (!hostWindow) return localViewport;
+    const frameContentRect = clientBoxRect(frameElement);
+    let hostClip = intersectOverlayRects([viewportRect(hostDocument), frameContentRect]);
+    if (!hostClip) return null;
+    for (let ancestor = frameElement.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      hostClip = clipByOverflowAncestor(hostClip, ancestor, hostWindow);
+      if (!hostClip) return null;
+    }
+    const mappedHostClip = mapHostClipToFrameViewport(hostClip, frameContentRect, {
+      width: localViewport.width,
+      height: localViewport.height,
+    });
+    return mappedHostClip ? intersectOverlayRects([localViewport, mappedHostClip]) : localViewport;
+  } catch {
+    return localViewport;
+  }
+}
+
+export function renderedElementScale(element: HTMLElement, rect: DOMRect): { x: number; y: number } {
+  const x = element.offsetWidth > 0 ? rect.width / element.offsetWidth : 1;
+  const y = element.offsetHeight > 0 ? rect.height / element.offsetHeight : 1;
+  return {
+    x: x > 0 && Number.isFinite(x) ? x : 1,
+    y: y > 0 && Number.isFinite(y) ? y : 1,
+  };
+}
+
+const SAFE_CLIP_FIELDS = ['left', 'top', 'right', 'bottom', 'width', 'height'] as const;
+
+export function clearVisibleClipContract(actionBar: HTMLElement): void {
+  for (const field of SAFE_CLIP_FIELDS) {
+    actionBar.removeAttribute(`data-g7pb-safe-clip-${field}`);
+    actionBar.style.removeProperty(`--g7pb-selected-actionbar-safe-${field}`);
+  }
+}
+
+export function exposeVisibleClipContract(actionBar: HTMLElement, clip: OverlayRect): void {
+  for (const field of SAFE_CLIP_FIELDS) {
+    const value = clip[field];
+    actionBar.setAttribute(`data-g7pb-safe-clip-${field}`, String(value));
+    actionBar.style.setProperty(`--g7pb-selected-actionbar-safe-${field}`, `${value}px`);
+  }
+}
+
+export function currentInteractionRects(actionBar: HTMLElement): OverlayRectEdges[] {
+  const ownerDocument = actionBar.ownerDocument;
+  const ownerWindow = ownerDocument.defaultView;
+  const rects: OverlayRectEdges[] = [];
+  const addRect = (rect: DOMRect | DOMRectReadOnly): void => {
+    if (rect.width <= 0 || rect.height <= 0) return;
+    rects.push({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+  };
+
+  try {
+    const selection = ownerWindow?.getSelection();
+    if (selection && !selection.isCollapsed) {
+      for (let rangeIndex = 0; rangeIndex < selection.rangeCount; rangeIndex += 1) {
+        const range = selection.getRangeAt(rangeIndex);
+        const rangeRects = range.getClientRects();
+        if (rangeRects.length === 0) addRect(range.getBoundingClientRect());
+        else for (let rectIndex = 0; rectIndex < rangeRects.length; rectIndex += 1) addRect(rangeRects[rectIndex]);
+      }
+    }
+  } catch {
+    // Selection can detach while Puck replaces a block; the active element remains a safe fallback.
+  }
+
+  const activeElement = ownerDocument.activeElement;
+  if (
+    activeElement
+    && activeElement !== ownerDocument.body
+    && activeElement !== ownerDocument.documentElement
+    && !actionBar.contains(activeElement)
+    && 'getBoundingClientRect' in activeElement
+  ) {
+    addRect(activeElement.getBoundingClientRect());
+  }
+  return rects;
+}

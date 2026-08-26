@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clearVisibleClipContract,
+  clientBoxRect,
+  currentInteractionRects,
+  exposeVisibleClipContract,
   intersectOverlayRects,
   inverseScaledTranslation,
   mapHostClipToFrameViewport,
   placeEditorOverlay,
+  renderedElementScale,
+  viewportRect,
+  visibleOwnerViewport,
 } from '../../resources/js/editor/editorOverlaySafeZone';
 
 describe('editor overlay safe zone geometry', () => {
@@ -126,5 +133,60 @@ describe('editor overlay safe zone geometry', () => {
       maxWidth: 284,
       maxHeight: 184,
     });
+  });
+
+  it('measures the iframe viewport and scaled element client box without assuming unit scale', () => {
+    const element = document.createElement('div');
+    Object.defineProperties(element, {
+      offsetWidth: { configurable: true, value: 50 },
+      offsetHeight: { configurable: true, value: 25 },
+      clientWidth: { configurable: true, value: 50 },
+      clientHeight: { configurable: true, value: 25 },
+      clientLeft: { configurable: true, value: 2 },
+      clientTop: { configurable: true, value: 1 },
+    });
+    element.getBoundingClientRect = () => ({
+      left: 10, top: 20, right: 110, bottom: 70, width: 100, height: 50,
+      x: 10, y: 20, toJSON: () => ({}),
+    });
+
+    expect(clientBoxRect(element)).toEqual({
+      left: 14, top: 22, right: 114, bottom: 72, width: 100, height: 50,
+    });
+    expect(renderedElementScale(element, element.getBoundingClientRect())).toEqual({ x: 2, y: 2 });
+    expect(viewportRect(document)).toMatchObject({ left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight });
+    expect(visibleOwnerViewport(element)).toEqual(viewportRect(document));
+  });
+
+  it('exposes and clears one canonical safe-clip contract for portal consumers', () => {
+    const actionBar = document.createElement('div');
+    const clip = { left: 8, top: 12, right: 408, bottom: 312, width: 400, height: 300 };
+    exposeVisibleClipContract(actionBar, clip);
+    expect(actionBar.getAttribute('data-g7pb-safe-clip-left')).toBe('8');
+    expect(actionBar.style.getPropertyValue('--g7pb-selected-actionbar-safe-bottom')).toBe('312px');
+
+    clearVisibleClipContract(actionBar);
+    expect(actionBar.hasAttribute('data-g7pb-safe-clip-left')).toBe(false);
+    expect(actionBar.style.getPropertyValue('--g7pb-selected-actionbar-safe-bottom')).toBe('');
+  });
+
+  it('uses the focused editor element as an avoid rectangle but ignores ActionBar descendants', () => {
+    const actionBar = document.createElement('div');
+    const actionButton = document.createElement('button');
+    const editorButton = document.createElement('button');
+    actionBar.append(actionButton);
+    document.body.append(actionBar, editorButton);
+    editorButton.getBoundingClientRect = () => ({
+      left: 30, top: 40, right: 130, bottom: 70, width: 100, height: 30,
+      x: 30, y: 40, toJSON: () => ({}),
+    });
+    actionButton.getBoundingClientRect = editorButton.getBoundingClientRect;
+
+    editorButton.focus();
+    expect(currentInteractionRects(actionBar)).toEqual([{ left: 30, top: 40, right: 130, bottom: 70 }]);
+    actionButton.focus();
+    expect(currentInteractionRects(actionBar)).toEqual([]);
+    actionBar.remove();
+    editorButton.remove();
   });
 });

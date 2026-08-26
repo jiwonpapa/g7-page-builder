@@ -16,6 +16,8 @@ copy_fixture() {
     "$fixture_root/fixture/resources/css/page-builder-public.css"
   cp "$repo_root/resources/js/editor/PuckEditorAdapter.tsx" \
     "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  cp "$repo_root/resources/js/editor/editorOverlaySafeZone.ts" \
+    "$fixture_root/fixture/resources/js/editor/editorOverlaySafeZone.ts"
   cp "$repo_root/tests/E2E/editorLayoutParity.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 }
@@ -78,17 +80,17 @@ expect_failure '선택 블록 ActionBar는 Puck 실제 canvas viewport 상태를
 
 copy_fixture
 perl -0pi -e 's/actionBar\.ownerDocument/globalThis.document/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$fixture_root/fixture/resources/js/editor/editorOverlaySafeZone.ts"
 expect_failure 'ActionBar 안전영역은 iframe뿐 아니라 host viewport와 모든 overflow clipping ancestor의 실제 가시 영역을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/const frameElement = ownerWindow\.frameElement as HTMLElement;/const frameElement = ownerDocument.documentElement;/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$fixture_root/fixture/resources/js/editor/editorOverlaySafeZone.ts"
 expect_failure 'ActionBar 안전영역은 iframe뿐 아니라 host viewport와 모든 overflow clipping ancestor의 실제 가시 영역을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/const translation = inverseScaledTranslation/const translation = directTranslation/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+perl -0pi -e 's/function renderedElementScale/function renderedScaleWithoutCompensation/' \
+  "$fixture_root/fixture/resources/js/editor/editorOverlaySafeZone.ts"
 expect_failure 'ActionBar 좌표는 host/canvas/Puck 렌더 scale을 측정하고 역보정해야 합니다.'
 
 copy_fixture

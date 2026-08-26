@@ -107,6 +107,16 @@ perl -0pi -e 's/targetBox\.x - fieldBox\.x/0/' \
 expect_failure '선택 대상을 contenteditable 내부 실제 좌표로 변환해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/resolveRichTextSelection\(page, selection\)/selection.cachedLocators/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure 'Puck iframe 교체에 대응해 실제 포인터 선택 매 시도마다 현재 field와 target locator를 다시 찾아야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)resolveRichTextSelection\(page, selection\)/$1selection.cachedLocators/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 해제 재클릭도 현재 Puck iframe의 field와 target locator를 다시 찾아야 합니다.'
+
+copy_fixture
 printf '\nconsole.log("temporary geometry");\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '전용 E2E에 임시 진단 로그를 남기면 안 됩니다.'
 

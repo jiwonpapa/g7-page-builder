@@ -127,6 +127,23 @@ interface PointerGeometry {
   start: { x: number; y: number };
 }
 
+interface RichTextSelectionLocator {
+  blockType: RichTextBlockType;
+  fieldPath: string;
+  locateTarget: (field: Locator) => Locator;
+}
+
+async function resolveRichTextSelection(page: Page, selection: RichTextSelectionLocator): Promise<{
+  field: Locator;
+  targetNode: Locator;
+}> {
+  const field = await richTextField(page, selection.blockType, selection.fieldPath);
+  const targetNode = selection.locateTarget(field);
+  await expect(targetNode).toHaveCount(1);
+  await expect(targetNode).toBeVisible();
+  return { field, targetNode };
+}
+
 async function textPointerGeometry(field: Locator, targetNode: Locator): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
   await expect(targetNode).toHaveCount(1);
@@ -187,23 +204,41 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
   };
 }
 
-async function dragSelectText(page: Page, field: Locator, targetNode: Locator, target: string): Promise<void> {
+async function dragSelectText(
+  page: Page,
+  selection: RichTextSelectionLocator,
+  target: string,
+): Promise<Locator> {
+  let lastFailure: unknown = new Error(`Pointer selection did not produce the exact target: ${target}`);
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const pointer = await textPointerGeometry(field, targetNode);
-    if (attempt > 0) await field.click({ position: pointer.end });
-    await field.focus();
-    await expect.poll(() => selectedText(field)).toBe('');
-    await field.hover({ position: pointer.start });
-    await page.mouse.down();
+    let pointerDown = false;
     try {
+      const { field, targetNode } = await resolveRichTextSelection(page, selection);
+      const pointer = await textPointerGeometry(field, targetNode);
+      if (attempt > 0) await field.click({ position: pointer.end });
+      await field.focus();
+      await expect.poll(() => selectedText(field)).toBe('');
+      await field.hover({ position: pointer.start });
+      await page.mouse.down();
+      pointerDown = true;
       await field.hover({ position: pointer.end, force: true });
-    } finally {
       await page.mouse.up();
+      pointerDown = false;
+      const actual = await selectedText(field);
+      if (actual !== target) {
+        lastFailure = new Error(`Pointer selection mismatch: expected ${target}, received ${actual}`);
+        continue;
+      }
+      await expect(field).toBeFocused();
+      await expect.poll(() => selectedText(field)).toBe(target);
+      return field;
+    } catch (error) {
+      lastFailure = error;
+    } finally {
+      if (pointerDown) await page.mouse.up();
     }
-    if (await selectedText(field) === target) break;
   }
-  await expect(field).toBeFocused();
-  await expect.poll(() => selectedText(field)).toBe(target);
+  throw lastFailure;
 }
 
 async function officialPuckMenuRoot(page: Page): Promise<Locator> {
@@ -350,10 +385,23 @@ async function assertSelectedFormatting(
   await expect(scope).toContainText(suffix);
 }
 
-async function collapseSelectionWithPointer(field: Locator, targetNode: Locator): Promise<void> {
-  const pointer = await textPointerGeometry(field, targetNode);
-  await field.click({ position: pointer.end });
-  await expect.poll(() => selectedText(field)).toBe('');
+async function collapseSelectionWithPointer(
+  page: Page,
+  selection: RichTextSelectionLocator,
+): Promise<void> {
+  let lastFailure: unknown = new Error('Pointer selection did not collapse.');
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const { field, targetNode } = await resolveRichTextSelection(page, selection);
+      const pointer = await textPointerGeometry(field, targetNode);
+      await field.click({ position: pointer.end });
+      await expect.poll(() => selectedText(field)).toBe('');
+      return;
+    } catch (error) {
+      lastFailure = error;
+    }
+  }
+  throw lastFailure;
 }
 
 async function revealSidebarRichTextField(page: Page, expectedText: string): Promise<Locator> {
@@ -475,11 +523,14 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await assertTabletHeaderHeight(page, testInfo.project.name);
     });
 
-    let rootField = await richTextField(page, 'heading', 'heading');
-    let rootTarget = rootField.locator('a[href="/richtext-root"]');
-    await test.step('REAL_POINTER_SELECTION_GATE', async () => {
-      await dragSelectText(page, rootField, rootTarget, EDITOR_INTERACTION_COPY.rootTarget);
-    });
+    const rootSelection: RichTextSelectionLocator = {
+      blockType: 'heading',
+      fieldPath: 'heading',
+      locateTarget: (field) => field.locator('a[href="/richtext-root"]'),
+    };
+    let rootField = await test.step('REAL_POINTER_SELECTION_GATE', async () => (
+      dragSelectText(page, rootSelection, EDITOR_INTERACTION_COPY.rootTarget)
+    ));
     let menuRoot: Locator;
     await test.step('OFFICIAL_PUCK_MENU_ROOT_GATE', async () => {
       menuRoot = await officialPuckMenuRoot(page);
@@ -502,7 +553,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await expect.poll(() => selectedText(rootField)).toBe(EDITOR_INTERACTION_COPY.rootTarget);
     });
     await test.step('COLLAPSED_SELECTION_GATE', async () => {
-      await collapseSelectionWithPointer(rootField, rootTarget);
+      await collapseSelectionWithPointer(page, rootSelection);
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
       await expect(elementPanel).toBeVisible();
       await page.getByTestId('page-builder-editor').click({ position: { x: 8, y: 8 } });
@@ -510,17 +561,18 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await expect(elementPanel).toBeHidden();
     });
     await test.step('REPEATED_SELECTION_GATE', async () => {
-      rootField = await richTextField(page, 'heading', 'heading');
-      rootTarget = rootField.locator('a[href="/richtext-root"]');
-      await dragSelectText(page, rootField, rootTarget, EDITOR_INTERACTION_COPY.rootTarget);
+      rootField = await dragSelectText(page, rootSelection, EDITOR_INTERACTION_COPY.rootTarget);
       await expect(await officialPuckMenuRoot(page)).toBeVisible();
-      await collapseSelectionWithPointer(rootField, rootTarget);
+      await collapseSelectionWithPointer(page, rootSelection);
     });
 
     await test.step('NESTED_INLINE_RICH_GATE', async () => {
-      const nestedField = await richTextField(page, 'features', 'items.0.title');
-      const nestedTarget = nestedField.locator('a[href="/richtext-nested"]');
-      await dragSelectText(page, nestedField, nestedTarget, EDITOR_INTERACTION_COPY.nestedTarget);
+      const nestedSelection: RichTextSelectionLocator = {
+        blockType: 'features',
+        fieldPath: 'items.0.title',
+        locateTarget: (field) => field.locator('a[href="/richtext-nested"]'),
+      };
+      const nestedField = await dragSelectText(page, nestedSelection, EDITOR_INTERACTION_COPY.nestedTarget);
       const nestedMenuRoot = await officialPuckMenuRoot(page);
       await expect(elementPanel).toBeHidden();
       await applySelectedFormatting(page, nestedMenuRoot, nestedField, EDITOR_INTERACTION_COPY.nestedTarget, {
@@ -528,18 +580,22 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       }, testInfo.project.name);
       await assertSelectedFormatting(nestedField, EDITOR_INTERACTION_COPY.nestedTarget,
         EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);
-      await collapseSelectionWithPointer(nestedField, nestedTarget);
+      await collapseSelectionWithPointer(page, nestedSelection);
     });
 
     await test.step('NO_LINK_INLINE_GATE', async () => {
-      const articleField = await richTextField(page, 'article-list', 'items.0.title');
-      const articleTarget = articleField.locator('p').filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.articleTitle}$`) });
-      await dragSelectText(page, articleField, articleTarget, EDITOR_INTERACTION_COPY.articleTitle);
+      const articleSelection: RichTextSelectionLocator = {
+        blockType: 'article-list',
+        fieldPath: 'items.0.title',
+        locateTarget: (field) => field.locator('p')
+          .filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.articleTitle}$`) }),
+      };
+      await dragSelectText(page, articleSelection, EDITOR_INTERACTION_COPY.articleTitle);
       const articleMenuRoot = await officialPuckMenuRoot(page);
       await expect(articleMenuRoot.getByRole('button', { name: '링크 편집', exact: true })).toHaveCount(0);
       await expect(articleMenuRoot.getByRole('button', { name: 'Link', exact: true })).toHaveCount(0);
       await expect(articleMenuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true })).toBeVisible();
-      await collapseSelectionWithPointer(articleField, articleTarget);
+      await collapseSelectionWithPointer(page, articleSelection);
     });
 
     await test.step('BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE', async () => {
@@ -552,9 +608,13 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     });
     await test.step('BLOCK_RICH_GATE', async () => {
       await exposeCanvasForPointer(page);
-      const blockField = await richTextField(page, 'rich-text', 'content');
-      const blockTarget = blockField.locator('p').filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.sidebarToCanvas}$`) });
-      await dragSelectText(page, blockField, blockTarget, EDITOR_INTERACTION_COPY.sidebarToCanvas);
+      const blockSelection: RichTextSelectionLocator = {
+        blockType: 'rich-text',
+        fieldPath: 'content',
+        locateTarget: (field) => field.locator('p')
+          .filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.sidebarToCanvas}$`) }),
+      };
+      const blockField = await dragSelectText(page, blockSelection, EDITOR_INTERACTION_COPY.sidebarToCanvas);
       await expect(await officialPuckMenuRoot(page)).toBeVisible();
       await expect(elementPanel).toBeHidden();
       await page.keyboard.type(EDITOR_INTERACTION_COPY.canvasToSidebar);

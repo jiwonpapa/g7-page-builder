@@ -92,7 +92,7 @@ perl -0pi -e 's/page\.mouse\.move\(pointer\.end\.x, pointer\.end\.y, \{ steps: P
 expect_failure 'force 없이 여러 실제 mouse move 단계로 pointer 종료점에 이동해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await field.focus();/' \
+perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await Promise.resolve();/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'
 
@@ -126,9 +126,8 @@ printf '\nfield.click({ force: true });\n' >>"$fixture_root/fixture/tests/E2E/ed
 expect_failure '전용 편집 E2E는 force click/hover로 실제 hit target 검증을 우회하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/await field\.focus\(\);/await page.keyboard.press("Tab");/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '범위 선택 전 contenteditable focus가 필요합니다.'
+printf '\nfield.focus();\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '전용 편집 E2E는 프로그램식 focus가 아니라 실제 pointerdown으로 contenteditable focus를 만들어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/INTERACTIVE_CANVAS_GATE/INTERACTIVE_CANVAS_REMOVED/' \

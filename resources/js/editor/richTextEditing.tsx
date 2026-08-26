@@ -126,6 +126,7 @@ function RichTextFloatingLayer({
     safeClipObserver?.observe(actionBar as HTMLElement, {
       attributes: true,
       attributeFilter: [
+        'style',
         'data-g7pb-safe-clip-left', 'data-g7pb-safe-clip-top',
         'data-g7pb-safe-clip-right', 'data-g7pb-safe-clip-bottom',
       ],

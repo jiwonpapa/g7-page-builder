@@ -68,6 +68,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/\.evaluate\([^\n]{0,300}\.click\s*\(/, 'evaluate click으로 실제 포인터 경로를 우회하면 안 됩니다.'],
     [/dispatchEvent\s*\([^\n]*(?:beforeinput|input)/, '합성 input 이벤트로 편집 결과를 주입하면 안 됩니다.'],
     [/force\s*:\s*true/, '전용 편집 E2E는 force click/hover로 실제 hit target 검증을 우회하면 안 됩니다.'],
+    [/field\.focus\(\)/, '전용 편집 E2E는 프로그램식 focus가 아니라 실제 pointerdown으로 contenteditable focus를 만들어야 합니다.'],
   ];
   for (const [pattern, message] of forbiddenSyntheticSelection) {
     if (pattern.test(spec)) errors.push(message);
@@ -97,7 +98,6 @@ export async function validateEditorAcceptanceContract(root) {
     [/function assertTextPointerReachable\([\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?outlineDragging:[\s\S]*?pointerEvents:[\s\S]*?canvasHits/,
       '텍스트 포인터 실패는 editor·iframe pointer 상태와 실제 hit stack·canvas hit를 보고해야 합니다.'],
     [/function collapseSelectionWithPointer\([\s\S]{0,900}findFieldCollapsePoints\(page, field, targetNode, currentSelection\)[\s\S]{0,180}for \(const point of points\)[\s\S]{0,180}page\.mouse\.click\(point\.x, point\.y\)[\s\S]{0,300}selectedText\(field\) === ['"]['"]/, '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'],
-    [/field\.focus\(\)/, '범위 선택 전 contenteditable focus가 필요합니다.'],
     [/expect\(field\)\.toBeFocused\(\)/, '실제 pointer 드래그 뒤 contenteditable focus를 확인해야 합니다.'],
     [/page\.mouse\.up\s*\(/, '실제 pointer 선택을 위한 page.mouse.up이 필요합니다.'],
     [/expect\.poll\(\(\)\s*=>\s*selectedText\(field\)\)\.toBe\(target\)/, 'mouse up 직후 선택 문자열이 목표 문자열과 정확히 같은지 확인해야 합니다.'],

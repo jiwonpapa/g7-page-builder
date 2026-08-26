@@ -43,7 +43,15 @@ async function richTextField(page: Page, blockType: RichTextBlockType, fieldPath
 }
 
 async function selectedText(field: Locator): Promise<string> {
-  return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
+  return field.evaluate((element) => {
+    const selection = element.ownerDocument.defaultView?.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) return '';
+    const belongsToField = (node: Node | null): boolean => (
+      node !== null && (node === element || element.contains(node))
+    );
+    if (!belongsToField(selection.anchorNode) || !belongsToField(selection.focusNode)) return '';
+    return selection.toString();
+  });
 }
 
 async function assertInteractiveCanvas(page: Page): Promise<void> {
@@ -489,10 +497,15 @@ async function dragSelectText(
     try {
       if (attempt > 0) await collapseSelectionWithPointer(page, selection);
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
-      const pointer = await textPointerGeometry(field, targetNode, attempt);
+      let pointer = await textPointerGeometry(field, targetNode, attempt);
       await assertTextPointerReachable(page, field, pointer);
       await expect.poll(() => selectedText(field)).toBe('');
-      await field.focus();
+      await page.mouse.move(pointer.start.x, pointer.start.y);
+      await page.evaluate(() => new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }));
+      pointer = await textPointerGeometry(field, targetNode, attempt);
+      await assertTextPointerReachable(page, field, pointer);
       await page.mouse.move(pointer.start.x, pointer.start.y);
       await page.mouse.down();
       pointerDown = true;
@@ -772,6 +785,7 @@ async function chooseRangeOption(
     const advanced = await openResponsiveAdvancedControls(page, menuRoot, projectName);
     trigger = advanced.getByTestId(testId);
   }
+  await expectStableControlGeometry(trigger);
   const triggerPoint = await assertPointerReachable(page, trigger);
   await activateControl(page, triggerPoint, projectName);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');

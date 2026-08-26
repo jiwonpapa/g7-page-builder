@@ -54,7 +54,7 @@ expect_failure '실제 pointer 선택을 위한 page.mouse.down이 필요합니�
 copy_fixture
 perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await page\.mouse\.click\(point\.x, point\.y\);/$1await field.focus();/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제 click 전에는 현재 field에서 실제 도달 가능한 end 픽셀을 찾아 같은 좌표를 클릭해야 합니다.'
+expect_failure '선택 해제는 같은 current field의 선택 target 밖 실제 도달 가능한 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
@@ -97,14 +97,14 @@ perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await 
 expect_failure 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await findTextPointerEnd\(page, field, pointer\)/$1await Promise.resolve(pointer.end)/' \
+perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await findFieldCollapsePoints\(page, field, targetNode\)/$1await Promise.resolve([{ x: 0, y: 0 }])/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제 click 전에는 현재 field에서 실제 도달 가능한 end 픽셀을 찾아 같은 좌표를 클릭해야 합니다.'
+expect_failure '선택 해제는 같은 current field의 선택 target 밖 실제 도달 가능한 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(function findTextPointerEnd[\s\S]*?)return candidates\[reachableIndex\]\.page;/$1return pointer.end;/' \
+perl -0pi -e 's/(function findFieldCollapsePoints[\s\S]*?)canvasHits\[index\]\?\.targetHit === false/$1canvasHits[index]?.targetHit === true/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 해제 좌표는 상위 문서 iframe과 현재 rich-text field를 모두 맞는 실제 픽셀이어야 합니다.'
+expect_failure '선택 해제 좌표는 field 내부이면서 선택 target과 툴바 밖인 실제 픽셀이어야 합니다.'
 
 copy_fixture
 printf '\nfield.click({ force: true });\n' >>"$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
@@ -121,7 +121,7 @@ perl -0pi -e 's/INTERACTIVE_CANVAS_GATE/INTERACTIVE_CANVAS_REMOVED/' \
 expect_failure '실제 iframe의 상호작용 가능 크기 gate가 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/targetNode\.boundingBox\(\)/field.boundingBox()/' \
+perl -0pi -e 's/targetNode\.boundingBox\(\)/field.boundingBox()/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 대상의 실제 렌더링 box를 측정해야 합니다.'
 

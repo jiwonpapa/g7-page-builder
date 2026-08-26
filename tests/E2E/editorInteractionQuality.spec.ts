@@ -257,18 +257,57 @@ async function assertTextPointerReachable(page: Page, field: Locator, pointer: P
   expect(canvasHits.end, 'pointer end must hit the current rich-text field').toBe(true);
 }
 
-async function findTextPointerEnd(page: Page, field: Locator, pointer: PointerGeometry): Promise<PointerPoint> {
-  const ratios = [0, 0.125, 0.25, 0.5, 0.75];
-  const candidates = ratios.map((ratio) => ({
-    page: {
-      x: pointer.end.x + (pointer.start.x - pointer.end.x) * ratio,
-      y: pointer.end.y + (pointer.start.y - pointer.end.y) * ratio,
-    },
-    local: {
-      x: pointer.localEnd.x + (pointer.localStart.x - pointer.localEnd.x) * ratio,
-      y: pointer.localEnd.y + (pointer.localStart.y - pointer.localEnd.y) * ratio,
-    },
-  }));
+async function findFieldCollapsePoints(
+  page: Page,
+  field: Locator,
+  targetNode: Locator,
+): Promise<PointerPoint[]> {
+  await field.scrollIntoViewIfNeeded();
+  const [fieldBox, targetBox, iframeBox] = await Promise.all([
+    field.boundingBox(),
+    targetNode.boundingBox(),
+    page.locator(CANVAS_IFRAME).boundingBox(),
+  ]);
+  const viewport = page.viewportSize();
+  if (!fieldBox || !targetBox || !iframeBox || !viewport) {
+    throw new Error('Collapse pointer geometry is unavailable.');
+  }
+  const visible = {
+    left: Math.max(0, iframeBox.x, fieldBox.x),
+    top: Math.max(0, iframeBox.y, fieldBox.y),
+    right: Math.min(viewport.width, iframeBox.x + iframeBox.width, fieldBox.x + fieldBox.width),
+    bottom: Math.min(viewport.height, iframeBox.y + iframeBox.height, fieldBox.y + fieldBox.height),
+  };
+  if (visible.right <= visible.left || visible.bottom <= visible.top) {
+    throw new Error(`current rich-text field has no visible iframe intersection: ${JSON.stringify({
+      fieldBox,
+      targetBox,
+      iframeBox,
+      viewport,
+    })}`);
+  }
+  const insetX = Math.min(8, (visible.right - visible.left) / 2);
+  const insetY = Math.min(4, (visible.bottom - visible.top) / 2);
+  const xs = [
+    visible.right - insetX,
+    visible.left + insetX,
+    visible.left + (visible.right - visible.left) * 0.75,
+    (visible.left + visible.right) / 2,
+    visible.left + (visible.right - visible.left) * 0.25,
+  ];
+  const ys = [
+    (visible.top + visible.bottom) / 2,
+    visible.bottom - insetY,
+    visible.top + insetY,
+  ];
+  const candidates = xs.flatMap((x) => ys.map((y) => ({ x, y })))
+    .filter((point, index, points) => points.findIndex((candidate) => (
+      Math.abs(candidate.x - point.x) < 0.5 && Math.abs(candidate.y - point.y) < 0.5
+    )) === index)
+    .filter((point) => !(
+      point.x >= targetBox.x && point.x <= targetBox.x + targetBox.width
+      && point.y >= targetBox.y && point.y <= targetBox.y + targetBox.height
+    ));
   const topDocumentHits = await page.evaluate(({ points, iframeSelector }) => {
     const iframe = document.querySelector(iframeSelector);
     return points.map((point) => {
@@ -279,33 +318,46 @@ async function findTextPointerEnd(page: Page, field: Locator, pointer: PointerGe
         className: hit instanceof HTMLElement ? hit.className : '',
       };
     });
-  }, { points: candidates.map((candidate) => candidate.page), iframeSelector: CANVAS_IFRAME });
+  }, { points: candidates, iframeSelector: CANVAS_IFRAME });
 
-  const canvasHits = await field.evaluate((element, points) => {
-    const rect = element.getBoundingClientRect();
-    return points.map((point) => {
-      const hit = element.ownerDocument.elementFromPoint(
-        rect.left + point.x,
-        rect.top + point.y,
+  const canvasHits = await targetNode.evaluate((target, geometry) => {
+    const view = target.ownerDocument.defaultView;
+    const field = target.closest('[contenteditable="true"]');
+    if (!view || !field || view.innerWidth <= 0 || view.innerHeight <= 0) return [];
+    const scaleX = geometry.iframeBox.width / view.innerWidth;
+    const scaleY = geometry.iframeBox.height / view.innerHeight;
+    return geometry.points.map((point) => {
+      const hit = target.ownerDocument.elementFromPoint(
+        (point.x - geometry.iframeBox.x) / scaleX,
+        (point.y - geometry.iframeBox.y) / scaleY,
       );
       return {
-        hit: hit === element || element.contains(hit),
+        fieldHit: hit === field || field.contains(hit),
+        targetHit: hit === target || target.contains(hit),
+        toolbarHit: Boolean(hit?.closest('[data-puck-rte-menu]')),
         tag: hit?.tagName ?? '',
         className: hit instanceof HTMLElement ? hit.className : '',
       };
     });
-  }, candidates.map((candidate) => candidate.local));
-  const reachableIndex = candidates.findIndex((_, index) => (
-    topDocumentHits[index]?.hit === true && canvasHits[index]?.hit === true
+  }, { points: candidates, iframeBox });
+  const reachable = candidates.filter((_, index) => (
+    topDocumentHits[index]?.hit === true
+    && canvasHits[index]?.fieldHit === true
+    && canvasHits[index]?.targetHit === false
+    && canvasHits[index]?.toolbarHit === false
   ));
-  if (reachableIndex < 0) {
-    throw new Error(`no current rich-text field pixel is pointer-reachable: ${JSON.stringify({
+  if (reachable.length === 0) {
+    throw new Error(`no unselected current rich-text field pixel is pointer-reachable: ${JSON.stringify({
+      fieldBox,
+      targetBox,
+      iframeBox,
+      viewport,
       candidates,
       topDocumentHits,
       canvasHits,
     })}`);
   }
-  return candidates[reachableIndex].page;
+  return reachable;
 }
 
 async function dragSelectText(
@@ -531,11 +583,15 @@ async function collapseSelectionWithPointer(
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
-      const pointer = await textPointerGeometry(field, targetNode);
-      const point = await findTextPointerEnd(page, field, pointer);
-      await page.mouse.click(point.x, point.y);
-      await expect.poll(() => selectedText(field)).toBe('');
-      return;
+      const points = await findFieldCollapsePoints(page, field, targetNode);
+      for (const point of points) {
+        await page.mouse.click(point.x, point.y);
+        await page.evaluate(() => new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }));
+        if (await selectedText(field) === '') return;
+      }
+      lastFailure = new Error(`Pointer click did not collapse the current selection: ${await selectedText(field)}`);
     } catch (error) {
       lastFailure = error;
     }

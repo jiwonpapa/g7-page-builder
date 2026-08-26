@@ -337,12 +337,12 @@ perl -0pi -e 's/onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.val
 expect_failure '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.touchscreen\.tap\(point\.x, point\.y\)/page.mouse.click(point.x, point.y)/' \
+perl -0pi -e 's/control\.tap\(\{ position: point\.controlOffset \}\)/page.mouse.click(point.x, point.y)/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'mobile 편집 E2E는 검증된 실제 픽셀을 touch tap해야 합니다.'
+expect_failure 'mobile 편집 E2E는 검증된 iframe 내부 픽셀을 실제 locator touch tap해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/activateControl\(page, optionPoint, projectName\)/optionControl.focus()/' \
+perl -0pi -e 's/activateControl\(optionPoint, projectName, optionControl\)/optionControl.focus()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 글자 portal option은 iframe body에서 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'
 
@@ -362,9 +362,19 @@ perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await page
 expect_failure 'control 도달성은 autosave pointer 차단이 풀리기를 기다려 우회하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/page\.mouse\.click\(point\.x, point\.y\)/page.mouse.click(point.x + 1, point.y)/' \
+perl -0pi -e 's/control\.click\(\{ position: point\.controlOffset \}\)/control.click({ position: { x: point.controlOffset.x + 1, y: point.controlOffset.y } })/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 글자 control은 검증된 같은 픽셀을 실제 touch 또는 mouse로 활성화해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/ - localReachability\.controlRect\.borderLeft//' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '편집 E2E는 iframe 내부 child hit부터 border·scale 변환과 상위 iframe hit까지 같은 실제 픽셀을 검증해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(async function activateControl\([\s\S]*?control): Locator/$1?: Locator/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 control은 필수 locator의 실제 tap/click만 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await control.scrollIntoViewIfNeeded();/' \

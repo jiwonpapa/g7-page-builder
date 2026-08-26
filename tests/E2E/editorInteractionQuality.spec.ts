@@ -75,7 +75,7 @@ async function openElementPanelFromActionBar(page: Page, projectName: string): P
   await expect(textToolsButton).toHaveCount(1);
   await expect(textToolsButton).toBeVisible();
   const point = await assertPointerReachable(page, textToolsButton);
-  await activateControl(page, point, projectName);
+  await activateControl(point, projectName, textToolsButton);
 }
 
 async function setCanvasViewportWidth(
@@ -158,6 +158,10 @@ interface PointerGeometry {
 interface PointerPoint {
   x: number;
   y: number;
+}
+
+interface ControlPointerPoint extends PointerPoint {
+  controlOffset: PointerPoint;
 }
 
 interface RichTextSelectionLocator {
@@ -537,7 +541,7 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
   return menuRoot;
 }
 
-async function assertPointerReachable(page: Page, control: Locator): Promise<PointerPoint> {
+async function assertPointerReachable(page: Page, control: Locator): Promise<ControlPointerPoint> {
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('Range control viewport geometry is unavailable.');
   const localReachability = await control.evaluate((element) => {
@@ -546,6 +550,9 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
       return { controlRect: null, points: [], viewport: null };
     }
     const rect = element.getBoundingClientRect();
+    const style = view.getComputedStyle(element);
+    const borderLeft = Number.parseFloat(style.borderLeftWidth) || 0;
+    const borderTop = Number.parseFloat(style.borderTopWidth) || 0;
     const visible = {
       left: Math.max(0, rect.left),
       top: Math.max(0, rect.top),
@@ -555,6 +562,8 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
     if (visible.right <= visible.left || visible.bottom <= visible.top) {
       return {
         controlRect: {
+          borderLeft,
+          borderTop,
           bottom: rect.bottom,
           height: rect.height,
           left: rect.left,
@@ -577,6 +586,8 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
     ];
     return {
       controlRect: {
+        borderLeft,
+        borderTop,
         bottom: rect.bottom,
         height: rect.height,
         left: rect.left,
@@ -678,7 +689,16 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
   const reachableIndex = candidates.findIndex((_, index) => (
     topDocumentReachability.points[index]?.hit === true
   ));
-  if (reachableIndex >= 0) return candidates[reachableIndex];
+  if (reachableIndex >= 0 && localReachability.controlRect) {
+    const localPoint = localCandidates[reachableIndex];
+    return {
+      ...candidates[reachableIndex],
+      controlOffset: {
+        x: localPoint.x - localReachability.controlRect.left - localReachability.controlRect.borderLeft,
+        y: localPoint.y - localReachability.controlRect.top - localReachability.controlRect.borderTop,
+      },
+    };
+  }
   throw new Error(`range control has no pointer-reachable top-document pixel: ${JSON.stringify({
     candidates,
     contentOrigin,
@@ -690,7 +710,19 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<Poi
   })}`);
 }
 
-async function activateControl(page: Page, point: PointerPoint, projectName: string): Promise<void> {
+async function activateControl(
+  point: ControlPointerPoint,
+  projectName: string,
+  control: Locator,
+): Promise<void> {
+  if (projectName === 'mobile') {
+    await control.tap({ position: point.controlOffset });
+    return;
+  }
+  await control.click({ position: point.controlOffset });
+}
+
+async function activateCanvasPoint(page: Page, point: PointerPoint, projectName: string): Promise<void> {
   if (projectName === 'mobile') {
     await page.touchscreen.tap(point.x, point.y);
     return;
@@ -728,7 +760,7 @@ async function openResponsiveAdvancedControls(
   const more = menuRoot.getByTestId('page-builder-richtext-more');
   await expect(more).toHaveCount(1);
   const point = await assertPointerReachable(page, more);
-  await activateControl(page, point, projectName);
+  await activateControl(point, projectName, more);
   await expect(more).toHaveAttribute('aria-expanded', 'true');
   await expect(advanced).toBeVisible();
   return advanced;
@@ -738,7 +770,7 @@ async function dismissContextPanelWithPointer(page: Page, projectName: string): 
   const editor = page.getByTestId('page-builder-editor');
   const editorBox = await editor.boundingBox();
   if (!editorBox) throw new Error('Editor pointer-dismiss geometry is unavailable.');
-  const point = {
+  const point: PointerPoint = {
     x: editorBox.x + Math.min(8, editorBox.width / 2),
     y: editorBox.y + Math.min(8, editorBox.height / 2),
   };
@@ -748,7 +780,7 @@ async function dismissContextPanelWithPointer(page: Page, projectName: string): 
     return hit !== null && editorRoot !== null && (hit === editorRoot || editorRoot.contains(hit));
   }, point);
   expect(hitIsEditor, 'context-panel dismiss point must hit the editor').toBe(true);
-  await activateControl(page, point, projectName);
+  await activateCanvasPoint(page, point, projectName);
   await expect(page.getByTestId('page-builder-context-panel')).toBeHidden();
 }
 
@@ -762,7 +794,7 @@ async function clickNativeControl(
   projectName: string,
 ): Promise<void> {
   const point = await assertPointerReachable(page, control);
-  await activateControl(page, point, projectName);
+  await activateControl(point, projectName, control);
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   await expect(field.locator(tag), `${tag} must apply immediately to the pointer-selected copy`).toHaveCount(1);
@@ -787,13 +819,13 @@ async function chooseRangeOption(
   }
   await expectStableControlGeometry(trigger);
   const triggerPoint = await assertPointerReachable(page, trigger);
-  await activateControl(page, triggerPoint, projectName);
+  await activateControl(triggerPoint, projectName, trigger);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   const optionControl = page.frameLocator(CANVAS_IFRAME).getByRole('option', { name: option, exact: true });
   await expectStableControlGeometry(optionControl);
   const optionPoint = await assertPointerReachable(page, optionControl);
   await expect.poll(() => selectedText(field)).toBe(target);
-  await activateControl(page, optionPoint, projectName);
+  await activateControl(optionPoint, projectName, optionControl);
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
@@ -998,7 +1030,7 @@ test('keeps ActionBar and rich-text controls pointer-reachable across the host a
         });
         const beforeCount = await targetMark.count();
         const boldPoint = await assertPointerReachable(page, bold);
-        await activateControl(page, boldPoint, testInfo.project.name);
+        await activateControl(boldPoint, testInfo.project.name, bold);
         await expect.poll(() => selectedText(field)).toBe(EDITOR_INTERACTION_COPY.rootTarget);
         await expect.poll(() => targetMark.count()).toBe(beforeCount === 0 ? 1 : 0);
         await collapseSelectionWithPointer(page, rootSelection);

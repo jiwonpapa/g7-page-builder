@@ -389,6 +389,10 @@ function editorBlock(page: Page, type: BlockType): Locator {
   );
 }
 
+function editorBlockPointerTarget(page: Page, type: BlockType): Locator {
+  return editorBlock(page, type).locator('xpath=ancestor::*[@data-puck-component][1]');
+}
+
 function editorInlineField(page: Page, type: BlockType, field: string): Locator {
   return editorBlock(page, type).locator(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
@@ -416,6 +420,8 @@ async function dismissContextPanel(page: Page): Promise<void> {
       await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
       await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(0);
       await waitForStableLayout(page);
+      await expect(contextPanel).toBeHidden();
+      return;
     }
 
     const closeButton = contextPanel.getByRole('button', { name: '스타일 도구 닫기' });
@@ -771,7 +777,9 @@ async function selectEditorBlock(page: Page, type: BlockType): Promise<void> {
     return;
   }
 
-  await activatePointerTarget(page, editorBlock(page, type), `${BLOCK_LABELS[type]} canvas block`, { x: 4, y: 4 });
+  const pointerTarget = editorBlockPointerTarget(page, type);
+  await expect(pointerTarget).toHaveAttribute('data-puck-component', /.+/);
+  await activatePointerTarget(page, pointerTarget, `${BLOCK_LABELS[type]} canvas block`, { x: 4, y: 4 });
 }
 
 async function expectBlockOrder(locator: Locator, expected: BlockType[]): Promise<void> {

@@ -116,6 +116,38 @@ make task-restack \
 
 수동 rebase 뒤 coordination metadata를 고치거나, scope 검사를 피하려고 후속 task에 선행 task의 PATHS를 추가해서는 안 됩니다.
 
+선행 작업을 통합하면서 후속 task의 이전 commit 역사가 중복되어 일반 rebase가 불필요한 충돌을 만들 때는 `task-restack-squash`를 사용합니다.
+
+```bash
+make task-restack-squash \
+  TASK=editor-lifecycle-e2e \
+  NEW_BASE_REF=<descendant-base-sha>
+```
+
+이 명령은 기존 base와 검증된 submitted SHA 사이의 **최종 tree delta**만 새 base에 3-way 적용하고, 하네스가 단일 commit을 만듭니다. 새 base는 기존 base의 후손이어야 하며, 기존 submitted SHA를 이미 포함하면 실패합니다. 새 base 자체의 변경은 task delta로 재제출하지 않습니다.
+
+소유 PATHS 범위, 기존 submission profile, task 잠금, metadata ancestry 검사는 일반 `task-restack`과 동일하게 유지됩니다. 충돌·scope 위반·profile 실패·metadata commit 전 중단 신호에서는 HEAD와 index·worktree를 이전 submitted SHA로 원자적 복구합니다. 성공할 때만 base/submitted SHA와 이전 SHA, 재적층 시각, 누적 이력을 갱신합니다.
+
+### 의미 충돌 task 교체
+
+최종 tree delta 자체가 통합된 선행 작업을 중복하거나, 자동 3-way 적용으로 의미를 판단할 수 없으면 충돌을 자동 해결하지 않습니다. 검토한 새 base에서 빈 Codex-managed worktree와 명시적 branch를 만든 뒤 submitted task를 교체합니다.
+
+```bash
+make task-replace-submitted \
+  TASK=editor-lifecycle-e2e-v2 \
+  SUPERSEDES=editor-lifecycle-e2e \
+  BASE_REF=<reviewed-base-sha>
+```
+
+하네스는 다음을 하나의 coordination mutex 트랜잭션으로 강제합니다.
+
+1. 기존 task가 `submitted`이고, 소유 worktree·branch·HEAD가 metadata와 일치하며 worktree가 clean인지 재검증합니다.
+2. 새 task는 별도 clean worktree의 현재 HEAD 또는 `BASE_REF`에서 시작하며, 기존 task의 `PATHS`·`AREAS`·`PROFILE`을 정확히 상속합니다. 범위를 넓히거나 profile을 낮출 수 없습니다.
+3. 기존 active metadata는 `superseded` history로 이동하고 `superseded_by`·`superseded_at`을 남기며, 이전 worktree·branch·commit은 수정하거나 삭제하지 않습니다.
+4. overlap 해제와 새 active metadata 생성은 함께 commit됩니다. 검증 실패나 commit 중단 신호에서는 새 metadata를 남기지 않고 기존 task를 `submitted`로 원상복구합니다.
+
+교체 명령은 코드 delta를 복사하지 않습니다. 새 task에서 의미가 확인된 최소 변경만 다시 구현한 뒤 일반 `task-submit`으로 전체 상속 profile을 통과해야 합니다. 수동 cherry-pick·metadata 수정·claim 확장은 허용하지 않습니다.
+
 ## 6. Local 순차 통합
 
 Local 통합 채팅에서 실행합니다.
@@ -168,7 +200,7 @@ task 채팅을 먼저 archive하면 Codex-managed worktree가 정리될 수 있�
 | PATHS/AREA 충돌 | 기존 task를 통합·취소하거나 경계를 다시 나눕니다. |
 | 범위 밖 변경 | 해당 변경을 되돌리지 말고 소유 task를 확인해 이관합니다. |
 | merge-tree 충돌 | 자동 해결하지 않고 계약 담당 task를 먼저 통합합니다. |
-| 제출 task의 기준 SHA 변경 | 소유 Worktree에서 `task-restack TASK=<id> NEW_BASE_REF=<sha>`를 실행합니다. |
+| 제출 task의 기준 SHA 변경 | 소유 Worktree에서 `task-restack TASK=<id> NEW_BASE_REF=<sha>`를 실행합니다. 중복 commit 역사 때문에 rebase가 충돌하면 `task-restack-squash`로 최종 delta만 재적층합니다. 최종 delta도 의미 충돌이면 `task-replace-submitted`로 새 task에 claim을 원자적 이관합니다. |
 | profile gate 실패 | 제출 Worktree에서 수정 후 다시 submit합니다. |
 | runtime guard 실패 | 기본 Local의 integration+runtime task에서 `TASK=`를 지정합니다. |
 | release guard 실패 | active task, dirty 상태, 검증 SHA를 확인하고 `integration-verify`를 재실행합니다. |

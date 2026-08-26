@@ -21,6 +21,8 @@ Usage:
   coord-harness.sh submit --task ID [--message MESSAGE]
   coord-harness.sh resubmit --task ID [--message MESSAGE]
   coord-harness.sh restack --task ID --new-base-ref REF
+  coord-harness.sh restack-squash --task ID --new-base-ref REF
+  coord-harness.sh replace-submitted --task NEW_ID --supersedes OLD_ID [--base-ref REF]
   coord-harness.sh integrate --task ID --integration-task ID
   coord-harness.sh verify --task ID
   coord-harness.sh finish --task ID
@@ -70,6 +72,46 @@ restack_rollback_sha=''
 restack_meta_file=''
 restack_committed_base_sha=''
 restack_committed_sha=''
+replace_rollback_active=0
+replace_old_meta=''
+replace_old_backup=''
+replace_history_meta=''
+replace_history_stage=''
+replace_new_meta=''
+replace_new_stage=''
+replace_expected_old_task=''
+replace_expected_new_task=''
+
+rollback_replace_submitted() {
+  [[ "$replace_rollback_active" == 1 ]] || return 0
+
+  if [[ -n "$replace_new_meta" && -f "$replace_new_meta" \
+    && -n "$replace_history_meta" && -f "$replace_history_meta" \
+    && ! -e "$replace_old_meta" \
+    && "$(field "$replace_new_meta" task)" == "$replace_expected_new_task" \
+    && "$(field "$replace_new_meta" status)" == active \
+    && "$(field "$replace_history_meta" task)" == "$replace_expected_old_task" \
+    && "$(field "$replace_history_meta" status)" == superseded \
+    && "$(field "$replace_history_meta" superseded_by)" == "$replace_expected_new_task" ]]; then
+    rm -f -- "$replace_old_backup" "$replace_new_stage" "$replace_new_stage.tmp.$$" \
+      "$replace_history_stage" "$replace_history_stage.tmp.$$"
+    replace_rollback_active=0
+    return 0
+  fi
+
+  [[ -z "$replace_new_meta" ]] || rm -f -- "$replace_new_meta"
+  [[ -z "$replace_history_meta" ]] || rm -f -- "$replace_history_meta"
+  [[ -z "$replace_new_stage" ]] || rm -f -- "$replace_new_stage" "$replace_new_stage.tmp.$$"
+  [[ -z "$replace_history_stage" ]] \
+    || rm -f -- "$replace_history_stage" "$replace_history_stage.tmp.$$"
+  if [[ -n "$replace_old_backup" && -f "$replace_old_backup" ]]; then
+    if ! mv "$replace_old_backup" "$replace_old_meta"; then
+      printf '%s: submitted-task replacement rollback failed; expected metadata=%s\n' \
+        "$PROGRAM" "$replace_old_meta" >&2
+    fi
+  fi
+  replace_rollback_active=0
+}
 
 rollback_restack() {
   [[ "$restack_rollback_active" == 1 && -n "$restack_rollback_sha" ]] || return 0
@@ -97,6 +139,7 @@ cleanup_mutex() {
 
 cleanup() {
   rollback_restack
+  rollback_replace_submitted
   cleanup_mutex
   release_task_lock
 }
@@ -295,6 +338,8 @@ load_task() {
   META_PREVIOUS_SUBMITTED_SHA="$(field "$file" previous_submitted_sha)"
   META_RESTACKED_AT="$(field "$file" restacked_at)"
   META_RESTACK_HISTORY="$(field "$file" restack_history)"
+  META_SUPERSEDED_BY="$(field "$file" superseded_by)"
+  META_SUPERSEDED_AT="$(field "$file" superseded_at)"
 }
 
 write_task() {
@@ -321,6 +366,8 @@ write_task() {
     printf 'previous_submitted_sha\t%s\n' "$META_PREVIOUS_SUBMITTED_SHA"
     printf 'restacked_at\t%s\n' "$META_RESTACKED_AT"
     printf 'restack_history\t%s\n' "$META_RESTACK_HISTORY"
+    printf 'superseded_by\t%s\n' "$META_SUPERSEDED_BY"
+    printf 'superseded_at\t%s\n' "$META_SUPERSEDED_AT"
   } > "$temp"
   mv "$temp" "$target"
 }
@@ -397,9 +444,10 @@ assert_task_owner() {
     || fail "task branch가 바뀌었습니다. expected=$META_BRANCH current=${current_branch:-detached}"
 }
 
-collect_and_check_changed_paths() {
-  local base_sha="$1"
-  local allowed_csv="$2"
+collect_and_check_changed_paths_at() {
+  local worktree="$1"
+  local base_sha="$2"
+  local allowed_csv="$3"
   local path
   local failed=0
   while IFS= read -r -d '' path; do
@@ -408,10 +456,16 @@ collect_and_check_changed_paths() {
       failed=1
     fi
   done < <(
-    git diff --name-only -z "$base_sha" --
-    git ls-files --others --exclude-standard -z
+    git -C "$worktree" diff --name-only -z "$base_sha" --
+    git -C "$worktree" ls-files --others --exclude-standard -z
   )
   [[ "$failed" == 0 ]] || fail 'claim한 PATHS 밖의 변경이 있어 제출을 중단했습니다.'
+}
+
+collect_and_check_changed_paths() {
+  local base_sha="$1"
+  local allowed_csv="$2"
+  collect_and_check_changed_paths_at "$repo_root" "$base_sha" "$allowed_csv"
 }
 
 require_node_24() {
@@ -513,6 +567,7 @@ parse_common_args() {
   MESSAGE=''
   INTEGRATION_TASK=''
   NEW_BASE_REF=''
+  SUPERSEDES_TASK=''
   SHOW_HISTORY=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -524,6 +579,7 @@ parse_common_args() {
       --message) [[ $# -ge 2 ]] || fail '--message 값이 필요합니다.'; MESSAGE="$2"; shift 2 ;;
       --integration-task) [[ $# -ge 2 ]] || fail '--integration-task 값이 필요합니다.'; INTEGRATION_TASK="$2"; shift 2 ;;
       --new-base-ref) [[ $# -ge 2 ]] || fail '--new-base-ref 값이 필요합니다.'; NEW_BASE_REF="$2"; shift 2 ;;
+      --supersedes) [[ $# -ge 2 ]] || fail '--supersedes 값이 필요합니다.'; SUPERSEDES_TASK="$2"; shift 2 ;;
       --history) SHOW_HISTORY=1; shift ;;
       *) fail "알 수 없는 인자입니다: $1" ;;
     esac
@@ -591,6 +647,8 @@ command_claim() {
   META_PREVIOUS_SUBMITTED_SHA=''
   META_RESTACKED_AT=''
   META_RESTACK_HISTORY=''
+  META_SUPERSEDED_BY=''
+  META_SUPERSEDED_AT=''
   write_task "$(task_file "$TASK_ID")"
   release_mutex
   note "CLAIMED task=$TASK_ID branch=$branch base=$base_sha paths=${PATHS_CSV:-none} areas=${AREAS_CSV:-none} profile=$PROFILE"
@@ -798,6 +856,281 @@ command_restack() {
   note "RESTACKED task=$TASK_ID previous_base=$previous_base_sha previous=$previous_submitted_sha base=$new_base_sha sha=$restacked_sha profile=$META_PROFILE"
 }
 
+command_restack_squash() {
+  parse_common_args "$@"
+  validate_task_id "$TASK_ID"
+  [[ -n "$NEW_BASE_REF" ]] || fail '--new-base-ref가 필요합니다.'
+  acquire_task_lock "$TASK_ID"
+  load_task "$TASK_ID"
+  assert_task_owner
+  [[ "$META_STATUS" == submitted ]] || fail "submitted task만 squash 재적층할 수 있습니다: $META_STATUS"
+  [[ -z "$(git status --porcelain)" ]] || fail '깨끗한 submitted worktree만 squash 재적층할 수 있습니다.'
+
+  local previous_base_sha="$META_BASE_SHA"
+  local previous_submitted_sha="$META_SUBMITTED_SHA"
+  local previous_submitted_at="$META_SUBMITTED_AT"
+  [[ -n "$previous_base_sha" && -n "$previous_submitted_sha" ]] \
+    || fail '기존 base/submitted SHA가 없습니다.'
+  [[ "$(git rev-parse HEAD)" == "$previous_submitted_sha" ]] \
+    || fail 'squash 재적층 전 task branch HEAD가 기존 submitted SHA와 일치해야 합니다.'
+  git merge-base --is-ancestor "$previous_base_sha" "$previous_submitted_sha" \
+    || fail '기존 submitted commit의 ancestry가 올바르지 않습니다.'
+  collect_and_check_changed_paths "$previous_base_sha" "$META_PATHS"
+  git diff --quiet "$previous_base_sha" "$previous_submitted_sha" -- \
+    && fail '기존 submitted SHA에 재적층할 최종 task delta가 없습니다.'
+
+  local new_base_sha
+  new_base_sha="$(git rev-parse --verify "$NEW_BASE_REF^{commit}" 2>/dev/null)" \
+    || fail "새 기준 commit을 찾지 못했습니다: $NEW_BASE_REF"
+  [[ "$new_base_sha" != "$previous_base_sha" ]] \
+    || fail '새 기준 SHA가 기존 기준 SHA와 같습니다.'
+  git merge-base --is-ancestor "$previous_base_sha" "$new_base_sha" \
+    || fail '새 기준 commit은 기존 base SHA의 후손이어야 합니다.'
+  if git merge-base --is-ancestor "$previous_submitted_sha" "$new_base_sha"; then
+    fail '새 기준 commit에 기존 submitted SHA가 이미 포함되어 있습니다.'
+  fi
+
+  restack_rollback_sha="$previous_submitted_sha"
+  restack_rollback_active=1
+  restack_meta_file="$META_FILE"
+  git reset --hard "$new_base_sha" >/dev/null
+  if ! git diff --binary --full-index --no-ext-diff \
+    "$previous_base_sha" "$previous_submitted_sha" -- \
+    | git apply --index --3way --whitespace=nowarn; then
+    fail 'squash 재적층 충돌이 발생해 task branch를 기존 submitted SHA로 복구했습니다.'
+  fi
+  git diff --cached --quiet \
+    && fail 'squash 재적층 결과 task delta가 비었습니다.'
+  [[ -z "$(git diff --name-only)" ]] \
+    || fail 'squash delta 적용 후 index와 worktree가 일치하지 않습니다.'
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  git commit -m "task($TASK_ID): squash restack submitted delta" >/dev/null
+
+  local restacked_sha
+  restacked_sha="$(git rev-parse HEAD)"
+  [[ "$(git rev-parse "$restacked_sha^")" == "$new_base_sha" ]] \
+    || fail 'squash 재적층 결과가 새 기준 위의 단일 commit이 아닙니다.'
+  [[ "$(git rev-list --count "$new_base_sha..$restacked_sha")" == 1 ]] \
+    || fail 'squash 재적층 결과 commit 수가 1개가 아닙니다.'
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_SQUASH_COMMIT:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  run_submission_profile "$META_PROFILE"
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  [[ "$(git rev-parse HEAD)" == "$restacked_sha" ]] \
+    || fail 'squash 재적층 검증 중 task branch HEAD가 변경되었습니다.'
+  [[ -z "$(git status --porcelain)" ]] \
+    || fail 'squash 재적층 검증 뒤 worktree가 깨끗하지 않습니다.'
+
+  local restacked_at
+  local history_entry
+  restacked_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  history_entry="$previous_base_sha:$previous_submitted_sha:$new_base_sha:$restacked_sha:$restacked_at"
+
+  acquire_mutex
+  load_task "$TASK_ID"
+  [[ "$META_STATUS" == submitted ]] || fail 'task 상태가 squash 재적층 도중 변경되었습니다.'
+  [[ "$META_BASE_SHA" == "$previous_base_sha" ]] || fail 'base SHA가 squash 재적층 도중 변경되었습니다.'
+  [[ "$META_SUBMITTED_SHA" == "$previous_submitted_sha" ]] \
+    || fail 'submitted SHA가 squash 재적층 도중 변경되었습니다.'
+  [[ "$META_SUBMITTED_AT" == "$previous_submitted_at" ]] \
+    || fail 'submitted 시각이 squash 재적층 도중 변경되었습니다.'
+  [[ "$(git rev-parse HEAD)" == "$restacked_sha" ]] \
+    || fail 'metadata 갱신 전 task branch HEAD가 변경되었습니다.'
+
+  META_PREVIOUS_BASE_SHA="$previous_base_sha"
+  META_PREVIOUS_SUBMITTED_SHA="$previous_submitted_sha"
+  META_RESTACKED_AT="$restacked_at"
+  META_RESTACK_HISTORY="${META_RESTACK_HISTORY:+$META_RESTACK_HISTORY;}$history_entry"
+  META_BASE_SHA="$new_base_sha"
+  META_SUBMITTED_SHA="$restacked_sha"
+  META_SUBMITTED_AT="$restacked_at"
+  restack_committed_base_sha="$new_base_sha"
+  restack_committed_sha="$restacked_sha"
+  write_task "$META_FILE"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_METADATA:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  restack_rollback_active=0
+  release_mutex
+  release_task_lock
+  note "RESTACKED_SQUASH task=$TASK_ID previous_base=$previous_base_sha previous=$previous_submitted_sha base=$new_base_sha sha=$restacked_sha profile=$META_PROFILE"
+}
+
+command_replace_submitted() {
+  parse_common_args "$@"
+  validate_task_id "$TASK_ID"
+  validate_task_id "$SUPERSEDES_TASK"
+  [[ "$TASK_ID" != "$SUPERSEDES_TASK" ]] \
+    || fail '새 task ID와 supersedes task ID는 달라야 합니다.'
+  [[ -z "$(git status --porcelain)" ]] \
+    || fail '깨끗한 새 worktree에서만 submitted task를 교체할 수 있습니다.'
+  [[ "$repo_root" != "$main_worktree" ]] \
+    || fail '기본 Local worktree에서는 submitted task를 교체할 수 없습니다.'
+
+  local new_branch
+  new_branch="$(git symbolic-ref --quiet --short HEAD || true)"
+  [[ -n "$new_branch" ]] || fail '새 task의 명시적 Git branch가 필요합니다.'
+  local new_base_sha
+  new_base_sha="$(git rev-parse --verify "$BASE_REF^{commit}" 2>/dev/null)" \
+    || fail "새 task 기준 commit을 찾지 못했습니다: $BASE_REF"
+  [[ "$(git rev-parse HEAD)" == "$new_base_sha" ]] \
+    || fail '현재 HEAD와 BASE_REF가 다릅니다. 정확한 새 기준 checkout에서 다시 실행하십시오.'
+
+  acquire_task_lock "$SUPERSEDES_TASK"
+  load_task "$SUPERSEDES_TASK"
+  [[ "$META_STATUS" == submitted ]] \
+    || fail "submitted task만 교체할 수 있습니다: $META_STATUS"
+
+  local old_meta_file="$META_FILE"
+  local old_worktree="$META_WORKTREE"
+  local old_branch="$META_BRANCH"
+  local old_base_sha="$META_BASE_SHA"
+  local old_paths="$META_PATHS"
+  local old_areas="$META_AREAS"
+  local old_profile="$META_PROFILE"
+  local old_submitted_sha="$META_SUBMITTED_SHA"
+  local old_submitted_at="$META_SUBMITTED_AT"
+  [[ -n "$old_worktree" && -d "$old_worktree" ]] \
+    || fail "교체할 submitted task worktree를 찾지 못했습니다: $old_worktree"
+  old_worktree="$(cd "$old_worktree" && pwd -P)"
+  [[ "$old_worktree" != "$repo_root" ]] \
+    || fail '기존 submitted task와 다른 새 worktree에서 교체해야 합니다.'
+  [[ "$old_branch" != "$new_branch" ]] \
+    || fail '기존 submitted task와 다른 새 branch에서 교체해야 합니다.'
+  [[ "$(git -C "$old_worktree" rev-parse --is-inside-work-tree 2>/dev/null)" == true ]] \
+    || fail '기존 submitted task worktree가 유효한 Git worktree가 아닙니다.'
+  local old_common_git_dir
+  old_common_git_dir="$(git -C "$old_worktree" rev-parse --path-format=absolute --git-common-dir)"
+  old_common_git_dir="$(cd "$old_common_git_dir" && pwd -P)"
+  [[ "$old_common_git_dir" == "$common_git_dir" ]] \
+    || fail '기존 submitted task worktree가 같은 Git 저장소에 속하지 않습니다.'
+  [[ "$(git -C "$old_worktree" symbolic-ref --quiet --short HEAD || true)" == "$old_branch" ]] \
+    || fail '기존 submitted task branch가 metadata와 일치하지 않습니다.'
+  [[ -z "$(git -C "$old_worktree" status --porcelain)" ]] \
+    || fail '기존 submitted task worktree가 깨끗하지 않습니다.'
+  [[ "$(git -C "$old_worktree" rev-parse HEAD)" == "$old_submitted_sha" ]] \
+    || fail '기존 submitted task HEAD가 기록된 submitted SHA와 일치하지 않습니다.'
+  git -C "$old_worktree" merge-base --is-ancestor "$old_base_sha" "$old_submitted_sha" \
+    || fail '기존 submitted task ancestry가 올바르지 않습니다.'
+  validate_paths "$old_paths"
+  validate_areas "$old_areas"
+  validate_profile "$old_profile"
+  collect_and_check_changed_paths_at "$old_worktree" "$old_base_sha" "$old_paths"
+
+  acquire_mutex
+  [[ ! -e "$(task_file "$TASK_ID")" ]] || fail "새 task ID가 이미 활성 상태입니다: $TASK_ID"
+  load_task "$SUPERSEDES_TASK"
+  [[ "$META_FILE" == "$old_meta_file" \
+    && "$META_STATUS" == submitted \
+    && "$META_WORKTREE" == "$old_worktree" \
+    && "$META_BRANCH" == "$old_branch" \
+    && "$META_BASE_SHA" == "$old_base_sha" \
+    && "$META_PATHS" == "$old_paths" \
+    && "$META_AREAS" == "$old_areas" \
+    && "$META_PROFILE" == "$old_profile" \
+    && "$META_SUBMITTED_SHA" == "$old_submitted_sha" \
+    && "$META_SUBMITTED_AT" == "$old_submitted_at" ]] \
+    || fail '기존 submitted task metadata가 교체 검증 도중 변경되었습니다.'
+  [[ "$(git -C "$old_worktree" symbolic-ref --quiet --short HEAD || true)" == "$old_branch" \
+    && "$(git -C "$old_worktree" rev-parse HEAD)" == "$old_submitted_sha" \
+    && -z "$(git -C "$old_worktree" status --porcelain)" ]] \
+    || fail '기존 submitted task worktree가 교체 검증 도중 변경되었습니다.'
+  [[ "$(git rev-parse HEAD)" == "$new_base_sha" \
+    && -z "$(git status --porcelain)" ]] \
+    || fail '새 task worktree가 교체 검증 도중 변경되었습니다.'
+
+  local existing
+  local existing_task
+  local existing_paths
+  local existing_areas
+  for existing in "$tasks_dir"/*.meta; do
+    [[ -e "$existing" ]] || continue
+    existing_task="$(field "$existing" task)"
+    [[ "$existing_task" == "$SUPERSEDES_TASK" ]] && continue
+    existing_paths="$(field "$existing" paths)"
+    existing_areas="$(field "$existing" areas)"
+    csv_paths_overlap "$old_paths" "$existing_paths" \
+      && fail "상속 PATHS가 task $existing_task와 겹칩니다: $existing_paths"
+    csv_areas_overlap "$old_areas" "$existing_areas" \
+      && fail "상속 AREAS가 task $existing_task와 겹칩니다: $existing_areas"
+    [[ "$(field "$existing" worktree)" != "$repo_root" ]] \
+      || fail "새 worktree를 task $existing_task가 이미 소유하고 있습니다."
+    [[ "$(field "$existing" branch)" != "$new_branch" ]] \
+      || fail "새 branch를 task $existing_task가 이미 소유하고 있습니다."
+  done
+
+  local replaced_at
+  local history_stamp
+  replaced_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  history_stamp="$(date -u '+%Y%m%dT%H%M%SZ')"
+  replace_old_meta="$old_meta_file"
+  replace_old_backup="$tasks_dir/.$SUPERSEDES_TASK.replace.$$.backup"
+  replace_history_meta="$history_dir/$SUPERSEDES_TASK.$history_stamp.meta"
+  replace_history_stage="$history_dir/.$SUPERSEDES_TASK.replace.$$.history"
+  replace_new_meta="$(task_file "$TASK_ID")"
+  replace_new_stage="$tasks_dir/.$TASK_ID.replace.$$.new"
+  replace_expected_old_task="$SUPERSEDES_TASK"
+  replace_expected_new_task="$TASK_ID"
+  [[ ! -e "$replace_old_backup" && ! -e "$replace_history_meta" \
+    && ! -e "$replace_history_stage" && ! -e "$replace_new_meta" \
+    && ! -e "$replace_new_stage" ]] \
+    || fail 'submitted task 교체 metadata 경로가 이미 존재합니다.'
+  replace_rollback_active=1
+
+  META_STATUS='superseded'
+  META_SUPERSEDED_BY="$TASK_ID"
+  META_SUPERSEDED_AT="$replaced_at"
+  write_task "$replace_history_stage"
+
+  META_TASK="$TASK_ID"
+  META_STATUS='active'
+  META_WORKTREE="$repo_root"
+  META_BRANCH="$new_branch"
+  META_BASE_SHA="$new_base_sha"
+  META_PATHS="$old_paths"
+  META_AREAS="$old_areas"
+  META_PROFILE="$old_profile"
+  META_CREATED_AT="$replaced_at"
+  META_SUBMITTED_SHA=''
+  META_SUBMITTED_AT=''
+  META_INTEGRATION_SHA=''
+  META_INTEGRATED_AT=''
+  META_VERIFIED_SHA=''
+  META_VERIFIED_AT=''
+  META_PREVIOUS_BASE_SHA=''
+  META_PREVIOUS_SUBMITTED_SHA=''
+  META_RESTACKED_AT=''
+  META_RESTACK_HISTORY=''
+  META_SUPERSEDED_BY=''
+  META_SUPERSEDED_AT=''
+  write_task "$replace_new_stage"
+
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_FAIL_REPLACE_BEFORE_COMMIT:-0}" == 1 ]]; then
+    fail 'TEST_MODE submitted-task replacement failure before commit'
+  fi
+  mv "$replace_old_meta" "$replace_old_backup"
+  mv "$replace_history_stage" "$replace_history_meta"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_REPLACE_ARCHIVE:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  mv "$replace_new_stage" "$replace_new_meta"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_REPLACE_METADATA:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  rm -f -- "$replace_old_backup"
+  replace_rollback_active=0
+  release_mutex
+  release_task_lock
+  note "REPLACED_SUBMITTED task=$TASK_ID supersedes=$SUPERSEDES_TASK base=$new_base_sha paths=${old_paths:-none} areas=${old_areas:-none} profile=$old_profile"
+}
+
 assert_integration_owner() {
   local task="$1"
   load_task "$task"
@@ -991,6 +1324,8 @@ case "$command_name" in
   submit) command_submit "$@" ;;
   resubmit) command_resubmit "$@" ;;
   restack) command_restack "$@" ;;
+  restack-squash) command_restack_squash "$@" ;;
+  replace-submitted) command_replace_submitted "$@" ;;
   integrate) command_integrate "$@" ;;
   verify) command_verify "$@" ;;
   finish) command_finish "$@" ;;

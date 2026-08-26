@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { RichTextMenu } from '@puckeditor/core';
 import { Extension, Mark, Node as TiptapNode, mergeAttributes, type Editor } from '@tiptap/core';
 import { Bold, Check, ChevronDown, Italic, Link2, RotateCcw, Underline, Unlink } from 'lucide-react';
@@ -17,6 +18,120 @@ type ToneValue = typeof TONE_VALUES[number];
 type RangeMenu = 'font' | 'weight' | 'size' | 'tone';
 type RichTextEditorState = Record<string, boolean | undefined>;
 type InlineRichTextOptions = { allowLink?: boolean };
+type FloatingLayerStyle = React.CSSProperties & {
+  '--g7pb-richtext-floating-left': string;
+  '--g7pb-richtext-floating-top': string;
+  '--g7pb-richtext-floating-max-width': string;
+  '--g7pb-richtext-floating-max-height': string;
+};
+
+function finiteDataNumber(element: HTMLElement | null, name: string, fallback: number): number {
+  const value = Number(element?.getAttribute(name));
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function RichTextFloatingLayer({
+  anchorRef,
+  align = 'start',
+  className,
+  children,
+  ...attributes
+}: React.HTMLAttributes<HTMLDivElement> & {
+  anchorRef: React.RefObject<HTMLElement | null>;
+  align?: 'start' | 'end';
+}): React.ReactElement | null {
+  const layerRef = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<FloatingLayerStyle>(() => ({
+    '--g7pb-richtext-floating-left': '0px',
+    '--g7pb-richtext-floating-top': '0px',
+    '--g7pb-richtext-floating-max-width': '0px',
+    '--g7pb-richtext-floating-max-height': '0px',
+    visibility: 'hidden',
+  }));
+  const anchor = anchorRef.current;
+  const ownerDocument = anchor?.ownerDocument ?? null;
+
+  React.useLayoutEffect(() => {
+    const layer = layerRef.current;
+    const currentAnchor = anchorRef.current;
+    const currentDocument = currentAnchor?.ownerDocument;
+    const ownerWindow = currentDocument?.defaultView;
+    if (!layer || !currentAnchor || !currentDocument || !ownerWindow) return undefined;
+    let animationFrame = 0;
+    const actionBar = currentAnchor.closest<HTMLElement>('.g7pb-selected-block-actionbar');
+    const position = (): void => {
+      animationFrame = 0;
+      const viewportWidth = currentDocument.documentElement.clientWidth || ownerWindow.innerWidth;
+      const viewportHeight = currentDocument.documentElement.clientHeight || ownerWindow.innerHeight;
+      const clipLeft = finiteDataNumber(actionBar, 'data-g7pb-safe-clip-left', 0);
+      const clipTop = finiteDataNumber(actionBar, 'data-g7pb-safe-clip-top', 0);
+      const clipRight = finiteDataNumber(actionBar, 'data-g7pb-safe-clip-right', viewportWidth);
+      const clipBottom = finiteDataNumber(actionBar, 'data-g7pb-safe-clip-bottom', viewportHeight);
+      const inset = 8;
+      const gap = 6;
+      const safeLeft = Math.min(clipRight, clipLeft + inset);
+      const safeTop = Math.min(clipBottom, clipTop + inset);
+      const safeRight = Math.max(safeLeft, clipRight - inset);
+      const safeBottom = Math.max(safeTop, clipBottom - inset);
+      const anchorRect = currentAnchor.getBoundingClientRect();
+      const layerRect = layer.getBoundingClientRect();
+      const maxWidth = Math.max(0, safeRight - safeLeft);
+      const maxHeight = Math.max(0, safeBottom - safeTop);
+      const width = Math.min(layerRect.width, maxWidth);
+      const height = Math.min(layerRect.height, maxHeight);
+      const preferredLeft = align === 'end' ? anchorRect.right - width : anchorRect.left;
+      const left = Math.min(Math.max(safeLeft, preferredLeft), Math.max(safeLeft, safeRight - width));
+      const below = anchorRect.bottom + gap;
+      const above = anchorRect.top - gap - height;
+      const top = below + height <= safeBottom
+        ? below
+        : above >= safeTop ? above : Math.min(Math.max(safeTop, below), Math.max(safeTop, safeBottom - height));
+      const next: FloatingLayerStyle = {
+        '--g7pb-richtext-floating-left': `${left}px`,
+        '--g7pb-richtext-floating-top': `${top}px`,
+        '--g7pb-richtext-floating-max-width': `${maxWidth}px`,
+        '--g7pb-richtext-floating-max-height': `${maxHeight}px`,
+        visibility: 'visible',
+      };
+      setStyle((current) => Object.keys(next).every((key) => (
+        current[key as keyof FloatingLayerStyle] === next[key as keyof FloatingLayerStyle]
+      )) ? current : next);
+    };
+    const schedule = (): void => {
+      if (animationFrame === 0) animationFrame = ownerWindow.requestAnimationFrame(position);
+    };
+    const resizeObserver = new ownerWindow.ResizeObserver(schedule);
+    resizeObserver.observe(currentAnchor);
+    resizeObserver.observe(layer);
+    const safeClipObserver = actionBar ? new ownerWindow.MutationObserver(schedule) : null;
+    safeClipObserver?.observe(actionBar as HTMLElement, {
+      attributes: true,
+      attributeFilter: [
+        'data-g7pb-safe-clip-left', 'data-g7pb-safe-clip-top',
+        'data-g7pb-safe-clip-right', 'data-g7pb-safe-clip-bottom',
+      ],
+    });
+    currentDocument.addEventListener('scroll', schedule, true);
+    ownerWindow.addEventListener('resize', schedule);
+    position();
+    return () => {
+      if (animationFrame !== 0) ownerWindow.cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      safeClipObserver?.disconnect();
+      currentDocument.removeEventListener('scroll', schedule, true);
+      ownerWindow.removeEventListener('resize', schedule);
+    };
+  }, [align, anchorRef, ownerDocument]);
+
+  if (!ownerDocument?.body) return null;
+  return createPortal(
+    <div {...attributes} ref={layerRef}
+      className={`${className ?? ''} g7pb-richtext-floating-layer`.trim()} style={style}>
+      {children}
+    </div>,
+    ownerDocument.body,
+  );
+}
 
 function enumAttribute<T extends string>(key: 'font' | 'size' | 'weight' | 'tone', values: readonly T[], fallback: T) {
   return {
@@ -104,6 +219,7 @@ function RangeChoiceMenu<T extends string>({
   onClose: () => void;
 }): React.ReactElement {
   const current = values.find((option) => option.value === value) ?? values[0];
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const suppressCompatibilityClick = React.useRef(false);
   const pendingOptionPointer = React.useRef<{ pointerId: number; value: T } | null>(null);
   const markPointerActivation = (): void => {
@@ -161,13 +277,14 @@ function RangeChoiceMenu<T extends string>({
     }
   };
   return <div className="g7pb-richtext-inline-toolbar__choice">
-    <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
+    <button ref={triggerRef} type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
       aria-label={`선택한 글자 ${label}: ${current.label}`}
       onKeyDown={clearPointerActivationFromKeyboard} onPointerCancel={clearPointerActivation}
       onPointerDown={toggleFromPointer} onClick={toggleFromKeyboard}>
       <span>{current.label}</span><ChevronDown size={13} aria-hidden="true" />
     </button>
-    {open ? <div className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
+    {open ? <RichTextFloatingLayer anchorRef={triggerRef}
+      className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
       {values.map((option) => <button type="button" role="option" aria-selected={option.value === value}
         key={option.value}
         onKeyDown={clearPointerActivationFromKeyboard}
@@ -177,7 +294,7 @@ function RangeChoiceMenu<T extends string>({
         onClick={(event) => chooseFromKeyboard(event, option.value)}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}
       </button>)}
-    </div> : null}
+    </RichTextFloatingLayer> : null}
   </div>;
 }
 
@@ -289,6 +406,7 @@ function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true 
   const [linkValue, setLinkValue] = useState('');
   const [linkError, setLinkError] = useState(false);
   const [openMenu, setOpenMenu] = useState<RangeMenu | null>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const rangeActive = Boolean(editorState?.g7HasSelection);
   const mark = markFromEditorState(editorState);
 
@@ -363,7 +481,7 @@ function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true 
           />
         </RichTextMenu.Group>
         <RichTextMenu.Group>
-          <div className="g7pb-richtext-inline-toolbar" role="group" aria-label="선택한 글자 추가 서식"
+          <div ref={toolbarRef} className="g7pb-richtext-inline-toolbar" role="group" aria-label="선택한 글자 추가 서식"
             data-testid="page-builder-richtext-inline-toolbar">
             <RangeChoiceMenu name="font" label="글꼴" value={mark.font} disabled={readOnly} open={openMenu === 'font'}
               testId="page-builder-richtext-font" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
@@ -416,13 +534,16 @@ function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true 
                 editor?.chain().focus().unsetAllMarks().run();
               }}
             />
-            {allowLink && linkOpen ? <form className="g7pb-richtext-inline-toolbar__link" onSubmit={applyLink}>
-              <label><span className="sr-only">링크 주소</span><input type="text" inputMode="url" value={linkValue}
-                aria-label="링크 주소" aria-invalid={linkError} placeholder="https:// 또는 /페이지" autoFocus
-                onChange={(event) => { setLinkValue(event.target.value); setLinkError(false); }} /></label>
-              <button type="submit">적용</button>
-              {linkError ? <span role="alert">안전한 HTTPS 또는 내부 주소를 입력하세요.</span> : null}
-            </form> : null}
+            {allowLink && linkOpen ? <RichTextFloatingLayer anchorRef={toolbarRef} align="end"
+              className="g7pb-richtext-inline-toolbar__link">
+              <form onSubmit={applyLink}>
+                <label><span className="sr-only">링크 주소</span><input type="text" inputMode="url" value={linkValue}
+                  aria-label="링크 주소" aria-invalid={linkError} placeholder="https:// 또는 /페이지" autoFocus
+                  onChange={(event) => { setLinkValue(event.target.value); setLinkError(false); }} /></label>
+                <button type="submit">적용</button>
+                {linkError ? <span role="alert">안전한 HTTPS 또는 내부 주소를 입력하세요.</span> : null}
+              </form>
+            </RichTextFloatingLayer> : null}
           </div>
         </RichTextMenu.Group>
       </RichTextMenu> : null}

@@ -95,7 +95,7 @@ describe('Puck-native rich-text editing', () => {
     expect(container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]')).toBeNull();
   });
 
-  it('keeps link input inside the Puck menu and applies to the retained editor selection', async () => {
+  it('portals the link input outside the clipped Puck action strip and applies to the retained editor selection', async () => {
     const operations: string[] = [];
     const chain = {
       focus: vi.fn(() => { operations.push('focus'); return chain; }),
@@ -113,9 +113,10 @@ describe('Puck-native rich-text editing', () => {
 
     const linkButton = container.querySelector<HTMLButtonElement>('[aria-label="링크 편집"]');
     await act(async () => linkButton?.click());
-    const input = container.querySelector<HTMLInputElement>('input[aria-label="링크 주소"]');
+    const input = document.body.querySelector<HTMLInputElement>('input[aria-label="링크 주소"]');
     expect(input).not.toBeNull();
-    expect(input?.closest('[data-puck-rte-menu]')).not.toBeNull();
+    expect(input?.closest('[data-puck-rte-menu]')).toBeNull();
+    expect(input?.closest('.g7pb-richtext-floating-layer')).not.toBeNull();
 
     await act(async () => {
       input?.focus();
@@ -127,7 +128,7 @@ describe('Puck-native rich-text editing', () => {
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }
     });
-    const form = container.querySelector<HTMLFormElement>('form');
+    const form = document.body.querySelector<HTMLFormElement>('.g7pb-richtext-floating-layer form');
     await act(async () => form?.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true })));
 
     expect(operations).toEqual(['focus', 'setLink', 'run']);
@@ -226,7 +227,7 @@ describe('Puck-native rich-text editing', () => {
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
 
-    const serif = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="option"]'))
+    const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
       .find((option) => option.textContent?.includes('명조'));
     await act(async () => {
       serif?.dispatchEvent(new PointerEvent('pointerdown', {
@@ -418,7 +419,7 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
-    const serif = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="option"]'))
+    const serif = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="option"]'))
       .find((option) => option.textContent?.includes('명조'));
     await act(async () => {
       serif?.dispatchEvent(new PointerEvent('pointerdown', {

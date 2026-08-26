@@ -447,10 +447,186 @@ grep -q $'^submitted_sha\t'"$signal_new_submitted"'$' "$signal_meta" \
 [[ ! -L "$signal_repo/.git/g7pb-coordination-v1/task-locks/signal-task.lock" ]] \
   || fail 'post-metadata termination left the task operation lock'
 
+squash_repo="$temp_root/restack-squash-repo"
+squash_worktree="$temp_root/restack-squash-task"
+git init -b main "$squash_repo" >/dev/null
+git -C "$squash_repo" config user.name 'Coord Harness Test'
+git -C "$squash_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$squash_repo/owned" "$squash_repo/upstream"
+printf 'base first\nshared\nbase last\n' > "$squash_repo/owned/file.txt"
+printf 'delete me\n' > "$squash_repo/owned/deleted.txt"
+printf 'base upstream\n' > "$squash_repo/upstream/file.txt"
+git -C "$squash_repo" add .
+git -C "$squash_repo" commit -m 'test: squash base' >/dev/null
+squash_old_base="$(git -C "$squash_repo" rev-parse HEAD)"
+git -C "$squash_repo" worktree add --detach "$squash_worktree" "$squash_old_base" >/dev/null
+(
+  cd "$squash_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task squash-task \
+    --paths owned \
+    --profile harness >/dev/null
+  printf 'task first\nshared\nbase last\n' > owned/file.txt
+  rm owned/deleted.txt
+  printf 'first addition\n' > owned/added.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task squash-task >/dev/null
+  printf 'task first\nshared\nbase last\nfinal task line\n' > owned/file.txt
+  printf 'final addition\n' > owned/added.txt
+  G7PB_COORD_TESTING=1 "$harness" resubmit --task squash-task >/dev/null
+)
+squash_old_submitted="$(git -C "$squash_worktree" rev-parse HEAD)"
+[[ "$(git -C "$squash_worktree" rev-list --count "$squash_old_base..$squash_old_submitted")" == 2 ]] \
+  || fail 'squash fixture must contain multiple submitted commits'
+
+printf 'new upstream\n' > "$squash_repo/upstream/file.txt"
+printf 'outside claim but inherited\n' > "$squash_repo/upstream/new.txt"
+git -C "$squash_repo" add .
+git -C "$squash_repo" commit -m 'test: advance squash base' >/dev/null
+squash_new_base="$(git -C "$squash_repo" rev-parse HEAD)"
+(
+  cd "$squash_worktree"
+  G7PB_COORD_TESTING=1 "$harness" restack-squash \
+    --task squash-task \
+    --new-base-ref "$squash_new_base" >/dev/null
+)
+squash_new_submitted="$(git -C "$squash_worktree" rev-parse HEAD)"
+[[ "$(git -C "$squash_worktree" rev-list --count "$squash_new_base..$squash_new_submitted")" == 1 ]] \
+  || fail 'squash restack did not create exactly one commit'
+[[ "$(git -C "$squash_worktree" rev-parse "$squash_new_submitted^")" == "$squash_new_base" ]] \
+  || fail 'squash restack commit is not directly based on the requested commit'
+[[ "$(git -C "$squash_worktree" diff --name-only "$squash_new_base..$squash_new_submitted")" == $'owned/added.txt\nowned/deleted.txt\nowned/file.txt' ]] \
+  || fail 'squash restack did not preserve only the final owned-path delta'
+[[ "$(git -C "$squash_worktree" show "$squash_new_submitted:owned/file.txt")" == $'task first\nshared\nbase last\nfinal task line' ]] \
+  || fail 'squash restack lost the final submitted file state'
+[[ "$(git -C "$squash_worktree" show "$squash_new_submitted:owned/added.txt")" == 'final addition' ]] \
+  || fail 'squash restack preserved an intermediate file state instead of the final delta'
+if git -C "$squash_worktree" cat-file -e "$squash_new_submitted:owned/deleted.txt" 2>/dev/null; then
+  fail 'squash restack lost a submitted deletion'
+fi
+[[ "$(git -C "$squash_worktree" show "$squash_new_submitted:upstream/new.txt")" == 'outside claim but inherited' ]] \
+  || fail 'squash restack did not inherit out-of-claim new-base content'
+
+squash_meta="$squash_repo/.git/g7pb-coordination-v1/tasks/squash-task.meta"
+grep -q $'^base_sha\t'"$squash_new_base"'$' "$squash_meta" \
+  || fail 'squash restack metadata did not update base_sha'
+grep -q $'^submitted_sha\t'"$squash_new_submitted"'$' "$squash_meta" \
+  || fail 'squash restack metadata did not update submitted_sha'
+grep -q $'^previous_base_sha\t'"$squash_old_base"'$' "$squash_meta" \
+  || fail 'squash restack metadata did not retain previous_base_sha'
+grep -q $'^previous_submitted_sha\t'"$squash_old_submitted"'$' "$squash_meta" \
+  || fail 'squash restack metadata did not retain previous_submitted_sha'
+squash_history="$(awk -F '\t' '$1 == "restack_history" { print $2 }' "$squash_meta")"
+[[ "$squash_history" == "$squash_old_base:$squash_old_submitted:$squash_new_base:$squash_new_submitted:"* ]] \
+  || fail 'squash restack metadata did not append transition history'
+
+printf 'profile gate base\n' > "$squash_repo/upstream/file.txt"
+git -C "$squash_repo" add upstream/file.txt
+git -C "$squash_repo" commit -m 'test: advance squash profile base' >/dev/null
+squash_profile_base="$(git -C "$squash_repo" rev-parse HEAD)"
+(
+  cd "$squash_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_FAIL_SUBMISSION_PROFILE=1 \
+    "$harness" restack-squash \
+      --task squash-task \
+      --new-base-ref "$squash_profile_base"
+)
+[[ "$(git -C "$squash_worktree" rev-parse HEAD)" == "$squash_new_submitted" ]] \
+  || fail 'profile-failed squash restack did not roll HEAD back'
+[[ -z "$(git -C "$squash_worktree" status --porcelain)" ]] \
+  || fail 'profile-failed squash restack did not restore a clean worktree'
+grep -q $'^base_sha\t'"$squash_new_base"'$' "$squash_meta" \
+  || fail 'profile-failed squash restack changed base metadata'
+grep -q $'^submitted_sha\t'"$squash_new_submitted"'$' "$squash_meta" \
+  || fail 'profile-failed squash restack changed submitted metadata'
+
+(
+  cd "$squash_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_SQUASH_COMMIT=1 \
+    "$harness" restack-squash \
+      --task squash-task \
+      --new-base-ref "$squash_profile_base"
+)
+[[ "$(git -C "$squash_worktree" rev-parse HEAD)" == "$squash_new_submitted" ]] \
+  || fail 'pre-metadata signal did not roll squash restack HEAD back'
+[[ -z "$(git -C "$squash_worktree" status --porcelain)" ]] \
+  || fail 'pre-metadata signal did not restore a clean squash worktree'
+grep -q $'^base_sha\t'"$squash_new_base"'$' "$squash_meta" \
+  || fail 'pre-metadata signal changed squash base metadata'
+
+(
+  cd "$squash_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_METADATA=1 \
+    "$harness" restack-squash \
+      --task squash-task \
+      --new-base-ref "$squash_profile_base"
+)
+squash_post_metadata_submitted="$(git -C "$squash_worktree" rev-parse HEAD)"
+[[ "$squash_post_metadata_submitted" != "$squash_new_submitted" ]] \
+  || fail 'post-metadata signal incorrectly rolled squash restack HEAD back'
+[[ "$(git -C "$squash_worktree" rev-parse "$squash_post_metadata_submitted^")" == "$squash_profile_base" ]] \
+  || fail 'post-metadata squash restack commit lost the requested parent'
+grep -q $'^base_sha\t'"$squash_profile_base"'$' "$squash_meta" \
+  || fail 'post-metadata signal lost committed squash base metadata'
+grep -q $'^submitted_sha\t'"$squash_post_metadata_submitted"'$' "$squash_meta" \
+  || fail 'post-metadata signal diverged squash HEAD and submitted metadata'
+[[ -z "$(git -C "$squash_worktree" status --porcelain)" ]] \
+  || fail 'post-metadata signal left the squash worktree dirty'
+[[ ! -L "$squash_repo/.git/g7pb-coordination-v1/task-locks/squash-task.lock" ]] \
+  || fail 'post-metadata signal left the squash task operation lock'
+
+conflict_squash_repo="$temp_root/restack-squash-conflict-repo"
+conflict_squash_worktree="$temp_root/restack-squash-conflict-task"
+git init -b main "$conflict_squash_repo" >/dev/null
+git -C "$conflict_squash_repo" config user.name 'Coord Harness Test'
+git -C "$conflict_squash_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$conflict_squash_repo/owned"
+printf 'base\n' > "$conflict_squash_repo/owned/file.txt"
+git -C "$conflict_squash_repo" add .
+git -C "$conflict_squash_repo" commit -m 'test: squash conflict base' >/dev/null
+conflict_squash_old_base="$(git -C "$conflict_squash_repo" rev-parse HEAD)"
+git -C "$conflict_squash_repo" worktree add --detach "$conflict_squash_worktree" "$conflict_squash_old_base" >/dev/null
+(
+  cd "$conflict_squash_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task conflict-squash-task \
+    --paths owned \
+    --profile harness >/dev/null
+  printf 'task\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task conflict-squash-task >/dev/null
+)
+conflict_squash_old_submitted="$(git -C "$conflict_squash_worktree" rev-parse HEAD)"
+printf 'upstream\n' > "$conflict_squash_repo/owned/file.txt"
+git -C "$conflict_squash_repo" add owned/file.txt
+git -C "$conflict_squash_repo" commit -m 'test: conflicting squash new base' >/dev/null
+conflict_squash_new_base="$(git -C "$conflict_squash_repo" rev-parse HEAD)"
+(
+  cd "$conflict_squash_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack-squash \
+    --task conflict-squash-task \
+    --new-base-ref "$conflict_squash_new_base"
+)
+[[ "$(git -C "$conflict_squash_worktree" rev-parse HEAD)" == "$conflict_squash_old_submitted" ]] \
+  || fail 'conflicting squash restack did not roll HEAD back'
+[[ -z "$(git -C "$conflict_squash_worktree" status --porcelain)" ]] \
+  || fail 'conflicting squash restack did not restore a clean worktree'
+conflict_squash_meta="$conflict_squash_repo/.git/g7pb-coordination-v1/tasks/conflict-squash-task.meta"
+grep -q $'^base_sha\t'"$conflict_squash_old_base"'$' "$conflict_squash_meta" \
+  || fail 'conflicting squash restack changed base metadata'
+grep -q $'^submitted_sha\t'"$conflict_squash_old_submitted"'$' "$conflict_squash_meta" \
+  || fail 'conflicting squash restack changed submitted metadata'
+
 grep -q '^dev-up: runtime-guard' "$root/Makefile" \
   || fail 'Makefile dev-up runtime guard missing'
 grep -q '^task-restack:' "$root/Makefile" \
   || fail 'Makefile task-restack target missing'
+grep -q '^task-restack-squash:' "$root/Makefile" \
+  || fail 'Makefile task-restack-squash target missing'
 grep -q '^release-package: release-guard' "$root/Makefile" \
   || fail 'Makefile release guard missing'
 grep -q '^## Parallel work and integration' "$root/AGENTS.md" \

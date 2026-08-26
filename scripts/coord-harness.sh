@@ -21,6 +21,7 @@ Usage:
   coord-harness.sh submit --task ID [--message MESSAGE]
   coord-harness.sh resubmit --task ID [--message MESSAGE]
   coord-harness.sh restack --task ID --new-base-ref REF
+  coord-harness.sh restack-squash --task ID --new-base-ref REF
   coord-harness.sh integrate --task ID --integration-task ID
   coord-harness.sh verify --task ID
   coord-harness.sh finish --task ID
@@ -798,6 +799,110 @@ command_restack() {
   note "RESTACKED task=$TASK_ID previous_base=$previous_base_sha previous=$previous_submitted_sha base=$new_base_sha sha=$restacked_sha profile=$META_PROFILE"
 }
 
+command_restack_squash() {
+  parse_common_args "$@"
+  validate_task_id "$TASK_ID"
+  [[ -n "$NEW_BASE_REF" ]] || fail '--new-base-ref가 필요합니다.'
+  acquire_task_lock "$TASK_ID"
+  load_task "$TASK_ID"
+  assert_task_owner
+  [[ "$META_STATUS" == submitted ]] || fail "submitted task만 squash 재적층할 수 있습니다: $META_STATUS"
+  [[ -z "$(git status --porcelain)" ]] || fail '깨끗한 submitted worktree만 squash 재적층할 수 있습니다.'
+
+  local previous_base_sha="$META_BASE_SHA"
+  local previous_submitted_sha="$META_SUBMITTED_SHA"
+  local previous_submitted_at="$META_SUBMITTED_AT"
+  [[ -n "$previous_base_sha" && -n "$previous_submitted_sha" ]] \
+    || fail '기존 base/submitted SHA가 없습니다.'
+  [[ "$(git rev-parse HEAD)" == "$previous_submitted_sha" ]] \
+    || fail 'squash 재적층 전 task branch HEAD가 기존 submitted SHA와 일치해야 합니다.'
+  git merge-base --is-ancestor "$previous_base_sha" "$previous_submitted_sha" \
+    || fail '기존 submitted commit의 ancestry가 올바르지 않습니다.'
+  collect_and_check_changed_paths "$previous_base_sha" "$META_PATHS"
+  git diff --quiet "$previous_base_sha" "$previous_submitted_sha" -- \
+    && fail '기존 submitted SHA에 재적층할 최종 task delta가 없습니다.'
+
+  local new_base_sha
+  new_base_sha="$(git rev-parse --verify "$NEW_BASE_REF^{commit}" 2>/dev/null)" \
+    || fail "새 기준 commit을 찾지 못했습니다: $NEW_BASE_REF"
+  [[ "$new_base_sha" != "$previous_base_sha" ]] \
+    || fail '새 기준 SHA가 기존 기준 SHA와 같습니다.'
+  git merge-base --is-ancestor "$previous_base_sha" "$new_base_sha" \
+    || fail '새 기준 commit은 기존 base SHA의 후손이어야 합니다.'
+  if git merge-base --is-ancestor "$previous_submitted_sha" "$new_base_sha"; then
+    fail '새 기준 commit에 기존 submitted SHA가 이미 포함되어 있습니다.'
+  fi
+
+  restack_rollback_sha="$previous_submitted_sha"
+  restack_rollback_active=1
+  restack_meta_file="$META_FILE"
+  git reset --hard "$new_base_sha" >/dev/null
+  if ! git diff --binary --full-index --no-ext-diff \
+    "$previous_base_sha" "$previous_submitted_sha" -- \
+    | git apply --index --3way --whitespace=nowarn; then
+    fail 'squash 재적층 충돌이 발생해 task branch를 기존 submitted SHA로 복구했습니다.'
+  fi
+  git diff --cached --quiet \
+    && fail 'squash 재적층 결과 task delta가 비었습니다.'
+  [[ -z "$(git diff --name-only)" ]] \
+    || fail 'squash delta 적용 후 index와 worktree가 일치하지 않습니다.'
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  git commit -m "task($TASK_ID): squash restack submitted delta" >/dev/null
+
+  local restacked_sha
+  restacked_sha="$(git rev-parse HEAD)"
+  [[ "$(git rev-parse "$restacked_sha^")" == "$new_base_sha" ]] \
+    || fail 'squash 재적층 결과가 새 기준 위의 단일 commit이 아닙니다.'
+  [[ "$(git rev-list --count "$new_base_sha..$restacked_sha")" == 1 ]] \
+    || fail 'squash 재적층 결과 commit 수가 1개가 아닙니다.'
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_SQUASH_COMMIT:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  run_submission_profile "$META_PROFILE"
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  [[ "$(git rev-parse HEAD)" == "$restacked_sha" ]] \
+    || fail 'squash 재적층 검증 중 task branch HEAD가 변경되었습니다.'
+  [[ -z "$(git status --porcelain)" ]] \
+    || fail 'squash 재적층 검증 뒤 worktree가 깨끗하지 않습니다.'
+
+  local restacked_at
+  local history_entry
+  restacked_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  history_entry="$previous_base_sha:$previous_submitted_sha:$new_base_sha:$restacked_sha:$restacked_at"
+
+  acquire_mutex
+  load_task "$TASK_ID"
+  [[ "$META_STATUS" == submitted ]] || fail 'task 상태가 squash 재적층 도중 변경되었습니다.'
+  [[ "$META_BASE_SHA" == "$previous_base_sha" ]] || fail 'base SHA가 squash 재적층 도중 변경되었습니다.'
+  [[ "$META_SUBMITTED_SHA" == "$previous_submitted_sha" ]] \
+    || fail 'submitted SHA가 squash 재적층 도중 변경되었습니다.'
+  [[ "$META_SUBMITTED_AT" == "$previous_submitted_at" ]] \
+    || fail 'submitted 시각이 squash 재적층 도중 변경되었습니다.'
+  [[ "$(git rev-parse HEAD)" == "$restacked_sha" ]] \
+    || fail 'metadata 갱신 전 task branch HEAD가 변경되었습니다.'
+
+  META_PREVIOUS_BASE_SHA="$previous_base_sha"
+  META_PREVIOUS_SUBMITTED_SHA="$previous_submitted_sha"
+  META_RESTACKED_AT="$restacked_at"
+  META_RESTACK_HISTORY="${META_RESTACK_HISTORY:+$META_RESTACK_HISTORY;}$history_entry"
+  META_BASE_SHA="$new_base_sha"
+  META_SUBMITTED_SHA="$restacked_sha"
+  META_SUBMITTED_AT="$restacked_at"
+  restack_committed_base_sha="$new_base_sha"
+  restack_committed_sha="$restacked_sha"
+  write_task "$META_FILE"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_METADATA:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  restack_rollback_active=0
+  release_mutex
+  release_task_lock
+  note "RESTACKED_SQUASH task=$TASK_ID previous_base=$previous_base_sha previous=$previous_submitted_sha base=$new_base_sha sha=$restacked_sha profile=$META_PROFILE"
+}
+
 assert_integration_owner() {
   local task="$1"
   load_task "$task"
@@ -991,6 +1096,7 @@ case "$command_name" in
   submit) command_submit "$@" ;;
   resubmit) command_resubmit "$@" ;;
   restack) command_restack "$@" ;;
+  restack-squash) command_restack_squash "$@" ;;
   integrate) command_integrate "$@" ;;
   verify) command_verify "$@" ;;
   finish) command_finish "$@" ;;

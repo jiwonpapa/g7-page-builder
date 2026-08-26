@@ -109,7 +109,11 @@ function RangeChoiceMenu<T extends string>({
   const clearPointerActivation = (): void => {
     suppressCompatibilityClick.current = false;
   };
+  const clearPointerActivationFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
+    if (event.key === 'Enter' || event.key === ' ') clearPointerActivation();
+  };
   const toggleFromPointer = (event: React.PointerEvent<HTMLButtonElement>): void => {
+    if (!event.isPrimary || event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     markPointerActivation();
@@ -124,6 +128,7 @@ function RangeChoiceMenu<T extends string>({
     if (event.detail === 0) onToggle(name);
   };
   const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
+    if (!event.isPrimary || event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     markPointerActivation();
@@ -140,13 +145,15 @@ function RangeChoiceMenu<T extends string>({
   return <div className="g7pb-richtext-inline-toolbar__choice">
     <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
       aria-label={`선택한 글자 ${label}: ${current.label}`}
-      onKeyDown={clearPointerActivation} onPointerDown={toggleFromPointer} onClick={toggleFromKeyboard}>
+      onKeyDown={clearPointerActivationFromKeyboard} onPointerCancel={clearPointerActivation}
+      onPointerDown={toggleFromPointer} onClick={toggleFromKeyboard}>
       <span>{current.label}</span><ChevronDown size={13} aria-hidden="true" />
     </button>
     {open ? <div className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
       {values.map((option) => <button type="button" role="option" aria-selected={option.value === value}
         key={option.value}
-        onKeyDown={clearPointerActivation}
+        onKeyDown={clearPointerActivationFromKeyboard}
+        onPointerCancel={clearPointerActivation}
         onPointerDown={(event) => chooseFromPointer(event, option.value)}
         onClick={(event) => chooseFromKeyboard(event, option.value)}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}

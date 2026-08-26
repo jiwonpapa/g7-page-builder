@@ -207,6 +207,8 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new PointerEvent('pointerdown', {
         bubbles: true,
         cancelable: true,
+        button: 0,
+        isPrimary: true,
         pointerType: 'mouse',
       }));
     });
@@ -226,12 +228,14 @@ describe('Puck-native rich-text editing', () => {
       serif?.dispatchEvent(new PointerEvent('pointerdown', {
         bubbles: true,
         cancelable: true,
+        button: 0,
+        isPrimary: true,
         pointerType: 'mouse',
       }));
     });
     await new Promise((resolve) => setTimeout(resolve, 5));
     await act(async () => {
-      serif?.dispatchEvent(new MouseEvent('click', {
+      trigger?.dispatchEvent(new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
         detail: 0,
@@ -251,5 +255,57 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('ignores non-primary range-menu pointers and clears a canceled pointer before keyboard activation', async () => {
+    const chain = {
+      focus: vi.fn(() => chain),
+      setMark: vi.fn(() => chain),
+      unsetMark: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 7 } },
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+    await rerender(editorState());
+    const trigger = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]');
+
+    await act(async () => {
+      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        isPrimary: true,
+        pointerType: 'mouse',
+      }));
+    });
+    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        isPrimary: false,
+        pointerType: 'mouse',
+      }));
+    });
+    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        isPrimary: true,
+        pointerType: 'mouse',
+      }));
+      trigger?.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerType: 'mouse' }));
+      trigger?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
+      trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
+    });
+    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
   });
 });

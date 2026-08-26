@@ -218,6 +218,206 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('class="g7pb-card-grid__body"', $artifact);
     }
 
+    public function test_nested_inline_text_fields_preserve_selected_range_marks_across_the_catalog(): void
+    {
+        $foundation = $this->foundationDocument()->toArray();
+        $foundation['blocks'][5]['props']['items'][0]['title'] = '<p>아이콘 <span data-g7pb-weight="bold">제목</span></p>';
+
+        $mvp = $this->document('<p>본문</p>')->toArray();
+        $mvp['blocks'][1]['props']['items'][0]['title'] = '<p>기능 <span data-g7pb-weight="bold">제목</span></p>';
+
+        $catalog = $this->catalogPayload();
+        $catalog['blocks'][1]['props']['slides'][0]['title'] = '<p>슬라이더 <span data-g7pb-weight="bold">제목</span></p>';
+        $catalog['blocks'][3]['props']['items'][0]['label'] = '<p>통계 <span data-g7pb-weight="bold">라벨</span></p>';
+        $catalog['blocks'][4]['props']['plans'][0]['name'] = '<p>가격 <span data-g7pb-weight="bold">이름</span></p>';
+        $catalog['blocks'][4]['props']['plans'][0]['features'][0] = '<p>가격 <span data-g7pb-weight="bold">기능</span></p>';
+
+        $phaseTwo = $this->phaseTwoDocument()->toArray();
+        $phaseTwo['blocks'][1]['props']['items'][0]['question'] = '<p>질문 <span data-g7pb-weight="bold">강조</span></p>';
+        $phaseTwo['blocks'][2]['props']['items'][0]['title'] = '<p>과정 <span data-g7pb-weight="bold">제목</span></p>';
+        $phaseTwo['blocks'][3]['props']['items'][0]['heading'] = '<p>탭 <span data-g7pb-weight="bold">제목</span></p>';
+        $phaseTwo['blocks'][4]['props']['columns'][0]['title'] = '<p>비교 <span data-g7pb-weight="bold">제목</span></p>';
+        $phaseTwo['blocks'][4]['props']['columns'][0]['description'] = '<p>비교 <span data-g7pb-weight="bold">설명</span></p>';
+        $phaseTwo['blocks'][4]['props']['rows'][0]['feature'] = '<p>비교 <span data-g7pb-weight="bold">항목</span></p>';
+        $phaseTwo['blocks'][5]['props']['items'][0]['title'] = '<p>기사 <span data-g7pb-weight="bold">제목</span></p>';
+
+        $production = $this->productionLibraryDocument()->toArray();
+        $production['blocks'][2]['props']['title'] = '<p>공지 <span data-g7pb-weight="bold">제목</span></p>';
+        $production['blocks'][3]['props']['items'][0]['title'] = '<p>카드 <span data-g7pb-weight="bold">제목</span></p>';
+
+        $phaseThree = $this->phaseThreeDocument()->toArray();
+        $phaseThree['blocks'][2]['props']['items'][0]['title'] = '<p>행사 <span data-g7pb-weight="bold">제목</span></p>';
+        $phaseThree['blocks'][3]['props']['items'][0]['title'] = '<p>자료 <span data-g7pb-weight="bold">제목</span></p>';
+
+        $artifact = $this->compileArtifacts([
+            PageBuilderDocument::fromArray($foundation),
+            PageBuilderDocument::fromArray($mvp),
+            PageBuilderDocument::fromArray($catalog),
+            PageBuilderDocument::fromArray($phaseTwo),
+            PageBuilderDocument::fromArray($production),
+            PageBuilderDocument::fromArray($phaseThree),
+        ]);
+
+        foreach ([
+            '<h3>아이콘 <span data-g7pb-weight="bold">제목</span></h3>',
+            '<h3>기능 <span data-g7pb-weight="bold">제목</span></h3>',
+            '<h2>슬라이더 <span data-g7pb-weight="bold">제목</span></h2>',
+            '<h3>통계 <span data-g7pb-weight="bold">라벨</span></h3>',
+            '<h3>가격 <span data-g7pb-weight="bold">이름</span></h3>',
+            '<li>가격 <span data-g7pb-weight="bold">기능</span></li>',
+            '<summary><span>질문 <span data-g7pb-weight="bold">강조</span></span>',
+            '<h3>과정 <span data-g7pb-weight="bold">제목</span></h3>',
+            '<h3>탭 <span data-g7pb-weight="bold">제목</span></h3>',
+            '<strong>비교 <span data-g7pb-weight="bold">제목</span></strong>',
+            '<span>비교 <span data-g7pb-weight="bold">설명</span></span>',
+            '<th scope="row">비교 <span data-g7pb-weight="bold">항목</span></th>',
+            '<h3><a href="/news/first">기사 <span data-g7pb-weight="bold">제목</span></a></h3>',
+            '<h2 class="g7pb-content-notice__title">공지 <span data-g7pb-weight="bold">제목</span></h2>',
+            '<h3>카드 <span data-g7pb-weight="bold">제목</span></h3>',
+            '<h3>행사 <span data-g7pb-weight="bold">제목</span></h3>',
+            '<h3>자료 <span data-g7pb-weight="bold">제목</span></h3>',
+        ] as $expectedMarkup) {
+            self::assertStringContainsString($expectedMarkup, $artifact);
+        }
+        self::assertSame(17, substr_count($artifact, 'data-g7pb-weight="bold"'));
+    }
+
+    public function test_nested_long_text_fields_preserve_block_rich_text_across_the_catalog(): void
+    {
+        $richText = static fn (string $label): string => '<p>앞 <strong>'.$label.'</strong></p><ul><li><a href="/guide">'.$label.' 안내</a></li></ul>';
+
+        $foundation = $this->foundationDocument()->toArray();
+        $foundation['blocks'][5]['props']['items'][0]['body'] = $richText('아이콘 본문');
+
+        $mvp = $this->document('<p>본문</p>')->toArray();
+        $mvp['blocks'][1]['props']['items'][0]['body'] = $richText('기능 본문');
+        $mvp['blocks'][2]['props']['body'] = $richText('행동 본문');
+
+        $catalog = $this->catalogPayload();
+        $catalog['blocks'][3]['props']['items'][0]['detail'] = $richText('통계 설명');
+        $catalog['blocks'][4]['props']['plans'][0]['description'] = $richText('가격 설명');
+        $catalog['blocks'][5]['props']['members'][0]['bio'] = $richText('팀 소개');
+        $catalog['blocks'][7]['props']['description'] = $richText('차트 설명');
+
+        $formAndMap = $this->formAndMapDocument()->toArray();
+        $formAndMap['blocks'][0]['props']['description'] = $richText('문의 설명');
+        $formAndMap['blocks'][1]['props']['description'] = $richText('지도 설명');
+
+        $phaseTwo = $this->phaseTwoDocument()->toArray();
+        $phaseTwo['blocks'][6]['props']['caption'] = $richText('영상 설명');
+
+        $artifact = $this->compileArtifacts([
+            PageBuilderDocument::fromArray($foundation),
+            PageBuilderDocument::fromArray($mvp),
+            PageBuilderDocument::fromArray($catalog),
+            PageBuilderDocument::fromArray($formAndMap),
+            PageBuilderDocument::fromArray($phaseTwo),
+        ]);
+
+        foreach (['아이콘 본문', '기능 본문', '행동 본문', '통계 설명', '가격 설명', '팀 소개', '차트 설명', '문의 설명', '지도 설명', '영상 설명'] as $label) {
+            self::assertStringContainsString('<strong>'.$label.'</strong>', $artifact);
+            self::assertStringContainsString('<a href="/guide" rel="noopener noreferrer">'.$label.' 안내</a>', $artifact);
+        }
+    }
+
+    public function test_new_rich_text_paths_reject_unsafe_markup_urls_and_nested_links(): void
+    {
+        $unsafeMarkup = $this->document('<p>본문</p>')->toArray();
+        $unsafeMarkup['blocks'][1]['props']['items'][0]['title'] = '<p onclick="alert(1)">위험</p>';
+        $this->assertCompileRejected(PageBuilderDocument::fromArray($unsafeMarkup));
+
+        $unsafeUrl = $this->document('<p>본문</p>')->toArray();
+        $unsafeUrl['blocks'][2]['props']['body'] = '<p><a href="javascript:alert(1)">위험</a></p>';
+        $this->assertCompileRejected(PageBuilderDocument::fromArray($unsafeUrl));
+
+        $nestedLink = $this->phaseTwoDocument()->toArray();
+        $nestedLink['blocks'][1]['props']['items'][0]['question'] = '<p><a href="/outer">바깥 <a href="/inner">안쪽</a></a></p>';
+        $this->assertCompileRejected(PageBuilderDocument::fromArray($nestedLink));
+
+        $linkedArticleTitle = $this->phaseTwoDocument()->toArray();
+        $linkedArticleTitle['blocks'][5]['props']['items'][0]['title'] = '<p><a href="/different">링크 제목</a></p>';
+        $this->assertCompileRejected(PageBuilderDocument::fromArray($linkedArticleTitle));
+    }
+
+    public function test_rich_text_length_uses_visible_text_and_rejects_visible_overflow(): void
+    {
+        $withinLimit = $this->productionLibraryDocument()->toArray();
+        $withinLimit['blocks'][2]['props']['title'] = '<p>'.str_repeat('<span data-g7pb-weight="bold">가</span>', 20).'</p>';
+
+        $artifact = (string) $this->builtInCompiler()->compile(
+            PageBuilderDocument::fromArray($withinLimit),
+            1,
+            'html',
+            'g7-7.0.7',
+        )->artifact;
+        self::assertSame(20, substr_count($artifact, 'data-g7pb-weight="bold"'));
+
+        $overLimit = $this->productionLibraryDocument()->toArray();
+        $overLimit['blocks'][2]['props']['title'] = '<p>'.str_repeat('가', 201).'</p>';
+        $this->assertCompileRejected(PageBuilderDocument::fromArray($overLimit));
+    }
+
+    public function test_article_title_marks_do_not_leak_tags_into_image_alternative_text(): void
+    {
+        $payload = $this->phaseTwoDocument()->toArray();
+        $payload['blocks'][5]['props']['items'][0]['title'] = '<p>접근성 <span data-g7pb-tone="accent">이름</span></p>';
+        $payload['blocks'][5]['props']['items'][0]['imageSrc'] = '/storage/article.webp';
+        $payload['blocks'][5]['props']['items'][0]['imageAlt'] = '';
+
+        $artifact = (string) $this->builtInCompiler()->compile(
+            PageBuilderDocument::fromArray($payload),
+            1,
+            'html',
+            'g7-7.0.7',
+        )->artifact;
+
+        self::assertStringContainsString('alt="접근성 이름"', $artifact);
+        self::assertStringNotContainsString('alt="&lt;p&gt;', $artifact);
+        self::assertStringContainsString('<h3><a href="/news/first">접근성 <span data-g7pb-tone="accent">이름</span></a></h3>', $artifact);
+    }
+
+    public function test_plain_v1_strings_keep_their_existing_html_structure(): void
+    {
+        $artifact = $this->compileArtifacts([
+            $this->foundationDocument(),
+            $this->document('<p>본문</p>'),
+            PageBuilderDocument::fromArray($this->catalogPayload()),
+            $this->formAndMapDocument(),
+            $this->phaseTwoDocument(),
+        ]);
+
+        foreach ([
+            '<h3>빠른 시작</h3><p>준비된 구조에서 내용을 편집합니다.</p>',
+            '<h3>빠른 제작</h3><p>블록으로 제작합니다.</p>',
+            '<p class="g7pb-cta__body">필요한 행동을 분명하게 안내합니다.</p>',
+            '<h3>사용자</h3><p>누적 사용자</p>',
+            '<h3>Starter</h3><p class="g7pb-pricing__price"><strong>₩29,000</strong><span>/월</span></p><p>시작 플랜</p>',
+            '<strong>제품</strong><p>제품을 설계합니다.</p>',
+            '<figcaption><header class="g7pb-section-heading"><p class="g7pb-section-eyebrow">데이터</p><h2>분기별 성과</h2></header><p>0부터 100까지 비교합니다.</p></figcaption>',
+            '<div class="g7pb-inquiry__intro"><header class="g7pb-section-heading"><p class="g7pb-section-eyebrow">CONTACT</p><h2>문의하세요</h2></header><p>영업일 기준으로 답변합니다.</p></div>',
+            '<figcaption>제품 소개 영상입니다.</figcaption>',
+        ] as $existingMarkup) {
+            self::assertStringContainsString($existingMarkup, $artifact);
+        }
+    }
+
+    public function test_promoted_fields_keep_bare_inline_markup_as_literal_plain_text(): void
+    {
+        $payload = $this->productionLibraryDocument()->toArray();
+        $payload['blocks'][2]['props']['title'] = '문자 <strong>그대로</strong>';
+
+        $mvp = $this->document('<p>본문</p>')->toArray();
+        $mvp['blocks'][2]['props']['body'] = '본문 <strong>그대로</strong>';
+
+        $artifact = $this->compileArtifacts([
+            PageBuilderDocument::fromArray($payload),
+            PageBuilderDocument::fromArray($mvp),
+        ]);
+
+        self::assertStringContainsString('<h2 class="g7pb-content-notice__title">문자 &lt;strong&gt;그대로&lt;/strong&gt;</h2>', $artifact);
+        self::assertStringContainsString('<p class="g7pb-cta__body">본문 &lt;strong&gt;그대로&lt;/strong&gt;</p>', $artifact);
+    }
+
     public function test_cta_and_contact_escape_plain_text_and_compile_safe_links(): void
     {
         $document = $this->document(
@@ -1236,6 +1436,27 @@ final class HtmlDocumentCompilerTest extends TestCase
                 ],
             ],
         );
+    }
+
+    /** @param list<PageBuilderDocument> $documents */
+    private function compileArtifacts(array $documents): string
+    {
+        $artifacts = '';
+        foreach ($documents as $document) {
+            $artifacts .= (string) $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7')->artifact;
+        }
+
+        return $artifacts;
+    }
+
+    private function assertCompileRejected(PageBuilderDocument $document): void
+    {
+        try {
+            $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
+            self::fail('Unsafe or invalid rich text compiled successfully.');
+        } catch (DocumentCompileException) {
+            self::addToAssertionCount(1);
+        }
     }
 
     /**

@@ -585,12 +585,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $this->assertOnlyKeys($item, ['icon', 'title', 'body'], "Icon list item {$index}");
             $icon = $this->requiredString($item, 'icon', 32);
-            $title = $this->requiredString($item, 'title', 160);
-            $body = $this->optionalString($item, 'body', 2000) ?? '';
+            $title = $this->requiredInlineRichTextString($item, 'title', 160);
+            $body = $this->optionalRichTextString($item, 'body', 2000) ?? '';
             if (! in_array($icon, self::FEATURE_ICONS, true)) {
                 throw new DocumentCompileException("Icon list item {$index} uses an unsupported icon.");
             }
-            $compiled[] = '<li class="g7pb-icon-list__item"><span class="g7pb-icon-list__icon g7pb-icon--'.$this->escapeAttribute($icon).'" aria-hidden="true"></span><div><h3>'.$this->escape($title).'</h3><p>'.$this->formatText($body).'</p></div></li>';
+            $bodyMarkup = $this->hasCanonicalRichTextMarkup($body)
+                ? '<div class="g7pb-icon-list__body">'.$this->sanitizeRichText($body).'</div>'
+                : '<p>'.$this->formatText($body).'</p>';
+            $compiled[] = '<li class="g7pb-icon-list__item"><span class="g7pb-icon-list__icon g7pb-icon--'.$this->escapeAttribute($icon).'" aria-hidden="true"></span><div><h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.'</div></li>';
         }
 
         return '<section class="g7pb-block g7pb-icon-list g7pb-icon-list--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="icon-list">'.$this->compileSectionHeading($eyebrow, $heading).'<ul class="g7pb-icon-list__items">'.implode('', $compiled).'</ul></section>';
@@ -642,7 +645,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->assertOnlyKeys($props, ['tone', 'title', 'body', 'actionLabel', 'actionUrl', 'appearance'], 'Notice');
         $tone = $this->requiredString($props, 'tone', 16);
-        $title = $this->requiredString($props, 'title', 200);
+        $title = $this->requiredInlineRichTextString($props, 'title', 200);
         $body = $this->requiredString($props, 'body', 2000);
         $actionLabel = $this->optionalString($props, 'actionLabel', 120) ?? '';
         $actionUrl = $this->optionalString($props, 'actionUrl', 2048) ?? '';
@@ -664,7 +667,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             ? '<div class="g7pb-content-notice__body">'.$this->sanitizeRichText($body).'</div>'
             : '<p class="g7pb-content-notice__body">'.$this->formatText($body).'</p>';
 
-        return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->escape($title).'</h2>'.$bodyMarkup.'</div>'.$action.'</section>';
+        return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->sanitizePromotedInlineRichText($title).'</h2>'.$bodyMarkup.'</div>'.$action.'</section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -694,7 +697,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $this->assertOnlyKeys($item, ['kicker', 'title', 'body', 'linkLabel', 'linkUrl'], "Card grid item {$index}");
             $kicker = $this->optionalString($item, 'kicker', 80) ?? '';
-            $title = $this->requiredString($item, 'title', 160);
+            $title = $this->requiredInlineRichTextString($item, 'title', 160);
             $body = $this->optionalString($item, 'body', 1000) ?? '';
             $linkLabel = $this->optionalString($item, 'linkLabel', 120) ?? '';
             $linkUrl = $this->optionalString($item, 'linkUrl', 2048) ?? '';
@@ -709,7 +712,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $bodyMarkup = $body === '' ? '' : ($this->hasRichTextMarkup($body)
                 ? '<div class="g7pb-card-grid__body">'.$this->sanitizeRichText($body).'</div>'
                 : '<p class="g7pb-card-grid__body">'.$this->formatText($body).'</p>');
-            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->escape($title).'</h3>'.$bodyMarkup.$link.'</article>';
+            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-card-grid--layout-'.$layout;
@@ -922,14 +925,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
 
             $icon = $this->requiredString($item, 'icon', 32);
-            $itemTitle = $this->requiredString($item, 'title', 160);
-            $body = $this->requiredString($item, 'body', 2000);
+            $itemTitle = $this->requiredInlineRichTextString($item, 'title', 160);
+            $body = $this->requiredRichTextString($item, 'body', 2000);
 
             if (! in_array($icon, self::FEATURE_ICONS, true)) {
                 throw new DocumentCompileException("Feature item {$index} uses an unsupported icon.");
             }
 
-            $compiledItems[] = '<article class="g7pb-features__item"><span class="g7pb-features__icon g7pb-icon--'.$this->escapeAttribute($icon).'" aria-hidden="true"></span><h3>'.$this->escape($itemTitle).'</h3><p>'.$this->formatText($body).'</p></article>';
+            $bodyMarkup = $this->hasCanonicalRichTextMarkup($body)
+                ? '<div class="g7pb-features__body">'.$this->sanitizeRichText($body).'</div>'
+                : '<p>'.$this->formatText($body).'</p>';
+            $compiledItems[] = '<article class="g7pb-features__item"><span class="g7pb-features__icon g7pb-icon--'.$this->escapeAttribute($icon).'" aria-hidden="true"></span><h3>'.$this->sanitizePromotedInlineRichText($itemTitle).'</h3>'.$bodyMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-features--layout-'.$layout;
@@ -950,7 +956,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
-        $body = $this->optionalString($props, 'body', 2000);
+        $body = $this->optionalRichTextString($props, 'body', 2000);
         $theme = $this->requiredString($props, 'theme', 16);
         $layout = $this->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
@@ -968,7 +974,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         $copy[] = '<h2 class="g7pb-cta__heading">'.$this->sanitizeInlineRichText($heading).'</h2>';
         if ($body !== null && $body !== '') {
-            $copy[] = '<p class="g7pb-cta__body">'.$this->formatText($body).'</p>';
+            $copy[] = $this->hasCanonicalRichTextMarkup($body)
+                ? '<div class="g7pb-cta__body">'.$this->sanitizeRichText($body).'</div>'
+                : '<p class="g7pb-cta__body">'.$this->formatText($body).'</p>';
         }
 
         $actions = [];
@@ -1119,7 +1127,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 "Slider Hero item {$index}",
             );
             $eyebrow = $this->optionalString($slide, 'eyebrow', 120);
-            $title = $this->requiredString($slide, 'title', 200);
+            $title = $this->requiredInlineRichTextString($slide, 'title', 200);
             $body = $this->optionalString($slide, 'body', 2000);
             $buttonLabel = $this->requiredString($slide, 'buttonLabel', 120);
             $buttonUrl = $this->requiredString($slide, 'buttonUrl', 2048);
@@ -1130,7 +1138,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $copy = $eyebrow === null || $eyebrow === ''
                 ? ''
                 : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
-            $copy .= '<h2>'.$this->escape($title).'</h2>';
+            $copy .= '<h2>'.$this->sanitizePromotedInlineRichText($title).'</h2>';
             if ($body !== null && $body !== '') {
                 $copy .= $this->hasRichTextMarkup($body)
                     ? '<div class="g7pb-hero-slider__body">'.$this->sanitizeRichText($body).'</div>'
@@ -1224,9 +1232,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Stats item {$index} icon is invalid.");
             }
             $value = $this->requiredString($item, 'value', 80);
-            $label = $this->requiredString($item, 'label', 120);
-            $detail = $this->optionalString($item, 'detail', 500) ?? '';
-            $compiled[] = '<article><span class="g7pb-stats__icon g7pb-stats__icon--'.$icon.'" aria-hidden="true"></span><strong>'.$this->escape($value).'</strong><h3>'.$this->escape($label).'</h3><p>'.$this->formatText($detail).'</p></article>';
+            $label = $this->requiredInlineRichTextString($item, 'label', 120);
+            $detail = $this->optionalRichTextString($item, 'detail', 500) ?? '';
+            $detailMarkup = $this->hasCanonicalRichTextMarkup($detail)
+                ? '<div class="g7pb-stats__detail">'.$this->sanitizeRichText($detail).'</div>'
+                : '<p>'.$this->formatText($detail).'</p>';
+            $compiled[] = '<article><span class="g7pb-stats__icon g7pb-stats__icon--'.$icon.'" aria-hidden="true"></span><strong>'.$this->escape($value).'</strong><h3>'.$this->sanitizePromotedInlineRichText($label).'</h3>'.$detailMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-stats--layout-'.$layout;
@@ -1263,10 +1274,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 ['name', 'price', 'period', 'description', 'features', 'buttonLabel', 'buttonUrl', 'featured'],
                 "Pricing plan {$index}",
             );
-            $name = $this->requiredString($plan, 'name', 120);
+            $name = $this->requiredInlineRichTextString($plan, 'name', 120);
             $price = $this->requiredString($plan, 'price', 80);
             $period = $this->optionalString($plan, 'period', 40) ?? '';
-            $description = $this->optionalString($plan, 'description', 500) ?? '';
+            $description = $this->optionalRichTextString($plan, 'description', 500) ?? '';
             $buttonLabel = $this->requiredString($plan, 'buttonLabel', 120);
             $buttonUrl = $this->requiredString($plan, 'buttonUrl', 2048);
             $featured = $this->requiredBoolean($plan, 'featured');
@@ -1278,14 +1289,19 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $featureItems = [];
             foreach (array_values($features) as $featureIndex => $feature) {
-                if (! is_string($feature) || trim($feature) === '' || mb_strlen($feature) > 200) {
-                    throw new DocumentCompileException("Pricing plan {$index} feature {$featureIndex} is invalid.");
-                }
-                $featureItems[] = '<li>'.$this->escape($feature).'</li>';
+                $feature = $this->requiredInlineRichTextValue(
+                    $feature,
+                    "Pricing plan {$index} feature {$featureIndex}",
+                    200,
+                );
+                $featureItems[] = '<li>'.$this->sanitizePromotedInlineRichText($feature).'</li>';
             }
             $featuredClass = $featured ? ' g7pb-pricing__plan--featured' : '';
             $badge = $featured ? '<span class="g7pb-pricing__badge">추천</span>' : '';
-            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->escape($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong><span>'.$this->escape($period).'</span></p><p>'.$this->formatText($description).'</p><ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
+            $descriptionMarkup = $this->hasCanonicalRichTextMarkup($description)
+                ? '<div class="g7pb-pricing__description">'.$this->sanitizeRichText($description).'</div>'
+                : '<p>'.$this->formatText($description).'</p>';
+            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->sanitizePromotedInlineRichText($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong><span>'.$this->escape($period).'</span></p>'.$descriptionMarkup.'<ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-pricing--layout-'.$layout;
@@ -1320,7 +1336,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $this->assertOnlyKeys($member, ['name', 'role', 'bio', 'imageSrc', 'imageAlt', 'profileUrl'], "Team member {$index}");
             $name = $this->requiredString($member, 'name', 120);
             $role = $this->requiredString($member, 'role', 160);
-            $bio = $this->optionalString($member, 'bio', 1000) ?? '';
+            $bio = $this->optionalRichTextString($member, 'bio', 1000) ?? '';
             $imageSrc = $this->optionalString($member, 'imageSrc', 2048) ?? '';
             $imageAlt = $this->optionalString($member, 'imageAlt', 300) ?? '';
             $profileUrl = $this->optionalString($member, 'profileUrl', 2048) ?? '';
@@ -1330,7 +1346,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $this->assertAllowedUrl($profileUrl, "Team member {$index}");
                 $memberName = '<h3><a href="'.$this->escapeAttribute($profileUrl).'">'.$this->escape($name).'</a></h3>';
             }
-            $compiled[] = '<article><figure>'.$media.'</figure>'.$memberName.'<strong>'.$this->escape($role).'</strong><p>'.$this->formatText($bio).'</p></article>';
+            $bioMarkup = $this->hasCanonicalRichTextMarkup($bio)
+                ? '<div class="g7pb-team__bio">'.$this->sanitizeRichText($bio).'</div>'
+                : '<p>'.$this->formatText($bio).'</p>';
+            $compiled[] = '<article><figure>'.$media.'</figure>'.$memberName.'<strong>'.$this->escape($role).'</strong>'.$bioMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-team--layout-'.$layout;
@@ -1388,7 +1407,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'unit', 'items', 'appearance'], 'Bar Chart');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
-        $description = $this->optionalString($props, 'description', 1000) ?? '';
+        $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
         $unit = $this->optionalString($props, 'unit', 20) ?? '';
         $items = $props['items'] ?? null;
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
@@ -1414,7 +1433,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<label><span><span>'.$this->escape($label).'</span><strong>'.$this->escape($formattedValue).'<span class="g7pb-bar-chart__unit">'.$this->escape($unit).'</span></strong></span><progress max="100" value="'.$this->escapeAttribute($formattedValue).'" data-tone="'.$tone.'">'.$this->escape($formattedValue).'</progress></label>';
         }
 
-        $descriptionMarkup = $description === '' ? '' : '<p>'.$this->formatText($description).'</p>';
+        $descriptionMarkup = $description === '' ? '' : ($this->hasCanonicalRichTextMarkup($description)
+            ? '<div class="g7pb-bar-chart__description">'.$this->sanitizeRichText($description).'</div>'
+            : '<p>'.$this->formatText($description).'</p>');
 
         return '<section class="g7pb-block g7pb-bar-chart '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="bar-chart"><figure><figcaption>'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.'</figcaption><div class="g7pb-bar-chart__plot">'.implode('', $compiled).'</div></figure></section>';
     }
@@ -1488,7 +1509,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'formKind', 'submitLabel', 'successMessage', 'privacyLabel', 'showPhone', 'showSubject', 'appearance'], 'Inquiry form');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
-        $description = $this->optionalString($props, 'description', 1000) ?? '';
+        $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
         $kind = $this->requiredString($props, 'formKind', 24);
         $submitLabel = $this->requiredString($props, 'submitLabel', 80);
         $successMessage = $this->requiredString($props, 'successMessage', 300);
@@ -1504,7 +1525,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $subject = $showSubject ? '<label class="g7pb-inquiry-form__wide"><span>문의 제목</span><input type="text" name="subject" maxlength="200"></label>' : '';
 
         return '<section class="g7pb-block g7pb-inquiry '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="inquiry-form">'
-            .'<div class="g7pb-inquiry__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').'</div>'
+            .'<div class="g7pb-inquiry__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : ($this->hasCanonicalRichTextMarkup($description) ? '<div class="g7pb-inquiry__description">'.$this->sanitizeRichText($description).'</div>' : '<p>'.$this->formatText($description).'</p>')).'</div>'
             .'<form class="g7pb-inquiry-form" method="post" action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-inquiry-form data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escapeAttribute($successMessage).'">'
             .'<input type="hidden" name="form_kind" value="'.$kind.'"><input type="hidden" name="block_instance_id" value=""><input type="hidden" name="started_at" value="">'
             .'<label class="g7pb-inquiry-form__honeypot" aria-hidden="true"><span>웹사이트</span><input type="text" name="website" tabindex="-1" autocomplete="off"></label>'
@@ -1522,7 +1543,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
-        $description = $this->optionalString($props, 'description', 1000) ?? '';
+        $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
         $address = $this->requiredString($props, 'address', 500);
         $latitude = $this->requiredNumber($props, 'latitude', -90, 90);
         $longitude = $this->requiredNumber($props, 'longitude', -180, 180);
@@ -1557,7 +1578,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             .($parking === '' ? '' : '<span class="g7pb-map__parking">'.$this->formatText($parking).'</span>')
             .'<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($directionsUrl).'">'.$this->escape($directionsLabel).'</a></address>';
 
-        return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : '<p>'.$this->formatText($description).'</p>').$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
+        $descriptionMarkup = $description === '' ? '' : ($this->hasCanonicalRichTextMarkup($description)
+            ? '<div class="g7pb-map__description">'.$this->sanitizeRichText($description).'</div>'
+            : '<p>'.$this->formatText($description).'</p>');
+
+        return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1622,9 +1647,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("FAQ item {$index} must be an object.");
             }
             $this->assertOnlyKeys($item, ['question', 'answer'], "FAQ item {$index}");
-            $question = $this->requiredString($item, 'question', 300);
+            $question = $this->requiredInlineRichTextString($item, 'question', 300);
             $answer = $this->requiredString($item, 'answer', 4000);
-            $compiled[] = '<details'.($openFirst && $index === 0 ? ' open' : '').'><summary><span>'.$this->escape($question).'</span><i aria-hidden="true">+</i></summary><div class="g7pb-faq__answer">'.$this->sanitizeRichText($answer).'</div></details>';
+            $compiled[] = '<details'.($openFirst && $index === 0 ? ' open' : '').'><summary><span>'.$this->sanitizePromotedInlineRichText($question).'</span><i aria-hidden="true">+</i></summary><div class="g7pb-faq__answer">'.$this->sanitizeRichText($answer).'</div></details>';
         }
 
         return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
@@ -1652,7 +1677,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Process step {$index} must be an object.");
             }
             $this->assertOnlyKeys($item, ['title', 'body', 'linkLabel', 'linkUrl'], "Process step {$index}");
-            $title = $this->requiredString($item, 'title', 200);
+            $title = $this->requiredInlineRichTextString($item, 'title', 200);
             $body = $this->requiredString($item, 'body', 1500);
             $linkLabel = $this->optionalString($item, 'linkLabel', 120) ?? '';
             $linkUrl = $this->optionalString($item, 'linkUrl', 2048) ?? '';
@@ -1667,7 +1692,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $bodyMarkup = $this->hasRichTextMarkup($body)
                 ? '<div class="g7pb-process__body">'.$this->sanitizeRichText($body).'</div>'
                 : '<p>'.$this->formatText($body).'</p>';
-            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->escape($title).'</h3>'.$bodyMarkup.$link.'</li>';
+            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</li>';
         }
 
         return '<section class="g7pb-block g7pb-process g7pb-process--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="process-timeline">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
@@ -1701,14 +1726,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $this->assertOnlyKeys($item, ['label', 'heading', 'body'], "Tab item {$index}");
             $label = $this->requiredString($item, 'label', 80);
-            $itemHeading = $this->requiredString($item, 'heading', 200);
+            $itemHeading = $this->requiredInlineRichTextString($item, 'heading', 200);
             $body = $this->requiredString($item, 'body', 4000);
             $selected = $initialTab === $index;
             $buttons[] = '<button type="button" role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</button>';
             $bodyMarkup = $this->hasRichTextMarkup($body)
                 ? '<div class="g7pb-tabs__body">'.$this->sanitizeRichText($body).'</div>'
                 : '<p>'.$this->formatText($body).'</p>';
-            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->escape($itemHeading).'</h3>'.$bodyMarkup.'</article>';
+            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->sanitizePromotedInlineRichText($itemHeading).'</h3>'.$bodyMarkup.'</article>';
         }
 
         return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
@@ -1740,9 +1765,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Comparison column {$index} must be an object.");
             }
             $this->assertOnlyKeys($column, ['title', 'description'], "Comparison column {$index}");
-            $title = $this->requiredString($column, 'title', 120);
-            $description = $this->optionalString($column, 'description', 300) ?? '';
-            $headings[] = '<th scope="col"'.($highlight === $index ? ' class="is-highlighted"' : '').'><strong>'.$this->escape($title).'</strong>'.($description === '' ? '' : '<span>'.$this->formatText($description).'</span>').'</th>';
+            $title = $this->requiredInlineRichTextString($column, 'title', 120);
+            $description = $this->optionalInlineRichTextString($column, 'description', 300) ?? '';
+            $headings[] = '<th scope="col"'.($highlight === $index ? ' class="is-highlighted"' : '').'><strong>'.$this->sanitizePromotedInlineRichText($title).'</strong>'.($description === '' ? '' : '<span>'.$this->sanitizePromotedInlineRichText($description).'</span>').'</th>';
         }
 
         $compiledRows = [];
@@ -1751,7 +1776,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Comparison row {$rowIndex} must be an object.");
             }
             $this->assertOnlyKeys($row, ['feature', 'values'], "Comparison row {$rowIndex}");
-            $feature = $this->requiredString($row, 'feature', 200);
+            $feature = $this->requiredInlineRichTextString($row, 'feature', 200);
             $values = $row['values'] ?? null;
             if (! is_array($values) || count($values) !== count($columns)) {
                 throw new DocumentCompileException("Comparison row {$rowIndex} values must match the columns.");
@@ -1763,7 +1788,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 }
                 $cells[] = '<td'.($highlight === $columnIndex ? ' class="is-highlighted"' : '').'>'.$this->formatText($value).'</td>';
             }
-            $compiledRows[] = '<tr><th scope="row">'.$this->escape($feature).'</th>'.implode('', $cells).'</tr>';
+            $compiledRows[] = '<tr><th scope="row">'.$this->sanitizePromotedInlineRichText($feature).'</th>'.implode('', $cells).'</tr>';
         }
 
         return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll" role="region" aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).' 비교표" tabindex="0"><table><caption class="g7pb-visually-hidden">'.$this->escape($this->inlinePlainText($heading)).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
@@ -1792,14 +1817,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $this->assertOnlyKeys($item, ['category', 'title', 'summary', 'date', 'imageSrc', 'imageAlt', 'url'], "Article item {$index}");
             $category = $this->optionalString($item, 'category', 80) ?? '';
-            $title = $this->requiredString($item, 'title', 240);
+            $title = $this->requiredInlineRichTextString($item, 'title', 240, allowLinks: false);
             $summary = $this->requiredString($item, 'summary', 1200);
             $date = $this->optionalString($item, 'date', 40) ?? '';
             $imageSrc = $this->optionalString($item, 'imageSrc', 2048) ?? '';
             $imageAlt = $this->optionalString($item, 'imageAlt', 300) ?? '';
             $url = $this->requiredString($item, 'url', 2048);
             $this->assertAllowedUrl($url, "Article item {$index}");
-            $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $title, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
+            $plainTitle = $this->promotedInlinePlainText($title, allowLinks: false);
+            $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $plainTitle, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
             $meta = array_filter([
                 $category === '' ? '' : '<span>'.$this->escape($category).'</span>',
                 $date === '' ? '' : '<time datetime="'.$this->escapeAttribute($date).'">'.$this->escape($date).'</time>',
@@ -1807,7 +1833,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $summaryMarkup = $this->hasRichTextMarkup($summary)
                 ? '<div class="g7pb-articles__summary">'.$this->sanitizeRichText($summary).'</div>'
                 : '<p>'.$this->formatText($summary).'</p>';
-            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->escape($title).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
+            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->sanitizePromotedInlineRichText($title, allowLinks: false).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
         }
 
         return '<section class="g7pb-block g7pb-articles g7pb-articles--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="article-list">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-articles__items">'.implode('', $compiled).'</div></section>';
@@ -1819,7 +1845,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'caption', 'provider', 'videoId', 'ratio', 'appearance'], 'Video embed');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredString($props, 'heading', 200);
-        $caption = $this->optionalString($props, 'caption', 1000) ?? '';
+        $caption = $this->optionalRichTextString($props, 'caption', 1000) ?? '';
         $provider = $this->requiredString($props, 'provider', 16);
         $videoId = $this->requiredString($props, 'videoId', 32);
         $ratio = $this->requiredString($props, 'ratio', 8);
@@ -1834,7 +1860,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             ? 'https://www.youtube-nocookie.com/embed/'.$videoId.'?rel=0'
             : 'https://player.vimeo.com/video/'.$videoId;
 
-        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'"><iframe src="'.$this->escapeAttribute($src).'" title="'.$this->escapeAttribute($this->inlinePlainText($heading)).'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>'.($caption === '' ? '' : '<figcaption>'.$this->formatText($caption).'</figcaption>').'</figure></section>';
+        $captionMarkup = $caption === '' ? '' : '<figcaption>'.($this->hasCanonicalRichTextMarkup($caption) ? $this->sanitizeRichText($caption) : $this->formatText($caption)).'</figcaption>';
+
+        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'"><iframe src="'.$this->escapeAttribute($src).'" title="'.$this->escapeAttribute($this->inlinePlainText($heading)).'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>'.$captionMarkup.'</figure></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1935,7 +1963,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $this->assertOnlyKeys($item, ['date', 'time', 'title', 'location', 'description', 'buttonLabel', 'buttonUrl'], "Event item {$index}");
             $date = $this->requiredString($item, 'date', 40);
             $time = $this->optionalString($item, 'time', 40) ?? '';
-            $title = $this->requiredString($item, 'title', 240);
+            $title = $this->requiredInlineRichTextString($item, 'title', 240);
             $location = $this->optionalString($item, 'location', 240) ?? '';
             $description = $this->requiredString($item, 'description', 1500);
             $buttonLabel = $this->optionalString($item, 'buttonLabel', 120) ?? '';
@@ -1951,7 +1979,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $descriptionMarkup = $this->hasRichTextMarkup($description)
                 ? '<div class="g7pb-events__description">'.$this->sanitizeRichText($description).'</div>'
                 : '<p>'.$this->formatText($description).'</p>';
-            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->escape($title).'</h3>'.$descriptionMarkup.$action.'</article></li>';
+            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.$action.'</article></li>';
         }
 
         return '<section class="g7pb-block g7pb-events g7pb-events--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="event-schedule">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
@@ -1975,7 +2003,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Download resource {$index} must be an object.");
             }
             $this->assertOnlyKeys($item, ['title', 'description', 'fileType', 'fileSize', 'buttonLabel', 'url'], "Download resource {$index}");
-            $title = $this->requiredString($item, 'title', 240);
+            $title = $this->requiredInlineRichTextString($item, 'title', 240);
             $description = $this->optionalString($item, 'description', 1200) ?? '';
             $fileType = $this->requiredString($item, 'fileType', 20);
             $fileSize = $this->optionalString($item, 'fileSize', 40) ?? '';
@@ -1987,7 +2015,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $descriptionMarkup = $description === '' ? '' : ($this->hasRichTextMarkup($description)
                 ? '<div class="g7pb-downloads__description">'.$this->sanitizeRichText($description).'</div>'
                 : '<p>'.$this->formatText($description).'</p>');
-            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->escape($title).'</h3>'.$descriptionMarkup.'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'" download>'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
+            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'" download>'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
         }
 
         return '<section class="g7pb-block g7pb-downloads '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="download-resources">'.$this->compileSectionHeading($eyebrow, $heading).'<ul>'.implode('', $compiled).'</ul></section>';
@@ -2406,9 +2434,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             },
             'email' => $type === self::CONTACT_TYPE ? '(.//*['.$hasClass('g7pb-contact__details').']/a[starts-with(@href, "mailto:")])[1]' : null,
             'description' => match ($type) {
-                self::BAR_CHART_TYPE => '(.//figcaption/p[not('.$hasClass('g7pb-section-eyebrow').')])[1]',
-                self::INQUIRY_FORM_TYPE => '(.//*['.$hasClass('g7pb-inquiry__intro').']/*[self::p and not('.$hasClass('g7pb-section-eyebrow').')])[1]',
-                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__intro').']/*[self::p and not('.$hasClass('g7pb-section-eyebrow').')])[1]',
+                self::BAR_CHART_TYPE => '(.//figcaption/*[('.$hasClass('g7pb-bar-chart__description').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))])[1]',
+                self::INQUIRY_FORM_TYPE => '(.//*['.$hasClass('g7pb-inquiry__intro').']/*[('.$hasClass('g7pb-inquiry__description').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))])[1]',
+                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__intro').']/*[('.$hasClass('g7pb-map__description').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))])[1]',
                 default => null,
             },
             'privacyLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*['.$hasClass('g7pb-inquiry-form__consent').']/span)[1]' : null,
@@ -2444,12 +2472,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             self::BUTTONS_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//*['.$hasClass('g7pb-buttons__items').']/a)['.$index.']' : null,
             self::ICON_LIST_TYPE => $collection === 'items' ? match ($leaf) {
                 'title' => '(.//*['.$hasClass('g7pb-icon-list__item').'])['.$index.']//h3',
-                'body' => '(.//*['.$hasClass('g7pb-icon-list__item').'])['.$index.']//p',
+                'body' => '(.//*['.$hasClass('g7pb-icon-list__item').'])['.$index.']//*[('.$hasClass('g7pb-icon-list__body').') or self::p][1]',
                 default => null,
             } : null,
             self::FEATURES_TYPE => $collection === 'items' ? match ($leaf) {
                 'title' => '(.//*['.$hasClass('g7pb-features__item').'])['.$index.']/h3',
-                'body' => '(.//*['.$hasClass('g7pb-features__item').'])['.$index.']/p',
+                'body' => '(.//*['.$hasClass('g7pb-features__item').'])['.$index.']/*[('.$hasClass('g7pb-features__body').') or self::p][1]',
                 default => null,
             } : null,
             self::HERO_SLIDER_TYPE => $collection === 'slides' ? match ($leaf) {
@@ -2464,21 +2492,21 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             self::STATS_TYPE => $collection === 'items' ? match ($leaf) {
                 'value' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/strong',
                 'label' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/h3',
-                'detail' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/p',
+                'detail' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/*[('.$hasClass('g7pb-stats__detail').') or self::p][1]',
                 default => null,
             } : null,
             self::PRICING_TYPE => $collection === 'plans' ? match ($leaf) {
                 'name' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/h3',
                 'price' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']//*['.$hasClass('g7pb-pricing__price').']/strong',
                 'period' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']//*['.$hasClass('g7pb-pricing__price').']/span',
-                'description' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/p[not('.$hasClass('g7pb-pricing__price').')]',
+                'description' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/*[('.$hasClass('g7pb-pricing__description').') or (self::p and not('.$hasClass('g7pb-pricing__price').'))][1]',
                 'buttonLabel' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/a',
                 default => null,
             } : null,
             self::TEAM_TYPE => $collection === 'members' ? match ($leaf) {
                 'name' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/h3',
                 'role' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/strong',
-                'bio' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/p',
+                'bio' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/*[('.$hasClass('g7pb-team__bio').') or self::p][1]',
                 default => null,
             } : null,
             self::GALLERY_TYPE => $collection === 'images' && $leaf === 'caption' ? '(.//*['.$hasClass('g7pb-gallery__grid').']/figure)['.$index.']/figcaption' : null,
@@ -2624,6 +2652,104 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         return $value;
+    }
+
+    /** @param array<string, mixed> $values */
+    private function requiredInlineRichTextString(
+        array $values,
+        string $key,
+        int $maxLength,
+        bool $allowLinks = true,
+    ): string {
+        return $this->requiredInlineRichTextValue(
+            $values[$key] ?? null,
+            "Property {$key}",
+            $maxLength,
+            $allowLinks,
+        );
+    }
+
+    /** @param array<string, mixed> $values */
+    private function optionalInlineRichTextString(
+        array $values,
+        string $key,
+        int $maxLength,
+        bool $allowLinks = true,
+    ): ?string {
+        $value = $values[$key] ?? null;
+        if ($value === null) {
+            return null;
+        }
+        if (! is_string($value)) {
+            throw new DocumentCompileException("Property {$key} must be a string within its length limit.");
+        }
+
+        $this->assertPromotedRichTextLength($value, $maxLength, inline: true, allowLinks: $allowLinks);
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $values */
+    private function requiredRichTextString(array $values, string $key, int $maxLength): string
+    {
+        $value = $values[$key] ?? null;
+        if (! is_string($value)) {
+            throw new DocumentCompileException("Property {$key} is required or too long.");
+        }
+
+        $this->assertPromotedRichTextLength($value, $maxLength, required: true);
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $values */
+    private function optionalRichTextString(array $values, string $key, int $maxLength): ?string
+    {
+        $value = $values[$key] ?? null;
+        if ($value === null) {
+            return null;
+        }
+        if (! is_string($value)) {
+            throw new DocumentCompileException("Property {$key} must be a string within its length limit.");
+        }
+
+        $this->assertPromotedRichTextLength($value, $maxLength);
+
+        return $value;
+    }
+
+    private function requiredInlineRichTextValue(
+        mixed $value,
+        string $property,
+        int $maxLength,
+        bool $allowLinks = true,
+    ): string {
+        if (! is_string($value)) {
+            throw new DocumentCompileException("{$property} is invalid.");
+        }
+
+        $this->assertPromotedRichTextLength(
+            $value,
+            $maxLength,
+            required: true,
+            inline: true,
+            allowLinks: $allowLinks,
+        );
+
+        return $value;
+    }
+
+    private function assertPromotedRichTextLength(
+        string $value,
+        int $maxLength,
+        bool $required = false,
+        bool $inline = false,
+        bool $allowLinks = true,
+    ): void {
+        $plainText = $this->promotedRichTextPlainText($value, $inline, $allowLinks);
+        if (($required && trim($plainText) === '') || mb_strlen($plainText) > $maxLength) {
+            throw new DocumentCompileException('Rich text is required or too long.');
+        }
     }
 
     /**
@@ -2798,12 +2924,59 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return preg_match('/<\/?[a-z][^>]*>/i', $value) === 1;
     }
 
-    private function sanitizeRichText(string $html): string
+    private function hasCanonicalInlineRichTextMarkup(string $value): bool
+    {
+        return preg_match('/^\s*<p\b[^>]*>.*<\/p>\s*$/is', $value) === 1;
+    }
+
+    private function hasCanonicalRichTextMarkup(string $value): bool
+    {
+        return preg_match('/^\s*<(?:p|h[2-4]|ol|ul|blockquote)\b/i', $value) === 1;
+    }
+
+    private function sanitizePromotedInlineRichText(string $value, bool $allowLinks = true): string
+    {
+        return $this->hasCanonicalInlineRichTextMarkup($value)
+            ? $this->sanitizeInlineRichText($value, $allowLinks)
+            : $this->escape($value);
+    }
+
+    private function promotedRichTextPlainText(string $value, bool $inline, bool $allowLinks): string
+    {
+        if ($inline) {
+            return $this->hasCanonicalInlineRichTextMarkup($value)
+                ? $this->inlinePlainText($value, $allowLinks)
+                : $value;
+        }
+        if (! $this->hasCanonicalRichTextMarkup($value)) {
+            return $value;
+        }
+
+        $sanitized = $this->sanitizeRichText($value, $allowLinks);
+        $withBreaks = preg_replace(
+            '/<br\s*\/?\s*>|<\/(?:p|h[2-4]|li|blockquote)>/i',
+            ' ',
+            $sanitized,
+        );
+        $plainText = html_entity_decode(strip_tags((string) $withBreaks), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim((string) preg_replace('/\s+/u', ' ', $plainText));
+    }
+
+    private function promotedInlinePlainText(string $value, bool $allowLinks = true): string
+    {
+        return $this->hasCanonicalInlineRichTextMarkup($value)
+            ? $this->inlinePlainText($value, $allowLinks)
+            : trim($value);
+    }
+
+    private function sanitizeRichText(string $html, bool $allowLinks = true): string
     {
         if (preg_match('/<(?:script|style|iframe|object|embed|svg|math|form|input|button)\b/i', $html) === 1
             || preg_match('/\son[a-z]+\s*=/i', $html) === 1) {
             throw new DocumentCompileException('Rich text contains unsafe markup.');
         }
+        $this->assertRichTextLinkNesting($html, $allowLinks);
 
         $document = new \DOMDocument('1.0', 'UTF-8');
         $previousErrors = libxml_use_internal_errors(true);
@@ -2828,7 +3001,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('Rich text could not be parsed.');
         }
 
-        $this->sanitizeRichTextNode($root);
+        $this->sanitizeRichTextNode($root, $allowLinks);
         $parts = [];
 
         foreach ($root->childNodes as $child) {
@@ -2848,7 +3021,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return $sanitized;
     }
 
-    private function sanitizeRichTextNode(\DOMNode $parent): void
+    private function sanitizeRichTextNode(\DOMNode $parent, bool $allowLinks): void
     {
         $allowed = ['p', 'h2', 'h3', 'h4', 'strong', 'em', 'u', 'span', 'a', 'ol', 'ul', 'li', 'blockquote', 'br'];
 
@@ -2866,7 +3039,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $tag = strtolower($child->tagName);
 
                 if (! in_array($tag, $allowed, true)) {
-                    $this->sanitizeRichTextNode($child);
+                    $this->sanitizeRichTextNode($child, $allowLinks);
 
                     while ($child->firstChild !== null) {
                         $parent->insertBefore($child->firstChild, $child);
@@ -2913,7 +3086,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                     $child->setAttribute('rel', 'noopener noreferrer');
                 }
 
-                $this->sanitizeRichTextNode($child);
+                $this->sanitizeRichTextNode($child, $allowLinks);
             } elseif (! $child instanceof \DOMText) {
                 $parent->removeChild($child);
             }
@@ -2922,13 +3095,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
     }
 
-    private function sanitizeInlineRichText(string $html): string
+    private function sanitizeInlineRichText(string $html, bool $allowLinks = true): string
     {
+        $this->assertRichTextLinkNesting($html, $allowLinks);
         if (! preg_match('/<(?:p|strong|em|u|span|a|br)\b/i', $html)) {
             return $this->escape($html);
         }
 
-        $sanitized = $this->sanitizeRichText($html);
+        $sanitized = $this->sanitizeRichText($html, $allowLinks);
         $document = new \DOMDocument('1.0', 'UTF-8');
         $previousErrors = libxml_use_internal_errors(true);
         try {
@@ -2964,11 +3138,38 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return implode('', $parts);
     }
 
-    private function inlinePlainText(string $html): string
+    private function inlinePlainText(string $html, bool $allowLinks = true): string
     {
-        $sanitized = preg_replace('/<br\s*\/?\s*>/i', ' ', $this->sanitizeInlineRichText($html));
+        $sanitized = preg_replace('/<br\s*\/?\s*>/i', ' ', $this->sanitizeInlineRichText($html, $allowLinks));
 
         return trim(html_entity_decode(strip_tags((string) $sanitized), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    }
+
+    private function assertRichTextLinkNesting(string $html, bool $allowLinks): void
+    {
+        if (! $allowLinks && preg_match('/<\s*a\b/i', $html) === 1) {
+            throw new DocumentCompileException('Rich text links are not allowed in this field.');
+        }
+
+        preg_match_all('/<\s*(\/?)\s*a\b[^>]*>/i', $html, $matches, PREG_SET_ORDER);
+        $depth = 0;
+        foreach ($matches as $match) {
+            if ($match[1] === '/') {
+                if ($depth === 0) {
+                    throw new DocumentCompileException('Rich text link markup is invalid.');
+                }
+                $depth--;
+
+                continue;
+            }
+            if ($depth > 0) {
+                throw new DocumentCompileException('Rich text links cannot be nested.');
+            }
+            $depth++;
+        }
+        if ($depth !== 0) {
+            throw new DocumentCompileException('Rich text link markup is invalid.');
+        }
     }
 
     private function escape(string $value): string

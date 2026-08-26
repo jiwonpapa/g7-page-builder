@@ -24,6 +24,108 @@ expect_fail() {
   fi
 }
 
+replace_meta_field() {
+  local meta_file="$1"
+  local key="$2"
+  local value="$3"
+  local staged="$meta_file.test-stage"
+  awk -F '\t' -v OFS='\t' -v key="$key" -v value="$value" \
+    '$1 == key { $2 = value } { print }' "$meta_file" > "$staged"
+  mv "$staged" "$meta_file"
+}
+
+setup_batch_fixture() {
+  local fixture="$1"
+  batch_repo="$temp_root/$fixture-repo"
+  batch_first_worktree="$temp_root/$fixture-first"
+  batch_second_worktree="$temp_root/$fixture-second"
+  batch_state="$batch_repo/.git/g7pb-coordination-v1"
+
+  git init -b main "$batch_repo" >/dev/null
+  git -C "$batch_repo" config user.name 'Coord Harness Test'
+  git -C "$batch_repo" config user.email 'coord-harness@example.test'
+  mkdir -p "$batch_repo/first" "$batch_repo/second"
+  printf 'base first\n' > "$batch_repo/first/file.txt"
+  printf 'base second\n' > "$batch_repo/second/file.txt"
+  git -C "$batch_repo" add .
+  git -C "$batch_repo" commit -m "test: $fixture base" >/dev/null
+  batch_start_sha="$(git -C "$batch_repo" rev-parse HEAD)"
+  git -C "$batch_repo" worktree add --detach "$batch_first_worktree" HEAD >/dev/null
+  git -C "$batch_repo" worktree add --detach "$batch_second_worktree" HEAD >/dev/null
+
+  (
+    cd "$batch_first_worktree"
+    G7PB_COORD_TESTING=1 "$harness" claim \
+      --task first-task \
+      --paths first \
+      --profile harness >/dev/null
+    printf 'submitted first\n' > first/file.txt
+    G7PB_COORD_TESTING=1 "$harness" submit --task first-task >/dev/null
+  )
+  (
+    cd "$batch_second_worktree"
+    G7PB_COORD_TESTING=1 "$harness" claim \
+      --task second-task \
+      --paths second \
+      --profile harness >/dev/null
+    printf 'submitted second\n' > second/file.txt
+    G7PB_COORD_TESTING=1 "$harness" submit --task second-task >/dev/null
+  )
+  (
+    cd "$batch_repo"
+    G7PB_COORD_TESTING=1 "$harness" claim \
+      --task integration-task \
+      --areas integration,runtime \
+      --profile harness >/dev/null
+  )
+}
+
+assert_submitted_batch_rollback() {
+  local context="$1"
+  [[ "$(git -C "$batch_repo" rev-parse HEAD)" == "$batch_start_sha" ]] \
+    || fail "$context changed main HEAD"
+  [[ -z "$(git -C "$batch_repo" status --porcelain)" ]] \
+    || fail "$context left the main worktree dirty"
+  if git -C "$batch_repo" rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
+    fail "$context left MERGE_HEAD"
+  fi
+  local task
+  for task in first-task second-task; do
+    local meta="$batch_state/tasks/$task.meta"
+    [[ -f "$meta" ]] || fail "$context lost submitted metadata for $task"
+    grep -q $'^status\tsubmitted$' "$meta" \
+      || fail "$context changed submitted status for $task"
+    if find "$batch_state/history" -type f -name "$task.*.meta" -print -quit | grep -q .; then
+      fail "$context left integrated history for $task"
+    fi
+    [[ ! -L "$batch_state/task-locks/$task.lock" ]] \
+      || fail "$context left task operation lock for $task"
+  done
+  [[ ! -L "$batch_state/task-locks/integration-task.lock" ]] \
+    || fail "$context left the integration task operation lock"
+}
+
+assert_integrated_batch_history() {
+  local expected_sha="$1"
+  local task
+  for task in first-task second-task; do
+    [[ ! -e "$batch_state/tasks/$task.meta" ]] \
+      || fail "integrated batch kept active metadata for $task"
+    local history_meta
+    history_meta="$(find "$batch_state/history" -type f -name "$task.*.meta" -print -quit)"
+    [[ -n "$history_meta" && -f "$history_meta" ]] \
+      || fail "integrated batch lost history metadata for $task"
+    grep -q $'^status\tintegrated$' "$history_meta" \
+      || fail "batch history status is not integrated for $task"
+    grep -q $'^integration_sha\t'"$expected_sha"'$' "$history_meta" \
+      || fail "batch history has a divergent integration SHA for $task"
+    [[ ! -L "$batch_state/task-locks/$task.lock" ]] \
+      || fail "integrated batch left task operation lock for $task"
+  done
+  [[ ! -L "$batch_state/task-locks/integration-task.lock" ]] \
+    || fail 'integrated batch left the integration task operation lock'
+}
+
 repo="$temp_root/repo"
 editor_worktree="$temp_root/editor"
 domain_worktree="$temp_root/domain"
@@ -764,6 +866,181 @@ git -C "$replace_repo" worktree add --detach "$replace_overlap_worktree" "$repla
 [[ ! -e "$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-overlap-task.meta" ]] \
   || fail 'replacement did not retain inherited overlap exclusion'
 
+batch_profile_hook="$temp_root/batch-profile-hook.sh"
+batch_profile_record="$temp_root/batch-profile-record.tsv"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'printf '\''%s\t%s\t%s\n'\'' "$1" "$2" "$3" >> "$G7PB_COORD_TEST_PROFILE_RECORD"' \
+  > "$batch_profile_hook"
+chmod +x "$batch_profile_hook"
+
+setup_batch_fixture 'batch-success'
+mkdir -p "$batch_state/task-locks"
+batch_lock_owner="$(hostname)|$$|$(ps -p "$$" -o lstart= | tr -d '[:space:]')"
+ln -s "$batch_lock_owner" "$batch_state/task-locks/integration-task.lock"
+(
+  cd "$batch_repo"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" integrate-batch \
+    --tasks first-task,second-task \
+    --integration-task integration-task
+)
+[[ "$(readlink "$batch_state/task-locks/integration-task.lock")" == "$batch_lock_owner" ]] \
+  || fail 'competing batch integration removed another live integration lock'
+rm -f "$batch_state/task-locks/integration-task.lock"
+assert_submitted_batch_rollback 'competing integration lock rejection'
+
+(
+  cd "$batch_repo"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_TASK_LOCK_COUNT=1 \
+    "$harness" integrate-batch \
+      --tasks second-task,first-task \
+      --integration-task integration-task
+)
+assert_submitted_batch_rollback 'partial-lock termination'
+
+(
+  cd "$batch_repo"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_INTEGRATION_PROFILE=1 \
+    "$harness" integrate \
+      --task first-task \
+      --integration-task integration-task
+)
+assert_submitted_batch_rollback 'single integration profile termination'
+
+replace_meta_field "$batch_state/tasks/first-task.meta" profile frontend
+replace_meta_field "$batch_state/tasks/first-task.meta" areas migration
+replace_meta_field "$batch_state/tasks/second-task.meta" profile php
+replace_meta_field "$batch_state/tasks/second-task.meta" areas version
+(
+  cd "$batch_repo"
+  G7PB_COORD_TESTING=1 \
+  G7PB_COORD_TEST_INTEGRATION_PROFILE_HOOK="$batch_profile_hook" \
+  G7PB_COORD_TEST_PROFILE_RECORD="$batch_profile_record" \
+    "$harness" integrate-batch \
+      --tasks second-task,first-task \
+      --integration-task integration-task >/dev/null
+)
+batch_success_sha="$(git -C "$batch_repo" rev-parse HEAD)"
+[[ "$batch_success_sha" != "$batch_start_sha" ]] \
+  || fail 'successful batch did not create an integration commit'
+[[ "$(git -C "$batch_repo" show HEAD:first/file.txt)" == 'submitted first' \
+  && "$(git -C "$batch_repo" show HEAD:second/file.txt)" == 'submitted second' ]] \
+  || fail 'successful batch did not integrate every submitted tree'
+[[ "$(wc -l < "$batch_profile_record" | tr -d ' ')" == 1 ]] \
+  || fail 'successful batch did not execute its integration profile exactly once'
+grep -q $'^mixed\tintegration-task\tmigration,version$' "$batch_profile_record" \
+  || fail 'successful batch did not select the strongest profile with the complete AREA union'
+[[ -z "$(git -C "$batch_repo" status --porcelain)" ]] \
+  || fail 'successful batch left the main worktree dirty'
+if git -C "$batch_repo" rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
+  fail 'successful batch left MERGE_HEAD'
+fi
+assert_integrated_batch_history "$batch_success_sha"
+
+setup_batch_fixture 'batch-profile-failure'
+(
+  cd "$batch_repo"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_FAIL_INTEGRATION_PROFILE=1 \
+    "$harness" integrate-batch \
+      --tasks first-task,second-task \
+      --integration-task integration-task
+)
+assert_submitted_batch_rollback 'batch profile failure'
+
+setup_batch_fixture 'batch-finalize-failure'
+(
+  cd "$batch_repo"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_FAIL_INTEGRATION_FINALIZE=1 \
+    "$harness" integrate-batch \
+      --tasks first-task,second-task \
+      --integration-task integration-task
+)
+assert_submitted_batch_rollback 'batch metadata finalization failure'
+
+setup_batch_fixture 'batch-partial-archive-signal'
+(
+  cd "$batch_repo"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_FIRST_INTEGRATION_ARCHIVE=1 \
+    "$harness" integrate-batch \
+      --tasks first-task,second-task \
+      --integration-task integration-task
+)
+assert_submitted_batch_rollback 'batch partial metadata termination'
+
+setup_batch_fixture 'batch-complete-archive-signal'
+(
+  cd "$batch_repo"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_INTEGRATION_METADATA=1 \
+    "$harness" integrate-batch \
+      --tasks first-task,second-task \
+      --integration-task integration-task
+)
+batch_preserved_sha="$(git -C "$batch_repo" rev-parse HEAD)"
+[[ "$batch_preserved_sha" != "$batch_start_sha" ]] \
+  || fail 'post-history termination rolled back a complete batch integration'
+[[ -z "$(git -C "$batch_repo" status --porcelain)" ]] \
+  || fail 'post-history termination left the main worktree dirty'
+if git -C "$batch_repo" rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
+  fail 'post-history termination left MERGE_HEAD'
+fi
+assert_integrated_batch_history "$batch_preserved_sha"
+
+setup_batch_fixture 'batch-invalid-contract'
+(
+  cd "$batch_repo"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" integrate-batch \
+    --tasks first-task,first-task \
+    --integration-task integration-task
+)
+grep -q '중복 ID' "$temp_root/expected-failure.log" \
+  || fail 'duplicate batch task IDs were not rejected explicitly'
+assert_submitted_batch_rollback 'duplicate task rejection'
+
+batch_first_meta="$batch_state/tasks/first-task.meta"
+batch_second_meta="$batch_state/tasks/second-task.meta"
+replace_meta_field "$batch_first_meta" paths 'first,second'
+(
+  cd "$batch_repo"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" integrate-batch \
+    --tasks first-task,second-task \
+    --integration-task integration-task
+)
+grep -q 'PATHS가 겹칩니다' "$temp_root/expected-failure.log" \
+  || {
+    sed -n '1,80p' "$temp_root/expected-failure.log" >&2
+    fail 'overlapping batch PATHS were not rejected explicitly'
+  }
+assert_submitted_batch_rollback 'overlapping path rejection'
+replace_meta_field "$batch_first_meta" paths first
+
+replace_meta_field "$batch_first_meta" areas version
+replace_meta_field "$batch_second_meta" areas version
+(
+  cd "$batch_repo"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" integrate-batch \
+    --tasks first-task,second-task \
+    --integration-task integration-task
+)
+grep -q 'AREAS가 겹칩니다' "$temp_root/expected-failure.log" \
+  || {
+    sed -n '1,80p' "$temp_root/expected-failure.log" >&2
+    fail 'overlapping batch AREAS were not rejected explicitly'
+  }
+assert_submitted_batch_rollback 'overlapping area rejection'
+
 grep -q '^dev-up: runtime-guard' "$root/Makefile" \
   || fail 'Makefile dev-up runtime guard missing'
 grep -q '^task-restack:' "$root/Makefile" \
@@ -772,6 +1049,8 @@ grep -q '^task-restack-squash:' "$root/Makefile" \
   || fail 'Makefile task-restack-squash target missing'
 grep -q '^task-replace-submitted:' "$root/Makefile" \
   || fail 'Makefile task-replace-submitted target missing'
+grep -q '^task-integrate-batch:' "$root/Makefile" \
+  || fail 'Makefile task-integrate-batch target missing'
 grep -q '^release-package: release-guard' "$root/Makefile" \
   || fail 'Makefile release guard missing'
 grep -q '^## Parallel work and integration' "$root/AGENTS.md" \

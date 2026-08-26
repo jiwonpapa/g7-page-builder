@@ -148,7 +148,7 @@ make task-replace-submitted \
 
 교체 명령은 코드 delta를 복사하지 않습니다. 새 task에서 의미가 확인된 최소 변경만 다시 구현한 뒤 일반 `task-submit`으로 전체 상속 profile을 통과해야 합니다. 수동 cherry-pick·metadata 수정·claim 확장은 허용하지 않습니다.
 
-## 6. Local 순차 통합
+## 6. Local 통합
 
 Local 통합 채팅에서 실행합니다.
 
@@ -161,6 +161,18 @@ make task-integrate \
 하네스는 제출 Worktree의 존재와 clean 상태, 기준 ancestry, 제출 commit을 확인합니다. 충돌 사전검사 후 임시 merge를 만들고 Docker profile gate를 실행합니다. 성공할 때만 merge commit을 만들고 task lease를 history의 `integrated` 상태로 이동합니다.
 
 충돌이나 gate 실패 시 통합 commit은 생성되지 않습니다. 공유 스키마·Provider·route·CSS 의미 충돌은 통합 담당자가 범위를 재배정한 뒤 새 제출로 해결합니다.
+
+서로 기능적으로 의존해 개별 임시 merge만으로는 제품 gate가 성립하지 않지만, claim한 PATHS와 AREAS는 겹치지 않는 submitted task 2개 이상은 한 번에 검증할 수 있습니다.
+
+```bash
+make task-integrate-batch \
+  TASKS=editor-pointer-controls,editor-lifecycle-e2e,page-kit-manifest \
+  INTEGRATION_TASK=integration-20260820
+```
+
+batch 통합은 task ID를 정규화해 중복을 거부하고, 모든 제출 metadata·소유 worktree·branch·HEAD·claim 비중첩을 잠근 상태에서 재검증합니다. 충돌 없는 하나의 임시 merge 위에서 포함된 profile 중 가장 강한 gate를 정확히 한 번 실행합니다. gate·Git commit·모든 task의 `integrated` history 기록이 모두 성공해야 완료되며, 실패나 종료 신호가 발생하면 main HEAD와 active `submitted` metadata를 함께 원복합니다. 모든 history 기록이 이미 완료된 뒤 종료된 경우에는 commit과 완결된 history를 함께 보존합니다.
+
+batch는 충돌을 덮거나 검증을 줄이는 수단이 아닙니다. claim이 겹치거나 독립적으로 제출되지 않은 변경은 범위를 재배정하고 다시 제출합니다.
 
 ## 7. 전체 검증과 릴리스
 

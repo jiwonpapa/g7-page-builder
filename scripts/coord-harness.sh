@@ -24,6 +24,7 @@ Usage:
   coord-harness.sh restack-squash --task ID --new-base-ref REF
   coord-harness.sh replace-submitted --task NEW_ID --supersedes OLD_ID [--base-ref REF]
   coord-harness.sh integrate --task ID --integration-task ID
+  coord-harness.sh integrate-batch --tasks ID1,ID2[,IDN...] --integration-task ID
   coord-harness.sh verify --task ID
   coord-harness.sh finish --task ID
   coord-harness.sh release --task ID
@@ -64,9 +65,22 @@ history_dir="$state_root/history"
 mutex_dir="$state_root/mutex"
 mutex_held=0
 task_locks_dir="$state_root/task-locks"
-task_lock_path=''
-task_lock_owner=''
-task_lock_held=0
+task_lock_records=()
+integration_temp_files=()
+integration_merge_active=0
+integration_start_sha=''
+integration_finalize_active=0
+integration_finalize_sha=''
+integration_finalize_task_ids=()
+integration_finalize_expected_submitted=()
+integration_finalize_expected_meta_hashes=()
+integration_finalize_expected_worktrees=()
+integration_finalize_expected_branches=()
+integration_finalize_expected_heads=()
+integration_finalize_meta_files=()
+integration_finalize_backups=()
+integration_finalize_history_files=()
+integration_finalize_stages=()
 restack_rollback_active=0
 restack_rollback_sha=''
 restack_meta_file=''
@@ -81,6 +95,65 @@ replace_new_meta=''
 replace_new_stage=''
 replace_expected_old_task=''
 replace_expected_new_task=''
+
+integration_finalize_is_committed() {
+  local count="${#integration_finalize_task_ids[@]}"
+  local index
+  [[ "$count" -gt 0 ]] || return 1
+  for ((index=0; index<count; index++)); do
+    [[ ! -e "${integration_finalize_meta_files[$index]}" \
+      && -f "${integration_finalize_history_files[$index]}" \
+      && "$(field "${integration_finalize_history_files[$index]}" task)" \
+        == "${integration_finalize_task_ids[$index]}" \
+      && "$(field "${integration_finalize_history_files[$index]}" status)" == integrated \
+      && "$(field "${integration_finalize_history_files[$index]}" submitted_sha)" \
+        == "${integration_finalize_expected_submitted[$index]}" \
+      && "$(field "${integration_finalize_history_files[$index]}" integration_sha)" \
+        == "$integration_finalize_sha" ]] || return 1
+  done
+}
+
+rollback_integration_finalize() {
+  [[ "$integration_finalize_active" == 1 ]] || return 0
+  local count="${#integration_finalize_task_ids[@]}"
+  local index
+  if integration_finalize_is_committed; then
+    for ((index=0; index<count; index++)); do
+      rm -f -- "${integration_finalize_backups[$index]}" \
+        "${integration_finalize_stages[$index]}" \
+        "${integration_finalize_stages[$index]}.tmp.$$"
+    done
+    integration_finalize_active=0
+    integration_merge_active=0
+    return 0
+  fi
+
+  for ((index=0; index<count; index++)); do
+    rm -f -- "${integration_finalize_history_files[$index]}" \
+      "${integration_finalize_stages[$index]}" \
+      "${integration_finalize_stages[$index]}.tmp.$$"
+  done
+  for ((index=count - 1; index>=0; index--)); do
+    if [[ -f "${integration_finalize_backups[$index]}" ]]; then
+      if ! mv "${integration_finalize_backups[$index]}" \
+        "${integration_finalize_meta_files[$index]}"; then
+        printf '%s: integration metadata rollback failed; expected metadata=%s\n' \
+          "$PROGRAM" "${integration_finalize_meta_files[$index]}" >&2
+      fi
+    fi
+  done
+  integration_finalize_active=0
+}
+
+rollback_integration_merge() {
+  [[ "$integration_merge_active" == 1 && -n "$integration_start_sha" ]] || return 0
+  git merge --abort >/dev/null 2>&1 || true
+  if ! git reset --hard "$integration_start_sha" >/dev/null 2>&1; then
+    printf '%s: integration rollback failed; expected HEAD=%s\n' \
+      "$PROGRAM" "$integration_start_sha" >&2
+  fi
+  integration_merge_active=0
+}
 
 rollback_replace_submitted() {
   [[ "$replace_rollback_active" == 1 ]] || return 0
@@ -137,11 +210,24 @@ cleanup_mutex() {
   fi
 }
 
+cleanup_integration_temp_files() {
+  local temp_file
+  if (( ${#integration_temp_files[@]} > 0 )); then
+    for temp_file in "${integration_temp_files[@]}"; do
+      [[ -n "$temp_file" ]] && rm -f -- "$temp_file"
+    done
+  fi
+  integration_temp_files=()
+}
+
 cleanup() {
+  rollback_integration_finalize
+  rollback_integration_merge
   rollback_restack
   rollback_replace_submitted
   cleanup_mutex
   release_task_lock
+  cleanup_integration_temp_files
 }
 
 trap cleanup EXIT
@@ -174,11 +260,12 @@ acquire_task_lock() {
   local task="$1"
   ensure_state
   mkdir -p "$task_locks_dir"
-  task_lock_path="$task_locks_dir/$task.lock"
+  local lock_path="$task_locks_dir/$task.lock"
   local process_start
   process_start="$(ps -p "$$" -o lstart= | tr -d '[:space:]')"
   [[ -n "$process_start" ]] || fail '현재 process 시작 시각을 확인하지 못했습니다.'
-  task_lock_owner="$(hostname)|$$|$process_start"
+  local lock_owner
+  lock_owner="$(hostname)|$$|$process_start"
   local attempt=0
   local max_attempts=100
   local existing_owner
@@ -186,17 +273,25 @@ acquire_task_lock() {
     max_attempts=2
   fi
   while (( attempt < max_attempts )); do
-    if ln -s "$task_lock_owner" "$task_lock_path" 2>/dev/null; then
-      task_lock_held=1
+    local lock_record="$lock_path"$'\t'"$lock_owner"
+    local lock_index="${#task_lock_records[@]}"
+    task_lock_records[$lock_index]="$lock_record"
+    if ln -s "$lock_owner" "$lock_path" 2>/dev/null; then
+      if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+        && "${G7PB_COORD_TEST_TERMINATE_AFTER_TASK_LOCK_COUNT:-}" \
+          == "${#task_lock_records[@]}" ]]; then
+        kill -TERM "$$"
+      fi
       return
     fi
+    unset 'task_lock_records[$lock_index]'
 
-    existing_owner="$(readlink "$task_lock_path" 2>/dev/null || true)"
+    existing_owner="$(readlink "$lock_path" 2>/dev/null || true)"
     if [[ -n "$existing_owner" ]] && ! task_lock_owner_is_live "$existing_owner"; then
       acquire_mutex
-      if [[ "$(readlink "$task_lock_path" 2>/dev/null || true)" == "$existing_owner" ]] \
+      if [[ "$(readlink "$lock_path" 2>/dev/null || true)" == "$existing_owner" ]] \
         && ! task_lock_owner_is_live "$existing_owner"; then
-        rm -f "$task_lock_path"
+        rm -f "$lock_path"
       fi
       release_mutex
       continue
@@ -208,14 +303,20 @@ acquire_task_lock() {
 }
 
 release_task_lock() {
-  if [[ "$task_lock_held" == 1 ]]; then
-    if [[ "$(readlink "$task_lock_path" 2>/dev/null || true)" == "$task_lock_owner" ]]; then
-      rm -f "$task_lock_path"
+  local index
+  local lock_record
+  local lock_path
+  local lock_owner
+  for ((index=${#task_lock_records[@]} - 1; index >= 0; index--)); do
+    lock_record="${task_lock_records[$index]-}"
+    [[ -n "$lock_record" ]] || continue
+    lock_path="${lock_record%%$'\t'*}"
+    lock_owner="${lock_record#*$'\t'}"
+    if [[ "$(readlink "$lock_path" 2>/dev/null || true)" == "$lock_owner" ]]; then
+      rm -f "$lock_path"
     fi
-    task_lock_held=0
-    task_lock_path=''
-    task_lock_owner=''
-  fi
+  done
+  task_lock_records=()
 }
 
 task_lock_owner_is_live() {
@@ -524,6 +625,21 @@ run_integration_profile() {
   local profile="$1"
   local integration_task="$2"
   local task_areas="${3:-}"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 ]]; then
+    if [[ "${G7PB_COORD_TEST_FAIL_INTEGRATION_PROFILE:-0}" == 1 ]]; then
+      fail 'TEST_MODE integration profile failure'
+    fi
+    if [[ -n "${G7PB_COORD_TEST_INTEGRATION_PROFILE_HOOK:-}" ]]; then
+      [[ -x "$G7PB_COORD_TEST_INTEGRATION_PROFILE_HOOK" ]] \
+        || fail 'TEST_MODE integration profile hook is not executable'
+      "$G7PB_COORD_TEST_INTEGRATION_PROFILE_HOOK" "$profile" "$integration_task" "$task_areas" \
+        || fail 'TEST_MODE integration profile hook failure'
+    fi
+    if [[ "${G7PB_COORD_TEST_TERMINATE_INTEGRATION_PROFILE:-0}" == 1 ]]; then
+      kill -TERM "$$"
+    fi
+    return 0
+  fi
   local needs_runtime_sync=0
   if csv_has "$task_areas" migration || csv_has "$task_areas" version; then
     needs_runtime_sync=1
@@ -548,6 +664,49 @@ run_integration_profile() {
   esac
 }
 
+select_batch_integration_profile() {
+  local profile
+  local has_full=0
+  local has_mixed=0
+  local has_g7=0
+  local has_php=0
+  local has_frontend=0
+  local has_docs=0
+  local has_harness=0
+  for profile in "$@"; do
+    case "$profile" in
+      full) has_full=1 ;;
+      mixed) has_mixed=1 ;;
+      g7) has_g7=1 ;;
+      php) has_php=1 ;;
+      frontend) has_frontend=1 ;;
+      docs) has_docs=1 ;;
+      harness) has_harness=1 ;;
+      *) fail "지원하지 않는 batch PROFILE입니다: $profile" ;;
+    esac
+  done
+
+  if [[ "$has_harness" == 1 ]]; then
+    [[ "$has_full$has_mixed$has_g7$has_php$has_frontend$has_docs" == 000000 ]] \
+      || fail 'harness PROFILE은 실제 integration PROFILE과 batch로 섞을 수 없습니다.'
+    printf 'harness\n'
+  elif [[ "$has_full" == 1 ]]; then
+    printf 'full\n'
+  elif [[ "$has_mixed" == 1 ]]; then
+    if [[ "$has_g7" == 1 ]]; then printf 'full\n'; else printf 'mixed\n'; fi
+  elif [[ "$has_g7" == 1 ]]; then
+    if [[ "$has_php$has_frontend$has_docs" == 000 ]]; then printf 'g7\n'; else printf 'full\n'; fi
+  elif [[ "$has_php$has_frontend$has_docs" == 100 ]]; then
+    printf 'php\n'
+  elif [[ "$has_php$has_frontend$has_docs" == 010 ]]; then
+    printf 'frontend\n'
+  elif [[ "$has_php$has_frontend$has_docs" == 001 ]]; then
+    printf 'docs\n'
+  else
+    printf 'mixed\n'
+  fi
+}
+
 archive_loaded_task() {
   local final_status="$1"
   local stamp
@@ -560,6 +719,7 @@ archive_loaded_task() {
 
 parse_common_args() {
   TASK_ID=''
+  TASKS_CSV=''
   PATHS_CSV=''
   AREAS_CSV=''
   PROFILE=''
@@ -572,6 +732,7 @@ parse_common_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --task) [[ $# -ge 2 ]] || fail '--task 값이 필요합니다.'; TASK_ID="$2"; shift 2 ;;
+      --tasks) [[ $# -ge 2 ]] || fail '--tasks 값이 필요합니다.'; TASKS_CSV="$2"; shift 2 ;;
       --paths) [[ $# -ge 2 ]] || fail '--paths 값이 필요합니다.'; PATHS_CSV="$2"; shift 2 ;;
       --areas) [[ $# -ge 2 ]] || fail '--areas 값이 필요합니다.'; AREAS_CSV="$2"; shift 2 ;;
       --profile) [[ $# -ge 2 ]] || fail '--profile 값이 필요합니다.'; PROFILE="$2"; shift 2 ;;
@@ -1139,18 +1300,96 @@ assert_integration_owner() {
   csv_has "$META_AREAS" integration || fail '통합 task가 integration AREA를 소유하지 않습니다.'
 }
 
-finalize_integrated_task() {
+assert_integration_owner_unchanged() {
   local task="$1"
-  local integration_sha="$2"
-  local expected_submitted_sha="$3"
-  acquire_mutex
+  local expected_meta_file="$2"
+  local expected_meta_hash="$3"
+  [[ -f "$expected_meta_file" \
+    && "$(git hash-object "$expected_meta_file")" == "$expected_meta_hash" ]] \
+    || fail '통합 검증 중 integration task metadata가 변경되었습니다.'
   load_task "$task"
-  [[ "$META_STATUS" == submitted ]] || fail '통합 완료 기록 전 task 상태가 변경되었습니다.'
-  [[ "$META_SUBMITTED_SHA" == "$expected_submitted_sha" ]] \
-    || fail '통합 완료 기록 전 submitted SHA가 변경되었습니다.'
-  META_INTEGRATION_SHA="$integration_sha"
-  META_INTEGRATED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-  archive_loaded_task integrated
+  assert_task_owner
+  [[ "$META_STATUS" == active ]] \
+    || fail '통합 검증 중 integration task가 active 상태를 잃었습니다.'
+  csv_has "$META_AREAS" integration \
+    || fail '통합 검증 중 integration AREA 소유권이 사라졌습니다.'
+}
+
+finalize_integrated_tasks() {
+  local integration_sha="$1"
+  local count="${#integration_finalize_task_ids[@]}"
+  local index
+  [[ "$count" -gt 0 ]] || fail '통합 완료할 task가 없습니다.'
+  acquire_mutex
+  for ((index=0; index<count; index++)); do
+    [[ -f "${integration_finalize_meta_files[$index]}" \
+      && "$(git hash-object "${integration_finalize_meta_files[$index]}")" \
+        == "${integration_finalize_expected_meta_hashes[$index]}" ]] \
+      || fail "통합 완료 전 task metadata가 변경되었습니다: ${integration_finalize_task_ids[$index]}"
+    load_task "${integration_finalize_task_ids[$index]}"
+    [[ "$META_STATUS" == submitted \
+      && "$META_SUBMITTED_SHA" == "${integration_finalize_expected_submitted[$index]}" \
+      && "$META_WORKTREE" == "${integration_finalize_expected_worktrees[$index]}" \
+      && "$META_BRANCH" == "${integration_finalize_expected_branches[$index]}" ]] \
+      || fail "통합 완료 전 task 계약이 변경되었습니다: ${integration_finalize_task_ids[$index]}"
+    [[ -d "$META_WORKTREE" \
+      && -z "$(git -C "$META_WORKTREE" status --porcelain 2>/dev/null || printf 'missing')" \
+      && "$(git -C "$META_WORKTREE" rev-parse HEAD 2>/dev/null || true)" \
+        == "${integration_finalize_expected_heads[$index]}" \
+      && "$(git -C "$META_WORKTREE" symbolic-ref --quiet --short HEAD 2>/dev/null || true)" \
+        == "${integration_finalize_expected_branches[$index]}" ]] \
+      || fail "통합 완료 전 제출 worktree가 변경되었습니다: ${integration_finalize_task_ids[$index]}"
+  done
+
+  local integrated_at
+  local history_stamp
+  integrated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  history_stamp="$(date -u '+%Y%m%dT%H%M%SZ')"
+  integration_finalize_sha="$integration_sha"
+  integration_finalize_backups=()
+  integration_finalize_history_files=()
+  integration_finalize_stages=()
+  for ((index=0; index<count; index++)); do
+    integration_finalize_backups[$index]="$tasks_dir/.${integration_finalize_task_ids[$index]}.integrate.$$.backup"
+    integration_finalize_history_files[$index]="$history_dir/${integration_finalize_task_ids[$index]}.$history_stamp.meta"
+    integration_finalize_stages[$index]="$history_dir/.${integration_finalize_task_ids[$index]}.integrate.$$.stage"
+    [[ ! -e "${integration_finalize_backups[$index]}" \
+      && ! -e "${integration_finalize_history_files[$index]}" \
+      && ! -e "${integration_finalize_stages[$index]}" ]] \
+      || fail "통합 metadata 경로가 이미 존재합니다: ${integration_finalize_task_ids[$index]}"
+  done
+  integration_finalize_active=1
+  for ((index=0; index<count; index++)); do
+    load_task "${integration_finalize_task_ids[$index]}"
+    META_STATUS='integrated'
+    META_INTEGRATION_SHA="$integration_sha"
+    META_INTEGRATED_AT="$integrated_at"
+    write_task "${integration_finalize_stages[$index]}"
+  done
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_FAIL_INTEGRATION_FINALIZE:-0}" == 1 ]]; then
+    fail 'TEST_MODE integration metadata finalization failure'
+  fi
+  for ((index=0; index<count; index++)); do
+    mv "${integration_finalize_meta_files[$index]}" "${integration_finalize_backups[$index]}"
+  done
+  for ((index=0; index<count; index++)); do
+    mv "${integration_finalize_stages[$index]}" "${integration_finalize_history_files[$index]}"
+    if [[ "$index" == 0 \
+      && "${G7PB_COORD_TESTING:-0}" == 1 \
+      && "${G7PB_COORD_TEST_TERMINATE_AFTER_FIRST_INTEGRATION_ARCHIVE:-0}" == 1 ]]; then
+      kill -TERM "$$"
+    fi
+  done
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_INTEGRATION_METADATA:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  for ((index=0; index<count; index++)); do
+    rm -f -- "${integration_finalize_backups[$index]}"
+  done
+  integration_finalize_active=0
+  integration_merge_active=0
   release_mutex
 }
 
@@ -1158,11 +1397,18 @@ command_integrate() {
   parse_common_args "$@"
   validate_task_id "$TASK_ID"
   validate_task_id "$INTEGRATION_TASK"
+  [[ "$TASK_ID" != "$INTEGRATION_TASK" ]] \
+    || fail '통합 task 자신을 submitted task로 병합할 수 없습니다.'
 
   assert_integration_owner "$INTEGRATION_TASK"
-  local integration_profile="$META_PROFILE"
   [[ "$repo_root" == "$main_worktree" ]] || fail '통합은 기본 Local worktree에서만 허용합니다.'
+  acquire_task_lock "$INTEGRATION_TASK"
+  assert_integration_owner "$INTEGRATION_TASK"
   [[ -z "$(git status --porcelain)" ]] || fail '깨끗한 통합 worktree에서만 병합할 수 있습니다.'
+  local integration_profile="$META_PROFILE"
+  local integration_owner_meta_file="$META_FILE"
+  local integration_owner_meta_hash
+  integration_owner_meta_hash="$(git hash-object "$integration_owner_meta_file")"
 
   acquire_task_lock "$TASK_ID"
   load_task "$TASK_ID"
@@ -1172,18 +1418,37 @@ command_integrate() {
   local submitted_sha="$META_SUBMITTED_SHA"
   local task_worktree="$META_WORKTREE"
   local task_base="$META_BASE_SHA"
+  local task_branch="$META_BRANCH"
+  local task_meta_file="$META_FILE"
+  local task_meta_hash
+  task_meta_hash="$(git hash-object "$task_meta_file")"
   [[ -n "$submitted_sha" ]] || fail 'submitted SHA가 없습니다.'
   git cat-file -e "$submitted_sha^{commit}" 2>/dev/null || fail 'submitted commit을 찾지 못했습니다.'
   git merge-base --is-ancestor "$task_base" "$submitted_sha" || fail 'submitted commit의 ancestry가 올바르지 않습니다.'
   [[ -d "$task_worktree" ]] || fail '제출 worktree가 없습니다. Codex snapshot을 복구한 뒤 통합하십시오.'
   [[ -z "$(git -C "$task_worktree" status --porcelain)" ]] || fail '제출 worktree에 미커밋 변경이 남아 있습니다.'
 
+  integration_finalize_task_ids=("$TASK_ID")
+  integration_finalize_expected_submitted=("$submitted_sha")
+  integration_finalize_expected_meta_hashes=("$task_meta_hash")
+  integration_finalize_expected_worktrees=("$task_worktree")
+  integration_finalize_expected_branches=("$task_branch")
+  integration_finalize_expected_heads=("$submitted_sha")
+  integration_finalize_meta_files=("$task_meta_file")
+
   if git merge-base --is-ancestor "$submitted_sha" HEAD; then
     if [[ "$task_worktree" != "$repo_root" ]]; then
       [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
         || fail '제출 뒤 task branch HEAD가 변경되었습니다. 새 변경을 별도 task로 제출하십시오.'
     fi
+    if [[ "$task_worktree" == "$repo_root" ]]; then
+      integration_finalize_expected_heads[0]="$(git rev-parse HEAD)"
+    fi
     run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"
+    assert_integration_owner_unchanged \
+      "$INTEGRATION_TASK" "$integration_owner_meta_file" "$integration_owner_meta_hash"
+    [[ -f "$task_meta_file" && "$(git hash-object "$task_meta_file")" == "$task_meta_hash" ]] \
+      || fail '통합 검증 중 제출 task metadata가 변경되었습니다.'
     [[ -d "$task_worktree" ]] || fail '통합 검증 중 제출 Worktree가 사라졌습니다.'
     [[ -z "$(git -C "$task_worktree" status --porcelain)" ]] \
       || fail '통합 검증 중 제출 Worktree가 변경되었습니다.'
@@ -1194,7 +1459,7 @@ command_integrate() {
       [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
         || fail '통합 검증 중 제출 Worktree가 변경되었습니다.'
     fi
-    finalize_integrated_task "$TASK_ID" "$(git rev-parse HEAD)" "$submitted_sha"
+    finalize_integrated_tasks "$(git rev-parse HEAD)"
     release_task_lock
     note "ALREADY_INTEGRATED task=$TASK_ID sha=$submitted_sha"
     return
@@ -1205,6 +1470,7 @@ command_integrate() {
 
   local merge_tree_output
   merge_tree_output="$(mktemp "${TMPDIR:-/tmp}/g7pb-merge-tree.XXXXXX")"
+  integration_temp_files[${#integration_temp_files[@]}]="$merge_tree_output"
   if ! git merge-tree --write-tree --messages HEAD "$submitted_sha" >"$merge_tree_output" 2>&1; then
     sed -n '1,200p' "$merge_tree_output" >&2
     rm -f "$merge_tree_output"
@@ -1212,29 +1478,220 @@ command_integrate() {
   fi
   rm -f "$merge_tree_output"
 
-  if ! git merge --no-ff --no-commit "$submitted_sha"; then
-    git merge --abort >/dev/null 2>&1 || true
-    fail 'Git 임시 병합이 실패했습니다.'
-  fi
+  integration_start_sha="$(git rev-parse HEAD)"
+  integration_merge_active=1
+  git merge --no-ff --no-commit "$submitted_sha" \
+    || fail 'Git 임시 병합이 실패했습니다.'
 
   if ! run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"; then
-    git merge --abort >/dev/null 2>&1 || fail '검증 실패 뒤 merge abort도 실패했습니다. 수동 복구가 필요합니다.'
-    fail '통합 검증이 실패해 병합을 중단하고 원상복구했습니다.'
+    fail '통합 검증이 실패해 병합을 중단합니다.'
   fi
 
   if [[ ! -d "$task_worktree" \
     || -n "$(git -C "$task_worktree" status --porcelain 2>/dev/null || printf 'missing')" \
     || "$(git -C "$task_worktree" rev-parse HEAD 2>/dev/null || true)" != "$submitted_sha" ]]; then
-    git merge --abort >/dev/null 2>&1 || fail '제출 Worktree 변경 감지 뒤 merge abort가 실패했습니다.'
     fail '통합 검증 중 제출 Worktree가 변경되어 병합을 중단했습니다.'
   fi
+  [[ -f "$task_meta_file" && "$(git hash-object "$task_meta_file")" == "$task_meta_hash" ]] \
+    || fail '통합 검증 중 제출 task metadata가 변경되었습니다.'
+  assert_integration_owner_unchanged \
+    "$INTEGRATION_TASK" "$integration_owner_meta_file" "$integration_owner_meta_hash"
 
   git commit -m "merge($TASK_ID): integrate submitted worktree"
   local integration_sha
   integration_sha="$(git rev-parse HEAD)"
-  finalize_integrated_task "$TASK_ID" "$integration_sha" "$submitted_sha"
+  finalize_integrated_tasks "$integration_sha"
   release_task_lock
   note "INTEGRATED task=$TASK_ID submitted=$submitted_sha integration=$integration_sha integration_profile=$integration_profile"
+}
+
+command_integrate_batch() {
+  parse_common_args "$@"
+  validate_task_id "$INTEGRATION_TASK"
+  [[ -n "$TASKS_CSV" ]] || fail '--tasks 값이 필요합니다.'
+  [[ "$TASKS_CSV" != ,* && "$TASKS_CSV" != *, && "$TASKS_CSV" != *,,* \
+    && ! "$TASKS_CSV" =~ [[:space:]] ]] \
+    || fail 'TASKS는 공백·빈 항목이 없는 쉼표 구분 task ID여야 합니다.'
+
+  local old_ifs="$IFS"
+  local requested_tasks=()
+  IFS=',' read -r -a requested_tasks <<< "$TASKS_CSV"
+  IFS="$old_ifs"
+  [[ "${#requested_tasks[@]}" -ge 2 ]] \
+    || fail 'batch 통합에는 서로 다른 submitted task가 2개 이상 필요합니다.'
+
+  local task
+  for task in "${requested_tasks[@]}"; do
+    validate_task_id "$task"
+    [[ "$task" != "$INTEGRATION_TASK" ]] \
+      || fail '통합 task 자신을 batch 제출물로 지정할 수 없습니다.'
+  done
+
+  local sorted_tasks=()
+  while IFS= read -r task; do
+    [[ -n "$task" ]] && sorted_tasks[${#sorted_tasks[@]}]="$task"
+  done < <(printf '%s\n' "${requested_tasks[@]}" | LC_ALL=C sort)
+  local index
+  for ((index=1; index<${#sorted_tasks[@]}; index++)); do
+    [[ "${sorted_tasks[$((index - 1))]}" != "${sorted_tasks[$index]}" ]] \
+      || fail "batch TASKS에 중복 ID가 있습니다: ${sorted_tasks[$index]}"
+  done
+
+  assert_integration_owner "$INTEGRATION_TASK"
+  [[ "$repo_root" == "$main_worktree" ]] \
+    || fail 'batch 통합은 기본 Local worktree에서만 허용합니다.'
+  acquire_task_lock "$INTEGRATION_TASK"
+  assert_integration_owner "$INTEGRATION_TASK"
+  [[ -z "$(git status --porcelain)" ]] \
+    || fail '깨끗한 통합 worktree에서만 batch 병합할 수 있습니다.'
+  local integration_owner_meta_file="$META_FILE"
+  local integration_owner_meta_hash
+  integration_owner_meta_hash="$(git hash-object "$integration_owner_meta_file")"
+
+  for task in "${sorted_tasks[@]}"; do
+    acquire_task_lock "$task"
+  done
+
+  local task_profiles=()
+  local task_paths=()
+  local task_areas_list=()
+  local submitted_shas=()
+  local combined_areas=''
+  local previous_index
+  integration_finalize_task_ids=()
+  integration_finalize_expected_submitted=()
+  integration_finalize_expected_meta_hashes=()
+  integration_finalize_expected_worktrees=()
+  integration_finalize_expected_branches=()
+  integration_finalize_expected_heads=()
+  integration_finalize_meta_files=()
+
+  for ((index=0; index<${#sorted_tasks[@]}; index++)); do
+    task="${sorted_tasks[$index]}"
+    load_task "$task"
+    [[ "$META_STATUS" == submitted ]] \
+      || fail "submitted task만 batch 병합할 수 있습니다: task=$task status=$META_STATUS"
+    validate_profile "$META_PROFILE"
+    validate_paths "$META_PATHS"
+    validate_areas "$META_AREAS"
+    [[ -n "$META_SUBMITTED_SHA" ]] \
+      || fail "submitted SHA가 없습니다: task=$task"
+    git cat-file -e "$META_SUBMITTED_SHA^{commit}" 2>/dev/null \
+      || fail "submitted commit을 찾지 못했습니다: task=$task"
+    git merge-base --is-ancestor "$META_BASE_SHA" "$META_SUBMITTED_SHA" \
+      || fail "submitted commit ancestry가 올바르지 않습니다: task=$task"
+    git merge-base --is-ancestor "$META_SUBMITTED_SHA" HEAD \
+      && fail "이미 HEAD에 포함된 task는 batch가 아닌 단일 통합으로 정리하십시오: task=$task"
+    [[ -d "$META_WORKTREE" ]] \
+      || fail "제출 worktree가 없습니다: task=$task worktree=$META_WORKTREE"
+    [[ "$META_WORKTREE" != "$repo_root" ]] \
+      || fail "batch 제출 task는 별도 worktree여야 합니다: task=$task"
+    [[ "$(git -C "$META_WORKTREE" rev-parse --is-inside-work-tree 2>/dev/null)" == true \
+      && "$(git -C "$META_WORKTREE" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" \
+        == "$common_git_dir" \
+      && "$(git -C "$META_WORKTREE" symbolic-ref --quiet --short HEAD 2>/dev/null || true)" \
+        == "$META_BRANCH" \
+      && "$(git -C "$META_WORKTREE" rev-parse HEAD 2>/dev/null || true)" \
+        == "$META_SUBMITTED_SHA" \
+      && -z "$(git -C "$META_WORKTREE" status --porcelain 2>/dev/null || printf 'missing')" ]] \
+      || fail "제출 worktree 계약이 metadata와 일치하지 않습니다: task=$task"
+    collect_and_check_changed_paths_at "$META_WORKTREE" "$META_BASE_SHA" "$META_PATHS"
+
+    for ((previous_index=0; previous_index<index; previous_index++)); do
+      csv_paths_overlap "$META_PATHS" "${task_paths[$previous_index]}" \
+        && fail "batch task PATHS가 겹칩니다: $task <-> ${sorted_tasks[$previous_index]}"
+      csv_areas_overlap "$META_AREAS" "${task_areas_list[$previous_index]}" \
+        && fail "batch task AREAS가 겹칩니다: $task <-> ${sorted_tasks[$previous_index]}"
+    done
+
+    task_profiles[$index]="$META_PROFILE"
+    task_paths[$index]="$META_PATHS"
+    task_areas_list[$index]="$META_AREAS"
+    submitted_shas[$index]="$META_SUBMITTED_SHA"
+    integration_finalize_task_ids[$index]="$task"
+    integration_finalize_expected_submitted[$index]="$META_SUBMITTED_SHA"
+    integration_finalize_expected_meta_hashes[$index]="$(git hash-object "$META_FILE")"
+    integration_finalize_expected_worktrees[$index]="$META_WORKTREE"
+    integration_finalize_expected_branches[$index]="$META_BRANCH"
+    integration_finalize_expected_heads[$index]="$META_SUBMITTED_SHA"
+    integration_finalize_meta_files[$index]="$META_FILE"
+    if [[ -n "$META_AREAS" ]]; then
+      combined_areas="${combined_areas:+$combined_areas,}$META_AREAS"
+    fi
+  done
+
+  if [[ -n "$combined_areas" ]]; then
+    local combined_area_items=()
+    IFS=',' read -r -a combined_area_items <<< "$combined_areas"
+    IFS="$old_ifs"
+    combined_areas=''
+    local area
+    while IFS= read -r area; do
+      [[ -n "$area" ]] || continue
+      combined_areas="${combined_areas:+$combined_areas,}$area"
+    done < <(printf '%s\n' "${combined_area_items[@]}" | LC_ALL=C sort -u)
+  fi
+
+  local batch_profile
+  batch_profile="$(select_batch_integration_profile "${task_profiles[@]}")"
+  local merge_tree_output
+  merge_tree_output="$(mktemp "${TMPDIR:-/tmp}/g7pb-batch-merge-tree.XXXXXX")"
+  integration_temp_files[${#integration_temp_files[@]}]="$merge_tree_output"
+  local synthetic_commit
+  local synthetic_tree
+  synthetic_commit="$(git rev-parse HEAD)"
+  for ((index=0; index<${#submitted_shas[@]}; index++)); do
+    if ! git merge-tree --write-tree --messages "$synthetic_commit" "${submitted_shas[$index]}" \
+      >"$merge_tree_output" 2>&1; then
+      sed -n '1,200p' "$merge_tree_output" >&2
+      rm -f "$merge_tree_output"
+      fail "batch 결합 트리 충돌 사전검사가 실패했습니다: ${sorted_tasks[$index]}"
+    fi
+    synthetic_tree="$(sed -n '1p' "$merge_tree_output")"
+    git cat-file -e "$synthetic_tree^{tree}" 2>/dev/null \
+      || fail "batch 결합 트리 사전검사 결과가 유효하지 않습니다: ${sorted_tasks[$index]}"
+    synthetic_commit="$(printf 'g7pb batch preflight: %s\n' "${sorted_tasks[$index]}" \
+      | git commit-tree "$synthetic_tree" -p "$synthetic_commit" -p "${submitted_shas[$index]}")"
+  done
+  rm -f "$merge_tree_output"
+
+  integration_start_sha="$(git rev-parse HEAD)"
+  integration_merge_active=1
+  git merge --no-ff --no-commit "${submitted_shas[@]}" \
+    || fail 'Git batch 임시 병합이 실패했습니다.'
+  [[ "$(git write-tree)" == "$synthetic_tree" ]] \
+    || fail 'Git batch 임시 병합 결과가 사전검사한 결합 트리와 다릅니다.'
+
+  if ! run_integration_profile "$batch_profile" "$INTEGRATION_TASK" "$combined_areas"; then
+    fail 'batch 통합 검증이 실패해 전체 병합을 중단합니다.'
+  fi
+
+  for ((index=0; index<${#sorted_tasks[@]}; index++)); do
+    [[ -f "${integration_finalize_meta_files[$index]}" \
+      && "$(git hash-object "${integration_finalize_meta_files[$index]}")" \
+        == "${integration_finalize_expected_meta_hashes[$index]}" \
+      && -d "${integration_finalize_expected_worktrees[$index]}" \
+      && -z "$(git -C "${integration_finalize_expected_worktrees[$index]}" \
+        status --porcelain 2>/dev/null || printf 'missing')" \
+      && "$(git -C "${integration_finalize_expected_worktrees[$index]}" \
+        rev-parse HEAD 2>/dev/null || true)" \
+        == "${integration_finalize_expected_heads[$index]}" \
+      && "$(git -C "${integration_finalize_expected_worktrees[$index]}" \
+        symbolic-ref --quiet --short HEAD 2>/dev/null || true)" \
+        == "${integration_finalize_expected_branches[$index]}" ]] \
+      || fail "batch 검증 중 제출 계약이 변경되었습니다: ${sorted_tasks[$index]}"
+  done
+  assert_integration_owner_unchanged \
+    "$INTEGRATION_TASK" "$integration_owner_meta_file" "$integration_owner_meta_hash"
+
+  local task_list
+  task_list="$(IFS=','; printf '%s' "${sorted_tasks[*]}")"
+  git commit -m 'merge(batch): integrate submitted worktrees' -m "Tasks: $task_list"
+  local integration_sha
+  integration_sha="$(git rev-parse HEAD)"
+  finalize_integrated_tasks "$integration_sha"
+  release_task_lock
+  note "INTEGRATED_BATCH tasks=$task_list integration=$integration_sha profile=$batch_profile"
 }
 
 command_runtime_guard() {
@@ -1252,6 +1709,7 @@ command_runtime_guard() {
 command_verify() {
   parse_common_args "$@"
   validate_task_id "$TASK_ID"
+  acquire_task_lock "$TASK_ID"
   command_runtime_guard --task "$TASK_ID"
   local file
   for file in "$tasks_dir"/*.meta; do
@@ -1272,6 +1730,7 @@ command_verify() {
   META_VERIFIED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   write_task "$META_FILE"
   release_mutex
+  release_task_lock
   note "VERIFIED task=$TASK_ID sha=$META_VERIFIED_SHA"
 }
 
@@ -1289,6 +1748,7 @@ command_release_guard() {
 command_finish() {
   parse_common_args "$@"
   validate_task_id "$TASK_ID"
+  acquire_task_lock "$TASK_ID"
   command_release_guard --task "$TASK_ID"
   local file
   for file in "$tasks_dir"/*.meta; do
@@ -1299,12 +1759,14 @@ command_finish() {
   load_task "$TASK_ID"
   archive_loaded_task complete
   release_mutex
+  release_task_lock
   note "FINISHED task=$TASK_ID"
 }
 
 command_release() {
   parse_common_args "$@"
   validate_task_id "$TASK_ID"
+  acquire_task_lock "$TASK_ID"
   load_task "$TASK_ID"
   assert_task_owner
   [[ "$META_STATUS" == active ]] || fail 'submitted task는 release할 수 없습니다. 통합하거나 보존해야 합니다.'
@@ -1314,6 +1776,7 @@ command_release() {
   load_task "$TASK_ID"
   archive_loaded_task cancelled
   release_mutex
+  release_task_lock
   note "RELEASED task=$TASK_ID"
 }
 
@@ -1327,6 +1790,7 @@ case "$command_name" in
   restack-squash) command_restack_squash "$@" ;;
   replace-submitted) command_replace_submitted "$@" ;;
   integrate) command_integrate "$@" ;;
+  integrate-batch) command_integrate_batch "$@" ;;
   verify) command_verify "$@" ;;
   finish) command_finish "$@" ;;
   release) command_release "$@" ;;

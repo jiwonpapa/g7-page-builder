@@ -431,6 +431,14 @@ function normalizeFeatureItems(value: unknown): FeatureItem[] {
   });
 }
 
+function inlineArrayContent(value: unknown, index: number, key: string, fallback: string): React.ReactNode {
+  const item = Array.isArray(value) && typeof value[index] === 'object' && value[index] !== null
+    ? value[index] as Record<string, unknown>
+    : {};
+  const candidate = item[key];
+  return React.isValidElement(candidate) || typeof candidate === 'string' ? candidate : fallback;
+}
+
 function hasNonEmptySlots(block: PageBuilderBlock): boolean {
   return Boolean(block.slots && Object.values(block.slots).some((slot) => slot.length > 0));
 }
@@ -1111,81 +1119,6 @@ function withBlockContainerFields<TComponents extends Record<string, { fields?: 
   }])) as unknown as TComponents;
 }
 
-function FeaturesItemsField({
-  value,
-  onChange,
-  readOnly,
-}: {
-  value: FeatureItem[];
-  onChange: (value: FeatureItem[]) => void;
-  readOnly?: boolean;
-}): React.ReactElement {
-  const items = normalizeFeatureItems(value);
-  const update = (index: number, patch: Partial<FeatureItem>): void => {
-    onChange(items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
-  };
-
-  return (
-    <div className="g7pb-feature-fields">
-      {items.map((item, index) => (
-        <fieldset key={index}>
-          <legend>항목 {index + 1}</legend>
-          <label>
-            아이콘
-            <select
-              value={item.icon}
-              disabled={readOnly}
-              onChange={(event) => update(index, { icon: event.target.value })}
-            >
-              <option value="sparkles">반짝임</option>
-              <option value="shield">보호</option>
-              <option value="bolt">속도</option>
-              <option value="heart">관심</option>
-            </select>
-          </label>
-          <label>
-            제목
-            <StableInputField
-              value={item.title}
-              onChange={(title) => update(index, { title })}
-              readOnly={readOnly}
-              testId={`page-builder-features-item-${index}-title`}
-            />
-          </label>
-          <label>
-            설명
-            <StableInputField
-              value={item.body}
-              onChange={(body) => update(index, { body })}
-              readOnly={readOnly}
-              multiline
-              testId={`page-builder-features-item-${index}-body`}
-            />
-          </label>
-          {items.length > 2 && (
-            <button type="button" disabled={readOnly} onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}>
-              항목 삭제
-            </button>
-          )}
-        </fieldset>
-      ))}
-      {items.length < 6 && (
-        <button
-          type="button"
-          className="g7pb-feature-fields__add"
-          disabled={readOnly}
-          onClick={() => onChange([
-            ...items,
-            { icon: 'sparkles', title: `기능 ${items.length + 1}`, body: '기능 설명을 입력하세요.' },
-          ])}
-        >
-          항목 추가
-        </button>
-      )}
-    </div>
-  );
-}
-
 function BlockFrame({
   id,
   type,
@@ -1243,7 +1176,7 @@ function HeroPreview({
         <div className="g7pb-preview-hero__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
-          <div className="g7pb-preview-richtext" data-g7pb-inline-field="body">{body}</div>
+          <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
           {primaryLabel && (
             <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
               <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
@@ -1276,8 +1209,12 @@ function FeaturesPreview({ id, title, items, layout, surface, spacing, textScale
           {normalizeFeatureItems(items).map((item, index) => (
             <article key={`${item.title}-${index}`}>
               <span aria-hidden="true">{glyphs[item.icon] ?? glyphs.sparkles}</span>
-              <h3 data-g7pb-inline-field={`items.${index}.title`}>{item.title}</h3>
-              <p data-g7pb-inline-field={`items.${index}.body`}>{item.body}</p>
+              <RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.title`}>
+                {inlineArrayContent(items, index, 'title', item.title)}
+              </RichTextCanvasField>
+              <RichTextCanvasField fieldPath={`items.${index}.body`}>
+                {inlineArrayContent(items, index, 'body', item.body)}
+              </RichTextCanvasField>
             </article>
           ))}
         </div>
@@ -1303,14 +1240,14 @@ function CtaPreview({
   textAlign = 'left',
   elementStyles,
   motion,
-}: Omit<CtaEditorProps, 'heading'> & { id: string; heading: React.ReactNode }): React.ReactElement {
+}: Omit<CtaEditorProps, 'heading' | 'body'> & { id: string; heading: React.ReactNode; body: React.ReactNode }): React.ReactElement {
   return (
     <BlockFrame id={id} type="cta" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-cta-split--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-cta-split__copy">
           {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{heading}</RichTextCanvasField>
-          {body && <p data-g7pb-inline-field="body">{body}</p>}
+          {body && <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>}
         </div>
         {(primaryLabel || secondaryLabel) && (
           <div className="g7pb-preview-cta-split__actions">
@@ -1498,11 +1435,20 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       fields: {
         title: createInlineRichTextField('제목'),
         items: {
-          type: 'custom',
+          type: 'array',
           label: '항목',
-          render: ({ value, onChange, readOnly }) => (
-            <FeaturesItemsField value={value} onChange={onChange} readOnly={readOnly} />
-          ),
+          min: 2,
+          max: 6,
+          defaultItemProps: (index) => ({ icon: 'sparkles', title: `기능 ${index + 1}`, body: '기능 설명을 입력하세요.' }),
+          getItemSummary: (item) => item.title,
+          arrayFields: {
+            icon: { type: 'select', label: '아이콘', options: [
+              { label: '반짝임', value: 'sparkles' }, { label: '보호', value: 'shield' },
+              { label: '속도', value: 'bolt' }, { label: '관심', value: 'heart' },
+            ] },
+            title: createInlineRichTextField('제목'),
+            body: createRichTextField('설명', 130),
+          },
         },
         layout: { type: 'select', label: '레이아웃', options: [
           { label: '벤토', value: 'bento' }, { label: '균등 그리드', value: 'grid' },
@@ -1546,15 +1492,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
           ),
         },
         heading: createInlineRichTextField('제목'),
-        body: {
-          type: 'custom',
-          label: '본문',
-          contentEditable: true,
-          render: ({ value, onChange, readOnly }) => (
-            <StableInputField value={value} onChange={onChange} readOnly={readOnly} multiline
-              testId="page-builder-cta-body" />
-          ),
-        },
+        body: createRichTextField('본문', 150, true),
         primaryLabel: {
           type: 'custom',
           label: '주 버튼 문구',
@@ -3014,6 +2952,11 @@ export function PuckEditorAdapter({
         <Puck
           config={runtimePuckConfig}
           data={data}
+          dictionary={{
+            'field-richtext-bold': '선택한 글자 굵게',
+            'field-richtext-italic': '선택한 글자 기울임',
+            'field-richtext-underline': '선택한 글자 밑줄',
+          }}
           height="100%"
           iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }}
           viewports={PAGE_BUILDER_VIEWPORTS}

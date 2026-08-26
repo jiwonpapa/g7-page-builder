@@ -60,6 +60,25 @@ async function assertTabletHeaderHeight(page: Page, projectName: string): Promis
     .toBeLessThanOrEqual(100);
 }
 
+async function openElementPanelFromActionBar(page: Page): Promise<void> {
+  const textToolsButton = page.locator('button:visible').filter({
+    has: page.getByTestId('page-builder-text-tools-open'),
+  });
+  await expect(textToolsButton).toHaveCount(1);
+  await expect(textToolsButton).toBeVisible();
+  await textToolsButton.scrollIntoViewIfNeeded();
+  const topHit = await textToolsButton.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const hit = element.ownerDocument.elementFromPoint(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+    );
+    return hit === element || (hit !== null && element.contains(hit));
+  });
+  expect(topHit, 'visible Puck text-tools ActionBar button must be pointer-reachable').toBe(true);
+  await textToolsButton.click();
+}
+
 async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
   const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
   const button = page.getByTestId(`page-builder-viewport-${width}`);
@@ -816,6 +835,8 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('COLLAPSED_SELECTION_GATE', async () => {
       await collapseSelectionWithPointer(page, rootSelection);
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
+      await expect(elementPanel).toBeHidden();
+      await openElementPanelFromActionBar(page);
       await expect(elementPanel).toBeVisible();
       await page.getByTestId('page-builder-editor').click({ position: { x: 8, y: 8 } });
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);

@@ -17,6 +17,7 @@ const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const E2E_OWNERSHIP_DIRECTORY = join(process.cwd(), 'output', 'playwright', 'ownership');
 const E2E_DOCUMENT_SLUG_PATTERN = /^(?:managed-)?g7pb-e2e-[a-z0-9-]+-\d{13}-[a-z0-9]{6}(?:-copy)?$|^g7pb-template-e2e-\d{13}-[a-z0-9]{6}$/;
+const MOBILE_EDITOR_BREAKPOINT = 900;
 /*
  * @puckeditor/core is pinned to 0.23.0. These selectors use that pinned build's
  * semantic CSS-module prefixes only; generated build hash suffixes are never
@@ -193,6 +194,17 @@ async function updateE2eOwnershipJournal(path: string, uploadedMediaId: string |
   await writeFile(path, JSON.stringify({ ...journal, uploadedMediaId }, null, 2), 'utf8');
 }
 
+async function removeE2eOwnershipJournal(path: string): Promise<void> {
+  try {
+    await unlink(path);
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
+  }
+}
+
 async function recoverOwnedE2eArtifacts(authToken: string): Promise<void> {
   await mkdir(E2E_OWNERSHIP_DIRECTORY, { recursive: true });
   const entries = await readdir(E2E_OWNERSHIP_DIRECTORY, { withFileTypes: true });
@@ -202,7 +214,7 @@ async function recoverOwnedE2eArtifacts(authToken: string): Promise<void> {
     const journal = JSON.parse(await readFile(path, 'utf8')) as unknown;
     assertOwnedE2eJournal(journal);
     await cleanupE2eArtifacts(authToken, journal.slugs, journal.uploadedMediaId);
-    await unlink(path);
+    await removeE2eOwnershipJournal(path);
   }
 }
 
@@ -437,17 +449,21 @@ async function waitForStableLayout(page: Page): Promise<void> {
 }
 
 async function mobileFieldsPanelIsOpen(page: Page): Promise<boolean> {
-  const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
-  if (!(await fieldsTab.isVisible())) return false;
+  return mobileSidebarPanelIsOpen(page, 'Fields');
+}
 
-  const fieldsItem = fieldsTab.locator('xpath=ancestor::li[1]');
-  const fieldsActive = await fieldsItem.evaluate(
+async function mobileSidebarPanelIsOpen(page: Page, name: 'Fields' | 'Outline'): Promise<boolean> {
+  const tab = page.locator('nav').getByText(name, { exact: true });
+  if (!(await tab.isVisible())) return false;
+
+  const item = tab.locator('xpath=ancestor::li[1]');
+  const active = await item.evaluate(
     (item, activeClass) => item.className.includes(activeClass),
     PUCK_NAV_ITEM_ACTIVE,
   );
   const leftSidebarOpen = await page.locator(PUCK_LEFT_SIDEBAR_OPEN).count() > 0;
 
-  return fieldsActive && leftSidebarOpen;
+  return active && leftSidebarOpen;
 }
 
 async function pointerHitEvidence(targetLocator: Locator, position?: { x: number; y: number }) {
@@ -524,6 +540,15 @@ async function activatePointerTarget(
     throw new Error(`${label} is not the topmost pointer target: ${JSON.stringify(evidence)}`);
   }
   await target.click(position ? { position } : undefined);
+}
+
+async function activatePuckInlineTextField(page: Page, field: Locator, label: string): Promise<void> {
+  await expect(field, `${label} must be visible before inline activation`).toBeVisible();
+  await field.scrollIntoViewIfNeeded();
+  await field.hover();
+  await expect(field).toHaveAttribute('contenteditable', 'plaintext-only');
+  await activatePointerTarget(page, field, label);
+  await expect(field).toBeEditable();
 }
 
 async function revealEditorHeaderActions(page: Page): Promise<void> {
@@ -723,7 +748,7 @@ async function revealBlockLibrary(page: Page): Promise<void> {
 async function hideMobileBlockLibrary(page: Page): Promise<void> {
   const viewport = page.viewportSize();
   const library = page.getByTestId('page-builder-block-library');
-  if (!viewport || viewport.width > 900 || !(await library.isVisible())) {
+  if (!viewport || viewport.width > MOBILE_EDITOR_BREAKPOINT || !(await library.isVisible())) {
     return;
   }
 
@@ -761,19 +786,28 @@ async function selectEditorBlock(page: Page, type: BlockType): Promise<void> {
   await dismissContextPanel(page);
   const viewport = page.viewportSize();
 
-  if (viewport && viewport.width <= 720) {
+  if (viewport && viewport.width <= MOBILE_EDITOR_BREAKPOINT) {
     const navigation = page.locator('nav');
+    const fieldsTab = navigation.getByText('Fields', { exact: true });
+    const outlineTab = navigation.getByText('Outline', { exact: true });
     if (await mobileFieldsPanelIsOpen(page)) {
-      await activatePointerTarget(page, navigation.getByText('Fields', { exact: true }), 'mobile Fields tab');
+      await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
       await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(0);
     }
 
-    await activatePointerTarget(page, navigation.getByText('Outline', { exact: true }), 'mobile Outline tab');
+    if (!(await mobileSidebarPanelIsOpen(page, 'Outline'))) {
+      await activatePointerTarget(page, outlineTab, 'mobile Outline tab');
+    }
     const outlineItem = page.getByText(BLOCK_LABELS[type], { exact: true }).last();
     await expect(outlineItem).toBeVisible();
     await activatePointerTarget(page, outlineItem, `mobile ${BLOCK_LABELS[type]} outline item`);
-    await activatePointerTarget(page, navigation.getByText('Outline', { exact: true }), 'mobile Outline tab');
-    await expect(outlineItem).toBeHidden();
+    if (await fieldsTab.isVisible()) {
+      if (!(await mobileFieldsPanelIsOpen(page))) {
+        await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
+      }
+      await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(1);
+      await expect(outlineItem).toBeHidden();
+    }
     return;
   }
 
@@ -920,11 +954,9 @@ async function selectAndEditHero(
   await expect(inlineTitle).toBeEditable();
   await inlineTitle.fill(title);
   if (directCanvas) {
-    await activatePointerTarget(page, inlineSubtitle, 'Hero eyebrow');
-    await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
+    await activatePuckInlineTextField(page, inlineSubtitle, 'Hero eyebrow');
     await inlineSubtitle.fill(subtitle);
-    await activatePointerTarget(page, inlineButton, 'Hero primary action label');
-    await expect(inlineButton).toHaveAttribute('contenteditable', 'plaintext-only');
+    await activatePuckInlineTextField(page, inlineButton, 'Hero primary action label');
     await inlineButton.fill(buttonLabel);
     await inlineSubtitle.press('Tab');
   } else {
@@ -1267,7 +1299,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectCanvasWidth(page, 768);
     await page.getByTestId('page-builder-viewport-1280').click();
     await expectCanvasWidth(page, 1280);
-    if ((page.viewportSize()?.width ?? 1280) <= 720) {
+    if ((page.viewportSize()?.width ?? 1280) <= MOBILE_EDITOR_BREAKPOINT) {
       await page.getByTestId('page-builder-viewport-360').click();
       await expectCanvasWidth(page, 360);
     }
@@ -1928,7 +1960,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         await page.close();
       }
       await cleanupE2eArtifacts(authToken, [slug, managedSlug, duplicateSlug], uploadedMediaId);
-      await unlink(ownershipJournalPath);
+      await removeE2eOwnershipJournal(ownershipJournalPath);
     }
     if (lifecycleError) throw lifecycleError;
     if (siteShellRestoreError) throw siteShellRestoreError;
@@ -2060,7 +2092,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     await expect(page.locator('.g7pb-template-page')).toBeVisible();
   } finally {
     await cleanupE2eArtifacts(authToken, [slug], null);
-    await unlink(ownershipJournalPath);
+    await removeE2eOwnershipJournal(ownershipJournalPath);
     if (previousHomeId) {
       const previousResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${previousHomeId}`);
       if (previousResponse.ok()) {

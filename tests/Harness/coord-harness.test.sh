@@ -106,6 +106,8 @@ printf '%s\n' "$status_after" | grep -q $'ACTIVE\teditor-task\tsubmitted' \
 [[ -f "$repo/editor/feature.txt" ]] || fail 'integrated file missing from main worktree'
 git -C "$repo" log -1 --format=%s | grep -q '^merge(editor-task):' \
   || fail 'integration merge commit missing'
+[[ ! -L "$repo/.git/g7pb-coordination-v1/task-locks/editor-task.lock" ]] \
+  || fail 'integration left the submitted task operation lock'
 
 (
   cd "$domain_worktree"
@@ -161,8 +163,294 @@ same_status="$(cd "$same_repo" && "$harness" status --history)"
 printf '%s\n' "$same_status" | grep -q $'HISTORY\tsame-worktree-task\tintegrated' \
   || fail 'same-worktree submitted ancestor was not finalized as integrated'
 
+restack_repo="$temp_root/restack-repo"
+restack_worktree="$temp_root/restack-task"
+git init -b main "$restack_repo" >/dev/null
+git -C "$restack_repo" config user.name 'Coord Harness Test'
+git -C "$restack_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$restack_repo/owned" "$restack_repo/upstream"
+printf 'base task\n' > "$restack_repo/owned/file.txt"
+printf 'base upstream\n' > "$restack_repo/upstream/file.txt"
+git -C "$restack_repo" add .
+git -C "$restack_repo" commit -m 'test: restack base' >/dev/null
+restack_old_base="$(git -C "$restack_repo" rev-parse HEAD)"
+git -C "$restack_repo" worktree add --detach "$restack_worktree" "$restack_old_base" >/dev/null
+(
+  cd "$restack_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task restack-task \
+    --paths owned \
+    --profile harness >/dev/null
+  printf 'submitted task\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task restack-task >/dev/null
+)
+restack_old_submitted="$(git -C "$restack_worktree" rev-parse HEAD)"
+printf 'new upstream\n' > "$restack_repo/upstream/file.txt"
+git -C "$restack_repo" add upstream/file.txt
+git -C "$restack_repo" commit -m 'test: advance restack base' >/dev/null
+restack_new_base="$(git -C "$restack_repo" rev-parse HEAD)"
+
+restack_lock_dir="$restack_repo/.git/g7pb-coordination-v1/task-locks"
+mkdir -p "$restack_lock_dir"
+restack_test_start="$(ps -p "$$" -o lstart= | tr -d '[:space:]')"
+ln -s "$(hostname)|$$|$restack_test_start" "$restack_lock_dir/restack-task.lock"
+(
+  cd "$restack_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack \
+    --task restack-task \
+    --new-base-ref "$restack_new_base"
+)
+[[ "$(readlink "$restack_lock_dir/restack-task.lock")" == "$(hostname)|$$|$restack_test_start" ]] \
+  || fail 'restack removed another live task operation lock'
+rm -f "$restack_lock_dir/restack-task.lock"
+
+(
+  cd "$restack_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack \
+    --task restack-task \
+    --new-base-ref "$restack_old_submitted"
+)
+[[ "$(git -C "$restack_worktree" rev-parse HEAD)" == "$restack_old_submitted" ]] \
+  || fail 'already-contained restack attempt changed HEAD'
+
+ln -s "$(hostname)|999999999|stale" "$restack_lock_dir/restack-task.lock"
+(
+  cd "$restack_worktree"
+  G7PB_COORD_TESTING=1 "$harness" restack \
+    --task restack-task \
+    --new-base-ref "$restack_new_base" >/dev/null
+)
+[[ ! -L "$restack_lock_dir/restack-task.lock" ]] \
+  || fail 'restack did not release a recovered stale task operation lock'
+restack_new_submitted="$(git -C "$restack_worktree" rev-parse HEAD)"
+[[ "$restack_new_submitted" != "$restack_old_submitted" ]] \
+  || fail 'restack did not replace the submitted commit'
+git -C "$restack_worktree" merge-base --is-ancestor "$restack_new_base" "$restack_new_submitted" \
+  || fail 'restacked submission is not based on the requested commit'
+[[ "$(git -C "$restack_worktree" diff --name-only "$restack_new_base..$restack_new_submitted")" == 'owned/file.txt' ]] \
+  || fail 'restack did not preserve only the task-owned delta'
+[[ "$(git -C "$restack_worktree" show "$restack_new_submitted:owned/file.txt")" == 'submitted task' ]] \
+  || fail 'restack lost the submitted task content'
+[[ "$(git -C "$restack_worktree" show "$restack_new_submitted:upstream/file.txt")" == 'new upstream' ]] \
+  || fail 'restack did not inherit the new base content'
+
+restack_meta="$restack_repo/.git/g7pb-coordination-v1/tasks/restack-task.meta"
+grep -q $'^base_sha\t'"$restack_new_base"'$' "$restack_meta" \
+  || fail 'restack metadata did not update base_sha'
+grep -q $'^submitted_sha\t'"$restack_new_submitted"'$' "$restack_meta" \
+  || fail 'restack metadata did not update submitted_sha'
+grep -q $'^previous_base_sha\t'"$restack_old_base"'$' "$restack_meta" \
+  || fail 'restack metadata did not retain previous_base_sha'
+grep -q $'^previous_submitted_sha\t'"$restack_old_submitted"'$' "$restack_meta" \
+  || fail 'restack metadata did not retain previous_submitted_sha'
+grep -q '^restacked_at' "$restack_meta" \
+  || fail 'restack metadata did not retain restacked_at evidence'
+
+printf 'dirty\n' >> "$restack_worktree/owned/file.txt"
+(
+  cd "$restack_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack \
+    --task restack-task \
+    --new-base-ref "$restack_new_base"
+)
+[[ "$(git -C "$restack_worktree" rev-parse HEAD)" == "$restack_new_submitted" ]] \
+  || fail 'dirty restack attempt changed HEAD'
+git -C "$restack_worktree" checkout -- owned/file.txt
+
+git -C "$restack_worktree" commit --allow-empty -m 'test: unexpected task advance' >/dev/null
+(
+  cd "$restack_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack \
+    --task restack-task \
+    --new-base-ref "$restack_new_base"
+)
+git -C "$restack_worktree" reset --hard "$restack_new_submitted" >/dev/null
+
+restack_unrelated="$(printf 'test: unrelated restack base\n' \
+  | git -C "$restack_repo" commit-tree "${restack_old_base}^{tree}")"
+(
+  cd "$restack_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack \
+    --task restack-task \
+    --new-base-ref "$restack_unrelated"
+)
+[[ "$(git -C "$restack_worktree" rev-parse HEAD)" == "$restack_new_submitted" ]] \
+  || fail 'non-descendant restack attempt changed HEAD'
+
+printf 'second upstream\n' > "$restack_repo/upstream/file.txt"
+git -C "$restack_repo" add upstream/file.txt
+git -C "$restack_repo" commit -m 'test: advance restack base again' >/dev/null
+restack_second_base="$(git -C "$restack_repo" rev-parse HEAD)"
+(
+  cd "$restack_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_FAIL_SUBMISSION_PROFILE=1 \
+    "$harness" restack \
+      --task restack-task \
+      --new-base-ref "$restack_second_base"
+)
+[[ "$(git -C "$restack_worktree" rev-parse HEAD)" == "$restack_new_submitted" ]] \
+  || fail 'profile-failed restack did not roll HEAD back'
+[[ -z "$(git -C "$restack_worktree" status --porcelain)" ]] \
+  || fail 'profile-failed restack did not restore a clean worktree'
+grep -q $'^base_sha\t'"$restack_new_base"'$' "$restack_meta" \
+  || fail 'profile-failed restack changed base metadata'
+grep -q $'^submitted_sha\t'"$restack_new_submitted"'$' "$restack_meta" \
+  || fail 'profile-failed restack changed submitted metadata'
+
+(
+  cd "$restack_worktree"
+  G7PB_COORD_TESTING=1 "$harness" restack \
+    --task restack-task \
+    --new-base-ref "$restack_second_base" >/dev/null
+)
+restack_second_submitted="$(git -C "$restack_worktree" rev-parse HEAD)"
+restack_history="$(awk -F '\t' '$1 == "restack_history" { print $2 }' "$restack_meta")"
+[[ "$restack_history" == *"$restack_old_base:$restack_old_submitted:$restack_new_base:$restack_new_submitted:"* ]] \
+  || fail 'restack history lost the first transition'
+[[ "$restack_history" == *"$restack_new_base:$restack_new_submitted:$restack_second_base:$restack_second_submitted:"* ]] \
+  || fail 'restack history lost the second transition'
+grep -q $'^previous_base_sha\t'"$restack_new_base"'$' "$restack_meta" \
+  || fail 'second restack did not retain its previous base'
+grep -q $'^previous_submitted_sha\t'"$restack_new_submitted"'$' "$restack_meta" \
+  || fail 'second restack did not retain its previous submitted SHA'
+
+conflict_repo="$temp_root/restack-conflict-repo"
+conflict_worktree="$temp_root/restack-conflict-task"
+git init -b main "$conflict_repo" >/dev/null
+git -C "$conflict_repo" config user.name 'Coord Harness Test'
+git -C "$conflict_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$conflict_repo/owned"
+printf 'base\n' > "$conflict_repo/owned/file.txt"
+git -C "$conflict_repo" add .
+git -C "$conflict_repo" commit -m 'test: conflict base' >/dev/null
+conflict_old_base="$(git -C "$conflict_repo" rev-parse HEAD)"
+git -C "$conflict_repo" worktree add --detach "$conflict_worktree" "$conflict_old_base" >/dev/null
+(
+  cd "$conflict_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task conflict-task \
+    --paths owned \
+    --profile harness >/dev/null
+  printf 'task\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task conflict-task >/dev/null
+)
+conflict_old_submitted="$(git -C "$conflict_worktree" rev-parse HEAD)"
+printf 'upstream\n' > "$conflict_repo/owned/file.txt"
+git -C "$conflict_repo" add owned/file.txt
+git -C "$conflict_repo" commit -m 'test: conflicting new base' >/dev/null
+conflict_new_base="$(git -C "$conflict_repo" rev-parse HEAD)"
+(
+  cd "$conflict_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack \
+    --task conflict-task \
+    --new-base-ref "$conflict_new_base"
+)
+[[ "$(git -C "$conflict_worktree" rev-parse HEAD)" == "$conflict_old_submitted" ]] \
+  || fail 'conflicting restack did not roll HEAD back'
+[[ -z "$(git -C "$conflict_worktree" status --porcelain)" ]] \
+  || fail 'conflicting restack did not restore a clean worktree'
+conflict_meta="$conflict_repo/.git/g7pb-coordination-v1/tasks/conflict-task.meta"
+grep -q $'^base_sha\t'"$conflict_old_base"'$' "$conflict_meta" \
+  || fail 'conflicting restack changed base metadata'
+grep -q $'^submitted_sha\t'"$conflict_old_submitted"'$' "$conflict_meta" \
+  || fail 'conflicting restack changed submitted metadata'
+[[ ! -d "$(git -C "$conflict_worktree" rev-parse --git-path rebase-merge)" ]] \
+  || fail 'conflicting restack left rebase state behind'
+[[ ! -d "$(git -C "$conflict_worktree" rev-parse --git-path rebase-apply)" ]] \
+  || fail 'conflicting restack left apply state behind'
+
+scope_repo="$temp_root/restack-scope-repo"
+scope_worktree="$temp_root/restack-scope-task"
+git init -b main "$scope_repo" >/dev/null
+git -C "$scope_repo" config user.name 'Coord Harness Test'
+git -C "$scope_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$scope_repo/owned"
+printf 'base\n' > "$scope_repo/owned/file.txt"
+git -C "$scope_repo" add .
+git -C "$scope_repo" commit -m 'test: scope base' >/dev/null
+scope_old_base="$(git -C "$scope_repo" rev-parse HEAD)"
+git -C "$scope_repo" worktree add --detach "$scope_worktree" "$scope_old_base" >/dev/null
+(
+  cd "$scope_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task scope-task \
+    --paths owned \
+    --profile harness >/dev/null
+  printf 'task change\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task scope-task >/dev/null
+)
+scope_old_submitted="$(git -C "$scope_worktree" rev-parse HEAD)"
+mkdir -p "$scope_repo/outside"
+git -C "$scope_repo" mv owned/file.txt outside/file.txt
+git -C "$scope_repo" commit -m 'test: move owned path outside claim' >/dev/null
+scope_new_base="$(git -C "$scope_repo" rev-parse HEAD)"
+(
+  cd "$scope_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" restack \
+    --task scope-task \
+    --new-base-ref "$scope_new_base"
+)
+grep -q $'OUT_OF_SCOPE\toutside/file.txt' "$temp_root/expected-failure.log" \
+  || fail 'post-rebase scope violation was not reported'
+[[ "$(git -C "$scope_worktree" rev-parse HEAD)" == "$scope_old_submitted" ]] \
+  || fail 'scope-failed restack did not roll HEAD back'
+[[ -z "$(git -C "$scope_worktree" status --porcelain)" ]] \
+  || fail 'scope-failed restack did not restore a clean worktree'
+
+signal_repo="$temp_root/restack-signal-repo"
+signal_worktree="$temp_root/restack-signal-task"
+git init -b main "$signal_repo" >/dev/null
+git -C "$signal_repo" config user.name 'Coord Harness Test'
+git -C "$signal_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$signal_repo/owned" "$signal_repo/upstream"
+printf 'base\n' > "$signal_repo/owned/file.txt"
+printf 'base\n' > "$signal_repo/upstream/file.txt"
+git -C "$signal_repo" add .
+git -C "$signal_repo" commit -m 'test: signal base' >/dev/null
+signal_old_base="$(git -C "$signal_repo" rev-parse HEAD)"
+git -C "$signal_repo" worktree add --detach "$signal_worktree" "$signal_old_base" >/dev/null
+(
+  cd "$signal_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task signal-task \
+    --paths owned \
+    --profile harness >/dev/null
+  printf 'task\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task signal-task >/dev/null
+)
+signal_old_submitted="$(git -C "$signal_worktree" rev-parse HEAD)"
+printf 'upstream\n' > "$signal_repo/upstream/file.txt"
+git -C "$signal_repo" add upstream/file.txt
+git -C "$signal_repo" commit -m 'test: signal new base' >/dev/null
+signal_new_base="$(git -C "$signal_repo" rev-parse HEAD)"
+(
+  cd "$signal_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_METADATA=1 \
+    "$harness" restack \
+      --task signal-task \
+      --new-base-ref "$signal_new_base"
+)
+signal_new_submitted="$(git -C "$signal_worktree" rev-parse HEAD)"
+[[ "$signal_new_submitted" != "$signal_old_submitted" ]] \
+  || fail 'post-metadata termination incorrectly rolled the branch back'
+signal_meta="$signal_repo/.git/g7pb-coordination-v1/tasks/signal-task.meta"
+grep -q $'^base_sha\t'"$signal_new_base"'$' "$signal_meta" \
+  || fail 'post-metadata termination lost the committed base metadata'
+grep -q $'^submitted_sha\t'"$signal_new_submitted"'$' "$signal_meta" \
+  || fail 'post-metadata termination diverged branch and submitted metadata'
+[[ -z "$(git -C "$signal_worktree" status --porcelain)" ]] \
+  || fail 'post-metadata termination left a dirty worktree'
+[[ ! -L "$signal_repo/.git/g7pb-coordination-v1/task-locks/signal-task.lock" ]] \
+  || fail 'post-metadata termination left the task operation lock'
+
 grep -q '^dev-up: runtime-guard' "$root/Makefile" \
   || fail 'Makefile dev-up runtime guard missing'
+grep -q '^task-restack:' "$root/Makefile" \
+  || fail 'Makefile task-restack target missing'
 grep -q '^release-package: release-guard' "$root/Makefile" \
   || fail 'Makefile release guard missing'
 grep -q '^## Parallel work and integration' "$root/AGENTS.md" \

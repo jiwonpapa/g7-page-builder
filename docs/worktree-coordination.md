@@ -95,7 +95,28 @@ make task-submit TASK=editor-inline-toolbar
 
 제출 뒤 Worktree는 깨끗해야 합니다. 제출된 task는 수동 release할 수 없고 통합해야 합니다.
 
-## 5. Local 순차 통합
+## 5. 제출 task 재적층
+
+한 task의 새 제출 SHA를 기준으로 이미 제출된 후속 task를 다시 쌓아야 할 때는 후속 task의 소유 Worktree에서 `task-restack`을 사용합니다. 기준은 branch 이름보다 검토한 commit SHA를 지정하는 편이 안전합니다.
+
+```bash
+make task-restack \
+  TASK=editor-lifecycle-e2e \
+  NEW_BASE_REF=<new-submitted-sha>
+```
+
+하네스는 다음 조건을 모두 강제합니다.
+
+1. task별 작업 잠금으로 `resubmit`·`restack`·`integrate`를 직렬화한 뒤, task가 `submitted` 상태이고 현재 Worktree와 branch의 소유자가 일치하는지 다시 확인합니다. 잠금에는 host·PID·process 시작 식별자를 기록하며 같은 host에서 종료된 process의 stale 잠금만 안전하게 회수합니다.
+2. Worktree가 깨끗하고 HEAD가 기록된 submitted SHA와 정확히 같아야 합니다.
+3. 새 기준 commit은 기존 base SHA의 후손이어야 하며 기존 submitted SHA를 이미 포함하지 않아야 합니다.
+4. 기존 base 이후 task commit만 새 기준 위에 rebase합니다. 충돌·scope·profile 검증 실패 또는 metadata commit 전 중단 신호에는 기존 submitted SHA로 원상복구하고, 원자 metadata 기록이 끝난 뒤 받은 신호에는 기록된 새 base·submitted SHA와 HEAD를 함께 유지합니다.
+5. 새 기준 대비 변경이 기존 claim PATHS 안에만 있는지 확인하고 원래 submission profile을 다시 통과해야 합니다.
+6. 성공할 때만 `base_sha`와 `submitted_sha`를 원자적으로 갱신하며 직전 base·submitted SHA, 재적층 시각과 누적 이력을 metadata에 남깁니다.
+
+수동 rebase 뒤 coordination metadata를 고치거나, scope 검사를 피하려고 후속 task에 선행 task의 PATHS를 추가해서는 안 됩니다.
+
+## 6. Local 순차 통합
 
 Local 통합 채팅에서 실행합니다.
 
@@ -109,7 +130,7 @@ make task-integrate \
 
 충돌이나 gate 실패 시 통합 commit은 생성되지 않습니다. 공유 스키마·Provider·route·CSS 의미 충돌은 통합 담당자가 범위를 재배정한 뒤 새 제출로 해결합니다.
 
-## 6. 전체 검증과 릴리스
+## 7. 전체 검증과 릴리스
 
 모든 구현 task가 통합되어 active task가 통합 task 하나만 남았을 때 실행합니다.
 
@@ -123,7 +144,7 @@ make integration-finish TASK=integration-20260820
 
 `integration-verify`는 전체 `quality-gate`를 실행하고 검증 SHA를 기록합니다. 이후 HEAD 또는 tracked/untracked 상태가 바뀌면 release guard가 실패합니다. 변경을 반영한 뒤 전체 검증을 다시 실행해야 합니다.
 
-## 7. 취소와 보존
+## 8. 취소와 보존
 
 아무 변경도 만들지 않은 active task만 취소할 수 있습니다.
 
@@ -147,6 +168,7 @@ task 채팅을 먼저 archive하면 Codex-managed worktree가 정리될 수 있�
 | PATHS/AREA 충돌 | 기존 task를 통합·취소하거나 경계를 다시 나눕니다. |
 | 범위 밖 변경 | 해당 변경을 되돌리지 말고 소유 task를 확인해 이관합니다. |
 | merge-tree 충돌 | 자동 해결하지 않고 계약 담당 task를 먼저 통합합니다. |
+| 제출 task의 기준 SHA 변경 | 소유 Worktree에서 `task-restack TASK=<id> NEW_BASE_REF=<sha>`를 실행합니다. |
 | profile gate 실패 | 제출 Worktree에서 수정 후 다시 submit합니다. |
 | runtime guard 실패 | 기본 Local의 integration+runtime task에서 `TASK=`를 지정합니다. |
 | release guard 실패 | active task, dirty 상태, 검증 SHA를 확인하고 `integration-verify`를 재실행합니다. |

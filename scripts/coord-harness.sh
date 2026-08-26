@@ -20,6 +20,7 @@ Usage:
   coord-harness.sh check --task ID
   coord-harness.sh submit --task ID [--message MESSAGE]
   coord-harness.sh resubmit --task ID [--message MESSAGE]
+  coord-harness.sh restack --task ID --new-base-ref REF
   coord-harness.sh integrate --task ID --integration-task ID
   coord-harness.sh verify --task ID
   coord-harness.sh finish --task ID
@@ -60,6 +61,32 @@ tasks_dir="$state_root/tasks"
 history_dir="$state_root/history"
 mutex_dir="$state_root/mutex"
 mutex_held=0
+task_locks_dir="$state_root/task-locks"
+task_lock_path=''
+task_lock_owner=''
+task_lock_held=0
+restack_rollback_active=0
+restack_rollback_sha=''
+restack_meta_file=''
+restack_committed_base_sha=''
+restack_committed_sha=''
+
+rollback_restack() {
+  [[ "$restack_rollback_active" == 1 && -n "$restack_rollback_sha" ]] || return 0
+  if [[ -n "$restack_meta_file" && -f "$restack_meta_file" \
+    && -n "$restack_committed_base_sha" && -n "$restack_committed_sha" \
+    && "$(field "$restack_meta_file" base_sha)" == "$restack_committed_base_sha" \
+    && "$(field "$restack_meta_file" submitted_sha)" == "$restack_committed_sha" ]]; then
+    restack_rollback_active=0
+    return 0
+  fi
+  git rebase --abort >/dev/null 2>&1 || true
+  if ! git reset --hard "$restack_rollback_sha" >/dev/null 2>&1; then
+    printf '%s: restack rollback failed; expected HEAD=%s\n' \
+      "$PROGRAM" "$restack_rollback_sha" >&2
+  fi
+  restack_rollback_active=0
+}
 
 cleanup_mutex() {
   if [[ "$mutex_held" == 1 ]]; then
@@ -68,7 +95,15 @@ cleanup_mutex() {
   fi
 }
 
-trap cleanup_mutex EXIT INT TERM
+cleanup() {
+  rollback_restack
+  cleanup_mutex
+  release_task_lock
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 ensure_state() {
   mkdir -p "$tasks_dir" "$history_dir"
@@ -90,6 +125,70 @@ acquire_mutex() {
 
 release_mutex() {
   cleanup_mutex
+}
+
+acquire_task_lock() {
+  local task="$1"
+  ensure_state
+  mkdir -p "$task_locks_dir"
+  task_lock_path="$task_locks_dir/$task.lock"
+  local process_start
+  process_start="$(ps -p "$$" -o lstart= | tr -d '[:space:]')"
+  [[ -n "$process_start" ]] || fail '현재 process 시작 시각을 확인하지 못했습니다.'
+  task_lock_owner="$(hostname)|$$|$process_start"
+  local attempt=0
+  local max_attempts=100
+  local existing_owner
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 ]]; then
+    max_attempts=2
+  fi
+  while (( attempt < max_attempts )); do
+    if ln -s "$task_lock_owner" "$task_lock_path" 2>/dev/null; then
+      task_lock_held=1
+      return
+    fi
+
+    existing_owner="$(readlink "$task_lock_path" 2>/dev/null || true)"
+    if [[ -n "$existing_owner" ]] && ! task_lock_owner_is_live "$existing_owner"; then
+      acquire_mutex
+      if [[ "$(readlink "$task_lock_path" 2>/dev/null || true)" == "$existing_owner" ]] \
+        && ! task_lock_owner_is_live "$existing_owner"; then
+        rm -f "$task_lock_path"
+      fi
+      release_mutex
+      continue
+    fi
+    attempt=$((attempt + 1))
+    sleep 0.05
+  done
+  fail "task 작업 잠금을 얻지 못했습니다: $task owner=${existing_owner:-unknown}"
+}
+
+release_task_lock() {
+  if [[ "$task_lock_held" == 1 ]]; then
+    if [[ "$(readlink "$task_lock_path" 2>/dev/null || true)" == "$task_lock_owner" ]]; then
+      rm -f "$task_lock_path"
+    fi
+    task_lock_held=0
+    task_lock_path=''
+    task_lock_owner=''
+  fi
+}
+
+task_lock_owner_is_live() {
+  local owner="$1"
+  local owner_host
+  local owner_pid
+  local owner_start
+  local extra
+  local current_start
+  IFS='|' read -r owner_host owner_pid owner_start extra <<< "$owner"
+  [[ -n "$owner_host" && "$owner_pid" =~ ^[0-9]+$ && -n "$owner_start" && -z "$extra" ]] \
+    || return 1
+  [[ "$owner_host" == "$(hostname)" ]] || return 0
+  kill -0 "$owner_pid" 2>/dev/null || return 1
+  current_start="$(ps -p "$owner_pid" -o lstart= 2>/dev/null | tr -d '[:space:]')"
+  [[ -n "$current_start" && "$current_start" == "$owner_start" ]]
 }
 
 validate_task_id() {
@@ -192,6 +291,10 @@ load_task() {
   META_INTEGRATED_AT="$(field "$file" integrated_at)"
   META_VERIFIED_SHA="$(field "$file" verified_sha)"
   META_VERIFIED_AT="$(field "$file" verified_at)"
+  META_PREVIOUS_BASE_SHA="$(field "$file" previous_base_sha)"
+  META_PREVIOUS_SUBMITTED_SHA="$(field "$file" previous_submitted_sha)"
+  META_RESTACKED_AT="$(field "$file" restacked_at)"
+  META_RESTACK_HISTORY="$(field "$file" restack_history)"
 }
 
 write_task() {
@@ -214,6 +317,10 @@ write_task() {
     printf 'integrated_at\t%s\n' "$META_INTEGRATED_AT"
     printf 'verified_sha\t%s\n' "$META_VERIFIED_SHA"
     printf 'verified_at\t%s\n' "$META_VERIFIED_AT"
+    printf 'previous_base_sha\t%s\n' "$META_PREVIOUS_BASE_SHA"
+    printf 'previous_submitted_sha\t%s\n' "$META_PREVIOUS_SUBMITTED_SHA"
+    printf 'restacked_at\t%s\n' "$META_RESTACKED_AT"
+    printf 'restack_history\t%s\n' "$META_RESTACK_HISTORY"
   } > "$temp"
   mv "$temp" "$target"
 }
@@ -324,6 +431,10 @@ require_php_85() {
 
 run_submission_profile() {
   local profile="$1"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_FAIL_SUBMISSION_PROFILE:-0}" == 1 ]]; then
+    fail 'TEST_MODE submission profile failure'
+  fi
   case "$profile" in
     frontend)
       require_node_24
@@ -401,6 +512,7 @@ parse_common_args() {
   BASE_REF='HEAD'
   MESSAGE=''
   INTEGRATION_TASK=''
+  NEW_BASE_REF=''
   SHOW_HISTORY=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -411,6 +523,7 @@ parse_common_args() {
       --base-ref) [[ $# -ge 2 ]] || fail '--base-ref 값이 필요합니다.'; BASE_REF="$2"; shift 2 ;;
       --message) [[ $# -ge 2 ]] || fail '--message 값이 필요합니다.'; MESSAGE="$2"; shift 2 ;;
       --integration-task) [[ $# -ge 2 ]] || fail '--integration-task 값이 필요합니다.'; INTEGRATION_TASK="$2"; shift 2 ;;
+      --new-base-ref) [[ $# -ge 2 ]] || fail '--new-base-ref 값이 필요합니다.'; NEW_BASE_REF="$2"; shift 2 ;;
       --history) SHOW_HISTORY=1; shift ;;
       *) fail "알 수 없는 인자입니다: $1" ;;
     esac
@@ -474,6 +587,10 @@ command_claim() {
   META_INTEGRATED_AT=''
   META_VERIFIED_SHA=''
   META_VERIFIED_AT=''
+  META_PREVIOUS_BASE_SHA=''
+  META_PREVIOUS_SUBMITTED_SHA=''
+  META_RESTACKED_AT=''
+  META_RESTACK_HISTORY=''
   write_task "$(task_file "$TASK_ID")"
   release_mutex
   note "CLAIMED task=$TASK_ID branch=$branch base=$base_sha paths=${PATHS_CSV:-none} areas=${AREAS_CSV:-none} profile=$PROFILE"
@@ -554,6 +671,7 @@ command_submit() {
 command_resubmit() {
   parse_common_args "$@"
   validate_task_id "$TASK_ID"
+  acquire_task_lock "$TASK_ID"
   load_task "$TASK_ID"
   assert_task_owner
   [[ "$META_STATUS" == submitted ]] || fail "submitted task만 재제출할 수 있습니다: $META_STATUS"
@@ -587,7 +705,97 @@ command_resubmit() {
   META_SUBMITTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   write_task "$META_FILE"
   release_mutex
+  release_task_lock
   note "RESUBMITTED task=$TASK_ID previous=$previous_sha sha=$resubmitted_sha profile=$META_PROFILE"
+}
+
+command_restack() {
+  parse_common_args "$@"
+  validate_task_id "$TASK_ID"
+  [[ -n "$NEW_BASE_REF" ]] || fail '--new-base-ref가 필요합니다.'
+  acquire_task_lock "$TASK_ID"
+  load_task "$TASK_ID"
+  assert_task_owner
+  [[ "$META_STATUS" == submitted ]] || fail "submitted task만 재적층할 수 있습니다: $META_STATUS"
+  [[ -z "$(git status --porcelain)" ]] || fail '깨끗한 submitted worktree만 재적층할 수 있습니다.'
+
+  local previous_base_sha="$META_BASE_SHA"
+  local previous_submitted_sha="$META_SUBMITTED_SHA"
+  local previous_submitted_at="$META_SUBMITTED_AT"
+  [[ -n "$previous_base_sha" && -n "$previous_submitted_sha" ]] \
+    || fail '기존 base/submitted SHA가 없습니다.'
+  [[ "$(git rev-parse HEAD)" == "$previous_submitted_sha" ]] \
+    || fail '재적층 전 task branch HEAD가 기존 submitted SHA와 일치해야 합니다.'
+  git merge-base --is-ancestor "$previous_base_sha" "$previous_submitted_sha" \
+    || fail '기존 submitted commit의 ancestry가 올바르지 않습니다.'
+  collect_and_check_changed_paths "$previous_base_sha" "$META_PATHS"
+
+  local new_base_sha
+  new_base_sha="$(git rev-parse --verify "$NEW_BASE_REF^{commit}" 2>/dev/null)" \
+    || fail "새 기준 commit을 찾지 못했습니다: $NEW_BASE_REF"
+  [[ "$new_base_sha" != "$previous_base_sha" ]] \
+    || fail '새 기준 SHA가 기존 기준 SHA와 같습니다.'
+  git merge-base --is-ancestor "$previous_base_sha" "$new_base_sha" \
+    || fail '새 기준 commit은 기존 base SHA의 후손이어야 합니다.'
+  if git merge-base --is-ancestor "$previous_submitted_sha" "$new_base_sha"; then
+    fail '새 기준 commit에 기존 submitted SHA가 이미 포함되어 있습니다.'
+  fi
+
+  restack_rollback_sha="$previous_submitted_sha"
+  restack_rollback_active=1
+  restack_meta_file="$META_FILE"
+  if ! git rebase --onto "$new_base_sha" "$previous_base_sha"; then
+    fail '재적층 충돌이 발생해 task branch를 기존 submitted SHA로 복구했습니다.'
+  fi
+
+  local restacked_sha
+  restacked_sha="$(git rev-parse HEAD)"
+  [[ "$restacked_sha" != "$new_base_sha" ]] \
+    || fail '재적층 결과 task delta가 비었습니다.'
+  git merge-base --is-ancestor "$new_base_sha" "$restacked_sha" \
+    || fail '재적층 SHA가 새 기준 SHA의 후손이 아닙니다.'
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  run_submission_profile "$META_PROFILE"
+  collect_and_check_changed_paths "$new_base_sha" "$META_PATHS"
+  [[ "$(git rev-parse HEAD)" == "$restacked_sha" ]] \
+    || fail '재적층 검증 중 task branch HEAD가 변경되었습니다.'
+  [[ -z "$(git status --porcelain)" ]] \
+    || fail '재적층 검증 뒤 worktree가 깨끗하지 않습니다.'
+
+  local restacked_at
+  local history_entry
+  restacked_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  history_entry="$previous_base_sha:$previous_submitted_sha:$new_base_sha:$restacked_sha:$restacked_at"
+
+  acquire_mutex
+  load_task "$TASK_ID"
+  [[ "$META_STATUS" == submitted ]] || fail 'task 상태가 재적층 도중 변경되었습니다.'
+  [[ "$META_BASE_SHA" == "$previous_base_sha" ]] || fail 'base SHA가 재적층 도중 변경되었습니다.'
+  [[ "$META_SUBMITTED_SHA" == "$previous_submitted_sha" ]] \
+    || fail 'submitted SHA가 재적층 도중 변경되었습니다.'
+  [[ "$META_SUBMITTED_AT" == "$previous_submitted_at" ]] \
+    || fail 'submitted 시각이 재적층 도중 변경되었습니다.'
+  [[ "$(git rev-parse HEAD)" == "$restacked_sha" ]] \
+    || fail 'metadata 갱신 전 task branch HEAD가 변경되었습니다.'
+
+  META_PREVIOUS_BASE_SHA="$previous_base_sha"
+  META_PREVIOUS_SUBMITTED_SHA="$previous_submitted_sha"
+  META_RESTACKED_AT="$restacked_at"
+  META_RESTACK_HISTORY="${META_RESTACK_HISTORY:+$META_RESTACK_HISTORY;}$history_entry"
+  META_BASE_SHA="$new_base_sha"
+  META_SUBMITTED_SHA="$restacked_sha"
+  META_SUBMITTED_AT="$restacked_at"
+  restack_committed_base_sha="$new_base_sha"
+  restack_committed_sha="$restacked_sha"
+  write_task "$META_FILE"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 \
+    && "${G7PB_COORD_TEST_TERMINATE_AFTER_RESTACK_METADATA:-0}" == 1 ]]; then
+    kill -TERM "$$"
+  fi
+  restack_rollback_active=0
+  release_mutex
+  release_task_lock
+  note "RESTACKED task=$TASK_ID previous_base=$previous_base_sha previous=$previous_submitted_sha base=$new_base_sha sha=$restacked_sha profile=$META_PROFILE"
 }
 
 assert_integration_owner() {
@@ -601,9 +809,12 @@ assert_integration_owner() {
 finalize_integrated_task() {
   local task="$1"
   local integration_sha="$2"
+  local expected_submitted_sha="$3"
   acquire_mutex
   load_task "$task"
   [[ "$META_STATUS" == submitted ]] || fail '통합 완료 기록 전 task 상태가 변경되었습니다.'
+  [[ "$META_SUBMITTED_SHA" == "$expected_submitted_sha" ]] \
+    || fail '통합 완료 기록 전 submitted SHA가 변경되었습니다.'
   META_INTEGRATION_SHA="$integration_sha"
   META_INTEGRATED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   archive_loaded_task integrated
@@ -620,6 +831,7 @@ command_integrate() {
   [[ "$repo_root" == "$main_worktree" ]] || fail '통합은 기본 Local worktree에서만 허용합니다.'
   [[ -z "$(git status --porcelain)" ]] || fail '깨끗한 통합 worktree에서만 병합할 수 있습니다.'
 
+  acquire_task_lock "$TASK_ID"
   load_task "$TASK_ID"
   [[ "$META_STATUS" == submitted ]] || fail "submitted task만 병합할 수 있습니다: $META_STATUS"
   local task_profile="$META_PROFILE"
@@ -649,7 +861,8 @@ command_integrate() {
       [[ "$(git -C "$task_worktree" rev-parse HEAD)" == "$submitted_sha" ]] \
         || fail '통합 검증 중 제출 Worktree가 변경되었습니다.'
     fi
-    finalize_integrated_task "$TASK_ID" "$(git rev-parse HEAD)"
+    finalize_integrated_task "$TASK_ID" "$(git rev-parse HEAD)" "$submitted_sha"
+    release_task_lock
     note "ALREADY_INTEGRATED task=$TASK_ID sha=$submitted_sha"
     return
   fi
@@ -686,7 +899,8 @@ command_integrate() {
   git commit -m "merge($TASK_ID): integrate submitted worktree"
   local integration_sha
   integration_sha="$(git rev-parse HEAD)"
-  finalize_integrated_task "$TASK_ID" "$integration_sha"
+  finalize_integrated_task "$TASK_ID" "$integration_sha" "$submitted_sha"
+  release_task_lock
   note "INTEGRATED task=$TASK_ID submitted=$submitted_sha integration=$integration_sha integration_profile=$integration_profile"
 }
 
@@ -776,6 +990,7 @@ case "$command_name" in
   check) command_check "$@" ;;
   submit) command_submit "$@" ;;
   resubmit) command_resubmit "$@" ;;
+  restack) command_restack "$@" ;;
   integrate) command_integrate "$@" ;;
   verify) command_verify "$@" ;;
   finish) command_finish "$@" ;;

@@ -210,14 +210,34 @@ async function textPointerGeometry(field: Locator, targetNode: Locator): Promise
 
 async function assertTextPointerReachable(page: Page, field: Locator, pointer: PointerGeometry): Promise<void> {
   const topDocumentHits = await page.evaluate(({ start, end, iframeSelector }) => {
-    const iframe = document.querySelector(iframeSelector);
+    const iframe = document.querySelector<HTMLIFrameElement>(iframeSelector);
+    const editor = document.querySelector<HTMLElement>('[data-testid="page-builder-editor"]');
+    const saveStatus = document.querySelector<HTMLElement>('[data-testid="page-builder-save-status"]');
+    const inspect = (point: PointerPoint) => {
+      const stack = document.elementsFromPoint(point.x, point.y).slice(0, 6);
+      return {
+        hit: stack[0] === iframe,
+        stack: stack.map((element) => ({
+          tag: element.tagName,
+          className: element instanceof HTMLElement ? element.className : '',
+          id: element.id,
+        })),
+      };
+    };
     return {
-      start: document.elementFromPoint(start.x, start.y) === iframe,
-      end: document.elementFromPoint(end.x, end.y) === iframe,
+      editor: {
+        ariaBusy: editor?.getAttribute('aria-busy') ?? '',
+        pointerEvents: editor ? getComputedStyle(editor).pointerEvents : '',
+        saveState: saveStatus?.getAttribute('data-state') ?? '',
+      },
+      frame: {
+        outlineDragging: iframe?.hasAttribute('data-puck-outline-dragging') ?? false,
+        pointerEvents: iframe ? getComputedStyle(iframe).pointerEvents : '',
+      },
+      start: inspect(start),
+      end: inspect(end),
     };
   }, { start: pointer.start, end: pointer.end, iframeSelector: CANVAS_IFRAME });
-  expect(topDocumentHits.start, 'pointer start must hit the Puck canvas iframe').toBe(true);
-  expect(topDocumentHits.end, 'pointer end must hit the Puck canvas iframe').toBe(true);
 
   const canvasHits = await field.evaluate((element, points) => {
     const rect = element.getBoundingClientRect();
@@ -234,8 +254,10 @@ async function assertTextPointerReachable(page: Page, field: Locator, pointer: P
       end: endHit === element || element.contains(endHit),
     };
   }, { start: pointer.localStart, end: pointer.localEnd });
-  expect(canvasHits.start, 'pointer start must hit the current rich-text field').toBe(true);
-  expect(canvasHits.end, 'pointer end must hit the current rich-text field').toBe(true);
+  expect(topDocumentHits.start.hit, `pointer start must hit the Puck canvas iframe: ${JSON.stringify({ pointer, topDocumentHits, canvasHits })}`).toBe(true);
+  expect(topDocumentHits.end.hit, `pointer end must hit the Puck canvas iframe: ${JSON.stringify({ pointer, topDocumentHits, canvasHits })}`).toBe(true);
+  expect(canvasHits.start, `pointer start must hit the current rich-text field: ${JSON.stringify({ pointer, topDocumentHits, canvasHits })}`).toBe(true);
+  expect(canvasHits.end, `pointer end must hit the current rich-text field: ${JSON.stringify({ pointer, topDocumentHits, canvasHits })}`).toBe(true);
 }
 
 async function findFieldCollapsePoints(
@@ -299,12 +321,10 @@ async function findFieldCollapsePoints(
     ];
     const candidates = segmentRects.flatMap(({ rect, source }) => {
       const inset = Math.min(2, (rect.right - rect.left) / 4);
-      const y = (rect.top + rect.bottom) / 2;
-      return [
-        { x: (rect.left + rect.right) / 2, y, source },
-        { x: rect.left + inset, y, source },
-        { x: rect.right - inset, y, source },
-      ];
+      const verticalInset = Math.min(2, (rect.bottom - rect.top) / 4);
+      const xs = [rect.left + inset, (rect.left + rect.right) / 2, rect.right - inset];
+      const ys = [rect.top + verticalInset, (rect.top + rect.bottom) / 2, rect.bottom - verticalInset];
+      return ys.flatMap((y) => xs.map((x) => ({ x, y, source })));
     });
     return { candidates, selectedRects, text, selectedIndex };
   }, selectedCopy);
@@ -389,12 +409,12 @@ async function dragSelectText(
   for (let attempt = 0; attempt < 3; attempt += 1) {
     let pointerDown = false;
     try {
+      if (attempt > 0) await collapseSelectionWithPointer(page, selection);
       const { field, targetNode } = await resolveRichTextSelection(page, selection);
       const pointer = await textPointerGeometry(field, targetNode);
       await assertTextPointerReachable(page, field, pointer);
-      if (attempt > 0) await page.mouse.click(pointer.end.x, pointer.end.y);
-      await field.focus();
       await expect.poll(() => selectedText(field)).toBe('');
+      await field.focus();
       await page.mouse.move(pointer.start.x, pointer.start.y);
       await page.mouse.down();
       pointerDown = true;

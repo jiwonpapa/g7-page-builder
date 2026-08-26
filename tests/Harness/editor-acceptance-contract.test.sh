@@ -97,6 +97,16 @@ perl -0pi -e 's/await assertTextPointerReachable\(page, field, pointer\);/await 
 expect_failure 'pointer down 전에 상위 문서와 iframe 내부 start/end hit target을 검증해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/if \(attempt > 0\) await collapseSelectionWithPointer\(page, selection\);/if (attempt > 0) await field.focus();/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 재시도는 기존 범위를 실제 포인터 클릭으로 접은 뒤 current locator를 다시 찾아야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/document\.elementsFromPoint\(point\.x, point\.y\)/[document.body]/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '텍스트 포인터 실패는 editor·iframe pointer 상태와 실제 hit stack·canvas hit를 보고해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await findFieldCollapsePoints\(page, field, targetNode, currentSelection\)/$1await Promise.resolve([{ x: 0, y: 0 }])/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'

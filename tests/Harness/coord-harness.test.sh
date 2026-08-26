@@ -621,12 +621,157 @@ grep -q $'^base_sha\t'"$conflict_squash_old_base"'$' "$conflict_squash_meta" \
 grep -q $'^submitted_sha\t'"$conflict_squash_old_submitted"'$' "$conflict_squash_meta" \
   || fail 'conflicting squash restack changed submitted metadata'
 
+replace_repo="$temp_root/replace-submitted-repo"
+replace_old_worktree="$temp_root/replace-submitted-old"
+replace_new_worktree="$temp_root/replace-submitted-new"
+replace_overlap_worktree="$temp_root/replace-submitted-overlap"
+git init -b main "$replace_repo" >/dev/null
+git -C "$replace_repo" config user.name 'Coord Harness Test'
+git -C "$replace_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$replace_repo/owned" "$replace_repo/other"
+printf 'base\n' > "$replace_repo/owned/file.txt"
+printf 'other\n' > "$replace_repo/other/file.txt"
+git -C "$replace_repo" add .
+git -C "$replace_repo" commit -m 'test: replacement base' >/dev/null
+replace_old_base="$(git -C "$replace_repo" rev-parse HEAD)"
+git -C "$replace_repo" worktree add --detach "$replace_old_worktree" "$replace_old_base" >/dev/null
+(
+  cd "$replace_old_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task replaced-task \
+    --paths owned \
+    --areas shared-contract \
+    --profile harness >/dev/null
+  printf 'submitted\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task replaced-task >/dev/null
+)
+replace_old_submitted="$(git -C "$replace_old_worktree" rev-parse HEAD)"
+replace_new_base="$(printf 'test: independent replacement base\n' \
+  | git -C "$replace_repo" commit-tree "${replace_old_base}^{tree}")"
+git -C "$replace_repo" worktree add -b codex/replacement-task \
+  "$replace_new_worktree" "$replace_new_base" >/dev/null
+
+printf 'dirty old\n' >> "$replace_old_worktree/owned/file.txt"
+(
+  cd "$replace_new_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" replace-submitted \
+    --task replacement-task \
+    --supersedes replaced-task
+)
+replace_old_meta="$replace_repo/.git/g7pb-coordination-v1/tasks/replaced-task.meta"
+[[ -f "$replace_old_meta" ]] || fail 'dirty old-task rejection removed submitted metadata'
+grep -q $'^status\tsubmitted$' "$replace_old_meta" \
+  || fail 'dirty old-task rejection changed submitted status'
+[[ ! -e "$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-task.meta" ]] \
+  || fail 'dirty old-task rejection created replacement metadata'
+git -C "$replace_old_worktree" checkout -- owned/file.txt
+
+git -C "$replace_old_worktree" commit --allow-empty -m 'test: move submitted head' >/dev/null
+(
+  cd "$replace_new_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" replace-submitted \
+    --task replacement-task \
+    --supersedes replaced-task
+)
+[[ -f "$replace_old_meta" ]] || fail 'moved old-HEAD rejection removed submitted metadata'
+[[ ! -e "$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-task.meta" ]] \
+  || fail 'moved old-HEAD rejection created replacement metadata'
+git -C "$replace_old_worktree" reset --hard "$replace_old_submitted" >/dev/null
+
+(
+  cd "$replace_new_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_FAIL_REPLACE_BEFORE_COMMIT=1 \
+    "$harness" replace-submitted \
+      --task replacement-task \
+      --supersedes replaced-task
+)
+[[ -f "$replace_old_meta" ]] || fail 'pre-commit replacement failure removed old submitted metadata'
+grep -q $'^status\tsubmitted$' "$replace_old_meta" \
+  || fail 'pre-commit replacement failure changed old submitted status'
+[[ ! -e "$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-task.meta" ]] \
+  || fail 'pre-commit replacement failure created new active metadata'
+
+(
+  cd "$replace_new_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_REPLACE_ARCHIVE=1 \
+    "$harness" replace-submitted \
+      --task replacement-task \
+      --supersedes replaced-task
+)
+[[ -f "$replace_old_meta" ]] || fail 'mid-transaction signal did not restore old submitted metadata'
+grep -q $'^status\tsubmitted$' "$replace_old_meta" \
+  || fail 'mid-transaction signal did not restore old submitted status'
+[[ ! -e "$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-task.meta" ]] \
+  || fail 'mid-transaction signal left replacement metadata'
+if find "$replace_repo/.git/g7pb-coordination-v1/history" -type f \
+  -name 'replaced-task.*.meta' -print -quit | grep -q .; then
+  fail 'mid-transaction signal left superseded history metadata'
+fi
+
+(
+  cd "$replace_new_worktree"
+  expect_fail env \
+    G7PB_COORD_TESTING=1 \
+    G7PB_COORD_TEST_TERMINATE_AFTER_REPLACE_METADATA=1 \
+    "$harness" replace-submitted \
+      --task replacement-task \
+      --supersedes replaced-task
+)
+replace_new_meta="$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-task.meta"
+[[ ! -e "$replace_old_meta" ]] || fail 'committed replacement kept old active metadata'
+[[ -f "$replace_new_meta" ]] || fail 'committed replacement lost new active metadata'
+grep -q $'^status\tactive$' "$replace_new_meta" \
+  || fail 'replacement task is not active'
+grep -q $'^base_sha\t'"$replace_new_base"'$' "$replace_new_meta" \
+  || fail 'replacement task did not use the requested current base'
+grep -q $'^paths\towned$' "$replace_new_meta" \
+  || fail 'replacement task weakened or changed inherited PATHS'
+grep -q $'^areas\tshared-contract$' "$replace_new_meta" \
+  || fail 'replacement task weakened or changed inherited AREAS'
+grep -q $'^profile\tharness$' "$replace_new_meta" \
+  || fail 'replacement task weakened or changed inherited PROFILE'
+replace_history_meta="$(find "$replace_repo/.git/g7pb-coordination-v1/history" -type f \
+  -name 'replaced-task.*.meta' -print -quit)"
+[[ -n "$replace_history_meta" && -f "$replace_history_meta" ]] \
+  || fail 'replacement did not archive old submitted metadata'
+grep -q $'^status\tsuperseded$' "$replace_history_meta" \
+  || fail 'replacement history status is not superseded'
+grep -q $'^submitted_sha\t'"$replace_old_submitted"'$' "$replace_history_meta" \
+  || fail 'replacement history lost the old submitted SHA'
+grep -q $'^superseded_by\treplacement-task$' "$replace_history_meta" \
+  || fail 'replacement history lost superseded_by'
+grep -Eq $'^superseded_at\t[0-9]{4}-[0-9]{2}-[0-9]{2}T' "$replace_history_meta" \
+  || fail 'replacement history lost superseded_at'
+[[ "$(git -C "$replace_old_worktree" rev-parse HEAD)" == "$replace_old_submitted" ]] \
+  || fail 'replacement changed the preserved old branch HEAD'
+[[ -z "$(git -C "$replace_old_worktree" status --porcelain)" ]] \
+  || fail 'replacement changed the preserved old worktree'
+[[ ! -L "$replace_repo/.git/g7pb-coordination-v1/task-locks/replaced-task.lock" ]] \
+  || fail 'replacement left the old task operation lock'
+
+git -C "$replace_repo" worktree add --detach "$replace_overlap_worktree" "$replace_new_base" >/dev/null
+(
+  cd "$replace_overlap_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" claim \
+    --task replacement-overlap-task \
+    --paths owned \
+    --profile harness
+)
+[[ ! -e "$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-overlap-task.meta" ]] \
+  || fail 'replacement did not retain inherited overlap exclusion'
+
 grep -q '^dev-up: runtime-guard' "$root/Makefile" \
   || fail 'Makefile dev-up runtime guard missing'
 grep -q '^task-restack:' "$root/Makefile" \
   || fail 'Makefile task-restack target missing'
 grep -q '^task-restack-squash:' "$root/Makefile" \
   || fail 'Makefile task-restack-squash target missing'
+grep -q '^task-replace-submitted:' "$root/Makefile" \
+  || fail 'Makefile task-replace-submitted target missing'
 grep -q '^release-package: release-guard' "$root/Makefile" \
   || fail 'Makefile release guard missing'
 grep -q '^## Parallel work and integration' "$root/AGENTS.md" \

@@ -510,11 +510,12 @@ function EditorShell({
     }
   }, [api, saveDraft]);
 
-  const working = loading || creating || saveState === 'saving' ||
+  const editorInteractionLocked = loading || creating ||
     publishState === 'preparing' || publishState === 'publishing';
+  const actionBusy = editorInteractionLocked || saveState === 'saving';
 
   return (
-    <main className="g7pb-root" data-testid="page-builder-app" aria-busy={working}>
+    <main className="g7pb-root" data-testid="page-builder-app" aria-busy={actionBusy}>
       <header className="g7pb-command-bar">
         <div className="g7pb-command-bar__identity">
           <span className="g7pb-product-mark" aria-hidden="true">G7</span>
@@ -535,11 +536,11 @@ function EditorShell({
                 {saveLabels[saveState]}
               </span>
               <button type="button" className="g7pb-button g7pb-button--quiet" data-testid="page-builder-save"
-                disabled={working} onClick={() => void saveDraft(true)}>
+                disabled={actionBusy} onClick={() => void saveDraft(true)}>
                 저장
               </button>
               <button type="button" className="g7pb-button g7pb-button--quiet g7pb-button--icon-label"
-                data-testid="page-builder-source-view" disabled={working}
+                data-testid="page-builder-source-view" disabled={actionBusy}
                 onClick={() => { setDiagnosticTab('document'); setDiagnosticsOpen(true); }}>
                 <Braces size={16} aria-hidden="true" /><span>원본 보기</span>
               </button>
@@ -550,12 +551,12 @@ function EditorShell({
                 </a>
               ) : (
                 <button type="button" className="g7pb-button g7pb-button--quiet" data-testid="page-builder-preview-link"
-                  disabled={working} onClick={() => void preparePreview()}>
+                  disabled={actionBusy} onClick={() => void preparePreview()}>
                   미리보기 생성
                 </button>
               )}
               <button type="button" className="g7pb-button g7pb-button--primary" data-testid="page-builder-publish"
-                disabled={working} onClick={() => void publish()}>
+                disabled={actionBusy} onClick={() => void publish()}>
                 발행
               </button>
               <span className="g7pb-status g7pb-status--publish" data-testid="page-builder-publish-status"
@@ -602,7 +603,7 @@ function EditorShell({
       {loading && <div className="g7pb-loading" role="status">페이지를 불러오는 중입니다.</div>}
 
       {!loading && document && (
-        <PuckEditorAdapter document={document} revisionKey={editorRevisionKey} disabled={working}
+        <PuckEditorAdapter document={document} revisionKey={editorRevisionKey} disabled={editorInteractionLocked}
           onDirty={handleEditorDirty} onChange={handleDocumentChange} onPublish={() => publish()} />
       )}
 

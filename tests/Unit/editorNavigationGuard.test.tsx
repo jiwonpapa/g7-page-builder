@@ -25,16 +25,23 @@ const testStorage: Storage = {
 Object.defineProperty(window, 'localStorage', { configurable: true, value: testStorage });
 
 vi.mock('../../resources/js/editor/PuckEditorAdapter', () => ({
-  PuckEditorAdapter: ({ document, onDirty, onChange }: {
+  PuckEditorAdapter: ({ document, disabled = false, onDirty, onChange }: {
     document: PageBuilderDocument;
+    disabled?: boolean;
     onDirty?: () => void;
     onChange?: (document: PageBuilderDocument) => void;
-  }) => (
-    <button type="button" data-testid="mock-editor-dirty" data-document-slug={document.slug} onClick={() => {
-      onDirty?.();
-      onChange?.({ ...document, slug: 'navigation-guard-changed' });
-    }}>변경</button>
-  ),
+  }) => {
+    const editCount = React.useRef(0);
+
+    return (
+      <button type="button" data-testid="mock-editor-dirty" data-document-slug={document.slug}
+        data-editor-disabled={String(disabled)} disabled={disabled} onClick={() => {
+          editCount.current += 1;
+          onDirty?.();
+          onChange?.({ ...document, slug: `navigation-guard-changed-${editCount.current}` });
+        }}>변경</button>
+    );
+  },
 }));
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
@@ -144,6 +151,67 @@ describe('editor unsaved navigation guard', () => {
 
     expect(saveDraft).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(journalKey)).toBeNull();
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-save-status"]')).dataset.state).toBe('saved');
+    await act(async () => { unmount(); });
+  });
+
+  it('keeps the canvas editable while a save request is pending and persists the newer edit', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    vi.spyOn(PageBuilderApiClient.prototype, 'listBlockPacks').mockResolvedValue({ items: [] });
+    vi.spyOn(PageBuilderApiClient.prototype, 'getDocument').mockResolvedValue(resource);
+    vi.spyOn(PageBuilderApiClient.prototype, 'createPreview').mockResolvedValue({
+      preview_url: '/preview/navigation-guard',
+      expires_at: '2026-08-24T01:00:00+09:00',
+    });
+    let resolveFirstSave: ((resource: DocumentResource) => void) | null = null;
+    const firstSave = new Promise<DocumentResource>((resolve) => {
+      resolveFirstSave = resolve;
+    });
+    const saveDraft = vi.spyOn(PageBuilderApiClient.prototype, 'saveDraft')
+      .mockImplementationOnce(async () => firstSave)
+      .mockImplementation(async (_documentId, document) => ({
+        ...resource,
+        document,
+        lock_version: 3,
+        revision: 3,
+      }));
+    const container = document.createElement('div');
+    document.body.append(container);
+    let unmount = (): void => undefined;
+    await act(async () => {
+      unmount = mountPageBuilderEditor(container, { documentId: resource.document.document_id });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const editor = await eventually<HTMLButtonElement>('[data-testid="mock-editor-dirty"]');
+    await act(async () => { editor.click(); });
+    await act(async () => {
+      (await eventually<HTMLButtonElement>('[data-testid="page-builder-save"]')).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(saveDraft).toHaveBeenCalledTimes(1);
+    expect((await eventually<HTMLElement>('[data-testid="page-builder-save-status"]')).dataset.state).toBe('saving');
+    expect(editor.dataset.editorDisabled).toBe('false');
+    expect(editor.disabled).toBe(false);
+    expect((await eventually<HTMLButtonElement>('[data-testid="page-builder-save"]')).disabled).toBe(true);
+
+    await act(async () => { editor.click(); });
+    const firstSnapshot = saveDraft.mock.calls[0]?.[1];
+    expect(firstSnapshot?.slug).toBe('navigation-guard-changed-1');
+
+    await act(async () => {
+      resolveFirstSave?.({
+        ...resource,
+        document: firstSnapshot ?? resource.document,
+        lock_version: 2,
+        revision: 2,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(saveDraft).toHaveBeenCalledTimes(2);
+    expect(saveDraft.mock.calls[1]?.[1].slug).toBe('navigation-guard-changed-2');
     expect((await eventually<HTMLElement>('[data-testid="page-builder-save-status"]')).dataset.state).toBe('saved');
     await act(async () => { unmount(); });
   });

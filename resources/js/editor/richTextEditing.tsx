@@ -103,20 +103,26 @@ function RangeChoiceMenu<T extends string>({
 }): React.ReactElement {
   const current = values.find((option) => option.value === value) ?? values[0];
   const suppressCompatibilityClick = React.useRef(false);
-  const markPointerActivation = (): void => {
+  const markPressActivation = (): void => {
     suppressCompatibilityClick.current = true;
   };
-  const clearPointerActivation = (): void => {
+  const clearPressActivation = (): void => {
     suppressCompatibilityClick.current = false;
   };
-  const clearPointerActivationFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
-    if (event.key === 'Enter' || event.key === ' ') clearPointerActivation();
+  const clearPressActivationFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
+    if (event.key === 'Enter' || event.key === ' ') clearPressActivation();
   };
-  const toggleFromPointer = (event: React.PointerEvent<HTMLButtonElement>): void => {
+  const toggleFromMouse = (event: React.MouseEvent<HTMLButtonElement>): void => {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
-    markPointerActivation();
+    markPressActivation();
+    onToggle(name);
+  };
+  const toggleFromTouch = (event: React.TouchEvent<HTMLButtonElement>): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    markPressActivation();
     onToggle(name);
   };
   const toggleFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -127,11 +133,17 @@ function RangeChoiceMenu<T extends string>({
     }
     if (event.detail === 0) onToggle(name);
   };
-  const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
+  const chooseFromMouse = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
-    markPointerActivation();
+    markPressActivation();
+    onChange(nextValue);
+  };
+  const chooseFromTouch = (event: React.TouchEvent<HTMLButtonElement>, nextValue: T): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    markPressActivation();
     onChange(nextValue);
   };
   const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
@@ -145,16 +157,17 @@ function RangeChoiceMenu<T extends string>({
   return <div className="g7pb-richtext-inline-toolbar__choice">
     <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
       aria-label={`선택한 글자 ${label}: ${current.label}`}
-      onKeyDown={clearPointerActivationFromKeyboard} onPointerCancel={clearPointerActivation}
-      onPointerDown={toggleFromPointer} onClick={toggleFromKeyboard}>
+      onKeyDown={clearPressActivationFromKeyboard} onTouchCancel={clearPressActivation}
+      onMouseDownCapture={toggleFromMouse} onTouchStartCapture={toggleFromTouch} onClick={toggleFromKeyboard}>
       <span>{current.label}</span><ChevronDown size={13} aria-hidden="true" />
     </button>
     {open ? <div className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
       {values.map((option) => <button type="button" role="option" aria-selected={option.value === value}
         key={option.value}
-        onKeyDown={clearPointerActivationFromKeyboard}
-        onPointerCancel={clearPointerActivation}
-        onPointerDown={(event) => chooseFromPointer(event, option.value)}
+        onKeyDown={clearPressActivationFromKeyboard}
+        onTouchCancel={clearPressActivation}
+        onMouseDownCapture={(event) => chooseFromMouse(event, option.value)}
+        onTouchStartCapture={(event) => chooseFromTouch(event, option.value)}
         onClick={(event) => chooseFromKeyboard(event, option.value)}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}
       </button>)}
@@ -232,8 +245,15 @@ function NativeRangeControl({
   onApply: () => void;
 }): React.ReactElement {
   const suppressCompatibilityClick = useRef(false);
-  const applyFromPointer = (event: React.PointerEvent<HTMLSpanElement>): void => {
+  const applyFromMouse = (event: React.MouseEvent<HTMLSpanElement>): void => {
     if (event.button !== 0 || disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressCompatibilityClick.current = true;
+    onApply();
+  };
+  const applyFromTouch = (event: React.TouchEvent<HTMLSpanElement>): void => {
+    if (disabled) return;
     event.preventDefault();
     event.stopPropagation();
     suppressCompatibilityClick.current = true;
@@ -252,8 +272,9 @@ function NativeRangeControl({
     onKeyDown={(event) => {
       if (event.key === 'Enter' || event.key === ' ') suppressCompatibilityClick.current = false;
     }}
-    onPointerCancel={() => { suppressCompatibilityClick.current = false; }}
-    onPointerDownCapture={applyFromPointer}
+    onTouchCancel={() => { suppressCompatibilityClick.current = false; }}
+    onMouseDownCapture={applyFromMouse}
+    onTouchStartCapture={applyFromTouch}
   >
     <RichTextMenu.Control title={label} icon={icon} active={active} disabled={disabled} onClick={applyFromClick} />
   </span>;

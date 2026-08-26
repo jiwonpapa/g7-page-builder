@@ -192,7 +192,7 @@ describe('Puck-native rich-text editing', () => {
     expect(createInlineRichTextField('독립 제목').options.link).not.toBe(false);
   });
 
-  it('opens and applies a range choice on pointer down before a moving Puck action bar can cancel click', async () => {
+  it('opens and applies a range choice on mouse down before a moving Puck action bar can cancel click', async () => {
     const chain = {
       focus: vi.fn(() => chain),
       setMark: vi.fn(() => chain),
@@ -208,12 +208,10 @@ describe('Puck-native rich-text editing', () => {
 
     const trigger = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]');
     await act(async () => {
-      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+      trigger?.dispatchEvent(new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         button: 0,
-        isPrimary: true,
-        pointerType: 'mouse',
       }));
     });
     await new Promise((resolve) => setTimeout(resolve, 5));
@@ -221,7 +219,7 @@ describe('Puck-native rich-text editing', () => {
       trigger?.dispatchEvent(new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
-        detail: 0,
+        detail: 1,
       }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
@@ -229,20 +227,18 @@ describe('Puck-native rich-text editing', () => {
     const serif = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="option"]'))
       .find((option) => option.textContent?.includes('명조'));
     await act(async () => {
-      serif?.dispatchEvent(new PointerEvent('pointerdown', {
+      serif?.dispatchEvent(new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         button: 0,
-        isPrimary: true,
-        pointerType: 'mouse',
       }));
     });
     await new Promise((resolve) => setTimeout(resolve, 5));
     await act(async () => {
-      trigger?.dispatchEvent(new MouseEvent('click', {
+      serif?.dispatchEvent(new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
-        detail: 0,
+        detail: 1,
       }));
     });
     expect(chain.setMark).toHaveBeenCalledWith('g7TextStyle', {
@@ -261,7 +257,7 @@ describe('Puck-native rich-text editing', () => {
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('applies each native mark on pointer down without duplicating the compatibility click', async () => {
+  it('applies each native mark on mouse down without duplicating the compatibility click', async () => {
     const operations: string[] = [];
     const chain = {
       focus: vi.fn(() => { operations.push('focus'); return chain; }),
@@ -285,11 +281,10 @@ describe('Puck-native rich-text editing', () => {
     ] as const) {
       const control = container.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
       await act(async () => {
-        control?.dispatchEvent(new PointerEvent('pointerdown', {
+        control?.dispatchEvent(new MouseEvent('mousedown', {
           bubbles: true,
           cancelable: true,
           button: 0,
-          pointerType: 'mouse',
         }));
         control?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
       });
@@ -304,7 +299,44 @@ describe('Puck-native rich-text editing', () => {
     expect(operations).toEqual(['focus', 'toggleBold', 'run']);
   });
 
-  it('ignores non-left native pointers and disables commands when editing is unavailable', async () => {
+  it('applies through mouse down when Puck isolates pointer down at the overlay portal', async () => {
+    const chain = {
+      focus: vi.fn(() => chain),
+      toggleBold: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 7 } },
+      getAttributes: vi.fn(() => ({})),
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+    await rerender(editorState());
+    container.addEventListener('pointerdown', (event) => event.stopPropagation(), { capture: true });
+
+    const bold = container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]');
+    await act(async () => {
+      bold?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        pointerType: 'mouse',
+      }));
+    });
+    expect(chain.toggleBold).not.toHaveBeenCalled();
+
+    await act(async () => {
+      bold?.dispatchEvent(new MouseEvent('mousedown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+      }));
+    });
+    expect(chain.toggleBold).toHaveBeenCalledOnce();
+    expect(chain.run).toHaveBeenCalledOnce();
+  });
+
+  it('ignores non-left mouse presses, supports touch start, and disables unavailable commands', async () => {
     const chain = {
       focus: vi.fn(() => chain),
       toggleBold: vi.fn(() => chain),
@@ -319,23 +351,20 @@ describe('Puck-native rich-text editing', () => {
     await rendered.rerender(editorState());
     const bold = rendered.container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]');
     await act(async () => {
-      bold?.dispatchEvent(new PointerEvent('pointerdown', {
+      bold?.dispatchEvent(new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         button: 2,
-        pointerType: 'mouse',
       }));
     });
     expect(chain.toggleBold).not.toHaveBeenCalled();
 
     await act(async () => {
-      bold?.dispatchEvent(new PointerEvent('pointerdown', {
+      bold?.dispatchEvent(new TouchEvent('touchstart', {
         bubbles: true,
         cancelable: true,
-        button: 0,
-        pointerType: 'touch',
       }));
-      bold?.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerType: 'touch' }));
+      bold?.dispatchEvent(new TouchEvent('touchcancel', { bubbles: true }));
       bold?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
       bold?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });
@@ -349,7 +378,7 @@ describe('Puck-native rich-text editing', () => {
     expect(readOnly.container.querySelector<HTMLButtonElement>('[aria-label="선택한 글자 굵게"]')?.disabled).toBe(true);
   });
 
-  it('ignores non-left range-menu pointers and clears a canceled pointer before keyboard activation', async () => {
+  it('ignores non-left range-menu mouse presses and preserves keyboard activation', async () => {
     const chain = {
       focus: vi.fn(() => chain),
       setMark: vi.fn(() => chain),
@@ -365,29 +394,25 @@ describe('Puck-native rich-text editing', () => {
     const trigger = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]');
 
     await act(async () => {
-      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+      trigger?.dispatchEvent(new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         button: 2,
-        isPrimary: true,
-        pointerType: 'mouse',
       }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
 
     await act(async () => {
-      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+      trigger?.dispatchEvent(new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
         button: 0,
-        isPrimary: false,
-        pointerType: 'mouse',
       }));
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
 
     await act(async () => {
-      trigger?.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerType: 'mouse' }));
+      trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
       trigger?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
     });

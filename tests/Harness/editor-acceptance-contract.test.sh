@@ -264,9 +264,14 @@ perl -0pi -e 's/function G7RichTextInlineMenu\(\{ editor,/function G7RichTextInl
 expect_failure '이동 중 click을 잃는 Puck 기본 inline B/I/U children을 중복 렌더하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/onPointerDownCapture=\{applyFromPointer\}/onClick={applyFromPointer}/' \
+perl -0pi -e 's/onMouseDownCapture=\{applyFromMouse\}/onClick={applyFromMouse}/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '부분 글자 B/I/U는 Puck가 pointerdown을 격리하기 전 capture 단계에서 적용해야 합니다.'
+expect_failure '부분 글자 B/I/U는 Puck의 pointerdown 격리 이후에도 도달하는 mouse·touch capture 경로에서 적용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/onTouchStartCapture=\{applyFromTouch\}/onClick={applyFromTouch}/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure '부분 글자 B/I/U는 Puck의 pointerdown 격리 이후에도 도달하는 mouse·touch capture 경로에서 적용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/toggleBold\(\)\.run\(\)/toggleStrike().run()/' \

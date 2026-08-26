@@ -113,7 +113,7 @@ function RangeChoiceMenu<T extends string>({
     if (event.key === 'Enter' || event.key === ' ') clearPointerActivation();
   };
   const toggleFromPointer = (event: React.PointerEvent<HTMLButtonElement>): void => {
-    if (!event.isPrimary || event.button !== 0) return;
+    if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     markPointerActivation();
@@ -128,7 +128,7 @@ function RangeChoiceMenu<T extends string>({
     if (event.detail === 0) onToggle(name);
   };
   const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
-    if (!event.isPrimary || event.button !== 0) return;
+    if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     markPointerActivation();

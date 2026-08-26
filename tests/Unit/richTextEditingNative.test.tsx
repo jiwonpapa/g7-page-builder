@@ -257,7 +257,7 @@ describe('Puck-native rich-text editing', () => {
     expect(trigger?.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('ignores non-primary range-menu pointers and clears a canceled pointer before keyboard activation', async () => {
+  it('ignores non-left range-menu pointers and clears a canceled pointer before keyboard activation', async () => {
     const chain = {
       focus: vi.fn(() => chain),
       setMark: vi.fn(() => chain),
@@ -292,16 +292,9 @@ describe('Puck-native rich-text editing', () => {
         pointerType: 'mouse',
       }));
     });
-    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
 
     await act(async () => {
-      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
-        bubbles: true,
-        cancelable: true,
-        button: 0,
-        isPrimary: true,
-        pointerType: 'mouse',
-      }));
       trigger?.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerType: 'mouse' }));
       trigger?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }));
       trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));

@@ -61,9 +61,9 @@ async function assertTabletHeaderHeight(page: Page, projectName: string): Promis
 }
 
 async function openElementPanelFromActionBar(page: Page): Promise<void> {
-  const textToolsButton = page.locator('button:visible').filter({
-    has: page.getByTestId('page-builder-text-tools-open'),
-  });
+  const textToolsButton = page.frameLocator(CANVAS_IFRAME)
+    .getByTestId('page-builder-text-tools-open')
+    .locator('xpath=ancestor::button[1]');
   await expect(textToolsButton).toHaveCount(1);
   await expect(textToolsButton).toBeVisible();
   await textToolsButton.scrollIntoViewIfNeeded();

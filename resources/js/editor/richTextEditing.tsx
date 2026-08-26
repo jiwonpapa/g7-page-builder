@@ -102,16 +102,35 @@ function RangeChoiceMenu<T extends string>({
   onChange: (value: T) => void;
 }): React.ReactElement {
   const current = values.find((option) => option.value === value) ?? values[0];
+  const toggleFromPointer = (event: React.PointerEvent<HTMLButtonElement>): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    onToggle(name);
+  };
+  const toggleFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>): void => {
+    event.stopPropagation();
+    if (event.detail === 0) onToggle(name);
+  };
+  const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    onChange(nextValue);
+  };
+  const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
+    event.stopPropagation();
+    if (event.detail === 0) onChange(nextValue);
+  };
   return <div className="g7pb-richtext-inline-toolbar__choice">
     <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
       aria-label={`선택한 글자 ${label}: ${current.label}`}
-      onClick={(event) => { event.stopPropagation(); onToggle(name); }}>
+      onPointerDown={toggleFromPointer} onClick={toggleFromKeyboard}>
       <span>{current.label}</span><ChevronDown size={13} aria-hidden="true" />
     </button>
     {open ? <div className="g7pb-richtext-inline-toolbar__options" role="listbox" aria-label={`선택한 글자 ${label}`}>
       {values.map((option) => <button type="button" role="option" aria-selected={option.value === value}
         key={option.value}
-        onClick={(event) => { event.stopPropagation(); onChange(option.value); }}>
+        onPointerDown={(event) => chooseFromPointer(event, option.value)}
+        onClick={(event) => chooseFromKeyboard(event, option.value)}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}
       </button>)}
     </div> : null}

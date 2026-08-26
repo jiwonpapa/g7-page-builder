@@ -11,7 +11,10 @@ import {
 } from './support/editorInteractionFixture';
 
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
+const API = '/api/modules/jiwonpapa-page_builder/admin';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
+const POINTER_EDGE_INSET_PX = 2;
+const MIN_POINTER_EDGE_INSET_PX = 0.25;
 
 type RichTextBlockType = 'heading' | 'features' | 'rich-text' | 'article-list';
 
@@ -100,21 +103,39 @@ interface PointerGeometry {
 async function textPointerGeometry(field: Locator, targetNode: Locator): Promise<PointerGeometry> {
   await field.scrollIntoViewIfNeeded();
   await expect(targetNode).toHaveCount(1);
-  const [fieldBox, targetBox] = await Promise.all([field.boundingBox(), targetNode.boundingBox()]);
+  const [fieldBox, targetBox, fragments] = await Promise.all([
+    field.boundingBox(),
+    targetNode.boundingBox(),
+    targetNode.evaluate((element) => Array.from(element.getClientRects())
+      .filter((rect) => rect.width > 0 && rect.height > 0)
+      .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, height: rect.height }))),
+  ]);
   if (!fieldBox || !targetBox || fieldBox.width <= 0 || fieldBox.height <= 0
-    || targetBox.width <= 0 || targetBox.height <= 0) {
+    || targetBox.width <= 0 || targetBox.height <= 0 || fragments.length === 0) {
     throw new Error('Rich-text pointer geometry is unavailable.');
   }
   const targetLeft = targetBox.x - fieldBox.x;
   const targetTop = targetBox.y - fieldBox.y;
+  const fragmentLeft = Math.min(...fragments.map((fragment) => fragment.left));
+  const fragmentTop = Math.min(...fragments.map((fragment) => fragment.top));
+  const first = fragments[0];
+  const last = fragments[fragments.length - 1];
+  const startInset = Math.min(POINTER_EDGE_INSET_PX,
+    Math.max(MIN_POINTER_EDGE_INSET_PX, (first.right - first.left) / 4));
+  const endInset = Math.min(POINTER_EDGE_INSET_PX,
+    Math.max(MIN_POINTER_EDGE_INSET_PX, (last.right - last.left) / 4));
   return {
     start: {
-      x: Math.max(0.25, Math.min(fieldBox.width - 0.25, targetLeft + 0.25)),
-      y: Math.max(0.25, Math.min(fieldBox.height - 0.25, targetTop + targetBox.height / 2)),
+      x: Math.max(0.25, Math.min(fieldBox.width - 0.25,
+        targetLeft + first.left - fragmentLeft + startInset)),
+      y: Math.max(0.25, Math.min(fieldBox.height - 0.25,
+        targetTop + first.top - fragmentTop + first.height / 2)),
     },
     end: {
-      x: Math.max(0.25, Math.min(fieldBox.width - 0.25, targetLeft + targetBox.width - 0.25)),
-      y: Math.max(0.25, Math.min(fieldBox.height - 0.25, targetTop + targetBox.height / 2)),
+      x: Math.max(0.25, Math.min(fieldBox.width - 0.25,
+        targetLeft + last.right - fragmentLeft - endInset)),
+      y: Math.max(0.25, Math.min(fieldBox.height - 0.25,
+        targetTop + last.top - fragmentTop + last.height / 2)),
     },
   };
 }
@@ -248,6 +269,21 @@ async function publish(page: Page): Promise<void> {
   }
   expect((await response).ok()).toBe(true);
   await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute('data-state', 'published');
+}
+
+async function preparePreview(page: Page, documentId: string): Promise<string> {
+  const previewLink = page.getByTestId('page-builder-preview-link');
+  await expect(previewLink).toBeVisible();
+  if (await previewLink.evaluate((element) => element.tagName === 'BUTTON')) {
+    const responsePromise = page.waitForResponse((response) => response.request().method() === 'POST'
+      && new URL(response.url()).pathname === `${API}/documents/${documentId}/preview`);
+    await previewLink.click();
+    expect((await responsePromise).ok()).toBe(true);
+  }
+  await expect(previewLink).toHaveAttribute('href', /\/modules\/jiwonpapa-page_builder\/preview\/[a-f0-9]{64}/);
+  const previewUrl = await previewLink.getAttribute('href');
+  if (!previewUrl) throw new Error('Editor interaction preview URL is unavailable.');
+  return previewUrl;
 }
 
 const ROOT_FORMATTING: FormattingExpectation = {
@@ -403,10 +439,9 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await assertPersistedEditorState(page);
     });
 
-    const previewUrl = await page.getByTestId('page-builder-preview-link').getAttribute('href');
-    if (!previewUrl) throw new Error('Editor interaction preview URL is unavailable.');
+    const previewUrl = await preparePreview(page, owned.documentId);
     const preview = await context.newPage();
-    await preview.goto(previewUrl);
+    expect((await preview.goto(previewUrl))?.ok()).toBe(true);
     await test.step('PREVIEW_SELECTION_MARK_GATE', async () => {
       await assertPublishedState(preview);
     });
@@ -416,7 +451,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     const publicUrl = await page.getByTestId('page-builder-public-link').getAttribute('href');
     if (!publicUrl) throw new Error('Editor interaction public URL is unavailable.');
     const published = await context.newPage();
-    await published.goto(publicUrl);
+    expect((await published.goto(publicUrl))?.ok()).toBe(true);
     await test.step('PUBLIC_SELECTION_MARK_GATE', async () => {
       await assertPublishedState(published);
     });

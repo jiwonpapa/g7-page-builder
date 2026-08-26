@@ -187,4 +187,52 @@ describe('Puck-native rich-text editing', () => {
   it('keeps the one-argument inline-field signature link-capable', () => {
     expect(createInlineRichTextField('독립 제목').options.link).not.toBe(false);
   });
+
+  it('opens and applies a range choice on pointer down before a moving Puck action bar can cancel click', async () => {
+    const chain = {
+      focus: vi.fn(() => chain),
+      setMark: vi.fn(() => chain),
+      unsetMark: vi.fn(() => chain),
+      run: vi.fn(() => true),
+    };
+    const editor = {
+      state: { selection: { empty: false, from: 3, to: 7 } },
+      chain: vi.fn(() => chain),
+    };
+    const { container, rerender } = renderInlineMenu(createRichTextField('본문'), editor);
+    await rerender(editorState());
+
+    const trigger = container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-font"]');
+    await act(async () => {
+      trigger?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        pointerType: 'mouse',
+      }));
+    });
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+
+    const serif = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="option"]'))
+      .find((option) => option.textContent?.includes('명조'));
+    await act(async () => {
+      serif?.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        pointerType: 'mouse',
+      }));
+    });
+    expect(chain.setMark).toHaveBeenCalledWith('g7TextStyle', {
+      font: 'serif',
+      size: 'base',
+      weight: 'regular',
+      tone: 'default',
+    });
+    expect(chain.run).toHaveBeenCalledOnce();
+    expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 0 }));
+    });
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+  });
 });

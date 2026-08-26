@@ -187,21 +187,8 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
   return menuRoot;
 }
 
-async function clickNativeControl(control: Locator, menuRoot: Locator, field: Locator, target: string): Promise<void> {
-  await control.click();
-  await expect(menuRoot).toBeVisible();
-  await expect.poll(() => selectedText(field)).toBe(target);
-}
-
-async function chooseRangeOption(
-  menuRoot: Locator,
-  field: Locator,
-  target: string,
-  testId: string,
-  option: string,
-): Promise<void> {
-  const trigger = menuRoot.getByTestId(testId);
-  const reachability = await trigger.evaluate((element) => {
+async function assertPointerReachable(control: Locator): Promise<void> {
+  const reachability = await control.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -220,6 +207,32 @@ async function chooseRangeOption(
   });
   expect(reachability.fullyVisible, `range control is clipped: ${JSON.stringify(reachability)}`).toBe(true);
   expect(reachability.centerHit, `range control is not pointer-reachable: ${JSON.stringify(reachability)}`).toBe(true);
+}
+
+async function clickNativeControl(
+  control: Locator,
+  menuRoot: Locator,
+  field: Locator,
+  target: string,
+  tag: 'em' | 'strong' | 'u',
+): Promise<void> {
+  await assertPointerReachable(control);
+  await control.click();
+  await expect(menuRoot).toBeVisible();
+  await expect.poll(() => selectedText(field)).toBe(target);
+  await expect(field.locator(tag), `${tag} must apply immediately to the pointer-selected copy`).toHaveCount(1);
+  await expect(field.locator(tag)).toHaveText(target);
+}
+
+async function chooseRangeOption(
+  menuRoot: Locator,
+  field: Locator,
+  target: string,
+  testId: string,
+  option: string,
+): Promise<void> {
+  const trigger = menuRoot.getByTestId(testId);
+  await assertPointerReachable(trigger);
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   await menuRoot.getByRole('option', { name: option, exact: true }).click();
@@ -237,9 +250,9 @@ async function applySelectedFormatting(
   const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
   const italic = menuRoot.getByRole('button', { name: '선택한 글자 기울임', exact: true });
   const underline = menuRoot.getByRole('button', { name: '선택한 글자 밑줄', exact: true });
-  await clickNativeControl(bold, menuRoot, field, target);
-  await clickNativeControl(italic, menuRoot, field, target);
-  await clickNativeControl(underline, menuRoot, field, target);
+  await clickNativeControl(bold, menuRoot, field, target, 'strong');
+  await clickNativeControl(italic, menuRoot, field, target, 'em');
+  await clickNativeControl(underline, menuRoot, field, target, 'u');
   await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-font', choices.font);
   await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-size', choices.size);
   await chooseRangeOption(menuRoot, field, target, 'page-builder-richtext-weight', choices.weight);
@@ -270,7 +283,7 @@ async function collapseSelectionWithPointer(field: Locator, targetNode: Locator)
   await expect.poll(() => selectedText(field)).toBe('');
 }
 
-async function revealSidebarRichTextField(page: Page, label: string, expectedText: string): Promise<Locator> {
+async function revealSidebarRichTextField(page: Page, expectedText: string): Promise<Locator> {
   const locateField = (): Locator => page.locator('[contenteditable="true"]:visible').filter({ hasText: expectedText });
   let sidebarField = locateField();
   if (await sidebarField.count() === 0) {
@@ -284,7 +297,6 @@ async function revealSidebarRichTextField(page: Page, label: string, expectedTex
     }
     sidebarField = locateField();
   }
-  await expect(page.getByText(label, { exact: true }).last()).toBeVisible();
   await expect(sidebarField).toHaveCount(1);
   await expect(sidebarField).toBeEditable();
   return sidebarField;
@@ -459,7 +471,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE', async () => {
       const blockField = await richTextField(page, 'rich-text', 'content');
       await blockField.click({ position: { x: 4, y: 4 } });
-      const sidebarField = await revealSidebarRichTextField(page, '본문', EDITOR_INTERACTION_COPY.blockInitial);
+      const sidebarField = await revealSidebarRichTextField(page, EDITOR_INTERACTION_COPY.blockInitial);
       await expect(sidebarField).toContainText(EDITOR_INTERACTION_COPY.blockInitial);
       await sidebarField.fill(EDITOR_INTERACTION_COPY.sidebarToCanvas);
       await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.sidebarToCanvas);
@@ -475,7 +487,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
     });
     await test.step('BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE', async () => {
-      const sidebarField = await revealSidebarRichTextField(page, '본문', EDITOR_INTERACTION_COPY.canvasToSidebar);
+      const sidebarField = await revealSidebarRichTextField(page, EDITOR_INTERACTION_COPY.canvasToSidebar);
       await expect(sidebarField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
     });
 

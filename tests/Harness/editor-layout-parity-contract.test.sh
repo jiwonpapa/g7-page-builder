@@ -37,6 +37,11 @@ expect_failure() {
 node "$repo_root/scripts/check-editor-layout-parity.mjs" --root "$repo_root"
 
 copy_fixture
+perl -0pi -e 's/"\@puckeditor\/core": "0\.23\.0"/"\@puckeditor\/core": "^0.23.0"/' \
+  "$fixture_root/fixture/package.json"
+expect_failure '모바일 헤더 흐름은 검증된 Puck 0.23.0 의미 DOM 계약과 함께 고정되어야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/(\.g7pb-header-controls \{\n    position:) static;/${1} fixed;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '모바일 제품 header control은 Puck MenuBar 흐름 안에 배치되어야 합니다.'
@@ -50,6 +55,21 @@ copy_fixture
 perl -0pi -e 's/(\.g7pb-header-controls \{[^}]*flex:) 1 1 100%;/${1} 0 0 auto;/s' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '모바일 제품 header control은 Puck toggle과 겹치지 않는 줄바꿈 가능한 전체 폭 영역이어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(> :has\(\.g7pb-header-controls\) \{\n    display:) contents;/${1} flex;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 Puck tools wrapper는 헤더 grid 흐름에 메뉴를 참여시켜야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(> :has\(\.g7pb-header-controls\) \{\n    position:) static;/${1} absolute;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 Puck MenuBar는 절대 배치 overlay가 아닌 헤더 전체 폭 두번째 행이어야 합니다.'
+
+copy_fixture
+printf '\n._MenuBar--menuOpen_deadbeef { position: static; }\n' \
+  >>"$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure 'Puck vendor 해시 class를 모바일 메뉴 레이아웃 계약으로 사용하면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \

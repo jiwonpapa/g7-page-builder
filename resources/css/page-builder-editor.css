@@ -1677,6 +1677,25 @@
   }
 }
 
+@media (max-width: 637px) {
+  .g7pb-puck-header-layer > header > div > :has(.g7pb-header-controls) {
+    display: contents;
+  }
+
+  .g7pb-puck-header-layer > header > div > :has(.g7pb-header-controls) > :has(> button[aria-label="Toggle menu bar"]) {
+    grid-column: 3;
+    grid-row: 1;
+    place-self: center end;
+  }
+
+  .g7pb-puck-header-layer > header > div > :has(.g7pb-header-controls) > :has(.g7pb-header-controls) {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+}
+
 @media (max-width: 720px) {
   .g7pb-header-controls {
     position: static;

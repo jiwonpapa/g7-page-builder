@@ -31,6 +31,11 @@ export async function validateEditorLayoutParity(root) {
   ]);
   const packageJson = JSON.parse(packageSource);
   const scripts = packageJson.scripts ?? {};
+  const puckVersion = packageJson.dependencies?.['@puckeditor/core'];
+
+  if (puckVersion !== '0.23.0') {
+    errors.push('모바일 헤더 흐름은 검증된 Puck 0.23.0 의미 DOM 계약과 함께 고정되어야 합니다.');
+  }
 
   if (scripts['check:editor-layout-parity'] !== 'node scripts/check-editor-layout-parity.mjs') {
     errors.push('package.json에 고정된 check:editor-layout-parity 명령이 필요합니다.');
@@ -99,6 +104,24 @@ export async function validateEditorLayoutParity(root) {
     if (/(?:z-index|top|right|bottom|left|inset(?:-inline|-block)?):/.test(mobileHeaderControls)) {
       errors.push('모바일 제품 header control에 viewport 고정 좌표나 z-index overlay를 사용하면 안 됩니다.');
     }
+  }
+  const compactMenuFlow = [
+    [
+      /@media\s*\(max-width:\s*637px\)[\s\S]*\.g7pb-puck-header-layer\s*>\s*header\s*>\s*div\s*>\s*:has\(\.g7pb-header-controls\)\s*\{[^}]*display:\s*contents;/,
+      '모바일 Puck tools wrapper는 헤더 grid 흐름에 메뉴를 참여시켜야 합니다.',
+    ],
+    [
+      /\.g7pb-puck-header-layer\s*>\s*header\s*>\s*div\s*>\s*:has\(\.g7pb-header-controls\)\s*>\s*:has\(>\s*button\[aria-label=['"]Toggle menu bar['"]\]\)\s*\{[^}]*grid-column:\s*3;[^}]*grid-row:\s*1;/,
+      'Puck 메뉴 toggle은 모바일 헤더 첫번째 행의 독립 제어여야 합니다.',
+    ],
+    [
+      /\.g7pb-puck-header-layer\s*>\s*header\s*>\s*div\s*>\s*:has\(\.g7pb-header-controls\)\s*>\s*:has\(\.g7pb-header-controls\)\s*\{[^}]*position:\s*static;[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*grid-row:\s*2;[^}]*width:\s*100%;/,
+      '모바일 Puck MenuBar는 절대 배치 overlay가 아닌 헤더 전체 폭 두번째 행이어야 합니다.',
+    ],
+  ];
+  for (const [pattern, message] of compactMenuFlow) requirePattern(errors, css, pattern, message);
+  if (/_[A-Za-z]*MenuBar(?:--[A-Za-z]+)?_[A-Za-z0-9]+/.test(css)) {
+    errors.push('Puck vendor 해시 class를 모바일 메뉴 레이아웃 계약으로 사용하면 안 됩니다.');
   }
   if (/100cqw\s*-\s*var\(--g7pb-theme-content-width\)/.test(css)) {
     errors.push('편집 root padding에 공개 출력과 다른 100cqw theme-width 공식을 사용하면 안 됩니다.');

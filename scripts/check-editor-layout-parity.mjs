@@ -78,6 +78,28 @@ export async function validateEditorLayoutParity(root) {
       '편집기 Logo grid 열은 로고 고유 폭보다 작아질 수 있어야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
+  const mobileHeaderControls = css.match(
+    /@media\s*\(max-width:\s*720px\)\s*\{\s*\.g7pb-header-controls\s*\{([^}]*)\}/s,
+  )?.[1] ?? '';
+  if (!mobileHeaderControls) {
+    errors.push('모바일 Puck header action의 전용 반응형 레이아웃이 필요합니다.');
+  } else {
+    requirePattern(
+      errors,
+      mobileHeaderControls,
+      /position:\s*static;/,
+      '모바일 제품 header control은 Puck MenuBar 흐름 안에 배치되어야 합니다.',
+    );
+    requirePattern(
+      errors,
+      mobileHeaderControls,
+      /flex:\s*1\s+1\s+100%;[\s\S]*max-width:\s*100%;[\s\S]*flex-wrap:\s*wrap;/,
+      '모바일 제품 header control은 Puck toggle과 겹치지 않는 줄바꿈 가능한 전체 폭 영역이어야 합니다.',
+    );
+    if (/(?:z-index|top|right|bottom|left|inset(?:-inline|-block)?):/.test(mobileHeaderControls)) {
+      errors.push('모바일 제품 header control에 viewport 고정 좌표나 z-index overlay를 사용하면 안 됩니다.');
+    }
+  }
   if (/100cqw\s*-\s*var\(--g7pb-theme-content-width\)/.test(css)) {
     errors.push('편집 root padding에 공개 출력과 다른 100cqw theme-width 공식을 사용하면 안 됩니다.');
   }

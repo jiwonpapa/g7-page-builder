@@ -37,6 +37,21 @@ expect_failure() {
 node "$repo_root/scripts/check-editor-layout-parity.mjs" --root "$repo_root"
 
 copy_fixture
+perl -0pi -e 's/(\.g7pb-header-controls \{\n    position:) static;/${1} fixed;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 제품 header control은 Puck MenuBar 흐름 안에 배치되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-header-controls \{[^}]*position: static;)/${1}\n    z-index: 80;/s' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 제품 header control에 viewport 고정 좌표나 z-index overlay를 사용하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-header-controls \{[^}]*flex:) 1 1 100%;/${1} 0 0 auto;/s' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '모바일 제품 header control은 Puck toggle과 겹치지 않는 줄바꿈 가능한 전체 폭 영역이어야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure 'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'

@@ -162,6 +162,21 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
   throw new Error(`Element not rendered: ${selector}`);
 }
 
+async function openTextToolsFromActionBar(): Promise<void> {
+  const textToolsWereOpen = document.querySelector('[data-testid="page-builder-text-scale"]') !== null;
+  const textToolsIcon = await eventually<SVGElement>('[data-testid="page-builder-text-tools-open"]');
+  const textToolsAction = textToolsIcon.closest<HTMLButtonElement>('button');
+  expect(textToolsAction).not.toBeNull();
+  await act(async () => {
+    textToolsAction?.click();
+  });
+  if (textToolsWereOpen) {
+    await act(async () => {
+      textToolsAction?.click();
+    });
+  }
+}
+
 function editorElements(selector: string): NodeListOf<HTMLElement> {
   const editorDocument = document.querySelector('iframe')?.contentDocument;
 
@@ -356,7 +371,10 @@ describe('Puck editor surface contract', () => {
     });
     const toolbar = container.querySelector('[data-testid="page-builder-richtext-inline-toolbar"]');
     expect(toolbar?.closest('[data-puck-rte-menu]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="puck-native-controls"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="puck-native-controls"]')).toBeNull();
+    expect(container.querySelectorAll('[aria-label="선택한 글자 굵게"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[aria-label="선택한 글자 기울임"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[aria-label="선택한 글자 밑줄"]')).toHaveLength(1);
     expect(container.querySelector('[data-testid="page-builder-richtext-font"]')?.getAttribute('aria-label'))
       .toBe('선택한 글자 글꼴: 모던');
     expect(editor.on).not.toHaveBeenCalled();
@@ -728,6 +746,7 @@ describe('Puck editor surface contract', () => {
       heroTitle?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
+    await openTextToolsFromActionBar();
     const textScaleMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-text-scale"]');
     await act(async () => {
       textScaleMarker.value = 'large';
@@ -781,6 +800,7 @@ describe('Puck editor surface contract', () => {
     });
     const routeOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-route-open"]');
     expect(routeOpenMarker).not.toBeNull();
+    await openTextToolsFromActionBar();
     const elementRouteOpenMarker = await eventually<HTMLButtonElement>('[data-testid="page-builder-element-route-open"]');
     await act(async () => {
       elementRouteOpenMarker.click();

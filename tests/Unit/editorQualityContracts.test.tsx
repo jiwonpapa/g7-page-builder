@@ -4,6 +4,13 @@ import { describe, expect, it } from 'vitest';
 
 import { blockAppearanceClassName, normalizeBlockAppearance } from '../../resources/js/editor/blockAppearance';
 import {
+  CANVAS_ELEMENT_MESSAGE,
+  normalizeCanvasElementSelectionIntent,
+  notifyCanvasElementSelection,
+  shouldAutoOpenCanvasTextTools,
+  type CanvasElementSelection,
+} from '../../resources/js/editor/canvasEditingContract';
+import {
   DEFAULT_PAGE_DESIGN,
   pageDesignCustomCss,
   pageDesignToTokens,
@@ -50,6 +57,50 @@ const documentFixture: PageBuilderDocument = {
 };
 
 describe('editor quality contracts', () => {
+  it('identifies current canvas pointer targets without implicitly opening element tools', () => {
+    const block = document.createElement('section');
+    block.dataset.blockId = '223e4567-e89b-42d3-a456-426614174001';
+    const richText = document.createElement('div');
+    richText.dataset.g7pbRichtextField = 'true';
+    richText.dataset.g7pbInlineField = 'heading';
+    const copy = document.createElement('span');
+    richText.append(copy);
+    block.append(richText);
+    document.body.append(block);
+    const received: { selection: CanvasElementSelection | null } = { selection: null };
+    const receive = (event: Event): void => {
+      if (event instanceof CustomEvent) received.selection = event.detail as CanvasElementSelection;
+    };
+    window.addEventListener(CANVAS_ELEMENT_MESSAGE, receive);
+    try {
+      notifyCanvasElementSelection(
+        { target: copy } as unknown as React.PointerEvent<HTMLElement>,
+        block.dataset.blockId,
+        'heading',
+      );
+    } finally {
+      window.removeEventListener(CANVAS_ELEMENT_MESSAGE, receive);
+      block.remove();
+    }
+
+    expect(received.selection).toMatchObject({ fieldPath: 'heading', intent: 'identify', role: 'text' });
+    expect(normalizeCanvasElementSelectionIntent(received.selection?.intent)).toBe('identify');
+    expect(shouldAutoOpenCanvasTextTools(received.selection, 'selection')).toBe(false);
+    expect(shouldAutoOpenCanvasTextTools(received.selection, 'range-active')).toBe(false);
+    expect(shouldAutoOpenCanvasTextTools(received.selection, 'range-inactive')).toBe(false);
+  });
+
+  it('keeps only missing-intent legacy canvas messages on the previous automatic-open behavior', () => {
+    const legacyTextSelection = { role: 'text' } as const;
+    const invalidCurrentSelection = { role: 'text', intent: 'open-without-user-intent' } as const;
+
+    expect(normalizeCanvasElementSelectionIntent(undefined)).toBe('legacy-open');
+    expect(shouldAutoOpenCanvasTextTools(legacyTextSelection, 'selection')).toBe(true);
+    expect(shouldAutoOpenCanvasTextTools(legacyTextSelection, 'range-inactive')).toBe(true);
+    expect(shouldAutoOpenCanvasTextTools(legacyTextSelection, 'range-active')).toBe(false);
+    expect(normalizeCanvasElementSelectionIntent(invalidCurrentSelection.intent)).toBe('identify');
+  });
+
   it('uses the same selected-range editor for headings and long copy', () => {
     expect(createInlineRichTextField('제목')).toMatchObject({
       type: 'richtext',

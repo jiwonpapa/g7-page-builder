@@ -17,6 +17,16 @@ const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const E2E_OWNERSHIP_DIRECTORY = join(process.cwd(), 'output', 'playwright', 'ownership');
 const E2E_DOCUMENT_SLUG_PATTERN = /^(?:managed-)?g7pb-e2e-[a-z0-9-]+-\d{13}-[a-z0-9]{6}(?:-copy)?$|^g7pb-template-e2e-\d{13}-[a-z0-9]{6}$/;
+const MOBILE_EDITOR_BREAKPOINT = 900;
+/*
+ * @puckeditor/core is pinned to 0.23.0. These selectors use that pinned build's
+ * semantic CSS-module prefixes only; generated build hash suffixes are never
+ * part of the lifecycle contract.
+ */
+const PUCK_LEFT_SIDEBAR_OPEN = '[class*="PuckLayout--leftSideBarVisible"]';
+const PUCK_RIGHT_SIDEBAR_OPEN = '[class*="PuckLayout--rightSideBarVisible"]';
+const PUCK_ARRAY_ITEM_SUMMARY = '[class*="ArrayFieldItem-summary"]';
+const PUCK_NAV_ITEM_ACTIVE = 'NavItem--active';
 
 type BlockType =
   | 'article-list'
@@ -184,6 +194,17 @@ async function updateE2eOwnershipJournal(path: string, uploadedMediaId: string |
   await writeFile(path, JSON.stringify({ ...journal, uploadedMediaId }, null, 2), 'utf8');
 }
 
+async function removeE2eOwnershipJournal(path: string): Promise<void> {
+  try {
+    await unlink(path);
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
+  }
+}
+
 async function recoverOwnedE2eArtifacts(authToken: string): Promise<void> {
   await mkdir(E2E_OWNERSHIP_DIRECTORY, { recursive: true });
   const entries = await readdir(E2E_OWNERSHIP_DIRECTORY, { withFileTypes: true });
@@ -193,7 +214,7 @@ async function recoverOwnedE2eArtifacts(authToken: string): Promise<void> {
     const journal = JSON.parse(await readFile(path, 'utf8')) as unknown;
     assertOwnedE2eJournal(journal);
     await cleanupE2eArtifacts(authToken, journal.slugs, journal.uploadedMediaId);
-    await unlink(path);
+    await removeE2eOwnershipJournal(path);
   }
 }
 
@@ -380,6 +401,10 @@ function editorBlock(page: Page, type: BlockType): Locator {
   );
 }
 
+function editorBlockPointerTarget(page: Page, type: BlockType): Locator {
+  return editorBlock(page, type).locator('xpath=ancestor::*[@data-puck-component][1]');
+}
+
 function editorInlineField(page: Page, type: BlockType, field: string): Locator {
   return editorBlock(page, type).locator(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
@@ -398,27 +423,167 @@ function visibleTestId(page: Page, testId: string): Locator {
   return page.locator(`[data-testid="${testId}"]:visible`);
 }
 
-async function revealEditorHeaderActions(page: Page): Promise<void> {
-  const addBlock = page.getByTestId('page-builder-add-block');
+async function dismissContextPanel(page: Page): Promise<void> {
   const contextPanel = page.getByTestId('page-builder-context-panel');
 
   if (await contextPanel.isVisible()) {
+    if (await mobileFieldsPanelIsOpen(page)) {
+      const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+      await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
+      await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(0);
+      await waitForStableLayout(page);
+      await expect(contextPanel).toBeHidden();
+      return;
+    }
+
     const closeButton = contextPanel.getByRole('button', { name: '스타일 도구 닫기' });
-    await expect.poll(() => closeButton.evaluate((button) => {
-      const rect = button.getBoundingClientRect();
-      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      return hit === button || button.contains(hit);
-    }), { message: 'the element balloon close button remains the topmost pointer target' }).toBe(true);
-    await closeButton.click();
+    await activatePointerTarget(page, closeButton, 'element balloon close button');
     await expect(contextPanel).toBeHidden();
   }
+}
 
-  if (await addBlock.isVisible()) {
-    return;
+async function waitForStableLayout(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+}
+
+async function mobileFieldsPanelIsOpen(page: Page): Promise<boolean> {
+  return mobileSidebarPanelIsOpen(page, 'Fields');
+}
+
+async function mobileSidebarPanelIsOpen(page: Page, name: 'Fields' | 'Outline'): Promise<boolean> {
+  const tab = page.locator('nav').getByText(name, { exact: true });
+  if (!(await tab.isVisible())) return false;
+
+  const item = tab.locator('xpath=ancestor::li[1]');
+  const active = await item.evaluate(
+    (item, activeClass) => item.className.includes(activeClass),
+    PUCK_NAV_ITEM_ACTIVE,
+  );
+  const leftSidebarOpen = await page.locator(PUCK_LEFT_SIDEBAR_OPEN).count() > 0;
+
+  return active && leftSidebarOpen;
+}
+
+async function pointerHitEvidence(targetLocator: Locator, position?: { x: number; y: number }) {
+  return targetLocator.evaluate((target, requestedPosition) => {
+    const rect = target.getBoundingClientRect();
+    const point = requestedPosition
+      ? { x: rect.left + requestedPosition.x, y: rect.top + requestedPosition.y }
+      : { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    const hit = document.elementFromPoint(point.x, point.y);
+    const controls = target.closest('.g7pb-header-controls');
+    const controlsRect = controls?.getBoundingClientRect();
+
+    return {
+      ariaExpanded: target.getAttribute('aria-expanded'),
+      point,
+      target: {
+        ariaLabel: target.getAttribute('aria-label'),
+        bottom: rect.bottom,
+        className: target.getAttribute('class'),
+        height: rect.height,
+        id: target.id || null,
+        left: rect.left,
+        right: rect.right,
+        tagName: target.tagName,
+        testId: target.getAttribute('data-testid'),
+        text: target.textContent?.trim().slice(0, 80) || null,
+        top: rect.top,
+        width: rect.width,
+      },
+      controls: controls && controlsRect
+        ? {
+            bottom: controlsRect.bottom,
+            display: getComputedStyle(controls).display,
+            height: controlsRect.height,
+            left: controlsRect.left,
+            position: getComputedStyle(controls).position,
+            right: controlsRect.right,
+            top: controlsRect.top,
+            width: controlsRect.width,
+          }
+        : null,
+      hit: hit
+        ? {
+            ariaLabel: hit.getAttribute('aria-label'),
+            className: hit.getAttribute('class'),
+            id: hit.id || null,
+            tagName: hit.tagName,
+            testId: hit.getAttribute('data-testid'),
+            text: hit.textContent?.trim().slice(0, 80) || null,
+          }
+        : null,
+      topmost: hit === target || target.contains(hit),
+      viewport: {
+        height: window.innerHeight,
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+        width: window.innerWidth,
+      },
+    };
+  }, position);
+}
+
+async function activatePointerTarget(
+  page: Page,
+  target: Locator,
+  label: string,
+  position?: { x: number; y: number },
+): Promise<void> {
+  await expect(target, `${label} must be visible before pointer activation`).toBeVisible();
+  await target.scrollIntoViewIfNeeded();
+  await waitForStableLayout(page);
+  const evidence = await pointerHitEvidence(target, position);
+  if (!evidence.topmost) {
+    throw new Error(`${label} is not the topmost pointer target: ${JSON.stringify(evidence)}`);
+  }
+  await target.click(position ? { position } : undefined);
+}
+
+async function activatePuckInlineTextField(page: Page, field: Locator, label: string): Promise<void> {
+  await expect(field, `${label} must be visible before inline activation`).toBeVisible();
+  await field.scrollIntoViewIfNeeded();
+  await field.hover();
+  await expect(field).toHaveAttribute('contenteditable', 'plaintext-only');
+  await activatePointerTarget(page, field, label);
+  await expect(field).toBeEditable();
+}
+
+async function openSelectedElementTextTools(page: Page): Promise<void> {
+  const textToolsAction = page.frameLocator('iframe')
+    .getByTestId('page-builder-text-tools-open')
+    .locator('xpath=ancestor::button[1]');
+  await activatePointerTarget(page, textToolsAction, 'selected element text tools');
+  await expect(page.getByTestId('page-builder-context-panel')).toBeVisible();
+}
+
+async function revealEditorHeaderActions(page: Page): Promise<void> {
+  const addBlock = page.getByTestId('page-builder-add-block');
+  await dismissContextPanel(page);
+
+  if (await mobileFieldsPanelIsOpen(page)) {
+    const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+    await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
+    await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(0);
+    await waitForStableLayout(page);
   }
 
-  await page.getByRole('button', { name: 'Toggle menu bar' }).click();
+  if (!(await addBlock.isVisible())) {
+    const menuToggle = page.getByRole('button', { name: 'Toggle menu bar' });
+    await expect(menuToggle).toBeVisible();
+    await activatePointerTarget(page, menuToggle, 'editor menu toggle');
+    await waitForStableLayout(page);
+  }
+
   await expect(addBlock).toBeVisible();
+  await addBlock.scrollIntoViewIfNeeded();
+  await waitForStableLayout(page);
+  const evidence = await pointerHitEvidence(addBlock);
+  if (!evidence.topmost) {
+    throw new Error(`The add-block control is not the topmost pointer target: ${JSON.stringify(evidence)}`);
+  }
 }
 
 async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: string): Promise<void> {
@@ -429,8 +594,75 @@ async function chooseRangeOption(rangeToolbar: Locator, testId: string, option: 
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 }
 
+async function selectedText(field: Locator): Promise<string> {
+  return field.evaluate((element) => element.ownerDocument.defaultView?.getSelection()?.toString() ?? '');
+}
+
+async function dragSelectText(page: Page, field: Locator, target: string): Promise<void> {
+  await field.scrollIntoViewIfNeeded();
+  const geometry = await field.evaluate((element, selectedCopy) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      const startOffset = (node.textContent ?? '').indexOf(selectedCopy);
+      if (startOffset >= 0) {
+        const startCharacter = document.createRange();
+        startCharacter.setStart(node, startOffset);
+        startCharacter.setEnd(node, startOffset + 1);
+        const endCharacter = document.createRange();
+        endCharacter.setStart(node, startOffset + selectedCopy.length - 1);
+        endCharacter.setEnd(node, startOffset + selectedCopy.length);
+        const startRect = startCharacter.getClientRects()[0];
+        const endRects = endCharacter.getClientRects();
+        const endRect = endRects[endRects.length - 1];
+        if (!startRect || !endRect) {
+          throw new Error(`Pointer selection target has no rendered character geometry: ${selectedCopy}`);
+        }
+        const fieldRect = element.getBoundingClientRect();
+        return {
+          field: { height: fieldRect.height, width: fieldRect.width },
+          start: {
+            x: startRect.left - fieldRect.left + Math.max(1, startRect.width * .1),
+            y: startRect.top - fieldRect.top + startRect.height / 2,
+          },
+          end: {
+            x: endRect.right - fieldRect.left - Math.max(1, endRect.width * .1),
+            y: endRect.top - fieldRect.top + endRect.height / 2,
+          },
+        };
+      }
+      node = walker.nextNode();
+    }
+    throw new Error(`Pointer selection target was not found: ${selectedCopy}`);
+  }, target);
+
+  const fieldBox = await field.boundingBox();
+  expect(fieldBox).not.toBeNull();
+  if (!fieldBox) {
+    throw new Error('The editable field has no pointer geometry.');
+  }
+  const scaleX = fieldBox.width / geometry.field.width;
+  const scaleY = fieldBox.height / geometry.field.height;
+  const start = {
+    x: fieldBox.x + geometry.start.x * scaleX,
+    y: fieldBox.y + geometry.start.y * scaleY,
+  };
+  const end = {
+    x: fieldBox.x + geometry.end.x * scaleX,
+    y: fieldBox.y + geometry.end.y * scaleY,
+  };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  try {
+    await page.mouse.move(end.x, end.y, { steps: 12 });
+  } finally {
+    await page.mouse.up();
+  }
+  await expect.poll(() => selectedText(field)).toBe(target);
+}
+
 async function expandBlockGallery(page: Page): Promise<void> {
-  const gallery = page.getByTestId('page-builder-block-gallery');
+  const gallery = visibleTestId(page, 'page-builder-block-gallery');
   const grid = gallery.locator('.g7pb-block-gallery__grid');
 
   for (let batch = 0; batch < 8; batch += 1) {
@@ -438,9 +670,43 @@ async function expandBlockGallery(page: Page): Promise<void> {
     const rendered = Number(await grid.getAttribute('data-rendered-items') ?? '0');
     if (total > 0 && rendered >= total) return;
 
-    await gallery.getByTestId('page-builder-gallery-load-more').evaluateAll((buttons) => {
-      (buttons[0] as HTMLButtonElement | undefined)?.click();
-    });
+    const loadMore = gallery.locator('[data-testid="page-builder-gallery-load-more"]:visible');
+    await expect(loadMore, 'block gallery load-more button must exist while items remain').toBeVisible();
+    await loadMore.scrollIntoViewIfNeeded();
+    await waitForStableLayout(page);
+
+    const renderedAfterScroll = Number(await grid.getAttribute('data-rendered-items') ?? '0');
+    if (renderedAfterScroll > rendered) {
+      continue;
+    }
+
+    if (await loadMore.count() === 0) {
+      await expect.poll(
+        async () => Number(await grid.getAttribute('data-rendered-items') ?? '0'),
+        { message: 'the observer-driven gallery window renders after the load-more control leaves the DOM' },
+      ).toBeGreaterThan(rendered);
+      continue;
+    }
+
+    let evidence: Awaited<ReturnType<typeof pointerHitEvidence>>;
+    try {
+      evidence = await pointerHitEvidence(loadMore);
+    } catch (error) {
+      if (await loadMore.count() > 0) throw error;
+      await expect.poll(
+        async () => Number(await grid.getAttribute('data-rendered-items') ?? '0'),
+        { message: 'the observer-driven gallery window renders after pointer evidence becomes detached' },
+      ).toBeGreaterThan(rendered);
+      continue;
+    }
+    if (!evidence.topmost) {
+      throw new Error(`block gallery load-more button is not the topmost pointer target: ${JSON.stringify(evidence)}`);
+    }
+    try {
+      await loadMore.click();
+    } catch (error) {
+      if (await loadMore.count() > 0) throw error;
+    }
     await expect.poll(
       async () => Number(await grid.getAttribute('data-rendered-items') ?? '0'),
       { message: 'the next gallery window renders' },
@@ -451,21 +717,17 @@ async function expandBlockGallery(page: Page): Promise<void> {
 }
 
 async function selectDefinitionGalleryTab(gallery: Locator): Promise<void> {
-  const tab = gallery.getByRole('tab', { name: /블록 종류/ });
+  const tab = gallery.locator('[role="tab"]:visible').filter({ hasText: /블록 종류/ });
   if (await tab.getAttribute('aria-selected') !== 'true') {
-    await tab.evaluateAll((tabs) => {
-      (tabs[0] as HTMLButtonElement | undefined)?.click();
-    });
+    await activatePointerTarget(gallery.page(), tab, 'block definition gallery tab');
   }
   await expect(tab).toHaveAttribute('aria-selected', 'true');
 }
 
 async function activateGalleryOption(gallery: Locator, option: string): Promise<void> {
-  const button = gallery.getByTestId(`page-builder-block-option-${option}`);
+  const button = gallery.locator(`[data-testid="page-builder-block-option-${option}"]:visible`);
   await expect(button).toBeVisible();
-  await button.evaluateAll((buttons) => {
-    (buttons[0] as HTMLButtonElement | undefined)?.click();
-  });
+  await activatePointerTarget(gallery.page(), button, `block gallery option ${option}`);
   await expect(gallery).toBeHidden();
 }
 
@@ -474,8 +736,8 @@ async function addBlockFromGallery(page: Page, option: string): Promise<void> {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));
   await revealEditorHeaderActions(page);
-  await page.getByTestId('page-builder-add-block').click();
-  const gallery = page.getByTestId('page-builder-block-gallery');
+  await activatePointerTarget(page, page.getByTestId('page-builder-add-block'), 'add-block control');
+  const gallery = visibleTestId(page, 'page-builder-block-gallery');
   await selectDefinitionGalleryTab(gallery);
   await expandBlockGallery(page);
   await activateGalleryOption(gallery, option);
@@ -494,7 +756,7 @@ async function revealBlockLibrary(page: Page): Promise<void> {
 async function hideMobileBlockLibrary(page: Page): Promise<void> {
   const viewport = page.viewportSize();
   const library = page.getByTestId('page-builder-block-library');
-  if (!viewport || viewport.width > 900 || !(await library.isVisible())) {
+  if (!viewport || viewport.width > MOBILE_EDITOR_BREAKPOINT || !(await library.isVisible())) {
     return;
   }
 
@@ -504,10 +766,24 @@ async function hideMobileBlockLibrary(page: Page): Promise<void> {
 
 async function revealInspectorField(page: Page, testId: string): Promise<Locator> {
   const field = visibleTestId(page, testId);
+  await dismissContextPanel(page);
 
-  if (!(await field.isVisible())) {
-    await page.keyboard.press('Escape');
-    await page.locator('nav').getByText('Fields', { exact: true }).click();
+  const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+  if (await fieldsTab.isVisible()) {
+    if (!(await mobileFieldsPanelIsOpen(page))) {
+      await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
+      await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(1);
+      await waitForStableLayout(page);
+    }
+  } else {
+    const rightSidebarOpen = await page.locator(PUCK_RIGHT_SIDEBAR_OPEN).count() > 0;
+    if (!rightSidebarOpen) {
+      const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
+      await expect(sidebarToggle).toBeVisible();
+      await activatePointerTarget(page, sidebarToggle, 'right sidebar toggle');
+      await expect(page.locator(PUCK_RIGHT_SIDEBAR_OPEN)).toHaveCount(1);
+      await waitForStableLayout(page);
+    }
   }
 
   await expect(field).toBeVisible();
@@ -515,31 +791,37 @@ async function revealInspectorField(page: Page, testId: string): Promise<Locator
 }
 
 async function selectEditorBlock(page: Page, type: BlockType): Promise<void> {
+  await dismissContextPanel(page);
   const viewport = page.viewportSize();
-  const visibleField = page.locator('.g7pb-field-control:visible').first();
 
-  if (viewport && viewport.width <= 720) {
+  if (viewport && viewport.width <= MOBILE_EDITOR_BREAKPOINT) {
     const navigation = page.locator('nav');
-    if (await visibleField.isVisible()) {
-      await navigation.getByText('Fields', { exact: true }).click();
-      await expect(visibleField).toBeHidden();
+    const fieldsTab = navigation.getByText('Fields', { exact: true });
+    const outlineTab = navigation.getByText('Outline', { exact: true });
+    if (await mobileFieldsPanelIsOpen(page)) {
+      await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
+      await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(0);
     }
 
-    await navigation.getByText('Outline', { exact: true }).click();
+    if (!(await mobileSidebarPanelIsOpen(page, 'Outline'))) {
+      await activatePointerTarget(page, outlineTab, 'mobile Outline tab');
+    }
     const outlineItem = page.getByText(BLOCK_LABELS[type], { exact: true }).last();
     await expect(outlineItem).toBeVisible();
-    await outlineItem.click();
-    await navigation.getByText('Outline', { exact: true }).click();
-    await expect(outlineItem).toBeHidden();
+    await activatePointerTarget(page, outlineItem, `mobile ${BLOCK_LABELS[type]} outline item`);
+    if (await fieldsTab.isVisible()) {
+      if (!(await mobileFieldsPanelIsOpen(page))) {
+        await activatePointerTarget(page, fieldsTab, 'mobile Fields tab');
+      }
+      await expect(page.locator(PUCK_LEFT_SIDEBAR_OPEN)).toHaveCount(1);
+      await expect(outlineItem).toBeHidden();
+    }
     return;
   }
 
-  if (viewport && viewport.width <= 900) {
-    await editorBlock(page, type).evaluate((element) => (element as HTMLElement).click());
-    return;
-  }
-
-  await editorBlock(page, type).click({ position: { x: 4, y: 4 } });
+  const pointerTarget = editorBlockPointerTarget(page, type);
+  await expect(pointerTarget).toHaveAttribute('data-puck-component', /.+/);
+  await activatePointerTarget(page, pointerTarget, `${BLOCK_LABELS[type]} canvas block`, { x: 4, y: 4 });
 }
 
 async function expectBlockOrder(locator: Locator, expected: BlockType[]): Promise<void> {
@@ -676,17 +958,13 @@ async function selectAndEditHero(
   await expect(inlineSubtitle).toHaveCount(1);
   await expect(inlineBody).toHaveCount(1);
   await expect(inlineButton).toHaveCount(1);
-  await inlineTitle.dispatchEvent('pointerdown');
+  await activatePointerTarget(page, inlineTitle, 'Hero title');
   await expect(inlineTitle).toBeEditable();
   await inlineTitle.fill(title);
   if (directCanvas) {
-    await inlineSubtitle.dispatchEvent('pointerdown');
-    await inlineSubtitle.hover();
-    await expect(inlineSubtitle).toHaveAttribute('contenteditable', 'plaintext-only');
+    await activatePuckInlineTextField(page, inlineSubtitle, 'Hero eyebrow');
     await inlineSubtitle.fill(subtitle);
-    await inlineButton.dispatchEvent('pointerdown');
-    await inlineButton.hover();
-    await expect(inlineButton).toHaveAttribute('contenteditable', 'plaintext-only');
+    await activatePuckInlineTextField(page, inlineButton, 'Hero primary action label');
     await inlineButton.fill(buttonLabel);
     await inlineSubtitle.press('Tab');
   } else {
@@ -695,6 +973,29 @@ async function selectAndEditHero(
   }
   await expect(inlineTitle).toContainText(title);
   await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(subtitle);
+}
+
+async function revealFirstFeaturesItemEditors(page: Page): Promise<{ title: Locator; body: Locator }> {
+  await revealInspectorField(page, 'page-builder-block-container-width');
+  await expect(page.getByRole('heading', { name: 'Features', exact: true, level: 2 })).toBeVisible();
+
+  const summary = page.locator(`${PUCK_ARRAY_ITEM_SUMMARY}:visible`).first();
+  await expect(summary).toBeVisible();
+  const item = summary.locator('xpath=..');
+  const fieldset = item.locator('fieldset');
+  if (!(await fieldset.isVisible())) {
+    await activatePointerTarget(page, summary, 'first Features array item');
+  }
+  await expect(fieldset).toBeVisible();
+
+  const title = fieldset.getByText('제목', { exact: true }).locator('xpath=..').getByRole('textbox');
+  const body = fieldset.getByText('설명', { exact: true }).locator('xpath=..').getByRole('textbox');
+  await expect(title).toHaveCount(1);
+  await expect(body).toHaveCount(1);
+  await expect(title).toBeVisible();
+  await expect(body).toBeVisible();
+
+  return { title, body };
 }
 
 async function selectAndEditFeatures(
@@ -707,11 +1008,12 @@ async function selectAndEditFeatures(
   await expect(features).toHaveCount(1);
   await selectEditorBlock(page, 'features');
   const headingField = editorInlineField(page, 'features', 'title');
-  await headingField.dispatchEvent('pointerdown');
+  await activatePointerTarget(page, headingField, 'Features heading');
   await expect(headingField).toBeEditable();
   await headingField.fill(heading);
-  await (await revealInspectorField(page, 'page-builder-features-item-0-title')).fill(itemTitle);
-  await (await revealInspectorField(page, 'page-builder-features-item-0-body')).fill(itemBody);
+  const itemEditors = await revealFirstFeaturesItemEditors(page);
+  await itemEditors.title.fill(itemTitle);
+  await itemEditors.body.fill(itemBody);
 }
 
 async function selectAndEditCta(
@@ -719,7 +1021,6 @@ async function selectAndEditCta(
   heading: string,
   body: string,
   primaryLabel: string,
-  directCanvas = true,
 ): Promise<void> {
   const cta = editorBlock(page, 'cta');
   await expect(cta).toHaveCount(1);
@@ -728,24 +1029,16 @@ async function selectAndEditCta(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
   );
   const headingField = inline('heading');
-  await headingField.dispatchEvent('pointerdown');
+  await activatePointerTarget(page, headingField, 'CTA heading');
   await expect(headingField).toBeEditable();
   await headingField.fill(heading);
-  if (directCanvas) {
-    await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
-    await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
-    for (const [field, value] of [['body', body], ['primaryLabel', primaryLabel]] as const) {
-      const target = inline(field);
-      await target.dispatchEvent('pointerdown');
-      await target.hover({ force: true });
-      await expect(target).toHaveAttribute('contenteditable', 'plaintext-only');
-      await target.fill(value);
-    }
-  } else {
-    await (await revealInspectorField(page, 'page-builder-cta-body')).fill(body);
-    await (await revealInspectorField(page, 'page-builder-cta-primary-label')).fill(primaryLabel);
-    await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
-    await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
+  await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
+  await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
+  for (const [field, value] of [['body', body], ['primaryLabel', primaryLabel]] as const) {
+    const target = inline(field);
+    await activatePointerTarget(page, target, `CTA ${field}`);
+    await expect(target).toBeEditable();
+    await target.fill(value);
   }
 }
 
@@ -759,7 +1052,7 @@ async function selectAndEditContact(
   await expect(contact).toHaveCount(1);
   await selectEditorBlock(page, 'contact');
   const headingField = editorInlineField(page, 'contact', 'heading');
-  await headingField.dispatchEvent('pointerdown');
+  await activatePointerTarget(page, headingField, 'Contact heading');
   await expect(headingField).toBeEditable();
   await headingField.fill(heading);
   await (await revealInspectorField(page, 'page-builder-contact-address')).fill(address);
@@ -809,9 +1102,7 @@ async function currentDocumentRevision(page: Page, documentId: string): Promise<
 
 async function publish(page: Page): Promise<void> {
   const publishButton = page.getByTestId('page-builder-publish');
-  const trigger = (): Promise<unknown> => (page.viewportSize()?.width ?? 1440) <= 720
-    ? publishButton.evaluate((element) => (element as HTMLButtonElement).click())
-    : publishButton.click();
+  await revealEditorHeaderActions(page);
   const [response] = await Promise.all([
     page.waitForResponse((candidate) => {
       const pathname = new URL(candidate.url()).pathname;
@@ -819,7 +1110,7 @@ async function publish(page: Page): Promise<void> {
       return candidate.request().method() === 'POST'
         && /^\/api\/modules\/jiwonpapa-page_builder\/admin\/publications\/[^/]+\/commit$/.test(pathname);
     }, { timeout: 30_000 }),
-    trigger(),
+    activatePointerTarget(page, publishButton, 'publish control'),
   ]);
   expect(response.ok()).toBe(true);
   await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute(
@@ -1016,7 +1307,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectCanvasWidth(page, 768);
     await page.getByTestId('page-builder-viewport-1280').click();
     await expectCanvasWidth(page, 1280);
-    if ((page.viewportSize()?.width ?? 1280) <= 720) {
+    if ((page.viewportSize()?.width ?? 1280) <= MOBILE_EDITOR_BREAKPOINT) {
       await page.getByTestId('page-builder-viewport-360').click();
       await expectCanvasWidth(page, 360);
     }
@@ -1120,7 +1411,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(sliderInlineFields).toHaveCount(8);
     await expect(visibleSliderInlineFields).toHaveCount(4);
     if (testInfo.project.name === 'desktop') {
-      await visibleSliderInlineFields.first().hover({ force: true });
+      await visibleSliderInlineFields.first().scrollIntoViewIfNeeded();
+      await visibleSliderInlineFields.first().hover();
       await expect(visibleSliderInlineFields.first()).toHaveAttribute('contenteditable', 'plaintext-only');
     }
     if (testInfo.project.name === 'desktop') {
@@ -1145,29 +1437,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const richTextBlock = editorBlock(page, 'rich-text');
       const richTextEditor = richTextBlock.locator('[contenteditable="true"]').first();
       const selectedText = '이해해야 할 내용';
-      await richTextEditor.click();
-      await expect(richTextEditor).toBeFocused();
-      await richTextEditor.evaluate((element, target) => {
-        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-        let node = walker.nextNode();
-        while (node) {
-          const text = node.textContent ?? '';
-          const start = text.indexOf(target);
-          if (start >= 0) {
-            const range = document.createRange();
-            range.setStart(node, start);
-            range.setEnd(node, start + target.length);
-            const selection = window.getSelection();
-            selection?.removeAllRanges();
-            selection?.addRange(range);
-            document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
-            element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-            return;
-          }
-          node = walker.nextNode();
-        }
-        throw new Error(`Rich text selection target was not found: ${target}`);
-      }, selectedText);
+      await dragSelectText(page, richTextEditor, selectedText);
       const rangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(rangeToolbar).toBeVisible();
       await chooseRangeOption(rangeToolbar, 'page-builder-richtext-font', '명조');
@@ -1183,26 +1453,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const heroBlock = editorBlock(page, 'hero');
       const heroTitleField = editorInlineField(page, 'hero', 'title');
       const selectedHeadingText = 'Hero';
-      await heroTitleField.evaluate((element, target) => {
-        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-        let node = walker.nextNode();
-        while (node) {
-          const start = (node.textContent ?? '').indexOf(target);
-          if (start >= 0) {
-            const range = document.createRange();
-            range.setStart(node, start);
-            range.setEnd(node, start + target.length);
-            const selection = window.getSelection();
-            selection?.removeAllRanges();
-            selection?.addRange(range);
-            document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
-            element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-            return;
-          }
-          node = walker.nextNode();
-        }
-        throw new Error(`Heading selection target was not found: ${target}`);
-      }, selectedHeadingText);
+      await dragSelectText(page, heroTitleField, selectedHeadingText);
       const headingRangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(headingRangeToolbar).toBeVisible();
       await expect(page.getByTestId('page-builder-context-panel')).toBeHidden();
@@ -1210,16 +1461,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await chooseRangeOption(headingRangeToolbar, 'page-builder-richtext-tone', '사용자색 1');
       await expect(heroTitleField.locator('span[data-g7pb-weight="bold"][data-g7pb-tone="custom1"]'))
         .toHaveText(selectedHeadingText);
-      await heroTitleField.evaluate((element) => {
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        range.collapse(false);
-        selection?.addRange(range);
-        document.dispatchEvent(new Event('selectionchange', { bubbles: true }));
-      });
-      await heroBlock.locator('[data-g7pb-inline-field="title"]').dispatchEvent('pointerdown');
+      await heroTitleField.click({ position: { x: 4, y: 4 } });
+      await expect.poll(() => selectedText(heroTitleField)).toBe('');
+      await expect(headingRangeToolbar).toBeHidden();
+      await openSelectedElementTextTools(page);
       const elementPanel = page.getByTestId('page-builder-context-panel');
       await expect(elementPanel).toContainText('요소 전체 · 부분 선택은 글자 위 툴바');
       const elementPanelBox = await elementPanel.boundingBox();
@@ -1235,7 +1480,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--xlarge/);
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-align--right/);
       await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
-      await page.getByTestId('page-builder-app').dispatchEvent('pointerdown');
+      await activatePointerTarget(
+        page,
+        page.getByTestId('page-builder-app'),
+        'editor background outside the element balloon',
+        { x: 4, y: 4 },
+      );
       await expect(elementPanel).toBeHidden();
 
       const containerWidth = await revealInspectorField(page, 'page-builder-block-container-width');
@@ -1274,7 +1524,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await expect(routePicker).toBeHidden();
       await expect(heroUrl).toHaveValue('/login');
 
-      await heroBlock.locator('[data-g7pb-inline-field="primaryLabel"]').dispatchEvent('pointerdown');
+      await activatePointerTarget(
+        page,
+        heroBlock.locator('[data-g7pb-inline-field="primaryLabel"]'),
+        'Hero primary action label',
+      );
+      await openSelectedElementTextTools(page);
       await page.getByTestId('page-builder-element-route-open').click();
       await expect(routePicker).toBeVisible();
       await routePicker.getByPlaceholder('로그인, 게시판, 상품…').fill('회원가입');
@@ -1308,7 +1563,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     uploadedMediaId = typeof mediaPayload.data?.id === 'string' ? mediaPayload.data.id : null;
     expect(uploadedMediaId).toMatch(DOCUMENT_ID_PATTERN);
     await updateE2eOwnershipJournal(ownershipJournalPath, uploadedMediaId);
-    await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel, testInfo.project.name === 'desktop');
+    await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel);
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
     await revealEditorHeaderActions(page);
@@ -1360,8 +1615,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
     await expect(editorInlineField(page, 'features', 'title')).toContainText(featuresHeading);
-    await expect(await revealInspectorField(page, 'page-builder-features-item-0-title')).toHaveValue(featureTitle);
-    await expect(await revealInspectorField(page, 'page-builder-features-item-0-body')).toHaveValue(featureBody);
+    const restoredFeatureEditors = await revealFirstFeaturesItemEditors(page);
+    await expect(restoredFeatureEditors.title).toHaveText(featureTitle);
+    await expect(restoredFeatureEditors.body).toHaveText(featureBody);
     await selectEditorBlock(page, 'cta');
     await expect(editorInlineField(page, 'cta', 'heading')).toContainText(ctaHeading);
     await expect(await revealInspectorField(page, 'page-builder-cta-body')).toHaveValue(ctaBody);
@@ -1714,7 +1970,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         await page.close();
       }
       await cleanupE2eArtifacts(authToken, [slug, managedSlug, duplicateSlug], uploadedMediaId);
-      await unlink(ownershipJournalPath);
+      await removeE2eOwnershipJournal(ownershipJournalPath);
     }
     if (lifecycleError) throw lifecycleError;
     if (siteShellRestoreError) throw siteShellRestoreError;
@@ -1846,7 +2102,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     await expect(page.locator('.g7pb-template-page')).toBeVisible();
   } finally {
     await cleanupE2eArtifacts(authToken, [slug], null);
-    await unlink(ownershipJournalPath);
+    await removeE2eOwnershipJournal(ownershipJournalPath);
     if (previousHomeId) {
       const previousResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${previousHomeId}`);
       if (previousResponse.ok()) {

@@ -23,6 +23,8 @@ export function useCanvasBlockAppearanceClass(blockId: string): string {
 }
 
 export type CanvasElementRole = 'block' | 'text' | 'action' | 'media';
+export type CanvasElementSelectionIntent = 'identify';
+export type CanvasTextToolsAutoOpenTrigger = 'selection' | 'range-active' | 'range-inactive';
 
 export interface CanvasElementSelection {
   blockId: string;
@@ -32,6 +34,12 @@ export interface CanvasElementSelection {
   label: string;
   collection: string | null;
   itemIndex: number | null;
+  /**
+   * Current canvases only identify the pointer target. A missing value is a
+   * compatibility signal from canvases bundled before selection intent was
+   * added, where selecting text also opened the element tools.
+   */
+  intent?: CanvasElementSelectionIntent;
   anchor?: {
     top: number;
     right: number;
@@ -40,6 +48,22 @@ export interface CanvasElementSelection {
     width: number;
     height: number;
   } | null;
+}
+
+export type NormalizedCanvasElementSelectionIntent = CanvasElementSelectionIntent | 'legacy-open';
+
+export function normalizeCanvasElementSelectionIntent(value: unknown): NormalizedCanvasElementSelectionIntent {
+  if (value === undefined) return 'legacy-open';
+  return 'identify';
+}
+
+export function shouldAutoOpenCanvasTextTools(
+  selection: Pick<CanvasElementSelection, 'intent' | 'role'> | null,
+  trigger: CanvasTextToolsAutoOpenTrigger,
+): boolean {
+  if (trigger === 'range-active' || !selection
+    || (selection.role !== 'text' && selection.role !== 'action')) return false;
+  return normalizeCanvasElementSelectionIntent(selection.intent) === 'legacy-open';
 }
 
 interface CollectionLimit {
@@ -558,6 +582,7 @@ export function notifyCanvasElementSelection(
     if (!fieldPath) return;
     const selection = {
       ...selectionFromPath(blockId, blockType, fieldPath, 'text'),
+      intent: 'identify',
       anchor: parentViewportRect(richText),
     } satisfies CanvasElementSelection;
     const message = { type: CANVAS_ELEMENT_MESSAGE, selection };
@@ -574,9 +599,9 @@ export function notifyCanvasElementSelection(
     ? 'media'
     : selectable?.dataset.g7pbActionField || inferredAction ? 'action' : fieldPath ? 'text' : 'block';
   const selection = fieldPath
-    ? { ...selectionFromPath(blockId, blockType, fieldPath, role), anchor: parentViewportRect(selectable) }
+    ? { ...selectionFromPath(blockId, blockType, fieldPath, role), intent: 'identify', anchor: parentViewportRect(selectable) }
     : { blockId, blockType, fieldPath: null, role, label: '블록 전체', collection: null, itemIndex: null,
-      anchor: parentViewportRect(target.closest<HTMLElement>('[data-block-id]')) } satisfies CanvasElementSelection;
+      intent: 'identify', anchor: parentViewportRect(target.closest<HTMLElement>('[data-block-id]')) } satisfies CanvasElementSelection;
 
   selectable?.ownerDocument.querySelectorAll('[data-g7pb-canvas-selected="true"]').forEach((element) => {
     element.removeAttribute('data-g7pb-canvas-selected');

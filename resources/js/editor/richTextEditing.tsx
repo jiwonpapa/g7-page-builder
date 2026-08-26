@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RichTextMenu } from '@puckeditor/core';
 import { Extension, Mark, Node as TiptapNode, mergeAttributes, type Editor } from '@tiptap/core';
-import { Check, ChevronDown, Link2, RotateCcw, Unlink } from 'lucide-react';
+import { Bold, Check, ChevronDown, Italic, Link2, RotateCcw, Underline, Unlink } from 'lucide-react';
 import { CanvasCurrentElementStylesContext, elementAppearanceClassName } from './canvasEditingContract';
 
 const FONT_VALUES = ['inherit', 'modern', 'serif', 'mono'] as const;
@@ -90,6 +90,7 @@ function RangeChoiceMenu<T extends string>({
   testId,
   onToggle,
   onChange,
+  onClose,
 }: {
   name: RangeMenu;
   label: string;
@@ -100,14 +101,17 @@ function RangeChoiceMenu<T extends string>({
   testId: string;
   onToggle: (menu: RangeMenu) => void;
   onChange: (value: T) => void;
+  onClose: () => void;
 }): React.ReactElement {
   const current = values.find((option) => option.value === value) ?? values[0];
   const suppressCompatibilityClick = React.useRef(false);
+  const pendingOptionPointer = React.useRef<{ pointerId: number; value: T } | null>(null);
   const markPointerActivation = (): void => {
     suppressCompatibilityClick.current = true;
   };
   const clearPointerActivation = (): void => {
     suppressCompatibilityClick.current = false;
+    pendingOptionPointer.current = null;
   };
   const clearPointerActivationFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
     if (event.key === 'Enter' || event.key === ' ') clearPointerActivation();
@@ -127,20 +131,34 @@ function RangeChoiceMenu<T extends string>({
     }
     if (event.detail === 0) onToggle(name);
   };
-  const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
+  const armOptionFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     markPointerActivation();
+    pendingOptionPointer.current = { pointerId: event.pointerId, value: nextValue };
+  };
+  const chooseFromPointer = (event: React.PointerEvent<HTMLButtonElement>, nextValue: T): void => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const pending = pendingOptionPointer.current;
+    if (!pending || pending.pointerId !== event.pointerId || pending.value !== nextValue) return;
+    pendingOptionPointer.current = null;
     onChange(nextValue);
   };
   const chooseFromKeyboard = (event: React.MouseEvent<HTMLButtonElement>, nextValue: T): void => {
+    event.preventDefault();
     event.stopPropagation();
     if (suppressCompatibilityClick.current) {
-      suppressCompatibilityClick.current = false;
+      clearPointerActivation();
+      onClose();
       return;
     }
-    if (event.detail === 0) onChange(nextValue);
+    if (event.detail === 0) {
+      onChange(nextValue);
+      onClose();
+    }
   };
   return <div className="g7pb-richtext-inline-toolbar__choice">
     <button type="button" disabled={disabled} data-testid={testId} aria-haspopup="listbox" aria-expanded={open}
@@ -154,7 +172,8 @@ function RangeChoiceMenu<T extends string>({
         key={option.value}
         onKeyDown={clearPointerActivationFromKeyboard}
         onPointerCancel={clearPointerActivation}
-        onPointerDown={(event) => chooseFromPointer(event, option.value)}
+        onPointerDown={(event) => armOptionFromPointer(event, option.value)}
+        onPointerUp={(event) => chooseFromPointer(event, option.value)}
         onClick={(event) => chooseFromKeyboard(event, option.value)}>
         <span>{option.label}</span>{option.value === value ? <Check size={13} aria-hidden="true" /> : null}
       </button>)}
@@ -218,7 +237,48 @@ function RichTextRangeStateSignal({ active }: { active: boolean }): null {
   return null;
 }
 
-function G7RichTextInlineMenu({ children, editor, editorState, readOnly, allowLink = true }: {
+function NativeRangeControl({
+  label,
+  icon,
+  active,
+  disabled,
+  onApply,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  active: boolean;
+  disabled: boolean;
+  onApply: () => void;
+}): React.ReactElement {
+  const suppressCompatibilityClick = useRef(false);
+  const applyFromPointer = (event: React.PointerEvent<HTMLSpanElement>): void => {
+    if (event.button !== 0 || disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressCompatibilityClick.current = true;
+    onApply();
+  };
+  const applyFromClick = (event: React.SyntheticEvent): void => {
+    event.stopPropagation();
+    if (suppressCompatibilityClick.current) {
+      suppressCompatibilityClick.current = false;
+      return;
+    }
+    if ((event.nativeEvent as MouseEvent).detail === 0 && !disabled) onApply();
+  };
+
+  return <span
+    onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') suppressCompatibilityClick.current = false;
+    }}
+    onPointerCancel={() => { suppressCompatibilityClick.current = false; }}
+    onPointerDownCapture={applyFromPointer}
+  >
+    <RichTextMenu.Control title={label} icon={icon} active={active} disabled={disabled} onClick={applyFromClick} />
+  </span>;
+}
+
+function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true }: {
   children: React.ReactNode;
   editor: Editor | null;
   editorState: RichTextEditorState | null;
@@ -241,7 +301,6 @@ function G7RichTextInlineMenu({ children, editor, editorState, readOnly, allowLi
     } else {
       chain.setMark('g7TextStyle', next).run();
     }
-    setOpenMenu(null);
   };
 
   const toggleLinkEditor = (): void => {
@@ -271,31 +330,62 @@ function G7RichTextInlineMenu({ children, editor, editorState, readOnly, allowLi
     <>
       <RichTextRangeStateSignal active={rangeActive} />
       {rangeActive ? <RichTextMenu>
-        {children}
+        <RichTextMenu.Group>
+          <NativeRangeControl
+            label="선택한 글자 굵게"
+            icon={<Bold size={15} aria-hidden="true" />}
+            active={Boolean(editorState?.isBold)}
+            disabled={readOnly || !editor || !editorState?.canBold}
+            onApply={() => {
+              editor?.chain().focus().toggleBold().run();
+              setOpenMenu(null);
+            }}
+          />
+          <NativeRangeControl
+            label="선택한 글자 기울임"
+            icon={<Italic size={15} aria-hidden="true" />}
+            active={Boolean(editorState?.isItalic)}
+            disabled={readOnly || !editor || !editorState?.canItalic}
+            onApply={() => {
+              editor?.chain().focus().toggleItalic().run();
+              setOpenMenu(null);
+            }}
+          />
+          <NativeRangeControl
+            label="선택한 글자 밑줄"
+            icon={<Underline size={15} aria-hidden="true" />}
+            active={Boolean(editorState?.isUnderline)}
+            disabled={readOnly || !editor || !editorState?.canUnderline}
+            onApply={() => {
+              editor?.chain().focus().toggleUnderline().run();
+              setOpenMenu(null);
+            }}
+          />
+        </RichTextMenu.Group>
         <RichTextMenu.Group>
           <div className="g7pb-richtext-inline-toolbar" role="group" aria-label="선택한 글자 추가 서식"
             data-testid="page-builder-richtext-inline-toolbar">
             <RangeChoiceMenu name="font" label="글꼴" value={mark.font} disabled={readOnly} open={openMenu === 'font'}
               testId="page-builder-richtext-font" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(font) => updateMark({ font })} values={[
+              onChange={(font) => updateMark({ font })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'inherit', label: '기본 글꼴' }, { value: 'modern', label: '모던' },
                 { value: 'serif', label: '명조' }, { value: 'mono', label: '고정폭' },
               ]} />
             <RangeChoiceMenu name="weight" label="굵기" value={mark.weight} disabled={readOnly} open={openMenu === 'weight'}
               testId="page-builder-richtext-weight" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(weight) => updateMark({ weight })} values={[
+              onChange={(weight) => updateMark({ weight })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'regular', label: '보통' }, { value: 'medium', label: '중간' },
                 { value: 'semibold', label: '굵게' }, { value: 'bold', label: '매우 굵게' },
               ]} />
             <RangeChoiceMenu name="size" label="크기" value={mark.size} disabled={readOnly} open={openMenu === 'size'}
               testId="page-builder-richtext-size" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(size) => updateMark({ size })} values={[
+              onChange={(size) => updateMark({ size })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'small', label: 'S' }, { value: 'base', label: 'M' },
                 { value: 'large', label: 'L' }, { value: 'xlarge', label: 'XL' },
               ]} />
             <RangeChoiceMenu name="tone" label="색상" value={mark.tone} disabled={readOnly} open={openMenu === 'tone'}
               testId="page-builder-richtext-tone" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-              onChange={(tone) => updateMark({ tone })} values={[
+              onChange={(tone) => updateMark({ tone })} onClose={() => setOpenMenu(null)} values={[
                 { value: 'default', label: '기본색' }, { value: 'muted', label: '보조색' },
                 { value: 'accent', label: '강조색' }, { value: 'contrast', label: '반전색' },
                 { value: 'custom1', label: '사용자색 1' }, { value: 'custom2', label: '사용자색 2' },

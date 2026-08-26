@@ -64,6 +64,7 @@ import {
   normalizeElementAppearance,
   normalizeElementAppearanceMap,
   remapCollectionElementAppearanceMap,
+  shouldAutoOpenCanvasTextTools,
   CanvasBlockAppearanceContext,
   CanvasCurrentElementStylesContext,
   CanvasElementStylesContext,
@@ -2715,7 +2716,7 @@ export function PuckEditorAdapter({
       setCanvasElementSelection(selection);
       setCanvasMediaDialogOpen(false);
       setCanvasRouteDialogOpen(false);
-      if (selection.role === 'text' || selection.role === 'action') {
+      if (shouldAutoOpenCanvasTextTools(selection, 'selection')) {
         window.requestAnimationFrame(() => {
           if (!rangeEditingActiveRef.current) setCanvasTextToolsOpen(true);
         });
@@ -2726,13 +2727,11 @@ export function PuckEditorAdapter({
     const acceptRangeState = (active: boolean): void => {
       const wasActive = rangeEditingActiveRef.current;
       rangeEditingActiveRef.current = active;
-      if (active) {
+      if (!shouldAutoOpenCanvasTextTools(canvasElementSelectionRef.current, active ? 'range-active' : 'range-inactive')) {
         setCanvasTextToolsOpen(false);
         return;
       }
       if (!wasActive) return;
-      const selection = canvasElementSelectionRef.current;
-      if (selection?.role !== 'text' && selection?.role !== 'action') return;
       window.requestAnimationFrame(() => {
         if (!rangeEditingActiveRef.current) setCanvasTextToolsOpen(true);
       });

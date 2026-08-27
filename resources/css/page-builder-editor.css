@@ -2130,6 +2130,7 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-mobile-subnav[hidden] { display: none; }
 .g7pb-mobile-subnav a { min-height: 2.8rem; color: #526071; font-size: .9rem; }
 .g7pb-mobile-menu--preview { display: none; animation: none !important; }
+.g7pb-mobile-menu--preview .g7pb-mobile-menu__close { margin-top: 3.5rem; }
 @keyframes g7pb-drawer-left-in { from { opacity: 0; transform: translateX(-2rem); } to { opacity: 1; transform: translateX(0); } }
 @keyframes g7pb-drawer-right-in { from { opacity: 0; transform: translateX(2rem); } to { opacity: 1; transform: translateX(0); } }
 .g7pb-site-footer { padding: clamp(3rem, 7vw, 5.5rem) max(1.25rem, calc((100vw - 72rem) / 2)); color: #d6dce6; background: #111827; }

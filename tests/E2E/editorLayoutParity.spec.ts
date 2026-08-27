@@ -452,13 +452,35 @@ async function assertScenario(
   projectName: string,
 ): Promise<void> {
   await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
-  await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+  const editor = page.getByTestId('page-builder-editor');
+  await expect(editor).toBeVisible();
+  const viewportMutations: string[] = [];
+  const collectViewportMutation = (request: { method(): string; url(): string }): void => {
+    const path = new URL(request.url()).pathname;
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method()) && path.includes(`/documents/${owned.documentId}`)) {
+      viewportMutations.push(`${request.method()} ${path}`);
+    }
+  };
+  page.on('request', collectViewportMutation);
   const width = await setCanvasViewport(page, projectName);
+  page.off('request', collectViewportMutation);
+  expect(viewportMutations, `${scenario.label} viewport switch must not persist document data`).toEqual([]);
+  const expectedMode = projectName === 'desktop' ? 'edit' : 'preview';
+  await expect(editor).toHaveAttribute('data-editing-mode', expectedMode);
+  await expect(editor).toHaveAttribute('data-canvas-viewport', String(width));
+  await expect(page.getByTestId('page-builder-editor-mode-notice'))
+    .toContainText('편집은 PC에서만 지원합니다. 모바일·태블릿은 반응형 미리보기 전용입니다.');
+  const addBlock = page.getByTestId('page-builder-add-block');
+  if (expectedMode === 'edit') await expect(addBlock).toBeEnabled();
+  else await expect(addBlock).toBeDisabled();
   await expect(page.locator(CANVAS_IFRAME)).toHaveCount(1);
   const editorBlocks = page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-block');
   await expect(editorBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
   const editorRoot = page.frameLocator(CANVAS_IFRAME).locator('.g7pb-preview-page');
   await expect(editorRoot).toBeVisible();
+  if (expectedMode === 'preview') {
+    await expect(page.frameLocator(CANVAS_IFRAME).locator('[contenteditable="true"]')).toHaveCount(0);
+  }
   await expectProductCanvasStyles(editorRoot);
   await expectStableVisibleGeometry(editorBlocks, scenario.expectedBlockCount);
   const editorMetrics = await layoutMetrics(editorBlocks, true);

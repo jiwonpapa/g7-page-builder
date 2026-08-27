@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-08-27
+
 ### Added
 
 - Header·Footer Site Part에 Puck의 현재 기기 버튼과 동기화되는 태블릿·모바일 표시 설정을 추가하고 간격·정렬·CTA/내비게이션 표시·메뉴 열 수·drawer/dropdown/하단 시트를 화면별로 재정의하거나 초기화할 수 있게 했습니다.

@@ -15,8 +15,8 @@ import {
   Sun,
   Smartphone,
   Sparkles,
+  Settings2,
   Tablet,
-  Type,
 } from 'lucide-react';
 import {
   ActionBar,
@@ -2778,6 +2778,11 @@ function SelectedBlockActionBar({
   const roleLabel = elementSelection?.role === 'media' ? '이미지'
     : elementSelection?.role === 'action' ? '버튼·링크'
       : elementSelection?.role === 'text' ? '텍스트' : '블록';
+  const elementStyleTarget = Boolean(elementSelection?.fieldPath)
+    && (elementSelection?.role === 'text' || elementSelection?.role === 'action');
+  const styleActionLabel = elementStyleTarget
+    ? `${elementSelection?.label ?? '선택 요소'} 요소 전체 스타일`
+    : '블록 설정';
   const puckActions = rangeEditingActive ? React.Children.toArray(children)[0] : children;
   return (
     <div
@@ -2810,9 +2815,12 @@ function SelectedBlockActionBar({
             <Link2 size={16} data-testid="page-builder-canvas-route-open" aria-hidden="true" />
           </ActionBar.Action> : null}
           {!rangeEditingActive && selectedBlock ? <ActionBar.Action
-            label={elementSelection?.fieldPath ? `${elementSelection.label} 스타일` : '블록 배경·여백'}
+            label={styleActionLabel}
+            aria-label={styleActionLabel}
             disabled={disabled} onClick={() => setTextToolsOpen((open) => !open)}>
-            <Type size={16} data-testid="page-builder-text-tools-open" aria-hidden="true" />
+            {elementStyleTarget
+              ? <Paintbrush size={16} data-testid="page-builder-element-style-open" aria-hidden="true" />
+              : <Settings2 size={16} data-testid="page-builder-block-style-open" aria-hidden="true" />}
           </ActionBar.Action> : null}
           {!rangeEditingActive && selectedCollection && itemIndex !== null && limits ? <>
             <ActionBar.Action label="선택 항목 위로" disabled={disabled || itemIndex === 0} onClick={() => updateCollection('up')}><span data-testid="page-builder-item-move-up" aria-hidden="true">⇡</span></ActionBar.Action>

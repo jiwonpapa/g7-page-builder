@@ -60,12 +60,13 @@ async function assertInteractiveCanvas(page: Page): Promise<void> {
   await expect.poll(async () => (await iframe.boundingBox())?.height ?? 0).toBeGreaterThan(1);
 }
 
-async function openElementPanelFromActionBar(page: Page): Promise<void> {
+async function openElementStyleFromActionBar(page: Page): Promise<void> {
   const textToolsButton = page.frameLocator(CANVAS_IFRAME)
-    .getByTestId('page-builder-text-tools-open')
+    .getByTestId('page-builder-element-style-open')
     .locator('xpath=ancestor::button[1]');
   await expect(textToolsButton).toHaveCount(1);
   await expect(textToolsButton).toBeVisible();
+  await expect(textToolsButton).toHaveAttribute('aria-label', /요소 전체 스타일/);
   await assertPointerReachable(page, textToolsButton);
   await activateControl(textToolsButton);
 }
@@ -917,24 +918,11 @@ async function collapseSelectionWithPointer(
   throw lastFailure;
 }
 
-async function revealSidebarRichTextField(page: Page, expectedText: string): Promise<Locator> {
-  const locateField = (): Locator => page.locator('[contenteditable="true"]:visible');
-  let sidebarField = locateField();
-  if (await sidebarField.count() === 0) {
-    const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
-    if (await fieldsTab.isVisible()) {
-      await fieldsTab.click();
-    } else {
-      const sidebarToggle = page.getByRole('button', { name: 'Toggle right sidebar' });
-      await expect(sidebarToggle).toBeVisible();
-      await sidebarToggle.click();
-    }
-    sidebarField = locateField();
-  }
-  await expect(sidebarField).toHaveCount(1);
-  await expect(sidebarField).toBeEditable();
-  await expect(sidebarField).toHaveText(expectedText);
-  return sidebarField;
+async function expectNoSidebarRichTextEditor(page: Page): Promise<void> {
+  const fieldsTab = page.locator('nav').getByText('Fields', { exact: true });
+  if (await fieldsTab.isVisible()) await fieldsTab.click();
+  await expect(page.locator('[contenteditable="true"]:visible')).toHaveCount(0);
+  await expect(page.locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
 }
 
 async function saveDraft(page: Page): Promise<void> {
@@ -1046,7 +1034,7 @@ test('keeps ActionBar and rich-text controls pointer-reachable in the PC editor'
         await expect.poll(() => targetMark.count()).toBe(beforeCount === 0 ? 1 : 0);
         await collapseSelectionWithPointer(page, rootSelection);
         await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
-        await openElementPanelFromActionBar(page);
+        await openElementStyleFromActionBar(page);
         await expect(page.getByTestId('page-builder-context-panel')).toBeVisible();
         await dismissContextPanelWithPointer(page);
       });
@@ -1116,7 +1104,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await collapseSelectionWithPointer(page, rootSelection);
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
       await expect(elementPanel).toBeHidden();
-      await openElementPanelFromActionBar(page);
+      await openElementStyleFromActionBar(page);
       await expect(elementPanel).toBeVisible();
       await page.getByTestId('page-builder-editor').click({ position: { x: 8, y: 8 } });
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
@@ -1164,31 +1152,25 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await collapseSelectionWithPointer(page, articleSelection);
     });
 
-    await test.step('BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE', async () => {
+    await test.step('SIDEBAR_RICH_TEXT_DUPLICATION_REMOVED_GATE', async () => {
       const blockField = await richTextField(page, 'rich-text', 'content');
       await blockField.click({ position: { x: 4, y: 4 } });
-      const sidebarField = await revealSidebarRichTextField(page, EDITOR_INTERACTION_COPY.blockInitial);
-      await expect(sidebarField).toContainText(EDITOR_INTERACTION_COPY.blockInitial);
-      await sidebarField.fill(EDITOR_INTERACTION_COPY.sidebarToCanvas);
-      await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.sidebarToCanvas);
+      await expectNoSidebarRichTextEditor(page);
     });
-    await test.step('BLOCK_RICH_GATE', async () => {
+    await test.step('CANVAS_ONLY_RICH_TEXT_CONTENT_GATE', async () => {
       await exposeCanvasForPointer(page);
       const blockSelection: RichTextSelectionLocator = {
         blockType: 'rich-text',
         fieldPath: 'content',
         locateTarget: (field) => field.locator('p')
-          .filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.sidebarToCanvas}$`) }),
+          .filter({ hasText: new RegExp(`^${EDITOR_INTERACTION_COPY.blockInitial}$`) }),
       };
-      const blockField = await dragSelectText(page, blockSelection, EDITOR_INTERACTION_COPY.sidebarToCanvas);
+      const blockField = await dragSelectText(page, blockSelection, EDITOR_INTERACTION_COPY.blockInitial);
       await expect(await officialPuckMenuRoot(page)).toBeVisible();
       await expect(elementPanel).toBeHidden();
       await page.keyboard.type(EDITOR_INTERACTION_COPY.canvasToSidebar);
       await expect(blockField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
-    });
-    await test.step('BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE', async () => {
-      const sidebarField = await revealSidebarRichTextField(page, EDITOR_INTERACTION_COPY.canvasToSidebar);
-      await expect(sidebarField).toHaveText(EDITOR_INTERACTION_COPY.canvasToSidebar);
+      await expectNoSidebarRichTextEditor(page);
     });
 
     await saveDraft(page);

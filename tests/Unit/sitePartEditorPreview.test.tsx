@@ -63,8 +63,11 @@ describe('Site Part Header preview', () => {
 
     await act(async () => root.render(<HeaderNavigationPreview {...props} mobileMenuStyle="drawer-right" />));
     const toggle = container.querySelector<HTMLButtonElement>('[data-g7pb-preview-menu-toggle]');
-    const menu = container.querySelector<HTMLElement>('[data-g7pb-preview-mobile-menu]');
-    expect(container.querySelector('.g7pb-header-mobile-editor-controls')?.hasAttribute('data-puck-overlay-portal')).toBe(true);
+    const overlayHost = document.body.querySelector<HTMLElement>('.g7pb-header-mobile-overlay-host');
+    const menu = overlayHost?.querySelector<HTMLElement>('[data-g7pb-preview-mobile-menu]');
+    expect(overlayHost?.parentElement).toBe(document.body);
+    expect(overlayHost?.hasAttribute('data-puck-overlay-portal')).toBe(true);
+    expect(container.querySelector('[data-g7pb-preview-mobile-menu]')).toBeNull();
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(menu?.hidden).toBe(true);
 
@@ -72,14 +75,14 @@ describe('Site Part Header preview', () => {
     expect(toggle?.getAttribute('aria-expanded')).toBe('true');
     expect(menu?.hidden).toBe(false);
     expect(menu?.classList.contains('g7pb-mobile-menu--drawer-right')).toBe(true);
-    expect(container.querySelector<HTMLButtonElement>('[data-g7pb-preview-menu-backdrop]')?.hidden).toBe(false);
+    expect(overlayHost?.querySelector<HTMLButtonElement>('[data-g7pb-preview-menu-backdrop]')?.hidden).toBe(false);
 
     await act(async () => root.render(<HeaderNavigationPreview {...props} mobileMenuStyle="drawer-left" />));
     expect(menu?.classList.contains('g7pb-mobile-menu--drawer-left')).toBe(true);
     expect(menu?.hidden).toBe(false);
 
-    const submenuToggle = container.querySelector<HTMLButtonElement>('[data-g7pb-preview-submenu-toggle]');
-    const submenu = container.querySelector<HTMLElement>('[data-g7pb-preview-mobile-submenu]');
+    const submenuToggle = overlayHost?.querySelector<HTMLButtonElement>('[data-g7pb-preview-submenu-toggle]');
+    const submenu = overlayHost?.querySelector<HTMLElement>('[data-g7pb-preview-mobile-submenu]');
     expect(submenu?.hidden).toBe(true);
     await act(async () => submenuToggle?.click());
     expect(submenuToggle?.getAttribute('aria-expanded')).toBe('true');

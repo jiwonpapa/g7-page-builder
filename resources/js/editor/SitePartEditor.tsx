@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Puck, registerOverlayPortal, type Config, type Viewports } from '@puckeditor/core';
 import {
   ArrowLeft,
@@ -68,6 +69,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
   const menuId = `g7pb-preview-mobile-menu-${useId().replaceAll(':', '')}`;
   const toggleRef = useRef<HTMLButtonElement>(null);
   const interactionRef = useRef<HTMLDivElement>(null);
+  const [overlayHost, setOverlayHost] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState<Record<number, boolean>>({});
   const drawer = props.mobileMenuStyle !== 'dropdown';
@@ -86,6 +88,24 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
   useEffect(() => registerOverlayPortal(interactionRef.current, { disableDrag: true }), [props.mobileMenu]);
 
   useEffect(() => {
+    if (!props.mobileMenu) {
+      setOverlayHost(null);
+      return undefined;
+    }
+    const ownerDocument = toggleRef.current?.ownerDocument;
+    if (!ownerDocument) return undefined;
+    const host = ownerDocument.createElement('div');
+    host.className = 'g7pb-header-mobile-overlay-host';
+    ownerDocument.body.append(host);
+    const unregister = registerOverlayPortal(host, { disableDrag: true });
+    setOverlayHost(host);
+    return () => {
+      unregister?.();
+      host.remove();
+    };
+  }, [props.mobileMenu]);
+
+  useEffect(() => {
     if (!open) return undefined;
     const ownerDocument = toggleRef.current?.ownerDocument;
     if (!ownerDocument) return undefined;
@@ -98,22 +118,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
 
   if (!props.mobileMenu) return null;
 
-  return <div ref={interactionRef} className="g7pb-header-mobile-editor-controls">
-    <button
-      ref={toggleRef}
-      className="g7pb-menu-toggle"
-      type="button"
-      aria-controls={menuId}
-      aria-expanded={open}
-      aria-label={`${direction} 모바일 메뉴 ${open ? '닫기' : '열기'}`}
-      data-g7pb-preview-menu-toggle
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (open) close();
-        else setOpen(true);
-      }}
-    ><span /></button>
+  const overlay = <>
     {drawer ? <button
       className="g7pb-mobile-menu__backdrop"
       type="button"
@@ -173,6 +178,25 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
       })}</ul>
       {props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
     </nav>
+  </>;
+
+  return <div ref={interactionRef} className="g7pb-header-mobile-editor-controls">
+    <button
+      ref={toggleRef}
+      className="g7pb-menu-toggle"
+      type="button"
+      aria-controls={menuId}
+      aria-expanded={open}
+      aria-label={`${direction} 모바일 메뉴 ${open ? '닫기' : '열기'}`}
+      data-g7pb-preview-menu-toggle
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (open) close();
+        else setOpen(true);
+      }}
+    ><span /></button>
+    {overlayHost ? createPortal(overlay, overlayHost) : null}
   </div>;
 }
 

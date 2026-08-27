@@ -150,6 +150,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
   const token = await authenticate(context);
   const api = await adminApi(token);
   const changedBrand = `Site Part E2E ${Date.now()}`;
+  const mobileMenuLabel = `E2E 메뉴 ${Date.now()}`;
   const childLabel = `하위 기능 ${Date.now()}`;
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -169,7 +170,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       ? seededNavigationBlock.props.navigation as Array<Record<string, unknown>>
       : [];
     if (seededNavigation.length === 0) seededNavigation.push({ label: '서비스', url: '/pages/services' });
-    seededNavigation[0] = { ...seededNavigation[0], children: [{ label: childLabel, url: '/pages/features' }] };
+    seededNavigation[0] = { ...seededNavigation[0], label: mobileMenuLabel, children: [{ label: childLabel, url: '/pages/features' }] };
     seededNavigationBlock.props.navigation = seededNavigation;
     const seedResponse = await api.put('/api/modules/jiwonpapa-page_builder/admin/site-parts/header/draft', {
       data: { locale, title: original.title, document: seededDocument, expected_lock_version: original.lock_version },
@@ -215,6 +216,24 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     await page.getByText('왼쪽', { exact: true }).last().click();
     await expect(editorMobileMenu).toHaveClass(/g7pb-mobile-menu--drawer-left/);
     await expect(editorMobileMenu).toBeVisible();
+    await expect(editorMobileMenu).toContainText(mobileMenuLabel);
+    const editorFrameBox = await page.locator('iframe').first().boundingBox();
+    const editorDrawerBox = await editorMobileMenu.boundingBox();
+    const editorBackdrop = canvas.locator('[data-g7pb-preview-menu-backdrop]');
+    const editorBackdropBox = await editorBackdrop.boundingBox();
+    expect(editorFrameBox).not.toBeNull();
+    expect(editorDrawerBox).not.toBeNull();
+    expect(editorBackdropBox).not.toBeNull();
+    expect(editorDrawerBox!.x).toBeLessThanOrEqual(editorFrameBox!.x + 1);
+    expect(Math.abs(editorDrawerBox!.y - editorFrameBox!.y)).toBeLessThanOrEqual(1);
+    expect(editorDrawerBox!.height).toBeGreaterThanOrEqual(editorFrameBox!.height - 2);
+    expect(editorBackdropBox!.width).toBeGreaterThanOrEqual(editorFrameBox!.width - 2);
+    expect(editorBackdropBox!.height).toBeGreaterThanOrEqual(editorFrameBox!.height - 2);
+    const editorClose = canvas.locator('[data-g7pb-preview-menu-close]');
+    expect(await editorClose.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === element;
+    })).toBe(true);
     await page.screenshot({ path: 'output/playwright/site-part-header-mobile-drawer-editor.png', fullPage: true });
     await canvas.locator('[data-g7pb-preview-menu-close]').click();
     await expect(editorMenuToggle).toHaveAttribute('aria-expanded', 'false');

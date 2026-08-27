@@ -53,7 +53,13 @@ import {
 } from './blockMotion';
 import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
 import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
-import { createInlineRichTextField, createRichTextField, RICH_TEXT_RANGE_STATE_MESSAGE, RichTextCanvasField } from './richTextEditing';
+import {
+  createInlineRichTextField,
+  createRichTextField,
+  richTextRangeAnchorFromSelection,
+  RICH_TEXT_RANGE_STATE_MESSAGE,
+  RichTextCanvasField,
+} from './richTextEditing';
 import {
   CANVAS_ELEMENT_MESSAGE,
   collectionLimit,
@@ -76,9 +82,12 @@ import {
 } from './canvasEditingContract';
 import {
   INITIAL_CANVAS_CONTEXT_STATE,
+  canvasContextRangeAnchor,
   canvasContextRangeActive,
   canvasContextSelection,
+  normalizeCanvasRangeAnchor,
   reduceCanvasContextState,
+  type CanvasRangeAnchor,
   type CanvasContextAction,
 } from './canvasContextState';
 import { SitePartEditor, AnnouncementPreview, FooterColumnsPreview, FooterSimplePreview, HeaderNavigationPreview } from './SitePartEditor';
@@ -230,6 +239,7 @@ interface CanvasEditingUiValue {
   selection: CanvasElementSelection | null;
   setSelection: React.Dispatch<React.SetStateAction<CanvasElementSelection | null>>;
   rangeEditingActive: boolean;
+  rangeAnchor: CanvasRangeAnchor | null;
   mediaDialogOpen: boolean;
   setMediaDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   routeDialogOpen: boolean;
@@ -2341,7 +2351,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
     : -1;
   const blockIndex = selectionIndex >= 0 ? selectionIndex : selectedZone === 'root:default-zone' ? selectedIndex : null;
   const selectedBlock = blockIndex !== null ? data.content[blockIndex] : null;
-  if (!canvasUi?.textToolsOpen || canvasUi.mediaDialogOpen || canvasUi.routeDialogOpen || !selectedBlock || blockIndex === null) return null;
+  if (!canvasUi?.textToolsOpen || canvasUi.rangeEditingActive || canvasUi.mediaDialogOpen || canvasUi.routeDialogOpen || !selectedBlock || blockIndex === null) return null;
   const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'
     ? selectedBlock.props.surface : 'default';
   const currentSpacing = selectedBlock.props.spacing === 'compact' || selectedBlock.props.spacing === 'spacious'
@@ -2452,7 +2462,7 @@ function ConnectedCanvasDialogs({ disabled }: { disabled: boolean }): React.Reac
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
-  if (!canvasUi || disabled) return null;
+  if (!canvasUi || disabled || canvasUi.rangeEditingActive) return null;
 
   const selectionIndex = canvasUi.selection
     ? data.content.findIndex((block) => idToUuid(asString(block.props.id)) === canvasUi.selection?.blockId)
@@ -2498,6 +2508,9 @@ const SELECTED_ACTION_BAR_SAFE_INSET_PX = 8;
 
 function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDivElement | null> {
   const actionBarRef = useRef<HTMLDivElement>(null);
+  const canvasUi = React.useContext(CanvasEditingUiContext);
+  const rangeEditingActive = canvasUi?.rangeEditingActive ?? false;
+  const rangeAnchor = canvasUi?.rangeEditingActive ? canvasUi.rangeAnchor : null;
 
   React.useLayoutEffect(() => {
     const actionBar = actionBarRef.current;
@@ -2554,7 +2567,9 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
       );
 
       const actionBarRect = actionBar.getBoundingClientRect();
-      const selectedRect = selectedOverlay.getBoundingClientRect();
+      const selectedRect = rangeEditingActive
+        ? richTextRangeAnchorFromSelection(ownerDocument) ?? rangeAnchor ?? selectedOverlay.getBoundingClientRect()
+        : selectedOverlay.getBoundingClientRect();
       const renderedScale = renderedElementScale(actionBar, actionBarRect);
       const placement = placeEditorOverlay({
         anchorRect: selectedRect,
@@ -2601,6 +2616,7 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
       positionObserver.observe(actionBar.parentElement, { attributes: true, attributeFilter: ['style'] });
     }
     ownerDocument.addEventListener('scroll', schedulePosition, true);
+    ownerDocument.addEventListener('selectionchange', schedulePosition);
     ownerWindow.addEventListener('resize', schedulePosition);
     const hostFrame = ownerWindow.frameElement as HTMLElement | null;
     const hostDocument = hostFrame?.ownerDocument ?? null;
@@ -2622,12 +2638,13 @@ function useSelectedActionBarSafeZone(enabled: boolean): React.RefObject<HTMLDiv
       hostResizeObserver?.disconnect();
       positionObserver.disconnect();
       ownerDocument.removeEventListener('scroll', schedulePosition, true);
+      ownerDocument.removeEventListener('selectionchange', schedulePosition);
       ownerWindow.removeEventListener('resize', schedulePosition);
       hostDocument?.removeEventListener('scroll', schedulePosition, true);
       hostWindow?.removeEventListener('resize', schedulePosition);
       clearPosition();
     };
-  }, [enabled]);
+  }, [enabled, rangeAnchor, rangeEditingActive]);
 
   return actionBarRef;
 }
@@ -2651,14 +2668,15 @@ function SelectedBlockActionBar({
   const currentViewportWidth = usePageBuilderPuck((state) => state.appState.ui.viewports.current.width);
   const narrowCanvas = typeof currentViewportWidth === 'number' && currentViewportWidth <= NARROW_CANVAS_MAX_WIDTH;
   const actionBarRef = useSelectedActionBarSafeZone(true);
+  const canvasUi = React.useContext(CanvasEditingUiContext);
   const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null
     ? data.content[selectedIndex]
     : null;
-  const canvasUi = React.useContext(CanvasEditingUiContext);
   if (!canvasUi) throw new Error('Canvas editing UI provider is unavailable.');
   const {
     selection: elementSelection,
     rangeEditingActive,
+    rangeAnchor,
     setSelection: setElementSelection,
     setMediaDialogOpen,
     setRouteDialogOpen,
@@ -2760,6 +2778,7 @@ function SelectedBlockActionBar({
   const roleLabel = elementSelection?.role === 'media' ? '이미지'
     : elementSelection?.role === 'action' ? '버튼·링크'
       : elementSelection?.role === 'text' ? '텍스트' : '블록';
+  const puckActions = rangeEditingActive ? React.Children.toArray(children)[0] : children;
   return (
     <div
       ref={actionBarRef}
@@ -2767,6 +2786,7 @@ function SelectedBlockActionBar({
       data-g7pb-selected-block-actionbar="true"
       data-g7pb-canvas-layout={narrowCanvas ? 'narrow' : 'wide'}
       data-g7pb-range-editing-active={rangeEditingActive ? 'true' : 'false'}
+      data-g7pb-range-anchor={rangeEditingActive && rangeAnchor ? 'true' : 'false'}
     >
       <ActionBar>
         {!rangeEditingActive && <ActionBar.Group>
@@ -2814,7 +2834,7 @@ function SelectedBlockActionBar({
           >
             <span data-testid="page-builder-block-move-down" aria-hidden="true">↓</span>
           </ActionBar.Action>}
-          {children}
+          {puckActions}
         </ActionBar.Group>
       </ActionBar>
     </div>
@@ -2938,6 +2958,7 @@ export function PuckEditorAdapter({
   }, []);
   const canvasElementSelection = canvasContextSelection(canvasContextState);
   const rangeEditingActive = canvasContextRangeActive(canvasContextState);
+  const rangeAnchor = canvasContextRangeAnchor(canvasContextState);
   const setCanvasElementSelection = useCallback<React.Dispatch<React.SetStateAction<CanvasElementSelection | null>>>((value) => {
     const current = canvasContextSelection(canvasContextStateRef.current);
     const selection = typeof value === 'function' ? value(current) : value;
@@ -2989,10 +3010,19 @@ export function PuckEditorAdapter({
         setCanvasTextToolsOpen(false);
       }
     };
-    const acceptRangeState = (active: boolean): void => {
+    const acceptRangeState = (active: boolean, anchorValue: unknown = null): void => {
       if (!viewportPolicy.canEdit) return;
       const wasActive = canvasContextRangeActive(canvasContextStateRef.current);
-      const next = transitionCanvasContext({ type: 'range.change', active });
+      const next = transitionCanvasContext({
+        type: 'range.change',
+        active,
+        anchor: active ? normalizeCanvasRangeAnchor(anchorValue) : null,
+      });
+      if (active) {
+        setCanvasMediaDialogOpen(false);
+        setCanvasRouteDialogOpen(false);
+        setCanvasTextToolsOpen(false);
+      }
       if (!shouldAutoOpenCanvasTextTools(canvasContextSelection(next), active ? 'range-active' : 'range-inactive')) {
         setCanvasTextToolsOpen(false);
         return;
@@ -3005,7 +3035,7 @@ export function PuckEditorAdapter({
     const fromMessage = (event: MessageEvent): void => {
       if (event.origin !== window.location.origin) return;
       if (event.data?.type === RICH_TEXT_RANGE_STATE_MESSAGE) {
-        acceptRangeState(event.data.active === true);
+        acceptRangeState(event.data.active === true, event.data.anchor);
         return;
       }
       if (event.data?.type !== CANVAS_ELEMENT_MESSAGE) return;
@@ -3015,7 +3045,7 @@ export function PuckEditorAdapter({
       if (event instanceof CustomEvent) accept(event.detail as CanvasElementSelection);
     };
     const fromRangeEvent = (event: Event): void => {
-      if (event instanceof CustomEvent) acceptRangeState(event.detail?.active === true);
+      if (event instanceof CustomEvent) acceptRangeState(event.detail?.active === true, event.detail?.anchor);
     };
     window.addEventListener('message', fromMessage);
     window.addEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);
@@ -3177,13 +3207,14 @@ export function PuckEditorAdapter({
     selection: canvasElementSelection,
     setSelection: setCanvasElementSelection,
     rangeEditingActive,
+    rangeAnchor,
     mediaDialogOpen: canvasMediaDialogOpen,
     setMediaDialogOpen: setCanvasMediaDialogOpen,
     routeDialogOpen: canvasRouteDialogOpen,
     setRouteDialogOpen: setCanvasRouteDialogOpen,
     textToolsOpen: canvasTextToolsOpen,
     setTextToolsOpen: setCanvasTextToolsOpen,
-  }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen, rangeEditingActive]);
+  }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen, rangeAnchor, rangeEditingActive]);
   const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(() => Object.fromEntries(
     data.content.flatMap((block) => {
       const rawId = asString(block.props.id);

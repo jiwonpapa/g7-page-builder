@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   INITIAL_CANVAS_CONTEXT_STATE,
+  canvasContextRangeAnchor,
   canvasContextRangeActive,
   canvasContextSelection,
+  normalizeCanvasRangeAnchor,
   reduceCanvasContextState,
   type CanvasContextState,
 } from '../../resources/js/editor/canvasContextState';
@@ -50,11 +52,13 @@ describe('canvas context state', () => {
       type: 'selection.accept',
       selection: selection('text', 'heading'),
     });
-    const textRange = reduceCanvasContextState(textElement, { type: 'range.change', active: true });
+    const anchor = { top: 20, right: 180, bottom: 44, left: 80, width: 100, height: 24 };
+    const textRange = reduceCanvasContextState(textElement, { type: 'range.change', active: true, anchor });
     const collapsed = reduceCanvasContextState(textRange, { type: 'range.change', active: false });
 
     expect(textRange.target.kind).toBe('text-range');
     expect(canvasContextRangeActive(textRange)).toBe(true);
+    expect(canvasContextRangeAnchor(textRange)).toEqual(anchor);
     expect(collapsed.target.kind).toBe('text-element');
     expect(canvasContextSelection(collapsed)).toEqual(canvasContextSelection(textElement));
   });
@@ -85,7 +89,11 @@ describe('canvas context state', () => {
 
   it('ends an active range when the target changes to a non-text element', () => {
     const textRange: CanvasContextState = {
-      target: { kind: 'text-range', selection: selection('text', 'heading') as CanvasElementSelection & { role: 'text' } },
+      target: {
+        kind: 'text-range',
+        selection: selection('text', 'heading') as CanvasElementSelection & { role: 'text' },
+        anchor: { top: 20, right: 180, bottom: 44, left: 80, width: 100, height: 24 },
+      },
     };
     const next = reduceCanvasContextState(textRange, {
       type: 'selection.accept',
@@ -106,5 +114,18 @@ describe('canvas context state', () => {
       .toBe(INITIAL_CANVAS_CONTEXT_STATE);
     expect(reduceCanvasContextState(current, { type: 'clear' }))
       .toBe(INITIAL_CANVAS_CONTEXT_STATE);
+  });
+
+  it('normalizes only finite, non-collapsed range anchors from cross-frame messages', () => {
+    expect(normalizeCanvasRangeAnchor({
+      top: 20, right: 180, bottom: 44, left: 80, width: 100, height: 24,
+    })).toEqual({ top: 20, right: 180, bottom: 44, left: 80, width: 100, height: 24 });
+    expect(normalizeCanvasRangeAnchor({
+      top: 20, right: 80, bottom: 44, left: 80, width: 0, height: 24,
+    })).toBeNull();
+    expect(normalizeCanvasRangeAnchor({
+      top: 20, right: Number.NaN, bottom: 44, left: 80, width: 100, height: 24,
+    })).toBeNull();
+    expect(normalizeCanvasRangeAnchor('not-an-anchor')).toBeNull();
   });
 });

@@ -528,6 +528,49 @@ async function officialPuckMenuRoot(page: Page): Promise<Locator> {
   return menuRoot;
 }
 
+async function expectRangeBalloonAnchored(menuRoot: Locator, field: Locator): Promise<void> {
+  const actionBar = menuRoot.locator('xpath=ancestor::*[@data-g7pb-range-editing-active="true"][1]');
+  await expect(actionBar).toHaveCount(1);
+  await expect(actionBar).toHaveAttribute('data-g7pb-range-anchor', 'true');
+  const geometry = await field.evaluate((element) => {
+    const selection = element.ownerDocument.defaultView?.getSelection();
+    const menu = element.ownerDocument.querySelector<HTMLElement>('[data-puck-rte-menu="true"]');
+    const toolbar = menu?.closest<HTMLElement>('[data-g7pb-range-editing-active="true"]');
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !menu || !toolbar) return null;
+    const rangeRect = selection.getRangeAt(0).getBoundingClientRect();
+    const menuRect = toolbar.getBoundingClientRect();
+    const view = element.ownerDocument.defaultView;
+    const visibleBlockActions = [...toolbar.querySelectorAll<HTMLElement>('button')]
+      .filter((button) => !button.closest('[data-puck-rte-menu]'))
+      .filter((button) => view?.getComputedStyle(button).display !== 'none').length;
+    return {
+      range: {
+        top: rangeRect.top, right: rangeRect.right, bottom: rangeRect.bottom, left: rangeRect.left,
+      },
+      menu: {
+        top: menuRect.top, right: menuRect.right, bottom: menuRect.bottom, left: menuRect.left,
+      },
+      viewport: { height: view?.innerHeight ?? 0, width: view?.innerWidth ?? 0 },
+      visibleBlockActions,
+    };
+  });
+  expect(geometry).not.toBeNull();
+  if (!geometry) return;
+  const gap = geometry.menu.bottom <= geometry.range.top
+    ? geometry.range.top - geometry.menu.bottom
+    : geometry.menu.top - geometry.range.bottom;
+  const horizontallyRelated = geometry.menu.right >= geometry.range.left
+    && geometry.menu.left <= geometry.range.right;
+  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(gap).toBeLessThanOrEqual(20);
+  expect(horizontallyRelated).toBe(true);
+  expect(geometry.menu.top).toBeGreaterThanOrEqual(0);
+  expect(geometry.menu.left).toBeGreaterThanOrEqual(0);
+  expect(geometry.menu.right).toBeLessThanOrEqual(geometry.viewport.width);
+  expect(geometry.menu.bottom).toBeLessThanOrEqual(geometry.viewport.height);
+  expect(geometry.visibleBlockActions).toBe(0);
+}
+
 async function assertPointerReachable(page: Page, control: Locator): Promise<void> {
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('Range control viewport geometry is unavailable.');
@@ -1051,6 +1094,9 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await expect(menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true })).toBeVisible();
       await expect(menuRoot.getByRole('button', { name: '선택한 글자 기울임', exact: true })).toBeVisible();
       await expect(menuRoot.getByRole('button', { name: '선택한 글자 밑줄', exact: true })).toBeVisible();
+    });
+    await test.step('RANGE_BALLOON_ANCHOR_GATE', async () => {
+      await expectRangeBalloonAnchored(menuRoot, rootField);
     });
     await test.step('ROOT_INLINE_RICH_GATE', async () => {
       menuRoot = await officialPuckMenuRoot(page);

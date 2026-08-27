@@ -328,6 +328,16 @@ perl -0pi -e 's/RichTextMenu/RichTextToolbar/' \
 expect_failure '공식 Puck RichTextMenu를 직접 사용해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/RANGE_BALLOON_ANCHOR_GATE/RANGE_BALLOON_ANCHOR_REMOVED/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 툴바가 실제 Range에 붙는 geometry gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/data-g7pb-range-anchor/data-g7pb-block-anchor/g' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '선택 글자 벌룬 E2E는 실제 Range 근접도와 요소 도구 부재를 함께 검증해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/function G7RichTextInlineMenu\(\{ editor,/function G7RichTextInlineMenu({ children, editor,/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '이동 중 click을 잃는 Puck 기본 inline B/I/U children을 중복 렌더하면 안 됩니다.'

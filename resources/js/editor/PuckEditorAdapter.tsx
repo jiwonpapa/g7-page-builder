@@ -74,6 +74,13 @@ import {
   valueAtPath,
   type CanvasElementSelection,
 } from './canvasEditingContract';
+import {
+  INITIAL_CANVAS_CONTEXT_STATE,
+  canvasContextRangeActive,
+  canvasContextSelection,
+  reduceCanvasContextState,
+  type CanvasContextAction,
+} from './canvasContextState';
 import { SitePartEditor, AnnouncementPreview, FooterColumnsPreview, FooterSimplePreview, HeaderNavigationPreview } from './SitePartEditor';
 import { sitePartCanonicalToPuck, type SitePartComponents } from './sitePartDocumentAdapter';
 import {
@@ -2914,10 +2921,8 @@ export function PuckEditorAdapter({
   const [catalogItems, setCatalogItems] = useState<ReadonlyArray<BlockGalleryItem>>(BLOCK_GALLERY_ITEMS);
   const [siteParts, setSiteParts] = useState<{ header: SitePartResource | null; footer: SitePartResource | null }>({ header: null, footer: null });
   const [sitePartMode, setSitePartMode] = useState<'header' | 'footer' | null>(null);
-  const [canvasElementSelection, setCanvasElementSelection] = useState<CanvasElementSelection | null>(null);
-  const canvasElementSelectionRef = useRef<CanvasElementSelection | null>(null);
-  const rangeEditingActiveRef = useRef(false);
-  const [rangeEditingActive, setRangeEditingActive] = useState(false);
+  const [canvasContextState, setCanvasContextState] = useState(INITIAL_CANVAS_CONTEXT_STATE);
+  const canvasContextStateRef = useRef(INITIAL_CANVAS_CONTEXT_STATE);
   const [canvasMediaDialogOpen, setCanvasMediaDialogOpen] = useState(false);
   const [canvasRouteDialogOpen, setCanvasRouteDialogOpen] = useState(false);
   const [canvasTextToolsOpen, setCanvasTextToolsOpen] = useState(false);
@@ -2925,6 +2930,19 @@ export function PuckEditorAdapter({
     block.type === 'Hero' || block.type === 'HeroSplit' || block.type === 'HeroSlider').length;
   const heroWarningKey = `g7pb:warning:${document.document_id}:hero-family:${heroFamilyCount}`;
   const [warningStateVersion, setWarningStateVersion] = useState(0);
+  const transitionCanvasContext = useCallback((action: CanvasContextAction) => {
+    const next = reduceCanvasContextState(canvasContextStateRef.current, action);
+    canvasContextStateRef.current = next;
+    setCanvasContextState(next);
+    return next;
+  }, []);
+  const canvasElementSelection = canvasContextSelection(canvasContextState);
+  const rangeEditingActive = canvasContextRangeActive(canvasContextState);
+  const setCanvasElementSelection = useCallback<React.Dispatch<React.SetStateAction<CanvasElementSelection | null>>>((value) => {
+    const current = canvasContextSelection(canvasContextStateRef.current);
+    const selection = typeof value === 'function' ? value(current) : value;
+    transitionCanvasContext({ type: 'selection.replace', selection });
+  }, [transitionCanvasContext]);
   const heroWarningDismissed = useMemo(() => {
     if (heroFamilyCount <= 1 || typeof window === 'undefined') return false;
     try {
@@ -2951,25 +2969,21 @@ export function PuckEditorAdapter({
 
   useEffect(() => {
     if (viewportPolicy.canEdit) return;
-    canvasElementSelectionRef.current = null;
-    rangeEditingActiveRef.current = false;
-    setCanvasElementSelection(null);
-    setRangeEditingActive(false);
+    transitionCanvasContext({ type: 'clear' });
     setCanvasMediaDialogOpen(false);
     setCanvasRouteDialogOpen(false);
     setCanvasTextToolsOpen(false);
-  }, [viewportPolicy.canEdit]);
+  }, [transitionCanvasContext, viewportPolicy.canEdit]);
 
   useEffect(() => {
     const accept = (selection: CanvasElementSelection): void => {
       if (!viewportPolicy.canEdit) return;
-      canvasElementSelectionRef.current = selection;
-      setCanvasElementSelection(selection);
+      transitionCanvasContext({ type: 'selection.accept', selection });
       setCanvasMediaDialogOpen(false);
       setCanvasRouteDialogOpen(false);
       if (shouldAutoOpenCanvasTextTools(selection, 'selection')) {
         window.requestAnimationFrame(() => {
-          if (!rangeEditingActiveRef.current) setCanvasTextToolsOpen(true);
+          if (!canvasContextRangeActive(canvasContextStateRef.current)) setCanvasTextToolsOpen(true);
         });
       } else {
         setCanvasTextToolsOpen(false);
@@ -2977,16 +2991,15 @@ export function PuckEditorAdapter({
     };
     const acceptRangeState = (active: boolean): void => {
       if (!viewportPolicy.canEdit) return;
-      const wasActive = rangeEditingActiveRef.current;
-      rangeEditingActiveRef.current = active;
-      setRangeEditingActive(active);
-      if (!shouldAutoOpenCanvasTextTools(canvasElementSelectionRef.current, active ? 'range-active' : 'range-inactive')) {
+      const wasActive = canvasContextRangeActive(canvasContextStateRef.current);
+      const next = transitionCanvasContext({ type: 'range.change', active });
+      if (!shouldAutoOpenCanvasTextTools(canvasContextSelection(next), active ? 'range-active' : 'range-inactive')) {
         setCanvasTextToolsOpen(false);
         return;
       }
       if (!wasActive) return;
       window.requestAnimationFrame(() => {
-        if (!rangeEditingActiveRef.current) setCanvasTextToolsOpen(true);
+        if (!canvasContextRangeActive(canvasContextStateRef.current)) setCanvasTextToolsOpen(true);
       });
     };
     const fromMessage = (event: MessageEvent): void => {
@@ -3012,7 +3025,7 @@ export function PuckEditorAdapter({
       window.removeEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);
       window.removeEventListener(RICH_TEXT_RANGE_STATE_MESSAGE, fromRangeEvent);
     };
-  }, [viewportPolicy.canEdit]);
+  }, [transitionCanvasContext, viewportPolicy.canEdit]);
 
   useEffect(() => {
     const closeOnPointerDown = (event: PointerEvent): void => {

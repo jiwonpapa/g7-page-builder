@@ -23,7 +23,7 @@ function requirePattern(errors, source, pattern, message) {
 
 export async function validateEditorAcceptanceContract(root) {
   const errors = [];
-  const [packageSource, makefile, coordinationHarness, spec, fixture, playwrightConfig, richTextSource, adapterSource, canvasSource, viewportPolicySource, layoutSpec] = await Promise.all([
+  const [packageSource, makefile, coordinationHarness, spec, fixture, playwrightConfig, richTextSource, adapterSource, canvasSource, canvasContextSource, viewportPolicySource, layoutSpec] = await Promise.all([
     text(root, 'package.json'),
     text(root, 'Makefile'),
     text(root, 'scripts/coord-harness.sh'),
@@ -33,6 +33,7 @@ export async function validateEditorAcceptanceContract(root) {
     text(root, 'resources/js/editor/richTextEditing.tsx'),
     text(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
     text(root, 'resources/js/editor/canvasEditingContract.ts'),
+    text(root, 'resources/js/editor/canvasContextState.ts'),
     text(root, 'resources/js/editor/editorViewportPolicy.ts'),
     text(root, 'tests/E2E/editorLayoutParity.spec.ts'),
   ]);
@@ -272,12 +273,22 @@ export async function validateEditorAcceptanceContract(root) {
     [adapterSource, /permissions=\{\{ edit: viewportPolicy\.canEdit, insert: viewportPolicy\.canEdit, delete: viewportPolicy\.canEdit, duplicate: viewportPolicy\.canEdit, drag: viewportPolicy\.canEdit \}\}/, 'Puck의 모든 mutation 권한은 단일 viewport policy에 연결되어야 합니다.'],
     [adapterSource, /const updateCanonical = \(nextData: PuckEditorData\): void => \{\s*if \(!viewportPolicy\.canEdit\) return;/, '미리보기 모드의 유출된 Puck 변경은 canonical 문서에 반영하면 안 됩니다.'],
     [adapterSource, /data-editing-mode=\{viewportPolicy\.mode\}/, '에디터 루트가 현재 편집·미리보기 모드를 노출해야 합니다.'],
-    [adapterSource, /if \(!viewportPolicy\.canEdit\) return;[\s\S]{0,500}canvasElementSelectionRef\.current = selection/, '미리보기 모드에서는 요소·범위 선택 메시지를 수용하면 안 됩니다.'],
+    [adapterSource, /const accept = \(selection: CanvasElementSelection\): void => \{\s*if \(!viewportPolicy\.canEdit\) return;[\s\S]{0,180}transitionCanvasContext\(\{ type: ['"]selection\.accept['"], selection \}\)/, '미리보기 모드에서는 요소·범위 선택 메시지를 수용하면 안 됩니다.'],
     [layoutSpec, /const expectedMode = projectName === ['"]desktop['"] \? ['"]edit['"] : ['"]preview['"]/, '페이지 킷 레이아웃 E2E가 PC 편집과 태블릿·모바일 미리보기를 구분해야 합니다.'],
     [layoutSpec, /viewportMutations[\s\S]{0,220}viewport switch must not persist document data/, '뷰포트 전환이 문서를 저장하지 않는 회귀 gate가 필요합니다.'],
     [layoutSpec, /expectedMode === ['"]preview['"][\s\S]{0,180}locator\(['"]\[contenteditable=['"]true['"]\]['"]\)[\s\S]{0,100}toHaveCount\(0\)/, '태블릿·모바일 미리보기에는 편집 가능한 DOM이 없어야 합니다.'],
   ];
   for (const [source, pattern, message] of requiredViewportPolicy) requirePattern(errors, source, pattern, message);
+  const requiredCanvasContextState = [
+    [canvasContextSource, /export type CanvasContextTarget =[\s\S]*kind: ['"]none['"][\s\S]*kind: ['"]block['"][\s\S]*kind: ['"]text-element['"][\s\S]*kind: ['"]text-range['"][\s\S]*kind: ['"]media['"][\s\S]*kind: ['"]action['"]/, '캔버스 선택 대상은 단일 판별 상태 계약으로 정의해야 합니다.'],
+    [canvasContextSource, /export function reduceCanvasContextState\([\s\S]*action\.type === ['"]selection\.accept['"][\s\S]*action\.type === ['"]selection\.replace['"][\s\S]*action\.type === ['"]range\.change['"][\s\S]*state\.target\.kind !== ['"]text-element['"][\s\S]*state\.target\.kind !== ['"]text-range['"]/, '요소 선택과 글자 범위 전이는 단일 reducer에서 정규화해야 합니다.'],
+    [adapterSource, /const \[canvasContextState, setCanvasContextState\] = useState\(INITIAL_CANVAS_CONTEXT_STATE\)[\s\S]*const transitionCanvasContext = useCallback\([\s\S]*reduceCanvasContextState\(canvasContextStateRef\.current, action\)/, '에디터는 단일 캔버스 컨텍스트 상태 커널을 사용해야 합니다.'],
+    [adapterSource, /const canvasElementSelection = canvasContextSelection\(canvasContextState\)[\s\S]*const rangeEditingActive = canvasContextRangeActive\(canvasContextState\)/, '요소와 범위 상태는 단일 캔버스 컨텍스트에서 파생해야 합니다.'],
+  ];
+  for (const [source, pattern, message] of requiredCanvasContextState) requirePattern(errors, source, pattern, message);
+  if (/useState<CanvasElementSelection \| null>\(null\)|const \[rangeEditingActive, setRangeEditingActive\] = useState\(false\)/.test(adapterSource)) {
+    errors.push('요소 선택과 글자 범위를 별도 React 상태로 중복 관리하면 안 됩니다.');
+  }
   const forbiddenDuplicateRangeState = [
     [/\bTextRangeBookmark\b|\bbookmarkRef\b/, 'Puck selection 외 별도 bookmark 상태를 두면 안 됩니다.'],
     [/\buseRichTextEditorRevision\b/, 'Puck editorState와 별도 revision 구독을 두면 안 됩니다.'],

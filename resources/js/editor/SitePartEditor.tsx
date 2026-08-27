@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Puck, type Config, type Viewports } from '@puckeditor/core';
+import { Puck, registerOverlayPortal, type Config, type Viewports } from '@puckeditor/core';
 import {
   ArrowLeft,
   Check,
@@ -67,6 +67,7 @@ export function HeaderSystemControlsPreview(): React.ReactElement {
 function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactElement | null {
   const menuId = `g7pb-preview-mobile-menu-${useId().replaceAll(':', '')}`;
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const interactionRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState<Record<number, boolean>>({});
   const drawer = props.mobileMenuStyle !== 'dropdown';
@@ -82,6 +83,8 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
     if (!props.mobileMenu) close();
   }, [close, props.mobileMenu]);
 
+  useEffect(() => registerOverlayPortal(interactionRef.current, { disableDrag: true }), [props.mobileMenu]);
+
   useEffect(() => {
     if (!open) return undefined;
     const ownerDocument = toggleRef.current?.ownerDocument;
@@ -95,7 +98,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
 
   if (!props.mobileMenu) return null;
 
-  return <>
+  return <div ref={interactionRef} className="g7pb-header-mobile-editor-controls">
     <button
       ref={toggleRef}
       className="g7pb-menu-toggle"
@@ -170,7 +173,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
       })}</ul>
       {props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
     </nav>
-  </>;
+  </div>;
 }
 
 export function HeaderNavigationPreview(props: HeaderNavigationProps): React.ReactElement {

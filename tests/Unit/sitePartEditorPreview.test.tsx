@@ -64,6 +64,7 @@ describe('Site Part Header preview', () => {
     await act(async () => root.render(<HeaderNavigationPreview {...props} mobileMenuStyle="drawer-right" />));
     const toggle = container.querySelector<HTMLButtonElement>('[data-g7pb-preview-menu-toggle]');
     const menu = container.querySelector<HTMLElement>('[data-g7pb-preview-mobile-menu]');
+    expect(container.querySelector('.g7pb-header-mobile-editor-controls')?.hasAttribute('data-puck-overlay-portal')).toBe(true);
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(menu?.hidden).toBe(true);
 

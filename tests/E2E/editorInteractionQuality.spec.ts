@@ -13,7 +13,7 @@ import {
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const API = '/api/modules/jiwonpapa-page_builder/admin';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
-const CANVAS_VIEWPORT_WIDTHS = [360, 768, 1280] as const;
+const PC_EDIT_CANVAS_WIDTH = 1280;
 const MIN_POINTER_EDGE_INSET_PX = 0.25;
 const POINTER_DRAG_STEPS = 8;
 
@@ -60,27 +60,19 @@ async function assertInteractiveCanvas(page: Page): Promise<void> {
   await expect.poll(async () => (await iframe.boundingBox())?.height ?? 0).toBeGreaterThan(1);
 }
 
-async function assertTabletHeaderHeight(page: Page, projectName: string): Promise<void> {
-  if (projectName !== 'tablet') return;
-  const header = page.locator('.g7pb-puck-header-layer');
-  await expect(header).toHaveCount(1);
-  await expect.poll(async () => (await header.boundingBox())?.height ?? Number.POSITIVE_INFINITY)
-    .toBeLessThanOrEqual(100);
-}
-
-async function openElementPanelFromActionBar(page: Page, projectName: string): Promise<void> {
+async function openElementPanelFromActionBar(page: Page): Promise<void> {
   const textToolsButton = page.frameLocator(CANVAS_IFRAME)
     .getByTestId('page-builder-text-tools-open')
     .locator('xpath=ancestor::button[1]');
   await expect(textToolsButton).toHaveCount(1);
   await expect(textToolsButton).toBeVisible();
   await assertPointerReachable(page, textToolsButton);
-  await activateControl(projectName, textToolsButton);
+  await activateControl(textToolsButton);
 }
 
 async function setCanvasViewportWidth(
   page: Page,
-  width: typeof CANVAS_VIEWPORT_WIDTHS[number],
+  width: number,
 ): Promise<void> {
   const button = page.getByTestId(`page-builder-viewport-${width}`);
   const menuToggle = page.getByRole('button', { name: 'Toggle menu bar' });
@@ -124,9 +116,8 @@ async function setCanvasViewportWidth(
   }
 }
 
-async function setCanvasViewport(page: Page, projectName: string): Promise<void> {
-  const width = projectName === 'mobile' ? 360 : projectName === 'tablet' ? 768 : 1280;
-  await setCanvasViewportWidth(page, width);
+async function setCanvasViewport(page: Page): Promise<void> {
+  await setCanvasViewportWidth(page, PC_EDIT_CANVAS_WIDTH);
 }
 
 async function exposeCanvasForPointer(page: Page): Promise<void> {
@@ -687,22 +678,11 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<voi
   })}`);
 }
 
-async function activateControl(
-  projectName: string,
-  control: Locator,
-): Promise<void> {
-  if (projectName === 'mobile') {
-    await control.tap({ scroll: 'none' });
-    return;
-  }
+async function activateControl(control: Locator): Promise<void> {
   await control.click({ scroll: 'none' });
 }
 
-async function activateCanvasPoint(page: Page, point: PointerPoint, projectName: string): Promise<void> {
-  if (projectName === 'mobile') {
-    await page.touchscreen.tap(point.x, point.y);
-    return;
-  }
+async function activateCanvasPoint(page: Page, point: PointerPoint): Promise<void> {
   await page.mouse.click(point.x, point.y);
 }
 
@@ -744,7 +724,6 @@ async function expectStableControlGeometry(control: Locator): Promise<void> {
 async function openResponsiveAdvancedControls(
   page: Page,
   menuRoot: Locator,
-  projectName: string,
 ): Promise<Locator> {
   const frame = page.frameLocator(CANVAS_IFRAME);
   const advanced = frame.getByTestId('page-builder-richtext-advanced-panel');
@@ -752,13 +731,13 @@ async function openResponsiveAdvancedControls(
   const more = menuRoot.getByTestId('page-builder-richtext-more');
   await expect(more).toHaveCount(1);
   await assertPointerReachable(page, more);
-  await activateControl(projectName, more);
+  await activateControl(more);
   await expect(more).toHaveAttribute('aria-expanded', 'true');
   await expect(advanced).toBeVisible();
   return advanced;
 }
 
-async function dismissContextPanelWithPointer(page: Page, projectName: string): Promise<void> {
+async function dismissContextPanelWithPointer(page: Page): Promise<void> {
   const editor = page.getByTestId('page-builder-editor');
   const editorBox = await editor.boundingBox();
   if (!editorBox) throw new Error('Editor pointer-dismiss geometry is unavailable.');
@@ -772,7 +751,7 @@ async function dismissContextPanelWithPointer(page: Page, projectName: string): 
     return hit !== null && editorRoot !== null && (hit === editorRoot || editorRoot.contains(hit));
   }, point);
   expect(hitIsEditor, 'context-panel dismiss point must hit the editor').toBe(true);
-  await activateCanvasPoint(page, point, projectName);
+  await activateCanvasPoint(page, point);
   await expect(page.getByTestId('page-builder-context-panel')).toBeHidden();
 }
 
@@ -783,10 +762,9 @@ async function clickNativeControl(
   field: Locator,
   target: string,
   tag: 'em' | 'strong' | 'u',
-  projectName: string,
 ): Promise<void> {
   await assertPointerReachable(page, control);
-  await activateControl(projectName, control);
+  await activateControl(control);
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
   await expect(field.locator(tag), `${tag} must apply immediately to the pointer-selected copy`).toHaveCount(1);
@@ -802,22 +780,21 @@ async function chooseRangeOption(
   option: string,
   markAttribute: keyof FormattingExpectation,
   markValue: string,
-  projectName: string,
 ): Promise<void> {
   let trigger = menuRoot.getByTestId(testId);
   if (await trigger.count() === 0) {
-    const advanced = await openResponsiveAdvancedControls(page, menuRoot, projectName);
+    const advanced = await openResponsiveAdvancedControls(page, menuRoot);
     trigger = advanced.getByTestId(testId);
   }
   await expectStableControlGeometry(trigger);
   await assertPointerReachable(page, trigger);
-  await activateControl(projectName, trigger);
+  await activateControl(trigger);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   const optionControl = page.frameLocator(CANVAS_IFRAME).getByRole('option', { name: option, exact: true });
   await expectStableControlGeometry(optionControl);
   await assertPointerReachable(page, optionControl);
   await expect.poll(() => selectedText(field)).toBe(target);
-  await activateControl(projectName, optionControl);
+  await activateControl(optionControl);
   await expect(optionControl).toBeHidden();
   await expect(menuRoot).toBeVisible();
   await expect.poll(() => selectedText(field)).toBe(target);
@@ -833,7 +810,6 @@ async function applySelectedFormatting(
   target: string,
   choices: { font: string; size: string; tone: string; weight: string },
   expected: FormattingExpectation,
-  projectName: string,
 ): Promise<void> {
   const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
   const italic = menuRoot.getByRole('button', { name: '선택한 글자 기울임', exact: true });
@@ -841,17 +817,17 @@ async function applySelectedFormatting(
   await expect(bold).toHaveCount(1);
   await expect(italic).toHaveCount(1);
   await expect(underline).toHaveCount(1);
-  await clickNativeControl(page, bold, menuRoot, field, target, 'strong', projectName);
-  await clickNativeControl(page, italic, menuRoot, field, target, 'em', projectName);
-  await clickNativeControl(page, underline, menuRoot, field, target, 'u', projectName);
+  await clickNativeControl(page, bold, menuRoot, field, target, 'strong');
+  await clickNativeControl(page, italic, menuRoot, field, target, 'em');
+  await clickNativeControl(page, underline, menuRoot, field, target, 'u');
   await chooseRangeOption(page, menuRoot, field, target,
-    'page-builder-richtext-font', choices.font, 'font', expected.font, projectName);
+    'page-builder-richtext-font', choices.font, 'font', expected.font);
   await chooseRangeOption(page, menuRoot, field, target,
-    'page-builder-richtext-size', choices.size, 'size', expected.size, projectName);
+    'page-builder-richtext-size', choices.size, 'size', expected.size);
   await chooseRangeOption(page, menuRoot, field, target,
-    'page-builder-richtext-weight', choices.weight, 'weight', expected.weight, projectName);
+    'page-builder-richtext-weight', choices.weight, 'weight', expected.weight);
   await chooseRangeOption(page, menuRoot, field, target,
-    'page-builder-richtext-tone', choices.tone, 'tone', expected.tone, projectName);
+    'page-builder-richtext-tone', choices.tone, 'tone', expected.tone);
 }
 
 async function assertSelectedFormatting(
@@ -991,7 +967,7 @@ async function assertPublishedState(page: Page): Promise<void> {
   await expect(articleHeading.locator('a a')).toHaveCount(0);
 }
 
-test('keeps ActionBar and rich-text controls pointer-reachable across the host and canvas matrix', async ({ context, page }, testInfo) => {
+test('keeps ActionBar and rich-text controls pointer-reachable in the PC editor', async ({ context, page }, testInfo) => {
   test.setTimeout(300_000);
   const token = await authenticateEditorInteractionAdmin(context);
   const api = await editorInteractionApi(token);
@@ -1009,8 +985,8 @@ test('keeps ActionBar and rich-text controls pointer-reachable across the host a
       locateTarget: (field) => field.locator('a[href="/richtext-root"]'),
     };
 
-    for (const width of CANVAS_VIEWPORT_WIDTHS) {
-      await test.step(`POINTER_CONTROL_MATRIX_${testInfo.project.name}_${width}`, async () => {
+    for (const width of [PC_EDIT_CANVAS_WIDTH]) {
+      await test.step(`PC_POINTER_CONTROL_GATE_${width}`, async () => {
         await setCanvasViewportWidth(page, width);
         await exposeCanvasForPointer(page);
         await assertInteractiveCanvas(page);
@@ -1022,14 +998,14 @@ test('keeps ActionBar and rich-text controls pointer-reachable across the host a
         });
         const beforeCount = await targetMark.count();
         await assertPointerReachable(page, bold);
-        await activateControl(testInfo.project.name, bold);
+        await activateControl(bold);
         await expect.poll(() => selectedText(field)).toBe(EDITOR_INTERACTION_COPY.rootTarget);
         await expect.poll(() => targetMark.count()).toBe(beforeCount === 0 ? 1 : 0);
         await collapseSelectionWithPointer(page, rootSelection);
         await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
-        await openElementPanelFromActionBar(page, testInfo.project.name);
+        await openElementPanelFromActionBar(page);
         await expect(page.getByTestId('page-builder-context-panel')).toBeVisible();
-        await dismissContextPanelWithPointer(page, testInfo.project.name);
+        await dismissContextPanelWithPointer(page);
       });
     }
   } finally {
@@ -1049,8 +1025,11 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     owned = await createOwnedEditorInteractionDocument(api, testInfo.project.name);
     await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-    await test.step('CANVAS_VIEWPORT_GATE', async () => {
-      await setCanvasViewport(page, testInfo.project.name);
+    await test.step('PC_ONLY_EDITING_GATE', async () => {
+      await setCanvasViewport(page);
+      await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'edit');
+      await expect(page.getByTestId('page-builder-editor-mode-notice'))
+        .toContainText('편집은 PC에서만 지원합니다. 모바일·태블릿은 반응형 미리보기 전용입니다.');
     });
     await test.step('POINTER_CANVAS_GATE', async () => {
       await exposeCanvasForPointer(page);
@@ -1058,10 +1037,6 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('INTERACTIVE_CANVAS_GATE', async () => {
       await assertInteractiveCanvas(page);
     });
-    await test.step('TABLET_HEADER_HEIGHT_GATE', async () => {
-      await assertTabletHeaderHeight(page, testInfo.project.name);
-    });
-
     const rootSelection: RichTextSelectionLocator = {
       blockType: 'heading',
       fieldPath: 'heading',
@@ -1081,7 +1056,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       menuRoot = await officialPuckMenuRoot(page);
       await applySelectedFormatting(page, menuRoot, rootField, EDITOR_INTERACTION_COPY.rootTarget, {
         font: '명조', size: 'L', weight: '매우 굵게', tone: '사용자색 1',
-      }, ROOT_FORMATTING, testInfo.project.name);
+      }, ROOT_FORMATTING);
       await assertSelectedFormatting(rootField, EDITOR_INTERACTION_COPY.rootTarget,
         EDITOR_INTERACTION_COPY.rootPrefix, EDITOR_INTERACTION_COPY.rootSuffix, ROOT_FORMATTING);
     });
@@ -1095,7 +1070,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await collapseSelectionWithPointer(page, rootSelection);
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
       await expect(elementPanel).toBeHidden();
-      await openElementPanelFromActionBar(page, testInfo.project.name);
+      await openElementPanelFromActionBar(page);
       await expect(elementPanel).toBeVisible();
       await page.getByTestId('page-builder-editor').click({ position: { x: 8, y: 8 } });
       await expect(page.frameLocator(CANVAS_IFRAME).locator('[data-puck-rte-menu]:visible')).toHaveCount(0);
@@ -1118,7 +1093,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       await expect(elementPanel).toBeHidden();
       await applySelectedFormatting(page, nestedMenuRoot, nestedField, EDITOR_INTERACTION_COPY.nestedTarget, {
         font: '고정폭', size: 'XL', weight: '굵게', tone: '강조색',
-      }, NESTED_FORMATTING, testInfo.project.name);
+      }, NESTED_FORMATTING);
       await assertSelectedFormatting(nestedField, EDITOR_INTERACTION_COPY.nestedTarget,
         EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);
       await collapseSelectionWithPointer(page, nestedSelection);
@@ -1135,7 +1110,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       const articleMenuRoot = await officialPuckMenuRoot(page);
       const articleHasMore = await articleMenuRoot.getByTestId('page-builder-richtext-more').count() > 0;
       const articleControlScope = articleHasMore
-        ? await openResponsiveAdvancedControls(page, articleMenuRoot, testInfo.project.name)
+        ? await openResponsiveAdvancedControls(page, articleMenuRoot)
         : articleMenuRoot;
       await expect(articleControlScope.getByRole('button', { name: '링크 편집', exact: true })).toHaveCount(0);
       await expect(articleMenuRoot.getByRole('button', { name: 'Link', exact: true })).toHaveCount(0);

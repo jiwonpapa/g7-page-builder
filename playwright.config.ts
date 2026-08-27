@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const PC_ONLY_EDITOR_TESTS = /(?:editorInteractionQuality|editorPerformance|pageBuilderLifecycle|sitePartLifecycle)\.spec\.ts/;
+
 export default defineConfig({
   testDir: './tests/E2E',
   outputDir: './output/playwright/results',
@@ -19,7 +21,15 @@ export default defineConfig({
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } } },
-    { name: 'tablet', use: { ...devices['iPad (gen 7)'], browserName: 'chromium' } },
-    { name: 'mobile', use: { ...devices['iPhone 13'], browserName: 'chromium' } },
+    {
+      name: 'tablet',
+      testIgnore: PC_ONLY_EDITOR_TESTS,
+      use: { ...devices['iPad (gen 7)'], browserName: 'chromium' },
+    },
+    {
+      name: 'mobile',
+      testIgnore: PC_ONLY_EDITOR_TESTS,
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+    },
   ],
 });

@@ -49,6 +49,14 @@
   z-index: 4;
 }
 
+.g7pb-editor-mode-notice {
+  padding: 4px 8px;
+  background: #fff8e8;
+  color: #7a2e0e;
+  font-size: 11px;
+  text-align: center;
+}
+
 .g7pb-motion-batch {
   display: inline-flex;
   gap: 4px;

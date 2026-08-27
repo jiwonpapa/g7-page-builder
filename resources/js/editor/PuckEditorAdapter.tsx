@@ -99,6 +99,14 @@ import {
   renderedElementScale,
   visibleOwnerViewport,
 } from './editorOverlaySafeZone';
+import {
+  initialEditorCanvasWidth,
+  PC_EDITOR_MIN_HOST_WIDTH,
+  PC_EDITOR_VIEWPORT_WIDTH,
+  PC_EDITOR_POLICY_NOTICE,
+  resolveEditorViewportPolicy,
+  type EditorViewportPolicy,
+} from './editorViewportPolicy';
 
 import {
   CONTACT_BLOCK_TYPE,
@@ -196,10 +204,18 @@ interface FullSiteCanvasValue {
   shellMode: PageBuilderDocument['shell_mode'];
   header: SitePartResource | null;
   footer: SitePartResource | null;
+  canEdit: boolean;
   edit: (kind: 'header' | 'footer') => void;
 }
 
-const FullSiteCanvasContext = React.createContext<FullSiteCanvasValue>({ shellMode: 'none', header: null, footer: null, edit: () => undefined });
+const FullSiteCanvasContext = React.createContext<FullSiteCanvasValue>({ shellMode: 'none', header: null, footer: null, canEdit: false, edit: () => undefined });
+const EditorViewportPolicyContext = React.createContext<EditorViewportPolicy>({
+  canEdit: false,
+  canvasWidth: PC_EDITOR_VIEWPORT_WIDTH,
+  hostSupported: false,
+  mode: 'preview',
+  status: '현재 기기에서는 편집할 수 없습니다.',
+});
 
 interface CanvasEditingUiValue {
   selection: CanvasElementSelection | null;
@@ -230,7 +246,8 @@ function FullSiteCanvasPart({ kind, resource, template }: { kind: 'header' | 'fo
   const canvas = React.useContext(FullSiteCanvasContext);
   return <section className={`g7pb-full-site-part g7pb-full-site-part--${kind}`} data-testid={`page-builder-canvas-${kind}`}>
     {resource ? <SitePartCanvasContent resource={resource} /> : <div className="g7pb-full-site-part__placeholder"><strong>{template ? `G7 활성 템플릿 ${kind === 'header' ? 'Header' : 'Footer'}` : `${kind === 'header' ? 'Header' : 'Footer'}가 아직 없습니다.`}</strong><span>{template ? '템플릿 공통 영역은 공개 미리보기에서 정확히 확인합니다.' : '공통 Site Part를 만들어 전체 사이트 흐름을 완성하세요.'}</span></div>}
-    {!template ? <button type="button" className="g7pb-full-site-part__edit" onClick={() => canvas.edit(kind)}>{kind === 'header' ? 'Header' : 'Footer'} 편집</button> : null}
+    {!template ? <button type="button" className="g7pb-full-site-part__edit" disabled={!canvas.canEdit}
+      onClick={() => canvas.edit(kind)}>{kind === 'header' ? 'Header' : 'Footer'} 편집</button> : null}
   </section>;
 }
 
@@ -2121,7 +2138,9 @@ function StableHeaderControls({
   selectedZone,
   currentViewportWidth,
   viewportState,
-  disabled,
+  editingDisabled,
+  viewportDisabled,
+  onViewportChange,
 }: {
   dispatch: (action: PuckAction) => void;
   data: PuckEditorData;
@@ -2134,7 +2153,9 @@ function StableHeaderControls({
     controlsVisible: boolean;
     options: Viewports;
   };
-  disabled: boolean;
+  editingDisabled: boolean;
+  viewportDisabled: boolean;
+  onViewportChange: (width: number | '100%') => void;
 }): React.ReactElement {
   const setViewport = (width: number): void => {
     const viewport = PAGE_BUILDER_VIEWPORTS.find((candidate) => candidate.width === width);
@@ -2155,6 +2176,7 @@ function StableHeaderControls({
       },
       recordHistory: false,
     });
+    onViewportChange(width);
   };
 
   const applyRecommendedMotions = (): void => {
@@ -2224,18 +2246,18 @@ function StableHeaderControls({
   return (
     <div className="g7pb-header-controls">
       <button type="button" className="g7pb-design-button" data-testid="page-builder-page-design"
-        disabled={disabled} onClick={selectPageDesign}>
+        disabled={editingDisabled} onClick={selectPageDesign}>
         <Paintbrush size={16} aria-hidden="true" /><span>페이지 디자인</span>
       </button>
       <div className="g7pb-theme-switcher" role="group" aria-label="라이트·다크 테마 미리보기">
-        <button type="button" aria-label="라이트 테마" aria-pressed={(data.root.props?.colorMode ?? 'light') === 'light'} disabled={disabled} onClick={() => setColorMode('light')}><Sun size={15} aria-hidden="true" /></button>
-        <button type="button" aria-label="다크 테마" aria-pressed={data.root.props?.colorMode === 'dark'} disabled={disabled} onClick={() => setColorMode('dark')}><Moon size={15} aria-hidden="true" /></button>
-        <button type="button" aria-label="기기 테마" aria-pressed={data.root.props?.colorMode === 'system'} disabled={disabled} onClick={() => setColorMode('system')}><Monitor size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label="라이트 테마" aria-pressed={(data.root.props?.colorMode ?? 'light') === 'light'} disabled={editingDisabled} onClick={() => setColorMode('light')}><Sun size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label="다크 테마" aria-pressed={data.root.props?.colorMode === 'dark'} disabled={editingDisabled} onClick={() => setColorMode('dark')}><Moon size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label="기기 테마" aria-pressed={data.root.props?.colorMode === 'system'} disabled={editingDisabled} onClick={() => setColorMode('system')}><Monitor size={15} aria-hidden="true" /></button>
       </div>
       <div className="g7pb-motion-batch" role="group" aria-label="페이지 효과 일괄 설정">
-        <button type="button" disabled={disabled || contentLength === 0}
+        <button type="button" disabled={editingDisabled || contentLength === 0}
           data-testid="page-builder-auto-motion" onClick={applyRecommendedMotions}><Sparkles size={15} aria-hidden="true" /><span>추천 효과</span></button>
-        <button type="button" disabled={disabled || contentLength === 0}
+        <button type="button" disabled={editingDisabled || contentLength === 0}
           data-testid="page-builder-clear-motion" onClick={clearMotions}><Ban size={15} aria-hidden="true" /><span>효과 없음</span></button>
       </div>
       <div className="g7pb-viewport-switcher" role="group" aria-label="캔버스 기기 미리보기">
@@ -2245,7 +2267,7 @@ function StableHeaderControls({
             type="button"
             data-testid={`page-builder-viewport-${viewport.width}`}
             aria-pressed={currentViewportWidth === viewport.width}
-            disabled={disabled}
+            disabled={viewportDisabled}
             onClick={() => setViewport(viewport.width as number)}
           >
             {viewportIcon(viewport.width as number)}<span>{viewport.label}</span>
@@ -2257,19 +2279,31 @@ function StableHeaderControls({
         contentLength={contentLength}
         selectedIndex={selectedIndex}
         selectedZone={selectedZone}
-        disabled={disabled}
+        disabled={editingDisabled}
       />
     </div>
   );
 }
 
-function ConnectedHeaderControls({ disabled }: { disabled: boolean }): React.ReactElement {
+function ConnectedHeaderControls({
+  editingDisabled,
+  onViewportChange,
+  viewportDisabled,
+}: {
+  editingDisabled: boolean;
+  onViewportChange: (width: number | '100%') => void;
+  viewportDisabled: boolean;
+}): React.ReactElement {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
   const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
   const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const viewportState = usePageBuilderPuck((state) => state.appState.ui.viewports);
+
+  useEffect(() => {
+    onViewportChange(viewportState.current.width);
+  }, [onViewportChange, viewportState.current.width]);
 
   return (
     <StableHeaderControls
@@ -2280,7 +2314,9 @@ function ConnectedHeaderControls({ disabled }: { disabled: boolean }): React.Rea
       selectedZone={selectedZone}
       currentViewportWidth={viewportState.current.width}
       viewportState={viewportState}
-      disabled={disabled}
+      editingDisabled={editingDisabled}
+      viewportDisabled={viewportDisabled}
+      onViewportChange={onViewportChange}
     />
   );
 }
@@ -2401,13 +2437,13 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   );
 }
 
-function ConnectedCanvasDialogs(): React.ReactElement | null {
+function ConnectedCanvasDialogs({ disabled }: { disabled: boolean }): React.ReactElement | null {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
   const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
-  if (!canvasUi) return null;
+  if (!canvasUi || disabled) return null;
 
   const selectionIndex = canvasUi.selection
     ? data.content.findIndex((block) => idToUuid(asString(block.props.id)) === canvasUi.selection?.blockId)
@@ -2777,7 +2813,19 @@ function SelectedBlockActionBar({
 }
 
 function PuckHeaderLayer({ children }: { children: React.ReactNode }): React.ReactElement {
-  return <div className="g7pb-puck-header-layer">{children}</div>;
+  const policy = React.useContext(EditorViewportPolicyContext);
+  return <div className="g7pb-puck-header-layer">
+    <div
+      className="g7pb-editor-mode-notice"
+      data-testid="page-builder-editor-mode-notice"
+      data-mode={policy.mode}
+      role="status"
+    >
+      <strong>{PC_EDITOR_POLICY_NOTICE}</strong>
+      <span>{policy.status}</span>
+    </div>
+    {children}
+  </div>;
 }
 
 function PuckDrawerLibrary({ children }: { children: React.ReactNode }): React.ReactElement {
@@ -2826,6 +2874,19 @@ export function PuckEditorAdapter({
   onChange,
   onPublish,
 }: PuckEditorAdapterProps): React.ReactElement {
+  const initialHostWidth = useMemo(() => (
+    typeof window === 'undefined' ? PC_EDITOR_MIN_HOST_WIDTH : window.innerWidth
+  ), []);
+  const [hostWidth, setHostWidth] = useState(initialHostWidth);
+  const [canvasViewportWidth, setCanvasViewportWidth] = useState<number | '100%'>(() => (
+    initialEditorCanvasWidth(initialHostWidth)
+  ));
+  const viewportPolicy = useMemo(() => resolveEditorViewportPolicy({
+    canvasWidth: canvasViewportWidth,
+    disabled,
+    hostWidth,
+  }), [canvasViewportWidth, disabled, hostWidth]);
+  const editingDisabled = !viewportPolicy.canEdit;
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const runtimePuckConfig = useMemo(() => ({
     ...pageBuilderPuckConfig,
@@ -2872,7 +2933,25 @@ export function PuckEditorAdapter({
   };
 
   useEffect(() => {
+    const updateHostWidth = (): void => setHostWidth(window.innerWidth);
+    window.addEventListener('resize', updateHostWidth);
+    return () => window.removeEventListener('resize', updateHostWidth);
+  }, []);
+
+  useEffect(() => {
+    if (viewportPolicy.canEdit) return;
+    canvasElementSelectionRef.current = null;
+    rangeEditingActiveRef.current = false;
+    setCanvasElementSelection(null);
+    setRangeEditingActive(false);
+    setCanvasMediaDialogOpen(false);
+    setCanvasRouteDialogOpen(false);
+    setCanvasTextToolsOpen(false);
+  }, [viewportPolicy.canEdit]);
+
+  useEffect(() => {
     const accept = (selection: CanvasElementSelection): void => {
+      if (!viewportPolicy.canEdit) return;
       canvasElementSelectionRef.current = selection;
       setCanvasElementSelection(selection);
       setCanvasMediaDialogOpen(false);
@@ -2886,6 +2965,7 @@ export function PuckEditorAdapter({
       }
     };
     const acceptRangeState = (active: boolean): void => {
+      if (!viewportPolicy.canEdit) return;
       const wasActive = rangeEditingActiveRef.current;
       rangeEditingActiveRef.current = active;
       setRangeEditingActive(active);
@@ -2921,7 +3001,7 @@ export function PuckEditorAdapter({
       window.removeEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);
       window.removeEventListener(RICH_TEXT_RANGE_STATE_MESSAGE, fromRangeEvent);
     };
-  }, []);
+  }, [viewportPolicy.canEdit]);
 
   useEffect(() => {
     const closeOnPointerDown = (event: PointerEvent): void => {
@@ -3006,21 +3086,35 @@ export function PuckEditorAdapter({
     items: catalogItems,
     toggleFavorite,
   }), [catalogItems, toggleFavorite]);
-  const editSitePart = useCallback((kind: 'header' | 'footer'): void => setSitePartMode(kind), []);
+  const editSitePart = useCallback((kind: 'header' | 'footer'): void => {
+    if (viewportPolicy.canEdit) setSitePartMode(kind);
+  }, [viewportPolicy.canEdit]);
   const closeSitePartEditor = useCallback((): void => setSitePartMode(null), []);
   const refreshSitePart = useCallback((resource: SitePartResource): void => {
     setSiteParts((current) => ({ ...current, [resource.document.kind]: resource }));
   }, []);
 
+  const handleViewportChange = useCallback((width: number | '100%'): void => {
+    setCanvasViewportWidth(width);
+  }, []);
+
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
-    headerActions: () => <><ConnectedHeaderControls disabled={disabled} /><ConnectedContextPanel disabled={disabled} /><ConnectedCanvasDialogs /></>,
+    headerActions: () => <>
+      <ConnectedHeaderControls
+        editingDisabled={editingDisabled}
+        viewportDisabled={disabled}
+        onViewportChange={handleViewportChange}
+      />
+      <ConnectedContextPanel disabled={editingDisabled} />
+      <ConnectedCanvasDialogs disabled={editingDisabled} />
+    </>,
     drawer: PuckDrawerLibrary,
     drawerItem: PuckDrawerItem,
     actionBar: (props: { children: React.ReactNode; label?: string; parentAction?: React.ReactNode }) => (
-      <SelectedBlockActionBar {...props} disabled={disabled} />
+      <SelectedBlockActionBar {...props} disabled={editingDisabled} />
     ),
-  }), [disabled]);
+  }), [disabled, editingDisabled, handleViewportChange]);
 
   const emitCanonical = (nextData: PuckEditorData): PageBuilderDocument => {
     latestDataRef.current = nextData;
@@ -3037,6 +3131,7 @@ export function PuckEditorAdapter({
     return emitCanonical(nextData);
   };
   const updateCanonical = (nextData: PuckEditorData): void => {
+    if (!viewportPolicy.canEdit) return;
     latestDataRef.current = nextData;
     onDirty?.();
     if (canonicalFrameRef.current !== null) return;
@@ -3051,8 +3146,9 @@ export function PuckEditorAdapter({
     shellMode: document.shell_mode ?? 'template',
     header: siteParts.header,
     footer: siteParts.footer,
+    canEdit: viewportPolicy.canEdit,
     edit: editSitePart,
-  } satisfies FullSiteCanvasValue), [document.shell_mode, editSitePart, siteParts.footer, siteParts.header]);
+  } satisfies FullSiteCanvasValue), [document.shell_mode, editSitePart, siteParts.footer, siteParts.header, viewportPolicy.canEdit]);
   const canvasEditingUi = useMemo<CanvasEditingUiValue>(() => ({
     selection: canvasElementSelection,
     setSelection: setCanvasElementSelection,
@@ -3092,7 +3188,14 @@ export function PuckEditorAdapter({
   }
 
   return (
-    <div className="g7pb-editor" data-testid="page-builder-editor" aria-busy={disabled}>
+    <div
+      className="g7pb-editor"
+      data-testid="page-builder-editor"
+      data-editing-mode={viewportPolicy.mode}
+      data-host-editing-supported={viewportPolicy.hostSupported ? 'true' : 'false'}
+      data-canvas-viewport={String(viewportPolicy.canvasWidth)}
+      aria-busy={disabled}
+    >
       {heroFamilyCount > 1 && !heroWarningDismissed && (
         <div className="g7pb-editor-warning" role="status" data-testid="page-builder-hero-warning">
           <span>Hero 계열 블록이 {heroFamilyCount}개 있습니다. 사용할 수 있지만 첫 화면 집중도가 낮아질 수 있습니다.</span>
@@ -3107,6 +3210,7 @@ export function PuckEditorAdapter({
         </div>
       )}
       <BlockCatalogContext.Provider value={blockCatalogContext}>
+        <EditorViewportPolicyContext.Provider value={viewportPolicy}>
         <FullSiteCanvasContext.Provider value={fullSiteCanvas}>
         <CanvasEditingUiContext.Provider value={canvasEditingUi}>
         <CanvasBlockAppearanceContext.Provider value={canvasBlockAppearances}>
@@ -3124,22 +3228,26 @@ export function PuckEditorAdapter({
           viewports={PAGE_BUILDER_VIEWPORTS}
           ui={{
             viewports: {
-              current: { width: 1280, height: 'auto' },
+              current: { width: canvasViewportWidth, height: 'auto' },
               controlsVisible: false,
               options: PAGE_BUILDER_VIEWPORTS,
             },
           }}
-          permissions={{ edit: !disabled, insert: !disabled, delete: !disabled, duplicate: !disabled, drag: !disabled }}
+          permissions={{ edit: viewportPolicy.canEdit, insert: viewportPolicy.canEdit, delete: viewportPolicy.canEdit, duplicate: viewportPolicy.canEdit, drag: viewportPolicy.canEdit }}
           overrides={overrides}
           headerTitle="페이지 블록"
           headerPath={document.slug}
           onChange={updateCanonical}
-          onPublish={(nextData) => onPublish(flushCanonical(nextData))}
+          onPublish={(nextData) => {
+            if (!viewportPolicy.canEdit) return;
+            return onPublish(flushCanonical(nextData));
+          }}
         />
         </CanvasElementStylesContext.Provider>
         </CanvasBlockAppearanceContext.Provider>
         </CanvasEditingUiContext.Provider>
         </FullSiteCanvasContext.Provider>
+        </EditorViewportPolicyContext.Provider>
       </BlockCatalogContext.Provider>
     </div>
   );

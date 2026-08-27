@@ -129,7 +129,7 @@ G7 전체 checkout의 기존 사용자 변경을 수정하거나 정리하지 �
 | 명령 | 책임 |
 |---|---|
 | `make staging-doctor` | 대상·버전·접속·상태 확인 |
-| `make integration-verify TASK=<id>` | 전체 로컬 품질 게이트, 실제 포인터 편집을 포함한 3 viewport 제품 E2E, 검증 SHA 기록 |
+| `make integration-verify TASK=<id>` | 전체 로컬 품질 게이트, PC 실제 포인터 편집과 태블릿·모바일 읽기 전용 레이아웃을 포함한 3 viewport 제품 E2E, 검증 SHA 기록 |
 | `make release-package TASK=<id>` | 검증 SHA와 clean 상태 확인 후 버전 아티팩트·체크섬 생성 |
 | `make deploy-staging TASK=<id>` | release guard 재확인, 임시 파일 rollback을 둔 단일 스테이징 배포 |
 | `make smoke-staging TASK=<id>` | release guard 재확인, 공개·관리자 shell·asset·route·migration 스모크 |

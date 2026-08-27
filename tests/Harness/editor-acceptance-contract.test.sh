@@ -15,6 +15,8 @@ copy_fixture() {
   cp "$repo_root/scripts/coord-harness.sh" "$fixture_root/fixture/scripts/coord-harness.sh"
   cp "$repo_root/tests/E2E/editorInteractionQuality.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+  cp "$repo_root/tests/E2E/editorLayoutParity.spec.ts" \
+    "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
   cp "$repo_root/tests/E2E/support/editorInteractionFixture.ts" \
     "$fixture_root/fixture/tests/E2E/support/editorInteractionFixture.ts"
   cp "$repo_root/resources/js/editor/richTextEditing.tsx" \
@@ -23,6 +25,8 @@ copy_fixture() {
     "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
   cp "$repo_root/resources/js/editor/canvasEditingContract.ts" \
     "$fixture_root/fixture/resources/js/editor/canvasEditingContract.ts"
+  cp "$repo_root/resources/js/editor/editorViewportPolicy.ts" \
+    "$fixture_root/fixture/resources/js/editor/editorViewportPolicy.ts"
 }
 
 expect_failure() {
@@ -57,9 +61,9 @@ perl -0pi -e 's/(function collapseSelectionWithPointer[\s\S]*?)await page\.mouse
 expect_failure '선택 해제는 같은 current field의 선택 substring 밖 실제 prefix/suffix 픽셀을 클릭해 빈 범위를 확인해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/CANVAS_VIEWPORT_GATE/CANVAS_VIEWPORT_REMOVED/' \
+perl -0pi -e 's/PC_ONLY_EDITING_GATE/PC_ONLY_EDITING_REMOVED/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'browser project와 내부 canvas viewport 일치 gate가 필요합니다.'
+expect_failure '실제 편집 E2E에 PC 전용 편집 모드 gate가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/POINTER_CANVAS_GATE/POINTER_CANVAS_REMOVED/' \
@@ -70,16 +74,6 @@ copy_fixture
 perl -0pi -e 's/expect\(library\)\.toBeHidden\(\)/expect(library).toBeVisible()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'pointer canvas 확보 뒤 블록 라이브러리 닫힘을 확인해야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/TABLET_HEADER_HEIGHT_GATE/TABLET_HEADER_HEIGHT_REMOVED/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '태블릿 Puck header 높이 회귀 gate가 필요합니다.'
-
-copy_fixture
-perl -0pi -e "s/projectName === 'mobile' \? 360 : projectName === 'tablet' \? 768 : 1280/1280/" \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '각 browser project에 맞는 360/768/1280 canvas 폭을 선택해야 합니다.'
 
 copy_fixture
 perl -0pi -e "s/#puck-canvas-root iframe/iframe/" \
@@ -337,34 +331,24 @@ perl -0pi -e 's/onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.val
 expect_failure '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{triggerRef\} preserveSelectionOnTouch/<RichTextFloatingLayer anchorRef={triggerRef}/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
-expect_failure '모바일 선택 글자 옵션은 touch 기본 포커스가 현재 범위를 접지 못하게 해야 합니다.'
-
-copy_fixture
 perl -0pi -e 's/scheduleCloseAfterPointer\(\);/onClose();/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 compatibility click까지 portal을 유지한 뒤 닫혀야 합니다.'
 
 copy_fixture
-perl -0pi -e "s/control\\.tap\\(\\{ scroll: 'none' \\}\\)/control.click({ scroll: 'none' })/" \
+perl -0pi -e 's/activateControl\(optionControl\)/optionControl.focus()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'mobile 편집 E2E는 변형된 iframe의 검증된 control을 실제 locator touch tap해야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/activateControl\(projectName, optionControl\)/optionControl.focus()/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 portal option은 iframe body에서 도달성 확인 뒤 실제 click 또는 touch tap으로 활성화해야 합니다.'
+expect_failure '선택 글자 portal option은 iframe body에서 도달성 확인 뒤 실제 PC pointer click으로 활성화해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's#(await assertPointerReachable\(page, optionControl\);\n)  await expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\);#$1  await expect(field).toBeVisible();#' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
+expect_failure '선택 글자 portal option의 실제 PC click 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/expect\(optionControl\)\.toBeHidden\(\)/expect(optionControl).toBeVisible()/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 portal option의 실제 click 또는 touch tap 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
+expect_failure '선택 글자 portal option의 실제 PC click 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(function assertPointerReachable[\s\S]*?)hit: stack\[0\] === iframe/$1hit: true/' \
@@ -379,7 +363,7 @@ expect_failure 'control 도달성은 autosave pointer 차단이 풀리기를 기
 copy_fixture
 perl -0pi -e "s/control\\.click\\(\\{ scroll: 'none' \\}\\)/control.click({ force: true })/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '선택 글자 control은 Playwright가 현재 변환을 반영한 중심점에 실제 touch 또는 mouse를 보내야 합니다.'
+expect_failure '선택 글자 control은 PC에서 실제 locator click으로 활성화해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/contentOrigin\.x \+ localCenter\.x \* contentScale\.x/contentOrigin.x + 1/' \
@@ -402,14 +386,9 @@ perl -0pi -e 's/(async function assertPointerReachable[^\{]+\{)/$1\n  await cont
 expect_failure 'control 도달성 검증이 레이아웃을 이동시키거나 frame 변환을 Playwright bbox로 대체하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/const CANVAS_VIEWPORT_WIDTHS = \[360, 768, 1280\] as const;/const CANVAS_VIEWPORT_WIDTHS = [360] as const;/' \
+perl -0pi -e 's/for \(const width of \[PC_EDIT_CANVAS_WIDTH\]\)/for (const width of [360, 768, PC_EDIT_CANVAS_WIDTH])/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure '모든 browser project에서 360·768·1280 내부 canvas 조합을 실제 포인터로 검증해야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/await expect\(viewportSwitcher\)\.toBeHidden\(\);/await expect(viewportSwitcher).toBeVisible();/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'mobile 편집 E2E는 viewport switcher 비겹침과 실제 menu 닫기를 검증해야 합니다.'
+expect_failure '부분 텍스트 포인터 E2E는 PC 편집 뷰포트에서 한 번만 실행해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/toggleBold\(\)\.run\(\)/toggleStrike().run()/' \
@@ -499,5 +478,35 @@ expect_failure '공개 출력 부분 서식 gate가 필요합니다.'
 copy_fixture
 perl -0pi -e 's# ?tests/E2E/editorInteractionQuality\.spec\.ts##' "$fixture_root/fixture/package.json"
 expect_failure 'test:e2e:product가 tests/E2E/editorInteractionQuality.spec.ts를 반드시 실행해야 합니다.'
+
+copy_fixture
+perl -0pi -e "s/(name: 'tablet',[\\s\\S]{0,100})testIgnore: PC_ONLY_EDITOR_TESTS,/\$1/" \
+  "$fixture_root/fixture/playwright.config.ts"
+expect_failure 'Playwright tablet project는 실제 편집 E2E를 실행하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/ && canvasWidth === PC_EDITOR_VIEWPORT_WIDTH//' \
+  "$fixture_root/fixture/resources/js/editor/editorViewportPolicy.ts"
+expect_failure '편집 권한은 문서 상태·호스트 폭·PC canvas를 모두 만족할 때만 열려야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/edit: viewportPolicy\.canEdit/edit: true/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure 'Puck의 모든 mutation 권한은 단일 viewport policy에 연결되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(const updateCanonical = \(nextData: PuckEditorData\): void => \{)\n    if \(!viewportPolicy\.canEdit\) return;/$1/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure '미리보기 모드의 유출된 Puck 변경은 canonical 문서에 반영하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e "s/projectName === 'desktop' \? 'edit' : 'preview'/'edit'/" \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '페이지 킷 레이아웃 E2E가 PC 편집과 태블릿·모바일 미리보기를 구분해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/viewport switch must not persist document data/viewport switch may persist document data/' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '뷰포트 전환이 문서를 저장하지 않는 회귀 gate가 필요합니다.'
 
 echo 'editor-acceptance-contract: PASS'

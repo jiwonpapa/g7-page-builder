@@ -939,8 +939,24 @@ describe('Puck editor surface contract', () => {
     const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
     const addButton = await eventually<HTMLButtonElement>('[data-testid="page-builder-add-block"]');
     expect(addButton.textContent).toContain('블록 추가');
+    expect(addButton.disabled).toBe(true);
+    expect(container.querySelector('[data-testid="page-builder-editor"]')?.getAttribute('data-editing-mode')).toBe('preview');
+    expect(container.querySelector('[data-testid="page-builder-editor-mode-notice"]')?.textContent)
+      .toContain('편집은 PC에서만 지원합니다. 모바일·태블릿은 반응형 미리보기 전용입니다.');
     await act(async () => {
       addButton.click();
+    });
+    expect(document.querySelector('[data-testid="page-builder-block-gallery"]')).toBeNull();
+    await act(async () => {
+      (await eventually<HTMLButtonElement>('[data-testid="page-builder-viewport-1280"]')).click();
+    });
+    const desktopViewportAfterPreview = await eventually<HTMLButtonElement>('[data-testid="page-builder-viewport-1280"][aria-pressed="true"]');
+    expect(desktopViewportAfterPreview.getAttribute('aria-pressed')).toBe('true');
+    const enabledAddButton = await eventually<HTMLButtonElement>('[data-testid="page-builder-add-block"]:not(:disabled)');
+    expect(enabledAddButton.disabled).toBe(false);
+    expect(container.querySelector('[data-testid="page-builder-editor"]')?.getAttribute('data-editing-mode')).toBe('edit');
+    await act(async () => {
+      enabledAddButton.click();
     });
 
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');

@@ -88,7 +88,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 4. 라이트·다크·기기 테마, Header·Page·Footer 전체 사이트 캔버스와 embedded Site Part 전환
 5. 선택 블록 글자 크기·정렬, 버튼 route·Hero media 문맥 편집과 문의 폼 제출·모바일 drawer 초점 순환
 6. reload 뒤 동일성
-7. 편집기 모바일·태블릿·PC iframe 폭 전환과 세 viewport preview
+7. PC에서만 문서를 편집하고 모바일·태블릿 iframe 폭은 저장 없는 반응형 preview로 전환
 8. publish, 비로그인 public DOM, 반응형 overflow 확인
 9. 재편집 중 기존 공개본 보존과 재발행
 10. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행
@@ -101,8 +101,8 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
 19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
-20. PC·태블릿·모바일에서 활성 canvas iframe의 contenteditable 내부 문자 좌표를 표시 축척이 적용된 Locator 좌표로 변환해 `hover(start) → mouse.down → hover(end, force) → mouse.up`만으로 목표 문자열과 정확히 같은 글자 범위를 선택합니다. 종료 hover의 `force`는 드래그 중 Puck DnD overlay의 actionability 가로채기만 우회하며 실제 pointer event는 그대로 전송합니다. Locator 좌표 `click`으로 선택을 해제하고, Tiptap의 active/inactive 단일 범위 상태가 요소 전체 벌룬과 동기화되는지, cross-realm 안전한 target 판정과 툴바 pointer/mouse down이 범위 북마크와 editor focus를 보존하는지, 실제 굵게 button과 글꼴·크기·색상·굵기 option click 뒤에도 툴바가 유지되는지 확인합니다. 이어서 태블릿 header 100px 예산, 같은 필드 반복 선택, 바깥 클릭 닫힘, 저장·reload·preview·public DOM 보존을 확인합니다.
-21. 45종을 모두 포함하는 내장 완성 섹션 95개와 Page Kit 5종을 PC 1280·태블릿 768·모바일 360 canvas에 실제 로드합니다. 각 Puck block의 실제 child와 같은 draft의 컴파일 미리보기를 instance/type 순서로 짝지어 문서·블록 가로 넘침 0px, 좌우 content edge 오차 1.25px 이하를 강제합니다.
+20. PC 1280 canvas에서만 contenteditable 내부 문자 좌표를 표시 축척이 적용된 Locator 좌표로 변환해 실제 `mouse.down → mouse.move → mouse.up`으로 목표 문자열과 정확히 같은 글자 범위를 선택합니다. 선택 해제, Tiptap active/inactive 단일 범위 상태와 요소 전체 벌룬의 상호배타, 반복 선택, 바깥 클릭 닫힘, 굵게·기울임·밑줄·글꼴·크기·색상·굵기의 즉시 반영, 저장·reload·preview·public DOM 보존을 확인합니다. 모바일·태블릿에서는 이 편집 spec을 실행하지 않습니다.
+21. 45종을 모두 포함하는 내장 완성 섹션 95개와 Page Kit 5종을 PC 1280·태블릿 768·모바일 360 canvas에 실제 로드합니다. PC는 편집 모드, 태블릿·모바일은 contenteditable과 mutation 권한이 없는 미리보기 전용 모드여야 하며 뷰포트 전환은 문서를 저장하지 않아야 합니다. 각 Puck block의 실제 child와 같은 draft의 컴파일 미리보기를 instance/type 순서로 짝지어 문서·블록 가로 넘침 0px, 좌우 content edge 오차 1.25px 이하를 강제합니다.
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 
@@ -110,7 +110,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
 
-`scripts/check-editor-acceptance-contract.mjs`는 위 20번, `scripts/check-editor-layout-parity.mjs`는 21번을 정적 계약으로 잠급니다. 전용 spec을 제품 E2E 목록에서 빼거나 retry/viewport skip을 추가해도 실패합니다. Puck iframe의 scoped box model, 95개 프리셋·Page Kit 5종의 세 viewport 가로 overflow와 편집/미리보기 content edge 비교를 제거해도 `quality-frontend`, `task-submit`, `dev-product-e2e`가 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
+`scripts/check-editor-acceptance-contract.mjs`는 위 20번과 PC 전용 mutation 권한, `scripts/check-editor-layout-parity.mjs`는 21번을 정적 계약으로 잠급니다. PC 편집 spec을 제품 E2E 목록에서 빼거나 태블릿·모바일에서 다시 실행하도록 바꾸거나 retry/skip을 추가해도 실패합니다. Puck iframe의 scoped box model, 95개 프리셋·Page Kit 5종의 세 viewport 가로 overflow와 편집/미리보기 content edge 비교를 제거해도 `quality-frontend`, `task-submit`, `dev-product-e2e`가 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
 
 ## 자동화와 로컬 통합
 

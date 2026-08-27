@@ -250,6 +250,8 @@ describe('Puck-native rich-text editing', () => {
     const body = createRichTextField('본문', 150, true);
     const title = createInlineRichTextField('제목', { allowLink: false });
 
+    expect(body).toMatchObject({ contentEditable: true, visible: false });
+    expect(title).toMatchObject({ contentEditable: true, visible: false });
     expect(body.options).toMatchObject({ heading: { levels: [2, 3, 4] } });
     const bodyOptions = body.options as Record<string, unknown>;
     expect(bodyOptions.blockquote).not.toBe(false);

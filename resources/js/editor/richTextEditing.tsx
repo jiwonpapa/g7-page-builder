@@ -773,6 +773,10 @@ export function createRichTextField(label: string, initialHeight = 150, headings
     type: 'richtext' as const,
     label,
     contentEditable: true,
+    // The canvas is the sole rich-text editing surface. Puck still supplies
+    // the editor instance and inline menu, while its duplicate sidebar field
+    // is hidden through the native field visibility contract.
+    visible: false,
     initialHeight,
     options: {
       ...BASE_RICH_TEXT_OPTIONS,

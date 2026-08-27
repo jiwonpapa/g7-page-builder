@@ -258,9 +258,9 @@ perl -0pi -e 's/await applySelectedFormatting\(page, nestedMenuRoot/await assert
 expect_failure 'nested inline-rich gate가 공식 B/I/U와 G7 선택 서식을 실제 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/BLOCK_RICH_GATE/BLOCK_RICH_REMOVED/' \
+perl -0pi -e 's/CANVAS_ONLY_RICH_TEXT_CONTENT_GATE/CANVAS_ONLY_RICH_TEXT_CONTENT_REMOVED/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'block-rich 실제 편집 gate가 필요합니다.'
+expect_failure 'block-rich 캔버스 직접 편집 gate가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/NO_LINK_INLINE_GATE/NO_LINK_INLINE_REMOVED/' \
@@ -268,19 +268,19 @@ perl -0pi -e 's/NO_LINK_INLINE_GATE/NO_LINK_INLINE_REMOVED/' \
 expect_failure '외부 action 내부 inline-rich의 no-link gate가 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/BIDIRECTIONAL_SIDEBAR_TO_CANVAS_GATE/BIDIRECTIONAL_SIDEBAR_TO_CANVAS_REMOVED/' \
+perl -0pi -e 's/SIDEBAR_RICH_TEXT_DUPLICATION_REMOVED_GATE/SIDEBAR_RICH_TEXT_DUPLICATION_ALLOWED/' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'sidebar richtext에서 canvas로 즉시 반영되는 gate가 필요합니다.'
+expect_failure '우측 sidebar의 중복 richtext 편집기 부재 gate가 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/BIDIRECTIONAL_CANVAS_TO_SIDEBAR_GATE/BIDIRECTIONAL_CANVAS_TO_SIDEBAR_REMOVED/' \
+perl -0pi -e 's/\[contenteditable="true"\]:visible/\[contenteditable="false"\]:visible/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'canvas richtext에서 sidebar로 즉시 반영되는 gate가 필요합니다.'
+expect_failure '우측 sidebar에서 contenteditable과 서식 메뉴가 모두 제거됐는지 검증해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/expect\(sidebarField\)\.toHaveText\(EDITOR_INTERACTION_COPY\.canvasToSidebar\)/expect(sidebarField).toContainText(EDITOR_INTERACTION_COPY.canvasToSidebar)/' \
+perl -0pi -e 's/await expectNoSidebarRichTextEditor\(page\);/await page.waitForTimeout(1);/g' \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'canvas-to-sidebar gate가 저장 전 즉시 반영을 검증해야 합니다.'
+expect_failure '중복 제거 gate가 선택된 richtext 블록의 우측 sidebar 부재를 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e "s/선택한 글자 기울임/선택한 글자 회전/g" \
@@ -291,11 +291,6 @@ copy_fixture
 perl -0pi -e "s/name: '링크 편집'/name: '주소 편집'/" \
   "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
 expect_failure 'ArticleList title에서 링크 편집 control 부재를 검증해야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/sidebarField\.fill\(/sidebarField.pressSequentially(/' \
-  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
-expect_failure 'sidebar richtext를 실제 입력으로 변경해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/page\.keyboard\.type\(/page.keyboard.insertText(/' \
@@ -491,6 +486,21 @@ copy_fixture
 printf '\nconst rangeEditing = window.getSelection();\n' \
   >>"$fixture_root/fixture/resources/js/editor/canvasEditingContract.ts"
 expect_failure '요소 선택 계약에서 DOM Selection으로 범위 상태를 중복 추론하면 안 됩니다.'
+
+copy_fixture
+perl -0pi -e 's/visible: false/visible: true/' \
+  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+expect_failure 'richtext는 캔버스에서만 편집하고 Puck sidebar 중복 필드는 숨겨야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/SIDEBAR_RICH_TEXT_DUPLICATION_REMOVED_GATE/SIDEBAR_DUPLICATION_ALLOWED_GATE/' \
+  "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
+expect_failure '우측 sidebar의 중복 richtext 편집기 부재 gate가 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/page-builder-element-style-open/page-builder-text-tools-open/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure 'ActionBar는 T 버튼 대신 요소 전체 스타일과 블록 설정을 구분해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/PUBLIC_SELECTION_MARK_GATE/PUBLIC_MARK_REMOVED/' \

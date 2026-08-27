@@ -162,11 +162,12 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
   throw new Error(`Element not rendered: ${selector}`);
 }
 
-async function openTextToolsFromActionBar(): Promise<void> {
+async function openElementStyleFromActionBar(): Promise<void> {
   const textToolsWereOpen = document.querySelector('[data-testid="page-builder-text-scale"]') !== null;
-  const textToolsIcon = await eventually<SVGElement>('[data-testid="page-builder-text-tools-open"]');
+  const textToolsIcon = await eventually<SVGElement>('[data-testid="page-builder-element-style-open"]');
   const textToolsAction = textToolsIcon.closest<HTMLButtonElement>('button');
   expect(textToolsAction).not.toBeNull();
+  expect(textToolsAction?.getAttribute('aria-label')).toContain('요소 전체 스타일');
   await act(async () => {
     textToolsAction?.click();
   });
@@ -738,6 +739,11 @@ describe('Puck editor surface contract', () => {
     await act(async () => {
       hero.click();
     });
+    const blockStyleAction = (await eventually<SVGElement>('[data-testid="page-builder-block-style-open"]'))
+      .closest<HTMLButtonElement>('button');
+    expect(blockStyleAction?.getAttribute('aria-label')).toBe('블록 설정');
+    expect(document.querySelector('[data-testid="page-builder-text-tools-open"]')).toBeNull();
+    expect(document.querySelector('[data-puck-rte-menu]')).toBeNull();
     expect(hero.querySelector('[data-g7pb-inline-field="title"]')?.textContent).toContain('Hero title');
     expect((await eventually<HTMLInputElement>('[data-testid="page-builder-hero-subtitle"]')).value).toBe('Hero eyebrow');
 
@@ -746,7 +752,7 @@ describe('Puck editor surface contract', () => {
       heroTitle?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    await openTextToolsFromActionBar();
+    await openElementStyleFromActionBar();
     const textScaleMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-text-scale"]');
     await act(async () => {
       textScaleMarker.value = 'large';
@@ -800,7 +806,7 @@ describe('Puck editor surface contract', () => {
     });
     const routeOpenMarker = await eventually<HTMLElement>('[data-testid="page-builder-canvas-route-open"]');
     expect(routeOpenMarker).not.toBeNull();
-    await openTextToolsFromActionBar();
+    await openElementStyleFromActionBar();
     const elementRouteOpenMarker = await eventually<HTMLButtonElement>('[data-testid="page-builder-element-route-open"]');
     await act(async () => {
       elementRouteOpenMarker.click();
@@ -1194,7 +1200,7 @@ describe('Puck editor surface contract', () => {
       preset?.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(onChange).toHaveBeenCalled();
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
     expect(onChange.mock.lastCall?.[0].blocks[0]).toMatchObject({
       type: 'content.hero-centered-01', block_version: 1,
       props: { eyebrow: '한정 혜택', title: '프로모션 제목' },

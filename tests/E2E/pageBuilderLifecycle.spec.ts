@@ -553,9 +553,10 @@ async function activatePuckInlineTextField(page: Page, field: Locator, label: st
 
 async function openSelectedElementTextTools(page: Page): Promise<void> {
   const textToolsAction = page.frameLocator('iframe')
-    .getByTestId('page-builder-text-tools-open')
+    .getByTestId('page-builder-element-style-open')
     .locator('xpath=ancestor::button[1]');
-  await activatePointerTarget(page, textToolsAction, 'selected element text tools');
+  await expect(textToolsAction).toHaveAttribute('aria-label', /요소 전체 스타일/);
+  await activatePointerTarget(page, textToolsAction, 'selected element style');
   await expect(page.getByTestId('page-builder-context-panel')).toBeVisible();
 }
 

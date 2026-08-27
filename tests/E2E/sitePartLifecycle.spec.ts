@@ -226,6 +226,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     expect(editorBackdropBox).not.toBeNull();
     expect(editorDrawerBox!.x).toBeLessThanOrEqual(editorFrameBox!.x + 1);
     expect(Math.abs(editorDrawerBox!.y - editorFrameBox!.y)).toBeLessThanOrEqual(1);
+    expect(editorDrawerBox!.width).toBeLessThanOrEqual(editorFrameBox!.width * 0.9);
     expect(editorDrawerBox!.height).toBeGreaterThanOrEqual(editorFrameBox!.height - 2);
     expect(editorBackdropBox!.width).toBeGreaterThanOrEqual(editorFrameBox!.width - 2);
     expect(editorBackdropBox!.height).toBeGreaterThanOrEqual(editorFrameBox!.height - 2);
@@ -277,6 +278,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       await expect(page.locator('[data-g7pb-menu-backdrop]')).toBeVisible();
       const drawerBox = await publicMobileMenu.boundingBox();
       expect(drawerBox?.x ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
+      expect(drawerBox?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(page.viewportSize()!.width * 0.9);
       const submenuToggle = page.locator('[data-g7pb-submenu-toggle]').first();
       await submenuToggle.click();
       await expect(submenuToggle).toHaveAttribute('aria-expanded', 'true');

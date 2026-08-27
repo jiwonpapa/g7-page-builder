@@ -490,6 +490,16 @@ perl -0pi -e 's/ && canvasWidth === PC_EDITOR_VIEWPORT_WIDTH//' \
 expect_failure '편집 권한은 문서 상태·호스트 폭·PC canvas를 모두 만족할 때만 열려야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/field\.contentEditable === true/false/' \
+  "$fixture_root/fixture/resources/js/editor/editorViewportPolicy.ts"
+expect_failure '미리보기 모드는 모든 inline-editable 필드를 읽기 전용으로 변환해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/applyEditorContentPolicy\(component\.fields, false\)/component.fields/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure 'Puck runtime config는 미리보기 모드에 읽기 전용 필드 계약을 적용해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/edit: viewportPolicy\.canEdit/edit: true/' \
   "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
 expect_failure 'Puck의 모든 mutation 권한은 단일 viewport policy에 연결되어야 합니다.'

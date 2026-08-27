@@ -2,8 +2,13 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const editorProps = vi.hoisted(() => [] as Array<{ kind: string; onChanged?: unknown }>);
+
 vi.mock('../../resources/js/editor/SitePartEditor', () => ({
-  SitePartEditor: ({ kind, setId }: { kind: string; setId?: string }) => <div data-testid={`mock-site-part-${kind}`} data-set-id={setId}>{kind}</div>,
+  SitePartEditor: ({ kind, setId, onChanged }: { kind: string; setId?: string; onChanged?: unknown }) => {
+    editorProps.push({ kind, onChanged });
+    return <div data-testid={`mock-site-part-${kind}`} data-set-id={setId}>{kind}</div>;
+  },
 }));
 
 import { SitePartWorkspace } from '../../resources/js/editor/SitePartWorkspace';
@@ -17,6 +22,7 @@ afterEach(() => {
   document.body.replaceChildren();
   window.localStorage.clear();
   vi.restoreAllMocks();
+  editorProps.length = 0;
 });
 
 function setResource(id: string, title: string, isActive: boolean) {
@@ -49,6 +55,10 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
   throw new Error(`Element not rendered: ${selector}`);
 }
 
+function latestEditorCallback(kind: string): unknown {
+  return [...editorProps].reverse().find((props) => props.kind === kind)?.onChanged;
+}
+
 describe('Header and Footer workspace', () => {
   it('shows both editors for the selected set and activates the ready pair atomically', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
@@ -68,6 +78,8 @@ describe('Header and Footer workspace', () => {
     await act(async () => { root.render(<SitePartWorkspace locale="ko" />); });
 
     await eventually('[data-testid="page-builder-site-part-set"]');
+    const initialHeaderCallback = latestEditorCallback('header');
+    const initialFooterCallback = latestEditorCallback('footer');
     const campaign = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-testid="page-builder-site-part-set"]'))
       .find((button) => button.textContent?.includes('캠페인 세트'));
     expect(campaign).toBeDefined();
@@ -75,6 +87,8 @@ describe('Header and Footer workspace', () => {
 
     expect(document.querySelector('[data-testid="mock-site-part-header"]')?.getAttribute('data-set-id')).toBe(campaignSet.id);
     expect(document.querySelector('[data-testid="mock-site-part-footer"]')?.getAttribute('data-set-id')).toBe(campaignSet.id);
+    expect(latestEditorCallback('header')).toBe(initialHeaderCallback);
+    expect(latestEditorCallback('footer')).toBe(initialFooterCallback);
     const activate = await eventually<HTMLButtonElement>('[data-testid="page-builder-site-part-set-activate"]');
     expect(activate.disabled).toBe(false);
     await act(async () => { activate.click(); });

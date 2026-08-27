@@ -312,10 +312,12 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
 
     if (!target.is_ready) {
       const headerPublish = page.getByTestId('page-builder-site-part-editor').filter({ hasText: 'Header 편집' }).getByTestId('page-builder-site-part-publish');
+      await expect(headerPublish).toBeEnabled();
       const headerResponse = page.waitForResponse((response) => response.url().includes('/site-parts/header/publish') && response.request().method() === 'POST');
       await headerPublish.click();
       expect((await headerResponse).ok()).toBe(true);
       const footerPublish = page.getByTestId('page-builder-site-part-editor').filter({ hasText: 'Footer 편집' }).getByTestId('page-builder-site-part-publish');
+      await expect(footerPublish).toBeEnabled();
       const footerResponse = page.waitForResponse((response) => response.url().includes('/site-parts/footer/publish') && response.request().method() === 'POST');
       await footerPublish.click();
       expect((await footerResponse).ok()).toBe(true);

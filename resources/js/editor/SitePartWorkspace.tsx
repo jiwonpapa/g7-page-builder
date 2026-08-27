@@ -112,7 +112,7 @@ export function SitePartWorkspace({ locale }: SitePartWorkspaceProps): React.Rea
     }
   };
 
-  const updatePart = (kind: SitePartKind, resource: SitePartResource): void => {
+  const updatePart = useCallback((kind: SitePartKind, resource: SitePartResource): void => {
     setSets((current) => current.map((set) => {
       if (set.id !== resource.set_id) return set;
       const next = { ...set, [kind]: summary(resource) } as SitePartSetResource;
@@ -121,7 +121,9 @@ export function SitePartWorkspace({ locale }: SitePartWorkspaceProps): React.Rea
         is_ready: next.header.active_revision !== null && next.footer.active_revision !== null,
       };
     }));
-  };
+  }, []);
+  const updateHeader = useCallback((resource: SitePartResource): void => updatePart('header', resource), [updatePart]);
+  const updateFooter = useCallback((resource: SitePartResource): void => updatePart('footer', resource), [updatePart]);
 
   return <main className="g7pb-root g7pb-site-parts-workspace" data-testid="page-builder-site-part-workspace" aria-busy={loading || busy}>
     <header className="g7pb-site-parts-workspace__header">
@@ -164,8 +166,8 @@ export function SitePartWorkspace({ locale }: SitePartWorkspaceProps): React.Rea
             </button>
           </header>
           <div className="g7pb-site-part-pair__editors" key={selected.id}>
-            <SitePartEditor kind="header" locale={locale} setId={selected.id} embedded paired onChanged={(resource) => updatePart('header', resource)} />
-            <SitePartEditor kind="footer" locale={locale} setId={selected.id} embedded paired onChanged={(resource) => updatePart('footer', resource)} />
+            <SitePartEditor kind="header" locale={locale} setId={selected.id} embedded paired onChanged={updateHeader} />
+            <SitePartEditor kind="footer" locale={locale} setId={selected.id} embedded paired onChanged={updateFooter} />
           </div>
         </> : !loading ? <div className="g7pb-site-part-pair__empty"><h2>사용할 세트가 없습니다.</h2><p>새 세트를 만들어 Header와 Footer 편집을 시작하세요.</p></div> : null}
       </section>

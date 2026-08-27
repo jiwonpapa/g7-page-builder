@@ -541,11 +541,20 @@ async function activatePointerTarget(
   await target.click(position ? { position } : undefined);
 }
 
-async function activatePuckInlineTextField(page: Page, field: Locator, label: string): Promise<void> {
+async function activatePuckPlainTextField(page: Page, field: Locator, label: string): Promise<void> {
   await expect(field, `${label} must be visible before inline activation`).toBeVisible();
   await field.scrollIntoViewIfNeeded();
   await field.hover();
   await expect(field).toHaveAttribute('contenteditable', 'plaintext-only');
+  await activatePointerTarget(page, field, label);
+  await expect(field).toBeEditable();
+}
+
+async function activatePuckRichTextField(page: Page, field: Locator, label: string): Promise<void> {
+  await expect(field, `${label} must be visible before rich-text activation`).toBeVisible();
+  await field.scrollIntoViewIfNeeded();
+  await field.hover();
+  await expect(field).toHaveAttribute('contenteditable', 'true');
   await activatePointerTarget(page, field, label);
   await expect(field).toBeEditable();
 }
@@ -979,9 +988,9 @@ async function selectAndEditHero(
   await expect(inlineTitle).toBeEditable();
   await inlineTitle.fill(title);
   if (directCanvas) {
-    await activatePuckInlineTextField(page, inlineSubtitle, 'Hero eyebrow');
+    await activatePuckPlainTextField(page, inlineSubtitle, 'Hero eyebrow');
     await inlineSubtitle.fill(subtitle);
-    await activatePuckInlineTextField(page, inlineButton, 'Hero primary action label');
+    await activatePuckPlainTextField(page, inlineButton, 'Hero primary action label');
     await inlineButton.fill(buttonLabel);
     await inlineSubtitle.press('Tab');
   } else {
@@ -1010,7 +1019,7 @@ async function selectAndEditFeatures(
     [editorInlineField(page, 'features', 'items.0.body'), itemBody, 'Features first item body'],
   ] as const;
   for (const [field, value, label] of itemFields) {
-    await activatePuckInlineTextField(page, field, label);
+    await activatePuckRichTextField(page, field, label);
     await field.fill(value);
     await expect(field).toHaveText(value);
   }

@@ -75,6 +75,9 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 | GET | `/api/modules/jiwonpapa-page_builder/admin/documents` | 문서 목록 조회 |
 | GET | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 기존 설정에서 Site Part를 최초 생성하기 위한 호환 fallback 조회 |
 | PUT | `/api/modules/jiwonpapa-page_builder/admin/site-shell` | 구버전 호환용 설정 저장. 신규 관리자 UI에서는 직접 사용하지 않음 |
+| GET | `/api/modules/jiwonpapa-page_builder/admin/site-part-sets` | 언어별 Header·Footer 세트와 활성·발행 상태 조회 |
+| POST | `/api/modules/jiwonpapa-page_builder/admin/site-part-sets` | 기존 SiteShell 기본값에서 새 Header·Footer 쌍 생성 |
+| POST | `/api/modules/jiwonpapa-page_builder/admin/site-part-sets/{uuid}/activate` | 두 Site Part가 모두 발행된 세트를 활성 공통 영역으로 원자 전환 |
 | GET | `/api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}` | 독립 Site Part 초안과 active revision 조회 |
 | POST | `/api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}/bootstrap` | 기존 SiteShell 또는 기본값에서 최초 revision 생성 |
 | PUT | `/api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}/draft` | expected lock으로 Site Part 새 revision 저장 |
@@ -99,7 +102,7 @@ G7가 자동으로 붙이는 prefix를 포함한 MVP endpoint입니다.
 | GET | `/api/modules/jiwonpapa-page_builder/public/site-shell?locale={locale}` | 두 active Site Part가 모두 정상일 때만 원자적 Header·Footer HTML 반환 |
 | GET | `/api/modules/jiwonpapa-page_builder/public/previews/{token}` | User Template preview용 만료 token snapshot 반환 |
 
-관리자 Web 진입점은 G7 네이티브 문서함 `/admin/page-builder`, 페이지 편집기 `/modules/jiwonpapa-page_builder/admin/editor?document={uuid}`, Site Part 편집기 `/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}`로 분리합니다. G7 기본 페이지 관리와 연결하지 않습니다.
+관리자 Web 진입점은 G7 네이티브 문서함 `/admin/page-builder`, 페이지 편집기 `/modules/jiwonpapa-page_builder/admin/editor?document={uuid}`, Header·Footer 통합 관리 `/modules/jiwonpapa-page_builder/admin/site-parts`로 분리합니다. 개별 Site Part URL은 기존 링크 호환용으로만 유지하며 G7 기본 페이지 관리와 연결하지 않습니다.
 
 문서는 먼저 archive해야 하며 archive 시 공개본과 홈 지정을 같은 transaction에서 해제합니다. 영구 삭제는 archived 상태, 최신 lock version, 사용자가 직접 입력한 정확한 slug 확인을 모두 통과해야 합니다. 기존 G7 페이지 데이터에는 적용하지 않습니다.
 

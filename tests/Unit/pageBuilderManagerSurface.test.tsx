@@ -184,7 +184,7 @@ describe('Page Builder manager surface', () => {
     await act(async () => { root.unmount(); });
   });
 
-  it('links to independent visual Header and Footer editors instead of a settings modal', async () => {
+  it('links to one top-level Header and Footer workspace instead of split document-only editors', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
     const emptyList = { items: [], pagination: { total: 0, page: 1, per_page: 100 } };
     globalThis.fetch = vi.fn<typeof fetch>()
@@ -196,11 +196,11 @@ describe('Page Builder manager surface', () => {
     document.body.append(container);
     const root = createRoot(container);
     await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
-    const header = await eventually<HTMLAnchorElement>('[data-testid="page-builder-manager-site-header"]');
-    const footer = await eventually<HTMLAnchorElement>('[data-testid="page-builder-manager-site-footer"]');
-    expect(header.getAttribute('href')).toBe('/modules/jiwonpapa-page_builder/admin/site-parts/header');
-    expect(footer.getAttribute('href')).toBe('/modules/jiwonpapa-page_builder/admin/site-parts/footer');
-    expect(document.querySelector('[data-testid="page-builder-manager-site-shell"]')).toBeNull();
+    const workspace = await eventually<HTMLAnchorElement>('[data-testid="page-builder-manager-site-parts"]');
+    expect(workspace.getAttribute('href')).toBe('/modules/jiwonpapa-page_builder/admin/site-parts');
+    expect(workspace.textContent).toContain('헤더·푸터');
+    expect(document.querySelector('[data-testid="page-builder-manager-site-header"]')).toBeNull();
+    expect(document.querySelector('[data-testid="page-builder-manager-site-footer"]')).toBeNull();
     expect(globalThis.fetch).toHaveBeenCalledOnce();
 
     await act(async () => { root.unmount(); });

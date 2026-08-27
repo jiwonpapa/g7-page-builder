@@ -68,6 +68,17 @@ final class ViewerController
             ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
+    public function sitePartManager(): Response
+    {
+        return response()
+            ->view('g7-page-builder::site-part-editor', [
+                'kind' => null,
+                'locale' => app()->getLocale(),
+            ])
+            ->header('Cache-Control', 'no-store')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
+    }
+
     public function preview(Request $request, string $token): Response
     {
         if ($request->query('shell') === 'template') {

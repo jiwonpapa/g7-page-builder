@@ -13,6 +13,7 @@ final readonly class SitePartSnapshot
         public ?\DateTimeImmutable $createdAt = null,
         public ?\DateTimeImmutable $updatedAt = null,
         public ?\DateTimeImmutable $publishedAt = null,
+        public ?string $setId = null,
     ) {}
 
     public function hasUnpublishedChanges(): bool

@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
-    <title>{{ $kind === 'header' ? 'Header' : 'Footer' }} · G7 Page Builder</title>
+    <title>{{ $kind === null ? '헤더·푸터' : ($kind === 'header' ? 'Header' : 'Footer') }} · G7 Page Builder</title>
     <link rel="stylesheet" href="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-site-part.css') }}">
 </head>
 <body class="g7pb-editor-shell">
     <div id="g7pb-site-part-editor"
-         data-g7pb-site-part-editor
+         @if ($kind === null) data-g7pb-site-part-workspace @else data-g7pb-site-part-editor @endif
          data-testid="page-builder-site-part-editor-root"
-         data-kind="{{ $kind }}"
+         @if ($kind !== null) data-kind="{{ $kind }}" @endif
          data-locale="{{ $locale }}"></div>
     <script>
         (() => {

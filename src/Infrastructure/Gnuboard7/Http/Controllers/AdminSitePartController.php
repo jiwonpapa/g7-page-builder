@@ -27,8 +27,13 @@ final class AdminSitePartController
             return $locale;
         }
 
+        $setId = $request->query('set_id');
+        if ($setId !== null && (! is_string($setId) || preg_match('/^[0-9a-f-]{36}$/i', $setId) !== 1)) {
+            return $this->invalid($request, ['set_id' => ['Invalid Site Part set id.']]);
+        }
+
         try {
-            return $this->success('Site Part를 조회했습니다.', $this->data($this->siteParts->get($kind, $locale)));
+            return $this->success('Site Part를 조회했습니다.', $this->data($this->siteParts->get($kind, $locale, $setId)));
         } catch (SitePartNotFoundException $exception) {
             return $this->error($request, 404, 'G7PB_SITE_PART_NOT_FOUND', $exception->getMessage());
         } catch (\Throwable $exception) {
@@ -66,6 +71,7 @@ final class AdminSitePartController
             'title' => ['required', 'string', 'max:255'],
             'expected_lock_version' => ['required', 'integer', 'min:1'],
             'document' => ['required', 'array'],
+            'set_id' => ['sometimes', 'uuid'],
         ]);
         if ($validator->fails()) {
             return $this->invalid($request, $validator->errors()->toArray());
@@ -79,6 +85,7 @@ final class AdminSitePartController
                 (array) $request->input('document'),
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
+                $this->optionalSetId($request),
             );
 
             return $this->success('Site Part 초안을 저장했습니다.', $this->data($snapshot));
@@ -100,6 +107,7 @@ final class AdminSitePartController
         $validator = Validator::make($request->all(), [
             'locale' => ['required', 'string', 'min:2', 'max:16'],
             'expected_lock_version' => ['required', 'integer', 'min:1'],
+            'set_id' => ['sometimes', 'uuid'],
         ]);
         if ($validator->fails()) {
             return $this->invalid($request, $validator->errors()->toArray());
@@ -111,6 +119,7 @@ final class AdminSitePartController
                 (string) $request->input('locale'),
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
+                $this->optionalSetId($request),
             )));
         } catch (SitePartNotFoundException $exception) {
             return $this->error($request, 404, 'G7PB_SITE_PART_NOT_FOUND', $exception->getMessage());
@@ -128,6 +137,7 @@ final class AdminSitePartController
         $validator = Validator::make($request->query->all(), [
             'locale' => ['required', 'string', 'min:2', 'max:16'],
             'limit' => ['sometimes', 'integer', 'min:1', 'max:50'],
+            'set_id' => ['sometimes', 'uuid'],
         ]);
         if ($validator->fails()) {
             return $this->invalid($request, $validator->errors()->toArray());
@@ -153,6 +163,7 @@ final class AdminSitePartController
                         $kind,
                         $locale,
                         (int) $limit,
+                        $this->optionalSetId($request),
                     ),
                 ),
             ]);
@@ -178,6 +189,7 @@ final class AdminSitePartController
     private function data(SitePartSnapshot $snapshot): array
     {
         return [
+            'set_id' => $snapshot->setId,
             'title' => $snapshot->title,
             'document' => $snapshot->document->toArray(),
             'lock_version' => $snapshot->lockVersion,
@@ -190,6 +202,13 @@ final class AdminSitePartController
             'updated_at' => $snapshot->updatedAt?->format(DATE_ATOM),
             'published_at' => $snapshot->publishedAt?->format(DATE_ATOM),
         ];
+    }
+
+    private function optionalSetId(Request $request): ?string
+    {
+        $setId = $request->input('set_id');
+
+        return is_string($setId) && $setId !== '' ? $setId : null;
     }
 
     private function actorId(Request $request): ?int

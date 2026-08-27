@@ -11,6 +11,7 @@ import type {
   SitePartDocument,
   SitePartKind,
   SitePartResource,
+  SitePartSetResource,
   SitePartRevisionResource,
   PageBuilderDocument,
   PageSeoMetadata,
@@ -527,8 +528,9 @@ export class PageBuilderApiClient {
     });
   }
 
-  async getSitePart(kind: SitePartKind, locale = 'ko'): Promise<SitePartResource> {
+  async getSitePart(kind: SitePartKind, locale = 'ko', setId?: string): Promise<SitePartResource> {
     const query = new URLSearchParams({ locale });
+    if (setId) query.set('set_id', setId);
     return this.request<SitePartResource>(`/site-parts/${kind}?${query.toString()}`);
   }
 
@@ -544,6 +546,7 @@ export class PageBuilderApiClient {
     title: string,
     document: SitePartDocument,
     expectedLockVersion: number,
+    setId?: string,
   ): Promise<SitePartResource> {
     return this.request<SitePartResource>(`/site-parts/${kind}/draft`, {
       method: 'PUT',
@@ -552,6 +555,7 @@ export class PageBuilderApiClient {
         title,
         document,
         expected_lock_version: expectedLockVersion,
+        ...(setId ? { set_id: setId } : {}),
       }),
     });
   }
@@ -560,16 +564,36 @@ export class PageBuilderApiClient {
     kind: SitePartKind,
     locale: string,
     expectedLockVersion: number,
+    setId?: string,
   ): Promise<SitePartResource> {
     return this.request<SitePartResource>(`/site-parts/${kind}/publish`, {
       method: 'POST',
-      body: JSON.stringify({ locale, expected_lock_version: expectedLockVersion }),
+      body: JSON.stringify({ locale, expected_lock_version: expectedLockVersion, ...(setId ? { set_id: setId } : {}) }),
     });
   }
 
-  async listSitePartRevisions(kind: SitePartKind, locale = 'ko'): Promise<{ items: SitePartRevisionResource[] }> {
+  async listSitePartRevisions(kind: SitePartKind, locale = 'ko', setId?: string): Promise<{ items: SitePartRevisionResource[] }> {
     const query = new URLSearchParams({ locale });
+    if (setId) query.set('set_id', setId);
     return this.request<{ items: SitePartRevisionResource[] }>(`/site-parts/${kind}/revisions?${query.toString()}`);
+  }
+
+  async listSitePartSets(locale = 'ko'): Promise<{ items: SitePartSetResource[] }> {
+    return this.request<{ items: SitePartSetResource[] }>(`/site-part-sets?${new URLSearchParams({ locale }).toString()}`);
+  }
+
+  async createSitePartSet(title: string, locale = 'ko'): Promise<SitePartSetResource> {
+    return this.request<SitePartSetResource>('/site-part-sets', {
+      method: 'POST',
+      body: JSON.stringify({ title, locale }),
+    });
+  }
+
+  async activateSitePartSet(setId: string, locale = 'ko'): Promise<SitePartSetResource> {
+    return this.request<SitePartSetResource>(`/site-part-sets/${encodeURIComponent(setId)}/activate`, {
+      method: 'POST',
+      body: JSON.stringify({ locale }),
+    });
   }
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {

@@ -879,6 +879,7 @@ export interface SitePartDocument {
 }
 
 export interface SitePartResource {
+  set_id: string | null;
   title: string;
   document: SitePartDocument;
   lock_version: number;
@@ -888,6 +889,26 @@ export interface SitePartResource {
   created_at: string | null;
   updated_at: string | null;
   published_at: string | null;
+}
+
+export interface SitePartSetPartSummary {
+  site_part_id: string;
+  revision: number;
+  active_revision: number | null;
+  status: 'draft' | 'published_with_changes' | 'published';
+  updated_at: string | null;
+}
+
+export interface SitePartSetResource {
+  id: string;
+  title: string;
+  locale: string;
+  is_active: boolean;
+  is_ready: boolean;
+  header: SitePartSetPartSummary;
+  footer: SitePartSetPartSummary;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface SitePartRevisionResource {

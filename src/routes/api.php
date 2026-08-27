@@ -8,6 +8,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminOfficialStoreController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminRouteCatalogController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartSetController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicPageController;
@@ -54,6 +55,16 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
     Route::post('block-packs/github/install', [AdminBlockPackController::class, 'githubInstall'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
         ->name('block-packs.github.install');
+    Route::get('site-part-sets', [AdminSitePartSetController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('site-part-sets.index');
+    Route::post('site-part-sets', [AdminSitePartSetController::class, 'store'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.create')
+        ->name('site-part-sets.store');
+    Route::post('site-part-sets/{set}/activate', [AdminSitePartSetController::class, 'activate'])
+        ->whereUuid('set')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('site-part-sets.activate');
     Route::get('site-parts/{kind}', [AdminSitePartController::class, 'show'])
         ->whereIn('kind', ['header', 'footer'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')

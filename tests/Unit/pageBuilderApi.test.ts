@@ -80,6 +80,25 @@ describe('PageBuilderApiClient', () => {
     expect(fetchImpl.mock.calls[0][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/routes/catalog`);
   });
 
+  it('uses typed endpoints for listing, creating, and atomically activating Header and Footer sets', async () => {
+    const setId = '123e4567-e89b-42d3-a456-426614174099';
+    const set = { id: setId, title: '회사 기본형', locale: 'ko', is_active: false, is_ready: true };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { items: [set] } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: set }, 201))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { ...set, is_active: true } }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await client.listSitePartSets('ko');
+    await client.createSitePartSet('회사 기본형', 'ko');
+    await client.activateSitePartSet(setId, 'ko');
+
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(`${PAGE_BUILDER_API_PREFIX}/site-part-sets?locale=ko`);
+    expect(JSON.parse(String(fetchImpl.mock.calls[1]?.[1]?.body))).toEqual({ title: '회사 기본형', locale: 'ko' });
+    expect(fetchImpl.mock.calls[2]?.[0]).toBe(`${PAGE_BUILDER_API_PREFIX}/site-part-sets/${setId}/activate`);
+    expect(JSON.parse(String(fetchImpl.mock.calls[2]?.[1]?.body))).toEqual({ locale: 'ko' });
+  });
+
   it('uses the BaseController envelope and Sanctum Bearer auth', async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({ success: true, message: 'ok', data: documentResource }),

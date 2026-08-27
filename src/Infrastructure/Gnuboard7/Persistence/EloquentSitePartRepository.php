@@ -9,44 +9,106 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\SitePartRecord;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\SitePartRevisionRecord;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\SitePartSetRecord;
 
 final class EloquentSitePartRepository implements SitePartRepository
 {
-    public function create(string $title, SitePartDocument $document, ?int $actorId): SitePartSnapshot
-    {
-        return DB::transaction(function () use ($title, $document, $actorId): SitePartSnapshot {
-            if (SitePartRecord::query()
-                ->where('kind', $document->kind)
-                ->where('locale', $document->locale)
-                ->exists()) {
-                throw new \InvalidArgumentException('Site Part already exists for this kind and locale.');
+    public function createSet(
+        string $title,
+        SitePartDocument $header,
+        SitePartDocument $footer,
+        ?int $actorId,
+    ): SitePartSetSnapshot {
+        return DB::transaction(function () use ($title, $header, $footer, $actorId): SitePartSetSnapshot {
+            if ($header->kind !== 'header' || $footer->kind !== 'footer' || $header->locale !== $footer->locale) {
+                throw new \InvalidArgumentException('Site Part set requires one Header and one Footer in the same locale.');
+            }
+            if (SitePartSetRecord::query()->where('locale', $header->locale)->where('title', $title)->exists()) {
+                throw new \InvalidArgumentException('같은 이름의 헤더·푸터 세트가 이미 있습니다.');
             }
 
-            $record = SitePartRecord::query()->create([
-                'id' => $document->sitePartId,
-                'kind' => $document->kind,
-                'locale' => $document->locale,
+            $set = SitePartSetRecord::query()->create([
+                'id' => $this->uuidV4(),
+                'locale' => $header->locale,
                 'title' => $title,
-                'lock_version' => 1,
-                'current_revision' => 1,
-                'active_revision' => null,
-                'published_at' => null,
+                'is_active' => ! SitePartSetRecord::query()->where('locale', $header->locale)->where('is_active', true)->exists(),
                 'created_by' => $actorId,
                 'updated_by' => $actorId,
             ]);
-            $this->insertRevision($document, $title, 1, $actorId);
+            $this->createPart($set->id, $title.' Header', $header, $actorId);
+            $this->createPart($set->id, $title.' Footer', $footer, $actorId);
 
-            return $this->snapshot($record);
+            return $this->setSnapshot($set);
         });
     }
 
-    public function find(string $kind, string $locale): ?SitePartSnapshot
+    /** @return list<SitePartSetSnapshot> */
+    public function listSets(string $locale): array
     {
+        /** @var Collection<int, SitePartSetRecord> $sets */
+        $sets = SitePartSetRecord::query()
+            ->where('locale', $locale)
+            ->orderBy('created_at')
+            ->orderBy('title')
+            ->get();
+
+        return array_values($sets->map(fn (SitePartSetRecord $set): SitePartSetSnapshot => $this->setSnapshot($set))->all());
+    }
+
+    public function activateSet(string $setId, string $locale, ?int $actorId): SitePartSetSnapshot
+    {
+        return DB::transaction(function () use ($setId, $locale, $actorId): SitePartSetSnapshot {
+            /** @var Collection<int, SitePartSetRecord> $sets */
+            $sets = SitePartSetRecord::query()
+                ->where('locale', $locale)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+            $set = $sets->first(fn (SitePartSetRecord $candidate): bool => $candidate->id === $setId);
+            if (! $set instanceof SitePartSetRecord) {
+                throw new SitePartNotFoundException('헤더·푸터 세트를 찾을 수 없습니다.');
+            }
+            $parts = SitePartRecord::query()->where('set_id', $set->id)->get()->keyBy('kind');
+            $header = $parts->get('header');
+            $footer = $parts->get('footer');
+            if (! $header instanceof SitePartRecord || ! $footer instanceof SitePartRecord
+                || $header->active_revision === null || $footer->active_revision === null) {
+                throw new \InvalidArgumentException('Header와 Footer를 모두 발행한 뒤 사용할 수 있습니다.');
+            }
+
+            $updatedAt = new \DateTimeImmutable;
+            SitePartSetRecord::query()->where('locale', $locale)->where('is_active', true)->update([
+                'is_active' => false,
+                'updated_by' => $actorId,
+                'updated_at' => $updatedAt,
+            ]);
+            SitePartSetRecord::query()->whereKey($set->id)->update([
+                'is_active' => true,
+                'updated_by' => $actorId,
+                'updated_at' => $updatedAt,
+            ]);
+
+            /** @var SitePartSetRecord|null $fresh */
+            $fresh = SitePartSetRecord::query()->find($set->id);
+
+            return $this->setSnapshot($fresh ?? throw new \RuntimeException('Activated Site Part set is missing.'));
+        });
+    }
+
+    public function find(string $kind, string $locale, ?string $setId = null): ?SitePartSnapshot
+    {
+        $resolvedSetId = $setId ?? $this->resolvedSetId($locale);
+        if ($resolvedSetId === null) {
+            return null;
+        }
+
         /** @var SitePartRecord|null $record */
         $record = SitePartRecord::query()
+            ->where('set_id', $resolvedSetId)
             ->where('kind', $kind)
             ->where('locale', $locale)
             ->first();
@@ -56,8 +118,17 @@ final class EloquentSitePartRepository implements SitePartRepository
 
     public function findPublished(string $kind, string $locale): ?SitePartSnapshot
     {
+        $setId = SitePartSetRecord::query()
+            ->where('locale', $locale)
+            ->where('is_active', true)
+            ->value('id');
+        if (! is_string($setId)) {
+            return null;
+        }
+
         /** @var SitePartRecord|null $record */
         $record = SitePartRecord::query()
+            ->where('set_id', $setId)
             ->where('kind', $kind)
             ->where('locale', $locale)
             ->whereNotNull('active_revision')
@@ -173,6 +244,65 @@ final class EloquentSitePartRepository implements SitePartRepository
             publishedAt: $record->published_at === null
                 ? null
                 : \DateTimeImmutable::createFromInterface($record->published_at),
+            setId: $record->set_id,
+        );
+    }
+
+    private function resolvedSetId(string $locale): ?string
+    {
+        $active = SitePartSetRecord::query()
+            ->where('locale', $locale)
+            ->where('is_active', true)
+            ->value('id');
+        if (is_string($active)) {
+            return $active;
+        }
+        $first = SitePartSetRecord::query()->where('locale', $locale)->oldest()->value('id');
+
+        return is_string($first) ? $first : null;
+    }
+
+    private function createPart(
+        string $setId,
+        string $title,
+        SitePartDocument $document,
+        ?int $actorId,
+    ): SitePartRecord {
+        $record = SitePartRecord::query()->create([
+            'id' => $document->sitePartId,
+            'set_id' => $setId,
+            'kind' => $document->kind,
+            'locale' => $document->locale,
+            'title' => $title,
+            'lock_version' => 1,
+            'current_revision' => 1,
+            'active_revision' => null,
+            'published_at' => null,
+            'created_by' => $actorId,
+            'updated_by' => $actorId,
+        ]);
+        $this->insertRevision($document, $title, 1, $actorId);
+
+        return $record;
+    }
+
+    private function setSnapshot(SitePartSetRecord $set): SitePartSetSnapshot
+    {
+        $header = $this->find('header', $set->locale, $set->id);
+        $footer = $this->find('footer', $set->locale, $set->id);
+        if ($header === null || $footer === null) {
+            throw new \RuntimeException('Site Part set is incomplete.');
+        }
+
+        return new SitePartSetSnapshot(
+            id: $set->id,
+            title: $set->title,
+            locale: $set->locale,
+            isActive: $set->is_active,
+            header: $header,
+            footer: $footer,
+            createdAt: \DateTimeImmutable::createFromInterface($set->created_at),
+            updatedAt: \DateTimeImmutable::createFromInterface($set->updated_at),
         );
     }
 

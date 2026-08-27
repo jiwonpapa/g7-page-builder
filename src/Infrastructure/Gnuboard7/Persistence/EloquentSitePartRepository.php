@@ -80,15 +80,20 @@ final class EloquentSitePartRepository implements SitePartRepository
                 throw new \InvalidArgumentException('Header와 Footer를 모두 발행한 뒤 사용할 수 있습니다.');
             }
 
+            $updatedAt = new \DateTimeImmutable;
             SitePartSetRecord::query()->where('locale', $locale)->where('is_active', true)->update([
                 'is_active' => false,
                 'updated_by' => $actorId,
-                'updated_at' => new \DateTimeImmutable,
+                'updated_at' => $updatedAt,
             ]);
-            $set->fill(['is_active' => true, 'updated_by' => $actorId])->save();
+            SitePartSetRecord::query()->whereKey($set->id)->update([
+                'is_active' => true,
+                'updated_by' => $actorId,
+                'updated_at' => $updatedAt,
+            ]);
 
             /** @var SitePartSetRecord|null $fresh */
-            $fresh = $set->fresh();
+            $fresh = SitePartSetRecord::query()->find($set->id);
 
             return $this->setSnapshot($fresh ?? throw new \RuntimeException('Activated Site Part set is missing.'));
         });

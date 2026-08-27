@@ -271,12 +271,15 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
   test.skip(testInfo.project.name !== 'desktop', 'The paired Site Part workspace is edited on PC.');
   const token = await authenticate(context);
   const api = await adminApi(token);
-  const locale = 'ko';
   let originalActive: SitePartSetResource | null = null;
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
   try {
+    await page.goto('/modules/jiwonpapa-page_builder/admin/site-parts');
+    const workspaceRoot = page.getByTestId('page-builder-site-part-editor-root');
+    const locale = await workspaceRoot.getAttribute('data-locale') ?? 'ko';
+    await expect(page.getByTestId('page-builder-site-part-set').first()).toBeVisible();
     let sets = await listSitePartSets(api, locale);
     originalActive = sets.find((set) => set.is_active) ?? null;
     if (!originalActive) throw new Error('The default Header/Footer set must be active.');
@@ -296,7 +299,7 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     }
     if (!target) throw new Error('A secondary Header/Footer set could not be prepared.');
 
-    await page.goto('/modules/jiwonpapa-page_builder/admin/site-parts');
+    await page.reload();
     await expect(page.getByTestId('page-builder-site-part-workspace')).toBeVisible();
     await expect(page.getByRole('heading', { name: '헤더·푸터', exact: true })).toBeVisible();
     const targetButton = page.getByTestId('page-builder-site-part-set').filter({ hasText: target.title });
@@ -327,7 +330,10 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     expect(pageErrors, pageErrors.join('\n')).toEqual([]);
   } finally {
     if (originalActive) {
-      await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-part-sets/${originalActive.id}/activate`, { data: { locale } });
+      const restore = await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-part-sets/${originalActive.id}/activate`, {
+        data: { locale: originalActive.locale },
+      });
+      expect(restore.ok()).toBe(true);
     }
     await api.dispose();
   }

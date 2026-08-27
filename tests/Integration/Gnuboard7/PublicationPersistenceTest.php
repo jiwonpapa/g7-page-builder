@@ -249,6 +249,11 @@ final class PublicationPersistenceTest extends TestCase
         $defaultFooter = $service->bootstrap('footer', 'ko', $shell, 1);
         $service->publish('header', 'ko', $defaultHeader->lockVersion, 1);
         $service->publish('footer', 'ko', $defaultFooter->lockVersion, 1);
+        $defaultSet = $service->listSets('ko')[0];
+        self::assertTrue($service->activateSet($defaultSet->id, 'ko', 1)->isActive);
+        self::assertTrue($service->listSets('ko')[0]->isActive);
+        self::assertNotNull($service->published('header', 'ko'));
+        self::assertNotNull($service->published('footer', 'ko'));
 
         $campaign = $service->createSet('캠페인 세트', 'ko', $shell, 2);
         self::assertFalse($campaign->isActive);

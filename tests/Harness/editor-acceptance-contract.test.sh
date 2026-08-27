@@ -25,6 +25,8 @@ copy_fixture() {
     "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
   cp "$repo_root/resources/js/editor/canvasEditingContract.ts" \
     "$fixture_root/fixture/resources/js/editor/canvasEditingContract.ts"
+  cp "$repo_root/resources/js/editor/canvasContextState.ts" \
+    "$fixture_root/fixture/resources/js/editor/canvasContextState.ts"
   cp "$repo_root/resources/js/editor/editorViewportPolicy.ts" \
     "$fixture_root/fixture/resources/js/editor/editorViewportPolicy.ts"
 }
@@ -309,6 +311,16 @@ copy_fixture
 perl -0pi -e 's/g7pb:richtext-range-state/g7pb:richtext-range-active/' \
   "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
 expect_failure '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'
+
+copy_fixture
+perl -0pi -e "s/kind: 'text-range'/kind: 'text-selection'/g" \
+  "$fixture_root/fixture/resources/js/editor/canvasContextState.ts"
+expect_failure '캔버스 선택 대상은 단일 판별 상태 계약으로 정의해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/canvasContextRangeActive\(canvasContextState\)/false/' \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure '요소와 범위 상태는 단일 캔버스 컨텍스트에서 파생해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/RichTextMenu/RichTextToolbar/' \

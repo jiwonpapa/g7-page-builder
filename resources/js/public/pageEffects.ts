@@ -1166,3 +1166,4 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !isTestR
   }
 }
 import '../../css/page-builder-public.css';
+import '../../css/page-builder-site-part-responsive.css';

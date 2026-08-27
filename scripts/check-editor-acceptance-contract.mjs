@@ -143,6 +143,7 @@ export async function validateEditorAcceptanceContract(root) {
     [/getByText\(['"]Blocks['"],\s*\{\s*exact:\s*true\s*\}\)/, '좁은 화면에서는 블록 라이브러리를 실제 닫아야 합니다.'],
     [/expect\(library\)\.toBeHidden\(\)/, 'pointer canvas 확보 뒤 블록 라이브러리 닫힘을 확인해야 합니다.'],
     [/RANGE_TOOLBAR_EXCLUSIVE_GATE/, '범위 툴바와 요소 벌룬 상호배타 gate가 필요합니다.'],
+    [/RANGE_BALLOON_ANCHOR_GATE/, '선택 글자 툴바가 실제 Range에 붙는 geometry gate가 필요합니다.'],
     [/OFFICIAL_PUCK_MENU_ROOT_GATE/, '공식 Puck menu root 범위 gate가 필요합니다.'],
     [/ROOT_INLINE_RICH_GATE/, 'root inline-rich 실제 편집 gate가 필요합니다.'],
     [/NESTED_INLINE_RICH_GATE/, 'nested array inline-rich 실제 편집 gate가 필요합니다.'],
@@ -229,9 +230,12 @@ export async function validateEditorAcceptanceContract(root) {
       '글꼴·크기·굵기·색상 option과 링크 form 모두 같은 floating portal 계약을 사용해야 합니다.'],
     [richTextSource, /const rangeActive = Boolean\(editorState\?\.g7HasSelection\)/, 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'],
     [richTextSource, /g7HasSelection:\s*isRichTextRangeActive\(context\.editor\)/, 'Puck selector가 선택 범위 상태를 파생해야 합니다.'],
+    [richTextSource, /export function richTextRangeAnchorFromSelection\([\s\S]*getClientRects\(\)[\s\S]*width: right - left, height: bottom - top/, '선택 글자 벌룬은 실제 DOM Range의 렌더링 좌표를 사용해야 합니다.'],
     [richTextSource, /RICH_TEXT_RANGE_STATE_MESSAGE\s*=\s*['"]g7pb:richtext-range-state['"]/, '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'],
     [adapterSource, /event\.data\?\.type === RICH_TEXT_RANGE_STATE_MESSAGE/, '호스트가 선택 범위 상태 메시지를 수신해야 합니다.'],
-    [adapterSource, /acceptRangeState\(event\.data\.active === true\)/, '호스트 UI는 active와 inactive를 같은 상태 처리기로 동기화해야 합니다.'],
+    [adapterSource, /acceptRangeState\(event\.data\.active === true, event\.data\.anchor\)/, '호스트 UI는 active와 inactive 및 Range 좌표를 같은 상태 처리기로 동기화해야 합니다.'],
+    [adapterSource, /rangeEditingActive\s*\?\s*richTextRangeAnchorFromSelection\(ownerDocument\) \?\? rangeAnchor \?\? selectedOverlay\.getBoundingClientRect\(\)[\s\S]*selectedOverlay\.getBoundingClientRect\(\)/, '범위 선택 중 ActionBar는 블록이 아니라 현재 DOM Range를 기준으로 배치해야 합니다.'],
+    [adapterSource, /if \(!canvasUi\?\.textToolsOpen \|\| canvasUi\.rangeEditingActive/, '글자 범위 선택 중 요소 전체 스타일 벌룬을 렌더하면 안 됩니다.'],
   ];
   for (const [source, pattern, message] of requiredRangeState) requirePattern(errors, source, pattern, message);
   const updateMarkSource = richTextSource.match(/const updateMark = [\s\S]*?\n  };/)?.[0] ?? '';
@@ -244,6 +248,8 @@ export async function validateEditorAcceptanceContract(root) {
     '요소 벌룬 닫기는 PC 캔버스의 검증된 픽셀을 실제 mouse로 활성화해야 합니다.');
   requirePattern(errors, spec, /function expectStableControlGeometry[\s\S]*?expect\(control\)\.toBeVisible\(\)[\s\S]*?g7pb-richtext-floating-layer[\s\S]*?toHaveAttribute\(['"]data-g7pb-floating-ready['"], ['"]true['"]\)[\s\S]*?index < 3[\s\S]*?sample\.ready/,
     '선택 글자 control은 안정 배치가 노출된 뒤 세 프레임의 geometry를 검증해야 합니다.');
+  requirePattern(errors, spec, /function expectRangeBalloonAnchored[\s\S]*?data-g7pb-range-anchor['"], ['"]true['"]\)[\s\S]*?getRangeAt\(0\)\.getBoundingClientRect\(\)[\s\S]*?visibleBlockActions[\s\S]*?gap\)\.toBeGreaterThanOrEqual\(4\)[\s\S]*?gap\)\.toBeLessThanOrEqual\(20\)[\s\S]*?visibleBlockActions\)\.toBe\(0\)/,
+    '선택 글자 벌룬 E2E는 실제 Range 근접도와 요소 도구 부재를 함께 검증해야 합니다.');
   requirePattern(errors, spec, /const optionControl = page\.frameLocator\(CANVAS_IFRAME\)\.getByRole\(['"]option['"][\s\S]{0,300}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)[\s\S]{0,180}activateControl\(optionControl\)[\s\S]{0,180}expect\(optionControl\)\.toBeHidden\(\)[\s\S]{0,180}expect\(menuRoot\)\.toBeVisible\(\)[\s\S]{0,180}expect\.poll\(\(\) => selectedText\(field\)\)\.toBe\(target\)/,
     '선택 글자 portal option의 실제 PC click 뒤 option은 닫히고 Puck 메뉴와 선택 범위는 유지되어야 합니다.');
   requirePattern(errors, spec, /function assertPointerReachable\(page:[\s\S]*?control\.evaluate[\s\S]*?element\.ownerDocument\.elementFromPoint[\s\S]*?const localCenter = localReachability\.points\[0\][\s\S]*?clientLeft:[\s\S]*?borderScaleX[\s\S]*?contentOrigin[\s\S]*?contentScale[\s\S]*?contentOrigin\.x \+ localCenter\.x \* contentScale\.x[\s\S]*?contentOrigin\.y \+ localCenter\.y \* contentScale\.y[\s\S]*?getComputedStyle\(iframe\)\.pointerEvents[\s\S]*?ariaBusy:[\s\S]*?saveState:[\s\S]*?data-puck-outline-dragging[\s\S]*?document\.elementsFromPoint\(point\.x, point\.y\)[\s\S]*?hit: stack\[0\] === iframe[\s\S]*?topDocumentReachability\.points\[0\]\?\.hit === true\) return/,

@@ -256,6 +256,10 @@ final class DomainContractsTest extends TestCase
                         'children' => [['label' => '팀', 'url' => '/pages/team']],
                     ]],
                     'mobile_menu_style' => 'drawer-left',
+                    'responsive' => [
+                        'tablet' => ['density' => 'spacious', 'alignment' => 'center', 'show_cta' => true, 'mobile_menu_style' => 'drawer-left'],
+                        'mobile' => ['density' => 'compact', 'alignment' => 'spread', 'show_cta' => false, 'mobile_menu_style' => 'sheet-bottom'],
+                    ],
                 ],
                 'slots' => [],
             ]],
@@ -265,7 +269,10 @@ final class DomainContractsTest extends TestCase
 
         self::assertStringNotContainsString('<script>', $artifact->html);
         self::assertStringContainsString('&lt;script&gt;', $artifact->html);
-        self::assertStringContainsString('data-g7pb-menu-style="drawer-left"', $artifact->html);
+        self::assertStringContainsString('data-g7pb-menu-style="sheet-bottom"', $artifact->html);
+        self::assertStringContainsString('data-g7pb-tablet-density="spacious"', $artifact->html);
+        self::assertStringContainsString('data-g7pb-mobile-menu-style="sheet-bottom"', $artifact->html);
+        self::assertStringContainsString('data-g7pb-mobile-cta="hide"', $artifact->html);
         self::assertStringContainsString('data-g7pb-menu-backdrop', $artifact->html);
         self::assertStringContainsString('data-g7pb-menu-close', $artifact->html);
         self::assertStringContainsString('class="g7pb-site-subnav"', $artifact->html);

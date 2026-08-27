@@ -1,6 +1,18 @@
 import type { Data } from '@puckeditor/core';
 
 import type { PageBuilderBlock, SitePartDocument, SitePartLink } from '../documents/types';
+import {
+  footerResponsiveFromCanonical,
+  footerResponsiveToCanonical,
+  type FooterResponsiveOverrides,
+  headerResponsiveFromCanonical,
+  headerResponsiveToCanonical,
+  type HeaderResponsiveOverrides,
+  legacyFooterResponsiveOverrides,
+  legacyHeaderResponsiveOverrides,
+  responsiveOverridesEqual,
+  type SitePartMobileMenuStyle,
+} from './sitePartResponsive';
 
 export interface HeaderNavigationProps {
   brandName: string;
@@ -12,7 +24,8 @@ export interface HeaderNavigationProps {
   ctaLabel: string;
   ctaUrl: string;
   mobileMenu: boolean;
-  mobileMenuStyle: 'dropdown' | 'drawer-left' | 'drawer-right';
+  mobileMenuStyle: SitePartMobileMenuStyle;
+  responsiveOverrides?: HeaderResponsiveOverrides;
 }
 
 export interface HeaderNavigationItem extends SitePartLink {
@@ -31,6 +44,7 @@ export interface FooterSimpleProps {
   homeUrl: string;
   navigation: SitePartLink[];
   footerText: string;
+  responsiveOverrides?: FooterResponsiveOverrides;
 }
 
 export interface FooterColumnItem {
@@ -43,6 +57,7 @@ export interface FooterColumnsProps {
   homeUrl: string;
   columns: FooterColumnItem[];
   legalText: string;
+  responsiveOverrides?: FooterResponsiveOverrides;
 }
 
 export interface SitePartComponents {
@@ -169,6 +184,7 @@ export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePar
         ctaUrl: preset === 'header-community' ? '/login' : '/pages/contact',
         mobileMenu: true,
         mobileMenuStyle: preset === 'header-community' ? 'drawer-left' : 'drawer-right',
+        responsiveOverrides: legacyHeaderResponsiveOverrides(preset === 'header-community' ? 'drawer-left' : 'drawer-right'),
       },
     };
     const content: SitePartPuckData['content'] = preset === 'header-business'
@@ -189,6 +205,7 @@ export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePar
           id: presetId('FooterSimple'), brandName: '사이트 이름', homeUrl: '/',
           navigation: [{ label: '소개', url: '/pages/about' }, { label: '문의', url: '/pages/contact' }, { label: '개인정보처리방침', url: '/pages/privacy' }],
           footerText: '© 사이트 이름. All rights reserved.',
+          responsiveOverrides: legacyFooterResponsiveOverrides(),
         },
       }],
     } as SitePartPuckData;
@@ -212,6 +229,7 @@ export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePar
       props: {
         id: presetId('FooterColumns'), brandName: '사이트 이름', homeUrl: '/', columns,
         legalText: '상호·대표·사업자번호·연락처 등 필수 사업자 정보를 입력해 주세요.',
+        responsiveOverrides: legacyFooterResponsiveOverrides(),
       },
     }],
   } as SitePartPuckData;
@@ -238,8 +256,13 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
         ctaUrl: text(cta.url, '/'),
         mobileMenu: props.mobile_menu !== false,
         mobileMenuStyle: props.mobile_menu_style === 'dropdown' || props.mobile_menu_style === 'drawer-left'
-          ? props.mobile_menu_style
-          : 'drawer-right',
+          || props.mobile_menu_style === 'sheet-bottom' ? props.mobile_menu_style : 'drawer-right',
+        responsiveOverrides: Object.prototype.hasOwnProperty.call(props, 'responsive')
+          ? headerResponsiveFromCanonical(props.responsive)
+          : legacyHeaderResponsiveOverrides(
+            props.mobile_menu_style === 'dropdown' || props.mobile_menu_style === 'drawer-left'
+              || props.mobile_menu_style === 'sheet-bottom' ? props.mobile_menu_style : 'drawer-right',
+          ),
       } });
       continue;
     }
@@ -260,6 +283,9 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
         homeUrl: text(props.home_url, '/'),
         navigation: leafLinks(props.navigation),
         footerText: text(props.footer_text),
+        responsiveOverrides: Object.prototype.hasOwnProperty.call(props, 'responsive')
+          ? footerResponsiveFromCanonical(props.responsive)
+          : legacyFooterResponsiveOverrides(),
       } });
       continue;
     }
@@ -274,6 +300,9 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
       homeUrl: text(props.home_url, '/'),
       columns,
       legalText: text(props.legal_text),
+      responsiveOverrides: Object.prototype.hasOwnProperty.call(props, 'responsive')
+        ? footerResponsiveFromCanonical(props.responsive)
+        : legacyFooterResponsiveOverrides(),
     } });
   }
 
@@ -287,7 +316,10 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
     let canonicalProps: Record<string, unknown>;
     if (component === 'HeaderNavigation') {
       const sourceBlock = source.blocks.find((candidate) => candidate.instance_id.toLowerCase() === stableUuid(text(props.id, '')).toLowerCase());
-      const mobileMenuStyle = props.mobileMenuStyle === 'dropdown' || props.mobileMenuStyle === 'drawer-left' ? props.mobileMenuStyle : 'drawer-right';
+      const mobileMenuStyle: SitePartMobileMenuStyle = props.mobileMenuStyle === 'dropdown' || props.mobileMenuStyle === 'drawer-left'
+        || props.mobileMenuStyle === 'sheet-bottom' ? props.mobileMenuStyle : 'drawer-right';
+      const responsiveOverrides = (props.responsiveOverrides as HeaderResponsiveOverrides | undefined) ?? {};
+      const sourceHasResponsive = Object.prototype.hasOwnProperty.call(sourceBlock?.props ?? {}, 'responsive');
       const ctaLabel = text(props.ctaLabel);
       const ctaUrl = text(props.ctaUrl);
       canonicalProps = {
@@ -298,6 +330,9 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
         ...(Object.prototype.hasOwnProperty.call(sourceBlock?.props ?? {}, 'mobile_menu_style') || mobileMenuStyle !== 'drawer-right'
           ? { mobile_menu_style: mobileMenuStyle }
           : {}),
+        ...(sourceHasResponsive || !responsiveOverridesEqual(responsiveOverrides, legacyHeaderResponsiveOverrides(mobileMenuStyle))
+          ? { responsive: headerResponsiveToCanonical(responsiveOverrides) }
+          : {}),
       };
     } else if (component === 'Announcement') {
       canonicalProps = {
@@ -305,11 +340,19 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
         tone: props.tone === 'dark' || props.tone === 'light' ? props.tone : 'brand',
       };
     } else if (component === 'FooterSimple') {
+      const sourceBlock = source.blocks.find((candidate) => candidate.instance_id.toLowerCase() === stableUuid(text(props.id, '')).toLowerCase());
+      const responsiveOverrides = (props.responsiveOverrides as FooterResponsiveOverrides | undefined) ?? {};
       canonicalProps = {
         brand_name: text(props.brandName), home_url: text(props.homeUrl, '/'),
         navigation: leafLinks(props.navigation), footer_text: text(props.footerText),
+        ...(Object.prototype.hasOwnProperty.call(sourceBlock?.props ?? {}, 'responsive')
+          || !responsiveOverridesEqual(responsiveOverrides, legacyFooterResponsiveOverrides())
+          ? { responsive: footerResponsiveToCanonical(responsiveOverrides) }
+          : {}),
       };
     } else {
+      const sourceBlock = source.blocks.find((candidate) => candidate.instance_id.toLowerCase() === stableUuid(text(props.id, '')).toLowerCase());
+      const responsiveOverrides = (props.responsiveOverrides as FooterResponsiveOverrides | undefined) ?? {};
       const columns = Array.isArray(props.columns) ? props.columns.flatMap((item) => {
         if (!item || typeof item !== 'object') return [];
         const sourceColumn = item as Record<string, unknown>;
@@ -317,6 +360,10 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
       }) : [];
       canonicalProps = {
         brand_name: text(props.brandName), home_url: text(props.homeUrl, '/'), columns, legal_text: text(props.legalText),
+        ...(Object.prototype.hasOwnProperty.call(sourceBlock?.props ?? {}, 'responsive')
+          || !responsiveOverridesEqual(responsiveOverrides, legacyFooterResponsiveOverrides())
+          ? { responsive: footerResponsiveToCanonical(responsiveOverrides) }
+          : {}),
       };
     }
     return {

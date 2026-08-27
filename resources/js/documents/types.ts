@@ -863,7 +863,7 @@ export interface SiteShellResource {
   cta: SiteShellLink | null;
   footer_text: string;
   show_footer_navigation: boolean;
-  mobile_menu_style?: 'dropdown' | 'drawer-left' | 'drawer-right';
+  mobile_menu_style?: 'dropdown' | 'drawer-left' | 'drawer-right' | 'sheet-bottom';
   updated_at: string | null;
 }
 

@@ -29,6 +29,10 @@ const header: SitePartDocument = {
       cta: { label: '문의', url: '/pages/contact' },
       mobile_menu: true,
       mobile_menu_style: 'drawer-left',
+      responsive: {
+        tablet: { density: 'spacious', alignment: 'center', show_cta: true, mobile_menu_style: 'drawer-left' },
+        mobile: { density: 'compact', alignment: 'spread', show_cta: false, mobile_menu_style: 'sheet-bottom' },
+      },
     },
     slots: {},
   }],
@@ -43,6 +47,21 @@ describe('Site Part Puck adapter', () => {
     expect(roundTrip).toEqual(header);
     expect(JSON.stringify(roundTrip)).not.toContain('style=');
     expect(JSON.stringify(roundTrip)).not.toContain('className');
+  });
+
+  it('preserves legacy output until responsive settings are explicitly changed', () => {
+    const legacy = structuredClone(header);
+    delete legacy.blocks[0]!.props.responsive;
+    const data = sitePartCanonicalToPuck(legacy);
+    expect(sitePartPuckToCanonical(data, legacy)).toEqual(legacy);
+
+    const block = data.content[0];
+    if (block?.type !== 'HeaderNavigation') throw new Error('HeaderNavigation is required.');
+    block.props.responsiveOverrides!.mobile = { mobileMenuStyle: 'sheet-bottom', density: 'compact' };
+    expect(sitePartPuckToCanonical(data, legacy).blocks[0]?.props.responsive).toEqual({
+      tablet: { density: 'comfortable', alignment: 'spread', show_cta: false, mobile_menu_style: 'drawer-left' },
+      mobile: { density: 'compact', mobile_menu_style: 'sheet-bottom' },
+    });
   });
 
   it('round-trips announcement, simple Footer, and column Footer blocks', () => {

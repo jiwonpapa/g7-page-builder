@@ -8,7 +8,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 
 final class SitePartHtmlCompiler
 {
-    public const COMPILER_VERSION = '0.4.0';
+    public const COMPILER_VERSION = '0.5.0';
 
     public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
     {
@@ -63,9 +63,11 @@ final class SitePartHtmlCompiler
         $sticky = (bool) ($props['sticky'] ?? true);
         $mobileMenu = (bool) ($props['mobile_menu'] ?? true);
         $mobileMenuStyle = $this->optionalString($props, 'mobile_menu_style', 24) ?? 'drawer-right';
-        if (! in_array($mobileMenuStyle, ['dropdown', 'drawer-left', 'drawer-right'], true)) {
+        if (! in_array($mobileMenuStyle, ['dropdown', 'drawer-left', 'drawer-right', 'sheet-bottom'], true)) {
             throw new DocumentCompileException('Header mobile menu style is invalid.');
         }
+        $responsive = $this->headerResponsivePresentation($props, $mobileMenuStyle);
+        $responsiveAttributes = $this->headerResponsiveAttributes($responsive);
         $brandContent = $logo === ''
             ? '<span>'.$this->escape($brand).'</span>'
             : '<img src="'.$this->attribute($logo).'" alt="'.$this->attribute($brand).'">';
@@ -76,16 +78,16 @@ final class SitePartHtmlCompiler
         if ($mobileMenu && ($navigation !== [] || $ctaLink !== null)) {
             $mobileLinks = $this->mobileNavigation($navigation);
             $mobileCta = $ctaLink === null ? '' : '<a class="g7pb-mobile-menu__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
-            $close = $mobileMenuStyle === 'dropdown' ? '' : '<span class="g7pb-mobile-menu__close" aria-label="메뉴 닫기" data-g7pb-menu-close>&times;</span>';
-            $backdrop = $mobileMenuStyle === 'dropdown' ? '' : '<span class="g7pb-mobile-menu__backdrop" aria-label="메뉴 닫기" data-g7pb-menu-backdrop hidden></span>';
+            $close = '<span class="g7pb-mobile-menu__close" aria-label="메뉴 닫기" data-g7pb-menu-close>&times;</span>';
+            $backdrop = '<span class="g7pb-mobile-menu__backdrop" aria-label="메뉴 닫기" data-g7pb-menu-backdrop '.$responsiveAttributes.' hidden></span>';
             $mobileHtml = '<span class="g7pb-menu-toggle" aria-expanded="false" aria-controls="g7pb-mobile-navigation" aria-label="메뉴 열기" data-g7pb-menu-toggle><span></span></span>'
-                .$backdrop.'<nav class="g7pb-mobile-menu g7pb-mobile-menu--'.$mobileMenuStyle.'" id="g7pb-mobile-navigation" aria-label="모바일 메뉴" data-g7pb-mobile-menu data-g7pb-menu-style="'.$mobileMenuStyle.'" hidden>'.$close.'<ul>'.$mobileLinks.'</ul>'.$mobileCta.'</nav>';
+                .$backdrop.'<nav class="g7pb-mobile-menu g7pb-mobile-menu--'.$mobileMenuStyle.'" id="g7pb-mobile-navigation" aria-label="모바일 메뉴" data-g7pb-mobile-menu data-g7pb-menu-style="'.$responsive['mobile']['mobile_menu_style'].'" '.$responsiveAttributes.' hidden>'.$close.'<ul>'.$mobileLinks.'</ul>'.$mobileCta.'</nav>';
         }
 
         $classes = 'g7pb-site-header'.($sticky ? ' is-sticky' : '').($variant === 'transparent' ? ' is-transparent' : '');
         $actionsHtml = '<div class="g7pb-site-header__actions">'.$ctaHtml.$systemControls.$mobileHtml.'</div>';
 
-        return '<header class="'.$classes.'" data-g7pb-site-header data-testid="page-builder-site-header"><div class="g7pb-site-header__inner">'
+        return '<header class="'.$classes.'" data-g7pb-site-header data-testid="page-builder-site-header" '.$responsiveAttributes.'><div class="g7pb-site-header__inner">'
             .'<a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$brandContent.'</a>'.$navigationHtml.$actionsHtml.'</div></header>';
     }
 
@@ -148,7 +150,9 @@ final class SitePartHtmlCompiler
         $navigation = $this->links($props['navigation'] ?? [], 10, 'Footer navigation');
         $legal = $this->optionalString($props, 'footer_text', 500) ?? '';
 
-        return '<footer class="g7pb-site-footer" data-testid="page-builder-site-footer"><div class="g7pb-site-footer__top">'
+        $responsiveAttributes = $this->footerResponsiveAttributes($this->footerResponsivePresentation($props, 2));
+
+        return '<footer class="g7pb-site-footer" data-testid="page-builder-site-footer" '.$responsiveAttributes.'><div class="g7pb-site-footer__top">'
             .'<a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$this->escape($brand).'</a>'
             .$this->navigation($navigation, '하단 메뉴', '').'</div>'
             .($legal === '' ? '' : '<p class="g7pb-site-footer__legal">'.$this->escape($legal).'</p>').'</footer>';
@@ -178,10 +182,154 @@ final class SitePartHtmlCompiler
             $compiledColumns[] = '<section><h2>'.$this->escape($heading).'</h2><ul>'.$items.'</ul></section>';
         }
 
-        return '<footer class="g7pb-site-footer g7pb-site-footer--columns" data-testid="page-builder-site-footer"><div class="g7pb-site-footer__columns">'
+        $responsiveAttributes = $this->footerResponsiveAttributes($this->footerResponsivePresentation($props, 4));
+
+        return '<footer class="g7pb-site-footer g7pb-site-footer--columns" data-testid="page-builder-site-footer" '.$responsiveAttributes.'><div class="g7pb-site-footer__columns">'
             .'<div><a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$this->escape($brand).'</a></div>'
             .implode('', $compiledColumns).'</div>'
             .($legal === '' ? '' : '<p class="g7pb-site-footer__legal">'.$this->escape($legal).'</p>').'</footer>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     * @return array{tablet: array{density: string, alignment: string, show_cta: bool, mobile_menu_style: string}, mobile: array{density: string, alignment: string, show_cta: bool, mobile_menu_style: string}}
+     */
+    private function headerResponsivePresentation(array $props, string $mobileMenuStyle): array
+    {
+        $base = ['density' => 'comfortable', 'alignment' => 'spread', 'show_cta' => true, 'mobile_menu_style' => $mobileMenuStyle];
+        if (! array_key_exists('responsive', $props)) {
+            return [
+                'tablet' => [...$base, 'show_cta' => false],
+                'mobile' => [...$base, 'density' => 'compact', 'show_cta' => false],
+            ];
+        }
+
+        $responsive = $this->responsiveObject($props['responsive'], 'Header responsive');
+        $tablet = array_replace($base, $this->headerResponsiveOverride($responsive['tablet'] ?? [], 'Header tablet'));
+        $mobile = array_replace($tablet, $this->headerResponsiveOverride($responsive['mobile'] ?? [], 'Header mobile'));
+
+        return ['tablet' => $tablet, 'mobile' => $mobile];
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     * @return array{tablet: array{density: string, alignment: string, show_navigation: bool, columns: int}, mobile: array{density: string, alignment: string, show_navigation: bool, columns: int}}
+     */
+    private function footerResponsivePresentation(array $props, int $desktopColumns): array
+    {
+        $base = ['density' => 'comfortable', 'alignment' => 'start', 'show_navigation' => true, 'columns' => $desktopColumns];
+        if (! array_key_exists('responsive', $props)) {
+            return [
+                'tablet' => [...$base, 'columns' => 2],
+                'mobile' => [...$base, 'density' => 'compact', 'columns' => 1],
+            ];
+        }
+
+        $responsive = $this->responsiveObject($props['responsive'], 'Footer responsive');
+        $tablet = array_replace($base, $this->footerResponsiveOverride($responsive['tablet'] ?? [], 'Footer tablet'));
+        $mobile = array_replace($tablet, $this->footerResponsiveOverride($responsive['mobile'] ?? [], 'Footer mobile'));
+
+        return ['tablet' => $tablet, 'mobile' => $mobile];
+    }
+
+    /** @return array<string, mixed> */
+    private function responsiveObject(mixed $value, string $context): array
+    {
+        if (! is_array($value) || ($value !== [] && array_is_list($value))) {
+            throw new DocumentCompileException("{$context} must be an object.");
+        }
+        $this->assertOnlyKeys($value, ['tablet', 'mobile'], $context);
+
+        return $value;
+    }
+
+    /** @return array<string, mixed> */
+    private function headerResponsiveOverride(mixed $value, string $context): array
+    {
+        if (! is_array($value) || ($value !== [] && array_is_list($value))) {
+            throw new DocumentCompileException("{$context} override must be an object.");
+        }
+        $this->assertOnlyKeys($value, ['density', 'alignment', 'show_cta', 'mobile_menu_style'], $context);
+        $this->assertEnumWhenPresent($value, 'density', ['compact', 'comfortable', 'spacious'], $context);
+        $this->assertEnumWhenPresent($value, 'alignment', ['start', 'center', 'spread'], $context);
+        $this->assertEnumWhenPresent($value, 'mobile_menu_style', ['dropdown', 'drawer-left', 'drawer-right', 'sheet-bottom'], $context);
+        if (array_key_exists('show_cta', $value) && ! is_bool($value['show_cta'])) {
+            throw new DocumentCompileException("{$context} show_cta must be boolean.");
+        }
+
+        return $value;
+    }
+
+    /** @return array<string, mixed> */
+    private function footerResponsiveOverride(mixed $value, string $context): array
+    {
+        if (! is_array($value) || ($value !== [] && array_is_list($value))) {
+            throw new DocumentCompileException("{$context} override must be an object.");
+        }
+        $this->assertOnlyKeys($value, ['density', 'alignment', 'show_navigation', 'columns'], $context);
+        $this->assertEnumWhenPresent($value, 'density', ['compact', 'comfortable', 'spacious'], $context);
+        $this->assertEnumWhenPresent($value, 'alignment', ['start', 'center'], $context);
+        if (array_key_exists('show_navigation', $value) && ! is_bool($value['show_navigation'])) {
+            throw new DocumentCompileException("{$context} show_navigation must be boolean.");
+        }
+        if (array_key_exists('columns', $value) && (! is_int($value['columns']) || ! in_array($value['columns'], [1, 2, 4], true))) {
+            throw new DocumentCompileException("{$context} columns is invalid.");
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $value
+     * @param  list<string>  $allowed
+     */
+    private function assertOnlyKeys(array $value, array $allowed, string $context): void
+    {
+        $unknown = array_diff(array_keys($value), $allowed);
+        if ($unknown !== []) {
+            throw new DocumentCompileException("{$context} contains unsupported fields.");
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $value
+     * @param  list<string>  $allowed
+     */
+    private function assertEnumWhenPresent(array $value, string $key, array $allowed, string $context): void
+    {
+        if (array_key_exists($key, $value) && (! is_string($value[$key]) || ! in_array($value[$key], $allowed, true))) {
+            throw new DocumentCompileException("{$context} {$key} is invalid.");
+        }
+    }
+
+    /**
+     * @param  array{tablet: array{density: string, alignment: string, show_cta: bool, mobile_menu_style: string}, mobile: array{density: string, alignment: string, show_cta: bool, mobile_menu_style: string}}  $responsive
+     */
+    private function headerResponsiveAttributes(array $responsive): string
+    {
+        return 'data-g7pb-tablet-density="'.$responsive['tablet']['density'].'" '
+            .'data-g7pb-tablet-alignment="'.$responsive['tablet']['alignment'].'" '
+            .'data-g7pb-tablet-cta="'.($responsive['tablet']['show_cta'] ? 'show' : 'hide').'" '
+            .'data-g7pb-tablet-menu-style="'.$responsive['tablet']['mobile_menu_style'].'" '
+            .'data-g7pb-mobile-density="'.$responsive['mobile']['density'].'" '
+            .'data-g7pb-mobile-alignment="'.$responsive['mobile']['alignment'].'" '
+            .'data-g7pb-mobile-cta="'.($responsive['mobile']['show_cta'] ? 'show' : 'hide').'" '
+            .'data-g7pb-mobile-menu-style="'.$responsive['mobile']['mobile_menu_style'].'"';
+    }
+
+    /**
+     * @param  array{tablet: array{density: string, alignment: string, show_navigation: bool, columns: int}, mobile: array{density: string, alignment: string, show_navigation: bool, columns: int}}  $responsive
+     */
+    private function footerResponsiveAttributes(array $responsive): string
+    {
+        return 'data-g7pb-tablet-density="'.$responsive['tablet']['density'].'" '
+            .'data-g7pb-tablet-alignment="'.$responsive['tablet']['alignment'].'" '
+            .'data-g7pb-tablet-navigation="'.($responsive['tablet']['show_navigation'] ? 'show' : 'hide').'" '
+            .'data-g7pb-tablet-columns="'.$responsive['tablet']['columns'].'" '
+            .'data-g7pb-mobile-density="'.$responsive['mobile']['density'].'" '
+            .'data-g7pb-mobile-alignment="'.$responsive['mobile']['alignment'].'" '
+            .'data-g7pb-mobile-navigation="'.($responsive['mobile']['show_navigation'] ? 'show' : 'hide').'" '
+            .'data-g7pb-mobile-columns="'.$responsive['mobile']['columns'].'"';
     }
 
     /** @return list<array{label: string, url: string}> */

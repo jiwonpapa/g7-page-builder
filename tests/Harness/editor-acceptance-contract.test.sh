@@ -8,7 +8,8 @@ trap 'rm -rf "$fixture_root"' EXIT
 copy_fixture() {
   rm -rf "$fixture_root/fixture"
   mkdir -p "$fixture_root/fixture/scripts" "$fixture_root/fixture/tests/E2E/support" \
-    "$fixture_root/fixture/resources/js/editor"
+    "$fixture_root/fixture/resources/js/editor" "$fixture_root/fixture/resources/css" \
+    "$fixture_root/fixture/schemas" "$fixture_root/fixture/src/Application/Compilation"
   cp "$repo_root/package.json" "$fixture_root/fixture/package.json"
   cp "$repo_root/playwright.config.ts" "$fixture_root/fixture/playwright.config.ts"
   cp "$repo_root/Makefile" "$fixture_root/fixture/Makefile"
@@ -17,6 +18,8 @@ copy_fixture() {
     "$fixture_root/fixture/tests/E2E/editorInteractionQuality.spec.ts"
   cp "$repo_root/tests/E2E/editorLayoutParity.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+  cp "$repo_root/tests/E2E/sitePartLifecycle.spec.ts" \
+    "$fixture_root/fixture/tests/E2E/sitePartLifecycle.spec.ts"
   cp "$repo_root/tests/E2E/support/editorInteractionFixture.ts" \
     "$fixture_root/fixture/tests/E2E/support/editorInteractionFixture.ts"
   cp "$repo_root/resources/js/editor/richTextEditing.tsx" \
@@ -29,6 +32,18 @@ copy_fixture() {
     "$fixture_root/fixture/resources/js/editor/canvasContextState.ts"
   cp "$repo_root/resources/js/editor/editorViewportPolicy.ts" \
     "$fixture_root/fixture/resources/js/editor/editorViewportPolicy.ts"
+  cp "$repo_root/resources/js/editor/SitePartEditor.tsx" \
+    "$fixture_root/fixture/resources/js/editor/SitePartEditor.tsx"
+  cp "$repo_root/resources/js/editor/sitePartResponsive.ts" \
+    "$fixture_root/fixture/resources/js/editor/sitePartResponsive.ts"
+  cp "$repo_root/resources/css/page-builder-public.css" \
+    "$fixture_root/fixture/resources/css/page-builder-public.css"
+  cp "$repo_root/resources/css/page-builder-editor.css" \
+    "$fixture_root/fixture/resources/css/page-builder-editor.css"
+  cp "$repo_root/schemas/site-part-document.schema.json" \
+    "$fixture_root/fixture/schemas/site-part-document.schema.json"
+  cp "$repo_root/src/Application/Compilation/SitePartHtmlCompiler.php" \
+    "$fixture_root/fixture/src/Application/Compilation/SitePartHtmlCompiler.php"
 }
 
 expect_failure() {
@@ -46,6 +61,11 @@ expect_failure() {
 }
 
 node "$repo_root/scripts/check-editor-acceptance-contract.mjs" --root "$repo_root"
+
+copy_fixture
+perl -0pi -e 's/sheet-bottom/sheet-removed/g' \
+  "$fixture_root/fixture/tests/E2E/sitePartLifecycle.spec.ts"
+expect_failure 'Site Part E2E가 실제 viewport 설정 변경과 초기화를 검증해야 합니다.'
 
 copy_fixture
 perl -0pi -e "s/screenshot: 'only-on-failure'/screenshot: 'off'/" \

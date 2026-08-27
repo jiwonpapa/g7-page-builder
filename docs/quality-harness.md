@@ -94,7 +94,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 10. 과거 revision 미리보기, 새 초안 복원 중 공개본 보존, 확인 후 rollback 재발행
 11. 공개 해제 뒤 public 404
 12. typed motion 저장·미리보기·발행, 조건부 public runtime과 실제 in-view 활성화
-13. 최상위 Header·Footer 통합 관리에서 다중 세트 생성, 두 편집기 동시 표시, 각각 저장·발행, 미발행 쌍 활성화 차단, 완성 쌍 원자 전환·원래 활성 쌍 복원과 공개 렌더를 확인합니다. 개별 Site Part에서는 축소 미리보기, 실제 드래그 삽입, 인라인/속성 편집과 모바일 메뉴 열기·Escape 닫기·초점 복귀를 확인합니다.
+13. 최상위 Header·Footer 통합 관리에서 다중 세트 생성, 두 편집기 동시 표시, 각각 저장·발행, 미발행 쌍 활성화 차단, 완성 쌍 원자 전환·원래 활성 쌍 복원과 공개 렌더를 확인합니다. 개별 Site Part에서는 축소 미리보기, 실제 드래그 삽입, 인라인/속성 편집, Puck 기기 전환에 따른 태블릿·모바일 표시 재정의·초기화와 drawer·dropdown·하단 시트 열기·Escape 닫기·초점 복귀를 확인합니다.
 14. 문서별 공통영역 제외 후 재발행 시 Header·Footer가 없는 인트로 렌더
 15. 활성 User Template route catalog에서 로그인 route를 선택하고 URL이 저장되는지 확인
 16. `template` 문서를 `/pages/{slug}`에서 활성 `_user_base` 안에 렌더하고 Page Builder Site Part가 섞이지 않는지 확인
@@ -103,6 +103,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
 20. PC 1280 canvas에서만 contenteditable 내부 문자 좌표를 표시 축척이 적용된 Locator 좌표로 변환해 실제 `mouse.down → mouse.move → mouse.up`으로 목표 문자열과 정확히 같은 글자 범위를 선택합니다. 선택 해제, Tiptap active/inactive 단일 범위 상태와 요소 전체 벌룬의 상호배타, 반복 선택, 바깥 클릭 닫힘, 굵게·기울임·밑줄·글꼴·크기·색상·굵기의 즉시 반영, `요소 전체 스타일`·`블록 설정` Action Bar 역할 분리, 우측 Inspector의 richtext 입력기·서식 메뉴 부재, 캔버스 입력과 저장·reload·preview·public DOM 보존을 확인합니다. 모바일·태블릿에서는 이 편집 spec을 실행하지 않습니다.
 21. 45종을 모두 포함하는 내장 완성 섹션 95개와 Page Kit 5종을 PC 1280·태블릿 768·모바일 360 canvas에 실제 로드합니다. PC는 편집 모드, 태블릿·모바일은 contenteditable과 mutation 권한이 없는 미리보기 전용 모드여야 하며 뷰포트 전환은 문서를 저장하지 않아야 합니다. 각 Puck block의 실제 child와 같은 draft의 컴파일 미리보기를 instance/type 순서로 짝지어 문서·블록 가로 넘침 0px, 좌우 content edge 오차 1.25px 이하를 강제합니다.
+22. Header·Footer Site Part는 PC 기준 표시값에 태블릿·모바일 제한형 재정의를 순서대로 합성합니다. 간격·정렬·CTA/내비게이션 표시·열 수·메뉴 방식만 저장하며 임의 class/style은 거부합니다. 기기별 초기화는 해당 재정의만 제거하고, 편집 iframe과 발행 HTML의 data 계약·하단 시트 geometry·무가로넘침을 함께 확인합니다.
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
 
@@ -110,7 +111,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
 
-`scripts/check-editor-acceptance-contract.mjs`는 위 20번과 PC 전용 mutation 권한, `scripts/check-editor-layout-parity.mjs`는 21번을 정적 계약으로 잠급니다. PC 편집 spec을 제품 E2E 목록에서 빼거나 태블릿·모바일에서 다시 실행하도록 바꾸거나 retry/skip을 추가해도 실패합니다. Puck iframe의 scoped box model, 95개 프리셋·Page Kit 5종의 세 viewport 가로 overflow와 편집/미리보기 content edge 비교를 제거해도 `quality-frontend`, `task-submit`, `dev-product-e2e`가 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
+`scripts/check-editor-acceptance-contract.mjs`는 위 20번·22번과 PC 전용 mutation 권한, `scripts/check-editor-layout-parity.mjs`는 21번을 정적 계약으로 잠급니다. PC 편집 spec을 제품 E2E 목록에서 빼거나 태블릿·모바일에서 다시 실행하도록 바꾸거나 retry/skip을 추가해도 실패합니다. Site Part viewport 상태·상속·초기화·schema enum·compiler data 계약·편집/공개 CSS·실제 하단 시트 E2E 중 하나를 제거해도 실패합니다. Puck iframe의 scoped box model, 95개 프리셋·Page Kit 5종의 세 viewport 가로 overflow와 편집/미리보기 content edge 비교를 제거해도 `quality-frontend`, `task-submit`, `dev-product-e2e`가 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
 
 ## 자동화와 로컬 통합
 
@@ -118,6 +119,6 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 - `frontend`: Node 24, `npm ci`, frontend gate, dist artifact
 - `php`: PHP 8.5, `composer install`, PHP gate
 - 현재 G7 설치·TLS·인증·제품 lifecycle 통합은 runtime lease를 가진 로컬 고정 checkout의 `make integration-verify TASK=<integration-id>`로 검사합니다.
-- Header Site Part 모바일 검증은 Puck 모바일 viewport에서 메뉴 열기, 좌·우 방향 변경, 닫기를 실제 클릭하고 발행 화면의 drawer 위치·backdrop·Escape focus 복귀까지 확인합니다. 모바일 폭에서 메뉴를 정적으로 펼쳐 보이는 것만으로 통과시키지 않습니다.
+- Header Site Part 반응형 검증은 Puck 태블릿·모바일 viewport에서 간격·정렬·메뉴 방식 재정의와 초기화를 실제 조작하고, 하단 시트를 열어 편집 iframe·발행 화면의 바닥 정렬·전체 폭·backdrop·Escape focus 복귀까지 확인합니다. 모바일 폭에서 메뉴를 정적으로 펼쳐 보이는 것만으로 통과시키지 않습니다.
 - `quality-g7`은 G7 7.0.8 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
 - TLS·관리자 인증·실제 module route를 포함하는 `dev-product-e2e`는 로컬 통합 필수 gate입니다. 호스팅형 CI나 외부 secret은 필수조건이 아닙니다.

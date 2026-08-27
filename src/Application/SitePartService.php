@@ -7,6 +7,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShell;
 
@@ -17,9 +18,9 @@ final class SitePartService
         private readonly SitePartHtmlCompiler $compiler,
     ) {}
 
-    public function get(string $kind, string $locale): SitePartSnapshot
+    public function get(string $kind, string $locale, ?string $setId = null): SitePartSnapshot
     {
-        return $this->repository->find($kind, $locale)
+        return $this->repository->find($kind, $locale, $setId)
             ?? throw new SitePartNotFoundException('Site Part was not found.');
     }
 
@@ -35,19 +36,35 @@ final class SitePartService
             return $existing;
         }
 
-        $document = new SitePartDocument(
-            sitePartId: $this->uuidV4(),
-            kind: $kind,
-            locale: $locale,
-            tokens: [],
-            blocks: [$this->legacyBlock($kind, $shell)],
-        );
+        $set = $this->createSet('기본 세트', $locale, $shell, $actorId);
 
-        return $this->repository->create(
-            $kind === 'header' ? '기본 Header' : '기본 Footer',
-            $document,
+        return $kind === 'header' ? $set->header : $set->footer;
+    }
+
+    /** @return list<SitePartSetSnapshot> */
+    public function listSets(string $locale): array
+    {
+        return $this->repository->listSets($locale);
+    }
+
+    public function createSet(string $title, string $locale, SiteShell $shell, ?int $actorId): SitePartSetSnapshot
+    {
+        $title = trim($title);
+        if ($title === '') {
+            throw new \InvalidArgumentException('헤더·푸터 세트 이름을 입력해 주세요.');
+        }
+
+        return $this->repository->createSet(
+            $title,
+            $this->defaultDocument('header', $locale, $shell),
+            $this->defaultDocument('footer', $locale, $shell),
             $actorId,
         );
+    }
+
+    public function activateSet(string $setId, string $locale, ?int $actorId): SitePartSetSnapshot
+    {
+        return $this->repository->activateSet($setId, $locale, $actorId);
     }
 
     /** @param array<string, mixed> $payload */
@@ -58,8 +75,9 @@ final class SitePartService
         array $payload,
         int $expectedLockVersion,
         ?int $actorId,
+        ?string $setId = null,
     ): SitePartSnapshot {
-        $current = $this->get($kind, $locale);
+        $current = $this->get($kind, $locale, $setId);
         $title = trim($title);
         if ($title === '') {
             throw new \InvalidArgumentException('Site Part title must not be empty.');
@@ -83,8 +101,9 @@ final class SitePartService
         string $locale,
         int $expectedLockVersion,
         ?int $actorId,
+        ?string $setId = null,
     ): SitePartSnapshot {
-        $current = $this->get($kind, $locale);
+        $current = $this->get($kind, $locale, $setId);
         $this->compiler->compile($current->document, $current->revision);
 
         return $this->repository->publish(
@@ -95,13 +114,24 @@ final class SitePartService
     }
 
     /** @return list<SitePartRevision> */
-    public function revisions(string $kind, string $locale, int $limit = 20): array
+    public function revisions(string $kind, string $locale, int $limit = 20, ?string $setId = null): array
     {
-        $current = $this->get($kind, $locale);
+        $current = $this->get($kind, $locale, $setId);
 
         return $this->repository->listRevisions(
             $current->document->sitePartId,
             min(50, max(1, $limit)),
+        );
+    }
+
+    private function defaultDocument(string $kind, string $locale, SiteShell $shell): SitePartDocument
+    {
+        return new SitePartDocument(
+            sitePartId: $this->uuidV4(),
+            kind: $kind,
+            locale: $locale,
+            tokens: [],
+            blocks: [$this->legacyBlock($kind, $shell)],
         );
     }
 

@@ -4,13 +4,24 @@ namespace Modules\Jiwonpapa\PageBuilder\Contracts;
 
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
+use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
 
 interface SitePartRepository
 {
-    public function create(string $title, SitePartDocument $document, ?int $actorId): SitePartSnapshot;
+    public function createSet(
+        string $title,
+        SitePartDocument $header,
+        SitePartDocument $footer,
+        ?int $actorId,
+    ): SitePartSetSnapshot;
 
-    public function find(string $kind, string $locale): ?SitePartSnapshot;
+    /** @return list<SitePartSetSnapshot> */
+    public function listSets(string $locale): array;
+
+    public function activateSet(string $setId, string $locale, ?int $actorId): SitePartSetSnapshot;
+
+    public function find(string $kind, string $locale, ?string $setId = null): ?SitePartSnapshot;
 
     public function findPublished(string $kind, string $locale): ?SitePartSnapshot;
 

@@ -8,6 +8,7 @@ function sitePartPath(kind: SitePartKind): string {
 }
 
 interface SitePartResource {
+  set_id?: string | null;
   title: string;
   document: {
     schema_version: 'g7-page-builder/site-part/v1';
@@ -21,6 +22,16 @@ interface SitePartResource {
   revision: number;
   active_revision: number | null;
   status: 'draft' | 'published_with_changes' | 'published';
+}
+
+interface SitePartSetResource {
+  id: string;
+  title: string;
+  locale: string;
+  is_active: boolean;
+  is_ready: boolean;
+  header: { active_revision: number | null; status: SitePartResource['status'] };
+  footer: { active_revision: number | null; status: SitePartResource['status'] };
 }
 
 test.use({ screenshot: 'off', trace: 'off', video: 'off' });
@@ -66,6 +77,27 @@ async function readOrBootstrap(api: APIRequestContext, kind: SitePartKind, local
   const payload = await response.json() as { success?: boolean; data?: SitePartResource };
   if (payload.success !== true || !payload.data) throw new Error(`${kind} Site Part API returned no resource.`);
   return payload.data;
+}
+
+async function listSitePartSets(api: APIRequestContext, locale: string): Promise<SitePartSetResource[]> {
+  const response = await api.get(`/api/modules/jiwonpapa-page_builder/admin/site-part-sets?locale=${encodeURIComponent(locale)}`);
+  expect(response.ok()).toBe(true);
+  const payload = await response.json() as { data?: { items?: SitePartSetResource[] } };
+  return payload.data?.items ?? [];
+}
+
+async function ensureSetPartPublished(api: APIRequestContext, set: SitePartSetResource, kind: SitePartKind): Promise<void> {
+  const query = new URLSearchParams({ locale: set.locale, set_id: set.id });
+  const response = await api.get(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}?${query.toString()}`);
+  expect(response.ok()).toBe(true);
+  const payload = await response.json() as { data?: SitePartResource };
+  const resource = payload.data;
+  if (!resource) throw new Error(`${kind} Site Part set resource is missing.`);
+  if (resource.active_revision !== null) return;
+  const publish = await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}/publish`, {
+    data: { locale: set.locale, set_id: set.id, expected_lock_version: resource.lock_version },
+  });
+  expect(publish.ok()).toBe(true);
 }
 
 async function restoreAndPublish(api: APIRequestContext, kind: SitePartKind, original: SitePartResource): Promise<void> {
@@ -231,6 +263,72 @@ test('opens the Footer as a separate visual Site Part with preview cards', async
     await expect(page.frameLocator('iframe').first().locator('.g7pb-site-footer')).toBeVisible();
     expect(resource.document.kind).toBe('footer');
   } finally {
+    await api.dispose();
+  }
+});
+
+test('manages multiple Header and Footer pairs from one top-level workspace', async ({ page, context }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'The paired Site Part workspace is edited on PC.');
+  const token = await authenticate(context);
+  const api = await adminApi(token);
+  const locale = 'ko';
+  let originalActive: SitePartSetResource | null = null;
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+
+  try {
+    let sets = await listSitePartSets(api, locale);
+    originalActive = sets.find((set) => set.is_active) ?? null;
+    if (!originalActive) throw new Error('The default Header/Footer set must be active.');
+    await ensureSetPartPublished(api, originalActive, 'header');
+    await ensureSetPartPublished(api, originalActive, 'footer');
+    sets = await listSitePartSets(api, locale);
+    originalActive = sets.find((set) => set.id === originalActive?.id) ?? originalActive;
+
+    let target = sets.find((set) => !set.is_active) ?? null;
+    if (!target) {
+      const create = await api.post('/api/modules/jiwonpapa-page_builder/admin/site-part-sets', {
+        data: { locale, title: 'E2E 통합 세트' },
+      });
+      expect(create.ok()).toBe(true);
+      const payload = await create.json() as { data?: SitePartSetResource };
+      target = payload.data ?? null;
+    }
+    if (!target) throw new Error('A secondary Header/Footer set could not be prepared.');
+
+    await page.goto('/modules/jiwonpapa-page_builder/admin/site-parts');
+    await expect(page.getByTestId('page-builder-site-part-workspace')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '헤더·푸터', exact: true })).toBeVisible();
+    const targetButton = page.getByTestId('page-builder-site-part-set').filter({ hasText: target.title });
+    await targetButton.click();
+    await expect(page.getByTestId('page-builder-site-part-editor')).toHaveCount(2);
+    const headerEditor = page.locator('[data-testid="page-builder-site-part-editor"][data-kind="header"]');
+    const footerEditor = page.locator('[data-testid="page-builder-site-part-editor"][data-kind="footer"]');
+    await expect(headerEditor).toBeVisible();
+    await expect(footerEditor).toBeVisible();
+
+    if (!target.is_ready) {
+      const headerPublish = page.getByTestId('page-builder-site-part-editor').filter({ hasText: 'Header 편집' }).getByTestId('page-builder-site-part-publish');
+      const headerResponse = page.waitForResponse((response) => response.url().includes('/site-parts/header/publish') && response.request().method() === 'POST');
+      await headerPublish.click();
+      expect((await headerResponse).ok()).toBe(true);
+      const footerPublish = page.getByTestId('page-builder-site-part-editor').filter({ hasText: 'Footer 편집' }).getByTestId('page-builder-site-part-publish');
+      const footerResponse = page.waitForResponse((response) => response.url().includes('/site-parts/footer/publish') && response.request().method() === 'POST');
+      await footerPublish.click();
+      expect((await footerResponse).ok()).toBe(true);
+    }
+
+    const activate = page.getByTestId('page-builder-site-part-set-activate');
+    await expect(activate).toBeEnabled();
+    const activateResponse = page.waitForResponse((response) => response.url().includes(`/site-part-sets/${target?.id}/activate`) && response.request().method() === 'POST');
+    await activate.click();
+    expect((await activateResponse).ok()).toBe(true);
+    await expect(targetButton).toContainText('사용 중');
+    expect(pageErrors, pageErrors.join('\n')).toEqual([]);
+  } finally {
+    if (originalActive) {
+      await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-part-sets/${originalActive.id}/activate`, { data: { locale } });
+    }
     await api.dispose();
   }
 });

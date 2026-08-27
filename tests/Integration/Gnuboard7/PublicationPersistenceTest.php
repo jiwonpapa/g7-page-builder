@@ -241,6 +241,84 @@ final class PublicationPersistenceTest extends TestCase
         self::assertSame(2, $idempotent->revision);
     }
 
+    public function test_site_part_sets_keep_the_legacy_pair_and_switch_only_to_a_fully_published_pair(): void
+    {
+        $service = new SitePartService(new EloquentSitePartRepository, new SitePartHtmlCompiler);
+        $shell = $this->siteShellService()->get('ko')->shell;
+        $defaultHeader = $service->bootstrap('header', 'ko', $shell, 1);
+        $defaultFooter = $service->bootstrap('footer', 'ko', $shell, 1);
+        $service->publish('header', 'ko', $defaultHeader->lockVersion, 1);
+        $service->publish('footer', 'ko', $defaultFooter->lockVersion, 1);
+
+        $campaign = $service->createSet('캠페인 세트', 'ko', $shell, 2);
+        self::assertFalse($campaign->isActive);
+        self::assertFalse($campaign->isReady());
+        self::assertNotSame($defaultHeader->document->sitePartId, $campaign->header->document->sitePartId);
+        self::assertNotSame($defaultFooter->document->sitePartId, $campaign->footer->document->sitePartId);
+        self::assertCount(2, $service->listSets('ko'));
+
+        try {
+            $service->activateSet($campaign->id, 'ko', 2);
+            self::fail('An unpublished Header/Footer pair must not become active.');
+        } catch (\InvalidArgumentException $exception) {
+            self::assertSame('Header와 Footer를 모두 발행한 뒤 사용할 수 있습니다.', $exception->getMessage());
+        }
+
+        $campaignHeader = $service->publish(
+            'header',
+            'ko',
+            $campaign->header->lockVersion,
+            2,
+            $campaign->id,
+        );
+        $campaignFooter = $service->publish(
+            'footer',
+            'ko',
+            $campaign->footer->lockVersion,
+            2,
+            $campaign->id,
+        );
+        $activated = $service->activateSet($campaign->id, 'ko', 2);
+
+        self::assertTrue($activated->isActive);
+        self::assertTrue($activated->isReady());
+        self::assertSame($campaignHeader->document->sitePartId, $service->published('header', 'ko')?->document->sitePartId);
+        self::assertSame($campaignFooter->document->sitePartId, $service->published('footer', 'ko')?->document->sitePartId);
+        self::assertSame(
+            ['기본 세트', '캠페인 세트'],
+            array_map(static fn ($set): string => $set->title, $service->listSets('ko')),
+        );
+    }
+
+    public function test_site_part_set_migration_preserves_the_legacy_header_and_footer_as_one_active_default_set(): void
+    {
+        $migration = require dirname(__DIR__, 3).'/database/migrations/2026_08_27_000014_add_site_part_sets.php';
+        $migration->down();
+        $now = new \DateTimeImmutable;
+        foreach (['header', 'footer'] as $index => $kind) {
+            $this->database->getConnection()->table('g7pb_site_parts')->insert([
+                'id' => sprintf('00000000-0000-4000-8000-%012d', $index + 1),
+                'kind' => $kind,
+                'locale' => 'ko',
+                'title' => '기본 '.$kind,
+                'lock_version' => 1,
+                'current_revision' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        $migration->up();
+        $sets = $this->database->getConnection()->table('g7pb_site_part_sets')->get();
+        $parts = $this->database->getConnection()->table('g7pb_site_parts')->get();
+
+        self::assertCount(1, $sets);
+        self::assertSame('기본 세트', $sets->first()->title);
+        self::assertSame(1, (int) $sets->first()->is_active);
+        self::assertCount(1, $parts->pluck('set_id')->unique());
+        self::assertSame($sets->first()->id, $parts->first()->set_id);
+    }
+
     public function test_public_site_shell_is_atomic_and_exposes_only_both_last_good_revisions(): void
     {
         $service = new SitePartService(new EloquentSitePartRepository, new SitePartHtmlCompiler);

@@ -597,6 +597,7 @@ describe('Puck editor surface contract', () => {
 
   it('shows builder-owned Header and Footer in the canvas and edits them without leaving the document work surface', async () => {
     const resource = (kind: 'header' | 'footer'): SitePartResource => ({
+      set_id: '123e4567-e89b-42d3-a456-426614174099',
       title: kind === 'header' ? '사이트 Header' : '사이트 Footer',
       document: {
         schema_version: 'g7-page-builder/site-part/v1',

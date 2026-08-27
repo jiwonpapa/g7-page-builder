@@ -29,7 +29,11 @@ G7 코어·활성 템플릿·기존 페이지 관리 파일과 DB는 수정하�
 
 Header·Footer는 비즈니스·미니멀/컴팩트·커뮤니티 내장 프리셋으로 시작할 수 있습니다. 프리셋은 편집기 상태를 바꾸는 초안일 뿐이며, 모든 문구·이미지·라우트는 적용 후에도 편집할 수 있습니다.
 
+언어별로 이름이 있는 Header·Footer 세트를 여러 개 보관할 수 있습니다. 각 세트는 Header와 Footer의 독립 revision을 한 쌍으로 묶으며, 둘 다 한 번 이상 발행된 세트만 `사용 중`으로 원자 전환할 수 있습니다. 기존 단일 Site Part는 마이그레이션에서 활성 `기본 세트`로 보존합니다. 활성 세트를 바꿔도 다른 세트의 초안·발행 이력은 삭제하지 않습니다.
+
 문서 편집 캔버스는 Header·Page·Footer를 한 화면에 표시합니다. `builder`의 Header·Footer는 같은 작업 화면에서 편집할 수 있고, `template` 공통영역은 G7 소유임을 명시한 읽기 전용 영역으로 표시합니다. `none`에는 공통영역이 나타나지 않습니다.
+
+최상위 관리자 진입점 `/modules/jiwonpapa-page_builder/admin/site-parts`는 세트 목록과 선택한 Header·Footer 편집기를 한 화면에 표시합니다. 기존 `/site-parts/{header|footer}`는 호환 진입점으로 유지하지만 문서함의 기본 동선에서는 노출하지 않습니다.
 
 Site Part 변경은 `builder` 공개 페이지와 공통 셸 API의 전체 표현 ETag에 반영됩니다. 활성 User Template은 다음 route 전환부터 마지막 정상 발행본을 받습니다.
 
@@ -46,6 +50,8 @@ Site Part 변경은 `builder` 공개 페이지와 공통 셸 API의 전체 표�
 - `GET /api/modules/jiwonpapa-page_builder/admin/site-shell?locale=ko`
 - `PUT /api/modules/jiwonpapa-page_builder/admin/site-shell`
 - `GET|POST|PUT /api/modules/jiwonpapa-page_builder/admin/site-parts/{header|footer}/**`
+- `GET|POST /api/modules/jiwonpapa-page_builder/admin/site-part-sets`
+- `POST /api/modules/jiwonpapa-page_builder/admin/site-part-sets/{uuid}/activate`
 - `GET /api/modules/jiwonpapa-page_builder/public/site-shell?locale=ko`
 - 조회는 documents.read, 저장은 documents.manage 권한을 사용합니다.
 - 로고는 모듈 전용 MediaPort 업로드 결과를 사용하며 외부 HTTP/HTTPS URL도 허용합니다.

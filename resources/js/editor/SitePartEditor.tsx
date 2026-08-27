@@ -36,7 +36,9 @@ import {
 interface SitePartEditorProps {
   kind: SitePartKind;
   locale: string;
+  setId?: string;
   embedded?: boolean;
+  paired?: boolean;
   iframeEnabled?: boolean;
   onBack?: () => void;
   onChanged?: (resource: SitePartResource) => void;
@@ -212,7 +214,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';
 }
 
-export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled = true, onBack, onChanged }: SitePartEditorProps): React.ReactElement {
+export function SitePartEditor({ kind, locale, setId, embedded = false, paired = false, iframeEnabled = true, onBack, onChanged }: SitePartEditorProps): React.ReactElement {
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const config = useMemo(() => sitePartConfigFor(kind), [kind]);
   const overrides = useMemo(() => ({
@@ -241,14 +243,14 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
   useEffect(() => {
     let active = true;
     setBusy(true);
-    api.getSitePart(kind, locale).catch((error: unknown) => {
-      if (error instanceof PageBuilderApiError && error.status === 404) return api.bootstrapSitePart(kind, locale);
+    api.getSitePart(kind, locale, setId).catch((error: unknown) => {
+      if (!setId && error instanceof PageBuilderApiError && error.status === 404) return api.bootstrapSitePart(kind, locale);
       throw error;
     }).then((next) => { if (active) apply(next); })
       .catch((error: unknown) => { if (active) setMessage(errorMessage(error)); })
       .finally(() => { if (active) setBusy(false); });
     return () => { active = false; };
-  }, [api, apply, kind, locale]);
+  }, [api, apply, kind, locale, setId]);
 
   const save = useCallback(async (): Promise<SitePartResource | null> => {
     const current = resourceRef.current;
@@ -257,7 +259,7 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
     setMessage(null);
     try {
       const document = sitePartPuckToCanonical(dataRef.current, current.document);
-      const saved = await api.saveSitePart(kind, current.title, document, current.lock_version);
+      const saved = await api.saveSitePart(kind, current.title, document, current.lock_version, setId);
       apply(saved);
       return saved;
     } catch (error) {
@@ -266,7 +268,7 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
     } finally {
       setBusy(false);
     }
-  }, [api, apply, kind]);
+  }, [api, apply, kind, setId]);
 
   useEffect(() => {
     if (!dirty || busy) return undefined;
@@ -280,7 +282,7 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
     setBusy(true);
     setMessage(null);
     try {
-      apply(await api.publishSitePart(kind, locale, saved.lock_version));
+      apply(await api.publishSitePart(kind, locale, saved.lock_version, setId));
       setMessage(`${kind === 'header' ? 'Header' : 'Footer'} 발행을 완료했습니다.`);
     } catch (error) {
       setMessage(errorMessage(error));
@@ -307,9 +309,9 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
     setMessage('프리셋을 적용했습니다. 라우트와 문구를 확인한 뒤 저장·발행하세요.');
   };
 
-  return <main className={`g7pb-root g7pb-site-part-editor ${embedded ? 'is-embedded' : ''}`} data-testid="page-builder-site-part-editor" data-kind={kind}>
+  return <section className={`g7pb-root g7pb-site-part-editor ${embedded ? 'is-embedded' : ''} ${paired ? 'is-paired' : ''}`} data-testid="page-builder-site-part-editor" data-kind={kind}>
     <header className="g7pb-command-bar">
-      <div className="g7pb-command-bar__identity">{embedded ? <button type="button" className="g7pb-icon-link" aria-label="페이지 편집으로 돌아가기" onClick={onBack}><ArrowLeft size={18} /></button> : <a href={PAGE_BUILDER_MANAGER_PATH} className="g7pb-icon-link" aria-label="문서함으로 돌아가기"><ArrowLeft size={18} /></a>}<div><p>Global Site Part</p><strong>{kind === 'header' ? 'Header 편집' : 'Footer 편집'}</strong></div></div>
+      <div className="g7pb-command-bar__identity">{paired ? null : embedded ? <button type="button" className="g7pb-icon-link" aria-label="페이지 편집으로 돌아가기" onClick={onBack}><ArrowLeft size={18} /></button> : <a href={PAGE_BUILDER_MANAGER_PATH} className="g7pb-icon-link" aria-label="문서함으로 돌아가기"><ArrowLeft size={18} /></a>}<div><p>{paired ? '공통 영역' : 'Global Site Part'}</p><strong>{kind === 'header' ? 'Header 편집' : 'Footer 편집'}</strong></div></div>
       <div className="g7pb-command-bar__actions">
         <span className="g7pb-status" data-state={dirty ? 'dirty' : 'saved'}>{dirty ? '저장할 변경 있음' : resource?.status === 'published' ? '발행됨' : '저장됨'}</span>
         <button type="button" className="g7pb-button g7pb-button--quiet" disabled={busy || !resource} onClick={() => void save()}><Save size={17} /> 저장</button>
@@ -323,5 +325,5 @@ export function SitePartEditor({ kind, locale, embedded = false, iframeEnabled =
       <div className="g7pb-site-part-device-legend" aria-hidden="true"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>상단 기기 버튼으로 반응형 화면을 확인하세요.</span></div>
       <Puck config={config} data={data} height="100%" iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ itemSelector: data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null, viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} overrides={overrides} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
     </div> : null}
-  </main>;
+  </section>;
 }

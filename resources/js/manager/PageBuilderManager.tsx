@@ -12,7 +12,6 @@ import {
   Inbox,
   MoreHorizontal,
   PackagePlus,
-  PanelBottom,
   PanelTop,
   Pencil,
   Settings,
@@ -891,10 +890,8 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             data-testid="page-builder-manager-block-packs" onClick={openBlockPacks}>
             블록 라이브러리
           </button>
-          <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-site-header"
-            href="/modules/jiwonpapa-page_builder/admin/site-parts/header"><PanelTop size={17} /> Header 편집</a>
-          <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-site-footer"
-            href="/modules/jiwonpapa-page_builder/admin/site-parts/footer"><PanelBottom size={17} /> Footer 편집</a>
+          <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-manager-site-parts"
+            href="/modules/jiwonpapa-page_builder/admin/site-parts"><PanelTop size={17} /> 헤더·푸터</a>
           <button className="g7pb-button g7pb-button--quiet" type="button"
             data-testid="page-builder-manager-create" onClick={() => setCreateDialogOpen(true)}>
             빈 페이지

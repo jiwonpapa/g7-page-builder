@@ -23,7 +23,7 @@ function requirePattern(errors, source, pattern, message) {
 
 export async function validateEditorAcceptanceContract(root) {
   const errors = [];
-  const [packageSource, makefile, coordinationHarness, spec, fixture, playwrightConfig, richTextSource, adapterSource, canvasSource, canvasContextSource, viewportPolicySource, layoutSpec] = await Promise.all([
+  const [packageSource, makefile, coordinationHarness, spec, fixture, playwrightConfig, richTextSource, adapterSource, canvasSource, canvasContextSource, viewportPolicySource, layoutSpec, sitePartSpec, sitePartEditorSource, sitePartResponsiveSource, sitePartSchema, sitePartCompiler] = await Promise.all([
     text(root, 'package.json'),
     text(root, 'Makefile'),
     text(root, 'scripts/coord-harness.sh'),
@@ -36,6 +36,11 @@ export async function validateEditorAcceptanceContract(root) {
     text(root, 'resources/js/editor/canvasContextState.ts'),
     text(root, 'resources/js/editor/editorViewportPolicy.ts'),
     text(root, 'tests/E2E/editorLayoutParity.spec.ts'),
+    text(root, 'tests/E2E/sitePartLifecycle.spec.ts'),
+    text(root, 'resources/js/editor/SitePartEditor.tsx'),
+    text(root, 'resources/js/editor/sitePartResponsive.ts'),
+    text(root, 'schemas/site-part-document.schema.json'),
+    text(root, 'src/Application/Compilation/SitePartHtmlCompiler.php'),
   ]);
   const packageJson = JSON.parse(packageSource);
   const scripts = packageJson.scripts ?? {};
@@ -94,6 +99,20 @@ export async function validateEditorAcceptanceContract(root) {
     requirePattern(errors, playwrightConfig, new RegExp(`name:\\s*['"]${project}['"][\\s\\S]{0,100}testIgnore:\\s*PC_ONLY_EDITOR_TESTS`),
       `Playwright ${project} project는 실제 편집 E2E를 실행하면 안 됩니다.`);
   }
+
+  const responsiveSitePartEvidence = [
+    [sitePartResponsiveSource, /viewportFromWidth[\s\S]*?width > 899[\s\S]*?width <= 520/, 'Site Part 기기 폭은 PC·태블릿·모바일 단일 계약으로 분류해야 합니다.'],
+    [sitePartResponsiveSource, /resolveHeaderPresentation[\s\S]*?overrides\.tablet[\s\S]*?overrides\.mobile/, 'Header 표시값은 PC→태블릿→모바일 순서로 상속해야 합니다.'],
+    [sitePartResponsiveSource, /resetResponsiveViewport[\s\S]*?delete next\[viewport\]/, '기기 설정 초기화는 선택한 화면 재정의만 제거해야 합니다.'],
+    [sitePartEditorSource, /usePuck<Config<SitePartComponents>>\(\)[\s\S]*?appState\.ui\.viewports\.current\.width/, '기기별 표시 필드는 실제 Puck viewport 상태를 사용해야 합니다.'],
+    [sitePartEditorSource, /page-builder-responsive-reset[\s\S]*?sheet-bottom/, '기기별 표시 UI에 초기화와 하단 시트 메뉴가 필요합니다.'],
+    [sitePartSchema, /headerResponsiveOverride[\s\S]*?additionalProperties[\s\S]*?false[\s\S]*?sheet-bottom/, 'Site Part schema가 임의 스타일을 막고 하단 시트 enum을 허용해야 합니다.'],
+    [sitePartCompiler, /COMPILER_VERSION = '0\.5\.0'[\s\S]*?data-g7pb-tablet-density[\s\S]*?data-g7pb-mobile-menu-style/, '발행 컴파일러가 새 반응형 계약과 compiler version을 출력해야 합니다.'],
+    [sitePartSpec, /page-builder-responsive-menu-style[\s\S]*?selectOption\('sheet-bottom'\)[\s\S]*?page-builder-responsive-reset/, 'Site Part E2E가 실제 viewport 설정 변경과 초기화를 검증해야 합니다.'],
+    [sitePartSpec, /data-g7pb-mobile-menu-style[\s\S]*?sheet-bottom[\s\S]*?drawerBox[\s\S]*?viewportSize/, 'Site Part E2E가 공개 하단 시트의 실제 geometry를 검증해야 합니다.'],
+    [sitePartSpec, /page-builder-responsive-navigation[\s\S]*?selectOption\('false'\)[\s\S]*?footerNavigation[\s\S]*?toBeHidden/, 'Footer E2E가 모바일 메뉴 표시 재정의를 실제 화면에서 검증해야 합니다.'],
+  ];
+  for (const [source, pattern, message] of responsiveSitePartEvidence) requirePattern(errors, source, pattern, message);
 
   const requiredEvidence = [
     [/test\.describe\.configure\(\{\s*retries:\s*0\s*\}\)/, '전용 E2E는 retries: 0으로 실행해야 합니다.'],

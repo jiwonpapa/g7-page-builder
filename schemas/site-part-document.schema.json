@@ -61,6 +61,42 @@
         }
       }
     },
+    "headerResponsiveOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "density": { "enum": ["compact", "comfortable", "spacious"] },
+        "alignment": { "enum": ["start", "center", "spread"] },
+        "show_cta": { "type": "boolean" },
+        "mobile_menu_style": { "enum": ["dropdown", "drawer-left", "drawer-right", "sheet-bottom"] }
+      }
+    },
+    "headerResponsive": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tablet": { "$ref": "#/$defs/headerResponsiveOverride" },
+        "mobile": { "$ref": "#/$defs/headerResponsiveOverride" }
+      }
+    },
+    "footerResponsiveOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "density": { "enum": ["compact", "comfortable", "spacious"] },
+        "alignment": { "enum": ["start", "center"] },
+        "show_navigation": { "type": "boolean" },
+        "columns": { "enum": [1, 2, 4] }
+      }
+    },
+    "footerResponsive": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tablet": { "$ref": "#/$defs/footerResponsiveOverride" },
+        "mobile": { "$ref": "#/$defs/footerResponsiveOverride" }
+      }
+    },
     "baseBlock": {
       "type": "object",
       "required": ["instance_id", "type", "block_version", "props", "slots"],
@@ -96,7 +132,8 @@
                 "navigation": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/navigationLink" } },
                 "cta": { "anyOf": [{ "$ref": "#/$defs/leafLink" }, { "type": "null" }] },
                 "mobile_menu": { "type": "boolean" },
-                "mobile_menu_style": { "enum": ["dropdown", "drawer-left", "drawer-right"] }
+                "mobile_menu_style": { "enum": ["dropdown", "drawer-left", "drawer-right", "sheet-bottom"] },
+                "responsive": { "$ref": "#/$defs/headerResponsive" }
               }
             }
           }
@@ -148,7 +185,8 @@
                 "brand_name": { "type": "string", "minLength": 1, "maxLength": 120 },
                 "home_url": { "$ref": "#/$defs/safeUrl" },
                 "navigation": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/leafLink" } },
-                "footer_text": { "type": "string", "maxLength": 500 }
+                "footer_text": { "type": "string", "maxLength": 500 },
+                "responsive": { "$ref": "#/$defs/footerResponsive" }
               }
             }
           }
@@ -187,7 +225,8 @@
                     }
                   }
                 },
-                "legal_text": { "type": "string", "maxLength": 500 }
+                "legal_text": { "type": "string", "maxLength": 500 },
+                "responsive": { "$ref": "#/$defs/footerResponsive" }
               }
             }
           }

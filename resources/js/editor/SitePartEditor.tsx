@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Puck, registerOverlayPortal, type Config, type Viewports } from '@puckeditor/core';
+import { ActionBar, Puck, registerOverlayPortal, type Config, type Field, usePuck, type Viewports } from '@puckeditor/core';
 import {
   ArrowLeft,
   Check,
@@ -33,6 +33,17 @@ import {
   type SitePartPuckData,
   sitePartPuckToCanonical,
 } from './sitePartDocumentAdapter';
+import {
+  type FooterResponsiveOverride,
+  type FooterResponsiveOverrides,
+  type HeaderResponsiveOverride,
+  type HeaderResponsiveOverrides,
+  resolveFooterPresentation,
+  resolveHeaderPresentation,
+  resetResponsiveViewport,
+  type SitePartResponsiveViewport,
+  viewportFromWidth,
+} from './sitePartResponsive';
 
 interface SitePartEditorProps {
   kind: SitePartKind;
@@ -51,6 +62,96 @@ const VIEWPORTS: Viewports = [
   { width: 1280, height: 'auto', label: 'PC', icon: 'Monitor' },
 ];
 
+function updateResponsiveValue<T extends object>(
+  overrides: { tablet?: T; mobile?: T },
+  viewport: SitePartResponsiveViewport,
+  key: keyof T,
+  value: unknown,
+): { tablet?: T; mobile?: T } {
+  const current = { ...(overrides[viewport] ?? {}) } as T;
+  if (value === '' || value === 'inherit') delete current[key];
+  else current[key] = value as T[keyof T];
+  const next = { ...overrides };
+  if (Object.keys(current).length === 0) delete next[viewport];
+  else next[viewport] = current;
+  return next;
+}
+
+function SitePartResponsiveField({
+  kind,
+  value,
+  onChange,
+  readOnly,
+}: {
+  kind: SitePartKind;
+  value: HeaderResponsiveOverrides | FooterResponsiveOverrides | undefined;
+  onChange: (next: HeaderResponsiveOverrides | FooterResponsiveOverrides) => void;
+  readOnly?: boolean;
+}): React.ReactElement {
+  const { appState } = usePuck<Config<SitePartComponents>>();
+  const viewport = viewportFromWidth(appState.ui.viewports.current.width);
+  const overrides = value ?? {};
+
+  if (viewport === 'desktop') {
+    return <div className="g7pb-site-part-responsive-field is-desktop" data-testid="page-builder-site-part-responsive">
+      <strong>PC 기본값</strong>
+      <p>PC에서는 위 기본 설정을 편집합니다. 태블릿·모바일 버튼을 누르면 해당 화면만 재정의할 수 있습니다.</p>
+    </div>;
+  }
+
+  const current = overrides[viewport];
+  const update = (key: string, next: unknown): void => {
+    if (kind === 'header') {
+      onChange(updateResponsiveValue(overrides as HeaderResponsiveOverrides, viewport, key as keyof HeaderResponsiveOverride, next));
+      return;
+    }
+    onChange(updateResponsiveValue(overrides as FooterResponsiveOverrides, viewport, key as keyof FooterResponsiveOverride, next));
+  };
+  const reset = (): void => onChange(resetResponsiveViewport(overrides, viewport));
+
+  return <div className="g7pb-site-part-responsive-field" data-testid="page-builder-site-part-responsive" data-viewport={viewport}>
+    <header><div><strong>{viewport === 'tablet' ? '태블릿' : '모바일'} 표시</strong><span>{current ? '재정의됨' : '상위 화면 상속'}</span></div>
+      <button type="button" disabled={readOnly || !current} onClick={reset} data-testid="page-builder-responsive-reset">이 화면 초기화</button></header>
+    <label><span>간격</span><select disabled={readOnly} value={current?.density ?? ''} onChange={(event) => update('density', event.currentTarget.value)} data-testid="page-builder-responsive-density">
+      <option value="">상속</option><option value="compact">좁게</option><option value="comfortable">기본</option><option value="spacious">넓게</option>
+    </select></label>
+    <label><span>정렬</span><select disabled={readOnly} value={current?.alignment ?? ''} onChange={(event) => update('alignment', event.currentTarget.value)} data-testid="page-builder-responsive-alignment">
+      <option value="">상속</option><option value="start">왼쪽</option><option value="center">가운데</option>{kind === 'header' ? <option value="spread">양쪽</option> : null}
+    </select></label>
+    {kind === 'header' ? <>
+      <label><span>강조 버튼</span><select disabled={readOnly} value={typeof (current as HeaderResponsiveOverride | undefined)?.showCta === 'boolean' ? String((current as HeaderResponsiveOverride).showCta) : 'inherit'} onChange={(event) => update('showCta', event.currentTarget.value === 'inherit' ? 'inherit' : event.currentTarget.value === 'true')} data-testid="page-builder-responsive-cta">
+        <option value="inherit">상속</option><option value="true">표시</option><option value="false">숨김</option>
+      </select></label>
+      <label><span>모바일 메뉴</span><select disabled={readOnly} value={(current as HeaderResponsiveOverride | undefined)?.mobileMenuStyle ?? ''} onChange={(event) => update('mobileMenuStyle', event.currentTarget.value)} data-testid="page-builder-responsive-menu-style">
+        <option value="">상속</option><option value="drawer-right">오른쪽 패널</option><option value="drawer-left">왼쪽 패널</option><option value="dropdown">헤더 아래</option><option value="sheet-bottom">하단 시트</option>
+      </select></label>
+    </> : <>
+      <label><span>하단 메뉴</span><select disabled={readOnly} value={typeof (current as FooterResponsiveOverride | undefined)?.showNavigation === 'boolean' ? String((current as FooterResponsiveOverride).showNavigation) : 'inherit'} onChange={(event) => update('showNavigation', event.currentTarget.value === 'inherit' ? 'inherit' : event.currentTarget.value === 'true')} data-testid="page-builder-responsive-navigation">
+        <option value="inherit">상속</option><option value="true">표시</option><option value="false">숨김</option>
+      </select></label>
+      <label><span>메뉴 열 수</span><select disabled={readOnly} value={(current as FooterResponsiveOverride | undefined)?.columns ?? ''} onChange={(event) => update('columns', event.currentTarget.value === '' ? '' : Number(event.currentTarget.value))} data-testid="page-builder-responsive-columns">
+        <option value="">상속</option><option value="1">1열</option><option value="2">2열</option><option value="4">4열</option>
+      </select></label>
+    </>}
+  </div>;
+}
+
+function createHeaderResponsiveField(): Field<HeaderResponsiveOverrides | undefined> {
+  return {
+    type: 'custom',
+    label: '기기별 표시',
+    render: ({ value, onChange, readOnly }) => <SitePartResponsiveField kind="header" value={value} onChange={(next) => onChange(next as HeaderResponsiveOverrides)} readOnly={readOnly} />,
+  };
+}
+
+function createFooterResponsiveField(): Field<FooterResponsiveOverrides | undefined> {
+  return {
+    type: 'custom',
+    label: '기기별 표시',
+    render: ({ value, onChange, readOnly }) => <SitePartResponsiveField kind="footer" value={value} onChange={(next) => onChange(next as FooterResponsiveOverrides)} readOnly={readOnly} />,
+  };
+}
+
 export function HeaderSystemControlsPreview(): React.ReactElement {
   const prevent = (event: React.SyntheticEvent): void => event.preventDefault();
   return <nav className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls>
@@ -65,6 +166,40 @@ export function HeaderSystemControlsPreview(): React.ReactElement {
   </nav>;
 }
 
+function headerResponsiveAttributes(props: HeaderNavigationProps): Record<string, string> {
+  const responsiveOverrides = props.responsiveOverrides ?? {};
+  const tablet = resolveHeaderPresentation(props.mobileMenuStyle, responsiveOverrides, 'tablet');
+  const mobile = resolveHeaderPresentation(props.mobileMenuStyle, responsiveOverrides, 'mobile');
+  return {
+    'data-g7pb-tablet-density': tablet.density,
+    'data-g7pb-tablet-alignment': tablet.alignment,
+    'data-g7pb-tablet-cta': tablet.showCta ? 'show' : 'hide',
+    'data-g7pb-tablet-menu-style': tablet.mobileMenuStyle,
+    'data-g7pb-mobile-density': mobile.density,
+    'data-g7pb-mobile-alignment': mobile.alignment,
+    'data-g7pb-mobile-cta': mobile.showCta ? 'show' : 'hide',
+    'data-g7pb-mobile-menu-style': mobile.mobileMenuStyle,
+  };
+}
+
+function footerResponsiveAttributes(
+  overrides: FooterResponsiveOverrides,
+  desktopColumns: 1 | 2 | 4,
+): Record<string, string> {
+  const tablet = resolveFooterPresentation(desktopColumns, overrides, 'tablet');
+  const mobile = resolveFooterPresentation(desktopColumns, overrides, 'mobile');
+  return {
+    'data-g7pb-tablet-density': tablet.density,
+    'data-g7pb-tablet-alignment': tablet.alignment,
+    'data-g7pb-tablet-navigation': tablet.showNavigation ? 'show' : 'hide',
+    'data-g7pb-tablet-columns': String(tablet.columns),
+    'data-g7pb-mobile-density': mobile.density,
+    'data-g7pb-mobile-alignment': mobile.alignment,
+    'data-g7pb-mobile-navigation': mobile.showNavigation ? 'show' : 'hide',
+    'data-g7pb-mobile-columns': String(mobile.columns),
+  };
+}
+
 function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactElement | null {
   const menuId = `g7pb-preview-mobile-menu-${useId().replaceAll(':', '')}`;
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -72,8 +207,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
   const [overlayHost, setOverlayHost] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState<Record<number, boolean>>({});
-  const drawer = props.mobileMenuStyle !== 'dropdown';
-  const direction = props.mobileMenuStyle === 'drawer-left' ? '왼쪽' : props.mobileMenuStyle === 'drawer-right' ? '오른쪽' : '아래';
+  const responsiveAttributes = headerResponsiveAttributes(props);
 
   const close = useCallback((restoreFocus = false): void => {
     setOpen(false);
@@ -119,7 +253,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
   if (!props.mobileMenu) return null;
 
   const overlay = <>
-    {drawer ? <button
+    <button
       className="g7pb-mobile-menu__backdrop"
       type="button"
       aria-label="모바일 메뉴 닫기"
@@ -130,7 +264,8 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
         event.stopPropagation();
         close(true);
       }}
-    /> : null}
+      {...responsiveAttributes}
+    />
     <nav
       id={menuId}
       className={`g7pb-mobile-menu g7pb-mobile-menu--preview g7pb-mobile-menu--${props.mobileMenuStyle}`}
@@ -138,8 +273,9 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
       data-g7pb-preview-mobile-menu
       data-g7pb-menu-style={props.mobileMenuStyle}
       hidden={!open}
+      {...responsiveAttributes}
     >
-      {drawer ? <button
+      <button
         className="g7pb-mobile-menu__close"
         type="button"
         aria-label="모바일 메뉴 닫기"
@@ -149,7 +285,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
           event.stopPropagation();
           close(true);
         }}
-      >×</button> : null}
+      >×</button>
       <ul>{props.navigation.map((item, index) => {
         const submenuId = `${menuId}-submenu-${index}`;
         const submenuOpen = openSubmenus[index] === true;
@@ -187,7 +323,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
       type="button"
       aria-controls={menuId}
       aria-expanded={open}
-      aria-label={`${direction} 모바일 메뉴 ${open ? '닫기' : '열기'}`}
+      aria-label={`모바일 메뉴 ${open ? '닫기' : '열기'}`}
       data-g7pb-preview-menu-toggle
       onClick={(event) => {
         event.preventDefault();
@@ -210,7 +346,7 @@ export function HeaderNavigationPreview(props: HeaderNavigationProps): React.Rea
     </li>
   ))}</ul></nav>;
   return (
-    <header className={`g7pb-site-header ${props.sticky ? 'is-sticky' : ''} ${props.variant === 'transparent' ? 'is-transparent' : ''}`}>
+    <header className={`g7pb-site-header ${props.sticky ? 'is-sticky' : ''} ${props.variant === 'transparent' ? 'is-transparent' : ''}`} {...headerResponsiveAttributes(props)}>
       <div className="g7pb-site-header__inner">
         <a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>
           {props.logoUrl ? <img src={props.logoUrl} alt={props.brandName} /> : <span data-g7pb-inline-field="brandName">{props.brandName}</span>}
@@ -234,14 +370,14 @@ export function AnnouncementPreview(props: AnnouncementProps): React.ReactElemen
 }
 
 export function FooterSimplePreview(props: FooterSimpleProps): React.ReactElement {
-  return <footer className="g7pb-site-footer"><div className="g7pb-site-footer__top">
+  return <footer className="g7pb-site-footer" {...footerResponsiveAttributes(props.responsiveOverrides ?? {}, 2)}><div className="g7pb-site-footer__top">
     <a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()} data-g7pb-inline-field="brandName">{props.brandName}</a>
     <nav aria-label="하단 메뉴"><ul>{props.navigation.map((item, index) => <li key={`${item.label}-${index}`}><a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}</a></li>)}</ul></nav>
   </div>{props.footerText ? <p className="g7pb-site-footer__legal" data-g7pb-inline-field="footerText">{props.footerText}</p> : null}</footer>;
 }
 
 export function FooterColumnsPreview(props: FooterColumnsProps): React.ReactElement {
-  return <footer className="g7pb-site-footer g7pb-site-footer--columns"><div className="g7pb-site-footer__columns">
+  return <footer className="g7pb-site-footer g7pb-site-footer--columns" {...footerResponsiveAttributes(props.responsiveOverrides ?? {}, 4)}><div className="g7pb-site-footer__columns">
     <div><a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>{props.brandName}</a></div>
     {props.columns.map((column, index) => <section key={`${column.heading}-${index}`}><h2>{column.heading}</h2><ul>{column.links.map((link, linkIndex) => <li key={`${link.label}-${linkIndex}`}><a href={safeSitePartHref(link.url)} onClick={(event) => event.preventDefault()}>{link.label}</a></li>)}</ul></section>)}
   </div>{props.legalText ? <p className="g7pb-site-footer__legal">{props.legalText}</p> : null}</footer>;
@@ -296,11 +432,53 @@ function SitePartPresetBar({ kind, onApply }: { kind: SitePartKind; onApply: (pr
   </section>;
 }
 
+function SitePartPuckShell({ children }: { children: React.ReactNode }): React.ReactElement {
+  const { appState, dispatch } = usePuck<Config<SitePartComponents>>();
+  const currentViewportWidth = appState.ui.viewports.current.width;
+  const selectedItem = appState.ui.itemSelector;
+  const previousViewportWidth = useRef(currentViewportWidth);
+  const lastSelectedItem = useRef(selectedItem);
+
+  useEffect(() => {
+    if (selectedItem) lastSelectedItem.current = selectedItem;
+  }, [selectedItem]);
+
+  useEffect(() => {
+    if (previousViewportWidth.current === currentViewportWidth) return;
+    previousViewportWidth.current = currentViewportWidth;
+    const itemSelector = lastSelectedItem.current
+      ?? (appState.data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null);
+    if (!itemSelector) return;
+    dispatch({ type: 'setUi', ui: { itemSelector }, recordHistory: false });
+  }, [appState.data.content.length, currentViewportWidth, dispatch]);
+
+  return <>{children}</>;
+}
+
+function SitePartActionBar({
+  label,
+  children,
+  parentAction,
+}: {
+  label?: string;
+  children: React.ReactNode;
+  parentAction: React.ReactNode;
+}): React.ReactElement {
+  const { appState } = usePuck<Config<SitePartComponents>>();
+  const responsive = viewportFromWidth(appState.ui.viewports.current.width) !== 'desktop';
+  return <div className={`g7pb-site-part-action-bar${responsive ? ' is-responsive' : ''}`}>
+    <ActionBar>
+      <ActionBar.Group>{parentAction}{label ? <ActionBar.Label label={label} /> : null}</ActionBar.Group>
+      <ActionBar.Group>{children}</ActionBar.Group>
+    </ActionBar>
+  </div>;
+}
+
 export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents> {
   const all: Config<SitePartComponents>['components'] = {
     HeaderNavigation: {
       label: 'Header · 내비게이션',
-      defaultProps: { brandName: '사이트 이름', logoUrl: '', homeUrl: '/', variant: 'solid', sticky: true, navigation: [{ label: '소개', url: '/pages/about', children: [] }], ctaLabel: '문의하기', ctaUrl: '/pages/contact', mobileMenu: true, mobileMenuStyle: 'drawer-right' },
+      defaultProps: { brandName: '사이트 이름', logoUrl: '', homeUrl: '/', variant: 'solid', sticky: true, navigation: [{ label: '소개', url: '/pages/about', children: [] }], ctaLabel: '문의하기', ctaUrl: '/pages/contact', mobileMenu: true, mobileMenuStyle: 'drawer-right', responsiveOverrides: { tablet: { density: 'comfortable', alignment: 'spread', showCta: false, mobileMenuStyle: 'drawer-right' }, mobile: { density: 'compact', alignment: 'spread', showCta: false, mobileMenuStyle: 'drawer-right' } } },
       fields: {
         brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, logoUrl: createMediaField('로고 이미지'), homeUrl: createRouteUrlField('홈 연결'),
         variant: { type: 'radio', label: '배경', options: [{ label: '기본', value: 'solid' }, { label: '투명', value: 'transparent' }] }, sticky: { type: 'radio', label: '스크롤 고정', options: [{ label: '고정', value: true }, { label: '고정 안 함', value: false }] },
@@ -311,7 +489,8 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
         } },
         ctaLabel: { type: 'text', label: '강조 버튼 문구', contentEditable: true }, ctaUrl: createRouteUrlField('강조 버튼 연결'),
         mobileMenu: { type: 'radio', label: '모바일 메뉴', options: [{ label: '사용', value: true }, { label: '숨김', value: false }] },
-        mobileMenuStyle: { type: 'radio', label: '모바일 열림 방향', options: [{ label: '오른쪽', value: 'drawer-right' }, { label: '왼쪽', value: 'drawer-left' }, { label: '아래', value: 'dropdown' }] },
+        mobileMenuStyle: { type: 'radio', label: '기본 메뉴 방식', options: [{ label: '오른쪽', value: 'drawer-right' }, { label: '왼쪽', value: 'drawer-left' }, { label: '헤더 아래', value: 'dropdown' }, { label: '하단 시트', value: 'sheet-bottom' }] },
+        responsiveOverrides: createHeaderResponsiveField(),
       },
       render: (props) => <HeaderNavigationPreview {...props} />,
     },
@@ -323,17 +502,17 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
     },
     FooterSimple: {
       label: 'Footer · 기본',
-      defaultProps: { brandName: '사이트 이름', homeUrl: '/', navigation: [{ label: '소개', url: '/pages/about' }], footerText: '사이트 정보를 입력해 주세요.' },
-      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: createRouteUrlField('홈 연결'), navigation: { type: 'array', label: '하단 메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, url: createRouteUrlField('메뉴 연결') } }, footerText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
+      defaultProps: { brandName: '사이트 이름', homeUrl: '/', navigation: [{ label: '소개', url: '/pages/about' }], footerText: '사이트 정보를 입력해 주세요.', responsiveOverrides: { tablet: { density: 'comfortable', alignment: 'start', showNavigation: true, columns: 2 }, mobile: { density: 'compact', alignment: 'start', showNavigation: true, columns: 1 } } },
+      fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: createRouteUrlField('홈 연결'), navigation: { type: 'array', label: '하단 메뉴', min: 0, max: 10, defaultItemProps: (index) => ({ label: `메뉴 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름', contentEditable: true }, url: createRouteUrlField('메뉴 연결') } }, footerText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true }, responsiveOverrides: createFooterResponsiveField() },
       render: (props) => <FooterSimplePreview {...props} />,
     },
     FooterColumns: {
       label: 'Footer · 다단 메뉴',
-      defaultProps: { brandName: '사이트 이름', homeUrl: '/', columns: [{ heading: '서비스', links: [{ label: '소개', url: '/pages/about' }, { label: '문의', url: '/pages/contact' }] }], legalText: '사이트 정보를 입력해 주세요.' },
+      defaultProps: { brandName: '사이트 이름', homeUrl: '/', columns: [{ heading: '서비스', links: [{ label: '소개', url: '/pages/about' }, { label: '문의', url: '/pages/contact' }] }], legalText: '사이트 정보를 입력해 주세요.', responsiveOverrides: { tablet: { density: 'comfortable', alignment: 'start', showNavigation: true, columns: 2 }, mobile: { density: 'compact', alignment: 'start', showNavigation: true, columns: 1 } } },
       fields: { brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, homeUrl: createRouteUrlField('홈 연결'), columns: { type: 'array', label: '메뉴 그룹', min: 1, max: 4, defaultItemProps: (index) => ({ heading: `메뉴 ${index + 1}`, links: [{ label: '링크', url: '/' }] }), getItemSummary: (item) => item.heading, arrayFields: {
         heading: { type: 'text', label: '그룹 제목', contentEditable: true },
         links: { type: 'array', label: '그룹 링크', min: 0, max: 8, defaultItemProps: (index) => ({ label: `링크 ${index + 1}`, url: '/' }), getItemSummary: (item) => item.label, arrayFields: { label: { type: 'text', label: '이름' }, url: createRouteUrlField('하단 메뉴 연결') } },
-      } }, legalText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true } },
+      } }, legalText: { type: 'textarea', label: '법적·사업자 문구', contentEditable: true }, responsiveOverrides: createFooterResponsiveField() },
       render: (props) => <FooterColumnsPreview {...props} />,
     },
   };
@@ -355,7 +534,9 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   const overrides = useMemo(() => ({
     drawer: SitePartDrawer,
     drawerItem: SitePartDrawerItem,
-    headerActions: () => <span className="g7pb-site-part-header-help">블록 선택 후 우측에서 세부 설정</span>,
+    actionBar: SitePartActionBar,
+    headerActions: () => <span className="g7pb-site-part-header-help">PC 기본 편집 · 태블릿/모바일은 기기별 표시</span>,
+    puck: SitePartPuckShell,
   }), []);
   const [resource, setResource] = useState<SitePartResource | null>(null);
   const [data, setData] = useState<SitePartPuckData>({ root: { props: {} }, content: [] });
@@ -457,7 +638,7 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     {busy && !resource ? <div className="g7pb-loading">Site Part를 준비하는 중입니다.</div> : null}
     {resource ? <div className="g7pb-site-part-puck" aria-busy={busy}>
       <SitePartPresetBar kind={kind} onApply={applyPreset} />
-      <div className="g7pb-site-part-device-legend" aria-hidden="true"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>상단 기기 버튼으로 반응형 화면을 확인하세요.</span></div>
+      <div className="g7pb-site-part-device-legend"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>기기 버튼을 바꾸면 우측의 기기별 표시 설정도 함께 바뀝니다.</span></div>
       <Puck config={config} data={data} height="100%" iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ itemSelector: data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null, viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} overrides={overrides} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
     </div> : null}
   </section>;

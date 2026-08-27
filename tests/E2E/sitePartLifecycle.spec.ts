@@ -7,6 +7,10 @@ function sitePartPath(kind: SitePartKind): string {
   return `/modules/jiwonpapa-page_builder/admin/site-parts/${kind}`;
 }
 
+function visibleTestId(page: Page, testId: string): Locator {
+  return page.locator(`[data-testid="${testId}"]:visible`);
+}
+
 interface SitePartResource {
   set_id?: string | null;
   title: string;
@@ -166,6 +170,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     if (!seededNavigationBlock) throw new Error('Header navigation block is required for the Site Part E2E seed.');
     seededNavigationBlock.props.mobile_menu = true;
     seededNavigationBlock.props.mobile_menu_style = 'drawer-right';
+    delete seededNavigationBlock.props.responsive;
     const seededNavigation = Array.isArray(seededNavigationBlock.props.navigation)
       ? seededNavigationBlock.props.navigation as Array<Record<string, unknown>>
       : [];
@@ -180,7 +185,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     await expect(page.getByTestId('page-builder-site-part-editor')).toBeVisible();
     await expect(page.getByText('Header 편집', { exact: true })).toBeVisible();
     await expect(page.getByText('Header · 내비게이션', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('상단 기기 버튼으로 반응형 화면을 확인하세요.')).toBeVisible();
+    await expect(page.getByText('기기 버튼을 바꾸면 우측의 기기별 표시 설정도 함께 바뀝니다.')).toBeVisible();
     await expect(page.getByTestId('page-builder-site-part-presets')).toContainText('빠른 시작 프리셋');
     await expect(page.getByTestId('page-builder-site-part-presets').getByRole('button')).toHaveCount(3);
     const headerNavigationCard = page.locator('[data-testid="drawer-item:HeaderNavigation"]:visible');
@@ -204,6 +209,9 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     const canvas = page.frameLocator('iframe').first();
     expect(await canvas.locator('body').innerText()).toContain(originalBrand);
     await page.getByTitle('Switch to 모바일 viewport').click();
+    const responsiveField = visibleTestId(page, 'page-builder-site-part-responsive');
+    await expect(responsiveField).toHaveAttribute('data-viewport', 'mobile');
+    await expect(visibleTestId(page, 'page-builder-responsive-menu-style')).toHaveValue('drawer-right');
     const editorMenuToggle = canvas.locator('[data-g7pb-preview-menu-toggle]');
     const editorMobileMenu = canvas.locator('[data-g7pb-preview-mobile-menu]');
     await expect(editorMenuToggle).toBeVisible();
@@ -213,21 +221,27 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     await expect(editorMenuToggle).toHaveAttribute('aria-expanded', 'true');
     await expect(editorMobileMenu).toBeVisible();
     await expect(editorMobileMenu).toHaveClass(/g7pb-mobile-menu--drawer-right/);
-    await page.getByText('왼쪽', { exact: true }).last().click();
-    await expect(editorMobileMenu).toHaveClass(/g7pb-mobile-menu--drawer-left/);
+    await visibleTestId(page, 'page-builder-responsive-menu-style').selectOption('drawer-left');
+    await expect(editorMobileMenu).toHaveAttribute('data-g7pb-mobile-menu-style', 'drawer-left');
+    const editorFrameBox = await page.locator('iframe').first().boundingBox();
+    expect(editorFrameBox).not.toBeNull();
+    await expect.poll(async () => {
+      const drawerBox = await editorMobileMenu.boundingBox();
+      return drawerBox ? Math.abs(drawerBox.x - editorFrameBox!.x) : Number.POSITIVE_INFINITY;
+    }).toBeLessThanOrEqual(1);
+    await visibleTestId(page, 'page-builder-responsive-menu-style').selectOption('sheet-bottom');
+    await expect(editorMobileMenu).toHaveAttribute('data-g7pb-mobile-menu-style', 'sheet-bottom');
     await expect(editorMobileMenu).toBeVisible();
     await expect(editorMobileMenu).toContainText(mobileMenuLabel);
-    const editorFrameBox = await page.locator('iframe').first().boundingBox();
     const editorDrawerBox = await editorMobileMenu.boundingBox();
     const editorBackdrop = canvas.locator('[data-g7pb-preview-menu-backdrop]');
     const editorBackdropBox = await editorBackdrop.boundingBox();
-    expect(editorFrameBox).not.toBeNull();
     expect(editorDrawerBox).not.toBeNull();
     expect(editorBackdropBox).not.toBeNull();
-    expect(editorDrawerBox!.x).toBeLessThanOrEqual(editorFrameBox!.x + 1);
-    expect(Math.abs(editorDrawerBox!.y - editorFrameBox!.y)).toBeLessThanOrEqual(1);
-    expect(editorDrawerBox!.width).toBeLessThanOrEqual(editorFrameBox!.width * 0.9);
-    expect(editorDrawerBox!.height).toBeGreaterThanOrEqual(editorFrameBox!.height - 2);
+    expect(Math.abs(editorDrawerBox!.x - editorFrameBox!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs((editorDrawerBox!.y + editorDrawerBox!.height) - (editorFrameBox!.y + editorFrameBox!.height))).toBeLessThanOrEqual(2);
+    expect(editorDrawerBox!.width).toBeGreaterThanOrEqual(editorFrameBox!.width - 2);
+    expect(editorDrawerBox!.height).toBeLessThanOrEqual(editorFrameBox!.height * 0.8);
     expect(editorBackdropBox!.width).toBeGreaterThanOrEqual(editorFrameBox!.width - 2);
     expect(editorBackdropBox!.height).toBeGreaterThanOrEqual(editorFrameBox!.height - 2);
     const editorClose = canvas.locator('[data-g7pb-preview-menu-close]');
@@ -235,10 +249,18 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       const rect = element.getBoundingClientRect();
       return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === element;
     })).toBe(true);
-    await page.screenshot({ path: 'output/playwright/site-part-header-mobile-drawer-editor.png', fullPage: true });
+    await page.screenshot({ path: 'output/playwright/site-part-header-mobile-sheet-editor.png', fullPage: true });
     await canvas.locator('[data-g7pb-preview-menu-close]').click();
     await expect(editorMenuToggle).toHaveAttribute('aria-expanded', 'false');
     await expect(editorMobileMenu).toBeHidden();
+    await page.getByTitle('Switch to 태블릿 viewport').click();
+    await expect(responsiveField).toHaveAttribute('data-viewport', 'tablet');
+    await visibleTestId(page, 'page-builder-responsive-density').selectOption('spacious');
+    await visibleTestId(page, 'page-builder-responsive-alignment').selectOption('center');
+    await expect(canvas.locator('.g7pb-site-header')).toHaveAttribute('data-g7pb-tablet-density', 'spacious');
+    await visibleTestId(page, 'page-builder-responsive-reset').click();
+    await expect(visibleTestId(page, 'page-builder-responsive-density')).toHaveValue('');
+    await expect(canvas.locator('.g7pb-site-header')).toHaveAttribute('data-g7pb-tablet-density', 'comfortable');
     await page.getByTitle('Switch to PC viewport').click();
     await dragLibraryBlockBefore(page, 'Announcement', canvas.locator('.g7pb-site-header').first());
     await expect(canvas.locator('.g7pb-site-announcement')).toBeVisible();
@@ -260,7 +282,10 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     const published = await readOrBootstrap(api, 'header', locale);
     expect(published.status).toBe('published');
     expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.brand_name).toBe(changedBrand);
-    expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.mobile_menu_style).toBe('drawer-left');
+    expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.mobile_menu_style).toBe('drawer-right');
+    expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.responsive).toEqual({
+      mobile: { density: 'compact', alignment: 'spread', show_cta: false, mobile_menu_style: 'sheet-bottom' },
+    });
     const publishedNavigation = published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.navigation as Array<Record<string, unknown>>;
     expect(publishedNavigation[0]?.children).toEqual([{ label: childLabel, url: '/pages/features' }]);
     expect(published.document.blocks.some((block) => block.type === 'site.header.announcement-01')).toBe(true);
@@ -274,11 +299,13 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       await page.reload();
       await page.locator('[data-g7pb-menu-toggle]').click();
       const publicMobileMenu = page.locator('[data-g7pb-mobile-menu]');
-      await expect(publicMobileMenu).toHaveClass(/g7pb-mobile-menu--drawer-left/);
+      await expect(publicMobileMenu).toHaveAttribute('data-g7pb-mobile-menu-style', 'sheet-bottom');
+      await expect(publicMobileMenu).toHaveAttribute('data-g7pb-menu-style', 'sheet-bottom');
       await expect(page.locator('[data-g7pb-menu-backdrop]')).toBeVisible();
       const drawerBox = await publicMobileMenu.boundingBox();
       expect(drawerBox?.x ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
-      expect(drawerBox?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(page.viewportSize()!.width * 0.9);
+      expect(drawerBox?.width ?? 0).toBeGreaterThanOrEqual(page.viewportSize()!.width - 2);
+      expect(Math.abs((drawerBox?.y ?? 0) + (drawerBox?.height ?? 0) - page.viewportSize()!.height)).toBeLessThanOrEqual(2);
       const submenuToggle = page.locator('[data-g7pb-submenu-toggle]').first();
       await submenuToggle.click();
       await expect(submenuToggle).toHaveAttribute('aria-expanded', 'true');
@@ -297,10 +324,12 @@ test('opens the Footer as a separate visual Site Part with preview cards', async
   test.skip(testInfo.project.name !== 'desktop', 'Site Part interaction is covered once; page lifecycle owns all three viewports.');
   const token = await authenticate(context);
   const api = await adminApi(token);
+  let original: SitePartResource | null = null;
   try {
     await page.goto(sitePartPath('footer'));
     const locale = await page.getByTestId('page-builder-site-part-editor-root').getAttribute('data-locale') ?? 'ko';
     const resource = await readOrBootstrap(api, 'footer', locale);
+    original = resource;
     await expect(page.getByTestId('page-builder-site-part-editor')).toHaveAttribute('data-kind', 'footer');
     await expect(page.getByText('Footer 편집', { exact: true })).toBeVisible();
     await expect(page.getByTestId('page-builder-site-part-presets').getByRole('button')).toHaveCount(3);
@@ -310,9 +339,24 @@ test('opens the Footer as a separate visual Site Part with preview cards', async
     await expect(columnsCard).toHaveCount(1);
     await expect(simpleCard.locator('.g7pb-site-part-thumb')).toBeVisible();
     await expect(columnsCard.locator('.g7pb-site-part-thumb')).toBeVisible();
-    await expect(page.frameLocator('iframe').first().locator('.g7pb-site-footer')).toBeVisible();
+    const canvas = page.frameLocator('iframe').first();
+    const footer = canvas.locator('.g7pb-site-footer').first();
+    const footerNavigation = footer.locator('nav, .g7pb-site-footer__columns > section').first();
+    await expect(footer).toBeVisible();
+    await page.getByTitle('Switch to 모바일 viewport').click();
+    await expect(visibleTestId(page, 'page-builder-site-part-responsive')).toHaveAttribute('data-viewport', 'mobile');
+    await visibleTestId(page, 'page-builder-responsive-alignment').selectOption('center');
+    await visibleTestId(page, 'page-builder-responsive-navigation').selectOption('false');
+    await visibleTestId(page, 'page-builder-responsive-columns').selectOption('1');
+    await expect(footer).toHaveAttribute('data-g7pb-mobile-alignment', 'center');
+    await expect(footer).toHaveAttribute('data-g7pb-mobile-navigation', 'hide');
+    await expect(footerNavigation).toBeHidden();
+    await visibleTestId(page, 'page-builder-responsive-reset').click();
+    await expect(visibleTestId(page, 'page-builder-responsive-alignment')).toHaveValue('');
+    await expect(footerNavigation).toBeVisible();
     expect(resource.document.kind).toBe('footer');
   } finally {
+    if (original) await restoreAndPublish(api, 'footer', original);
     await api.dispose();
   }
 });

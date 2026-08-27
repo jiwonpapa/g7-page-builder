@@ -38,6 +38,15 @@ describe('SitePartDocument v1 schema', () => {
     expect(validate(document), JSON.stringify(validate.errors)).toBe(true);
   });
 
+  it('accepts typed viewport overrides and the mobile bottom sheet menu', () => {
+    const responsive = structuredClone(document);
+    (responsive.blocks[0]!.props as Record<string, unknown>).responsive = {
+      tablet: { density: 'comfortable', alignment: 'center', show_cta: true, mobile_menu_style: 'drawer-left' },
+      mobile: { density: 'compact', alignment: 'spread', show_cta: false, mobile_menu_style: 'sheet-bottom' },
+    };
+    expect(validate(responsive), JSON.stringify(validate.errors)).toBe(true);
+  });
+
   it('rejects third-level menus, executable routes, and arbitrary style fields', () => {
     const thirdLevel = structuredClone(document);
     (thirdLevel.blocks[0]!.props.navigation[0]!.children[0] as Record<string, unknown>).children = [{ label: '깊은 링크', url: '/deep' }];
@@ -50,5 +59,9 @@ describe('SitePartDocument v1 schema', () => {
     const arbitrary = structuredClone(document) as typeof document & { className?: string };
     arbitrary.className = 'fixed inset-0';
     expect(validate(arbitrary)).toBe(false);
+
+    const arbitraryResponsive = structuredClone(document);
+    (arbitraryResponsive.blocks[0]!.props as Record<string, unknown>).responsive = { mobile: { class_name: 'fixed', style: 'position:fixed' } };
+    expect(validate(arbitraryResponsive)).toBe(false);
   });
 });

@@ -100,11 +100,13 @@ import {
   visibleOwnerViewport,
 } from './editorOverlaySafeZone';
 import {
+  applyEditorContentPolicy,
   initialEditorCanvasWidth,
   PC_EDITOR_MIN_HOST_WIDTH,
   PC_EDITOR_VIEWPORT_WIDTH,
   PC_EDITOR_POLICY_NOTICE,
   resolveEditorViewportPolicy,
+  type EditorFieldContract,
   type EditorViewportPolicy,
 } from './editorViewportPolicy';
 
@@ -2888,13 +2890,22 @@ export function PuckEditorAdapter({
   }), [canvasViewportWidth, disabled, hostWidth]);
   const editingDisabled = !viewportPolicy.canEdit;
   const api = useMemo(() => new PageBuilderApiClient(), []);
-  const runtimePuckConfig = useMemo(() => ({
-    ...pageBuilderPuckConfig,
-    components: {
-      ...pageBuilderPuckConfig.components,
-      ...externalEditorComponents(),
-    },
-  }) as Config<EditorComponents, PageDesignProps>, []);
+  const runtimePuckConfig = useMemo(() => {
+    const baseConfig = {
+      ...pageBuilderPuckConfig,
+      components: {
+        ...pageBuilderPuckConfig.components,
+        ...externalEditorComponents(),
+      },
+    } as Config<EditorComponents, PageDesignProps>;
+    if (viewportPolicy.canEdit) return baseConfig;
+    const components = Object.fromEntries(Object.entries(baseConfig.components).map(([type, candidate]) => {
+      const component = candidate as typeof candidate & { fields?: Record<string, EditorFieldContract> };
+      if (!component.fields) return [type, component];
+      return [type, { ...component, fields: applyEditorContentPolicy(component.fields, false) }];
+    })) as Config<EditorComponents, PageDesignProps>['components'];
+    return { ...baseConfig, components };
+  }, [viewportPolicy.canEdit]);
   const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);

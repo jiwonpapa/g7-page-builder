@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyEditorContentPolicy,
   initialEditorCanvasWidth,
   MOBILE_PREVIEW_VIEWPORT_WIDTH,
   PC_EDITOR_MIN_HOST_WIDTH,
@@ -44,5 +45,31 @@ describe('editor viewport policy', () => {
       disabled: true,
       hostWidth: 1440,
     })).toMatchObject({ canEdit: false, hostSupported: true, mode: 'preview' });
+  });
+
+  it('turns every inline-editable root and nested field read-only in preview mode', () => {
+    const fields = {
+      title: { type: 'richtext', contentEditable: true },
+      items: {
+        type: 'array',
+        arrayFields: {
+          label: { type: 'text', contentEditable: true },
+          metadata: {
+            type: 'object',
+            objectFields: { summary: { type: 'textarea', contentEditable: true } },
+          },
+        },
+      },
+      fixed: { type: 'text', contentEditable: false },
+    };
+
+    expect(applyEditorContentPolicy(fields, true)).toBe(fields);
+    const previewFields = applyEditorContentPolicy(fields, false);
+    expect(previewFields).not.toBe(fields);
+    expect(previewFields.title.contentEditable).toBe(false);
+    expect(previewFields.items.arrayFields.label.contentEditable).toBe(false);
+    expect(previewFields.items.arrayFields.metadata.objectFields.summary.contentEditable).toBe(false);
+    expect(previewFields.fixed.contentEditable).toBe(false);
+    expect(fields.title.contentEditable).toBe(true);
   });
 });

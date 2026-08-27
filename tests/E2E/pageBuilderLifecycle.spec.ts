@@ -25,7 +25,6 @@ const MOBILE_EDITOR_BREAKPOINT = 900;
  */
 const PUCK_LEFT_SIDEBAR_OPEN = '[class*="PuckLayout--leftSideBarVisible"]';
 const PUCK_RIGHT_SIDEBAR_OPEN = '[class*="PuckLayout--rightSideBarVisible"]';
-const PUCK_ARRAY_ITEM_SUMMARY = '[class*="ArrayFieldItem-summary"]';
 const PUCK_NAV_ITEM_ACTIVE = 'NavItem--active';
 
 type BlockType =
@@ -993,30 +992,6 @@ async function selectAndEditHero(
   await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(subtitle);
 }
 
-async function revealFirstFeaturesItemEditors(page: Page): Promise<{ title: Locator; body: Locator }> {
-  await revealInspectorField(page, 'page-builder-block-container-width');
-  const inspectorItemsLabel = page.getByText('항목', { exact: true }).filter({ visible: true });
-  await expect(inspectorItemsLabel).toHaveCount(1);
-
-  const summary = page.locator(`${PUCK_ARRAY_ITEM_SUMMARY}:visible`).first();
-  await expect(summary).toBeVisible();
-  const item = summary.locator('xpath=..');
-  const fieldset = item.locator('fieldset');
-  if (!(await fieldset.isVisible())) {
-    await activatePointerTarget(page, summary, 'first Features array item');
-  }
-  await expect(fieldset).toBeVisible();
-
-  const title = fieldset.getByText('제목', { exact: true }).locator('xpath=..').getByRole('textbox');
-  const body = fieldset.getByText('설명', { exact: true }).locator('xpath=..').getByRole('textbox');
-  await expect(title).toHaveCount(1);
-  await expect(body).toHaveCount(1);
-  await expect(title).toBeVisible();
-  await expect(body).toBeVisible();
-
-  return { title, body };
-}
-
 async function selectAndEditFeatures(
   page: Page,
   heading: string,
@@ -1030,9 +1005,15 @@ async function selectAndEditFeatures(
   await activatePointerTarget(page, headingField, 'Features heading');
   await expect(headingField).toBeEditable();
   await headingField.fill(heading);
-  const itemEditors = await revealFirstFeaturesItemEditors(page);
-  await itemEditors.title.fill(itemTitle);
-  await itemEditors.body.fill(itemBody);
+  const itemFields = [
+    [editorInlineField(page, 'features', 'items.0.title'), itemTitle, 'Features first item title'],
+    [editorInlineField(page, 'features', 'items.0.body'), itemBody, 'Features first item body'],
+  ] as const;
+  for (const [field, value, label] of itemFields) {
+    await activatePuckInlineTextField(page, field, label);
+    await field.fill(value);
+    await expect(field).toHaveText(value);
+  }
 }
 
 async function selectAndEditCta(
@@ -1634,9 +1615,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
     await expect(editorInlineField(page, 'features', 'title')).toContainText(featuresHeading);
-    const restoredFeatureEditors = await revealFirstFeaturesItemEditors(page);
-    await expect(restoredFeatureEditors.title).toHaveText(featureTitle);
-    await expect(restoredFeatureEditors.body).toHaveText(featureBody);
+    await expect(editorInlineField(page, 'features', 'items.0.title')).toHaveText(featureTitle);
+    await expect(editorInlineField(page, 'features', 'items.0.body')).toHaveText(featureBody);
     await selectEditorBlock(page, 'cta');
     await expect(editorInlineField(page, 'cta', 'heading')).toContainText(ctaHeading);
     await expect(editorInlineField(page, 'cta', 'body')).toContainText(ctaBody);

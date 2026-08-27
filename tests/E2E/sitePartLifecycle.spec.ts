@@ -163,6 +163,8 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     const seededDocument = structuredClone(original.document);
     const seededNavigationBlock = seededDocument.blocks.find((block) => block.type === 'site.header.navigation-01');
     if (!seededNavigationBlock) throw new Error('Header navigation block is required for the Site Part E2E seed.');
+    seededNavigationBlock.props.mobile_menu = true;
+    seededNavigationBlock.props.mobile_menu_style = 'drawer-right';
     const seededNavigation = Array.isArray(seededNavigationBlock.props.navigation)
       ? seededNavigationBlock.props.navigation as Array<Record<string, unknown>>
       : [];
@@ -200,6 +202,24 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
 
     const canvas = page.frameLocator('iframe').first();
     expect(await canvas.locator('body').innerText()).toContain(originalBrand);
+    await page.getByTitle('Switch to 모바일 viewport').click();
+    const editorMenuToggle = canvas.locator('[data-g7pb-preview-menu-toggle]');
+    const editorMobileMenu = canvas.locator('[data-g7pb-preview-mobile-menu]');
+    await expect(editorMenuToggle).toBeVisible();
+    await expect(editorMenuToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(editorMobileMenu).toBeHidden();
+    await editorMenuToggle.click();
+    await expect(editorMenuToggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(editorMobileMenu).toBeVisible();
+    await expect(editorMobileMenu).toHaveClass(/g7pb-mobile-menu--drawer-right/);
+    await page.getByText('왼쪽', { exact: true }).last().click();
+    await expect(editorMobileMenu).toHaveClass(/g7pb-mobile-menu--drawer-left/);
+    await expect(editorMobileMenu).toBeVisible();
+    await page.screenshot({ path: 'output/playwright/site-part-header-mobile-drawer-editor.png', fullPage: true });
+    await canvas.locator('[data-g7pb-preview-menu-close]').click();
+    await expect(editorMenuToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(editorMobileMenu).toBeHidden();
+    await page.getByTitle('Switch to PC viewport').click();
     await dragLibraryBlockBefore(page, 'Announcement', canvas.locator('.g7pb-site-header').first());
     await expect(canvas.locator('.g7pb-site-announcement')).toBeVisible();
     await expect(canvas.getByText(originalBrand, { exact: true }).first()).toBeVisible();
@@ -220,6 +240,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     const published = await readOrBootstrap(api, 'header', locale);
     expect(published.status).toBe('published');
     expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.brand_name).toBe(changedBrand);
+    expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.mobile_menu_style).toBe('drawer-left');
     const publishedNavigation = published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.navigation as Array<Record<string, unknown>>;
     expect(publishedNavigation[0]?.children).toEqual([{ label: childLabel, url: '/pages/features' }]);
     expect(published.document.blocks.some((block) => block.type === 'site.header.announcement-01')).toBe(true);
@@ -232,10 +253,18 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       await page.setViewportSize({ width: 390, height: 844 });
       await page.reload();
       await page.locator('[data-g7pb-menu-toggle]').click();
+      const publicMobileMenu = page.locator('[data-g7pb-mobile-menu]');
+      await expect(publicMobileMenu).toHaveClass(/g7pb-mobile-menu--drawer-left/);
+      await expect(page.locator('[data-g7pb-menu-backdrop]')).toBeVisible();
+      const drawerBox = await publicMobileMenu.boundingBox();
+      expect(drawerBox?.x ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
       const submenuToggle = page.locator('[data-g7pb-submenu-toggle]').first();
       await submenuToggle.click();
       await expect(submenuToggle).toHaveAttribute('aria-expanded', 'true');
       await expect(page.locator('[data-g7pb-mobile-submenu]').getByText(childLabel, { exact: true })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(publicMobileMenu).toBeHidden();
+      await expect(page.locator('[data-g7pb-menu-toggle]')).toBeFocused();
     }
   } finally {
     if (original) await restoreAndPublish(api, 'header', original);

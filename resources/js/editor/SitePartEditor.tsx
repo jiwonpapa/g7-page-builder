@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Puck, type Config, type Viewports } from '@puckeditor/core';
 import {
   ArrowLeft,
@@ -64,6 +64,115 @@ export function HeaderSystemControlsPreview(): React.ReactElement {
   </nav>;
 }
 
+function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactElement | null {
+  const menuId = `g7pb-preview-mobile-menu-${useId().replaceAll(':', '')}`;
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [openSubmenus, setOpenSubmenus] = useState<Record<number, boolean>>({});
+  const drawer = props.mobileMenuStyle !== 'dropdown';
+  const direction = props.mobileMenuStyle === 'drawer-left' ? '왼쪽' : props.mobileMenuStyle === 'drawer-right' ? '오른쪽' : '아래';
+
+  const close = useCallback((restoreFocus = false): void => {
+    setOpen(false);
+    setOpenSubmenus({});
+    if (restoreFocus) toggleRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!props.mobileMenu) close();
+  }, [close, props.mobileMenu]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const ownerDocument = toggleRef.current?.ownerDocument;
+    if (!ownerDocument) return undefined;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') close(true);
+    };
+    ownerDocument.addEventListener('keydown', onKeyDown);
+    return () => ownerDocument.removeEventListener('keydown', onKeyDown);
+  }, [close, open]);
+
+  if (!props.mobileMenu) return null;
+
+  return <>
+    <button
+      ref={toggleRef}
+      className="g7pb-menu-toggle"
+      type="button"
+      aria-controls={menuId}
+      aria-expanded={open}
+      aria-label={`${direction} 모바일 메뉴 ${open ? '닫기' : '열기'}`}
+      data-g7pb-preview-menu-toggle
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (open) close();
+        else setOpen(true);
+      }}
+    ><span /></button>
+    {drawer ? <button
+      className="g7pb-mobile-menu__backdrop"
+      type="button"
+      aria-label="모바일 메뉴 닫기"
+      data-g7pb-preview-menu-backdrop
+      hidden={!open}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        close(true);
+      }}
+    /> : null}
+    <nav
+      id={menuId}
+      className={`g7pb-mobile-menu g7pb-mobile-menu--preview g7pb-mobile-menu--${props.mobileMenuStyle}`}
+      aria-label="모바일 메뉴"
+      data-g7pb-preview-mobile-menu
+      data-g7pb-menu-style={props.mobileMenuStyle}
+      hidden={!open}
+    >
+      {drawer ? <button
+        className="g7pb-mobile-menu__close"
+        type="button"
+        aria-label="모바일 메뉴 닫기"
+        data-g7pb-preview-menu-close
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          close(true);
+        }}
+      >×</button> : null}
+      <ul>{props.navigation.map((item, index) => {
+        const submenuId = `${menuId}-submenu-${index}`;
+        const submenuOpen = openSubmenus[index] === true;
+        return <li key={`${item.label}-${index}`} className={item.children.length > 0 ? 'has-children' : undefined}>
+          {item.children.length > 0 ? <>
+            <div className="g7pb-mobile-menu__row">
+              <a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}</a>
+              <button
+                type="button"
+                aria-controls={submenuId}
+                aria-expanded={submenuOpen}
+                aria-label={`${item.label} 하위 메뉴 ${submenuOpen ? '닫기' : '열기'}`}
+                data-g7pb-preview-submenu-toggle
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setOpenSubmenus((current) => ({ ...current, [index]: !submenuOpen }));
+                }}
+              ><span aria-hidden="true">⌄</span></button>
+            </div>
+            <ul id={submenuId} className="g7pb-mobile-subnav" data-g7pb-preview-mobile-submenu hidden={!submenuOpen}>
+              {item.children.map((child, childIndex) => <li key={`${child.label}-${childIndex}`}><a href={safeSitePartHref(child.url)} onClick={(event) => event.preventDefault()}>{child.label}</a></li>)}
+            </ul>
+          </> : <a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}</a>}
+        </li>;
+      })}</ul>
+      {props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
+    </nav>
+  </>;
+}
+
 export function HeaderNavigationPreview(props: HeaderNavigationProps): React.ReactElement {
   const navigation = (className: string, label: string): React.ReactElement => <nav className={className} aria-label={label}><ul>{props.navigation.map((item, index) => (
     <li key={`${item.label}-${index}`} className={item.children.length > 0 ? 'has-children' : undefined}>
@@ -83,10 +192,9 @@ export function HeaderNavigationPreview(props: HeaderNavigationProps): React.Rea
         <div className="g7pb-site-header__actions">
           {props.ctaLabel ? <a className="g7pb-site-header__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
           <HeaderSystemControlsPreview />
-          {props.mobileMenu ? <button className="g7pb-menu-toggle" type="button" aria-label={`${props.mobileMenuStyle === 'drawer-left' ? '왼쪽' : props.mobileMenuStyle === 'drawer-right' ? '오른쪽' : '아래'} 모바일 메뉴`}><span /></button> : null}
+          <HeaderMobileMenuPreview {...props} />
         </div>
       </div>
-      {props.mobileMenu ? <div className={`g7pb-mobile-menu g7pb-mobile-menu--preview g7pb-mobile-menu--${props.mobileMenuStyle}`}>{navigation('g7pb-mobile-menu__navigation', '모바일 메뉴')}{props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}</div> : null}
     </header>
   );
 }

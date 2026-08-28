@@ -313,7 +313,7 @@ function BlockquotePreview(props: BlockquoteEditorProps & { id: string }): React
 function NoticePreview(props: NoticeEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="notice" motion={props.motion} elementStyles={props.elementStyles}>
     <aside className={`g7pb-preview-notice g7pb-preview-notice--${props.tone} ${surfaceClass(props)}`} role={props.tone === 'critical' ? 'alert' : 'note'}>
-      <i aria-hidden="true" /><div><RichTextCanvasField as="strong" className="g7pb-preview-richtext" fieldPath="title">{props.title}</RichTextCanvasField><RichTextCanvasField fieldPath="body" className="g7pb-preview-richtext g7pb-preview-notice__body">{props.body}</RichTextCanvasField></div>
+      <i aria-hidden="true" /><div><RichTextCanvasField as="h2" className="g7pb-preview-richtext g7pb-preview-notice__title" fieldPath="title">{props.title}</RichTextCanvasField><RichTextCanvasField fieldPath="body" className="g7pb-preview-richtext g7pb-preview-notice__body">{props.body}</RichTextCanvasField></div>
       {props.actionLabel ? <a href={safeLink(props.actionUrl)} data-g7pb-action-field="actionLabel" onClick={(event) => event.preventDefault()}>{props.actionLabel} →</a> : null}
     </aside>
   </Frame>;

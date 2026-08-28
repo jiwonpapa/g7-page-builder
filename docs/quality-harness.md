@@ -55,6 +55,7 @@
 - editor IIFE, public effects IIFE, CSS output의 존재·경로·sourcemap 부재를 검사합니다.
 - motion schema allowlist, Puck 왕복, compiler data attribute, JS-disabled fallback과 reduced-motion을 단위시험합니다.
 - `page-builder-editor-wysiwyg.css`는 Puck의 편집용 `contentEditable` DOM을 발행 HTML의 semantic typography에 연결합니다. 제목 래퍼와 내부 실제 `h1`~`h4`의 computed font family·size·weight·line-height·letter-spacing 및 줄 수가 발행본과 다르면 레이아웃 E2E가 실패하며, 사용자가 지정한 요소별 글꼴·크기·굵기·색상은 이 기본 브리지보다 우선합니다.
+- 로고 목록과 안내 블록처럼 편집기 DOM이 발행 HTML과 다른 태그를 사용해 브라우저 기본 글꼴 규칙이 개입하지 않도록 제목 semantic을 `h2`로 고정합니다. Hero·CTA·섹션 preset은 같은 layout class와 typography 계약을 공유하며, 패리티 실패에는 양쪽 태그·실제 폭·최대 폭·조상 DOM 경로를 함께 출력합니다.
 
 ## Architecture
 

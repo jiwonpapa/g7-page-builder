@@ -18,6 +18,10 @@ copy_fixture() {
     "$fixture_root/fixture/resources/css/page-builder-public.css"
   cp "$repo_root/resources/js/editor/PuckEditorAdapter.tsx" \
     "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  cp "$repo_root/resources/js/editor/catalogBlocks.tsx" \
+    "$fixture_root/fixture/resources/js/editor/catalogBlocks.tsx"
+  cp "$repo_root/resources/js/editor/productionCatalogBlocks.tsx" \
+    "$fixture_root/fixture/resources/js/editor/productionCatalogBlocks.tsx"
   cp "$repo_root/resources/js/editor/editorOverlaySafeZone.ts" \
     "$fixture_root/fixture/resources/js/editor/editorOverlaySafeZone.ts"
   cp "$repo_root/tests/E2E/editorLayoutParity.spec.ts" \
@@ -41,6 +45,21 @@ expect_failure() {
 }
 
 node "$repo_root/scripts/check-editor-layout-parity.mjs" --root "$repo_root"
+
+copy_fixture
+perl -0pi -e 's/(function LogoCloudPreview[\s\S]*?<RichTextCanvasField )as="h2"/${1}as="p"/' \
+  "$fixture_root/fixture/resources/js/editor/catalogBlocks.tsx"
+expect_failure '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(function NoticePreview[\s\S]*?<RichTextCanvasField )as="h2"/${1}as="strong"/' \
+  "$fixture_root/fixture/resources/js/editor/productionCatalogBlocks.tsx"
+expect_failure '안내 블록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/ancestorTrail/removedTrail/g' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '브라우저 WYSIWYG 실패에는 실제 글자 폭과 semantic DOM 조상 진단값이 포함되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-hero :is\(h1,[^}]*font-size: clamp\(2\.5rem, 7vw, )5\.75rem/${1}4rem/s' \

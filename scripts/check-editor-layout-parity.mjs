@@ -28,12 +28,14 @@ function customPropertyValue(css, property) {
 
 export async function validateEditorLayoutParity(root) {
   const errors = [];
-  const [packageSource, editorCss, wysiwygCss, publicCss, adapter, overlaySource, spec, catalogVisualSpec] = await Promise.all([
+  const [packageSource, editorCss, wysiwygCss, publicCss, adapter, catalogSource, productionSource, overlaySource, spec, catalogVisualSpec] = await Promise.all([
     source(root, 'package.json'),
     source(root, 'resources/css/page-builder-editor.css'),
     source(root, 'resources/css/page-builder-editor-wysiwyg.css'),
     source(root, 'resources/css/page-builder-public.css'),
     source(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
+    source(root, 'resources/js/editor/catalogBlocks.tsx'),
+    source(root, 'resources/js/editor/productionCatalogBlocks.tsx'),
     source(root, 'resources/js/editor/editorOverlaySafeZone.ts'),
     source(root, REQUIRED_SPEC),
     source(root, CATALOG_VISUAL_SPEC),
@@ -87,6 +89,18 @@ export async function validateEditorLayoutParity(root) {
       '리치텍스트 본문은 편집기와 공개 출력에서 동일한 기본 1rem typography를 사용해야 합니다.'],
     [/\.g7pb-preview-button\s*\{[^}]*font-weight:\s*700;/,
       '편집기 버튼의 기본 굵기는 공개 출력과 동일해야 합니다.'],
+    [/:is\(\.g7pb-preview-stats,[^}]*font-size:\s*clamp\(2\.1rem,\s*5vw,\s*4\.25rem\);[^}]*line-height:\s*1\.06;/s,
+      '카탈로그 섹션 제목은 공개 section heading과 동일한 typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-blockquote\s*>\s*\.g7pb-preview-blockquote__quote\s*\{[^}]*font-family:\s*Georgia,[^}]*font-size:\s*clamp\(1\.5rem,\s*4vw,\s*3rem\);/,
+      '편집기 인용문은 Puck wrapper에도 공개 인용문 typography를 적용해야 합니다.'],
+    [/\.g7pb-preview-social-links\s+:is\(h2,\s*\[data-g7pb-heading-level="2"\]\)\s*\{[^}]*font-size:\s*\.82rem;/,
+      '소셜 링크 제목은 편집 wrapper와 공개 h2가 같은 소형 제목 규칙을 사용해야 합니다.'],
+    [/\.g7pb-preview-hero--layout-poster\s+:is\(h1,[^}]*font-size:\s*clamp\(3\.25rem,\s*9vw,\s*8rem\);/s,
+      'Hero poster 제목은 공개 preset과 동일한 크기 계약을 사용해야 합니다.'],
+    [/\.g7pb-preview-hero--layout-editorial\s+:is\(h1,[^}]*font-family:\s*Georgia,[^}]*font-size:\s*clamp\(3\.4rem,\s*8vw,\s*7rem\);/s,
+      'Hero editorial 제목은 공개 preset과 동일한 serif typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-cta-split--layout-banner\s+:is\(h2,[^}]*font-size:\s*clamp\(1\.8rem,\s*4vw,\s*3rem\);/s,
+      'CTA banner 제목은 공개 preset의 축소 typography를 사용해야 합니다.'],
     [/\.g7pb-preview-page,\s*\.g7pb-preview-page \*,\s*\.g7pb-preview-page \*::before,\s*\.g7pb-preview-page \*::after\s*\{\s*box-sizing:\s*border-box;/s,
       'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'],
     [/--g7pb-preview-content-width:\s*var\(--g7pb-theme-content-width\)/,
@@ -119,6 +133,18 @@ export async function validateEditorLayoutParity(root) {
       '편집기 Logo grid 열은 로고 고유 폭보다 작아질 수 있어야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
+  requirePattern(errors, catalogSource,
+    /function LogoCloudPreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2"[^>]*fieldPath="heading">/,
+    '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');
+  requirePattern(errors, productionSource,
+    /function NoticePreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2" className="g7pb-preview-richtext g7pb-preview-notice__title" fieldPath="title">/,
+    '안내 블록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');
+  requirePattern(errors, spec,
+    /ancestorTrail:[\s\S]*maxWidth:[\s\S]*tagName:[\s\S]*width:/,
+    '브라우저 WYSIWYG 실패에는 실제 글자 폭과 semantic DOM 조상 진단값이 포함되어야 합니다.');
+  requirePattern(errors, spec,
+    /['"]\.g7pb-divider__label['"]/,
+    '구분선 label은 편집기와 공개 출력 양쪽에서 typography 후보로 측정해야 합니다.');
   const mobileHeaderControls = css.match(
     /@media\s*\(max-width:\s*720px\)\s*\{\s*\.g7pb-header-controls\s*\{([^}]*)\}/s,
   )?.[1] ?? '';

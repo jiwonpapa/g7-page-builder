@@ -20,6 +20,7 @@
 - Puck의 편집용 `div` 안에 생성되는 실제 제목 노드가 발행 HTML과 다른 기본 글꼴 크기·굵기·행간·자간을 사용하던 P000 결함을 공통 WYSIWYG 브리지로 수정하고, 리치텍스트 본문과 버튼 기본 typography도 발행 계약에 맞췄습니다.
 - 로고·안내 블록 제목의 semantic 태그, Hero·CTA preset, 섹션·인용문·소셜 링크 typography를 발행 DOM과 맞추고, 패리티 오류에 실제 폭과 조상 DOM 경로를 포함해 남은 줄바꿈 원인을 즉시 추적할 수 있게 했습니다.
 - Hero 편집 DOM을 발행본과 같은 direct grid 구조로 맞추고, Icon List·미디어·카드 섹션 제목과 로고 그리드의 실제 폭 및 Hero Split preset 여백을 공개 CSS와 통일했습니다.
+- 편집 가능 제목에 남아 있던 비표준 줄바꿈을 공개 heading 규칙으로 초기화하고 Hero Slider 내부 여백 및 Bar Chart 제목 폭을 발행본과 일치시켰습니다.
 
 ## [0.27.1] - 2026-08-28
 

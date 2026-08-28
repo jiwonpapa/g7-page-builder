@@ -237,9 +237,9 @@ perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--heading-defau
 expect_failure '명시적 굵기가 없는 semantic heading은 공개 HTML 기본 제목의 700 계산값과 같아야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*font-size:) inherit !important;/${1} initial !important;/' \
+perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*white-space:) inherit !important;/${1} pre-wrap !important;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Puck의 실제 제목 leaf 태그와 무관하게 wrapper의 WYSIWYG typography를 상속해야 합니다.'
+expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography와 줄바꿈 규칙을 상속해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;/${1} 780px;/' \

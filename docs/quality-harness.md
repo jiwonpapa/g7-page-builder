@@ -63,6 +63,7 @@
 - 제목 굵기를 설정하지 않은 문서는 semantic heading 기본값 700을, 사용자가 `regular`를 명시한 문서는 400을 사용합니다. 편집 wrapper가 둘을 같은 class로 축약해 사용자 선택과 기본 디자인을 섞지 못하게 합니다.
 - Features 제목은 편집기와 공개본 모두 `normal` 행간을 명시해 외부 template CSS에 따라 높이가 달라지지 않게 합니다.
 - 공개 블록의 semantic heading 기본 굵기와 Features 행간은 활성 G7 템플릿의 전역 `h1`~`h4` CSS로부터 격리합니다. 기본 제목은 700, 명시적 `regular`는 400으로 고정되어 shell 종류가 바뀌어도 편집기와 발행본 계산값이 같습니다.
+- Puck의 `.rich-text * { white-space: pre-wrap }` 기본값이 제목 안쪽 leaf에 남지 않도록 wrapper의 `white-space`·`overflow-wrap`·`word-break`를 강제 상속합니다. 같은 폭·폰트에서도 편집기만 한 줄 더 생기는 회귀를 차단합니다.
 
 ## Architecture
 

@@ -325,6 +325,35 @@ describe('Puck editor surface contract', () => {
     expect(editorCss).not.toMatch(/\.g7pb-preview-rich-text--(?:narrow|standard|wide)\s*>\s*\*/);
   });
 
+  it('keeps an empty Hero image slot visible and directly selectable on the canvas', async () => {
+    const documentWithEmptyHero: PageBuilderDocument = {
+      ...fixture,
+      blocks: fixture.blocks.map((block, index) => index === 0 ? {
+        ...block,
+        props: { ...block.props, image: { src: '', alt: '' } },
+      } : block),
+    };
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<PuckEditorAdapter
+        document={documentWithEmptyHero}
+        revisionKey={0}
+        iframeEnabled={false}
+        onChange={() => undefined}
+        onPublish={() => undefined}
+      />);
+    });
+
+    const media = await eventually<HTMLElement>('[data-block-type="hero"] [data-g7pb-media-field="imageSrc"]');
+    const placeholder = media.querySelector<HTMLElement>('.g7pb-preview-media-placeholder');
+    expect(placeholder?.getAttribute('aria-label')).toBe('대표 이미지를 선택하세요');
+    expect(placeholder?.textContent).toBe('대표 이미지를 선택하세요');
+  });
+
   it('delegates rich-text drag isolation to the native Puck inline wrapper', async () => {
     const parentPointerDown = vi.fn();
     const container = document.createElement('div');
@@ -913,6 +942,10 @@ describe('Puck editor surface contract', () => {
     expect(library.textContent).toContain('실제 화면을 확인하고 블록을 선택하세요.');
     expect(library.textContent).not.toContain('끌어');
     expect(library.textContent).toContain('완성 섹션과 모든 출처 보기');
+    const compactComponents = new Set([
+      'Heading', 'RichText', 'Buttons', 'Divider', 'Blockquote', 'Notice',
+      'Breadcrumbs', 'AnchorMenu', 'SocialLinks',
+    ]);
     for (const component of [
       'Hero',
       'Heading',
@@ -942,7 +975,9 @@ describe('Puck editor surface contract', () => {
       'ImageCarousel',
     ]) {
       const drawerItem = await eventually<HTMLElement>(`[data-testid="drawer-item:${component}"]`);
-      expect(drawerItem.querySelector(`[data-library-block="${component}"]`)).not.toBeNull();
+      const card = drawerItem.querySelector<HTMLElement>(`[data-library-block="${component}"]`);
+      expect(card).not.toBeNull();
+      expect(card?.dataset.previewDensity).toBe(compactComponents.has(component) ? 'compact' : 'regular');
       expect(drawerItem.querySelector('[data-block-preview]')).not.toBeNull();
       expect(drawerItem.querySelector('.g7pb-block-thumb__zoom')).toBeNull();
     }
@@ -1040,6 +1075,10 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('섹션 바로가기');
     expect(gallery.textContent).toContain('소셜 링크');
     expect(gallery.textContent).toContain('이미지 캐러셀');
+    expect(gallery.querySelector('[data-testid="page-builder-block-option-heading"]')
+      ?.closest<HTMLElement>('.g7pb-block-gallery__item')?.dataset.previewDensity).toBe('compact');
+    expect(gallery.querySelector('[data-testid="page-builder-block-option-image-text"]')
+      ?.closest<HTMLElement>('.g7pb-block-gallery__item')?.dataset.previewDensity).toBe('regular');
     expect(gallery.textContent).toContain('자주 쓰는 기본 블록');
     expect(gallery.querySelectorAll('[data-testid^="page-builder-quick-add-"]')).toHaveLength(6);
     const categorySelect = gallery.querySelector<HTMLSelectElement>('[aria-label="블록 분류"]');

@@ -1306,6 +1306,30 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const drawerText = await drawerLibrary.textContent();
     expect(drawerText?.match(/끌어/g)?.length ?? 0).toBe(0);
     await expect(drawerLibrary.locator('.g7pb-block-thumb__zoom')).toHaveCount(0);
+    const compactHeadingPreview = drawerLibrary.locator(
+      '[data-library-block="Heading"][data-preview-density="compact"] .g7pb-puck-drawer-card__preview:visible',
+    ).first();
+    const compactRichTextPreview = drawerLibrary.locator(
+      '[data-library-block="RichText"][data-preview-density="compact"] .g7pb-puck-drawer-card__preview:visible',
+    ).first();
+    const regularImageTextPreview = drawerLibrary.locator(
+      '[data-library-block="ImageText"][data-preview-density="regular"] .g7pb-puck-drawer-card__preview:visible',
+    ).first();
+    await expect(compactHeadingPreview).toBeVisible();
+    await expect(compactRichTextPreview).toBeVisible();
+    await expect(regularImageTextPreview).toBeVisible();
+    if (testInfo.project.name === 'desktop') {
+      const [headingBox, richTextBox, imageTextBox] = await Promise.all([
+        compactHeadingPreview.boundingBox(),
+        compactRichTextPreview.boundingBox(),
+        regularImageTextPreview.boundingBox(),
+      ]);
+      expect(headingBox).not.toBeNull();
+      expect(richTextBox).not.toBeNull();
+      expect(imageTextBox).not.toBeNull();
+      expect(headingBox?.height ?? Number.POSITIVE_INFINITY).toBeLessThan((imageTextBox?.height ?? 0) * .75);
+      expect(richTextBox?.height ?? Number.POSITIVE_INFINITY).toBeLessThan((imageTextBox?.height ?? 0) * .75);
+    }
     await hideMobileBlockLibrary(page);
 
     await revealEditorHeaderActions(page);
@@ -1572,6 +1596,28 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     uploadedMediaId = typeof mediaPayload.data?.id === 'string' ? mediaPayload.data.id : null;
     expect(uploadedMediaId).toMatch(DOCUMENT_ID_PATTERN);
     await updateE2eOwnershipJournal(ownershipJournalPath, uploadedMediaId);
+    if (testInfo.project.name === 'desktop') {
+      await mediaField.getByTestId('page-builder-media-open').click();
+      const heroMedia = editorBlock(page, 'hero').locator('[data-g7pb-media-field="imageSrc"]');
+      await expect(heroMedia.locator('img')).toHaveCount(1);
+      await activatePointerTarget(page, heroMedia, 'Hero canvas image');
+      const directClear = page.frameLocator('iframe').getByTestId('page-builder-canvas-media-clear')
+        .locator('xpath=ancestor::button[1]');
+      await expect(directClear).toBeEnabled();
+      await activatePointerTarget(page, directClear, 'Hero canvas image clear');
+      await expect(heroMedia.locator('.g7pb-preview-media-placeholder')).toContainText('대표 이미지를 선택하세요');
+      await activatePointerTarget(page, heroMedia, 'Hero empty image slot');
+      const directOpen = page.frameLocator('iframe').getByTestId('page-builder-canvas-media-open')
+        .locator('xpath=ancestor::button[1]');
+      await activatePointerTarget(page, directOpen, 'Hero canvas image change');
+      const canvasMediaDialog = page.getByTestId('page-builder-canvas-media-dialog');
+      await expect(canvasMediaDialog).toBeVisible();
+      const directMediaItems = canvasMediaDialog.getByTestId('page-builder-media-item');
+      await expect(directMediaItems.first()).toBeVisible();
+      await directMediaItems.first().click();
+      await expect(canvasMediaDialog).toBeHidden();
+      await expect(heroMedia.locator('img')).toHaveCount(1);
+    }
     await selectAndEditCta(page, ctaHeading, ctaBody, ctaPrimaryLabel);
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);

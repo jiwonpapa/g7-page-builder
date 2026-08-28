@@ -1245,11 +1245,11 @@ function HeroPreview({
             <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
           </a>
         )}
-        {image && (
-          <figure className="g7pb-preview-hero__media" data-g7pb-media-field="imageSrc">
-            <img src={image} alt={imageAlt} />
-          </figure>
-        )}
+        <figure className="g7pb-preview-hero__media" data-g7pb-media-field="imageSrc">
+          {image
+            ? <img src={image} alt={imageAlt} />
+            : <span className="g7pb-preview-media-placeholder" role="img" aria-label="대표 이미지를 선택하세요">대표 이미지를 선택하세요</span>}
+        </figure>
       </div>
     </BlockFrame>
   );
@@ -1781,6 +1781,24 @@ interface BlockGalleryItem {
   packLabel: string;
 }
 
+type BlockPreviewDensity = 'compact' | 'regular';
+
+const COMPACT_BLOCK_PREVIEWS = new Set<keyof EditorComponents>([
+  'Heading',
+  'RichText',
+  'Buttons',
+  'Divider',
+  'Blockquote',
+  'Notice',
+  'Breadcrumbs',
+  'AnchorMenu',
+  'SocialLinks',
+]);
+
+function blockPreviewDensity(type: keyof EditorComponents): BlockPreviewDensity {
+  return COMPACT_BLOCK_PREVIEWS.has(type) ? 'compact' : 'regular';
+}
+
 function blockPackAssetUrl(packId: string, packVersion: string, path: string): string {
   const [publisher, pack] = packId.split('/', 2);
   if (!publisher || !pack || !path || path.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')) {
@@ -2119,7 +2137,8 @@ function StableAddBlockControls({
               data-total-items={visibleItems.length}
               data-rendered-items={renderedItems.length}>
               {renderedItems.map((item, index) => (
-                <article key={item.catalogId} className="g7pb-block-gallery__item">
+                <article key={item.catalogId} className="g7pb-block-gallery__item"
+                  data-preview-density={blockPreviewDensity(item.type)}>
                   <button type="button" className="g7pb-block-gallery__add"
                     ref={index === 0 ? firstItemRef : undefined}
                     data-testid={item.testId} onClick={() => insert(item)}>
@@ -2902,7 +2921,8 @@ function PuckDrawerItem({ children, name }: { children: React.ReactNode; name: s
   }
 
   return (
-    <div className="g7pb-puck-drawer-card" data-library-block={item.type}>
+    <div className="g7pb-puck-drawer-card" data-library-block={item.type}
+      data-preview-density={blockPreviewDensity(item.type)}>
       <div className="g7pb-puck-drawer-card__preview">
         <BlockGalleryThumbnail item={item} />
       </div>

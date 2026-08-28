@@ -283,7 +283,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-hero-slider__dots button.is-active { width: 1.8rem; opacity: 1; }
 .g7pb-hero-slider__status { margin: .5rem 0 0; font-size: .75rem; text-align: center; opacity: .72; }
 .g7pb-logo-cloud { text-align: center; }
-.g7pb-logo-cloud h2 { margin: 0 0 2rem; color: var(--g7pb-page-muted, #526071); font-size: 1rem; }
+.g7pb-logo-cloud h2 { margin: 0 0 2rem; color: var(--g7pb-page-muted, #526071); font-size: 1rem; line-height: 1.2; }
 .g7pb-logo-cloud ul { display: flex; flex-wrap: wrap; gap: 1rem 3rem; justify-content: center; margin: 0; padding: 0; list-style: none; }
 .g7pb-logo-cloud li { display: grid; min-width: 8rem; min-height: 3rem; place-items: center; color: #465166; font-size: 1.15rem; font-weight: 850; }
 .g7pb-logo-cloud__image { max-width: 7.5rem; max-height: 2.7rem; object-fit: contain; filter: grayscale(1); }

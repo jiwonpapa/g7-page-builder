@@ -294,7 +294,7 @@ export async function validateEditorLayoutParity(root) {
     [/root\.scrollWidth\s*-\s*root\.clientWidth/, 'iframe/preview document 가로 overflow 측정이 필요합니다.'],
     [/editor\.contentLeft\s*-\s*preview\.contentLeft/, '편집기/미리보기 왼쪽 content edge 비교가 필요합니다.'],
     [/editor\.contentRight\s*-\s*preview\.contentRight/, '편집기/미리보기 오른쪽 content edge 비교가 필요합니다.'],
-    [/typographyCandidate[\s\S]*getComputedStyle\(typographyCandidate\)[\s\S]*range\.getClientRects\(\)/,
+    [/typographySelectors[\s\S]*for \(const selector of typographySelectors\)[\s\S]*getComputedStyle\(typographyCandidate\)[\s\S]*createTreeWalker\(typographyCandidate,\s*NodeFilter\.SHOW_TEXT\)[\s\S]*range\.getClientRects\(\)/,
       '각 블록의 대표 텍스트 computed typography와 실제 줄바꿈을 측정해야 합니다.'],
     [/Math\.abs\(editorTypography\.fontSize\s*-\s*previewTypography\.fontSize\)/,
       '편집기/미리보기 대표 텍스트의 실제 font-size 차이를 비교해야 합니다.'],
@@ -332,7 +332,7 @@ export async function validateEditorLayoutParity(root) {
       '블록 카탈로그 시각 비교 전에 전체 문서 media 준비 단계를 실행해야 합니다.'],
     [/const firstCapture\s*=\s*await block\.screenshot[\s\S]*waitForVisualBlockStability\(block\)[\s\S]*const secondCapture\s*=\s*await block\.screenshot[\s\S]*firstCapture\.equals\(secondCapture\)[\s\S]*toMatchSnapshot\(snapshotName\)/,
       '블록 카탈로그 baseline 비교 전에 동일 요소의 연속 캡처가 일치해야 합니다.'],
-    [/await expectCatalogPresentationQuality\([\s\S]*builtinManifest\.blocks\.map\(\(block\)\s*=>\s*block\.block_id\)[\s\S]*for \(let index = 0; index < builtinManifest\.blocks\.length; index \+= 1\)[\s\S]*waitForVisualBlockStability\(renderedBlocks\.nth\(index\)\)/,
+    [/await expectCatalogPresentationQuality\([\s\S]*renderedTypes[\s\S]*for \(let index = 0; index < builtinManifest\.blocks\.length; index \+= 1\)[\s\S]*waitForVisualBlockStability\(renderedBlocks\.nth\(index\)\)/,
       '전체 내장 블록은 manifest 순서·가시성·미디어·가독성·overflow와 안정화 검사를 통과해야 합니다.'],
   ];
   for (const [pattern, message] of catalogVisualEvidence) {

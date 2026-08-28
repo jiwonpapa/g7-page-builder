@@ -74,6 +74,9 @@ export interface BlockAppearance {
 
 export interface ElementAppearance {
   font?: 'inherit' | 'system' | 'modern' | 'serif' | 'mono';
+  /** Explicit user choice in rem. The editor also shows its 16px-root px equivalent. */
+  fontSizeRem?: number;
+  /** Legacy relative-size token kept for existing documents. */
   size?: 'small' | 'base' | 'large' | 'xlarge';
   weight?: 'regular' | 'medium' | 'semibold' | 'bold';
   align?: 'left' | 'center' | 'right';

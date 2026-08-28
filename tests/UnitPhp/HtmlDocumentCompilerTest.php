@@ -127,7 +127,7 @@ final class HtmlDocumentCompilerTest extends TestCase
     public function test_selected_range_typography_is_preserved_in_testimonials_and_faq(): void
     {
         $payload = $this->phaseTwoDocument()->toArray();
-        $payload['blocks'][0]['props']['items'][0]['quote'] = '<p>앞 문장 <span data-g7pb-font="serif" data-g7pb-size="large" data-g7pb-tone="accent"><u>선택 문장</u></span> 뒤 문장</p>';
+        $payload['blocks'][0]['props']['items'][0]['quote'] = '<p>앞 문장 <span data-g7pb-font="serif" data-g7pb-font-size-rem="3" data-g7pb-tone="accent"><u>선택 문장</u></span> 뒤 문장</p>';
         $payload['blocks'][1]['props']['items'][0]['answer'] = '<p>기본 <strong>굵게</strong> <a href="/guide">내부 링크</a></p>';
 
         $artifact = (string) $this->builtInCompiler()->compile(
@@ -138,7 +138,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         )->artifact;
 
         self::assertStringContainsString(
-            '앞 문장 <span data-g7pb-font="serif" data-g7pb-size="large" data-g7pb-tone="accent"><u>선택 문장</u></span> 뒤 문장',
+            '앞 문장 <span data-g7pb-font="serif" data-g7pb-font-size-rem="3" data-g7pb-tone="accent"><u>선택 문장</u></span> 뒤 문장',
             $artifact,
         );
         self::assertStringContainsString('<strong>굵게</strong> <a href="/guide" rel="noopener noreferrer">내부 링크</a>', $artifact);
@@ -642,7 +642,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'surface' => 'default',
             'spacing' => 'spacious',
             'elements' => [
-                'title' => ['size' => 'large', 'weight' => 'bold', 'align' => 'right'],
+                'title' => ['fontSizeRem' => 3, 'weight' => 'bold', 'align' => 'right'],
             ],
         ];
 
@@ -653,8 +653,8 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         )->artifact;
 
-        self::assertMatchesRegularExpression('/<h1 class="[^"]*g7pb-hero__title[^"]*g7pb-element-size--large[^"]*g7pb-element-weight--bold[^"]*g7pb-element-align--right[^"]*">/', $artifact);
-        self::assertDoesNotMatchRegularExpression('/g7pb-hero__body[^"]*g7pb-element-size--large/', $artifact);
+        self::assertMatchesRegularExpression('/<h1 class="[^"]*g7pb-hero__title[^"]*g7pb-element-font-size--48[^"]*g7pb-element-weight--bold[^"]*g7pb-element-align--right[^"]*">/', $artifact);
+        self::assertDoesNotMatchRegularExpression('/g7pb-hero__body[^"]*g7pb-element-font-size--48/', $artifact);
     }
 
     public function test_element_appearance_rejects_arbitrary_tokens(): void
@@ -665,6 +665,28 @@ final class HtmlDocumentCompilerTest extends TestCase
             'spacing' => 'spacious',
             'elements' => ['title' => ['size' => 'expression(alert(1))']],
         ];
+
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_element_appearance_rejects_arbitrary_or_conflicting_font_sizes(): void
+    {
+        $payload = $this->document('<p>안전한 본문</p>')->toArray();
+        $payload['blocks'][0]['props']['appearance'] = [
+            'surface' => 'default',
+            'spacing' => 'spacious',
+            'elements' => ['title' => ['fontSizeRem' => 3, 'size' => 'large']],
+        ];
+
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
+    public function test_selected_range_typography_rejects_arbitrary_font_size(): void
+    {
+        $payload = $this->phaseTwoDocument()->toArray();
+        $payload['blocks'][0]['props']['items'][0]['quote'] = '<p><span data-g7pb-font-size-rem="3.1">차단</span></p>';
 
         $this->expectException(DocumentCompileException::class);
         $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');

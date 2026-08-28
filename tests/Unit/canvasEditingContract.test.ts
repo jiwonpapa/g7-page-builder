@@ -57,15 +57,16 @@ describe('canvas editing contract', () => {
 
   it('normalizes safe element tokens per field path and rejects arbitrary style payloads', () => {
     const styles = normalizeElementAppearanceMap({
-      title: { font: 'serif', size: 'large', weight: 'bold', align: 'right', tone: 'accent', color: 'red' },
+      title: { font: 'serif', fontSizeRem: 3, size: 'large', weight: 'bold', align: 'right', tone: 'accent', color: 'red' },
       'items.0.body': { size: 'expression(alert(1))', align: 'center' },
       'bad[path]': { size: 'large' },
     });
     expect(styles).toEqual({
-      title: { font: 'serif', size: 'large', weight: 'bold', align: 'right', tone: 'accent' },
+      title: { font: 'serif', fontSizeRem: 3, weight: 'bold', align: 'right', tone: 'accent' },
       'items.0.body': { align: 'center' },
     });
-    expect(elementAppearanceClassName(styles, 'title')).toContain('g7pb-element-size--large');
+    expect(elementAppearanceClassName(styles, 'title')).toContain('g7pb-element-font-size--48');
+    expect(elementAppearanceClassName(styles, 'title')).not.toContain('g7pb-element-size--large');
     expect(elementAppearanceClassName(styles, 'title')).toContain('g7pb-element-font--serif');
     expect(elementAppearanceClassName(styles, 'items.0.body')).not.toContain('expression');
   });

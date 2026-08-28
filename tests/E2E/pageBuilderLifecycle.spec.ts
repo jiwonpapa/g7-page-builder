@@ -1473,10 +1473,11 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const rangeToolbar = page.frameLocator('iframe').getByTestId('page-builder-richtext-inline-toolbar');
       await expect(rangeToolbar).toBeVisible();
       await chooseRangeOption(rangeToolbar, 'page-builder-richtext-font', '명조');
-      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-size', 'L');
+      await chooseRangeOption(rangeToolbar, 'page-builder-richtext-size', '32 px · 2 rem');
       await chooseRangeOption(rangeToolbar, 'page-builder-richtext-tone', '강조색');
-      const selectedMark = richTextBlock.locator('span[data-g7pb-font="serif"][data-g7pb-size="large"][data-g7pb-tone="accent"]');
+      const selectedMark = richTextBlock.locator('span[data-g7pb-font="serif"][data-g7pb-font-size-rem="2"][data-g7pb-tone="accent"]');
       await expect(selectedMark).toHaveText(selectedText);
+      await expect(selectedMark).toHaveCSS('font-size', '32px');
       await expect(richTextBlock.locator('[contenteditable="true"]')).toContainText('방문자가 이해해야 할 내용을 읽기 편한 문단');
     }
 
@@ -1507,11 +1508,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
         expect(elementPanelBox.y).toBeGreaterThanOrEqual(0);
         expect(elementPanelBox.y + elementPanelBox.height).toBeLessThanOrEqual(editorViewport.height);
       }
-      await elementPanel.getByTestId('page-builder-text-scale').selectOption('xlarge');
+      await elementPanel.getByTestId('page-builder-font-size-rem').selectOption('3');
       await elementPanel.getByTestId('page-builder-text-align-right').click();
-      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--xlarge/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-font-size--48/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveCSS('font-size', '48px');
       await expect(heroBlock.locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-align--right/);
-      await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
+      await expect(heroBlock.locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-font-size--48/);
       await activatePointerTarget(
         page,
         page.getByTestId('page-builder-app'),
@@ -1663,8 +1665,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(heroSubtitle);
     if (testInfo.project.name === 'desktop') {
       await expect(await revealInspectorField(page, 'page-builder-hero-primary-url')).toHaveValue('/register');
-      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-size--xlarge/);
-      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-size--xlarge/);
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveClass(/g7pb-element-font-size--48/);
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="title"]')).toHaveCSS('font-size', '48px');
+      await expect(editorBlock(page, 'hero').locator('[data-g7pb-inline-field="body"]')).not.toHaveClass(/g7pb-element-font-size--48/);
     }
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
@@ -1696,9 +1699,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expectBlockOrder(renderedBlocks(previewPage), PUBLISHED_BLOCK_ORDER);
     await expect(previewPage.getByText(heroTitle, { exact: true })).toBeVisible();
     if (testInfo.project.name === 'desktop') {
-      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-size--xlarge/);
+      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-font-size--48/);
+      await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveCSS('font-size', '48px');
       await expect(previewPage.getByText(heroTitle, { exact: true })).toHaveClass(/g7pb-element-align--right/);
-      await expect(previewPage.locator('[data-block-type="hero"] .g7pb-hero__body')).not.toHaveClass(/g7pb-element-size--xlarge/);
+      await expect(previewPage.locator('[data-block-type="hero"] .g7pb-hero__body')).not.toHaveClass(/g7pb-element-font-size--48/);
     }
     await expect(previewPage.getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await expect(previewPage.getByText(featuresHeading, { exact: true })).toBeVisible();
@@ -1754,6 +1758,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await publicPage.screenshot({ path: 'output/playwright/page-builder-public-desktop.png', fullPage: true });
     }
     await expect(publicPage.getByText(heroTitle, { exact: true })).toBeVisible();
+    if (testInfo.project.name === 'desktop') {
+      await expect(publicPage.getByText(heroTitle, { exact: true })).toHaveCSS('font-size', '48px');
+    }
     await expect(publicPage.locator('[data-block-type="hero"] img.g7pb-hero__image')).toHaveCount(1);
     await expect(publicPage.getByText(featuresHeading, { exact: true })).toBeVisible();
     await expect(publicPage.getByText(ctaHeading, { exact: true })).toBeVisible();

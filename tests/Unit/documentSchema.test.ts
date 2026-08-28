@@ -137,6 +137,22 @@ describe('PageBuilderDocument v1 schema', () => {
     const arbitraryStyle = structuredClone(productionDocument) as unknown as { blocks: Array<{ props: Record<string, unknown> }> };
     arbitraryStyle.blocks[3]!.props.className = 'fixed inset-0';
     expect(validate(arbitraryStyle)).toBe(false);
+
+    const explicitFontSize = structuredClone(productionDocument) as unknown as { blocks: Array<{ props: Record<string, unknown> }> };
+    explicitFontSize.blocks[0]!.props.appearance = {
+      surface: 'default', spacing: 'normal', elements: { title: { fontSizeRem: 3 } },
+    };
+    expect(validate(explicitFontSize), JSON.stringify(validate.errors)).toBe(true);
+
+    const arbitraryFontSize = structuredClone(explicitFontSize);
+    ((arbitraryFontSize.blocks[0]!.props.appearance as { elements: { title: { fontSizeRem: number } } })
+      .elements.title.fontSizeRem) = 3.1;
+    expect(validate(arbitraryFontSize)).toBe(false);
+
+    const mixedLegacySize = structuredClone(explicitFontSize);
+    ((mixedLegacySize.blocks[0]!.props.appearance as { elements: { title: Record<string, unknown> } })
+      .elements.title).size = 'large';
+    expect(validate(mixedLegacySize)).toBe(false);
   });
 
   it('accepts every bundled preset as a complete one-block document', () => {
@@ -158,7 +174,7 @@ describe('PageBuilderDocument v1 schema', () => {
   });
 
   it('accepts typed-mark serialization across every declared rich-text capability path', () => {
-    const typedMark = '<span data-g7pb-font="serif" data-g7pb-size="large" data-g7pb-tone="accent"><strong><em><u>가</u></em></strong></span>';
+    const typedMark = '<span data-g7pb-font="serif" data-g7pb-font-size-rem="3" data-g7pb-tone="accent"><strong><em><u>가</u></em></strong></span>';
     const inlineMarkup = `<p>${typedMark.repeat(40)}</p>`;
     const blockMarkup = `<p>${typedMark.repeat(400)}</p>`;
     expect(new Set(richTextFieldMatrix.map((entry) => entry.blockId))).toEqual(

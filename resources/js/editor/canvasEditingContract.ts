@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { ElementAppearance, ElementAppearanceMap } from '../documents/types';
+import { elementFontSizeClassName, normalizeFontSizeRem } from './fontSize';
 
 export const CANVAS_ELEMENT_MESSAGE = 'g7pb:canvas-element-selected';
 
@@ -473,9 +474,11 @@ export function normalizeElementAppearance(value: unknown): ElementAppearance {
   const record = value !== null && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+  const fontSizeRem = normalizeFontSizeRem(record.fontSizeRem);
   return {
     ...(record.font === 'system' || record.font === 'modern' || record.font === 'serif' || record.font === 'mono' ? { font: record.font } : {}),
-    ...(record.size === 'small' || record.size === 'large' || record.size === 'xlarge' ? { size: record.size } : {}),
+    ...(fontSizeRem !== undefined ? { fontSizeRem } : {}),
+    ...(fontSizeRem === undefined && (record.size === 'small' || record.size === 'large' || record.size === 'xlarge') ? { size: record.size } : {}),
     ...(record.weight === 'medium' || record.weight === 'semibold' || record.weight === 'bold' ? { weight: record.weight } : {}),
     ...(record.align === 'center' || record.align === 'right' ? { align: record.align } : {}),
     ...(record.tone === 'muted' || record.tone === 'accent' || record.tone === 'contrast'
@@ -537,7 +540,9 @@ export function elementAppearanceClassName(styles: ElementAppearanceMap | undefi
   const style = normalizeElementAppearance(styles?.[fieldPath]);
   return [
     `g7pb-element-font--${style.font ?? 'inherit'}`,
-    `g7pb-element-size--${style.size ?? 'base'}`,
+    style.fontSizeRem === undefined
+      ? `g7pb-element-size--${style.size ?? 'base'}`
+      : elementFontSizeClassName(normalizeFontSizeRem(style.fontSizeRem) ?? 1),
     `g7pb-element-weight--${style.weight ?? 'regular'}`,
     `g7pb-element-align--${style.align ?? 'left'}`,
     `g7pb-element-tone--${style.tone ?? 'default'}`,

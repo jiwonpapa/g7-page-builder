@@ -60,6 +60,7 @@ import {
 } from './blockMotion';
 import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
 import { CatalogIcon, type CatalogIconName } from './catalogIcon';
+import { FONT_SIZE_REM_OPTIONS, normalizeFontSizeRem } from './fontSize';
 import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
 import {
   createInlineRichTextField,
@@ -1060,6 +1061,7 @@ export function sanitizeRichTextForPreview(value: string): string {
       const href = child.tagName === 'A' ? child.getAttribute('href') ?? '' : '';
       const typedMarks = child.tagName === 'SPAN' ? {
         font: child.getAttribute('data-g7pb-font') ?? '',
+        fontSizeRem: child.getAttribute('data-g7pb-font-size-rem') ?? '',
         size: child.getAttribute('data-g7pb-size') ?? '',
         weight: child.getAttribute('data-g7pb-weight') ?? '',
         tone: child.getAttribute('data-g7pb-tone') ?? '',
@@ -1073,6 +1075,8 @@ export function sanitizeRichTextForPreview(value: string): string {
       }
       if (typedMarks) {
         if (['modern', 'serif', 'mono'].includes(typedMarks.font)) child.setAttribute('data-g7pb-font', typedMarks.font);
+        const fontSizeRem = normalizeFontSizeRem(Number(typedMarks.fontSizeRem));
+        if (fontSizeRem !== undefined) child.setAttribute('data-g7pb-font-size-rem', String(fontSizeRem));
         if (['small', 'large', 'xlarge'].includes(typedMarks.size)) child.setAttribute('data-g7pb-size', typedMarks.size);
         if (['medium', 'semibold', 'bold'].includes(typedMarks.weight)) child.setAttribute('data-g7pb-weight', typedMarks.weight);
         if (['muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4'].includes(typedMarks.tone)) child.setAttribute('data-g7pb-tone', typedMarks.tone);
@@ -2467,6 +2471,9 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const isTextElement = fieldPath !== null && (canvasUi.selection?.role === 'text' || canvasUi.selection?.role === 'action');
   const elementStyles = normalizeElementAppearanceMap(selectedBlock.props.elementStyles);
   const currentElement = normalizeElementAppearance(fieldPath ? elementStyles[fieldPath] : undefined);
+  const currentFontSize = currentElement.fontSizeRem === undefined
+    ? currentElement.size ? 'legacy' : 'auto'
+    : String(currentElement.fontSizeRem);
   const routeFieldPath = fieldPath ? resolveRouteFieldPath(selectedBlock.type, fieldPath) : null;
   const update = (patch: Record<string, unknown>): void => {
     dispatch({
@@ -2513,10 +2520,16 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
             onChange={(event) => updateElement({ font: event.currentTarget.value as ElementAppearance['font'] })}>
             <option value="inherit">기본</option><option value="modern">모던</option><option value="serif">명조</option><option value="mono">고정폭</option>
           </select></label>
-          <label><span>크기</span><select disabled={disabled} value={currentElement.size ?? 'base'}
-            data-testid="page-builder-text-scale"
-            onChange={(event) => updateElement({ size: event.currentTarget.value as ElementAppearance['size'] })}>
-            <option value="small">S</option><option value="base">M</option><option value="large">L</option><option value="xlarge">XL</option>
+          <label><span>글자 크기</span><select disabled={disabled} value={currentFontSize}
+            data-testid="page-builder-font-size-rem"
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              if (value === 'auto') updateElement({ fontSizeRem: undefined, size: undefined });
+              else if (value !== 'legacy') updateElement({ fontSizeRem: Number(value), size: undefined });
+            }}>
+            <option value="auto">자동 · 반응형</option>
+            {currentElement.size ? <option value="legacy">기존 상대 크기</option> : null}
+            {FONT_SIZE_REM_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select></label>
           <label><span>굵기</span><select disabled={disabled} value={currentElement.weight ?? 'regular'}
             data-testid="page-builder-element-weight"

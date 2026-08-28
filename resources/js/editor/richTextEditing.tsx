@@ -5,6 +5,12 @@ import { Extension, Mark, Node as TiptapNode, mergeAttributes, type Editor } fro
 import { Bold, Check, ChevronDown, Italic, Link2, RotateCcw, SlidersHorizontal, Underline, Unlink } from 'lucide-react';
 import { CanvasCurrentElementStylesContext, elementAppearanceClassName } from './canvasEditingContract';
 import type { CanvasRangeAnchor } from './canvasContextState';
+import {
+  FONT_SIZE_REM_OPTIONS,
+  FONT_SIZE_REM_VALUES,
+  normalizeFontSizeRem,
+  type FontSizeRem,
+} from './fontSize';
 
 const FONT_VALUES = ['inherit', 'modern', 'serif', 'mono'] as const;
 const SIZE_VALUES = ['base', 'small', 'large', 'xlarge'] as const;
@@ -256,18 +262,31 @@ function enumAttribute<T extends string>(key: 'font' | 'size' | 'weight' | 'tone
   };
 }
 
+function fontSizeRemAttribute() {
+  return {
+    default: null,
+    parseHTML: (element: HTMLElement): FontSizeRem | null =>
+      normalizeFontSizeRem(Number(element.getAttribute('data-g7pb-font-size-rem'))) ?? null,
+    renderHTML: (attributes: Record<string, unknown>): Record<string, string> => {
+      const value = normalizeFontSizeRem(attributes.fontSizeRem);
+      return value === undefined ? {} : { 'data-g7pb-font-size-rem': String(value) };
+    },
+  };
+}
+
 export const G7TextStyleMark = Mark.create({
   name: 'g7TextStyle',
   addAttributes() {
     return {
       font: enumAttribute('font', FONT_VALUES, 'inherit'),
+      fontSizeRem: fontSizeRemAttribute(),
       size: enumAttribute('size', SIZE_VALUES, 'base'),
       weight: enumAttribute('weight', WEIGHT_VALUES, 'regular'),
       tone: enumAttribute('tone', TONE_VALUES, 'default'),
     };
   },
   parseHTML() {
-    return [{ tag: 'span[data-g7pb-font], span[data-g7pb-size], span[data-g7pb-weight], span[data-g7pb-tone]' }];
+    return [{ tag: 'span[data-g7pb-font], span[data-g7pb-font-size-rem], span[data-g7pb-size], span[data-g7pb-weight], span[data-g7pb-tone]' }];
   },
   renderHTML({ HTMLAttributes }) {
     return ['span', mergeAttributes(HTMLAttributes), 0];
@@ -290,10 +309,12 @@ export const G7SingleLineRichText = Extension.create({
   },
 });
 
-function selectedMark(editor: Editor | null): { font: FontValue; size: SizeValue; weight: WeightValue; tone: ToneValue } {
+function selectedMark(editor: Editor | null): { font: FontValue; fontSizeRem?: FontSizeRem; size: SizeValue; weight: WeightValue; tone: ToneValue } {
   const attributes = editor?.getAttributes('g7TextStyle') ?? {};
+  const fontSizeRem = normalizeFontSizeRem(attributes.fontSizeRem);
   return {
     font: FONT_VALUES.includes(attributes.font as FontValue) ? attributes.font as FontValue : 'inherit',
+    ...(fontSizeRem === undefined ? {} : { fontSizeRem }),
     size: SIZE_VALUES.includes(attributes.size as SizeValue) ? attributes.size as SizeValue : 'base',
     weight: WEIGHT_VALUES.includes(attributes.weight as WeightValue) ? attributes.weight as WeightValue : 'regular',
     tone: TONE_VALUES.includes(attributes.tone as ToneValue) ? attributes.tone as ToneValue : 'default',
@@ -440,14 +461,23 @@ function safeEditorLink(value: string): string | null {
 
 function markFromEditorState(editorState: RichTextEditorState | null): {
   font: FontValue;
+  fontSizeRem?: FontSizeRem;
   size: SizeValue;
   weight: WeightValue;
   tone: ToneValue;
 } {
+  const fontSizeIndex = editorState?.g7FontSizeSet
+    ? Number(Boolean(editorState.g7FontSizeBit0))
+      + (Number(Boolean(editorState.g7FontSizeBit1)) * 2)
+      + (Number(Boolean(editorState.g7FontSizeBit2)) * 4)
+      + (Number(Boolean(editorState.g7FontSizeBit3)) * 8)
+    : -1;
+  const fontSizeRem = fontSizeIndex >= 0 ? FONT_SIZE_REM_VALUES[fontSizeIndex] : undefined;
   return {
     font: editorState?.g7FontModern ? 'modern'
       : editorState?.g7FontSerif ? 'serif'
         : editorState?.g7FontMono ? 'mono' : 'inherit',
+    ...(fontSizeRem === undefined ? {} : { fontSizeRem }),
     size: editorState?.g7SizeSmall ? 'small'
       : editorState?.g7SizeLarge ? 'large'
         : editorState?.g7SizeXlarge ? 'xlarge' : 'base',
@@ -574,18 +604,24 @@ function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true 
   const rangeActive = Boolean(editorState?.g7HasSelection);
   const narrowViewport = useNarrowOwnerViewport(toolbarRef, rangeActive);
   const mark = markFromEditorState(editorState);
+  const fontSizeChoice = mark.fontSizeRem === undefined
+    ? mark.size === 'base' ? 'auto' : 'legacy'
+    : String(mark.fontSizeRem);
 
   useEffect(() => {
     if (rangeActive && narrowViewport) return;
     setAdvancedOpen(false);
   }, [narrowViewport, rangeActive]);
 
-  const updateMark = (patch: Partial<{ font: FontValue; size: SizeValue; weight: WeightValue; tone: ToneValue }>): void => {
+  const updateMark = (patch: Partial<{ font: FontValue; fontSizeRem: FontSizeRem | undefined; size: SizeValue; weight: WeightValue; tone: ToneValue }>): void => {
     if (!editor || readOnly || !rangeActive) return;
     const chain = editor.chain().focus();
     const next = { ...mark, ...patch };
-    if (next.font === 'inherit' && next.size === 'base' && next.weight === 'regular' && next.tone === 'default') {
+    if (next.font === 'inherit' && next.fontSizeRem === undefined && next.size === 'base' && next.weight === 'regular' && next.tone === 'default') {
       chain.unsetMark('g7TextStyle').run();
+    } else if (Object.prototype.hasOwnProperty.call(patch, 'fontSizeRem') && patch.fontSizeRem === undefined) {
+      const { fontSizeRem: _removedFontSize, ...withoutFontSize } = next;
+      chain.unsetMark('g7TextStyle').setMark('g7TextStyle', withoutFontSize).run();
     } else {
       chain.setMark('g7TextStyle', next).run();
     }
@@ -648,11 +684,15 @@ function G7RichTextInlineMenu({ editor, editorState, readOnly, allowLink = true 
           { value: 'regular', label: '보통' }, { value: 'medium', label: '중간' },
           { value: 'semibold', label: '굵게' }, { value: 'bold', label: '매우 굵게' },
         ]} />
-      <RangeChoiceMenu name="size" label="크기" value={mark.size} disabled={readOnly} open={openMenu === 'size'}
+      <RangeChoiceMenu name="size" label="글자 크기" value={fontSizeChoice} disabled={readOnly} open={openMenu === 'size'}
         testId="page-builder-richtext-size" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
-        onChange={(size) => updateMark({ size })} onClose={() => setOpenMenu(null)} values={[
-          { value: 'small', label: 'S' }, { value: 'base', label: 'M' },
-          { value: 'large', label: 'L' }, { value: 'xlarge', label: 'XL' },
+        onChange={(value) => {
+          if (value === 'auto') updateMark({ fontSizeRem: undefined, size: 'base' });
+          else if (value !== 'legacy') updateMark({ fontSizeRem: normalizeFontSizeRem(Number(value)), size: 'base' });
+        }} onClose={() => setOpenMenu(null)} values={[
+          { value: 'auto', label: '자동 · 반응형' },
+          ...(mark.size === 'base' ? [] : [{ value: 'legacy', label: '기존 상대 크기' }]),
+          ...FONT_SIZE_REM_OPTIONS,
         ]} />
       <RangeChoiceMenu name="tone" label="색상" value={mark.tone} disabled={readOnly} open={openMenu === 'tone'}
         testId="page-builder-richtext-tone" onToggle={(menu) => setOpenMenu((current) => current === menu ? null : menu)}
@@ -786,6 +826,9 @@ export function createRichTextField(label: string, initialHeight = 150, headings
       extensions: [G7TextStyleMark],
       selector: (context: { editor: Editor | null }, readOnly: boolean) => {
         const current = selectedMark(context.editor);
+        const fontSizeIndex = current.fontSizeRem === undefined
+          ? -1
+          : FONT_SIZE_REM_VALUES.indexOf(current.fontSizeRem);
         return {
           g7HasSelection: isRichTextRangeActive(context.editor),
           g7CanLink: !readOnly && isRichTextRangeActive(context.editor),
@@ -793,6 +836,11 @@ export function createRichTextField(label: string, initialHeight = 150, headings
           g7FontModern: current.font === 'modern',
           g7FontSerif: current.font === 'serif',
           g7FontMono: current.font === 'mono',
+          g7FontSizeSet: fontSizeIndex >= 0,
+          g7FontSizeBit0: fontSizeIndex >= 0 && (fontSizeIndex & 1) !== 0,
+          g7FontSizeBit1: fontSizeIndex >= 0 && (fontSizeIndex & 2) !== 0,
+          g7FontSizeBit2: fontSizeIndex >= 0 && (fontSizeIndex & 4) !== 0,
+          g7FontSizeBit3: fontSizeIndex >= 0 && (fontSizeIndex & 8) !== 0,
           g7SizeBase: current.size === 'base',
           g7SizeSmall: current.size === 'small',
           g7SizeLarge: current.size === 'large',
@@ -885,6 +933,7 @@ export function RichTextCanvasField({
 
 export const RICH_TEXT_ALLOWED_VALUES = Object.freeze({
   fonts: FONT_VALUES,
+  fontSizesRem: FONT_SIZE_REM_VALUES,
   sizes: SIZE_VALUES,
   weights: WEIGHT_VALUES,
   tones: TONE_VALUES,

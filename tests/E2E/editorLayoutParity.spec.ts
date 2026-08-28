@@ -55,6 +55,7 @@ interface LayoutMetric {
 
 interface TypographyMetric {
   ancestorTrail: string[];
+  descendantTrail: string[];
   contentEditable: string;
   fontFamily: string;
   fontSize: number;
@@ -415,8 +416,40 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
         if (ancestor === measured) break;
         ancestor = ancestor.parentElement;
       }
+      const descendantTrail = [typographyCandidate, ...Array.from(typographyCandidate.querySelectorAll<HTMLElement>('*'))]
+        .slice(0, 12)
+        .map((descendant) => {
+          const descendantRect = descendant.getBoundingClientRect();
+          const descendantStyle = block.ownerDocument.defaultView?.getComputedStyle(descendant);
+          const className = typeof descendant.className === 'string'
+            ? descendant.className.trim().replace(/\s+/g, '.').slice(0, 100)
+            : '';
+          const descendantRange = block.ownerDocument.createRange();
+          descendantRange.selectNodeContents(descendant);
+          const lineRects = Array.from(descendantRange.getClientRects())
+            .filter((lineRect) => lineRect.width > 0 && lineRect.height > 0)
+            .map((lineRect) => `${lineRect.width.toFixed(2)}x${lineRect.height.toFixed(2)}`)
+            .join(',');
+          return [
+            `${descendant.tagName.toLowerCase()}${className ? `.${className}` : ''}`,
+            `${descendantRect.width.toFixed(2)}x${descendantRect.height.toFixed(2)}`,
+            `display=${descendantStyle?.display ?? ''}`,
+            `min-height=${descendantStyle?.minHeight ?? ''}`,
+            `padding=${descendantStyle?.padding ?? ''}`,
+            `margin=${descendantStyle?.margin ?? ''}`,
+            `position=${descendantStyle?.position ?? ''}`,
+            `font-stretch=${descendantStyle?.fontStretch ?? ''}`,
+            `font-kerning=${descendantStyle?.fontKerning ?? ''}`,
+            `font-feature=${descendantStyle?.fontFeatureSettings ?? ''}`,
+            `font-variation=${descendantStyle?.fontVariationSettings ?? ''}`,
+            `text-transform=${descendantStyle?.textTransform ?? ''}`,
+            `transform=${descendantStyle?.transform ?? ''}`,
+            `lines=${lineRects}`,
+          ].join(':');
+        });
       typography = {
         ancestorTrail,
+        descendantTrail,
         contentEditable: typographyCandidate.contentEditable,
         fontFamily: typographyStyle?.fontFamily ?? '',
         fontSize,

@@ -27,11 +27,11 @@ if (! is_array($manifest) || ! is_array($manifest['blocks'] ?? null) || ! is_arr
 $registry = new BlockRegistry;
 $registry->register((new BuiltInBlockPackLoader)->load($root), enabled: true);
 $compiler = new HtmlDocumentCompiler($registry);
-$viewer = (string) file_get_contents($root.'/resources/views/viewer.blade.php');
-if (preg_match('/<style>(.*?)<\/style>/s', $viewer, $viewerStyle) !== 1) {
-    throw new RuntimeException('Public viewer CSS is missing.');
+$publicCssPath = $root.'/dist/css/page-builder-public.css';
+if (! is_file($publicCssPath)) {
+    throw new RuntimeException('Built public viewer CSS is missing. Run npm run build first.');
 }
-$css = $viewerStyle[1];
+$css = (string) file_get_contents($publicCssPath);
 $slugify = static function (string $value): string {
     $kebab = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $value) ?? $value;
 

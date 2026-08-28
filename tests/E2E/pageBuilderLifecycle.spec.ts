@@ -1240,7 +1240,6 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'Buttons',
       'ImageText',
       'IconList',
-      'HeroSplit',
       'HeroSlider',
       'Features',
       'Cta',
@@ -1287,7 +1286,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       images.map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src)))];
     await expect.poll(collectThumbnailUrls, {
       message: 'all built-in block thumbnail URLs are rendered',
-    }).toHaveLength(45);
+    }).toHaveLength(44);
+    await expect(page.getByTestId('drawer-item:HeroSplit')).toHaveCount(0);
     const thumbnailUrls = await collectThumbnailUrls();
     const thumbnailResponses = await Promise.all(thumbnailUrls.map((url) => page.request.get(url)));
     try {
@@ -1380,10 +1380,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await blockSearch.fill('');
     await selectDefinitionGalleryTab(blockGallery);
     const galleryGrid = blockGallery.locator('.g7pb-block-gallery__grid');
-    await expect(galleryGrid).toHaveAttribute('data-total-items', '45');
+    await expect(galleryGrid).toHaveAttribute('data-total-items', '44');
     await expect(galleryGrid).toHaveAttribute('data-rendered-items', '24');
     await expandBlockGallery(page);
-    await expect(galleryGrid).toHaveAttribute('data-rendered-items', '45');
+    await expect(galleryGrid).toHaveAttribute('data-rendered-items', '44');
     for (const option of [
       'hero',
       'heading',
@@ -1392,7 +1392,6 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'buttons',
       'image-text',
       'icon-list',
-      'hero-split',
       'hero-slider',
       'features',
       'cta',

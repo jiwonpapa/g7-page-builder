@@ -98,7 +98,8 @@ export interface HeroBlockProps {
   primaryCta?: PageBuilderCallToAction;
   image?: PageBuilderImage;
   alignment: 'left' | 'center';
-  layout?: 'poster' | 'product' | 'backdrop' | 'editorial' | 'device';
+  layout?: 'poster' | 'product' | 'backdrop' | 'editorial' | 'device' | 'balanced' | 'screenshot' | 'overlap' | 'offset';
+  mediaPosition?: 'left' | 'right';
   appearance?: BlockAppearance;
 }
 
@@ -314,7 +315,9 @@ export interface MapDirectionsBlockProps {
   latitude: number;
   longitude: number;
   zoom: 12 | 14 | 16 | 18;
-  provider: 'openstreetmap' | 'google' | 'none';
+  provider: 'image' | 'openstreetmap' | 'google' | 'none';
+  mapImageSrc?: string;
+  mapImageAlt?: string;
   directionsLabel: string;
   directionsUrl: string;
   phone: string;

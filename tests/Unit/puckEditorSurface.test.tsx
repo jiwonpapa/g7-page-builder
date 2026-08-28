@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PageBuilderDocument, SitePartResource } from '../../resources/js/documents/types';
@@ -461,6 +462,15 @@ describe('Puck editor surface contract', () => {
     }
   });
 
+  it('keeps the legacy split Hero renderer without offering it as a new block', () => {
+    expect(pageBuilderPuckConfig.components.HeroSplit).toBeDefined();
+    const offered = Object.values(pageBuilderPuckConfig.categories ?? {})
+      .filter((category) => category.visible !== false)
+      .flatMap((category) => category.components ?? []);
+    expect(offered).not.toContain('HeroSplit');
+    expect(offered).toContain('Hero');
+  });
+
   it('marks every image alternative text inspector field as required', () => {
     const visit = (fields: Record<string, any>, path: string): string[] => Object.entries(fields).flatMap(([name, field]) => {
       const current = `${path}.${name}`;
@@ -472,6 +482,14 @@ describe('Puck editor surface contract', () => {
 
     expect(labels.length).toBeGreaterThanOrEqual(10);
     expect(labels.every((label) => label.endsWith('(필수)'))).toBe(true);
+  });
+
+  it('uses a native date picker for editorial content dates', () => {
+    const dateField = (pageBuilderPuckConfig.components.ArticleList.fields!.items as any).arrayFields.date;
+    expect(dateField).toMatchObject({ type: 'custom', label: '날짜' });
+    const markup = renderToStaticMarkup(dateField.render({ value: '2026-08-21', onChange: () => undefined, readOnly: false }));
+    expect(markup).toContain('type="date"');
+    expect(markup).toContain('value="2026-08-21"');
   });
 
   it('provides selected-range rich text editing across all long-copy product families', () => {
@@ -960,7 +978,6 @@ describe('Puck editor surface contract', () => {
       'Buttons',
       'ImageText',
       'IconList',
-      'HeroSplit',
       'HeroSlider',
       'Features',
       'Cta',
@@ -1025,12 +1042,12 @@ describe('Puck editor surface contract', () => {
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
     expect(Array.from(gallery.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent)).toEqual([
-      '전체140', '블록 종류45', '완성 섹션95',
+      '전체139', '블록 종류44', '완성 섹션95',
     ]);
     expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
       .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공']);
     expect(gallery.querySelector('.g7pb-block-thumb__zoom')).toBeNull();
-    expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-total-items')).toBe('140');
+    expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-total-items')).toBe('139');
     expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-rendered-items')).toBe('24');
     expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(24);
     for (let batch = 0; batch < 5; batch += 1) {
@@ -1038,7 +1055,8 @@ describe('Puck editor surface contract', () => {
         gallery.querySelector<HTMLButtonElement>('[data-testid="page-builder-gallery-load-more"]')?.click();
       });
     }
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(140);
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(139);
+    expect(gallery.textContent).not.toContain('기존 분할 히어로');
     expect(gallery.textContent).toContain('히어로');
     expect(gallery.textContent).toContain('제목');
     expect(gallery.textContent).toContain('리치텍스트');

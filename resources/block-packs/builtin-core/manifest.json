@@ -36,18 +36,20 @@
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
-        "ko": "분할 히어로",
-        "en": "Split hero"
+        "ko": "기존 분할 히어로",
+        "en": "Legacy split hero"
       },
       "description": {
-        "ko": "메시지와 대표 이미지를 좌우로 나눠 소개합니다.",
-        "en": "Place a message beside a primary image."
+        "ko": "기존 문서 호환용입니다. 새 페이지에서는 히어로의 분할 레이아웃을 사용합니다.",
+        "en": "Kept for existing documents; use a split layout on Hero for new pages."
       },
       "thumbnail": "thumbnails/generated/block-02-hero-split.png",
       "schema_ref": "builtin:heroSplitProps",
       "editor_component": "HeroSplit",
       "compiler": "builtin.hero-split-01",
-      "capabilities": []
+      "capabilities": [
+        "editor.compatibility-only"
+      ]
     },
     {
       "block_id": "content.hero-slider-01",
@@ -1401,7 +1403,7 @@
     },
     {
       "preset_id": "hero-split.product-focus",
-      "block_id": "content.hero-split-01",
+      "block_id": "content.hero-centered-01",
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
@@ -1968,7 +1970,7 @@
         "ko": "매거진 인사이트"
       },
       "description": {
-        "ko": "대표 기사와 보조 기사를 잡지형 그리드로 보여줍니다."
+        "ko": "네 개 기사를 빈칸 없는 2열 그리드로 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-34-articles-insights.png",
       "props": {
@@ -2000,6 +2002,15 @@
             "date": "2026-08-15",
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
             "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
+            "url": "/"
+          },
+          {
+            "category": "인터뷰",
+            "title": "현장에서 발견한 운영의 기준",
+            "summary": "꾸준히 관리되는 페이지가 갖춘 공통점을 정리합니다.",
+            "date": "2026-08-12",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "imageAlt": "현장에서 발견한 운영의 기준",
             "url": "/"
           }
         ],
@@ -2722,7 +2733,7 @@
     },
     {
       "preset_id": "hero-split.balanced",
-      "block_id": "content.hero-split-01",
+      "block_id": "content.hero-centered-01",
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
@@ -2750,7 +2761,7 @@
     },
     {
       "preset_id": "hero-split.overlap",
-      "block_id": "content.hero-split-01",
+      "block_id": "content.hero-centered-01",
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
@@ -2778,7 +2789,7 @@
     },
     {
       "preset_id": "hero-split.offset",
-      "block_id": "content.hero-split-01",
+      "block_id": "content.hero-centered-01",
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
@@ -3892,6 +3903,15 @@
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
             "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
             "url": "/"
+          },
+          {
+            "category": "인터뷰",
+            "title": "현장에서 발견한 운영의 기준",
+            "summary": "꾸준히 관리되는 페이지가 갖춘 공통점을 정리합니다.",
+            "date": "2026-08-12",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "imageAlt": "현장에서 발견한 운영의 기준",
+            "url": "/"
           }
         ],
         "layout": "list"
@@ -3938,6 +3958,15 @@
             "date": "2026-08-15",
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
             "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
+            "url": "/"
+          },
+          {
+            "category": "인터뷰",
+            "title": "현장에서 발견한 운영의 기준",
+            "summary": "꾸준히 관리되는 페이지가 갖춘 공통점을 정리합니다.",
+            "date": "2026-08-12",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "imageAlt": "현장에서 발견한 운영의 기준",
             "url": "/"
           }
         ],
@@ -3986,6 +4015,15 @@
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
             "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
             "url": "/"
+          },
+          {
+            "category": "인터뷰",
+            "title": "현장에서 발견한 운영의 기준",
+            "summary": "꾸준히 관리되는 페이지가 갖춘 공통점을 정리합니다.",
+            "date": "2026-08-12",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "imageAlt": "현장에서 발견한 운영의 기준",
+            "url": "/"
           }
         ],
         "layout": "featured"
@@ -4032,6 +4070,15 @@
             "date": "2026-08-15",
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
             "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
+            "url": "/"
+          },
+          {
+            "category": "인터뷰",
+            "title": "현장에서 발견한 운영의 기준",
+            "summary": "꾸준히 관리되는 페이지가 갖춘 공통점을 정리합니다.",
+            "date": "2026-08-12",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
+            "imageAlt": "현장에서 발견한 운영의 기준",
             "url": "/"
           }
         ],

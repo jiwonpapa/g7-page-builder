@@ -275,7 +275,7 @@ async function measureGallery(page: Page): Promise<number> {
   const gallery = page.getByTestId('page-builder-block-gallery');
   await expect(gallery).toBeVisible();
   const grid = gallery.locator('.g7pb-block-gallery__grid');
-  await expect(grid).toHaveAttribute('data-total-items', '140');
+  await expect(grid).toHaveAttribute('data-total-items', '139');
   await expect(grid).toHaveAttribute('data-rendered-items', '24');
   await expect(grid.locator('[data-block-preview]')).toHaveCount(24);
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));

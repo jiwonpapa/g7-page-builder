@@ -222,6 +222,8 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-map address { display: grid; gap: .6rem; margin-top: 2rem; font-style: normal; }
 .g7pb-map__frame { min-height: 28rem; overflow: hidden; border: 1px solid #cad4e1; border-radius: var(--g7pb-theme-radius); background: #e9eef2; }
 .g7pb-map__frame iframe { display: block; width: 100%; height: 100%; min-height: 28rem; border: 0; }
+.g7pb-map__frame > img,
+.g7pb-map__frame > .g7pb-media-placeholder { width: 100%; height: 100%; min-height: 28rem; object-fit: cover; }
 .g7pb-map__placeholder { display: grid; min-height: 28rem; place-items: center; color: var(--g7pb-page-muted, #526071); background: repeating-linear-gradient(45deg, #edf1f4 0 20px, #e4e9ed 20px 40px); }
 .g7pb-section-heading { max-width: 48rem; margin-bottom: clamp(2rem, 5vw, 4rem); }
 .g7pb-section-heading h2 { margin: .65rem 0 0; font-size: clamp(2.1rem, 5vw, 4.25rem); line-height: 1.06; letter-spacing: -.045em; }
@@ -604,9 +606,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-testimonials--split { display: grid; grid-template-columns: minmax(14rem, .55fr) minmax(0, 1.45fr); gap: clamp(2rem, 6vw, 6rem); }
 .g7pb-testimonials--quote-hero blockquote:first-child { grid-column: 1 / -1; text-align: center; }
 .g7pb-testimonials--quote-hero blockquote:first-child .g7pb-testimonials__quote { max-width: 30ch; margin-inline: auto; font-family: Georgia, "Noto Serif KR", serif; font-size: clamp(1.6rem, 4vw, 3.4rem); }
-.g7pb-articles--magazine .g7pb-articles__items { display: grid; grid-template-columns: 1.25fr .75fr; }
-.g7pb-articles--magazine article:first-child { grid-row: span 2; }
-.g7pb-articles--magazine article:first-child .g7pb-articles__image { aspect-ratio: 4 / 3; }
+.g7pb-articles--magazine .g7pb-articles__items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1.5rem, 4vw, 3rem); }
 .g7pb-articles--featured .g7pb-articles__items article:first-child { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(1.5rem, 4vw, 4rem); }
 .g7pb-articles--featured .g7pb-articles__items article:not(:first-child) figure { display: none; }
 .g7pb-articles--editorial { display: grid; grid-template-columns: minmax(14rem, .5fr) minmax(0, 1.5fr); gap: clamp(2rem, 6vw, 6rem); }

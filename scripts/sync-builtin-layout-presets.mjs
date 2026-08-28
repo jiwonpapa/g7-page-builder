@@ -43,6 +43,7 @@ const articleItems = [
   ['제품', '더 빠른 페이지 운영을 위한 구조', '편집과 발행 흐름을 실무 관점에서 소개합니다.', '2026-08-21', 'service-conversion-hero-consultation'],
   ['브랜드', '지역의 이야기를 시각 언어로 만드는 법', '사진과 긴 글의 리듬을 함께 설계하는 방법을 살펴봅니다.', '2026-08-18', 'editorial-community-story-shop'],
   ['인사이트', '행동을 만드는 랜딩 페이지의 순서', '첫 화면부터 마지막 행동 유도까지 정보 위계를 점검합니다.', '2026-08-15', 'company-launch-hero-team'],
+  ['인터뷰', '현장에서 발견한 운영의 기준', '꾸준히 관리되는 페이지가 갖춘 공통점을 정리합니다.', '2026-08-12', 'local-business-customer-neighbor'],
 ].map(([category, title, summary, date, image]) => ({ category, title, summary, date, imageSrc: asset(image), imageAlt: title, url: '/' }));
 
 const groups = [
@@ -57,7 +58,7 @@ const groups = [
     enrich: (props, layout) => ({ ...props, alignment: layout === 'poster' ? 'center' : 'left', layout, image: { src: asset(imageSets.hero[layout]), alt: `${layout} 히어로 대표 이미지` } }),
   },
   {
-    baseId: 'hero-split.product-focus', primary: 'screenshot', layouts: [
+    baseId: 'hero-split.product-focus', targetBlockId: 'content.hero-centered-01', primary: 'screenshot', layouts: [
       ['screenshot', 'product-focus', '제품 스크린샷 히어로', '넓은 제품 화면과 설명을 비대칭으로 배치합니다.'],
       ['balanced', 'balanced', '균형 분할 히어로', '메시지와 이미지를 같은 비중으로 나눕니다.'],
       ['overlap', 'overlap', '겹침형 히어로', '이미지 위로 메시지 패널이 겹치는 구성을 만듭니다.'],
@@ -140,7 +141,7 @@ const groups = [
   },
   {
     baseId: 'articles.insights', primary: 'magazine', layouts: [
-      ['magazine', 'insights', '매거진 인사이트', '대표 기사와 보조 기사를 잡지형 그리드로 보여줍니다.'],
+      ['magazine', 'insights', '매거진 인사이트', '네 개 기사를 빈칸 없는 2열 그리드로 보여줍니다.'],
       ['list', 'list', '인사이트 목록', '이미지와 요약을 행 단위로 차분하게 읽습니다.'],
       ['grid', 'grid', '인사이트 카드 그리드', '여러 글을 같은 비중의 카드로 탐색합니다.'],
       ['featured', 'featured', '대표 기사 중심', '첫 글을 크게 보여주고 나머지는 간결한 목록으로 둡니다.'],
@@ -169,6 +170,7 @@ for (const group of groups) {
   const base = manifest.presets[baseIndex];
   for (const [layout, suffix, label, description] of group.layouts) {
     const preset = clone(base);
+    if (group.targetBlockId) preset.block_id = group.targetBlockId;
     preset.preset_id = layout === group.primary ? group.baseId : `${group.baseId.split('.')[0]}.${suffix}`;
     preset.label = { ko: label };
     preset.description = { ko: description };
@@ -205,14 +207,16 @@ const pageKitLayouts = {
   },
 };
 
-for (const [kit, layouts] of Object.entries(pageKitLayouts)) {
-  const path = resolve(root, `resources/store/source/page-kits/${kit}/document.json`);
-  const document = JSON.parse(await readFile(path, 'utf8'));
-  for (const block of document.blocks) {
-    const layout = layouts[block.type];
-    if (layout) block.props.layout = layout;
+if (process.env.G7PB_SYNC_PAGE_KITS !== '0') {
+  for (const [kit, layouts] of Object.entries(pageKitLayouts)) {
+    const path = resolve(root, `resources/store/source/page-kits/${kit}/document.json`);
+    const document = JSON.parse(await readFile(path, 'utf8'));
+    for (const block of document.blocks) {
+      const layout = layouts[block.type];
+      if (layout) block.props.layout = layout;
+    }
+    await writeFile(path, `${JSON.stringify(document, null, 2)}\n`);
   }
-  await writeFile(path, `${JSON.stringify(document, null, 2)}\n`);
 }
 
-process.stdout.write(`Synchronized ${manifest.presets.length} meaningful built-in presets and ${Object.keys(pageKitLayouts).length} page kits.\n`);
+process.stdout.write(`Synchronized ${manifest.presets.length} meaningful built-in presets${process.env.G7PB_SYNC_PAGE_KITS === '0' ? ' without page kits' : ` and ${Object.keys(pageKitLayouts).length} page kits`}.\n`);

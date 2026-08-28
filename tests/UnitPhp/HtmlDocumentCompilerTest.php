@@ -1065,6 +1065,48 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('data-block-type="hero-slider"', (string) $result->artifact);
     }
 
+    public function test_unified_hero_compiles_split_layout_without_changing_its_public_type(): void
+    {
+        $payload = $this->document('<p>제품 설명</p>')->toArray();
+        $payload['blocks'][0]['props']['layout'] = 'screenshot';
+        $payload['blocks'][0]['props']['mediaPosition'] = 'left';
+
+        $artifact = (string) $this->builtInCompiler()->compile(
+            PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7',
+        )->artifact;
+
+        self::assertStringContainsString('data-block-type="hero"', $artifact);
+        self::assertStringContainsString('g7pb-hero-split--left', $artifact);
+        self::assertStringContainsString('g7pb-hero-split--layout-screenshot', $artifact);
+        self::assertStringNotContainsString('data-block-type="hero-split"', $artifact);
+    }
+
+    public function test_map_accepts_an_uploaded_map_image_and_keeps_the_external_directions_link(): void
+    {
+        $payload = $this->formAndMapDocument()->toArray();
+        $payload['blocks'][1]['props']['provider'] = 'image';
+        $payload['blocks'][1]['props']['mapImageSrc'] = '/storage/office-map.webp';
+        $payload['blocks'][1]['props']['mapImageAlt'] = '시청역에서 사무실까지의 약도';
+
+        $artifact = (string) $this->builtInCompiler()->compile(
+            PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7',
+        )->artifact;
+
+        self::assertStringContainsString('class="g7pb-map__image"', $artifact);
+        self::assertStringContainsString('alt="시청역에서 사무실까지의 약도"', $artifact);
+        self::assertStringContainsString('href="https://www.openstreetmap.org/directions"', $artifact);
+    }
+
+    public function test_article_dates_must_be_real_iso_dates(): void
+    {
+        $payload = $this->phaseTwoDocument()->toArray();
+        $payload['blocks'][5]['props']['items'][0]['date'] = '2026-02-31';
+
+        $this->expectException(DocumentCompileException::class);
+        $this->expectExceptionMessage('날짜는 날짜 선택기로 입력해 주세요.');
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
     public function test_compiler_wraps_artifact_with_allowlisted_page_design_classes(): void
     {
         $payload = $this->document('<p>안전한 본문</p>')->toArray();

@@ -163,6 +163,7 @@ interface HeroEditorProps {
   imageSrc: string;
   imageAlt: string;
   alignment: 'left' | 'center';
+  mediaPosition: 'left' | 'right';
   layout: NonNullable<HeroBlockProps['layout']> | 'classic';
   surface: BlockAppearance['surface'];
   spacing: BlockAppearance['spacing'];
@@ -293,6 +294,51 @@ function FullSiteRoot({ children, design }: { children: React.ReactNode; design:
 
 export type PuckEditorData = Data<EditorComponents, PageDesignProps>;
 
+const MOTION_PRESET_FAMILIES: Readonly<Record<string, readonly BlockMotion['preset'][]>> = Object.freeze({
+  Hero: ['parallax-soft', 'reveal'],
+  HeroSplit: ['parallax-soft', 'reveal'],
+  HeroSlider: ['parallax-soft', 'reveal'],
+  Gallery: ['parallax-soft', 'stagger', 'reveal'],
+  ImageCarousel: ['parallax-soft', 'reveal'],
+  Features: ['stagger', 'reveal'],
+  IconList: ['stagger', 'reveal'],
+  CardGrid: ['stagger', 'reveal'],
+  LogoCloud: ['stagger', 'reveal'],
+  Pricing: ['stagger', 'reveal'],
+  Team: ['stagger', 'reveal'],
+  Testimonials: ['stagger', 'reveal'],
+  ProcessTimeline: ['stagger', 'reveal'],
+  ArticleList: ['stagger', 'reveal'],
+  G7RecentPosts: ['stagger', 'reveal'],
+  G7ProductGrid: ['stagger', 'reveal'],
+  Stats: ['counter', 'stagger', 'reveal'],
+  BarChart: ['chart-draw', 'reveal'],
+});
+
+export function recommendedMotionPlan(types: readonly string[]): BlockMotion[] {
+  let previous: BlockMotion['preset'] | null = null;
+  const occurrences = new Map<string, number>();
+  const intensities: BlockMotion['intensity'][] = ['subtle', 'normal', 'normal', 'strong'];
+  const staggers: BlockMotion['stagger_ms'][] = [60, 100, 160];
+
+  return types.map((type, index) => {
+    const options = MOTION_PRESET_FAMILIES[type] ?? ['reveal'];
+    const occurrence = occurrences.get(type) ?? 0;
+    occurrences.set(type, occurrence + 1);
+    let preset = options[occurrence % options.length] ?? 'reveal';
+    if (options.length > 1 && preset === previous) {
+      preset = options[(options.indexOf(preset) + 1) % options.length] ?? preset;
+    }
+    previous = preset;
+    return {
+      ...DEFAULT_BLOCK_MOTION,
+      preset,
+      intensity: intensities[index % intensities.length] ?? 'normal',
+      stagger_ms: staggers[index % staggers.length] ?? 100,
+    };
+  });
+}
+
 interface BlockRoundTripMetadata {
   blockVersion: number;
   hadSlots: boolean;
@@ -347,6 +393,7 @@ const DEFAULT_HERO: HeroEditorProps = {
   imageSrc: '',
   imageAlt: '',
   alignment: 'center',
+  mediaPosition: 'right',
   layout: 'product',
   surface: 'default',
   spacing: 'spacious',
@@ -414,8 +461,13 @@ function normalizeTheme(value: unknown): CtaEditorProps['theme'] {
 
 function normalizeHeroLayout(value: unknown): HeroEditorProps['layout'] {
   return value === 'product' || value === 'poster' || value === 'backdrop' || value === 'editorial' || value === 'device'
+    || value === 'balanced' || value === 'screenshot' || value === 'overlap' || value === 'offset'
     ? value
     : 'classic';
+}
+
+function isSplitHeroLayout(layout: HeroEditorProps['layout']): layout is 'balanced' | 'screenshot' | 'overlap' | 'offset' {
+  return layout === 'balanced' || layout === 'screenshot' || layout === 'overlap' || layout === 'offset';
 }
 
 function normalizeFeaturesLayout(value: unknown): FeaturesEditorProps['layout'] {
@@ -542,6 +594,7 @@ function heroToEditorProps(props: Record<string, unknown>): HeroEditorProps {
     imageSrc: asString(image.src),
     imageAlt: asString(image.alt),
     alignment: normalizeAlignment(props.alignment),
+    mediaPosition: props.mediaPosition === 'left' ? 'left' : 'right',
     layout: normalizeHeroLayout(props.layout),
     ...appearanceToEditorProps(props.appearance, { surface: 'default', spacing: 'spacious' }),
     motion: { ...DEFAULT_BLOCK_MOTION },
@@ -767,6 +820,7 @@ function puckBlockToCanonical(
     };
     const layout = normalizeHeroLayout(editorProps.layout);
     if (layout !== 'classic') heroProps.layout = layout;
+    if (isSplitHeroLayout(layout)) heroProps.mediaPosition = editorProps.mediaPosition === 'left' ? 'left' : 'right';
     const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
     if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious' || appearance.textScale || appearance.textAlign || appearance.elements) {
       heroProps.appearance = appearance;
@@ -1232,6 +1286,7 @@ function HeroPreview({
   imageSrc,
   imageAlt,
   alignment,
+  mediaPosition,
   layout,
   surface,
   spacing,
@@ -1241,6 +1296,26 @@ function HeroPreview({
   motion,
 }: Omit<HeroEditorProps, 'body' | 'title'> & { id: string; body: React.ReactNode; title: React.ReactNode }): React.ReactElement {
   const image = safeImage(imageSrc);
+
+  if (isSplitHeroLayout(layout)) {
+    return (
+      <BlockFrame id={id} type="hero" motion={motion} elementStyles={elementStyles}>
+        <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${mediaPosition} g7pb-preview-hero-split--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
+          <div className="g7pb-preview-hero-split__copy">
+            {eyebrow && <small data-g7pb-inline-field="eyebrow">{eyebrow}</small>}
+            <RichTextCanvasField as="h1" className="g7pb-preview-richtext" fieldPath="title">{title}</RichTextCanvasField>
+            <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
+            {primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>{primaryLabel}</a>}
+          </div>
+          <figure data-g7pb-media-field="imageSrc">
+            {image
+              ? <img src={image} alt={imageAlt} />
+              : <span className="g7pb-preview-media-placeholder" role="img" aria-label="대표 이미지를 선택하세요">대표 이미지를 선택하세요</span>}
+          </figure>
+        </div>
+      </BlockFrame>
+    );
+  }
 
   return (
     <BlockFrame id={id} type="hero" motion={motion} elementStyles={elementStyles}>
@@ -1387,7 +1462,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
   categories: {
     content: {
       title: '콘텐츠 블록',
-      components: ['Heading', 'RichText', 'ImageText', 'IconList', 'Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Buttons', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
+      components: ['Heading', 'RichText', 'ImageText', 'IconList', 'Hero', 'HeroSlider', 'Features', 'Cta', 'Buttons', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
       defaultExpanded: true,
     },
     business: {
@@ -1404,6 +1479,10 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       title: 'G7 데이터',
       components: ['G7RecentPosts', 'G7BoardArchive', 'G7PostDetail', 'G7ProductGrid', 'G7ProductShowcase', 'G7ProductDetail'],
       defaultExpanded: true,
+    },
+    legacy: {
+      components: ['HeroSplit'],
+      visible: false,
     },
   },
   components: withBlockContainerFields({
@@ -1445,12 +1524,22 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
             { label: '가운데', value: 'center' },
           ],
         },
+        mediaPosition: {
+          type: 'radio',
+          label: '이미지 위치',
+          options: [
+            { label: '왼쪽', value: 'left' },
+            { label: '오른쪽', value: 'right' },
+          ],
+        },
         layout: {
           type: 'select', label: '레이아웃', options: [
             { label: '기존 기본', value: 'classic' },
             { label: '제품 소개', value: 'product' }, { label: '포스터', value: 'poster' },
             { label: '배경 이미지', value: 'backdrop' }, { label: '에디토리얼', value: 'editorial' },
             { label: '디바이스 쇼케이스', value: 'device' },
+            { label: '균형 분할', value: 'balanced' }, { label: '제품 스크린샷', value: 'screenshot' },
+            { label: '이미지 겹침', value: 'overlap' }, { label: '세로 오프셋', value: 'offset' },
           ],
         },
         elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> },
@@ -1474,23 +1563,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
         },
         motion: createMotionField(['none', 'reveal', 'parallax-soft']),
       },
-      render: ({ id, eyebrow, title, body, primaryLabel, primaryUrl, imageSrc, imageAlt, alignment, layout, surface, spacing, motion }) => (
-        <HeroPreview
-          id={id}
-          eyebrow={eyebrow}
-          title={title}
-          body={body}
-          primaryLabel={primaryLabel}
-          primaryUrl={primaryUrl}
-          imageSrc={imageSrc}
-          imageAlt={imageAlt}
-          alignment={alignment}
-          layout={layout}
-          surface={surface}
-          spacing={spacing}
-          motion={motion}
-        />
-      ),
+      render: (props) => <HeroPreview {...props} />,
     },
     Features: {
       label: 'Features',
@@ -1825,6 +1898,7 @@ const BLOCK_SEARCH_ALIASES: Readonly<Record<string, string>> = Object.freeze({
 const BLOCK_CATEGORY_ORDER = ['기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터'] as const;
 const QUICK_ADD_COMPONENTS = ['Heading', 'RichText', 'Image', 'Buttons', 'Hero', 'Cta'] as const;
 const OPEN_BLOCK_GALLERY_EVENT = 'g7pb:open-block-gallery';
+const LEGACY_LIBRARY_DEFINITION_IDS = new Set(['content.hero-split-01']);
 export const BLOCK_GALLERY_WINDOW_SIZE = 24;
 
 function blockPackLabel(packId: string): string {
@@ -1832,7 +1906,9 @@ function blockPackLabel(packId: string): string {
   return packId.split('/').at(-1)?.replace(/[-_]+/g, ' ') || packId;
 }
 
-const BUILTIN_DEFINITION_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_DEFINITIONS.map((definition) => {
+const BUILTIN_DEFINITION_GALLERY_ITEMS: ReadonlyArray<BlockGalleryItem> = BUILTIN_BLOCK_DEFINITIONS
+  .filter((definition) => !LEGACY_LIBRARY_DEFINITION_IDS.has(definition.block_id))
+  .map((definition) => {
   const type = definition.editor_component;
   if (!Object.prototype.hasOwnProperty.call(pageBuilderPuckConfig.components, type)) {
     throw new Error(`Builtin Block Pack editor component is not registered: ${type}`);
@@ -1903,6 +1979,7 @@ const BlockCatalogContext = React.createContext<BlockCatalogContextValue>({
 });
 
 function apiCatalogItemToGalleryItem(item: BlockCatalogItem, locale: string): BlockGalleryItem | null {
+  if (item.kind === 'definition' && LEGACY_LIBRARY_DEFINITION_IDS.has(item.block_id)) return null;
   if (!Object.prototype.hasOwnProperty.call(pageBuilderPuckConfig.components, item.editor_component)
     && !isEditorComponentRegistered(item.editor_component)) {
     return null;
@@ -2233,26 +2310,17 @@ function StableHeaderControls({
   };
 
   const applyRecommendedMotions = (): void => {
-    const recommendedPreset = (type: string): BlockMotion['preset'] => {
-      if (type === 'Hero' || type === 'HeroSplit') return 'parallax-soft';
-      if (type === 'Features' || type === 'LogoCloud' || type === 'Pricing' || type === 'Team' || type === 'Gallery') return 'stagger';
-      if (type === 'Stats') return 'counter';
-      if (type === 'BarChart') return 'chart-draw';
-      return 'reveal';
-    };
+    const motionPlan = recommendedMotionPlan(data.content.map((block) => block.type));
 
     dispatch({
       type: 'setData',
       data: {
         ...data,
-        content: data.content.map((block) => ({
+        content: data.content.map((block, index) => ({
           ...block,
           props: {
             ...block.props,
-            motion: {
-              ...DEFAULT_BLOCK_MOTION,
-              preset: recommendedPreset(block.type),
-            },
+            motion: motionPlan[index] ?? { ...DEFAULT_BLOCK_MOTION, preset: 'reveal' },
           },
         })),
       } as never,

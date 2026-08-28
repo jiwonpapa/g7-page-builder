@@ -410,7 +410,8 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     await expect(page.getByRole('alert')).toContainText('Header와 Footer 프리셋을 함께 적용했습니다.');
     const saveResponse = page.waitForResponse((response) => response.url().includes(`/site-part-sets/${target?.id}/draft`) && response.request().method() === 'PUT');
     await page.getByTestId('page-builder-site-part-set-save').click();
-    expect((await saveResponse).ok()).toBe(true);
+    const savedResponse = await saveResponse;
+    expect(savedResponse.ok(), await savedResponse.text()).toBe(true);
 
     await setEditor.getByRole('button', { name: '모바일', exact: true }).click();
     await expect(setEditor.getByText('모바일·태블릿은 확인 전용 · 편집은 PC에서 지원')).toBeVisible();
@@ -419,7 +420,8 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
 
     const publishResponse = page.waitForResponse((response) => response.url().includes(`/site-part-sets/${target?.id}/publish`) && response.request().method() === 'POST');
     await page.getByTestId('page-builder-site-part-set-publish').click();
-    expect((await publishResponse).ok()).toBe(true);
+    const publishedResponse = await publishResponse;
+    expect(publishedResponse.ok(), await publishedResponse.text()).toBe(true);
     await expect(page.getByRole('alert')).toContainText('Header와 Footer를 한 세트로 발행했습니다.');
 
     const activate = page.getByTestId('page-builder-site-part-set-activate');

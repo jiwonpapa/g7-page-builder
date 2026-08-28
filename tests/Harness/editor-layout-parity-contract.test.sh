@@ -237,6 +237,11 @@ perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(h1, h2, h3, h4\) \{[^}]*fon
 expect_failure 'Puck semantic descendant는 PageBuilderDocument heading wrapper의 계산된 typography를 상속해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*font-size:) inherit !important;/${1} initial !important;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure 'Puck의 실제 제목 leaf 태그와 무관하게 wrapper의 WYSIWYG typography를 상속해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-richtext\.g7pb-preview-rich-text__content \{[^}]*font-size:) 1rem;/${1} 1.25rem;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
 expect_failure '리치텍스트 본문은 편집기와 공개 출력에서 동일한 기본 1rem typography를 사용해야 합니다.'

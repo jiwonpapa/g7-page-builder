@@ -166,7 +166,7 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
 }
 
 async function openElementStyleFromActionBar(): Promise<void> {
-  const textToolsWereOpen = document.querySelector('[data-testid="page-builder-text-scale"]') !== null;
+  const textToolsWereOpen = document.querySelector('[data-testid="page-builder-font-size-rem"]') !== null;
   const textToolsIcon = await eventually<SVGElement>('[data-testid="page-builder-element-style-open"]');
   const textToolsAction = textToolsIcon.closest<HTMLButtonElement>('button');
   expect(textToolsAction).not.toBeNull();
@@ -822,16 +822,18 @@ describe('Puck editor surface contract', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     await openElementStyleFromActionBar();
-    const textScaleMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-text-scale"]');
+    const textScaleMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-font-size-rem"]');
     await act(async () => {
-      textScaleMarker.value = 'large';
+      textScaleMarker.value = '3';
       textScaleMarker.dispatchEvent(new Event('change', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.size === 'large'
+    expect([...textScaleMarker.options].map((option) => option.textContent)).toContain('48 px · 3 rem');
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.fontSizeRem === 3
+      && changed.blocks[0].props.appearance?.elements?.title?.size === undefined
       && changed.blocks[0].props.appearance?.textScale === undefined)).toBe(true);
-    expect(await eventually('[data-block-type="hero"] [data-g7pb-inline-field="title"].g7pb-element-size--large')).not.toBeNull();
-    expect(editorElements('[data-block-type="hero"] [data-g7pb-inline-field="body"]')[0]?.classList.contains('g7pb-element-size--large')).toBe(false);
+    expect(await eventually('[data-block-type="hero"] [data-g7pb-inline-field="title"].g7pb-element-font-size--48')).not.toBeNull();
+    expect(editorElements('[data-block-type="hero"] [data-g7pb-inline-field="body"]')[0]?.classList.contains('g7pb-element-font-size--48')).toBe(false);
     const serifMarker = await eventually<HTMLSelectElement>('[data-testid="page-builder-element-font"]');
     await act(async () => {
       serifMarker.value = 'serif';
@@ -845,7 +847,7 @@ describe('Puck editor surface contract', () => {
       alignRightMarker.closest('button')?.click();
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.size === 'large'
+    expect(onChange.mock.calls.some(([changed]) => changed.blocks[0].props.appearance?.elements?.title?.fontSizeRem === 3
       && changed.blocks[0].props.appearance?.elements?.title?.align === 'right')).toBe(true);
 
     const darkTheme = await eventually<HTMLButtonElement>('button[aria-label="다크 테마"]');

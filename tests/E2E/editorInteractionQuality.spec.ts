@@ -21,7 +21,7 @@ type RichTextBlockType = 'heading' | 'features' | 'rich-text' | 'article-list';
 
 interface FormattingExpectation {
   font: 'mono' | 'serif';
-  size: 'large' | 'xlarge';
+  fontSizeRem: '2' | '3';
   tone: 'accent' | 'custom1';
   weight: 'bold' | 'semibold';
 }
@@ -822,7 +822,7 @@ async function chooseRangeOption(
   target: string,
   testId: string,
   option: string,
-  markAttribute: keyof FormattingExpectation,
+  markAttribute: 'font' | 'font-size-rem' | 'tone' | 'weight',
   markValue: string,
 ): Promise<void> {
   let trigger = menuRoot.getByTestId(testId);
@@ -852,7 +852,7 @@ async function applySelectedFormatting(
   menuRoot: Locator,
   field: Locator,
   target: string,
-  choices: { font: string; size: string; tone: string; weight: string },
+  choices: { font: string; fontSize: string; tone: string; weight: string },
   expected: FormattingExpectation,
 ): Promise<void> {
   const bold = menuRoot.getByRole('button', { name: '선택한 글자 굵게', exact: true });
@@ -867,7 +867,7 @@ async function applySelectedFormatting(
   await chooseRangeOption(page, menuRoot, field, target,
     'page-builder-richtext-font', choices.font, 'font', expected.font);
   await chooseRangeOption(page, menuRoot, field, target,
-    'page-builder-richtext-size', choices.size, 'size', expected.size);
+    'page-builder-richtext-size', choices.fontSize, 'font-size-rem', expected.fontSizeRem);
   await chooseRangeOption(page, menuRoot, field, target,
     'page-builder-richtext-weight', choices.weight, 'weight', expected.weight);
   await chooseRangeOption(page, menuRoot, field, target,
@@ -885,9 +885,11 @@ async function assertSelectedFormatting(
     await expect(scope.locator(tag), `${tag} must apply only to the pointer-selected copy`).toHaveCount(1);
     await expect(scope.locator(tag)).toHaveText(target);
   }
-  const g7Mark = scope.locator(`span[data-g7pb-font="${expected.font}"][data-g7pb-size="${expected.size}"][data-g7pb-weight="${expected.weight}"][data-g7pb-tone="${expected.tone}"]`);
+  const g7Mark = scope.locator(`span[data-g7pb-font="${expected.font}"][data-g7pb-font-size-rem="${expected.fontSizeRem}"][data-g7pb-weight="${expected.weight}"][data-g7pb-tone="${expected.tone}"]`);
   await expect(g7Mark).toHaveCount(1);
   await expect(g7Mark).toHaveText(target);
+  await expect(g7Mark).toHaveCSS('font-size', `${Number(expected.fontSizeRem) * 16}px`);
+  await expect(g7Mark).not.toHaveAttribute('data-g7pb-size');
   await expect(scope).toContainText(prefix);
   await expect(scope).toContainText(suffix);
 }
@@ -967,10 +969,10 @@ async function preparePreview(page: Page, documentId: string): Promise<string> {
 }
 
 const ROOT_FORMATTING: FormattingExpectation = {
-  font: 'serif', size: 'large', weight: 'bold', tone: 'custom1',
+  font: 'serif', fontSizeRem: '2', weight: 'bold', tone: 'custom1',
 };
 const NESTED_FORMATTING: FormattingExpectation = {
-  font: 'mono', size: 'xlarge', weight: 'semibold', tone: 'accent',
+  font: 'mono', fontSizeRem: '3', weight: 'semibold', tone: 'accent',
 };
 
 async function assertPersistedEditorState(page: Page): Promise<void> {
@@ -1089,7 +1091,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('ROOT_INLINE_RICH_GATE', async () => {
       menuRoot = await officialPuckMenuRoot(page);
       await applySelectedFormatting(page, menuRoot, rootField, EDITOR_INTERACTION_COPY.rootTarget, {
-        font: '명조', size: 'L', weight: '매우 굵게', tone: '사용자색 1',
+        font: '명조', fontSize: '32 px · 2 rem', weight: '매우 굵게', tone: '사용자색 1',
       }, ROOT_FORMATTING);
       await assertSelectedFormatting(rootField, EDITOR_INTERACTION_COPY.rootTarget,
         EDITOR_INTERACTION_COPY.rootPrefix, EDITOR_INTERACTION_COPY.rootSuffix, ROOT_FORMATTING);
@@ -1126,7 +1128,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
       const nestedMenuRoot = await officialPuckMenuRoot(page);
       await expect(elementPanel).toBeHidden();
       await applySelectedFormatting(page, nestedMenuRoot, nestedField, EDITOR_INTERACTION_COPY.nestedTarget, {
-        font: '고정폭', size: 'XL', weight: '굵게', tone: '강조색',
+        font: '고정폭', fontSize: '48 px · 3 rem', weight: '굵게', tone: '강조색',
       }, NESTED_FORMATTING);
       await assertSelectedFormatting(nestedField, EDITOR_INTERACTION_COPY.nestedTarget,
         EDITOR_INTERACTION_COPY.nestedPrefix, EDITOR_INTERACTION_COPY.nestedSuffix, NESTED_FORMATTING);

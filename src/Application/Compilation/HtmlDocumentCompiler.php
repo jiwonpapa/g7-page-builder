@@ -2421,11 +2421,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $style */
     private function elementAppearanceClasses(array $style): string
     {
-        $this->assertOnlyKeys($style, ['font', 'size', 'weight', 'align', 'tone'], 'Element appearance');
+        $this->assertOnlyKeys($style, ['font', 'fontSizeRem', 'size', 'weight', 'align', 'tone'], 'Element appearance');
         if ($style === []) {
             throw new DocumentCompileException('Element appearance cannot be empty.');
         }
         $font = $this->optionalString($style, 'font', 16);
+        $fontSizeRem = $style['fontSizeRem'] ?? null;
         $size = $this->optionalString($style, 'size', 16);
         $weight = $this->optionalString($style, 'weight', 16);
         $align = $this->optionalString($style, 'align', 16);
@@ -2435,6 +2436,20 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         if ($size !== null && ! in_array($size, ['small', 'base', 'large', 'xlarge'], true)) {
             throw new DocumentCompileException('Element appearance size is invalid.');
+        }
+        if ($fontSizeRem !== null && (! is_int($fontSizeRem) && ! is_float($fontSizeRem))) {
+            throw new DocumentCompileException('Element appearance font size is invalid.');
+        }
+        $fontSizeIndex = $fontSizeRem === null ? false : array_search(
+            (float) $fontSizeRem,
+            [0.75, 0.875, 1.0, 1.125, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0],
+            true,
+        );
+        if ($fontSizeRem !== null && $fontSizeIndex === false) {
+            throw new DocumentCompileException('Element appearance font size is invalid.');
+        }
+        if ($fontSizeRem !== null && $size !== null) {
+            throw new DocumentCompileException('Element appearance cannot combine legacy and explicit font sizes.');
         }
         if ($weight !== null && ! in_array($weight, ['regular', 'medium', 'semibold', 'bold'], true)) {
             throw new DocumentCompileException('Element appearance weight is invalid.');
@@ -2448,6 +2463,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         return implode(' ', array_filter([
             $font === null ? null : 'g7pb-element-font--'.$font,
+            $fontSizeIndex === false ? null : 'g7pb-element-font-size--'.[12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 96][$fontSizeIndex],
             $size === null ? null : 'g7pb-element-size--'.$size,
             $weight === null ? null : 'g7pb-element-weight--'.$weight,
             $align === null ? null : 'g7pb-element-align--'.$align,
@@ -3173,7 +3189,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 foreach ($attributes as $attribute) {
                     $isLinkHref = $tag === 'a' && $attribute === 'href';
                     $isTypedTextMark = $tag === 'span'
-                        && in_array($attribute, ['data-g7pb-font', 'data-g7pb-size', 'data-g7pb-weight', 'data-g7pb-tone'], true);
+                        && in_array($attribute, ['data-g7pb-font', 'data-g7pb-font-size-rem', 'data-g7pb-size', 'data-g7pb-weight', 'data-g7pb-tone'], true);
                     if (! $isLinkHref && ! $isTypedTextMark) {
                         $child->removeAttribute($attribute);
                     }
@@ -3182,6 +3198,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 if ($tag === 'span') {
                     $allowedValues = [
                         'data-g7pb-font' => ['modern', 'serif', 'mono'],
+                        'data-g7pb-font-size-rem' => ['0.75', '0.875', '1', '1.125', '1.25', '1.5', '1.75', '2', '2.25', '2.5', '3', '3.5', '4', '4.5', '5', '6'],
                         'data-g7pb-size' => ['small', 'large', 'xlarge'],
                         'data-g7pb-weight' => ['medium', 'semibold', 'bold'],
                         'data-g7pb-tone' => ['muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4'],

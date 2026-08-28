@@ -1225,7 +1225,7 @@
         "layout": "product",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero.webp",
-          "alt": "product 히어로 대표 이미지"
+          "alt": "고객과 대화하는 서비스 담당자"
         }
       }
     },
@@ -1309,7 +1309,7 @@
         "heading": "문의와 방문 안내",
         "address": "서울특별시 중구 세종대로 110",
         "phone": "02-0000-0000",
-        "email": "hello@example.com",
+        "email": "hello@g7studio.kr",
         "cta": {
           "label": "상담 요청",
           "url": "/contact"
@@ -1425,7 +1425,7 @@
         "layout": "screenshot",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero.webp",
-          "alt": "screenshot 분할 히어로 대표 이미지"
+          "alt": "고객 상담 서비스를 소개하는 담당자"
         }
       }
     },
@@ -2643,7 +2643,7 @@
         "layout": "poster",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/event-launch-hero-event.webp",
-          "alt": "poster 히어로 대표 이미지"
+          "alt": "행사 무대에서 발표하는 연사"
         }
       }
     },
@@ -2671,7 +2671,7 @@
         "layout": "backdrop",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero-space.webp",
-          "alt": "backdrop 히어로 대표 이미지"
+          "alt": "따뜻한 조명의 로컬 매장 내부"
         }
       }
     },
@@ -2699,7 +2699,7 @@
         "layout": "editorial",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-hero-editorial.webp",
-          "alt": "editorial 히어로 대표 이미지"
+          "alt": "지역 커뮤니티 현장을 소개하는 인물"
         }
       }
     },
@@ -2727,7 +2727,7 @@
         "layout": "device",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
-          "alt": "device 히어로 대표 이미지"
+          "alt": "상담 서비스를 소개하는 담당자"
         }
       }
     },
@@ -2755,7 +2755,7 @@
         "layout": "balanced",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
-          "alt": "balanced 분할 히어로 대표 이미지"
+          "alt": "회의 중인 제품 팀 구성원"
         }
       }
     },
@@ -2783,7 +2783,7 @@
         "layout": "overlap",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-gathering.webp",
-          "alt": "overlap 분할 히어로 대표 이미지"
+          "alt": "행사에 모인 지역 커뮤니티"
         }
       }
     },
@@ -2811,7 +2811,7 @@
         "layout": "offset",
         "image": {
           "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp",
-          "alt": "offset 분할 히어로 대표 이미지"
+          "alt": "로컬 비즈니스 공간을 운영하는 담당자"
         }
       }
     },
@@ -4277,15 +4277,15 @@
     "thumbnails/generated/block-09-icon-list.png": "a9addef28cf75fad7003a0a018804ed23da1de306e5d1fbad0b616a1a5402197",
     "thumbnails/generated/block-10-features.png": "e03b8312c3c78264a73412688d051a1b405eb5a1d9eaf8a7328d8b8db41f1367",
     "thumbnails/generated/block-11-cta.png": "2684d9f236e00f3aa54c2cd494c0fb67c1337d2d116659819accd5b069ce9f42",
-    "thumbnails/generated/block-12-contact.png": "c9f47c4d61b9c2605a472e792657f974570bc3d21cc7d08b800848727b18a466",
+    "thumbnails/generated/block-12-contact.png": "4366021908f7258ba90d154f2498c994e12da398603113eb2f46818157969da8",
     "thumbnails/generated/block-13-logo-cloud.png": "a161aa5d08571dafa099aadb5b4b66ad457793252806c5d21d40582d150d76d9",
     "thumbnails/generated/block-14-stats.png": "8991bd5dc844c721b21a2f2a590c9072bf56d2992598a9b3c72bb487cb42f595",
     "thumbnails/generated/block-15-pricing.png": "7370b37ab1d5170ae3f3d803d389183d1559b228e9e89e98f9ee64e525f18ec5",
     "thumbnails/generated/block-16-team.png": "f24975af293cdd4b20df693adc7f724b01cdf0b5d3772cdf6fd56a201f4d5bd4",
     "thumbnails/generated/block-17-gallery.png": "9b3aede1b01603800afff600851d2feaf16b288a3ece0cc3616f4fc35689c7b5",
     "thumbnails/generated/block-18-bar-chart.png": "a89a174561f51c7d1f9bd31171bc50153ec3386042ee6ec31196e510a6db268a",
-    "thumbnails/generated/block-19-g7-recent-posts.png": "f644401cd1280b643fb3428b8ac298bf65c51d81f69000908662275a596b969b",
-    "thumbnails/generated/block-20-g7-product-grid.png": "ca74c2562720e8c45d7c099edf3b38860cbfacc646a0973ea78226e32df5610a",
+    "thumbnails/generated/block-19-g7-recent-posts.png": "98548cf311a5d13c21d86f31520d4338566ffb0ebbdff0c90441a316916b8ecb",
+    "thumbnails/generated/block-20-g7-product-grid.png": "3ed3929789f8a3a8ce15b94cb677d9bed7846a982af9295f781cb8328279858c",
     "thumbnails/generated/block-21-inquiry-form.png": "efc189bb37fa217e73bde4e78a9cd414510b67e1642fb5b6729ae0d99edd2406",
     "thumbnails/generated/block-22-map-directions.png": "602dc53bac45c309d47cd1f0fe4b708c0ea00ffc3312915b094c68b970c9c79a",
     "thumbnails/generated/block-23-testimonials.png": "88f260f1200d56977773347a3688161e0c16d24e9e993474891a7bf7ad680da8",
@@ -4299,10 +4299,10 @@
     "thumbnails/generated/block-31-testimonial-slider.png": "5e01dfe707ca64587a2df312539098614524225b7422dde516e5cb1bbe3df00c",
     "thumbnails/generated/block-32-event-schedule.png": "9a991852773a081a8020dde7b057d472123672ecee91310e395e95b68e7567f7",
     "thumbnails/generated/block-33-download-resources.png": "1142771b868503546e79111a571ea7350e280b05e14b5cb7a392b9e3d19f1d31",
-    "thumbnails/generated/block-34-g7-board-archive.png": "9286ecaf9a4f570a50544b14609f4f23459ee1298624f886290f47d6c36ba9b9",
-    "thumbnails/generated/block-35-g7-product-showcase.png": "1ba27c26365178a51fad78aedd52a1b22f97db0e9e760bab57295719ea0c994d",
-    "thumbnails/generated/block-36-g7-post-detail.png": "219ccf5379056120fbef7f23d1a436d6de655236d67e59bfe9c8fc0abdf5dbe9",
-    "thumbnails/generated/block-37-g7-product-detail.png": "3b9d326fd80ea20f35f4b35481a5946f187f3bae8ad3fa2fb2c600625aa2eb45",
+    "thumbnails/generated/block-34-g7-board-archive.png": "55fe3146bb9e55798860b16dbb0dd0e0d9959ac9d609eade18e84d185f11e875",
+    "thumbnails/generated/block-35-g7-product-showcase.png": "92fb3e9a07da27b86c56cb2a058f8dd210d7fdd66f194bcfc8802504a560810e",
+    "thumbnails/generated/block-36-g7-post-detail.png": "ec622946601ebffd526a8fa894f45d1e075a27cc59ecd263f0b15842fb836e1d",
+    "thumbnails/generated/block-37-g7-product-detail.png": "56a4ffb9273f23e3f0a4b3b7067fb055282dda742f867fecc07bcd61c0eee3b5",
     "thumbnails/generated/block-38-divider.png": "0a2df7df90fc4d3ea5eff877fc84b253170158900629d94fdc59ac46b9a31932",
     "thumbnails/generated/block-39-blockquote.png": "0415f73f555f55786a61e7689bb89bd6a76662d22a104578c16af897ba43bb61",
     "thumbnails/generated/block-40-notice.png": "5c1f5e85cf63151df3cae9d5137c239313dec4624ab07a4b823edacc79a70335",
@@ -4326,7 +4326,7 @@
     "thumbnails/generated/preset-13-hero-service-intro.png": "a01a73b13ada046eb8644bb16c3a99fa3954fdb6d4fe7414c4a9cf4688dd1312",
     "thumbnails/generated/preset-14-features-core-benefits.png": "e03b8312c3c78264a73412688d051a1b405eb5a1d9eaf8a7328d8b8db41f1367",
     "thumbnails/generated/preset-15-cta-contact.png": "2684d9f236e00f3aa54c2cd494c0fb67c1337d2d116659819accd5b069ce9f42",
-    "thumbnails/generated/preset-16-contact-office.png": "c9f47c4d61b9c2605a472e792657f974570bc3d21cc7d08b800848727b18a466",
+    "thumbnails/generated/preset-16-contact-office.png": "4366021908f7258ba90d154f2498c994e12da398603113eb2f46818157969da8",
     "thumbnails/generated/preset-17-faq-basic.png": "884999ba508ce54e6beee0c76fd15e3b86b30c12756239ee04353a4f8d93cf0b",
     "thumbnails/generated/preset-18-process-four-step.png": "31b0b9bf78e32fb4f28df9e1382fd1e9a5fca2307f5bb804a27249d105f7179c",
     "thumbnails/generated/preset-19-hero-split-product-focus.png": "f403b9b93bf6793ac7d94e991c51332664d3051a90adda99cacbfd6eac94d319",
@@ -4337,8 +4337,8 @@
     "thumbnails/generated/preset-24-team-leadership.png": "f24975af293cdd4b20df693adc7f724b01cdf0b5d3772cdf6fd56a201f4d5bd4",
     "thumbnails/generated/preset-25-gallery-project-scenes.png": "9b3aede1b01603800afff600851d2feaf16b288a3ece0cc3616f4fc35689c7b5",
     "thumbnails/generated/preset-26-bar-chart-quarterly.png": "a89a174561f51c7d1f9bd31171bc50153ec3386042ee6ec31196e510a6db268a",
-    "thumbnails/generated/preset-27-g7-posts-latest.png": "f644401cd1280b643fb3428b8ac298bf65c51d81f69000908662275a596b969b",
-    "thumbnails/generated/preset-28-g7-products-new.png": "ca74c2562720e8c45d7c099edf3b38860cbfacc646a0973ea78226e32df5610a",
+    "thumbnails/generated/preset-27-g7-posts-latest.png": "98548cf311a5d13c21d86f31520d4338566ffb0ebbdff0c90441a316916b8ecb",
+    "thumbnails/generated/preset-28-g7-products-new.png": "3ed3929789f8a3a8ce15b94cb677d9bed7846a982af9295f781cb8328279858c",
     "thumbnails/generated/preset-29-inquiry-general.png": "efc189bb37fa217e73bde4e78a9cd414510b67e1642fb5b6729ae0d99edd2406",
     "thumbnails/generated/preset-30-map-office.png": "602dc53bac45c309d47cd1f0fe4b708c0ea00ffc3312915b094c68b970c9c79a",
     "thumbnails/generated/preset-31-testimonials-customer-proof.png": "88f260f1200d56977773347a3688161e0c16d24e9e993474891a7bf7ad680da8",
@@ -4350,10 +4350,10 @@
     "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "5e01dfe707ca64587a2df312539098614524225b7422dde516e5cb1bbe3df00c",
     "thumbnails/generated/preset-38-events-upcoming.png": "9a991852773a081a8020dde7b057d472123672ecee91310e395e95b68e7567f7",
     "thumbnails/generated/preset-39-downloads-resource-center.png": "1142771b868503546e79111a571ea7350e280b05e14b5cb7a392b9e3d19f1d31",
-    "thumbnails/generated/preset-40-g7-archive-searchable.png": "9286ecaf9a4f570a50544b14609f4f23459ee1298624f886290f47d6c36ba9b9",
-    "thumbnails/generated/preset-41-g7-showcase-featured.png": "1ba27c26365178a51fad78aedd52a1b22f97db0e9e760bab57295719ea0c994d",
-    "thumbnails/generated/preset-42-g7-post-detail-featured.png": "219ccf5379056120fbef7f23d1a436d6de655236d67e59bfe9c8fc0abdf5dbe9",
-    "thumbnails/generated/preset-43-g7-product-detail-featured.png": "3b9d326fd80ea20f35f4b35481a5946f187f3bae8ad3fa2fb2c600625aa2eb45",
+    "thumbnails/generated/preset-40-g7-archive-searchable.png": "55fe3146bb9e55798860b16dbb0dd0e0d9959ac9d609eade18e84d185f11e875",
+    "thumbnails/generated/preset-41-g7-showcase-featured.png": "92fb3e9a07da27b86c56cb2a058f8dd210d7fdd66f194bcfc8802504a560810e",
+    "thumbnails/generated/preset-42-g7-post-detail-featured.png": "ec622946601ebffd526a8fa894f45d1e075a27cc59ecd263f0b15842fb836e1d",
+    "thumbnails/generated/preset-43-g7-product-detail-featured.png": "56a4ffb9273f23e3f0a4b3b7067fb055282dda742f867fecc07bcd61c0eee3b5",
     "thumbnails/generated/preset-44-divider-section-break.png": "0a2df7df90fc4d3ea5eff877fc84b253170158900629d94fdc59ac46b9a31932",
     "thumbnails/generated/preset-45-blockquote-customer-voice.png": "0415f73f555f55786a61e7689bb89bd6a76662d22a104578c16af897ba43bb61",
     "thumbnails/generated/preset-46-notice-service-info.png": "5c1f5e85cf63151df3cae9d5137c239313dec4624ab07a4b823edacc79a70335",

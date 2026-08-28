@@ -18,6 +18,22 @@ const imageSets = {
   },
 };
 
+const imageAlts = {
+  hero: {
+    product: '고객과 대화하는 서비스 담당자',
+    poster: '행사 무대에서 발표하는 연사',
+    backdrop: '따뜻한 조명의 로컬 매장 내부',
+    editorial: '지역 커뮤니티 현장을 소개하는 인물',
+    device: '상담 서비스를 소개하는 담당자',
+  },
+  split: {
+    balanced: '회의 중인 제품 팀 구성원',
+    screenshot: '고객 상담 서비스를 소개하는 담당자',
+    overlap: '행사에 모인 지역 커뮤니티',
+    offset: '로컬 비즈니스 공간을 운영하는 담당자',
+  },
+};
+
 const teamMembers = [
   ['김하늘', '대표 · 제품', '고객 문제를 제품 전략과 실행으로 연결합니다.', 'company-launch-team-product'],
   ['이로운', '브랜드 디자인', '복잡한 메시지를 선명한 경험으로 만듭니다.', 'company-launch-team-design'],
@@ -55,7 +71,7 @@ const groups = [
       ['editorial', 'editorial', '에디토리얼 히어로', '세리프 제목과 세로 이미지로 잡지형 첫 화면을 만듭니다.'],
       ['device', 'device', '디바이스 쇼케이스 히어로', '제품 화면을 디바이스 프레임처럼 강조합니다.'],
     ],
-    enrich: (props, layout) => ({ ...props, alignment: layout === 'poster' ? 'center' : 'left', layout, image: { src: asset(imageSets.hero[layout]), alt: `${layout} 히어로 대표 이미지` } }),
+    enrich: (props, layout) => ({ ...props, alignment: layout === 'poster' ? 'center' : 'left', layout, image: { src: asset(imageSets.hero[layout]), alt: imageAlts.hero[layout] } }),
   },
   {
     baseId: 'hero-split.product-focus', targetBlockId: 'content.hero-centered-01', primary: 'screenshot', layouts: [
@@ -64,7 +80,7 @@ const groups = [
       ['overlap', 'overlap', '겹침형 히어로', '이미지 위로 메시지 패널이 겹치는 구성을 만듭니다.'],
       ['offset', 'offset', '오프셋 히어로', '텍스트와 세로 이미지의 시작점을 다르게 둡니다.'],
     ],
-    enrich: (props, layout) => ({ ...props, layout, image: { src: asset(imageSets.split[layout]), alt: `${layout} 분할 히어로 대표 이미지` } }),
+    enrich: (props, layout) => ({ ...props, layout, image: { src: asset(imageSets.split[layout]), alt: imageAlts.split[layout] } }),
   },
   {
     baseId: 'features.core-benefits', primary: 'bento', layouts: [

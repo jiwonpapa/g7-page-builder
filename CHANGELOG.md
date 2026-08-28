@@ -9,6 +9,7 @@
 ### Added
 
 - 45종 전체 블록의 manifest 순서, 가시 콘텐츠, 깨진 이미지, 최소 가독성, 가로 넘침과 렌더 안정성을 한 발행 문서에서 검사하는 카탈로그 품질 gate를 추가했습니다.
+- 45종 블록·95개 프리셋·140개 renderer 생성물에 placeholder·중복·구조 차이·미디어·alt·날짜·동적 샘플 완결성·source freshness와 exact review digest를 강제하는 프로덕트 품질 게이트를 추가했습니다. 생성·frontend 검증·제품 E2E·릴리스 패키징·스테이징 배포가 같은 fail-closed 판정을 사용합니다.
 
 ### Changed
 
@@ -20,6 +21,8 @@
 
 ### Fixed
 
+- 최신 공개 CSS·compiler보다 오래된 140개 썸네일 source index가 기존 파일 존재 검사만 통과하던 문제를 막고, 변경된 연락처 썸네일과 index를 현재 renderer 결과로 재생성했습니다.
+- Hero 프리셋 이미지 대체 텍스트에 `product`, `poster`, `overlap` 같은 내부 layout 이름이 노출되던 문제와 연락처 프리셋의 예제 도메인을 실제 제품형 문구로 정리했습니다.
 - 요소 전체와 선택 글자의 S/M/L/XL 크기 선택을 `자동(반응형)`과 `12 px · 0.75 rem`부터 `96 px · 6 rem`까지의 명시적 단계로 교체하고, 저장·편집·미리보기·발행에서 같은 계산 크기를 사용하도록 통일했습니다.
 - 편집기와 미리보기·발행본의 Hero·분할 Hero·슬라이더·섹션 제목·CTA·통계 글자 크기와 radius 규칙을 동일 계약으로 통일하고, computed typography와 실제 줄 수가 달라지면 세 viewport E2E가 실패하도록 보강했습니다.
 - Puck의 편집용 `div` 안에 생성되는 실제 제목 노드가 발행 HTML과 다른 기본 글꼴 크기·굵기·행간·자간을 사용하던 P000 결함을 공통 WYSIWYG 브리지로 수정하고, 리치텍스트 본문과 버튼 기본 typography도 발행 계약에 맞췄습니다.

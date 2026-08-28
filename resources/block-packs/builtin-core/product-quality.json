@@ -1,0 +1,150 @@
+{
+  "contract": {
+    "contract_version": "g7pb-block-product-quality/v1",
+    "inventory": {
+      "block_count": 45,
+      "active_block_count": 44,
+      "preset_count": 95,
+      "catalog_item_count": 140,
+      "unique_thumbnail_count": 96,
+      "compatibility_only_block_ids": [
+        "content.hero-split-01"
+      ]
+    },
+    "copy": {
+      "minimum_label_length": 2,
+      "minimum_description_length": 15,
+      "prohibited_patterns": [
+        "(?:내용|제목|설명|콘텐츠)\\s*[0-9]+",
+        "(?:제목|설명|내용|문구|이미지).{0,8}입력(?:해\\s*)?주세요",
+        "lorem\\s+ipsum",
+        "(?:dummy|placeholder|todo|tbd)",
+        "https?://(?:www\\.)?example\\.(?:com|org|net)",
+        "^\\s*(?:YT|IG|FB)\\s*$"
+      ]
+    },
+    "media": {
+      "prohibited_alt_patterns": [
+        "^(?:product|poster|backdrop|editorial|device|balanced|screenshot|overlap|offset)\\b"
+      ]
+    },
+    "variation": {
+      "minimum_distinct_signatures": 2,
+      "presentation_keys": [
+        "layout",
+        "variant",
+        "formKind",
+        "aspectRatio",
+        "alignment",
+        "columns",
+        "measure",
+        "mediaPosition",
+        "tone",
+        "controls",
+        "source",
+        "period",
+        "audience",
+        "level",
+        "width"
+      ]
+    },
+    "dynamic_preview": {
+      "minimum_items_by_block": {
+        "g7.board-recent-posts-01": 3,
+        "g7.ecommerce-product-grid-01": 4,
+        "g7.board-content-archive-01": 3,
+        "g7.ecommerce-product-showcase-01": 3,
+        "g7.board-post-detail-01": 1,
+        "g7.ecommerce-product-detail-01": 1
+      }
+    },
+    "review": {
+      "required_criteria": [
+        "purpose_fit",
+        "visual_hierarchy",
+        "copy_quality",
+        "media_relevance",
+        "responsive_readiness",
+        "editing_completeness",
+        "accessibility"
+      ],
+      "allowed_reviewer_kinds": [
+        "maintainer",
+        "codex-assisted"
+      ]
+    },
+    "block_policies": {
+      "content.hero-centered-01": { "status": "product", "category": "hero-conversion", "profile": "hero", "expected_presets": 9 },
+      "content.hero-split-01": { "status": "compatibility", "category": "hero-conversion", "profile": "compatibility", "expected_presets": 0 },
+      "content.hero-slider-01": { "status": "product", "category": "hero-conversion", "profile": "hero", "expected_presets": 1 },
+      "content.heading-01": { "status": "product", "category": "basic", "profile": "text", "expected_presets": 2 },
+      "content.rich-text-01": { "status": "product", "category": "basic", "profile": "text", "expected_presets": 2 },
+      "media.image-01": { "status": "product", "category": "basic", "profile": "media", "expected_presets": 2 },
+      "action.buttons-01": { "status": "product", "category": "basic", "profile": "action", "expected_presets": 2 },
+      "media.image-text-01": { "status": "product", "category": "content", "profile": "media", "expected_presets": 2 },
+      "content.icon-list-01": { "status": "product", "category": "content", "profile": "collection", "expected_presets": 2 },
+      "content.features-grid-01": { "status": "product", "category": "hero-conversion", "profile": "collection", "expected_presets": 5 },
+      "content.cta-split-01": { "status": "product", "category": "hero-conversion", "profile": "action", "expected_presets": 4 },
+      "content.contact-info-01": { "status": "product", "category": "trust-company", "profile": "action", "expected_presets": 1 },
+      "trust.logo-cloud-01": { "status": "product", "category": "trust-company", "profile": "collection", "expected_presets": 3 },
+      "data.stats-icons-01": { "status": "product", "category": "data-comparison", "profile": "collection", "expected_presets": 4 },
+      "commerce.pricing-tiers-01": { "status": "product", "category": "data-comparison", "profile": "collection", "expected_presets": 4 },
+      "company.team-grid-01": { "status": "product", "category": "trust-company", "profile": "collection", "expected_presets": 4 },
+      "media.gallery-grid-01": { "status": "product", "category": "media", "profile": "media", "expected_presets": 4 },
+      "data.bar-chart-01": { "status": "product", "category": "data-comparison", "profile": "data", "expected_presets": 1 },
+      "g7.board-recent-posts-01": { "status": "product", "category": "g7-data", "profile": "data", "expected_presets": 1 },
+      "g7.ecommerce-product-grid-01": { "status": "product", "category": "g7-data", "profile": "data", "expected_presets": 1 },
+      "form.inquiry-01": { "status": "product", "category": "form-location", "profile": "form", "expected_presets": 5 },
+      "location.map-directions-01": { "status": "product", "category": "form-location", "profile": "location", "expected_presets": 1 },
+      "trust.testimonials-01": { "status": "product", "category": "trust-company", "profile": "collection", "expected_presets": 5 },
+      "content.faq-accordion-01": { "status": "product", "category": "content", "profile": "interactive", "expected_presets": 1 },
+      "content.process-timeline-01": { "status": "product", "category": "content", "profile": "collection", "expected_presets": 1 },
+      "content.tabs-01": { "status": "product", "category": "content", "profile": "interactive", "expected_presets": 1 },
+      "commerce.comparison-table-01": { "status": "product", "category": "data-comparison", "profile": "interactive", "expected_presets": 1 },
+      "content.article-list-01": { "status": "product", "category": "content", "profile": "collection", "expected_presets": 5 },
+      "media.video-embed-01": { "status": "product", "category": "media", "profile": "media", "expected_presets": 1 },
+      "trust.logo-carousel-01": { "status": "product", "category": "trust-company", "profile": "interactive", "expected_presets": 1 },
+      "trust.testimonial-slider-01": { "status": "product", "category": "trust-company", "profile": "interactive", "expected_presets": 1 },
+      "content.event-schedule-01": { "status": "product", "category": "content", "profile": "collection", "expected_presets": 1 },
+      "content.download-resources-01": { "status": "product", "category": "content", "profile": "collection", "expected_presets": 1 },
+      "g7.board-content-archive-01": { "status": "product", "category": "g7-data", "profile": "data", "expected_presets": 1 },
+      "g7.ecommerce-product-showcase-01": { "status": "product", "category": "g7-data", "profile": "data", "expected_presets": 1 },
+      "g7.board-post-detail-01": { "status": "product", "category": "g7-data", "profile": "data", "expected_presets": 1 },
+      "g7.ecommerce-product-detail-01": { "status": "product", "category": "g7-data", "profile": "data", "expected_presets": 1 },
+      "content.divider-01": { "status": "product", "category": "basic", "profile": "text", "expected_presets": 1 },
+      "content.blockquote-01": { "status": "product", "category": "basic", "profile": "text", "expected_presets": 1 },
+      "content.notice-01": { "status": "product", "category": "hero-conversion", "profile": "text", "expected_presets": 1 },
+      "content.card-grid-01": { "status": "product", "category": "content", "profile": "collection", "expected_presets": 5 },
+      "navigation.breadcrumbs-01": { "status": "product", "category": "navigation", "profile": "navigation", "expected_presets": 1 },
+      "navigation.anchor-menu-01": { "status": "product", "category": "navigation", "profile": "navigation", "expected_presets": 1 },
+      "navigation.social-links-01": { "status": "product", "category": "navigation", "profile": "navigation", "expected_presets": 1 },
+      "media.image-carousel-01": { "status": "product", "category": "media", "profile": "media", "expected_presets": 1 }
+    }
+  },
+  "approval": {
+    "review_version": "g7pb-block-product-review/v1",
+    "catalog_digest": "7f36548c6a2b4610fde8d5eb6d47a69c0433aa9f28f30bea6ce5f60d6bd7842d",
+    "item_count": 140,
+    "reviewer": {
+      "kind": "codex-assisted",
+      "name": "Codex block product audit"
+    },
+    "reviewed_at": "2026-08-28T11:11:36Z",
+    "decision": "approved",
+    "criteria": {
+      "purpose_fit": "pass",
+      "visual_hierarchy": "pass",
+      "copy_quality": "pass",
+      "media_relevance": "pass",
+      "responsive_readiness": "pass",
+      "editing_completeness": "pass",
+      "accessibility": "pass"
+    },
+    "findings": [],
+    "evidence": [
+      "resources/block-packs/builtin-core/thumbnails/generated/index.json",
+      "tests/E2E/blockCatalogQuality.spec.ts",
+      "tests/E2E/editorLayoutParity.spec.ts"
+    ]
+  }
+}

@@ -10,6 +10,7 @@
   "scripts": {
     "build": "NODE_ENV=production vite build && NODE_ENV=production vite build --config vite.manager.config.ts && NODE_ENV=production vite build --config vite.site-part.config.ts && NODE_ENV=production vite build --config vite.effects.config.ts",
     "build:store": "php scripts/build-official-store.php",
+    "generate:block-library": "node scripts/sync-builtin-layout-presets.mjs && npm run build && npm run generate:block-thumbnails",
     "generate:block-thumbnails": "node scripts/generate-block-thumbnails.mjs",
     "generate:page-kit-logos": "node scripts/generate-page-kit-logos.mjs",
     "generate:page-kit-screenshots": "node scripts/generate-page-kit-screenshots.mjs",
@@ -17,19 +18,21 @@
     "check:version": "node scripts/check-version-policy.mjs",
     "check:editor-acceptance": "node scripts/check-editor-acceptance-contract.mjs",
     "check:editor-layout-parity": "node scripts/check-editor-layout-parity.mjs",
+    "check:block-product-quality": "node scripts/check-block-product-quality.mjs",
     "lint:css": "stylelint \"resources/css/**/*.css\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:unit": "npm run check:editor-layout-parity && vitest run",
+    "test:unit": "npm run check:editor-layout-parity && npm run check:block-product-quality && vitest run",
     "test:e2e:infra": "playwright test tests/E2E/infrastructure.spec.ts",
     "test:e2e:performance": "playwright test tests/E2E/editorPerformance.spec.ts --project=desktop",
+    "pretest:e2e:product": "npm run check:block-product-quality -- --verify-render-source",
     "test:e2e:product": "playwright test tests/E2E/pageBuilderLifecycle.spec.ts tests/E2E/sitePartLifecycle.spec.ts tests/E2E/globalSiteShellRoutes.spec.ts tests/E2E/officialStore.spec.ts tests/E2E/publicQuality.spec.ts tests/E2E/blockCatalogQuality.spec.ts tests/E2E/editorPerformance.spec.ts tests/E2E/editorInteractionQuality.spec.ts tests/E2E/editorLayoutParity.spec.ts",
     "check:g7-budget": "node scripts/check-g7-dependency-budget.mjs",
     "check:boundaries": "bash scripts/check-boundaries.sh",
     "check:assets": "node scripts/check-assets.mjs",
     "check:frontend-budgets": "node scripts/check-frontend-budgets.mjs",
-    "check": "npm run check:version && npm run check:store && npm run check:editor-acceptance && npm run check:editor-layout-parity && npm run typecheck && npm run lint:css && npm run test:coverage && npm run check:g7-budget && npm run check:boundaries && npm run build && npm run check:assets && npm run check:frontend-budgets"
+    "check": "npm run check:version && npm run check:store && npm run check:editor-acceptance && npm run check:editor-layout-parity && npm run typecheck && npm run lint:css && npm run test:coverage && npm run check:g7-budget && npm run check:boundaries && npm run build && npm run check:block-product-quality -- --verify-render-source && npm run check:assets && npm run check:frontend-budgets"
   },
   "dependencies": {
     "@puckeditor/core": "0.23.0",

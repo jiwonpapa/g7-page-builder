@@ -24,6 +24,19 @@
 
 45종 공통 합격선은 manifest 순서와 1:1 발행, 비어 있지 않은 가시 콘텐츠, 깨진 이미지 0, 최소 10px 가독성, 블록·문서 가로 넘침 0, 안정된 geometry, axe WCAG A/AA입니다. 핵심 10종은 세 viewport의 무허용치 시각 baseline을 추가 유지하며, 장기적으로 baseline을 45종 전체로 확대합니다.
 
+## 생성·승인·배포 품질 게이트
+
+블록 콘텐츠는 `npm run generate:block-library` 이외의 수동 생성물을 정식 산출물로 인정하지 않습니다. 이 명령은 45종 블록과 95개 프리셋을 실제 PHP compiler와 공개 CSS로 렌더링해 140개 썸네일과 source index를 다시 만들고, 다음 자동 기준을 즉시 검사합니다.
+
+- 계약한 블록·프리셋·호환 전용 재고와 block별 프리셋 수
+- placeholder 문구, 완전히 같은 preset props, 동일 block의 구조 차이 부족
+- 이미지가 있는 경우 의미 있는 alt와 로컬 배포 이미지 실재 여부
+- 내부 `poster`, `overlap` 같은 개발 layout 이름이 alt에 노출되지 않는지 여부
+- 날짜 field의 실제 `YYYY-MM-DD`, 95개 프리셋 썸네일의 전수 고유성
+- 현재 props·compiler HTML·공개 CSS로 다시 계산한 140개 source hash와 저장 index 일치
+
+G7 API 응답이 필요한 6개 동적 블록은 라이브러리용 결정적 샘플 DOM을 함께 생성하며, 목록형 3~4개·상세형 1개보다 적거나 생성 인덱스와 다르면 빈 미리보기로 판정해 실패합니다. 자동 기준 통과 뒤 140개 contact sheet를 용도 적합성·시각 위계·문구·미디어 적합성·반응형·편집 완결성·접근성 기준으로 검토합니다. 승인은 exact source/thumbnail digest에만 유효하며 생성물이 바뀌면 자동 무효화됩니다. `npm run check`, 제품 E2E, `release-package.sh`, `deploy-staging.sh`는 모두 이 승인과 최신 renderer source를 재검증하므로 미승인·노후 생성물은 정식 패키징과 배포가 불가능합니다.
+
 ## 공식 제품에서 확인한 공통 구조
 
 | 제품 | 확인한 구조 | 적용 원칙 |

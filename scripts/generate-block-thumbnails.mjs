@@ -79,6 +79,23 @@ await writeFile(resolve(thumbnailRoot, 'index.json'), `${JSON.stringify({
   output: '320x200 PNG from a fixed 960x600 public-renderer crop',
   count: index.length,
   sources: Object.fromEntries(index.map((item) => [item.catalog_id, item.source_hash])),
+  dynamic_samples: Object.fromEntries(index
+    .filter((item) => item.dynamic_sample_count > 0)
+    .map((item) => [item.catalog_id, item.dynamic_sample_count])),
 }, null, 2)}\n`);
 
+const productQuality = spawnSync(process.execPath, [
+  resolve(root, 'scripts/check-block-product-quality.mjs'),
+  '--candidate',
+  '--verify-render-source',
+], {
+  cwd: root,
+  encoding: 'utf8',
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
+if (productQuality.status !== 0) {
+  throw new Error(`Generated block library failed the product quality candidate gate:\n${productQuality.stdout}${productQuality.stderr}`);
+}
+
+process.stdout.write(productQuality.stdout);
 process.stdout.write(`Generated ${index.length} renderer-backed block thumbnails.\n`);

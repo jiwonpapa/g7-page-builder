@@ -21,6 +21,11 @@ function requirePattern(errors, value, pattern, message) {
   if (!pattern.test(value)) errors.push(message);
 }
 
+function customPropertyValue(css, property) {
+  const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return css.match(new RegExp(`${escaped}\\s*:\\s*([^;]+);`))?.[1].trim() ?? '';
+}
+
 export async function validateEditorLayoutParity(root) {
   const errors = [];
   const [packageSource, css, publicCss, adapter, overlaySource, spec, catalogVisualSpec] = await Promise.all([
@@ -35,6 +40,12 @@ export async function validateEditorLayoutParity(root) {
   const packageJson = JSON.parse(packageSource);
   const scripts = packageJson.scripts ?? {};
   const puckVersion = packageJson.dependencies?.['@puckeditor/core'];
+
+  const editorRadius = customPropertyValue(css, '--g7pb-theme-radius');
+  const publicRadius = customPropertyValue(publicCss, '--g7pb-theme-radius');
+  if (editorRadius !== '1rem' || publicRadius !== '1rem') {
+    errors.push('편집기와 공개 출력의 기본 radius는 동일한 1rem 계약이어야 합니다.');
+  }
 
   if (puckVersion !== '0.23.0') {
     errors.push('모바일 헤더 흐름은 검증된 Puck 0.23.0 의미 DOM 계약과 함께 고정되어야 합니다.');
@@ -54,6 +65,18 @@ export async function validateEditorLayoutParity(root) {
   }
 
   const cssContract = [
+    [/\.g7pb-preview-hero\s+:is\(h1,[^}]*font-size:\s*clamp\(2\.5rem,\s*7vw,\s*5\.75rem\);[^}]*letter-spacing:\s*-\.04em;/s,
+      '편집기 Hero 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-hero-split\s+:is\(h1,[^}]*font-size:\s*clamp\(2\.6rem,\s*6vw,\s*5\.25rem\);[^}]*letter-spacing:\s*-\.055em;/s,
+      '편집기 Hero Split 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-hero-slider h2\s*\{[^}]*font-size:\s*clamp\(2\.5rem,\s*6vw,\s*5rem\);[^}]*letter-spacing:\s*-\.055em;/,
+      '편집기 Hero Slider 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-features\s*>\s*:is\(h2,[^}]*font-size:\s*clamp\(2rem,\s*4vw,\s*3\.5rem\);[^}]*letter-spacing:\s*-\.03em;/s,
+      '편집기 Features 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-cta-split\s+:is\(h2,[\s\S]*?font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4\.75rem\);[^}]*letter-spacing:\s*-\.045em;/,
+      '편집기 CTA와 Contact 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-stats article\s*>\s*strong\s*\{[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4rem\);/,
+      '편집기 Stats 값은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
     [/\.g7pb-preview-page,\s*\.g7pb-preview-page \*,\s*\.g7pb-preview-page \*::before,\s*\.g7pb-preview-page \*::after\s*\{\s*box-sizing:\s*border-box;/s,
       'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'],
     [/--g7pb-preview-content-width:\s*var\(--g7pb-theme-content-width\)/,
@@ -224,6 +247,24 @@ export async function validateEditorLayoutParity(root) {
     /template\s*\?\s*['"] g7pb-full-site-page--template['"]\s*:\s*['"]['"]/,
     'template shell 전용 G7 Container envelope class를 편집 page root에 적용해야 합니다.');
   requirePattern(errors, publicCss,
+    /\.g7pb-hero__title\s*\{[^}]*font-size:\s*clamp\(2\.5rem,\s*7vw,\s*5\.75rem\);[^}]*letter-spacing:\s*-\.04em;/,
+    '공개 Hero 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-hero-split__copy h1\s*\{[^}]*font-size:\s*clamp\(2\.6rem,\s*6vw,\s*5\.25rem\);[^}]*letter-spacing:\s*-\.055em;/,
+    '공개 Hero Split 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-hero-slider__copy h2\s*\{[^}]*font-size:\s*clamp\(2\.5rem,\s*6vw,\s*5rem\);[^}]*letter-spacing:\s*-\.055em;/,
+    '공개 Hero Slider 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-features__title\s*\{[^}]*font-size:\s*clamp\(2rem,\s*4vw,\s*3\.5rem\);[^}]*letter-spacing:\s*-\.03em;/,
+    '공개 Features 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-cta__heading,[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4\.75rem\);[^}]*letter-spacing:\s*-\.045em;/,
+    '공개 CTA와 Contact 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-stats article\s*>\s*strong\s*\{[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4rem\);/,
+    '공개 Stats 값의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
     /@media\s*\(max-width:\s*800px\)[\s\S]*\.g7pb-hero-split\s*\{\s*grid-template-columns:\s*1fr;/,
     '공개 Hero Split도 768px 경계에서 편집기와 동일하게 단일 열로 접혀야 합니다.');
   requirePattern(errors, publicCss,
@@ -253,6 +294,14 @@ export async function validateEditorLayoutParity(root) {
     [/root\.scrollWidth\s*-\s*root\.clientWidth/, 'iframe/preview document 가로 overflow 측정이 필요합니다.'],
     [/editor\.contentLeft\s*-\s*preview\.contentLeft/, '편집기/미리보기 왼쪽 content edge 비교가 필요합니다.'],
     [/editor\.contentRight\s*-\s*preview\.contentRight/, '편집기/미리보기 오른쪽 content edge 비교가 필요합니다.'],
+    [/typographyCandidate[\s\S]*getComputedStyle\(typographyCandidate\)[\s\S]*range\.getClientRects\(\)/,
+      '각 블록의 대표 텍스트 computed typography와 실제 줄바꿈을 측정해야 합니다.'],
+    [/Math\.abs\(editorTypography\.fontSize\s*-\s*previewTypography\.fontSize\)/,
+      '편집기/미리보기 대표 텍스트의 실제 font-size 차이를 비교해야 합니다.'],
+    [/editorTypography\.lineCount\s*!==\s*previewTypography\.lineCount/,
+      '편집기/미리보기 대표 텍스트의 줄바꿈 수가 같아야 합니다.'],
+    [/editorTypography\.fontFamily\s*!==\s*previewTypography\.fontFamily[\s\S]*editorTypography\.fontWeight\s*!==\s*previewTypography\.fontWeight/,
+      '편집기/미리보기 대표 텍스트의 font family와 weight를 비교해야 합니다.'],
     [/page-builder-preview-link/, '실제 미리보기 ticket 검증이 필요합니다.'],
     [/previewLink\.evaluate\(\(element\)\s*=>\s*element\.tagName\s*===\s*['"]BUTTON['"]\)[\s\S]*await previewLink\.click\(\)/,
       '초안 변경으로 미리보기 ticket이 무효화되면 실제 생성 버튼 흐름을 실행해야 합니다.'],
@@ -283,6 +332,8 @@ export async function validateEditorLayoutParity(root) {
       '블록 카탈로그 시각 비교 전에 전체 문서 media 준비 단계를 실행해야 합니다.'],
     [/const firstCapture\s*=\s*await block\.screenshot[\s\S]*waitForVisualBlockStability\(block\)[\s\S]*const secondCapture\s*=\s*await block\.screenshot[\s\S]*firstCapture\.equals\(secondCapture\)[\s\S]*toMatchSnapshot\(snapshotName\)/,
       '블록 카탈로그 baseline 비교 전에 동일 요소의 연속 캡처가 일치해야 합니다.'],
+    [/await expectCatalogPresentationQuality\([\s\S]*builtinManifest\.blocks\.map\(\(block\)\s*=>\s*block\.block_id\)[\s\S]*for \(let index = 0; index < builtinManifest\.blocks\.length; index \+= 1\)[\s\S]*waitForVisualBlockStability\(renderedBlocks\.nth\(index\)\)/,
+      '전체 내장 블록은 manifest 순서·가시성·미디어·가독성·overflow와 안정화 검사를 통과해야 합니다.'],
   ];
   for (const [pattern, message] of catalogVisualEvidence) {
     requirePattern(errors, catalogVisualSpec, pattern, message);

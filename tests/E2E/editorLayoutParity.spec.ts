@@ -8,6 +8,7 @@ const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const CANVAS_IFRAME = '#puck-canvas-root iframe';
 const VIEWPORT_WIDTHS = { desktop: 1280, tablet: 768, mobile: 360 } as const;
 const LAYOUT_TOLERANCE_PX = 1.25;
+const TYPOGRAPHY_TOLERANCE_PX = 0.75;
 
 interface CatalogManifest {
   blocks: Array<{ block_id: string; block_version: number }>;
@@ -49,6 +50,17 @@ interface LayoutMetric {
   overflow: number;
   rectLeftOverflow: number;
   rectRightOverflow: number;
+  typography: TypographyMetric | null;
+}
+
+interface TypographyMetric {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: string;
+  letterSpacing: number;
+  lineCount: number;
+  lineHeight: number;
+  text: string;
 }
 
 interface Scenario {
@@ -325,6 +337,56 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
     const rectRightOverflow = Math.max(0, rect.right - viewportWidth);
     const blockScrollOverflow = Math.max(0, block.scrollWidth - block.clientWidth);
     const measuredScrollOverflow = Math.max(0, measured.scrollWidth - measured.clientWidth);
+    const typographyCandidate = Array.from(measured.querySelectorAll<HTMLElement>([
+      'h1',
+      '[data-g7pb-heading-level="1"]',
+      'h2',
+      '[data-g7pb-heading-level="2"]',
+      'h3',
+      '[data-g7pb-heading-level="3"]',
+      'h4',
+      '[data-g7pb-heading-level="4"]',
+      'blockquote p',
+      'figcaption',
+      'strong',
+      'a',
+      'button',
+      'time',
+      'p',
+      'small',
+    ].join(',')))
+      .find((candidate) => {
+        const candidateRect = candidate.getBoundingClientRect();
+        return candidateRect.width > 0
+          && candidateRect.height > 0
+          && (candidate.textContent ?? '').replace(/\s+/g, ' ').trim() !== '';
+      }) ?? null;
+    let typography: TypographyMetric | null = null;
+    if (typographyCandidate) {
+      const typographyStyle = block.ownerDocument.defaultView?.getComputedStyle(typographyCandidate);
+      const typographyRect = typographyCandidate.getBoundingClientRect();
+      const fontSize = Number.parseFloat(typographyStyle?.fontSize ?? '0') || 0;
+      const parsedLineHeight = Number.parseFloat(typographyStyle?.lineHeight ?? '0');
+      const lineHeight = Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
+        ? parsedLineHeight
+        : fontSize * 1.2;
+      const range = block.ownerDocument.createRange();
+      range.selectNodeContents(typographyCandidate);
+      const lineTops = new Set(
+        Array.from(range.getClientRects())
+          .filter((lineRect) => lineRect.width > 0 && lineRect.height > 0)
+          .map((lineRect) => Math.round(lineRect.top)),
+      );
+      typography = {
+        fontFamily: typographyStyle?.fontFamily ?? '',
+        fontSize,
+        fontWeight: typographyStyle?.fontWeight ?? '',
+        letterSpacing: Number.parseFloat(typographyStyle?.letterSpacing ?? '0') || 0,
+        lineCount: lineTops.size || Math.max(1, Math.round(typographyRect.height / lineHeight)),
+        lineHeight,
+        text: (typographyCandidate.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      };
+    }
     return {
       blockId: block.dataset.blockId ?? '',
       blockType: block.dataset.blockType ?? '',
@@ -335,6 +397,7 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
       overflow: Math.max(rectLeftOverflow, rectRightOverflow, blockScrollOverflow, measuredScrollOverflow),
       rectLeftOverflow,
       rectRightOverflow,
+      typography,
     };
   }), editor);
 }
@@ -418,11 +481,39 @@ function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: Layou
     const preview = previewMetrics[index];
     const leftDelta = Math.abs(editor.contentLeft - preview.contentLeft);
     const rightDelta = Math.abs(editor.contentRight - preview.contentRight);
+    const editorTypography = editor.typography;
+    const previewTypography = preview.typography;
+    const typographyPresenceMismatch = (editorTypography === null) !== (previewTypography === null);
+    const typographyTextMismatch = editorTypography !== null && previewTypography !== null
+      && editorTypography.text !== previewTypography.text;
+    const typographyFamilyMismatch = editorTypography !== null && previewTypography !== null
+      && editorTypography.fontFamily !== previewTypography.fontFamily;
+    const typographyWeightMismatch = editorTypography !== null && previewTypography !== null
+      && editorTypography.fontWeight !== previewTypography.fontWeight;
+    const typographyLineCountMismatch = editorTypography !== null && previewTypography !== null
+      && editorTypography.lineCount !== previewTypography.lineCount;
+    const fontSizeDelta = editorTypography !== null && previewTypography !== null
+      ? Math.abs(editorTypography.fontSize - previewTypography.fontSize)
+      : 0;
+    const lineHeightDelta = editorTypography !== null && previewTypography !== null
+      ? Math.abs(editorTypography.lineHeight - previewTypography.lineHeight)
+      : 0;
+    const letterSpacingDelta = editorTypography !== null && previewTypography !== null
+      ? Math.abs(editorTypography.letterSpacing - previewTypography.letterSpacing)
+      : 0;
     if (
       editor.overflow > LAYOUT_TOLERANCE_PX
       || preview.overflow > LAYOUT_TOLERANCE_PX
       || leftDelta > LAYOUT_TOLERANCE_PX
       || rightDelta > LAYOUT_TOLERANCE_PX
+      || typographyPresenceMismatch
+      || typographyTextMismatch
+      || typographyFamilyMismatch
+      || typographyWeightMismatch
+      || typographyLineCountMismatch
+      || fontSizeDelta > TYPOGRAPHY_TOLERANCE_PX
+      || lineHeightDelta > TYPOGRAPHY_TOLERANCE_PX
+      || letterSpacingDelta > TYPOGRAPHY_TOLERANCE_PX
     ) {
       mismatches.push({
         blockId: editor.blockId,
@@ -431,6 +522,14 @@ function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: Layou
         previewOverflow: preview.overflow,
         leftDelta,
         rightDelta,
+        fontSizeDelta,
+        letterSpacingDelta,
+        lineHeightDelta,
+        typographyFamilyMismatch,
+        typographyLineCountMismatch,
+        typographyPresenceMismatch,
+        typographyTextMismatch,
+        typographyWeightMismatch,
         editor,
         preview,
       });

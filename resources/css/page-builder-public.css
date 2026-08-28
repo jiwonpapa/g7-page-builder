@@ -86,7 +86,15 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-site-footer--columns ul { display: grid; gap: .7rem; margin: 0; padding: 0; list-style: none; }
 .g7pb-site-footer--columns a { color: inherit; text-decoration: none; }
 .g7pb-page { min-height: 100vh; overflow: hidden; }
-.g7pb-document-theme { --g7pb-theme-accent: #4f46e5; --g7pb-theme-accent-soft: #eef2ff; --g7pb-theme-accent-strong: #312e81; --g7pb-theme-radius: 1rem; --g7pb-theme-content-width: 72rem; --g7pb-theme-body-size: 1rem; font-size: var(--g7pb-theme-body-size); }
+.g7pb-document-theme {
+  --g7pb-theme-accent: #4f46e5;
+  --g7pb-theme-accent-soft: #eef2ff;
+  --g7pb-theme-accent-strong: #312e81;
+  --g7pb-theme-radius: 1rem;
+  --g7pb-theme-content-width: 72rem;
+  --g7pb-theme-body-size: 1rem;
+  font-size: var(--g7pb-theme-body-size);
+}
 .g7pb-theme-palette-blue { --g7pb-theme-accent: #2563eb; --g7pb-theme-accent-soft: #eff6ff; --g7pb-theme-accent-strong: #1e40af; }
 .g7pb-theme-palette-emerald { --g7pb-theme-accent: #059669; --g7pb-theme-accent-soft: #ecfdf5; --g7pb-theme-accent-strong: #065f46; }
 .g7pb-theme-palette-amber { --g7pb-theme-accent: #d97706; --g7pb-theme-accent-soft: #fffbeb; --g7pb-theme-accent-strong: #92400e; }

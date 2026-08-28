@@ -4,5 +4,6 @@
 .g7pb-preview-page [data-g7pb-heading-level].g7pb-element-weight--regular { font-weight: 700; }
 .g7pb-preview-page [data-g7pb-heading-level] { overflow-wrap: normal; white-space: normal; word-break: normal; }
 .g7pb-preview-page [data-g7pb-heading-level] :where(h1, h2, h3, h4) { margin: 0; color: inherit; font: inherit; letter-spacing: inherit; text-align: inherit; }
+.g7pb-preview-page [data-g7pb-heading-level] :where(*) { margin: 0 !important; color: inherit !important; font-family: inherit !important; font-size: inherit !important; font-weight: inherit !important; letter-spacing: inherit !important; line-height: inherit !important; text-align: inherit !important; }
 .g7pb-preview-richtext.g7pb-preview-rich-text__content { color: var(--g7pb-theme-muted); font-size: 1rem; line-height: 1.8; overflow-wrap: anywhere; }
 .g7pb-preview-button { display: inline-flex; min-height: 3rem; align-items: center; justify-content: center; padding: .75rem 1.25rem; border-radius: var(--g7pb-theme-radius); font-weight: 700; text-decoration: none; }

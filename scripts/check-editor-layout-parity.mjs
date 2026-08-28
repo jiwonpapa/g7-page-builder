@@ -85,6 +85,8 @@ export async function validateEditorLayoutParity(root) {
       '편집 가능한 semantic heading은 공개 HTML과 동일한 기본 굵기를 사용해야 합니다.'],
     [/\[data-g7pb-heading-level\]\s+:where\(h1,\s*h2,\s*h3,\s*h4\)\s*\{[^}]*font:\s*inherit;[^}]*letter-spacing:\s*inherit;/,
       'Puck semantic descendant는 PageBuilderDocument heading wrapper의 계산된 typography를 상속해야 합니다.'],
+    [/\[data-g7pb-heading-level\]\s+:where\(\*\)\s*\{[^}]*margin:\s*0\s*!important;[^}]*font-family:\s*inherit\s*!important;[^}]*font-size:\s*inherit\s*!important;[^}]*font-weight:\s*inherit\s*!important;[^}]*line-height:\s*inherit\s*!important;/,
+      'Puck의 실제 제목 leaf 태그와 무관하게 wrapper의 WYSIWYG typography를 상속해야 합니다.'],
     [/\.g7pb-preview-richtext\.g7pb-preview-rich-text__content\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.8;/,
       '리치텍스트 본문은 편집기와 공개 출력에서 동일한 기본 1rem typography를 사용해야 합니다.'],
     [/\.g7pb-preview-button\s*\{[^}]*font-weight:\s*700;/,

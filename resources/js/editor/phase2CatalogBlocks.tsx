@@ -214,16 +214,15 @@ function createDateField(label: string): Field<string> {
     type: 'custom',
     label,
     render: ({ value, onChange, readOnly }) => (
-      <label className="g7pb-date-field">
-        <span>{label}</span>
-        <input
-          type="date"
-          value={typeof value === 'string' ? value : ''}
-          onChange={(event) => onChange(event.currentTarget.value)}
-          disabled={readOnly}
-          data-testid="page-builder-article-date"
-        />
-      </label>
+      <input
+        className="g7pb-field-control"
+        type="date"
+        value={typeof value === 'string' ? value : ''}
+        onChange={(event) => onChange(event.currentTarget.value)}
+        disabled={readOnly}
+        aria-label={label}
+        data-testid="page-builder-article-date"
+      />
     ),
   };
 }

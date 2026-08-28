@@ -390,6 +390,10 @@ export async function validateEditorLayoutParity(root) {
   ];
   for (const [pattern, message] of requiredEvidence) requirePattern(errors, spec, pattern, message);
 
+  if ((spec.match(/ownerDocument\.fonts\.ready/g) ?? []).length < 2) {
+    errors.push('편집 iframe과 공개 미리보기 모두 document.fonts.ready 이후 geometry를 측정해야 합니다.');
+  }
+
   if (/\btest\.(?:skip|fixme)\s*\(/.test(spec) || /testInfo\.project\.name\s*!==/.test(spec)) {
     errors.push('레이아웃 E2E는 viewport나 시나리오를 skip/fixme로 우회하면 안 됩니다.');
   }

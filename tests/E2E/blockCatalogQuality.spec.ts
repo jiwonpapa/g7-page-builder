@@ -16,7 +16,7 @@ interface ResourceEnvelope {
 }
 
 interface CatalogManifest {
-  blocks: Array<{ block_id: string; block_version: number }>;
+  blocks: Array<{ block_id: string; block_version: number; capabilities: string[] }>;
   presets: Array<{ preset_id: string; block_id: string; block_version: number; props: Record<string, unknown> }>;
 }
 
@@ -292,12 +292,31 @@ function allCatalogBlocks(): Array<Record<string, unknown>> {
 
   return builtinManifest.blocks.map((definition, index) => {
     const preset = presetsByBlock.get(definition.block_id);
-    if (!preset) throw new Error(`No E2E preset covers ${definition.block_id}.`);
+    const compatibilityProps = definition.block_id === 'content.hero-split-01'
+      ? {
+          eyebrow: '기존 문서 호환',
+          title: '기존 분할 히어로도 안전하게 렌더링됩니다',
+          body: '<p>새 문서에서는 히어로 블록의 분할 레이아웃을 사용합니다.</p>',
+          primaryCta: { label: '자세히 보기', url: '/' },
+          image: {
+            src: '/modules/jiwonpapa-page_builder/store/previews/company-launch-hero.webp',
+            alt: '기존 분할 히어로 호환 이미지',
+          },
+          mediaPosition: 'right',
+          layout: 'screenshot',
+        }
+      : null;
+    if (!preset && !definition.capabilities.includes('editor.compatibility-only')) {
+      throw new Error(`No E2E preset covers active block ${definition.block_id}.`);
+    }
+    if (!preset && compatibilityProps === null) {
+      throw new Error(`No E2E compatibility fixture covers ${definition.block_id}.`);
+    }
     return {
       instance_id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
       type: definition.block_id,
       block_version: definition.block_version,
-      props: structuredClone(preset.props),
+      props: structuredClone(preset?.props ?? compatibilityProps),
       slots: [],
     };
   });
@@ -309,7 +328,9 @@ test.describe.configure({ retries: 0 });
 test('publishes every catalog block and keeps the responsive visual baselines', async ({ page }, testInfo) => {
   test.setTimeout(240_000);
   expect(builtinManifest.blocks.length).toBeGreaterThan(0);
-  expect(builtinManifest.presets.length).toBeGreaterThanOrEqual(builtinManifest.blocks.length);
+  expect(builtinManifest.presets.length).toBeGreaterThanOrEqual(
+    builtinManifest.blocks.filter((block) => !block.capabilities.includes('editor.compatibility-only')).length,
+  );
 
   const login = await playwrightRequest.newContext({
     baseURL: BASE_URL,

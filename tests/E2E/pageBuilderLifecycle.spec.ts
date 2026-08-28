@@ -1287,7 +1287,8 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       images.map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src)))];
     await expect.poll(collectThumbnailUrls, {
       message: 'all built-in block thumbnail URLs are rendered',
-    }).toHaveLength(45);
+    }).toHaveLength(44);
+    await expect(page.getByTestId('drawer-item:HeroSplit')).toHaveCount(0);
     const thumbnailUrls = await collectThumbnailUrls();
     const thumbnailResponses = await Promise.all(thumbnailUrls.map((url) => page.request.get(url)));
     try {

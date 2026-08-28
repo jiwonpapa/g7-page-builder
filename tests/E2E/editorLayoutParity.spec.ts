@@ -11,7 +11,7 @@ const LAYOUT_TOLERANCE_PX = 1.25;
 const TYPOGRAPHY_TOLERANCE_PX = 0.75;
 
 interface CatalogManifest {
-  blocks: Array<{ block_id: string; block_version: number }>;
+  blocks: Array<{ block_id: string; block_version: number; capabilities: string[] }>;
   presets: Array<{
     preset_id: string;
     block_id: string;
@@ -767,12 +767,19 @@ test.describe.configure({ retries: 0 });
 test('keeps every built-in block preset and Page Kit inside the editor/preview layout contract', async ({ context, page }, testInfo) => {
   test.setTimeout(360_000);
   expect(builtinManifest.blocks.length).toBeGreaterThan(0);
+  const activeBlocks = builtinManifest.blocks.filter((block) => (
+    !block.capabilities.includes('editor.compatibility-only')
+  ));
+  const compatibilityBlocks = builtinManifest.blocks.filter((block) => (
+    block.capabilities.includes('editor.compatibility-only')
+  ));
   expect(builtinManifest.presets.length).toBeGreaterThanOrEqual(builtinManifest.blocks.length);
+  expect(compatibilityBlocks.map((block) => block.block_id)).toEqual(['content.hero-split-01']);
   expect(pageKitScenarios.length).toBeGreaterThan(0);
   expect(new Set(declaredPageKitSlugs).size).toBe(declaredPageKitSlugs.length);
   expect([...declaredPageKitSlugs].sort()).toEqual(sourcePageKitSlugs);
   expect(new Set(builtinManifest.presets.map((preset) => preset.block_id))).toEqual(
-    new Set(builtinManifest.blocks.map((block) => block.block_id)),
+    new Set(activeBlocks.map((block) => block.block_id)),
   );
 
   const { api } = await authenticate(context);

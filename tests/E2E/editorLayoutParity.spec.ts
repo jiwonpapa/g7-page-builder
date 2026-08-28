@@ -54,13 +54,17 @@ interface LayoutMetric {
 }
 
 interface TypographyMetric {
+  ancestorTrail: string[];
   fontFamily: string;
   fontSize: number;
   fontWeight: string;
   letterSpacing: number;
   lineCount: number;
   lineHeight: number;
+  maxWidth: string;
+  tagName: string;
   text: string;
+  width: number;
 }
 
 interface Scenario {
@@ -348,6 +352,7 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
       '[data-g7pb-heading-level="4"]',
       'blockquote p',
       'figcaption',
+      '.g7pb-divider__label',
       'strong',
       'a',
       'button',
@@ -392,14 +397,30 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
           lineClusters.push(center);
         }
       }
+      const ancestorTrail: string[] = [];
+      let ancestor: HTMLElement | null = typographyCandidate;
+      while (ancestor && ancestorTrail.length < 5) {
+        const ancestorRect = ancestor.getBoundingClientRect();
+        const ancestorStyle = block.ownerDocument.defaultView?.getComputedStyle(ancestor);
+        const className = typeof ancestor.className === 'string'
+          ? ancestor.className.trim().replace(/\s+/g, '.').slice(0, 120)
+          : '';
+        ancestorTrail.push(`${ancestor.tagName.toLowerCase()}${className ? `.${className}` : ''}:${ancestorRect.width.toFixed(2)}:${ancestorStyle?.maxWidth ?? ''}:${ancestorStyle?.display ?? ''}`);
+        if (ancestor === measured) break;
+        ancestor = ancestor.parentElement;
+      }
       typography = {
+        ancestorTrail,
         fontFamily: typographyStyle?.fontFamily ?? '',
         fontSize,
         fontWeight: typographyStyle?.fontWeight ?? '',
         letterSpacing: Number.parseFloat(typographyStyle?.letterSpacing ?? '0') || 0,
         lineCount: lineClusters.length || Math.max(1, Math.round(typographyRect.height / lineHeight)),
         lineHeight,
+        maxWidth: typographyStyle?.maxWidth ?? '',
+        tagName: typographyCandidate.tagName.toLowerCase(),
         text: (typographyCandidate.textContent ?? '').replace(/\s+/g, ' ').trim(),
+        width: typographyRect.width,
       };
     }
     return {

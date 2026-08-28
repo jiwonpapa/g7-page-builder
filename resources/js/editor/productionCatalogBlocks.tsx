@@ -5,6 +5,7 @@ import { createMotionField, DEFAULT_BLOCK_MOTION, motionPreviewAttributes, norma
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
+import { CatalogIcon } from './catalogIcon';
 import {
   decorateCanvasElementStyles,
   CanvasCurrentElementStylesContext,
@@ -134,10 +135,6 @@ const SOCIAL_NETWORKS: Array<{ label: string; value: SocialNetwork }> = [
   { label: 'X', value: 'x' }, { label: 'Kakao', value: 'kakao' },
   { label: '블로그', value: 'blog' }, { label: '웹사이트', value: 'website' },
 ];
-
-const SOCIAL_GLYPHS: Record<SocialNetwork, string> = {
-  instagram: 'IG', youtube: 'YT', facebook: 'f', linkedin: 'in', x: 'X', kakao: 'K', blog: 'B', website: '↗',
-};
 
 const DEFAULT_DIVIDER: DividerEditorProps = {
   variant: 'solid', width: 'standard', label: '', surface: 'default', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
@@ -342,7 +339,7 @@ function AnchorMenuPreview(props: AnchorMenuEditorProps & { id: string }): React
 
 function SocialLinksPreview(props: SocialLinksEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="social-links" motion={props.motion} elementStyles={props.elementStyles}>
-    <nav className={`g7pb-preview-social-links g7pb-preview-social-links--${props.variant} g7pb-preview-social-links--${props.alignment} ${surfaceClass(props)}`} aria-label={typeof props.heading === 'string' ? props.heading : undefined}><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField><ul>{normalizeSocialLinks(props.items).map((item, index) => <li key={`${item.network}-${index}`}><a href={safeLink(item.url)} onClick={(event) => event.preventDefault()} aria-label={item.label}><i aria-hidden="true">{SOCIAL_GLYPHS[item.network]}</i><span data-g7pb-inline-field={`items.${index}.label`}>{inlineArrayContent(props.items, index, 'label', item.label)}</span></a></li>)}</ul></nav>
+    <nav className={`g7pb-preview-social-links g7pb-preview-social-links--${props.variant} g7pb-preview-social-links--${props.alignment} ${surfaceClass(props)}`} aria-label={typeof props.heading === 'string' ? props.heading : undefined}><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField><ul>{normalizeSocialLinks(props.items).map((item, index) => <li key={`${item.network}-${index}`}><a href={safeLink(item.url)} onClick={(event) => event.preventDefault()} aria-label={item.label}><i aria-hidden="true"><CatalogIcon name={item.network} size={17} /></i><span data-g7pb-inline-field={`items.${index}.label`}>{inlineArrayContent(props.items, index, 'label', item.label)}</span></a></li>)}</ul></nav>
   </Frame>;
 }
 

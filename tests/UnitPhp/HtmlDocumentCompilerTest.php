@@ -860,6 +860,8 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('<a href="/guide" rel="noopener noreferrer">내부 링크</a>', $artifact);
         self::assertStringContainsString('role="group" aria-label="페이지 행동"', $artifact);
         self::assertStringContainsString('g7pb-icon--bolt', $artifact);
+        self::assertStringContainsString('<svg class="g7pb-icon-list__icon g7pb-icon--bolt"', $artifact);
+        self::assertStringContainsString('stroke-linejoin="round" aria-hidden="true"', $artifact);
         self::assertStringContainsString('data-g7pb-motion="stagger"', $artifact);
         $imageTextMedia = strpos($artifact, 'g7pb-image-text__media');
         $imageTextCopy = strpos($artifact, 'g7pb-image-text__copy');
@@ -885,6 +887,8 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('data-g7pb-slider-controls="both"', $artifact);
         self::assertStringContainsString('aria-label="1번 이미지를 선택하세요"', $artifact);
         self::assertStringContainsString('alt="제품 전시 공간"', $artifact);
+        self::assertStringContainsString('<svg class="g7pb-social-links__glyph"', $artifact);
+        self::assertStringNotContainsString('>IG<', $artifact);
         self::assertStringNotContainsString('<script', $artifact);
         self::assertStringNotContainsString('javascript:', $artifact);
     }

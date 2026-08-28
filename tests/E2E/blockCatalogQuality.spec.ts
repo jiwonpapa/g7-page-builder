@@ -424,6 +424,13 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
     await expect(videoFrame).toHaveAttribute('title', /\S+/);
     await expect(videoFrame).toHaveAttribute('loading', 'lazy');
     await expect(videoFrame).toHaveAttribute('src', /^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//);
+    await expect(page.locator('.g7pb-features__icon')).toHaveCount(3);
+    await expect(page.locator('.g7pb-icon-list__icon')).toHaveCount(4);
+    await expect(page.locator('.g7pb-stats__icon')).toHaveCount(3);
+    const socialIcons = page.locator('.g7pb-social-links__icon');
+    await expect(socialIcons).toHaveCount(3);
+    await expect(socialIcons.locator('svg')).toHaveCount(3);
+    expect(await socialIcons.allTextContents()).toEqual(['', '', '']);
     const comparisonScroller = page.locator('.g7pb-comparison__scroll');
     await expect(comparisonScroller).toHaveAttribute('role', 'region');
     await expect(comparisonScroller).toHaveAttribute('tabindex', '0');

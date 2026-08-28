@@ -244,7 +244,12 @@ expect_failure 'Puck의 실제 제목 leaf 태그와 무관하게 wrapper의 WYS
 copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;/${1} 780px;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Features 제목은 공개 출력과 같은 가용 폭과 상속 line-height를 사용해야 합니다.'
+expect_failure 'Features 기본 제목은 공개 출력과 같은 가용 폭과 normal line-height를 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\]\.g7pb-element-weight--regular:not\(\.g7pb-element-weight--heading-default\) \{ line-height:) 1\.5;/${1} normal;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure 'Features의 명시적 regular 제목은 공개 출력의 상속 line-height를 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(> :is\(header, figcaption\) \{[^}]*max-width:) 48rem;/${1} 760px;/' \

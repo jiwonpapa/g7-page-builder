@@ -61,7 +61,8 @@
 - Puck이 richtext 제목 내부에 생성하는 leaf 태그는 특정 `h1`~`h4` 형태라고 가정하지 않습니다. 실제 leaf의 기본 margin을 제거하고 wrapper의 font family·size·weight·line-height·letter-spacing을 강제 상속해 편집 캔버스에 보이는 글자 자체를 발행 제목과 맞춥니다.
 - `regular` 제목은 발행본의 계산값인 400을 사용합니다. Features와 공통 섹션 제목은 편집기 전용 richtext의 680px 제한을 받지 않고 발행 CSS의 실제 가용 폭·48rem 컨테이너·line-height를 그대로 사용합니다.
 - 제목 굵기를 설정하지 않은 문서는 semantic heading 기본값 700을, 사용자가 `regular`를 명시한 문서는 400을 사용합니다. 편집 wrapper가 둘을 같은 class로 축약해 사용자 선택과 기본 디자인을 섞지 못하게 합니다.
-- Features 제목은 미설정 기본값의 `normal` 행간과 명시적 `regular` 스타일의 상속 행간을 구분합니다. 프리셋 기본 디자인과 Page Kit의 저장된 element style이 각각 공개 렌더 계산값을 유지합니다.
+- Features 제목은 편집기와 공개본 모두 `normal` 행간을 명시해 외부 template CSS에 따라 높이가 달라지지 않게 합니다.
+- 공개 블록의 semantic heading 기본 굵기와 Features 행간은 활성 G7 템플릿의 전역 `h1`~`h4` CSS로부터 격리합니다. 기본 제목은 700, 명시적 `regular`는 400으로 고정되어 shell 종류가 바뀌어도 편집기와 발행본 계산값이 같습니다.
 
 ## Architecture
 

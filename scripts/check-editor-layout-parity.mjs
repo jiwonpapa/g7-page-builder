@@ -89,8 +89,6 @@ export async function validateEditorLayoutParity(root) {
       'Puck의 실제 제목 leaf 태그와 무관하게 wrapper의 WYSIWYG typography를 상속해야 합니다.'],
     [/\.g7pb-preview-features\s*>\s*\[data-g7pb-heading-level="2"\]\s*\{[^}]*max-width:\s*none;[^}]*line-height:\s*normal;/,
       'Features 기본 제목은 공개 출력과 같은 가용 폭과 normal line-height를 사용해야 합니다.'],
-    [/\.g7pb-preview-features\s*>\s*\[data-g7pb-heading-level="2"\]\.g7pb-element-weight--regular:not\(\.g7pb-element-weight--heading-default\)\s*\{[^}]*line-height:\s*1\.5;/,
-      'Features의 명시적 regular 제목은 공개 출력의 상속 line-height를 사용해야 합니다.'],
     [/:is\(\.g7pb-preview-stats,[^}]+\)\s*>\s*:is\(header,\s*figcaption\)\s*\{[^}]*max-width:\s*48rem;/,
       '공통 섹션 제목 컨테이너는 공개 g7pb-section-heading과 같은 48rem 폭이어야 합니다.'],
     [/:is\(\.g7pb-preview-stats,[^}]+\)\s*>\s*header\s*>\s*\[data-g7pb-heading-level="2"\]\s*\{[^}]*max-width:\s*none;/,
@@ -155,6 +153,12 @@ export async function validateEditorLayoutParity(root) {
       '편집 가능한 제목은 공개 heading과 같은 줄바꿈 규칙을 사용해야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
+  requirePattern(errors, publicCss, /\.g7pb-block\s+:where\(h1,\s*h2,\s*h3,\s*h4\)\s*\{[^}]*font-weight:\s*700\s*!important;/,
+    '활성 G7 템플릿의 전역 heading 규칙이 블록 기본 제목 굵기를 바꾸지 못하게 격리해야 합니다.');
+  requirePattern(errors, publicCss, /\.g7pb-element-weight--regular\s*\{[^}]*font-weight:\s*400\s*!important;/,
+    '명시적 regular element style은 활성 템플릿과 무관하게 공개본에서 400이어야 합니다.');
+  requirePattern(errors, publicCss, /\.g7pb-features__title\s*\{[^}]*line-height:\s*normal\s*!important;/,
+    'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
   requirePattern(errors, catalogSource,
     /function LogoCloudPreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2"[^>]*fieldPath="heading">/,
     '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');

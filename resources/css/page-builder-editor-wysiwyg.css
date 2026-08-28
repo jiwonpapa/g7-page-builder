@@ -4,7 +4,6 @@
 .g7pb-preview-page [data-g7pb-heading-level] { overflow-wrap: normal; white-space: normal; word-break: normal; }
 .g7pb-preview-page [data-g7pb-heading-level] :where(*) { margin: 0 !important; color: inherit !important; font-family: inherit !important; font-size: inherit !important; font-weight: inherit !important; letter-spacing: inherit !important; line-height: inherit !important; text-align: inherit !important; }
 .g7pb-preview-page .g7pb-preview-features > [data-g7pb-heading-level="2"] { max-width: none; line-height: normal; }
-.g7pb-preview-page .g7pb-preview-features > [data-g7pb-heading-level="2"].g7pb-element-weight--regular:not(.g7pb-element-weight--heading-default) { line-height: 1.5; }
 .g7pb-preview-page :is(.g7pb-preview-stats, .g7pb-preview-pricing, .g7pb-preview-team, .g7pb-preview-gallery, .g7pb-preview-bar-chart, .g7pb-preview-g7-data) > :is(header, figcaption) { max-width: 48rem; }
 .g7pb-preview-page :is(.g7pb-preview-stats, .g7pb-preview-pricing, .g7pb-preview-team, .g7pb-preview-gallery, .g7pb-preview-g7-data) > header > [data-g7pb-heading-level="2"] { max-width: none; }
 .g7pb-preview-richtext.g7pb-preview-rich-text__content { color: var(--g7pb-theme-muted); font-size: 1rem; line-height: 1.8; overflow-wrap: anywhere; }

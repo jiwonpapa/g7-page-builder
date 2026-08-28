@@ -426,6 +426,19 @@ describe('Puck editor surface contract', () => {
     }
   });
 
+  it('marks every image alternative text inspector field as required', () => {
+    const visit = (fields: Record<string, any>, path: string): string[] => Object.entries(fields).flatMap(([name, field]) => {
+      const current = `${path}.${name}`;
+      const own = /(?:^|\.)(?:alt|imageAlt|avatarAlt)$/.test(current) ? [String(field.label)] : [];
+      return [...own, ...(field.arrayFields ? visit(field.arrayFields, `${current}[]`) : [])];
+    });
+    const labels = Object.entries(pageBuilderPuckConfig.components).flatMap(([component, config]) =>
+      visit(config.fields as Record<string, any>, component));
+
+    expect(labels.length).toBeGreaterThanOrEqual(10);
+    expect(labels.every((label) => label.endsWith('(필수)'))).toBe(true);
+  });
+
   it('provides selected-range rich text editing across all long-copy product families', () => {
     const components = pageBuilderPuckConfig.components as Record<string, { fields: Record<string, any> }>;
     const field = (component: string, path: string[]): any => path.reduce(

@@ -66,6 +66,7 @@
 - Features 제목은 편집기와 공개본 모두 `normal` 행간을 명시해 외부 template CSS에 따라 높이가 달라지지 않게 합니다.
 - 공개 블록의 semantic heading 기본 굵기와 Features 행간은 활성 G7 템플릿의 전역 `h1`~`h4` CSS로부터 격리합니다. 기본 제목은 700, 명시적 `regular`는 400으로 고정되어 shell 종류가 바뀌어도 편집기와 발행본 계산값이 같습니다.
 - Logo Cloud의 소형 `h2`도 공개본에서 `1rem/1.2`를 명시해 활성 템플릿의 전역 행간이 편집기와 다른 높이를 만들지 못하게 합니다.
+- FAQ·문의·지도·배너 CTA의 1열 전환은 공개본과 편집기 모두 700px에서 적용합니다. Icon List 제목의 모바일 clamp도 공개 section heading과 같아야 합니다.
 - Puck의 `.rich-text * { white-space: pre-wrap }` 및 ProseMirror의 `font-feature-settings: "liga" 0` 기본값이 제목 안쪽 leaf에 남지 않도록 wrapper의 줄바꿈 규칙과 font shaping을 강제 상속합니다. 같은 폭·폰트에서도 편집기 글자가 16~19% 넓어져 한 줄 더 생기는 회귀를 차단합니다.
 
 ## Architecture

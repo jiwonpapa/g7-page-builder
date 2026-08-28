@@ -115,6 +115,7 @@ final class EloquentSitePartRepository implements SitePartRepository
             }
             $this->saveDraft($headerTitle, $header, $headerExpectedLockVersion, $actorId);
             $this->saveDraft($footerTitle, $footer, $footerExpectedLockVersion, $actorId);
+            /** @var SitePartSetRecord|null $set */
             $set = SitePartSetRecord::query()->whereKey($setId)->lockForUpdate()->first();
             if (! $set instanceof SitePartSetRecord) {
                 throw new SitePartNotFoundException('헤더·푸터 세트를 찾을 수 없습니다.');
@@ -131,6 +132,7 @@ final class EloquentSitePartRepository implements SitePartRepository
         ?int $actorId,
     ): SitePartSetSnapshot {
         return DB::transaction(function () use ($setId, $headerExpectedLockVersion, $footerExpectedLockVersion, $actorId): SitePartSetSnapshot {
+            /** @var Collection<int, SitePartRecord> $parts */
             $parts = SitePartRecord::query()->where('set_id', $setId)->orderBy('kind')->lockForUpdate()->get()->keyBy('kind');
             $header = $parts->get('header');
             $footer = $parts->get('footer');
@@ -151,6 +153,7 @@ final class EloquentSitePartRepository implements SitePartRepository
                     'updated_by' => $actorId,
                 ])->save();
             }
+            /** @var SitePartSetRecord|null $set */
             $set = SitePartSetRecord::query()->whereKey($setId)->first();
 
             return $this->setSnapshot($set ?? throw new SitePartNotFoundException('헤더·푸터 세트를 찾을 수 없습니다.'));

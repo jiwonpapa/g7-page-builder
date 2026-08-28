@@ -911,6 +911,12 @@ export interface SitePartSetResource {
   updated_at: string | null;
 }
 
+export interface SitePartSetEditorResource {
+  set: SitePartSetResource;
+  header: SitePartResource;
+  footer: SitePartResource;
+}
+
 export interface SitePartRevisionResource {
   revision: number;
   title: string;

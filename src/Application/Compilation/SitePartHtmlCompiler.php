@@ -12,16 +12,27 @@ final class SitePartHtmlCompiler
 
     public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
     {
+        $primaryTypes = $document->kind === 'header'
+            ? ['site.header.navigation-01']
+            : ['site.footer.simple-01', 'site.footer.columns-01'];
+        $primaryCount = count(array_filter(
+            $document->blocks,
+            static fn (array $block): bool => in_array($block['type'] ?? null, $primaryTypes, true),
+        ));
+        if ($primaryCount !== 1) {
+            throw new DocumentCompileException('Site Part publication requires exactly one primary block.');
+        }
         $sections = [];
         foreach ($document->blocks as $index => $block) {
             $type = $block['type'] ?? null;
             $props = $block['props'] ?? null;
-            if (! is_string($type) || ! is_array($props)) {
+            $slots = $block['slots'] ?? [];
+            if (! is_string($type) || ! is_array($props) || ! is_array($slots)) {
                 throw new DocumentCompileException("Site Part block {$index} is invalid.");
             }
 
             $sections[] = match ($type) {
-                'site.header.navigation-01' => $this->compileHeaderNavigation($props, $document->locale),
+                'site.header.navigation-01' => $this->compileHeaderNavigation($props, $slots, $document->locale),
                 'site.header.announcement-01' => $this->compileAnnouncement($props),
                 'site.footer.simple-01' => $this->compileSimpleFooter($props),
                 'site.footer.columns-01' => $this->compileColumnsFooter($props),
@@ -40,8 +51,11 @@ final class SitePartHtmlCompiler
         );
     }
 
-    /** @param array<string, mixed> $props */
-    private function compileHeaderNavigation(array $props, string $locale): string
+    /**
+     * @param  array<string, mixed>  $props
+     * @param  array<string, mixed>  $slots
+     */
+    private function compileHeaderNavigation(array $props, array $slots, string $locale): string
     {
         $brand = $this->requiredString($props, 'brand_name', 120);
         $logo = $this->optionalString($props, 'logo_url', 2048) ?? '';
@@ -73,7 +87,7 @@ final class SitePartHtmlCompiler
             : '<img src="'.$this->attribute($logo).'" alt="'.$this->attribute($brand).'">';
         $navigationHtml = $this->navigation($navigation, '주 메뉴', 'g7pb-site-nav');
         $ctaHtml = $ctaLink === null ? '' : '<a class="g7pb-site-header__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
-        $systemControls = $this->systemControls($locale);
+        $systemControls = $this->systemControls($locale, $this->systemControlOptions($slots));
         $mobileHtml = '';
         if ($mobileMenu && ($navigation !== [] || $ctaLink !== null)) {
             $mobileLinks = $this->mobileNavigation($navigation);
@@ -91,8 +105,12 @@ final class SitePartHtmlCompiler
             .'<a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$brandContent.'</a>'.$navigationHtml.$actionsHtml.'</div></header>';
     }
 
-    private function systemControls(string $locale): string
+    /** @param array{search: bool, account: bool, cart: bool, notifications: bool, theme: bool, locale: bool, currency: bool}|null $options */
+    private function systemControls(string $locale, ?array $options): string
     {
+        if ($options === null) {
+            return '';
+        }
         $english = str_starts_with(strtolower($locale), 'en');
         $labels = $english ? [
             'controls' => 'Site tools', 'search' => 'Search', 'search_placeholder' => 'Search',
@@ -106,18 +124,70 @@ final class SitePartHtmlCompiler
             'register' => '회원가입', 'mypage' => '마이페이지', 'logout' => '로그아웃',
         ];
 
-        return '<nav class="g7pb-system-controls" aria-label="'.$this->attribute($labels['controls']).'" data-g7pb-system-controls>'
-            .'<span data-g7pb-system-search-host data-g7pb-label="'.$this->attribute($labels['search']).'" data-g7pb-placeholder="'.$this->attribute($labels['search_placeholder']).'"></span>'
-            .'<a href="/mypage/notifications" data-g7pb-system-member hidden>'.$this->escape($labels['notifications']).'<span class="g7pb-system-badge" data-g7pb-system-notification-count hidden></span></a>'
-            .'<a href="/shop/cart" data-g7pb-system-cart>'.$this->escape($labels['cart']).'<span class="g7pb-system-badge" data-g7pb-system-cart-count hidden></span></a>'
-            .'<a href="#g7-action-theme" data-g7pb-system-theme>'.$this->escape($labels['theme']).'</a>'
-            .'<span data-g7pb-system-locale-host data-g7pb-label="'.$this->attribute($labels['language']).'"></span>'
-            .'<span data-g7pb-system-currency-host data-g7pb-label="'.$this->attribute($labels['currency']).'"></span>'
-            .'<a href="/login" data-g7pb-system-guest>'.$this->escape($labels['login']).'</a>'
-            .'<a href="/register" data-g7pb-system-guest data-g7pb-system-register>'.$this->escape($labels['register']).'</a>'
-            .'<a href="/mypage" data-g7pb-system-member hidden>'.$this->escape($labels['mypage']).'</a>'
-            .'<a href="#g7-action-logout" data-g7pb-system-member hidden>'.$this->escape($labels['logout']).'</a>'
-            .'</nav>';
+        $controls = '';
+        if ($options['search']) {
+            $controls .= '<span data-g7pb-system-search-host data-g7pb-label="'.$this->attribute($labels['search']).'" data-g7pb-placeholder="'.$this->attribute($labels['search_placeholder']).'"></span>';
+        }
+        if ($options['notifications']) {
+            $controls .= '<a href="/mypage/notifications" data-g7pb-system-member hidden>'.$this->escape($labels['notifications']).'<span class="g7pb-system-badge" data-g7pb-system-notification-count hidden></span></a>';
+        }
+        if ($options['cart']) {
+            $controls .= '<a href="/shop/cart" data-g7pb-system-cart>'.$this->escape($labels['cart']).'<span class="g7pb-system-badge" data-g7pb-system-cart-count hidden></span></a>';
+        }
+        if ($options['theme']) {
+            $controls .= '<a href="#g7-action-theme" data-g7pb-system-theme>'.$this->escape($labels['theme']).'</a>';
+        }
+        if ($options['locale']) {
+            $controls .= '<span data-g7pb-system-locale-host data-g7pb-label="'.$this->attribute($labels['language']).'"></span>';
+        }
+        if ($options['currency']) {
+            $controls .= '<span data-g7pb-system-currency-host data-g7pb-label="'.$this->attribute($labels['currency']).'"></span>';
+        }
+        if ($options['account']) {
+            $controls .= '<a href="/login" data-g7pb-system-guest>'.$this->escape($labels['login']).'</a>'
+                .'<a href="/register" data-g7pb-system-guest data-g7pb-system-register>'.$this->escape($labels['register']).'</a>'
+                .'<a href="/mypage" data-g7pb-system-member hidden>'.$this->escape($labels['mypage']).'</a>'
+                .'<a href="#g7-action-logout" data-g7pb-system-member hidden>'.$this->escape($labels['logout']).'</a>';
+        }
+
+        return $controls === '' ? '' : '<nav class="g7pb-system-controls" aria-label="'.$this->attribute($labels['controls']).'" data-g7pb-system-controls>'.$controls.'</nav>';
+    }
+
+    /**
+     * @param  array<string, mixed>  $slots
+     * @return array{search: bool, account: bool, cart: bool, notifications: bool, theme: bool, locale: bool, currency: bool}|null
+     */
+    private function systemControlOptions(array $slots): ?array
+    {
+        $this->assertOnlyKeys($slots, ['systemControls'], 'Header slots');
+        if (! array_key_exists('systemControls', $slots)) {
+            return ['search' => true, 'account' => true, 'cart' => true, 'notifications' => true, 'theme' => true, 'locale' => true, 'currency' => true];
+        }
+        $controls = $slots['systemControls'];
+        if (! is_array($controls) || count($controls) > 1) {
+            throw new DocumentCompileException('Header system controls slot is invalid.');
+        }
+        if ($controls === []) {
+            return null;
+        }
+        $block = $controls[0] ?? null;
+        if (! is_array($block) || ($block['type'] ?? null) !== 'site.header.system-controls-01'
+            || ! is_array($block['props'] ?? null) || ! is_array($block['slots'] ?? null) || $block['slots'] !== []) {
+            throw new DocumentCompileException('Header system controls block is invalid.');
+        }
+        $props = $block['props'];
+        $keys = ['search', 'account', 'cart', 'notifications', 'theme', 'locale', 'currency'];
+        $this->assertOnlyKeys($props, $keys, 'Header system controls');
+        $options = [];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $props) && ! is_bool($props[$key])) {
+                throw new DocumentCompileException("Header system controls {$key} must be boolean.");
+            }
+            $options[$key] = $props[$key] ?? true;
+        }
+
+        /** @var array{search: bool, account: bool, cart: bool, notifications: bool, theme: bool, locale: bool, currency: bool} $options */
+        return $options;
     }
 
     /** @param array<string, mixed> $props */

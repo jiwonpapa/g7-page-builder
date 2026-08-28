@@ -27,6 +27,45 @@
       "items": { "$ref": "#/$defs/block" }
     }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "header" } } },
+      "then": {
+        "properties": {
+          "blocks": {
+            "type": "array",
+            "allOf": [
+              {
+                "type": "array",
+                "contains": { "type": "object", "properties": { "type": { "const": "site.header.navigation-01" } }, "required": ["type"] },
+                "minContains": 0,
+                "maxContains": 1
+              },
+              {
+                "type": "array",
+                "contains": { "type": "object", "properties": { "type": { "const": "site.header.announcement-01" } }, "required": ["type"] },
+                "minContains": 0,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "footer" } } },
+      "then": {
+        "properties": {
+          "blocks": {
+            "type": "array",
+            "contains": { "type": "object", "properties": { "type": { "enum": ["site.footer.simple-01", "site.footer.columns-01"] } }, "required": ["type"] },
+            "minContains": 0,
+            "maxContains": 1
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "safeUrl": {
       "type": "string",
@@ -105,8 +144,37 @@
         "type": { "type": "string" },
         "block_version": { "const": 1 },
         "props": { "type": "object" },
-        "slots": { "type": "object", "maxProperties": 0 }
+        "slots": { "type": "object" }
       }
+    },
+    "emptySlots": { "type": "object", "maxProperties": 0 },
+    "headerSystemControls": {
+      "allOf": [
+        { "$ref": "#/$defs/baseBlock" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "instance_id": true,
+            "type": { "const": "site.header.system-controls-01" },
+            "block_version": true,
+            "slots": { "$ref": "#/$defs/emptySlots" },
+            "props": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "search": { "type": "boolean" },
+                "account": { "type": "boolean" },
+                "cart": { "type": "boolean" },
+                "notifications": { "type": "boolean" },
+                "theme": { "type": "boolean" },
+                "locale": { "type": "boolean" },
+                "currency": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      ]
     },
     "headerNavigation": {
       "allOf": [
@@ -118,7 +186,17 @@
             "instance_id": true,
             "type": { "const": "site.header.navigation-01" },
             "block_version": true,
-            "slots": true,
+            "slots": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "systemControls": {
+                  "type": "array",
+                  "maxItems": 1,
+                  "items": { "$ref": "#/$defs/headerSystemControls" }
+                }
+              }
+            },
             "props": {
               "type": "object",
               "additionalProperties": false,
@@ -150,7 +228,7 @@
             "instance_id": true,
             "type": { "const": "site.header.announcement-01" },
             "block_version": true,
-            "slots": true,
+            "slots": { "$ref": "#/$defs/emptySlots" },
             "props": {
               "type": "object",
               "additionalProperties": false,
@@ -176,7 +254,7 @@
             "instance_id": true,
             "type": { "const": "site.footer.simple-01" },
             "block_version": true,
-            "slots": true,
+            "slots": { "$ref": "#/$defs/emptySlots" },
             "props": {
               "type": "object",
               "additionalProperties": false,
@@ -203,7 +281,7 @@
             "instance_id": true,
             "type": { "const": "site.footer.columns-01" },
             "block_version": true,
-            "slots": true,
+            "slots": { "$ref": "#/$defs/emptySlots" },
             "props": {
               "type": "object",
               "additionalProperties": false,

@@ -236,6 +236,32 @@ final class DomainContractsTest extends TestCase
         );
     }
 
+    public function test_site_part_rejects_duplicate_primary_blocks(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('exactly one primary');
+
+        new SitePartDocument(
+            sitePartId: '00000000-0000-4000-8000-000000000010',
+            kind: 'header',
+            locale: 'ko',
+            tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000011',
+                'type' => 'site.header.navigation-01',
+                'block_version' => 1,
+                'props' => [],
+                'slots' => [],
+            ], [
+                'instance_id' => '00000000-0000-4000-8000-000000000012',
+                'type' => 'site.header.navigation-01',
+                'block_version' => 1,
+                'props' => [],
+                'slots' => [],
+            ]],
+        );
+    }
+
     public function test_site_part_compiler_escapes_content_and_rejects_executable_urls(): void
     {
         $document = new SitePartDocument(
@@ -287,6 +313,28 @@ final class DomainContractsTest extends TestCase
         self::assertStringContainsString('/pages/team', $artifact->html);
         self::assertSame(3, $artifact->sourceRevision);
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $artifact->artifactSha256);
+
+        $configured = $document->toArray();
+        $configured['blocks'][0]['slots'] = ['systemControls' => [[
+            'instance_id' => '00000000-0000-4000-8000-000000000012',
+            'type' => 'site.header.system-controls-01',
+            'block_version' => 1,
+            'props' => [
+                'search' => true,
+                'account' => true,
+                'cart' => false,
+                'notifications' => false,
+                'theme' => true,
+                'locale' => false,
+                'currency' => false,
+            ],
+            'slots' => [],
+        ]]];
+        $configuredArtifact = (new SitePartHtmlCompiler)->compile(SitePartDocument::fromArray($configured), 4);
+        self::assertStringContainsString('data-g7pb-system-search-host', $configuredArtifact->html);
+        self::assertStringNotContainsString('data-g7pb-system-cart', $configuredArtifact->html);
+        self::assertStringNotContainsString('data-g7pb-system-notification-count', $configuredArtifact->html);
+        self::assertStringNotContainsString('data-g7pb-system-locale-host', $configuredArtifact->html);
 
         $unsafe = $document->toArray();
         $unsafe['blocks'][0]['props']['home_url'] = 'javascript:alert(1)';

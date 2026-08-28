@@ -64,7 +64,7 @@ describe('Page Builder manager surface', () => {
     await act(async () => { root.render(<PageBuilderManager locale="ko" />); });
 
     const dialog = await eventually<HTMLElement>('[data-testid="page-builder-store-dialog"]');
-    expect(dialog.textContent).toContain('기본 페이지');
+    expect(dialog.textContent).toContain('페이지 킷');
     expect(dialog.querySelector('[data-testid="page-builder-store-filter-page_kit"]')?.getAttribute('aria-selected')).toBe('true');
 
     await act(async () => { root.unmount(); });

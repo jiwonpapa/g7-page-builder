@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
+use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
@@ -83,6 +84,80 @@ final class AdminSitePartSetController
         }
     }
 
+    public function saveDraft(Request $request, string $set): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'locale' => ['required', 'string', 'min:2', 'max:16'],
+            'header.title' => ['required', 'string', 'max:255'],
+            'header.document' => ['required', 'array'],
+            'header.expected_lock_version' => ['required', 'integer', 'min:1'],
+            'footer.title' => ['required', 'string', 'max:255'],
+            'footer.document' => ['required', 'array'],
+            'footer.expected_lock_version' => ['required', 'integer', 'min:1'],
+        ]);
+        if ($validator->fails()) {
+            return $this->invalid($request, $validator->errors()->toArray());
+        }
+
+        try {
+            $snapshot = $this->siteParts->saveSetDraft(
+                $set,
+                (string) $request->input('locale'),
+                (string) $request->input('header.title'),
+                (array) $request->input('header.document'),
+                (int) $request->input('header.expected_lock_version'),
+                (string) $request->input('footer.title'),
+                (array) $request->input('footer.document'),
+                (int) $request->input('footer.expected_lock_version'),
+                $this->actorId($request),
+            );
+
+            return $this->success('헤더·푸터 세트를 저장했습니다.', $this->editorData($snapshot));
+        } catch (SitePartNotFoundException $exception) {
+            return $this->error($request, 404, 'G7PB_SITE_PART_SET_NOT_FOUND', $exception->getMessage());
+        } catch (LockConflictException $exception) {
+            return $this->error($request, 409, 'G7PB_LOCK_CONFLICT', $exception->getMessage(), [
+                'current_lock_version' => $exception->currentLockVersion,
+            ]);
+        } catch (\InvalidArgumentException $exception) {
+            return $this->error($request, 400, 'G7PB_SITE_PART_SET_INVALID', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            return $this->unexpected($request, $exception);
+        }
+    }
+
+    public function publish(Request $request, string $set): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'locale' => ['required', 'string', 'min:2', 'max:16'],
+            'header_expected_lock_version' => ['required', 'integer', 'min:1'],
+            'footer_expected_lock_version' => ['required', 'integer', 'min:1'],
+        ]);
+        if ($validator->fails()) {
+            return $this->invalid($request, $validator->errors()->toArray());
+        }
+
+        try {
+            $snapshot = $this->siteParts->publishSet(
+                $set,
+                (string) $request->input('locale'),
+                (int) $request->input('header_expected_lock_version'),
+                (int) $request->input('footer_expected_lock_version'),
+                $this->actorId($request),
+            );
+
+            return $this->success('헤더·푸터 세트를 발행했습니다.', $this->editorData($snapshot));
+        } catch (SitePartNotFoundException $exception) {
+            return $this->error($request, 404, 'G7PB_SITE_PART_SET_NOT_FOUND', $exception->getMessage());
+        } catch (LockConflictException $exception) {
+            return $this->error($request, 409, 'G7PB_LOCK_CONFLICT', $exception->getMessage(), [
+                'current_lock_version' => $exception->currentLockVersion,
+            ]);
+        } catch (\Throwable $exception) {
+            return $this->unexpected($request, $exception);
+        }
+    }
+
     /** @param array<string, mixed> $input */
     private function validatedLocale(Request $request, array $input): string|JsonResponse
     {
@@ -122,6 +197,35 @@ final class AdminSitePartSetController
                 ? 'draft'
                 : ($snapshot->hasUnpublishedChanges() ? 'published_with_changes' : 'published'),
             'updated_at' => $snapshot->updatedAt?->format(DATE_ATOM),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function editorData(SitePartSetSnapshot $set): array
+    {
+        return [
+            'set' => $this->data($set),
+            'header' => $this->resourceData($set->header),
+            'footer' => $this->resourceData($set->footer),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function resourceData(SitePartSnapshot $snapshot): array
+    {
+        return [
+            'set_id' => $snapshot->setId,
+            'title' => $snapshot->title,
+            'document' => $snapshot->document->toArray(),
+            'lock_version' => $snapshot->lockVersion,
+            'revision' => $snapshot->revision,
+            'active_revision' => $snapshot->activeRevision,
+            'status' => $snapshot->activeRevision === null
+                ? 'draft'
+                : ($snapshot->hasUnpublishedChanges() ? 'published_with_changes' : 'published'),
+            'created_at' => $snapshot->createdAt?->format(DATE_ATOM),
+            'updated_at' => $snapshot->updatedAt?->format(DATE_ATOM),
+            'published_at' => $snapshot->publishedAt?->format(DATE_ATOM),
         ];
     }
 

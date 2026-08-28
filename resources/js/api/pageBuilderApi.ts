@@ -12,6 +12,7 @@ import type {
   SitePartKind,
   SitePartResource,
   SitePartSetResource,
+  SitePartSetEditorResource,
   SitePartRevisionResource,
   PageBuilderDocument,
   PageSeoMetadata,
@@ -593,6 +594,37 @@ export class PageBuilderApiClient {
     return this.request<SitePartSetResource>(`/site-part-sets/${encodeURIComponent(setId)}/activate`, {
       method: 'POST',
       body: JSON.stringify({ locale }),
+    });
+  }
+
+  async saveSitePartSet(
+    setId: string,
+    header: Pick<SitePartResource, 'title' | 'document' | 'lock_version'>,
+    footer: Pick<SitePartResource, 'title' | 'document' | 'lock_version'>,
+  ): Promise<SitePartSetEditorResource> {
+    return this.request<SitePartSetEditorResource>(`/site-part-sets/${encodeURIComponent(setId)}/draft`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        locale: header.document.locale,
+        header: { title: header.title, document: header.document, expected_lock_version: header.lock_version },
+        footer: { title: footer.title, document: footer.document, expected_lock_version: footer.lock_version },
+      }),
+    });
+  }
+
+  async publishSitePartSet(
+    setId: string,
+    locale: string,
+    headerLockVersion: number,
+    footerLockVersion: number,
+  ): Promise<SitePartSetEditorResource> {
+    return this.request<SitePartSetEditorResource>(`/site-part-sets/${encodeURIComponent(setId)}/publish`, {
+      method: 'POST',
+      body: JSON.stringify({
+        locale,
+        header_expected_lock_version: headerLockVersion,
+        footer_expected_lock_version: footerLockVersion,
+      }),
     });
   }
 

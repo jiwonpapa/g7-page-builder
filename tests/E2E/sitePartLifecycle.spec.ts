@@ -398,24 +398,31 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     await expect(page.getByRole('heading', { name: '헤더·푸터', exact: true })).toBeVisible();
     const targetButton = page.getByTestId('page-builder-site-part-set').filter({ hasText: target.title });
     await targetButton.click();
-    await expect(page.getByTestId('page-builder-site-part-editor')).toHaveCount(2);
-    const headerEditor = page.locator('[data-testid="page-builder-site-part-editor"][data-kind="header"]');
-    const footerEditor = page.locator('[data-testid="page-builder-site-part-editor"][data-kind="footer"]');
-    await expect(headerEditor).toBeVisible();
-    await expect(footerEditor).toBeVisible();
+    const setEditor = page.getByTestId('page-builder-site-part-set-editor');
+    await expect(setEditor).toBeVisible();
+    await expect(page.getByTestId('page-builder-site-part-editor')).toHaveCount(0);
+    await expect(setEditor.getByRole('button', { name: 'Sets', exact: true })).toBeVisible();
+    await expect(setEditor.getByRole('button', { name: 'Blocks', exact: true })).toBeVisible();
+    await expect(setEditor.getByRole('button', { name: 'Outline', exact: true })).toBeVisible();
+    await expect(page.getByTestId('page-builder-site-part-set-presets').getByRole('button')).toHaveCount(3);
 
-    if (!target.is_ready) {
-      const headerPublish = page.getByTestId('page-builder-site-part-editor').filter({ hasText: 'Header 편집' }).getByTestId('page-builder-site-part-publish');
-      await expect(headerPublish).toBeEnabled();
-      const headerResponse = page.waitForResponse((response) => response.url().includes('/site-parts/header/publish') && response.request().method() === 'POST');
-      await headerPublish.click();
-      expect((await headerResponse).ok()).toBe(true);
-      const footerPublish = page.getByTestId('page-builder-site-part-editor').filter({ hasText: 'Footer 편집' }).getByTestId('page-builder-site-part-publish');
-      await expect(footerPublish).toBeEnabled();
-      const footerResponse = page.waitForResponse((response) => response.url().includes('/site-parts/footer/publish') && response.request().method() === 'POST');
-      await footerPublish.click();
-      expect((await footerResponse).ok()).toBe(true);
-    }
+    await page.getByTestId('page-builder-site-part-set-presets').getByRole('button', { name: /비즈니스/ }).click();
+    await expect(page.getByRole('alert')).toContainText('Header와 Footer 프리셋을 함께 적용했습니다.');
+    const saveResponse = page.waitForResponse((response) => response.url().includes(`/site-part-sets/${target?.id}/draft`) && response.request().method() === 'PUT');
+    await page.getByTestId('page-builder-site-part-set-save').click();
+    const savedResponse = await saveResponse;
+    expect(savedResponse.ok(), await savedResponse.text()).toBe(true);
+
+    await setEditor.getByRole('button', { name: '모바일', exact: true }).click();
+    await expect(setEditor.getByText('모바일·태블릿은 확인 전용 · 편집은 PC에서 지원')).toBeVisible();
+    await expect(setEditor.getByText('확인 전용 화면입니다.')).toBeVisible();
+    await setEditor.getByRole('button', { name: 'PC', exact: true }).click();
+
+    const publishResponse = page.waitForResponse((response) => response.url().includes(`/site-part-sets/${target?.id}/publish`) && response.request().method() === 'POST');
+    await page.getByTestId('page-builder-site-part-set-publish').click();
+    const publishedResponse = await publishResponse;
+    expect(publishedResponse.ok(), await publishedResponse.text()).toBe(true);
+    await expect(page.getByRole('alert')).toContainText('Header와 Footer를 한 세트로 발행했습니다.');
 
     const activate = page.getByTestId('page-builder-site-part-set-activate');
     await expect(activate).toBeEnabled();

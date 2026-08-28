@@ -65,6 +65,14 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
         ->whereUuid('set')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
         ->name('site-part-sets.activate');
+    Route::put('site-part-sets/{set}/draft', [AdminSitePartSetController::class, 'saveDraft'])
+        ->whereUuid('set')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.update')
+        ->name('site-part-sets.draft');
+    Route::post('site-part-sets/{set}/publish', [AdminSitePartSetController::class, 'publish'])
+        ->whereUuid('set')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('site-part-sets.publish');
     Route::get('site-parts/{kind}', [AdminSitePartController::class, 'show'])
         ->whereIn('kind', ['header', 'footer'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')

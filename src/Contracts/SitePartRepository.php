@@ -21,6 +21,24 @@ interface SitePartRepository
 
     public function activateSet(string $setId, string $locale, ?int $actorId): SitePartSetSnapshot;
 
+    public function saveSetDraft(
+        string $setId,
+        string $headerTitle,
+        SitePartDocument $header,
+        int $headerExpectedLockVersion,
+        string $footerTitle,
+        SitePartDocument $footer,
+        int $footerExpectedLockVersion,
+        ?int $actorId,
+    ): SitePartSetSnapshot;
+
+    public function publishSet(
+        string $setId,
+        int $headerExpectedLockVersion,
+        int $footerExpectedLockVersion,
+        ?int $actorId,
+    ): SitePartSetSnapshot;
+
     public function find(string $kind, string $locale, ?string $setId = null): ?SitePartSnapshot;
 
     public function findPublished(string $kind, string $locale): ?SitePartSnapshot;

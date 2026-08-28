@@ -99,6 +99,67 @@ final class EloquentSitePartRepository implements SitePartRepository
         });
     }
 
+    public function saveSetDraft(
+        string $setId,
+        string $headerTitle,
+        SitePartDocument $header,
+        int $headerExpectedLockVersion,
+        string $footerTitle,
+        SitePartDocument $footer,
+        int $footerExpectedLockVersion,
+        ?int $actorId,
+    ): SitePartSetSnapshot {
+        return DB::transaction(function () use ($setId, $headerTitle, $header, $headerExpectedLockVersion, $footerTitle, $footer, $footerExpectedLockVersion, $actorId): SitePartSetSnapshot {
+            if ($header->kind !== 'header' || $footer->kind !== 'footer' || $header->locale !== $footer->locale) {
+                throw new \InvalidArgumentException('Site Part set requires one Header and one Footer in the same locale.');
+            }
+            $this->saveDraft($headerTitle, $header, $headerExpectedLockVersion, $actorId);
+            $this->saveDraft($footerTitle, $footer, $footerExpectedLockVersion, $actorId);
+            /** @var SitePartSetRecord|null $set */
+            $set = SitePartSetRecord::query()->whereKey($setId)->lockForUpdate()->first();
+            if (! $set instanceof SitePartSetRecord) {
+                throw new SitePartNotFoundException('헤더·푸터 세트를 찾을 수 없습니다.');
+            }
+
+            return $this->setSnapshot($set);
+        });
+    }
+
+    public function publishSet(
+        string $setId,
+        int $headerExpectedLockVersion,
+        int $footerExpectedLockVersion,
+        ?int $actorId,
+    ): SitePartSetSnapshot {
+        return DB::transaction(function () use ($setId, $headerExpectedLockVersion, $footerExpectedLockVersion, $actorId): SitePartSetSnapshot {
+            /** @var Collection<int, SitePartRecord> $parts */
+            $parts = SitePartRecord::query()->where('set_id', $setId)->orderBy('kind')->lockForUpdate()->get()->keyBy('kind');
+            $header = $parts->get('header');
+            $footer = $parts->get('footer');
+            if (! $header instanceof SitePartRecord || ! $footer instanceof SitePartRecord) {
+                throw new SitePartNotFoundException('헤더·푸터 세트를 찾을 수 없습니다.');
+            }
+            $this->assertLock($header, $headerExpectedLockVersion);
+            $this->assertLock($footer, $footerExpectedLockVersion);
+            $updatedAt = new \DateTimeImmutable;
+            foreach ([$header, $footer] as $record) {
+                if ($record->active_revision === $record->current_revision) {
+                    continue;
+                }
+                $record->fill([
+                    'active_revision' => $record->current_revision,
+                    'lock_version' => $record->lock_version + 1,
+                    'published_at' => $updatedAt,
+                    'updated_by' => $actorId,
+                ])->save();
+            }
+            /** @var SitePartSetRecord|null $set */
+            $set = SitePartSetRecord::query()->whereKey($setId)->first();
+
+            return $this->setSnapshot($set ?? throw new SitePartNotFoundException('헤더·푸터 세트를 찾을 수 없습니다.'));
+        });
+    }
+
     public function find(string $kind, string $locale, ?string $setId = null): ?SitePartSnapshot
     {
         $resolvedSetId = $setId ?? $this->resolvedSetId($locale);

@@ -25,6 +25,8 @@ import {
   type FooterColumnsProps,
   type FooterSimpleProps,
   type HeaderNavigationProps,
+  type HeaderSystemControlsProps,
+  DEFAULT_HEADER_SYSTEM_CONTROLS,
   safeSitePartHref,
   type SitePartComponents,
   type SitePartPresetKey,
@@ -152,17 +154,19 @@ function createFooterResponsiveField(): Field<FooterResponsiveOverrides | undefi
   };
 }
 
-export function HeaderSystemControlsPreview(): React.ReactElement {
+export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps): React.ReactElement {
   const prevent = (event: React.SyntheticEvent): void => event.preventDefault();
   return <nav className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls>
-    <form className="g7pb-system-search" action="/search" onSubmit={prevent}>
+    {props.search ? <form className="g7pb-system-search" action="/search" onSubmit={prevent}>
       <input name="q" aria-label="통합 검색" placeholder="통합 검색" readOnly />
       <button type="submit">검색</button>
-    </form>
-    <a href="/shop/cart" onClick={prevent}>장바구니</a>
-    <button type="button">화면 모드</button>
-    <label className="g7pb-system-select"><span>언어</span><select aria-label="언어" value="ko" disabled><option value="ko">한국어</option></select></label>
-    <a href="/login" onClick={prevent}>로그인</a>
+    </form> : null}
+    {props.notifications ? <a href="/mypage/notifications" onClick={prevent}>알림 <span className="g7pb-system-badge">3</span></a> : null}
+    {props.cart ? <a href="/shop/cart" onClick={prevent}>장바구니 <span className="g7pb-system-badge">2</span></a> : null}
+    {props.theme ? <button type="button">화면 모드</button> : null}
+    {props.locale ? <label className="g7pb-system-select"><span>언어</span><select aria-label="언어" value="ko" disabled><option value="ko">한국어</option></select></label> : null}
+    {props.currency ? <label className="g7pb-system-select"><span>통화</span><select aria-label="통화" value="KRW" disabled><option value="KRW">KRW</option></select></label> : null}
+    {props.account ? <a href="/login" onClick={prevent}>로그인</a> : null}
   </nav>;
 }
 
@@ -336,7 +340,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
   </div>;
 }
 
-export function HeaderNavigationPreview(props: HeaderNavigationProps): React.ReactElement {
+export function HeaderNavigationPreview(props: HeaderNavigationProps & { systemControlsPreview?: React.ReactNode }): React.ReactElement {
   const navigation = (className: string, label: string): React.ReactElement => <nav className={className} aria-label={label}><ul>{props.navigation.map((item, index) => (
     <li key={`${item.label}-${index}`} className={item.children.length > 0 ? 'has-children' : undefined}>
       <a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}{item.children.length > 0 ? <span aria-hidden="true">⌄</span> : null}</a>
@@ -354,7 +358,7 @@ export function HeaderNavigationPreview(props: HeaderNavigationProps): React.Rea
         {navigation('g7pb-site-nav', '주 메뉴')}
         <div className="g7pb-site-header__actions">
           {props.ctaLabel ? <a className="g7pb-site-header__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
-          <HeaderSystemControlsPreview />
+          {props.systemControlsPreview}
           <HeaderMobileMenuPreview {...props} />
         </div>
       </div>
@@ -394,12 +398,14 @@ function SitePartThumbnail({ name }: { name: string }): React.ReactElement {
   if (name === 'HeaderNavigation') return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--navigation" aria-hidden="true"><b /><span><i /><i /><i /></span><em /></div>;
   if (name === 'Announcement') return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--announcement" aria-hidden="true"><b /><i /></div>;
   if (name === 'FooterColumns') return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--columns" aria-hidden="true"><b /><span><i /><i /><i /></span></div>;
+  if (name === 'HeaderSystemControls') return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--navigation" aria-hidden="true"><b /><span><i /><i /><i /></span></div>;
   return <div className="g7pb-site-part-thumb g7pb-site-part-thumb--footer" aria-hidden="true"><span><b /><i /><i /></span><em /></div>;
 }
 
-function SitePartDrawerItem({ name }: { children: React.ReactNode; name: string }): React.ReactElement {
+export function SitePartDrawerItem({ name }: { children: React.ReactNode; name: string }): React.ReactElement {
   const descriptions: Record<string, string> = {
     HeaderNavigation: '브랜드·PC 메뉴·모바일 메뉴·강조 버튼',
+    HeaderSystemControls: '검색·회원 상태·알림·장바구니·테마·언어·통화',
     Announcement: '상단 공지와 선택 링크',
     FooterSimple: '브랜드·하단 메뉴·사업자 문구',
     FooterColumns: '브랜드와 최대 4개 메뉴 그룹',
@@ -407,7 +413,7 @@ function SitePartDrawerItem({ name }: { children: React.ReactNode; name: string 
 
   return <div className="g7pb-site-part-library-card" data-site-part-block={name}>
     <SitePartThumbnail name={name} />
-    <div><strong>{name === 'HeaderNavigation' ? 'Header · 내비게이션' : name === 'Announcement' ? 'Header · 공지 바' : name === 'FooterColumns' ? 'Footer · 다단 메뉴' : 'Footer · 기본'}</strong><span>{descriptions[name]}</span><em>끌어서 배치</em></div>
+    <div><strong>{name === 'HeaderNavigation' ? 'Header · 내비게이션' : name === 'HeaderSystemControls' ? 'G7 시스템 기능' : name === 'Announcement' ? 'Header · 공지 바' : name === 'FooterColumns' ? 'Footer · 다단 메뉴' : 'Footer · 기본'}</strong><span>{descriptions[name]}</span></div>
     <span className="g7pb-site-part-library-card__handle" aria-hidden="true">⠿</span>
   </div>;
 }
@@ -455,7 +461,7 @@ function SitePartPuckShell({ children }: { children: React.ReactNode }): React.R
   return <>{children}</>;
 }
 
-function SitePartActionBar({
+export function SitePartActionBar({
   label,
   children,
   parentAction,
@@ -478,7 +484,7 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
   const all: Config<SitePartComponents>['components'] = {
     HeaderNavigation: {
       label: 'Header · 내비게이션',
-      defaultProps: { brandName: '사이트 이름', logoUrl: '', homeUrl: '/', variant: 'solid', sticky: true, navigation: [{ label: '소개', url: '/pages/about', children: [] }], ctaLabel: '문의하기', ctaUrl: '/pages/contact', mobileMenu: true, mobileMenuStyle: 'drawer-right', responsiveOverrides: { tablet: { density: 'comfortable', alignment: 'spread', showCta: false, mobileMenuStyle: 'drawer-right' }, mobile: { density: 'compact', alignment: 'spread', showCta: false, mobileMenuStyle: 'drawer-right' } } },
+      defaultProps: { brandName: '사이트 이름', logoUrl: '', homeUrl: '/', variant: 'solid', sticky: true, navigation: [{ label: '소개', url: '/pages/about', children: [] }], ctaLabel: '문의하기', ctaUrl: '/pages/contact', mobileMenu: true, mobileMenuStyle: 'drawer-right', responsiveOverrides: { tablet: { density: 'comfortable', alignment: 'spread', showCta: false, mobileMenuStyle: 'drawer-right' }, mobile: { density: 'compact', alignment: 'spread', showCta: false, mobileMenuStyle: 'drawer-right' } }, systemControls: [{ type: 'HeaderSystemControls', props: { id: '6a741d82-3080-4e72-a2f1-7d2d968eb881', ...DEFAULT_HEADER_SYSTEM_CONTROLS } }] },
       fields: {
         brandName: { type: 'text', label: '사이트 이름', contentEditable: true }, logoUrl: createMediaField('로고 이미지'), homeUrl: createRouteUrlField('홈 연결'),
         variant: { type: 'radio', label: '배경', options: [{ label: '기본', value: 'solid' }, { label: '투명', value: 'transparent' }] }, sticky: { type: 'radio', label: '스크롤 고정', options: [{ label: '고정', value: true }, { label: '고정 안 함', value: false }] },
@@ -491,8 +497,26 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
         mobileMenu: { type: 'radio', label: '모바일 메뉴', options: [{ label: '사용', value: true }, { label: '숨김', value: false }] },
         mobileMenuStyle: { type: 'radio', label: '기본 메뉴 방식', options: [{ label: '오른쪽', value: 'drawer-right' }, { label: '왼쪽', value: 'drawer-left' }, { label: '헤더 아래', value: 'dropdown' }, { label: '하단 시트', value: 'sheet-bottom' }] },
         responsiveOverrides: createHeaderResponsiveField(),
+        systemControls: { type: 'slot', label: 'G7 시스템 기능', allow: ['HeaderSystemControls'] },
       },
-      render: (props) => <HeaderNavigationPreview {...props} />,
+      render: ({ systemControls: SystemControls, ...props }) => <HeaderNavigationPreview
+        {...props}
+        systemControlsPreview={SystemControls ? <SystemControls className="g7pb-site-header__system-slot" /> : null}
+      />,
+    },
+    HeaderSystemControls: {
+      label: 'G7 시스템 기능',
+      defaultProps: { search: true, account: true, cart: true, notifications: true, theme: true, locale: true, currency: true },
+      fields: {
+        search: { type: 'radio', label: '통합 검색', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+        account: { type: 'radio', label: '로그인·회원 상태', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+        cart: { type: 'radio', label: '장바구니 개수', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+        notifications: { type: 'radio', label: '알림 개수', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+        theme: { type: 'radio', label: '라이트·다크 전환', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+        locale: { type: 'radio', label: '언어 선택', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+        currency: { type: 'radio', label: '통화 선택', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
+      },
+      render: (props) => <HeaderSystemControlsPreview {...props} />,
     },
     Announcement: {
       label: 'Header · 공지 바',
@@ -516,10 +540,72 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
       render: (props) => <FooterColumnsPreview {...props} />,
     },
   };
-  const allowed = kind === 'header' ? ['HeaderNavigation', 'Announcement'] : ['FooterSimple', 'FooterColumns'];
+  const allowed = kind === 'header' ? ['HeaderNavigation', 'HeaderSystemControls', 'Announcement'] : ['FooterSimple', 'FooterColumns'];
   return {
     components: Object.fromEntries(Object.entries(all).filter(([name]) => allowed.includes(name))) as Config<SitePartComponents>['components'],
     root: { fields: {}, render: ({ children }) => <div className={`g7pb-site-part-preview g7pb-site-part-preview--${kind}`}>{kind === 'footer' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}{children}{kind === 'header' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}</div> },
+  };
+}
+
+export function sitePartSetConfig(): Config<SitePartComponents> {
+  const header = sitePartConfigFor('header');
+  const footer = sitePartConfigFor('footer');
+  const hasType = (content: SitePartPuckData['content'], types: string[]): boolean => content.some((block) => types.includes(block.type));
+  const hasNestedType = (value: unknown, type: string): boolean => {
+    if (Array.isArray(value)) return value.some((item) => hasNestedType(item, type));
+    if (!value || typeof value !== 'object') return false;
+    const record = value as Record<string, unknown>;
+    return record.type === type || Object.values(record).some((item) => hasNestedType(item, type));
+  };
+  return {
+    categories: {
+      header: { title: 'Header', components: ['Announcement', 'HeaderNavigation'], defaultExpanded: true },
+      system: { title: 'G7 기능', components: ['HeaderSystemControls'], defaultExpanded: true },
+      footer: { title: 'Footer', components: ['FooterSimple', 'FooterColumns'], defaultExpanded: true },
+    },
+    components: {
+      Announcement: {
+        ...header.components.Announcement,
+        resolvePermissions: (_data, { appState }) => ({
+          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['Announcement']),
+          duplicate: false,
+        }),
+      },
+      HeaderNavigation: {
+        ...header.components.HeaderNavigation,
+        resolvePermissions: (_data, { appState }) => ({
+          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['HeaderNavigation']),
+          duplicate: false,
+        }),
+      },
+      HeaderSystemControls: {
+        ...header.components.HeaderSystemControls,
+        resolvePermissions: (_data, { appState }) => ({
+          insert: !hasNestedType(appState.data.content, 'HeaderSystemControls'),
+          duplicate: false,
+        }),
+      },
+      FooterSimple: {
+        ...footer.components.FooterSimple,
+        resolvePermissions: (_data, { appState }) => ({
+          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['FooterSimple', 'FooterColumns']),
+          duplicate: false,
+        }),
+      },
+      FooterColumns: {
+        ...footer.components.FooterColumns,
+        resolvePermissions: (_data, { appState }) => ({
+          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['FooterSimple', 'FooterColumns']),
+          duplicate: false,
+        }),
+      },
+    },
+    root: {
+      fields: {},
+      render: ({ children }) => <div className="g7pb-site-part-preview g7pb-site-part-preview--set">
+        {children}
+      </div>,
+    },
   };
 }
 

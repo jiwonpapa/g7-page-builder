@@ -39,6 +39,50 @@ final readonly class SitePartDocument
             if (! is_string($type) || ! str_starts_with($type, "site.{$this->kind}.")) {
                 throw new \InvalidArgumentException('Site Part block kind does not match its document.');
             }
+            $allowed = $this->kind === 'header'
+                ? ['site.header.navigation-01', 'site.header.announcement-01']
+                : ['site.footer.simple-01', 'site.footer.columns-01'];
+            if (! in_array($type, $allowed, true)) {
+                throw new \InvalidArgumentException('Site Part top-level block is not supported.');
+            }
+            $slots = $block['slots'] ?? null;
+            if (! is_array($slots)) {
+                throw new \InvalidArgumentException('Site Part block slots must be an object.');
+            }
+            if ($type === 'site.header.navigation-01') {
+                $unknownSlots = array_diff(array_keys($slots), ['systemControls']);
+                $controls = $slots['systemControls'] ?? [];
+                if ($unknownSlots !== [] || ! is_array($controls) || count($controls) > 1) {
+                    throw new \InvalidArgumentException('Header system controls slot is invalid.');
+                }
+                foreach ($controls as $control) {
+                    if (! is_array($control) || ($control['type'] ?? null) !== 'site.header.system-controls-01'
+                        || ! is_array($control['props'] ?? null) || ($control['slots'] ?? null) !== []) {
+                        throw new \InvalidArgumentException('Header system controls block is invalid.');
+                    }
+                }
+            } elseif ($slots !== []) {
+                throw new \InvalidArgumentException('This Site Part block does not accept nested slots.');
+            }
+        }
+        $primaryTypes = $this->kind === 'header'
+            ? ['site.header.navigation-01']
+            : ['site.footer.simple-01', 'site.footer.columns-01'];
+        $primaryCount = count(array_filter(
+            $this->blocks,
+            static fn (array $block): bool => in_array($block['type'] ?? null, $primaryTypes, true),
+        ));
+        if ($primaryCount > 1) {
+            throw new \InvalidArgumentException('Site Part may contain exactly one primary block.');
+        }
+        if ($this->kind === 'header') {
+            $announcementCount = count(array_filter(
+                $this->blocks,
+                static fn (array $block): bool => ($block['type'] ?? null) === 'site.header.announcement-01',
+            ));
+            if ($announcementCount > 1) {
+                throw new \InvalidArgumentException('Site Part may contain one announcement block.');
+            }
         }
     }
 

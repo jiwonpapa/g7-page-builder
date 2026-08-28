@@ -59,7 +59,22 @@ expect_failure '안내 블록 제목은 공개 출력과 동일한 h2 semantic �
 copy_fixture
 perl -0pi -e 's/ancestorTrail/removedTrail/g' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
-expect_failure '브라우저 WYSIWYG 실패에는 실제 글자 폭과 semantic DOM 조상 진단값이 포함되어야 합니다.'
+expect_failure '브라우저 WYSIWYG 실패에는 실제 글자 폭, 줄바꿈 속성, 편집 상태와 semantic DOM 조상 진단값이 포함되어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-page \[data-g7pb-heading-level\] \{[^}]*white-space:) normal;/${1} nowrap;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure '편집 가능한 제목은 공개 heading과 같은 줄바꿈 규칙을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-hero-slider article > div \{[^}]*padding:) clamp\(2rem, 6vw, 5rem\);/${1} 72px;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Hero Slider copy inset은 공개 슬라이더와 같은 유동 여백이어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-bar-chart figcaption > \[data-g7pb-heading-level="2"\] \{ max-width:) 48rem;/${1} 680px;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Bar Chart 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e "s/const image = safeImage\(imageSrc\);/const legacyClass = 'g7pb-preview-hero__copy'; const image = safeImage(imageSrc);/" \

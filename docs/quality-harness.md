@@ -57,6 +57,7 @@
 - `page-builder-editor-wysiwyg.css`는 Puck의 편집용 `contentEditable` DOM을 발행 HTML의 semantic typography에 연결합니다. 제목 래퍼와 내부 실제 `h1`~`h4`의 computed font family·size·weight·line-height·letter-spacing 및 줄 수가 발행본과 다르면 레이아웃 E2E가 실패하며, 사용자가 지정한 요소별 글꼴·크기·굵기·색상은 이 기본 브리지보다 우선합니다.
 - 로고 목록과 안내 블록처럼 편집기 DOM이 발행 HTML과 다른 태그를 사용해 브라우저 기본 글꼴 규칙이 개입하지 않도록 제목 semantic을 `h2`로 고정합니다. Hero·CTA·섹션 preset은 같은 layout class와 typography 계약을 공유하며, 패리티 실패에는 양쪽 태그·실제 폭·최대 폭·조상 DOM 경로를 함께 출력합니다.
 - Hero 편집 렌더는 제목·본문·CTA·이미지를 발행 Hero와 같은 direct grid child 순서로 유지합니다. 일반 섹션 제목은 공개 `.g7pb-section-heading`의 48rem 폭을 공유하고, contenteditable 줄 수는 Range fragment와 실제 line-box 높이 중 큰 값을 사용해 편집 DOM 특성 때문에 줄바꿈 실패를 놓치거나 오탐하지 않습니다.
+- 패리티 실패 증거에는 제목의 실제 높이·scrollWidth·`white-space`·`overflow-wrap`·`word-break`·contenteditable 상태를 포함합니다. 편집 제목은 공개 제목과 동일한 일반 줄바꿈을 강제하며 Hero Slider 내부 여백과 Bar Chart 제목 폭도 공개 계산식과 공유합니다.
 
 ## Architecture
 

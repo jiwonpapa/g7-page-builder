@@ -55,16 +55,22 @@ interface LayoutMetric {
 
 interface TypographyMetric {
   ancestorTrail: string[];
+  contentEditable: string;
   fontFamily: string;
   fontSize: number;
   fontWeight: string;
+  height: number;
   letterSpacing: number;
   lineCount: number;
   lineHeight: number;
   maxWidth: string;
+  overflowWrap: string;
+  scrollWidth: number;
   tagName: string;
   text: string;
+  whiteSpace: string;
   width: number;
+  wordBreak: string;
 }
 
 interface Scenario {
@@ -411,9 +417,11 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
       }
       typography = {
         ancestorTrail,
+        contentEditable: typographyCandidate.contentEditable,
         fontFamily: typographyStyle?.fontFamily ?? '',
         fontSize,
         fontWeight: typographyStyle?.fontWeight ?? '',
+        height: typographyRect.height,
         letterSpacing: Number.parseFloat(typographyStyle?.letterSpacing ?? '0') || 0,
         lineCount: Math.max(
           lineClusters.length,
@@ -421,9 +429,13 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
         ),
         lineHeight,
         maxWidth: typographyStyle?.maxWidth ?? '',
+        overflowWrap: typographyStyle?.overflowWrap ?? '',
+        scrollWidth: typographyCandidate.scrollWidth,
         tagName: typographyCandidate.tagName.toLowerCase(),
         text: (typographyCandidate.textContent ?? '').replace(/\s+/g, ' ').trim(),
+        whiteSpace: typographyStyle?.whiteSpace ?? '',
         width: typographyRect.width,
+        wordBreak: typographyStyle?.wordBreak ?? '',
       };
     }
     return {

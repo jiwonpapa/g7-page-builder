@@ -137,6 +137,12 @@ export async function validateEditorLayoutParity(root) {
       '편집기 Icon List 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'],
     [/\.g7pb-preview-card-grid\s*>\s*header\s+:is\(h2,[\s\S]*?max-width:\s*48rem;/,
       '편집기 Card Grid와 Image Carousel 제목 폭은 공개 section heading과 같아야 합니다.'],
+    [/\.g7pb-preview-hero-slider\s+article\s*>\s*div\s*\{[^}]*padding:\s*clamp\(2rem,\s*6vw,\s*5rem\);/,
+      '편집기 Hero Slider copy inset은 공개 슬라이더와 같은 유동 여백이어야 합니다.'],
+    [/\.g7pb-preview-bar-chart\s+figcaption\s*>\s*\[data-g7pb-heading-level="2"\]\s*\{[^}]*max-width:\s*48rem;/,
+      '편집기 Bar Chart 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'],
+    [/\.g7pb-preview-page\s+\[data-g7pb-heading-level\]\s*\{[^}]*overflow-wrap:\s*normal;[^}]*white-space:\s*normal;[^}]*word-break:\s*normal;/,
+      '편집 가능한 제목은 공개 heading과 같은 줄바꿈 규칙을 사용해야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
   requirePattern(errors, catalogSource,
@@ -153,8 +159,8 @@ export async function validateEditorLayoutParity(root) {
     /g7pb-preview-hero[^>]*>[\s\S]*?g7pb-preview-eyebrow[\s\S]*?RichTextCanvasField as="h1"[\s\S]*?RichTextCanvasField fieldPath="body"[\s\S]*?g7pb-preview-hero__media/,
     '편집기 Hero의 제목, 본문, CTA, 이미지는 공개 Hero와 같은 grid 순서를 유지해야 합니다.');
   requirePattern(errors, spec,
-    /ancestorTrail:[\s\S]*maxWidth:[\s\S]*tagName:[\s\S]*width:/,
-    '브라우저 WYSIWYG 실패에는 실제 글자 폭과 semantic DOM 조상 진단값이 포함되어야 합니다.');
+    /ancestorTrail:[\s\S]*contentEditable:[\s\S]*height:[\s\S]*maxWidth:[\s\S]*overflowWrap:[\s\S]*scrollWidth:[\s\S]*tagName:[\s\S]*whiteSpace:[\s\S]*width:[\s\S]*wordBreak:/,
+    '브라우저 WYSIWYG 실패에는 실제 글자 폭, 줄바꿈 속성, 편집 상태와 semantic DOM 조상 진단값이 포함되어야 합니다.');
   requirePattern(errors, spec,
     /['"]\.g7pb-divider__label['"]/,
     '구분선 label은 편집기와 공개 출력 양쪽에서 typography 후보로 측정해야 합니다.');

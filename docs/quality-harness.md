@@ -70,6 +70,7 @@
 - 이미지 대체 텍스트 필드는 우측 설정 라벨에 `(필수)`를 표시합니다. 누락·길이 오류는 내부 property key나 문의 번호 대신 사용자가 바로 고칠 수 있는 한국어 항목명으로 안내합니다.
 - 이미지가 비어 있어도 편집 캔버스에는 점선 이미지 자리를 유지하고, 해당 자리를 직접 눌러 이미지 선택·교체·비우기를 수행한 뒤 저장·발행할 수 있어야 합니다. 우측 설정의 미디어 선택기는 동일 값을 편집하는 보조 경로로 유지합니다.
 - 블록 라이브러리의 제목·리치텍스트·버튼·구분선처럼 짧은 블록은 compact 미리보기 비율을 사용하고, 이미지·Hero·복합 섹션은 regular 비율을 유지합니다. 브라우저 E2E는 compact 카드가 regular 카드보다 실제로 낮게 렌더되는지 확인합니다.
+- 편집기 UI와 콘텐츠 아이콘은 `lucide-react`를 기본 세트로 사용합니다. UI 15~20px, 소셜 17px, 지표 28px, 특징 34px 단계로 구분하고, 공개 compiler도 같은 Lucide geometry의 인라인 SVG를 출력합니다. `YT`·`IG`·`◆`·`↯` 같은 문자 또는 CSS pseudo-element는 아이콘으로 인정하지 않습니다.
 - Puck의 `.rich-text * { white-space: pre-wrap }` 및 ProseMirror의 `font-feature-settings: "liga" 0` 기본값이 제목 안쪽 leaf에 남지 않도록 wrapper의 줄바꿈 규칙과 font shaping을 강제 상속합니다. 같은 폭·폰트에서도 편집기 글자가 16~19% 넓어져 한 줄 더 생기는 회귀를 차단합니다.
 
 ## Architecture

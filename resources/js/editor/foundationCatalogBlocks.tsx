@@ -10,6 +10,7 @@ import {
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
+import { CatalogIcon, type CatalogIconName } from './catalogIcon';
 import {
   decorateCanvasElementStyles,
   CanvasCurrentElementStylesContext,
@@ -121,11 +122,6 @@ const ICON_OPTIONS = [
   { label: '반짝임', value: 'sparkles' },
   { label: '별', value: 'star' },
 ];
-
-const ICON_GLYPHS: Record<string, string> = {
-  bolt: '↯', check: '✓', code: '</>', globe: '◎', heart: '♥', layers: '▱',
-  mobile: '▯', palette: '◒', shield: '◆', sparkles: '✦', star: '★',
-};
 
 const DEFAULT_HEADING: HeadingEditorProps = {
   eyebrow: '섹션 안내', heading: '이 섹션의 핵심을 한 문장으로', level: '2', anchor: '',
@@ -351,7 +347,7 @@ function IconListPreview(props: IconListEditorProps & { id: string }): React.Rea
       <header>{props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}
         <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
       <ul>{normalizeIconItems(props.items).map((item, index) => <li key={`${item.title}-${index}`}>
-        <i aria-hidden="true">{ICON_GLYPHS[item.icon] ?? ICON_GLYPHS.check}</i>
+        <span className="g7pb-preview-catalog-icon"><CatalogIcon name={(item.icon || 'check') as CatalogIconName} size={25} /></span>
         <div><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</RichTextCanvasField>
           <RichTextCanvasField fieldPath={`items.${index}.body`}>{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField></div>
       </li>)}</ul>

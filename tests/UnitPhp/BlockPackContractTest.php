@@ -69,18 +69,17 @@ final class BlockPackContractTest extends TestCase
         self::assertNotNull($registry->definition('media.image-carousel-01', 1));
     }
 
-    public function test_icon_list_glyph_css_does_not_leak_into_feature_icons(): void
+    public function test_catalog_icons_do_not_fall_back_to_text_pseudo_elements(): void
     {
         $publicCss = file_get_contents(dirname(__DIR__, 2).'/resources/css/page-builder-public.css');
         self::assertIsString($publicCss);
 
         foreach (['bolt', 'code', 'globe', 'heart', 'layers', 'mobile', 'palette', 'shield', 'sparkles', 'star'] as $icon) {
-            self::assertStringContainsString(".g7pb-icon-list__icon.g7pb-icon--{$icon}::before", $publicCss);
-            self::assertDoesNotMatchRegularExpression(
-                "/(?<![\\w-])\\.g7pb-icon--{$icon}::before/",
-                str_replace(".g7pb-icon-list__icon.g7pb-icon--{$icon}::before", '', $publicCss),
-            );
+            self::assertStringNotContainsString(".g7pb-icon--{$icon}::before", $publicCss);
         }
+        self::assertStringNotContainsString("content: 'YT'", $publicCss);
+        self::assertStringNotContainsString("content: 'IG'", $publicCss);
+        self::assertStringContainsString('.g7pb-social-links__glyph', $publicCss);
     }
 
     public function test_data_pack_rejects_runtime_code(): void

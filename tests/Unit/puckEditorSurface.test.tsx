@@ -271,6 +271,12 @@ describe('Puck editor surface contract', () => {
     });
 
     expect(container.querySelectorAll('[data-testid="page-builder-block"]')).toHaveLength(content.length);
+    expect(container.querySelectorAll('.g7pb-preview-features article > span svg').length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelectorAll('.g7pb-preview-icon-list li > span svg').length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelectorAll('.g7pb-preview-stats article > i svg').length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelectorAll('.g7pb-preview-social-links a > i svg').length).toBeGreaterThanOrEqual(1);
+    expect(Array.from(container.querySelectorAll('.g7pb-preview-social-links a > i'))
+      .every((icon) => icon.textContent?.trim() === '')).toBe(true);
     const consoleErrors = consoleError.mock.calls.map((call) => call.map(String).join(' '));
     expect(consoleErrors).toEqual([]);
   }, FULL_CATALOG_RENDER_TIMEOUT_MS);

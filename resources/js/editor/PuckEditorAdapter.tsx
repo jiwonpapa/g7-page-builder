@@ -5,18 +5,25 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  ArrowDown,
+  ArrowUp,
   Blocks,
+  Copy,
   ImageOff,
   ImagePlus,
   Link2,
   Monitor,
   Paintbrush,
+  Plus,
   Moon,
   Sun,
   Smartphone,
   Sparkles,
+  Star,
   Settings2,
   Tablet,
+  Trash2,
+  X,
 } from 'lucide-react';
 import {
   ActionBar,
@@ -52,6 +59,7 @@ import {
   normalizeBlockMotion,
 } from './blockMotion';
 import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
+import { CatalogIcon, type CatalogIconName } from './catalogIcon';
 import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
 import {
   createInlineRichTextField,
@@ -1256,13 +1264,6 @@ function HeroPreview({
 }
 
 function FeaturesPreview({ id, title, items, layout, surface, spacing, textScale = 'balanced', textAlign = 'left', elementStyles, motion }: Omit<FeaturesEditorProps, 'title'> & { id: string; title: React.ReactNode }): React.ReactElement {
-  const glyphs: Record<string, string> = {
-    sparkles: '✦',
-    shield: '◆',
-    bolt: '↯',
-    heart: '♥',
-  };
-
   return (
     <BlockFrame id={id} type="features" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-features g7pb-preview-features--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
@@ -1270,7 +1271,7 @@ function FeaturesPreview({ id, title, items, layout, surface, spacing, textScale
         <div className="g7pb-preview-features__grid">
           {normalizeFeatureItems(items).map((item, index) => (
             <article key={`${item.title}-${index}`}>
-              <span aria-hidden="true">{glyphs[item.icon] ?? glyphs.sparkles}</span>
+              <span aria-hidden="true"><CatalogIcon name={(item.icon || 'sparkles') as CatalogIconName} size={34} /></span>
               <RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.title`}>
                 {inlineArrayContent(items, index, 'title', item.title)}
               </RichTextCanvasField>
@@ -2101,7 +2102,7 @@ function StableAddBlockControls({
                 <span>선택하면 현재 블록 바로 뒤에 추가됩니다.</span>
               </div>
               <button type="button" className="g7pb-block-gallery__close" aria-label="블록 갤러리 닫기"
-                onClick={() => setOpen(false)}>×</button>
+                onClick={() => setOpen(false)}><X size={20} aria-hidden="true" /></button>
             </header>
             <div className="g7pb-block-gallery__tabs" role="tablist" aria-label="블록 라이브러리 형식">
               {([['all', '전체'], ['definition', '블록 종류'], ['preset', '완성 섹션']] as const).map(([value, label]) => (
@@ -2126,12 +2127,12 @@ function StableAddBlockControls({
                 {packs.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)}>
-                ★ 즐겨찾기
+                <Star size={15} fill={favoritesOnly ? 'currentColor' : 'none'} aria-hidden="true" /> 즐겨찾기
               </button>
             </div>
             {!query.trim() && !category && !packId && kind === 'all' && !favoritesOnly ? <section className="g7pb-block-gallery__quick" aria-labelledby="g7pb-quick-add-title">
               <div><small>QUICK ADD</small><h3 id="g7pb-quick-add-title">자주 쓰는 기본 블록</h3></div>
-              <div>{quickItems.map((item) => <button key={item.catalogId} type="button" data-testid={`page-builder-quick-add-${String(item.type).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`} onClick={() => insert(item)}><span aria-hidden="true">+</span>{item.title}</button>)}</div>
+              <div>{quickItems.map((item) => <button key={item.catalogId} type="button" data-testid={`page-builder-quick-add-${String(item.type).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`} onClick={() => insert(item)}><Plus size={15} aria-hidden="true" />{item.title}</button>)}</div>
             </section> : null}
             <div className="g7pb-block-gallery__grid"
               data-total-items={visibleItems.length}
@@ -2157,7 +2158,7 @@ function StableAddBlockControls({
                     aria-pressed={item.favorite}
                     onClick={() => void toggleFavorite(item.catalogId, !item.favorite)}
                   >
-                    {item.favorite ? '★' : '☆'}
+                    <Star size={18} fill={item.favorite ? 'currentColor' : 'none'} aria-hidden="true" />
                   </button>
                 </article>
               ))}
@@ -2436,7 +2437,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   return createPortal(
     <section className={`g7pb-context-panel${isTextElement ? ` g7pb-element-balloon g7pb-element-balloon--${balloonPlacement}` : ''}`} style={balloonStyle}
       role="dialog" aria-label={isTextElement ? '선택 요소 스타일' : '선택 블록 스타일'} data-testid="page-builder-context-panel">
-      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '요소 전체 · 부분 선택은 글자 위 툴바' : '블록 배경·여백·표시 대상을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}>×</button></header>
+      <header><div><strong>{canvasUi.selection?.label ?? '블록 전체'} 스타일</strong><span>{isTextElement ? '요소 전체 · 부분 선택은 글자 위 툴바' : '블록 배경·여백·표시 대상을 조정합니다.'}</span></div><button type="button" aria-label="스타일 도구 닫기" onClick={() => canvasUi.setTextToolsOpen(false)}><X size={17} aria-hidden="true" /></button></header>
       {isTextElement ? <>
         <div className="g7pb-element-balloon__controls">
           <label><span>글꼴</span><select disabled={disabled} value={currentElement.font ?? 'inherit'}
@@ -2856,24 +2857,24 @@ function SelectedBlockActionBar({
               : <Settings2 size={16} data-testid="page-builder-block-style-open" aria-hidden="true" />}
           </ActionBar.Action> : null}
           {!rangeEditingActive && selectedCollection && itemIndex !== null && limits ? <>
-            <ActionBar.Action label="선택 항목 위로" disabled={disabled || itemIndex === 0} onClick={() => updateCollection('up')}><span data-testid="page-builder-item-move-up" aria-hidden="true">⇡</span></ActionBar.Action>
-            <ActionBar.Action label="선택 항목 아래로" disabled={disabled || itemIndex >= selectedCollection.length - 1} onClick={() => updateCollection('down')}><span data-testid="page-builder-item-move-down" aria-hidden="true">⇣</span></ActionBar.Action>
-            <ActionBar.Action label="선택 항목 복제" disabled={disabled || selectedCollection.length >= limits.max} onClick={() => updateCollection('duplicate')}><span data-testid="page-builder-item-duplicate" aria-hidden="true">⧉</span></ActionBar.Action>
-            <ActionBar.Action label={`선택 항목 삭제${selectedCollection.length <= limits.min ? ` (최소 ${limits.min}개)` : ''}`} disabled={disabled || selectedCollection.length <= limits.min} onClick={() => updateCollection('delete')}><span data-testid="page-builder-item-delete" aria-hidden="true">⌫</span></ActionBar.Action>
+            <ActionBar.Action label="선택 항목 위로" disabled={disabled || itemIndex === 0} onClick={() => updateCollection('up')}><ArrowUp size={16} data-testid="page-builder-item-move-up" aria-hidden="true" /></ActionBar.Action>
+            <ActionBar.Action label="선택 항목 아래로" disabled={disabled || itemIndex >= selectedCollection.length - 1} onClick={() => updateCollection('down')}><ArrowDown size={16} data-testid="page-builder-item-move-down" aria-hidden="true" /></ActionBar.Action>
+            <ActionBar.Action label="선택 항목 복제" disabled={disabled || selectedCollection.length >= limits.max} onClick={() => updateCollection('duplicate')}><Copy size={16} data-testid="page-builder-item-duplicate" aria-hidden="true" /></ActionBar.Action>
+            <ActionBar.Action label={`선택 항목 삭제${selectedCollection.length <= limits.min ? ` (최소 ${limits.min}개)` : ''}`} disabled={disabled || selectedCollection.length <= limits.min} onClick={() => updateCollection('delete')}><Trash2 size={16} data-testid="page-builder-item-delete" aria-hidden="true" /></ActionBar.Action>
           </> : null}
           {!rangeEditingActive && <ActionBar.Action
             label="블록 위로 이동"
             disabled={disabled || selectedIndex === null || selectedIndex === 0}
             onClick={() => move((selectedIndex ?? 0) - 1)}
           >
-            <span data-testid="page-builder-block-move-up" aria-hidden="true">↑</span>
+            <ArrowUp size={16} data-testid="page-builder-block-move-up" aria-hidden="true" />
           </ActionBar.Action>}
           {!rangeEditingActive && <ActionBar.Action
             label="블록 아래로 이동"
             disabled={disabled || selectedIndex === null || selectedIndex >= contentLength - 1}
             onClick={() => move((selectedIndex ?? -1) + 1)}
           >
-            <span data-testid="page-builder-block-move-down" aria-hidden="true">↓</span>
+            <ArrowDown size={16} data-testid="page-builder-block-move-down" aria-hidden="true" />
           </ActionBar.Action>}
           {puckActions}
         </ActionBar.Group>

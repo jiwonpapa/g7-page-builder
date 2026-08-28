@@ -9,6 +9,7 @@ import {
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
+import { CatalogIcon, type CatalogIconName } from './catalogIcon';
 import { CanvasCurrentElementStylesContext, decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasBlockAppearanceClass, useCanvasElementStyles } from './canvasEditingContract';
 import {
   canonicalPhase2BlockToPuck,
@@ -669,7 +670,7 @@ function LogoCloudPreview(props: LogoCloudEditorProps & { id: string }): React.R
 }
 
 function StatsPreview(props: StatsEditorProps & { id: string }): React.ReactElement {
-  return <BlockFrame id={props.id} type="stats" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-stats g7pb-preview-stats--layout-${props.layout} ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header><div>{normalizeStats(props.items).map((item, index) => <article key={`${item.label}-${index}`}><i aria-hidden="true">{item.icon === 'users' ? '●●' : item.icon === 'trend' ? '↗' : item.icon === 'target' ? '◎' : '▥'}</i><strong data-g7pb-inline-field={`items.${index}.value`}>{inlineArrayContent(props.items, index, 'value', item.value)}</strong><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.label`}>{inlineArrayContent(props.items, index, 'label', item.label)}</RichTextCanvasField><RichTextCanvasField fieldPath={`items.${index}.detail`}>{inlineArrayContent(props.items, index, 'detail', item.detail)}</RichTextCanvasField></article>)}</div></div></BlockFrame>;
+  return <BlockFrame id={props.id} type="stats" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-stats g7pb-preview-stats--layout-${props.layout} ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header><div>{normalizeStats(props.items).map((item, index) => <article key={`${item.label}-${index}`}><i aria-hidden="true"><CatalogIcon name={item.icon as CatalogIconName} size={28} /></i><strong data-g7pb-inline-field={`items.${index}.value`}>{inlineArrayContent(props.items, index, 'value', item.value)}</strong><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.label`}>{inlineArrayContent(props.items, index, 'label', item.label)}</RichTextCanvasField><RichTextCanvasField fieldPath={`items.${index}.detail`}>{inlineArrayContent(props.items, index, 'detail', item.detail)}</RichTextCanvasField></article>)}</div></div></BlockFrame>;
 }
 
 function PricingPreview(props: PricingEditorProps & { id: string }): React.ReactElement {

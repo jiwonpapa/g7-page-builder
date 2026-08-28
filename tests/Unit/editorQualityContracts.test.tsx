@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { blockAppearanceClassName, normalizeBlockAppearance } from '../../resources/js/editor/blockAppearance';
 import {
   CANVAS_ELEMENT_MESSAGE,
+  CanvasCurrentElementStylesContext,
   normalizeCanvasElementSelectionIntent,
   notifyCanvasElementSelection,
   shouldAutoOpenCanvasTextTools,
@@ -111,12 +112,19 @@ describe('editor quality contracts', () => {
     expect(RICH_TEXT_ALLOWED_VALUES.tones).toEqual([
       'default', 'muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4',
     ]);
-    expect(renderToStaticMarkup(
+    const defaultHeading = renderToStaticMarkup(
       <RichTextCanvasField as="h2" fieldPath="heading"><div>부분 선택 제목</div></RichTextCanvasField>,
-    )).toContain('role="heading" aria-level="2"');
-    expect(renderToStaticMarkup(
-      <RichTextCanvasField as="h2" fieldPath="heading"><div>부분 선택 제목</div></RichTextCanvasField>,
-    )).not.toContain('<h2><div');
+    );
+    expect(defaultHeading).toContain('role="heading" aria-level="2"');
+    expect(defaultHeading).toContain('g7pb-element-weight--heading-default');
+    expect(defaultHeading).not.toContain('<h2><div');
+    const explicitRegularHeading = renderToStaticMarkup(
+      <CanvasCurrentElementStylesContext.Provider value={{ heading: { weight: 'regular' } }}>
+        <RichTextCanvasField as="h2" fieldPath="heading"><div>보통 굵기 제목</div></RichTextCanvasField>
+      </CanvasCurrentElementStylesContext.Provider>,
+    );
+    expect(explicitRegularHeading).toContain('g7pb-element-weight--regular');
+    expect(explicitRegularHeading).not.toContain('g7pb-element-weight--heading-default');
   });
 
   it('round-trips four user colors for light and dark themes without accepting arbitrary CSS', () => {

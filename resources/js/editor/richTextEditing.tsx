@@ -858,13 +858,16 @@ export function RichTextCanvasField({
   as?: 'div' | 'p' | 'span' | 'strong' | 'h1' | 'h2' | 'h3' | 'h4';
 }): React.ReactElement {
   const elementStyles = React.useContext(CanvasCurrentElementStylesContext);
-  const semanticClassName = requestedElement === 'strong' ? 'g7pb-element-weight--bold' : '';
+  const headingLevel = /^h([1-4])$/.exec(requestedElement)?.[1];
+  const explicitWeight = elementStyles?.[fieldPath]?.weight;
+  const semanticClassName = requestedElement === 'strong'
+    ? 'g7pb-element-weight--bold'
+    : headingLevel && explicitWeight === undefined ? 'g7pb-element-weight--heading-default' : '';
   const resolvedClassName = [
     className,
     elementAppearanceClassName(elementStyles, fieldPath),
     semanticClassName,
   ].filter(Boolean).join(' ');
-  const headingLevel = /^h([1-4])$/.exec(requestedElement)?.[1];
   const semanticRole: React.AriaRole | undefined = headingLevel
     ? 'heading'
     : requestedElement === 'p' ? 'paragraph'

@@ -60,6 +60,7 @@
 - 패리티 실패 증거에는 제목의 실제 높이·scrollWidth·`white-space`·`overflow-wrap`·`word-break`·contenteditable 상태를 포함합니다. 편집 제목은 공개 제목과 동일한 일반 줄바꿈을 강제하며 Hero Slider 내부 여백과 Bar Chart 제목 폭도 공개 계산식과 공유합니다.
 - Puck이 richtext 제목 내부에 생성하는 leaf 태그는 특정 `h1`~`h4` 형태라고 가정하지 않습니다. 실제 leaf의 기본 margin을 제거하고 wrapper의 font family·size·weight·line-height·letter-spacing을 강제 상속해 편집 캔버스에 보이는 글자 자체를 발행 제목과 맞춥니다.
 - `regular` 제목은 발행본의 계산값인 400을 사용합니다. Features와 공통 섹션 제목은 편집기 전용 richtext의 680px 제한을 받지 않고 발행 CSS의 실제 가용 폭·48rem 컨테이너·line-height를 그대로 사용합니다.
+- 제목 굵기를 설정하지 않은 문서는 semantic heading 기본값 700을, 사용자가 `regular`를 명시한 문서는 400을 사용합니다. 편집 wrapper가 둘을 같은 class로 축약해 사용자 선택과 기본 디자인을 섞지 못하게 합니다.
 
 ## Architecture
 

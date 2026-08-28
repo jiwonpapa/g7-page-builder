@@ -2,8 +2,8 @@
    nodes on the same computed typography contract as the PageBuilderDocument wrapper and public HTML. */
 .g7pb-preview-page [data-g7pb-richtext-display] [contenteditable] { color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; line-height: inherit; text-align: inherit; }
 .g7pb-preview-page [data-g7pb-heading-level].g7pb-element-weight--regular { font-weight: 400; }
+.g7pb-preview-page [data-g7pb-heading-level].g7pb-element-weight--heading-default { font-weight: 700; }
 .g7pb-preview-page [data-g7pb-heading-level] { overflow-wrap: normal; white-space: normal; word-break: normal; }
-.g7pb-preview-page [data-g7pb-heading-level] :where(h1, h2, h3, h4) { margin: 0; color: inherit; font: inherit; letter-spacing: inherit; text-align: inherit; }
 .g7pb-preview-page [data-g7pb-heading-level] :where(*) { margin: 0 !important; color: inherit !important; font-family: inherit !important; font-size: inherit !important; font-weight: inherit !important; letter-spacing: inherit !important; line-height: inherit !important; text-align: inherit !important; }
 .g7pb-preview-page .g7pb-preview-features > [data-g7pb-heading-level="2"] { max-width: none; line-height: 1.5; }
 .g7pb-preview-page :is(.g7pb-preview-stats, .g7pb-preview-pricing, .g7pb-preview-team, .g7pb-preview-gallery, .g7pb-preview-bar-chart, .g7pb-preview-g7-data) > :is(header, figcaption) { max-width: 48rem; }

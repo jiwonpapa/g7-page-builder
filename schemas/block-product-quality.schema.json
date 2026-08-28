@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/block-product-quality-v1.json",
+  "title": "G7 Page Builder built-in block product quality contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "approval"],
+  "properties": {
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_version", "inventory", "copy", "media", "variation", "dynamic_preview", "review", "block_policies"],
+      "properties": {
+        "contract_version": { "const": "g7pb-block-product-quality/v1" },
+        "inventory": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["block_count", "active_block_count", "preset_count", "catalog_item_count", "unique_thumbnail_count", "compatibility_only_block_ids"],
+          "properties": {
+            "block_count": { "type": "integer", "minimum": 1 },
+            "active_block_count": { "type": "integer", "minimum": 1 },
+            "preset_count": { "type": "integer", "minimum": 1 },
+            "catalog_item_count": { "type": "integer", "minimum": 1 },
+            "unique_thumbnail_count": { "type": "integer", "minimum": 1 },
+            "compatibility_only_block_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 2 } }
+          }
+        },
+        "copy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum_label_length", "minimum_description_length", "prohibited_patterns"],
+          "properties": {
+            "minimum_label_length": { "type": "integer", "minimum": 2 },
+            "minimum_description_length": { "type": "integer", "minimum": 10 },
+            "prohibited_patterns": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 2 } }
+          }
+        },
+        "media": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["prohibited_alt_patterns"],
+          "properties": {
+            "prohibited_alt_patterns": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 2 } }
+          }
+        },
+        "variation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum_distinct_signatures", "presentation_keys"],
+          "properties": {
+            "minimum_distinct_signatures": { "type": "integer", "minimum": 2 },
+            "presentation_keys": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 2 } }
+          }
+        },
+        "dynamic_preview": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum_items_by_block"],
+          "properties": {
+            "minimum_items_by_block": {
+              "type": "object",
+              "minProperties": 1,
+              "propertyNames": { "pattern": "^g7\\." },
+              "additionalProperties": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required_criteria", "allowed_reviewer_kinds"],
+          "properties": {
+            "required_criteria": { "type": "array", "minItems": 6, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]+$" } },
+            "allowed_reviewer_kinds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["maintainer", "codex-assisted"] } }
+          }
+        },
+        "block_policies": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "category", "profile", "expected_presets"],
+            "properties": {
+              "status": { "enum": ["product", "compatibility"] },
+              "category": { "type": "string", "minLength": 2 },
+              "profile": { "enum": ["hero", "text", "media", "action", "collection", "interactive", "data", "form", "location", "navigation", "compatibility"] },
+              "expected_presets": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_version", "catalog_digest", "item_count", "reviewer", "reviewed_at", "decision", "criteria", "findings", "evidence"],
+      "properties": {
+        "review_version": { "const": "g7pb-block-product-review/v1" },
+        "catalog_digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "item_count": { "type": "integer", "minimum": 1 },
+        "reviewer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": { "enum": ["maintainer", "codex-assisted"] },
+            "name": { "type": "string", "minLength": 2, "maxLength": 120 }
+          }
+        },
+        "reviewed_at": { "type": "string", "format": "date-time" },
+        "decision": { "enum": ["approved", "rejected"] },
+        "criteria": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z][a-z0-9_]+$" },
+          "additionalProperties": { "enum": ["pass", "fail"] },
+          "minProperties": 6
+        },
+        "findings": { "type": "array", "items": { "type": "string", "minLength": 2 } },
+        "evidence": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 2 } }
+      }
+    }
+  }
+}

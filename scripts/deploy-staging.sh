@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ssh_target="${G7PB_STAGING_SSH:-g7devops}"
 
+(cd "$root" && npm run check:block-product-quality -- --verify-render-source --release)
 "$root/scripts/staging-doctor.sh"
 
 if ! git -C "$root" diff --quiet || ! git -C "$root" diff --cached --quiet; then

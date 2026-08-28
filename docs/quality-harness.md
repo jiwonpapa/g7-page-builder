@@ -14,6 +14,10 @@
 | `dev-browser-smoke` | home/login/runtime 기본 assertion | 환경 완료 아님 |
 | `dev-product-e2e` | 생성→실제 포인터 편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
 
+블록 라이브러리는 별도 `g7pb-block-product-quality/v1` 계약을 사용합니다. 45종 블록·95개 프리셋·140개 renderer 생성물의 정확한 재고, block별 제품/호환 정책, placeholder 문구, 중복 props, 프리셋 구조 차이, 로컬 이미지·대체 텍스트·실제 날짜, 95개 고유 프리셋 썸네일을 자동 판정합니다. G7 동적 데이터 블록은 라이브러리 생성 시 목록형 3~4개·상세형 1개의 결정적 제품 샘플이 실제 공개 renderer DOM에 보여야 하며 빈 제목 껍데기는 실패합니다. 각 생성물의 `catalog_id + 현재 compiler/CSS/props source hash + thumbnail SHA-256`을 묶은 review digest가 승인 기록과 다르면 frontend 검증·제품 E2E·릴리스 패키징·스테이징 배포를 모두 중단합니다.
+
+`npm run generate:block-library`는 프리셋 동기화→production build→140개 실제 renderer 썸네일 재생성→candidate 품질 검사를 한 흐름으로 실행합니다. Candidate 검사는 생성 오류를 즉시 차단하지만 정식 승인으로 간주하지 않습니다. 전체 contact sheet와 세 viewport E2E 증거를 검토한 뒤 `product-quality.json`의 exact digest를 승인해야 정식 `check:block-product-quality`가 통과합니다. 생성 후 props·compiler HTML·공개 CSS·이미지 중 하나라도 바뀌면 source hash 또는 thumbnail hash가 달라져 기존 승인은 자동 폐기됩니다.
+
 ## Worktree coordination
 
 - 모든 구현 Worktree는 깨끗한 기준 SHA, 소유 path prefix, 검증 profile을 `coord-start`로 등록합니다.

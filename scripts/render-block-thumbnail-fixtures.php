@@ -46,21 +46,44 @@ foreach ($manifest['presets'] as $preset) {
     $presetsByBlock[$preset['block_id']] ??= $preset;
 }
 
+$compatibilityPropsByBlock = [
+    'content.hero-split-01' => [
+        'eyebrow' => '기존 문서 호환',
+        'title' => '기존 분할 히어로도 안전하게 렌더링됩니다',
+        'body' => '<p>새 문서에서는 히어로 블록의 분할 레이아웃을 사용합니다.</p>',
+        'primaryCta' => ['label' => '자세히 보기', 'url' => '/'],
+        'image' => [
+            'src' => '/modules/jiwonpapa-page_builder/store/previews/company-launch-hero.webp',
+            'alt' => '기존 분할 히어로 호환 이미지',
+        ],
+        'mediaPosition' => 'right',
+        'layout' => 'screenshot',
+    ],
+];
+
 $catalog = [];
 foreach ($manifest['blocks'] as $index => $definition) {
     if (! is_array($definition)
         || ! is_string($definition['block_id'] ?? null)
         || ! is_int($definition['block_version'] ?? null)
-        || ! isset($presetsByBlock[$definition['block_id']])) {
-        throw new RuntimeException('Every built-in block requires a canonical thumbnail preset.');
+        || ! is_array($definition['capabilities'] ?? null)) {
+        throw new RuntimeException('Built-in block definition is invalid.');
     }
-    $preset = $presetsByBlock[$definition['block_id']];
+    $blockId = $definition['block_id'];
+    $preset = $presetsByBlock[$blockId] ?? null;
+    $props = is_array($preset)
+        ? $preset['props']
+        : ($compatibilityPropsByBlock[$blockId] ?? null);
+    if (! is_array($props)
+        || ($preset === null && ! in_array('editor.compatibility-only', $definition['capabilities'], true))) {
+        throw new RuntimeException("Active built-in block requires a canonical thumbnail preset: {$blockId}");
+    }
     $catalog[] = [
-        'catalog_id' => 'block:'.$definition['block_id'].'@'.$definition['block_version'],
+        'catalog_id' => 'block:'.$blockId.'@'.$definition['block_version'],
         'filename' => sprintf('block-%02d-%s.png', $index + 1, $slugify((string) ($definition['editor_component'] ?? $definition['block_id']))),
-        'block_id' => $definition['block_id'],
+        'block_id' => $blockId,
         'block_version' => $definition['block_version'],
-        'props' => $preset['props'],
+        'props' => $props,
     ];
 }
 foreach ($manifest['presets'] as $index => $preset) {

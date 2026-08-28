@@ -31,7 +31,7 @@ if (!Array.isArray(index) || index.length !== expectedCount) {
 
 const browser = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({ viewport: { width: 320, height: 200 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: 960, height: 600 }, deviceScaleFactor: 1 / 3 });
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   for (const item of index) {
     await page.goto(pathToFileURL(resolve(fixtureRoot, item.fixture)).href, { waitUntil: 'load' });
@@ -42,13 +42,15 @@ try {
       const width = 960;
       const cropHeight = 600;
       const height = Math.max(stage.scrollHeight, 1);
-      const scale = 320 / width;
       const offsetX = 0;
-      const offsetY = Math.max(0, (cropHeight - height) * scale / 2);
+      const offsetY = Math.max(0, (cropHeight - height) / 2);
       stage.style.transformOrigin = 'top left';
-      stage.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-      document.body.style.width = '320px';
-      document.body.style.height = '200px';
+      stage.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      document.documentElement.style.width = `${width}px`;
+      document.documentElement.style.height = `${cropHeight}px`;
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.width = `${width}px`;
+      document.body.style.height = `${cropHeight}px`;
     });
     await page.screenshot({ path: resolve(thumbnailRoot, item.filename), type: 'png', animations: 'disabled' });
   }

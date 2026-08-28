@@ -54,6 +54,7 @@
 - `module.json`의 module/plugin 의존성 0개와 optional G7 surface 부재 검사
 - editor IIFE, public effects IIFE, CSS output의 존재·경로·sourcemap 부재를 검사합니다.
 - motion schema allowlist, Puck 왕복, compiler data attribute, JS-disabled fallback과 reduced-motion을 단위시험합니다.
+- `page-builder-editor-wysiwyg.css`는 Puck의 편집용 `contentEditable` DOM을 발행 HTML의 semantic typography에 연결합니다. 제목 래퍼와 내부 실제 `h1`~`h4`의 computed font family·size·weight·line-height·letter-spacing 및 줄 수가 발행본과 다르면 레이아웃 E2E가 실패하며, 사용자가 지정한 요소별 글꼴·크기·굵기·색상은 이 기본 브리지보다 우선합니다.
 
 ## Architecture
 

@@ -21,17 +21,6 @@ function requirePattern(errors, value, pattern, message) {
   if (!pattern.test(value)) errors.push(message);
 }
 
-const WYSIWYG_TYPOGRAPHY_TOKENS = [
-  '--g7pb-theme-radius',
-  '--g7pb-wysiwyg-hero-title-size',
-  '--g7pb-wysiwyg-hero-split-title-size',
-  '--g7pb-wysiwyg-hero-slider-title-size',
-  '--g7pb-wysiwyg-section-title-size',
-  '--g7pb-wysiwyg-features-title-size',
-  '--g7pb-wysiwyg-cta-title-size',
-  '--g7pb-wysiwyg-stats-value-size',
-];
-
 function customPropertyValue(css, property) {
   const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return css.match(new RegExp(`${escaped}\\s*:\\s*([^;]+);`))?.[1].trim() ?? '';
@@ -52,14 +41,10 @@ export async function validateEditorLayoutParity(root) {
   const scripts = packageJson.scripts ?? {};
   const puckVersion = packageJson.dependencies?.['@puckeditor/core'];
 
-  for (const token of WYSIWYG_TYPOGRAPHY_TOKENS) {
-    const editorValue = customPropertyValue(css, token);
-    const publicValue = customPropertyValue(publicCss, token);
-    if (!editorValue || !publicValue) {
-      errors.push(`편집기와 공개 출력 모두 ${token} WYSIWYG 토큰을 선언해야 합니다.`);
-    } else if (editorValue !== publicValue) {
-      errors.push(`${token} 값이 편집기(${editorValue})와 공개 출력(${publicValue})에서 다릅니다.`);
-    }
+  const editorRadius = customPropertyValue(css, '--g7pb-theme-radius');
+  const publicRadius = customPropertyValue(publicCss, '--g7pb-theme-radius');
+  if (editorRadius !== '1rem' || publicRadius !== '1rem') {
+    errors.push('편집기와 공개 출력의 기본 radius는 동일한 1rem 계약이어야 합니다.');
   }
 
   if (puckVersion !== '0.23.0') {
@@ -80,6 +65,18 @@ export async function validateEditorLayoutParity(root) {
   }
 
   const cssContract = [
+    [/\.g7pb-preview-hero\s+:is\(h1,[^}]*font-size:\s*clamp\(2\.5rem,\s*7vw,\s*5\.75rem\);[^}]*letter-spacing:\s*-\.04em;/s,
+      '편집기 Hero 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-hero-split\s+:is\(h1,[^}]*font-size:\s*clamp\(2\.6rem,\s*6vw,\s*5\.25rem\);[^}]*letter-spacing:\s*-\.055em;/s,
+      '편집기 Hero Split 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-hero-slider h2\s*\{[^}]*font-size:\s*clamp\(2\.5rem,\s*6vw,\s*5rem\);[^}]*letter-spacing:\s*-\.055em;/,
+      '편집기 Hero Slider 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-features\s*>\s*:is\(h2,[^}]*font-size:\s*clamp\(2rem,\s*4vw,\s*3\.5rem\);[^}]*letter-spacing:\s*-\.03em;/s,
+      '편집기 Features 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-cta-split\s+:is\(h2,[\s\S]*?font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4\.75rem\);[^}]*letter-spacing:\s*-\.045em;/,
+      '편집기 CTA와 Contact 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-stats article\s*>\s*strong\s*\{[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4rem\);/,
+      '편집기 Stats 값은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
     [/\.g7pb-preview-page,\s*\.g7pb-preview-page \*,\s*\.g7pb-preview-page \*::before,\s*\.g7pb-preview-page \*::after\s*\{\s*box-sizing:\s*border-box;/s,
       'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'],
     [/--g7pb-preview-content-width:\s*var\(--g7pb-theme-content-width\)/,
@@ -249,6 +246,24 @@ export async function validateEditorLayoutParity(root) {
   requirePattern(errors, adapter,
     /template\s*\?\s*['"] g7pb-full-site-page--template['"]\s*:\s*['"]['"]/,
     'template shell 전용 G7 Container envelope class를 편집 page root에 적용해야 합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-hero__title\s*\{[^}]*font-size:\s*clamp\(2\.5rem,\s*7vw,\s*5\.75rem\);[^}]*letter-spacing:\s*-\.04em;/,
+    '공개 Hero 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-hero-split__copy h1\s*\{[^}]*font-size:\s*clamp\(2\.6rem,\s*6vw,\s*5\.25rem\);[^}]*letter-spacing:\s*-\.055em;/,
+    '공개 Hero Split 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-hero-slider__copy h2\s*\{[^}]*font-size:\s*clamp\(2\.5rem,\s*6vw,\s*5rem\);[^}]*letter-spacing:\s*-\.055em;/,
+    '공개 Hero Slider 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-features__title\s*\{[^}]*font-size:\s*clamp\(2rem,\s*4vw,\s*3\.5rem\);[^}]*letter-spacing:\s*-\.03em;/,
+    '공개 Features 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-cta__heading,[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4\.75rem\);[^}]*letter-spacing:\s*-\.045em;/,
+    '공개 CTA와 Contact 제목의 WYSIWYG typography 계약이 필요합니다.');
+  requirePattern(errors, publicCss,
+    /\.g7pb-stats article\s*>\s*strong\s*\{[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4rem\);/,
+    '공개 Stats 값의 WYSIWYG typography 계약이 필요합니다.');
   requirePattern(errors, publicCss,
     /@media\s*\(max-width:\s*800px\)[\s\S]*\.g7pb-hero-split\s*\{\s*grid-template-columns:\s*1fr;/,
     '공개 Hero Split도 768px 경계에서 편집기와 동일하게 단일 열로 접혀야 합니다.');

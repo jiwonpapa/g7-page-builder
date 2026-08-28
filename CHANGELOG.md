@@ -16,7 +16,7 @@
 
 ### Fixed
 
-- 편집기와 미리보기·발행본의 Hero·분할 Hero·슬라이더·섹션 제목·CTA·통계 글자 크기와 radius 토큰을 동일 계약으로 통일하고, computed typography와 실제 줄 수가 달라지면 세 viewport E2E가 실패하도록 보강했습니다.
+- 편집기와 미리보기·발행본의 Hero·분할 Hero·슬라이더·섹션 제목·CTA·통계 글자 크기와 radius 규칙을 동일 계약으로 통일하고, computed typography와 실제 줄 수가 달라지면 세 viewport E2E가 실패하도록 보강했습니다.
 
 ## [0.27.1] - 2026-08-28
 

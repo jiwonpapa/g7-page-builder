@@ -41,14 +41,14 @@ expect_failure() {
 node "$repo_root/scripts/check-editor-layout-parity.mjs" --root "$repo_root"
 
 copy_fixture
-perl -0pi -e 's/(--g7pb-wysiwyg-hero-title-size: clamp\(2\.5rem, 7vw, )5\.75rem/${1}4rem/' \
+perl -0pi -e 's/(\.g7pb-preview-hero :is\(h1,[^}]*font-size: clamp\(2\.5rem, 7vw, )5\.75rem/${1}4rem/s' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
-expect_failure '--g7pb-wysiwyg-hero-title-size 값이 편집기(clamp(2.5rem, 7vw, 4rem))와 공개 출력(clamp(2.5rem, 7vw, 5.75rem))에서 다릅니다.'
+expect_failure '편집기 Hero 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(--g7pb-wysiwyg-section-title-size: clamp\(2\.1rem, 5vw, 4\.25rem\);)/--g7pb-wysiwyg-section-title-removed: clamp(2.1rem, 5vw, 4.25rem);/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
-expect_failure '편집기와 공개 출력 모두 --g7pb-wysiwyg-section-title-size WYSIWYG 토큰을 선언해야 합니다.'
+perl -0pi -e 's/(--g7pb-theme-radius:) 1rem;/${1} .75rem;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기와 공개 출력의 기본 radius는 동일한 1rem 계약이어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/"\@puckeditor\/core": "0\.23\.0"/"\@puckeditor\/core": "^0.23.0"/' \

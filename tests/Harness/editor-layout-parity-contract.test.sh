@@ -62,6 +62,26 @@ perl -0pi -e 's/ancestorTrail/removedTrail/g' \
 expect_failure '브라우저 WYSIWYG 실패에는 실제 글자 폭과 semantic DOM 조상 진단값이 포함되어야 합니다.'
 
 copy_fixture
+perl -0pi -e "s/const image = safeImage\(imageSrc\);/const legacyClass = 'g7pb-preview-hero__copy'; const image = safeImage(imageSrc);/" \
+  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+expect_failure '편집기 Hero는 공개 Hero와 같은 direct grid child 구조를 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-icon-list > header :is\(h2, \[data-g7pb-heading-level="2"\]\) \{ max-width:) 48rem;/${1} 18ch;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Icon List 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-logo-cloud--layout-grid > div):last-child/${1}/g' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Logo grid 열은 로고 고유 폭보다 작아질 수 있어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/lineCount: Math\.max\(/lineCount: Math.min(/' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure 'contenteditable과 semantic heading의 줄 수는 range fragment와 실제 line box 높이를 함께 사용해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-hero :is\(h1,[^}]*font-size: clamp\(2\.5rem, 7vw, )5\.75rem/${1}4rem/s' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '편집기 Hero 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'

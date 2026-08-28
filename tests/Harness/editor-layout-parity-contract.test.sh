@@ -241,6 +241,16 @@ perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*white-space:) i
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
 expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography, font shaping과 줄바꿈 규칙을 상속해야 합니다.'
 
+copy_fixture
+perl -0pi -e 's/(\.g7pb-theme-font-modern \{ font-family:) system-ui,/${1} Inter, Pretendard,/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(:root \{ color-scheme: light; font-family:) system-ui,/${1} Inter, Pretendard,/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure '공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.'
+
 cp "$repo_root/resources/css/page-builder-editor-wysiwyg.css" \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
 perl -0pi -e 's/font-feature-settings: inherit !important;/font-feature-settings: "liga" 0 !important;/' \

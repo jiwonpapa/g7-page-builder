@@ -123,13 +123,13 @@
   },
   "approval": {
     "review_version": "g7pb-block-product-review/v1",
-    "catalog_digest": "4245277a6f2c27ac8b85e2f23249b6f665c95ae6fe38f6807803b460d6625df4",
+    "catalog_digest": "7f36548c6a2b4610fde8d5eb6d47a69c0433aa9f28f30bea6ce5f60d6bd7842d",
     "item_count": 140,
     "reviewer": {
       "kind": "codex-assisted",
       "name": "Codex block product audit"
     },
-    "reviewed_at": "2026-08-28T11:06:20Z",
+    "reviewed_at": "2026-08-28T11:11:36Z",
     "decision": "approved",
     "criteria": {
       "purpose_fit": "pass",

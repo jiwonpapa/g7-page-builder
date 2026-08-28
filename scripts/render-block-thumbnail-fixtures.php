@@ -38,7 +38,7 @@ $slugify = static function (string $value): string {
     return trim((string) preg_replace('/[^a-z0-9]+/', '-', strtolower($kebab)), '-');
 };
 
-$thumbnailImage = static fn (string $filename): string => 'file://'.$root.'/resources/store/dist/previews/'.$filename;
+$thumbnailImage = static fn (string $filename): string => '/modules/jiwonpapa-page_builder/store/previews/'.$filename;
 $dynamicThumbnailSamples = [
     'g7.board-recent-posts-01' => [
         'target' => 'list',
@@ -194,12 +194,14 @@ foreach ($catalog as $position => $item) {
         ]],
     ]);
     $artifact = $compiler->compile($document, 1, 'html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION);
+    $artifactHtml = $artifact->artifact;
+    [$artifactHtml, $dynamicSampleCount] = $decorateDynamicThumbnail($item['block_id'], $artifactHtml);
+    $artifactSourceHtml = $artifactHtml;
     $artifactHtml = str_replace(
         '/modules/jiwonpapa-page_builder/store/previews/',
         'file://'.$root.'/resources/store/dist/previews/',
-        $artifact->artifact,
+        $artifactHtml,
     );
-    [$artifactHtml, $dynamicSampleCount] = $decorateDynamicThumbnail($item['block_id'], $artifactHtml);
     $html = '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         .'<style>html,body{margin:0;background:#f6f7f9}*{box-sizing:border-box}body{width:960px;overflow:hidden}.g7pb-thumbnail-stage{width:960px;background:#fff}'.$css.'</style>'
         .'</head><body><main class="g7pb-public-shell g7pb-theme-mode-light g7pb-theme-palette-blue g7pb-theme-font-system g7pb-theme-radius-soft g7pb-theme-width-standard g7pb-theme-scale-balanced"><div class="g7pb-thumbnail-stage">'
@@ -212,7 +214,7 @@ foreach ($catalog as $position => $item) {
         'catalog_id' => $item['catalog_id'],
         'filename' => $item['filename'],
         'fixture' => $fixtureName,
-        'source_hash' => hash('sha256', $item['catalog_id']."\n".json_encode($item['props'], JSON_THROW_ON_ERROR)."\n".$artifactHtml."\n".hash('sha256', $css)),
+        'source_hash' => hash('sha256', $item['catalog_id']."\n".json_encode($item['props'], JSON_THROW_ON_ERROR)."\n".$artifactSourceHtml."\n".hash('sha256', $css)),
         'dynamic_sample_count' => $dynamicSampleCount,
     ];
 }

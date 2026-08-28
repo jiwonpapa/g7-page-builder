@@ -16,5 +16,7 @@ done
 
 grep -Fq 'npm run check:block-product-quality -- --verify-render-source --release' scripts/release-package.sh
 grep -Fq 'npm run check:block-product-quality -- --verify-render-source --release' scripts/deploy-staging.sh
+grep -Fq '$artifactSourceHtml = $artifactHtml;' scripts/render-block-thumbnail-fixtures.php
+grep -Fq 'json_encode($item['"'"'props'"'"'], JSON_THROW_ON_ERROR)."\n".$artifactSourceHtml' scripts/render-block-thumbnail-fixtures.php
 
 echo 'BLOCK_PRODUCT_QUALITY_CONTRACT OK'

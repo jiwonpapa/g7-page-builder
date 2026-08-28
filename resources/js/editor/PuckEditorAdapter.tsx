@@ -1221,16 +1221,14 @@ function HeroPreview({
   return (
     <BlockFrame id={id} type="hero" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-hero--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
-        <div className="g7pb-preview-hero__copy">
-          {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
-          <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
-          <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
-          {primaryLabel && (
-            <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
-              <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
-            </a>
-          )}
-        </div>
+        {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
+        <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
+        <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
+        {primaryLabel && (
+          <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
+            <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
+          </a>
+        )}
         {image && (
           <figure className="g7pb-preview-hero__media" data-g7pb-media-field="imageSrc">
             <img src={image} alt={imageAlt} />

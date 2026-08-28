@@ -415,7 +415,10 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
         fontSize,
         fontWeight: typographyStyle?.fontWeight ?? '',
         letterSpacing: Number.parseFloat(typographyStyle?.letterSpacing ?? '0') || 0,
-        lineCount: lineClusters.length || Math.max(1, Math.round(typographyRect.height / lineHeight)),
+        lineCount: Math.max(
+          lineClusters.length,
+          Math.max(1, Math.round(typographyRect.height / lineHeight)),
+        ),
         lineHeight,
         maxWidth: typographyStyle?.maxWidth ?? '',
         tagName: typographyCandidate.tagName.toLowerCase(),

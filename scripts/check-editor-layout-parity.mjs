@@ -129,8 +129,14 @@ export async function validateEditorLayoutParity(root) {
       '편집기 Gallery media wrapper는 width가 적용되는 block formatting context여야 합니다.'],
     [/\.g7pb-preview-hero-split--layout-overlap\s*\{[^}]*repeat\(12,\s*minmax\(0,\s*1fr\)\)/,
       '편집기 overlap Hero grid는 최소 콘텐츠 폭으로 캔버스를 밀면 안 됩니다.'],
-    [/\.g7pb-preview-logo-cloud--layout-grid\s*>\s*div\s*\{[^}]*repeat\(4,\s*minmax\(0,\s*1fr\)\)/,
+    [/\.g7pb-preview-hero-split--layout-overlap\s+\.g7pb-preview-hero-split__copy\s*\{[^}]*padding:\s*clamp\(2rem,\s*5vw,\s*4rem\)/,
+      '편집기 overlap Hero copy inset은 공개 preset과 같은 유동 여백이어야 합니다.'],
+    [/\.g7pb-preview-logo-cloud--layout-grid\s*>\s*div:last-child\s*\{[^}]*repeat\(4,\s*minmax\(0,\s*1fr\)\)/,
       '편집기 Logo grid 열은 로고 고유 폭보다 작아질 수 있어야 합니다.'],
+    [/\.g7pb-preview-icon-list\s*>\s*header\s+:is\(h2,[^}]*max-width:\s*48rem;/,
+      '편집기 Icon List 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'],
+    [/\.g7pb-preview-card-grid\s*>\s*header\s+:is\(h2,[\s\S]*?max-width:\s*48rem;/,
+      '편집기 Card Grid와 Image Carousel 제목 폭은 공개 section heading과 같아야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
   requirePattern(errors, catalogSource,
@@ -139,6 +145,13 @@ export async function validateEditorLayoutParity(root) {
   requirePattern(errors, productionSource,
     /function NoticePreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2" className="g7pb-preview-richtext g7pb-preview-notice__title" fieldPath="title">/,
     '안내 블록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');
+  const heroPreviewSource = adapter.match(/function HeroPreview[\s\S]*?\n}\n\nfunction FeaturesPreview/)?.[0] ?? '';
+  if (heroPreviewSource.includes('g7pb-preview-hero__copy')) {
+    errors.push('편집기 Hero는 공개 Hero와 같은 direct grid child 구조를 사용해야 합니다.');
+  }
+  requirePattern(errors, heroPreviewSource,
+    /g7pb-preview-hero[^>]*>[\s\S]*?g7pb-preview-eyebrow[\s\S]*?RichTextCanvasField as="h1"[\s\S]*?RichTextCanvasField fieldPath="body"[\s\S]*?g7pb-preview-hero__media/,
+    '편집기 Hero의 제목, 본문, CTA, 이미지는 공개 Hero와 같은 grid 순서를 유지해야 합니다.');
   requirePattern(errors, spec,
     /ancestorTrail:[\s\S]*maxWidth:[\s\S]*tagName:[\s\S]*width:/,
     '브라우저 WYSIWYG 실패에는 실제 글자 폭과 semantic DOM 조상 진단값이 포함되어야 합니다.');
@@ -332,6 +345,8 @@ export async function validateEditorLayoutParity(root) {
     [/editor\.contentRight\s*-\s*preview\.contentRight/, '편집기/미리보기 오른쪽 content edge 비교가 필요합니다.'],
     [/typographySelectors[\s\S]*for \(const selector of typographySelectors\)[\s\S]*getComputedStyle\(typographyCandidate\)[\s\S]*createTreeWalker\(typographyCandidate,\s*NodeFilter\.SHOW_TEXT\)[\s\S]*range\.getClientRects\(\)/,
       '각 블록의 대표 텍스트 computed typography와 실제 줄바꿈을 측정해야 합니다.'],
+    [/lineCount:\s*Math\.max\([\s\S]*lineClusters\.length,[\s\S]*Math\.round\(typographyRect\.height\s*\/\s*lineHeight\)/,
+      'contenteditable과 semantic heading의 줄 수는 range fragment와 실제 line box 높이를 함께 사용해야 합니다.'],
     [/Math\.abs\(editorTypography\.fontSize\s*-\s*previewTypography\.fontSize\)/,
       '편집기/미리보기 대표 텍스트의 실제 font-size 차이를 비교해야 합니다.'],
     [/editorTypography\.lineCount\s*!==\s*previewTypography\.lineCount/,

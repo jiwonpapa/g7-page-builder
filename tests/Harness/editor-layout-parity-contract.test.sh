@@ -227,9 +227,9 @@ perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \
 expect_failure 'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--regular \{ font-weight:) 700;/${1} 400;/' \
+perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--regular \{ font-weight:) 400;/${1} 700;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure '편집 가능한 semantic heading은 공개 HTML과 동일한 기본 굵기를 사용해야 합니다.'
+expect_failure '편집 가능한 semantic heading의 regular 굵기는 공개 HTML의 400 계산값과 같아야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(h1, h2, h3, h4\) \{[^}]*font:) inherit;/${1} initial;/' \
@@ -240,6 +240,21 @@ copy_fixture
 perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*font-size:) inherit !important;/${1} initial !important;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
 expect_failure 'Puck의 실제 제목 leaf 태그와 무관하게 wrapper의 WYSIWYG typography를 상속해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;/${1} 780px;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure 'Features 제목은 공개 출력과 같은 가용 폭과 상속 line-height를 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(> :is\(header, figcaption\) \{[^}]*max-width:) 48rem;/${1} 760px;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure '공통 섹션 제목 컨테이너는 공개 g7pb-section-heading과 같은 48rem 폭이어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(> header > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;/${1} 680px;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure '공통 섹션 제목 leaf는 편집기 전용 680px 제한 없이 공개 heading 컨테이너 폭을 채워야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-richtext\.g7pb-preview-rich-text__content \{[^}]*font-size:) 1rem;/${1} 1.25rem;/' \

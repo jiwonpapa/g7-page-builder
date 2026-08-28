@@ -55,6 +55,7 @@ const {
   canonicalToPuck,
   pageBuilderPuckConfig,
   puckToCanonical,
+  recommendedMotionPlan,
   sanitizeRichTextForPreview,
 } = await import('../../resources/js/editor/PuckEditorAdapter');
 
@@ -530,6 +531,47 @@ describe('Puck PageBuilderDocument adapter', () => {
 
     expect(session.data.content.map((block) => block.type)).toEqual(['InquiryForm', 'MapDirections']);
     expect(puckToCanonical(session.data, session.context)).toEqual(serviceBlocks);
+  });
+
+  it('stores split Hero layouts on the unified Hero contract and preserves legacy Map documents', () => {
+    const composed: PageBuilderDocument = {
+      ...documentFixture,
+      blocks: [
+        {
+          instance_id: 'a1111111-1111-4111-8111-111111111111', type: HERO_BLOCK_TYPE, block_version: 1,
+          props: {
+            eyebrow: 'PRODUCT', title: '하나의 히어로', body: '<p>설명</p>', alignment: 'left',
+            layout: 'screenshot', mediaPosition: 'left', image: { src: '/hero.webp', alt: '제품 화면' },
+          }, slots: {},
+        },
+        {
+          instance_id: 'b1111111-1111-4111-8111-111111111111', type: MAP_DIRECTIONS_BLOCK_TYPE, block_version: 1,
+          props: {
+            eyebrow: 'CONTACT', heading: '찾아오시는 길', description: '약도를 확인하세요.', address: '서울시 중구',
+            latitude: 37.5, longitude: 127, zoom: 16, provider: 'image', mapImageSrc: '/map.webp', mapImageAlt: '사무실 약도',
+            directionsLabel: '길찾기', directionsUrl: '/directions', phone: '', hours: '', parking: '',
+          }, slots: {},
+        },
+      ],
+    };
+
+    const session = canonicalToPuck(composed);
+    expect(session.data.content.map((block) => block.type)).toEqual(['Hero', 'MapDirections']);
+    expect(session.data.content[0]?.props).toMatchObject({ layout: 'screenshot', mediaPosition: 'left' });
+    expect(session.data.content[1]?.props).toMatchObject({ provider: 'image', mapImageSrc: '/map.webp', mapImageAlt: '사무실 약도' });
+    expect(puckToCanonical(session.data, session.context).blocks).toEqual(composed.blocks);
+  });
+
+  it('builds a deterministic, varied and capability-aware recommended motion plan', () => {
+    const types = ['Hero', 'Features', 'Heading', 'Stats', 'BarChart', 'Gallery', 'ArticleList'];
+    const first = recommendedMotionPlan(types);
+    const second = recommendedMotionPlan(types);
+
+    expect(first).toEqual(second);
+    expect(new Set(first.map((motion) => motion.preset)).size).toBeGreaterThanOrEqual(4);
+    expect(first[3]?.preset).toBe('counter');
+    expect(['chart-draw', 'reveal']).toContain(first[4]?.preset);
+    expect(first.every((motion) => motion.trigger === 'once')).toBe(true);
   });
 
   it('round-trips all seven phase-two product blocks and exposes their visible copy inline', () => {

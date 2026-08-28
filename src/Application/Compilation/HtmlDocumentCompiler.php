@@ -879,22 +879,59 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileHero(array $props): string
     {
+        $this->assertOnlyKeys($props, ['eyebrow', 'title', 'body', 'primaryCta', 'image', 'alignment', 'mediaPosition', 'layout', 'appearance'], 'Hero');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $title = $this->requiredInlineRichTextString($props, 'title', 200);
         $body = $this->optionalString($props, 'body', 4000);
         $alignment = $this->optionalString($props, 'alignment', 16) ?? 'center';
         $layout = $this->optionalString($props, 'layout', 16);
+        $mediaPosition = $this->optionalString($props, 'mediaPosition', 16) ?? 'right';
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
+        $splitLayouts = ['balanced', 'screenshot', 'overlap', 'offset'];
 
         if (! in_array($alignment, ['left', 'center'], true)) {
             throw new DocumentCompileException('Hero alignment must be left or center.');
         }
-        if ($layout !== null && ! in_array($layout, ['poster', 'product', 'backdrop', 'editorial', 'device'], true)) {
+        if ($layout !== null && ! in_array($layout, ['poster', 'product', 'backdrop', 'editorial', 'device', ...$splitLayouts], true)) {
             throw new DocumentCompileException('Hero layout is invalid.');
+        }
+        if (! in_array($mediaPosition, ['left', 'right'], true)) {
+            throw new DocumentCompileException('Hero media position is invalid.');
         }
 
         $cta = $this->optionalMap($props, 'primaryCta');
         $image = $this->optionalMap($props, 'image');
+
+        if ($layout !== null && in_array($layout, $splitLayouts, true)) {
+            $copy = [];
+            if ($eyebrow !== null && $eyebrow !== '') {
+                $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
+            }
+            $copy[] = '<h1>'.$this->sanitizeInlineRichText($title).'</h1>';
+            if ($body !== null && $body !== '') {
+                $copy[] = $this->hasCanonicalRichTextMarkup($body)
+                    ? '<div class="g7pb-hero-split__body">'.$this->sanitizeRichText($body).'</div>'
+                    : '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
+            }
+            if ($cta !== null) {
+                $copy[] = $this->compileActionLink($cta, 'Hero CTA', 'g7pb-button g7pb-button--primary');
+            }
+            if ($image !== null) {
+                $this->assertOnlyKeys($image, ['src', 'alt'], 'Hero image');
+            }
+            $src = $image === null ? '' : $this->requiredString($image, 'src', 2048);
+            $alt = $image === null ? '대표 이미지' : $this->requiredString($image, 'alt', 300);
+            $media = '<figure class="g7pb-hero-split__media">'.$this->compileCatalogImage(
+                $src,
+                $alt,
+                'g7pb-hero-split__image',
+                '대표 이미지 자리',
+                'eager',
+            ).'</figure>';
+
+            return '<section class="g7pb-block g7pb-hero g7pb-hero-split g7pb-hero-split--'.$mediaPosition.' g7pb-hero-split--layout-'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero"><div class="g7pb-hero-split__copy">'.implode('', $copy).'</div>'.$media.'</section>';
+        }
+
         $parts = [];
 
         if ($eyebrow !== null && $eyebrow !== '') {
@@ -1566,7 +1603,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileMapDirections(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
+        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'mapImageSrc', 'mapImageAlt', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
         $eyebrow = $this->optionalString($props, 'eyebrow', 120);
         $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
         $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
@@ -1575,19 +1612,23 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $longitude = $this->requiredNumber($props, 'longitude', -180, 180);
         $zoom = $this->requiredIntegerChoice($props, 'zoom', [12, 14, 16, 18]);
         $provider = $this->requiredString($props, 'provider', 24);
+        $mapImageSrc = $this->optionalString($props, 'mapImageSrc', 2048) ?? '';
+        $mapImageAlt = $this->optionalString($props, 'mapImageAlt', 300) ?? '';
         $directionsLabel = $this->requiredString($props, 'directionsLabel', 80);
         $directionsUrl = $this->requiredString($props, 'directionsUrl', 2048);
         $phone = $this->optionalString($props, 'phone', 40) ?? '';
         $hours = $this->optionalString($props, 'hours', 300) ?? '';
         $parking = $this->optionalString($props, 'parking', 300) ?? '';
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($provider, ['openstreetmap', 'google', 'none'], true)) {
+        if (! in_array($provider, ['image', 'openstreetmap', 'google', 'none'], true)) {
             throw new DocumentCompileException('Map provider is invalid.');
         }
         $this->assertAllowedUrl($directionsUrl, 'Directions link');
 
         $map = '<div class="g7pb-map__placeholder" role="img" aria-label="'.$this->escapeAttribute($address).' 지도 자리"><span>지도 표시 안 함</span></div>';
-        if ($provider === 'openstreetmap') {
+        if ($provider === 'image') {
+            $map = $this->compileCatalogImage($mapImageSrc, $mapImageAlt, 'g7pb-map__image', '지도 이미지를 등록하세요');
+        } elseif ($provider === 'openstreetmap') {
             $delta = match ($zoom) {
                 18 => 0.002, 16 => 0.008, 14 => 0.03, default => 0.12
             };
@@ -1846,6 +1887,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $title = $this->requiredInlineRichTextString($item, 'title', 240, allowLinks: false);
             $summary = $this->requiredString($item, 'summary', 1200);
             $date = $this->optionalString($item, 'date', 40) ?? '';
+            if ($date !== '') {
+                $parsedDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+                if ($parsedDate === false || $parsedDate->format('Y-m-d') !== $date) {
+                    throw new DocumentCompileException("Article item {$index} 날짜는 날짜 선택기로 입력해 주세요.");
+                }
+            }
             $imageSrc = $this->optionalString($item, 'imageSrc', 2048) ?? '';
             $imageAlt = $this->optionalString($item, 'imageAlt', 300) ?? '';
             $url = $this->requiredString($item, 'url', 2048);

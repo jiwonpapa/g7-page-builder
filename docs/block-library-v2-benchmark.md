@@ -22,8 +22,8 @@
 
 | 블록 | 레이아웃 |
 |---|---|
-| Hero | product, poster, backdrop, editorial, device |
-| Split Hero | balanced, screenshot, overlap, offset |
+| Hero | product, poster, backdrop, editorial, device, balanced, screenshot, overlap, offset |
+| Legacy Split Hero | 기존 문서 호환 렌더러로만 유지, 신규 라이브러리에서 숨김 |
 | Features | grid, bento, editorial, panel, list |
 | CTA | split, centered, banner, panel |
 | Logo Cloud | strip, grid, panel |
@@ -39,11 +39,11 @@
 
 ## 샘플 콘텐츠와 썸네일 기준
 
-- Hero, Split Hero, Team, Gallery, Testimonials, Article List 프리셋에는 모듈이 배포하는 실제 샘플 이미지를 기본 등록한다.
+- Hero, Team, Gallery, Testimonials, Article List 프리셋에는 모듈이 배포하는 실제 샘플 이미지를 기본 등록한다.
 - 이미지 URL은 공식 Store preview 자산을 사용하므로 외부 네트워크 없이 로컬과 고객 서버에서 동일하게 보인다.
 - 썸네일은 편집기용 도형이 아니라 `HtmlDocumentCompiler`의 실제 HTML과 공개 Viewer CSS로 생성한다.
 - 960×600 공개 렌더러 영역을 320×200으로 축소해, 긴 블록 전체를 억지로 맞추며 내용이 작아지는 문제를 방지한다.
-- 모든 45개 블록과 95개 프리셋, 총 140개 썸네일을 렌더러 기반으로 생성하고 해시를 manifest에 기록한다.
+- 기존 문서 호환을 포함한 45개 렌더 계약과 95개 프리셋, 총 140개 썸네일을 생성합니다. 신규 라이브러리는 호환 전용 Split Hero 기본 항목을 제외한 44개 기본 블록과 95개 완성 섹션을 노출합니다.
 
 ## 페이지 킷 반영
 

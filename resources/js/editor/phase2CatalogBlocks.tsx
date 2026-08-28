@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Config } from '@puckeditor/core';
+import type { Config, Field } from '@puckeditor/core';
 
 import {
   createMotionField,
@@ -187,6 +187,7 @@ const DEFAULT_ARTICLES: ArticleListEditorProps = {
     { category: '제품', title: '더 빠른 페이지 운영을 위한 시작', summary: '콘텐츠를 구성하고 발행하는 기본 흐름을 소개합니다.', date: '2026-08-21', imageSrc: '', imageAlt: '', url: '/' },
     { category: '가이드', title: '좋은 랜딩 페이지가 답하는 세 가지', summary: '방문자의 질문과 행동을 중심으로 구조를 점검합니다.', date: '2026-08-18', imageSrc: '', imageAlt: '', url: '/' },
     { category: '업데이트', title: '새로 추가된 콘텐츠 블록', summary: '비교, FAQ, 후기 등 실무에서 자주 쓰는 구성을 확인하세요.', date: '2026-08-15', imageSrc: '', imageAlt: '', url: '/' },
+    { category: '인터뷰', title: '현장에서 발견한 운영의 기준', summary: '꾸준히 관리되는 페이지가 갖춘 공통점을 정리합니다.', date: '2026-08-12', imageSrc: '', imageAlt: '', url: '/' },
   ],
   layout: 'magazine', surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
 };
@@ -206,6 +207,25 @@ function testimonialsLayout(value: unknown): TestimonialsEditorProps['layout'] {
 
 function articleLayout(value: unknown): ArticleListEditorProps['layout'] {
   return value === 'grid' || value === 'featured' || value === 'magazine' || value === 'editorial' ? value : 'list';
+}
+
+function createDateField(label: string): Field<string> {
+  return {
+    type: 'custom',
+    label,
+    render: ({ value, onChange, readOnly }) => (
+      <label className="g7pb-date-field">
+        <span>{label}</span>
+        <input
+          type="date"
+          value={typeof value === 'string' ? value : ''}
+          onChange={(event) => onChange(event.currentTarget.value)}
+          disabled={readOnly}
+          data-testid="page-builder-article-date"
+        />
+      </label>
+    ),
+  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -384,7 +404,7 @@ export const phase2CatalogComponentConfigs: Config<Phase2CatalogEditorComponents
   },
   ArticleList: {
     label: '에디토리얼 목록', defaultProps: DEFAULT_ARTICLES,
-    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: createInlineRichTextField('제목'), layout: { type: 'select', label: '레이아웃', options: [{ label: '매거진', value: 'magazine' }, { label: '대표 기사', value: 'featured' }, { label: '에디토리얼', value: 'editorial' }, { label: '목록', value: 'list' }, { label: '그리드', value: 'grid' }] }, items: { type: 'array', label: '콘텐츠', min: 2, max: 8, defaultItemProps: (index) => ({ category: '소식', title: `콘텐츠 ${index + 1}`, summary: '콘텐츠 설명을 입력하세요.', date: '', imageSrc: '', imageAlt: '', url: '/' }), getItemSummary: (item) => item.title, arrayFields: { category: { type: 'text', label: '분류', contentEditable: true }, title: createInlineRichTextField('제목', { allowLink: false }), summary: createRichTextField('요약', 130), date: { type: 'text', label: '날짜', contentEditable: true }, imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '대체 텍스트' }, url: createRouteUrlField('콘텐츠 연결') } }, ...appearanceFields, motion: createMotionField(['none', 'reveal', 'stagger']) },
+    fields: { eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: createInlineRichTextField('제목'), layout: { type: 'select', label: '레이아웃', options: [{ label: '매거진 2열', value: 'magazine' }, { label: '대표 기사', value: 'featured' }, { label: '에디토리얼', value: 'editorial' }, { label: '목록', value: 'list' }, { label: '그리드', value: 'grid' }] }, items: { type: 'array', label: '콘텐츠', min: 2, max: 8, defaultItemProps: (index) => ({ category: '소식', title: `콘텐츠 ${index + 1}`, summary: '콘텐츠 설명을 입력하세요.', date: '', imageSrc: '', imageAlt: '', url: '/' }), getItemSummary: (item) => item.title, arrayFields: { category: { type: 'text', label: '분류', contentEditable: true }, title: createInlineRichTextField('제목', { allowLink: false }), summary: createRichTextField('요약', 130), date: createDateField('날짜'), imageSrc: createMediaField('대표 이미지'), imageAlt: { type: 'text', label: '대체 텍스트' }, url: createRouteUrlField('콘텐츠 연결') } }, ...appearanceFields, motion: createMotionField(['none', 'reveal', 'stagger']) },
     render: (props) => <ArticleListPreview {...props} />,
   },
   VideoEmbed: {

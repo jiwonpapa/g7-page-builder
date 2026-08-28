@@ -224,7 +224,9 @@ export interface MapDirectionsEditorProps extends AppearanceEditorProps {
   latitude: number;
   longitude: number;
   zoom: '12' | '14' | '16' | '18';
-  provider: 'openstreetmap' | 'google' | 'none';
+  provider: 'image' | 'openstreetmap' | 'google' | 'none';
+  mapImageSrc: string;
+  mapImageAlt: string;
   directionsLabel: string;
   directionsUrl: string;
   phone: string;
@@ -424,7 +426,8 @@ const DEFAULT_INQUIRY_FORM: InquiryFormEditorProps = {
 
 const DEFAULT_MAP_DIRECTIONS: MapDirectionsEditorProps = {
   eyebrow: '오시는 길', heading: '방문을 환영합니다', description: '아래 주소와 교통 정보를 확인해 주세요.',
-  address: '서울특별시 중구 세종대로 110', latitude: 37.5665, longitude: 126.978, zoom: '16', provider: 'openstreetmap',
+  address: '서울특별시 중구 세종대로 110', latitude: 37.5665, longitude: 126.978, zoom: '16', provider: 'image',
+  mapImageSrc: '', mapImageAlt: '',
   directionsLabel: '길찾기', directionsUrl: 'https://www.openstreetmap.org/', phone: '02-0000-0000', hours: '평일 09:00–18:00', parking: '방문객 주차 가능',
   surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
 };
@@ -707,7 +710,11 @@ function InquiryFormPreview(props: InquiryFormEditorProps & { id: string }): Rea
 function MapDirectionsPreview(props: MapDirectionsEditorProps & { id: string }): React.ReactElement {
   return <BlockFrame id={props.id} type="map-directions" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-map ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
     <div><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField><RichTextCanvasField fieldPath="description">{props.description}</RichTextCanvasField><address><strong data-g7pb-inline-field="address">{props.address}</strong><span data-g7pb-inline-field="phone">{props.phone}</span><span data-g7pb-inline-field="hours">{props.hours}</span><span data-g7pb-inline-field="parking">{props.parking}</span><b data-g7pb-inline-field="directionsLabel">{props.directionsLabel} →</b></address></div>
-    <figure aria-label="지도 미리보기"><span className="g7pb-preview-map__grid" /><i aria-hidden="true">●</i><figcaption>{props.provider === 'none' ? '지도 숨김' : props.provider === 'google' ? 'Google 지도' : 'OpenStreetMap'} · {props.latitude.toFixed(4)}, {props.longitude.toFixed(4)}</figcaption></figure>
+    <figure aria-label="지도 미리보기" data-g7pb-media-field={props.provider === 'image' ? 'mapImageSrc' : undefined}>
+      {props.provider === 'image'
+        ? <ImageOrPlaceholder src={props.mapImageSrc} alt={props.mapImageAlt} label="지도 이미지 등록" />
+        : <><span className="g7pb-preview-map__grid" /><i aria-hidden="true">●</i><figcaption>{props.provider === 'none' ? '지도 숨김' : props.provider === 'google' ? 'Google 지도' : 'OpenStreetMap'} · {props.latitude.toFixed(4)}, {props.longitude.toFixed(4)}</figcaption></>}
+    </figure>
   </div></BlockFrame>;
 }
 
@@ -803,7 +810,8 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
     fields: {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: createInlineRichTextField('제목'), description: createRichTextField('설명', 140), address: { type: 'text', label: '주소', contentEditable: true },
       latitude: { type: 'number', label: '위도', min: -90, max: 90 }, longitude: { type: 'number', label: '경도', min: -180, max: 180 }, zoom: { type: 'select', label: '지도 확대', options: ['12', '14', '16', '18'].map((value) => ({ label: `${value} 단계`, value })) },
-      provider: { type: 'radio', label: '지도 제공자', options: [{ label: 'OpenStreetMap', value: 'openstreetmap' }, { label: 'Google', value: 'google' }, { label: '표시 안 함', value: 'none' }] },
+      provider: { type: 'radio', label: '지도 표시 방식', options: [{ label: '지도 이미지 (권장)', value: 'image' }, { label: 'OpenStreetMap', value: 'openstreetmap' }, { label: 'Google', value: 'google' }, { label: '표시 안 함', value: 'none' }] },
+      mapImageSrc: createMediaField('지도 이미지', 'map-directions-image'), mapImageAlt: { type: 'text', label: '지도 이미지 대체 텍스트' },
       directionsLabel: { type: 'text', label: '길찾기 버튼 문구', contentEditable: true }, directionsUrl: createRouteUrlField('길찾기 연결'), phone: { type: 'text', label: '전화번호', contentEditable: true }, hours: { type: 'textarea', label: '운영 시간', contentEditable: true }, parking: { type: 'textarea', label: '주차 안내', contentEditable: true },
       elementStyles: { type: 'custom', label: '캔버스 요소 스타일', render: () => <></> }, surface: { type: 'select', label: '배경 프리셋', options: SURFACE_OPTIONS }, spacing: { type: 'select', label: '세로 여백', options: SPACING_OPTIONS }, motion: createMotionField(['none', 'reveal']),
     }, render: (props) => <MapDirectionsPreview {...props} />,
@@ -836,7 +844,7 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
   if (block.type === G7_RECENT_POSTS_BLOCK_TYPE) return { type: 'G7RecentPosts', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(props.period)) ? asString(props.period) as G7RecentPostsEditorProps['period'] : 'week', limit: ['3', '4', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7RecentPostsEditorProps['limit'] : '6', pageSize: ['4', '6'].includes(String(props.pageSize)) ? String(props.pageSize) as G7RecentPostsEditorProps['pageSize'] : '3', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', emptyMessage: asString(props.emptyMessage, '표시할 게시글이 없습니다.'), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === G7_PRODUCT_GRID_BLOCK_TYPE) return { type: 'G7ProductGrid', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), source: props.source === 'popular' || props.source === 'latest' ? props.source : 'new', limit: ['2', '3', '6', '8', '12'].includes(String(props.limit)) ? String(props.limit) as G7ProductGridEditorProps['limit'] : '4', columns: props.columns === 2 || props.columns === '2' ? '2' : props.columns === 3 || props.columns === '3' ? '3' : '4', pageSize: ['2', '3', '6'].includes(String(props.pageSize)) ? String(props.pageSize) as G7ProductGridEditorProps['pageSize'] : '4', audience: props.audience === 'guest' || props.audience === 'member' ? props.audience : 'all', detailBasePath: asString(props.detailBasePath, '/shop/products'), emptyMessage: asString(props.emptyMessage, '표시할 상품이 없습니다.'), ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === INQUIRY_FORM_BLOCK_TYPE) return { type: 'InquiryForm', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), formKind: ['quote', 'reservation', 'application', 'newsletter'].includes(asString(props.formKind)) ? asString(props.formKind) as InquiryFormKind : 'inquiry', submitLabel: asString(props.submitLabel, '문의 보내기'), successMessage: asString(props.successMessage, '문의가 접수되었습니다.'), privacyLabel: asString(props.privacyLabel, '개인정보 수집 및 이용에 동의합니다.'), showPhone: props.showPhone !== false, showSubject: props.showSubject !== false, ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
-  if (block.type === MAP_DIRECTIONS_BLOCK_TYPE) return { type: 'MapDirections', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), address: asString(props.address), latitude: typeof props.latitude === 'number' ? props.latitude : 37.5665, longitude: typeof props.longitude === 'number' ? props.longitude : 126.978, zoom: ['12', '14', '18'].includes(String(props.zoom)) ? String(props.zoom) as MapDirectionsEditorProps['zoom'] : '16', provider: props.provider === 'google' || props.provider === 'none' ? props.provider : 'openstreetmap', directionsLabel: asString(props.directionsLabel, '길찾기'), directionsUrl: asString(props.directionsUrl, 'https://www.openstreetmap.org/'), phone: asString(props.phone), hours: asString(props.hours), parking: asString(props.parking), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
+  if (block.type === MAP_DIRECTIONS_BLOCK_TYPE) return { type: 'MapDirections', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), address: asString(props.address), latitude: typeof props.latitude === 'number' ? props.latitude : 37.5665, longitude: typeof props.longitude === 'number' ? props.longitude : 126.978, zoom: ['12', '14', '18'].includes(String(props.zoom)) ? String(props.zoom) as MapDirectionsEditorProps['zoom'] : '16', provider: props.provider === 'image' || props.provider === 'google' || props.provider === 'none' ? props.provider : 'openstreetmap', mapImageSrc: asString(props.mapImageSrc), mapImageAlt: asString(props.mapImageAlt), directionsLabel: asString(props.directionsLabel, '길찾기'), directionsUrl: asString(props.directionsUrl, 'https://www.openstreetmap.org/'), phone: asString(props.phone), hours: asString(props.hours), parking: asString(props.parking), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   return null;
 }
 
@@ -888,7 +896,22 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
   if (type === 'G7RecentPosts') return { type: G7_RECENT_POSTS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' ? 'popular' : 'recent', period: ['today', 'month', 'year'].includes(asString(raw.period)) ? raw.period : 'week', limit: Number(raw.limit) || 6, pageSize: Number(raw.pageSize) || 3, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', emptyMessage: asString(raw.emptyMessage, '표시할 게시글이 없습니다.') }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
   if (type === 'G7ProductGrid') return { type: G7_PRODUCT_GRID_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), source: raw.source === 'popular' || raw.source === 'latest' ? raw.source : 'new', limit: Number(raw.limit) || 4, columns: Number(raw.columns) || 4, pageSize: Number(raw.pageSize) || 4, audience: raw.audience === 'guest' || raw.audience === 'member' ? raw.audience : 'all', detailBasePath: asString(raw.detailBasePath, '/shop/products'), emptyMessage: asString(raw.emptyMessage, '표시할 상품이 없습니다.') }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
   if (type === 'InquiryForm') return { type: INQUIRY_FORM_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), formKind: ['quote', 'reservation', 'application', 'newsletter'].includes(asString(raw.formKind)) ? raw.formKind : 'inquiry', submitLabel: asString(raw.submitLabel), successMessage: asString(raw.successMessage), privacyLabel: asString(raw.privacyLabel), showPhone: raw.showPhone !== false, showSubject: raw.showSubject !== false }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
-  if (type === 'MapDirections') return { type: MAP_DIRECTIONS_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), address: asString(raw.address), latitude: typeof raw.latitude === 'number' ? raw.latitude : 37.5665, longitude: typeof raw.longitude === 'number' ? raw.longitude : 126.978, zoom: Number(raw.zoom) || 16, provider: raw.provider === 'google' || raw.provider === 'none' ? raw.provider : 'openstreetmap', directionsLabel: asString(raw.directionsLabel), directionsUrl: asString(raw.directionsUrl), phone: asString(raw.phone), hours: asString(raw.hours), parking: asString(raw.parking) }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
+  if (type === 'MapDirections') {
+    const provider = raw.provider === 'image' || raw.provider === 'google' || raw.provider === 'none' ? raw.provider : 'openstreetmap';
+    const mapProps: Record<string, unknown> = {
+      eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), description: asString(raw.description), address: asString(raw.address),
+      latitude: typeof raw.latitude === 'number' ? raw.latitude : 37.5665, longitude: typeof raw.longitude === 'number' ? raw.longitude : 126.978,
+      zoom: Number(raw.zoom) || 16, provider, directionsLabel: asString(raw.directionsLabel), directionsUrl: asString(raw.directionsUrl),
+      phone: asString(raw.phone), hours: asString(raw.hours), parking: asString(raw.parking),
+    };
+    const mapImageSrc = asString(raw.mapImageSrc);
+    const mapImageAlt = asString(raw.mapImageAlt);
+    if (provider === 'image' || mapImageSrc || mapImageAlt) {
+      mapProps.mapImageSrc = mapImageSrc;
+      mapProps.mapImageAlt = mapImageAlt;
+    }
+    return { type: MAP_DIRECTIONS_BLOCK_TYPE, props: attachAppearance(mapProps, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
+  }
   return null;
 }
 

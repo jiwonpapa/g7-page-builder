@@ -134,7 +134,7 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
   ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'Hero', textFields: [
     ...plain('eyebrow', 'primaryLabel'), ...inlineRich('title'), ...blockRich('body'),
-    ...structural('primaryUrl', 'imageSrc', 'imageAlt', 'alignment', 'layout'),
+    ...structural('primaryUrl', 'imageSrc', 'imageAlt', 'alignment', 'mediaPosition', 'layout'),
   ], collections: [], directMedia: true, directRoute: true, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'HeroSplit', textFields: [
     ...plain('eyebrow', 'primaryLabel'), ...inlineRich('title'), ...blockRich('body'),
@@ -168,8 +168,8 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
     ...structural('tabVariant', 'initialTab'),
   ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'ArticleList', textFields: [
-    ...plain('eyebrow', 'items.*.category', 'items.*.date'), ...inlineRich('heading', { path: 'items.*.title', allowLink: false }), ...blockRich('items.*.summary'),
-    ...structural('layout', 'items.*.imageSrc', 'items.*.imageAlt', 'items.*.url'),
+    ...plain('eyebrow', 'items.*.category'), ...inlineRich('heading', { path: 'items.*.title', allowLink: false }), ...blockRich('items.*.summary'),
+    ...structural('layout', 'items.*.date', 'items.*.imageSrc', 'items.*.imageAlt', 'items.*.url'),
   ], collections: ['items'], directMedia: true, directRoute: true, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'EventSchedule', textFields: [
     ...plain('eyebrow', 'items.*.date', 'items.*.time', 'items.*.location', 'items.*.buttonLabel'),
@@ -185,8 +185,8 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
   ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'MapDirections', textFields: [
     ...plain('eyebrow', 'address', 'directionsLabel', 'phone', 'hours', 'parking'), ...inlineRich('heading'), ...blockRich('description'),
-    ...structural('latitude', 'longitude', 'zoom', 'provider', 'directionsUrl'),
-  ], collections: [], directMedia: false, directRoute: true, dynamicData: false }),
+    ...structural('latitude', 'longitude', 'zoom', 'provider', 'mapImageSrc', 'mapImageAlt', 'directionsUrl'),
+  ], collections: [], directMedia: true, directRoute: true, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'LogoCloud', textFields: [
     ...plain('logos.*.name'), ...inlineRich('heading'), ...structural('logos.*.imageSrc', 'logos.*.imageAlt', 'logos.*.url', 'layout'),
   ], collections: ['logos'], directMedia: true, directRoute: true, dynamicData: false }),

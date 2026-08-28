@@ -69,15 +69,16 @@ function replaceRichTextPath(target: unknown, path: string, value: string): void
 
 function documentForBlock(blockId: string, index: number): typeof fixture {
   const preset = builtinManifest.presets.find((candidate) => candidate.block_id === blockId);
-  if (!preset) throw new Error(`${blockId}: bundled preset이 없습니다.`);
+  const compatibilityBlock = catalogFixture.blocks.find((candidate) => candidate.type === blockId);
+  if (!preset && !compatibilityBlock) throw new Error(`${blockId}: bundled preset 또는 호환 fixture가 없습니다.`);
   return {
     ...structuredClone(fixture),
     slug: `rich-text-envelope-${index + 1}`,
     blocks: [{
       instance_id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
       type: blockId,
-      block_version: preset.block_version,
-      props: structuredClone(preset.props),
+      block_version: preset?.block_version ?? compatibilityBlock!.block_version,
+      props: structuredClone(preset?.props ?? compatibilityBlock!.props),
       slots: {},
     }],
   } as typeof fixture;

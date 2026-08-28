@@ -26,7 +26,8 @@ describe('Block Pack manifest v1 schema', () => {
     const definitions = new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`));
     expect(builtinManifest.presets.every((preset) => definitions.has(`${preset.block_id}@${preset.block_version}`))).toBe(true);
     const presetBlockIds = new Set(builtinManifest.presets.map((preset) => preset.block_id));
-    expect(builtinManifest.blocks.every((block) => presetBlockIds.has(block.block_id))).toBe(true);
+    expect(builtinManifest.blocks.every((block) => presetBlockIds.has(block.block_id)
+      || block.capabilities.includes('editor.compatibility-only'))).toBe(true);
     const thumbnails = [
       ...builtinManifest.blocks.map((block) => block.thumbnail),
       ...builtinManifest.presets.map((preset) => preset.thumbnail),

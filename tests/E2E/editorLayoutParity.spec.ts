@@ -337,7 +337,7 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
     const rectRightOverflow = Math.max(0, rect.right - viewportWidth);
     const blockScrollOverflow = Math.max(0, block.scrollWidth - block.clientWidth);
     const measuredScrollOverflow = Math.max(0, measured.scrollWidth - measured.clientWidth);
-    const typographyCandidate = Array.from(measured.querySelectorAll<HTMLElement>([
+    const typographySelectors = [
       'h1',
       '[data-g7pb-heading-level="1"]',
       'h2',
@@ -354,13 +354,17 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
       'time',
       'p',
       'small',
-    ].join(',')))
-      .find((candidate) => {
+    ];
+    let typographyCandidate: HTMLElement | null = null;
+    for (const selector of typographySelectors) {
+      typographyCandidate = Array.from(measured.querySelectorAll<HTMLElement>(selector)).find((candidate) => {
         const candidateRect = candidate.getBoundingClientRect();
         return candidateRect.width > 0
           && candidateRect.height > 0
           && (candidate.textContent ?? '').replace(/\s+/g, ' ').trim() !== '';
       }) ?? null;
+      if (typographyCandidate) break;
+    }
     let typography: TypographyMetric | null = null;
     if (typographyCandidate) {
       const typographyStyle = block.ownerDocument.defaultView?.getComputedStyle(typographyCandidate);
@@ -371,18 +375,29 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
         ? parsedLineHeight
         : fontSize * 1.2;
       const range = block.ownerDocument.createRange();
-      range.selectNodeContents(typographyCandidate);
-      const lineTops = new Set(
-        Array.from(range.getClientRects())
-          .filter((lineRect) => lineRect.width > 0 && lineRect.height > 0)
-          .map((lineRect) => Math.round(lineRect.top)),
-      );
+      const walker = block.ownerDocument.createTreeWalker(typographyCandidate, NodeFilter.SHOW_TEXT);
+      const lineCenters: number[] = [];
+      for (let textNode = walker.nextNode(); textNode; textNode = walker.nextNode()) {
+        if ((textNode.textContent ?? '').trim() === '') continue;
+        range.selectNodeContents(textNode);
+        for (const lineRect of Array.from(range.getClientRects())) {
+          if (lineRect.width > 0 && lineRect.height > 0) lineCenters.push(lineRect.top + (lineRect.height / 2));
+        }
+      }
+      lineCenters.sort((left, right) => left - right);
+      const lineClusters: number[] = [];
+      for (const center of lineCenters) {
+        const previousCenter = lineClusters.at(-1);
+        if (previousCenter === undefined || Math.abs(center - previousCenter) > Math.max(1, lineHeight * .35)) {
+          lineClusters.push(center);
+        }
+      }
       typography = {
         fontFamily: typographyStyle?.fontFamily ?? '',
         fontSize,
         fontWeight: typographyStyle?.fontWeight ?? '',
         letterSpacing: Number.parseFloat(typographyStyle?.letterSpacing ?? '0') || 0,
-        lineCount: lineTops.size || Math.max(1, Math.round(typographyRect.height / lineHeight)),
+        lineCount: lineClusters.length || Math.max(1, Math.round(typographyRect.height / lineHeight)),
         lineHeight,
         text: (typographyCandidate.textContent ?? '').replace(/\s+/g, ' ').trim(),
       };

@@ -433,7 +433,7 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
     await prepareVisualDocument(publicRoot);
     await expectCatalogPresentationQuality(
       renderedBlocks,
-      builtinManifest.blocks.map((block) => block.block_id),
+      renderedTypes,
     );
     for (let index = 0; index < builtinManifest.blocks.length; index += 1) {
       await waitForVisualBlockStability(renderedBlocks.nth(index));

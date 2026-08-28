@@ -278,6 +278,11 @@ perl -0pi -e 's/(\.g7pb-features__title \{[^}]*line-height:) normal !important;/
 expect_failure 'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/(\.g7pb-logo-cloud h2 \{[^}]*line-height:) 1\.2;/${1} 1.5;/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure 'Logo Cloud 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/(> :is\(header, figcaption\) \{[^}]*max-width:) 48rem;/${1} 760px;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
 expect_failure '공통 섹션 제목 컨테이너는 공개 g7pb-section-heading과 같은 48rem 폭이어야 합니다.'

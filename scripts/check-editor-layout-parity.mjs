@@ -159,6 +159,8 @@ export async function validateEditorLayoutParity(root) {
     '명시적 regular element style은 활성 템플릿과 무관하게 공개본에서 400이어야 합니다.');
   requirePattern(errors, publicCss, /\.g7pb-features__title\s*\{[^}]*line-height:\s*normal\s*!important;/,
     'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
+  requirePattern(errors, publicCss, /\.g7pb-logo-cloud\s+h2\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.2;/,
+    'Logo Cloud 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
   requirePattern(errors, editorCss,
     /\.g7pb-theme-font-modern\s*\{\s*font-family:\s*system-ui,[^}]+\}[\s\S]*\.g7pb-document-theme \[data-g7pb-font='modern'\]\s*\{\s*font-family:\s*system-ui,/,
     '편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.');

@@ -159,6 +159,12 @@ export async function validateEditorLayoutParity(root) {
     '명시적 regular element style은 활성 템플릿과 무관하게 공개본에서 400이어야 합니다.');
   requirePattern(errors, publicCss, /\.g7pb-features__title\s*\{[^}]*line-height:\s*normal\s*!important;/,
     'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
+  requirePattern(errors, editorCss,
+    /\.g7pb-theme-font-modern\s*\{\s*font-family:\s*system-ui,[^}]+\}[\s\S]*\.g7pb-document-theme \[data-g7pb-font='modern'\]\s*\{\s*font-family:\s*system-ui,/,
+    '편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.');
+  requirePattern(errors, publicCss,
+    /:root\s*\{[^}]*font-family:\s*system-ui,[^}]+\}[\s\S]*\.g7pb-theme-font-modern\s*\{\s*font-family:\s*system-ui,[^}]+\}[\s\S]*\[data-g7pb-font='modern'\]\s*\{\s*font-family:\s*system-ui,/,
+    '공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.');
   requirePattern(errors, catalogSource,
     /function LogoCloudPreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2"[^>]*fieldPath="heading">/,
     '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');

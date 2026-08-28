@@ -1,4 +1,4 @@
-:root { color-scheme: light; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+:root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 * { box-sizing: border-box; }
 body { margin: 0; color: #172033; background: #fff; }
 .g7pb-skip-link { position: fixed; z-index: 1000; top: .75rem; left: .75rem; padding: .75rem 1rem; color: #fff; background: #172033; transform: translateY(-180%); }
@@ -101,7 +101,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-theme-palette-rose { --g7pb-theme-accent: #e11d48; --g7pb-theme-accent-soft: #fff1f2; --g7pb-theme-accent-strong: #9f1239; }
 .g7pb-theme-palette-slate { --g7pb-theme-accent: #475569; --g7pb-theme-accent-soft: #f1f5f9; --g7pb-theme-accent-strong: #1e293b; }
 .g7pb-theme-font-system { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-.g7pb-theme-font-modern { font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.g7pb-theme-font-modern { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .g7pb-theme-font-serif { font-family: Georgia, "Noto Serif KR", "Times New Roman", serif; }
 .g7pb-theme-radius-sharp { --g7pb-theme-radius: .125rem; }
 .g7pb-theme-radius-round { --g7pb-theme-radius: 1.75rem; }
@@ -119,7 +119,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-text-align--center { text-align: center; }
 .g7pb-text-align--right { text-align: right; }
 .g7pb-element-font--system { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-.g7pb-element-font--modern { font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.g7pb-element-font--modern { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .g7pb-element-font--serif { font-family: Georgia, "Noto Serif KR", "Times New Roman", serif; }
 .g7pb-element-font--mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 .g7pb-element-size--small { font-size: .875em; }
@@ -137,7 +137,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-element-tone--custom2, [data-g7pb-tone='custom2'] { color: var(--g7pb-custom-tone-2); }
 .g7pb-element-tone--custom3, [data-g7pb-tone='custom3'] { color: var(--g7pb-custom-tone-3); }
 .g7pb-element-tone--custom4, [data-g7pb-tone='custom4'] { color: var(--g7pb-custom-tone-4); }
-[data-g7pb-font='modern'] { font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+[data-g7pb-font='modern'] { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 [data-g7pb-font='serif'] { font-family: Georgia, "Noto Serif KR", "Times New Roman", serif; }
 [data-g7pb-font='mono'] { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 [data-g7pb-size='small'] { font-size: .875em; }
@@ -693,7 +693,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-surface--contrast p.g7pb-section-eyebrow { color: #9ab2ff; }
 .g7pb-block :where(h1, h2, h3, h4) { font-weight: 700 !important; }
 .g7pb-element-font--system { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
-.g7pb-element-font--modern { font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
+.g7pb-element-font--modern { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
 .g7pb-element-font--serif { font-family: Georgia, "Noto Serif KR", "Times New Roman", serif !important; }
 .g7pb-element-font--mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important; }
 .g7pb-element-size--small { font-size: .875em !important; }

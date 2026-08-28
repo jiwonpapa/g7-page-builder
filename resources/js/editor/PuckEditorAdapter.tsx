@@ -1140,6 +1140,22 @@ function createPageColorField(label: string, testId: string) {
   };
 }
 
+const REQUIRED_INSPECTOR_FIELD_NAMES = new Set(['alt', 'imageAlt', 'avatarAlt']);
+
+function markRequiredInspectorFields(fields: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(fields).map(([name, field]) => {
+    if (!field || typeof field !== 'object' || Array.isArray(field)) return [name, field];
+    const next = { ...(field as Record<string, unknown>) };
+    if (REQUIRED_INSPECTOR_FIELD_NAMES.has(name) && typeof next.label === 'string' && !next.label.includes('(필수)')) {
+      next.label = `${next.label} (필수)`;
+    }
+    if (next.arrayFields && typeof next.arrayFields === 'object' && !Array.isArray(next.arrayFields)) {
+      next.arrayFields = markRequiredInspectorFields(next.arrayFields as Record<string, unknown>);
+    }
+    return [name, next];
+  }));
+}
+
 function withBlockContainerFields<TComponents extends Record<string, { fields?: Record<string, unknown> }>>(
   components: TComponents,
 ): TComponents {
@@ -1160,10 +1176,10 @@ function withBlockContainerFields<TComponents extends Record<string, { fields?: 
   }]));
   return Object.fromEntries(Object.entries(components).map(([name, component]) => [name, {
     ...component,
-    fields: {
+    fields: markRequiredInspectorFields({
       ...(component.fields ?? {}),
       ...stableFields,
-    },
+    }),
   }])) as unknown as TComponents;
 }
 

@@ -34,6 +34,20 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringNotContainsString('<form', (string) $first->artifact);
     }
 
+    public function test_required_image_alt_error_is_actionable_korean_copy(): void
+    {
+        $payload = $this->productionLibraryDocument()->toArray();
+        $payload['blocks'][7]['props']['images'][0]['alt'] = '';
+
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+            self::fail('An image carousel without alternative text compiled successfully.');
+        } catch (DocumentCompileException $exception) {
+            self::assertSame('필수 항목 “이미지 대체 텍스트”를 입력해야 합니다.', $exception->getMessage());
+            self::assertStringNotContainsString('Property alt', $exception->getMessage());
+        }
+    }
+
     public function test_external_block_fails_closed_without_its_registered_schema_validator(): void
     {
         $manifest = BlockPackManifest::fromArray([

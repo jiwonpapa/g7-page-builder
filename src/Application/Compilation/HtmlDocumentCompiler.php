@@ -2629,8 +2629,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $value = $values[$key] ?? null;
 
-        if (! is_string($value) || trim($value) === '' || mb_strlen($value) > $maxLength) {
-            throw new DocumentCompileException("Property {$key} is required or too long.");
+        if (! is_string($value) || trim($value) === '') {
+            throw new DocumentCompileException($this->requiredFieldMessage($key));
+        }
+        if (mb_strlen($value) > $maxLength) {
+            throw new DocumentCompileException($this->fieldLengthMessage($key, $maxLength));
         }
 
         return $value;
@@ -2694,10 +2697,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $value = $values[$key] ?? null;
         if (! is_string($value)) {
-            throw new DocumentCompileException("Property {$key} is required or too long.");
+            throw new DocumentCompileException($this->requiredFieldMessage($key));
         }
 
-        $this->assertPromotedRichTextLength($value, $maxLength, required: true);
+        $this->assertPromotedRichTextLength($value, $maxLength, required: true, property: $key);
 
         return $value;
     }
@@ -2745,11 +2748,49 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         bool $required = false,
         bool $inline = false,
         bool $allowLinks = true,
+        ?string $property = null,
     ): void {
         $plainText = $this->promotedRichTextPlainText($value, $inline, $allowLinks);
-        if (($required && trim($plainText) === '') || mb_strlen($plainText) > $maxLength) {
-            throw new DocumentCompileException('Rich text is required or too long.');
+        if ($required && trim($plainText) === '') {
+            throw new DocumentCompileException($this->requiredFieldMessage($property ?? 'content'));
         }
+        if (mb_strlen($plainText) > $maxLength) {
+            throw new DocumentCompileException($this->fieldLengthMessage($property ?? 'content', $maxLength));
+        }
+    }
+
+    private function requiredFieldMessage(string $key): string
+    {
+        return '필수 항목 “'.$this->fieldLabel($key).'”를 입력해야 합니다.';
+    }
+
+    private function fieldLengthMessage(string $key, int $maxLength): string
+    {
+        return '“'.$this->fieldLabel($key).'” 입력은 '.$maxLength.'자 이내여야 합니다.';
+    }
+
+    private function fieldLabel(string $key): string
+    {
+        return match ($key) {
+            'alt', 'imageAlt', 'avatarAlt' => '이미지 대체 텍스트',
+            'title', 'heading' => '제목',
+            'content', 'body', 'answer', 'description', 'summary' => '본문',
+            'label', 'buttonLabel', 'submitLabel', 'directionsLabel', 'linkLabel', 'currentLabel' => '표시 문구',
+            'url', 'buttonUrl', 'directionsUrl', 'detailUrl', 'detailBasePath' => '연결 주소',
+            'src' => '이미지',
+            'address' => '주소',
+            'phone' => '전화번호',
+            'email' => '이메일',
+            'date' => '날짜',
+            'name' => '이름',
+            'role' => '역할',
+            'quote' => '인용문',
+            'citation' => '출처',
+            'videoId' => '영상 ID',
+            'productKey' => '상품 식별자',
+            'boardSlug' => '게시판 식별자',
+            default => $key,
+        };
     }
 
     /**

@@ -67,8 +67,18 @@ function hasAdminToken(): boolean {
   }
 }
 
+function actionableCompileMessage(message: string): string | null {
+  if (/^(?:필수 항목 “.+”를 입력해야 합니다|“.+” 입력은 \d+자 이내여야 합니다)\.$/.test(message)) {
+    return message;
+  }
+  const legacy = message.match(/^Property (alt|imageAlt|avatarAlt) is required or too long\.$/);
+  return legacy ? '필수 항목 “이미지 대체 텍스트”를 입력해야 합니다.' : null;
+}
+
 function formatError(error: unknown): string {
   if (error instanceof PageBuilderApiError) {
+    const actionable = error.code === 'G7PB_COMPILE_FAILED' ? actionableCompileMessage(error.message) : null;
+    if (actionable) return actionable;
     const message = error.code === 'G7PB_COMPILE_FAILED'
       ? `미리보기 또는 발행할 수 없는 블록 설정이 있습니다. ${error.message}`
       : error.message;

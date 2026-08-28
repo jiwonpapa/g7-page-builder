@@ -247,9 +247,19 @@ perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\] \{[^}
 expect_failure 'Features 기본 제목은 공개 출력과 같은 가용 폭과 normal line-height를 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\]\.g7pb-element-weight--regular:not\(\.g7pb-element-weight--heading-default\) \{ line-height:) 1\.5;/${1} normal;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Features의 명시적 regular 제목은 공개 출력의 상속 line-height를 사용해야 합니다.'
+perl -0pi -e 's/(\.g7pb-block :where\(h1, h2, h3, h4\) \{ font-weight:) 700 !important;/${1} 400 !important;/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure '활성 G7 템플릿의 전역 heading 규칙이 블록 기본 제목 굵기를 바꾸지 못하게 격리해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-element-weight--regular \{ font-weight:) 400 !important;/${1} 700 !important;/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure '명시적 regular element style은 활성 템플릿과 무관하게 공개본에서 400이어야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-features__title \{[^}]*line-height:) normal !important;/${1} 1.5;/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure 'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(> :is\(header, figcaption\) \{[^}]*max-width:) 48rem;/${1} 760px;/' \

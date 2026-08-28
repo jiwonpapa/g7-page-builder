@@ -8,6 +8,7 @@ import type { CanvasRangeAnchor } from './canvasContextState';
 import {
   FONT_SIZE_REM_OPTIONS,
   FONT_SIZE_REM_VALUES,
+  elementFontSizeClassName,
   normalizeFontSizeRem,
   type FontSizeRem,
 } from './fontSize';
@@ -269,7 +270,10 @@ function fontSizeRemAttribute() {
       normalizeFontSizeRem(Number(element.getAttribute('data-g7pb-font-size-rem'))) ?? null,
     renderHTML: (attributes: Record<string, unknown>): Record<string, string> => {
       const value = normalizeFontSizeRem(attributes.fontSizeRem);
-      return value === undefined ? {} : { 'data-g7pb-font-size-rem': String(value) };
+      return value === undefined ? {} : {
+        class: elementFontSizeClassName(value),
+        'data-g7pb-font-size-rem': String(value),
+      };
     },
   };
 }

@@ -2435,29 +2435,29 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-preview-image-carousel__controls i { width: .35rem; height: .35rem; border-radius: 50%; background: var(--g7pb-theme-border); }
 .g7pb-preview-image-carousel__controls i:first-child { width: 1rem; border-radius: 999px; background: var(--g7pb-theme-accent); }
 
-.g7pb-element-font--system { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
-.g7pb-element-font--modern { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
-.g7pb-element-font--serif { font-family: Georgia, "Noto Serif KR", "Times New Roman", serif !important; }
-.g7pb-element-font--mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important; }
-.g7pb-element-size--small { font-size: .875em !important; }
-.g7pb-element-size--large { font-size: 1.2em !important; }
-.g7pb-element-size--xlarge { font-size: 1.45em !important; }
-.g7pb-element-font-size--12,[data-g7pb-font-size-rem='0.75']{font-size:.75rem!important}
-.g7pb-element-font-size--14,[data-g7pb-font-size-rem='0.875']{font-size:.875rem!important}
-.g7pb-element-font-size--16,[data-g7pb-font-size-rem='1']{font-size:1rem!important}
-.g7pb-element-font-size--18,[data-g7pb-font-size-rem='1.125']{font-size:1.125rem!important}
-.g7pb-element-font-size--20,[data-g7pb-font-size-rem='1.25']{font-size:1.25rem!important}
-.g7pb-element-font-size--24,[data-g7pb-font-size-rem='1.5']{font-size:1.5rem!important}
-.g7pb-element-font-size--28,[data-g7pb-font-size-rem='1.75']{font-size:1.75rem!important}
-.g7pb-element-font-size--32,[data-g7pb-font-size-rem='2']{font-size:2rem!important}
-.g7pb-element-font-size--36,[data-g7pb-font-size-rem='2.25']{font-size:2.25rem!important}
-.g7pb-element-font-size--40,[data-g7pb-font-size-rem='2.5']{font-size:2.5rem!important}
-.g7pb-element-font-size--48,[data-g7pb-font-size-rem='3']{font-size:3rem!important}
-.g7pb-element-font-size--56,[data-g7pb-font-size-rem='3.5']{font-size:3.5rem!important}
-.g7pb-element-font-size--64,[data-g7pb-font-size-rem='4']{font-size:4rem!important}
-.g7pb-element-font-size--72,[data-g7pb-font-size-rem='4.5']{font-size:4.5rem!important}
-.g7pb-element-font-size--80,[data-g7pb-font-size-rem='5']{font-size:5rem!important}
-.g7pb-element-font-size--96,[data-g7pb-font-size-rem='6']{font-size:6rem!important}
+.g7pb-element-font--system{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+.g7pb-element-font--modern{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+.g7pb-element-font--serif{font-family:Georgia,"Noto Serif KR","Times New Roman",serif!important}
+.g7pb-element-font--mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace!important}
+.g7pb-element-size--small{font-size:.875em!important}
+.g7pb-element-size--large{font-size:1.2em!important}
+.g7pb-element-size--xlarge{font-size:1.45em!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--12{font-size:.75rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--14{font-size:.875rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--16{font-size:1rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--18{font-size:1.125rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--20{font-size:1.25rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--24{font-size:1.5rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--28{font-size:1.75rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--32{font-size:2rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--36{font-size:2.25rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--40{font-size:2.5rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--48{font-size:3rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--56{font-size:3.5rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--64{font-size:4rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--72{font-size:4.5rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--80{font-size:5rem!important}
+.g7pb-preview-page.g7pb-preview-page .g7pb-element-font-size--96{font-size:6rem!important}
 .g7pb-element-weight--medium { font-weight: 500 !important; }
 .g7pb-element-weight--semibold { font-weight: 650 !important; }
 .g7pb-element-weight--bold { font-weight: 800 !important; }

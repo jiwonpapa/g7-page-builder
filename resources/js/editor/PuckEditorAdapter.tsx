@@ -1464,7 +1464,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
   categories: {
     content: {
       title: '콘텐츠 블록',
-      components: ['Heading', 'RichText', 'ImageText', 'IconList', 'Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'Buttons', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
+      components: ['Heading', 'RichText', 'ImageText', 'IconList', 'Hero', 'HeroSlider', 'Features', 'Cta', 'Buttons', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
       defaultExpanded: true,
     },
     business: {

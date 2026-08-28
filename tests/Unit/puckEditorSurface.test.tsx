@@ -462,6 +462,15 @@ describe('Puck editor surface contract', () => {
     }
   });
 
+  it('keeps the legacy split Hero renderer without offering it as a new block', () => {
+    expect(pageBuilderPuckConfig.components.HeroSplit).toBeDefined();
+    const offered = Object.values(pageBuilderPuckConfig.categories ?? {}).flatMap((category) => (
+      category.components ?? []
+    ));
+    expect(offered).not.toContain('HeroSplit');
+    expect(offered).toContain('Hero');
+  });
+
   it('marks every image alternative text inspector field as required', () => {
     const visit = (fields: Record<string, any>, path: string): string[] => Object.entries(fields).flatMap(([name, field]) => {
       const current = `${path}.${name}`;

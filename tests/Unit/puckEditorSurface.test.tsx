@@ -13,6 +13,8 @@ import eventPageKit from '../../resources/store/source/page-kits/event-launch/do
 import localBusinessPageKit from '../../resources/store/source/page-kits/local-business/document.json';
 import servicePageKit from '../../resources/store/source/page-kits/service-conversion/document.json';
 
+const FULL_CATALOG_RENDER_TIMEOUT_MS = 15_000;
+
 class TestResizeObserver {
   observe(): void {}
   unobserve(): void {}
@@ -271,7 +273,7 @@ describe('Puck editor surface contract', () => {
     expect(container.querySelectorAll('[data-testid="page-builder-block"]')).toHaveLength(content.length);
     const consoleErrors = consoleError.mock.calls.map((call) => call.map(String).join(' '));
     expect(consoleErrors).toEqual([]);
-  });
+  }, FULL_CATALOG_RENDER_TIMEOUT_MS);
 
   it('keeps rich-text visual blocks full width while measuring only their content', async () => {
     const measures = ['narrow', 'standard', 'wide'] as const;

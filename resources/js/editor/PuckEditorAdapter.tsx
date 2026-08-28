@@ -1482,6 +1482,10 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       components: ['G7RecentPosts', 'G7BoardArchive', 'G7PostDetail', 'G7ProductGrid', 'G7ProductShowcase', 'G7ProductDetail'],
       defaultExpanded: true,
     },
+    legacy: {
+      components: ['HeroSplit'],
+      visible: false,
+    },
   },
   components: withBlockContainerFields({
     ...catalogComponentConfigs,

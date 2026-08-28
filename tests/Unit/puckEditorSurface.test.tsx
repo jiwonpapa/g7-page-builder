@@ -464,9 +464,9 @@ describe('Puck editor surface contract', () => {
 
   it('keeps the legacy split Hero renderer without offering it as a new block', () => {
     expect(pageBuilderPuckConfig.components.HeroSplit).toBeDefined();
-    const offered = Object.values(pageBuilderPuckConfig.categories ?? {}).flatMap((category) => (
-      category.components ?? []
-    ));
+    const offered = Object.values(pageBuilderPuckConfig.categories ?? {})
+      .filter((category) => category.visible !== false)
+      .flatMap((category) => category.components ?? []);
     expect(offered).not.toContain('HeroSplit');
     expect(offered).toContain('Hero');
   });

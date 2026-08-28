@@ -44,6 +44,16 @@ const VISUAL_CAPTURE_OPTIONS = {
   scale: 'css',
 } as const;
 
+interface CatalogPresentationMetric {
+  blockType: string;
+  brokenImages: string[];
+  empty: boolean;
+  height: number;
+  minReadableFontSize: number | null;
+  overflow: number;
+  width: number;
+}
+
 async function prepareVisualDocument(root: Locator): Promise<void> {
   await root.locator('img').evaluateAll(async (elements, options) => {
     const images = elements as HTMLImageElement[];
@@ -208,6 +218,65 @@ async function expectDeterministicVisualBlock(
   expect.soft(secondCapture).toMatchSnapshot(snapshotName);
 }
 
+async function expectCatalogPresentationQuality(
+  blocks: Locator,
+  expectedBlockTypes: string[],
+): Promise<void> {
+  const metrics = await blocks.evaluateAll((elements): CatalogPresentationMetric[] => elements.map((element) => {
+    const block = element as HTMLElement;
+    const rect = block.getBoundingClientRect();
+    const view = block.ownerDocument.defaultView;
+    const isVisible = (candidate: HTMLElement): boolean => {
+      const candidateRect = candidate.getBoundingClientRect();
+      const style = view?.getComputedStyle(candidate);
+      return candidateRect.width > 0
+        && candidateRect.height > 0
+        && style?.display !== 'none'
+        && style?.visibility !== 'hidden'
+        && Number.parseFloat(style?.opacity ?? '1') > 0;
+    };
+    const descendants = Array.from(block.querySelectorAll<HTMLElement>('*')).filter(isVisible);
+    const readableFontSizes = descendants
+      .filter((candidate) => Array.from(candidate.childNodes).some((node) => (
+        node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== ''
+      )))
+      .filter((candidate) => !candidate.closest('.g7pb-visually-hidden, [aria-hidden="true"]'))
+      .map((candidate) => Number.parseFloat(view?.getComputedStyle(candidate).fontSize ?? '0'))
+      .filter((fontSize) => Number.isFinite(fontSize) && fontSize > 0);
+    const brokenImages = descendants
+      .filter((candidate): candidate is HTMLImageElement => candidate instanceof HTMLImageElement)
+      .filter((image) => image.complete && image.naturalWidth === 0)
+      .map((image) => image.currentSrc || image.src || '[empty-src]');
+    const hasMeaningfulContent = descendants.some((candidate) => {
+      if (candidate.matches('img,svg,canvas,iframe,video,a,button,input,select,textarea')) return true;
+      return Array.from(candidate.childNodes).some((node) => (
+        node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== ''
+      ));
+    });
+    const blockType = block.dataset.blockType ?? '';
+    return {
+      blockType,
+      brokenImages,
+      empty: blockType !== 'divider' && !hasMeaningfulContent,
+      height: rect.height,
+      minReadableFontSize: readableFontSizes.length > 0 ? Math.min(...readableFontSizes) : null,
+      overflow: Math.max(0, block.scrollWidth - block.clientWidth),
+      width: rect.width,
+    };
+  }));
+
+  expect(metrics.map((metric) => metric.blockType)).toEqual(expectedBlockTypes);
+  const violations = metrics.filter((metric) => (
+    metric.width <= 0
+    || metric.height <= 0
+    || metric.overflow > 1
+    || metric.empty
+    || metric.brokenImages.length > 0
+    || (metric.minReadableFontSize !== null && metric.minReadableFontSize < 10)
+  ));
+  expect(violations, `catalog presentation violations: ${JSON.stringify(violations)}`).toEqual([]);
+}
+
 function adminCredentials(): { email: string; password: string } {
   const email = process.env.G7PB_ADMIN_EMAIL;
   const password = process.env.G7PB_ADMIN_PASSWORD;
@@ -362,6 +431,13 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
     await expect(comparisonScroller).toBeFocused();
     await page.evaluate(() => document.fonts.ready);
     await prepareVisualDocument(publicRoot);
+    await expectCatalogPresentationQuality(
+      renderedBlocks,
+      builtinManifest.blocks.map((block) => block.block_id),
+    );
+    for (let index = 0; index < builtinManifest.blocks.length; index += 1) {
+      await waitForVisualBlockStability(renderedBlocks.nth(index));
+    }
 
     const accessibility = await new AxeBuilder({ page })
       .include('[data-testid="page-builder-public-root"]')

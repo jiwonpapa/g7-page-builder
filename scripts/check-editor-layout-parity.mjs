@@ -21,6 +21,22 @@ function requirePattern(errors, value, pattern, message) {
   if (!pattern.test(value)) errors.push(message);
 }
 
+const WYSIWYG_TYPOGRAPHY_TOKENS = [
+  '--g7pb-theme-radius',
+  '--g7pb-wysiwyg-hero-title-size',
+  '--g7pb-wysiwyg-hero-split-title-size',
+  '--g7pb-wysiwyg-hero-slider-title-size',
+  '--g7pb-wysiwyg-section-title-size',
+  '--g7pb-wysiwyg-features-title-size',
+  '--g7pb-wysiwyg-cta-title-size',
+  '--g7pb-wysiwyg-stats-value-size',
+];
+
+function customPropertyValue(css, property) {
+  const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return css.match(new RegExp(`${escaped}\\s*:\\s*([^;]+);`))?.[1].trim() ?? '';
+}
+
 export async function validateEditorLayoutParity(root) {
   const errors = [];
   const [packageSource, css, publicCss, adapter, overlaySource, spec, catalogVisualSpec] = await Promise.all([
@@ -35,6 +51,16 @@ export async function validateEditorLayoutParity(root) {
   const packageJson = JSON.parse(packageSource);
   const scripts = packageJson.scripts ?? {};
   const puckVersion = packageJson.dependencies?.['@puckeditor/core'];
+
+  for (const token of WYSIWYG_TYPOGRAPHY_TOKENS) {
+    const editorValue = customPropertyValue(css, token);
+    const publicValue = customPropertyValue(publicCss, token);
+    if (!editorValue || !publicValue) {
+      errors.push(`편집기와 공개 출력 모두 ${token} WYSIWYG 토큰을 선언해야 합니다.`);
+    } else if (editorValue !== publicValue) {
+      errors.push(`${token} 값이 편집기(${editorValue})와 공개 출력(${publicValue})에서 다릅니다.`);
+    }
+  }
 
   if (puckVersion !== '0.23.0') {
     errors.push('모바일 헤더 흐름은 검증된 Puck 0.23.0 의미 DOM 계약과 함께 고정되어야 합니다.');
@@ -253,6 +279,14 @@ export async function validateEditorLayoutParity(root) {
     [/root\.scrollWidth\s*-\s*root\.clientWidth/, 'iframe/preview document 가로 overflow 측정이 필요합니다.'],
     [/editor\.contentLeft\s*-\s*preview\.contentLeft/, '편집기/미리보기 왼쪽 content edge 비교가 필요합니다.'],
     [/editor\.contentRight\s*-\s*preview\.contentRight/, '편집기/미리보기 오른쪽 content edge 비교가 필요합니다.'],
+    [/typographyCandidate[\s\S]*getComputedStyle\(typographyCandidate\)[\s\S]*range\.getClientRects\(\)/,
+      '각 블록의 대표 텍스트 computed typography와 실제 줄바꿈을 측정해야 합니다.'],
+    [/Math\.abs\(editorTypography\.fontSize\s*-\s*previewTypography\.fontSize\)/,
+      '편집기/미리보기 대표 텍스트의 실제 font-size 차이를 비교해야 합니다.'],
+    [/editorTypography\.lineCount\s*!==\s*previewTypography\.lineCount/,
+      '편집기/미리보기 대표 텍스트의 줄바꿈 수가 같아야 합니다.'],
+    [/editorTypography\.fontFamily\s*!==\s*previewTypography\.fontFamily[\s\S]*editorTypography\.fontWeight\s*!==\s*previewTypography\.fontWeight/,
+      '편집기/미리보기 대표 텍스트의 font family와 weight를 비교해야 합니다.'],
     [/page-builder-preview-link/, '실제 미리보기 ticket 검증이 필요합니다.'],
     [/previewLink\.evaluate\(\(element\)\s*=>\s*element\.tagName\s*===\s*['"]BUTTON['"]\)[\s\S]*await previewLink\.click\(\)/,
       '초안 변경으로 미리보기 ticket이 무효화되면 실제 생성 버튼 흐름을 실행해야 합니다.'],
@@ -283,6 +317,8 @@ export async function validateEditorLayoutParity(root) {
       '블록 카탈로그 시각 비교 전에 전체 문서 media 준비 단계를 실행해야 합니다.'],
     [/const firstCapture\s*=\s*await block\.screenshot[\s\S]*waitForVisualBlockStability\(block\)[\s\S]*const secondCapture\s*=\s*await block\.screenshot[\s\S]*firstCapture\.equals\(secondCapture\)[\s\S]*toMatchSnapshot\(snapshotName\)/,
       '블록 카탈로그 baseline 비교 전에 동일 요소의 연속 캡처가 일치해야 합니다.'],
+    [/await expectCatalogPresentationQuality\([\s\S]*builtinManifest\.blocks\.map\(\(block\)\s*=>\s*block\.block_id\)[\s\S]*for \(let index = 0; index < builtinManifest\.blocks\.length; index \+= 1\)[\s\S]*waitForVisualBlockStability\(renderedBlocks\.nth\(index\)\)/,
+      '전체 내장 블록은 manifest 순서·가시성·미디어·가독성·overflow와 안정화 검사를 통과해야 합니다.'],
   ];
   for (const [pattern, message] of catalogVisualEvidence) {
     requirePattern(errors, catalogVisualSpec, pattern, message);

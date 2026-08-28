@@ -31,7 +31,7 @@ expect_failure() {
     echo "Expected editor layout parity contract failure: $expected" >&2
     exit 1
   fi
-  grep -Fq "$expected" "$fixture_root/stderr" || {
+  grep -Fq -- "$expected" "$fixture_root/stderr" || {
     echo "Missing failure message: $expected" >&2
     sed -n '1,120p' "$fixture_root/stderr" >&2
     exit 1
@@ -39,6 +39,16 @@ expect_failure() {
 }
 
 node "$repo_root/scripts/check-editor-layout-parity.mjs" --root "$repo_root"
+
+copy_fixture
+perl -0pi -e 's/(--g7pb-wysiwyg-hero-title-size: clamp\(2\.5rem, 7vw, )5\.75rem/${1}4rem/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '--g7pb-wysiwyg-hero-title-size 값이 편집기(clamp(2.5rem, 7vw, 4rem))와 공개 출력(clamp(2.5rem, 7vw, 5.75rem))에서 다릅니다.'
+
+copy_fixture
+perl -0pi -e 's/(--g7pb-wysiwyg-section-title-size: clamp\(2\.1rem, 5vw, 4\.25rem\);)/--g7pb-wysiwyg-section-title-removed: clamp(2.1rem, 5vw, 4.25rem);/' \
+  "$fixture_root/fixture/resources/css/page-builder-public.css"
+expect_failure '편집기와 공개 출력 모두 --g7pb-wysiwyg-section-title-size WYSIWYG 토큰을 선언해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/"\@puckeditor\/core": "0\.23\.0"/"\@puckeditor\/core": "^0.23.0"/' \
@@ -216,6 +226,16 @@ perl -0pi -e 's/editor\.contentLeft - preview\.contentLeft/editor.contentLeft - 
 expect_failure '편집기/미리보기 왼쪽 content edge 비교가 필요합니다.'
 
 copy_fixture
+perl -0pi -e 's/Math\.abs\(editorTypography\.fontSize - previewTypography\.fontSize\)/0/' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '편집기/미리보기 대표 텍스트의 실제 font-size 차이를 비교해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/editorTypography\.lineCount !== previewTypography\.lineCount/false/' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '편집기/미리보기 대표 텍스트의 줄바꿈 수가 같아야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/await previewLink\.click\(\)/await previewLink.isVisible()/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure '초안 변경으로 미리보기 ticket이 무효화되면 실제 생성 버튼 흐름을 실행해야 합니다.'
@@ -268,6 +288,11 @@ copy_fixture
 perl -0pi -e 's/await prepareVisualDocument\(publicRoot\)/await Promise.resolve()/' \
   "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
 expect_failure '블록 카탈로그 시각 비교 전에 전체 문서 media 준비 단계를 실행해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/await expectCatalogPresentationQuality\(/await Promise.resolve\(/' \
+  "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+expect_failure '전체 내장 블록은 manifest 순서·가시성·미디어·가독성·overflow와 안정화 검사를 통과해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/firstCapture\.equals\(secondCapture\)/true/g' \

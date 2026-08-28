@@ -9,7 +9,7 @@
 | `quality-coordination` | path lease·범위 차단·제출·통합·runtime/release guard와 편집 상호작용·레이아웃 계약 회귀시험 | 병렬 작업·merge 금지 |
 | `quality-php` | Composer validate, Pint, PHPStan, PHPUnit | merge 금지 |
 | `quality-php-coverage` | Xdebug 기반 Unit+G7 integration PHP line coverage | merge 금지 |
-| `quality-frontend` | SemVer/changelog, TS strict, Vitest+V8 coverage, G7 dependency budget, boundary, production build, asset 검사 | merge 금지 |
+| `quality-frontend` | SemVer/changelog, TS strict, Vitest+V8 coverage, G7 dependency budget, boundary, production build, asset 검사, 편집기/발행 타이포 토큰 계약 | merge 금지 |
 | `quality-g7` | module 설치·활성·migration·TLS·DB·Redis·관리자 인증 | 통합 merge 금지 |
 | `dev-browser-smoke` | home/login/runtime 기본 assertion | 환경 완료 아님 |
 | `dev-product-e2e` | 생성→실제 포인터 편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
@@ -20,7 +20,7 @@
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
 - `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
-- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`와 `check:editor-layout-parity`를 실행합니다. 기존 상호작용 증거와 함께 Puck iframe의 scoped `border-box`, 공개 출력과 같은 content-width 공식, 45종을 모두 포함하는 95개 프리셋과 공식 마켓 적용 API로 미디어까지 해소한 Page Kit 5종의 가로 overflow·좌우 content edge 비교가 빠지면 제출을 거부합니다.
+- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`와 `check:editor-layout-parity`를 실행합니다. 기존 상호작용 증거와 함께 Puck iframe의 scoped `border-box`, 공개 출력과 같은 content-width 공식, 편집기·발행 CSS의 동일 WYSIWYG 타이포 토큰, 45종을 모두 포함하는 95개 프리셋과 공식 마켓 적용 API로 미디어까지 해소한 Page Kit 5종의 가로 overflow·좌우 content edge·대표 텍스트 computed style·줄 수 비교가 빠지면 제출을 거부합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
 - `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.
@@ -100,9 +100,9 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 16. `template` 문서를 `/pages/{slug}`에서 활성 `_user_base` 안에 렌더하고 Page Builder Site Part가 섞이지 않는지 확인
 17. 임시 홈 지정 시 merged `/` route가 Page Builder home layout으로 바뀌며 테스트 종료 뒤 기존 홈 지정을 복원하는지 확인
 18. 공통 로그인 전후 표시 조건, G7 목록 pagination, 다운로드 자산 선택, 게시글·상품 상세 블록의 안전한 공개 렌더 확인
-19. 45종 전체 블록을 한 문서로 실제 발행하고 고유 public block 45개, axe WCAG A/AA, 무가로넘침, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
+19. 45종 전체 블록을 한 문서로 실제 발행하고 manifest 순서와 고유 public block 45개, 각 블록의 비어 있지 않은 가시 콘텐츠·깨진 이미지 0·최소 10px 가독성·무가로넘침·안정된 geometry, axe WCAG A/AA, PC·태블릿·모바일 핵심 10종씩 30개 시각 baseline 확인
 20. PC 1280 canvas에서만 contenteditable 내부 문자 좌표를 표시 축척이 적용된 Locator 좌표로 변환해 실제 `mouse.down → mouse.move → mouse.up`으로 목표 문자열과 정확히 같은 글자 범위를 선택합니다. 선택 해제, Tiptap active/inactive 단일 범위 상태와 요소 전체 벌룬의 상호배타, 반복 선택, 바깥 클릭 닫힘, 굵게·기울임·밑줄·글꼴·크기·색상·굵기의 즉시 반영, `요소 전체 스타일`·`블록 설정` Action Bar 역할 분리, 우측 Inspector의 richtext 입력기·서식 메뉴 부재, 캔버스 입력과 저장·reload·preview·public DOM 보존을 확인합니다. 모바일·태블릿에서는 이 편집 spec을 실행하지 않습니다.
-21. 45종을 모두 포함하는 내장 완성 섹션 95개와 Page Kit 5종을 PC 1280·태블릿 768·모바일 360 canvas에 실제 로드합니다. PC는 편집 모드, 태블릿·모바일은 contenteditable과 mutation 권한이 없는 미리보기 전용 모드여야 하며 뷰포트 전환은 문서를 저장하지 않아야 합니다. 각 Puck block의 실제 child와 같은 draft의 컴파일 미리보기를 instance/type 순서로 짝지어 문서·블록 가로 넘침 0px, 좌우 content edge 오차 1.25px 이하를 강제합니다.
+21. 45종을 모두 포함하는 내장 완성 섹션 95개와 Page Kit 5종을 PC 1280·태블릿 768·모바일 360 canvas에 실제 로드합니다. PC는 편집 모드, 태블릿·모바일은 contenteditable과 mutation 권한이 없는 미리보기 전용 모드여야 하며 뷰포트 전환은 문서를 저장하지 않아야 합니다. 각 Puck block의 실제 child와 같은 draft의 컴파일 미리보기를 instance/type 순서로 짝지어 문서·블록 가로 넘침 0px, 좌우 content edge 오차 1.25px 이하, 대표 제목의 font family·weight·크기·행간·자간 오차 0.75px 이하와 동일 줄 수를 강제합니다.
 22. Header·Footer Site Part는 PC 기준 표시값에 태블릿·모바일 제한형 재정의를 순서대로 합성합니다. 간격·정렬·CTA/내비게이션 표시·열 수·메뉴 방식만 저장하며 임의 class/style은 거부합니다. 기기별 초기화는 해당 재정의만 제거하고, 편집 iframe과 발행 HTML의 data 계약·하단 시트 geometry·무가로넘침을 함께 확인합니다.
 
 현재 제품 E2E는 위 흐름을 검사합니다. 기존 Page Management와 별도 메뉴·권한 공존은 `dev-verify`, 공개 해제 뒤 문서·revision 보존과 오래된 발행 후보 차단은 G7 통합 PHPUnit이 검사합니다. 공개 전용 결정적 fixture는 axe WCAG A/AA와 PC·태블릿·모바일 고정 스크린샷을 검사하며, G7 통합 PHPUnit은 compile 실패 뒤 마지막 정상 public artifact·표현 hash 불변을 검사합니다.
@@ -111,7 +111,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
 
-`scripts/check-editor-acceptance-contract.mjs`는 위 20번·22번과 PC 전용 mutation 권한, `scripts/check-editor-layout-parity.mjs`는 21번을 정적 계약으로 잠급니다. PC 편집 spec을 제품 E2E 목록에서 빼거나 태블릿·모바일에서 다시 실행하도록 바꾸거나 retry/skip을 추가해도 실패합니다. Site Part viewport 상태·상속·초기화·schema enum·compiler data 계약·편집/공개 CSS·실제 하단 시트 E2E 중 하나를 제거해도 실패합니다. Puck iframe의 scoped box model, 95개 프리셋·Page Kit 5종의 세 viewport 가로 overflow와 편집/미리보기 content edge 비교를 제거해도 `quality-frontend`, `task-submit`, `dev-product-e2e`가 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
+`scripts/check-editor-acceptance-contract.mjs`는 위 20번·22번과 PC 전용 mutation 권한, `scripts/check-editor-layout-parity.mjs`는 19번·21번을 정적 계약으로 잠급니다. PC 편집 spec을 제품 E2E 목록에서 빼거나 태블릿·모바일에서 다시 실행하도록 바꾸거나 retry/skip을 추가해도 실패합니다. Site Part viewport 상태·상속·초기화·schema enum·compiler data 계약·편집/공개 CSS·실제 하단 시트 E2E 중 하나를 제거해도 실패합니다. Puck iframe의 scoped box model, WYSIWYG 타이포 토큰, 45종 전체 presentation 검사, 95개 프리셋·Page Kit 5종의 세 viewport 가로 overflow·content edge·computed typography·줄 수 비교를 제거해도 `quality-frontend`, `task-submit`, `dev-product-e2e`가 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
 
 ## 자동화와 로컬 통합
 

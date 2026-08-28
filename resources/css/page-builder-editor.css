@@ -702,7 +702,6 @@
   min-height: 100%; background: #fff; color: #172033; container-type: inline-size; font-size: var(--g7pb-theme-body-size);
 }
 
-/* Puck's iframe lacks .g7pb-root; scope the reset so responsive padding stays inside the canvas width. */
 .g7pb-preview-page,
 .g7pb-preview-page *,
 .g7pb-preview-page *::before,
@@ -2307,7 +2306,6 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-preview-card-grid article a { color: var(--g7pb-theme-accent); font-size: .82rem; font-weight: 850; text-decoration: none; }
 .g7pb-preview-card-grid--outlined article { margin: .45rem; padding: 1.35rem; border: 1px solid var(--g7pb-theme-border); border-radius: var(--g7pb-theme-radius); }
 
-/* Block Library V2 editor parity: structural preset classes mirror public output. */
 .g7pb-preview-hero--layout-product { grid-template-columns: minmax(0, .85fr) minmax(20rem, 1.15fr); text-align: left; justify-items: start; }
 .g7pb-preview-hero--layout-product .g7pb-preview-hero__media { grid-column: 2; grid-row: 1 / span 5; height: min(62vw, 38rem); }
 .g7pb-preview-hero--layout-poster { min-height: min(78vh, 52rem); align-content: center; justify-items: center; text-align: center; }
@@ -2591,7 +2589,6 @@ body:has(.g7pb-selected-block-actionbar) {
   .g7pb-preview-image-carousel figure:not(:first-child) { display: none; }
 }
 
-/* Final editor/public container overrides prevent presets from exceeding the Puck iframe. */
 .g7pb-preview-block.g7pb-container-align--left:not(.g7pb-container-width--full) > * {
   padding-right: max(1.25rem, calc(100vw - var(--g7pb-preview-content-width) - 1.25rem));
   padding-left: 1.25rem;

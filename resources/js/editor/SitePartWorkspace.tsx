@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Check, CirclePlus, PanelsTopLeft, Power } from 'lucide-react';
+import { ArrowLeft, CirclePlus, PanelsTopLeft } from 'lucide-react';
 
 import {
   PAGE_BUILDER_MANAGER_PATH,
@@ -12,7 +12,7 @@ import type {
   SitePartSetPartSummary,
   SitePartSetResource,
 } from '../documents/types';
-import { SitePartEditor } from './SitePartEditor';
+import { SitePartSetEditor } from './SitePartSetEditor';
 
 interface SitePartWorkspaceProps {
   locale: string;
@@ -23,12 +23,6 @@ function errorMessage(error: unknown): string {
     return error.correlationId ? `${error.message} · 문의 번호 ${error.correlationId}` : error.message;
   }
   return error instanceof Error ? error.message : '헤더·푸터 세트를 불러오지 못했습니다.';
-}
-
-function statusLabel(part: SitePartSetPartSummary): string {
-  if (part.status === 'published') return '발행됨';
-  if (part.status === 'published_with_changes') return '발행 후 변경';
-  return '초안';
 }
 
 function summary(resource: SitePartResource): SitePartSetPartSummary {
@@ -122,8 +116,6 @@ export function SitePartWorkspace({ locale }: SitePartWorkspaceProps): React.Rea
       };
     }));
   }, []);
-  const updateHeader = useCallback((resource: SitePartResource): void => updatePart('header', resource), [updatePart]);
-  const updateFooter = useCallback((resource: SitePartResource): void => updatePart('footer', resource), [updatePart]);
 
   return <main className="g7pb-root g7pb-site-parts-workspace" data-testid="page-builder-site-part-workspace" aria-busy={loading || busy}>
     <header className="g7pb-site-parts-workspace__header">
@@ -140,37 +132,18 @@ export function SitePartWorkspace({ locale }: SitePartWorkspaceProps): React.Rea
     {message ? <div className="g7pb-site-parts-workspace__notice" role="alert">{message}</div> : null}
 
     <div className="g7pb-site-parts-workspace__layout">
-      <aside className="g7pb-site-part-set-nav" aria-label="헤더·푸터 세트">
-        <div className="g7pb-site-part-set-nav__heading"><p>세트</p><strong>{sets.length}</strong></div>
-        {loading ? <p className="g7pb-site-part-set-nav__empty">불러오는 중입니다.</p> : sets.map((set) => <button
-          key={set.id}
-          type="button"
-          className="g7pb-site-part-set-nav__item"
-          data-testid="page-builder-site-part-set"
-          aria-current={set.id === selectedId ? 'true' : undefined}
-          onClick={() => setSelectedId(set.id)}
-        >
-          <span><strong>{set.title}</strong>{set.is_active ? <em><Check size={12} /> 사용 중</em> : null}</span>
-          <small>Header {statusLabel(set.header)} · Footer {statusLabel(set.footer)}</small>
-        </button>)}
-      </aside>
-
-      <section className="g7pb-site-part-pair" aria-live="polite">
-        {selected ? <>
-          <header className="g7pb-site-part-pair__header">
-            <div><p>{selected.is_active ? '현재 사이트에 적용 중' : '편집 중인 세트'}</p><h2>{selected.title}</h2><span>Header와 Footer는 독립 저장·발행되며, 둘 다 발행해야 세트를 사용할 수 있습니다.</span></div>
-            <button type="button" className="g7pb-button g7pb-button--primary" data-testid="page-builder-site-part-set-activate"
-              disabled={busy || selected.is_active || !selected.is_ready} onClick={() => void activate()}>
-              {selected.is_active ? <Check size={17} /> : <Power size={17} />}
-              {selected.is_active ? '사용 중' : selected.is_ready ? '이 세트 사용' : '발행 후 사용'}
-            </button>
-          </header>
-          <div className="g7pb-site-part-pair__editors" key={selected.id}>
-            <SitePartEditor kind="header" locale={locale} setId={selected.id} embedded paired onChanged={updateHeader} />
-            <SitePartEditor kind="footer" locale={locale} setId={selected.id} embedded paired onChanged={updateFooter} />
-          </div>
-        </> : !loading ? <div className="g7pb-site-part-pair__empty"><h2>사용할 세트가 없습니다.</h2><p>새 세트를 만들어 Header와 Footer 편집을 시작하세요.</p></div> : null}
-      </section>
+      {selected ? <SitePartSetEditor
+        key={selected.id}
+        locale={locale}
+        setId={selected.id}
+        setTitle={selected.title}
+        sets={sets}
+        isActive={selected.is_active}
+        onSelectSet={setSelectedId}
+        onCreateSet={() => setCreateOpen(true)}
+        onActivate={activate}
+        onChanged={updatePart}
+      /> : !loading ? <div className="g7pb-site-part-pair__empty"><h2>사용할 세트가 없습니다.</h2><p>새 세트를 만들어 Header와 Footer 편집을 시작하세요.</p></div> : null}
     </div>
 
     {createOpen ? <div className="g7pb-dialog-backdrop" role="presentation">

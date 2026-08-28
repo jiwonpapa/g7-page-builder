@@ -374,6 +374,46 @@ describe('PageBuilderApiClient', () => {
     expect(JSON.parse(String(fetchImpl.mock.calls[3][1]?.body))).toEqual({ locale: 'ko', expected_lock_version: 3 });
   });
 
+  it('saves and publishes Header and Footer as one atomic set request', async () => {
+    const header = {
+      title: '기본 Header',
+      document: {
+        schema_version: 'g7-page-builder/site-part/v1' as const,
+        site_part_id: '123e4567-e89b-42d3-a456-426614174055',
+        kind: 'header' as const,
+        locale: 'ko', tokens: {}, blocks: [],
+      },
+      lock_version: 2, revision: 2, active_revision: null, status: 'draft' as const,
+      created_at: null, updated_at: null, published_at: null,
+    };
+    const footer = {
+      ...header,
+      title: '기본 Footer',
+      document: { ...header.document, site_part_id: '123e4567-e89b-42d3-a456-426614174056', kind: 'footer' as const },
+    };
+    const pair = { set: { id: 'default' }, header, footer };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: pair }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'ok', data: pair }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await client.saveSitePartSet('default',
+      { title: header.title, document: header.document, lock_version: 2 },
+      { title: footer.title, document: footer.document, lock_version: 2 });
+    await client.publishSitePartSet('default', 'ko', 3, 4);
+
+    expect(fetchImpl.mock.calls.map(([url]) => url)).toEqual([
+      `${PAGE_BUILDER_API_PREFIX}/site-part-sets/default/draft`,
+      `${PAGE_BUILDER_API_PREFIX}/site-part-sets/default/publish`,
+    ]);
+    expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body))).toMatchObject({
+      header: { expected_lock_version: 2 }, footer: { expected_lock_version: 2 },
+    });
+    expect(JSON.parse(String(fetchImpl.mock.calls[1][1]?.body))).toEqual({
+      locale: 'ko', header_expected_lock_version: 3, footer_expected_lock_version: 4,
+    });
+  });
+
   it('loads the block catalog and stores actor-scoped favorites', async () => {
     const catalog = { items: [], categories: ['hero'] };
     const fetchImpl = vi.fn<typeof fetch>()

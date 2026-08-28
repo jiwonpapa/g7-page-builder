@@ -2,12 +2,27 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const editorProps = vi.hoisted(() => [] as Array<{ kind: string; onChanged?: unknown }>);
+const editorProps = vi.hoisted(() => [] as Array<{ setId?: string; onChanged?: unknown }>);
 
-vi.mock('../../resources/js/editor/SitePartEditor', () => ({
-  SitePartEditor: ({ kind, setId, onChanged }: { kind: string; setId?: string; onChanged?: unknown }) => {
-    editorProps.push({ kind, onChanged });
-    return <div data-testid={`mock-site-part-${kind}`} data-set-id={setId}>{kind}</div>;
+vi.mock('../../resources/js/editor/SitePartSetEditor', () => ({
+  SitePartSetEditor: ({
+    setId,
+    sets,
+    onChanged,
+    onSelectSet,
+    onActivate,
+  }: {
+    setId?: string;
+    sets: Array<{ id: string; title: string }>;
+    onChanged?: unknown;
+    onSelectSet: (setId: string) => void;
+    onActivate: () => Promise<void>;
+  }) => {
+    editorProps.push({ setId, onChanged });
+    return <div data-testid="mock-site-part-set-editor" data-set-id={setId}>
+      {sets.map((set) => <button key={set.id} type="button" data-testid="page-builder-site-part-set" onClick={() => onSelectSet(set.id)}>{set.title}</button>)}
+      <button type="button" data-testid="page-builder-site-part-set-activate" onClick={() => void onActivate()}>activate</button>
+    </div>;
   },
 }));
 
@@ -55,12 +70,8 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
   throw new Error(`Element not rendered: ${selector}`);
 }
 
-function latestEditorCallback(kind: string): unknown {
-  return [...editorProps].reverse().find((props) => props.kind === kind)?.onChanged;
-}
-
 describe('Header and Footer workspace', () => {
-  it('shows both editors for the selected set and activates the ready pair atomically', async () => {
+  it('shows one full-set editor for the selected set and activates the ready pair atomically', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
     const defaultSet = setResource('123e4567-e89b-42d3-a456-426614174001', '기본 세트', true);
     const campaignSet = setResource('123e4567-e89b-42d3-a456-426614174002', '캠페인 세트', false);
@@ -78,17 +89,14 @@ describe('Header and Footer workspace', () => {
     await act(async () => { root.render(<SitePartWorkspace locale="ko" />); });
 
     await eventually('[data-testid="page-builder-site-part-set"]');
-    const initialHeaderCallback = latestEditorCallback('header');
-    const initialFooterCallback = latestEditorCallback('footer');
+    const initialCallback = editorProps.at(-1)?.onChanged;
     const campaign = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-testid="page-builder-site-part-set"]'))
       .find((button) => button.textContent?.includes('캠페인 세트'));
     expect(campaign).toBeDefined();
     await act(async () => { campaign?.click(); });
 
-    expect(document.querySelector('[data-testid="mock-site-part-header"]')?.getAttribute('data-set-id')).toBe(campaignSet.id);
-    expect(document.querySelector('[data-testid="mock-site-part-footer"]')?.getAttribute('data-set-id')).toBe(campaignSet.id);
-    expect(latestEditorCallback('header')).toBe(initialHeaderCallback);
-    expect(latestEditorCallback('footer')).toBe(initialFooterCallback);
+    expect(document.querySelector('[data-testid="mock-site-part-set-editor"]')?.getAttribute('data-set-id')).toBe(campaignSet.id);
+    expect(editorProps.at(-1)?.onChanged).toBe(initialCallback);
     const activate = await eventually<HTMLButtonElement>('[data-testid="page-builder-site-part-set-activate"]');
     expect(activate.disabled).toBe(false);
     await act(async () => { activate.click(); });

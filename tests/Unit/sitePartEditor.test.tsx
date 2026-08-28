@@ -6,6 +6,9 @@ import {
   sitePartCanonicalToPuck,
   sitePartPresetToPuck,
   sitePartPuckToCanonical,
+  sitePartSetCanonicalToPuck,
+  sitePartSetPresetToPuck,
+  sitePartSetPuckToCanonical,
 } from '../../resources/js/editor/sitePartDocumentAdapter';
 import type { SitePartDocument } from '../../resources/js/documents/types';
 
@@ -44,9 +47,37 @@ describe('Site Part Puck adapter', () => {
     const roundTrip = sitePartPuckToCanonical(data, header);
 
     expect(data.content[0]?.type).toBe('HeaderNavigation');
+    const navigation = data.content[0]?.type === 'HeaderNavigation' ? data.content[0] : null;
+    expect(navigation?.props.systemControls?.[0]?.props.id).not.toBe(navigation?.props.id);
     expect(roundTrip).toEqual(header);
     expect(JSON.stringify(roundTrip)).not.toContain('style=');
     expect(JSON.stringify(roundTrip)).not.toContain('className');
+  });
+
+  it('round-trips configurable G7 runtime controls through the Header slot', () => {
+    const configured = structuredClone(header);
+    configured.blocks[0]!.slots = {
+      systemControls: [{
+        instance_id: '123e4567-e89b-42d3-a456-426614174090',
+        type: 'site.header.system-controls-01',
+        block_version: 1,
+        props: {
+          search: true,
+          account: true,
+          cart: false,
+          notifications: false,
+          theme: true,
+          locale: false,
+          currency: false,
+        },
+        slots: {},
+      }],
+    };
+
+    const data = sitePartCanonicalToPuck(configured);
+    const navigation = data.content.find((block) => block.type === 'HeaderNavigation');
+    expect(navigation?.props.systemControls?.[0]?.props).toMatchObject({ cart: false, notifications: false });
+    expect(sitePartPuckToCanonical(data, configured)).toEqual(configured);
   });
 
   it('preserves legacy output until responsive settings are explicitly changed', () => {
@@ -86,7 +117,13 @@ describe('Site Part Puck adapter', () => {
           block_version: 1,
           props: { brand_name: '지원소프트', home_url: '/', navigation: [], footer_text: 'Copyright' },
           slots: {},
-        }, {
+        }],
+      },
+      {
+        ...header,
+        site_part_id: '123e4567-e89b-42d3-a456-426614174061',
+        kind: 'footer',
+        blocks: [{
           instance_id: '123e4567-e89b-42d3-a456-426614174060',
           type: 'site.footer.columns-01',
           block_version: 1,
@@ -153,6 +190,47 @@ describe('Site Part Puck adapter', () => {
     expect(footerColumns?.props.columns).toHaveLength(3);
     expect(footerColumns?.props.columns[0]?.links[0]).toEqual({ label: '주요 기능', url: '/pages/features' });
     expect(sitePartPuckToCanonical(businessFooter, footer).blocks[0]?.type).toBe('site.footer.columns-01');
+  });
+
+  it('combines one Header and one Footer into a single Puck set and splits them without loss', () => {
+    const footer: SitePartDocument = {
+      ...header,
+      site_part_id: '123e4567-e89b-42d3-a456-426614174098',
+      kind: 'footer',
+      blocks: [{
+        instance_id: '123e4567-e89b-42d3-a456-426614174099',
+        type: 'site.footer.simple-01',
+        block_version: 1,
+        props: { brand_name: '지원소프트', home_url: '/', navigation: [], footer_text: 'Copyright' },
+        slots: {},
+      }],
+    };
+
+    const data = sitePartSetCanonicalToPuck(header, footer);
+    expect(data.content.map((block) => block.type)).toEqual(['HeaderNavigation', 'FooterSimple']);
+    expect(sitePartSetPuckToCanonical(data, header, footer)).toEqual({ header, footer });
+  });
+
+  it('applies a complete Header and Footer preset as one set operation', () => {
+    const footer: SitePartDocument = {
+      ...header,
+      site_part_id: '123e4567-e89b-42d3-a456-426614174098',
+      kind: 'footer',
+      blocks: [],
+    };
+
+    const business = sitePartSetPresetToPuck(header, footer, 'business');
+    expect(business.content.map((block) => block.type)).toEqual([
+      'Announcement',
+      'HeaderNavigation',
+      'FooterColumns',
+    ]);
+    const split = sitePartSetPuckToCanonical(business, header, footer);
+    expect(split.header.blocks.map((block) => block.type)).toEqual([
+      'site.header.announcement-01',
+      'site.header.navigation-01',
+    ]);
+    expect(split.footer.blocks.map((block) => block.type)).toEqual(['site.footer.columns-01']);
   });
 
 });

@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe('Site Part Header preview', () => {
-  it('shows the fixed G7 system controls beside editable Header content', async () => {
+  it('shows the configured G7 system controls beside editable Header content', async () => {
     Object.defineProperty(globalThis, 'ResizeObserver', {
       configurable: true,
       value: class {
@@ -22,7 +22,7 @@ describe('Site Part Header preview', () => {
         disconnect(): void {}
       },
     });
-    const { HeaderNavigationPreview } = await import('../../resources/js/editor/SitePartEditor');
+    const { HeaderNavigationPreview, HeaderSystemControlsPreview } = await import('../../resources/js/editor/SitePartEditor');
     const html = renderToStaticMarkup(<HeaderNavigationPreview
       brandName="지원소프트"
       logoUrl=""
@@ -34,6 +34,15 @@ describe('Site Part Header preview', () => {
       ctaUrl="/contact"
       mobileMenu
       mobileMenuStyle="drawer-right"
+      systemControlsPreview={<HeaderSystemControlsPreview
+        search
+        account
+        cart
+        notifications
+        theme
+        locale
+        currency
+      />}
     />);
 
     expect(html).toContain('class="g7pb-site-header__actions"');

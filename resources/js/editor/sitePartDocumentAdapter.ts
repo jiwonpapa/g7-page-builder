@@ -1,4 +1,4 @@
-import type { Data } from '@puckeditor/core';
+import type { Data, Slot } from '@puckeditor/core';
 
 import type { PageBuilderBlock, SitePartDocument, SitePartLink } from '../documents/types';
 import {
@@ -26,7 +26,23 @@ export interface HeaderNavigationProps {
   mobileMenu: boolean;
   mobileMenuStyle: SitePartMobileMenuStyle;
   responsiveOverrides?: HeaderResponsiveOverrides;
+  systemControls?: Slot<{ HeaderSystemControls: HeaderSystemControlsProps }>;
 }
+
+export interface HeaderSystemControlsProps {
+  search: boolean;
+  account: boolean;
+  cart: boolean;
+  notifications: boolean;
+  theme: boolean;
+  locale: boolean;
+  currency: boolean;
+}
+
+type HeaderSystemControlsContent = Array<{
+  type: 'HeaderSystemControls';
+  props: HeaderSystemControlsProps & { id: string };
+}>;
 
 export interface HeaderNavigationItem extends SitePartLink {
   children: SitePartLink[];
@@ -62,6 +78,7 @@ export interface FooterColumnsProps {
 
 export interface SitePartComponents {
   HeaderNavigation: HeaderNavigationProps;
+  HeaderSystemControls: HeaderSystemControlsProps;
   Announcement: AnnouncementProps;
   FooterSimple: FooterSimpleProps;
   FooterColumns: FooterColumnsProps;
@@ -78,10 +95,49 @@ const COMPONENT_BY_TYPE: Record<string, keyof SitePartComponents> = {
 
 const TYPE_BY_COMPONENT: Record<keyof SitePartComponents, string> = {
   HeaderNavigation: 'site.header.navigation-01',
+  HeaderSystemControls: 'site.header.system-controls-01',
   Announcement: 'site.header.announcement-01',
   FooterSimple: 'site.footer.simple-01',
   FooterColumns: 'site.footer.columns-01',
 };
+
+export const DEFAULT_HEADER_SYSTEM_CONTROLS: HeaderSystemControlsProps = {
+  search: true,
+  account: true,
+  cart: true,
+  notifications: true,
+  theme: true,
+  locale: true,
+  currency: true,
+};
+
+function systemControlValue(props: Record<string, unknown>, key: keyof HeaderSystemControlsProps): boolean {
+  return props[key] !== false;
+}
+
+function systemControlsToPuck(
+  block: PageBuilderBlock,
+  fallbackId: string,
+): HeaderSystemControlsContent {
+  if (Object.prototype.hasOwnProperty.call(block.slots ?? {}, 'systemControls')) {
+    const child = block.slots?.systemControls?.find((candidate) => candidate.type === 'site.header.system-controls-01');
+    if (!child) return [];
+    return [{
+      type: 'HeaderSystemControls',
+      props: {
+        id: stableUuid(child.instance_id),
+        search: systemControlValue(child.props, 'search'),
+        account: systemControlValue(child.props, 'account'),
+        cart: systemControlValue(child.props, 'cart'),
+        notifications: systemControlValue(child.props, 'notifications'),
+        theme: systemControlValue(child.props, 'theme'),
+        locale: systemControlValue(child.props, 'locale'),
+        currency: systemControlValue(child.props, 'currency'),
+      },
+    }];
+  }
+  return [{ type: 'HeaderSystemControls', props: { id: derivedUuid(fallbackId), ...DEFAULT_HEADER_SYSTEM_CONTROLS } }];
+}
 
 function text(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
@@ -128,6 +184,10 @@ export function linesToLinks(value: string): SitePartLink[] {
 function stableUuid(value: string): string {
   const match = value.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i);
   if (match) return match[0].toLowerCase();
+  return derivedUuid(value);
+}
+
+function derivedUuid(value: string): string {
   let a = 2166136261;
   let b = 2246822519;
   for (const character of value) {
@@ -155,6 +215,8 @@ export type SitePartPresetKey =
   | 'footer-business'
   | 'footer-compact'
   | 'footer-community';
+
+export type SitePartSetPresetKey = 'business' | 'minimal' | 'community';
 
 export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePartPresetKey): SitePartPuckData {
   const presetId = (component: keyof SitePartComponents): string => stableUuid(`${preset}:${component}:${document.locale}`);
@@ -185,6 +247,10 @@ export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePar
         mobileMenu: true,
         mobileMenuStyle: preset === 'header-community' ? 'drawer-left' : 'drawer-right',
         responsiveOverrides: legacyHeaderResponsiveOverrides(preset === 'header-community' ? 'drawer-left' : 'drawer-right'),
+        systemControls: [{
+          type: 'HeaderSystemControls',
+          props: { id: presetId('HeaderSystemControls'), ...DEFAULT_HEADER_SYSTEM_CONTROLS },
+        }],
       },
     };
     const content: SitePartPuckData['content'] = preset === 'header-business'
@@ -263,6 +329,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
             props.mobile_menu_style === 'dropdown' || props.mobile_menu_style === 'drawer-left'
               || props.mobile_menu_style === 'sheet-bottom' ? props.mobile_menu_style : 'drawer-right',
           ),
+        systemControls: systemControlsToPuck(block, `${id}:system-controls`),
       } });
       continue;
     }
@@ -289,6 +356,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
       } });
       continue;
     }
+    if (component !== 'FooterColumns') continue;
     const columns = Array.isArray(props.columns) ? props.columns.flatMap((item) => {
       if (!item || typeof item !== 'object') return [];
       const source = item as Record<string, unknown>;
@@ -310,10 +378,13 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
 }
 
 export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePartDocument): SitePartDocument {
-  const blocks = data.content.map((block, index): PageBuilderBlock => {
+  const blocks = data.content
+    .filter((block) => block.type !== 'HeaderSystemControls')
+    .map((block, index): PageBuilderBlock => {
     const props = block.props as Record<string, unknown>;
     const component = block.type as keyof SitePartComponents;
     let canonicalProps: Record<string, unknown>;
+    let canonicalSlots: Record<string, PageBuilderBlock[]> = {};
     if (component === 'HeaderNavigation') {
       const sourceBlock = source.blocks.find((candidate) => candidate.instance_id.toLowerCase() === stableUuid(text(props.id, '')).toLowerCase());
       const mobileMenuStyle: SitePartMobileMenuStyle = props.mobileMenuStyle === 'dropdown' || props.mobileMenuStyle === 'drawer-left'
@@ -334,6 +405,33 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
           ? { responsive: headerResponsiveToCanonical(responsiveOverrides) }
           : {}),
       };
+      const systemControls = Array.isArray(props.systemControls)
+        ? props.systemControls.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+        : [];
+      const controlBlocks = systemControls.flatMap((item, controlIndex): PageBuilderBlock[] => {
+        if (item.type !== 'HeaderSystemControls' || !item.props || typeof item.props !== 'object') return [];
+        const controlProps = item.props as Record<string, unknown>;
+        return [{
+          instance_id: stableUuid(text(controlProps.id, `${text(props.id)}:system-controls:${controlIndex}`)),
+          type: 'site.header.system-controls-01',
+          block_version: 1,
+          props: {
+            search: systemControlValue(controlProps, 'search'),
+            account: systemControlValue(controlProps, 'account'),
+            cart: systemControlValue(controlProps, 'cart'),
+            notifications: systemControlValue(controlProps, 'notifications'),
+            theme: systemControlValue(controlProps, 'theme'),
+            locale: systemControlValue(controlProps, 'locale'),
+            currency: systemControlValue(controlProps, 'currency'),
+          },
+          slots: {},
+        }];
+      }).slice(0, 1);
+      const defaultControls = controlBlocks.length === 1
+        && Object.entries(DEFAULT_HEADER_SYSTEM_CONTROLS).every(([key, value]) => controlBlocks[0]?.props[key] === value);
+      if (Object.prototype.hasOwnProperty.call(sourceBlock?.slots ?? {}, 'systemControls') || !defaultControls) {
+        canonicalSlots = { systemControls: controlBlocks };
+      }
     } else if (component === 'Announcement') {
       canonicalProps = {
         text: text(props.text), link_label: text(props.linkLabel), link_url: text(props.linkUrl),
@@ -371,8 +469,78 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
       type: TYPE_BY_COMPONENT[component],
       block_version: 1,
       props: canonicalProps,
-      slots: {},
+      slots: canonicalSlots,
     };
   });
   return { ...source, blocks };
+}
+
+function normalizedSetContent(content: SitePartPuckData['content']): SitePartPuckData['content'] {
+  const announcement = content.find((block) => block.type === 'Announcement');
+  const header = content.find((block) => block.type === 'HeaderNavigation');
+  const footer = content.find((block) => block.type === 'FooterSimple' || block.type === 'FooterColumns');
+  return [announcement, header, footer].filter(Boolean) as SitePartPuckData['content'];
+}
+
+export function normalizeSitePartSetPuckData(data: SitePartPuckData): SitePartPuckData {
+  return {
+    root: data.root,
+    content: normalizedSetContent(data.content),
+  } as SitePartPuckData;
+}
+
+export function sitePartSetCanonicalToPuck(
+  header: SitePartDocument,
+  footer: SitePartDocument,
+): SitePartPuckData {
+  if (header.kind !== 'header' || footer.kind !== 'footer' || header.locale !== footer.locale) {
+    throw new Error('Site Part set requires one Header and one Footer in the same locale.');
+  }
+  return normalizeSitePartSetPuckData({
+    root: { props: {} },
+    content: [
+      ...sitePartCanonicalToPuck(header).content,
+      ...sitePartCanonicalToPuck(footer).content,
+    ],
+  } as SitePartPuckData);
+}
+
+export function sitePartSetPuckToCanonical(
+  data: SitePartPuckData,
+  header: SitePartDocument,
+  footer: SitePartDocument,
+): { header: SitePartDocument; footer: SitePartDocument } {
+  const normalized = normalizeSitePartSetPuckData(data);
+  const headerData = {
+    root: normalized.root,
+    content: normalized.content.filter((block) => block.type === 'Announcement' || block.type === 'HeaderNavigation'),
+  } as SitePartPuckData;
+  const footerData = {
+    root: normalized.root,
+    content: normalized.content.filter((block) => block.type === 'FooterSimple' || block.type === 'FooterColumns'),
+  } as SitePartPuckData;
+  return {
+    header: sitePartPuckToCanonical(headerData, header),
+    footer: sitePartPuckToCanonical(footerData, footer),
+  };
+}
+
+export function sitePartSetPresetToPuck(
+  header: SitePartDocument,
+  footer: SitePartDocument,
+  preset: SitePartSetPresetKey,
+): SitePartPuckData {
+  const headerPreset: SitePartPresetKey = preset === 'business'
+    ? 'header-business'
+    : preset === 'minimal' ? 'header-minimal' : 'header-community';
+  const footerPreset: SitePartPresetKey = preset === 'business'
+    ? 'footer-business'
+    : preset === 'minimal' ? 'footer-compact' : 'footer-community';
+  return normalizeSitePartSetPuckData({
+    root: { props: {} },
+    content: [
+      ...sitePartPresetToPuck(header, headerPreset).content,
+      ...sitePartPresetToPuck(footer, footerPreset).content,
+    ],
+  } as SitePartPuckData);
 }

@@ -67,6 +67,62 @@ final class SitePartService
         return $this->repository->activateSet($setId, $locale, $actorId);
     }
 
+    /**
+     * @param  array<string, mixed>  $headerPayload
+     * @param  array<string, mixed>  $footerPayload
+     */
+    public function saveSetDraft(
+        string $setId,
+        string $locale,
+        string $headerTitle,
+        array $headerPayload,
+        int $headerExpectedLockVersion,
+        string $footerTitle,
+        array $footerPayload,
+        int $footerExpectedLockVersion,
+        ?int $actorId,
+    ): SitePartSetSnapshot {
+        $currentHeader = $this->get('header', $locale, $setId);
+        $currentFooter = $this->get('footer', $locale, $setId);
+        $headerPayload['site_part_id'] = $currentHeader->document->sitePartId;
+        $headerPayload['kind'] = 'header';
+        $headerPayload['locale'] = $locale;
+        $footerPayload['site_part_id'] = $currentFooter->document->sitePartId;
+        $footerPayload['kind'] = 'footer';
+        $footerPayload['locale'] = $locale;
+
+        return $this->repository->saveSetDraft(
+            $setId,
+            $this->requiredTitle($headerTitle),
+            SitePartDocument::fromArray($headerPayload),
+            $headerExpectedLockVersion,
+            $this->requiredTitle($footerTitle),
+            SitePartDocument::fromArray($footerPayload),
+            $footerExpectedLockVersion,
+            $actorId,
+        );
+    }
+
+    public function publishSet(
+        string $setId,
+        string $locale,
+        int $headerExpectedLockVersion,
+        int $footerExpectedLockVersion,
+        ?int $actorId,
+    ): SitePartSetSnapshot {
+        $header = $this->get('header', $locale, $setId);
+        $footer = $this->get('footer', $locale, $setId);
+        $this->compiler->compile($header->document, $header->revision);
+        $this->compiler->compile($footer->document, $footer->revision);
+
+        return $this->repository->publishSet(
+            $setId,
+            $headerExpectedLockVersion,
+            $footerExpectedLockVersion,
+            $actorId,
+        );
+    }
+
     /** @param array<string, mixed> $payload */
     public function saveDraft(
         string $kind,
@@ -133,6 +189,16 @@ final class SitePartService
             tokens: [],
             blocks: [$this->legacyBlock($kind, $shell)],
         );
+    }
+
+    private function requiredTitle(string $title): string
+    {
+        $title = trim($title);
+        if ($title === '') {
+            throw new \InvalidArgumentException('Site Part title must not be empty.');
+        }
+
+        return $title;
     }
 
     /** @return array<string, mixed> */

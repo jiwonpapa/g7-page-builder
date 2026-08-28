@@ -153,6 +153,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const [storeQuery, setStoreQuery] = useState('');
   const [storeType, setStoreType] = useState<'all' | OfficialStoreProduct['product_type']>('all');
   const pageKitDeepLinkHandled = useRef(false);
+  const blockLibraryDeepLinkHandled = useRef(false);
   const [pageKitProduct, setPageKitProduct] = useState<OfficialStoreProduct | null>(null);
   const [pageKitTitle, setPageKitTitle] = useState('');
   const [pageKitSlug, setPageKitSlug] = useState('');
@@ -475,6 +476,21 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
     setMessage(null);
     void loadBlockPacks();
   };
+
+  useEffect(() => {
+    if (blockLibraryDeepLinkHandled.current
+      || new URLSearchParams(window.location.search).get('view') !== 'block-library') {
+      return;
+    }
+    blockLibraryDeepLinkHandled.current = true;
+    setBlockPacksOpen(true);
+    setMessage(null);
+    setBlockPacksLoading(true);
+    void api.listBlockPacks()
+      .then((resource) => setBlockPacks(resource.items))
+      .catch((error: unknown) => setMessage(errorMessage(error)))
+      .finally(() => setBlockPacksLoading(false));
+  }, [api]);
 
   const loadOfficialStore = async (): Promise<void> => {
     setStoreLoading(true);
@@ -881,7 +897,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
           <a className="g7pb-button g7pb-button--quiet" href="/admin">G7 관리자</a>
           <button className="g7pb-button g7pb-button--primary" type="button"
             data-testid="page-builder-manager-page-kits" onClick={openPageKits}>
-            <LayoutTemplate size={17} aria-hidden="true" /> 기본 페이지
+            <LayoutTemplate size={17} aria-hidden="true" /> 페이지 킷
           </button>
           <button className="g7pb-button g7pb-button--quiet" type="button" data-testid="page-builder-manager-inbox" onClick={() => void openInbox()}>
             <Inbox size={17} aria-hidden="true" /> 문의함
@@ -1062,10 +1078,10 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             <p className="g7pb-kicker">새 문서</p>
             <h2 id="g7pb-manager-create-heading">페이지 기본 정보</h2>
             <div className="g7pb-create-choice">
-              <div><strong>기본 페이지에서 시작</strong><span>샘플 이미지와 완성된 블록 구성을 선택합니다.</span></div>
+              <div><strong>페이지 킷에서 시작</strong><span>샘플 이미지와 완성된 블록 구성을 선택합니다.</span></div>
               <button type="button" className="g7pb-button g7pb-button--primary"
                 data-testid="page-builder-manager-create-page-kit"
-                onClick={() => { setCreateDialogOpen(false); openPageKits(); }}>기본 페이지 보기</button>
+                onClick={() => { setCreateDialogOpen(false); openPageKits(); }}>페이지 킷 보기</button>
             </div>
             <p className="g7pb-dialog__divider"><span>또는 빈 페이지</span></p>
             <form onSubmit={(event) => void createDocument(event)}>
@@ -1366,7 +1382,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
             <div className="g7pb-dialog__heading-row">
               <div>
                 <p className="g7pb-kicker">지원소프트 기본 제공</p>
-                <h2 id="g7pb-store-heading">{storeType === 'page_kit' ? '기본 페이지' : '무료 블록 팩 · 기본 페이지'}</h2>
+                <h2 id="g7pb-store-heading">{storeType === 'page_kit' ? '페이지 킷' : '무료 블록 팩 · 페이지 킷'}</h2>
                 <p>{storeType === 'page_kit'
                   ? '샘플 이미지와 블록 구성이 완성된 페이지를 선택하면 즉시 편집기로 이동합니다.'
                   : '검증된 공식 자산과 실제 PC·태블릿·모바일 적용 화면만 표시합니다.'}</p>

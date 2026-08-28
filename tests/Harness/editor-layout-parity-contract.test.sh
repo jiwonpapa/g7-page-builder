@@ -378,6 +378,11 @@ perl -0pi -e 's/expectProductCanvasStyles\(editorRoot\)/Promise.resolve()/' \
 expect_failure 'Puck iframe은 제품 CSS 적용과 geometry 안정화 뒤에 측정해야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/\n\s*await editorRoot\.evaluate\(async \(element\) => \{ await element\.ownerDocument\.fonts\.ready; \}\);//' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '편집 iframe과 공개 미리보기 모두 document.fonts.ready 이후 geometry를 측정해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/expectProductPublicStyles\(previewBlocks\)/Promise.resolve()/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure 'preview는 제품 공개 CSS 적용과 geometry 안정화 뒤에 측정해야 합니다.'

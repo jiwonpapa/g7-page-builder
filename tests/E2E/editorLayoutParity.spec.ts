@@ -55,9 +55,12 @@ interface LayoutMetric {
 
 interface TypographyMetric {
   ancestorTrail: string[];
+  canvasTextWidth: number;
   descendantTrail: string[];
   contentEditable: string;
   fontFamily: string;
+  fontReady: boolean;
+  fontStatus: FontFaceSetLoadStatus;
   fontSize: number;
   fontWeight: string;
   height: number;
@@ -69,6 +72,7 @@ interface TypographyMetric {
   scrollWidth: number;
   tagName: string;
   text: string;
+  textCodePoints: string;
   whiteSpace: string;
   width: number;
   wordBreak: string;
@@ -387,6 +391,10 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
         ? parsedLineHeight
         : fontSize * 1.2;
       const range = block.ownerDocument.createRange();
+      const rawText = typographyCandidate.textContent ?? '';
+      const canvas = block.ownerDocument.createElement('canvas');
+      const canvasContext = canvas.getContext('2d');
+      if (canvasContext && typographyStyle) canvasContext.font = typographyStyle.font;
       const walker = block.ownerDocument.createTreeWalker(typographyCandidate, NodeFilter.SHOW_TEXT);
       const lineCenters: number[] = [];
       for (let textNode = walker.nextNode(); textNode; textNode = walker.nextNode()) {
@@ -442,6 +450,9 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
             `font-kerning=${descendantStyle?.fontKerning ?? ''}`,
             `font-feature=${descendantStyle?.fontFeatureSettings ?? ''}`,
             `font-variation=${descendantStyle?.fontVariationSettings ?? ''}`,
+            `font-size=${descendantStyle?.fontSize ?? ''}`,
+            `letter-spacing=${descendantStyle?.letterSpacing ?? ''}`,
+            `word-spacing=${descendantStyle?.wordSpacing ?? ''}`,
             `text-transform=${descendantStyle?.textTransform ?? ''}`,
             `transform=${descendantStyle?.transform ?? ''}`,
             `lines=${lineRects}`,
@@ -449,9 +460,14 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
         });
       typography = {
         ancestorTrail,
+        canvasTextWidth: canvasContext ? canvasContext.measureText(rawText).width : 0,
         descendantTrail,
         contentEditable: typographyCandidate.contentEditable,
         fontFamily: typographyStyle?.fontFamily ?? '',
+        fontReady: typographyStyle
+          ? block.ownerDocument.fonts.check(`${typographyStyle.fontWeight} ${typographyStyle.fontSize} ${typographyStyle.fontFamily}`, rawText)
+          : false,
+        fontStatus: block.ownerDocument.fonts.status,
         fontSize,
         fontWeight: typographyStyle?.fontWeight ?? '',
         height: typographyRect.height,
@@ -465,7 +481,8 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
         overflowWrap: typographyStyle?.overflowWrap ?? '',
         scrollWidth: typographyCandidate.scrollWidth,
         tagName: typographyCandidate.tagName.toLowerCase(),
-        text: (typographyCandidate.textContent ?? '').replace(/\s+/g, ' ').trim(),
+        text: rawText.replace(/\s+/g, ' ').trim(),
+        textCodePoints: Array.from(rawText).map((character) => character.codePointAt(0)?.toString(16) ?? '').join(','),
         whiteSpace: typographyStyle?.whiteSpace ?? '',
         width: typographyRect.width,
         wordBreak: typographyStyle?.wordBreak ?? '',
@@ -665,6 +682,7 @@ async function assertScenario(
     await expect(page.frameLocator(CANVAS_IFRAME).locator('[contenteditable="true"]')).toHaveCount(0);
   }
   await expectProductCanvasStyles(editorRoot);
+  await editorRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
   await expectStableVisibleGeometry(editorBlocks, scenario.expectedBlockCount);
   const editorMetrics = await layoutMetrics(editorBlocks, true);
   expectBlockContainment(editorMetrics, `${scenario.label} editor`);
@@ -704,6 +722,7 @@ async function assertScenario(
       ? standalonePreviewRoot
       : preview.locator('html');
     await expect(previewRoot).toBeVisible();
+    await previewRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
     await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
     const previewMetrics = await layoutMetrics(previewBlocks, false);
     expectLayoutParity(editorMetrics, previewMetrics);

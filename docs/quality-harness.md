@@ -59,6 +59,7 @@
 - Hero 편집 렌더는 제목·본문·CTA·이미지를 발행 Hero와 같은 direct grid child 순서로 유지합니다. 일반 섹션 제목은 공개 `.g7pb-section-heading`의 48rem 폭을 공유하고, contenteditable 줄 수는 Range fragment와 실제 line-box 높이 중 큰 값을 사용해 편집 DOM 특성 때문에 줄바꿈 실패를 놓치거나 오탐하지 않습니다.
 - 패리티 실패 증거에는 제목의 실제 높이·scrollWidth·`white-space`·`overflow-wrap`·`word-break`·contenteditable 상태를 포함합니다. 편집 제목은 공개 제목과 동일한 일반 줄바꿈을 강제하며 Hero Slider 내부 여백과 Bar Chart 제목 폭도 공개 계산식과 공유합니다.
 - Puck이 richtext 제목 내부에 생성하는 leaf 태그는 특정 `h1`~`h4` 형태라고 가정하지 않습니다. 실제 leaf의 기본 margin을 제거하고 wrapper의 font family·size·weight·line-height·letter-spacing을 강제 상속해 편집 캔버스에 보이는 글자 자체를 발행 제목과 맞춥니다.
+- `regular` 제목은 발행본의 계산값인 400을 사용합니다. Features와 공통 섹션 제목은 편집기 전용 richtext의 680px 제한을 받지 않고 발행 CSS의 실제 가용 폭·48rem 컨테이너·line-height를 그대로 사용합니다.
 
 ## Architecture
 

@@ -343,6 +343,16 @@ perl -0pi -e 's/(\.g7pb-logo-cloud--layout-grid ul \{ display: grid; grid-templa
 expect_failure '공개 Logo grid 열도 로고 고유 폭보다 작아질 수 있어야 합니다.'
 
 copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-icon-list > header :is\(h2, \[data-g7pb-heading-level="2"\]\) \{[^}]*font-size: clamp\()2\.1rem, 5vw, 4\.25rem/${1}2rem, 5vw, 4rem/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 Icon List 제목의 반응형 크기는 공개 section heading과 같아야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(@media \(max-width: )700px(\) \{\n  \.g7pb-preview-cta-split,)/${1}899px${2}/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+expect_failure '편집기 FAQ·문의·지도·배너 CTA는 공개본과 같은 700px 기준에서 1열로 전환해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/ALL_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure '전체 프리셋 편집/미리보기 gate가 필요합니다.'

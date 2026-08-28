@@ -31,6 +31,7 @@
 - 편집 iframe과 공개 미리보기의 웹폰트 로딩 완료 전에 WYSIWYG geometry를 판정하던 하네스를 수정하고, fallback·숨은 문자 원인을 구분할 수 있는 font readiness와 실제 측정폭 진단을 추가했습니다.
 - 번들하지 않은 `Inter`·`Pretendard` 이름이 관리자와 공개 템플릿에서 서로 다른 font face로 해석되던 P000 원인을 제거하고 블록 `modern` 글꼴을 deterministic `system-ui` 스택으로 통일했습니다.
 - Logo Cloud 공개 제목이 활성 G7 템플릿의 전역 `h2` 행간을 상속해 편집기보다 높아지던 마지막 위지윅 회귀를 격리했습니다.
+- 태블릿에서 FAQ·문의·지도 편집기만 일찍 1열로 바뀌고 모바일 배너 CTA와 Icon List가 공개본과 다르게 보이던 반응형 위지윅 기준을 통일했습니다.
 
 ## [0.27.1] - 2026-08-28
 

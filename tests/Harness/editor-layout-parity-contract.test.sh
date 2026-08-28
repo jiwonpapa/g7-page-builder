@@ -232,9 +232,9 @@ perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--regular \{ fo
 expect_failure '편집 가능한 semantic heading의 regular 굵기는 공개 HTML의 400 계산값과 같아야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(h1, h2, h3, h4\) \{[^}]*font:) inherit;/${1} initial;/' \
+perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--heading-default \{ font-weight:) 700;/${1} 400;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Puck semantic descendant는 PageBuilderDocument heading wrapper의 계산된 typography를 상속해야 합니다.'
+expect_failure '명시적 굵기가 없는 semantic heading은 공개 HTML 기본 제목의 700 계산값과 같아야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*font-size:) inherit !important;/${1} initial !important;/' \

@@ -12,6 +12,8 @@ copy_fixture() {
   cp "$repo_root/package.json" "$fixture_root/fixture/package.json"
   cp "$repo_root/resources/css/page-builder-editor.css" \
     "$fixture_root/fixture/resources/css/page-builder-editor.css"
+  cp "$repo_root/resources/css/page-builder-editor-wysiwyg.css" \
+    "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
   cp "$repo_root/resources/css/page-builder-public.css" \
     "$fixture_root/fixture/resources/css/page-builder-public.css"
   cp "$repo_root/resources/js/editor/PuckEditorAdapter.tsx" \
@@ -169,6 +171,26 @@ copy_fixture
 perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure 'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--regular \{ font-weight:) 700;/${1} 400;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure '편집 가능한 semantic heading은 공개 HTML과 동일한 기본 굵기를 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(h1, h2, h3, h4\) \{[^}]*font:) inherit;/${1} initial;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure 'Puck semantic descendant는 PageBuilderDocument heading wrapper의 계산된 typography를 상속해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-richtext\.g7pb-preview-rich-text__content \{[^}]*font-size:) 1rem;/${1} 1.25rem;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure '리치텍스트 본문은 편집기와 공개 출력에서 동일한 기본 1rem typography를 사용해야 합니다.'
+
+copy_fixture
+perl -0pi -e 's/(\.g7pb-preview-button \{[^}]*font-weight:) 700;/${1} 800;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure '편집기 버튼의 기본 굵기는 공개 출력과 동일해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-block > \* \{ width: 100%; max-width: 100%; )margin-inline: 0;/${1}margin-inline: auto;/' \

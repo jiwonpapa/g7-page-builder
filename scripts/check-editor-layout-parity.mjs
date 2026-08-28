@@ -28,15 +28,17 @@ function customPropertyValue(css, property) {
 
 export async function validateEditorLayoutParity(root) {
   const errors = [];
-  const [packageSource, css, publicCss, adapter, overlaySource, spec, catalogVisualSpec] = await Promise.all([
+  const [packageSource, editorCss, wysiwygCss, publicCss, adapter, overlaySource, spec, catalogVisualSpec] = await Promise.all([
     source(root, 'package.json'),
     source(root, 'resources/css/page-builder-editor.css'),
+    source(root, 'resources/css/page-builder-editor-wysiwyg.css'),
     source(root, 'resources/css/page-builder-public.css'),
     source(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
     source(root, 'resources/js/editor/editorOverlaySafeZone.ts'),
     source(root, REQUIRED_SPEC),
     source(root, CATALOG_VISUAL_SPEC),
   ]);
+  const css = `${editorCss}\n${wysiwygCss}`;
   const packageJson = JSON.parse(packageSource);
   const scripts = packageJson.scripts ?? {};
   const puckVersion = packageJson.dependencies?.['@puckeditor/core'];
@@ -69,7 +71,7 @@ export async function validateEditorLayoutParity(root) {
       '편집기 Hero 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
     [/\.g7pb-preview-hero-split\s+:is\(h1,[^}]*font-size:\s*clamp\(2\.6rem,\s*6vw,\s*5\.25rem\);[^}]*letter-spacing:\s*-\.055em;/s,
       '편집기 Hero Split 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
-    [/\.g7pb-preview-hero-slider h2\s*\{[^}]*font-size:\s*clamp\(2\.5rem,\s*6vw,\s*5rem\);[^}]*letter-spacing:\s*-\.055em;/,
+    [/\.g7pb-preview-hero-slider\s+:is\(h2,[^}]*font-size:\s*clamp\(2\.5rem,\s*6vw,\s*5rem\);[^}]*letter-spacing:\s*-\.055em;/s,
       '편집기 Hero Slider 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
     [/\.g7pb-preview-features\s*>\s*:is\(h2,[^}]*font-size:\s*clamp\(2rem,\s*4vw,\s*3\.5rem\);[^}]*letter-spacing:\s*-\.03em;/s,
       '편집기 Features 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
@@ -77,6 +79,14 @@ export async function validateEditorLayoutParity(root) {
       '편집기 CTA와 Contact 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
     [/\.g7pb-preview-stats article\s*>\s*strong\s*\{[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4rem\);/,
       '편집기 Stats 값은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
+    [/\[data-g7pb-heading-level\]\.g7pb-element-weight--regular\s*\{[^}]*font-weight:\s*700;/,
+      '편집 가능한 semantic heading은 공개 HTML과 동일한 기본 굵기를 사용해야 합니다.'],
+    [/\[data-g7pb-heading-level\]\s+:where\(h1,\s*h2,\s*h3,\s*h4\)\s*\{[^}]*font:\s*inherit;[^}]*letter-spacing:\s*inherit;/,
+      'Puck semantic descendant는 PageBuilderDocument heading wrapper의 계산된 typography를 상속해야 합니다.'],
+    [/\.g7pb-preview-richtext\.g7pb-preview-rich-text__content\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.8;/,
+      '리치텍스트 본문은 편집기와 공개 출력에서 동일한 기본 1rem typography를 사용해야 합니다.'],
+    [/\.g7pb-preview-button\s*\{[^}]*font-weight:\s*700;/,
+      '편집기 버튼의 기본 굵기는 공개 출력과 동일해야 합니다.'],
     [/\.g7pb-preview-page,\s*\.g7pb-preview-page \*,\s*\.g7pb-preview-page \*::before,\s*\.g7pb-preview-page \*::after\s*\{\s*box-sizing:\s*border-box;/s,
       'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'],
     [/--g7pb-preview-content-width:\s*var\(--g7pb-theme-content-width\)/,

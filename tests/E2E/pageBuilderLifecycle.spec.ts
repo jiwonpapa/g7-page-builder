@@ -1240,7 +1240,6 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       'Buttons',
       'ImageText',
       'IconList',
-      'HeroSplit',
       'HeroSlider',
       'Features',
       'Cta',

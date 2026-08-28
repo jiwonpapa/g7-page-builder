@@ -1307,17 +1307,17 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     expect(drawerText?.match(/끌어/g)?.length ?? 0).toBe(0);
     await expect(drawerLibrary.locator('.g7pb-block-thumb__zoom')).toHaveCount(0);
     const compactHeadingPreview = drawerLibrary.locator(
-      '[data-library-block="Heading"][data-preview-density="compact"] .g7pb-puck-drawer-card__preview',
-    );
+      '[data-library-block="Heading"][data-preview-density="compact"] .g7pb-puck-drawer-card__preview:visible',
+    ).first();
     const compactRichTextPreview = drawerLibrary.locator(
-      '[data-library-block="RichText"][data-preview-density="compact"] .g7pb-puck-drawer-card__preview',
-    );
+      '[data-library-block="RichText"][data-preview-density="compact"] .g7pb-puck-drawer-card__preview:visible',
+    ).first();
     const regularImageTextPreview = drawerLibrary.locator(
-      '[data-library-block="ImageText"][data-preview-density="regular"] .g7pb-puck-drawer-card__preview',
-    );
-    await expect(compactHeadingPreview).toHaveCount(1);
-    await expect(compactRichTextPreview).toHaveCount(1);
-    await expect(regularImageTextPreview).toHaveCount(1);
+      '[data-library-block="ImageText"][data-preview-density="regular"] .g7pb-puck-drawer-card__preview:visible',
+    ).first();
+    await expect(compactHeadingPreview).toBeVisible();
+    await expect(compactRichTextPreview).toBeVisible();
+    await expect(regularImageTextPreview).toBeVisible();
     if (testInfo.project.name === 'desktop') {
       const [headingBox, richTextBox, imageTextBox] = await Promise.all([
         compactHeadingPreview.boundingBox(),

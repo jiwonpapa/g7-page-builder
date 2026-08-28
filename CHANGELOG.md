@@ -27,6 +27,7 @@
 - Features 제목의 `normal` 행간을 편집기와 공개본에 명시해 shell에 따른 높이 변화를 제거했습니다.
 - 활성 G7 템플릿의 전역 heading CSS가 공개 블록의 굵기·행간을 덮어쓰던 경계를 격리하고, 기본 700과 명시적 `regular` 400을 shell과 무관하게 보존합니다.
 - Puck 내부 richtext의 `pre-wrap` 줄바꿈이 제목 leaf에 남아 같은 폭에서도 편집기만 한 줄 더 생기던 문제를 wrapper 줄바꿈 규칙 상속으로 수정했습니다.
+- ProseMirror가 편집 제목에만 `font-feature-settings: "liga" 0`을 적용해 같은 폰트·크기에서도 한글 폭이 16~19% 넓어지던 P000 원인을 제거하고 공개 제목과 같은 font shaping을 사용하도록 수정했습니다.
 
 ## [0.27.1] - 2026-08-28
 

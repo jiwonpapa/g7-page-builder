@@ -239,7 +239,13 @@ expect_failure '명시적 굵기가 없는 semantic heading은 공개 HTML 기�
 copy_fixture
 perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*white-space:) inherit !important;/${1} pre-wrap !important;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography와 줄바꿈 규칙을 상속해야 합니다.'
+expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography, font shaping과 줄바꿈 규칙을 상속해야 합니다.'
+
+cp "$repo_root/resources/css/page-builder-editor-wysiwyg.css" \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+perl -0pi -e 's/font-feature-settings: inherit !important;/font-feature-settings: "liga" 0 !important;/' \
+  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography, font shaping과 줄바꿈 규칙을 상속해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;/${1} 780px;/' \

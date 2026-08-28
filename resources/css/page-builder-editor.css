@@ -803,6 +803,7 @@
 
 .g7pb-preview-block :is([data-g7pb-inline-field], [data-g7pb-media-field], [data-g7pb-action-field]) {
   cursor: text;
+  pointer-events: auto;
   border-radius: .22rem;
   transition: outline-color 120ms ease, box-shadow 120ms ease;
 }

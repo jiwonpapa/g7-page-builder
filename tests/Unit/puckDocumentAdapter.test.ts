@@ -572,6 +572,8 @@ describe('Puck PageBuilderDocument adapter', () => {
     expect(first[3]?.preset).toBe('counter');
     expect(['chart-draw', 'reveal']).toContain(first[4]?.preset);
     expect(first.every((motion) => motion.trigger === 'once')).toBe(true);
+    expect(recommendedMotionPlan(['LogoCarousel', 'TestimonialSlider']).map((motion) => motion.preset))
+      .toEqual(['reveal', 'reveal']);
   });
 
   it('round-trips all seven phase-two product blocks and exposes their visible copy inline', () => {

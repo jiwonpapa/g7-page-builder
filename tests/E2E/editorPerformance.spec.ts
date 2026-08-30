@@ -221,9 +221,13 @@ async function measureTyping(page: Page): Promise<number[]> {
   const hero = page.frameLocator('iframe').locator(
     '[data-testid="page-builder-block"][data-block-type="hero"]',
   );
-  await hero.scrollIntoViewIfNeeded();
-  // Click the block's padding, not the rounded 4px boundary shared with the root overlay.
-  await hero.click({ position: { x: 24, y: 24 } });
+  // Select Puck's component surface, as the lifecycle gate does. The rendered
+  // Hero padding can belong to the page overlay and leave Page fields selected.
+  const component = hero.locator('xpath=ancestor::*[@data-puck-component][1]');
+  await expect(component).toHaveAttribute('data-puck-component', /.+/);
+  await component.scrollIntoViewIfNeeded();
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await component.click({ position: { x: 4, y: 4 } });
   const input = page.locator('[data-testid="page-builder-hero-subtitle"]:visible').first();
   await expect(input).toBeVisible();
   await input.fill('PERFORMANCE');

@@ -60,7 +60,8 @@ Site Part 변경은 `builder` 공개 페이지와 공통 셸 API의 전체 표�
 - 화면 크기 변경·browser navigation·페이지 이탈 때 메뉴와 잠금을 해제합니다. 브라우저 history에 별도 가상 항목을 삽입하지 않습니다. G7 HtmlContent 교체는 동일 URL에서 열린 하위 메뉴·스크롤·포커스를 복구하고 이전 DOM의 listener를 정리합니다.
 - PC 편집 화면의 모바일/태블릿 캔버스는 동일 컨트롤러와 계정/설정 markup을 사용하며 persona 전환은 저장되지 않습니다. 실제 인증·라우트 이동은 공개 runtime에서만 실행합니다.
 - `npm run test:e2e:site-shell`은 기존 인증 검증과 `mobileNavigationQuality.spec.ts`를 함께 실행합니다. Chromium의 320/360/390/430/768/899/900px 경계와 WebKit 모바일 엔진을 검사하며, 실패/누락/오래된 fingerprint는 패키징·배포를 차단합니다. WebKit 설치가 없으면 `npx playwright install webkit` 후 재검증합니다.
-- 자동화 엔진 검증은 물리 iPhone/Android와 VoiceOver/TalkBack 실제 사용 검증을 대신하지 않습니다. 해당 수동 증거가 없으면 실제 기기 접근성 검증 완료로 보고하지 않습니다.
+- 자동화 엔진 검증은 물리 iPhone/Android와 VoiceOver/TalkBack 실제 사용 검증을 대신하지 않습니다. `--run`은 자동 검사만 완료하고, 패키징·배포에서 실행하는 일반 check는 `output/playwright/mobile-navigation-manual-review.json`까지 요구합니다. 수동 검증이 없으면 릴리스는 계속 차단됩니다.
+- 수동 기록은 자동 결과와 같은 `fingerprint`, `status=passed`, `reviewer.kind=human`과 검토자 이름, `results`의 `ios-safari-voiceover`·`android-chrome-talkback` 두 항목이 필요합니다. 각 항목은 실제 `device`, `os`, `browserVersion`, `evidence`, `checkedAt`, `status=passed` 및 `checks`의 `navigation`·`account`·`focus-and-reading-order`·`safe-area-and-keyboard`·`scroll-and-back` 통과 기록을 포함합니다. AI나 테스트 fixture로 사람 검토를 대신 작성하지 않습니다.
 
 - 편집 문서는 디자인·브랜드·메뉴 링크만 소유합니다.
 - 검색·로그인·회원가입·로그아웃·마이페이지·알림·장바구니·테마·언어·통화는 compiler가 만든 고정 마커와 모듈 runtime adapter가 제공합니다.

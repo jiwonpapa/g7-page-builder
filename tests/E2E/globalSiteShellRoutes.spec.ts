@@ -86,15 +86,22 @@ test('applies one fail-safe Page Builder Header and Footer across representative
       else expect(response?.ok(), route).toBe(true);
       await expect(page.getByTestId('page-builder-site-header'), route).toBeVisible();
       await expect(page.getByTestId('page-builder-site-footer'), route).toBeVisible();
-      await expect(page.locator('[data-g7pb-system-controls]'), route).toHaveCount(1);
-      await expect(page.locator('[data-g7pb-system-controls] form[action="/search"]'), route).toHaveCount(1);
+      const desktopControls = page.locator('.g7pb-system-controls[data-g7pb-system-controls]');
+      const mobileControls = page.locator('[data-g7pb-mobile-menu][data-g7pb-system-controls]');
+      await expect(desktopControls, route).toHaveCount(1);
+      await expect(desktopControls, route).toBeVisible();
+      await expect(mobileControls, route).toHaveCount(1);
+      await expect(mobileControls, route).toBeHidden();
+      await expect(page.locator('[data-g7pb-system-controls]:visible'), route).toHaveCount(1);
+      await expect(desktopControls.locator('form[action="/search"]'), route).toHaveCount(1);
+      await expect(mobileControls.locator('form[action="/search"]'), route).toHaveCount(0);
       expect(await page.locator('html').evaluate((html) => html.scrollWidth <= html.clientWidth + 1), route).toBe(true);
     }
 
     await page.goto('/boards');
     await expect(page.locator('[data-g7pb-system-cart]')).toHaveAttribute('href', /\/cart$/u);
     await page.getByRole('button', { name: '계정 메뉴', exact: true }).click();
-    await expect(page.locator('[data-g7pb-system-guest] a[href="/login"]')).toBeVisible();
+    await expect(page.locator('.g7pb-system-controls [data-g7pb-system-guest] a[href="/login"]')).toBeVisible();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: '검색 열기', exact: true }).click();
     const search = page.locator('[data-g7pb-system-controls] input[name="q"]');

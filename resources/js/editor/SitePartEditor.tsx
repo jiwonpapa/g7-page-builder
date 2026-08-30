@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { installShellDisclosures, paintShellProduct, shellControlsMarkup, shellIcon, shellRecord, shellSafeUrl } from '../public/siteShellControls';
+import { installShellDisclosures, mountMobileShell, paintShellProduct, shellControlsMarkup, shellIcon, shellRecord, shellSafeUrl, type ShellOptions } from '../public/siteShellControls';
+import { installMobileNavigation } from '../public/mobileNavigation';
 import '../../css/page-builder-site-shell.css';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, registerOverlayPortal, type Config, type Field, usePuck, type Viewports } from '@puckeditor/core';
@@ -180,7 +181,7 @@ export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps): R
     }, true);
     return () => { dispose(); unregister?.(); };
   }, [markup, persona]);
-  return <nav ref={ref} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={content} />;
+  return <nav ref={ref} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-options={signature} data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={content} />;
 }
 
 export const SitePartPersona = createContext<'guest' | 'member' | 'admin'>('guest');
@@ -224,137 +225,72 @@ function footerResponsiveAttributes(
 }
 
 function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactElement | null {
+  const persona = useContext(SitePartPersona);
   const menuId = `g7pb-preview-mobile-menu-${useId().replaceAll(':', '')}`;
   const toggleRef = useRef<HTMLButtonElement>(null);
   const interactionRef = useRef<HTMLDivElement>(null);
   const [overlayHost, setOverlayHost] = useState<HTMLElement | null>(null);
-  const [open, setOpen] = useState(false);
-  const [openSubmenus, setOpenSubmenus] = useState<Record<number, boolean>>({});
   const responsiveAttributes = headerResponsiveAttributes(props);
-
-  const close = useCallback((restoreFocus = false): void => {
-    setOpen(false);
-    setOpenSubmenus({});
-    if (restoreFocus) toggleRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    if (!props.mobileMenu) close();
-  }, [close, props.mobileMenu]);
-
   useEffect(() => registerOverlayPortal(interactionRef.current, { disableDrag: true }), [props.mobileMenu]);
-
   useEffect(() => {
-    if (!props.mobileMenu) {
-      setOverlayHost(null);
-      return undefined;
-    }
-    const ownerDocument = toggleRef.current?.ownerDocument;
-    if (!ownerDocument) return undefined;
-    const host = ownerDocument.createElement('div');
+    const doc = toggleRef.current?.ownerDocument;
+    if (!props.mobileMenu || !doc) return;
+    const host = doc.createElement('div');
     host.className = 'g7pb-header-mobile-overlay-host';
-    ownerDocument.body.append(host);
+    doc.body.append(host);
     const unregister = registerOverlayPortal(host, { disableDrag: true });
     setOverlayHost(host);
-    return () => {
-      unregister?.();
-      host.remove();
-    };
+    return () => { unregister?.(); host.remove(); };
   }, [props.mobileMenu]);
-
   useEffect(() => {
-    if (!open) return undefined;
-    const ownerDocument = toggleRef.current?.ownerDocument;
-    if (!ownerDocument) return undefined;
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') close(true);
+    const toggle = toggleRef.current;
+    const menu = overlayHost?.querySelector<HTMLElement>('[data-g7pb-preview-mobile-menu]');
+    const header = toggle?.closest('header');
+    if (!toggle || !menu || !header) return;
+    const paint = (): void => {
+      const raw = header.querySelector<HTMLElement>('[data-g7pb-shell-options]')?.dataset.g7pbShellOptions ?? '{}';
+      let options: ShellOptions;
+      try { options = JSON.parse(raw) as ShellOptions; } catch { return; }
+      mountMobileShell(menu, options);
+      paintShellProduct(menu, { currentUser: persona === 'guest' ? null : { uuid: 'preview', name: persona === 'admin' ? '관리자 미리보기' : '회원 미리보기', is_admin: persona === 'admin' }, commerceAvailable: true, notificationCount: 3 });
+      menu.querySelectorAll<HTMLElement>('[data-g7pb-system-locale-host], [data-g7pb-system-currency-host]').forEach((node) => {
+        if (node.querySelector('select')) return;
+        const language = node.hasAttribute('data-g7pb-system-locale-host');
+        node.innerHTML = `<label class="g7pb-system-select"><span>${language ? '언어' : '통화'}</span><select aria-label="${language ? '언어' : '통화'}">${language ? '<option>한국어</option><option>English</option>' : '<option>KRW</option><option>USD</option>'}</select></label>`;
+      });
     };
-    ownerDocument.addEventListener('keydown', onKeyDown);
-    return () => ownerDocument.removeEventListener('keydown', onKeyDown);
-  }, [close, open]);
-
+    paint();
+    const observer = new MutationObserver(paint);
+    observer.observe(header, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-g7pb-shell-options'] });
+    return () => observer.disconnect();
+  }, [overlayHost, persona]);
+  useEffect(() => {
+    const toggle = toggleRef.current;
+    const menu = overlayHost?.querySelector<HTMLElement>('[data-g7pb-preview-mobile-menu]');
+    if (!toggle || !menu) return;
+    return installMobileNavigation({ toggle, menu, backdrop: overlayHost?.querySelector('[data-g7pb-preview-menu-backdrop]'), preview: true });
+  }, [overlayHost, props.mobileMenu]);
   if (!props.mobileMenu) return null;
-
   const overlay = <>
-    <button
-      className="g7pb-mobile-menu__backdrop"
-      type="button"
-      aria-label="모바일 메뉴 닫기"
-      data-g7pb-preview-menu-backdrop
-      hidden={!open}
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        close(true);
-      }}
-      {...responsiveAttributes}
-    />
-    <nav
-      id={menuId}
-      className={`g7pb-mobile-menu g7pb-mobile-menu--preview g7pb-mobile-menu--${props.mobileMenuStyle}`}
-      aria-label="모바일 메뉴"
-      data-g7pb-preview-mobile-menu
-      data-g7pb-menu-style={props.mobileMenuStyle}
-      hidden={!open}
-      {...responsiveAttributes}
-    >
-      <button
-        className="g7pb-mobile-menu__close"
-        type="button"
-        aria-label="모바일 메뉴 닫기"
-        data-g7pb-preview-menu-close
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          close(true);
-        }}
-      >×</button>
-      <ul>{props.navigation.map((item, index) => {
+    <button className="g7pb-mobile-menu__backdrop" type="button" aria-label="모바일 메뉴 닫기" data-g7pb-preview-menu-backdrop hidden {...responsiveAttributes} />
+    <section id={menuId} className={`g7pb-mobile-menu g7pb-mobile-menu--preview g7pb-mobile-menu--${props.mobileMenuStyle}`} aria-label="전체 메뉴" data-g7pb-preview-mobile-menu data-g7pb-unified-menu data-g7pb-system-controls data-g7pb-menu-style={props.mobileMenuStyle} hidden {...responsiveAttributes}>
+      <div className="g7pb-mobile-menu__heading"><strong>전체 메뉴</strong><button className="g7pb-mobile-menu__close" type="button" aria-label="모바일 메뉴 닫기" data-g7pb-preview-menu-close data-g7pb-menu-close>×</button></div>
+      <div className="g7pb-mobile-account" data-g7pb-mobile-account />
+      <nav aria-label="모바일 메뉴"><ul>{props.navigation.map((item, index) => {
         const submenuId = `${menuId}-submenu-${index}`;
-        const submenuOpen = openSubmenus[index] === true;
-        return <li key={`${item.label}-${index}`} className={item.children.length > 0 ? 'has-children' : undefined}>
-          {item.children.length > 0 ? <>
-            <div className="g7pb-mobile-menu__row">
-              <a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}</a>
-              <button
-                type="button"
-                aria-controls={submenuId}
-                aria-expanded={submenuOpen}
-                aria-label={`${item.label} 하위 메뉴 ${submenuOpen ? '닫기' : '열기'}`}
-                data-g7pb-preview-submenu-toggle
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setOpenSubmenus((current) => ({ ...current, [index]: !submenuOpen }));
-                }}
-              ><span aria-hidden="true">⌄</span></button>
-            </div>
-            <ul id={submenuId} className="g7pb-mobile-subnav" data-g7pb-preview-mobile-submenu hidden={!submenuOpen}>
-              {item.children.map((child, childIndex) => <li key={`${child.label}-${childIndex}`}><a href={safeSitePartHref(child.url)} onClick={(event) => event.preventDefault()}>{child.label}</a></li>)}
-            </ul>
-          </> : <a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}</a>}
+        return <li key={index} className={item.children.length ? 'has-children' : undefined}>
+          {item.children.length ? <><div className="g7pb-mobile-menu__row">
+            <a href={safeSitePartHref(item.url)}>{item.label}</a>
+            <button type="button" aria-controls={submenuId} aria-expanded="false" aria-label={`${item.label} 하위 메뉴 열기`} data-g7pb-preview-submenu-toggle data-g7pb-submenu-toggle><span aria-hidden="true">⌄</span></button>
+          </div><ul id={submenuId} className="g7pb-mobile-subnav" data-g7pb-preview-mobile-submenu hidden>{item.children.map((child, childIndex) => <li key={childIndex}><a href={safeSitePartHref(child.url)}>{child.label}</a></li>)}</ul></> : <a href={safeSitePartHref(item.url)}>{item.label}</a>}
         </li>;
-      })}</ul>
-      {props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
-    </nav>
+      })}</ul></nav>
+      {props.ctaLabel ? <a className="g7pb-mobile-menu__cta" href={safeSitePartHref(props.ctaUrl)}>{props.ctaLabel}</a> : null}
+      <div className="g7pb-mobile-settings" data-g7pb-mobile-settings />
+    </section>
   </>;
-
   return <div ref={interactionRef} className="g7pb-header-mobile-editor-controls">
-    <button
-      ref={toggleRef}
-      className="g7pb-menu-toggle"
-      type="button"
-      aria-controls={menuId}
-      aria-expanded={open}
-      aria-label={`모바일 메뉴 ${open ? '닫기' : '열기'}`}
-      data-g7pb-preview-menu-toggle
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (open) close();
-        else setOpen(true);
-      }}
-    ><span /></button>
+    <button ref={toggleRef} className="g7pb-menu-toggle" type="button" aria-controls={menuId} aria-expanded="false" aria-label="모바일 메뉴 열기" data-g7pb-preview-menu-toggle><span /></button>
     {overlayHost ? createPortal(overlay, overlayHost) : null}
   </div>;
 }
@@ -370,7 +306,7 @@ export function HeaderNavigationPreview(props: HeaderNavigationProps & { systemC
     </li>
   ))}</ul></nav>;
   return (
-    <header className={`g7pb-site-header ${props.sticky ? 'is-sticky' : ''} ${props.variant === 'transparent' ? 'is-transparent' : ''}`} {...headerResponsiveAttributes(props)}>
+    <header className={`g7pb-site-header ${props.sticky ? 'is-sticky' : ''} ${props.variant === 'transparent' ? 'is-transparent' : ''}`} data-g7pb-unified-header={props.mobileMenu ? '' : undefined} {...headerResponsiveAttributes(props)}>
       <div className="g7pb-site-header__inner">
         <a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>
           {props.logoUrl ? <img src={props.logoUrl} alt={props.brandName} /> : <span data-g7pb-inline-field="brandName">{information.brandName}</span>}

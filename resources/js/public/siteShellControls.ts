@@ -10,6 +10,7 @@ const paths: Record<string, string> = {
   bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
   cart: '<path d="M3 3h2l3 12h11l2-9H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
   shield: '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/>',
   logout: '<path d="M9 4H4v16h5m6-12 4 4-4 4m-7-4h11"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
@@ -65,6 +66,40 @@ export function mountShellControls(root: ParentNode): void {
       host.dataset.g7pbShellMounted = 'true';
     } catch { /* Malformed optional controls retain the compiled fallback. */ }
   });
+  root.querySelectorAll<HTMLElement>('[data-g7pb-mobile-shell-options]').forEach((menu) => {
+    try { mountMobileShell(menu, JSON.parse(menu.dataset.g7pbMobileShellOptions ?? '{}') as ShellOptions, menu.dataset.g7pbShellLocale?.startsWith('en')); } catch { /* Retain the compiled navigation on malformed options. */ }
+  });
+}
+
+/** Reuse the desktop account/settings bodies, with no nested popovers on mobile. */
+export function mountMobileShell(menu: HTMLElement, options: ShellOptions, english = false): void {
+  const signature = JSON.stringify(options);
+  if (menu.dataset.g7pbMobileShellMounted === signature) return;
+  const template = menu.ownerDocument.createElement('template');
+  template.innerHTML = shellControlsMarkup(options, english);
+  const account = menu.querySelector<HTMLElement>('[data-g7pb-mobile-account]');
+  const settings = menu.querySelector<HTMLElement>('[data-g7pb-mobile-settings]');
+  if (!account || !settings) return;
+  account.replaceChildren(); settings.replaceChildren();
+  const accountBody = template.content.querySelector('[data-g7pb-shell-panel="account"]');
+  const preferencesBody = template.content.querySelector('[data-g7pb-shell-panel="preferences"]');
+  if (accountBody) account.append(...Array.from(accountBody.childNodes));
+  const wishlist = account.querySelector('[href="/mypage/wishlist"]');
+  if (wishlist) wishlist.insertAdjacentHTML('afterbegin', shellIcon('heart'));
+  if (preferencesBody) settings.append(...Array.from(preferencesBody.childNodes));
+  if (options.notifications) {
+    const notifications = menu.ownerDocument.createElement('a');
+    notifications.href = '/mypage/notifications'; notifications.dataset.g7pbSystemMember = ''; notifications.hidden = true;
+    notifications.innerHTML = `${shellIcon('bell')}<span>${english ? 'Notifications' : '알림'}</span><span class="g7pb-mobile-count" data-g7pb-system-notification-count hidden></span>`;
+    account.append(notifications);
+  }
+  const logout = account.querySelector<HTMLAnchorElement>('[href="#g7-action-logout"]');
+  if (logout) { logout.dataset.g7pbSystemMember = ''; logout.hidden = true; logout.classList.add('g7pb-mobile-logout'); settings.append(logout); }
+  const error = account.querySelector('[data-g7pb-shell-error]');
+  if (error) settings.append(error);
+  account.hidden = !options.account && !options.notifications;
+  settings.hidden = !options.account && !options.theme && !options.locale && !options.currency;
+  menu.dataset.g7pbMobileShellMounted = signature;
 }
 
 export function shellCommerce(state: ShellRecord, config: ShellWindow['G7Config']): boolean {
@@ -135,6 +170,7 @@ export function installShellDisclosures(host: HTMLElement, onOpen?: (key: string
     const button = host.querySelector<HTMLButtonElement>(`[data-g7pb-shell-toggle="${key}"]`);
     const panel = host.querySelector<HTMLElement>(`[data-g7pb-shell-panel="${key}"]`);
     if (!button || !panel || button.closest('[hidden]')) return;
+    doc.dispatchEvent(new CustomEvent('g7pb:shell-open', { detail: key }));
     button.setAttribute('aria-expanded', 'true'); panel.hidden = false;
     // G7 HtmlContent may replace its DOM after any public-state update. Keep the
     // user's open panel/focus, without restarting the entry animation each time.
@@ -170,10 +206,13 @@ export function installShellDisclosures(host: HTMLElement, onOpen?: (key: string
     if (!preview && panel && !panel.hidden) disclosureState.set(doc, { key: panel.dataset.g7pbShellPanel!, focus: Math.max(0, focusable(panel).indexOf(target)) });
   };
   const submit = (event: Event): void => { if (preview) event.preventDefault(); };
+  const otherPanel = (event: Event): void => { if ((event as CustomEvent).detail === 'navigation') close(false); };
+  const resized = (): void => close(false);
   doc.addEventListener('click', click); doc.addEventListener('keydown', keydown); doc.addEventListener('focusin', focus); host.addEventListener('submit', submit);
+  doc.addEventListener('g7pb:shell-open', otherPanel); doc.defaultView?.addEventListener('resize', resized);
   const previous = !preview ? disclosureState.get(doc) : undefined;
   if (previous) openPanel(previous.key, previous.focus, true);
-  return () => { doc.removeEventListener('click', click); doc.removeEventListener('keydown', keydown); doc.removeEventListener('focusin', focus); host.removeEventListener('submit', submit); };
+  return () => { doc.removeEventListener('click', click); doc.removeEventListener('keydown', keydown); doc.removeEventListener('focusin', focus); host.removeEventListener('submit', submit); doc.removeEventListener('g7pb:shell-open', otherPanel); doc.defaultView?.removeEventListener('resize', resized); };
 }
 
 export async function loadShellNotifications(host: HTMLElement, view: Window, fetcher: typeof fetch = fetch, markAll = false): Promise<void> {

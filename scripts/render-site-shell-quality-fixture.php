@@ -18,4 +18,17 @@ foreach ($blocks as $kind => $block) {
     ]]);
     $html[$kind] = $compiler->compile($document, 1)->html;
 }
+if (in_array('--mobile', $argv, true)) {
+    $navigation = [];
+    for ($index = 1; $index <= 10; $index++) {
+        $navigation[] = ['label' => '서비스 '.$index.' · 길이가 긴 메뉴 이름도 줄바꿈으로 표시합니다', 'url' => '/service-'.$index, 'children' => [['label' => '상세 안내 '.$index, 'url' => '/detail-'.$index]]];
+    }
+    foreach (['drawer-right', 'drawer-left', 'dropdown', 'sheet-bottom', 'empty'] as $style) {
+        $document = new SitePartDocument('11111111-1111-4111-8111-111111111111', 'header', 'ko', [], [[
+            'instance_id' => '22222222-2222-4222-8222-222222222222', 'type' => 'site.header.navigation-01', 'block_version' => 1,
+            'props' => ['brand_name' => 'Quality Site', 'home_url' => '/', 'navigation' => $style === 'empty' ? [] : $navigation, 'mobile_menu_style' => $style === 'empty' ? 'drawer-right' : $style], 'slots' => [],
+        ]]);
+        $html['mobile'][$style] = $compiler->compile($document, 1)->html;
+    }
+}
 echo json_encode($html, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

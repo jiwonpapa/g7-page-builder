@@ -49,6 +49,20 @@ Site Part 변경은 `builder` 공개 페이지와 공통 셸 API의 전체 표�
 
 ## G7 핵심 기능 보존
 
+### 모바일 통합 메뉴
+
+모바일 변경에 따른 공통 CSS fingerprint 갱신으로 140개 썸네일을 다시 생성했습니다. 139개 PNG는 기존 승인본과 byte-identical입니다. 유일하게 바뀐 `preset-89-articles-grid.png`는 이전·현재 이미지를 직접 비교했으며 콘텐츠·구성 변화는 없습니다. 기존 기준을 유지하는 Codex-assisted 증분 검토이며 새로운 사람 승인으로 표시하지 않습니다.
+
+- 900px 미만에서는 로고·검색·선택형 장바구니·전체 메뉴를 사용합니다. 계정·알림·설정은 별도 모바일 팝업으로 중복 노출하지 않습니다. 사용자 메뉴가 비어 있어도 활성 시스템 기능이 있으면 전체 메뉴를 제공합니다. `mobile_menu=false`는 기존 동작을 보존합니다.
+- 계정/관리자/주문/알림 → 사이트 메뉴와 하위 목록 → 선택 CTA → 테마·언어·통화·로그아웃 순서입니다. 링크와 상태는 PC와 동일한 고정 adapter를 사용하며 사용자·token·handler를 문서에 저장하지 않습니다.
+- 기본 오른쪽 drawer와 기존 왼쪽 drawer·dropdown·bottom sheet를 유지합니다. 360px 이하 drawer는 전체 폭입니다. 최소 터치 영역은 44px, 일반 행은 48px 이상이며 safe area와 reduced motion을 반영합니다.
+- drawer/sheet는 dialog로서 배경을 inert 처리하고 Tab/Shift+Tab, Escape, 포커스 복귀, 스크롤 잠금을 지원합니다. dropdown은 일반 disclosure region으로 배경을 잠그지 않습니다. 내부 사이트 링크는 semantic nav이며 ARIA menu가 아닙니다.
+- 화면 크기 변경·browser navigation·페이지 이탈 때 메뉴와 잠금을 해제합니다. 브라우저 history에 별도 가상 항목을 삽입하지 않습니다. G7 HtmlContent 교체는 동일 URL에서 열린 하위 메뉴·스크롤·포커스를 복구하고 이전 DOM의 listener를 정리합니다.
+- PC 편집 화면의 모바일/태블릿 캔버스는 동일 컨트롤러와 계정/설정 markup을 사용하며 persona 전환은 저장되지 않습니다. 실제 인증·라우트 이동은 공개 runtime에서만 실행합니다.
+- `npm run test:e2e:site-shell`은 기존 인증 검증과 `mobileNavigationQuality.spec.ts`를 함께 실행합니다. Chromium의 320/360/390/430/768/899/900px 경계와 WebKit 모바일 엔진을 검사하며, 실패/누락/오래된 fingerprint는 패키징·배포를 차단합니다. WebKit 설치가 없으면 `npx playwright install webkit` 후 재검증합니다.
+- 자동화 엔진 검증은 물리 iPhone/Android와 VoiceOver/TalkBack 실제 사용 검증을 대신하지 않습니다. `--run`은 자동 검사만 완료하고, 패키징·배포에서 실행하는 일반 check는 `output/playwright/mobile-navigation-manual-review.json`까지 요구합니다. 수동 검증이 없으면 릴리스는 계속 차단됩니다.
+- 수동 기록은 자동 결과와 같은 `fingerprint`, `status=passed`, `reviewer.kind=human`과 검토자 이름, `results`의 `ios-safari-voiceover`·`android-chrome-talkback` 두 항목이 필요합니다. 각 항목은 실제 `device`, `os`, `browserVersion`, `evidence`, `checkedAt`, `status=passed` 및 `checks`의 `navigation`·`account`·`focus-and-reading-order`·`safe-area-and-keyboard`·`scroll-and-back` 통과 기록을 포함합니다. AI나 테스트 fixture로 사람 검토를 대신 작성하지 않습니다.
+
 - 편집 문서는 디자인·브랜드·메뉴 링크만 소유합니다.
 - 검색·로그인·회원가입·로그아웃·마이페이지·알림·장바구니·테마·언어·통화는 compiler가 만든 고정 마커와 모듈 runtime adapter가 제공합니다.
 - endpoint, method, auth token, handler 이름은 편집 필드로 노출하지 않습니다.

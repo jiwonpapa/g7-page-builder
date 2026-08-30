@@ -1,3 +1,5 @@
+@import url("../js/public/mobileNavigation.css");
+
 /* Shared by compiled Header/Footer and editor. Account access survives every viewport. */
 .g7pb-system-controls[data-g7pb-shell-mounted] { gap: .25rem; }
 .g7pb-shell-tool { position: relative; }
@@ -48,8 +50,9 @@ html[class~='dark'] .g7pb-site-header:not(.is-transparent), [data-theme='dark'] 
   .g7pb-site-header__inner { width: calc(100% - 1rem); gap: .25rem; }
   .g7pb-site-header .g7pb-site-brand { max-width: 6rem; font-size: .9rem; }
   .g7pb-site-header__actions { gap: 0; }
-  .g7pb-system-controls .g7pb-shell-icon { width: 2.5rem; min-width: 2.5rem; padding: .5rem; }
+  .g7pb-system-controls .g7pb-shell-icon { width: 44px; min-width: 44px; padding: .5rem; }
 }
+
 @media (prefers-reduced-motion: no-preference) {
   .g7pb-shell-popover:not([hidden]) { animation: g7pb-shell-enter 120ms ease-out; }
   @keyframes g7pb-shell-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }

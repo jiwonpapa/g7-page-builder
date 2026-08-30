@@ -59,7 +59,7 @@ RUN apt-get update \
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 RUN npm install --global "@playwright/test@${PLAYWRIGHT_VERSION}" \
-    && playwright install --with-deps chromium \
+    && playwright install --with-deps chromium webkit \
     && chmod -R a+rX /ms-playwright \
     && rm -rf /root/.npm /var/lib/apt/lists/*
 

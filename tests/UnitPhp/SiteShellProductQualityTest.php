@@ -28,8 +28,16 @@ final class SiteShellProductQualityTest extends TestCase
         $html = $this->compile('header', []);
         self::assertStringContainsString('data-g7pb-shell-options=', $html);
         self::assertStringContainsString('data-g7pb-site-info="inherit"', $html);
+        self::assertStringContainsString('data-g7pb-menu-toggle', $html);
+        self::assertStringContainsString('data-g7pb-unified-menu', $html);
+        self::assertStringContainsString('data-g7pb-mobile-shell-options=', $html);
         self::assertStringNotContainsString('auth_token', $html);
         self::assertStringNotContainsString('is_admin', $html);
+    }
+
+    public function test_explicitly_disabled_mobile_menu_preserves_the_existing_contract(): void
+    {
+        self::assertStringNotContainsString('data-g7pb-menu-toggle', $this->compile('header', ['mobile_menu' => false]));
     }
 
     public function test_factory_footer_inherits_site_information_but_custom_content_is_preserved(): void

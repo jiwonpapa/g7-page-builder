@@ -159,8 +159,12 @@ function createFooterResponsiveField(): Field<FooterResponsiveOverrides | undefi
 export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps): React.ReactElement {
   const persona = useContext(SitePartPersona);
   const ref = useRef<HTMLElement>(null);
-  const signature = JSON.stringify(props);
+  // Puck adds changing selection/overlay metadata to render props. Only actual
+  // control options may rebuild this interactive DOM and reset its open panel.
+  const { search, account, cart, notifications, theme, locale, currency } = props;
+  const signature = JSON.stringify({ search, account, cart, notifications, theme, locale, currency });
   const markup = useMemo(() => shellControlsMarkup(JSON.parse(signature) as HeaderSystemControlsProps), [signature]);
+  const content = useMemo(() => ({ __html: markup }), [markup]);
   useEffect(() => {
     const host = ref.current;
     if (!host) return;
@@ -176,7 +180,7 @@ export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps): R
     }, true);
     return () => { dispose(); unregister?.(); };
   }, [markup, persona]);
-  return <nav ref={ref} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={{ __html: markup }} />;
+  return <nav ref={ref} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={content} />;
 }
 
 export const SitePartPersona = createContext<'guest' | 'member' | 'admin'>('guest');
@@ -764,8 +768,10 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     {message ? <div className="g7pb-notice" role="alert"><span>{message}</span><button type="button" className="g7pb-notice__dismiss" onClick={() => setMessage(null)}>닫기</button></div> : null}
     {busy && !resource ? <div className="g7pb-loading">Site Part를 준비하는 중입니다.</div> : null}
     {resource ? <div className="g7pb-site-part-puck" aria-busy={busy}>
-      <SitePartPresetBar kind={kind} onApply={applyPreset} />
-      {kind === 'header' ? <SitePartPersonaSelector value={persona} onChange={setPersona} /> : null}
+      <div>
+        <SitePartPresetBar kind={kind} onApply={applyPreset} />
+        {kind === 'header' ? <SitePartPersonaSelector value={persona} onChange={setPersona} /> : null}
+      </div>
       <div className="g7pb-site-part-device-legend"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>기기 버튼을 바꾸면 우측의 기기별 표시 설정도 함께 바뀝니다.</span></div>
       <Puck config={config} data={data} height="100%" iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ itemSelector: data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null, viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} overrides={overrides} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
     </div> : null}

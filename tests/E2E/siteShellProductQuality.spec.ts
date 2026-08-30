@@ -101,9 +101,18 @@ test('real G7 authentication · admin route · native logout · guest transition
   if (testInfo.project.name === 'desktop') {
     await page.goto('/modules/jiwonpapa-page_builder/admin/site-parts/header');
     await page.getByLabel('접속 상태 미리보기', { exact: true }).selectOption('admin');
+    const personaBounds = await page.locator('.g7pb-site-part-persona').boundingBox();
+    expect(personaBounds?.height).toBeLessThan(64);
     const preview = page.frameLocator('iframe').first();
     await preview.getByRole('button', { name: '계정 메뉴', exact: true }).click();
-    await expect(preview.getByRole('link', { name: '관리자', exact: true })).toBeVisible();
+    const previewAdmin = preview.getByRole('link', { name: '관리자', exact: true });
+    await expect(previewAdmin).toBeVisible();
+    // A visible DOM node alone can still be clipped or reset by Puck selection.
+    // Real pointer interaction must work without navigating or changing content.
+    await previewAdmin.click();
+    await expect(page).toHaveURL(/\/admin\/site-parts\/header$/u);
+    await expect(preview.getByRole('button', { name: '계정 메뉴', exact: true })).toHaveAttribute('aria-expanded', 'true');
+    await expect(previewAdmin).toBeVisible();
     await expect(page.locator('.g7pb-status[data-state="dirty"]')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('editor-admin-persona.png'), animations: 'disabled' });
   }

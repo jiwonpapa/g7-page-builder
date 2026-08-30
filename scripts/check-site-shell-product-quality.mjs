@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
-const evidencePath = 'output/quality/site-shell-product.json';
+const evidencePath = 'output/playwright/site-shell-product.json';
 const inputs = [
   'resources/js/public/siteShellControls.ts', 'resources/js/public/pageEffects.ts',
   'resources/js/editor/SitePartEditor.tsx', 'resources/js/editor/sitePartDocumentAdapter.ts',
@@ -15,6 +15,9 @@ const inputs = [
   'tests/Unit/siteShellProductQuality.test.ts', 'tests/UnitPhp/SiteShellProductQualityTest.php',
   'scripts/render-site-shell-quality-fixture.php', 'scripts/check-site-shell-product-quality.mjs',
   'tests/Integration/Gnuboard7/SiteShellRuntimeConfigTest.php',
+  'tests/Unit/sitePartEditorPreview.test.tsx',
+  'dist/js/page-builder-site-part.iife.js', 'dist/css/page-builder-site-part.css',
+  'dist/js/page-builder-editor.iife.js', 'dist/css/page-builder-editor.css',
   'dist/js/page-effects.iife.js', 'dist/css/page-builder-public.css',
 ];
 const fingerprint = () => createHash('sha256').update(inputs.map((file) => `${file}:${createHash('sha256').update(readFileSync(file)).digest('hex')}`).join('\n')).digest('hex');
@@ -28,7 +31,7 @@ if (process.argv.includes('--run')) {
   const result = spawnSync('npx', ['playwright', 'test', 'tests/E2E/siteShellProductQuality.spec.ts', '--retries=0'], { stdio: 'inherit', env: process.env });
   if (result.status !== 0) process.exit(result.status ?? 1);
   if (before !== fingerprint()) throw new Error('Site Shell inputs changed during validation.');
-  mkdirSync('output/quality', { recursive: true });
+  mkdirSync('output/playwright', { recursive: true });
   writeFileSync(evidencePath, JSON.stringify({ status: 'passed', fingerprint: before, checkedAt: new Date().toISOString(), viewports: ['desktop', 'tablet', 'mobile'], contractPersonas: ['guest', 'member', 'admin', 'unavailable'], realG7: ['administrator', 'admin-route', 'native-logout', 'guest', 'standalone-builder', 'api-logout', 'editor-persona'] }, null, 2));
 }
 if (!existsSync(evidencePath)) throw new Error('Site Shell release blocked: run npm run test:e2e:site-shell in the local integration runtime.');

@@ -207,7 +207,12 @@ export function installShellDisclosures(host: HTMLElement, onOpen?: (key: string
   };
   const submit = (event: Event): void => { if (preview) event.preventDefault(); };
   const otherPanel = (event: Event): void => { if ((event as CustomEvent).detail === 'navigation') close(false); };
-  const resized = (): void => close(false);
+  let viewportWidth = doc.defaultView?.innerWidth;
+  const resized = (): void => {
+    if (doc.defaultView?.innerWidth === viewportWidth) return;
+    viewportWidth = doc.defaultView?.innerWidth;
+    close(false);
+  };
   doc.addEventListener('click', click); doc.addEventListener('keydown', keydown); doc.addEventListener('focusin', focus); host.addEventListener('submit', submit);
   doc.addEventListener('g7pb:shell-open', otherPanel); doc.defaultView?.addEventListener('resize', resized);
   const previous = !preview ? disclosureState.get(doc) : undefined;

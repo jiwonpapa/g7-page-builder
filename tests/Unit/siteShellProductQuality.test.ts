@@ -67,6 +67,7 @@ describe('Site Shell product release gate', () => {
     const opened = vi.fn(); const dispose = installShellDisclosures(host, opened);
     const toggle = host.querySelector<HTMLButtonElement>('[data-g7pb-shell-toggle="search"]')!;
     toggle.click();
+    window.dispatchEvent(new Event('resize'));
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(doc.activeElement).toBe(host.querySelector('input'));
     doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));

@@ -50,7 +50,7 @@ describe('shared mobile navigation contract', () => {
     expect(elements.menu.hidden).toBe(true); cleanup();
   });
   it('restores open submenu, scroll and focus after HtmlContent replacement without duplicate listeners', () => {
-    vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390);
+    const width = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390);
     const { toggle, menu } = fixture(); bootMobileNavigation(document); toggle.click();
     menu.querySelector<HTMLElement>('[data-g7pb-submenu-toggle]')!.click();
     menu.scrollTop = 120; menu.dispatchEvent(new Event('scroll')); menu.querySelector<HTMLElement>('#sub a')!.focus();
@@ -59,6 +59,8 @@ describe('shared mobile navigation contract', () => {
     const next = document.querySelector<HTMLElement>('#menu')!;
     expect(next.hidden).toBe(false); expect(next.querySelector<HTMLElement>('#sub')!.hidden).toBe(false);
     expect(next.scrollTop).toBe(120); expect(document.activeElement?.textContent).toBe('소개');
+    window.dispatchEvent(new Event('resize')); expect(next.hidden).toBe(false);
+    width.mockReturnValue(844);
     window.dispatchEvent(new Event('resize')); expect(next.hidden).toBe(true);
     expect(document.documentElement.classList.contains('g7pb-menu-open')).toBe(false);
   });

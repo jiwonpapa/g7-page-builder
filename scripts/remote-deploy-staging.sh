@@ -79,7 +79,7 @@ php artisan seo:clear --no-ansi >/dev/null
 php artisan tinker --execute='$manager = app(\App\Extension\ModuleManager::class); $manager->loadModules(); $module = $manager->getModule("jiwonpapa-page_builder"); if ($module === null) { throw new \RuntimeException("Page Builder module is not loaded."); } $updated = app(\App\Contracts\Repositories\ModuleRepositoryInterface::class)->updateByIdentifier("jiwonpapa-page_builder", ["vendor" => $module->getVendor(), "version" => $module->getVersion(), "github_url" => $module->getGithubUrl(), "metadata" => $module->getMetadata(), "config" => $module->getConfig(), "update_available" => false, "updated_at" => now()]); if ($updated !== 1) { throw new \RuntimeException("Page Builder module registry was not updated."); }' --no-ansi
 
 if [[ -d "$rollback_path" ]]; then
-  rm -rf -- "$rollback_path"
+  echo "Previous module retained for recovery: $rollback_path"
 fi
 trap - ERR
 

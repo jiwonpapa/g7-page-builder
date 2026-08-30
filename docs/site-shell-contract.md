@@ -1,5 +1,15 @@
 # 출력 Shell·Header·Footer 계약
 
+## 제품 상태·검증 계약
+
+- Header의 계정 패널은 `currentUser.uuid`가 있는 경우만 회원 메뉴를 보이며 `is_admin === true`인 회원에게만 `/admin` 링크를 제공합니다. 실제 접근 권한은 G7 서버가 검증합니다.
+- 검색은 보이는 input과 submit을 사용합니다. 검색·계정·알림·설정은 disclosure 패널이며 Escape·바깥 클릭·포커스 이탈로 닫힙니다. 모바일에서도 회원·관리자 기능을 제거하지 않습니다.
+- template 셸은 공개 G7 state/dispatch에 연결합니다. 독립 builder 셸은 공개 `/api/auth/user`, 알림·장바구니·활성 언어 API를 사용합니다. 자격증명·회원 정보는 HTML 캐시나 문서에 들어가지 않습니다.
+- `use_site_settings`는 선택적인 boolean입니다. 미지정한 기존 문서는 기본 브랜드 `사이트 이름`이면서 로고가 없을 때만 자동 연결합니다. 직접 입력한 브랜드·메뉴·법적 문구는 변경하지 않습니다. 소셜 URL은 HTTPS만 렌더합니다.
+- 편집기 접속 상태는 명시적인 예시이며 저장되지 않습니다. 실제 G7 인증 검증과 분리해 보고합니다.
+- `npm run test:e2e:site-shell`은 실제 compiler와 배포 JS/CSS의 4상태×3화면 계약, 키보드·포인터·접근성 및 실제 G7 관리자 로그인/라우트/로그아웃을 검증합니다. `output/quality/site-shell-product.json`은 검증 당시 소스와 번들 fingerprint를 기록합니다.
+- 패키징과 온라인 배포는 해당 증거가 없거나 오래되면 차단합니다. 본문 140개 블록 품질 게이트도 그대로 유지합니다. 자동 검사 통과를 별도의 사람 디자인 승인으로 표현하지 않습니다.
+
 ## 결론
 
 기본 페이지의 content는 활성 G7 User Template이 소유하고 Page Builder 발행 콘텐츠를 받습니다. Page Builder Header·Footer 두 Site Part가 모두 정상 발행되면 호환되는 활성 User Template의 전체 사용자 라우트에도 같은 공통 셸을 적용합니다.
@@ -46,6 +56,10 @@ Site Part 변경은 `builder` 공개 페이지와 공통 셸 API의 전체 표�
 - 모바일 원본 overlay·toolbar·drawer도 같은 조건으로 닫아 이중 메뉴와 잔류 overlay를 막습니다.
 
 ## API와 경계
+
+### 0.29.0 기존 블록 검토 범위
+
+공통 셸 CSS 추가로 전체 140개 썸네일의 source fingerprint를 다시 생성했습니다. 139개 PNG는 기존 승인본과 byte-identical이며, 변경된 `preset-89-articles-grid.png`는 기존 화면과 직접 비교했습니다. 본문 콘텐츠·정책 변경은 없습니다. 이 증분 검토는 Codex-assisted이며 새로운 사람 승인으로 표시하지 않습니다. 별도로 전체 반응형·편집·발행 품질게이트를 통과해야 릴리스할 수 있습니다.
 
 - `GET /api/modules/jiwonpapa-page_builder/admin/site-shell?locale=ko`
 - `PUT /api/modules/jiwonpapa-page_builder/admin/site-shell`

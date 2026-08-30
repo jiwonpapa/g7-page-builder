@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-editor.css') }}">
 </head>
 <body class="g7pb-editor-shell">
+    <div hidden data-g7pb-runtime-config="{{ json_encode($siteRuntimeConfig ?? [], JSON_THROW_ON_ERROR) }}"></div>
     <div id="g7pb-editor"
          data-testid="page-builder-editor-root"
          data-g7pb-editor

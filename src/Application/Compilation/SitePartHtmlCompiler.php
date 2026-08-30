@@ -8,7 +8,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 
 final class SitePartHtmlCompiler
 {
-    public const COMPILER_VERSION = '0.5.0';
+    public const COMPILER_VERSION = '0.6.0';
 
     public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
     {
@@ -85,7 +85,8 @@ final class SitePartHtmlCompiler
         $brandContent = $logo === ''
             ? '<span>'.$this->escape($brand).'</span>'
             : '<img src="'.$this->attribute($logo).'" alt="'.$this->attribute($brand).'">';
-        $navigationHtml = $this->navigation($navigation, '주 메뉴', 'g7pb-site-nav');
+        $navigationHtml = $this->navigation($navigation, '주 메뉴', 'g7pb-site-nav')
+            ?: '<div class="g7pb-site-nav" aria-hidden="true"></div>';
         $ctaHtml = $ctaLink === null ? '' : '<a class="g7pb-site-header__cta" href="'.$this->attribute($ctaLink['url']).'">'.$this->escape($ctaLink['label']).'</a>';
         $systemControls = $this->systemControls($locale, $this->systemControlOptions($slots));
         $mobileHtml = '';
@@ -101,7 +102,7 @@ final class SitePartHtmlCompiler
         $classes = 'g7pb-site-header'.($sticky ? ' is-sticky' : '').($variant === 'transparent' ? ' is-transparent' : '');
         $actionsHtml = '<div class="g7pb-site-header__actions">'.$ctaHtml.$systemControls.$mobileHtml.'</div>';
 
-        return '<header class="'.$classes.'" data-g7pb-site-header data-testid="page-builder-site-header" '.$responsiveAttributes.'><div class="g7pb-site-header__inner">'
+        return '<header class="'.$classes.'" '.$this->siteInfoAttribute($props).' data-g7pb-site-header data-testid="page-builder-site-header" '.$responsiveAttributes.'><div class="g7pb-site-header__inner">'
             .'<a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$brandContent.'</a>'.$navigationHtml.$actionsHtml.'</div></header>';
     }
 
@@ -150,7 +151,7 @@ final class SitePartHtmlCompiler
                 .'<a href="#g7-action-logout" data-g7pb-system-member hidden>'.$this->escape($labels['logout']).'</a>';
         }
 
-        return $controls === '' ? '' : '<nav class="g7pb-system-controls" aria-label="'.$this->attribute($labels['controls']).'" data-g7pb-system-controls>'.$controls.'</nav>';
+        return $controls === '' ? '' : '<nav class="g7pb-system-controls" aria-label="'.$this->attribute($labels['controls']).'" data-g7pb-system-controls data-g7pb-shell-locale="'.$this->attribute($locale).'" data-g7pb-shell-options="'.$this->attribute(json_encode($options, JSON_THROW_ON_ERROR)).'">'.$controls.'</nav>';
     }
 
     /**
@@ -222,10 +223,12 @@ final class SitePartHtmlCompiler
 
         $responsiveAttributes = $this->footerResponsiveAttributes($this->footerResponsivePresentation($props, 2));
 
-        return '<footer class="g7pb-site-footer" data-testid="page-builder-site-footer" '.$responsiveAttributes.'><div class="g7pb-site-footer__top">'
-            .'<a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$this->escape($brand).'</a>'
+        $inherit = $this->siteInfoAttribute($props);
+
+        return '<footer class="g7pb-site-footer" '.$inherit.' data-testid="page-builder-site-footer" '.$responsiveAttributes.'><div class="g7pb-site-footer__top">'
+            .'<div><a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$this->escape($brand).'</a>'.$this->siteInfoDetails($inherit).'</div>'
             .$this->navigation($navigation, '하단 메뉴', '').'</div>'
-            .($legal === '' ? '' : '<p class="g7pb-site-footer__legal">'.$this->escape($legal).'</p>').'</footer>';
+            .($legal === '' || ($inherit !== '' && $legal === '사이트 정보를 입력해 주세요.') ? '' : '<p class="g7pb-site-footer__legal">'.$this->escape($legal).'</p>').'</footer>';
     }
 
     /** @param array<string, mixed> $props */
@@ -254,10 +257,29 @@ final class SitePartHtmlCompiler
 
         $responsiveAttributes = $this->footerResponsiveAttributes($this->footerResponsivePresentation($props, 4));
 
-        return '<footer class="g7pb-site-footer g7pb-site-footer--columns" data-testid="page-builder-site-footer" '.$responsiveAttributes.'><div class="g7pb-site-footer__columns">'
-            .'<div><a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$this->escape($brand).'</a></div>'
+        $inherit = $this->siteInfoAttribute($props);
+
+        return '<footer class="g7pb-site-footer g7pb-site-footer--columns" '.$inherit.' data-testid="page-builder-site-footer" '.$responsiveAttributes.'><div class="g7pb-site-footer__columns">'
+            .'<div><a class="g7pb-site-brand" href="'.$this->attribute($home).'">'.$this->escape($brand).'</a>'.$this->siteInfoDetails($inherit).'</div>'
             .implode('', $compiledColumns).'</div>'
-            .($legal === '' ? '' : '<p class="g7pb-site-footer__legal">'.$this->escape($legal).'</p>').'</footer>';
+            .($legal === '' || ($inherit !== '' && $legal === '사이트 정보를 입력해 주세요.') ? '' : '<p class="g7pb-site-footer__legal">'.$this->escape($legal).'</p>').'</footer>';
+    }
+
+    /** @param array<string, mixed> $props */
+    private function siteInfoAttribute(array $props): string
+    {
+        if (array_key_exists('use_site_settings', $props) && ! is_bool($props['use_site_settings'])) {
+            throw new DocumentCompileException('Site settings inheritance must be boolean.');
+        }
+        // Only untouched factory branding inherits automatically. Custom content wins.
+        $inherit = $props['use_site_settings'] ?? (($props['brand_name'] ?? '') === '사이트 이름' && ($props['logo_url'] ?? '') === '');
+
+        return $inherit ? 'data-g7pb-site-info="inherit"' : '';
+    }
+
+    private function siteInfoDetails(string $inherit): string
+    {
+        return $inherit === '' ? '' : '<p class="g7pb-site-description" data-g7pb-site-description hidden></p><nav class="g7pb-site-socials" aria-label="소셜 채널" data-g7pb-site-socials hidden></nav>';
     }
 
     /**

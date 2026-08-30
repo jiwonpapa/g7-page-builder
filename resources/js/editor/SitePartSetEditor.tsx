@@ -34,6 +34,8 @@ import {
   SitePartActionBar,
   SitePartDrawerItem,
   sitePartSetConfig,
+  SitePartPersona,
+  SitePartPersonaSelector,
 } from './SitePartEditor';
 
 const VIEWPORTS: Viewports = [
@@ -169,6 +171,7 @@ export function SitePartSetEditor({
 }: SitePartSetEditorProps): React.ReactElement {
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const config = useMemo(() => sitePartSetConfig(), []);
+  const [persona, setPersona] = useState<'guest' | 'member' | 'admin'>('guest');
   const [resources, setResources] = useState<SitePartSetEditorResource | null>(null);
   const [data, setData] = useState<SitePartPuckData>({ root: { props: {} }, content: [] });
   const [panel, setPanel] = useState<LeftPanel>('sets');
@@ -325,7 +328,7 @@ export function SitePartSetEditor({
   }), []);
   const ready = Boolean(resources?.header.active_revision && resources?.footer.active_revision);
 
-  return <section className="g7pb-site-part-set-editor" data-testid="page-builder-site-part-set-editor" aria-busy={loading}>
+  return <SitePartPersona.Provider value={persona}><section className="g7pb-site-part-set-editor" data-testid="page-builder-site-part-set-editor" aria-busy={loading}>
     <header className="g7pb-site-part-set-editor__command">
       <div><p>{isActive ? '현재 사이트에 적용 중' : '편집 중인 세트'}</p><h1>{setTitle}</h1><span>Header와 Footer를 한 작업면에서 편집합니다.</span></div>
       <div>
@@ -335,6 +338,7 @@ export function SitePartSetEditor({
         <button type="button" className="g7pb-button g7pb-button--quiet" disabled={!ready || isActive || saving} data-testid="page-builder-site-part-set-activate" onClick={() => void onActivate()}><Check size={17} /> {isActive ? '사용 중' : ready ? '이 세트 사용' : '발행 후 사용'}</button>
       </div>
     </header>
+    <SitePartPersonaSelector value={persona} onChange={setPersona} />
     {message ? <div className="g7pb-notice" role="alert"><span>{message}</span><button type="button" className="g7pb-notice__dismiss" onClick={() => setMessage(null)}>닫기</button></div> : null}
     {loading ? <div className="g7pb-loading">헤더·푸터 세트를 준비하는 중입니다.</div> : resources ? <Puck
       key={`${setId}:${resources.header.document.site_part_id}:${resources.footer.document.site_part_id}:${editorRevision}`}
@@ -351,5 +355,5 @@ export function SitePartSetEditor({
     >
       <SetCanvasLayout panel={panel} onPanel={setPanel} sets={sets} selectedId={setId} dirty={dirty} onSelectSet={selectSet} onCreateSet={onCreateSet} onPreset={applyPreset} onViewport={setEditorViewport} />
     </Puck> : null}
-  </section>;
+  </section></SitePartPersona.Provider>;
 }

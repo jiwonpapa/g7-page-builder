@@ -7,7 +7,7 @@
 - template 셸은 공개 G7 state/dispatch에 연결합니다. 독립 builder 셸은 공개 `/api/auth/user`, 알림·장바구니·활성 언어 API를 사용합니다. 자격증명·회원 정보는 HTML 캐시나 문서에 들어가지 않습니다.
 - `use_site_settings`는 선택적인 boolean입니다. 미지정한 기존 문서는 기본 브랜드 `사이트 이름`이면서 로고가 없을 때만 자동 연결합니다. 직접 입력한 브랜드·메뉴·법적 문구는 변경하지 않습니다. 소셜 URL은 HTTPS만 렌더합니다.
 - 편집기 접속 상태는 명시적인 예시이며 저장되지 않습니다. 실제 G7 인증 검증과 분리해 보고합니다.
-- `npm run test:e2e:site-shell`은 실제 compiler와 배포 JS/CSS의 4상태×3화면 계약, 키보드·포인터·접근성 및 실제 G7 관리자 로그인/라우트/로그아웃을 검증합니다. `output/quality/site-shell-product.json`은 검증 당시 소스와 번들 fingerprint를 기록합니다.
+- `npm run test:e2e:site-shell`은 실제 compiler와 배포 JS/CSS의 4상태×3화면 계약, 키보드·포인터·접근성 및 실제 G7 관리자 로그인/라우트/로그아웃을 검증합니다. `output/playwright/site-shell-product.json`은 검증 당시 소스와 편집기·공개 번들 fingerprint를 기록합니다.
 - 패키징과 온라인 배포는 해당 증거가 없거나 오래되면 차단합니다. 본문 140개 블록 품질 게이트도 그대로 유지합니다. 자동 검사 통과를 별도의 사람 디자인 승인으로 표현하지 않습니다.
 
 ## 결론

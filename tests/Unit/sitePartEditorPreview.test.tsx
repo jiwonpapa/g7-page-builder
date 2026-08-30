@@ -4,6 +4,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it } from 'vitest';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  configurable: true,
+  value: class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  },
+});
 
 const mounted: Array<() => void> = [];
 
@@ -13,15 +21,32 @@ afterEach(() => {
 });
 
 describe('Site Part Header preview', () => {
+  it('preserves an open account panel when Puck changes non-content render metadata', async () => {
+    const { HeaderSystemControlsPreview, SitePartPersona } = await import('../../resources/js/editor/SitePartEditor');
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    const options = { search: true, account: true, cart: true, notifications: true, theme: true, locale: true, currency: true };
+    const render = (selected: boolean): React.ReactElement => <SitePartPersona.Provider value="admin"><HeaderSystemControlsPreview {...{ ...options, puck: { isSelected: selected } }} /></SitePartPersona.Provider>;
+    await act(async () => root.render(render(false)));
+    const toggle = container.querySelector<HTMLButtonElement>('[data-g7pb-shell-toggle="account"]');
+    const panel = container.querySelector<HTMLElement>('[data-g7pb-shell-panel="account"]');
+    await act(async () => toggle?.click());
+    expect(panel?.hidden).toBe(false);
+    await act(async () => root.render(render(true)));
+    expect(container.querySelector('[data-g7pb-shell-panel="account"]')).toBe(panel);
+    expect(panel?.hidden).toBe(false);
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    const admin = panel?.querySelector<HTMLAnchorElement>('[data-g7pb-system-admin]');
+    expect(admin?.hidden).toBe(false);
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    await act(async () => admin?.dispatchEvent(click));
+    expect(click.defaultPrevented).toBe(true);
+    expect(panel?.hidden).toBe(false);
+  });
+
   it('shows the configured G7 system controls beside editable Header content', async () => {
-    Object.defineProperty(globalThis, 'ResizeObserver', {
-      configurable: true,
-      value: class {
-        observe(): void {}
-        unobserve(): void {}
-        disconnect(): void {}
-      },
-    });
     const { HeaderNavigationPreview, HeaderSystemControlsPreview } = await import('../../resources/js/editor/SitePartEditor');
     const html = renderToStaticMarkup(<HeaderNavigationPreview
       brandName="지원소프트"

@@ -1,5 +1,6 @@
 import EmblaCarousel from 'embla-carousel';
 import Autoplay from 'embla-carousel-autoplay';
+import { installShellDisclosures, loadShellNotifications, mountShellControls, paintShellProduct, shellAuthHeaders, shellRecord, type ShellWindow } from './siteShellControls';
 
 type MotionPreset = 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
 
@@ -14,7 +15,7 @@ type MotionWindow = Window & {
   IntersectionObserver?: typeof IntersectionObserver;
 };
 
-type G7ShellWindow = MotionWindow & {
+type G7ShellWindow = MotionWindow & ShellWindow & {
   G7Core?: {
     state?: {
       get?: () => unknown;
@@ -618,9 +619,11 @@ export function ensureSiteShellButtons(root: Document = document): void {
   });
 }
 
-function systemState(view: G7ShellWindow): Record<string, unknown> {
+const standaloneShellStates = new WeakMap<Document, Record<string, unknown>>();
+
+function systemState(view: G7ShellWindow, root: Document): Record<string, unknown> {
   try {
-    return asRecord(view.G7Core?.state?.get?.()) ?? {};
+    return asRecord(view.G7Core?.state?.get?.()) ?? standaloneShellStates.get(root) ?? {};
   } catch {
     return {};
   }
@@ -647,15 +650,21 @@ function replaceSelectOptions(select: HTMLSelectElement, values: Array<{ value: 
 
 function ensureG7SystemControlElements(root: Document): void {
   root.querySelectorAll<HTMLElement>('[data-g7pb-system-search-host]').forEach((host) => {
-    if (host.querySelector('form')) return;
+    if (host.matches('form') || host.querySelector('form')) {
+      const input = host.querySelector<HTMLInputElement>('input[name="q"]');
+      if (input && !input.value && systemSearchQueries.has(root)) input.value = systemSearchQueries.get(root)!;
+      return;
+    }
     const form = root.createElement('form');
     form.className = 'g7pb-system-search';
     form.action = '/search';
     form.method = 'get';
     form.role = 'search';
     const label = root.createElement('label');
-    label.className = 'g7pb-visually-hidden';
-    label.textContent = host.dataset.g7pbLabel || '검색';
+    const labelText = root.createElement('span');
+    labelText.className = 'g7pb-visually-hidden';
+    labelText.textContent = host.dataset.g7pbLabel || '검색';
+    label.append(labelText);
     const input = root.createElement('input');
     input.name = 'q';
     input.type = 'search';
@@ -680,6 +689,7 @@ function ensureG7SystemControlElements(root: Document): void {
       text.textContent = host.dataset.g7pbLabel || '';
       const select = root.createElement('select');
       select.setAttribute(selectAttribute, '');
+      select.setAttribute('aria-label', host.dataset.g7pbLabel || '설정');
       label.append(text, select);
       host.append(label);
     });
@@ -689,17 +699,18 @@ function ensureG7SystemControlElements(root: Document): void {
 }
 
 export function renderG7SystemControls(root: Document = document, view: G7ShellWindow = window as G7ShellWindow): void {
+  mountShellControls(root);
   ensureG7SystemControlElements(root);
   const controls = Array.from(root.querySelectorAll<HTMLElement>('[data-g7pb-system-controls]'));
+  const state = systemState(view, root);
+  paintShellProduct(root, state, view.G7Config);
   if (controls.length === 0) return;
-
-  const state = systemState(view);
   const user = asRecord(state.currentUser);
   const isMember = typeof user?.uuid === 'string' && user.uuid !== '';
   const cartCount = Math.max(0, Number(state.cartCount) || 0);
   const notificationCount = Math.max(0, Number(state.notificationCount) || 0);
   const shopBase = typeof state.shopBase === 'string' ? state.shopBase.replace(/\/$/u, '') : '/shop';
-  const appConfig = asRecord(state.appConfig);
+  const appConfig = asRecord(state.appConfig ?? view.G7Config?.appConfig);
   const locales = Array.isArray(appConfig?.supportedLocales)
     ? appConfig.supportedLocales.filter((locale): locale is string => typeof locale === 'string' && /^[a-z]{2,3}(?:-[A-Z]{2})?$/u.test(locale))
     : [];
@@ -710,7 +721,7 @@ export function renderG7SystemControls(root: Document = document, view: G7ShellW
     : [];
   const preferredCurrency = typeof state.preferredCurrency === 'string'
     ? state.preferredCurrency
-    : typeof state.defaultCurrency === 'string' ? state.defaultCurrency : '';
+    : storageValue(view, 'g7_preferred_currency') || (typeof state.defaultCurrency === 'string' ? state.defaultCurrency : '');
 
   controls.forEach((control) => {
     control.querySelectorAll<HTMLElement>('[data-g7pb-system-member]').forEach((item) => { item.hidden = !isMember; });
@@ -753,9 +764,74 @@ export function renderG7SystemControls(root: Document = document, view: G7ShellW
   });
 }
 
+const shellDisclosureMounts = new WeakMap<Document, Map<HTMLElement, () => void>>();
 export function bootG7SystemControls(root: Document = document, view: G7ShellWindow = window as G7ShellWindow): void {
   renderG7SystemControls(root, view);
+  const mounts = shellDisclosureMounts.get(root) ?? new Map<HTMLElement, () => void>();
+  shellDisclosureMounts.set(root, mounts);
+  for (const [host, dispose] of mounts) if (!host.isConnected) { dispose(); mounts.delete(host); }
+  root.querySelectorAll<HTMLElement>('[data-g7pb-shell-mounted]').forEach((host) => {
+    if (host.dataset.g7pbDisclosuresReady) return;
+    mounts.set(host, installShellDisclosures(host, (key) => { if (key === 'notifications') void loadShellNotifications(host, view); }));
+    host.querySelector('[data-g7pb-notifications-read-all]')?.addEventListener('click', () => { void loadShellNotifications(host, view, fetch, true); });
+    host.dataset.g7pbDisclosuresReady = 'true';
+  });
+  if (view.G7Core?.state?.subscribe && root.documentElement.dataset.g7pbStateSubscribed !== 'true') {
+    view.G7Core.state.subscribe(() => renderG7SystemControls(root, view));
+    root.documentElement.dataset.g7pbStateSubscribed = 'true';
+  }
+  const standaloneConfig = root.querySelector<HTMLElement>('[data-g7pb-runtime-config]');
+  if (!view.G7Core && standaloneConfig && !standaloneShellStates.has(root)) {
+    let config: Record<string, unknown> = {};
+    try { config = shellRecord(JSON.parse(standaloneConfig.dataset.g7pbRuntimeConfig ?? '{}')); } catch { /* Safe empty configuration. */ }
+    standaloneShellStates.set(root, config);
+    void fetch('/api/public/locales/active', { headers: { Accept: 'application/json' } }).then(async (response) => {
+      if (!response.ok) return;
+      const locales = shellRecord(shellRecord(await response.json()).data);
+      config = { ...config, appConfig: { supportedLocales: locales.locales, localeNames: locales.locale_names } };
+      standaloneShellStates.set(root, { ...standaloneShellStates.get(root), appConfig: config.appConfig });
+      renderG7SystemControls(root, view);
+    }).catch(() => { /* Optional language capabilities fail closed. */ });
+    const refresh = async (): Promise<void> => {
+      try {
+        const response = await fetch('/api/auth/user', { credentials: 'same-origin', headers: shellAuthHeaders(view) });
+        const payload = response.ok ? shellRecord(await response.json()) : {};
+        const currentUser = shellRecord(payload.data);
+        standaloneShellStates.set(root, { ...config, currentUser });
+        renderG7SystemControls(root, view);
+        if (config.commerceAvailable === true) {
+          const headers = shellAuthHeaders(view);
+          const key = storageValue(view, 'g7_cart_key');
+          if (key) headers['X-Cart-Key'] = key;
+          const cart = await fetch('/api/modules/sirsoft-ecommerce/cart/count', { credentials: 'same-origin', headers });
+          if (cart.ok) {
+            const count = shellRecord(shellRecord(await cart.json()).data);
+            standaloneShellStates.set(root, { ...standaloneShellStates.get(root), cartCount: Number(count.count) || 0 });
+            renderG7SystemControls(root, view);
+          }
+        }
+        if (typeof currentUser.uuid === 'string') {
+          const unread = await fetch('/api/user/notifications/unread-count', { credentials: 'same-origin', headers: shellAuthHeaders(view) });
+          if (unread.ok) {
+            const count = shellRecord(shellRecord(await unread.json()).data);
+            standaloneShellStates.set(root, { ...standaloneShellStates.get(root), notificationCount: Number(count.count ?? count.unread_count) || 0 });
+            renderG7SystemControls(root, view);
+          }
+        }
+      } catch { /* Public content remains usable when account services are unavailable. */ }
+    };
+    void refresh();
+    view.addEventListener('storage', (event) => { if (event.key === 'auth_token') void refresh(); });
+    view.addEventListener('pageshow', (event) => { if (event.persisted) void refresh(); });
+    renderG7SystemControls(root, view);
+  }
   if (root.documentElement.dataset.g7pbSystemControlsReady === 'true') return;
+
+  root.addEventListener('g7pb:notifications-read', () => {
+    if (view.G7Core?.state?.set) view.G7Core.state.set({ notificationCount: 0 });
+    else standaloneShellStates.set(root, { ...systemState(view, root), notificationCount: 0 });
+    renderG7SystemControls(root, view);
+  });
 
   root.addEventListener('input', (event) => {
     const input = event.target as HTMLInputElement | null;
@@ -771,8 +847,9 @@ export function bootG7SystemControls(root: Document = document, view: G7ShellWin
     const current = storageValue(view, 'g7_color_scheme') || 'auto';
     const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
     try {
-      const dispatched = view.G7Core?.dispatch?.({ handler: 'setTheme', target: next });
-      if (dispatched === undefined) {
+      if (view.G7Core?.dispatch) {
+        void view.G7Core.dispatch({ handler: 'setTheme', target: next });
+      } else {
         view.localStorage.setItem('g7_color_scheme', next);
         const resolved = next === 'auto' && typeof view.matchMedia === 'function'
           ? (view.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -780,6 +857,8 @@ export function bootG7SystemControls(root: Document = document, view: G7ShellWin
         root.documentElement.dataset.theme = resolved;
         root.documentElement.classList.toggle('dark', resolved === 'dark');
       }
+      const label = button.querySelector('[data-g7pb-theme-label]');
+      if (label) label.textContent = next === 'auto' ? '화면 모드: 시스템' : next === 'light' ? '화면 모드: 밝게' : '화면 모드: 어둡게';
     } catch {
       // G7가 초기화되지 않은 순간에는 기존 템플릿 상태를 바꾸지 않습니다.
     }
@@ -789,21 +868,22 @@ export function bootG7SystemControls(root: Document = document, view: G7ShellWin
     const select = event.target as HTMLSelectElement | null;
     if (!select) return;
     if (select.matches('[data-g7pb-system-locale]') && /^[a-z]{2,3}(?:-[A-Z]{2})?$/u.test(select.value)) {
-      void view.G7Core?.dispatch?.({ handler: 'setLocale', target: select.value });
+      if (view.G7Core?.dispatch) void view.G7Core.dispatch({ handler: 'setLocale', target: select.value });
+      else { view.localStorage.setItem('g7_locale', select.value); view.location.reload(); }
     }
     if (select.matches('[data-g7pb-system-currency]') && /^[A-Z]{3}$/u.test(select.value)) {
-      void view.G7Core?.dispatch?.({
+      if (view.G7Core?.dispatch) void view.G7Core.dispatch({
         handler: 'sirsoft-basic.savePreferredCurrency',
         params: { currencyCode: select.value },
       });
+      else {
+        view.localStorage.setItem('g7_preferred_currency', select.value);
+        standaloneShellStates.set(root, { ...systemState(view, root), preferredCurrency: select.value });
+        renderG7SystemControls(root, view);
+      }
     }
   });
 
-  try {
-    view.G7Core?.state?.subscribe?.(() => renderG7SystemControls(root, view));
-  } catch {
-    // 구형 호스트는 subscribe 없이도 MutationObserver 재부트로 현재 상태를 반영합니다.
-  }
   root.documentElement.dataset.g7pbSystemControlsReady = 'true';
 }
 
@@ -936,7 +1016,10 @@ export function bootServiceActions(
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    void fetcher('/api/user/auth/logout', {
+    const nativeDispatch = (view as G7ShellWindow).G7Core?.dispatch;
+    const request = nativeDispatch
+      ? Promise.resolve().then(() => nativeDispatch({ handler: 'logout' }))
+      : fetcher('/api/auth/logout', {
       method: 'POST',
       credentials: 'same-origin',
       headers,
@@ -944,7 +1027,15 @@ export function bootServiceActions(
       if (!response.ok) throw new Error('logout failed');
       storage?.removeItem('auth_token');
       navigate('/');
-    }).catch(() => {
+    });
+    void request.catch(() => {
+      link.dataset.g7pbActionPending = 'false';
+      link.removeAttribute('aria-disabled');
+      let error = link.closest('[data-g7pb-system-controls]')?.querySelector<HTMLElement>('[data-g7pb-shell-error]');
+      if (!error) { error = root.createElement('span'); error.role = 'alert'; link.after(error); }
+      error.hidden = false;
+      error.textContent = '로그아웃하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    }).finally(() => {
       link.dataset.g7pbActionPending = 'false';
       link.removeAttribute('aria-disabled');
     });
@@ -1167,3 +1258,4 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !isTestR
 }
 import '../../css/page-builder-public.css';
 import '../../css/page-builder-site-part-responsive.css';
+import '../../css/page-builder-site-shell.css';

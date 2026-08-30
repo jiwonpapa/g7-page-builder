@@ -222,7 +222,8 @@ async function measureTyping(page: Page): Promise<number[]> {
     '[data-testid="page-builder-block"][data-block-type="hero"]',
   );
   await hero.scrollIntoViewIfNeeded();
-  await hero.click({ position: { x: 4, y: 4 } });
+  // Click the block's padding, not the rounded 4px boundary shared with the root overlay.
+  await hero.click({ position: { x: 24, y: 24 } });
   const input = page.locator('[data-testid="page-builder-hero-subtitle"]:visible').first();
   await expect(input).toBeVisible();
   await input.fill('PERFORMANCE');

@@ -254,7 +254,7 @@ describe('published page effects runtime', () => {
     root.querySelector('span')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
 
-    expect(fetcher).toHaveBeenCalledWith('/api/user/auth/logout', expect.objectContaining({
+    expect(fetcher).toHaveBeenCalledWith('/api/auth/logout', expect.objectContaining({
       method: 'POST',
       credentials: 'same-origin',
       headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),

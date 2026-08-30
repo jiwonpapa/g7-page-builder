@@ -1075,7 +1075,10 @@ grep -q 'trap restore_files ERR' "$root/scripts/remote-deploy-staging.sh" \
   || fail 'staging deploy temporary file rollback trap missing'
 grep -q 'trap cleanup_work EXIT' "$root/scripts/remote-deploy-staging.sh" \
   || fail 'staging deploy temporary work cleanup missing'
-grep -q 'rm -rf -- "$rollback_path"' "$root/scripts/remote-deploy-staging.sh" \
-  || fail 'staging deploy rollback cleanup missing'
+grep -q 'Previous module retained for recovery: $rollback_path' "$root/scripts/remote-deploy-staging.sh" \
+  || fail 'staging deploy must retain the previous release for recovery'
+if grep -q 'rm -rf -- "$rollback_path"' "$root/scripts/remote-deploy-staging.sh"; then
+  fail 'staging deploy must not delete the recovery release automatically'
+fi
 
 printf 'coord-harness.test: PASS\n'

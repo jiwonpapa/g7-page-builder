@@ -43,6 +43,9 @@
     @endif
 </head>
 <body>
+    @if (!empty($siteRuntimeConfig))
+        <div hidden data-g7pb-runtime-config="{{ json_encode($siteRuntimeConfig, JSON_THROW_ON_ERROR) }}"></div>
+    @endif
     @if (!empty($siteShell) || !empty($siteHeaderHtml) || !empty($siteFooterHtml))
         <a class="g7pb-skip-link" href="#g7pb-main">본문 바로가기</a>
     @endif

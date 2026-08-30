@@ -107,7 +107,7 @@ export async function validateEditorAcceptanceContract(root) {
     [sitePartEditorSource, /usePuck<Config<SitePartComponents>>\(\)[\s\S]*?appState\.ui\.viewports\.current\.width/, '기기별 표시 필드는 실제 Puck viewport 상태를 사용해야 합니다.'],
     [sitePartEditorSource, /page-builder-responsive-reset[\s\S]*?sheet-bottom/, '기기별 표시 UI에 초기화와 하단 시트 메뉴가 필요합니다.'],
     [sitePartSchema, /headerResponsiveOverride[\s\S]*?additionalProperties[\s\S]*?false[\s\S]*?sheet-bottom/, 'Site Part schema가 임의 스타일을 막고 하단 시트 enum을 허용해야 합니다.'],
-    [sitePartCompiler, /COMPILER_VERSION = '0\.5\.0'[\s\S]*?data-g7pb-tablet-density[\s\S]*?data-g7pb-mobile-menu-style/, '발행 컴파일러가 새 반응형 계약과 compiler version을 출력해야 합니다.'],
+    [sitePartCompiler, /COMPILER_VERSION = '0\.6\.0'[\s\S]*?data-g7pb-tablet-density[\s\S]*?data-g7pb-mobile-menu-style/, '발행 컴파일러가 새 반응형 계약과 compiler version을 출력해야 합니다.'],
     [sitePartSpec, /page-builder-responsive-menu-style[\s\S]*?selectOption\('sheet-bottom'\)[\s\S]*?page-builder-responsive-reset/, 'Site Part E2E가 실제 viewport 설정 변경과 초기화를 검증해야 합니다.'],
     [sitePartSpec, /data-g7pb-mobile-menu-style[\s\S]*?sheet-bottom[\s\S]*?drawerBox[\s\S]*?viewportSize/, 'Site Part E2E가 공개 하단 시트의 실제 geometry를 검증해야 합니다.'],
     [sitePartSpec, /page-builder-responsive-navigation[\s\S]*?selectOption\('false'\)[\s\S]*?footerNavigation[\s\S]*?toBeHidden/, 'Footer E2E가 모바일 메뉴 표시 재정의를 실제 화면에서 검증해야 합니다.'],

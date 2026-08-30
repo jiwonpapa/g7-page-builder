@@ -6,9 +6,12 @@ use App\Seo\SeoMiddleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
+use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\EmbeddedFramePolicy;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\SiteShellRuntimeConfig;
 use Symfony\Component\HttpFoundation\Response;
 
 final class PageBuilderHomeOverride
@@ -17,6 +20,7 @@ final class PageBuilderHomeOverride
         private readonly PageBuilderService $service,
         private readonly SiteShellService $siteShellService,
         private readonly ?SeoMiddleware $seo = null,
+        private readonly ?SitePartService $sitePartService = null,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -60,9 +64,24 @@ final class PageBuilderHomeOverride
                 Log::warning('Page Builder home site shell was skipped.', ['exception' => $exception]);
             }
         }
-        $etag = '"'.($siteShell === null
+        $siteHeaderHtml = null;
+        $siteFooterHtml = null;
+        if (in_array($page->shellMode, ['builder', 'global'], true) && $this->sitePartService !== null) {
+            try {
+                $compiler = new SitePartHtmlCompiler;
+                $header = $this->sitePartService->published('header', $page->locale);
+                $footer = $this->sitePartService->published('footer', $page->locale);
+                $siteHeaderHtml = $header === null ? null : $compiler->compile($header->document, $header->revision)->html;
+                $siteFooterHtml = $footer === null ? null : $compiler->compile($footer->document, $footer->revision)->html;
+            } catch (\Throwable $exception) {
+                Log::warning('Page Builder home Site Parts were skipped.', ['exception' => $exception]);
+            }
+        }
+        $runtimeConfig = (new SiteShellRuntimeConfig)->snapshot();
+        $representation = ($siteShell === null
             ? $page->representationSha256()
-            : hash('sha256', $page->representationSha256().$siteShell->shell->representationSha256())).'"';
+            : hash('sha256', $page->representationSha256().$siteShell->shell->representationSha256()));
+        $etag = '"'.hash('sha256', $representation.($siteHeaderHtml ?? '').($siteFooterHtml ?? '').json_encode($runtimeConfig, JSON_THROW_ON_ERROR)).'"';
         if ($request->header('If-None-Match') === $etag) {
             return response('', 304)
                 ->header('Cache-Control', 'public, no-cache, must-revalidate')
@@ -76,6 +95,9 @@ final class PageBuilderHomeOverride
                 'rootTestId' => 'page-builder-public-root',
                 'canonicalUrl' => url('/'),
                 'siteShell' => $siteShell?->shell,
+                'siteHeaderHtml' => $siteHeaderHtml,
+                'siteFooterHtml' => $siteFooterHtml,
+                'siteRuntimeConfig' => $runtimeConfig,
             ])
             ->header('Cache-Control', 'public, no-cache, must-revalidate')
             ->header('ETag', $etag)

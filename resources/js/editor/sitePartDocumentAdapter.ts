@@ -15,6 +15,7 @@ import {
 } from './sitePartResponsive';
 
 export interface HeaderNavigationProps {
+  useSiteSettings?: boolean;
   brandName: string;
   logoUrl: string;
   homeUrl: string;
@@ -56,6 +57,7 @@ export interface AnnouncementProps {
 }
 
 export interface FooterSimpleProps {
+  useSiteSettings?: boolean;
   brandName: string;
   homeUrl: string;
   navigation: SitePartLink[];
@@ -69,6 +71,7 @@ export interface FooterColumnItem {
 }
 
 export interface FooterColumnsProps {
+  useSiteSettings?: boolean;
   brandName: string;
   homeUrl: string;
   columns: FooterColumnItem[];
@@ -242,8 +245,8 @@ export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePar
         variant: preset === 'header-minimal' ? 'transparent' : 'solid',
         sticky: true,
         navigation,
-        ctaLabel: preset === 'header-minimal' ? '' : preset === 'header-community' ? '로그인' : '문의하기',
-        ctaUrl: preset === 'header-community' ? '/login' : '/pages/contact',
+        ctaLabel: preset === 'header-business' ? '문의하기' : '',
+        ctaUrl: '/pages/contact',
         mobileMenu: true,
         mobileMenuStyle: preset === 'header-community' ? 'drawer-left' : 'drawer-right',
         responsiveOverrides: legacyHeaderResponsiveOverrides(preset === 'header-community' ? 'drawer-left' : 'drawer-right'),
@@ -280,7 +283,7 @@ export function sitePartPresetToPuck(document: SitePartDocument, preset: SitePar
   const columns = preset === 'footer-community'
     ? [
       { heading: '커뮤니티', links: [{ label: '최신글', url: '/boards' }, { label: '인기글', url: '/boards?sort=popular' }] },
-      { heading: '회원', links: [{ label: '로그인', url: '/login' }, { label: '회원가입', url: '/register' }] },
+      { heading: '고객 지원', links: [{ label: '도움말', url: '/pages/guide' }, { label: '문의', url: '/pages/contact' }] },
       { heading: '안내', links: [{ label: '이용약관', url: '/pages/terms' }, { label: '개인정보처리방침', url: '/pages/privacy' }] },
     ]
     : [
@@ -313,6 +316,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
       content.push({ type: component, props: {
         id,
         brandName: text(props.brand_name, '사이트 이름'),
+        ...(typeof props.use_site_settings === 'boolean' ? { useSiteSettings: props.use_site_settings } : {}),
         logoUrl: text(props.logo_url),
         homeUrl: text(props.home_url, '/'),
         variant: props.variant === 'transparent' ? 'transparent' : 'solid',
@@ -347,6 +351,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
       content.push({ type: component, props: {
         id,
         brandName: text(props.brand_name, '사이트 이름'),
+        ...(typeof props.use_site_settings === 'boolean' ? { useSiteSettings: props.use_site_settings } : {}),
         homeUrl: text(props.home_url, '/'),
         navigation: leafLinks(props.navigation),
         footerText: text(props.footer_text),
@@ -365,6 +370,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
     content.push({ type: component, props: {
       id,
       brandName: text(props.brand_name, '사이트 이름'),
+      ...(typeof props.use_site_settings === 'boolean' ? { useSiteSettings: props.use_site_settings } : {}),
       homeUrl: text(props.home_url, '/'),
       columns,
       legalText: text(props.legal_text),
@@ -464,6 +470,7 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
           : {}),
       };
     }
+    if (component !== 'Announcement' && typeof props.useSiteSettings === 'boolean') canonicalProps.use_site_settings = props.useSiteSettings;
     return {
       instance_id: stableUuid(text(props.id, `${source.site_part_id}:${component}:${index}`)),
       type: TYPE_BY_COMPONENT[component],

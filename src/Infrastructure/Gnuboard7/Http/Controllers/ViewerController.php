@@ -14,6 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShellSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\EmbeddedFramePolicy;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\SiteShellRuntimeConfig;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ViewerController
@@ -48,6 +49,7 @@ final class ViewerController
             ->view('g7-page-builder::editor', [
                 'documentId' => $documentId,
                 'locale' => app()->getLocale(),
+                'siteRuntimeConfig' => (new SiteShellRuntimeConfig)->snapshot(),
             ])
             ->header('Cache-Control', 'no-store')
             ->header('X-Robots-Tag', 'noindex, nofollow');
@@ -63,6 +65,7 @@ final class ViewerController
             ->view('g7-page-builder::site-part-editor', [
                 'kind' => $kind,
                 'locale' => app()->getLocale(),
+                'siteRuntimeConfig' => (new SiteShellRuntimeConfig)->snapshot(),
             ])
             ->header('Cache-Control', 'no-store')
             ->header('X-Robots-Tag', 'noindex, nofollow');
@@ -74,6 +77,7 @@ final class ViewerController
             ->view('g7-page-builder::site-part-editor', [
                 'kind' => null,
                 'locale' => app()->getLocale(),
+                'siteRuntimeConfig' => (new SiteShellRuntimeConfig)->snapshot(),
             ])
             ->header('Cache-Control', 'no-store')
             ->header('X-Robots-Tag', 'noindex, nofollow');
@@ -103,6 +107,7 @@ final class ViewerController
                 'siteShell' => $siteShell?->shell,
                 'siteHeaderHtml' => $siteHeader?->html,
                 'siteFooterHtml' => $siteFooter?->html,
+                'siteRuntimeConfig' => (new SiteShellRuntimeConfig)->snapshot(),
             ])
             ->header('Cache-Control', 'no-store')
             ->header('Pragma', 'no-cache')
@@ -144,6 +149,7 @@ final class ViewerController
                 'siteShell' => $siteShell?->shell,
                 'siteHeaderHtml' => $siteHeader?->html,
                 'siteFooterHtml' => $siteFooter?->html,
+                'siteRuntimeConfig' => (new SiteShellRuntimeConfig)->snapshot(),
             ])
             ->header('Cache-Control', 'public, no-cache, must-revalidate')
             ->header('ETag', $etag)
@@ -216,6 +222,7 @@ final class ViewerController
 
         return hash('sha256', implode(':', [
             $page->representationSha256(),
+            json_encode((new SiteShellRuntimeConfig)->snapshot(), JSON_THROW_ON_ERROR),
             $siteHeader instanceof SitePartArtifact ? $siteHeader->artifactSha256 : $shellSha256,
             $siteFooter instanceof SitePartArtifact ? $siteFooter->artifactSha256 : $shellSha256,
         ]));

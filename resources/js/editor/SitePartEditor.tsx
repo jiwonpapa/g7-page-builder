@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { installShellDisclosures, paintShellProduct, shellControlsMarkup, shellIcon, shellRecord, shellSafeUrl } from '../public/siteShellControls';
+import '../../css/page-builder-site-shell.css';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, registerOverlayPortal, type Config, type Field, usePuck, type Viewports } from '@puckeditor/core';
 import {
@@ -155,19 +157,32 @@ function createFooterResponsiveField(): Field<FooterResponsiveOverrides | undefi
 }
 
 export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps): React.ReactElement {
-  const prevent = (event: React.SyntheticEvent): void => event.preventDefault();
-  return <nav className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls>
-    {props.search ? <form className="g7pb-system-search" action="/search" onSubmit={prevent}>
-      <input name="q" aria-label="통합 검색" placeholder="통합 검색" readOnly />
-      <button type="submit">검색</button>
-    </form> : null}
-    {props.notifications ? <a href="/mypage/notifications" onClick={prevent}>알림 <span className="g7pb-system-badge">3</span></a> : null}
-    {props.cart ? <a href="/shop/cart" onClick={prevent}>장바구니 <span className="g7pb-system-badge">2</span></a> : null}
-    {props.theme ? <button type="button">화면 모드</button> : null}
-    {props.locale ? <label className="g7pb-system-select"><span>언어</span><select aria-label="언어" value="ko" disabled><option value="ko">한국어</option></select></label> : null}
-    {props.currency ? <label className="g7pb-system-select"><span>통화</span><select aria-label="통화" value="KRW" disabled><option value="KRW">KRW</option></select></label> : null}
-    {props.account ? <a href="/login" onClick={prevent}>로그인</a> : null}
-  </nav>;
+  const persona = useContext(SitePartPersona);
+  const ref = useRef<HTMLElement>(null);
+  const signature = JSON.stringify(props);
+  const markup = useMemo(() => shellControlsMarkup(JSON.parse(signature) as HeaderSystemControlsProps), [signature]);
+  useEffect(() => {
+    const host = ref.current;
+    if (!host) return;
+    host.innerHTML = markup;
+    paintShellProduct(host, { currentUser: persona === 'guest' ? null : { uuid: 'preview', name: persona === 'admin' ? '관리자 미리보기' : '회원 미리보기', is_admin: persona === 'admin' }, commerceAvailable: true, cartCount: 2, notificationCount: 3 });
+    host.querySelectorAll<HTMLElement>('[data-g7pb-system-locale-host], [data-g7pb-system-currency-host]').forEach((node) => {
+      const language = node.hasAttribute('data-g7pb-system-locale-host');
+      node.innerHTML = `<label class="g7pb-system-select"><span>${language ? '언어' : '통화'}</span><select aria-label="${language ? '언어' : '통화'}">${language ? '<option>한국어</option><option>English</option>' : '<option>KRW</option><option>USD</option>'}</select></label>`;
+    });
+    const unregister = registerOverlayPortal(host, { disableDrag: true });
+    const dispose = installShellDisclosures(host, (key) => {
+      if (key === 'notifications') { const list = host.querySelector('[data-g7pb-notifications-list]'); if (list) list.textContent = '서비스 소식 · 상태 미리보기용 예시 알림입니다.'; }
+    }, true);
+    return () => { dispose(); unregister?.(); };
+  }, [markup, persona]);
+  return <nav ref={ref} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={{ __html: markup }} />;
+}
+
+export const SitePartPersona = createContext<'guest' | 'member' | 'admin'>('guest');
+
+export function SitePartPersonaSelector({ value, onChange }: { value: 'guest' | 'member' | 'admin'; onChange: (value: 'guest' | 'member' | 'admin') => void }): React.ReactElement {
+  return <label className="g7pb-site-part-persona">접속 상태 미리보기<select aria-label="접속 상태 미리보기" value={value} onChange={(event) => onChange(event.target.value as typeof value)}><option value="guest">비회원</option><option value="member">일반 회원</option><option value="admin">관리자</option></select><small>예시 상태 · 저장되지 않습니다</small></label>;
 }
 
 function headerResponsiveAttributes(props: HeaderNavigationProps): Record<string, string> {
@@ -341,6 +356,7 @@ function HeaderMobileMenuPreview(props: HeaderNavigationProps): React.ReactEleme
 }
 
 export function HeaderNavigationPreview(props: HeaderNavigationProps & { systemControlsPreview?: React.ReactNode }): React.ReactElement {
+  const information = previewSiteInformation(props);
   const navigation = (className: string, label: string): React.ReactElement => <nav className={className} aria-label={label}><ul>{props.navigation.map((item, index) => (
     <li key={`${item.label}-${index}`} className={item.children.length > 0 ? 'has-children' : undefined}>
       <a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}{item.children.length > 0 ? <span aria-hidden="true">⌄</span> : null}</a>
@@ -353,9 +369,9 @@ export function HeaderNavigationPreview(props: HeaderNavigationProps & { systemC
     <header className={`g7pb-site-header ${props.sticky ? 'is-sticky' : ''} ${props.variant === 'transparent' ? 'is-transparent' : ''}`} {...headerResponsiveAttributes(props)}>
       <div className="g7pb-site-header__inner">
         <a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>
-          {props.logoUrl ? <img src={props.logoUrl} alt={props.brandName} /> : <span data-g7pb-inline-field="brandName">{props.brandName}</span>}
+          {props.logoUrl ? <img src={props.logoUrl} alt={props.brandName} /> : <span data-g7pb-inline-field="brandName">{information.brandName}</span>}
         </a>
-        {navigation('g7pb-site-nav', '주 메뉴')}
+        {props.navigation.length ? navigation('g7pb-site-nav', '주 메뉴') : <div className="g7pb-site-nav" aria-hidden="true" />}
         <div className="g7pb-site-header__actions">
           {props.ctaLabel ? <a className="g7pb-site-header__cta" href={safeSitePartHref(props.ctaUrl)} onClick={(event) => event.preventDefault()}>{props.ctaLabel}</a> : null}
           {props.systemControlsPreview}
@@ -374,17 +390,34 @@ export function AnnouncementPreview(props: AnnouncementProps): React.ReactElemen
 }
 
 export function FooterSimplePreview(props: FooterSimpleProps): React.ReactElement {
+  const information = previewSiteInformation(props);
   return <footer className="g7pb-site-footer" {...footerResponsiveAttributes(props.responsiveOverrides ?? {}, 2)}><div className="g7pb-site-footer__top">
-    <a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()} data-g7pb-inline-field="brandName">{props.brandName}</a>
+    <div><a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()} data-g7pb-inline-field="brandName">{information.brandName}</a><SiteInformationPreview {...information} /></div>
     <nav aria-label="하단 메뉴"><ul>{props.navigation.map((item, index) => <li key={`${item.label}-${index}`}><a href={safeSitePartHref(item.url)} onClick={(event) => event.preventDefault()}>{item.label}</a></li>)}</ul></nav>
-  </div>{props.footerText ? <p className="g7pb-site-footer__legal" data-g7pb-inline-field="footerText">{props.footerText}</p> : null}</footer>;
+  </div>{props.footerText && !(information.inherit && props.footerText === '사이트 정보를 입력해 주세요.') ? <p className="g7pb-site-footer__legal" data-g7pb-inline-field="footerText">{props.footerText}</p> : null}</footer>;
 }
 
 export function FooterColumnsPreview(props: FooterColumnsProps): React.ReactElement {
+  const information = previewSiteInformation(props);
   return <footer className="g7pb-site-footer g7pb-site-footer--columns" {...footerResponsiveAttributes(props.responsiveOverrides ?? {}, 4)}><div className="g7pb-site-footer__columns">
-    <div><a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>{props.brandName}</a></div>
+    <div><a className="g7pb-site-brand" href={safeSitePartHref(props.homeUrl)} onClick={(event) => event.preventDefault()}>{information.brandName}</a><SiteInformationPreview {...information} /></div>
     {props.columns.map((column, index) => <section key={`${column.heading}-${index}`}><h2>{column.heading}</h2><ul>{column.links.map((link, linkIndex) => <li key={`${link.label}-${linkIndex}`}><a href={safeSitePartHref(link.url)} onClick={(event) => event.preventDefault()}>{link.label}</a></li>)}</ul></section>)}
-  </div>{props.legalText ? <p className="g7pb-site-footer__legal">{props.legalText}</p> : null}</footer>;
+  </div>{props.legalText && !(information.inherit && props.legalText === '사이트 정보를 입력해 주세요.') ? <p className="g7pb-site-footer__legal">{props.legalText}</p> : null}</footer>;
+}
+
+function previewSiteInformation(props: { brandName: string; useSiteSettings?: boolean; logoUrl?: string }): { inherit: boolean; brandName: string; description: string; socials: Record<string, unknown> } {
+  const inherit = props.useSiteSettings ?? (props.brandName === '사이트 이름' && !props.logoUrl);
+  let config: Record<string, unknown> = {};
+  try { if (typeof document !== 'undefined') config = shellRecord(JSON.parse(document.querySelector<HTMLElement>('[data-g7pb-runtime-config]')?.dataset.g7pbRuntimeConfig ?? '{}')); } catch { /* Keep authored fallback during isolated preview tests. */ }
+  const settings = shellRecord(config.settings); const general = shellRecord(settings.general);
+  return { inherit, brandName: inherit && typeof general.site_name === 'string' && general.site_name ? general.site_name : props.brandName, description: inherit && typeof general.site_description === 'string' ? general.site_description : '', socials: inherit ? shellRecord(settings.social) : {} };
+}
+
+function SiteInformationPreview(info: ReturnType<typeof previewSiteInformation>): React.ReactElement {
+  const socials = ['github', 'twitter', 'discord', 'facebook', 'instagram', 'youtube'].flatMap((name) => {
+    const url = shellSafeUrl(info.socials[name]); return url.startsWith('https:') ? [{ name, url }] : [];
+  });
+  return <>{info.description ? <p className="g7pb-site-description">{info.description}</p> : null}{socials.length ? <nav className="g7pb-site-socials" aria-label="소셜 채널">{socials.map(({ name, url }) => <a key={name} href={url} aria-label={`${name} (새 창)`} onClick={(event) => event.preventDefault()} dangerouslySetInnerHTML={{ __html: shellIcon(name) }} />)}</nav> : null}</>;
 }
 
 function SitePartDrawer({ children }: { children: React.ReactNode }): React.ReactElement {
@@ -541,6 +574,13 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
     },
   };
   const allowed = kind === 'header' ? ['HeaderNavigation', 'HeaderSystemControls', 'Announcement'] : ['FooterSimple', 'FooterColumns'];
+  const settingsField: Field<boolean | undefined> = {
+    type: 'custom', label: 'G7 사이트 정보 연결',
+    render: ({ value, onChange, readOnly }) => <label><select aria-label="G7 사이트 정보 연결" disabled={readOnly} value={value === undefined ? 'auto' : String(value)} onChange={(event) => onChange(event.target.value === 'auto' ? undefined : event.target.value === 'true')}><option value="auto">기본 이름만 자동 연결</option><option value="true">G7 사이트 설정 사용</option><option value="false">직접 입력한 정보 사용</option></select><small>사이트 이름·설명·소셜을 G7 설정에서 가져옵니다. 법적 문구와 메뉴는 유지됩니다.</small></label>,
+  };
+  all.HeaderNavigation.fields = { ...all.HeaderNavigation.fields!, useSiteSettings: settingsField };
+  all.FooterSimple.fields = { ...all.FooterSimple.fields!, useSiteSettings: settingsField };
+  all.FooterColumns.fields = { ...all.FooterColumns.fields!, useSiteSettings: settingsField };
   return {
     components: Object.fromEntries(Object.entries(all).filter(([name]) => allowed.includes(name))) as Config<SitePartComponents>['components'],
     root: { fields: {}, render: ({ children }) => <div className={`g7pb-site-part-preview g7pb-site-part-preview--${kind}`}>{kind === 'footer' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}{children}{kind === 'header' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}</div> },
@@ -615,6 +655,7 @@ function errorMessage(error: unknown): string {
 }
 
 export function SitePartEditor({ kind, locale, setId, embedded = false, paired = false, iframeEnabled = true, onBack, onChanged }: SitePartEditorProps): React.ReactElement {
+  const [persona, setPersona] = useState<'guest' | 'member' | 'admin'>('guest');
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const config = useMemo(() => sitePartConfigFor(kind), [kind]);
   const overrides = useMemo(() => ({
@@ -711,7 +752,7 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     setMessage('프리셋을 적용했습니다. 라우트와 문구를 확인한 뒤 저장·발행하세요.');
   };
 
-  return <section className={`g7pb-root g7pb-site-part-editor ${embedded ? 'is-embedded' : ''} ${paired ? 'is-paired' : ''}`} data-testid="page-builder-site-part-editor" data-kind={kind}>
+  return <SitePartPersona.Provider value={persona}><section className={`g7pb-root g7pb-site-part-editor ${embedded ? 'is-embedded' : ''} ${paired ? 'is-paired' : ''}`} data-testid="page-builder-site-part-editor" data-kind={kind}>
     <header className="g7pb-command-bar">
       <div className="g7pb-command-bar__identity">{paired ? null : embedded ? <button type="button" className="g7pb-icon-link" aria-label="페이지 편집으로 돌아가기" onClick={onBack}><ArrowLeft size={18} /></button> : <a href={PAGE_BUILDER_MANAGER_PATH} className="g7pb-icon-link" aria-label="문서함으로 돌아가기"><ArrowLeft size={18} /></a>}<div><p>{paired ? '공통 영역' : 'Global Site Part'}</p><strong>{kind === 'header' ? 'Header 편집' : 'Footer 편집'}</strong></div></div>
       <div className="g7pb-command-bar__actions">
@@ -724,8 +765,9 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     {busy && !resource ? <div className="g7pb-loading">Site Part를 준비하는 중입니다.</div> : null}
     {resource ? <div className="g7pb-site-part-puck" aria-busy={busy}>
       <SitePartPresetBar kind={kind} onApply={applyPreset} />
+      {kind === 'header' ? <SitePartPersonaSelector value={persona} onChange={setPersona} /> : null}
       <div className="g7pb-site-part-device-legend"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>기기 버튼을 바꾸면 우측의 기기별 표시 설정도 함께 바뀝니다.</span></div>
       <Puck config={config} data={data} height="100%" iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ itemSelector: data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null, viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} overrides={overrides} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
     </div> : null}
-  </section>;
+  </section></SitePartPersona.Provider>;
 }

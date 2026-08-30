@@ -11,14 +11,15 @@ const budgets = [
   { path: 'resources/css/page-builder-editor-wysiwyg.css', raw: 2_000 },
   { path: 'resources/css/page-builder-site-part.css', raw: 1_000 },
   { path: 'resources/css/page-builder-public.css', raw: 90_000 },
+  { path: 'resources/css/page-builder-site-shell.css', raw: 9_000 },
   { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
   { path: 'dist/css/page-builder-editor.css', gzip: 45_000 },
-  { path: 'dist/css/page-builder-site-part.css', gzip: 30_000 },
-  { path: 'dist/css/page-builder-public.css', gzip: 16_000 },
+  { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
+  { path: 'dist/css/page-builder-public.css', gzip: 18_000 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
   { path: 'dist/js/page-builder-editor.iife.js', gzip: 500_000 },
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
-  { path: 'dist/js/page-effects.iife.js', gzip: 20_000 },
+  { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
 ];
 
 const report = [];

@@ -1,6 +1,6 @@
 {
   "name": "@jiwonpapa/g7-page-builder",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -19,6 +19,8 @@
     "check:editor-acceptance": "node scripts/check-editor-acceptance-contract.mjs",
     "check:editor-layout-parity": "node scripts/check-editor-layout-parity.mjs",
     "check:block-product-quality": "node scripts/check-block-product-quality.mjs",
+    "check:site-shell-product-quality": "node scripts/check-site-shell-product-quality.mjs",
+    "test:e2e:site-shell": "node scripts/check-site-shell-product-quality.mjs --run",
     "lint:css": "stylelint \"resources/css/**/*.css\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -27,7 +29,7 @@
     "test:e2e:infra": "playwright test tests/E2E/infrastructure.spec.ts",
     "test:e2e:performance": "playwright test tests/E2E/editorPerformance.spec.ts --project=desktop",
     "pretest:e2e:product": "npm run check:block-product-quality -- --verify-render-source",
-    "test:e2e:product": "playwright test tests/E2E/pageBuilderLifecycle.spec.ts tests/E2E/sitePartLifecycle.spec.ts tests/E2E/globalSiteShellRoutes.spec.ts tests/E2E/officialStore.spec.ts tests/E2E/publicQuality.spec.ts tests/E2E/blockCatalogQuality.spec.ts tests/E2E/editorPerformance.spec.ts tests/E2E/editorInteractionQuality.spec.ts tests/E2E/editorLayoutParity.spec.ts",
+    "test:e2e:product": "playwright test tests/E2E/pageBuilderLifecycle.spec.ts tests/E2E/sitePartLifecycle.spec.ts tests/E2E/globalSiteShellRoutes.spec.ts tests/E2E/officialStore.spec.ts tests/E2E/publicQuality.spec.ts tests/E2E/blockCatalogQuality.spec.ts tests/E2E/editorPerformance.spec.ts tests/E2E/editorInteractionQuality.spec.ts tests/E2E/editorLayoutParity.spec.ts && npm run test:e2e:site-shell",
     "check:g7-budget": "node scripts/check-g7-dependency-budget.mjs",
     "check:boundaries": "bash scripts/check-boundaries.sh",
     "check:assets": "node scripts/check-assets.mjs",

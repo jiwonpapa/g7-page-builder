@@ -93,7 +93,10 @@ test('applies one fail-safe Page Builder Header and Footer across representative
 
     await page.goto('/boards');
     await expect(page.locator('[data-g7pb-system-cart]')).toHaveAttribute('href', /\/cart$/u);
-    await expect(page.locator('[data-g7pb-system-guest]').first()).toHaveAttribute('href', '/login');
+    await page.getByRole('button', { name: '계정 메뉴', exact: true }).click();
+    await expect(page.locator('[data-g7pb-system-guest] a[href="/login"]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: '검색 열기', exact: true }).click();
     const search = page.locator('[data-g7pb-system-controls] input[name="q"]');
     await search.fill('통합 셸');
     await search.press('Enter');

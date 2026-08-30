@@ -204,6 +204,7 @@
               "properties": {
                 "brand_name": { "type": "string", "minLength": 1, "maxLength": 120 },
                 "logo_url": { "$ref": "#/$defs/imageUrl" },
+                "use_site_settings": { "type": "boolean" },
                 "home_url": { "$ref": "#/$defs/safeUrl" },
                 "variant": { "enum": ["solid", "transparent"] },
                 "sticky": { "type": "boolean" },
@@ -264,6 +265,7 @@
                 "home_url": { "$ref": "#/$defs/safeUrl" },
                 "navigation": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/leafLink" } },
                 "footer_text": { "type": "string", "maxLength": 500 },
+                "use_site_settings": { "type": "boolean" },
                 "responsive": { "$ref": "#/$defs/footerResponsive" }
               }
             }
@@ -304,6 +306,7 @@
                   }
                 },
                 "legal_text": { "type": "string", "maxLength": 500 },
+                "use_site_settings": { "type": "boolean" },
                 "responsive": { "$ref": "#/$defs/footerResponsive" }
               }
             }

@@ -1,12 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const compiled = JSON.parse(execFileSync('php', ['scripts/render-site-shell-quality-fixture.php'], { encoding: 'utf8' })) as { header: string; footer: string };
 const css = readFileSync('dist/css/page-builder-public.css', 'utf8');
 const js = readFileSync('dist/js/page-effects.iife.js', 'utf8');
 const settings = { general: { site_name: '검증 사이트', site_description: '실제 사이트 정보가 표시되는 공통 영역' }, social: { youtube: 'https://youtube.com/@example', github: 'https://github.com/example' } };
+
+
+const portable = (page: Page): boolean => (page.viewportSize()?.width ?? 1440) < 900;
+async function openAccount(page: Page, header: Locator): Promise<Locator> {
+  await header.locator(portable(page) ? '[data-g7pb-menu-toggle]' : '[data-g7pb-shell-toggle="account"]').click();
+  return header.locator(portable(page) ? '[data-g7pb-mobile-menu]' : '[data-g7pb-shell-panel="account"]');
+}
 
 // Synthetic API contracts are deliberately separate from the real G7 login test below.
 for (const persona of ['guest', 'member', 'admin', 'unavailable'] as const) {
@@ -25,8 +32,7 @@ for (const persona of ['guest', 'member', 'admin', 'unavailable'] as const) {
     await page.goto('/__shell-quality');
     const header = page.getByTestId('page-builder-site-header');
     await expect(header.locator('[data-g7pb-shell-mounted]')).toHaveCount(1);
-    await header.getByRole('button', { name: '계정 메뉴', exact: true }).click();
-    const account = header.locator('[data-g7pb-shell-panel="account"]');
+    const account = await openAccount(page, header);
     await expect(account).toBeVisible();
     if (member) {
       await expect(account.getByText('검증 회원', { exact: true })).toBeVisible();
@@ -41,7 +47,7 @@ for (const persona of ['guest', 'member', 'admin', 'unavailable'] as const) {
     const accessibility = await new AxeBuilder({ page }).include('[data-testid="page-builder-site-header"]').include('[data-testid="page-builder-site-footer"]').analyze();
     expect(accessibility.violations).toEqual([]);
     await page.keyboard.press('Escape');
-    await expect(header.getByRole('button', { name: '계정 메뉴', exact: true })).toBeFocused();
+    await expect(header.locator(portable(page) ? '[data-g7pb-menu-toggle]' : '[data-g7pb-shell-toggle="account"]')).toBeFocused();
     await header.getByRole('button', { name: '검색 열기', exact: true }).click();
     const search = header.getByRole('searchbox', { name: '통합 검색' });
     await expect(search).toBeVisible(); await expect(search).toBeFocused();
@@ -56,15 +62,16 @@ for (const persona of ['guest', 'member', 'admin', 'unavailable'] as const) {
     await expect(search).toBeFocused();
     const rect = await search.boundingBox(); expect(rect?.height).toBeGreaterThanOrEqual(44);
     await page.keyboard.press('Escape');
-    await header.getByRole('button', { name: '화면 설정', exact: true }).click();
-    await expect(header.getByLabel('언어', { exact: true })).toBeVisible();
-    if (persona !== 'unavailable') await expect(header.getByLabel('통화', { exact: true })).toBeVisible();
+    await header.locator(portable(page) ? '[data-g7pb-menu-toggle]' : '[data-g7pb-shell-toggle="preferences"]').click();
+    const preferences = header.locator(portable(page) ? '[data-g7pb-mobile-menu]' : '[data-g7pb-shell-panel="preferences"]');
+    await expect(preferences.getByLabel('언어', { exact: true })).toBeVisible();
+    if (persona !== 'unavailable') await expect(preferences.getByLabel('통화', { exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
-    if (member) {
+    if (member && !portable(page)) {
       await header.getByRole('button', { name: '알림', exact: true }).click();
       await expect(header.getByText('새로운 소식', { exact: true })).toBeVisible();
       await header.getByRole('button', { name: '모두 읽음', exact: true }).click();
-      await expect(header.locator('[data-g7pb-system-notification-count]')).toBeHidden();
+      await expect(header.locator('.g7pb-system-controls [data-g7pb-system-notification-count]')).toBeHidden();
       await page.keyboard.press('Escape');
     }
     await expect(page.locator('[data-g7pb-site-info] .g7pb-site-brand')).toHaveText('검증 사이트');
@@ -85,14 +92,14 @@ test('real G7 authentication · admin route · native logout · guest transition
   await page.goto('/');
   const header = page.getByTestId('page-builder-site-header');
   await expect(header).toBeVisible();
-  await expect(header.locator('[data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
-  await expect(header.locator('[data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
+  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
+  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
   if (testInfo.project.name === 'desktop' && await header.locator('.g7pb-site-nav[aria-hidden="true"]').count()) {
     const inner = await header.locator('.g7pb-site-header__inner').boundingBox();
     const actions = await header.locator('.g7pb-site-header__actions').boundingBox();
     expect(inner && actions && Math.abs(inner.x + inner.width - actions.x - actions.width)).toBeLessThanOrEqual(1);
   }
-  await header.getByRole('button', { name: '계정 메뉴', exact: true }).click();
+  await openAccount(page, header);
   const admin = header.getByRole('link', { name: '관리자', exact: true });
   await expect(admin).toBeVisible(); await expect(admin).toHaveAttribute('href', '/admin');
   await page.screenshot({ path: testInfo.outputPath(`real-admin-${testInfo.project.name}.png`), fullPage: false });
@@ -115,20 +122,34 @@ test('real G7 authentication · admin route · native logout · guest transition
     await expect(previewAdmin).toBeVisible();
     await expect(page.locator('.g7pb-status[data-state="dirty"]')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('editor-admin-persona.png'), animations: 'disabled' });
+    await page.getByTitle('Switch to 모바일 viewport').click();
+    const mobileToggle = preview.locator('[data-g7pb-preview-menu-toggle]');
+    await mobileToggle.click();
+    const mobileMenu = preview.locator('[data-g7pb-preview-mobile-menu]');
+    await expect(mobileMenu).toHaveAttribute('role', 'dialog');
+    await expect(mobileMenu.getByRole('link', { name: '관리자', exact: true })).toBeVisible();
+    await expect(mobileMenu.getByLabel('언어', { exact: true })).toBeVisible();
+    await mobileMenu.getByRole('link', { name: '관리자', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/site-parts\/header$/u);
+    await expect(mobileMenu).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('editor-mobile-menu.png'), animations: 'disabled' });
+    await mobileMenu.locator('[data-g7pb-preview-menu-close]').click();
+    await expect(mobileMenu).toBeHidden();
+    await expect(page.locator('.g7pb-status[data-state="dirty"]')).toHaveCount(0);
   }
   await page.goto('/');
-  await expect(header.locator('[data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
-  await expect(header.locator('[data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
-  await header.getByRole('button', { name: '계정 메뉴', exact: true }).click();
+  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
+  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
+  await openAccount(page, header);
   const nativeLogout = page.waitForResponse((response) => /\/api\/(?:admin\/)?auth\/logout$/u.test(new URL(response.url()).pathname) && response.request().method() === 'POST');
   await header.getByRole('link', { name: '로그아웃', exact: true }).click();
   expect((await nativeLogout).ok()).toBe(true);
   await page.waitForURL(/\/login(?:\?|$)/u);
   expect(await page.evaluate(() => localStorage.getItem('auth_token'))).toBeNull();
   await page.goto('/');
-  await header.getByRole('button', { name: '계정 메뉴', exact: true }).click();
+  await openAccount(page, header);
   await expect(header.getByRole('link', { name: '로그인', exact: true })).toBeVisible();
-  await expect(header.locator('[data-g7pb-system-admin]')).toBeHidden();
+  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toBeHidden();
 });
 
 test('real standalone builder viewer · authenticated account · API logout', async ({ page, context, request }, testInfo) => {
@@ -153,7 +174,7 @@ test('real standalone builder viewer · authenticated account · API logout', as
     await page.goto(`/pages/${slug}`);
     await expect(page.locator('[data-g7pb-runtime-config]')).toHaveCount(1);
     const header = page.getByTestId('page-builder-site-header');
-    await header.getByRole('button', { name: '계정 메뉴', exact: true }).click();
+    await openAccount(page, header);
     await expect(header.getByRole('link', { name: '관리자', exact: true })).toBeVisible();
     await expect(page.getByTestId('page-builder-site-footer')).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath(`builder-admin-${testInfo.project.name}.png`), animations: 'disabled' });
@@ -162,7 +183,7 @@ test('real standalone builder viewer · authenticated account · API logout', as
     const logoutResult = await loggedOut;
     expect(logoutResult.status(), 'The public G7 logout endpoint must accept the current account.').toBe(200);
     await expect(page).toHaveURL(/\/$/u);
-    await header.getByRole('button', { name: '계정 메뉴', exact: true }).click();
+    await openAccount(page, header);
     await expect(header.getByRole('link', { name: '로그인', exact: true })).toBeVisible();
   } finally {
     // Only this test-created document is archived; never touch an existing page.

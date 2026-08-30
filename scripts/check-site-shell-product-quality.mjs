@@ -5,6 +5,8 @@ import { spawnSync } from 'node:child_process';
 const evidencePath = 'output/playwright/site-shell-product.json';
 const inputs = [
   'resources/js/public/siteShellControls.ts', 'resources/js/public/pageEffects.ts',
+  'resources/js/public/mobileNavigation.ts', 'tests/Unit/mobileNavigation.test.ts', 'tests/E2E/mobileNavigationQuality.spec.ts',
+  'docker/Dockerfile', 'scripts/check-editor-acceptance-contract.mjs',
   'resources/js/editor/SitePartEditor.tsx', 'resources/js/editor/sitePartDocumentAdapter.ts',
   'resources/js/editor/SitePartSetEditor.tsx', 'resources/views/editor.blade.php', 'resources/views/site-part-editor.blade.php',
   'resources/css/page-builder-site-shell.css', 'resources/css/page-builder-public.css',
@@ -28,7 +30,7 @@ for (const file of ['scripts/release-package.sh', 'scripts/deploy-staging.sh']) 
 }
 if (process.argv.includes('--run')) {
   const before = fingerprint();
-  const result = spawnSync('npx', ['playwright', 'test', 'tests/E2E/siteShellProductQuality.spec.ts', '--retries=0'], { stdio: 'inherit', env: process.env });
+  const result = spawnSync('npx', ['playwright', 'test', 'tests/E2E/siteShellProductQuality.spec.ts', 'tests/E2E/mobileNavigationQuality.spec.ts', '--retries=0'], { stdio: 'inherit', env: process.env });
   if (result.status !== 0) process.exit(result.status ?? 1);
   if (before !== fingerprint()) throw new Error('Site Shell inputs changed during validation.');
   mkdirSync('output/playwright', { recursive: true });

@@ -1,5 +1,6 @@
 import EmblaCarousel from 'embla-carousel';
 import Autoplay from 'embla-carousel-autoplay';
+import { bootMobileNavigation } from './mobileNavigation';
 import { installShellDisclosures, loadShellNotifications, mountShellControls, paintShellProduct, shellAuthHeaders, shellRecord, type ShellWindow } from './siteShellControls';
 
 type MotionPreset = 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
@@ -1044,76 +1045,8 @@ export function bootServiceActions(
   root.documentElement.dataset.g7pbServiceActionsReady = 'true';
 }
 
-export function bootSiteShellMenu(root: Document = document, view: Window = window): void {
-  const toggle = root.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]');
-  const menu = root.querySelector<HTMLElement>('[data-g7pb-mobile-menu]');
-  const backdrop = root.querySelector<HTMLButtonElement>('[data-g7pb-menu-backdrop]');
-  const closeButton = menu?.querySelector<HTMLButtonElement>('[data-g7pb-menu-close]');
-  if (!toggle || !menu || toggle.dataset.g7pbMenuReady === 'true') return;
-
-  const submenuToggles = Array.from(menu.querySelectorAll<HTMLButtonElement>('[data-g7pb-submenu-toggle]'));
-  const setSubmenuOpen = (button: HTMLButtonElement, open: boolean): void => {
-    const submenuId = button.getAttribute('aria-controls');
-    const submenu = submenuId ? root.getElementById(submenuId) : null;
-    if (!submenu) return;
-    button.setAttribute('aria-expanded', String(open));
-    submenu.hidden = !open;
-    const currentLabel = button.getAttribute('aria-label') ?? '';
-    button.setAttribute('aria-label', currentLabel.replace(open ? '열기' : '닫기', open ? '닫기' : '열기'));
-  };
-  const closeSubmenus = (): void => submenuToggles.forEach((button) => setSubmenuOpen(button, false));
-  submenuToggles.forEach((button) => button.addEventListener('click', () => {
-    setSubmenuOpen(button, button.getAttribute('aria-expanded') !== 'true');
-  }));
-
-  const close = (restoreFocus = false): void => {
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', '메뉴 열기');
-    menu.hidden = true;
-    if (backdrop) backdrop.hidden = true;
-    closeSubmenus();
-    root.documentElement.classList.remove('g7pb-menu-open');
-    if (restoreFocus) toggle.focus();
-  };
-  const open = (): void => {
-    toggle.setAttribute('aria-expanded', 'true');
-    toggle.setAttribute('aria-label', '메뉴 닫기');
-    menu.hidden = false;
-    if (backdrop) backdrop.hidden = false;
-    root.documentElement.classList.add('g7pb-menu-open');
-    menu.querySelector<HTMLElement>('a, button')?.focus();
-  };
-
-  toggle.addEventListener('click', () => {
-    if (toggle.getAttribute('aria-expanded') === 'true') close();
-    else open();
-  });
-  menu.addEventListener('click', (event) => {
-    if ((event.target as Element | null)?.closest('a')) close();
-  });
-  backdrop?.addEventListener('click', () => close(true));
-  closeButton?.addEventListener('click', () => close(true));
-  root.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') close(true);
-    if (event.key !== 'Tab' || toggle.getAttribute('aria-expanded') !== 'true' || menu.dataset.g7pbMenuStyle === 'dropdown') return;
-    const focusable = Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'))
-      .filter((element) => element.closest('[hidden]') === null);
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && root.activeElement === first) {
-      event.preventDefault();
-      last?.focus();
-    } else if (!event.shiftKey && root.activeElement === last) {
-      event.preventDefault();
-      first?.focus();
-    }
-  });
-  view.addEventListener('resize', () => {
-    if (view.innerWidth >= 900) close();
-  }, { passive: true });
-  toggle.dataset.g7pbMenuReady = 'true';
-  close();
+export function bootSiteShellMenu(root: Document = document, _view: Window = window): void {
+  bootMobileNavigation(root);
 }
 
 export function bootPageSliders(root: Document = document, reducedMotion = false): void {

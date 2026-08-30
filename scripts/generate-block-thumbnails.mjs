@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
-const fixtureRoot = resolve(root, 'output/block-thumbnail-fixtures');
+const fixtureRoot = resolve(root, 'output/playwright/block-thumbnail-fixtures');
 const thumbnailRoot = resolve(root, 'resources/block-packs/builtin-core/thumbnails/generated');
 const manifestPath = resolve(root, 'resources/block-packs/builtin-core/manifest.json');
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));

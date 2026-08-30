@@ -43,9 +43,14 @@ for (const persona of ['guest', 'member', 'admin', 'unavailable'] as const) {
     if (persona === 'admin') await expect(account.getByRole('link', { name: '관리자', exact: true })).toHaveAttribute('href', '/admin');
     else await expect(account.locator('[data-g7pb-system-admin]')).toBeHidden();
     expect(await page.locator('html').evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
-    await page.screenshot({ path: testInfo.outputPath(`shell-${persona}-${testInfo.project.name}.png`), fullPage: true, animations: 'disabled' });
+    // Mobile modals occupy the viewport, not the locked page behind them.
+    // Chromium full-page capture can change mobile visualViewport.scale to 4;
+    // capture the actual viewport and assert its scale before pointer checks.
+    await page.screenshot({ path: testInfo.outputPath(`shell-${persona}-${testInfo.project.name}.png`), fullPage: !portable(page), animations: 'disabled' });
+    await expect.poll(() => page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(1);
     const accessibility = await new AxeBuilder({ page }).include('[data-testid="page-builder-site-header"]').include('[data-testid="page-builder-site-footer"]').analyze();
     expect(accessibility.violations).toEqual([]);
+    await expect.poll(() => page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(1);
     await page.keyboard.press('Escape');
     await expect(header.locator(portable(page) ? '[data-g7pb-menu-toggle]' : '[data-g7pb-shell-toggle="account"]')).toBeFocused();
     await header.getByRole('button', { name: '검색 열기', exact: true }).click();

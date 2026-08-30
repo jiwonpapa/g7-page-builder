@@ -104,7 +104,13 @@ export function installMobileNavigation({ toggle, menu, backdrop, preview = fals
     remember();
   };
   const onOtherPanel = (event: Event): void => { if ((event as CustomEvent).detail !== 'navigation' && opened) close(); };
-  const onResize = (): void => { if (opened) close(view.innerWidth < 900); };
+  let viewportWidth = view.innerWidth;
+  const onResize = (): void => {
+    // A soft keyboard/browser toolbar changes height, not the responsive layout.
+    if (view.innerWidth === viewportWidth) return;
+    viewportWidth = view.innerWidth;
+    if (opened) close(view.innerWidth < 900);
+  };
   const onNavigate = (): void => close();
   const presentation = new MutationObserver(() => {
     if (!opened) return;

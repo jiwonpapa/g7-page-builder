@@ -96,6 +96,8 @@ test('WebKit mobile engine · drawer, select, keyboard, reduced motion and close
     await menu.getByLabel('통화', { exact: true }).selectOption('USD'); await expect(menu.getByLabel('통화', { exact: true })).toHaveValue('USD');
     await expect(menu).toBeVisible();
     expect(await menu.evaluate((node) => getComputedStyle(node).animationName)).toBe('none');
+    await page.setViewportSize({ width: 390, height: 500 });
+    await expect(menu).toBeVisible();
     await menu.locator('[data-g7pb-menu-close]').focus();
     await page.screenshot({ path: info.outputPath('webkit-mobile.png'), animations: 'disabled' });
     await page.keyboard.press('Escape'); await expect(menu).toBeHidden(); await expect(toggle).toBeFocused();

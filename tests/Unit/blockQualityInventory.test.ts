@@ -58,6 +58,20 @@ describe('actual block quality dependency inventory', () => {
     expect(result.changed.map(item => item.scopes)).toEqual([['render', 'editing'], ['render', 'editing']]);
   });
 
+  it('invalidates render and editing when module-owned template language changes', () => {
+    const root = fixture(); const before = fingerprints(root);
+    const path = 'resources/layouts/user/page_builder_preview.json';
+    write(root, path, JSON.stringify({ props: { lang: '{{page?.data?.page?.locale}}' } }));
+    const result = collectBlockQualityInventory(root, facts());
+    expect(result.items.every(item => item.dependencies.render.includes(path))).toBe(true);
+    expect(compareEvidenceFingerprints(before, fingerprints(root)).changed.map(item => item.scopes))
+      .toEqual([['render', 'editing'], ['render', 'editing']]);
+    const bound = fingerprints(root);
+    write(root, path, JSON.stringify({ props: { lang: 'en' } }));
+    expect(compareEvidenceFingerprints(bound, fingerprints(root)).changed.map(item => item.scopes))
+      .toEqual([['render', 'editing'], ['render', 'editing']]);
+  });
+
   it('invalidates only the owning preset metadata for a copy change', () => {
     const root = fixture(); const before = fingerprints(root);
     const path = 'resources/block-packs/builtin-core/manifest.json';

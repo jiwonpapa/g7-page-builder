@@ -10,7 +10,7 @@ export const QUALITY_DEPENDENCY_FILES = [
   'package-lock.json', 'scripts/render-block-thumbnail-fixtures.php', 'dist/css/page-builder-public.css',
 ] as const;
 // Conservative dependency sets: narrowing these requires measured/proven renderer ownership.
-export const QUALITY_DEPENDENCY_TREES = ['src', 'resources/js', 'resources/css', 'tests/E2E', 'tests/Unit'] as const;
+export const QUALITY_DEPENDENCY_TREES = ['src', 'resources/js', 'resources/css', 'resources/layouts/user', 'tests/E2E', 'tests/Unit'] as const;
 const PACK = 'resources/block-packs/builtin-core';
 const MEDIA_PREFIX = '/modules/jiwonpapa-page_builder/store/previews/';
 const SCOPES: Array<keyof EvidenceInputs> = ['content', 'rights', 'render', 'editing'];
@@ -141,7 +141,7 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
   ];
   if (JSON.stringify(catalog.map(item => item.catalog_id).sort()) !== JSON.stringify([...facts.keys()].sort())) throw new Error('renderer inventory does not match catalog.');
   const compilerSources = { ...trees.src, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']!, 'scripts/render-block-thumbnail-fixtures.php': common['scripts/render-block-thumbnail-fixtures.php']! };
-  const renderSources = { ...compilerSources, ...trees['resources/css'], ...states.sources, 'dist/css/page-builder-public.css': common['dist/css/page-builder-public.css']! };
+  const renderSources = { ...compilerSources, ...trees['resources/css'], ...trees['resources/layouts/user'], ...states.sources, 'dist/css/page-builder-public.css': common['dist/css/page-builder-public.css']! };
   const editingSources = { ...trees['resources/js'], ...trees['tests/E2E'], ...trees['tests/Unit'], ...states.sources, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']! };
   const items = catalog.map(({ definition, preset, planned, catalog_id }): CollectedItem => {
     if (!Number.isInteger(definition.block_version) || Number(definition.block_version) < 1 || planned.block_version !== definition.block_version

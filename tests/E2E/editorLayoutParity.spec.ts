@@ -102,6 +102,43 @@ interface OwnedDocument {
   slug: string;
 }
 
+interface TemplateNode {
+  id?: string;
+  [key: string]: unknown;
+}
+
+async function installCandidateTemplateLayouts(context: BrowserContext): Promise<void> {
+  const directory = process.env.G7PB_PARITY_CANDIDATE_LAYOUTS;
+  if (!directory) return;
+  // Request-local candidate only: preserve the real merged G7 shell and replace
+  // exactly the module-owned node. Never modify shared template files or caches.
+  await context.route(/\/api\/layouts\/[^/]+\/jiwonpapa-page_builder\.page_builder_(home|public|preview)(?:\.json)?(?:\?|$)/, async route => {
+    const kind = new URL(route.request().url()).pathname.match(/page_builder_(home|public|preview)/)?.[1];
+    if (!kind) throw new Error('Unknown candidate module layout.');
+    const source = JSON.parse(readFileSync(resolve(directory, `page_builder_${kind}.json`), 'utf8')) as {
+      slots: { content: TemplateNode[] };
+    };
+    const body = source.slots.content.find(node => node.id === `page_builder_${kind}_body`);
+    if (!body) throw new Error('Candidate module body is missing.');
+    const response = await route.fetch();
+    expect(response.ok()).toBe(true);
+    let replacements = 0;
+    const replace = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(replace);
+      if (!value || typeof value !== 'object') return value;
+      const node = value as TemplateNode;
+      if (node.id === `page_builder_${kind}_content` || node.id === body.id) {
+        replacements += 1;
+        return body;
+      }
+      return Object.fromEntries(Object.entries(node).map(([key, item]) => [key, replace(item)]));
+    };
+    const payload = replace(await response.json());
+    expect(replacements, 'Candidate must replace exactly one module-owned content node').toBe(1);
+    await route.fulfill({ response, json: payload });
+  });
+}
+
 interface MediaResource {
   data?: {
     items?: Array<{ id?: unknown; url?: unknown }>;
@@ -246,7 +283,7 @@ async function putScenario(
     ...structuredClone(scenario.document),
     document_id: owned.documentId,
     slug: owned.slug,
-    shell_mode: 'none',
+    shell_mode: scenario.document.shell_mode ?? 'none',
     blocks: rekeyBlocks(sourceBlocks),
   };
   const response = await api.put(`${API}/documents/${owned.documentId}/draft`, {
@@ -885,6 +922,10 @@ async function assertScenario(
     // module-owned content, not on the host template or its navigation.
     const contentLanguages = await previewBlocks.evaluateAll(blocks =>
       [...new Set(blocks.map(element => element.closest('[lang]')?.getAttribute('lang')))]);
+    if (owned.document.shell_mode === 'template') {
+      await expect(preview.locator('.g7pb-template-body')).toHaveAttribute('lang', String(owned.document.locale));
+      await expect(preview.locator('html')).toHaveAttribute('lang', await page.locator('html').getAttribute('lang') ?? '');
+    }
     expect(contentLanguages, `${scenario.label} compiled content language`).toEqual([owned.document.locale]);
     await previewRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
     await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
@@ -966,6 +1007,115 @@ test('keeps canonical language and normal Korean line boxes after saved document
     await api.dispose();
   }
 });
+
+async function assertTemplateLanguageBinding(
+  context: BrowserContext, page: Page, api: APIRequestContext, owned: OwnedDocument, projectName: string,
+): Promise<void> {
+  await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
+  await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+  const width = await setCanvasViewport(page, projectName);
+  const canvas = page.frameLocator(CANVAS_IFRAME).locator('.g7pb-preview-page');
+  await expect(canvas).toHaveAttribute('lang', String(owned.document.locale));
+  await expect(page.frameLocator(CANVAS_IFRAME).getByTestId('page-builder-block')).toHaveCount(1);
+  const stored = await api.get(`${API}/documents/${owned.documentId}`);
+  expect(stored.ok()).toBe(true);
+  const resource = await stored.json() as DocumentResource;
+  expect(resource.data?.document?.locale).toBe(owned.document.locale);
+  expect(resource.data?.document?.blocks).toEqual(owned.document.blocks);
+  const ticket = await api.post(`${API}/documents/${owned.documentId}/preview`, {
+    data: { expected_lock_version: owned.lockVersion },
+  });
+  expect(ticket.ok()).toBe(true);
+  const payload = await ticket.json() as { data?: { preview_url?: string } };
+  expect(payload.data?.preview_url).toMatch(/\/preview\/[a-f0-9]{64}/);
+  const preview = await context.newPage();
+  try {
+    await preview.setViewportSize({ width, height: 1000 });
+    expect((await preview.goto(payload.data!.preview_url!))?.ok()).toBe(true);
+    await expect(preview.locator('.g7pb-template-body')).toHaveAttribute('lang', String(owned.document.locale));
+    await expect(preview.locator('html')).toHaveAttribute('lang', await page.locator('html').getAttribute('lang') ?? '');
+    const block = preview.getByTestId('page-builder-rendered-block');
+    await expect(block).toHaveCount(1);
+    await expect.poll(() => block.evaluate(element => element.isConnected
+      ? element.closest('[lang]')?.getAttribute('lang') : null)).toBe(owned.document.locale);
+    await expectDocumentContained(preview.locator('.g7pb-template-body'), 'template language body overflow');
+  } finally {
+    await preview.close();
+  }
+}
+
+// Language persistence and typography parity are independent gates. Keep the
+// strict geometry gate failing while a known, separately owned CSS fix is pending.
+for (const boundary of ['language', 'typography'] as const) {
+test(boundary === 'language'
+  ? 'keeps template locale binding through reload preview and publication'
+  : 'keeps template body language separate from the G7 host after saved document re-entry', async ({ context, page }, testInfo) => {
+  const { api } = await authenticate(context);
+  const ownedDocuments: OwnedDocument[] = [];
+  await installCandidateTemplateLayouts(context);
+  try {
+    const source = presetScenario();
+    const feature = (source.document.blocks as Array<Record<string, unknown>>)
+      .find(block => block.type === 'content.features-grid-01');
+    if (!feature) throw new Error('Missing template language features fixture.');
+    for (const locale of ['ko', 'en', 'ja']) {
+      const owned = await createDocument(api, testInfo.project.name, locale);
+      ownedDocuments.push(owned);
+      const scenario = { label: `LANGUAGE_TEMPLATE_${locale}`, expectedBlockCount: 1,
+        document: { ...source.document, locale, shell_mode: 'template', blocks: [feature] } };
+      await putScenario(api, owned, scenario);
+      expect(owned.document.shell_mode).toBe('template');
+      if (boundary === 'language') {
+        await assertTemplateLanguageBinding(context, page, api, owned, testInfo.project.name);
+      } else {
+        await assertScenario(context, page, owned, scenario, testInfo.project.name);
+      }
+      // Compare hydrated G7 host state, not the server HTML before G7 applies
+      // the visitor's locale. The document locale must not override that state.
+      const hostLanguage = await page.locator('html').getAttribute('lang');
+      expect(hostLanguage).toBeTruthy();
+      // Publication is a separate proof from a temporary preview, using only
+      // this test's uniquely owned document and the real prepare/commit APIs.
+      const prepared = await api.post(`${API}/documents/${owned.documentId}/publications/prepare`, {
+        data: { expected_lock_version: owned.lockVersion },
+      });
+      expect(prepared.ok()).toBe(true);
+      const preparedPayload = await prepared.json() as { data?: { publication_token?: string } };
+      const token = preparedPayload.data?.publication_token;
+      expect(token).toBeTruthy();
+      const committed = await api.post(`${API}/publications/${token}/commit`, { data: {} });
+      expect(committed.ok()).toBe(true);
+      const published = await context.newPage();
+      try {
+        const width = VIEWPORT_WIDTHS[testInfo.project.name as keyof typeof VIEWPORT_WIDTHS];
+        await published.setViewportSize({ width, height: 1000 });
+        expect((await published.goto(`/pages/${owned.slug}`))?.ok()).toBe(true);
+        const body = published.locator('.g7pb-template-body');
+        await expect(body).toBeVisible();
+        await expect(body).toHaveAttribute('lang', locale);
+        await expect(published.locator('html')).toHaveAttribute('lang', hostLanguage!);
+        const blocks = published.getByTestId('page-builder-rendered-block');
+        await expect(blocks).toHaveCount(1);
+        await expect.poll(() => blocks.first().evaluate(element => element.isConnected
+          ? element.closest('[lang]')?.getAttribute('lang') : null)).toBe(locale);
+        await expectDocumentContained(body, 'template publication body overflow');
+        await body.screenshot({ path: testInfo.outputPath(`template-${locale}-published.png`) });
+        await testInfo.attach(`template-${locale}-language`, { contentType: 'application/json',
+          body: JSON.stringify({ locale, hostLanguage, width, shellMode: owned.document.shell_mode,
+            publicationLanguage: await body.getAttribute('lang') }) });
+      } finally {
+        await published.close();
+      }
+    }
+  } finally {
+    await page.close();
+    for (const owned of ownedDocuments.reverse()) await purgeDocument(api, owned);
+    await api.dispose();
+  }
+});
+}
 
 test('keeps every built-in block preset and Page Kit inside the editor/preview layout contract', async ({ context, page }, testInfo) => {
   test.setTimeout(360_000);

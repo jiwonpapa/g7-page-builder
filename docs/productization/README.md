@@ -27,6 +27,8 @@
 
 ## 차수 진행과 커밋
 
+후속 **2-E4는 G7 template의 모듈 소유 본문에 canonical 언어를 연결**합니다. 언어 저장/reload/preview/public 검사와 엄격한 화면 치수 검사는 별도로 유지합니다. 현재 CSS에서는 카드 제목 3개의 크기/줄높이 차이도 확인했으며, 후보 화면 검토에서 SVG 아이콘 누락을 확인했습니다. 기존 여백 8건과 함께 다음 출력 경계의 검증 대상입니다. 템플릿 레이아웃을 render/editing 변경 추적에 추가했지만 560개 품질 결정은 pending을 유지합니다. [2-E4 실행 기록](phase-2-template-language.md)에 실제 main·요청별 후보·실패·화면 검토 한계를 구분합니다.
+
 1. 차수별 정확한 파일 범위와 검증 profile을 소유한 worktree에서 작업합니다.
 2. 필수 검사 뒤 `make task-submit TASK=<id>`로 자동 커밋·제출합니다. 수동 stage/commit으로 우회하지 않습니다.
 3. integration/runtime 소유자가 통합 게이트를 통과시킨 뒤 다음 구현 기준 SHA를 정합니다.

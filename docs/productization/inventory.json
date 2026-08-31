@@ -1,0 +1,4012 @@
+{
+  "record_version": "g7pb-productization-inventory/1",
+  "purpose": "Planning snapshot, not runtime registry or product approval",
+  "base_sha": "8b75d3a654638bfeb932985f67f8106ef05c8c42",
+  "captured_on": "2026-08-31",
+  "source_hashes": {
+    "resources/block-packs/builtin-core/manifest.json": "509bc8a6db1824358d1bb7a5ad076fb2c9ad2f73b1156b72afb1ad30434d4d84",
+    "resources/block-packs/builtin-core/product-quality.json": "63c7649aa16f3edaf8b8b888b1a1c71997e055e670f10e5f56d706d7e51293cd",
+    "resources/store/source/page-kits/manifest.json": "24b64f851cb15b42262e30d58c7cbce3e0e99a397bf6436a0a4a216c1a93bd97",
+    "resources/js/editor/canvasEditingContract.ts": "3d8d7593147a81176f3eae5319fbee14843251a20a90cb817e367ea1175a48a3",
+    "schemas/page-builder-document.schema.json": "2e4c54872311a401d4aea5c14830cc3654d0d568357454b5a6b39b58c0e50b1d"
+  },
+  "counts": {
+    "definitions": 45,
+    "catalog_definitions": 44,
+    "presets": 95,
+    "page_kits": 5
+  },
+  "legacy_approval": {
+    "decision": "approved",
+    "reviewer_kind": "codex-assisted",
+    "reviewed_at": "2026-08-30T06:04:14Z",
+    "applies_to_new_standard": false
+  },
+  "definitions": [
+    {
+      "id": "content.hero-centered-01",
+      "block_version": 1,
+      "component": "Hero",
+      "schema_ref": "builtin:heroProps",
+      "category": "hero-conversion",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "primaryLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "primaryUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "alignment",
+            "kind": "structural"
+          },
+          {
+            "path": "mediaPosition",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.hero-split-01",
+      "block_version": 1,
+      "component": "HeroSplit",
+      "schema_ref": "builtin:heroSplitProps",
+      "category": "hero-conversion",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "editor.compatibility-only"
+      ],
+      "batch": "6-B",
+      "current_exposure": "compatibility-only",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "primaryLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "primaryUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "mediaPosition",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.hero-slider-01",
+      "block_version": 1,
+      "component": "HeroSlider",
+      "schema_ref": "builtin:heroSliderProps",
+      "category": "hero-conversion",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.slider"
+      ],
+      "batch": "7-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "slides.*.eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "slides.*.buttonLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "slides.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "slides.*.body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "slides.*.buttonUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "slides.*.imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "slides.*.imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "autoplay",
+            "kind": "structural"
+          },
+          {
+            "path": "interval",
+            "kind": "structural"
+          },
+          {
+            "path": "loop",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "slides",
+            "min": 2,
+            "max": 5
+          }
+        ],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.heading-01",
+      "block_version": 1,
+      "component": "Heading",
+      "schema_ref": "builtin:headingProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "7-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "level",
+            "kind": "structural"
+          },
+          {
+            "path": "anchor",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.rich-text-01",
+      "block_version": 1,
+      "component": "RichText",
+      "schema_ref": "builtin:richTextProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "6-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "content",
+            "kind": "block-rich"
+          },
+          {
+            "path": "measure",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "media.image-01",
+      "block_version": 1,
+      "component": "Image",
+      "schema_ref": "builtin:imageBlockProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "7-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "caption",
+            "kind": "plain"
+          },
+          {
+            "path": "src",
+            "kind": "structural"
+          },
+          {
+            "path": "alt",
+            "kind": "structural"
+          },
+          {
+            "path": "linkUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "aspectRatio",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "action.buttons-01",
+      "block_version": 1,
+      "component": "Buttons",
+      "schema_ref": "builtin:buttonsProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "7-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "items.*.label",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.url",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.variant",
+            "kind": "structural"
+          },
+          {
+            "path": "alignment",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 1,
+            "max": 3
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "media.image-text-01",
+      "block_version": 1,
+      "component": "ImageText",
+      "schema_ref": "builtin:imageTextProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "primaryLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "mediaPosition",
+            "kind": "structural"
+          },
+          {
+            "path": "primaryUrl",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.icon-list-01",
+      "block_version": 1,
+      "component": "IconList",
+      "schema_ref": "builtin:iconListProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "items.*.icon",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.features-grid-01",
+      "block_version": 1,
+      "component": "Features",
+      "schema_ref": "builtin:featuresProps",
+      "category": "hero-conversion",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "items.*.icon",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 1,
+            "max": 6
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.cta-split-01",
+      "block_version": 1,
+      "component": "Cta",
+      "schema_ref": "builtin:ctaProps",
+      "category": "hero-conversion",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "primaryLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "secondaryLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "primaryUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "secondaryUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "theme",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.contact-info-01",
+      "block_version": 1,
+      "component": "Contact",
+      "schema_ref": "builtin:contactProps",
+      "category": "trust-company",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "address",
+            "kind": "plain"
+          },
+          {
+            "path": "phone",
+            "kind": "plain"
+          },
+          {
+            "path": "email",
+            "kind": "plain"
+          },
+          {
+            "path": "ctaLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "mapLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "ctaUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "mapUrl",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "trust.logo-cloud-01",
+      "block_version": 1,
+      "component": "LogoCloud",
+      "schema_ref": "builtin:logoCloudProps",
+      "category": "trust-company",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "logos.*.name",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "logos.*.imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "logos.*.imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "logos.*.url",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "logos",
+            "min": 2,
+            "max": 12
+          }
+        ],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "data.stats-icons-01",
+      "block_version": 1,
+      "component": "Stats",
+      "schema_ref": "builtin:statsProps",
+      "category": "data-comparison",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.value",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.label",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.detail",
+            "kind": "block-rich"
+          },
+          {
+            "path": "items.*.icon",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 6
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "component": "Pricing",
+      "schema_ref": "builtin:pricingProps",
+      "category": "data-comparison",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "plans.*.price",
+            "kind": "plain"
+          },
+          {
+            "path": "plans.*.period",
+            "kind": "plain"
+          },
+          {
+            "path": "plans.*.buttonLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "plans.*.name",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "plans.*.features.*",
+            "editorPath": "plans.*.features.*.text",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "plans.*.description",
+            "kind": "block-rich"
+          },
+          {
+            "path": "plans.*.buttonUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "plans.*.featured",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "plans",
+            "min": 2,
+            "max": 4
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "company.team-grid-01",
+      "block_version": 1,
+      "component": "Team",
+      "schema_ref": "builtin:teamProps",
+      "category": "trust-company",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "members.*.name",
+            "kind": "plain"
+          },
+          {
+            "path": "members.*.role",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "members.*.bio",
+            "kind": "block-rich"
+          },
+          {
+            "path": "members.*.imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "members.*.imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "members.*.profileUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "members",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "media.gallery-grid-01",
+      "block_version": 1,
+      "component": "Gallery",
+      "schema_ref": "builtin:galleryProps",
+      "category": "media",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-D",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "images.*.caption",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "columns",
+            "kind": "structural"
+          },
+          {
+            "path": "images.*.src",
+            "kind": "structural"
+          },
+          {
+            "path": "images.*.alt",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "images",
+            "min": 2,
+            "max": 12
+          }
+        ],
+        "directMedia": true,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "data.bar-chart-01",
+      "block_version": 1,
+      "component": "BarChart",
+      "schema_ref": "builtin:barChartProps",
+      "category": "data-comparison",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "unit",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.label",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "description",
+            "kind": "block-rich"
+          },
+          {
+            "path": "items.*.value",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.tone",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "g7.board-recent-posts-01",
+      "block_version": 1,
+      "component": "G7RecentPosts",
+      "schema_ref": "builtin:g7RecentPostsProps",
+      "category": "g7-data",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "g7.module.sirsoft-board",
+        "public.dynamic-data"
+      ],
+      "batch": "7-E",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "emptyMessage",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "source",
+            "kind": "structural"
+          },
+          {
+            "path": "period",
+            "kind": "structural"
+          },
+          {
+            "path": "limit",
+            "kind": "structural"
+          },
+          {
+            "path": "pageSize",
+            "kind": "structural"
+          },
+          {
+            "path": "audience",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": true
+      }
+    },
+    {
+      "id": "g7.ecommerce-product-grid-01",
+      "block_version": 1,
+      "component": "G7ProductGrid",
+      "schema_ref": "builtin:g7ProductGridProps",
+      "category": "g7-data",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "g7.module.sirsoft-ecommerce",
+        "public.dynamic-data"
+      ],
+      "batch": "7-E",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "emptyMessage",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "source",
+            "kind": "structural"
+          },
+          {
+            "path": "limit",
+            "kind": "structural"
+          },
+          {
+            "path": "columns",
+            "kind": "structural"
+          },
+          {
+            "path": "pageSize",
+            "kind": "structural"
+          },
+          {
+            "path": "audience",
+            "kind": "structural"
+          },
+          {
+            "path": "detailBasePath",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": true
+      }
+    },
+    {
+      "id": "form.inquiry-01",
+      "block_version": 1,
+      "component": "InquiryForm",
+      "schema_ref": "builtin:inquiryFormProps",
+      "category": "form-location",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.form-submission"
+      ],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "submitLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "successMessage",
+            "kind": "plain"
+          },
+          {
+            "path": "privacyLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "description",
+            "kind": "block-rich"
+          },
+          {
+            "path": "formKind",
+            "kind": "structural"
+          },
+          {
+            "path": "showPhone",
+            "kind": "structural"
+          },
+          {
+            "path": "showSubject",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "location.map-directions-01",
+      "block_version": 1,
+      "component": "MapDirections",
+      "schema_ref": "builtin:mapDirectionsProps",
+      "category": "form-location",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.map-embed"
+      ],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "address",
+            "kind": "plain"
+          },
+          {
+            "path": "directionsLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "phone",
+            "kind": "plain"
+          },
+          {
+            "path": "hours",
+            "kind": "plain"
+          },
+          {
+            "path": "parking",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "description",
+            "kind": "block-rich"
+          },
+          {
+            "path": "latitude",
+            "kind": "structural"
+          },
+          {
+            "path": "longitude",
+            "kind": "structural"
+          },
+          {
+            "path": "zoom",
+            "kind": "structural"
+          },
+          {
+            "path": "provider",
+            "kind": "structural"
+          },
+          {
+            "path": "mapImageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "mapImageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "directionsUrl",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "trust.testimonials-01",
+      "block_version": 1,
+      "component": "Testimonials",
+      "schema_ref": "builtin:testimonialsProps",
+      "category": "trust-company",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.name",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.role",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.company",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.quote",
+            "kind": "block-rich"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.avatarSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.avatarAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.rating",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": true,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.faq-accordion-01",
+      "block_version": 1,
+      "component": "FaqAccordion",
+      "schema_ref": "builtin:faqAccordionProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.accordion"
+      ],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.question",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.answer",
+            "kind": "block-rich"
+          },
+          {
+            "path": "behavior",
+            "kind": "structural"
+          },
+          {
+            "path": "openFirst",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 12
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.process-timeline-01",
+      "block_version": 1,
+      "component": "ProcessTimeline",
+      "schema_ref": "builtin:processTimelineProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.linkLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.linkUrl",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.tabs-01",
+      "block_version": 1,
+      "component": "Tabs",
+      "schema_ref": "builtin:tabsProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.tabs"
+      ],
+      "batch": "7-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.label",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "tabVariant",
+            "kind": "structural"
+          },
+          {
+            "path": "initialTab",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 6
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "commerce.comparison-table-01",
+      "block_version": 1,
+      "component": "ComparisonTable",
+      "schema_ref": "builtin:comparisonTableProps",
+      "category": "data-comparison",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "rows.*.values.*",
+            "editorPath": "rows.*.valuesText",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "columns.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "columns.*.description",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "rows.*.feature",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "highlightColumn",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "columns",
+            "min": 2,
+            "max": 4
+          },
+          {
+            "name": "rows",
+            "min": 1,
+            "max": 12
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.article-list-01",
+      "block_version": 1,
+      "component": "ArticleList",
+      "schema_ref": "builtin:articleListProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.category",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.title",
+            "allowLink": false,
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.summary",
+            "kind": "block-rich"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.date",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.url",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "media.video-embed-01",
+      "block_version": 1,
+      "component": "VideoEmbed",
+      "schema_ref": "builtin:videoEmbedProps",
+      "category": "media",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.video-embed"
+      ],
+      "batch": "7-D",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "caption",
+            "kind": "block-rich"
+          },
+          {
+            "path": "provider",
+            "kind": "structural"
+          },
+          {
+            "path": "videoId",
+            "kind": "structural"
+          },
+          {
+            "path": "ratio",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "trust.logo-carousel-01",
+      "block_version": 1,
+      "component": "LogoCarousel",
+      "schema_ref": "builtin:logoCarouselProps",
+      "category": "trust-company",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.slider"
+      ],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "logos.*.name",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "logos.*.imageSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "logos.*.imageAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "logos.*.url",
+            "kind": "structural"
+          },
+          {
+            "path": "autoplay",
+            "kind": "structural"
+          },
+          {
+            "path": "interval",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "logos",
+            "min": 3,
+            "max": 12
+          }
+        ],
+        "directMedia": true,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "trust.testimonial-slider-01",
+      "block_version": 1,
+      "component": "TestimonialSlider",
+      "schema_ref": "builtin:testimonialSliderProps",
+      "category": "trust-company",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.slider"
+      ],
+      "batch": "7-C",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.name",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.role",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.company",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.quote",
+            "kind": "block-rich"
+          },
+          {
+            "path": "items.*.avatarSrc",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.avatarAlt",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.rating",
+            "kind": "structural"
+          },
+          {
+            "path": "autoplay",
+            "kind": "structural"
+          },
+          {
+            "path": "interval",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": true,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.event-schedule-01",
+      "block_version": 1,
+      "component": "EventSchedule",
+      "schema_ref": "builtin:eventScheduleProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.date",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.time",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.location",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.buttonLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.description",
+            "kind": "block-rich"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.buttonUrl",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 1,
+            "max": 12
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.download-resources-01",
+      "block_version": 1,
+      "component": "DownloadResources",
+      "schema_ref": "builtin:downloadResourcesProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.fileType",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.fileSize",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.buttonLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.description",
+            "kind": "block-rich"
+          },
+          {
+            "path": "items.*.url",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 1,
+            "max": 12
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "g7.board-content-archive-01",
+      "block_version": 1,
+      "component": "G7BoardArchive",
+      "schema_ref": "builtin:g7BoardArchiveProps",
+      "category": "g7-data",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "g7.module.sirsoft-board",
+        "public.dynamic-data",
+        "public.search-filter"
+      ],
+      "batch": "7-E",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "emptyMessage",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "source",
+            "kind": "structural"
+          },
+          {
+            "path": "period",
+            "kind": "structural"
+          },
+          {
+            "path": "limit",
+            "kind": "structural"
+          },
+          {
+            "path": "pageSize",
+            "kind": "structural"
+          },
+          {
+            "path": "audience",
+            "kind": "structural"
+          },
+          {
+            "path": "showSearch",
+            "kind": "structural"
+          },
+          {
+            "path": "showBoardFilter",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": true
+      }
+    },
+    {
+      "id": "g7.ecommerce-product-showcase-01",
+      "block_version": 1,
+      "component": "G7ProductShowcase",
+      "schema_ref": "builtin:g7ProductShowcaseProps",
+      "category": "g7-data",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "g7.module.sirsoft-ecommerce",
+        "public.dynamic-data"
+      ],
+      "batch": "7-E",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "emptyMessage",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "source",
+            "kind": "structural"
+          },
+          {
+            "path": "limit",
+            "kind": "structural"
+          },
+          {
+            "path": "pageSize",
+            "kind": "structural"
+          },
+          {
+            "path": "audience",
+            "kind": "structural"
+          },
+          {
+            "path": "detailBasePath",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": true
+      }
+    },
+    {
+      "id": "g7.board-post-detail-01",
+      "block_version": 1,
+      "component": "G7PostDetail",
+      "schema_ref": "builtin:g7PostDetailProps",
+      "category": "g7-data",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "g7.module.sirsoft-board",
+        "public.dynamic-data"
+      ],
+      "batch": "7-E",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "linkLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "emptyMessage",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "boardSlug",
+            "kind": "structural"
+          },
+          {
+            "path": "postId",
+            "kind": "structural"
+          },
+          {
+            "path": "detailUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "audience",
+            "kind": "structural"
+          },
+          {
+            "path": "showContent",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": true
+      }
+    },
+    {
+      "id": "g7.ecommerce-product-detail-01",
+      "block_version": 1,
+      "component": "G7ProductDetail",
+      "schema_ref": "builtin:g7ProductDetailProps",
+      "category": "g7-data",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "g7.module.sirsoft-ecommerce",
+        "public.dynamic-data"
+      ],
+      "batch": "7-E",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "buttonLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "emptyMessage",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "productKey",
+            "kind": "structural"
+          },
+          {
+            "path": "detailUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "audience",
+            "kind": "structural"
+          },
+          {
+            "path": "showDescription",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": true
+      }
+    },
+    {
+      "id": "content.divider-01",
+      "block_version": 1,
+      "component": "Divider",
+      "schema_ref": "builtin:dividerProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "7-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "label",
+            "kind": "plain"
+          },
+          {
+            "path": "variant",
+            "kind": "structural"
+          },
+          {
+            "path": "width",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.blockquote-01",
+      "block_version": 1,
+      "component": "Blockquote",
+      "schema_ref": "builtin:blockquoteProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "7-B",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "citation",
+            "kind": "plain"
+          },
+          {
+            "path": "role",
+            "kind": "plain"
+          },
+          {
+            "path": "quote",
+            "kind": "block-rich"
+          },
+          {
+            "path": "alignment",
+            "kind": "structural"
+          },
+          {
+            "path": "variant",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.notice-01",
+      "block_version": 1,
+      "component": "Notice",
+      "schema_ref": "builtin:noticeProps",
+      "category": "hero-conversion",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "actionLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "tone",
+            "kind": "structural"
+          },
+          {
+            "path": "actionUrl",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.card-grid-01",
+      "block_version": 1,
+      "component": "CardGrid",
+      "schema_ref": "builtin:cardGridProps",
+      "category": "content",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "6-A",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.kicker",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.linkLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.title",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.body",
+            "kind": "block-rich"
+          },
+          {
+            "path": "items.*.linkUrl",
+            "kind": "structural"
+          },
+          {
+            "path": "columns",
+            "kind": "structural"
+          },
+          {
+            "path": "variant",
+            "kind": "structural"
+          },
+          {
+            "path": "layout",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 6
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "navigation.breadcrumbs-01",
+      "block_version": 1,
+      "component": "Breadcrumbs",
+      "schema_ref": "builtin:breadcrumbsProps",
+      "category": "navigation",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-D",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "items.*.label",
+            "kind": "plain"
+          },
+          {
+            "path": "currentLabel",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.url",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 1,
+            "max": 6
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "navigation.anchor-menu-01",
+      "block_version": 1,
+      "component": "AnchorMenu",
+      "schema_ref": "builtin:anchorMenuProps",
+      "category": "navigation",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-D",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "label",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.label",
+            "kind": "plain"
+          },
+          {
+            "path": "items.*.anchor",
+            "kind": "structural"
+          },
+          {
+            "path": "sticky",
+            "kind": "structural"
+          },
+          {
+            "path": "alignment",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "navigation.social-links-01",
+      "block_version": 1,
+      "component": "SocialLinks",
+      "schema_ref": "builtin:socialLinksProps",
+      "category": "navigation",
+      "supply_kind": "composite-section",
+      "capabilities": [],
+      "batch": "7-D",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "items.*.label",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "items.*.network",
+            "kind": "structural"
+          },
+          {
+            "path": "items.*.url",
+            "kind": "structural"
+          },
+          {
+            "path": "variant",
+            "kind": "structural"
+          },
+          {
+            "path": "alignment",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 1,
+            "max": 8
+          }
+        ],
+        "directMedia": false,
+        "directRoute": true,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "media.image-carousel-01",
+      "block_version": 1,
+      "component": "ImageCarousel",
+      "schema_ref": "builtin:imageCarouselProps",
+      "category": "media",
+      "supply_kind": "composite-section",
+      "capabilities": [
+        "public.slider"
+      ],
+      "batch": "7-D",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "eyebrow",
+            "kind": "plain"
+          },
+          {
+            "path": "images.*.caption",
+            "kind": "plain"
+          },
+          {
+            "path": "heading",
+            "kind": "inline-rich"
+          },
+          {
+            "path": "images.*.src",
+            "kind": "structural"
+          },
+          {
+            "path": "images.*.alt",
+            "kind": "structural"
+          },
+          {
+            "path": "autoplay",
+            "kind": "structural"
+          },
+          {
+            "path": "interval",
+            "kind": "structural"
+          },
+          {
+            "path": "controls",
+            "kind": "structural"
+          },
+          {
+            "path": "aspectRatio",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "images",
+            "min": 2,
+            "max": 8
+          }
+        ],
+        "directMedia": true,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    }
+  ],
+  "presets": [
+    {
+      "id": "heading.section-intro",
+      "block_id": "content.heading-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "heading.compact-title",
+      "block_id": "content.heading-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "rich-text.article-intro",
+      "block_id": "content.rich-text-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "6-A",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "rich-text.policy",
+      "block_id": "content.rich-text-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "image.landscape",
+      "block_id": "media.image-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "image.square",
+      "block_id": "media.image-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "buttons.primary-secondary",
+      "block_id": "action.buttons-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "buttons.centered-actions",
+      "block_id": "action.buttons-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "image-text.product-story",
+      "block_id": "media.image-text-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "image-text.company-story",
+      "block_id": "media.image-text-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "6-A",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "icon-list.benefits",
+      "block_id": "content.icon-list-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "icon-list.checklist",
+      "block_id": "content.icon-list-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "hero.service-intro",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "6-A",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "features.core-benefits",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "6-A",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "cta.contact",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "6-A",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "contact.office",
+      "block_id": "content.contact-info-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "faq.basic",
+      "block_id": "content.faq-accordion-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "process.four-step",
+      "block_id": "content.process-timeline-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "hero-split.product-focus",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "hero-slider.campaign",
+      "block_id": "content.hero-slider-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "logo-cloud.partners",
+      "block_id": "trust.logo-cloud-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "stats.business-proof",
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "pricing.three-tier",
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "team.leadership",
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "gallery.project-scenes",
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "bar-chart.quarterly",
+      "block_id": "data.bar-chart-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "g7-posts.latest",
+      "block_id": "g7.board-recent-posts-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-E-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "data-empty",
+        "data-error",
+        "capability-missing"
+      ]
+    },
+    {
+      "id": "g7-products.new",
+      "block_id": "g7.ecommerce-product-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-E-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "data-empty",
+        "data-error",
+        "capability-missing"
+      ]
+    },
+    {
+      "id": "inquiry.general",
+      "block_id": "form.inquiry-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "map.office",
+      "block_id": "location.map-directions-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "testimonials.customer-proof",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "tabs.service-guide",
+      "block_id": "content.tabs-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "comparison.plans",
+      "block_id": "commerce.comparison-table-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "articles.insights",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "video.product-tour",
+      "block_id": "media.video-embed-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "logo-carousel.customers",
+      "block_id": "trust.logo-carousel-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "testimonial-slider.spotlight",
+      "block_id": "trust.testimonial-slider-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "events.upcoming",
+      "block_id": "content.event-schedule-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "downloads.resource-center",
+      "block_id": "content.download-resources-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "g7-archive.searchable",
+      "block_id": "g7.board-content-archive-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-E-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "data-empty",
+        "data-error",
+        "capability-missing"
+      ]
+    },
+    {
+      "id": "g7-showcase.featured",
+      "block_id": "g7.ecommerce-product-showcase-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-E-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "data-empty",
+        "data-error",
+        "capability-missing"
+      ]
+    },
+    {
+      "id": "g7-post-detail.featured",
+      "block_id": "g7.board-post-detail-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-E-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "data-empty",
+        "data-error",
+        "capability-missing"
+      ]
+    },
+    {
+      "id": "g7-product-detail.featured",
+      "block_id": "g7.ecommerce-product-detail-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-E-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "data-empty",
+        "data-error",
+        "capability-missing"
+      ]
+    },
+    {
+      "id": "divider.section-break",
+      "block_id": "content.divider-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "blockquote.customer-voice",
+      "block_id": "content.blockquote-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "7-B-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "notice.service-info",
+      "block_id": "content.notice-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "card-grid.services",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "6-A",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "breadcrumbs.detail-page",
+      "block_id": "navigation.breadcrumbs-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "anchor-menu.long-page",
+      "block_id": "navigation.anchor-menu-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "social-links.official",
+      "block_id": "navigation.social-links-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "image-carousel.space-tour",
+      "block_id": "media.image-carousel-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "inquiry.quote",
+      "block_id": "form.inquiry-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "inquiry.reservation",
+      "block_id": "form.inquiry-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "inquiry.application",
+      "block_id": "form.inquiry-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "inquiry.newsletter",
+      "block_id": "form.inquiry-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "hero.poster",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "hero.backdrop",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "hero.editorial",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "hero.device",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "hero-split.balanced",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "hero-split.overlap",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "hero-split.offset",
+      "block_id": "content.hero-centered-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "features.grid",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "features.editorial",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "features.panel",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "features.list",
+      "block_id": "content.features-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "cta.centered",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "cta.banner",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "cta.panel",
+      "block_id": "content.cta-split-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-A-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "logo-cloud.grid",
+      "block_id": "trust.logo-cloud-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "logo-cloud.panel",
+      "block_id": "trust.logo-cloud-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "stats.grid",
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "stats.strip",
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "stats.split",
+      "block_id": "data.stats-icons-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "pricing.cards",
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "pricing.compact",
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "pricing.editorial",
+      "block_id": "commerce.pricing-tiers-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "team.grid",
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "team.editorial",
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "team.featured",
+      "block_id": "company.team-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "gallery.grid",
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "gallery.masonry",
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-02",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "gallery.filmstrip",
+      "block_id": "media.gallery-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-D-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "testimonials.grid",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "testimonials.spotlight",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "testimonials.split",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "testimonials.quote-hero",
+      "block_id": "trust.testimonials-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-C-04",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "articles.list",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "articles.grid",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "articles.featured",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "articles.editorial",
+      "block_id": "content.article-list-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max",
+        "media-missing"
+      ]
+    },
+    {
+      "id": "card-grid.grid",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "card-grid.rail",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "card-grid.editorial",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "card-grid.numbered",
+      "block_id": "content.card-grid-01",
+      "block_version": 1,
+      "supply_kind": "section-candidate",
+      "batch": "7-B-03",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    }
+  ],
+  "page_kits": [
+    {
+      "id": "company-launch",
+      "source": "resources/store/source/page-kits/company-launch/document.json",
+      "sha256": "6f596b3b66c412799beb03577d8984cc6d8839568027f7b85f42824bd33b46e5",
+      "batch": "7-F",
+      "review_status": "not-reviewed-under-v2",
+      "block_ids": [
+        "content.hero-split-01",
+        "content.features-grid-01",
+        "data.stats-icons-01",
+        "company.team-grid-01",
+        "trust.testimonials-01",
+        "content.cta-split-01"
+      ],
+      "contains_legacy_hero_split": true
+    },
+    {
+      "id": "service-conversion",
+      "source": "resources/store/source/page-kits/service-conversion/document.json",
+      "sha256": "ced754fb7d77f51e7dd40712e37e2db188d85eed662803a7aef50f8d1929f4fc",
+      "batch": "6-B",
+      "review_status": "not-reviewed-under-v2",
+      "block_ids": [
+        "content.hero-split-01",
+        "content.icon-list-01",
+        "content.process-timeline-01",
+        "trust.testimonials-01",
+        "content.faq-accordion-01",
+        "form.inquiry-01"
+      ],
+      "contains_legacy_hero_split": true
+    },
+    {
+      "id": "local-business",
+      "source": "resources/store/source/page-kits/local-business/document.json",
+      "sha256": "018310eb3f80262c3c68f709df848355d54f95b82556e3c5ae490c0045edd4cf",
+      "batch": "6-B",
+      "review_status": "not-reviewed-under-v2",
+      "block_ids": [
+        "content.hero-split-01",
+        "content.features-grid-01",
+        "content.process-timeline-01",
+        "trust.testimonials-01",
+        "location.map-directions-01",
+        "form.inquiry-01"
+      ],
+      "contains_legacy_hero_split": true
+    },
+    {
+      "id": "event-launch",
+      "source": "resources/store/source/page-kits/event-launch/document.json",
+      "sha256": "db7f928a7623dbc50fb17808cab223f8ca1fe15b3f96d9482385ddb3d2ef0b4f",
+      "batch": "7-F",
+      "review_status": "not-reviewed-under-v2",
+      "block_ids": [
+        "content.hero-split-01",
+        "data.stats-icons-01",
+        "content.event-schedule-01",
+        "company.team-grid-01",
+        "trust.logo-cloud-01",
+        "content.faq-accordion-01",
+        "form.inquiry-01"
+      ],
+      "contains_legacy_hero_split": true
+    },
+    {
+      "id": "editorial-community",
+      "source": "resources/store/source/page-kits/editorial-community/document.json",
+      "sha256": "c3cae436f6a18e6e448a71f3b09b3e76efc7e1e6b93aed0fcb12172e81ce734d",
+      "batch": "6-B",
+      "review_status": "not-reviewed-under-v2",
+      "block_ids": [
+        "content.hero-split-01",
+        "content.article-list-01",
+        "content.event-schedule-01",
+        "content.download-resources-01",
+        "content.cta-split-01"
+      ],
+      "contains_legacy_hero_split": true
+    }
+  ]
+}

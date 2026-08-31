@@ -1,0 +1,12 @@
+{
+  "release": "0.30.0",
+  "status": "excluded",
+  "scope": "physical-device-review",
+  "platforms": ["ios-safari-voiceover", "android-chrome-talkback"],
+  "authorization": {
+    "kind": "user-request",
+    "request": "진행하고 ios 안드로이드는 뺴라",
+    "requestedAt": "2026-08-31"
+  },
+  "reason": "이번 릴리스의 iOS·Android 실기기 및 VoiceOver·TalkBack 검증을 사용자 요청으로 제외합니다. 사람 검토 통과를 의미하지 않습니다. Chromium·WebKit, PC·태블릿·모바일 반응형 자동 검증과 나머지 품질 게이트는 유지합니다."
+}

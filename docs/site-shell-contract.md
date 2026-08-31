@@ -62,6 +62,7 @@ Site Part 변경은 `builder` 공개 페이지와 공통 셸 API의 전체 표�
 - `npm run test:e2e:site-shell`은 기존 인증 검증과 `mobileNavigationQuality.spec.ts`를 함께 실행합니다. Chromium의 320/360/390/430/768/899/900px 경계와 WebKit 모바일 엔진을 검사하며, 실패/누락/오래된 fingerprint는 패키징·배포를 차단합니다. WebKit 설치가 없으면 `npx playwright install webkit` 후 재검증합니다.
 - 자동화 엔진 검증은 물리 iPhone/Android와 VoiceOver/TalkBack 실제 사용 검증을 대신하지 않습니다. `--run`은 자동 검사만 완료하고, 패키징·배포에서 실행하는 일반 check는 `output/playwright/mobile-navigation-manual-review.json`까지 요구합니다. 수동 검증이 없으면 릴리스는 계속 차단됩니다.
 - 수동 기록은 자동 결과와 같은 `fingerprint`, `status=passed`, `reviewer.kind=human`과 검토자 이름, `results`의 `ios-safari-voiceover`·`android-chrome-talkback` 두 항목이 필요합니다. 각 항목은 실제 `device`, `os`, `browserVersion`, `evidence`, `checkedAt`, `status=passed` 및 `checks`의 `navigation`·`account`·`focus-and-reading-order`·`safe-area-and-keyboard`·`scroll-and-back` 통과 기록을 포함합니다. AI나 테스트 fixture로 사람 검토를 대신 작성하지 않습니다.
+- 예외: 2026-08-31 사용자의 명시적 요청에 따라 **0.30.0만** iOS·Android 실기기/스크린리더 검증을 제외합니다. `docs/release-exclusions/0.30.0.json`에 원문·날짜·대상·사유를 기록하며 자동 결과도 `physicalDeviceReview.status=excluded`로 남깁니다. 이 결정과 버전은 소스 fingerprint에 포함되며, 다른 버전으로 재사용할 수 없습니다. Chromium/WebKit·반응형·접근성·실제 G7 인증 자동 검사와 본문 블록 품질 게이트는 그대로 필수입니다. 제외는 실기기 통과나 지원 보증이 아닙니다.
 
 - 편집 문서는 디자인·브랜드·메뉴 링크만 소유합니다.
 - 검색·로그인·회원가입·로그아웃·마이페이지·알림·장바구니·테마·언어·통화는 compiler가 만든 고정 마커와 모듈 runtime adapter가 제공합니다.

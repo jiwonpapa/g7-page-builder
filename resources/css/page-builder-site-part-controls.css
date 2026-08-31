@@ -12,6 +12,63 @@
   background: #fff;
 }
 
+/* Both standalone and embedded editors load this shared control sheet. */
+.g7pb-site-part-set-tools .g7pb-site-part-set-history {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.g7pb-site-part-set-tools .g7pb-site-part-set-history button {
+  display: inline-flex;
+  width: 34px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--g7pb-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.g7pb-site-part-set-tools .g7pb-site-part-set-history button:disabled {
+  cursor: default;
+  opacity: .35;
+}
+
+.g7pb-root.g7pb-site-part-editor {
+  display: flex;
+  min-height: 0;
+  height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.g7pb-root.g7pb-site-part-editor.is-embedded {
+  height: 100%;
+}
+
+.g7pb-site-part-editor > .g7pb-command-bar,
+.g7pb-site-part-editor > .g7pb-notice,
+.g7pb-site-part-editor .g7pb-site-part-puck > div:not(.Puck) {
+  flex: none;
+}
+
+.g7pb-site-part-editor .g7pb-site-part-puck {
+  display: flex;
+  min-height: 0;
+  height: auto;
+  flex: 1;
+  flex-direction: column;
+}
+
+.g7pb-site-part-editor .g7pb-site-part-puck > .Puck {
+  min-height: 0;
+  flex: 1;
+}
+
 .g7pb-site-part-set-tools__status {
   margin-left: auto;
   color: var(--g7pb-muted);

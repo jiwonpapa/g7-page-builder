@@ -225,6 +225,124 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
   await page.screenshot({ path: 'output/playwright/site-part-workspace-ux.png', fullPage: false });
 }
 
+for (const kind of ['header', 'footer'] as const) {
+  test(`replaces ${kind} presets through native canvas history and persists the visible result`, async ({ page, context }) => {
+    const api = await adminApi(await authenticate(context));
+    let original: SitePartResource | null = null;
+    let fixtureId: string | null = null;
+    try {
+      await page.goto(sitePartPath(kind));
+      const locale = await page.getByTestId('page-builder-site-part-editor-root').getAttribute('data-locale') ?? 'ko';
+      original = await readOrBootstrap(api, kind, locale);
+      const editor = page.getByTestId('page-builder-site-part-editor');
+      const presets = editor.getByTestId('page-builder-site-part-presets');
+      const canvas = page.frameLocator('iframe').first();
+      const distinguishingBlock = canvas.locator(kind === 'header' ? '.g7pb-site-announcement' : '.g7pb-site-footer--columns');
+      const apply = async (name: RegExp, accepted = true): Promise<void> => {
+        page.once('dialog', (dialog) => accepted ? dialog.accept() : dialog.dismiss());
+        await presets.getByRole('button', { name }).click();
+      };
+      await apply(/비즈니스/);
+      await expect(distinguishingBlock).toHaveCount(1);
+      // Save the baseline so the next preset must remain a distinct, undoable edit.
+      await editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true }).click();
+      await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
+      await apply(kind === 'header' ? /미니멀/ : /컴팩트/);
+      await expect(distinguishingBlock).toHaveCount(0);
+      await page.keyboard.press('ControlOrMeta+z');
+      await expect(distinguishingBlock).toHaveCount(1);
+      await editor.getByRole('button', { name: '다시 실행', exact: true }).click();
+      await expect(distinguishingBlock).toHaveCount(0);
+      await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
+      await expect(distinguishingBlock).toHaveCount(1);
+      await apply(kind === 'header' ? /미니멀/ : /컴팩트/, false);
+      await expect(distinguishingBlock).toHaveCount(1);
+      // Cancelling a preset must not erase the redo branch.
+      await editor.getByRole('button', { name: '다시 실행', exact: true }).click();
+      await expect(distinguishingBlock).toHaveCount(0);
+      await editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true }).click();
+      await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
+      const saved = await readOrBootstrap(api, kind, locale);
+      expect(saved.document.blocks.map((block) => block.type)).toEqual([kind === 'header' ? 'site.header.navigation-01' : 'site.footer.simple-01']);
+      await page.reload();
+      await expect(canvas.locator(kind === 'header' ? '.g7pb-site-header' : '.g7pb-site-footer')).toBeVisible();
+      await expect(distinguishingBlock).toHaveCount(0);
+      await expect(editor.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
+
+      // A slow save response must not erase an Undo that happens after the request.
+      await apply(/비즈니스/);
+      await expect(distinguishingBlock).toHaveCount(1);
+      let releaseSave!: () => void;
+      let saveStarted!: () => void;
+      const held = new Promise<void>((resolve) => { releaseSave = resolve; });
+      const started = new Promise<void>((resolve) => { saveStarted = resolve; });
+      const draftUrl = `**/site-parts/${kind}/draft`;
+      await page.route(draftUrl, async (route) => {
+        const response = await route.fetch();
+        saveStarted();
+        await held;
+        await route.fulfill({ response });
+      }, { times: 1 });
+      try {
+        await editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true }).click();
+        await started;
+        await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
+        await expect(distinguishingBlock).toHaveCount(0);
+        const response = page.waitForResponse((item) => item.url().includes(`/site-parts/${kind}/draft`) && item.request().method() === 'PUT');
+        releaseSave();
+        expect((await response).ok()).toBe(true);
+        await expect(editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true })).toBeEnabled();
+        await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'dirty');
+        await editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true }).click();
+        await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
+      } finally { releaseSave(); }
+
+      // Exercise the same editor inside a real builder document, not only the standalone route.
+      const created = await api.post('/api/modules/jiwonpapa-page_builder/admin/documents', {
+        data: { title: `E2E Site Part preset ${kind}`, slug: `e2e-site-part-preset-${kind}-${Date.now()}`, locale, mode: 'canvas', shell_mode: 'builder' },
+      });
+      expect(created.ok()).toBe(true);
+      fixtureId = (await created.json()).data.document.document_id as string;
+      await page.goto(`/modules/jiwonpapa-page_builder/admin/editor?document=${fixtureId}`);
+      await canvas.getByRole('button', { name: `${kind === 'header' ? 'Header' : 'Footer'} 편집`, exact: true }).click();
+      await expect(editor).toHaveClass(/is-embedded/);
+      await expect(distinguishingBlock).toHaveCount(0);
+      await apply(/비즈니스/);
+      await expect(distinguishingBlock).toHaveCount(1);
+      await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
+      await expect(distinguishingBlock).toHaveCount(0);
+      await editor.getByRole('button', { name: '다시 실행', exact: true }).click();
+      await expect(distinguishingBlock).toHaveCount(1);
+      await editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true }).click();
+      await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
+      await page.screenshot({ path: `output/playwright/site-part-${kind}-preset-history.png`, fullPage: false });
+      for (const height of [800, 1000]) {
+        await page.setViewportSize({ width: 1440, height });
+        await expect.poll(async () => {
+          const rect = await editor.locator('.Puck').boundingBox();
+          return rect ? Math.round(rect.y + rect.height) : 0;
+        }).toBe(height);
+      }
+      await editor.getByRole('button', { name: '페이지 편집으로 돌아가기', exact: true }).click();
+      await expect(editor).toHaveCount(0);
+      await canvas.getByRole('button', { name: `${kind === 'header' ? 'Header' : 'Footer'} 편집`, exact: true }).click();
+      await expect(distinguishingBlock).toHaveCount(1);
+      await expect(editor.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
+    } finally {
+      await page.goto('about:blank');
+      if (original) await restoreAndPublish(api, kind, original);
+      if (fixtureId) {
+        const current = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${fixtureId}`);
+        expect(current.ok()).toBe(true);
+        const fixture = (await current.json()).data;
+        const archived = await api.post(`/api/modules/jiwonpapa-page_builder/admin/documents/${fixtureId}/archive`, { data: { expected_lock_version: fixture.lock_version } });
+        expect(archived.ok()).toBe(true);
+      }
+      await api.dispose();
+    }
+  });
+}
+
 test('edits and publishes the Header as an independent responsive Puck Site Part', async ({ page, context }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Site Part interaction is covered once; page lifecycle owns all three viewports.');
   const token = await authenticate(context);

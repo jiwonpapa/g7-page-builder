@@ -154,7 +154,7 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
   const puck = editor.locator('.Puck');
   const viewportHeight = page.viewportSize()!.height;
   for (const tab of ['블록', '구조', '세트', '블록', '구조', '세트']) {
-    await editor.getByRole('button', { name: tab, exact: true }).click();
+    await editor.getByText(tab, { exact: true }).click();
     await expect.poll(async () => {
       const box = await puck.boundingBox();
       return box ? Math.round(box.y + box.height) : 0;
@@ -182,14 +182,16 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
   const persona = editor.getByRole('group', { name: '접속 상태 미리보기' });
   await persona.getByRole('button', { name: '관리자', exact: true }).click();
   await expect(persona.getByRole('button', { name: '관리자', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await editor.getByRole('button', { name: '블록', exact: true }).click();
+  await editor.getByText('블록', { exact: true }).click();
   for (const component of ['HeaderNavigation', 'FooterSimple', 'FooterColumns', 'HeaderSystemControls']) {
     await expect(editor.getByTestId(`drawer-item:${component}`)).toHaveClass(/DrawerItem--disabled/);
   }
   const canvas = page.frameLocator('iframe').first();
   const account = canvas.getByRole('button', { name: '계정 메뉴', exact: true });
   for (let repeat = 0; repeat < 3; repeat += 1) {
-    await canvas.locator('.g7pb-site-brand').first().click();
+    const header = await canvas.locator('.g7pb-site-header').boundingBox();
+    if (!header) throw new Error('Header selection geometry is missing.');
+    await page.mouse.click(header.x + 4, header.y + 4);
     await account.click();
     const actionBar = canvas.locator('.g7pb-site-part-action-bar');
     await expect(actionBar).toContainText('G7 시스템 기능');
@@ -460,9 +462,9 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     const setEditor = page.getByTestId('page-builder-site-part-set-editor');
     await expect(setEditor).toBeVisible();
     await expect(page.getByTestId('page-builder-site-part-editor')).toHaveCount(0);
-    await expect(setEditor.getByRole('button', { name: '세트', exact: true })).toBeVisible();
-    await expect(setEditor.getByRole('button', { name: '블록', exact: true })).toBeVisible();
-    await expect(setEditor.getByRole('button', { name: '구조', exact: true })).toBeVisible();
+    await expect(setEditor.getByText('세트', { exact: true })).toBeVisible();
+    await expect(setEditor.getByText('블록', { exact: true })).toBeVisible();
+    await expect(setEditor.getByText('구조', { exact: true })).toBeVisible();
     await expect(page.getByTestId('page-builder-site-part-set-presets').getByRole('button')).toHaveCount(3);
 
     await page.getByTestId('page-builder-site-part-set-presets').getByRole('button', { name: /비즈니스/ }).click();

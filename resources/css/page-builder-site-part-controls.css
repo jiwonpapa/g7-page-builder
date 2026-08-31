@@ -1,0 +1,70 @@
+.g7pb-site-part-persona {
+  flex: none;
+}
+
+.g7pb-site-part-set-tools {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--g7pb-border);
+  background: #fff;
+}
+
+.g7pb-site-part-set-tools__status {
+  margin-left: auto;
+  color: var(--g7pb-muted);
+  font-size: 11px;
+}
+
+.g7pb-site-part-set-tools button:hover:not(:disabled) {
+  background: #f0f4fa;
+}
+
+.g7pb-site-part-persona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--g7pb-border);
+  font-size: 12px;
+  background: #fff;
+}
+
+.g7pb-site-part-persona__buttons {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--g7pb-border);
+  border-radius: 8px;
+  background: #f4f6fa;
+}
+
+.g7pb-site-part-persona__buttons button {
+  min-height: 32px;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 5px;
+  color: #526175;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.g7pb-site-part-persona__buttons button[aria-pressed='true'] {
+  color: #1e4fd3;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(23 32 51 / 12%);
+  font-weight: 750;
+}
+
+.g7pb-site-part-persona small {
+  color: var(--g7pb-muted);
+}
+
+.g7pb-site-part-persona button:focus-visible {
+  outline: 2px solid var(--g7pb-primary);
+  outline-offset: 2px;
+}

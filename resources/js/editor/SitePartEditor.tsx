@@ -2,6 +2,7 @@ import React, { createContext, useContext, useCallback, useEffect, useId, useMem
 import { installShellDisclosures, mountMobileShell, paintShellProduct, shellControlsMarkup, shellIcon, shellRecord, shellSafeUrl, type ShellOptions } from '../public/siteShellControls';
 import { installMobileNavigation } from '../public/mobileNavigation';
 import '../../css/page-builder-site-shell.css';
+import '../../css/page-builder-site-part-controls.css';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, registerOverlayPortal, type Config, type Field, usePuck, type Viewports } from '@puckeditor/core';
 import {
@@ -160,6 +161,8 @@ function createFooterResponsiveField(): Field<FooterResponsiveOverrides | undefi
 export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps & { onSelect?: () => void }): React.ReactElement {
   const persona = useContext(SitePartPersona);
   const ref = useRef<HTMLElement>(null);
+  const onSelectRef = useRef(props.onSelect);
+  onSelectRef.current = props.onSelect;
   // Puck adds changing selection/overlay metadata to render props. Only actual
   // control options may rebuild this interactive DOM and reset its open panel.
   const { search, account, cart, notifications, theme, locale, currency } = props;
@@ -179,9 +182,16 @@ export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps & {
     const dispose = installShellDisclosures(host, (key) => {
       if (key === 'notifications') { const list = host.querySelector('[data-g7pb-notifications-list]'); if (list) list.textContent = '서비스 소식 · 상태 미리보기용 예시 알림입니다.'; }
     }, true);
-    return () => { dispose(); unregister?.(); };
+    // Portal clicks bubble through both child and parent Puck components.
+    // Select last at the document boundary, after Puck's parent handler, while
+    // preserving the disclosure listener and its keyboard/click behavior.
+    const select = (event: Event): void => {
+      if (host.contains(event.target as Node)) onSelectRef.current?.();
+    };
+    host.ownerDocument.addEventListener('click', select);
+    return () => { host.ownerDocument.removeEventListener('click', select); dispose(); unregister?.(); };
   }, [markup, persona]);
-  return <nav ref={ref} onPointerDownCapture={props.onSelect} onFocusCapture={props.onSelect} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-options={signature} data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={content} />;
+  return <nav ref={ref} aria-disabled="false" onFocusCapture={props.onSelect} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-options={signature} data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={content} />;
 }
 
 function SelectableSystemControls(props: HeaderSystemControlsProps & { id: string }): React.ReactElement {
@@ -190,7 +200,9 @@ function SelectableSystemControls(props: HeaderSystemControlsProps & { id: strin
     const width = appState.ui.viewports.current.width;
     if (typeof width === 'number' && width <= 768) return;
     const itemSelector = getSelectorForId(props.id);
-    if (itemSelector) dispatch({ type: 'setUi', ui: { itemSelector }, recordHistory: false });
+    if (itemSelector && (appState.ui.itemSelector?.index !== itemSelector.index || appState.ui.itemSelector?.zone !== itemSelector.zone)) {
+      dispatch({ type: 'setUi', ui: { itemSelector }, recordHistory: false });
+    }
   };
   return <HeaderSystemControlsPreview {...props} onSelect={select} />;
 }
@@ -590,9 +602,9 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   }), []);
   const [resource, setResource] = useState<SitePartResource | null>(null);
   const [data, setData] = useState<SitePartPuckData>({ root: { props: {} }, content: [] });
-  const config = useMemo(() => sitePartConfigFor(kind, data), [kind, data]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
+  const config = useMemo(() => sitePartConfigFor(kind, data, !busy), [kind, data, busy]);
   const [dirty, setDirty] = useState(false);
   const resourceRef = useRef<SitePartResource | null>(null);
   const dataRef = useRef(data);

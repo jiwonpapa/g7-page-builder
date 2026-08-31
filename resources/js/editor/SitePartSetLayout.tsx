@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { Puck, usePuck, type Config, type Plugin } from '@puckeditor/core';
 import { Check, Layers3, ListTree, Monitor, PanelLeft, PanelRight, Plus, Redo2, Smartphone, Tablet, Undo2 } from 'lucide-react';
 import type { SitePartSetResource } from '../documents/types';
-import type { SitePartComponents, SitePartSetPresetKey } from './sitePartDocumentAdapter';
+import type { SitePartComponents, SitePartPuckData, SitePartSetPresetKey } from './sitePartDocumentAdapter';
 
 interface SetLayoutContext {
   sets: SitePartSetResource[];
@@ -10,7 +10,7 @@ interface SetLayoutContext {
   dirty: boolean;
   onSelectSet: (id: string) => void;
   onCreateSet: () => void;
-  onPreset: (preset: SitePartSetPresetKey) => void;
+  onPreset: (preset: SitePartSetPresetKey, apply: (data: SitePartPuckData) => void) => void;
   onViewport: (viewport: 'desktop' | 'tablet' | 'mobile') => void;
 }
 
@@ -23,6 +23,10 @@ function useSetLayout(): SetLayoutContext {
 
 function SitePartSets(): React.ReactElement {
   const { sets, selectedId, onSelectSet, onCreateSet, onPreset } = useSetLayout();
+  const { dispatch } = usePuck<Config<SitePartComponents>>();
+  const applyPreset = (preset: SitePartSetPresetKey): void => {
+    onPreset(preset, (data) => dispatch({ type: 'setData', data }));
+  };
   return <div className="g7pb-site-part-set-layout__panel" data-panel="sets">
     <header className="g7pb-site-part-set-panel-heading"><div><strong>헤더·푸터 세트</strong><span>세트마다 헤더와 푸터를 하나씩 사용합니다.</span></div><button type="button" onClick={onCreateSet}><Plus size={16} /> 새 세트</button></header>
     <div className="g7pb-site-part-set-list">
@@ -33,9 +37,9 @@ function SitePartSets(): React.ReactElement {
     </div>
     <section className="g7pb-site-part-set-presets" data-testid="page-builder-site-part-set-presets">
       <header><strong>세트 프리셋</strong><span>헤더와 푸터를 함께 교체합니다.</span></header>
-      <button type="button" onClick={() => onPreset('business')}><strong>비즈니스</strong><span>공지·2단 메뉴·문의 CTA·다단 푸터</span></button>
-      <button type="button" onClick={() => onPreset('minimal')}><strong>미니멀</strong><span>투명 헤더·핵심 링크·짧은 푸터</span></button>
-      <button type="button" onClick={() => onPreset('community')}><strong>커뮤니티</strong><span>게시판 메뉴·회원 동선·정책 푸터</span></button>
+      <button type="button" onClick={() => applyPreset('business')}><strong>비즈니스</strong><span>공지·2단 메뉴·문의 CTA·다단 푸터</span></button>
+      <button type="button" onClick={() => applyPreset('minimal')}><strong>미니멀</strong><span>투명 헤더·핵심 링크·짧은 푸터</span></button>
+      <button type="button" onClick={() => applyPreset('community')}><strong>커뮤니티</strong><span>게시판 메뉴·회원 동선·정책 푸터</span></button>
     </section>
   </div>;
 }

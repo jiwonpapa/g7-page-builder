@@ -366,7 +366,18 @@ function ArticleListPreview(props: ArticleListEditorProps & { id: string }): Rea
 }
 
 function VideoPreview(props: VideoEmbedEditorProps & { id: string }): React.ReactElement {
-  return <Frame id={props.id} type="video-embed" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-video ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header><figure data-ratio={props.ratio}><div><span aria-hidden="true">▶</span><strong>{props.provider === 'youtube' ? 'YouTube' : 'Vimeo'} 영상</strong><small>{props.videoId || '영상 ID를 입력하세요'}</small></div><RichTextCanvasField as="span" className="g7pb-preview-richtext" fieldPath="caption">{props.caption}</RichTextCanvasField></figure></div></Frame>;
+  const captionValue = React.isValidElement(props.caption)
+    ? (props.caption.props as { value?: unknown }).value : props.caption;
+  const hasCaption = typeof captionValue === 'string' && captionValue.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() !== '';
+  return <Frame id={props.id} type="video-embed" motion={props.motion} elementStyles={props.elementStyles}>
+    <div className={`g7pb-preview-video ${surfaceClass(props)}`}>
+      <header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
+      <figure>
+        <div className="g7pb-preview-video__frame" data-ratio={props.ratio}><span aria-hidden="true">▶</span><strong>{props.provider === 'youtube' ? 'YouTube' : 'Vimeo'} 영상</strong><small>{props.videoId || '영상 ID를 입력하세요'}</small></div>
+        {hasCaption ? <figcaption><RichTextCanvasField as="span" className="g7pb-preview-richtext g7pb-preview-video__caption" fieldPath="caption">{props.caption}</RichTextCanvasField></figcaption> : null}
+      </figure>
+    </div>
+  </Frame>;
 }
 
 const appearanceFields = {

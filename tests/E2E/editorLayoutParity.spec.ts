@@ -1,5 +1,5 @@
 import { expect, request as playwrightRequest, test, type APIRequestContext, type BrowserContext, type Locator, type Page } from '@playwright/test';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
@@ -54,6 +54,7 @@ interface LayoutMetric {
 }
 
 interface TypographyMetric {
+  color: string;
   ancestorTrail: string[];
   canvasTextWidth: number;
   descendantTrail: string[];
@@ -459,6 +460,7 @@ async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMe
           ].join(':');
         });
       typography = {
+        color: typographyStyle?.color ?? '',
         ancestorTrail,
         canvasTextWidth: canvasContext ? canvasContext.measureText(rawText).width : 0,
         descendantTrail,
@@ -591,6 +593,8 @@ function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: Layou
       && editorTypography.fontFamily !== previewTypography.fontFamily;
     const typographyWeightMismatch = editorTypography !== null && previewTypography !== null
       && editorTypography.fontWeight !== previewTypography.fontWeight;
+    const typographyColorMismatch = editorTypography !== null && previewTypography !== null
+      && editorTypography.color !== previewTypography.color;
     const typographyLineCountMismatch = editorTypography !== null && previewTypography !== null
       && editorTypography.lineCount !== previewTypography.lineCount;
     const fontSizeDelta = editorTypography !== null && previewTypography !== null
@@ -611,6 +615,7 @@ function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: Layou
       || typographyTextMismatch
       || typographyFamilyMismatch
       || typographyWeightMismatch
+      || typographyColorMismatch
       || typographyLineCountMismatch
       || fontSizeDelta > TYPOGRAPHY_TOLERANCE_PX
       || lineHeightDelta > TYPOGRAPHY_TOLERANCE_PX
@@ -631,6 +636,7 @@ function expectLayoutParity(editorMetrics: LayoutMetric[], previewMetrics: Layou
         typographyPresenceMismatch,
         typographyTextMismatch,
         typographyWeightMismatch,
+        typographyColorMismatch,
         editor,
         preview,
       });
@@ -644,6 +650,126 @@ function expectBlockContainment(metrics: LayoutMetric[], surface: string): void 
   expect(overflows, `${surface} block overflows: ${JSON.stringify(overflows)}`).toEqual([]);
 }
 
+async function compareContentElements(editorBlocks: Locator, previewBlocks: Locator): Promise<{
+  checked: number; failures: Array<Record<string, unknown>>; geometry: Array<Record<string, unknown>>;
+}> {
+  const expected = await editorBlocks.evaluateAll((blocks) => blocks.map((block) => {
+    const tree = (element: Element, depth = 0): unknown => {
+      const s = getComputedStyle(element); const r = element.getBoundingClientRect();
+      return {tag:element.tagName,class:element.className,field:element.getAttribute('data-g7pb-inline-field'),width:r.width,height:r.height,margin:s.margin,padding:s.padding,display:s.display,font:s.fontSize,line:s.lineHeight,children:depth < 3 && !element.hasAttribute('data-g7pb-richtext-field') ? Array.from(element.children).map(e=>tree(e,depth+1)):[]};
+    };
+    const metrics = (element: Element, inline = false) => {
+      const range = element.ownerDocument.createRange();
+      range.selectNodeContents(element);
+      let rect = element.getBoundingClientRect();
+      if (inline) {
+        const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        const lines: DOMRect[] = [];
+        while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
+        if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
+      }
+      const style = getComputedStyle(element);
+      return { parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, width: rect.width, height: rect.height, color: style.color, fontSize: style.fontSize,
+        fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
+    };
+    return {
+      id: (block as HTMLElement).dataset.blockId, type: (block as HTMLElement).dataset.blockType,
+      height: block.getBoundingClientRect().height,
+      padding: block.firstElementChild && getComputedStyle(block.firstElementChild).padding,
+      tree: block.firstElementChild && tree(block.firstElementChild),
+      fields: Array.from(block.querySelectorAll<HTMLElement>('[data-g7pb-richtext-field]'))
+        .filter((element) => element.getBoundingClientRect().height > 0 && element.textContent?.trim())
+        .map((element) => ({ field: element.dataset.g7pbInlineField ?? '', tag: element.dataset.g7pbRichtextDisplay,
+          html: element.outerHTML.slice(0, 2000), text: (element.textContent ?? '').replace(/\s+/g, ' ').trim(), ...metrics(element.dataset.g7pbInlineField === 'caption' && element.parentElement?.tagName === 'FIGCAPTION' ? element.parentElement : element, element.dataset.g7pbRichtextDisplay === 'span' && element.dataset.g7pbInlineField !== 'caption') })),
+      media: Array.from(block.querySelectorAll<HTMLImageElement>('img'))
+        .filter((element) => element.getBoundingClientRect().height > 0)
+        .map((element) => ({ src: element.src, width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height,
+          diagnostic: {reduced:matchMedia('(prefers-reduced-motion: reduce)').matches, transform:getComputedStyle(element).transform, cssWidth:getComputedStyle(element).width, parentWidth:element.parentElement?.getBoundingClientRect().width, parentTransform:element.parentElement && getComputedStyle(element.parentElement).transform} })),
+      video: Array.from(block.querySelectorAll('.g7pb-preview-video__frame')).map((element) => metrics(element)),
+    };
+  }));
+  return previewBlocks.evaluateAll((blocks, input) => {
+    const failures: Array<Record<string, unknown>> = [];
+    const geometry: Array<Record<string, unknown>> = [];
+    let checked = 0;
+    const normalize = (text: string | null) => (text ?? '').replace(/\s+/g, ' ').trim();
+    const tree = (element: Element, depth = 0): unknown => {
+      const s = getComputedStyle(element); const r = element.getBoundingClientRect();
+      return {tag:element.tagName,class:element.className,width:r.width,height:r.height,margin:s.margin,padding:s.padding,display:s.display,font:s.fontSize,line:s.lineHeight,children:depth < 3 ? Array.from(element.children).map(e=>tree(e,depth+1)):[]};
+    };
+    for (const source of input) {
+      const block = blocks.find((element) => (element as HTMLElement).dataset.blockId === source.id);
+      if (!block) throw new Error(`Missing compiled block ${source.id}`);
+      geometry.push({id:source.id,type:source.type,editor:source.height,preview:block.getBoundingClientRect().height,delta:source.height-block.getBoundingClientRect().height,editorPadding:source.padding,previewPadding:getComputedStyle(block).padding,editorTree:source.tree,previewTree:tree(block)});
+      const candidates = Array.from(block.querySelectorAll<HTMLElement>('h1,h2,h3,h4,p,div,span,strong,small,figcaption,cite,a,li,td,th'));
+      const compare = (key: string, editor: Record<string, unknown>, element: Element | undefined | null, inline = false) => {
+        checked += 1;
+        if (!element) { failures.push({ block: source.type, id: source.id, key, reason: 'Missing compiled counterpart' }); return; }
+        const range = element.ownerDocument.createRange();
+        range.selectNodeContents(element);
+        let rect = element.getBoundingClientRect();
+        if (inline) {
+          const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+          const lines: DOMRect[] = [];
+          while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
+          if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
+        }
+        const style = getComputedStyle(element);
+        const actual: Record<string, unknown> = { width: rect.width, height: rect.height, color: style.color,
+          fontSize: style.fontSize, fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
+        const differences = Object.keys(actual).filter((property) => property in editor && (
+          typeof actual[property] === 'number'
+            ? Math.abs(Number(actual[property]) - Number(editor[property])) > 1.25
+            : actual[property] !== editor[property]
+        ));
+        const matchedRules: string[] = [];
+        if (differences.length) {
+          const scan = (rules: CSSRuleList) => { for (const rule of Array.from(rules)) {
+            if (rule instanceof CSSStyleRule) { try { if (element.matches(rule.selectorText) && /font|line-height|transform|width|height/.test(rule.style.cssText)) matchedRules.push(rule.cssText); } catch { /* Unsupported selector diagnostic only. */ } }
+            else if ('cssRules' in rule) scan((rule as CSSGroupingRule).cssRules);
+          } };
+          for (const sheet of Array.from(element.ownerDocument.styleSheets)) { try { scan(sheet.cssRules); } catch { /* Cross-origin template stylesheet. */ } }
+        }
+        if (differences.length) failures.push({ block: source.type, id: source.id, key, differences, editor,
+          stylesheets: Array.from(element.ownerDocument.styleSheets).map(sheet=>sheet.href), matchedRules,
+          diagnostic: {reduced:matchMedia('(prefers-reduced-motion: reduce)').matches, transform:getComputedStyle(element).transform, cssWidth:getComputedStyle(element).width, parentTransform:element.parentElement && getComputedStyle(element.parentElement).transform},
+          preview: actual, parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, html: element.outerHTML.slice(0, 2000), selector: `${element.tagName}.${element.className}` });
+      };
+      for (const field of source.fields) {
+        const matches = candidates.filter((element) => normalize(element.textContent).replace(/^[“”]|[“”]$/g, '') === field.text.replace(/^[“”]|[“”]$/g, '') && element.getBoundingClientRect().height > 0);
+        const score = (element: HTMLElement): number => {
+          const tag = element.tagName.toLowerCase();
+          if (field.field === 'caption' && tag === 'figcaption') return 100;
+          if (field.field.endsWith('.answer') && tag === 'div' && element.parentElement?.tagName === 'DETAILS') return 110;
+          if (field.tag === 'div') return /__(body|summary|description|quote)/.test(element.className) ? 100 : tag === 'p' ? 80 : tag === 'div' ? 10 : 0;
+          return tag === field.tag ? 100 : /^(h[1-4]|figcaption|small|strong|cite)$/.test(tag) ? 60 : 0;
+        };
+        matches.sort((a, b) => score(b) - score(a));
+        compare(field.field, field, matches[0], field.tag === 'span' && field.field !== 'caption');
+      }
+      const images = Array.from(block.querySelectorAll<HTMLImageElement>('img'));
+      const usedImages = new Set<HTMLImageElement>();
+      for (const [index, media] of source.media.entries()) {
+        const match = images.find((element) => element.src === media.src && !usedImages.has(element));
+        if (match) usedImages.add(match);
+        compare(`image:${index}`, media, match);
+      }
+      for (const [index, video] of source.video.entries()) {
+        compare(`video-frame:${index}`, {width:video.width,height:video.height}, block.querySelectorAll('.g7pb-video__frame')[index]);
+      }
+    }
+    return { checked, failures, geometry };
+  }, expected);
+}
+
+async function settleContentMedia(blocks: Locator): Promise<void> {
+  await blocks.evaluateAll(async (elements) => {
+    const images = elements.flatMap((element) => Array.from(element.querySelectorAll('img')));
+    for (const image of images) image.loading = 'eager';
+    await Promise.all(images.map(async (image) => { try { await image.decode(); } catch { /* Broken media is reported by the catalog gate. */ } }));
+  });
+}
+
 async function assertScenario(
   context: BrowserContext,
   page: Page,
@@ -651,6 +777,29 @@ async function assertScenario(
   scenario: Scenario,
   projectName: string,
 ): Promise<void> {
+  // Optional local candidate bundle: never overwrite the shared installed runtime.
+  if (process.env.G7PB_PARITY_CANDIDATE_DIST) {
+    for (const [file, contentType] of [['js/page-builder-editor.iife.js', 'application/javascript'], ['css/page-builder-editor.css', 'text/css']]) {
+      await context.route(`**/dist/${file}*`, (route) => route.fulfill({
+        path: resolve(process.env.G7PB_PARITY_CANDIDATE_DIST!, file), contentType,
+      }));
+    }
+  }
+  if (process.env.G7PB_PARITY_CANDIDATE_PUBLIC_CSS) {
+    await context.route('**/dist/css/page-builder-public.css*', (route) => route.fulfill({
+      path: process.env.G7PB_PARITY_CANDIDATE_PUBLIC_CSS!, contentType: 'text/css',
+    }));
+    if (process.env.G7PB_PARITY_INSTALLED_PUBLIC_CSS) {
+      const installed = readFileSync(process.env.G7PB_PARITY_INSTALLED_PUBLIC_CSS, 'utf8').trim();
+      const candidate = readFileSync(process.env.G7PB_PARITY_CANDIDATE_PUBLIC_CSS, 'utf8').trim();
+      await context.route('**/api/modules/bundle.css*', async (route) => {
+        const response = await route.fetch();
+        const bundle = await response.text();
+        if (!bundle.includes(installed)) throw new Error('Candidate public CSS does not match the installed G7 module bundle.');
+        await route.fulfill({response, body: bundle.replace(installed, candidate), contentType: 'text/css'});
+      });
+    }
+  }
   await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
   const editor = page.getByTestId('page-builder-editor');
   await expect(editor).toBeVisible();
@@ -683,6 +832,7 @@ async function assertScenario(
   }
   await expectProductCanvasStyles(editorRoot);
   await editorRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
+  await settleContentMedia(editorBlocks);
   await expectStableVisibleGeometry(editorBlocks, scenario.expectedBlockCount);
   const editorMetrics = await layoutMetrics(editorBlocks, true);
   expectBlockContainment(editorMetrics, `${scenario.label} editor`);
@@ -708,7 +858,8 @@ async function assertScenario(
   if (!previewUrl) throw new Error(`${scenario.label} preview URL is unavailable.`);
   const preview = await context.newPage();
   try {
-    await preview.setViewportSize({ width, height: 900 });
+    const canvasHeight = await editorRoot.evaluate((element) => element.ownerDocument.defaultView!.innerHeight);
+    await preview.setViewportSize({ width, height: canvasHeight });
     const response = await preview.goto(previewUrl);
     expect(response?.ok()).toBe(true);
     const previewBlocks = preview.getByTestId('page-builder-rendered-block');
@@ -716,6 +867,7 @@ async function assertScenario(
     await expect(previewBlocks.first()).toBeVisible({ timeout: 60_000 });
     await expect(previewBlocks.last()).toBeVisible({ timeout: 60_000 });
     await expectProductPublicStyles(previewBlocks);
+    await settleContentMedia(previewBlocks);
     await expectStableVisibleGeometry(previewBlocks, scenario.expectedBlockCount);
     const standalonePreviewRoot = preview.getByTestId('page-builder-preview-root');
     const previewRoot = await standalonePreviewRoot.count() === 1
@@ -725,6 +877,10 @@ async function assertScenario(
     await previewRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
     await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
     const previewMetrics = await layoutMetrics(previewBlocks, false);
+    const elementComparison = await compareContentElements(editorBlocks, previewBlocks);
+    mkdirSync(resolve('output/playwright/parity-elements'), { recursive: true });
+    writeFileSync(resolve('output/playwright/parity-elements', `${projectName}-${scenario.label.replace(/[^a-z0-9_-]/gi, '-')}.json`), JSON.stringify(elementComparison, null, 2));
+    expect(elementComparison.failures.length, `Internal content differences: ${JSON.stringify(elementComparison.failures.slice(0, 3))}; full evidence: output/playwright/parity-elements`).toBe(0);
     expectLayoutParity(editorMetrics, previewMetrics);
   } finally {
     await preview.close();
@@ -761,7 +917,9 @@ async function purgeDocument(
   }
 }
 
-test.use({ screenshot: 'off', trace: 'off', video: 'off' });
+// Compare settled document geometry, not different instants of a scroll animation.
+// Motion playback has its own product gate; both renderers honor reduced motion here.
+test.use({ screenshot: 'off', trace: 'off', video: 'off', contextOptions: {reducedMotion: 'reduce'} });
 test.describe.configure({ retries: 0 });
 
 test('keeps every built-in block preset and Page Kit inside the editor/preview layout contract', async ({ context, page }, testInfo) => {

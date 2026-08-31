@@ -140,6 +140,16 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 ## 자동화와 로컬 통합
 
+### WYSIWYG 검사 확대 중인 범위와 미통과 조건
+
+`editorLayoutParity.spec.ts`는 대표 제목·외곽 폭 비교에 더해 가시 리치텍스트 필드 전체와 이미지·영상 프레임의 크기, 글꼴·굵기·행간·색상을 비교합니다. 편집 iframe과 출력 화면의 폭뿐 아니라 높이도 맞추며, 양쪽 모두 reduced motion 상태에서 안정된 geometry를 측정합니다. 애니메이션 재생 자체는 별도 효과 검사 대상입니다.
+
+후보 번들은 선택형 `G7PB_PARITY_CANDIDATE_DIST` / `G7PB_PARITY_CANDIDATE_PUBLIC_CSS` 경로로 독립 브라우저에만 제공할 수 있습니다. 템플릿의 모듈 CSS bundle을 대체할 때는 설치된 원본과의 정확한 일치를 먼저 확인하며 실제 설치 파일을 덮어쓰지 않습니다. 기본 실행에는 후보 대체가 없습니다.
+
+내부 항목 비교 통과를 전체 레이아웃 통과로 해석하면 안 됩니다. 전체 블록 높이·여백 비교는 현재 `output/playwright/parity-elements`의 진단 정보이고, 동적 G7 데이터 블록의 편집 샘플과 실제 데이터 동기화도 미완료입니다. 모든 슬라이드·빈 미디어·사용자 서식·저장 이후 상태, 세 뷰포트와 Page Kit 전체 검증을 끝내기 전에는 전체 WYSIWYG 품질 완료를 선언하지 않습니다.
+
+2026-08-31 재검증에서는 기본 프리셋 내부 비교 통과 이후 `service-conversion` 템플릿 출력에서 SVG 및 `details` 제거로 구조가 손실되는 문제가 확인되었습니다. 이 실패는 skip·허용 오차 확대·HTML 보안 필터 해제로 통과시키지 않습니다. 현행 `HtmlContent` 연동 경계와 충돌하므로, 공식 연동 방식의 변경 승인을 포함한 해결 후 전체 gate를 다시 실행해야 합니다.
+
 - 필수 판정은 GitHub Actions가 아니라 로컬 `make quality-gate TASK=<integration-id>`와 동일 Docker runtime을 기준으로 합니다.
 - `frontend`: Node 24, `npm ci`, frontend gate, dist artifact
 - `php`: PHP 8.5, `composer install`, PHP gate

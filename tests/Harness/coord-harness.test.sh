@@ -866,6 +866,110 @@ git -C "$replace_repo" worktree add --detach "$replace_overlap_worktree" "$repla
 [[ ! -e "$replace_repo/.git/g7pb-coordination-v1/tasks/replacement-overlap-task.meta" ]] \
   || fail 'replacement did not retain inherited overlap exclusion'
 
+expand_repo="$temp_root/replace-submitted-expanded-repo"
+expand_old_worktree="$temp_root/replace-submitted-expanded-old"
+expand_new_worktree="$temp_root/replace-submitted-expanded-new"
+expand_overlap_worktree="$temp_root/replace-submitted-expanded-overlap"
+git init -b main "$expand_repo" >/dev/null
+git -C "$expand_repo" config user.name 'Coord Harness Test'
+git -C "$expand_repo" config user.email 'coord-harness@example.test'
+mkdir -p "$expand_repo/owned" "$expand_repo/generated" "$expand_repo/occupied"
+printf 'base\n' > "$expand_repo/owned/file.txt"
+printf 'generated base\n' > "$expand_repo/generated/file.txt"
+printf 'occupied base\n' > "$expand_repo/occupied/file.txt"
+git -C "$expand_repo" add .
+git -C "$expand_repo" commit -m 'test: expanded replacement base' >/dev/null
+expand_old_base="$(git -C "$expand_repo" rev-parse HEAD)"
+git -C "$expand_repo" worktree add --detach "$expand_old_worktree" "$expand_old_base" >/dev/null
+(
+  cd "$expand_old_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task expand-replaced-task \
+    --paths owned \
+    --areas shared-contract \
+    --profile harness >/dev/null
+  printf 'submitted\n' > owned/file.txt
+  G7PB_COORD_TESTING=1 "$harness" submit --task expand-replaced-task >/dev/null
+)
+expand_old_submitted="$(git -C "$expand_old_worktree" rev-parse HEAD)"
+expand_new_base="$(printf 'test: independent expanded replacement base\n' \
+  | git -C "$expand_repo" commit-tree "${expand_old_base}^{tree}")"
+git -C "$expand_repo" worktree add -b codex/expanded-replacement-task \
+  "$expand_new_worktree" "$expand_new_base" >/dev/null
+git -C "$expand_repo" worktree add --detach "$expand_overlap_worktree" "$expand_new_base" >/dev/null
+(
+  cd "$expand_overlap_worktree"
+  G7PB_COORD_TESTING=1 "$harness" claim \
+    --task expanded-overlap-owner \
+    --paths occupied \
+    --profile harness >/dev/null
+)
+
+(
+  cd "$expand_new_worktree"
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" replace-submitted \
+    --task expanded-replacement-task \
+    --supersedes expand-replaced-task \
+    --paths owned,generated
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" replace-submitted-expanded \
+    --task expanded-replacement-task \
+    --supersedes expand-replaced-task \
+    --paths generated
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" replace-submitted-expanded \
+    --task expanded-replacement-task \
+    --supersedes expand-replaced-task \
+    --paths owned
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" replace-submitted-expanded \
+    --task expanded-replacement-task \
+    --supersedes expand-replaced-task \
+    --paths owned,generated,generated
+  expect_fail env G7PB_COORD_TESTING=1 "$harness" replace-submitted-expanded \
+    --task expanded-replacement-task \
+    --supersedes expand-replaced-task \
+    --paths owned,occupied
+)
+expand_old_meta="$expand_repo/.git/g7pb-coordination-v1/tasks/expand-replaced-task.meta"
+[[ -f "$expand_old_meta" ]] || fail 'rejected expansion removed old submitted metadata'
+grep -q $'^status\tsubmitted$' "$expand_old_meta" \
+  || fail 'rejected expansion changed old submitted status'
+[[ ! -e "$expand_repo/.git/g7pb-coordination-v1/tasks/expanded-replacement-task.meta" ]] \
+  || fail 'rejected expansion created replacement metadata'
+
+(
+  cd "$expand_new_worktree"
+  G7PB_COORD_TESTING=1 "$harness" replace-submitted-expanded \
+    --task expanded-replacement-task \
+    --supersedes expand-replaced-task \
+    --paths owned,generated >/dev/null
+)
+expand_new_meta="$expand_repo/.git/g7pb-coordination-v1/tasks/expanded-replacement-task.meta"
+[[ ! -e "$expand_old_meta" ]] || fail 'successful expansion kept old active metadata'
+[[ -f "$expand_new_meta" ]] || fail 'successful expansion lost new active metadata'
+grep -q $'^status\tactive$' "$expand_new_meta" \
+  || fail 'expanded replacement task is not active'
+grep -q $'^base_sha\t'"$expand_new_base"'$' "$expand_new_meta" \
+  || fail 'expanded replacement did not use the requested current base'
+grep -q $'^paths\towned,generated$' "$expand_new_meta" \
+  || fail 'expanded replacement did not retain old and approved new PATHS'
+grep -q $'^areas\tshared-contract$' "$expand_new_meta" \
+  || fail 'expanded replacement changed inherited AREAS'
+grep -q $'^profile\tharness$' "$expand_new_meta" \
+  || fail 'expanded replacement changed inherited PROFILE'
+expand_history_meta="$(find "$expand_repo/.git/g7pb-coordination-v1/history" -type f \
+  -name 'expand-replaced-task.*.meta' -print -quit)"
+[[ -n "$expand_history_meta" && -f "$expand_history_meta" ]] \
+  || fail 'expanded replacement did not archive old submitted metadata'
+grep -q $'^status\tsuperseded$' "$expand_history_meta" \
+  || fail 'expanded replacement history status is not superseded'
+grep -q $'^submitted_sha\t'"$expand_old_submitted"'$' "$expand_history_meta" \
+  || fail 'expanded replacement history lost the old submitted SHA'
+grep -q $'^superseded_by\texpanded-replacement-task$' "$expand_history_meta" \
+  || fail 'expanded replacement history lost superseded_by'
+[[ "$(git -C "$expand_old_worktree" rev-parse HEAD)" == "$expand_old_submitted" ]] \
+  || fail 'expanded replacement changed the preserved old branch HEAD'
+[[ -z "$(git -C "$expand_old_worktree" status --porcelain)" ]] \
+  || fail 'expanded replacement changed the preserved old worktree'
+
 batch_profile_hook="$temp_root/batch-profile-hook.sh"
 batch_profile_record="$temp_root/batch-profile-record.tsv"
 printf '%s\n' \
@@ -1060,6 +1164,8 @@ grep -q '^task-restack-squash:' "$root/Makefile" \
   || fail 'Makefile task-restack-squash target missing'
 grep -q '^task-replace-submitted:' "$root/Makefile" \
   || fail 'Makefile task-replace-submitted target missing'
+grep -q '^task-replace-submitted-expanded:' "$root/Makefile" \
+  || fail 'Makefile task-replace-submitted-expanded target missing'
 grep -q '^task-integrate-batch:' "$root/Makefile" \
   || fail 'Makefile task-integrate-batch target missing'
 grep -q '^release-package: release-guard' "$root/Makefile" \

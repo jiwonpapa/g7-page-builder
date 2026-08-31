@@ -21,6 +21,8 @@
 
 Block은 `instance_id`, `type`, `block_version`, `props`, 선택형 `slots`를 가집니다. schema는 향후 중첩을 위해 Block 배열을 표현하지만 첫 수직 slice의 Adapter와 compiler는 비어 있지 않은 `slots`를 fail-closed합니다. Editor vendor 전용 키는 허용하지 않습니다.
 
+제품화 1차에서는 이 v1 의미를 유지하고 [v2 별도 도입·이행·복원 정책](productization/compatibility.md)을 결정했습니다. v1 열기/단순 편집만으로 자동 변환하지 않으며, 새 중첩 사용 시 명시적 전환 후 새 revision에 저장하도록 3~4차에 구현합니다. 현재 schema/validator/compiler는 이번 문서 변경으로 수정되지 않았습니다.
+
 ## CompileResult
 
 ```json

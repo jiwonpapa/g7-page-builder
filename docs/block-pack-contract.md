@@ -3,6 +3,8 @@
 상태: implementation baseline
 계약 버전: `g7pb-block-pack/v1`
 
+제품화 1차에서 [공급 분류·콘텐츠 합격선](productization/content-policy.md)과 [재고/배치 원장](productization/inventory.json)을 추가했습니다. 이는 현재 Pack manifest v1이나 승인 데이터를 변경하지 않습니다. 새 구조 블록·사용자 Section은 [호환 결정](productization/compatibility.md)에 따라 후속 차수에서 구현합니다. 기존 140개 항목의 일괄 승인은 과거 증거로 보존하고 새 기준의 항목별 합격으로 자동 승격하지 않습니다.
+
 ## 결론
 
 블록 인스턴스, 블록 정의, 프리셋, 설치 패키지는 서로 다른 생명주기를 가집니다. 페이지에서 블록을 삭제하는 동작은 문서만 변경하며, Block Pack 비활성화·제거와 연결하지 않습니다.

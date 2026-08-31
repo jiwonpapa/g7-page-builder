@@ -3,6 +3,12 @@
 상태: implementation baseline
 대상: 1인 관리자·사이트 제작자
 
+## 제품화 개선과 현행 구현의 구분
+
+2026-08-31부터 [8차 제품화 계획](productization/roadmap.md)의 1차를 진행합니다. 아래는 현재 v1 구현 명세이며, 새 제한 중첩·기기별 상속·블록별 편집 능력·콘텐츠 합격선은 [편집 정책](productization/editing-policy.md), [콘텐츠 기준](productization/content-policy.md), [호환 결정](productization/compatibility.md)을 후속 구현 기준으로 사용합니다. 문서 채택만으로 해당 기능을 현재 구현 완료로 표시하지 않습니다.
+
+이번 목표는 완성 섹션과 제한된 Section/Columns/Stack 조합을 함께 제공하는 운영자용 페이지 빌더입니다. 기존 복합 블록 내부의 자유 중첩, 임의 CSS/HTML/JS, G7 Layout Editor 코드 이식은 포함하지 않습니다. [차수별 상태와 검증](productization/README.md)을 기준으로 출시 여부를 판정합니다.
+
 현재 구현: 9개 분류의 45종 페이지 block 카탈로그와 95개 내장 프리셋, 6개 Quick Add, 5종 typed motion preset, 라이트·다크·기기 테마, 자체 MediaPort, G7 최근글·상품·검색 아카이브·상품 쇼케이스·게시글 상세·상품 상세 공개 데이터 블록, 반복 목록 pagination, 공통 로그인 전후 표시 조건, 독립 문서함·복제·보관·복구·발행, 문서별 SEO·OG 이미지 스냅샷, 문의함·지도, Header/Footer Site Part 시각 편집·2단 라우트·PC 드롭다운·좌우 모바일 drawer·프리셋·독립 revision 완료.
 
 ## 목표

@@ -33,6 +33,8 @@ SemVer 판단에서 다음을 공개 API로 봅니다.
 한 번 배포한 버전의 내용은 바꾸지 않습니다. 변경이 필요하면 반드시 새 버전을 만듭니다.
 G7 최소 요구 버전 `g7_version`은 제품 버전과 별개이며 실제 사용 API의 최초 G7 버전을 하한으로 둡니다.
 
+제품화 개선의 schema v1/v2·block 정수 version·compiler SemVer·Pack·제품 버전은 [ADR-001](productization/compatibility.md)로 구분합니다. 1차 문서 커밋에서는 배포 버전과 schema를 올리지 않습니다. 후속 기능 릴리스 번호는 실제 통합 시 최신 버전과 변경 성격을 확인해 version lease에서 결정하며, 계획의 목표 번호를 현재 배포 버전으로 표시하지 않습니다.
+
 ## 단일 버전 원본
 
 `module.json.version`이 제품 버전의 원본입니다. 다음 값은 항상 같아야 합니다.

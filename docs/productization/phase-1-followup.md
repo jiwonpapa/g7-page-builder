@@ -114,3 +114,9 @@ docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.y
 위 시험/증거 제출 `e683dd2`는 frontend gate를 다시 통과해 main `9371e2f`로 통합했습니다. 이어 Docker에서 동일 E2E를 실행한 결과 desktop 1 PASS, iPad/iPhone emulation 2 FAIL입니다(`output/playwright/optional-integrated-20260831`, 47.8초). 이 결과는 앞선 macOS의 3 PASS를 덮어쓰지 않는 별도 실행 증거입니다.
 
 실패 위치는 미리보기 전환 전 전체선택·삭제입니다. Tiptap은 iOS emulation에 Mac keymap을 사용하며 `Ctrl-a`를 문단 시작으로 해석합니다. Linux 실행기의 `ControlOrMeta+A`와 일치하지 않으므로 준비된 입력기를 실제 클릭·초점 확인한 뒤 플랫폼 독립적인 Playwright `fill('')` 입력으로 시험을 보정했습니다. 초기 fallback을 건드리지 않도록 `.tiptap` 준비 조건은 유지합니다. 테스트 skip, 제품 키보드 동작 변경, 발행 검증 완화는 없습니다. 보정 task는 clean `9371e2f`의 `optional-browser-portability-20260831`이며 최종 재실행 결과는 제출·통합 증거와 분리해 기록합니다.
+
+### 최종 브라우저 결과와 계속 진행 지시
+
+시험 보정 `1aa013a`는 frontend 통합 gate를 통과해 **`b5de8ddc9d5a5017eb091ca203dc24be70ef576e`**에 반영됐습니다. 이 SHA의 Docker 재실행은 **desktop/tablet/mobile 3 PASS, 33.7초, retries=0**입니다(`output/playwright/optional-portable-integrated-20260831`). main 및 소유 worktree는 clean이며 빈 텍스트 후속 task들은 모두 통합 기록으로 닫혔습니다.
+
+사용자의 추가 지시 “계속 해라 왜 이러지?”를 기준안에 따라 계속 구현하라는 지시로 반영했습니다. 기준 수립·현행 동작 확인을 다음 배치의 기준선으로 삼고 2-A에 착수합니다. 기준안 확인을 같은 범위의 반복 승인으로 요구하지 않습니다. 미통합 `rich-boundary` CSS의 stale source를 알려진 실패로 보존하는 것이며 개별 콘텐츠의 사람 심사·전수 시각 합격·최종 integration-verify·운영 배포는 별도 조건입니다.

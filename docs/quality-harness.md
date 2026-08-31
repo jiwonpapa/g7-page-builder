@@ -20,6 +20,14 @@
 
 ## Worktree coordination
 
+### 차수 2-A: 분리된 증거 계약
+
+`schemas/block-quality-evidence.schema.json`과 `scripts/lib/blockQualityEvidence.ts`는 새 `g7pb-block-quality-evidence/v2` 계약을 제공합니다. 콘텐츠 의미·자산 권리 review와 렌더·편집 verification을 항목별로 구분하고 각 결정의 source digest와 실제 evidence artifact digest를 대조합니다. 이전 review 객체는 원문 값과 별도 digest로 보존하며 새 결정은 모두 `pending`으로 생성합니다. 새 review 승인 주체는 `maintainer`이고, 이전 `codex-assisted` 이력은 역사적 근거일 뿐 새 사람 승인이 아닙니다.
+
+이 배치에서는 **기존 v1 검사·릴리스 연결을 제거하거나 대체하지 않습니다.** 순수 TypeScript 판정 코어와 schema를 먼저 고정하고 2-B에서 실제 140개 재고·파일 hash·변경 영향 수집기를 연결합니다. `assessQualityEvidence().errors`가 비어도 `pending`이 있으면 `ready=false`이므로 승인으로 사용할 수 없습니다. 입력 의존성을 누락한 채 이미지를 hash한 것처럼 주장하지 않도록 실제 수집 책임은 후속 collector에 명시적으로 둡니다. 자세한 범위·시험은 [2차 실행 기록](productization/phase-2-evidence.md)에 기록합니다.
+
+## Worktree coordination rules
+
 - 모든 구현 Worktree는 깨끗한 기준 SHA, 소유 path prefix, 검증 profile을 `coord-start`로 등록합니다.
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.

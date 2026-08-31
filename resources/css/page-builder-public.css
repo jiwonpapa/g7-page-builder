@@ -149,7 +149,12 @@ body { margin: 0; color: #172033; background: #fff; }
 [data-g7pb-tone='muted'] { color: var(--g7pb-page-muted, #64748b); }
 [data-g7pb-tone='accent'] { color: var(--g7pb-theme-accent, #2456df); }
 [data-g7pb-tone='contrast'] { color: var(--g7pb-page-bg, #fff); }
-.g7pb-block { padding: clamp(3.5rem, 8vw, 8rem) max(1.25rem, calc((100vw - var(--g7pb-theme-content-width)) / 2)); }
+.g7pb-block { padding: clamp(3.5rem, 8vw, 8rem) max(1.25rem, calc((100vw - var(--g7pb-theme-content-width)) / 2)); line-height: normal; }
+/* Keep native text defaults independent of a host template's CSS reset. */
+.g7pb-block :where(h3) { margin-block: 1em; font-size: 1.17em; line-height: normal; }
+.g7pb-block :where(h4) { margin-block: 1.33em; font-size: 1em; line-height: normal; }
+.g7pb-block :where(p) { margin-block: 1em; }
+.g7pb-block :where(ul, ol) { margin-block: 1em; }
 .g7pb-container-width--narrow { --g7pb-block-content-width: 48rem; }
 .g7pb-container-width--standard { --g7pb-block-content-width: 72rem; }
 .g7pb-container-width--wide { --g7pb-block-content-width: 88rem; }
@@ -453,6 +458,18 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-rich-text__content { overflow-wrap: anywhere; }
 .g7pb-rich-text__content > :first-child { margin-top: 0; }
 .g7pb-rich-text__content > :last-child { margin-bottom: 0; }
+
+/* Editing a plain field into rich text must not introduce outer paragraph gaps. */
+:is(.g7pb-hero__body, .g7pb-hero-split__body, .g7pb-hero-slider__body,
+  .g7pb-faq__answer, .g7pb-video figcaption, .g7pb-blockquote__quote,
+  .g7pb-content-notice__body, .g7pb-card-grid__body, .g7pb-process__body,
+  .g7pb-tabs__body, .g7pb-articles__summary, .g7pb-testimonial-slider__quote,
+  .g7pb-events__description, .g7pb-downloads__description) > :first-child { margin-block-start: 0; }
+:is(.g7pb-hero__body, .g7pb-hero-split__body, .g7pb-hero-slider__body,
+  .g7pb-faq__answer, .g7pb-video figcaption, .g7pb-blockquote__quote,
+  .g7pb-content-notice__body, .g7pb-card-grid__body, .g7pb-process__body,
+  .g7pb-tabs__body, .g7pb-articles__summary, .g7pb-testimonial-slider__quote,
+  .g7pb-events__description, .g7pb-downloads__description) > :last-child { margin-block-end: 0; }
 .g7pb-rich-text__content h2, .g7pb-rich-text__content h3, .g7pb-rich-text__content h4 { color: inherit; line-height: 1.2; letter-spacing: -.025em; }
 .g7pb-rich-text__content a { color: var(--g7pb-theme-accent); text-underline-offset: .2em; }
 .g7pb-rich-text.g7pb-text-align--center .g7pb-rich-text__content, .g7pb-rich-text.g7pb-text-align--right .g7pb-rich-text__content { margin-inline-start: auto; }

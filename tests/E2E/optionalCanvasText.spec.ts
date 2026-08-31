@@ -15,6 +15,16 @@ const CANVAS = '#puck-canvas-root iframe';
 const BODY = '미리보기에서도 사라지면 안 되는 본문';
 test.use({ screenshot: 'only-on-failure', trace: 'off', video: 'off' });
 
+async function assertUnobscuredPreview(page: Page): Promise<void> {
+  await expect(page.getByTestId('page-builder-block-library')).toBeHidden();
+  await expect.poll(() => page.locator(CANVAS).evaluate(frame => {
+    const rect = frame.getBoundingClientRect();
+    const y = Math.min(rect.top + rect.height / 2, window.innerHeight - 2);
+    return rect.width > 0 && y > rect.top && [0.05, 0.5, 0.95].every(ratio =>
+      document.elementFromPoint(rect.left + rect.width * ratio, y) === frame);
+  }), { message: '미리보기 iframe의 좌우/중앙을 편집 패널이 가리면 안 됩니다.' }).toBe(true);
+}
+
 async function assertOptionalElements(page: Page): Promise<void> {
   const canvas = page.frameLocator(CANVAS);
   const hero = canvas.locator('[data-block-type="hero"]');
@@ -68,6 +78,7 @@ test('keeps optional text recoverable in edit mode and consistent in readonly vi
       await page.goto(editorUrl);
       await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', width === 1440 ? 'edit' : 'preview');
       await assertOptionalElements(page);
+      if (width < 1024) await assertUnobscuredPreview(page);
       await page.screenshot({ path: testInfo.outputPath(`optional-content-${width}.png`), fullPage: false });
       await page.frameLocator(CANVAS).locator('[data-block-type="cta"]').screenshot({
         path: testInfo.outputPath(`optional-cta-${width}.png`),
@@ -75,6 +86,18 @@ test('keeps optional text recoverable in edit mode and consistent in readonly vi
     }
 
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await expect(page.getByTestId('page-builder-block-library')).toBeVisible();
+    await page.setViewportSize({ width: 768, height: 1000 });
+    await assertUnobscuredPreview(page);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await expect(page.getByTestId('page-builder-block-library')).toBeVisible();
+    await page.getByRole('button', { name: 'Toggle left sidebar', exact: true }).click();
+    await page.getByRole('button', { name: 'Toggle right sidebar', exact: true }).click();
+    await assertUnobscuredPreview(page);
+    await page.setViewportSize({ width: 768, height: 1000 });
+    await assertUnobscuredPreview(page);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await assertUnobscuredPreview(page);
     await page.goto(editorUrl);
     // Puck's lazy fallback is contenteditable but has no Tiptap input handler.
     // Interact with the initialized editor, not that transient placeholder.

@@ -2968,6 +2968,23 @@ function SelectedBlockActionBar({
 
 function PuckHeaderLayer({ children }: { children: React.ReactNode }): React.ReactElement {
   const policy = React.useContext(EditorViewportPolicyContext);
+  const dispatch = usePageBuilderPuck((state) => state.dispatch);
+  const leftSideBarVisible = usePageBuilderPuck((state) => state.appState.ui.leftSideBarVisible);
+  const rightSideBarVisible = usePageBuilderPuck((state) => state.appState.ui.rightSideBarVisible);
+  const previousHostSupported = useRef(policy.hostSupported);
+  const pcPanels = useRef({ leftSideBarVisible: true, rightSideBarVisible: true });
+
+  useEffect(() => {
+    if (previousHostSupported.current === policy.hostSupported) return;
+    previousHostSupported.current = policy.hostSupported;
+    if (!policy.hostSupported) pcPanels.current = { leftSideBarVisible, rightSideBarVisible };
+    dispatch({
+      type: 'setUi',
+      ui: policy.hostSupported ? pcPanels.current : { leftSideBarVisible: false, rightSideBarVisible: false },
+      recordHistory: false,
+    });
+  }, [dispatch, leftSideBarVisible, policy.hostSupported, rightSideBarVisible]);
+
   return <div className="g7pb-puck-header-layer">
     <div
       className="g7pb-editor-mode-notice"
@@ -3408,6 +3425,8 @@ export function PuckEditorAdapter({
           iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }}
           viewports={PAGE_BUILDER_VIEWPORTS}
           ui={{
+            leftSideBarVisible: viewportPolicy.hostSupported,
+            rightSideBarVisible: viewportPolicy.hostSupported,
             viewports: {
               current: { width: canvasViewportWidth, height: 'auto' },
               controlsVisible: false,

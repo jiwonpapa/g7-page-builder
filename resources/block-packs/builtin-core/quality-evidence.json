@@ -1,0 +1,3535 @@
+{
+  "schema_version": "g7pb-block-quality-evidence/v2",
+  "legacy_review": {
+    "source_path": "resources/block-packs/builtin-core/product-quality.json",
+    "record_digest": "e50b7125adf01195a27ac62df9bf7e94b941c3faa07b81bf7efb16be88eadfa9",
+    "record": {
+      "review_version": "g7pb-block-product-review/v1",
+      "catalog_digest": "fdf18240ceea2b1dc0a4651434ab1fafc48129500ae55f883ef0d638880adda6",
+      "item_count": 140,
+      "reviewer": {
+        "kind": "codex-assisted",
+        "name": "Codex block product audit"
+      },
+      "reviewed_at": "2026-08-30T06:04:14Z",
+      "decision": "approved",
+      "criteria": {
+        "purpose_fit": "pass",
+        "visual_hierarchy": "pass",
+        "copy_quality": "pass",
+        "media_relevance": "pass",
+        "responsive_readiness": "pass",
+        "editing_completeness": "pass",
+        "accessibility": "pass"
+      },
+      "findings": [],
+      "evidence": [
+        "resources/block-packs/builtin-core/thumbnails/generated/index.json",
+        "tests/E2E/blockCatalogQuality.spec.ts",
+        "tests/E2E/editorLayoutParity.spec.ts"
+      ]
+    }
+  },
+  "items": [
+    {
+      "catalog_id": "block:content.hero-centered-01@1",
+      "source_digests": {
+        "content": "b436ae5efdc48c94b7442962989bcaf4b6f76cd2572fe4374df5ced1b1b3f9fe",
+        "rights": "4ad501a1c8d86922315d740590ccadd02c31faf22dafee4d03d809003d21e427",
+        "render": "629260058688b2f8174299a3b955ec1718fba78932ca1b10d6e46f5d6c1cf025",
+        "editing": "61d0d87afb382e70e2a8a9db4afa96f1a4275cbfc95125fff5ee232eb9df3fee"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.hero-split-01@1",
+      "source_digests": {
+        "content": "00a80d27c7a13a473b76141b073dd075943ed1c4ebbb4cafb41e1bc8f3f6506c",
+        "rights": "2caafa979aa66e585ab8514ce4eb2f52dcd5b35926469e9b55da7ac226632d18",
+        "render": "a3545f685b7444827b6ce9cac25c9f2f6e3bbafae38d4c806867009519cc8b01",
+        "editing": "e25613420ab3da4b9c3ccdd32b1ddeea49320301202016f56335067ca5bbd082"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.hero-slider-01@1",
+      "source_digests": {
+        "content": "2040c7942c0932418040b5b46d67721d3dab1c4a8cd24a875abbbac3cdd54440",
+        "rights": "eccf1ef4871003bce1eddcf7fbb1d66646f5ba94420f071b67afd3a8f183c280",
+        "render": "49b8e1d6aa3eef0e97d45ea2ec2c3017f33d9a31eaac030bdee80420ade05bc5",
+        "editing": "7e6ae558e4ffde94a4b17e9fdab494df7fd5c8ac8897a32c47765bcac27e6605"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.heading-01@1",
+      "source_digests": {
+        "content": "f2070304271b9f7ddd6f7cf457db6ea03f0d9237e120f7a1909d553288aa6e75",
+        "rights": "1e2649baafe4da878f09f41b0bd98652c95dfd7a23df37b1d694bba35adbe2f5",
+        "render": "c0b5357f43dde4dcc11b8235e3d00ce53146e484203c9e14594b6a4fd086d86f",
+        "editing": "34d43e075685deb256594899117914463e038c5c03b6b965b51771cf85dfa9f8"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.rich-text-01@1",
+      "source_digests": {
+        "content": "2c37a097d81c87d9ee4167c123499542465cffe071ca6182e4e633c303e12239",
+        "rights": "1ef8df6555e5871f84570b9f6469428c1f7e685267913f0edff78d2c33fb9c6f",
+        "render": "29b0dc154df73e3ebefda2945f96cf2e6781cd1259fe89ebfbcbc88317c74435",
+        "editing": "c8f875af185880137b0ddb82eceb1558a0a81e04f344304cb5ec5a0f8e923458"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:media.image-01@1",
+      "source_digests": {
+        "content": "0fe26e5e5f4dd9a0b11bb6c62174c2ce61970a6f999e095d2710b563e28e6a71",
+        "rights": "df50326de22432b085d0cb124b9816668381190e94774c9b645b10b054248a34",
+        "render": "238c41e3f237d2eb7d20ba09fedf491a87fd1dc6e55689c213e548a31a96cb8d",
+        "editing": "be75f35e387852680b090afb3d3a07ad0ea9bee7cbbc119fe37d457a3d500d81"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:action.buttons-01@1",
+      "source_digests": {
+        "content": "3d0b46496ef73b9a182984d87c027b194df8c7f1d0d9d4bb682862641a532e24",
+        "rights": "cf1a7ca5231426d2a003164c8b08cf349a3e58bfba04eaa310cc14f2a0278b4c",
+        "render": "3acc5dd1d875c3041941697fbb976459a38a97dd3e3bb545c30454dc3e9ab3a6",
+        "editing": "14a5214b298a7747dd4f3e2e714ff24c290bc5737f0f323ed2880c1534a59b02"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:media.image-text-01@1",
+      "source_digests": {
+        "content": "755ae9df04b4ab22411222d4a172acb0d103432ad302fa653ee285e360d27c5e",
+        "rights": "340b14ccffcef820ee7ede37f414c0129316357263e32247039f064b004e07bc",
+        "render": "959de546dc3b83010685d65a074ba6cc5e0aab81913edc8573f4b34c44a6a972",
+        "editing": "8d17120a3a304003c903a816ef23c939794c3c13eb376c250a0009d4535a1616"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.icon-list-01@1",
+      "source_digests": {
+        "content": "d3d35c6fceb374bb011c8142cc1de67d9003ba98c4b418ab5f80204a83762169",
+        "rights": "decad0f6bda31105d1ae7ec1166e65e6c4a7125b5b488240de2fc9d646a4fd45",
+        "render": "d6770f91c0ad8cdfa2b892bf4c40416a501448c79e4453a1001fb4fd7e75e10a",
+        "editing": "2c747f62ea7103f53cf7d6d0f34a7ade4036102fcbacb4bacf022c3f7745f9bd"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.features-grid-01@1",
+      "source_digests": {
+        "content": "4efe9b8f5acf52ea35a05a59f521db324cee4f12398e9b0d6f9c17530b8a4d2a",
+        "rights": "f57409b3e3de4f5ea7071e3580be0af67970009686f1d1c1907cfa0dff457d36",
+        "render": "8b3cd2ecb80240c3165b0511d5a016b8bdc2255a2fe95fbad74a43d231782fe6",
+        "editing": "ed9ca8a4a91095984b68fdad7a27efc2a1b30730b9c230294cbb8614724b8460"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.cta-split-01@1",
+      "source_digests": {
+        "content": "884bb342039587dc120aa1f9b8554e36faefa995df16481a2a4f039f30e4f771",
+        "rights": "8b113155ec59fc92a0531ef5d298e35b5f1ca59380b920237f617827ca7d7501",
+        "render": "06264eadb570e0642e0342374eca829e3452d9ceb1d15e11f62773a0a1662e89",
+        "editing": "75f08ec1d83a379507c7cc55369966ac84824cc115efd2f42bee7b9648d36088"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.contact-info-01@1",
+      "source_digests": {
+        "content": "1b13a2c2d36a80a49d563dc869d4eb57bbaf058cc6c3b6bafae1ecb87137cf39",
+        "rights": "a673d95399647c4ebc64180213cb898bc880dd78bacb779d93dc4780a65fa3ef",
+        "render": "3ad6374828867c509925c93fb1af5dccd10a09b72fff09f99976d80fae1fc46e",
+        "editing": "b5cb12ebb798181e84153ac4c8ebde2aa891008eefe457059f7a64b1543c1133"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:trust.logo-cloud-01@1",
+      "source_digests": {
+        "content": "536e689984bb6ea8be936ed48d1299f23948680a97b07b2e5fd4a5daff2370dd",
+        "rights": "0903563bc0fcfc20968a97ce0438c6dfaaadbcdbca0e6170204899af96532de5",
+        "render": "f522cd408d2512a57fe99e9e475ae0f9fc7769117117f98c8995580130ece7a2",
+        "editing": "00cac0ae243449e7686ee698979c0c7050b9635f185668c32370387b3c223945"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:data.stats-icons-01@1",
+      "source_digests": {
+        "content": "d789db971732318fbedd8def43659d346407952550739dfd8c6c53e05d944ad8",
+        "rights": "03a475f135d9603a654d955512cd2f6200f7b6e962cf71e90617aab5ee84e4aa",
+        "render": "757a732ea4d3b24c03901eb4f20a48fa7af17cb37e4c3186b29e801c85b3778b",
+        "editing": "e4803b2b1519a9f29e374e295390c7feb7d9ffaff8704148cd686240f0d97015"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:commerce.pricing-tiers-01@1",
+      "source_digests": {
+        "content": "6e4c41797c04e7bd3a44718a4ddccf1e436153c63b117b963493238106da91c2",
+        "rights": "368041e80b350148d705bdd04a43244a22635bab663beba4f953069f18fbdb1c",
+        "render": "27a714294bde4bb45f5ecb85e7e010bd2fb99260166ffdf53d78415478b7851d",
+        "editing": "7f359bd9cf2ccf8703ef2a4956388860b24836647ac42db3155edb7ba8a755f5"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:company.team-grid-01@1",
+      "source_digests": {
+        "content": "dd88ec172f89ed4751de4e114ffbb2898b4e4c59282e7815261638fc3a7ee811",
+        "rights": "162ea71ff10094a61541e4cee00b3217615de699b8420ebe7bfb0c9a2f7e5818",
+        "render": "79711f98f4407fc18adec06d6ca0fac24bedaa57ab911fbdd5494381a888158e",
+        "editing": "e1f8d0b56d8e305eaf27a1d3d227e0a9db480d9f1b3f8b3b82073cf0965d8afe"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:media.gallery-grid-01@1",
+      "source_digests": {
+        "content": "912c83493ec8d7defd3c2f75dee1c87e70d9cbb0aa94b314fa66bca2c21b4ffa",
+        "rights": "2747673d3da843ff088074af5649f0111129dc462ca7310da8cfd9021edbf09e",
+        "render": "f821efcb2407ccc161e3321abd12f72d4f7d599382c65974ca5cd21d69460cb5",
+        "editing": "ff5f8ecd553ea2829d116e6ebaa15770b5fe655ad8863ff8b625d9b238af014a"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:data.bar-chart-01@1",
+      "source_digests": {
+        "content": "6db473110d96ef872a7d667852fab543b75117331e1d5f6e0a1259b125b4867a",
+        "rights": "b5ec8b91bf83b1220896b00a865826d095f8bc199e39dd2df9bcb756be8698a6",
+        "render": "49764e8a895a5f055db081e92ed7be226e6b48dc5ec7a098e58768ecb817d19a",
+        "editing": "8062434b207b84353c5a768ea1883560770cf15cbacaf08276bc700a02def47c"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:g7.board-recent-posts-01@1",
+      "source_digests": {
+        "content": "4cfe7f3ce58077604132c263559ab99c6c5471d5d58c1c34447a5f617eeec410",
+        "rights": "9f900899792bfa2d40fc597a49b2d28dc47b74d0878caacc3a1423510525dd91",
+        "render": "288bc285e58f29eb565de8ac08daabb903ae170136e790c562d5847eaa9eb370",
+        "editing": "f0db9129624eb3ec63a9b50d4ac66e1bfaab5b916fec368c52fe43ab25e368f4"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:g7.ecommerce-product-grid-01@1",
+      "source_digests": {
+        "content": "2ef91d9f5a069b2a5bc256f713b1f7b7e13625a442234c91b4717cd861daefe2",
+        "rights": "3c8888af12f52a8634027af9b280dc5f3881eb5248d34ee5e1fc61492c66d268",
+        "render": "0a83315368a50cd0d306195a95d62998813562d09992016f78f2fbd7ca0c8404",
+        "editing": "4826f577a73a3a7775dc4cfb599900016f345160cad1e68b671943b6a422db3f"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:form.inquiry-01@1",
+      "source_digests": {
+        "content": "a208139301a0de8d95d680c7301a204b56dfcf496dc0265b68b7968b1f59fdf2",
+        "rights": "9e7bce3ba617197d8e3155786a3ef792365634d4d371ca9cc274c7e1a328c586",
+        "render": "77483c23b58189841cf2fd26b5b43cf29658a8ae772e7268933b896fcc78a90c",
+        "editing": "58ed6d495730ba13d1a6fe7e271824fa7cf601e43d60c25f4ad0c09b7c6f01b7"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:location.map-directions-01@1",
+      "source_digests": {
+        "content": "2f05fa55a15e7b5cdd826bc1e595241d8e41f03bbce3e0075387c41a16d6c2a2",
+        "rights": "1b87e2b75fd82115160a56c171dd90e162f3f64cff5e452de3b067902528a16e",
+        "render": "e76cf0ed1442db05fd0d3a5a909753cf1ce50bcf4fc7eaf158310c753f70afc6",
+        "editing": "ea3d7519ce91373ebbfff7426726a76cc727d6eee3e178a525b30c2c96cd3960"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:trust.testimonials-01@1",
+      "source_digests": {
+        "content": "6041e9b666f454b81ec6c38ea34b669e1e6045a2886e1d954f4aa6c861cc154d",
+        "rights": "7f952a8c0f1d2327361a79c43b27f124a0dc83fc0b567fbbdd995bef0b56dd59",
+        "render": "1369b3e9da92ed9c58b2fb410ceefbd499008ac6656ba68a4527bdbf750f1530",
+        "editing": "3fda0dbb36b29092f6dabf066922bd0b9d6da8a2b346a296ce40a7c6aa26a09e"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.faq-accordion-01@1",
+      "source_digests": {
+        "content": "2799f0b113ef24a3148efe266dba5aa2b89aa248053546878d786de6ffcd61e4",
+        "rights": "222f2933bee53762805310a8dcc3cdc79a9e04be4d09e1c992106d75cd3c6d64",
+        "render": "c701b74e5fa94a6b7d4c52cb3d146dadc9ea832a02dfb1f5c51b90244ca40d9e",
+        "editing": "5f9a4c8cf2200c26a3fc9a3183c01a3835c7988f2047cb189e05268eb43e890f"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.process-timeline-01@1",
+      "source_digests": {
+        "content": "01b8278bab8b058c33802bb6680c2745bb69fc5012ae1757795abe31064d03e4",
+        "rights": "6c7d1c403708ded0d50b3cbb1c9de1773a79c72130de6f43d1179133500e700d",
+        "render": "80d660c170b8a8244300b0e4b7e90b1d777160e1ec2c622015f6e5dc7caf57b7",
+        "editing": "ac2de4e21dcccaa4659d2ce5b8dcdd8de672ea9db5fd3e1705d17e587a81d5a2"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.tabs-01@1",
+      "source_digests": {
+        "content": "83dcd19f9aa5e6a7615de81ec330423a11303a2bbd8a0aabed0a240005fc64f3",
+        "rights": "f19f3c9853505c650f96062bdf5132f261fc2f21c4d8b6ee6727eea5235ebd17",
+        "render": "fc6e4b61636823f078773377d7c92ef693004f6b3d42380ee5ba94a3b7b8308b",
+        "editing": "89d8b5e25cc779fa5fa8b8b8136f518015853806971164ab23ca3eda9a373459"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:commerce.comparison-table-01@1",
+      "source_digests": {
+        "content": "e886980d98b98b724eac823a5e4c2c4c4ccff2d41ae61489e22bbe3012dcd2f5",
+        "rights": "9fd786b14cda10de8bfa1180ca99f384b580809d484a495d449ba9771737f67f",
+        "render": "b0be586f2dce9ecaa4a484df5a6941305060222409ac3a026c1580eeac33a71e",
+        "editing": "4b833b3ee1ca592c2f016fb7756d775a3d5e699a79e92fe0002a26592e2be849"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.article-list-01@1",
+      "source_digests": {
+        "content": "27d14c5aac91f79ac3cc2d9ada93145597e4d122eca8ca02c98892aa6d4482c0",
+        "rights": "aafadb237d3a34b97ff2d19dd7f37966ba6315e2f036ae404480a53120511ede",
+        "render": "cd0d9cb84d0c8b35731384adca8212b2f28ba4ec4642ab57ed25467b27d01e94",
+        "editing": "700cced08c09884eae5398cf8e8d519f673cde0d3aa4dce0829260f3c0c7fc15"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:media.video-embed-01@1",
+      "source_digests": {
+        "content": "8304966a15a163c1d7415b45f8805b544a4c9624cb6a4fccf871e9366f4ed53e",
+        "rights": "f1ef8694b25c251f9b250c36e1633cadf501ab06c3b7e365242b3d3152338201",
+        "render": "2b43dd376801163744d70d1095df652d0377f87a243941e16c670d8cbc81a53e",
+        "editing": "8fbafad594c268cf453dcedae4510d5af41c6fdccb22d41f376c2f697cf6e0f8"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:trust.logo-carousel-01@1",
+      "source_digests": {
+        "content": "8dcc3f5521376035f802243e455636b32a2647cf71c4be80391c19da2308e3e7",
+        "rights": "65abc186ef9789ba6c4486b9fe4eef51903e3fd894912a7ad1490a27dbe57873",
+        "render": "6d80bc6f67c4d2170eff3191a34249fb7194b8625ec30a5a4fec700e2c1adea3",
+        "editing": "6d361767516fcc7614370b101f6ed8d1972dd249bbba1d56d22d427a6736076a"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:trust.testimonial-slider-01@1",
+      "source_digests": {
+        "content": "4996be6ca63eb635f07602cbded0383c7948b933519c4594ef628c37f8b92864",
+        "rights": "de4b32a5ded7744e6f6ccca079469465ba364cc6940aa7616c66c566d2cb1394",
+        "render": "7e563f8e19f0cc2f9242422ed527268c7f577926c6c9340cd695cd62e3667985",
+        "editing": "20d3a9fb47f1406dbaf505352627f11475482b08a67738de9401e1447c1ba31e"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.event-schedule-01@1",
+      "source_digests": {
+        "content": "7ba2358d832ab4561b4ba97d3e8ac1e7ee3650e4a13f36ef44577c6c53c09fe6",
+        "rights": "8b4e0e711c90ccdf2686ef03cc595fa458425e3e4da1bb7656d3066dd9e64edb",
+        "render": "180f563e050c8b6623d7f737f0d6d97855b15253c48bf6908c0f7bfa88f17e5f",
+        "editing": "09bdcb269c96d6ebac41bb5a936839647f022bb1456338bb7f1c8d7747c35ec5"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.download-resources-01@1",
+      "source_digests": {
+        "content": "c48c9a96edc7b1a67dc7f59d3fea1ab26972547957cc969df71938a1fa8f4ee6",
+        "rights": "e15c2e4cc632eb60199e0899fa2365904037be064bdd1ab375c1a68c058b9e2b",
+        "render": "8ad250016049c8772c813bf6e5c8204ddd73988c743179ec263e8d29e769f131",
+        "editing": "40267174d6a0c21db935a961085447521a37293fbe2483dc962f82642f6fc902"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:g7.board-content-archive-01@1",
+      "source_digests": {
+        "content": "b0ddeee4f0da33e67f770fd0ee9b5d3be0f5871d6c64bda30a3bf7299b2fe125",
+        "rights": "c82319928d3a8b5b2ace701ca60a86dd0360b3356d9ae234426865288c83aa28",
+        "render": "97e49b10c05de4fba0954adb5da1fc8eb209c116198931ebc503514feb43124e",
+        "editing": "fd6425dfc72e44b9d7c7bfcad0a3365df84e4510162c8c4016647dab4a60c94b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:g7.ecommerce-product-showcase-01@1",
+      "source_digests": {
+        "content": "e58188234c8b82fb5caeb01b5c96e6ccdef94bf6dfc43a15f1205d323f862f09",
+        "rights": "21b519109fcb1b5ca577e7dd0a5ea69fc482163b7722c65bdc3f575a527d1959",
+        "render": "e90add3f0a1d5a97ee8d3d0184ec97abae3e04e6b942db36140e572176ad99d0",
+        "editing": "bf41b17826d884ca205f6412ede394c895b7b9339e077b706785b2b17df4f7d0"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:g7.board-post-detail-01@1",
+      "source_digests": {
+        "content": "c9c802742dcc35f17ad1be90a23e7451dccd06bbdd59fd239d805101ad18f43b",
+        "rights": "66fe1f7a4ddded37403ae24c85c3aa8f21aeedee7e51db820be45942c39c0b75",
+        "render": "ea51d4076c95529950a46083ff2bb08256c2627191e3bff26f4f870313eab7e0",
+        "editing": "c037ba605ebfd8506554ed495f1dc50b4eb0f2e091a5f5ae0501bfa1ba1cb15f"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:g7.ecommerce-product-detail-01@1",
+      "source_digests": {
+        "content": "81763478f5c4309030161544e4bc40c45c83482c04c50330ea0e3834fb92338e",
+        "rights": "c29f2b2946c9d7aa6616efde9456cb5776c32208ea32df24f1328ce0daaa35e6",
+        "render": "08fd4101f35a6d6db4955f9b7cac7d05408ea1d093df868907246fadbbaf3068",
+        "editing": "1882ca9aa65e49eb417f67a6264e0f5fbac9a1c6f2e99f553a70322c48db611c"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.divider-01@1",
+      "source_digests": {
+        "content": "7ba58b0ed2e71d1557ebf84c6c0d8fd9eccb8d6c602bb3ec0132399fbf208e10",
+        "rights": "5acbdf874e18c8a4b5fbea7ad586a1a2d979993f9725748dcf078158800f74b0",
+        "render": "f4760038f844650fd893f35be8c4d8b9bf1ce04b4fd8fd0218ce2745766cf3cd",
+        "editing": "600bdb755eafc9f1161e80a17f884348770588e73006973dde9af0b9aa37303f"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.blockquote-01@1",
+      "source_digests": {
+        "content": "3aab5342ff82d0e5b5d3adc0cf7dbb40f9ffd0dd9fa1fb17e9ea7816afa65043",
+        "rights": "6e7b41f46e7840696611980304a0481c8f1e24a086ee102feb6daf050363affa",
+        "render": "9fb28cea6fa9d2cb589a082ec48b015c433541575f5ca21dcf5257e23fab4fe6",
+        "editing": "60faadc61385cd09a3c4bb1b94ae6bc8550a67a5b22c0de3fef8adcfc742dce2"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.notice-01@1",
+      "source_digests": {
+        "content": "9a2bceabacf8814d0fb63ce6d2c4aff2e26f4f2ee4e4693a546fc5d7bbb61897",
+        "rights": "8b18f628e9c1764ef15801238edb3e28bd025d58e0e509a52a03459880c8f453",
+        "render": "a3d69ddefc66a09093ee27b774cecf1f58412386966dfb8d4947f4427df55b50",
+        "editing": "858a490e8973f3e70fdaeba49406423de4528da533d7fb400ad70b4b7e7bcd34"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.card-grid-01@1",
+      "source_digests": {
+        "content": "6b852ae1da37e7b2a46aae70b6a9936bc655688338bba2e96ba81c9531ed751d",
+        "rights": "8b9e4cbc8d4e6a3923d366cd1fd0184753fe1b3766eee528f0d763e917a6386e",
+        "render": "77ae00a6cb986895064cd23d7efede891d28f68f611c3b140fe17395763472b6",
+        "editing": "b28ac977f64f70cd2b760c041608bac80d44427e35e7707cf8614fcd79b63a6f"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:navigation.breadcrumbs-01@1",
+      "source_digests": {
+        "content": "b81f4b692af301bb39ce73e600ea49621b210cde0086103d0863a8b7b4c623d9",
+        "rights": "f6a0b4a1c5b1ceda8438f73182728056a94146e16204bc6f4d9699bce8f45ea1",
+        "render": "b24a9a17d7bf389aa52b8cff2530b7e539dc960da906cf2f374b0f9c03c051fe",
+        "editing": "932ba1acf497e5ead0b1c5fccd9be173354e3d5ea42822352a49e90fdde0c05d"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:navigation.anchor-menu-01@1",
+      "source_digests": {
+        "content": "c9b77288cbb3fcd2b74e7b3c0b237d031b0e2a5069929f3f55d0f994d6030873",
+        "rights": "0b11db8624cf53da8d733a58bc2c78782674cad1c7cbbce61d7252ba46e44583",
+        "render": "107721aa0f83c2bfc4ac188b7371b8dc2c54e22557ed3396128cd8782caebd7b",
+        "editing": "db5d71aa2bf2d7acaf07e68c80ba9b5eece00e42067d7c0eb358ea15b73e2a27"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:navigation.social-links-01@1",
+      "source_digests": {
+        "content": "e7d9f7adf60925a38204a8ebce4156810fed62d2e4d1a01fa35e9fc64a5a5de2",
+        "rights": "1450e016518ee35de0ce493a887c71986dd5f10b1bea45994f6af0c5883e6423",
+        "render": "e1e7a6105b62f8934ad6d0e26f1d5658f901ccb722702662dd663c4183e71ae5",
+        "editing": "b17341a51761352b6285ac1939941bdc18b778127184c1da6fc7c682664d3e49"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:media.image-carousel-01@1",
+      "source_digests": {
+        "content": "5650341e893ebcc525fc014b3b7bf9918c9be6177e5d760b4d9e44a5eda82276",
+        "rights": "ce4a46c0d216213c99636e8c2d40951eb784bf4a450832b95398f15939db39b4",
+        "render": "21c2d3eed5a338180b3dd86f8b2dc3a74aa8f8cff47adcf80fb5ad023f974f9d",
+        "editing": "a46a49f1ef57c15199f3f34a0d82330b6806172f8c8d3d49672bad9bdce67c97"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:heading.section-intro",
+      "source_digests": {
+        "content": "c66e918eeff0bd3b3151eff0c2eaf07287584630ab2193bebe4700f88fcc7b59",
+        "rights": "6fb12dfb5b817c1a1120ae698ed4c2fc267e7bd95d3b0270474971a247404197",
+        "render": "c843a816d552fc63893b29708aa69953320c42a8c85f2c38d5949ef0569784a5",
+        "editing": "b345775a79805f8cd9651f1cb86fc75bfe78163806e4d6fff675a1be1a8db151"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:heading.compact-title",
+      "source_digests": {
+        "content": "1af623fb3774accdf980bfcaff283da494898d981c28f9b05ea2cf6bbf3d3654",
+        "rights": "ad818a49d9323014e1d0fd72e55986b297d93d467c3a1d2a437dc92091fd03a5",
+        "render": "213f499c3db0be4c8f0d6df7459df5c3141d36da9fc58b4c1b41d8a2e945b76e",
+        "editing": "ab0eaabff2fcd942a23b7a3ccc52c85012f6ad8f173544f50caae631def820b0"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:rich-text.article-intro",
+      "source_digests": {
+        "content": "de6954ba854e5c1d6ecf1c10af489f4db4e7b99f836b5cb2265536fb592c3dfe",
+        "rights": "ebc40a7055aa8f6a58929c282737b3f8288e64690a756daf5ac079c661d4d3dd",
+        "render": "3e4cb80146f52617b055997c69856d7a701914558542ba011d88da270ce93647",
+        "editing": "f6b554546071ba5c5a38fb85bc28f4428dc44376f7270d64deb4701ae898fcbf"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:rich-text.policy",
+      "source_digests": {
+        "content": "2641464dd2745ffc7735d27fd0418174cf10f0dbff18ee30eccdce006a5fac94",
+        "rights": "4b66e82b515311c725a5a6aee485cb44913aa84887b61bca9b54e4f8ab3cce4b",
+        "render": "225e81bc4f8452cde935cb921848a606c20abb80a76818465b030e88f82fb810",
+        "editing": "5e364fff10a3ad1c73255e6fc2c0941128c78fe670fb5f076c400fef09cb9a4b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:image.landscape",
+      "source_digests": {
+        "content": "761e7cfc5527f5b975b19f8133d489a7f6037adceef06ec068c296d416a9a9b6",
+        "rights": "c15af63f4ca46b2118be98f171304bc6beb4500afc190f12eab205ce0270a8bc",
+        "render": "4aad7bc4e3fdd15d38715dbc2de08e684d44fed46e113ed7d66d9325005cc712",
+        "editing": "c4ff1fe457701d510d9da60d5ae66c1e5d537372524983ceaba4f5fa8f562c4b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:image.square",
+      "source_digests": {
+        "content": "31ada6ba8f38322390e76212f15fe58484faa0868ef60c9cf56ba07d037daf5d",
+        "rights": "fd3767159615903a21fecebee9f9451df8f1e02c60102c8c629ac7861427d3e4",
+        "render": "488b923f2a6f696e6641c2d2509458838de4903c21944932ab337abff8869282",
+        "editing": "e9d7b6c904755a8bb9d4f7a3a0df1cf2b599134ace72ed4e4b028b2c7149b87d"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:buttons.primary-secondary",
+      "source_digests": {
+        "content": "d6a2bc9db509f4122f16071b0e9c669d1c6ff6f0f8c43df50791de6197794171",
+        "rights": "4a874ff143bc51a0c5fda0fde6b3b2ba46be00e8dbf27c0684102e9bc538810b",
+        "render": "311e03c0beeeb90c49b21dbac1ba4823cded7d3e175706a340114555c6877a29",
+        "editing": "6a6a615185bfb38b392036fcf1cfed1c2e7a47223be827901223ddb22fb19cf2"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:buttons.centered-actions",
+      "source_digests": {
+        "content": "1515faf3e3313e01abdb2cdba220f76e43c710f27f3bd3dd547f4ff5e6cd767f",
+        "rights": "558f42ad2a29edc0c13401aa9040572b7a817b2e4edb5ec5f214e5ef235d43f0",
+        "render": "32a6aaf9dbf8bbae18e176fa16e28f152ac9fd8f8846358ccec50f6f8276c230",
+        "editing": "9f2371c66d6813dfc62d2cbd09d88237d036e14d369d19f1f201463f86f61fef"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:image-text.product-story",
+      "source_digests": {
+        "content": "24454dfdd8b1671424952f534a4aa57aaab6ec9ce1c385f6fb6e83b0859ecaa3",
+        "rights": "3acd244ba6f2eb55db6b53d6d7c705173c49aa570b755435e8c1c66e416d8651",
+        "render": "3effa0be7a625a63c73882932dad6d463f696d3a8e364f634a1bef83ed5af973",
+        "editing": "ee3e83332669b724773e1b5db1e9aa2cce24e2f8865e9eb6c4a89832d1f429c1"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:image-text.company-story",
+      "source_digests": {
+        "content": "2415038587645a337d1b9657bffbf2c13a7e9e36d6af6eabf6bd01b2c3233164",
+        "rights": "61ab2bfc048c40d0009a84a388f876c55fc1af874634e3048fea99c79ad58a7c",
+        "render": "3902d4240287620c7cdfc96f0999bac133769ebfb56083fde870077163334f83",
+        "editing": "99319cc3e0c69e8b889cc19f2bed7d12095053fcc1d017960dfd6d731ce0ca1f"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:icon-list.benefits",
+      "source_digests": {
+        "content": "e6d7abcc738c2eca4afcd262b196785c0b9294dfc01f61db813699678b00f99d",
+        "rights": "75616cbde80f73fc35e7a4eee64191ebf812128ca793fbbf5fbc776cde3aea4c",
+        "render": "c82240cba50e758135ccca22844640ce496dcad87e62b28ab9c1b58d30bc4251",
+        "editing": "7d954ead9f18f7a0c69d21b58e4d9d41b81e6aac2b4e23df298a4a31f764d92d"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:icon-list.checklist",
+      "source_digests": {
+        "content": "8bd960a65bce8e01bca0f5bdbcba189c06696bfcad1f767ac794087989b5f842",
+        "rights": "35b8fae6cd9bbdc33e011b7d39b42db1a6ec04c1fb687984eeeb38f45328cac0",
+        "render": "5306759337e6546b8847df023339cc416ec75d66f59ad21141761cceed4380d1",
+        "editing": "39e36e5e7efbaa1dd497a1ae8c71509c2d3de6c3e3e51628ceceeaaaae033b9b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero.service-intro",
+      "source_digests": {
+        "content": "5206cf34cd459ab7f645d0267b1ad65d042d4ec19200fbb333d342ad533574a1",
+        "rights": "24dffbcf76c5919cc4c9a39e7f96aa2c8f8cd4f2b955ab18668c14be37b2000f",
+        "render": "2b17439949d9426388ca4b7753a9377964a83ff46e9168de17ac8d90967f90d1",
+        "editing": "b50fdad90ae282cf29bd92b37ae336e55fb40f6024624639193f0687d95267af"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:features.core-benefits",
+      "source_digests": {
+        "content": "3fbec6383e19fba1a51ff652fe7863cd7c19cd096e24722d0ac34a3000296cd6",
+        "rights": "086847d31b313b230b9cd591c08652a288f935e359bb5322ad04dc7d3a9c7ec9",
+        "render": "627245ab905d32b01cbf232dab612de356da0b3d3452ba14a1d6975a75bad124",
+        "editing": "bd69887eacae1d10ebf6468287d15b86b886971c7cb003501abdfed6ffd319e4"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:cta.contact",
+      "source_digests": {
+        "content": "3401be059976a4f1854282c61e07d6e8d2018fc014bf59de7b668b1b02e13719",
+        "rights": "3db115d85d131e92c310944220d63657f4ef28c547311c74ec0bc7a4a0d4597f",
+        "render": "fcf55d548fb2e3168769ab0460ca451ec49f497f438dc3a3a237eb45bf509851",
+        "editing": "8ec731493a93c6785b972a03ff4054b69e877d87d94b0e978e2aeaef43d30f9b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:contact.office",
+      "source_digests": {
+        "content": "7404b3487cb866e0a82749387588d08bd2e4b156be379e535bc7d752b64d8fad",
+        "rights": "660a277d9cdc4a166ffea3214763ac5ba3c761bede5e7321fb870dbab9761b24",
+        "render": "69b6a450267c19ddd5bb1a3f27a224d14cde3e96525c5ef88e914870292e1048",
+        "editing": "2aef742afc1a8d9ebaa3241282bbd3582523901f01efdc9b7e309371cd841fbf"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:faq.basic",
+      "source_digests": {
+        "content": "7e887e629739ce20ade882693aed1f35ac115b1f2b7bbc1c55e649b8feeecc8b",
+        "rights": "5c615ac3d5eda6fcf9bb28e5e9dedec130bf5575abf0739298d53b618e2cc7f9",
+        "render": "8699cc875995fef4ce39958644272a5b720d5ee2bd3b713a7442a2abdd6dbcd8",
+        "editing": "f21d2b91bd85055c44cf3a97dee1d6efbc8845ccc98558d354f3dbe7415153e8"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:process.four-step",
+      "source_digests": {
+        "content": "80a65b9aade2369cf3a23fdbc4e820ffc4174147ea75f4514c82962991a276a8",
+        "rights": "428fccefdb55d0ab63a74990f03fc5d37925e92a58a6f5ab06ac4a408cddba09",
+        "render": "135b25a91270de40ab02e4dd7615a73d724c00cbe44284c7d47405ba7a162356",
+        "editing": "e21fdd98aa08aa74fa021ec09af6eb2a469021c6030e15208ac291101bf20af3"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero-split.product-focus",
+      "source_digests": {
+        "content": "545cbe4cbd6300e37918725b7f9bcae6b38535e1d9c34f8c9d2a75748a7f4f4f",
+        "rights": "2bf33571a273a1bebca6ba1f975dff2c3cc9e062b421963d4cddd877876892b3",
+        "render": "59d6673a43a80a28e74aa4dcb7e9c9eacfddb4f7cdcbba4042eaeda869474d27",
+        "editing": "4c0f793849a69c913015ed6c8809c3acbca9893a8b39e0366889f7a92a4ed08a"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero-slider.campaign",
+      "source_digests": {
+        "content": "68c1539d284c6bc92aa3d239b9f416dd94c9800e82b1dcaa7b2b6dbc89e18db9",
+        "rights": "d5b4b89249bc87c31df47b0c11b7249387d2c4f8efb03409db006d202c7c4070",
+        "render": "05d3e84e73f0a7e71df62da5cb36914202de68a5f27ebeb4dc525c9e5a3ba84b",
+        "editing": "ac63b85cf23c0bdf2df39eabd0b47ce3ff79869cbf133b275aab12602a0dd73c"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:logo-cloud.partners",
+      "source_digests": {
+        "content": "548b58e11ebf7fa6abf22dde1bb4021ae108b18e51eca232363a672479112906",
+        "rights": "0d54200fc91422e68760bcc5de9f416eaed72181fa2b07bb1f6490856ecb2e98",
+        "render": "4aaf9c6e810ff79960f0a5ebab6a0a71709bfcc60b8992571dae957273e0f6f9",
+        "editing": "77f20f7d17de28f2198804adc79c12cf24ebf0a760685c2ff92973dcd204a348"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:stats.business-proof",
+      "source_digests": {
+        "content": "b0da3628754398c9a85f4e7e28f85fb907dc4c0f6caf456f2e2b6a6cd367368a",
+        "rights": "d59ffb4492db2c1d9daec203cb6e90bb49889b3eed89f0e9c4f68ec10e4aaef8",
+        "render": "3afde2bd57146c9517ec8d4cfcc0bfe6feb3efabd30e14daf67f2a34320eed9c",
+        "editing": "aa2b106e97673d5e13ff0396f5fa19bc6a7919f028aa13311348e445f2320597"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:pricing.three-tier",
+      "source_digests": {
+        "content": "84e65bd0bd67d47258d02ee0b62e15a7d645ec7b37935b847ffee86c58a0c094",
+        "rights": "b248b9434042ab081171b412449d2cefce42a8770eb0a7aa5887d239e350eb35",
+        "render": "86523b9539f6ce13967e0ea8cc1e6d79db1d1e05b9b58cdcb4c002fd51221157",
+        "editing": "df963887106025d9bd2c747c67a591b9387cead2d4e10ca781b1d19178c904b6"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:team.leadership",
+      "source_digests": {
+        "content": "bb586217b09d4dc02ee988106b41e3b11ee7e30a8f1576d53ad212df4f6ccb29",
+        "rights": "21d88a3275f31d721415f453199badbb0e32587ea89197803245c45cb40be28c",
+        "render": "f22f1ad85634d3a4c63111cdbc635b3654a070a2e9386438aa8d16345765b524",
+        "editing": "02cdad649029afcf78acdcbd446c4e8d102b78640632c043150eb9f29a3f1beb"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:gallery.project-scenes",
+      "source_digests": {
+        "content": "4e6f14d5d7fe12c0894079692c1c06208c8a55feab8c0fc65bcf99565513b4f8",
+        "rights": "0f02de134995157d17df82dacf2af938dfbb27ff714534406f4bd00e28aa1e13",
+        "render": "e368929c4b3b1d0f6758e9fb21cbcdbbc71fceb4e41e7708072cb0700c9a0cbb",
+        "editing": "aad57d3e271b32c46be037caa3eef0270a59ec1ef1172088328cd0f2da2574ae"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:bar-chart.quarterly",
+      "source_digests": {
+        "content": "b4f802c847fb8b70b49bbfc78e71729367c0b1559e687e922bdc7d9a8ee3de5e",
+        "rights": "ed592788034e499e583d515f808d6d9f9c9f1d1d488a5af7153a64eaa66aab02",
+        "render": "72b40996ec906c3a6bf1f499ab059763640536d348949749a796b2027cc61b5e",
+        "editing": "514ed92f6fc3cc7483c77d702cedee9e935994eab0bef76e155c835bda294b55"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:g7-posts.latest",
+      "source_digests": {
+        "content": "936c98f65459b8d46533ff88323ed7005da271a111ad4ddf4dcd32145bd44109",
+        "rights": "be880de89ad52741a17c0b93b547ebb765d1a3ca97693cb5b53fbe3047cd1a57",
+        "render": "a0dbe45020a3be7b61600d76f680c216d337693c309e3ad9ea87e8877c488606",
+        "editing": "0eee32a8b18cd9b8db1ca469e9341c391f376f79782da4623b5fcb20cf354d9e"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:g7-products.new",
+      "source_digests": {
+        "content": "ecdf08446135200a426b1630259ccdccee7771df6715432c7ceecd763eaefc7d",
+        "rights": "3805041874a9391b0c2bdcd42b57f039c6e4b42a8bc77f40107ed5afdd865a83",
+        "render": "308babd3ac5b1d44f22c58c6531f2cf485108462c0637526a531fdf11014ba2a",
+        "editing": "c0cbaefa3b5d05046a1d73c997418cdeaba696aa5f65057c7782d59c9b201fe1"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:inquiry.general",
+      "source_digests": {
+        "content": "4ed466f1bd1a2172255491757128766680a1016f6110686b7064f0b727063047",
+        "rights": "b0740c5ecb4ac4baa1120b0163617c49349e1f8ca1d6315bcf81d38fb7b64937",
+        "render": "a80b7c6449c85114724bfde1f8df138f2fa106e6b3f047f546ca93319acc149b",
+        "editing": "fa72bbef5ff7b8b94b08ac38d9d568004d255692fc21be5b7b622f7a616fcca1"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:map.office",
+      "source_digests": {
+        "content": "daee3077236bf56ab4954ffc1ef58d1bb33afa5665aa6d346be7f40ab1910cfe",
+        "rights": "3cb3311a3463e7c5773fb9b24a67e971bd87fb28c690623e0a5a4cb5d270a3ae",
+        "render": "45888d648f43b5d7e206dd9cd011039b459d2a35911042ac1cc077484e03f922",
+        "editing": "e20e8dfcb2f703a94f181acbc73952992af874038e8fbb17bd6a0c64ea550b65"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.customer-proof",
+      "source_digests": {
+        "content": "3aa048bbc18a2af24aadbfbd05d74492ec367228c56201dc8436354a70d01202",
+        "rights": "435099859f31d43844d2fa9863e9c06608bc687cfb45b4c6549ca9a8933e54f8",
+        "render": "19c41df0323bb6a47e8e24a08898708e52b99723fca5b6530777d228ceb2ab57",
+        "editing": "cfaf9456afcb4b721ed475ce9b58ef147fb6a424b29b0dbe58177a5190aa34d2"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:tabs.service-guide",
+      "source_digests": {
+        "content": "2b46c11c5a2ffa20125189962feb3021d67ce7f075bd13dc7e029a4b452508f9",
+        "rights": "bdd9fb80f826393009d46fd9e15be1441f2e27e01e3980054d8f7337318e32ef",
+        "render": "8c36d19dca36b0ff35444d69279313ef65e2d7849cb400ba0885265868068f60",
+        "editing": "183f522923de1b3f45db84485cd42e9799b269df767411c08e24602cd335d0e2"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:comparison.plans",
+      "source_digests": {
+        "content": "8c7479da53baa52c2a7c278bdb176fe3ccaf1ad23c61af027cb9921e0297751c",
+        "rights": "b5f9ad68a9ce44f1f75eb4a6a2622eee5999be99ea27f34cc50b751883a9a3ac",
+        "render": "b26ca6587eb1198fcfb961bb4940f5e85bde55182d422d77a90225c0e0fe2eab",
+        "editing": "5420f2f282a6cc058bad052b320f5bc240c4d04663d358c09cbd28b4fe424074"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:articles.insights",
+      "source_digests": {
+        "content": "18dbe431c0f6d6a0a7a50cd507039db548a377371549e6417f43d11debad6544",
+        "rights": "9878ae687c56d7108a1583df32851b4e19dfe7fcf3daef7be966f1fe403d60be",
+        "render": "1209f1dd612e561eeae28251990b4f2b93011b569ac46109b6e587d67ce9a063",
+        "editing": "95d4d349bd2b401395143adc4dde894a2426121ffda70f389387f036150b4623"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:video.product-tour",
+      "source_digests": {
+        "content": "121712339ea4d15a643d9f365236970d39c76cb45295f44801737c9716f74c4a",
+        "rights": "2e15352260125d4a44f8f6a38025512628a8881b7a48a40699e4014ba2dd7016",
+        "render": "913370335cd7dd894f5ec3af03e0f915ede2d216ef6e0e1517d22109e9dabd51",
+        "editing": "810da08b9f8a1f2f794a782cd0fab9ca0310aa8ed1afa66d4648b0526ff2c17e"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:logo-carousel.customers",
+      "source_digests": {
+        "content": "d75311bafe16191ef117451162eaa0a30c549a745eb976bd029bf9566a935ead",
+        "rights": "adad975980e3ab6588e130bb0a9306c8aee5897eae3a36341046718274f4c1da",
+        "render": "02805413416d4445c0c0b6fb2f2922acda9c10223f484e9e67d23cd1d591225d",
+        "editing": "0c4da02c6253b0f7f702936366959f74c56e00a9d8b9baae2e20e22d36894536"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:testimonial-slider.spotlight",
+      "source_digests": {
+        "content": "0c5eddf129179e5d241912b9df65b4c7a5ab730095bb452e0a49acf6bb3cdf0e",
+        "rights": "1ef9afb558489a3cf00bd066ce8ce18d83469a70d10bbdce7870497eabd74ad2",
+        "render": "311741891f6bbb51d0e258b196c7216cba682ee8f7f9ee8d6bf8db09d9407041",
+        "editing": "047bddfaf5566d245613567652f5e2cd8b4cf05a34644bd972d536e1712f7b26"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:events.upcoming",
+      "source_digests": {
+        "content": "258668ca7b0c99a732eef96dc19b9854338d02128a0a69c423965ccfcb29e54c",
+        "rights": "f8f9c08892b221f3a267d87f167795cd1ac0f02c96fbf4eceaef419243a11b2d",
+        "render": "7329e28832d408216ebfe377b1efe430e24e2f114fcf83e1718fda3d657783dd",
+        "editing": "9cd179deba6a5ff85ef0015e58c3dd0b6ddf644bfed84a18640618fae8b71140"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:downloads.resource-center",
+      "source_digests": {
+        "content": "1dd09617cc8f351290f284a3cb4b6b71a93e8187dc7a5428c434ba82aaa3b529",
+        "rights": "826216cfd749af6e3f0a3e948746ee9c6574e2f4d4d766babb643107b312a4e3",
+        "render": "fa8e1c3d39dc473e11cbe7f27dc75917fa326824fb210dd316c7f64afbb12c34",
+        "editing": "f019a8aa9ad1a5f7d3ebfddb124352f44891829270bb5d9503f9b848ebd4293d"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:g7-archive.searchable",
+      "source_digests": {
+        "content": "5e7759a6c148a8fe1b91d65f2cd7fe8b2a9afef356a31fcbef4a45c469cf5161",
+        "rights": "13a996427e228581fa92c98d912a79cfd8db684a8b3cddadaced3453395049b7",
+        "render": "2dd8ad10dc4d83fae3ab15bb4fed98e6ca6e6a2a9fcd570b3e79cc45774ac0a6",
+        "editing": "ae44627baf920c47bc8db274a683f9569ecb1d7201ef8d9817c78a4aa086fb34"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:g7-showcase.featured",
+      "source_digests": {
+        "content": "8d4d68722aa5f0a3a6f6a6a2cc1ecd4d8dda6898e0b1bee497858af73ff91254",
+        "rights": "94e218c651d6dd1730cef1962fecc91fbb0dc4c67a9b9370c77cd6e25e45a116",
+        "render": "dd4575f9fa84f598988b668cb204acc7ff3bb2aba1cab091308bd1008a013ae4",
+        "editing": "5d6871ecf9a4da3449e8f01cdb2e351f69e9e82903e7af20333c28ddea6d2927"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:g7-post-detail.featured",
+      "source_digests": {
+        "content": "b2a3e4ab94be4736afa067e010a1e5fec2e7d09b3f9810f2862c964d63bdd74f",
+        "rights": "7ddd23afdaaf925f7933162fca76beeaf82423384cc9b5ed90fbd8dfb7ef0bbd",
+        "render": "4ccaa6256787e4ab166af7fef646a1a431d0c12cfb83fa674352151cd158c722",
+        "editing": "a45bab28a7c88613981d93980ba3f54d30d5a1fc5e05413ded70b580469b2fd6"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:g7-product-detail.featured",
+      "source_digests": {
+        "content": "0bb645f8041f041f0a196e0a62a50830173e299ac8cece7a5a92084881935ebb",
+        "rights": "49c77041dda331b941500066a4d2b88031c63cc5e8e5d82cd7eaee243fd640f2",
+        "render": "bed0bf1bcffc2a00ba458af61063e55c1dc2c3c2f0a98881d2584c136ef55466",
+        "editing": "34b8ce9aaf3080b4b30678c6be3c6e858c6cd08a077b3f613d50ac5b1160be17"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:divider.section-break",
+      "source_digests": {
+        "content": "2ab7356ddd99d716adc4da4ad8c9319b31e6335165caf5cdb8dbfb389c222d23",
+        "rights": "e4905c53a1a6cc14c363a8c32b7e65a4c13b7d4d44cdb6eed5790124a9e4b1f6",
+        "render": "1c597b4fae5765ceb643015c7e9d992630189b46a4a9136f9f0b256213fc96bd",
+        "editing": "05c230a380c7bf8a69175a5e19f2f8955f3e6efabe2f28597b11bced0faee177"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:blockquote.customer-voice",
+      "source_digests": {
+        "content": "c4915365caf36e721c5f28e6fc3ddbb5e3f794413b8511cc2cbb66252dfe08b2",
+        "rights": "3b71a092494b91bd3c21f6362871b3ebd5065cf5f1ed55427ed7eee13fd81fb7",
+        "render": "a14759975de98539b655102541028573719ea6c86a4c059d5ac806f73965df1c",
+        "editing": "5d35658e1eba135f1fe014b50d473d3b7d24f520747eb33463887d52cb0fc8fa"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:notice.service-info",
+      "source_digests": {
+        "content": "9e749ae21ae32bfdfdd0fe728d67ddc6aa4d3e63abfff89dd93b78ff07f467d8",
+        "rights": "841e85fa77da70c76ae47e79ec1f6ab5a2be3e1e3125f375e87a57b6b58181cf",
+        "render": "5ca03a931bdb1ea46accdab5122ba6065114978e3ca5acce57c463f5e71f7556",
+        "editing": "f5e8d2437fd0f8a4d1ac0c2b41f0564cc37ffaba28951037412b2addf98bfbf3"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:card-grid.services",
+      "source_digests": {
+        "content": "c7314ed69ff034f2f25a267b2b15380bb004b4500230d1987d916de3a518c03b",
+        "rights": "f1d13ab87002cc33b1f6685d313bbfdad441df9532ad97d0a40bf20f646565f7",
+        "render": "25319a31f921ba34ab4580e0cec0fb8fbb7d4423d788eb79cafd4e7010a28cbf",
+        "editing": "f1bdaed06d236f7fda55402110177e036490202601f033cfd099a75494b441d6"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:breadcrumbs.detail-page",
+      "source_digests": {
+        "content": "8af234ba1615d5a826611cdbe3bcab419c0fc2ee0ebe5b64b66cd0a8ecec5bfc",
+        "rights": "c94b753a2ffc0c1f0ea1e83cac8a5d0fb028eac02169394f83dca5e04f299448",
+        "render": "5e5c80c5c12b044713517b369469911c63d11ac8362fb176ffdac6bab6dc8829",
+        "editing": "c37b234147d5076e64df64f08ca70e97bb53f70df3abd336d9095f9e1b33d66d"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:anchor-menu.long-page",
+      "source_digests": {
+        "content": "90a54352803df9f91245b29362976b6829f5417c3effe855e3cfdaf3e5f5833d",
+        "rights": "967ca25d99e32bfa10ad62c5838cbb68c052c090ecee221900c7116a05e4d9f1",
+        "render": "6d822f2164e30b221076839d9443323953699ceb1485844210a2526ea927d190",
+        "editing": "24fea5c5a2efe972c298278dd55688e01d3b8cf2fc331ad900390f281f1b853b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:social-links.official",
+      "source_digests": {
+        "content": "97dad62357057dcae4c99e9895e4b771a687ce22ac8b876b4f2786213dd008e1",
+        "rights": "0b8d09c7ec9ab93dde8215ad011edb3c6082935d6d286b2d4bd8c8ce31b6c8c3",
+        "render": "468872e783c64fecd686b6581c2fa624365cbe6c411edca79b979f534ea986ef",
+        "editing": "248d4bb0f15b3e9256ad919bb79c6c2a70d0f8099f310161a1a7b278c8bdacff"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:image-carousel.space-tour",
+      "source_digests": {
+        "content": "621d242238d9efdd5f19e27400a74a4d8558a188185223ee5c9b965c6f3de037",
+        "rights": "1ac6bf970bc9ec0f82c6b4c6cfdb6c37364687a32eda144902e5b1ee3d369f7b",
+        "render": "fcc6858538bcd87f024b505b17ccdd4a31326eaabbe2933bdcd64672329d9e98",
+        "editing": "0058090108190d2c7bdf2312f10cc7f6aedc9603500fff7ff5ec257ce38194e1"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:inquiry.quote",
+      "source_digests": {
+        "content": "c3ed0148be6b36cfcb44c515e39eb7adbc2f80fc9642944007bdfb8d7cab6d00",
+        "rights": "09d62d3ebf4cc2199e995d69bb70b5800dc84d1dcbc28f5a76672be32aff55e5",
+        "render": "deea131c150946c511d8601c19537e04ad9fd3503b2688760e8c5652cf613e51",
+        "editing": "e0d3f8d7c8fd69364ee6a1261a4cc1c037e230ff1d48ea242e88b3ddd446f362"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:inquiry.reservation",
+      "source_digests": {
+        "content": "7dc8a475bb6be5b0fe42662e98d1da0a05c1d39c24bea699a6dbbf2e56d8a070",
+        "rights": "6358cc8aba333bacb98ba56b7082e15c7d7a63865b1253622cbdac8e96821a8b",
+        "render": "aa158e88a546f51b6cf3431d953a0db38d227448a6739303e6b630beec7dbb5a",
+        "editing": "07da986bbbaabe9f6e8286f50cffdec0888e4f8a5130e55156a87b3e16d04ac9"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:inquiry.application",
+      "source_digests": {
+        "content": "a345fa89d8e27132b19cf5d6346335c12690021dbcf2651346701fc5d1a58eb7",
+        "rights": "728ee9301c749ab64d0083b08c7ac5146de9055ec11bdb3d78c78190aa1ba976",
+        "render": "0697c9eac5701813248a93ced7c36689b8c57cac89476bcbae79c3b0a972a74c",
+        "editing": "d4922da1c2b4ed733c20e32ec682d9562298b9cd4062d80714d0f139fc193573"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:inquiry.newsletter",
+      "source_digests": {
+        "content": "895682f6d0a2935208092b8d3f56afa5257dc3aa485e8af5417d8e4300d38811",
+        "rights": "4ffba205f1f2861c6fc5132368aad78275059829d3d03192fda92dde3fc575fa",
+        "render": "5dcb19afa308ca830e0fddcbc52eb831bfe40c22429cf095d380bdf9c7c8924e",
+        "editing": "60c7fc1fbcbee47357a13ee3a07c0c82b7d4137c464819408fa98989c9114448"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero.poster",
+      "source_digests": {
+        "content": "c12aeb42ae292c5a9844f36a75335bbf0d309e5d691a9a3c4de9d21eb77e8022",
+        "rights": "b400ff94b9768732cb33547e2c47419ceda6ea779fa28c4ba5452fead321ca9f",
+        "render": "50b66c00f82a912236dc74e1225613c0b18b25df96620531582a489aa799f7e0",
+        "editing": "82404043ad7e638fafb5390ba800cdd4534b3457385b7aab8bb0e9840bd8d6c9"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero.backdrop",
+      "source_digests": {
+        "content": "51b1d0ccd8c98b7f960fe074e1ab37920bb2999af63ff0caa6a90664b68d9060",
+        "rights": "63500aeba763d0bd517b6c2342d962fa97a5e0ff604a88e98724be42d4a6bb73",
+        "render": "d0301502bf7793de614111b27c0627a06a4f426a261c0f0fe99992159fed4b0c",
+        "editing": "4d38f5c984320236e17044285f5bf713ca2fc70d76c70f311a28b9127c51eac6"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero.editorial",
+      "source_digests": {
+        "content": "1b0d669136fb5507ed45508a14551814084b0e6c27fa1f9e874ea30e6bdee30f",
+        "rights": "289f97c06fddece69900c531a8648ead419b73085895b1abe9766906a6adf1c9",
+        "render": "d06051c953226e738565f9a81356493d646e4199d2db454ef2e092db05d159af",
+        "editing": "810df8409fc8b7a931261fbd453d1a609592bb99b588c6ee24cdea443d25b2d4"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero.device",
+      "source_digests": {
+        "content": "7a81590b2f77589262751c9d8b52f1bdfd3cdfa5fe2662f887a3bd777806c292",
+        "rights": "d179d3ad70021d90de57230dea9e7fabb3850450323828a120e319bc665dd21c",
+        "render": "d0796c98dbd5ab4b42d2236c580cb390d20e8506e14dc549a28cb99557b8e270",
+        "editing": "7a81775cb6dda6f663026eb3108186bd41739797ba31d6919deb9b53c8c479e4"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero-split.balanced",
+      "source_digests": {
+        "content": "a42750f218d8713741d001d9287fb75906d64fcd33c0977891668492d911e3cf",
+        "rights": "5da7a43bcd6fed79077d5c3a0b301be32ccd6a4ecdd61f4177b91e7b43fa6144",
+        "render": "0e9d37fe257fc5f367b149dc4062e87922fd47d9be3e1902adebe751d505fb23",
+        "editing": "23fd6c5d852e18f2e5e519196f8b0322b8a9791554eeefc9ec1213a3f368c3e4"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero-split.overlap",
+      "source_digests": {
+        "content": "312f1304768d61851805962f0657d6acddf0d8457ee8b00b873a7e07dd7c5591",
+        "rights": "a3ce4adde3651440d40f56669ad2d20be6f40488a942a009148a4408536bc948",
+        "render": "930b88376aab18eb13b57d8f3d3d78c0c71fc1a1799854f392c0e722d93018a7",
+        "editing": "b0e97b5a98722f433ad5121651c37ff32ceac4b2dcedb096972929695c460ff2"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:hero-split.offset",
+      "source_digests": {
+        "content": "59184b3d330ccd3188bbad105a9f75a8b6f6433c4616e068c84339076704d9e5",
+        "rights": "826274a4bb5fcce723663e1f8658145677b226a2d60bb3fa87e007d6a4558c89",
+        "render": "75d5a325b945382f3aedf1aae2a33709584fe3232c867930bc7e069a51cec12e",
+        "editing": "a06bfb433b5501312cff7acb313e9c351da3cbe325fc1f33e9878c3deb5f4e7f"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:features.grid",
+      "source_digests": {
+        "content": "d4d5413fedbc842baafd6e61931dc2e28195b31795a7efb3dcdbb04ac36925ea",
+        "rights": "89967dba315528c2782f5efdb786945e5ffe8e1ec8efbadd89f7cf19da273d61",
+        "render": "98f448625c16703c4aacd74102a5d2601e7c76df9755e266a43c771cffd43a45",
+        "editing": "b433770e022b5a62814440030e18d151e9a5a0f95535012fdf7f22120f228d91"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:features.editorial",
+      "source_digests": {
+        "content": "d8daf57491588d6963d2e894e46d729da2d7242cd80ef22321276dffcec61c60",
+        "rights": "6783fdab67bd95a0549f7480018da6649c2657bcabfadf2210ccc4e856560968",
+        "render": "6d3859ce344e975ebbdcafb1a1f3d5656f394b7b72e09114e608f0930f7fafab",
+        "editing": "4049f7cf6d9c5fbf298b38435f3aea865902828c731abc884726160d3933e3e0"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:features.panel",
+      "source_digests": {
+        "content": "d8fed3faa23967fb3d46abbd8ca91d3ee96fbd9de986a985ebe8bfa7cb3ac203",
+        "rights": "ea9d774e0723def158c762b59ddb0d2d6641b0e3ae5dab7145f28d4e87afbcaf",
+        "render": "72ae1f4378d757986bb250e0f558ab8e140988a69fc294b2568dac2b02d04542",
+        "editing": "5cfcd8538ef7696c3f4063e1af6a9b416688575304cebe3287d61ec2d6e230d7"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:features.list",
+      "source_digests": {
+        "content": "2e4efbbdec87f99a38b34d1c4f4978ea3c1109e078bbf8234cb2a31d46b49899",
+        "rights": "eb73fffccb8754c7705da742f63b3d38d4ea2279beee4f44a6bc6ab1f2705c62",
+        "render": "c6a24dc6bb43e13fcb00d223ac46bfb254944d201ae0f37e93f7d1d150ae2ac2",
+        "editing": "f63a6ca7058039347ecca7605a8319158e3b283fcd1c2656b3a88c88f1029269"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:cta.centered",
+      "source_digests": {
+        "content": "8677c9686450af880dcc068b08ab8982d3cb3331c02245f73596fff82fe11be8",
+        "rights": "6160c59fb5cb6576fea13d0b7ca3880a94a06bdae9f092bfd06173286b4063ff",
+        "render": "327c4e81067468f63126af5ded36ae59d9896a2dcf30c7480556ffc931b70fa3",
+        "editing": "e7f06c3f76b3392c82b85752bc8ae1d26246351150d40aa03b77835430bfc547"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:cta.banner",
+      "source_digests": {
+        "content": "60f63bcaf8056f01d4a82e1187490aca1ca543ac5d421ee4399d906a30685f63",
+        "rights": "202954e285f59275fb5e845cb05814286ca9bffba23418a903da012a7a56ecb4",
+        "render": "e902cf70e160f74bd8d50c273d099e810d035495a5b4f712761edbf839f2b654",
+        "editing": "98ff28ac87ed0c10ccda8b22df111cbfc62f9f1b65be0d8228ba4fa1ada12eaa"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:cta.panel",
+      "source_digests": {
+        "content": "c749e74fa58e8b1773a2aa75482759a95028c535ed0346e5ddf1b16ccc894f74",
+        "rights": "7ca22f43fc4cca79e6ed24b5b16223005297029c3c6533fd6f3697d55bd0b994",
+        "render": "6180385256ea9092f31367a706563bb0854e26cef972cbac4e6c73e229b67e12",
+        "editing": "bcc8bebd261954bbdbb5909476b7fe76b113ae870322ae04bc6f92bcddf5b62c"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:logo-cloud.grid",
+      "source_digests": {
+        "content": "4f6bb29ef045a45d42dae5787603958626eb89fb0e45f6c33ef2f78e992511a4",
+        "rights": "8eb8d1e3c6ba68c4455b6e62895c34ae75ac14e81c5a261d7a41d6b1457759d7",
+        "render": "bb7c34eb79edcbce9883b12e1da6c03d7c7f16f65786270520da8adbd406f5de",
+        "editing": "9b028c99a0f52cec83c3a892f80d7b8ad15e3230433a951f9a4cd6d58ecfeff8"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:logo-cloud.panel",
+      "source_digests": {
+        "content": "849b6418516f5342f6cebabc134d5bf43ae0fb8bb4305f30c793534edc482327",
+        "rights": "4eafdbcc1092451cf0bee59a9cfc8ec7851d0ee655ca07967c8924793f9413ac",
+        "render": "5cfb21f7e190cfbe7e76743a5d92cc2d966048549eed1346b5c9b107bba02c1a",
+        "editing": "d0214bf9608b99ff914b659f959face2d4bbda471e68dccd4d8e65e8607de750"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:stats.grid",
+      "source_digests": {
+        "content": "1a10585c35fe9fa254a7ab9ce56a1f71dc1db51030640332bfa09f94baf71bbe",
+        "rights": "fa5bf469fc3948fcb5324f16880478a966c066d33643f366048eb2053c8da3b4",
+        "render": "26dd4a934f672c59ecf6d37c2ab946b4ac816d264ff113c46e5068612c4f6b76",
+        "editing": "f28eaf7a05244fbb11a350158ebbfc2a4f1da00a6f2b4f03791afd9083029cb5"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:stats.strip",
+      "source_digests": {
+        "content": "01bc16f84e610d740f5db2636d30ce4a7b7e0052d9c9eb4f5e0ad2c61cd66807",
+        "rights": "543e260b77cf3f7b28783760fcef1bcc07d9662836aa084fe2d6a8caf90777bd",
+        "render": "3b64854d03a4193d026a4bb41fd0405325e9cac9b922e01c31c64becc447f783",
+        "editing": "1cde7f81d51ff1bc93c9b7813d6a91998c1b7fc508e263e74c0395afa75ff430"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:stats.split",
+      "source_digests": {
+        "content": "665d2098cc1ac01452c4e3a880598bddbac14f09e26579d9e01d93ffad276972",
+        "rights": "a8da41ed2e01420c623f069efa02b3dbf035a1dd2b0aae5a360b3be9eeed275e",
+        "render": "fc231afc17bacada43e3df432d249892eba70eb6c4923887fda17a9414139e4f",
+        "editing": "cee748eb4ed0825f3e24ceef8cb204cad27541da464841551ee0c285dac36f96"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:pricing.cards",
+      "source_digests": {
+        "content": "1e71ea334cb46acbd7503199f8abf739e57930ad5e5b6bc68be7cb50b3706619",
+        "rights": "49f898a49c5e9b7900b76d8a660f51fe686ea1464eee194325cedb6f39edd397",
+        "render": "0f6801a0781ffaa79576c5bc90280fd9f27681e14b23b4de831922599e4e35c4",
+        "editing": "7b4dbcf9f75cd059057c7dbb873e8c1c76782013d45861194562b496d73ff85e"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:pricing.compact",
+      "source_digests": {
+        "content": "b03c80ea616b9e305094f5904d23285730ee0826ef5604f32f209eb5d0740702",
+        "rights": "71047eff74fb9791627a39278d9185406448e727033812efa72ec7dda291cb04",
+        "render": "dc12efc0f247e5b73f232edeb4eac89ca832561d19c2b35a6882c622dad2a8a9",
+        "editing": "b9e1e48d65a9e2574a81f9aa96338159047413c80b4c4bef113b637646f84243"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:pricing.editorial",
+      "source_digests": {
+        "content": "c4a98dd1f8240f53063e816f12fbaca51988cf7e60c0df054e68e3762bd67d25",
+        "rights": "3e7059f67d4e2b3da34c54ba446e3372bc466c3cf54a9d23203f7f8960af73a0",
+        "render": "0cc00f3dad59632210d5293ebf105366c38e29b39c2f36213f3974aa7a07bb44",
+        "editing": "f7809e70bba38d778d0a0509c428f50eaaae6b64cd97969a5bb8919a22552a1b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:team.grid",
+      "source_digests": {
+        "content": "86870c0a2ebdf0402defe37dd97ed645f308f5ebf0d5bc6f63ca1e4ec0da1f03",
+        "rights": "d8e9c72bf804d24199135402d1731d45bb5485486ba8e67634b9e4ef966ddc81",
+        "render": "b6898ae2ed3ef35fdcfff6d1ca229aafa692b42f6c6b6d70247bc921b252dbb9",
+        "editing": "09157ef40fe8c988eafd73451e49802e8d3567d2b0969f7e29ca733c962053a5"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:team.editorial",
+      "source_digests": {
+        "content": "a1e1c46c400684c8205f5fe53cf3586b28543b40aacc835ba4d7d9b1050b770b",
+        "rights": "8f7aedfb423abf25b41884c13caf0bfd591ef832973f62e48a38ed761c27c997",
+        "render": "ef7d88719bf90b60438ae2ef349cf1c5994632b32ed36a44d85d42a31470c03c",
+        "editing": "70384a8b4c2c9c8a86d5df430312ff49e9d07e06d3cb0cf294acbda895e302f2"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:team.featured",
+      "source_digests": {
+        "content": "ea312eb7c1e10578d8e01ed15d2786bfb69af4014887bbc3d6ed666868ec62df",
+        "rights": "b9020a92c87b969fc4b77fb8f291fc75ddf545fc746a46cbd25efc519ad07362",
+        "render": "9f30bc6b7932ffb6be599d65a94724df07b5270d69e9fd12940e4d131fc0d37f",
+        "editing": "c8ca33dcbdbf366818261f34a166482bfaefef45c66bf8cbd806e055b2424496"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:gallery.grid",
+      "source_digests": {
+        "content": "dc35ad6519c094e5d23e365a6346437f2af2fad2b082a3b38cc7fb0bc122bd6e",
+        "rights": "9cda37ab946c4e3201bfa6f89f3ad70abef3ec11bf0fe1f07fc4a88d9bf36270",
+        "render": "c76a0dc34b5e17e0ef025be46332bd3d0df79b51ac6e6adfc3ce7c5f189f650b",
+        "editing": "9a0f5522c2516156b6aa31c03e78a820881d3c55876f0d1e2d003b3a8dd74d72"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:gallery.masonry",
+      "source_digests": {
+        "content": "2bf6b1f3be51bca5f4d8868563aba9a6782e541313de19fea8773765f98cc134",
+        "rights": "764b5c11516ed3fe2477fd9d15a0ea6c6c2d5573c34d7fe25730a85fc4b57901",
+        "render": "bcac8787770cc902a456b56c785ead3e77265b506336ee91c014616aae121271",
+        "editing": "1bab0a83c85a5434bee6d32b23394bb3bc3cf40d0ac5c9099658c26c22eb5654"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:gallery.filmstrip",
+      "source_digests": {
+        "content": "8527d17367298e29945d985f49aeb76e12eb9042be4a7fd9b31b41620f3e6c57",
+        "rights": "de1815695c9185660818ff4c2eccfde48b0b700b3cd4a5f2f62dee513efec23f",
+        "render": "bfbcaba2a4609771dceddeacb096506b8bbf8085955c607a84cfdbd37af078bc",
+        "editing": "b84cd588bd062bbd7ec264aee2f2f82ea4c35f597d9deaa5a5cf27c5f71bb992"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.grid",
+      "source_digests": {
+        "content": "19140966f931af4780e99fa769f0d9fa49748303bbc38ad3f5f7c1379148ba66",
+        "rights": "37babb237a6c43d8f62fee0992653294a74773c92c4ac36e8d24763bd6ed3dc9",
+        "render": "30154b5c873d38e38c4c93408858bf698ced7e6428d575328dfce19a0baf352f",
+        "editing": "37075097c41c90f0ba9e56959551139560ae876674430e8803041e2817ace1ae"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.spotlight",
+      "source_digests": {
+        "content": "34c57ef58f841295939f4005f1cf361ab7b29bde65f20057b2f8e9d24fcd13b7",
+        "rights": "b0013248a5816b1bce2ea2e3965dfdf1d6d83c89bb97270006f10480bdb4d912",
+        "render": "3f14572d2bd5d7a00620f691ad50de503249f9ce147b259e5f483adc95f93a93",
+        "editing": "b59b13fb090e53e5344ea48f1ae5fe57e4c0e272519ea69eb216db42a9a076f6"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.split",
+      "source_digests": {
+        "content": "a7069f2a56771f2a99a7292ce079a2aa50e30cb94f71c13c0dd9b3f37652fe83",
+        "rights": "14038daf9c94fde52e0d1e2ab763f32873a19c8d7cd910e24da37f5d4060986a",
+        "render": "9e14ffe57da378237cdc6999e606ca1169e1a0d4d234d85d0190b43b45636dd6",
+        "editing": "fb9eb2d193d72ad5a54809dde59b224e589ecf4b6f4f849b8579c86a7403b98c"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.quote-hero",
+      "source_digests": {
+        "content": "4e6588ec90e078f519d27e0afe38e2c415f25d0a0ca90667df6e1c8aa4d9db58",
+        "rights": "974907baa7ffc4b158b3c7f109f8fc34189d33ab6f161bd22297569b0aa61b5c",
+        "render": "c7dce962900572473c1023f8c17605b1e23cdd7d1aa2be4dfb79c6bcf872e72d",
+        "editing": "f57ae6537b991a9cad5e3060822ad68c62f09d53c3561cab5eee7323f42c3ba1"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:articles.list",
+      "source_digests": {
+        "content": "bdda0d7b37a996a5af4a4368e0bec4264651e8239abdb8b8d26cd8fc21d840f1",
+        "rights": "8940855e3630330b4242de453dce0d0a4a1c024bc9c65da76ad273dd3f8eb1da",
+        "render": "ce64acd67086478dc28824dc25ba89142888b2d3b61d4eae6b0cb5335da1b474",
+        "editing": "64989a9536c7f064d8192af3946bb20e037fef67edb2fbea0a4a525220dfc04b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:articles.grid",
+      "source_digests": {
+        "content": "5dcf01c16ca67e49a35cd475609707b633ab51c986306ab7dbdcfe33518710a7",
+        "rights": "2990b2facdc68e00ce00b4645b38beecf836a0acd16032409b5fcd415a3eaa11",
+        "render": "a8e0299e79190abda17af7dcc8e0f96953ff5f2a866e55af46d6e839894e5f82",
+        "editing": "3f84cbf0d9a064de17afaba3b4dccd813f9b825b6acd5549c15b17c026e970c0"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:articles.featured",
+      "source_digests": {
+        "content": "bf82b705a632720305d2496b61b556ff9b019df91ba7892a59c9b83dd1f92fbe",
+        "rights": "044d80e548fd82f06ce325cd594522419e2b62d0fd2499af1a844d985d6afda0",
+        "render": "090f9aeae5a9f60d72d2f275444e68eb5f5a831b0021c9acef439330d33c838b",
+        "editing": "4479c5bbd8737eaa0b069d7abe343886d712be30d3949f65274c78396878c778"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:articles.editorial",
+      "source_digests": {
+        "content": "4d90bbe41986514059769e96fd50778a506cb28187893b8adc9d78097ed86fc8",
+        "rights": "bd428feb2667e0b4f1e48e7a1c1fd5a4aad4321c696e78e63ab38c0ede8c5ef3",
+        "render": "5fd6519aef99f2afc09ef521cb1440718c2fb2ecf89dcc5baac03f0ce1571f53",
+        "editing": "5c9b0ecedf4bd2dae10f6dbabfbbb1b28acc106bd32fadb1bb86c22b3b5a14e3"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:card-grid.grid",
+      "source_digests": {
+        "content": "0ce653125eb4791ef76bb2498e1483535e9918a967cb20755e1229c38bc13035",
+        "rights": "116cd403d3a9d2571f02685b8ca837172f20e20a835f3a3c91e9628253b4e53a",
+        "render": "b612e3edeb50b43b0590d42bd80f853e3da0e1e798bba788b98e3497699e0fb2",
+        "editing": "658ecf52f64da698ab4b0963e5a720e0bc408161f5799980d4b5030a8e7b478b"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:card-grid.rail",
+      "source_digests": {
+        "content": "2e1ba8e083a0b3402f6a804a22f1c00c10d518d90e2c67f59fb4bac46529608a",
+        "rights": "f6373975028ed1c210f92f238ec586f298f55f2ffbeaac41cb96822849248ab7",
+        "render": "24b72e4098d6b8891fd6ab5fc5d2e6c68bcc547f87d4cf6cbe1d53a47c517387",
+        "editing": "e1d0e1457cb3b20a6a6f59bb353cda3bfb00e855b05701a342ae843fac7e88a3"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:card-grid.editorial",
+      "source_digests": {
+        "content": "828660d6837d6e922feb37f1535dd7d5ff8fad45ab185fcfaebdf15f654e7a30",
+        "rights": "0b62b140b1b33ae5897ddd0e6dc6d9c62de5de3f1e4c56f98be45a3f5cadf15b",
+        "render": "752aef35ec566dd4c9a7ccdad0cab039825c6cd4167c5ffaac79b571bb10f127",
+        "editing": "b6352108156a57035c99b7d8ed3ab1373b9d1f6f48f722502ef36ec2e5387291"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:card-grid.numbered",
+      "source_digests": {
+        "content": "8204459510305500e9f3b62cc5bac495ae34fe438bf81a1cb836c082eb6acd36",
+        "rights": "889dbb3a6cdbf58c60eff8bd6ba472a2e984ee8d7a050c30ca1e55f1634a98c1",
+        "render": "3135a68dd7400fdb4f9088a6c69f7207b429104a12556b71fb8a74592e11b570",
+        "editing": "8aa477a5ece18d4aa26973b6189ecc1aac4473c4b1e40ad15acb2ead39d01627"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    }
+  ]
+}

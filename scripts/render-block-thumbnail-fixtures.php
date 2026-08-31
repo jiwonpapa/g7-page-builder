@@ -32,6 +32,51 @@ if (! is_file($publicCssPath)) {
     throw new RuntimeException('Built public viewer CSS is missing. Run npm run build first.');
 }
 $css = (string) file_get_contents($publicCssPath);
+// URL-bearing CSS/srcset need explicit dependency support before they can be reviewed.
+// Do not silently omit remote fonts, background images or responsive image candidates.
+if (preg_match('/(?:url\s*\(|@import)/i', $css)) {
+    throw new RuntimeException('Evidence collection does not yet support public CSS asset URLs.');
+}
+$collectEvidenceAssets = static function (string $html): array {
+    $dom = new DOMDocument;
+    $previousErrors = libxml_use_internal_errors(true);
+    try {
+        if (! $dom->loadHTML('<!doctype html><html><head><meta charset="utf-8"></head><body>'.$html.'</body></html>', LIBXML_NONET)) {
+            throw new RuntimeException('Cannot parse rendered asset dependencies.');
+        }
+    } finally {
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousErrors);
+    }
+    $xpath = new DOMXPath($dom);
+    $assets = [];
+    foreach ($xpath->query('//*') as $element) {
+        if (! $element instanceof DOMElement) {
+            continue;
+        }
+        if ($element->hasAttribute('srcset') || preg_match('/url\s*\(/i', $element->getAttribute('style'))) {
+            throw new RuntimeException('Evidence collection does not yet support srcset or inline CSS asset URLs.');
+        }
+        $attributes = ['src', 'poster'];
+        if ($element->tagName === 'object') {
+            $attributes[] = 'data';
+        }
+        if (in_array($element->tagName, ['image', 'use', 'link'], true) || $element->hasAttribute('download')) {
+            $attributes[] = 'href';
+            $attributes[] = 'xlink:href';
+        }
+        foreach ($attributes as $attribute) {
+            $url = trim($element->getAttribute($attribute));
+            if ($url !== '' && ! str_starts_with($url, '#')) {
+                $assets[$url] = true;
+            }
+        }
+    }
+    $urls = array_keys($assets);
+    sort($urls, SORT_STRING);
+
+    return $urls;
+};
 $slugify = static function (string $value): string {
     $kebab = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $value) ?? $value;
 
@@ -216,6 +261,10 @@ foreach ($catalog as $position => $item) {
         'fixture' => $fixtureName,
         'source_hash' => hash('sha256', $item['catalog_id']."\n".json_encode($item['props'], JSON_THROW_ON_ERROR)."\n".$artifactSourceHtml."\n".hash('sha256', $css)),
         'dynamic_sample_count' => $dynamicSampleCount,
+        'evidence_version' => 'g7pb-render-fixture-evidence/v1',
+        'semantic_hash' => hash('sha256', $item['catalog_id']."\n".json_encode($item['props'], JSON_THROW_ON_ERROR)."\n".$artifactSourceHtml),
+        'public_css_hash' => hash('sha256', $css),
+        'asset_urls' => $collectEvidenceAssets($artifactSourceHtml),
     ];
 }
 

@@ -18,7 +18,7 @@
 
 `npm run generate:block-library`는 프리셋 동기화→production build→140개 실제 renderer 썸네일 재생성→candidate 품질 검사를 한 흐름으로 실행합니다. Candidate 검사는 생성 오류를 즉시 차단하지만 정식 승인으로 간주하지 않습니다. 전체 contact sheet와 세 viewport E2E 증거를 검토한 뒤 `product-quality.json`의 exact digest를 승인해야 정식 `check:block-product-quality`가 통과합니다. 생성 후 props·compiler HTML·공개 CSS·이미지 중 하나라도 바뀌면 source hash 또는 thumbnail hash가 달라져 기존 승인은 자동 폐기됩니다.
 
-## Worktree coordination
+## Block quality evidence v2
 
 ### 차수 2-A: 분리된 증거 계약
 
@@ -26,7 +26,15 @@
 
 이 배치에서는 **기존 v1 검사·릴리스 연결을 제거하거나 대체하지 않습니다.** 순수 TypeScript 판정 코어와 schema를 먼저 고정하고 2-B에서 실제 140개 재고·파일 hash·변경 영향 수집기를 연결합니다. `assessQualityEvidence().errors`가 비어도 `pending`이 있으면 `ready=false`이므로 승인으로 사용할 수 없습니다. 입력 의존성을 누락한 채 이미지를 hash한 것처럼 주장하지 않도록 실제 수집 책임은 후속 collector에 명시적으로 둡니다. 자세한 범위·시험은 [2차 실행 기록](productization/phase-2-evidence.md)에 기록합니다.
 
-## Worktree coordination rules
+### 차수 2-B: 실제 파일 수집과 shadow 원장
+
+Node 24에서 `node scripts/check-block-quality-evidence.mjs --json`을 실행하면 현재 PHP renderer를 새로 실행하고, manifest와 계획 재고를 exact ID로 대조하여 콘텐츠·권리·렌더·편집별 실제 파일 지문을 계산합니다. `--snapshot`은 기존 v1 review 원문을 보존한 **모두 pending인 제안 JSON을 stdout으로만 출력**합니다. 파일 저장이나 승인 생성 명령이 아닙니다.
+
+`SHADOW_OK`는 원장의 ID/지문/참조 파일이 일치한다는 뜻이며 제품 합격이 아닙니다. pending이나 외부/런타임 미확인 자산이 있으면 `ready=false`, `--require-ready`는 exit 1입니다. 누락·변조·stale·거부된 심사/실패 검증은 기본 검사도 실패합니다. 제출/릴리스 연결은 아직 v1 그대로이며 2-C에서 이행합니다.
+
+`bash tests/Harness/block-quality-evidence.test.sh`는 실제 140개 현재 renderer와 원장을 비교하고, 별도 고유 임시 디렉터리에서 승인 fixture·변조/삭제된 파일·경로 이탈·stale·재고 누락을 검증합니다. 테스트용 승인 fixture는 추적 원장에 기록하지 않습니다. 새 collector의 Vitest coverage 하한도 95/90/95/95로 적용합니다.
+
+## Worktree coordination
 
 - 모든 구현 Worktree는 깨끗한 기준 SHA, 소유 path prefix, 검증 profile을 `coord-start`로 등록합니다.
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.

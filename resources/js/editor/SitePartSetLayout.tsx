@@ -25,7 +25,7 @@ function SitePartSets(): React.ReactElement {
   const { sets, selectedId, onSelectSet, onCreateSet, onPreset } = useSetLayout();
   const { dispatch } = usePuck<Config<SitePartComponents>>();
   const applyPreset = (preset: SitePartSetPresetKey): void => {
-    onPreset(preset, (data) => dispatch({ type: 'setData', data }));
+    onPreset(preset, (data) => dispatch({ type: 'setData', data, recordHistory: true }));
   };
   return <div className="g7pb-site-part-set-layout__panel" data-panel="sets">
     <header className="g7pb-site-part-set-panel-heading"><div><strong>헤더·푸터 세트</strong><span>세트마다 헤더와 푸터를 하나씩 사용합니다.</span></div><button type="button" onClick={onCreateSet}><Plus size={16} /> 새 세트</button></header>

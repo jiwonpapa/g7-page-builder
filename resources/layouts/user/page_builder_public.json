@@ -40,15 +40,26 @@
   "slots": {
     "content": [
       {
-        "id": "page_builder_public_content",
-        "type": "composite",
-        "name": "HtmlContent",
+        "id": "page_builder_public_body",
+        "type": "basic",
+        "name": "Div",
         "if": "{{page?.data?.page?.artifact}}",
         "props": {
-          "content": "{{page?.data?.page?.artifact ?? ''}}",
-          "isHtml": true,
-          "className": "g7pb-page g7pb-template-page"
-        }
+          "lang": "{{page?.data?.page?.locale ?? ''}}",
+          "className": "g7pb-template-body"
+        },
+        "children": [
+          {
+            "id": "page_builder_public_content",
+            "type": "composite",
+            "name": "HtmlContent",
+            "props": {
+              "content": "{{page?.data?.page?.artifact ?? ''}}",
+              "isHtml": true,
+              "className": "g7pb-page g7pb-template-page"
+            }
+          }
+        ]
       }
     ]
   }

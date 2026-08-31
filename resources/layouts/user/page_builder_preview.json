@@ -34,15 +34,26 @@
         "text": "미리보기 · 이 화면은 공개되지 않습니다."
       },
       {
-        "id": "page_builder_preview_content",
-        "type": "composite",
-        "name": "HtmlContent",
+        "id": "page_builder_preview_body",
+        "type": "basic",
+        "name": "Div",
         "if": "{{page?.data?.page?.artifact}}",
         "props": {
-          "content": "{{page?.data?.page?.artifact ?? ''}}",
-          "isHtml": true,
-          "className": "g7pb-page g7pb-template-page"
-        }
+          "lang": "{{page?.data?.page?.locale ?? ''}}",
+          "className": "g7pb-template-body"
+        },
+        "children": [
+          {
+            "id": "page_builder_preview_content",
+            "type": "composite",
+            "name": "HtmlContent",
+            "props": {
+              "content": "{{page?.data?.page?.artifact ?? ''}}",
+              "isHtml": true,
+              "className": "g7pb-page g7pb-template-page"
+            }
+          }
+        ]
       }
     ]
   }

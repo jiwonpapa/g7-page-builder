@@ -10,9 +10,11 @@
 
 ### 확인한 실제 결함
 
-기존 변환 context와 반환 문서에 `seo`가 없어 **기존 SEO가 Puck 왕복 후 undefined가 됐습니다.** 편집 화면은 반환 문서를 draft로 저장하며 서버 `saveDraft`도 누락된 SEO를 이전 문서에서 보충하지 않습니다. focused 실패 시험에서 SEO title/description/og_image_url/robots가 사라짐을 확인한 뒤 분리된 변환에서 복사·보존하도록 수정했습니다. 반환 객체를 수정해도 원본/다음 반환 결과를 바꾸지 않는 시험을 포함합니다.
+기존 변환 context와 반환 문서에 `seo`가 없어 **프런트 canonical 문서의 SEO가 Puck 왕복 후 undefined가 됐습니다.** focused 실패 시험에서 title/description/og_image_url/robots 누락을 확인한 뒤 분리된 변환에서 복사·보존하도록 수정했습니다. 반환 객체를 수정해도 원본/다음 반환 결과를 바꾸지 않는 시험을 포함합니다.
 
-새 SEO 필드를 추가한 것이 아니라 이미 존재하는 canonical 필드의 유실을 고친 것입니다. v1 schema·API·DB·G7·Site Part·공개 CSS·발행 compiler는 변경하지 않습니다. 실제 편집/저장/reload/public 보존은 별도 브라우저 배치에서 확인하며, 단위시험만으로 서버 데이터 유실 회귀의 완전한 종료를 선언하지 않습니다.
+**3-A3 추적 후 정정:** Service의 `saveDraft`만 확인한 초기 기록은 서버까지 보존하지 않는다고 잘못 판단했습니다. 실제 `EloquentPageBuilderRepository::saveDraft`는 기존 SEO를 이미 복원합니다. 따라서 이 수정은 DB 유실 복구가 아니라 프런트 canonical 왕복 계약의 보완입니다. 기존 서버 보존 로직은 변경하지 않습니다. E2E는 서버 fallback이 프런트 누락을 가리지 않도록 저장 요청 payload와 API GET을 각각 확인합니다.
+
+새 SEO 필드를 추가한 것이 아니라 이미 존재하는 canonical 필드의 프런트 누락을 보완한 것입니다. v1 schema·API·DB·G7·Site Part·공개 CSS·발행 compiler는 변경하지 않습니다. 실제 편집/저장/reload/public 보존은 별도 브라우저 배치에서 확인하며, 서버 데이터 유실이 재현됐다고 보고하지 않습니다.
 
 ## 검증
 

@@ -15,6 +15,7 @@ const CANVAS = '#puck-canvas-root iframe';
 const BODY = '미리보기에서도 사라지면 안 되는 본문';
 const RESTORED_BODY = '삭제한 뒤 새로 입력하고 저장한 본문';
 const ADDRESS = '서울특별시 테스트로 1';
+const SEO = { title: '내용 편집 뒤에도 남는 검색 제목', description: '본문 삭제와 재입력이 검색 설정을 지우면 안 됩니다.', og_image_url: '', robots: 'noindex' as const };
 test.use({ screenshot: 'only-on-failure', trace: 'off', video: 'off' });
 
 async function assertUnobscuredPreview(page: Page): Promise<void> {
@@ -46,7 +47,12 @@ async function saveAndAssertBody(page: Page, api: APIRequestContext, documentId:
   const saved = page.waitForResponse(response => response.request().method() === 'PUT'
     && new URL(response.url()).pathname === `${API}/documents/${documentId}/draft`);
   await page.getByTestId('page-builder-save').click();
-  expect((await saved).ok()).toBe(true);
+  const savedResponse = await saved;
+  expect(savedResponse.ok()).toBe(true);
+  // The repository also preserves omitted SEO. Inspect the outgoing canonical
+  // payload, otherwise server fallback could conceal a frontend regression.
+  const requestDocument = savedResponse.request().postDataJSON() as { document: PageBuilderDocument };
+  expect(requestDocument.document.seo).toEqual(SEO);
   await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
   // Read the canonical server document: editor DOM alone cannot prove saving.
   const response = await api.get(`${API}/documents/${documentId}`);
@@ -54,6 +60,13 @@ async function saveAndAssertBody(page: Page, api: APIRequestContext, documentId:
   const payload = await response.json() as { data: { document: PageBuilderDocument } };
   expect(payload.data.document.blocks).toHaveLength(4);
   expect(payload.data.document.blocks.find(block => block.type === 'content.cta-split-01')?.props.body).toBe(expectedHtml);
+  expect(payload.data.document.seo).toEqual(SEO);
+}
+
+async function assertPublicSeo(page: Page): Promise<void> {
+  await expect(page).toHaveTitle(SEO.title);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', SEO.description);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow');
 }
 
 async function publish(page: Page): Promise<void> {
@@ -84,7 +97,7 @@ for (const deleteKey of ['Delete', 'Backspace'] as const) {
       const current = await api.get(`${API}/documents/${owned.documentId}`);
       expect(current.ok()).toBe(true);
       const payload = await current.json() as { data: { document: PageBuilderDocument; lock_version: number } };
-      const document: PageBuilderDocument = { ...payload.data.document, blocks: [
+      const document: PageBuilderDocument = { ...payload.data.document, seo: { ...SEO }, blocks: [
         { instance_id: crypto.randomUUID(), type: 'content.hero-centered-01', block_version: 1,
           props: { title: '빈 버튼을 만들지 않는 히어로', body: '<p>히어로 본문</p>', eyebrow: '', layout: 'product' }, slots: {} },
         { instance_id: crypto.randomUUID(), type: 'content.heading-01', block_version: 1,
@@ -161,7 +174,9 @@ for (const deleteKey of ['Delete', 'Backspace'] as const) {
       await publish(page);
       const publicPage = await context.newPage();
       try {
-        await publicPage.goto(`/pages/${owned.slug}`);
+        const emptyResponse = await publicPage.goto(`/pages/${owned.slug}`);
+        expect(emptyResponse?.headers()['x-robots-tag']).toBe('noindex, nofollow');
+        await assertPublicSeo(publicPage);
         const publicCta = publicPage.locator('[data-block-type="cta"]');
         await expect(publicCta).toBeVisible();
         await expect(publicCta).toContainText('선택 본문 편집');
@@ -176,8 +191,23 @@ for (const deleteKey of ['Delete', 'Backspace'] as const) {
         await page.reload();
         await assertOptionalElements(page, RESTORED_BODY, ADDRESS);
         await page.frameLocator(CANVAS).locator('[data-block-type="cta"]').screenshot({ path: testInfo.outputPath('cta-restored-reloaded.png') });
+        const stored = await api.get(`${API}/documents/${owned.documentId}`);
+        expect(stored.ok()).toBe(true);
+        const afterReload = await stored.json() as { data: { document: PageBuilderDocument; lock_version: number } };
+        expect(afterReload.data.document.seo).toEqual(SEO);
+        const preview = await api.post(`${API}/documents/${owned.documentId}/preview`, { data: { expected_lock_version: afterReload.data.lock_version } });
+        expect(preview.ok()).toBe(true);
+        const ticket = await preview.json() as { data: { preview_url: string } };
+        expect(ticket.data.preview_url).toMatch(/\/preview\/[a-f0-9]{64}/);
+        const previewPage = await context.newPage();
+        try {
+          expect((await previewPage.goto(ticket.data.preview_url))?.ok()).toBe(true);
+          await expect(previewPage.locator('[data-block-type="cta"]')).toContainText(RESTORED_BODY);
+        } finally { await previewPage.close(); }
         await publish(page);
-        await publicPage.reload();
+        const restoredResponse = await publicPage.reload();
+        expect(restoredResponse?.headers()['x-robots-tag']).toBe('noindex, nofollow');
+        await assertPublicSeo(publicPage);
         await expect(publicCta).toContainText(RESTORED_BODY);
         await expect(publicCta).not.toContainText(BODY);
         await publicCta.screenshot({ path: testInfo.outputPath('cta-restored-published.png') });

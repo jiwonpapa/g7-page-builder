@@ -18,7 +18,13 @@ function validate(value) {
   for (const key of ['check', 'test:unit', 'pretest:e2e:product']) {
     const commands = value.scripts[key].split(' && ');
     assert(commands.includes('npm run check:block-quality-evidence'), `${key} omits shadow check`);
-    if (key === 'check') assert(commands.indexOf('npm run build') < commands.indexOf('npm run check:block-quality-evidence'));
+    const technical = `npm run check:block-product-quality -- --technical${key === 'test:unit' ? '' : ' --verify-render-source'}`;
+    assert(commands.includes(technical), `${key} omits exact technical gate`);
+    if (key === 'check') {
+      const build = commands.indexOf('npm run build');
+      assert(build >= 0 && build < commands.indexOf(technical), 'technical source check must follow build');
+      assert(build < commands.indexOf('npm run check:block-quality-evidence'));
+    }
   }
   assert.equal(value.scripts['test:block-quality-evidence'], 'bash tests/Harness/block-quality-evidence.test.sh');
   assert(value.scripts.check.split(' && ').includes('npm run test:block-quality-evidence'));
@@ -41,9 +47,15 @@ for (const mutate of [
   value => { value.release = value.release.replace('--require-ready)', '--require-ready) || true'); },
   value => { value.deploy = value.deploy.replace('--require-ready', '--json'); },
   value => { value.release = value.release.replace('--verify-render-source --release', '--candidate'); },
+  value => { value.deploy = value.deploy.replace('--verify-render-source --release', '--technical'); },
+  value => { value.scripts.check = value.scripts.check.replace('--technical --verify-render-source', '--technical'); },
+  value => { value.scripts['test:unit'] = value.scripts['test:unit'].replace('--technical', '--candidate'); },
+  value => { value.scripts['pretest:e2e:product'] = value.scripts['pretest:e2e:product'].replace('--technical', '--technical || true'); },
+  value => { value.scripts.check = value.scripts.check.replace('npm run build && ', '') + ' && npm run build'; },
+  value => { value.scripts.check = value.scripts.check.replace('npm run build && ', ''); },
 ]) {
   const broken = structuredClone(source); mutate(broken);
   assert.throws(() => validate(broken));
 }
-console.log('BLOCK_QUALITY_GATE_WIRING OK: development shadow + release readiness; no deployment executed');
+console.log('BLOCK_QUALITY_GATE_WIRING OK: development technical + shadow; unchanged legacy + v2 release gates; 12 mutations rejected; no deployment executed');
 JS

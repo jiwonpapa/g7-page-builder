@@ -4,7 +4,26 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "$root"
-node scripts/check-block-product-quality.mjs --release
+# Development validates technical contracts; it does not renew the frozen v1
+# approval. Release scripts below still require that approval and v2 readiness.
+node scripts/check-block-product-quality.mjs --technical
+node --input-type=module <<'JS'
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+const run = args => spawnSync(process.execPath, ['scripts/check-block-product-quality.mjs', ...args], { encoding: 'utf8' });
+const technical = run(['--technical']);
+assert.equal(technical.status, 0, technical.stderr);
+assert.match(technical.stdout, /TECHNICAL_OK.*approval_checked=false release_authorized=false/);
+for (const args of [
+  ['--technical', '--release'], ['--candidate', '--release'], ['--technical', '--candidate'],
+  ['--relase'], ['--technical', '--technical'], ['--root'], ['--root', '--release'],
+]) {
+  const result = run(args);
+  assert.notEqual(result.status, 0, `unexpected success: ${args.join(' ')}`);
+  assert(!result.stdout.includes('_OK'), `invalid mode reported success: ${args.join(' ')}`);
+}
+console.log('BLOCK_PRODUCT_QUALITY_MODES OK: technical is not approval; invalid/ambiguous modes fail');
+JS
 
 for required in \
   'generate:block-library' \

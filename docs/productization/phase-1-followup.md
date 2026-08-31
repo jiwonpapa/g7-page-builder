@@ -83,3 +83,28 @@ docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.y
 - `optionalCanvasText.spec.ts`는 1440/768/390 host 폭의 표시, 빈 본문 재입력, 미리보기 전환, 저장/새로고침, 실제 PHP 발행본을 검증합니다. 이 제출 시점의 소스 존재를 실제 E2E 통과로 표시하지 않습니다. 통합 runtime에서 실행 후 결과를 별도로 보고합니다.
 
 이 후속 제출로 이전의 **작업 범위 재편 승인 요청은 불필요해졌습니다.** 공개 CSS의 렌더 증거 갱신, 대표 콘텐츠 사용자 확인, 최종 통합/릴리스 조건은 그대로 남습니다.
+
+## 빈 텍스트 통합·실제 입력 검증 결과 (2026-08-31)
+
+코드 `eacd8d4`와 시험 `1e379db`는 배치 통합 SHA **`6fe0900b743c0bdd425dca9760cb7fcda4c19a3f`**에 반영되었습니다. 통합 frontend gate는 **33 files / 269 tests PASS**이며 TypeScript strict, CSS lint, production build, asset/용량/경계 검사와 최신 렌더 원본 140개 검사가 통과했습니다. 기존 public CSS 기준으로, 미통합 `rich-boundary`의 검증 결과가 아닙니다.
+
+후속 시험 보정은 clean `6fe0900b`에서 시작한 `optional-input-verification-20260831`에서 수행했습니다. main runtime의 제품 코드는 그대로 두고, 소유 worktree의 Playwright 시험으로 실제 로그인·문서 API·브라우저·PHP 발행본을 확인했습니다. 시험 문서만 기존 소유권 확인/정리 하네스로 생성·폐기했으며 사용자 문서는 변경하지 않았습니다.
+
+### 실패의 원인과 정정
+
+1. 최초 시험은 준비 여부를 구분하지 않는 `[contenteditable="true"]`를 조작했습니다. 삭제한 DOM은 비어도 Puck 필드 focus는 `null`, 문서는 기존 값이었습니다. 고정 Puck 0.23.0의 `EditorFallback`은 입력 처리기가 없는 임시 contenteditable이며 실제 Tiptap과 같은 선택자에 잡힙니다. 준비된 `.tiptap[contenteditable="true"]`를 기다리고 실제 클릭 초점과 키보드 삭제를 검증하도록 보정했습니다. 임의 지연, 비공개 상태 수정, DOM을 원본으로 저장하는 우회는 추가하지 않았습니다.
+2. 준비된 입력기로는 삭제 직후 기기 미리보기 전환과 PC 복귀·재입력이 통과했습니다. 따라서 최초 실패를 영속 데이터 유실이나 프레임워크 교체 필요의 근거로 확정하지 않습니다. 초기 fallback 자체의 입력 가능 노출은 남은 로딩 UX 검토 항목이며, 이번 준비 완료 후 시험으로 초기 로딩 구간까지 합격했다고 주장하지 않습니다.
+3. Contact 주소는 draft에서 비어 있는 표현을 확인할 수 있지만 현행 발행 필수값입니다. 빈 주소를 선택값으로 가정한 시험을 고쳐, 발행 오류를 먼저 확인하고 실제 속성 패널에서 주소를 입력한 뒤 발행합니다. 필수 검증을 완화하지 않았습니다.
+
+### 실제 실행 증거
+
+| 검사 | 결과 | 확인 범위 |
+|---|---|---|
+| optional E2E 전체 project | **3 PASS / 29.8초** | desktop/tablet/mobile 설정; 각 설정에서 1440·768·390 host 표시와 PC 편집 흐름 |
+| desktop 반복, retries=0 | **3 PASS / 27.3초** | 별도 문서로 3회 반복; 엔진 준비·삭제 직후 전환 재확인 |
+| 저장·발행 | PASS | 빈 본문 편집 칸 유지, 재입력·저장·reload, 주소 누락 발행 차단, 주소 입력 후 PHP 공개 본문·링크 |
+| CTA 캡처 검토 | 제한적 확인 | 세 host 폭의 본문 유지 확인. tablet 캡처에는 축소 캔버스와 겹친 inspector가 포함되어 독립 시각 합격 증거로 사용하지 않음 |
+
+증거는 Local의 `output/playwright/optional-acceptance-20260831`와 `output/playwright/optional-repeat-20260831`입니다. 앞선 실패 증거(`optional-content`, `optional-pointer-diagnostic`, `optional-dirty-diagnostic`, `optional-focus-diagnostic`, `optional-dom-diagnostic`, `optional-events-diagnostic`, `optional-ready-editor`, `optional-ready-lifecycle`의 동일 일자 디렉터리)도 보존했습니다. 초기 탐색용 로그·DOM 이벤트 계측은 최종 코드에 남기지 않았습니다. 별도 candidate bundle 검사는 공유 runtime 덮어쓰기 없이 요청 단위로만 적용하며 위 PASS 실행에는 candidate를 사용하지 않았습니다.
+
+후속 시험/문서 커밋은 하네스로 제출·통합하고 SHA는 Git/coordination 기록에 남깁니다. **1차 전체 완료는 아닙니다.** 공개 CSS 증거 갱신, 대표 페이지 기준의 사용자 확인, 최종 통합 검증은 별도로 남습니다. TypeScript/React/Puck 버전과 공개 문서 계약을 변경하거나 원격 push·배포하지 않았습니다.

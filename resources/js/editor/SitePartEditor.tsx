@@ -157,7 +157,7 @@ function createFooterResponsiveField(): Field<FooterResponsiveOverrides | undefi
   };
 }
 
-export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps): React.ReactElement {
+export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps & { onSelect?: () => void }): React.ReactElement {
   const persona = useContext(SitePartPersona);
   const ref = useRef<HTMLElement>(null);
   // Puck adds changing selection/overlay metadata to render props. Only actual
@@ -181,13 +181,30 @@ export function HeaderSystemControlsPreview(props: HeaderSystemControlsProps): R
     }, true);
     return () => { dispose(); unregister?.(); };
   }, [markup, persona]);
-  return <nav ref={ref} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-options={signature} data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={content} />;
+  return <nav ref={ref} onPointerDownCapture={props.onSelect} onFocusCapture={props.onSelect} className="g7pb-system-controls" aria-label="사이트 기능 미리보기" data-g7pb-system-controls data-g7pb-shell-options={signature} data-g7pb-shell-mounted="true" dangerouslySetInnerHTML={content} />;
+}
+
+function SelectableSystemControls(props: HeaderSystemControlsProps & { id: string }): React.ReactElement {
+  const { appState, dispatch, getSelectorForId } = usePuck<Config<SitePartComponents>>();
+  const select = (): void => {
+    const width = appState.ui.viewports.current.width;
+    if (typeof width === 'number' && width <= 768) return;
+    const itemSelector = getSelectorForId(props.id);
+    if (itemSelector) dispatch({ type: 'setUi', ui: { itemSelector }, recordHistory: false });
+  };
+  return <HeaderSystemControlsPreview {...props} onSelect={select} />;
 }
 
 export const SitePartPersona = createContext<'guest' | 'member' | 'admin'>('guest');
 
 export function SitePartPersonaSelector({ value, onChange }: { value: 'guest' | 'member' | 'admin'; onChange: (value: 'guest' | 'member' | 'admin') => void }): React.ReactElement {
-  return <label className="g7pb-site-part-persona">접속 상태 미리보기<select aria-label="접속 상태 미리보기" value={value} onChange={(event) => onChange(event.target.value as typeof value)}><option value="guest">비회원</option><option value="member">일반 회원</option><option value="admin">관리자</option></select><small>예시 상태 · 저장되지 않습니다</small></label>;
+  return <div className="g7pb-site-part-persona">
+    <span>접속 상태 미리보기</span>
+    <div className="g7pb-site-part-persona__buttons" role="group" aria-label="접속 상태 미리보기">
+      {([['guest', '비회원'], ['member', '일반 회원'], ['admin', '관리자']] as const).map(([persona, label]) => <button key={persona} type="button" aria-pressed={value === persona} onClick={() => onChange(persona)}>{label}</button>)}
+    </div>
+    <small>예시 상태 · 저장되지 않습니다</small>
+  </div>;
 }
 
 function headerResponsiveAttributes(props: HeaderNavigationProps): Record<string, string> {
@@ -453,7 +470,7 @@ export function SitePartActionBar({
   </div>;
 }
 
-export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents> {
+export function sitePartConfigFor(kind: SitePartKind, data?: SitePartPuckData, canInsert = true): Config<SitePartComponents> {
   const all: Config<SitePartComponents>['components'] = {
     HeaderNavigation: {
       label: 'Header · 내비게이션',
@@ -489,7 +506,7 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
         locale: { type: 'radio', label: '언어 선택', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
         currency: { type: 'radio', label: '통화 선택', options: [{ label: '표시', value: true }, { label: '숨김', value: false }] },
       },
-      render: (props) => <HeaderSystemControlsPreview {...props} />,
+      render: (props) => <SelectableSystemControls {...props} />,
     },
     Announcement: {
       label: 'Header · 공지 바',
@@ -521,69 +538,36 @@ export function sitePartConfigFor(kind: SitePartKind): Config<SitePartComponents
   all.HeaderNavigation.fields = { ...all.HeaderNavigation.fields!, useSiteSettings: settingsField };
   all.FooterSimple.fields = { ...all.FooterSimple.fields!, useSiteSettings: settingsField };
   all.FooterColumns.fields = { ...all.FooterColumns.fields!, useSiteSettings: settingsField };
+  const content = data?.content ?? [];
+  const existing = (types: string[]): boolean => content.some((block) => types.includes(block.type));
+  const headerBlock = content.find((block) => block.type === 'HeaderNavigation');
+  for (const name of allowed as Array<keyof SitePartComponents>) {
+    const occupied = name === 'HeaderSystemControls'
+      ? !headerBlock || Boolean(headerBlock.props.systemControls?.length)
+      : existing(name.startsWith('Footer') ? ['FooterSimple', 'FooterColumns'] : [name]);
+    // Drawer insertion checks type-level permissions, not resolvePermissions(item).
+    all[name].permissions = { insert: canInsert && !occupied, duplicate: false };
+  }
   return {
     components: Object.fromEntries(Object.entries(all).filter(([name]) => allowed.includes(name))) as Config<SitePartComponents>['components'],
-    root: { fields: {}, render: ({ children }) => <div className={`g7pb-site-part-preview g7pb-site-part-preview--${kind}`}>{kind === 'footer' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}{children}{kind === 'header' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}</div> },
+    root: { fields: {}, render: ({ puck }) => <div className={`g7pb-site-part-preview g7pb-site-part-preview--${kind}`}>{kind === 'footer' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}{puck.renderDropZone({ zone: 'default-zone', allow: allowed.filter((name) => name !== 'HeaderSystemControls') })}{kind === 'header' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}</div> },
   };
 }
 
-export function sitePartSetConfig(): Config<SitePartComponents> {
-  const header = sitePartConfigFor('header');
-  const footer = sitePartConfigFor('footer');
-  const hasType = (content: SitePartPuckData['content'], types: string[]): boolean => content.some((block) => types.includes(block.type));
-  const hasNestedType = (value: unknown, type: string): boolean => {
-    if (Array.isArray(value)) return value.some((item) => hasNestedType(item, type));
-    if (!value || typeof value !== 'object') return false;
-    const record = value as Record<string, unknown>;
-    return record.type === type || Object.values(record).some((item) => hasNestedType(item, type));
-  };
+export function sitePartSetConfig(data?: SitePartPuckData, canInsert = true): Config<SitePartComponents> {
+  const header = sitePartConfigFor('header', data, canInsert);
+  const footer = sitePartConfigFor('footer', data, canInsert);
   return {
     categories: {
-      header: { title: 'Header', components: ['Announcement', 'HeaderNavigation'], defaultExpanded: true },
-      system: { title: 'G7 기능', components: ['HeaderSystemControls'], defaultExpanded: true },
-      footer: { title: 'Footer', components: ['FooterSimple', 'FooterColumns'], defaultExpanded: true },
+      header: { title: '헤더 · 각 1개', components: ['Announcement', 'HeaderNavigation'], defaultExpanded: true },
+      system: { title: 'G7 시스템 기능 · 헤더 안에 1개', components: ['HeaderSystemControls'], defaultExpanded: true },
+      footer: { title: '푸터 · 두 형태 중 1개', components: ['FooterSimple', 'FooterColumns'], defaultExpanded: true },
     },
-    components: {
-      Announcement: {
-        ...header.components.Announcement,
-        resolvePermissions: (_data, { appState }) => ({
-          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['Announcement']),
-          duplicate: false,
-        }),
-      },
-      HeaderNavigation: {
-        ...header.components.HeaderNavigation,
-        resolvePermissions: (_data, { appState }) => ({
-          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['HeaderNavigation']),
-          duplicate: false,
-        }),
-      },
-      HeaderSystemControls: {
-        ...header.components.HeaderSystemControls,
-        resolvePermissions: (_data, { appState }) => ({
-          insert: !hasNestedType(appState.data.content, 'HeaderSystemControls'),
-          duplicate: false,
-        }),
-      },
-      FooterSimple: {
-        ...footer.components.FooterSimple,
-        resolvePermissions: (_data, { appState }) => ({
-          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['FooterSimple', 'FooterColumns']),
-          duplicate: false,
-        }),
-      },
-      FooterColumns: {
-        ...footer.components.FooterColumns,
-        resolvePermissions: (_data, { appState }) => ({
-          insert: !hasType(appState.data.content as SitePartPuckData['content'], ['FooterSimple', 'FooterColumns']),
-          duplicate: false,
-        }),
-      },
-    },
+    components: { ...header.components, ...footer.components },
     root: {
       fields: {},
-      render: ({ children }) => <div className="g7pb-site-part-preview g7pb-site-part-preview--set">
-        {children}
+      render: ({ puck }) => <div className="g7pb-site-part-preview g7pb-site-part-preview--set">
+        {puck.renderDropZone({ zone: 'default-zone', allow: ['Announcement', 'HeaderNavigation', 'FooterSimple', 'FooterColumns'] })}
       </div>,
     },
   };
@@ -597,7 +581,6 @@ function errorMessage(error: unknown): string {
 export function SitePartEditor({ kind, locale, setId, embedded = false, paired = false, iframeEnabled = true, onBack, onChanged }: SitePartEditorProps): React.ReactElement {
   const [persona, setPersona] = useState<'guest' | 'member' | 'admin'>('guest');
   const api = useMemo(() => new PageBuilderApiClient(), []);
-  const config = useMemo(() => sitePartConfigFor(kind), [kind]);
   const overrides = useMemo(() => ({
     drawer: SitePartDrawer,
     drawerItem: SitePartDrawerItem,
@@ -607,6 +590,7 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   }), []);
   const [resource, setResource] = useState<SitePartResource | null>(null);
   const [data, setData] = useState<SitePartPuckData>({ root: { props: {} }, content: [] });
+  const config = useMemo(() => sitePartConfigFor(kind, data), [kind, data]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
   const [dirty, setDirty] = useState(false);

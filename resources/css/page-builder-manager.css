@@ -115,6 +115,8 @@
 }
 
 .g7pb-dialog .g7pb-block-pack-toolbar > label {
+  position: relative;
+  flex: none;
   display: inline-flex;
   color: #fff;
   cursor: pointer;
@@ -160,7 +162,7 @@
 
 .g7pb-block-pack-github__fields {
   display: grid;
-  grid-template-columns: .7fr 1fr 1.2fr;
+  grid-template-columns: minmax(0, .7fr) minmax(0, 1fr) minmax(0, 1.2fr);
   gap: 9px;
 }
 
@@ -633,15 +635,36 @@
   font-size: 12px;
 }
 
-.sr-only {
+.sr-only,
+.g7pb-dialog input.sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
+  min-width: 0;
+  min-height: 0;
   padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+.g7pb-block-pack-toolbar:focus-within > label {
+  outline: 2px solid var(--g7pb-primary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .g7pb-block-pack-toolbar,
+  .g7pb-block-pack-github__heading,
+  .g7pb-block-pack-github__result {
+    flex-wrap: wrap;
+  }
+
+  .g7pb-block-pack-github__fields,
+  .g7pb-block-pack-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .g7pb-manager-notice {

@@ -1210,6 +1210,18 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(blockPackDialog).toContainText('블록 45 / 완성 섹션 95');
     await expect(blockPackDialog).toContainText('편집기 상단 블록 추가');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
+    const managerViewport = page.viewportSize()!;
+    for (const width of [1440, 1024, 640, 390]) {
+      await page.setViewportSize({ width, height: managerViewport.height });
+      await expect.poll(() => blockPackDialog.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+      const fileSize = await blockPackDialog.getByTestId('page-builder-block-pack-upload').boundingBox();
+      expect(fileSize?.width).toBe(1);
+      expect(fileSize?.height).toBe(1);
+    }
+    await page.setViewportSize(managerViewport);
+    const chooser = page.waitForEvent('filechooser');
+    await blockPackDialog.getByText('ZIP 추가', { exact: true }).click();
+    expect((await chooser).isMultiple()).toBe(false);
     await expect(blockPackDialog.getByRole('button', { name: '최신 버전 확인' })).toBeVisible();
     await blockPackDialog.getByRole('button', { name: '닫기' }).click();
     await expect(blockPackDialog).toHaveCount(0);

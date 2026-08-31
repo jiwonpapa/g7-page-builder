@@ -493,7 +493,7 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
 
     await setEditor.getByRole('button', { name: '모바일', exact: true }).click();
     await expect(setEditor.getByText('모바일·태블릿은 확인 전용 · 편집은 PC에서 지원')).toBeVisible();
-    await expect(setEditor.getByText('확인 전용 화면입니다.')).toBeVisible();
+    await expect(setEditor.locator('.g7pb-site-part-set-layout__preview-only:visible').getByText('확인 전용 화면입니다.')).toBeVisible();
     await setEditor.getByRole('button', { name: 'PC', exact: true }).click();
 
     const publishResponse = page.waitForResponse((response) => response.url().includes(`/site-part-sets/${target?.id}/publish`) && response.request().method() === 'POST');

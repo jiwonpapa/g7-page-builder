@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { resolve } from 'node:path';
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
 import {
   authenticateEditorInteractionAdmin,
@@ -29,6 +30,14 @@ async function assertOptionalElements(page: Page): Promise<void> {
 
 test('keeps optional text recoverable in edit mode and consistent in readonly viewports and publication', async ({ context, page }, testInfo) => {
   test.setTimeout(120_000);
+  // Candidate assets are request-local; never overwrite the shared runtime.
+  if (process.env.G7PB_OPTIONAL_CANDIDATE_DIST) {
+    for (const [file, contentType] of [['js/page-builder-editor.iife.js', 'application/javascript'], ['css/page-builder-editor.css', 'text/css']]) {
+      await context.route(`**/dist/${file}*`, route => route.fulfill({
+        path: resolve(process.env.G7PB_OPTIONAL_CANDIDATE_DIST!, file), contentType,
+      }));
+    }
+  }
   const token = await authenticateEditorInteractionAdmin(context);
   const api = await editorInteractionApi(token);
   let owned: OwnedEditorInteractionDocument | null = null;
@@ -60,12 +69,21 @@ test('keeps optional text recoverable in edit mode and consistent in readonly vi
       await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', width === 1440 ? 'edit' : 'preview');
       await assertOptionalElements(page);
       await page.screenshot({ path: testInfo.outputPath(`optional-content-${width}.png`), fullPage: false });
+      await page.frameLocator(CANVAS).locator('[data-block-type="cta"]').screenshot({
+        path: testInfo.outputPath(`optional-cta-${width}.png`),
+      });
     }
 
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(editorUrl);
-    const body = page.frameLocator(CANVAS).locator('[data-block-type="cta"] [data-g7pb-inline-field="body"] [contenteditable="true"]');
-    await body.fill('');
+    // Puck's lazy fallback is contenteditable but has no Tiptap input handler.
+    // Interact with the initialized editor, not that transient placeholder.
+    const body = page.frameLocator(CANVAS).locator('[data-block-type="cta"] [data-g7pb-inline-field="body"] .tiptap[contenteditable="true"]');
+    await body.click();
+    await expect(body).toBeFocused();
+    await body.press('ControlOrMeta+A');
+    await body.press('Backspace');
+    await expect(body).toHaveText('');
     await expect(body).toBeVisible();
     await page.getByTestId('page-builder-viewport-768').click();
     await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'preview');
@@ -81,6 +99,14 @@ test('keeps optional text recoverable in edit mode and consistent in readonly vi
     await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
     await page.reload();
     await assertOptionalElements(page);
+
+    // Address is required at publication even though an incomplete draft can
+    // omit its canvas element. Keep that contract instead of weakening it.
+    await page.getByTestId('page-builder-publish').click();
+    await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute('data-state', 'error');
+    await expect(page.getByRole('alert')).toContainText('주소');
+    await page.frameLocator(CANVAS).locator('[data-block-type="contact"] [data-g7pb-inline-field="heading"] .tiptap').click();
+    await page.locator('[data-testid="page-builder-contact-address"]:visible').fill('서울특별시 테스트로 1');
 
     const publication = page.waitForResponse(response => response.request().method() === 'POST'
       && /^\/api\/modules\/jiwonpapa-page_builder\/admin\/publications\/[^/]+\/commit$/.test(new URL(response.url()).pathname));

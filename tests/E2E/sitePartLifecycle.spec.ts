@@ -149,6 +149,65 @@ async function globalPublicPageUrl(api: APIRequestContext, locale: string): Prom
   return typeof item?.public_url === 'string' ? item.public_url : null;
 }
 
+async function verifySetWorkspaceTools(page: Page): Promise<void> {
+  const editor = page.getByTestId('page-builder-site-part-set-editor');
+  const puck = editor.locator('.Puck');
+  const viewportHeight = page.viewportSize()!.height;
+  for (const tab of ['블록', '구조', '세트', '블록', '구조', '세트']) {
+    await editor.getByRole('button', { name: tab, exact: true }).click();
+    await expect.poll(async () => {
+      const box = await puck.boundingBox();
+      return box ? Math.round(box.y + box.height) : 0;
+    }).toBe(viewportHeight);
+    expect((await puck.boundingBox())!.height).toBeGreaterThan(500);
+  }
+  for (const name of ['왼쪽 패널 열기·닫기', '오른쪽 설정 열기·닫기']) {
+    const button = editor.getByRole('button', { name, exact: true });
+    await button.click();
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await button.click();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+  }
+  for (const side of ['left', 'right']) {
+    const sidebar = editor.locator(`[class*="Sidebar--${side}_"]`);
+    const before = (await sidebar.boundingBox())!.width;
+    const handle = editor.locator(`[class*="ResizeHandle--${side}_"]`);
+    const box = (await handle.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + 80);
+    await page.mouse.down();
+    await page.mouse.move(box.x + (side === 'left' ? 45 : -45), box.y + 80, { steps: 10 });
+    await page.mouse.up();
+    await expect.poll(async () => (await sidebar.boundingBox())!.width).toBeGreaterThan(before + 30);
+  }
+  const persona = editor.getByRole('group', { name: '접속 상태 미리보기' });
+  await persona.getByRole('button', { name: '관리자', exact: true }).click();
+  await expect(persona.getByRole('button', { name: '관리자', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await editor.getByRole('button', { name: '블록', exact: true }).click();
+  for (const component of ['HeaderNavigation', 'FooterSimple', 'FooterColumns', 'HeaderSystemControls']) {
+    await expect(editor.getByTestId(`drawer-item:${component}`)).toHaveClass(/DrawerItem--disabled/);
+  }
+  const canvas = page.frameLocator('iframe').first();
+  const account = canvas.getByRole('button', { name: '계정 메뉴', exact: true });
+  for (let repeat = 0; repeat < 3; repeat += 1) {
+    await canvas.locator('.g7pb-site-brand').first().click();
+    await account.click();
+    const actionBar = canvas.locator('.g7pb-site-part-action-bar');
+    await expect(actionBar).toContainText('G7 시스템 기능');
+    await expect(actionBar.getByRole('button', { name: 'Delete', exact: true })).toBeVisible();
+  }
+  await canvas.locator('.g7pb-site-part-action-bar').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(0);
+  await expect(editor.getByTestId('drawer-item:HeaderSystemControls')).not.toHaveClass(/DrawerItem--disabled/);
+  await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
+  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(1);
+  await expect(editor.getByTestId('drawer-item:HeaderSystemControls')).toHaveClass(/DrawerItem--disabled/);
+  await editor.getByRole('button', { name: '다시 실행', exact: true }).click();
+  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(0);
+  await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
+  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(1);
+  await page.screenshot({ path: 'output/playwright/site-part-workspace-ux.png', fullPage: false });
+}
+
 test('edits and publishes the Header as an independent responsive Puck Site Part', async ({ page, context }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Site Part interaction is covered once; page lifecycle owns all three viewports.');
   const token = await authenticate(context);
@@ -401,9 +460,9 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     const setEditor = page.getByTestId('page-builder-site-part-set-editor');
     await expect(setEditor).toBeVisible();
     await expect(page.getByTestId('page-builder-site-part-editor')).toHaveCount(0);
-    await expect(setEditor.getByRole('button', { name: 'Sets', exact: true })).toBeVisible();
-    await expect(setEditor.getByRole('button', { name: 'Blocks', exact: true })).toBeVisible();
-    await expect(setEditor.getByRole('button', { name: 'Outline', exact: true })).toBeVisible();
+    await expect(setEditor.getByRole('button', { name: '세트', exact: true })).toBeVisible();
+    await expect(setEditor.getByRole('button', { name: '블록', exact: true })).toBeVisible();
+    await expect(setEditor.getByRole('button', { name: '구조', exact: true })).toBeVisible();
     await expect(page.getByTestId('page-builder-site-part-set-presets').getByRole('button')).toHaveCount(3);
 
     await page.getByTestId('page-builder-site-part-set-presets').getByRole('button', { name: /비즈니스/ }).click();
@@ -412,6 +471,8 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     await page.getByTestId('page-builder-site-part-set-save').click();
     const savedResponse = await saveResponse;
     expect(savedResponse.ok(), await savedResponse.text()).toBe(true);
+
+    await verifySetWorkspaceTools(page);
 
     await setEditor.getByRole('button', { name: '모바일', exact: true }).click();
     await expect(setEditor.getByText('모바일·태블릿은 확인 전용 · 편집은 PC에서 지원')).toBeVisible();

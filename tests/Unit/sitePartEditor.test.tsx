@@ -12,6 +12,15 @@ import {
 } from '../../resources/js/editor/sitePartDocumentAdapter';
 import type { SitePartDocument } from '../../resources/js/documents/types';
 
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  configurable: true,
+  value: class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  },
+});
+
 const header: SitePartDocument = {
   schema_version: 'g7-page-builder/site-part/v1',
   site_part_id: '123e4567-e89b-42d3-a456-426614174055',
@@ -42,6 +51,40 @@ const header: SitePartDocument = {
 };
 
 describe('Site Part Puck adapter', () => {
+  it('disables insertion by component type across both editors and restores it after deletion', async () => {
+    const { sitePartConfigFor, sitePartSetConfig } = await import('../../resources/js/editor/SitePartEditor');
+    const data = sitePartCanonicalToPuck(header);
+    for (const config of [sitePartConfigFor('header', data), sitePartSetConfig(data)]) {
+      expect(config.components.HeaderNavigation.permissions).toMatchObject({ insert: false, duplicate: false });
+      expect(config.components.HeaderSystemControls.permissions).toMatchObject({ insert: false, duplicate: false });
+    }
+    const navigation = data.content[0];
+    if (navigation.type !== 'HeaderNavigation') throw new Error('Header required.');
+    navigation.props.systemControls = [];
+    expect(sitePartSetConfig(data).components.HeaderSystemControls.permissions?.insert).toBe(true);
+    expect(sitePartSetConfig(data, false).components.HeaderSystemControls.permissions?.insert).toBe(false);
+    const empty = { root: { props: {} }, content: [] };
+    expect(sitePartSetConfig(empty).components.HeaderNavigation.permissions?.insert).toBe(true);
+    expect(sitePartSetConfig(empty).components.HeaderSystemControls.permissions?.insert).toBe(false);
+    const footer = sitePartPresetToPuck({ ...header, kind: 'footer', blocks: [] }, 'footer-compact');
+    expect(sitePartSetConfig(footer).components.FooterSimple.permissions?.insert).toBe(false);
+    expect(sitePartSetConfig(footer).components.FooterColumns.permissions?.insert).toBe(false);
+  });
+
+  it('rejects duplicate shells and misplaced controls without silently dropping them', () => {
+    const data = sitePartCanonicalToPuck(header);
+    data.content.push(structuredClone(data.content[0]!));
+    expect(() => sitePartSetPuckToCanonical(data, header, { ...header, kind: 'footer', blocks: [] })).toThrow('헤더 블록은 세트에 하나만');
+    expect(data.content).toHaveLength(2);
+    data.content.pop();
+    const navigation = data.content[0];
+    if (navigation.type !== 'HeaderNavigation') throw new Error('Header required.');
+    navigation.props.systemControls!.push(structuredClone(navigation.props.systemControls![0]));
+    expect(() => sitePartPuckToCanonical(data, header)).toThrow('G7 시스템 기능은 헤더 안에 하나만');
+    data.content = [navigation.props.systemControls![0] as typeof navigation];
+    expect(() => sitePartPuckToCanonical(data, header)).toThrow('G7 시스템 기능은 헤더 안에만');
+  });
+
   it('round-trips the typed Header document without inline style output', () => {
     const data = sitePartCanonicalToPuck(header);
     const roundTrip = sitePartPuckToCanonical(data, header);

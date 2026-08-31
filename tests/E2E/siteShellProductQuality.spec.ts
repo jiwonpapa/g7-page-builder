@@ -112,7 +112,7 @@ test('real G7 authentication · admin route · native logout · guest transition
   await expect(page).toHaveURL(/\/admin(?:\/|$)/u);
   if (testInfo.project.name === 'desktop') {
     await page.goto('/modules/jiwonpapa-page_builder/admin/site-parts/header');
-    await page.getByLabel('접속 상태 미리보기', { exact: true }).selectOption('admin');
+    await page.getByRole('group', { name: '접속 상태 미리보기', exact: true }).getByRole('button', { name: '관리자', exact: true }).click();
     const personaBounds = await page.locator('.g7pb-site-part-persona').boundingBox();
     expect(personaBounds?.height).toBeLessThan(64);
     const preview = page.frameLocator('iframe').first();

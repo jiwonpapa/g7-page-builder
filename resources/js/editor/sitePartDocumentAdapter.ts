@@ -384,6 +384,7 @@ export function sitePartCanonicalToPuck(document: SitePartDocument): SitePartPuc
 }
 
 export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePartDocument): SitePartDocument {
+  assertUniqueSitePartBlocks(data.content);
   const blocks = data.content
     .filter((block) => block.type !== 'HeaderSystemControls')
     .map((block, index): PageBuilderBlock => {
@@ -432,7 +433,7 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
           },
           slots: {},
         }];
-      }).slice(0, 1);
+      });
       const defaultControls = controlBlocks.length === 1
         && Object.entries(DEFAULT_HEADER_SYSTEM_CONTROLS).every(([key, value]) => controlBlocks[0]?.props[key] === value);
       if (Object.prototype.hasOwnProperty.call(sourceBlock?.slots ?? {}, 'systemControls') || !defaultControls) {
@@ -483,10 +484,27 @@ export function sitePartPuckToCanonical(data: SitePartPuckData, source: SitePart
 }
 
 function normalizedSetContent(content: SitePartPuckData['content']): SitePartPuckData['content'] {
-  const announcement = content.find((block) => block.type === 'Announcement');
-  const header = content.find((block) => block.type === 'HeaderNavigation');
-  const footer = content.find((block) => block.type === 'FooterSimple' || block.type === 'FooterColumns');
-  return [announcement, header, footer].filter(Boolean) as SitePartPuckData['content'];
+  const order = ['Announcement', 'HeaderNavigation', 'FooterSimple', 'FooterColumns'];
+  // Never silently discard document content to conceal an invalid insertion.
+  return [...content].sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+}
+
+function assertUniqueSitePartBlocks(content: SitePartPuckData['content']): void {
+  for (const [label, types] of [
+    ['헤더', ['HeaderNavigation']],
+    ['푸터', ['FooterSimple', 'FooterColumns']],
+    ['공지 바', ['Announcement']],
+  ] as const) {
+    if (content.filter((block) => (types as readonly string[]).includes(block.type)).length > 1) {
+      throw new Error(`${label} 블록은 세트에 하나만 사용할 수 있습니다. 중복 블록을 삭제해 주세요.`);
+    }
+  }
+  if (content.some((block) => block.type === 'HeaderSystemControls')) {
+    throw new Error('G7 시스템 기능은 헤더 안에만 넣을 수 있습니다.');
+  }
+  if (content.some((block) => block.type === 'HeaderNavigation' && (block.props.systemControls?.length ?? 0) > 1)) {
+    throw new Error('G7 시스템 기능은 헤더 안에 하나만 사용할 수 있습니다.');
+  }
 }
 
 export function normalizeSitePartSetPuckData(data: SitePartPuckData): SitePartPuckData {
@@ -518,6 +536,7 @@ export function sitePartSetPuckToCanonical(
   footer: SitePartDocument,
 ): { header: SitePartDocument; footer: SitePartDocument } {
   const normalized = normalizeSitePartSetPuckData(data);
+  assertUniqueSitePartBlocks(normalized.content);
   const headerData = {
     root: normalized.root,
     content: normalized.content.filter((block) => block.type === 'Announcement' || block.type === 'HeaderNavigation'),

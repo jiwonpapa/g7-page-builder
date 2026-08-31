@@ -21,6 +21,24 @@ afterEach(() => {
 });
 
 describe('Site Part Header preview', () => {
+  it('selects preview personas with direct pressed-state buttons', async () => {
+    const { SitePartPersonaSelector } = await import('../../resources/js/editor/SitePartEditor');
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    let selected = 'guest';
+    await act(async () => root.render(<SitePartPersonaSelector value="guest" onChange={(value) => { selected = value; }} />));
+    const buttons = container.querySelectorAll('button');
+    expect(buttons).toHaveLength(3);
+    expect(container.querySelector('select')).toBeNull();
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
+    await act(async () => buttons[2].click());
+    expect(selected).toBe('admin');
+    await act(async () => root.render(<SitePartPersonaSelector value="admin" onChange={() => {}} />));
+    expect(buttons[2].getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('preserves an open account panel when Puck changes non-content render metadata', async () => {
     const { HeaderSystemControlsPreview, SitePartPersona } = await import('../../resources/js/editor/SitePartEditor');
     const container = document.createElement('div');

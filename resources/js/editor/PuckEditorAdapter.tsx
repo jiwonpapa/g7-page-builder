@@ -1310,7 +1310,7 @@ function HeroPreview({
             {canvasTextValue(eyebrow) && <small data-g7pb-inline-field="eyebrow">{eyebrow}</small>}
             <RichTextCanvasField as="h1" className="g7pb-preview-richtext" fieldPath="title">{title}</RichTextCanvasField>
             <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
-            {primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>{primaryLabel}</a>}
+            {canvasTextValue(primaryLabel) && <a data-g7pb-inline-field="primaryLabel" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>{primaryLabel}</a>}
           </div>
           <figure data-g7pb-media-field="imageSrc">
             {image
@@ -1328,7 +1328,7 @@ function HeroPreview({
         {canvasTextValue(eyebrow) && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
         <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
         <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
-        {primaryLabel && (
+        {canvasTextValue(primaryLabel) && (
           <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
             <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
           </a>

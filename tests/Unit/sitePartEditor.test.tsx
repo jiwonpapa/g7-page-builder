@@ -51,6 +51,20 @@ const header: SitePartDocument = {
 };
 
 describe('Site Part Puck adapter', () => {
+  it('updates permissions without remounting previews or their field editors', async () => {
+    const { sitePartConfigFor, sitePartSetConfig, withSitePartPermissions } = await import('../../resources/js/editor/SitePartEditor');
+    const data = sitePartCanonicalToPuck(header);
+    for (const base of [sitePartConfigFor('header'), sitePartSetConfig()]) {
+      const updated = withSitePartPermissions(base, data);
+      expect(updated.root).toBe(base.root);
+      expect(updated.components.HeaderNavigation.render).toBe(base.components.HeaderNavigation.render);
+      expect(updated.components.HeaderNavigation.fields).toBe(base.components.HeaderNavigation.fields);
+      expect(updated.components.HeaderSystemControls.render).toBe(base.components.HeaderSystemControls.render);
+      expect(updated.components.HeaderNavigation.permissions?.insert).toBe(false);
+      expect(base.components.HeaderNavigation.permissions?.insert).toBe(true);
+    }
+  });
+
   it('disables insertion by component type across both editors and restores it after deletion', async () => {
     const { sitePartConfigFor, sitePartSetConfig } = await import('../../resources/js/editor/SitePartEditor');
     const data = sitePartCanonicalToPuck(header);

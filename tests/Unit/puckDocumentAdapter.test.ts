@@ -51,6 +51,47 @@ class TestResizeObserver {
 
 globalThis.ResizeObserver = TestResizeObserver;
 
+describe('isolated canonical document envelope adapter', () => {
+  it('preserves existing SEO metadata across an ordinary content edit without sharing references', () => {
+    const document = structuredClone(documentFixture);
+    document.seo = { title: '검색 제목', description: '검색 설명', og_image_url: '/storage/share.webp', robots: 'noindex' };
+    const session = canonicalToPuck(document);
+    const result = puckToCanonical(session.data, session.context);
+    expect(result.seo).toEqual(document.seo);
+    expect(result.seo).not.toBe(document.seo);
+    result.seo!.title = '다른 결과의 제목';
+    expect(puckToCanonical(session.data, session.context).seo).toEqual(document.seo);
+  });
+
+  it('round-trips an empty v1 envelope without a renderer or adding optional fields', async () => {
+    const { canonicalDocumentToPuck, puckDocumentToCanonical } = await import('../../resources/js/editor/puckDocumentAdapter');
+    const document: PageBuilderDocument = { schema_version: 'g7-page-builder/v1', document_id: '00000000-0000-4000-8000-000000000001', slug: 'empty', locale: 'ko', mode: 'canvas', blocks: [] };
+    const noBlock = (): never => { throw new Error('Empty document must not convert a block'); };
+    const session = canonicalDocumentToPuck(document, noBlock);
+    expect(puckDocumentToCanonical(session.data, session.context, noBlock)).toEqual(document);
+    expect(document).not.toHaveProperty('tokens');
+    expect(document).not.toHaveProperty('shell_mode');
+  });
+
+  it('preserves flat document metadata and delegates each block conversion once', async () => {
+    const { canonicalDocumentToPuck, puckDocumentToCanonical } = await import('../../resources/js/editor/puckDocumentAdapter');
+    const document = structuredClone(documentFixture);
+    document.shell_mode = 'builder';
+    const before = structuredClone(document);
+    const original = canonicalToPuck(document);
+    const converted: string[] = [];
+    const session = canonicalDocumentToPuck(document, (block) => {
+      converted.push(block.instance_id);
+      return structuredClone(original.data.content.find((item) => item.props.id === block.instance_id)!);
+    });
+    expect(converted).toEqual(document.blocks.map((block) => block.instance_id));
+    expect(session).toEqual(original);
+    const result = puckDocumentToCanonical(session.data, session.context, (block) => structuredClone(document.blocks.find((node) => node.instance_id === block.props.id)!));
+    expect(result).toEqual(document);
+    expect(document).toEqual(before);
+  });
+});
+
 const {
   canonicalToPuck,
   pageBuilderPuckConfig,

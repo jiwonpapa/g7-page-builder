@@ -3,6 +3,7 @@ import { Puck, usePuck, type Config, type Plugin } from '@puckeditor/core';
 import { Check, Layers3, ListTree, Monitor, PanelLeft, PanelRight, Plus, Redo2, Smartphone, Tablet, Undo2 } from 'lucide-react';
 import type { SitePartSetResource } from '../documents/types';
 import type { SitePartComponents, SitePartPuckData, SitePartSetPresetKey } from './sitePartDocumentAdapter';
+import { useSitePartHistory } from './useSitePartHistory';
 
 interface SetLayoutContext {
   sets: SitePartSetResource[];
@@ -53,7 +54,8 @@ export const SITE_PART_SET_PLUGINS: Plugin<Config<SitePartComponents>>[] = [
 
 export function SitePartSetTools(): React.ReactElement {
   const { dirty, onViewport } = useSetLayout();
-  const { appState, dispatch, history } = usePuck<Config<SitePartComponents>>();
+  const { appState, dispatch } = usePuck<Config<SitePartComponents>>();
+  const history = useSitePartHistory();
   const currentWidth = appState.ui.viewports.current.width;
   const width = typeof currentWidth === 'number' ? currentWidth : 1280;
   const viewport = width <= 360 ? 'mobile' : width <= 768 ? 'tablet' : 'desktop';
@@ -61,12 +63,12 @@ export function SitePartSetTools(): React.ReactElement {
   const selectViewport = (next: number): void => {
     dispatch({ type: 'setUi', ui: { viewports: { ...appState.ui.viewports, current: { width: next, height: 'auto' }, controlsVisible: false } }, recordHistory: false });
   };
-  return <div className="g7pb-site-part-set-tools" data-testid="page-builder-site-part-set-layout">
+  return <div ref={history.ref} className="g7pb-site-part-set-tools" data-testid="page-builder-site-part-set-layout">
     <div className="g7pb-site-part-set-history" aria-label="편집 도구">
       <button type="button" title="왼쪽 패널 열기·닫기" aria-label="왼쪽 패널 열기·닫기" aria-expanded={appState.ui.leftSideBarVisible} onClick={() => dispatch({ type: 'setUi', ui: { leftSideBarVisible: !appState.ui.leftSideBarVisible }, recordHistory: false })}><PanelLeft size={18} /></button>
       <button type="button" title="오른쪽 설정 열기·닫기" aria-label="오른쪽 설정 열기·닫기" aria-expanded={appState.ui.rightSideBarVisible} onClick={() => dispatch({ type: 'setUi', ui: { rightSideBarVisible: !appState.ui.rightSideBarVisible }, recordHistory: false })}><PanelRight size={18} /></button>
-      <button type="button" title="실행 취소 (⌘/Ctrl+Z)" aria-label="실행 취소" disabled={!history.hasPast} onClick={() => history.back()}><Undo2 size={18} /></button>
-      <button type="button" title="다시 실행 (⌘/Ctrl+Shift+Z)" aria-label="다시 실행" disabled={!history.hasFuture} onClick={() => history.forward()}><Redo2 size={18} /></button>
+      <button type="button" title="실행 취소 (⌘/Ctrl+Z)" aria-label="실행 취소" disabled={!history.canUndo} onClick={history.undo}><Undo2 size={18} /></button>
+      <button type="button" title="다시 실행 (⌘/Ctrl+Shift+Z)" aria-label="다시 실행" disabled={!history.canRedo} onClick={history.redo}><Redo2 size={18} /></button>
     </div>
     <div className="g7pb-site-part-viewports" aria-label="반응형 화면">
       <button type="button" aria-pressed={viewport === 'mobile'} onClick={() => selectViewport(360)}><Smartphone size={16} /> 모바일</button>

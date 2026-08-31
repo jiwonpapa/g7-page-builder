@@ -19,7 +19,17 @@ export function useSitePartActionBarPosition(): React.RefObject<HTMLDivElement |
       if (!clip) return;
       const rect = bar.getBoundingClientRect();
       const scale = renderedElementScale(bar, rect);
-      const target = placeEditorOverlay({ anchorRect: anchor.getBoundingClientRect(), overlaySize: rect, visibleClip: clip, gap: 8, inset: 8 });
+      const anchorBox = anchor.getBoundingClientRect();
+      const panels = Array.from(doc.querySelectorAll<HTMLElement>('[data-g7pb-shell-panel]:not([hidden])'))
+        .map((panel) => panel.getBoundingClientRect()).filter((panel) => panel.width > 0 && panel.height > 0);
+      const occupied = [anchorBox, ...panels];
+      const anchorRect = {
+        left: Math.min(...occupied.map((box) => box.left)),
+        top: Math.min(...occupied.map((box) => box.top)),
+        right: Math.max(...occupied.map((box) => box.right)),
+        bottom: Math.max(...occupied.map((box) => box.bottom)),
+      };
+      const target = placeEditorOverlay({ anchorRect, overlaySize: rect, visibleClip: clip, gap: 8, inset: 8 });
       const delta = inverseScaledTranslation({ currentRect: rect, target, renderedScale: scale });
       x += delta.x;
       y += delta.y;
@@ -34,6 +44,8 @@ export function useSitePartActionBarPosition(): React.RefObject<HTMLDivElement |
     const position = new win.MutationObserver(schedule);
     position.observe(anchor, { attributes: true, attributeFilter: ['style'] });
     if (bar.parentElement) position.observe(bar.parentElement, { attributes: true, attributeFilter: ['style'] });
+    const panels = new win.MutationObserver(schedule);
+    panels.observe(doc.body, { attributes: true, subtree: true, attributeFilter: ['hidden'] });
     const host = win.frameElement;
     const hostWin = host?.ownerDocument.defaultView;
     const hostSize = hostWin ? new hostWin.ResizeObserver(schedule) : null;
@@ -48,6 +60,7 @@ export function useSitePartActionBarPosition(): React.RefObject<HTMLDivElement |
       win.cancelAnimationFrame(frame);
       size.disconnect();
       position.disconnect();
+      panels.disconnect();
       hostSize?.disconnect();
       doc.removeEventListener('scroll', schedule, true);
       win.removeEventListener('resize', schedule);

@@ -72,6 +72,17 @@ describe('actual block quality dependency inventory', () => {
       .toEqual([['render', 'editing'], ['render', 'editing']]);
   });
 
+  it('tracks the shared layout policy and its cross-language fixture in both technical scopes', () => {
+    const root = fixture();
+    for (const path of ['schemas/layout-policy-v1.json', 'tests/Fixtures/layout-policy-cases.json']) {
+      const before = fingerprints(root);
+      write(root, path, '{"changed":true}');
+      const result = collectBlockQualityInventory(root, facts());
+      expect(result.items.every(item => item.dependencies.render.includes(path) && item.dependencies.editing.includes(path))).toBe(true);
+      expect(compareEvidenceFingerprints(before, fingerprints(root)).changed.map(item => item.scopes)).toEqual([['render', 'editing'], ['render', 'editing']]);
+    }
+  });
+
   it('invalidates only the owning preset metadata for a copy change', () => {
     const root = fixture(); const before = fingerprints(root);
     const path = 'resources/block-packs/builtin-core/manifest.json';

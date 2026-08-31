@@ -35,6 +35,9 @@ export default defineConfig(({ command }) => ({
       reporter: ['text', 'json-summary', 'html'],
       reportsDirectory: 'output/coverage',
       thresholds: {
+        'resources/js/editor/puckDocumentAdapter.ts': { statements: 80, branches: 77, functions: 76, lines: 81 },
+        'resources/js/documents/layoutPolicy.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
+        'resources/js/documents/layoutTree.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'scripts/lib/blockQualityEvidence.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'scripts/lib/blockQualityInventory.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'scripts/lib/blockQualityStates.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },

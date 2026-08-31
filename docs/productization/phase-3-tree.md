@@ -38,6 +38,8 @@
 
 ## 보류된 선행 조건과 승인 목록
 
+최종 제출은 `c2f883b`, main 통합은 `ed8d1a0`입니다. TS 379 PASS, PHP 141 PASS(2,122 assertions), `mixed`의 coordination/dev-check·production build·renderer freshness·asset/budget 검사가 통과했습니다. 후속 [3-A2](phase-3-adapter.md)에서 파일별 coverage 하한과 정책 JSON/fixture 의존성 추적을 연결합니다. 이 통합을 full 브라우저 기능 또는 release 합격으로 집계하지 않습니다.
+
 2차 `rich-boundary-20260831` 통합을 현재 main에서 재시도했습니다. merge 사전 검사는 통과했지만 최신 CSS에 대한 기존 썸네일 source 140개가 stale하여 frontend gate가 실패했고, harness가 병합을 취소했습니다. Local HEAD는 기준 SHA로 보존됐으며 `make dev-build-assets`로 ignored dist도 기존 main으로 다시 빌드했습니다.
 
 기존 CSS task는 `resources/css/page-builder-public.css`만 소유합니다. 해당 task의 replacement는 동일 PATHS/AREAS/PROFILE을 상속해야 하므로 썸네일·증거 원장을 임의로 추가하지 않습니다. 증거 갱신을 포함한 정식 작업 범위 조정이 필요하며, 사용자의 지시대로 최종 승인 목록에 모읍니다. 썸네일 검사 삭제·과거 승인 재사용·lease 강제 해제로 해결하지 않습니다.

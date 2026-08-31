@@ -7,6 +7,7 @@ import type { QualityStateInventory } from './blockQualityStates';
 
 export const QUALITY_DEPENDENCY_FILES = [
   'docs/productization/content-policy.md', 'schemas/page-builder-document.schema.json',
+  'schemas/layout-policy-v1.json', 'tests/Fixtures/layout-policy-cases.json',
   'package-lock.json', 'scripts/render-block-thumbnail-fixtures.php', 'dist/css/page-builder-public.css',
 ] as const;
 // Conservative dependency sets: narrowing these requires measured/proven renderer ownership.
@@ -140,9 +141,10 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
     }),
   ];
   if (JSON.stringify(catalog.map(item => item.catalog_id).sort()) !== JSON.stringify([...facts.keys()].sort())) throw new Error('renderer inventory does not match catalog.');
-  const compilerSources = { ...trees.src, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']!, 'scripts/render-block-thumbnail-fixtures.php': common['scripts/render-block-thumbnail-fixtures.php']! };
+  const layoutContractSources = { 'schemas/layout-policy-v1.json': common['schemas/layout-policy-v1.json']!, 'tests/Fixtures/layout-policy-cases.json': common['tests/Fixtures/layout-policy-cases.json']! };
+  const compilerSources = { ...trees.src, ...layoutContractSources, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']!, 'scripts/render-block-thumbnail-fixtures.php': common['scripts/render-block-thumbnail-fixtures.php']! };
   const renderSources = { ...compilerSources, ...trees['resources/css'], ...trees['resources/layouts/user'], ...states.sources, 'dist/css/page-builder-public.css': common['dist/css/page-builder-public.css']! };
-  const editingSources = { ...trees['resources/js'], ...trees['tests/E2E'], ...trees['tests/Unit'], ...states.sources, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']! };
+  const editingSources = { ...trees['resources/js'], ...trees['tests/E2E'], ...trees['tests/Unit'], ...states.sources, ...layoutContractSources, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']! };
   const items = catalog.map(({ definition, preset, planned, catalog_id }): CollectedItem => {
     if (!Number.isInteger(definition.block_version) || Number(definition.block_version) < 1 || planned.block_version !== definition.block_version
       || (preset && (preset.block_version !== definition.block_version || planned.block_id !== definition.block_id))) throw new Error(`planning inventory version/block mismatch: ${catalog_id}`);

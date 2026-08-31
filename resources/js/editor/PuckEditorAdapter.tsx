@@ -1,3 +1,6 @@
+import { canonicalDocumentToPuck, puckDocumentToCanonical, type PuckAdapterContext, type PuckEditorSession } from './puckDocumentAdapter';
+export type { PuckAdapterContext, PuckEditorSession } from './puckDocumentAdapter';
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -105,14 +108,11 @@ import { sitePartCanonicalToPuck, type SitePartComponents } from './sitePartDocu
 import {
   pageDesignClassName,
   pageDesignCustomCss,
-  pageDesignToTokens,
-  tokensToPageDesign,
   type PageDesignProps,
 } from './pageDesignTokens';
 import {
   BLOCK_CONTAINER_FIELDS,
   blockContainerClassName,
-  blockContainerEditorProps,
   mergeBlockContainerAppearance,
 } from './blockAppearance';
 import {
@@ -152,7 +152,6 @@ import {
   type PageBuilderDocument,
   type ElementAppearance,
   type ElementAppearanceMap,
-  type ScalarToken,
   type SitePartResource,
 } from '../documents/types';
 
@@ -344,38 +343,6 @@ export function recommendedMotionPlan(types: readonly string[]): BlockMotion[] {
   });
 }
 
-interface BlockRoundTripMetadata {
-  blockVersion: number;
-  hadSlots: boolean;
-  hadAppearance: boolean;
-  hadMotion: boolean;
-  hadVisibility: boolean;
-  hadLayout: boolean;
-  initialLayout: string | null;
-  hadPageSize: boolean;
-  hadSliderSettings: boolean;
-}
-
-export interface PuckAdapterContext {
-  document: {
-    schemaVersion: PageBuilderDocument['schema_version'];
-    documentId: string;
-    slug: string;
-    mode: PageBuilderDocument['mode'];
-    locale: string;
-    shellMode: NonNullable<PageBuilderDocument['shell_mode']>;
-    hadShellMode: boolean;
-    tokens: Record<string, ScalarToken>;
-    hadTokens: boolean;
-  };
-  blocks: Record<string, BlockRoundTripMetadata>;
-}
-
-export interface PuckEditorSession {
-  data: PuckEditorData;
-  context: PuckAdapterContext;
-}
-
 interface PuckEditorAdapterProps {
   document: PageBuilderDocument;
   revisionKey: number;
@@ -554,10 +521,6 @@ function inlineArrayContent(value: unknown, index: number, key: string, fallback
 
 function hasNonEmptySlots(block: PageBuilderBlock): boolean {
   return Boolean(block.slots && Object.values(block.slots).some((slot) => slot.length > 0));
-}
-
-function cloneTokens(tokens: Record<string, ScalarToken> | undefined): Record<string, ScalarToken> {
-  return tokens ? { ...tokens } : {};
 }
 
 function idToUuid(id: unknown): string {
@@ -742,55 +705,7 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
 }
 
 export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSession {
-  const metadata: Record<string, BlockRoundTripMetadata> = {};
-  for (const block of document.blocks) {
-    const initialPuckBlock = canonicalBlockToPuck(block);
-    const initialLayoutValue = (initialPuckBlock.props as Record<string, unknown>).layout;
-    metadata[block.instance_id.toLowerCase()] = {
-      blockVersion: block.block_version,
-      hadSlots: Object.prototype.hasOwnProperty.call(block, 'slots'),
-      hadAppearance: Object.prototype.hasOwnProperty.call(block.props, 'appearance'),
-      hadMotion: Object.prototype.hasOwnProperty.call(block, 'motion'),
-      hadVisibility: Object.prototype.hasOwnProperty.call(block, 'visibility'),
-      hadLayout: Object.prototype.hasOwnProperty.call(block.props, 'layout'),
-      initialLayout: typeof initialLayoutValue === 'string' ? initialLayoutValue : null,
-      hadPageSize: Object.prototype.hasOwnProperty.call(block.props, 'pageSize'),
-      hadSliderSettings: Object.prototype.hasOwnProperty.call(block.props, 'autoplay')
-        || Object.prototype.hasOwnProperty.call(block.props, 'interval')
-        || Object.prototype.hasOwnProperty.call(block.props, 'loop'),
-    };
-  }
-
-  return {
-    data: {
-      root: { props: tokensToPageDesign(document.tokens) },
-      content: document.blocks.map((block) => {
-        const puckBlock = canonicalBlockToPuck(block);
-        return {
-          ...puckBlock,
-          props: {
-            ...puckBlock.props,
-            ...blockContainerEditorProps(block.props.appearance),
-            __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',
-          },
-        } as unknown as PuckEditorData['content'][number];
-      }),
-    },
-    context: {
-      document: {
-        schemaVersion: document.schema_version,
-        documentId: document.document_id,
-        slug: document.slug,
-        mode: document.mode,
-        locale: document.locale,
-        shellMode: document.shell_mode ?? 'template',
-        hadShellMode: Object.prototype.hasOwnProperty.call(document, 'shell_mode'),
-        tokens: cloneTokens(document.tokens),
-        hadTokens: Object.prototype.hasOwnProperty.call(document, 'tokens'),
-      },
-      blocks: metadata,
-    },
-  };
+  return canonicalDocumentToPuck(document, canonicalBlockToPuck);
 }
 
 function puckBlockToCanonical(
@@ -970,29 +885,8 @@ function puckBlockToCanonical(
   return canonical;
 }
 
-export function puckToCanonical(
-  data: PuckEditorData,
-  context: PuckAdapterContext,
-): PageBuilderDocument {
-  const document: PageBuilderDocument = {
-    schema_version: context.document.schemaVersion,
-    document_id: context.document.documentId,
-    slug: context.document.slug,
-    mode: context.document.mode,
-    locale: context.document.locale,
-    blocks: data.content.map((block) => puckBlockToCanonical(block, context)),
-  };
-
-  if (context.document.hadShellMode || context.document.shellMode !== 'template') {
-    document.shell_mode = context.document.shellMode;
-  }
-
-  const tokens = pageDesignToTokens(data.root.props, context.document.tokens);
-  if (context.document.hadTokens || Object.keys(tokens).length > 0) {
-    document.tokens = tokens;
-  }
-
-  return document;
+export function puckToCanonical(data: PuckEditorData, context: PuckAdapterContext): PageBuilderDocument {
+  return puckDocumentToCanonical(data, context, puckBlockToCanonical);
 }
 
 function safeLink(value: unknown): string {

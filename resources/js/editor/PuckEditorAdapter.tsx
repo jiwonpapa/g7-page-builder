@@ -230,6 +230,7 @@ interface EditorComponents extends CatalogEditorComponents {
 }
 
 interface FullSiteCanvasValue {
+  locale: PageBuilderDocument['locale'];
   shellMode: PageBuilderDocument['shell_mode'];
   header: SitePartResource | null;
   footer: SitePartResource | null;
@@ -237,7 +238,7 @@ interface FullSiteCanvasValue {
   edit: (kind: 'header' | 'footer') => void;
 }
 
-const FullSiteCanvasContext = React.createContext<FullSiteCanvasValue>({ shellMode: 'none', header: null, footer: null, canEdit: false, edit: () => undefined });
+const FullSiteCanvasContext = React.createContext<FullSiteCanvasValue>({ locale: 'ko', shellMode: 'none', header: null, footer: null, canEdit: false, edit: () => undefined });
 const EditorViewportPolicyContext = React.createContext<EditorViewportPolicy>({
   canEdit: false,
   canvasWidth: PC_EDITOR_VIEWPORT_WIDTH,
@@ -286,7 +287,9 @@ function FullSiteRoot({ children, design }: { children: React.ReactNode; design:
   const template = canvas.shellMode === 'template';
   const builder = canvas.shellMode === 'builder' || canvas.shellMode === 'global';
 
-  return <div className={`g7pb-preview-page ${pageDesignClassName(design)}`}>
+  // Puck's iframe language is independent of the canonical document. Set the
+  // content language here so font fallback/normal line boxes match publication.
+  return <div lang={canvas.locale} className={`g7pb-preview-page ${pageDesignClassName(design)}`}>
     <style data-g7pb-custom-palette="true">{pageDesignCustomCss(design)}</style>
     {(template || builder) ? <FullSiteCanvasPart kind="header" resource={builder ? canvas.header : null} template={template} /> : null}
     <div className={`g7pb-full-site-page${template ? ' g7pb-full-site-page--template' : ''}`} data-testid="page-builder-canvas-page">{children}</div>
@@ -3340,12 +3343,13 @@ export function PuckEditorAdapter({
   };
 
   const fullSiteCanvas = useMemo(() => ({
+    locale: document.locale,
     shellMode: document.shell_mode ?? 'template',
     header: siteParts.header,
     footer: siteParts.footer,
     canEdit: viewportPolicy.canEdit,
     edit: editSitePart,
-  } satisfies FullSiteCanvasValue), [document.shell_mode, editSitePart, siteParts.footer, siteParts.header, viewportPolicy.canEdit]);
+  } satisfies FullSiteCanvasValue), [document.locale, document.shell_mode, editSitePart, siteParts.footer, siteParts.header, viewportPolicy.canEdit]);
   const canvasEditingUi = useMemo<CanvasEditingUiValue>(() => ({
     selection: canvasElementSelection,
     setSelection: setCanvasElementSelection,

@@ -221,6 +221,34 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('uses canonical document language without changing host language or emitting document edits', async () => {
+    const hostLanguage = document.documentElement.lang;
+    document.documentElement.lang = 'en';
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    const onChange = vi.fn();
+    const onPublish = vi.fn();
+    mounted.push(() => {
+      act(() => root.unmount());
+      document.documentElement.lang = hostLanguage;
+    });
+
+    for (const locale of ['ko', 'en', 'ja']) {
+      await act(async () => {
+        root.render(<PuckEditorAdapter document={{ ...fixture, locale, shell_mode: 'none' }}
+          revisionKey={0} iframeEnabled={false} onChange={onChange} onPublish={onPublish} />);
+        await new Promise(resolve => setTimeout(resolve, 20));
+      });
+      const canvas = await eventually<HTMLElement>('.g7pb-preview-page');
+      expect(canvas.lang).toBe(locale);
+      expect(canvas.querySelector('[data-g7pb-richtext-field]')?.closest('[lang]')?.getAttribute('lang')).toBe(locale);
+      expect(document.documentElement.lang).toBe('en');
+    }
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onPublish).not.toHaveBeenCalled();
+  });
+
   it('uses valid flow containers for every rich-text visual semantic', async () => {
     const container = document.createElement('div');
     document.body.append(container);

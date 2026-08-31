@@ -4,6 +4,7 @@ import { installMobileNavigation } from '../public/mobileNavigation';
 import '../../css/page-builder-site-shell.css';
 import '../../css/page-builder-site-part-controls.css';
 import { useSitePartActionBarPosition } from './SitePartActionBarPosition';
+import { SitePartEditorCommands, SitePartEditorTools } from './SitePartEditorCommands';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, registerOverlayPortal, type Config, type Field, usePuck, type Viewports } from '@puckeditor/core';
 import {
@@ -432,10 +433,10 @@ const SITE_PART_PRESETS: Record<SitePartKind, Array<{ key: SitePartPresetKey; la
   ],
 };
 
-function SitePartPresetBar({ kind, onApply }: { kind: SitePartKind; onApply: (preset: SitePartPresetKey) => void }): React.ReactElement {
+function SitePartPresetBar({ kind, onApply, disabled }: { kind: SitePartKind; onApply: (preset: SitePartPresetKey) => void; disabled: boolean }): React.ReactElement {
   return <section className="g7pb-site-part-presets" data-testid="page-builder-site-part-presets" aria-label={`${kind === 'header' ? 'Header' : 'Footer'} 프리셋`}>
     <header><LayoutTemplate size={18} /><div><strong>빠른 시작 프리셋</strong><span>적용 후 화면과 우측 설정에서 자유롭게 바꾸세요.</span></div></header>
-    <div>{SITE_PART_PRESETS[kind].map((preset) => <button key={preset.key} type="button" onClick={() => onApply(preset.key)}><strong>{preset.label}</strong><span>{preset.description}</span></button>)}</div>
+    <div>{SITE_PART_PRESETS[kind].map((preset) => <button key={preset.key} type="button" disabled={disabled} onClick={() => onApply(preset.key)}><strong>{preset.label}</strong><span>{preset.description}</span></button>)}</div>
   </section>;
 }
 
@@ -601,7 +602,7 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     drawer: SitePartDrawer,
     drawerItem: SitePartDrawerItem,
     actionBar: SitePartActionBar,
-    headerActions: () => <span className="g7pb-site-part-header-help">PC 기본 편집 · 태블릿/모바일은 기기별 표시</span>,
+    header: SitePartEditorTools,
     puck: SitePartPuckShell,
   }), []);
   const [resource, setResource] = useState<SitePartResource | null>(null);
@@ -613,6 +614,8 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   const [dirty, setDirty] = useState(false);
   const resourceRef = useRef<SitePartResource | null>(null);
   const dataRef = useRef(data);
+  const presetCommand = useRef<((data: SitePartPuckData) => void) | null>(null);
+  const changeRevision = useRef(0);
 
   const apply = useCallback((next: SitePartResource): void => {
     resourceRef.current = next;
@@ -642,9 +645,15 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     setBusy(true);
     setMessage(null);
     try {
+      const savingRevision = changeRevision.current;
       const document = sitePartPuckToCanonical(dataRef.current, current.document);
       const saved = await api.saveSitePart(kind, current.title, document, current.lock_version, setId);
-      apply(saved);
+      if (changeRevision.current === savingRevision) apply(saved);
+      else {
+        // Undo/Redo can still run while saving: never replace those newer edits with the response.
+        resourceRef.current = saved;
+        setResource(saved);
+      }
       return saved;
     } catch (error) {
       setMessage(errorMessage(error));
@@ -661,12 +670,23 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   }, [busy, dirty, save]);
 
   const publish = async (): Promise<void> => {
+    const requestedRevision = changeRevision.current;
     const saved = dirty ? await save() : resourceRef.current;
     if (!saved) return;
+    if (changeRevision.current !== requestedRevision) {
+      setMessage('저장 중 편집 내용이 변경되었습니다. 현재 내용을 확인한 뒤 다시 발행해 주세요.');
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
-      apply(await api.publishSitePart(kind, locale, saved.lock_version, setId));
+      const publishingRevision = changeRevision.current;
+      const published = await api.publishSitePart(kind, locale, saved.lock_version, setId);
+      if (changeRevision.current === publishingRevision) apply(published);
+      else {
+        resourceRef.current = published;
+        setResource(published);
+      }
       setMessage(`${kind === 'header' ? 'Header' : 'Footer'} 발행을 완료했습니다.`);
     } catch (error) {
       setMessage(errorMessage(error));
@@ -676,6 +696,7 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   };
 
   const update = (next: SitePartPuckData): void => {
+    changeRevision.current += 1;
     dataRef.current = next;
     setData(next);
     setDirty(true);
@@ -684,16 +705,14 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
 
   const applyPreset = (preset: SitePartPresetKey): void => {
     const current = resourceRef.current;
-    if (!current) return;
+    if (!current || busy || !presetCommand.current) return;
     if (dataRef.current.content.length > 0 && !window.confirm('현재 Site Part 블록을 선택한 프리셋으로 바꾸시겠습니까?')) return;
     const next = sitePartPresetToPuck(current.document, preset);
-    dataRef.current = next;
-    setData(next);
-    setDirty(true);
+    presetCommand.current(next);
     setMessage('프리셋을 적용했습니다. 라우트와 문구를 확인한 뒤 저장·발행하세요.');
   };
 
-  return <SitePartPersona.Provider value={persona}><section className={`g7pb-root g7pb-site-part-editor ${embedded ? 'is-embedded' : ''} ${paired ? 'is-paired' : ''}`} data-testid="page-builder-site-part-editor" data-kind={kind}>
+  return <SitePartEditorCommands.Provider value={presetCommand}><SitePartPersona.Provider value={persona}><section className={`g7pb-root g7pb-site-part-editor ${embedded ? 'is-embedded' : ''} ${paired ? 'is-paired' : ''}`} data-testid="page-builder-site-part-editor" data-kind={kind}>
     <header className="g7pb-command-bar">
       <div className="g7pb-command-bar__identity">{paired ? null : embedded ? <button type="button" className="g7pb-icon-link" aria-label="페이지 편집으로 돌아가기" onClick={onBack}><ArrowLeft size={18} /></button> : <a href={PAGE_BUILDER_MANAGER_PATH} className="g7pb-icon-link" aria-label="문서함으로 돌아가기"><ArrowLeft size={18} /></a>}<div><p>{paired ? '공통 영역' : 'Global Site Part'}</p><strong>{kind === 'header' ? 'Header 편집' : 'Footer 편집'}</strong></div></div>
       <div className="g7pb-command-bar__actions">
@@ -706,11 +725,11 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     {busy && !resource ? <div className="g7pb-loading">Site Part를 준비하는 중입니다.</div> : null}
     {resource ? <div className="g7pb-site-part-puck" aria-busy={busy}>
       <div>
-        <SitePartPresetBar kind={kind} onApply={applyPreset} />
+        <SitePartPresetBar kind={kind} onApply={applyPreset} disabled={busy} />
         {kind === 'header' ? <SitePartPersonaSelector value={persona} onChange={setPersona} /> : null}
       </div>
       <div className="g7pb-site-part-device-legend"><Smartphone size={15} /><Tablet size={15} /><Monitor size={15} /><span>기기 버튼을 바꾸면 우측의 기기별 표시 설정도 함께 바뀝니다.</span></div>
       <Puck config={config} data={data} height="100%" iframe={{ enabled: iframeEnabled, syncHostStyles: true, waitForStyles: false }} viewports={VIEWPORTS} ui={{ itemSelector: data.content.length > 0 ? { index: 0, zone: 'root:default-zone' } : null, viewports: { current: { width: 1280, height: 'auto' }, controlsVisible: true, options: VIEWPORTS } }} permissions={{ edit: !busy, insert: !busy, delete: !busy, duplicate: !busy, drag: !busy }} overrides={overrides} headerTitle={kind === 'header' ? 'Header 블록' : 'Footer 블록'} headerPath={resource.title} onChange={update} onPublish={() => void publish()} />
     </div> : null}
-  </section></SitePartPersona.Provider>;
+  </section></SitePartPersona.Provider></SitePartEditorCommands.Provider>;
 }

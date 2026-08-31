@@ -100,9 +100,14 @@ test('real G7 authentication · admin route · native logout · guest transition
   await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
   await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
   if (testInfo.project.name === 'desktop' && await header.locator('.g7pb-site-nav[aria-hidden="true"]').count()) {
-    const inner = await header.locator('.g7pb-site-header__inner').boundingBox();
-    const actions = await header.locator('.g7pb-site-header__actions').boundingBox();
-    expect(inner && actions && Math.abs(inner.x + inner.width - actions.x - actions.width)).toBeLessThanOrEqual(1);
+    // G7 replaces HtmlContent while auth/site state hydrates. Read both rectangles
+    // atomically from one connected header, and still enforce the same 1px tolerance.
+    await expect.poll(() => header.evaluate((element) => {
+      const inner = element.querySelector('.g7pb-site-header__inner')?.getBoundingClientRect();
+      const actions = element.querySelector('.g7pb-site-header__actions')?.getBoundingClientRect();
+      if (!element.isConnected || !inner?.width || !actions?.width) return Number.POSITIVE_INFINITY;
+      return Math.abs(inner.right - actions.right);
+    })).toBeLessThanOrEqual(1);
   }
   await openAccount(page, header);
   const admin = header.getByRole('link', { name: '관리자', exact: true });

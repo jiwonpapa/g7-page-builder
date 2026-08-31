@@ -42,6 +42,14 @@ Node 24에서 `node scripts/check-block-quality-evidence.mjs --json`을 실행�
 
 `node scripts/check-block-quality-evidence.mjs --refresh`는 **변경 없는 결정은 보존하고 영향 범위만 pending으로 되돌린 제안 JSON**을 stdout으로 출력합니다. 소스 변경이 없는 rejected/failed는 유지하며 증거 삭제/변조·과거 기록 변조를 reset으로 숨기지 않습니다. 새/삭제된 ID도 제안 diff로 확인하고 Git에 기록해야 합니다. `--snapshot`은 초기 이행용이며 반복 갱신에 쓰지 않습니다. 어느 명령도 approved/passed를 생성하거나 원장 파일을 자동 저장하지 않습니다.
 
+### 차수 2-D: 상태 자료와 샘플 격리
+
+`tests/Fixtures/block-quality-states.json`의 9개 상태를 `schemas/block-quality-states.schema.json`으로 검증하고 `scripts/lib/blockQualityStates.ts`가 canonical props·기존 편집 metadata에서 결정적으로 공급합니다. 각 catalog에 적용/비적용 이유·fixture ID·공급자·시험 파일을 연결합니다. 실제 fixture/schema/provider/test 파일 누락이나 계획 상태와 현재 capability 불일치는 실패이며, 해당 파일 변화는 render/editing 증거의 재검증 원인입니다.
+
+반응형 시험 입력은 canvas 1280/768/360과 window 1440/768/390을 구분합니다. 미디어/동적 오류는 canonical 문서를 훼손하는 대신 별도 응답 입력으로 둡니다. 동적 공급기는 지정된 G7 읽기 endpoint의 GET만 처리하고 다른 요청은 거부하며 전역 fetch를 교체하거나 실제 API로 fallback하지 않습니다.
+
+CLI의 `state_fixtures` 수치는 적용 관계이며 실제 브라우저 실행·심사 합격 수가 아닙니다. 저장/발행은 실제 제품 E2E, 외부 데이터 연동은 별도 G7 통합 시험이 계속 필요합니다. [2-D 증거와 제한](productization/phase-2-states.md)을 참고합니다.
+
 Worktree의 제출 준비에는 Node 24뿐 아니라 PHP 8.5·Composer 의존성과 현재 `npm run build` 결과가 필요합니다. 소스/시험 변경 후 build→변경 영향 확인→`--refresh` 제안 diff 검토/적용→shadow 및 단위시험→`task-submit` 순서입니다. 원장을 최신화한 것과 실제 화면/심사의 완료는 구분하며, 최종 제품 심사 때까지 pending을 유지합니다.
 
 ## Worktree coordination

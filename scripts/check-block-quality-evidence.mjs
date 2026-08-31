@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { assessQualityEvidence, createPendingEvidence, fingerprintEvidence, refreshQualityEvidence } from './lib/blockQualityEvidence.ts';
 import { collectBlockQualityInventory, compareEvidenceFingerprints } from './lib/blockQualityInventory.ts';
+import { collectBlockQualityStates } from './lib/blockQualityStates.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACK = 'resources/block-packs/builtin-core';
@@ -31,13 +32,14 @@ export function collectCurrentEvidence(root = ROOT) {
     rmSync(output, { recursive: true, force: true });
   }
   const renderMs = performance.now() - started;
-  const inventory = collectBlockQualityInventory(root, facts);
+  const states = collectBlockQualityStates(root);
+  const inventory = collectBlockQualityInventory(root, facts, states);
   const current = inventory.items.map(item => fingerprintEvidence(item.catalog_id, item.inputs));
   const legacyRecord = json(join(root, LEGACY)).approval;
   const snapshot = createPendingEvidence(current, { source_path: LEGACY, record: legacyRecord });
   const legacySources = json(join(root, `${PACK}/thumbnails/generated/index.json`)).sources;
   const legacySourceChanges = facts.filter(item => legacySources[item.catalog_id] !== item.source_hash).map(item => item.catalog_id);
-  return { inventory, current, snapshot, legacySourceChanges, renderMs, started };
+  return { inventory, current, snapshot, legacySourceChanges, renderMs, started, states };
 }
 
 function inspectCandidate(root, collected) {
@@ -87,6 +89,10 @@ export function checkQualityEvidence(root = ROOT, collected = collectCurrentEvid
   return {
     mode: 'shadow', schema_version: snapshot.schema_version, counts: inventory.counts,
     legacy_source_changes: collected.legacySourceChanges,
+    state_fixtures: { items: collected.states.items.length,
+      required: collected.states.items.reduce((sum, item) => sum + item.bindings.filter(binding => binding.applicable).length, 0),
+      not_applicable: collected.states.items.reduce((sum, item) => sum + item.bindings.filter(binding => !binding.applicable).length, 0),
+      executed_product_scenarios: 'not-inferred-from-fixture-registration' },
     impact, changed_by_scope: changedByScope, warnings: inventory.warnings,
     errors, pending_count: assessment.pending.length, ready: assessment.ready && errors.length === 0 && inventory.warnings.length === 0,
     shadow_valid: errors.length === 0,

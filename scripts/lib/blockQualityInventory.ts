@@ -3,6 +3,7 @@ import { lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import type { EvidenceFingerprint, EvidenceInputs, EvidenceJson } from './blockQualityEvidence';
+import type { QualityStateInventory } from './blockQualityStates';
 
 export const QUALITY_DEPENDENCY_FILES = [
   'docs/productization/content-policy.md', 'schemas/page-builder-document.schema.json',
@@ -55,7 +56,7 @@ function sameIds(left: Map<string, JsonRecord>, right: Map<string, JsonRecord>, 
 }
 
 /** Read-only collector. The renderer facts must be produced by the current PHP compiler. */
-export function collectBlockQualityInventory(root: string, rendererFacts: unknown): {
+export function collectBlockQualityInventory(root: string, rendererFacts: unknown, states: QualityStateInventory): {
   items: CollectedItem[]; warnings: string[]; elapsed_ms: number;
   counts: { definitions: number; presets: number; items: number; uniqueAssets: number; filesRead: number };
 } {
@@ -103,6 +104,12 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
   sameIds(blocks, plannedBlocks, 'planning inventory'); sameIds(presets, plannedPresets, 'planning inventory');
   const packId = string(manifest.pack_id, 'pack id');
   const facts = uniqueMap(rows(rendererFacts, 'renderer facts'), 'catalog_id', 'renderer fact');
+  const stateItems = new Map(states.items.map(item => [item.catalog_id, item]));
+  if (stateItems.size !== states.items.length || JSON.stringify([...stateItems.keys()].sort()) !== JSON.stringify([...facts.keys()].sort())) throw new Error('State fixture inventory does not match renderer inventory.');
+  if (!Object.keys(states.sources).length) throw new Error('Missing state fixture sources.');
+  for (const [path, hash] of Object.entries(states.sources)) {
+    if (fileHash(path) !== hash) throw new Error(`Changed state fixture source: ${path}`);
+  }
   const warnings: string[] = [];
   const assetsSeen = new Set<string>();
   const asset = (value: EvidenceJson): AssetFact => {
@@ -134,8 +141,8 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
   ];
   if (JSON.stringify(catalog.map(item => item.catalog_id).sort()) !== JSON.stringify([...facts.keys()].sort())) throw new Error('renderer inventory does not match catalog.');
   const compilerSources = { ...trees.src, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']!, 'scripts/render-block-thumbnail-fixtures.php': common['scripts/render-block-thumbnail-fixtures.php']! };
-  const renderSources = { ...compilerSources, ...trees['resources/css'], 'dist/css/page-builder-public.css': common['dist/css/page-builder-public.css']! };
-  const editingSources = { ...trees['resources/js'], ...trees['tests/E2E'], ...trees['tests/Unit'], 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']! };
+  const renderSources = { ...compilerSources, ...trees['resources/css'], ...states.sources, 'dist/css/page-builder-public.css': common['dist/css/page-builder-public.css']! };
+  const editingSources = { ...trees['resources/js'], ...trees['tests/E2E'], ...trees['tests/Unit'], ...states.sources, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']! };
   const items = catalog.map(({ definition, preset, planned, catalog_id }): CollectedItem => {
     if (!Number.isInteger(definition.block_version) || Number(definition.block_version) < 1 || planned.block_version !== definition.block_version
       || (preset && (preset.block_version !== definition.block_version || planned.block_id !== definition.block_id))) throw new Error(`planning inventory version/block mismatch: ${catalog_id}`);
@@ -153,7 +160,7 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
       rights: { assets: assets.map(item => ({ ...item })), review_policy: 'explicit-maintainer-review-required' },
       render: { source_hash: hashString(fact.source_hash, 'renderer'), public_css_hash: hashString(fact.public_css_hash, 'CSS'),
         thumbnail: { path: thumbnailPath, sha256: fileHash(thumbnailPath) }, sources: renderSources },
-      editing: { sources: editingSources, required_states: planned.required_states ?? planned.current_editing ?? 'definition-defaults' },
+      editing: { sources: editingSources, required_states: planned.required_states ?? planned.current_editing ?? 'definition-defaults', state_bindings: stateItems.get(catalog_id)!.bindings.map(binding => ({ ...binding })) },
     };
     return { catalog_id, inputs, assets, dependencies: {
       content: [`${PACK}/manifest.json`, 'docs/productization/inventory.json', 'docs/productization/content-policy.md'],

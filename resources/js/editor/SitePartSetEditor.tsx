@@ -26,6 +26,7 @@ import {
   SitePartActionBar,
   SitePartDrawerItem,
   sitePartSetConfig,
+  withSitePartPermissions,
   SitePartPersona,
   SitePartPersonaSelector,
 } from './SitePartEditor';
@@ -74,7 +75,8 @@ export function SitePartSetEditor({
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [editorViewport, setEditorViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const config = useMemo(() => sitePartSetConfig(data, editorViewport === 'desktop'), [data, editorViewport]);
+  const baseConfig = useMemo(() => sitePartSetConfig(), []);
+  const config = useMemo(() => withSitePartPermissions(baseConfig, data, editorViewport === 'desktop'), [baseConfig, data, editorViewport]);
   const [message, setMessage] = useState<string | null>(null);
   const resourcesRef = useRef(resources);
   const dataRef = useRef(data);

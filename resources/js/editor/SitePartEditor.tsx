@@ -550,20 +550,24 @@ export function sitePartConfigFor(kind: SitePartKind, data?: SitePartPuckData, c
   all.HeaderNavigation.fields = { ...all.HeaderNavigation.fields!, useSiteSettings: settingsField };
   all.FooterSimple.fields = { ...all.FooterSimple.fields!, useSiteSettings: settingsField };
   all.FooterColumns.fields = { ...all.FooterColumns.fields!, useSiteSettings: settingsField };
-  const content = data?.content ?? [];
-  const existing = (types: string[]): boolean => content.some((block) => types.includes(block.type));
-  const headerBlock = content.find((block) => block.type === 'HeaderNavigation');
-  for (const name of allowed as Array<keyof SitePartComponents>) {
-    const occupied = name === 'HeaderSystemControls'
-      ? !headerBlock || Boolean(headerBlock.props.systemControls?.length)
-      : existing(name.startsWith('Footer') ? ['FooterSimple', 'FooterColumns'] : [name]);
-    // Drawer insertion checks type-level permissions, not resolvePermissions(item).
-    all[name].permissions = { insert: canInsert && !occupied, duplicate: false };
-  }
-  return {
+  return withSitePartPermissions({
     components: Object.fromEntries(Object.entries(all).filter(([name]) => allowed.includes(name))) as Config<SitePartComponents>['components'],
     root: { fields: {}, render: ({ puck }) => <div className={`g7pb-site-part-preview g7pb-site-part-preview--${kind}`}>{kind === 'footer' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}{puck.renderDropZone({ zone: 'default-zone', allow: allowed.filter((name) => name !== 'HeaderSystemControls') })}{kind === 'header' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}</div> },
-  };
+  }, data, canInsert);
+}
+
+/** Recompute insertion only: keep render/field identities and open preview state. */
+export function withSitePartPermissions(config: Config<SitePartComponents>, data?: SitePartPuckData, canInsert = true): Config<SitePartComponents> {
+  const content = data?.content ?? [];
+  const headerBlock = content.find((block) => block.type === 'HeaderNavigation');
+  const components = Object.fromEntries(Object.entries(config.components).map(([name, component]) => {
+    const occupied = name === 'HeaderSystemControls'
+      ? !headerBlock || Boolean(headerBlock.props.systemControls?.length)
+      : content.some((block) => name.startsWith('Footer') ? block.type.startsWith('Footer') : block.type === name);
+    // Drawer insertion checks type-level permissions, not resolvePermissions(item).
+    return [name, { ...component, permissions: { ...component.permissions, insert: canInsert && !occupied, duplicate: false } }];
+  })) as Config<SitePartComponents>['components'];
+  return { ...config, components };
 }
 
 export function sitePartSetConfig(data?: SitePartPuckData, canInsert = true): Config<SitePartComponents> {
@@ -604,7 +608,8 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   const [data, setData] = useState<SitePartPuckData>({ root: { props: {} }, content: [] });
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
-  const config = useMemo(() => sitePartConfigFor(kind, data, !busy), [kind, data, busy]);
+  const baseConfig = useMemo(() => sitePartConfigFor(kind), [kind]);
+  const config = useMemo(() => withSitePartPermissions(baseConfig, data, !busy), [baseConfig, data, busy]);
   const [dirty, setDirty] = useState(false);
   const resourceRef = useRef<SitePartResource | null>(null);
   const dataRef = useRef(data);

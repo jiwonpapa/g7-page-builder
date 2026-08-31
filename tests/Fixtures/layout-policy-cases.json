@@ -1,0 +1,68 @@
+{
+  "valid": {
+    "schema_version": "g7-page-builder/v2",
+    "document_id": "00000000-0000-4000-8000-000000000001",
+    "slug": "nested-contract",
+    "locale": "ko",
+    "mode": "canvas",
+    "shell_mode": "template",
+    "seo": { "title": "구조 보존" },
+    "tokens": { "color": "blue" },
+    "blocks": [{
+      "instance_id": "00000000-0000-4000-8000-000000000002",
+      "type": "layout.section-01", "block_version": 1,
+      "props": { "gap": "normal" },
+      "slots": { "content": [{
+        "instance_id": "00000000-0000-4000-8000-000000000003",
+        "type": "layout.columns-01", "block_version": 1,
+        "props": { "columns": 2, "ratio": "1:1", "gap": "compact" },
+        "slots": {
+          "column1": [{
+            "instance_id": "00000000-0000-4000-8000-000000000004",
+            "type": "layout.stack-01", "block_version": 1,
+            "props": { "gap": "normal" },
+            "slots": { "content": [{
+              "instance_id": "00000000-0000-4000-8000-000000000005",
+              "type": "content.heading-01", "block_version": 1,
+              "props": { "heading": "보존할 제목", "appearance": { "textAlign": "center" } },
+              "responsive": { "mobile": { "appearance": { "textAlign": "left" } } }
+            }] }
+          }],
+          "column2": [{
+            "instance_id": "00000000-0000-4000-8000-000000000006",
+            "type": "content.rich-text-01", "block_version": 1,
+            "props": { "body": "<p>내용 / 한글 😀</p>" }, "slots": {}
+          }]
+        }
+      }] }
+    }]
+  },
+  "cases": [
+    { "name": "root is a list", "path": ["blocks"], "value": {}, "error": "shape" },
+    { "name": "block is an object", "path": ["blocks", 0], "value": null, "error": "shape" },
+    { "name": "UUID required", "path": ["blocks", 0, "instance_id"], "value": "puck-id", "error": "id" },
+    { "name": "version is an integer", "path": ["blocks", 0, "block_version"], "value": 1.5, "error": "shape" },
+    { "name": "layout version is known", "path": ["blocks", 0, "block_version"], "value": 2, "error": "type" },
+    { "name": "unknown type", "path": ["blocks", 0, "type"], "value": "vendor.unknown-01", "error": "type" },
+    { "name": "no root Stack", "path": ["blocks", 0, "type"], "value": "layout.stack-01", "error": "parent" },
+    { "name": "no Section in Section", "path": ["blocks", 0, "slots", "content", 0, "type"], "value": "layout.section-01", "error": "parent" },
+    { "name": "props must be an object", "path": ["blocks", 0, "props"], "value": null, "error": "shape" },
+    { "name": "props cannot be a list", "path": ["blocks", 0, "props"], "value": [1], "error": "shape" },
+    { "name": "slots must be an object", "path": ["blocks", 0, "slots"], "value": null, "error": "shape" },
+    { "name": "slots cannot be a list", "path": ["blocks", 0, "slots"], "value": [[]], "error": "shape" },
+    { "name": "no undeclared slot even empty", "path": ["blocks", 0, "slots", "unknown"], "value": [], "error": "slot" },
+    { "name": "slot children are a list", "path": ["blocks", 0, "slots", "content"], "value": {}, "error": "shape" },
+    { "name": "duplicate UUID", "path": ["blocks", 0, "slots", "content", 0, "instance_id"], "value": "00000000-0000-4000-8000-000000000002", "error": "duplicate_id" },
+    { "name": "columns out of range", "path": ["blocks", 0, "slots", "content", 0, "props", "columns"], "value": 4, "error": "columns" },
+    { "name": "ratio does not match columns", "path": ["blocks", 0, "slots", "content", 0, "props", "ratio"], "value": "1:1:1", "error": "columns" },
+    { "name": "inactive column rejected", "path": ["blocks", 0, "slots", "content", 0, "slots", "column3"], "value": [], "error": "slot" },
+    { "name": "leaf cannot declare children", "path": ["blocks", 0, "slots", "content", 0, "slots", "column2", 0, "slots", "content"], "value": [], "error": "slot" },
+    { "name": "no nested compound", "path": ["blocks", 0, "slots", "content", 0, "slots", "column2", 0, "type"], "value": "content.hero-centered-01", "error": "parent" }
+  ],
+  "byte_cases": [
+    { "value": "한글😀/", "bytes": 13 },
+    { "value": "\n\"\\", "bytes": 8 },
+    { "value": [1, 1.5, -0.0, 0.0000001, 0.000001, 100000000000000000000, 1e21], "bytes": 51 },
+    { "value": "\u2028\u2029", "bytes": 8 }
+  ]
+}

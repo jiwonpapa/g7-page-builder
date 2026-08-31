@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
-import { assessQualityEvidence, createPendingEvidence, fingerprintEvidence } from './lib/blockQualityEvidence.ts';
+import { assessQualityEvidence, createPendingEvidence, fingerprintEvidence, refreshQualityEvidence } from './lib/blockQualityEvidence.ts';
 import { collectBlockQualityInventory, compareEvidenceFingerprints } from './lib/blockQualityInventory.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -40,8 +40,8 @@ export function collectCurrentEvidence(root = ROOT) {
   return { inventory, current, snapshot, legacySourceChanges, renderMs, started };
 }
 
-export function checkQualityEvidence(root = ROOT, collected = collectCurrentEvidence(root)) {
-  const { inventory, current, snapshot } = collected;
+function inspectCandidate(root, collected) {
+  const { current, snapshot } = collected;
   const candidate = json(join(root, LEDGER));
   let assessment = assessQualityEvidence(candidate, current, {});
   const artifacts = {};
@@ -68,6 +68,18 @@ export function checkQualityEvidence(root = ROOT, collected = collectCurrentEvid
       artifactErrors.push('legacy-review-does-not-match-preserved-v1-record');
     }
   }
+  return { candidate, assessment, artifacts, artifactErrors, schemaValid };
+}
+
+export function proposeQualityEvidenceRefresh(root = ROOT, collected = collectCurrentEvidence(root)) {
+  const { candidate, artifacts, artifactErrors } = inspectCandidate(root, collected);
+  if (artifactErrors.length) throw new Error(`Cannot refresh unreadable/corrupt evidence: ${artifactErrors.join(', ')}`);
+  return refreshQualityEvidence(candidate, collected.current, artifacts);
+}
+
+export function checkQualityEvidence(root = ROOT, collected = collectCurrentEvidence(root)) {
+  const { inventory, current, snapshot } = collected;
+  const { candidate, assessment, artifactErrors, schemaValid } = inspectCandidate(root, collected);
   const comparable = schemaValid && !assessment.errors.includes('duplicate-item');
   const impact = comparable ? compareEvidenceFingerprints(candidate.items, current) : null;
   const errors = [...assessment.errors, ...artifactErrors];
@@ -84,18 +96,23 @@ export function checkQualityEvidence(root = ROOT, collected = collectCurrentEvid
 
 function main(args) {
   if (Number(process.versions.node.split('.')[0]) !== 24) throw new Error('Quality evidence CLI requires Node 24.');
-  if (args.some(arg => !['--json', '--snapshot', '--require-ready'].includes(arg))
-    || (args.includes('--snapshot') && args.length !== 1)) throw new Error('Usage: node scripts/check-block-quality-evidence.mjs [--json] [--require-ready] | --snapshot');
+  if (args.some(arg => !['--json', '--snapshot', '--refresh', '--require-ready'].includes(arg))
+    || (args.some(arg => ['--snapshot', '--refresh'].includes(arg)) && args.length !== 1)) throw new Error('Usage: node scripts/check-block-quality-evidence.mjs [--json] [--require-ready] | --snapshot | --refresh');
   const collected = collectCurrentEvidence();
   if (args.includes('--snapshot')) {
     // Emits a proposal only: never writes a ledger, approval or successful verification.
     process.stdout.write(`${JSON.stringify(collected.snapshot, null, 2)}\n`);
     return;
   }
+  if (args.includes('--refresh')) {
+    process.stdout.write(`${JSON.stringify(proposeQualityEvidenceRefresh(ROOT, collected), null, 2)}\n`);
+    return;
+  }
   const report = checkQualityEvidence(ROOT, collected);
   if (args.includes('--json')) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   else {
-    process.stdout.write(`BLOCK_QUALITY_EVIDENCE ${report.shadow_valid ? 'SHADOW_OK' : 'FAIL'}: ${report.counts.items} items; ${report.pending_count} pending; ready=${report.ready}\n`);
+    const status = !report.shadow_valid ? 'FAIL' : args.includes('--require-ready') && !report.ready ? 'NOT_READY' : 'SHADOW_OK';
+    process.stdout.write(`BLOCK_QUALITY_EVIDENCE ${status}: ${report.counts.items} items; ${report.pending_count} pending; ready=${report.ready}\n`);
     process.stdout.write(`Changed scopes: ${JSON.stringify(report.changed_by_scope)}; ${report.timings_ms.total}ms\n`);
     for (const warning of report.warnings) process.stdout.write(`WARNING ${warning}\n`);
     for (const error of report.errors) process.stderr.write(`${error}\n`);

@@ -78,3 +78,26 @@ Task `productization-phase2b-20260831`, 기준 SHA `4558235c0345f9b227521a74933d
 ### 2-C로 이어갈 범위
 
 새 shadow 판정은 현재 수동 CLI/하네스이고 기존 v1 제출/릴리스 gate를 아직 대체하지 않습니다. 다음 배치에서 source 변경 시 영향 범위의 결정만 pending으로 되돌리고 나머지를 보존하는 이행, 개발 검사·release 차단 연결, 실패 fixture와 전체 게이트 검증을 수행합니다. 후속 6~7차의 콘텐츠 심사/권리 검토·실제 화면 검증을 자동으로 만들어 통과시키지 않습니다.
+
+## 2-C 작업 카드 — 갱신과 gate 연결
+
+기준 SHA `58933d5873d8a4575c2510dfc74c7e396a5a650e`(2-B main 통합), task `productization-phase2c-20260831`, mixed/shared-contract/version. 2-B 제출 `e25409b`와 main 통합에서 PHPUnit 134개·Vitest 301개·frontend production build/기존 v1 fresh source를 통과했고, 통합 후 Docker에서도 새 evidence contract harness 140개를 다시 통과했습니다.
+
+- QA-01/QA-02: 변경 범위만 pending으로 재설정하는 순수 TS 함수와 읽기 전용 `--refresh` 제안 출력. 변경 없는 결정·과거 기록을 보존하고 파일 삭제/변조·모순된 source를 갱신으로 숨기지 않습니다.
+- 제출의 단위시험 및 전체 frontend 검사에 v2 shadow 검사를 추가하고, 패키징·온라인 배포 전 `--require-ready`를 추가합니다. 기존 v1·site-shell·integration/release guard는 제거하거나 우회하지 않습니다. 실제 배포 명령은 실행하지 않습니다.
+- 재사용: 2-A schema/판정 함수, 2-B 현재 PHP/파일 collector와 artifact 검사, 기존 Node 24/PHP 8.5/worktree gate. 새 원장/버전/서버 API를 추가하지 않습니다.
+- RED→GREEN: CSS·copy·자산·editor 변경, 새/삭제 ID, 불변성, 거부/실패 보존, 증거 삭제/변조, gate 연결을 먼저 시험합니다.
+- 사용자 데이터·발행본 변화 없음. 갱신 제안은 파일에 자동 저장하지 않으며 이전 원장/결정은 Git 변경 검토·history로 보존합니다. 후속 상태별 실제 화면 fixture/기술 검증은 별도 근거이며 560개 pending을 자동 합격시키지 않습니다.
+
+### 2-C 실행 증거
+
+- 새 refresh 시험 9건을 먼저 실패시킨 뒤 통과시켰습니다. 전체 Vitest V8 **35 files / 310 tests PASS**, 21.82초(macOS Node 24). 판정 코어 coverage **100/98.63/100/100%**, collector **99.37/99/100/100%**이며 기존 하한을 유지합니다.
+- 갱신 로직은 CSS/렌더 변경 시 content/rights 결정을 보존하고 render/editing만 pending으로 만듭니다. copy·자산·editor·새/삭제 ID도 시험하고 원본 객체를 변경하지 않습니다. 자동 approved/passed 생성은 없습니다.
+- 실제 140개 원장의 이번 변경은 **content 0 / rights 0 / render 0 / editing 140**입니다. 단위시험 파일 변경을 보수적으로 편집 검증 전체에 반영했으며 다른 세 범위의 지문·과거 review는 그대로입니다. 갱신 후에도 560개 pending입니다.
+- current PHP/실파일 하네스에서 정상 proof·변조·삭제·경로 이탈·stale·legacy 변조 및 refresh 거부를 검사했습니다. native Node CLI `--refresh`는 현재 추적 원장과 같고 `--require-ready`는 현재 pending 원장을 exit 1로 차단합니다.
+- gate wiring 시험은 연결 누락 상태의 RED를 확인한 뒤 통과했습니다. 개발 shadow 연결 삭제, release의 `|| true` 추가, strict 옵션 제거, v1 gate 제거 등 6개 변조 fixture를 모두 거부합니다. 패키징·배포 스크립트는 실행하지 않았습니다.
+- 전체 frontend check는 build 뒤 새 증거 검사를 실행합니다. Local `quality-coordination`에는 정적 wiring 시험만 넣어 아직 새 build 전의 dist 때문에 검사가 순환 차단되지 않도록 했습니다.
+
+### 2차에서 아직 남은 수락 항목
+
+이번 구현은 승인 분리/영향 수집/안전 갱신/배포 차단의 기반입니다. 계획의 G7R-05 상태별 fixture ID·적용/제외 이유를 실제 시험 공급자와 연결하는 작업, 필수 상태 fixture 삭제·샘플 API 누출 부정 시험, `rich-boundary`의 오래된 렌더 증거 해소는 아직 남아 있습니다. 계획 inventory에는 기본/긴 문구/반응형/저장재진입 각95, 미디어 없음39, 목록 경계57, 동적 empty/error/capability 부재 각6의 요구가 있으나, 선언 수를 실행 합격 수로 세지 않습니다. 이 수락 항목을 닫기 전에는 2차 전체 완료 또는 3차 중첩 완료를 선언하지 않습니다.

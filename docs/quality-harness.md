@@ -34,6 +34,16 @@ Node 24에서 `node scripts/check-block-quality-evidence.mjs --json`을 실행�
 
 `bash tests/Harness/block-quality-evidence.test.sh`는 실제 140개 현재 renderer와 원장을 비교하고, 별도 고유 임시 디렉터리에서 승인 fixture·변조/삭제된 파일·경로 이탈·stale·재고 누락을 검증합니다. 테스트용 승인 fixture는 추적 원장에 기록하지 않습니다. 새 collector의 Vitest coverage 하한도 95/90/95/95로 적용합니다.
 
+### 차수 2-C: 영향 범위 갱신과 배포 차단
+
+현재 `test:unit`·제품 E2E 전 검사·`check`는 v2 shadow 무결성을 검사합니다. `check`에서는 production build **뒤에** 현재 렌더/원장 검사를 실행합니다. `quality-coordination`은 배포 스크립트를 실행하지 않고 gate 연결 자체를 검사하며, actual evidence 하네스는 build 이후 frontend check에 포함합니다.
+
+패키징과 온라인 배포에는 `npm run check:block-quality-evidence -- --require-ready`가 추가됩니다. pending·미확인 자산·stale·누락/변조된 증거는 배포를 차단합니다. 기존 v1/site-shell/최종 SHA guard도 그대로 필요합니다. 이번 배치에서 배포하지 않습니다.
+
+`node scripts/check-block-quality-evidence.mjs --refresh`는 **변경 없는 결정은 보존하고 영향 범위만 pending으로 되돌린 제안 JSON**을 stdout으로 출력합니다. 소스 변경이 없는 rejected/failed는 유지하며 증거 삭제/변조·과거 기록 변조를 reset으로 숨기지 않습니다. 새/삭제된 ID도 제안 diff로 확인하고 Git에 기록해야 합니다. `--snapshot`은 초기 이행용이며 반복 갱신에 쓰지 않습니다. 어느 명령도 approved/passed를 생성하거나 원장 파일을 자동 저장하지 않습니다.
+
+Worktree의 제출 준비에는 Node 24뿐 아니라 PHP 8.5·Composer 의존성과 현재 `npm run build` 결과가 필요합니다. 소스/시험 변경 후 build→변경 영향 확인→`--refresh` 제안 diff 검토/적용→shadow 및 단위시험→`task-submit` 순서입니다. 원장을 최신화한 것과 실제 화면/심사의 완료는 구분하며, 최종 제품 심사 때까지 pending을 유지합니다.
+
 ## Worktree coordination
 
 - 모든 구현 Worktree는 깨끗한 기준 SHA, 소유 path prefix, 검증 profile을 `coord-start`로 등록합니다.

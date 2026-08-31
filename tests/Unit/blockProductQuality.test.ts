@@ -140,4 +140,61 @@ describe('built-in block product quality gate', () => {
     });
     expect(result.errors.join('\n')).toContain('동적 미리보기 항목이 부족합니다');
   });
+
+  it('checks technical quality without approving or rewriting a stale legacy review', () => {
+    const quality = clone(qualitySource);
+    quality.approval.catalog_digest = 'a'.repeat(64);
+    quality.approval.decision = 'rejected';
+    const original = clone(quality);
+    const result = validateBlockProductQuality({
+      root, manifest: clone(manifestSource), index: clone(indexSource), quality, packageJson,
+      technical: true, verifyRenderSource: true,
+      freshSources: clone(indexSource.sources), freshDynamicSamples: clone(indexSource.dynamic_samples),
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.approvalChecked).toBe(false);
+    expect(quality).toEqual(original);
+    expect(validateBlockProductQuality({
+      root, manifest: clone(manifestSource), index: clone(indexSource), quality, packageJson,
+    }).errors.join('\n')).toContain('제품 검토 승인이 현재 생성물과 다릅니다');
+  });
+
+  it('retains current CSS source, content and dynamic sample failures in technical mode', () => {
+    const manifest = clone(manifestSource);
+    manifest.presets.find(preset => preset.preset_id === 'hero.poster')!.props.heading = '제목을 입력해주세요';
+    const freshSources = clone(indexSource.sources);
+    const catalogId = Object.keys(freshSources)[0] as keyof typeof freshSources;
+    freshSources[catalogId] = 'b'.repeat(64);
+    const result = validateBlockProductQuality({
+      root, manifest, index: clone(indexSource), quality: clone(qualitySource), packageJson,
+      technical: true, verifyRenderSource: true, freshSources, freshDynamicSamples: {},
+    });
+    expect(result.errors.join('\n')).toContain('placeholder 문구');
+    expect(result.errors.join('\n')).toContain('현재 props/compiler/CSS보다 오래되었습니다');
+    expect(result.errors.join('\n')).toContain('동적 미리보기 샘플이 현재 fixture와 다릅니다');
+  });
+
+  it.each([
+    { candidate: true, release: true },
+    { technical: true, release: true },
+    { candidate: true, technical: true },
+  ])('rejects incompatible approval modes %j', (modes) => {
+    const result = validateBlockProductQuality({
+      root, manifest: clone(manifestSource), index: clone(indexSource), quality: approvedQuality(), packageJson,
+      ...modes,
+    });
+    expect(result.errors.join('\n')).toContain('서로 함께 사용할 수 없습니다');
+  });
+
+  it('does not let technical mode drop source freshness or evidence checks from development wiring', () => {
+    for (const key of ['check', 'test:unit', 'pretest:e2e:product']) {
+      const changedPackage = clone(packageJson);
+      changedPackage.scripts[key] = changedPackage.scripts[key].replace('npm run check:block-quality-evidence', 'true');
+      const result = validateBlockProductQuality({
+        root, manifest: clone(manifestSource), index: clone(indexSource), quality: clone(qualitySource),
+        packageJson: changedPackage, technical: true,
+      });
+      expect(result.errors.join('\n')).toContain(`${key}가 기술 품질과 v2 증거 무결성`);
+    }
+  });
 });

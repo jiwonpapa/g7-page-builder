@@ -154,14 +154,12 @@ function validateWiring(errors, root, packageJson) {
   if (scripts['check:block-product-quality'] !== 'node scripts/check-block-product-quality.mjs') {
     errors.push('package.json에 고정된 check:block-product-quality 명령이 필요합니다.');
   }
-  if (typeof scripts.check !== 'string' || !scripts.check.includes('npm run check:block-product-quality -- --verify-render-source')) {
-    errors.push('frontend 전체 check가 최신 renderer source까지 제품 품질 게이트를 실행해야 합니다.');
-  }
-  if (typeof scripts['test:unit'] !== 'string' || !scripts['test:unit'].includes('npm run check:block-product-quality')) {
-    errors.push('task 제출 단위시험이 제품 품질 게이트를 실행해야 합니다.');
-  }
-  if (typeof scripts['pretest:e2e:product'] !== 'string' || !scripts['pretest:e2e:product'].includes('npm run check:block-product-quality -- --verify-render-source')) {
-    errors.push('제품 E2E 전에 최신 renderer source 제품 품질 게이트를 실행해야 합니다.');
+  for (const key of ['check', 'test:unit', 'pretest:e2e:product']) {
+    const commands = (scripts[key] ?? '').split(' && ');
+    const technical = `npm run check:block-product-quality -- --technical${key === 'test:unit' ? '' : ' --verify-render-source'}`;
+    if (!commands.includes(technical) || !commands.includes('npm run check:block-quality-evidence')) {
+      errors.push(`${key}가 기술 품질과 v2 증거 무결성 게이트를 함께 실행해야 합니다.`);
+    }
   }
   const generator = readFileSync(resolve(root, 'scripts/generate-block-thumbnails.mjs'), 'utf8');
   if (!/check-block-product-quality\.mjs[\s\S]*--candidate[\s\S]*--verify-render-source/.test(generator)) {
@@ -182,12 +180,16 @@ export function validateBlockProductQuality({
   quality,
   packageJson,
   candidate = false,
+  technical = false,
   release = false,
   verifyRenderSource = false,
   freshSources = null,
   freshDynamicSamples = null,
 }) {
   const errors = [];
+  if ([candidate, technical, release].filter(Boolean).length > 1) {
+    errors.push('candidate, technical, release 모드는 서로 함께 사용할 수 없습니다.');
+  }
   const contract = quality.contract;
   const approval = quality.approval;
   const policies = contract.block_policies;
@@ -326,7 +328,10 @@ export function validateBlockProductQuality({
   }
 
   const digest = productReviewDigest(contract.contract_version, items);
-  if (!candidate) {
+  // Development may verify changed render artifacts while the preserved v1
+  // approval remains historical. Neither this nor candidate mode grants approval.
+  const approvalChecked = !candidate && !technical;
+  if (approvalChecked) {
     if (approval.catalog_digest !== digest) errors.push(`제품 검토 승인이 현재 생성물과 다릅니다. review_digest=${digest}`);
     if (approval.item_count !== items.length) errors.push('제품 검토 승인 item_count가 현재 생성물 수와 다릅니다.');
     if (approval.decision !== 'approved') errors.push('제품 검토가 approved 상태가 아닙니다.');
@@ -336,16 +341,25 @@ export function validateBlockProductQuality({
     }
     if (!contract.review.allowed_reviewer_kinds.includes(approval.reviewer?.kind)) errors.push('허용되지 않은 제품 검토자 종류입니다.');
   }
-  if (release) validateWiring(errors, root, packageJson);
-  return { digest, errors, items };
+  if (release || technical) validateWiring(errors, root, packageJson);
+  return { digest, errors, items, approvalChecked };
 }
 
 async function main() {
-  const rootFlag = process.argv.indexOf('--root');
-  const root = resolve(rootFlag >= 0 ? process.argv[rootFlag + 1] : process.cwd());
-  const candidate = process.argv.includes('--candidate');
-  const release = process.argv.includes('--release');
-  const verifyRenderSource = process.argv.includes('--verify-render-source');
+  const args = process.argv.slice(2);
+  const rootFlag = args.indexOf('--root');
+  const rootValue = rootFlag >= 0 ? args[rootFlag + 1] : process.cwd();
+  if (!rootValue || rootValue.startsWith('--')) throw new Error('--root requires a path.');
+  const flags = args.filter((_, index) => rootFlag < 0 || (index !== rootFlag && index !== rootFlag + 1));
+  const allowed = ['--candidate', '--technical', '--release', '--verify-render-source'];
+  if (flags.some(flag => !allowed.includes(flag)) || new Set(flags).size !== flags.length) {
+    throw new Error('Unknown or duplicate block quality option.');
+  }
+  const root = resolve(rootValue);
+  const candidate = flags.includes('--candidate');
+  const technical = flags.includes('--technical');
+  const release = flags.includes('--release');
+  const verifyRenderSource = flags.includes('--verify-render-source');
   const manifest = json(resolve(root, MANIFEST_PATH));
   const index = json(resolve(root, GENERATED_INDEX_PATH));
   const quality = json(resolve(root, QUALITY_PATH));
@@ -359,13 +373,14 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const result = validateBlockProductQuality({ root, manifest, index, quality, packageJson, candidate, release, verifyRenderSource });
+  const result = validateBlockProductQuality({ root, manifest, index, quality, packageJson, candidate, technical, release, verifyRenderSource });
   if (result.errors.length > 0) {
     for (const error of result.errors) console.error(`BLOCK_PRODUCT_QUALITY\t${error}`);
     process.exitCode = 1;
     return;
   }
-  console.log(`BLOCK_PRODUCT_QUALITY\tOK items=${result.items.length} review_digest=${result.digest}${candidate ? ' candidate=true' : ''}`);
+  const mode = technical ? 'TECHNICAL_OK' : candidate ? 'CANDIDATE_OK' : 'LEGACY_REVIEW_OK';
+  console.log(`BLOCK_PRODUCT_QUALITY\t${mode} items=${result.items.length} review_digest=${result.digest} approval_checked=${result.approvalChecked} release_authorized=false`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main();

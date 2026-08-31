@@ -46,11 +46,14 @@ describe('Site Part Header preview', () => {
     const root = createRoot(container);
     mounted.push(() => act(() => root.unmount()));
     const options = { search: true, account: true, cart: true, notifications: true, theme: true, locale: true, currency: true };
-    const render = (selected: boolean): React.ReactElement => <SitePartPersona.Provider value="admin"><HeaderSystemControlsPreview {...{ ...options, puck: { isSelected: selected } }} /></SitePartPersona.Provider>;
+    let selections = 0;
+    const render = (selected: boolean): React.ReactElement => <SitePartPersona.Provider value="admin"><HeaderSystemControlsPreview {...{ ...options, puck: { isSelected: selected } }} onSelect={() => { selections += 1; }} /></SitePartPersona.Provider>;
     await act(async () => root.render(render(false)));
     const toggle = container.querySelector<HTMLButtonElement>('[data-g7pb-shell-toggle="account"]');
     const panel = container.querySelector<HTMLElement>('[data-g7pb-shell-panel="account"]');
     await act(async () => toggle?.click());
+    expect(selections).toBeGreaterThan(0);
+    const firstSelections = selections;
     expect(panel?.hidden).toBe(false);
     await act(async () => root.render(render(true)));
     expect(container.querySelector('[data-g7pb-shell-panel="account"]')).toBe(panel);
@@ -62,6 +65,7 @@ describe('Site Part Header preview', () => {
     await act(async () => admin?.dispatchEvent(click));
     expect(click.defaultPrevented).toBe(true);
     expect(panel?.hidden).toBe(false);
+    expect(selections).toBeGreaterThan(firstSelections);
   });
 
   it('shows the configured G7 system controls beside editable Header content', async () => {

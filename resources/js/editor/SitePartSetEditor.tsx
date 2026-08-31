@@ -75,7 +75,6 @@ export function SitePartSetEditor({
   const [dirty, setDirty] = useState(false);
   const [editorViewport, setEditorViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const config = useMemo(() => sitePartSetConfig(data, editorViewport === 'desktop'), [data, editorViewport]);
-  const [editorRevision, setEditorRevision] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const resourcesRef = useRef(resources);
   const dataRef = useRef(data);
@@ -198,17 +197,12 @@ export function SitePartSetEditor({
     setMessage(null);
   };
 
-  const applyPreset = (preset: SitePartSetPresetKey): void => {
+  const applyPreset = (preset: SitePartSetPresetKey, apply: (data: SitePartPuckData) => void): void => {
     const current = resourcesRef.current;
     if (!current) return;
     if (dirtyRef.current && !window.confirm('저장하지 않은 변경을 세트 프리셋으로 바꾸시겠습니까?')) return;
     const next = sitePartSetPresetToPuck(current.header.document, current.footer.document, preset);
-    dataRef.current = next;
-    setData(next);
-    setEditorRevision((value) => value + 1);
-    revisionRef.current += 1;
-    dirtyRef.current = true;
-    setDirty(true);
+    apply(next);
     setMessage('Header와 Footer 프리셋을 함께 적용했습니다.');
   };
 
@@ -240,7 +234,7 @@ export function SitePartSetEditor({
     {message ? <div className="g7pb-notice" role="alert"><span>{message}</span><button type="button" className="g7pb-notice__dismiss" onClick={() => setMessage(null)}>닫기</button></div> : null}
     <SitePartSetLayoutContext.Provider value={{ sets, selectedId: setId, dirty, onSelectSet: selectSet, onCreateSet, onPreset: applyPreset, onViewport: setEditorViewport }}>
     {loading ? <div className="g7pb-loading">헤더·푸터 세트를 준비하는 중입니다.</div> : resources ? <Puck
-      key={`${setId}:${resources.header.document.site_part_id}:${resources.footer.document.site_part_id}:${editorRevision}`}
+      key={`${setId}:${resources.header.document.site_part_id}:${resources.footer.document.site_part_id}`}
       config={config}
       plugins={SITE_PART_SET_PLUGINS}
       data={data}

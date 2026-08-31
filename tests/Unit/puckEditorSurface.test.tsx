@@ -90,6 +90,7 @@ const fixture: PageBuilderDocument = {
         eyebrow: 'Hero eyebrow',
         title: 'Hero title',
         body: '<p>Hero body</p>',
+        primaryCta: { label: 'Hero action', url: '/start' },
         alignment: 'center',
         image: { src: 'https://images.example.com/hero.webp', alt: 'Hero image' },
       },
@@ -804,6 +805,8 @@ describe('Puck editor surface contract', () => {
     expect((await eventually<HTMLElement>('[data-testid="page-builder-canvas-footer"]')).textContent).toContain('G7 활성 템플릿 Footer');
     expect(hero.textContent).toContain('Hero body');
     expect(hero.textContent).not.toContain('[object Object]');
+    // Route editing needs a real action, not an empty inline-field wrapper.
+    expect(hero.querySelector('[data-g7pb-inline-field="primaryLabel"]')?.textContent).toBe('Hero action');
 
     await act(async () => {
       hero.click();

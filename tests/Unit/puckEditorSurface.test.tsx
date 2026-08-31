@@ -1249,6 +1249,18 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('Server Hero');
     expect(gallery.textContent).toContain('Promotion hero');
     expect(gallery.textContent).not.toContain('로드되지 않은 블록');
+    const definitionThumbnail = gallery.querySelector<HTMLImageElement>('img[src$="thumbnails/hero.svg"]');
+    const presetThumbnail = gallery.querySelector<HTMLImageElement>('img[src$="thumbnails/promotion.svg"]');
+    expect(definitionThumbnail).not.toBeNull();
+    expect(presetThumbnail).not.toBeNull();
+    await act(async () => { definitionThumbnail?.dispatchEvent(new Event('error')); });
+    expect(gallery.querySelector('[data-g7pb-thumbnail-state="unavailable"]')?.textContent)
+      .toContain('미리보기를 불러오지 못했습니다');
+    expect(gallery.querySelector('[data-g7pb-thumbnail-state="unavailable"]')?.getAttribute('aria-hidden'))
+      .not.toBe('true');
+    expect(gallery.querySelector('img[src$="thumbnails/hero.svg"]')).toBeNull();
+    expect(gallery.querySelector('img[src$="thumbnails/promotion.svg"]')).toBe(presetThumbnail);
+    expect(onChange).not.toHaveBeenCalled();
     expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
       .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공', 'marketing']);
 

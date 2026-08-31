@@ -924,5 +924,8 @@ export function catalogPuckBlockToCanonical(type: string, raw: Record<string, un
 }
 
 export function CatalogGalleryThumbnail({ type }: { type: CatalogComponentType }): React.ReactElement {
-  return <div className={`g7pb-block-thumb g7pb-block-thumb--catalog g7pb-block-thumb--${type.replace(/[A-Z]/g, (value) => `-${value.toLowerCase()}`).replace(/^-/, '')}`} data-block-preview={type} aria-hidden="true"><b /><span><i /><i /><i /><i /></span><em /></div>;
+  return <span className="g7pb-block-thumb g7pb-block-thumb--unavailable" data-block-preview={type}
+    data-g7pb-thumbnail-state="unavailable">
+    <span>미리보기를 불러오지 못했습니다</span>
+  </span>;
 }

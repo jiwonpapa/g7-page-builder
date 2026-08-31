@@ -187,7 +187,8 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
     await expect(editor.getByTestId(`drawer-item:${component}`)).toHaveClass(/DrawerItem--disabled/);
   }
   const canvas = page.frameLocator('iframe').first();
-  const account = canvas.getByRole('button', { name: '계정 메뉴', exact: true });
+  const controls = canvas.locator('.g7pb-site-header [data-g7pb-system-controls]');
+  const account = controls.getByRole('button', { name: '계정 메뉴', exact: true });
   for (let repeat = 0; repeat < 3; repeat += 1) {
     const header = await canvas.locator('.g7pb-site-header').boundingBox();
     if (!header) throw new Error('Header selection geometry is missing.');
@@ -198,15 +199,27 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
     await expect(actionBar.getByRole('button', { name: 'Delete', exact: true })).toBeVisible();
   }
   await canvas.locator('.g7pb-site-part-action-bar').getByRole('button', { name: 'Delete', exact: true }).click();
-  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(0);
+  await expect(controls).toHaveCount(0);
+  await expect(canvas.locator('[data-g7pb-preview-mobile-menu] [data-g7pb-system-admin]')).toHaveCount(0);
   await expect(editor.getByTestId('drawer-item:HeaderSystemControls')).not.toHaveClass(/DrawerItem--disabled/);
   await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
-  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(1);
+  await expect(controls).toHaveCount(1);
   await expect(editor.getByTestId('drawer-item:HeaderSystemControls')).toHaveClass(/DrawerItem--disabled/);
   await editor.getByRole('button', { name: '다시 실행', exact: true }).click();
-  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(0);
+  await expect(controls).toHaveCount(0);
   await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
-  await expect(canvas.locator('[data-g7pb-system-controls]')).toHaveCount(1);
+  await expect(controls).toHaveCount(1);
+  await editor.getByTestId('page-builder-site-part-set-save').click();
+  await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
+  await editor.getByText('세트', { exact: true }).click();
+  await editor.getByTestId('page-builder-site-part-set-presets').getByRole('button', { name: /미니멀/ }).click();
+  await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(0);
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(1);
+  await editor.getByRole('button', { name: '다시 실행', exact: true }).click();
+  await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(0);
+  await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
+  await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(1);
   await page.screenshot({ path: 'output/playwright/site-part-workspace-ux.png', fullPage: false });
 }
 

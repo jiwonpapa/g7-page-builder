@@ -1384,13 +1384,14 @@ function CtaPreview({
   elementStyles,
   motion,
 }: Omit<CtaEditorProps, 'heading' | 'body'> & { id: string; heading: React.ReactNode; body: React.ReactNode }): React.ReactElement {
+  const { canEdit } = React.useContext(EditorViewportPolicyContext);
   return (
     <BlockFrame id={id} type="cta" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-cta-split--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-cta-split__copy">
           {canvasTextValue(eyebrow) && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{heading}</RichTextCanvasField>
-          {canvasTextValue(body) && <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>}
+          {(canEdit || canvasTextValue(body)) && <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>}
         </div>
         {(canvasTextValue(primaryLabel) || canvasTextValue(secondaryLabel)) && (
           <div className="g7pb-preview-cta-split__actions">

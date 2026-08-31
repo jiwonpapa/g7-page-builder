@@ -5,6 +5,7 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ssh_target="${G7PB_STAGING_SSH:-g7devops}"
 
 (cd "$root" && npm run check:block-product-quality -- --verify-render-source --release)
+(cd "$root" && npm run check:block-quality-evidence -- --require-ready)
 (cd "$root" && npm run check:site-shell-product-quality)
 "$root/scripts/staging-doctor.sh"
 

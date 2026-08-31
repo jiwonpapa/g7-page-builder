@@ -94,6 +94,33 @@ export function createPendingEvidence(
   };
 }
 
+/** Propose a source refresh, preserving unchanged decisions and never granting approval. */
+export function refreshQualityEvidence(
+  candidate: unknown,
+  current: EvidenceFingerprint[],
+  artifactDigests: Readonly<Record<string, string>>,
+): QualityEvidence {
+  if (!validate(candidate)) throw new Error('Cannot refresh invalid evidence schema.');
+  const integrity = assessQualityEvidence(candidate, candidate.items, artifactDigests);
+  const corrupt = integrity.errors.filter(error => !error.startsWith('rejected-review:') && !error.startsWith('failed-verification:'));
+  if (corrupt.length) throw new Error(`Cannot refresh corrupt evidence: ${corrupt.join(', ')}`);
+  const proposal = createPendingEvidence(current, candidate.legacy_review);
+  const check = assessQualityEvidence(proposal, current, artifactDigests);
+  if (check.errors.length) throw new Error(`Invalid current inventory: ${check.errors.join(', ')}`);
+  const previous = new Map(candidate.items.map(item => [item.catalog_id, item]));
+  for (const item of proposal.items) {
+    const before = previous.get(item.catalog_id);
+    if (!before) continue;
+    for (const scope of ['content', 'rights'] as const) {
+      if (before.source_digests[scope] === item.source_digests[scope]) item.reviews[scope] = structuredClone(before.reviews[scope]);
+    }
+    for (const scope of ['render', 'editing'] as const) {
+      if (before.source_digests[scope] === item.source_digests[scope]) item.verifications[scope] = structuredClone(before.verifications[scope]);
+    }
+  }
+  return proposal;
+}
+
 /** Artifact digests must come from actual files. Missing entries are not evidence. */
 export function assessQualityEvidence(
   candidate: unknown,

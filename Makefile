@@ -83,6 +83,7 @@ quality-coordination: check-agent-policy
 	npm run check:editor-acceptance
 	bash tests/Harness/editor-acceptance-contract.test.sh
 	bash tests/Harness/block-product-quality-contract.test.sh
+	bash tests/Harness/block-quality-gate-wiring.test.sh
 
 dev-bootstrap: runtime-guard
 	./scripts/dev-bootstrap.sh

@@ -4,6 +4,7 @@ import {
   assessQualityEvidence,
   createPendingEvidence,
   fingerprintEvidence,
+  refreshQualityEvidence,
   type EvidenceInputs,
   type QualityEvidence,
 } from '../../scripts/lib/blockQualityEvidence';
@@ -20,6 +21,74 @@ const inputs: EvidenceInputs = {
 const current = () => [fingerprintEvidence(ID, inputs)];
 const pending = () => createPendingEvidence(current(), {
   source_path: 'resources/block-packs/builtin-core/product-quality.json', record: legacyQuality.approval,
+});
+
+describe('evidence refresh without automatic approval', () => {
+  it('preserves unchanged decisions and exact provenance without mutating the old record', () => {
+    const before = reviewed();
+    const refreshed = refreshQualityEvidence(before, current(), artifacts);
+    expect(refreshed).toEqual(before);
+    expect(refreshed).not.toBe(before);
+    refreshed.items[0]!.reviews.content = { status: 'pending' };
+    expect(before.items[0]!.reviews.content.status).toBe('approved');
+  });
+
+  it.each([
+    ['render', ['render', 'editing']],
+    ['content', ['content', 'render', 'editing']],
+    ['rights', ['content', 'rights', 'render', 'editing']],
+    ['editing', ['editing']],
+  ] as const)('resets only affected decisions for %s source changes', (scope, reset) => {
+    const changed = structuredClone(inputs); changed[scope].newDependency = 'changed';
+    const after = [fingerprintEvidence(ID, changed)];
+    const before = reviewed();
+    const refreshed = refreshQualityEvidence(before, after, artifacts);
+    expect(refreshed.legacy_review).toEqual(before.legacy_review);
+    const decisions = { ...refreshed.items[0]!.reviews, ...refreshed.items[0]!.verifications };
+    for (const [name, decision] of Object.entries(decisions)) {
+      expect(decision.status === 'pending').toBe((reset as readonly string[]).includes(name));
+    }
+    expect(assessQualityEvidence(refreshed, after, artifacts).errors).toEqual([]);
+    expect(assessQualityEvidence(refreshed, after, artifacts).ready).toBe(false);
+  });
+
+  it('starts new catalog identities pending and omits removed identities only in the returned proposal', () => {
+    const before = reviewed();
+    const replacement = [fingerprintEvidence('block:new@1', inputs)];
+    const result = refreshQualityEvidence(before, replacement, artifacts);
+    expect(result.items.map(item => item.catalog_id)).toEqual(['block:new@1']);
+    expect(assessQualityEvidence(result, replacement, artifacts).pending).toHaveLength(4);
+    expect(before.items[0]!.catalog_id).toBe(ID);
+  });
+
+  it('does not erase rejected/failed decisions for unchanged sources', () => {
+    const before = reviewed();
+    Object.assign(before.items[0]!.reviews.content, { status: 'rejected', findings: ['잘못된 주장'] });
+    Object.assign(before.items[0]!.verifications.render, { status: 'failed', findings: ['가로 넘침'] });
+    const result = refreshQualityEvidence(before, current(), artifacts);
+    expect(result).toEqual(before);
+    expect(assessQualityEvidence(result, current(), artifacts).ready).toBe(false);
+  });
+
+  it('refuses refresh as a shortcut for deleted/changed evidence or corrupt provenance', () => {
+    expect(() => refreshQualityEvidence(reviewed(), current(), {})).toThrow('missing-artifact');
+    expect(() => refreshQualityEvidence(reviewed(), current(), { [artifact.path]: 'b'.repeat(64) })).toThrow('changed-artifact');
+    const corrupt = reviewed(); corrupt.legacy_review.record.decision = 'changed';
+    expect(() => refreshQualityEvidence(corrupt, current(), artifacts)).toThrow('legacy-review-integrity');
+    const staleDecision = reviewed();
+    Object.assign(staleDecision.items[0]!.reviews.content, { source_digest: 'b'.repeat(64) });
+    expect(() => refreshQualityEvidence(staleDecision, current(), artifacts)).toThrow('stale-review');
+  });
+
+  it('rejects invalid schemas and empty, duplicate or malformed current inventory', () => {
+    expect(() => refreshQualityEvidence({}, current(), artifacts)).toThrow('schema');
+    expect(() => refreshQualityEvidence(reviewed(), [], artifacts)).toThrow('current');
+    expect(() => refreshQualityEvidence(reviewed(), [...current(), ...current()], artifacts)).toThrow('current');
+    const malformed = current(); malformed[0]!.source_digests.render = 'bad';
+    expect(() => refreshQualityEvidence(reviewed(), malformed, artifacts)).toThrow('current');
+    const duplicate = reviewed(); duplicate.items.push(duplicate.items[0]!);
+    expect(() => refreshQualityEvidence(duplicate, current(), artifacts)).toThrow('duplicate');
+  });
 });
 
 // Test-only review fixture; production migration must never manufacture approval.

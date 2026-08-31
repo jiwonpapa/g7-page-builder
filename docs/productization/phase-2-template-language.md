@@ -11,13 +11,13 @@ G7 template 본문이 원본 문서의 언어를 받지 못하던 경계를 모�
 
 ## 실패 경계와 실제 증거
 
-Local `output/playwright/` 아래에 실행별 JSON·PNG·실패 context를 분리했습니다.
+실행별 PNG·실패 context·치수 JSON은 Local `output/playwright/` 아래에 보존했습니다. 통합 전 5회 실행의 reporter `report.json`은 worktree `/Users/neojins/.codex/worktrees/g7pb-wysiwyg-optional-20260831/output/playwright/` 아래에 있습니다. Playwright가 상대 reporter 경로를 config root 기준으로 해석하기 때문입니다. 통합 후 실행은 reporter도 Local 절대 경로를 지정합니다.
 
 1. `phase2e4-red-20260831`: 수정 전 main, PC **1 FAIL, 5.5초**. 한국어 문서를 저장해 재진입한 editor는 ko인데 template preview 본문은 en이었습니다. 최초 언어 실패에서 중단했습니다.
 2. `phase2e4-candidate-20260831`: 요청별 후보 레이아웃만 연결, PC **1 FAIL / 나머지 2 미실행**. 본문 ko 연결은 통과했으나 다음 CSS 경계에서 실패했습니다. Features 텍스트 7개 중 카드 제목 3개가 editor **18.72px / normal**, template **16px / 24px**였습니다. G7의 heading reset 상속이 원인입니다.
 3. `phase2e4-combined-20260831`: 후보 레이아웃+기존 제출 CSS로 글자 비교는 통과했으나, 시험이 서버 HTML의 ko를 hydrated G7 화면의 en과 비교해 실패했습니다. 최종 시험은 실제 렌더링된 G7 관리자 host 언어를 기준으로 preview/public host가 변하지 않는지 검사합니다. 서버 HTML을 현재 브라우저 상태로 잘못 사용하지 않습니다.
 4. `phase2e4-language-candidate-20260831`: PC PASS, 태블릿의 DOM 단발 읽기에서 undefined가 반환돼 FAIL, 모바일 미실행. 렌더 교체 중 분리 DOM을 읽는 가능성을 구분하기 위해 최종 시험은 현재 DOM에 연결된 본문의 상속 언어를 polling assertion으로 확인합니다. 고정 지연·언어 강제 변경·시험 재시도는 사용하지 않습니다.
-5. `phase2e4-verified-candidate-20260831`: 최종 후보 **6 PASS, 1.8분**, retries/skip/flaky 0. 3기기 × 언어 경계/엄격한 치수 경계이며 각 사례에서 ko/en/ja 문서를 확인합니다. 언어 경계는 현행 CSS, 치수 경계는 미통합 CSS 후보를 사용합니다. 후자의 결과를 실제 main CSS 합격으로 간주하지 않습니다.
+5. `phase2e4-verified-candidate-20260831`: 최종 후보 **6 PASS, 107.9초**, retries/skip/flaky 0. 3기기 × 언어 경계/엄격한 치수 경계이며 각 사례에서 ko/en/ja 문서를 확인합니다. 치수 JSON 9개는 각각 텍스트 7개, 합계 63개 비교에서 차이 0입니다. 언어 경계는 현행 CSS, 치수 경계는 미통합 CSS 후보를 사용합니다. 후자의 결과를 실제 main CSS 합격으로 간주하지 않습니다.
 
 후보 레이아웃은 실제 G7 병합 응답에서 모듈 소유 본문 노드 정확히 하나만 교체합니다. G7 shell과 API 원본을 보존하고 공유 runtime 파일/캐시를 덮어쓰지 않습니다. CSS 후보는 `rich-boundary-20260831`의 기존 dist, SHA-256 `84c05e5a1ca5c5dca63ffa74ed1875b229a9049514bcb50ea080b3497e24ed40`이며 최신 main에서 재빌드된 승인본이라는 뜻이 아닙니다.
 
@@ -35,6 +35,17 @@ Local `output/playwright/` 아래에 실행별 JSON·PNG·실패 context를 분�
 
 PC Features editor/preview PNG를 직접 열어 확인했습니다. editor는 축소된 캔버스이므로 PNG 자체의 픽셀 크기를 1:1 비교하지 않고 DOM 치수를 사용합니다. **preview에서 카드 아이콘이 사라지는 별도 차이**도 확인했습니다. G7 HtmlContent의 SVG 차단과 일치하며, 현재 글자/이미지 비교는 SVG 아이콘 존재를 검사하지 않습니다. 따라서 후보의 글자 치수 통과를 화면 전체 동일성이나 디자인 승인으로 표현하지 않습니다.
 
+모바일 editor/preview PNG도 열었지만 editor의 긴 블록 캡처는 iframe viewport 바깥이 잘리고 Puck 하단 도구가 섞여 전체 본문을 보여주지 못합니다. 이 파일은 완전한 모바일 시각 비교 증거로 사용하지 않습니다. 이번 모바일/태블릿 결과는 Chromium 기기 모사이며 실기기 검증이 아닙니다.
+
 다음 CSS/템플릿 출력 배치는 기존 여백 8건, 이번 제목 크기 3건, 아이콘 존재와 정렬을 구분해 검증해야 합니다. 기존 CSS 제출본의 native heading 규칙이 제목 크기 경계도 다루지만, SVG/기능성 요소 누락까지 해결했다는 뜻은 아닙니다. 보안 필터를 넓히거나 G7 템플릿을 수정하지 않고 모듈 소유 출력/고정 runtime adapter 정책 안에서 검토합니다.
 
 제출/통합 SHA와 gate 결과는 Git/coordination 기록으로 추적합니다. 실제 통합 main의 후보 주입 없는 결과는 `phase2e4-integrated-20260831`, 엄격한 치수 검사 잔여 실패는 `phase2e4-integrated-typography-20260831`로 별도 보존합니다. 2차 전체 완료·3차 진입·push·운영 배포·release 승인은 이번 배치에 포함하지 않습니다.
+
+## 통합 기록
+
+- 구현 제출 `824c2d1b1b9382e37417f31f4d86a4e28587781d` → main `37f6646271f51b3fe6ff8a9a98db3189a597cdf2`.
+- 제출 단위시험 340개 PASS(10.93초), Local의 Docker frontend 통합 검사 PASS(단위/coverage 340개, 17.17초). 기존 React act/usePuck 및 JSDOM navigation 경고는 있었으며 무경고 실행이라고 주장하지 않습니다.
+- Local runtime lease 아래 공식 `module:refresh-layout jiwonpapa-page_builder` 명령으로 모듈 선언 레이아웃을 갱신했습니다. home/public/preview 공개 layout API 세 응답에서 각 body가 정확히 하나이고 lang binding 및 기존 HtmlContent 자식이 보존됨을 확인했습니다. 기존 홈페이지 지정과 G7 템플릿 파일은 변경하지 않았습니다.
+- 실제 main `37f6646`의 후보 주입 없는 브라우저 실행: **12 PASS, 138.6초**, retries/skip/flaky 0. standalone ko/en 언어 치수 3개, template ko/en/ja 저장/reload/preview/public 언어 3개, Delete/Backspace 저장/발행 6개입니다. 이는 엄격한 template 치수 검사까지 합격했다는 뜻이 아닙니다.
+- 실제 main의 모바일 한국어 발행 PNG도 직접 확인했습니다. 문구는 유지되지만 위 카드 아이콘 누락이 실제 출력에서도 남습니다. 장문 모바일 editor 캡처의 한계와 별도로 보존합니다.
+- 실제 main의 엄격한 template 치수 검사는 **PC 1 FAIL, 4.3초**입니다. 본문 ko 연결은 통과하고 카드 제목 3개에서 fontSize/lineHeight가 달랐습니다. 태블릿/모바일 치수 검사는 이 실행에서 선택하지 않았으며, 전체 95개 프리셋/5개 Page Kit 재감사는 실행하지 않았습니다. 기존 여백 8건은 앞선 2-E2의 증거이며 이번에 전수 재측정한 숫자가 아닙니다.

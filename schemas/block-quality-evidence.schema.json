@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/block-quality-evidence-v2.json",
+  "title": "Independent content, rights, render and editing evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "legacy_review", "items"],
+  "properties": {
+    "schema_version": { "const": "g7pb-block-quality-evidence/v2" },
+    "legacy_review": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_path", "record_digest", "record"],
+      "properties": {
+        "source_path": { "$ref": "#/$defs/path" },
+        "record_digest": { "$ref": "#/$defs/digest" },
+        "record": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/json" } }
+      }
+    },
+    "items": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["catalog_id", "source_digests", "reviews", "verifications"],
+        "properties": {
+          "catalog_id": { "type": "string", "pattern": "^(?:block|preset):[^\\s]+$" },
+          "source_digests": {
+            "type": "object", "additionalProperties": false,
+            "required": ["content", "rights", "render", "editing"],
+            "properties": {
+              "content": { "$ref": "#/$defs/digest" }, "rights": { "$ref": "#/$defs/digest" },
+              "render": { "$ref": "#/$defs/digest" }, "editing": { "$ref": "#/$defs/digest" }
+            }
+          },
+          "reviews": {
+            "type": "object", "additionalProperties": false, "required": ["content", "rights"],
+            "properties": { "content": { "$ref": "#/$defs/review" }, "rights": { "$ref": "#/$defs/review" } }
+          },
+          "verifications": {
+            "type": "object", "additionalProperties": false, "required": ["render", "editing"],
+            "properties": { "render": { "$ref": "#/$defs/verification" }, "editing": { "$ref": "#/$defs/verification" } }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "json": { "anyOf": [
+      { "type": "null" }, { "type": "boolean" }, { "type": "number" }, { "type": "string" },
+      { "type": "array", "items": { "$ref": "#/$defs/json" } },
+      { "type": "object", "additionalProperties": { "$ref": "#/$defs/json" } }
+    ] },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "path": { "type": "string", "pattern": "^(?!.*(?:^|/)\\.\\.?(?:/|$))(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+$" },
+    "pending": { "type": "object", "additionalProperties": false, "required": ["status"], "properties": { "status": { "const": "pending" } } },
+    "evidence": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+        "properties": { "path": { "$ref": "#/$defs/path" }, "sha256": { "$ref": "#/$defs/digest" } }
+      }
+    },
+    "findings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "review": {
+      "oneOf": [
+        { "$ref": "#/$defs/pending" },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "source_digest", "reviewer", "reviewed_at", "findings", "evidence"],
+          "properties": {
+            "status": { "enum": ["approved", "rejected"] },
+            "source_digest": { "$ref": "#/$defs/digest" },
+            "reviewer": {
+              "type": "object", "additionalProperties": false, "required": ["kind", "name"],
+              "properties": { "kind": { "const": "maintainer" }, "name": { "type": "string", "minLength": 2, "maxLength": 120 } }
+            },
+            "reviewed_at": { "type": "string", "format": "date-time" },
+            "findings": { "$ref": "#/$defs/findings" }, "evidence": { "$ref": "#/$defs/evidence" }
+          },
+          "if": { "properties": { "status": { "const": "approved" } }, "required": ["status"] },
+          "then": { "properties": { "findings": { "type": "array", "maxItems": 0 } } },
+          "else": { "properties": { "findings": { "type": "array", "minItems": 1 } } }
+        }
+      ]
+    },
+    "verification": {
+      "oneOf": [
+        { "$ref": "#/$defs/pending" },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "source_digest", "tool", "checked_at", "findings", "evidence"],
+          "properties": {
+            "status": { "enum": ["passed", "failed"] }, "source_digest": { "$ref": "#/$defs/digest" },
+            "tool": { "type": "string", "minLength": 2 }, "checked_at": { "type": "string", "format": "date-time" },
+            "findings": { "$ref": "#/$defs/findings" }, "evidence": { "$ref": "#/$defs/evidence" }
+          },
+          "if": { "properties": { "status": { "const": "passed" } }, "required": ["status"] },
+          "then": { "properties": { "findings": { "type": "array", "maxItems": 0 } } },
+          "else": { "properties": { "findings": { "type": "array", "minItems": 1 } } }
+        }
+      ]
+    }
+  }
+}

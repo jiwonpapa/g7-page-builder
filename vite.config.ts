@@ -26,7 +26,7 @@ export default defineConfig(({ command }) => ({
     include: ['tests/Unit/**/*.test.ts', 'tests/Unit/**/*.test.tsx'],
     coverage: {
       provider: 'v8',
-      include: ['resources/js/**/*.{ts,tsx}'],
+      include: ['resources/js/**/*.{ts,tsx}', 'scripts/lib/blockQualityEvidence.ts'],
       exclude: [
         'resources/js/editor/main.tsx',
         // React/Puck lifecycle wiring is exercised in Playwright; typed conversion stays unit-covered.
@@ -35,6 +35,7 @@ export default defineConfig(({ command }) => ({
       reporter: ['text', 'json-summary', 'html'],
       reportsDirectory: 'output/coverage',
       thresholds: {
+        'scripts/lib/blockQualityEvidence.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
         statements: 54,
         branches: 54,
         functions: 47,

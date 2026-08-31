@@ -646,7 +646,15 @@ function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React
       <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
         <div className="g7pb-preview-hero-slider__viewport">
           <div className="g7pb-preview-hero-slider__track">
-            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}><div><small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath={`slides.${index}.title`}>{slide.title}</RichTextCanvasField><RichTextCanvasField fieldPath={`slides.${index}.body`}>{slide.body}</RichTextCanvasField>{inlineArrayText(props.slides, index, 'buttonLabel', slide.buttonLabel as string) && <span data-g7pb-inline-field={`slides.${index}.buttonLabel`}>{slide.buttonLabel} →</span>}</div><span data-g7pb-media-field={`slides.${index}.imageSrc`}><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></span></article>)}
+            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}>
+              <div className="g7pb-preview-hero-slider__copy">
+                <small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small>
+                <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath={`slides.${index}.title`}>{slide.title}</RichTextCanvasField>
+                <RichTextCanvasField className="g7pb-preview-richtext g7pb-preview-hero-slider__body" fieldPath={`slides.${index}.body`}>{slide.body}</RichTextCanvasField>
+                {inlineArrayText(props.slides, index, 'buttonLabel', slide.buttonLabel as string) && <a className="g7pb-preview-hero-slider__cta" data-g7pb-inline-field={`slides.${index}.buttonLabel`} href={safeUrl(slide.buttonUrl) ?? '#'} onClick={(event) => event.preventDefault()}>{slide.buttonLabel}</a>}
+              </div>
+              <figure data-g7pb-media-field={`slides.${index}.imageSrc`}><ImageOrPlaceholder src={slide.imageSrc} alt={slide.imageAlt} label={`슬라이드 ${index + 1}`} /></figure>
+            </article>)}
           </div>
         </div>
         <div

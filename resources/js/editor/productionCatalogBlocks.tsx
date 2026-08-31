@@ -320,7 +320,7 @@ function CardGridPreview(props: CardGridEditorProps & { id: string }): React.Rea
   return <Frame id={props.id} type="card-grid" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-card-grid g7pb-preview-card-grid--${props.columns} g7pb-preview-card-grid--${props.variant} g7pb-preview-card-grid--layout-${props.layout} ${surfaceClass(props)}`}>
       <header>{props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}<RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
-      <div>{normalizeCards(props.items).map((item, index) => <article key={`${item.title}-${index}`}><small data-g7pb-inline-field={`items.${index}.kicker`}>{inlineArrayContent(props.items, index, 'kicker', item.kicker)}</small><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</RichTextCanvasField><RichTextCanvasField fieldPath={`items.${index}.body`} className="g7pb-preview-richtext g7pb-preview-card-grid__body">{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField>{item.linkLabel ? <a href={safeLink(item.linkUrl)} data-g7pb-action-field={`items.${index}.linkLabel`} onClick={(event) => event.preventDefault()}>{inlineArrayContent(props.items, index, 'linkLabel', item.linkLabel)} →</a> : null}</article>)}</div>
+      <div>{normalizeCards(props.items).map((item, index) => <article key={`${item.title}-${index}`}><small data-g7pb-inline-field={`items.${index}.kicker`}>{inlineArrayContent(props.items, index, 'kicker', item.kicker)}</small><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.title`}>{inlineArrayContent(props.items, index, 'title', item.title)}</RichTextCanvasField><RichTextCanvasField fieldPath={`items.${index}.body`} className="g7pb-preview-richtext g7pb-preview-card-grid__body">{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField>{item.linkUrl ? <a href={safeLink(item.linkUrl)} data-g7pb-action-field={`items.${index}.linkLabel`} onClick={(event) => event.preventDefault()}>{inlineArrayContent(props.items, index, 'linkLabel', item.linkLabel)}<span aria-hidden="true"> →</span></a> : null}</article>)}</div>
     </div>
   </Frame>;
 }
@@ -345,11 +345,19 @@ function SocialLinksPreview(props: SocialLinksEditorProps & { id: string }): Rea
 
 function ImageCarouselPreview(props: ImageCarouselEditorProps & { id: string }): React.ReactElement {
   const images = normalizeImages(props.images);
+  const [selected, setSelected] = React.useState(0);
+  const active = Math.min(selected, Math.max(0, images.length - 1));
+  const move = (step: number) => setSelected((active + step + images.length) % Math.max(1, images.length));
   return <Frame id={props.id} type="image-carousel" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-image-carousel g7pb-preview-image-carousel--${props.aspectRatio.replace(':', '-')} ${surfaceClass(props)}`}>
       <header>{props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}<RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header>
-      <div className="g7pb-preview-image-carousel__stage">{images.map((item, index) => <figure key={`${item.src}-${index}`} aria-hidden={index > 0}>{safeImage(item.src) ? <img src={safeImage(item.src) ?? undefined} alt={item.alt} data-g7pb-media-field={`images.${index}.src`} /> : <span role="img" data-g7pb-media-field={`images.${index}.src`} aria-label={`${index + 1}번 이미지를 선택하세요`}>{String(index + 1).padStart(2, '0')}</span>}<figcaption data-g7pb-inline-field={`images.${index}.caption`}>{inlineArrayContent(props.images, index, 'caption', item.caption)}</figcaption></figure>)}</div>
-      <div className="g7pb-preview-image-carousel__controls" aria-hidden="true"><button type="button" tabIndex={-1}>←</button><span>{images.map((_, index) => <i key={index} />)}</span><button type="button" tabIndex={-1}>→</button></div>
+      <div className="g7pb-preview-image-carousel__stage">{images.map((item, index) => <figure key={`${item.src}-${index}`} hidden={index !== active}>{safeImage(item.src) ? <img src={safeImage(item.src) ?? undefined} alt={item.alt} data-g7pb-media-field={`images.${index}.src`} /> : <span role="img" data-g7pb-media-field={`images.${index}.src`} aria-label={`${index + 1}번 이미지를 선택하세요`}>{String(index + 1).padStart(2, '0')}</span>}<figcaption data-g7pb-inline-field={`images.${index}.caption`}>{inlineArrayContent(props.images, index, 'caption', item.caption)}</figcaption></figure>)}</div>
+      <div className="g7pb-preview-image-carousel__controls">
+        {props.controls !== 'dots' ? <button type="button" aria-label="이전 이미지" onClick={() => move(-1)}>←</button> : null}
+        {props.controls !== 'arrows' ? <span>{images.map((_, index) => <button type="button" key={index} aria-label={`${index + 1}번 이미지`} aria-pressed={index === active} onClick={() => setSelected(index)} />)}</span> : null}
+        {props.controls !== 'dots' ? <button type="button" aria-label="다음 이미지" onClick={() => move(1)}>→</button> : null}
+      </div>
+      <p className="g7pb-preview-image-carousel__status" aria-live="polite">{active + 1} / {images.length}</p>
     </div>
   </Frame>;
 }

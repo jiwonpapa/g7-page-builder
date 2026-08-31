@@ -219,10 +219,10 @@ async function authenticate(context: BrowserContext): Promise<{ api: APIRequestC
   }
 }
 
-async function createDocument(api: APIRequestContext, projectName: string): Promise<OwnedDocument> {
+async function createDocument(api: APIRequestContext, projectName: string, locale = 'ko'): Promise<OwnedDocument> {
   const slug = `g7pb-layout-${projectName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const response = await api.post(`${API}/documents`, {
-    data: { title: '편집 미리보기 레이아웃 계약', slug, locale: 'ko', mode: 'canvas', shell_mode: 'none' },
+    data: { title: '편집 미리보기 레이아웃 계약', slug, locale, mode: 'canvas', shell_mode: 'none' },
   });
   expect(response.ok()).toBe(true);
   const payload = await response.json() as DocumentResource;
@@ -669,7 +669,13 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
         if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
       }
       const style = getComputedStyle(element);
-      return { parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, width: rect.width, height: rect.height, color: style.color, fontSize: style.fontSize,
+      const context = { lang: element.closest('[lang]')?.getAttribute('lang'), mode: element.ownerDocument.compatMode };
+      const descendants = Array.from(element.querySelectorAll('*')).map(child => {
+        const childStyle = getComputedStyle(child);
+        return { tag: child.tagName, font: childStyle.font, lineHeight: childStyle.lineHeight,
+          height: child.getBoundingClientRect().height, display: childStyle.display };
+      });
+      return { context, descendants, parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, width: rect.width, height: rect.height, color: style.color, fontSize: style.fontSize,
         fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
     };
     return {
@@ -733,7 +739,7 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
         if (differences.length) failures.push({ block: source.type, id: source.id, key, differences, editor,
           stylesheets: Array.from(element.ownerDocument.styleSheets).map(sheet=>sheet.href), matchedRules,
           diagnostic: {reduced:matchMedia('(prefers-reduced-motion: reduce)').matches, transform:getComputedStyle(element).transform, cssWidth:getComputedStyle(element).width, parentTransform:element.parentElement && getComputedStyle(element.parentElement).transform},
-          preview: actual, parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, html: element.outerHTML.slice(0, 2000), selector: `${element.tagName}.${element.className}` });
+          preview: actual, context: {lang:element.closest('[lang]')?.getAttribute('lang'),mode:element.ownerDocument.compatMode}, parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, html: element.outerHTML.slice(0, 2000), selector: `${element.tagName}.${element.className}` });
       };
       for (const field of source.fields) {
         const matches = candidates.filter((element) => normalize(element.textContent).replace(/^[“”]|[“”]$/g, '') === field.text.replace(/^[“”]|[“”]$/g, '') && element.getBoundingClientRect().height > 0);
@@ -827,6 +833,7 @@ async function assertScenario(
   await expect(editorBlocks).toHaveCount(scenario.expectedBlockCount, { timeout: 60_000 });
   const editorRoot = page.frameLocator(CANVAS_IFRAME).locator('.g7pb-preview-page');
   await expect(editorRoot).toBeVisible();
+  await expect(editorRoot).toHaveAttribute('lang', String(owned.document.locale));
   if (expectedMode === 'preview') {
     await expect(page.frameLocator(CANVAS_IFRAME).locator('[contenteditable="true"]')).toHaveCount(0);
   }
@@ -874,13 +881,28 @@ async function assertScenario(
       ? standalonePreviewRoot
       : preview.locator('html');
     await expect(previewRoot).toBeVisible();
+    // Template html belongs to G7; require the document's language only at
+    // module-owned content, not on the host template or its navigation.
+    const contentLanguages = await previewBlocks.evaluateAll(blocks =>
+      [...new Set(blocks.map(element => element.closest('[lang]')?.getAttribute('lang')))]);
+    expect(contentLanguages, `${scenario.label} compiled content language`).toEqual([owned.document.locale]);
     await previewRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
     await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
     const previewMetrics = await layoutMetrics(previewBlocks, false);
     const elementComparison = await compareContentElements(editorBlocks, previewBlocks);
-    mkdirSync(resolve('output/playwright/parity-elements'), { recursive: true });
-    writeFileSync(resolve('output/playwright/parity-elements', `${projectName}-${scenario.label.replace(/[^a-z0-9_-]/gi, '-')}.json`), JSON.stringify(elementComparison, null, 2));
-    expect(elementComparison.failures.length, `Internal content differences: ${JSON.stringify(elementComparison.failures.slice(0, 3))}; full evidence: output/playwright/parity-elements`).toBe(0);
+    const evidenceRoot = resolve(process.env.G7PB_PARITY_EVIDENCE_DIR ?? 'output/playwright/parity-elements');
+    const evidenceName = `${projectName}-${scenario.label.replace(/[^a-z0-9_-]/gi, '-')}`;
+    mkdirSync(evidenceRoot, { recursive: true });
+    writeFileSync(resolve(evidenceRoot, `${evidenceName}.json`), JSON.stringify(elementComparison, null, 2));
+    const captureId = elementComparison.failures[0]?.id
+      ?? (scenario.label.startsWith('LANGUAGE_') ? await editorBlocks.first().getAttribute('data-block-id') : null);
+    if (typeof captureId === 'string') {
+      await editorBlocks.and(page.frameLocator(CANVAS_IFRAME).locator(`[data-block-id="${captureId}"]`))
+        .screenshot({ path: resolve(evidenceRoot, `${evidenceName}-editor.png`) });
+      await previewBlocks.and(preview.locator(`[data-block-id="${captureId}"]`))
+        .screenshot({ path: resolve(evidenceRoot, `${evidenceName}-preview.png`) });
+    }
+    expect(elementComparison.failures.length, `Internal content differences: ${JSON.stringify(elementComparison.failures.slice(0, 3))}; full evidence: ${evidenceRoot}`).toBe(0);
     expectLayoutParity(editorMetrics, previewMetrics);
   } finally {
     await preview.close();
@@ -921,6 +943,29 @@ async function purgeDocument(
 // Motion playback has its own product gate; both renderers honor reduced motion here.
 test.use({ screenshot: 'off', trace: 'off', video: 'off', contextOptions: {reducedMotion: 'reduce'} });
 test.describe.configure({ retries: 0 });
+
+test('keeps canonical language and normal Korean line boxes after saved document re-entry', async ({ context, page }, testInfo) => {
+  const { api } = await authenticate(context);
+  const ownedDocuments: OwnedDocument[] = [];
+  try {
+    const source = presetScenario();
+    const feature = (source.document.blocks as Array<Record<string, unknown>>)
+      .find(block => block.type === 'content.features-grid-01');
+    if (!feature) throw new Error('Missing normal-line-height features fixture.');
+    for (const locale of ['ko', 'en']) {
+      const owned = await createDocument(api, testInfo.project.name, locale);
+      ownedDocuments.push(owned);
+      const scenario = { label: `LANGUAGE_${locale}`, expectedBlockCount: 1,
+        document: { ...source.document, locale, blocks: [feature] } };
+      await putScenario(api, owned, scenario);
+      await assertScenario(context, page, owned, scenario, testInfo.project.name);
+    }
+  } finally {
+    await page.close();
+    for (const owned of ownedDocuments.reverse()) await purgeDocument(api, owned);
+    await api.dispose();
+  }
+});
 
 test('keeps every built-in block preset and Page Kit inside the editor/preview layout contract', async ({ context, page }, testInfo) => {
   test.setTimeout(360_000);

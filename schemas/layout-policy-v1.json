@@ -1,0 +1,94 @@
+{
+  "policy_version": "g7pb-layout-policy/v1",
+  "document_schema": "g7-page-builder/v2",
+  "limits": {
+    "nodes": 500,
+    "slot_children": 200,
+    "depth": 4,
+    "utf8_bytes": 1048576
+  },
+  "root_types": [
+    "content.hero-centered-01",
+    "content.hero-split-01",
+    "content.hero-slider-01",
+    "content.heading-01",
+    "content.rich-text-01",
+    "media.image-01",
+    "action.buttons-01",
+    "media.image-text-01",
+    "content.icon-list-01",
+    "content.features-grid-01",
+    "content.cta-split-01",
+    "content.contact-info-01",
+    "trust.logo-cloud-01",
+    "data.stats-icons-01",
+    "commerce.pricing-tiers-01",
+    "company.team-grid-01",
+    "media.gallery-grid-01",
+    "data.bar-chart-01",
+    "g7.board-recent-posts-01",
+    "g7.ecommerce-product-grid-01",
+    "form.inquiry-01",
+    "location.map-directions-01",
+    "trust.testimonials-01",
+    "content.faq-accordion-01",
+    "content.process-timeline-01",
+    "content.tabs-01",
+    "commerce.comparison-table-01",
+    "content.article-list-01",
+    "media.video-embed-01",
+    "trust.logo-carousel-01",
+    "trust.testimonial-slider-01",
+    "content.event-schedule-01",
+    "content.download-resources-01",
+    "g7.board-content-archive-01",
+    "g7.ecommerce-product-showcase-01",
+    "g7.board-post-detail-01",
+    "g7.ecommerce-product-detail-01",
+    "content.divider-01",
+    "content.blockquote-01",
+    "content.notice-01",
+    "content.card-grid-01",
+    "navigation.breadcrumbs-01",
+    "navigation.anchor-menu-01",
+    "navigation.social-links-01",
+    "media.image-carousel-01"
+  ],
+  "leaf_types": [
+    "content.heading-01",
+    "content.rich-text-01",
+    "media.image-01",
+    "action.buttons-01",
+    "content.divider-01"
+  ],
+  "layouts": {
+    "section": "layout.section-01",
+    "columns": "layout.columns-01",
+    "stack": "layout.stack-01"
+  },
+  "child_groups": {
+    "root": ["compatibility", "section"],
+    "section": ["columns", "stack", "leaf"],
+    "columns": ["stack", "leaf"],
+    "stack": ["leaf"]
+  },
+  "ratios": {
+    "1": [
+      "1"
+    ],
+    "2": [
+      "1:1",
+      "1:2",
+      "2:1"
+    ],
+    "3": [
+      "1:1:1"
+    ]
+  },
+  "gap_px": {
+    "none": 0,
+    "compact": 8,
+    "normal": 16,
+    "spacious": 24
+  }
+}

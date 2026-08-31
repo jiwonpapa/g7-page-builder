@@ -108,3 +108,9 @@ docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.y
 증거는 Local의 `output/playwright/optional-acceptance-20260831`와 `output/playwright/optional-repeat-20260831`입니다. 앞선 실패 증거(`optional-content`, `optional-pointer-diagnostic`, `optional-dirty-diagnostic`, `optional-focus-diagnostic`, `optional-dom-diagnostic`, `optional-events-diagnostic`, `optional-ready-editor`, `optional-ready-lifecycle`의 동일 일자 디렉터리)도 보존했습니다. 초기 탐색용 로그·DOM 이벤트 계측은 최종 코드에 남기지 않았습니다. 별도 candidate bundle 검사는 공유 runtime 덮어쓰기 없이 요청 단위로만 적용하며 위 PASS 실행에는 candidate를 사용하지 않았습니다.
 
 후속 시험/문서 커밋은 하네스로 제출·통합하고 SHA는 Git/coordination 기록에 남깁니다. **1차 전체 완료는 아닙니다.** 공개 CSS 증거 갱신, 대표 페이지 기준의 사용자 확인, 최종 통합 검증은 별도로 남습니다. TypeScript/React/Puck 버전과 공개 문서 계약을 변경하거나 원격 push·배포하지 않았습니다.
+
+### Linux 통합 브라우저의 단축키 차이
+
+위 시험/증거 제출 `e683dd2`는 frontend gate를 다시 통과해 main `9371e2f`로 통합했습니다. 이어 Docker에서 동일 E2E를 실행한 결과 desktop 1 PASS, iPad/iPhone emulation 2 FAIL입니다(`output/playwright/optional-integrated-20260831`, 47.8초). 이 결과는 앞선 macOS의 3 PASS를 덮어쓰지 않는 별도 실행 증거입니다.
+
+실패 위치는 미리보기 전환 전 전체선택·삭제입니다. Tiptap은 iOS emulation에 Mac keymap을 사용하며 `Ctrl-a`를 문단 시작으로 해석합니다. Linux 실행기의 `ControlOrMeta+A`와 일치하지 않으므로 준비된 입력기를 실제 클릭·초점 확인한 뒤 플랫폼 독립적인 Playwright `fill('')` 입력으로 시험을 보정했습니다. 초기 fallback을 건드리지 않도록 `.tiptap` 준비 조건은 유지합니다. 테스트 skip, 제품 키보드 동작 변경, 발행 검증 완화는 없습니다. 보정 task는 clean `9371e2f`의 `optional-browser-portability-20260831`이며 최종 재실행 결과는 제출·통합 증거와 분리해 기록합니다.

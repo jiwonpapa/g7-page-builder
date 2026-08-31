@@ -62,6 +62,7 @@ import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
 import { CatalogIcon, type CatalogIconName } from './catalogIcon';
 import { FONT_SIZE_REM_OPTIONS, normalizeFontSizeRem } from './fontSize';
 import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
+import { canvasTextValue } from './foundationCatalogBlocks';
 import {
   createInlineRichTextField,
   createRichTextField,
@@ -1306,7 +1307,7 @@ function HeroPreview({
       <BlockFrame id={id} type="hero" motion={motion} elementStyles={elementStyles}>
         <div className={`g7pb-preview-hero-split g7pb-preview-hero-split--${mediaPosition} g7pb-preview-hero-split--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
           <div className="g7pb-preview-hero-split__copy">
-            {eyebrow && <small data-g7pb-inline-field="eyebrow">{eyebrow}</small>}
+            {canvasTextValue(eyebrow) && <small data-g7pb-inline-field="eyebrow">{eyebrow}</small>}
             <RichTextCanvasField as="h1" className="g7pb-preview-richtext" fieldPath="title">{title}</RichTextCanvasField>
             <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
             {primaryLabel && <a data-g7pb-inline-field="primaryLabel" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>{primaryLabel}</a>}
@@ -1324,7 +1325,7 @@ function HeroPreview({
   return (
     <BlockFrame id={id} type="hero" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-hero g7pb-preview-hero--${alignment} g7pb-preview-hero--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
-        {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
+        {canvasTextValue(eyebrow) && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
         <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
         <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
         {primaryLabel && (
@@ -1387,18 +1388,18 @@ function CtaPreview({
     <BlockFrame id={id} type="cta" motion={motion} elementStyles={elementStyles}>
       <div className={`g7pb-preview-cta-split g7pb-preview-cta-split--${normalizeTheme(theme)} g7pb-preview-cta-split--layout-${layout} g7pb-preview-surface--${surface} g7pb-preview-spacing--${spacing} g7pb-text-scale--${textScale} g7pb-text-align--${textAlign}`}>
         <div className="g7pb-preview-cta-split__copy">
-          {eyebrow && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
+          {canvasTextValue(eyebrow) && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
           <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{heading}</RichTextCanvasField>
-          {body && <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>}
+          {canvasTextValue(body) && <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>}
         </div>
-        {(primaryLabel || secondaryLabel) && (
+        {(canvasTextValue(primaryLabel) || canvasTextValue(secondaryLabel)) && (
           <div className="g7pb-preview-cta-split__actions">
-            {primaryLabel && (
+            {canvasTextValue(primaryLabel) && (
               <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
                 <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>
               </a>
             )}
-            {secondaryLabel && (
+            {canvasTextValue(secondaryLabel) && (
               <a className="g7pb-preview-cta g7pb-preview-cta--secondary" href={safeLink(secondaryUrl)} onClick={(event) => event.preventDefault()}>
                 <span data-g7pb-inline-field="secondaryLabel">{secondaryLabel}</span>
               </a>
@@ -1435,7 +1436,7 @@ function ContactPreview({
           <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{heading}</RichTextCanvasField>
         </div>
         <address className="g7pb-preview-contact__details">
-          {address && <p data-g7pb-inline-field="address">{address}</p>}
+          {canvasTextValue(address) && <p data-g7pb-inline-field="address">{address}</p>}
           {phone && (
             <a href={safePhoneLink(phone)} onClick={(event) => event.preventDefault()}><span data-g7pb-inline-field="phone">{phone}</span></a>
           )}
@@ -1443,14 +1444,14 @@ function ContactPreview({
             <a href={safeEmailLink(email)} onClick={(event) => event.preventDefault()}><span data-g7pb-inline-field="email">{email}</span></a>
           )}
         </address>
-        {(ctaLabel || mapLabel) && (
+        {(canvasTextValue(ctaLabel) || canvasTextValue(mapLabel)) && (
           <div className="g7pb-preview-contact__actions">
-            {ctaLabel && (
+            {canvasTextValue(ctaLabel) && (
               <a className="g7pb-preview-cta" href={safeLink(ctaUrl)} onClick={(event) => event.preventDefault()}>
                 <span data-g7pb-inline-field="ctaLabel">{ctaLabel}</span>
               </a>
             )}
-            {mapLabel && (
+            {canvasTextValue(mapLabel) && (
               <a className="g7pb-preview-cta g7pb-preview-cta--secondary" href={safeLink(mapUrl)} onClick={(event) => event.preventDefault()}>
                 <span data-g7pb-inline-field="mapLabel">{mapLabel}</span>
               </a>

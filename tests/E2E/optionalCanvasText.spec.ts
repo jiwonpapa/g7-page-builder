@@ -81,8 +81,9 @@ test('keeps optional text recoverable in edit mode and consistent in readonly vi
     const body = page.frameLocator(CANVAS).locator('[data-block-type="cta"] [data-g7pb-inline-field="body"] .tiptap[contenteditable="true"]');
     await body.click();
     await expect(body).toBeFocused();
-    await body.press('ControlOrMeta+A');
-    await body.press('Backspace');
+    // Do not resolve selection shortcuts from the test runner OS: iOS
+    // emulation uses Tiptap's Mac keymap even on the Linux browser runner.
+    await body.fill('');
     await expect(body).toHaveText('');
     await expect(body).toBeVisible();
     await page.getByTestId('page-builder-viewport-768').click();

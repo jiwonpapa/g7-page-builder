@@ -101,3 +101,9 @@ Task `productization-phase2b-20260831`, 기준 SHA `4558235c0345f9b227521a74933d
 ### 2차에서 아직 남은 수락 항목
 
 이번 구현은 승인 분리/영향 수집/안전 갱신/배포 차단의 기반입니다. 계획의 G7R-05 상태별 fixture ID·적용/제외 이유를 실제 시험 공급자와 연결하는 작업, 필수 상태 fixture 삭제·샘플 API 누출 부정 시험, `rich-boundary`의 오래된 렌더 증거 해소는 아직 남아 있습니다. 계획 inventory에는 기본/긴 문구/반응형/저장재진입 각95, 미디어 없음39, 목록 경계57, 동적 empty/error/capability 부재 각6의 요구가 있으나, 선언 수를 실행 합격 수로 세지 않습니다. 이 수락 항목을 닫기 전에는 2차 전체 완료 또는 3차 중첩 완료를 선언하지 않습니다.
+
+## 2-D 상태 fixture와 격리 공급자 연결
+
+후속 task `productization-phase2d-20260831`, 기준 `330f3bd`에서 위 상태 fixture 연결과 누락/샘플 누출 부정 시험을 구현했습니다. 9개 버전된 상태, 140개 catalog의 필수 731/비적용 529 관계와 실제 공급/시험 파일을 연결하고 current editor metadata와 대조합니다. 6개 동적 runtime의 18개 빈 데이터/오류/endpoint 부재 처리를 시험했으며, 전역 fetch·인증 상태를 교체하지 않습니다.
+
+전체 37 files/329 tests와 strict·실파일 하네스를 통과했고, fixture 변경은 content/rights를 유지하며 render/editing만 무효화합니다. 560개 결정은 여전히 pending이며 등록된 사례 수로 제품 합격을 주장하지 않습니다. 상세 증거와 저장/발행·시각 심사의 구분은 [2-D 실행 기록](phase-2-states.md)에 있습니다. 남은 선행 작업은 `rich-boundary` CSS의 실제 영향 검증과 stale 렌더 증거 처리입니다.

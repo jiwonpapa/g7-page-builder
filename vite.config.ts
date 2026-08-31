@@ -26,7 +26,7 @@ export default defineConfig(({ command }) => ({
     include: ['tests/Unit/**/*.test.ts', 'tests/Unit/**/*.test.tsx'],
     coverage: {
       provider: 'v8',
-      include: ['resources/js/**/*.{ts,tsx}', 'scripts/lib/blockQualityEvidence.ts', 'scripts/lib/blockQualityInventory.ts'],
+      include: ['resources/js/**/*.{ts,tsx}', 'scripts/lib/blockQualityEvidence.ts', 'scripts/lib/blockQualityInventory.ts', 'scripts/lib/blockQualityStates.ts'],
       exclude: [
         'resources/js/editor/main.tsx',
         // React/Puck lifecycle wiring is exercised in Playwright; typed conversion stays unit-covered.
@@ -37,6 +37,7 @@ export default defineConfig(({ command }) => ({
       thresholds: {
         'scripts/lib/blockQualityEvidence.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'scripts/lib/blockQualityInventory.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
+        'scripts/lib/blockQualityStates.ts': { statements: 95, branches: 90, functions: 95, lines: 95 },
         statements: 54,
         branches: 54,
         functions: 47,

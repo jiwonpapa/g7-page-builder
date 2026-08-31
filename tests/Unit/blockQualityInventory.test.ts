@@ -3,7 +3,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fingerprintEvidence } from '../../scripts/lib/blockQualityEvidence';
-import { collectBlockQualityInventory, compareEvidenceFingerprints, QUALITY_DEPENDENCY_FILES, QUALITY_DEPENDENCY_TREES } from '../../scripts/lib/blockQualityInventory';
+import { collectBlockQualityInventory as collectInventory, compareEvidenceFingerprints, QUALITY_DEPENDENCY_FILES, QUALITY_DEPENDENCY_TREES } from '../../scripts/lib/blockQualityInventory';
+import { collectBlockQualityStates, QUALITY_STATE_SOURCE_FILES } from '../../scripts/lib/blockQualityStates';
+import stateFixtures from '../Fixtures/block-quality-states.json';
+
+const collectBlockQualityInventory = (root: string, facts: unknown) => collectInventory(root, facts, collectBlockQualityStates(root));
 
 const temporary: string[] = [];
 const HASH = 'a'.repeat(64);
@@ -23,8 +27,10 @@ function fixture(): string {
   temporary.push(root);
   for (const path of QUALITY_DEPENDENCY_FILES) write(root, path, '{}');
   for (const path of QUALITY_DEPENDENCY_TREES) write(root, `${path}/sample.txt`, 'dependency');
+  for (const path of QUALITY_STATE_SOURCE_FILES) write(root, path, 'state input');
+  write(root, QUALITY_STATE_SOURCE_FILES[0], JSON.stringify(stateFixtures));
   write(root, 'resources/block-packs/builtin-core/manifest.json', JSON.stringify({ pack_id: 'jiwonpapa/builtin-core', blocks: [block], presets: [preset] }));
-  write(root, 'docs/productization/inventory.json', JSON.stringify({ definitions: [{ id: block.block_id, block_version: 1, supply_kind: 'composite-section' }], presets: [{ id: preset.preset_id, block_id: block.block_id, block_version: 1, supply_kind: 'section-candidate', required_states: ['default', 'long-copy'] }] }));
+  write(root, 'docs/productization/inventory.json', JSON.stringify({ definitions: [{ id: block.block_id, block_version: 1, supply_kind: 'composite-section', current_editing: { fields: [], collections: [], directMedia: false, dynamicData: false } }], presets: [{ id: preset.preset_id, block_id: block.block_id, block_version: 1, supply_kind: 'section-candidate', required_states: ['default', 'long-copy', 'responsive', 'save-reload'] }] }));
   write(root, 'resources/block-packs/builtin-core/thumbnails/demo.png', 'block image');
   write(root, 'resources/block-packs/builtin-core/thumbnails/preset.png', 'preset image');
   write(root, 'resources/store/dist/previews/demo.webp', 'asset bytes');
@@ -157,5 +163,36 @@ describe('actual block quality dependency inventory', () => {
     delete planning.definitions[0].supply_kind;
     write(root, path, JSON.stringify(planning));
     expect(() => collectBlockQualityInventory(root, facts())).toThrow('supply kind');
+  });
+
+  it('requires every state source file and keeps fixture changes out of content/rights review', () => {
+    const root = fixture(); const before = fingerprints(root);
+    write(root, QUALITY_STATE_SOURCE_FILES[2], 'changed fixture provider');
+    expect(compareEvidenceFingerprints(before, fingerprints(root)).changed.map(item => item.scopes)).toEqual([['render', 'editing'], ['render', 'editing']]);
+    for (const path of QUALITY_STATE_SOURCE_FILES) {
+      const missing = fixture(); rmSync(join(missing, path));
+      expect(() => collectBlockQualityStates(missing)).toThrow();
+    }
+    const linked = fixture(); const outside = fixture();
+    rmSync(join(linked, QUALITY_STATE_SOURCE_FILES[2]));
+    symlinkSync(join(outside, QUALITY_STATE_SOURCE_FILES[2]), join(linked, QUALITY_STATE_SOURCE_FILES[2]));
+    expect(() => collectBlockQualityStates(linked)).toThrow('Unsafe quality state input');
+    const directory = fixture(); rmSync(join(directory, QUALITY_STATE_SOURCE_FILES[2])); mkdirSync(join(directory, QUALITY_STATE_SOURCE_FILES[2]));
+    expect(() => collectBlockQualityStates(directory)).toThrow('Unsafe quality state input');
+  });
+
+  it('rejects changed/deleted state providers and required-state drift before evidence refresh', () => {
+    const root = fixture();
+    const path = 'docs/productization/inventory.json';
+    const planning = JSON.parse(readFileSync(join(root, path), 'utf8'));
+    planning.presets[0].required_states.pop(); write(root, path, JSON.stringify(planning));
+    expect(() => collectBlockQualityStates(root)).toThrow('Required state/capability mismatch');
+    const other = fixture(); const states = collectBlockQualityStates(other);
+    expect(() => collectInventory(other, facts(), { ...states, sources: {} })).toThrow('Missing state fixture sources');
+    expect(() => collectInventory(other, facts(), { ...states, sources: { ...states.sources, [QUALITY_STATE_SOURCE_FILES[0]]: HASH } })).toThrow('Changed state fixture source');
+    expect(() => collectInventory(other, facts(), { ...states, items: states.items.slice(1) })).toThrow('State fixture inventory');
+    expect(() => collectInventory(other, facts(), { ...states, items: [...states.items, states.items[0]!] })).toThrow('State fixture inventory');
+    const deleted = structuredClone(stateFixtures); deleted.states.pop(); write(other, QUALITY_STATE_SOURCE_FILES[0], JSON.stringify(deleted));
+    expect(() => collectBlockQualityStates(other)).toThrow('fixture schema');
   });
 });

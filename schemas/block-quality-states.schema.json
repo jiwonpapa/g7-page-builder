@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/quality-states-v1.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "states"],
+  "properties": {
+    "version": { "const": "g7pb-quality-states/v1" },
+    "states": {
+      "type": "array", "minItems": 9, "maxItems": 9,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "provider", "input"],
+        "properties": {
+          "id": { "enum": ["default", "long-copy", "responsive", "save-reload", "media-missing", "collection-min-max", "data-empty", "data-error", "capability-missing"] },
+          "provider": { "enum": ["canonical", "long-copy", "viewport", "roundtrip", "media-response", "collection-boundaries", "dynamic-response"] },
+          "input": { "type": "object" }
+        },
+        "allOf": [
+          { "if": { "properties": { "provider": { "enum": ["canonical", "roundtrip"] } } }, "then": { "properties": { "input": { "type": "object", "maxProperties": 0 } } } },
+          { "if": { "properties": { "provider": { "const": "long-copy" } } }, "then": { "properties": { "input": { "type": "object", "additionalProperties": false, "required": ["text"], "properties": { "text": { "type": "string", "minLength": 60, "maxLength": 80 } } } } } },
+          { "if": { "properties": { "provider": { "const": "viewport" } } }, "then": { "properties": { "input": { "type": "object", "additionalProperties": false, "required": ["canvas_widths", "window_widths"], "properties": { "canvas_widths": { "const": [1280, 768, 360] }, "window_widths": { "const": [1440, 768, 390] } } } } } },
+          { "if": { "properties": { "provider": { "const": "media-response" } } }, "then": { "properties": { "input": { "type": "object", "additionalProperties": false, "required": ["status"], "properties": { "status": { "const": 404 } } } } } },
+          { "if": { "properties": { "provider": { "const": "collection-boundaries" } } }, "then": { "properties": { "input": { "type": "object", "additionalProperties": false, "required": ["cases"], "properties": { "cases": { "const": ["minimum", "maximum", "below-minimum", "above-maximum"] } } } } } },
+          { "if": { "properties": { "provider": { "const": "dynamic-response" } } }, "then": { "properties": { "input": { "type": "object", "additionalProperties": false, "required": ["status", "payload"], "properties": { "status": { "enum": [200, 404, 503] }, "payload": { "type": "object", "additionalProperties": false, "required": ["success", "data"], "properties": { "success": { "type": "boolean" }, "data": { "const": [] } } } } } } } }
+        ]
+      }
+    }
+  }
+}

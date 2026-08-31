@@ -18,6 +18,9 @@ const report = checkQualityEvidence(root, collected);
 assert.equal(report.shadow_valid, true, JSON.stringify(report.errors));
 assert.equal(report.counts.items, report.counts.definitions + report.counts.presets);
 assert.equal(report.impact.changed.length, 0);
+assert.equal(report.state_fixtures.items, report.counts.items);
+assert.equal(report.state_fixtures.required + report.state_fixtures.not_applicable, report.counts.items * 9);
+assert.equal(report.state_fixtures.executed_product_scenarios, 'not-inferred-from-fixture-registration');
 
 const directory = mkdtempSync(join(tmpdir(), 'g7pb-evidence-contract-'));
 const ledgerPath = join(directory, 'resources/block-packs/builtin-core/quality-evidence.json');

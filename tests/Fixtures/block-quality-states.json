@@ -1,0 +1,14 @@
+{
+  "version": "g7pb-quality-states/v1",
+  "states": [
+    { "id": "default", "provider": "canonical", "input": {} },
+    { "id": "long-copy", "provider": "long-copy", "input": { "text": "긴 한국어 안내 문장이 여러 줄에 걸쳐 이어져도 핵심 내용과 다음 행동을 읽을 수 있어야 합니다. 충분한 여백과 줄바꿈을 확인합니다." } },
+    { "id": "responsive", "provider": "viewport", "input": { "canvas_widths": [1280, 768, 360], "window_widths": [1440, 768, 390] } },
+    { "id": "save-reload", "provider": "roundtrip", "input": {} },
+    { "id": "media-missing", "provider": "media-response", "input": { "status": 404 } },
+    { "id": "collection-min-max", "provider": "collection-boundaries", "input": { "cases": ["minimum", "maximum", "below-minimum", "above-maximum"] } },
+    { "id": "data-empty", "provider": "dynamic-response", "input": { "status": 200, "payload": { "success": true, "data": [] } } },
+    { "id": "data-error", "provider": "dynamic-response", "input": { "status": 503, "payload": { "success": false, "data": [] } } },
+    { "id": "capability-missing", "provider": "dynamic-response", "input": { "status": 404, "payload": { "success": false, "data": [] } } }
+  ]
+}

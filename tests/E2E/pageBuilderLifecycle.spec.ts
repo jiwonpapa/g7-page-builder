@@ -1214,9 +1214,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     for (const width of [1440, 1024, 640, 390]) {
       await page.setViewportSize({ width, height: managerViewport.height });
       await expect.poll(() => blockPackDialog.getByRole('dialog').evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
-      const fileSize = await blockPackDialog.getByTestId('page-builder-block-pack-upload').boundingBox();
-      expect(fileSize?.width).toBe(1);
-      expect(fileSize?.height).toBe(1);
+      const upload = blockPackDialog.getByTestId('page-builder-block-pack-upload');
+      // Dialog enter animation scales geometry; the hidden input's CSS size is invariant.
+      await expect(upload).toHaveCSS('width', '1px');
+      await expect(upload).toHaveCSS('height', '1px');
     }
     await page.setViewportSize(managerViewport);
     const chooser = page.waitForEvent('filechooser');

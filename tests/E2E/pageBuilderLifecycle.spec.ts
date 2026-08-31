@@ -1213,7 +1213,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const managerViewport = page.viewportSize()!;
     for (const width of [1440, 1024, 640, 390]) {
       await page.setViewportSize({ width, height: managerViewport.height });
-      await expect.poll(() => blockPackDialog.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+      await expect.poll(() => blockPackDialog.getByRole('dialog').evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
       const fileSize = await blockPackDialog.getByTestId('page-builder-block-pack-upload').boundingBox();
       expect(fileSize?.width).toBe(1);
       expect(fileSize?.height).toBe(1);

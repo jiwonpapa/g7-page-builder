@@ -3,6 +3,7 @@ import { installShellDisclosures, mountMobileShell, paintShellProduct, shellCont
 import { installMobileNavigation } from '../public/mobileNavigation';
 import '../../css/page-builder-site-shell.css';
 import '../../css/page-builder-site-part-controls.css';
+import { useSitePartActionBarPosition } from './SitePartActionBarPosition';
 import { createPortal } from 'react-dom';
 import { ActionBar, Puck, registerOverlayPortal, type Config, type Field, usePuck, type Viewports } from '@puckeditor/core';
 import {
@@ -200,9 +201,7 @@ function SelectableSystemControls(props: HeaderSystemControlsProps & { id: strin
     const width = appState.ui.viewports.current.width;
     if (typeof width === 'number' && width <= 768) return;
     const itemSelector = getSelectorForId(props.id);
-    if (itemSelector && (appState.ui.itemSelector?.index !== itemSelector.index || appState.ui.itemSelector?.zone !== itemSelector.zone)) {
-      dispatch({ type: 'setUi', ui: { itemSelector }, recordHistory: false });
-    }
+    if (itemSelector) dispatch({ type: 'setUi', ui: { itemSelector }, recordHistory: false });
   };
   return <HeaderSystemControlsPreview {...props} onSelect={select} />;
 }
@@ -474,7 +473,8 @@ export function SitePartActionBar({
 }): React.ReactElement {
   const { appState } = usePuck<Config<SitePartComponents>>();
   const responsive = viewportFromWidth(appState.ui.viewports.current.width) !== 'desktop';
-  return <div className={`g7pb-site-part-action-bar${responsive ? ' is-responsive' : ''}`}>
+  const actionBarRef = useSitePartActionBarPosition();
+  return <div ref={actionBarRef} className={`g7pb-site-part-action-bar${responsive ? ' is-responsive' : ''}`}>
     <ActionBar>
       <ActionBar.Group>{parentAction}{label ? <ActionBar.Label label={label} /> : null}</ActionBar.Group>
       <ActionBar.Group>{children}</ActionBar.Group>

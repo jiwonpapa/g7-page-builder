@@ -68,3 +68,8 @@
   outline: 2px solid var(--g7pb-primary);
   outline-offset: 2px;
 }
+
+.g7pb-site-part-action-bar,
+.g7pb-site-part-action-bar.is-responsive {
+  transform: translate(var(--g7pb-site-part-toolbar-x, 0), var(--g7pb-site-part-toolbar-y, 0));
+}

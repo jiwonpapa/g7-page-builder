@@ -167,6 +167,18 @@ function asString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
 }
 
+/** Puck replaces inline strings with elements; truthiness is not content presence. */
+export function canvasTextValue(value: unknown, format: 'richtext' | 'plain' = 'richtext'): string {
+  if (typeof value === 'string') {
+    return (format === 'plain' ? value : value.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;|&#xa0;/gi, ' ')).trim();
+  }
+  if (!React.isValidElement(value)) return '';
+  const props = value.props as { value?: unknown; content?: unknown; children?: unknown };
+  if ('value' in props) return canvasTextValue(props.value, format);
+  if ('content' in props) return canvasTextValue(props.content, format);
+  return canvasTextValue(props.children, format);
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -286,7 +298,7 @@ function HeadingPreview(props: HeadingEditorProps & { id: string }): React.React
   const Tag = `h${props.level}` as 'h2' | 'h3' | 'h4';
   return <Frame id={props.id} type="heading" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-heading ${surfaceClass(props)}`}>
-      {props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}
+      {canvasTextValue(props.eyebrow, 'plain') ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}
       <RichTextCanvasField as={Tag} className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField>
     </div>
   </Frame>;

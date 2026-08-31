@@ -28,6 +28,14 @@ function renderBlock(type: string, props: Record<string, unknown>): Document {
 }
 
 describe('optional canvas text presence', () => {
+  it('does not interpret literal angle brackets or entities in plain labels as HTML', () => {
+    for (const value of ['<안내>', '&nbsp;']) {
+      expect(canvasTextValue(inline(value), 'plain')).toBe(value);
+      const hero = renderBlock('Hero', { primaryLabel: inline(value), primaryUrl: '/next' });
+      expect(hero.querySelector('a[href="/next"]')?.textContent).toBe(value);
+    }
+  });
+
   it.each(['', ' \n\t', '<p><br></p>', '<p>&nbsp;</p>', '<p>&#160;&#xA0;</p>'])
     ('treats empty plain/editable/read-only content consistently: %j', (value) => {
       expect(canvasTextValue(value)).toBe('');

@@ -67,3 +67,19 @@ docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.y
 ```
 
 후속 기록 task는 문서 두 파일만 소유한 `productization-phase1-followup-20260831`입니다. 제출/통합 SHA는 하네스와 Git 기록으로 확인하며, 이 문서 자신의 미래 commit SHA를 미리 만들지 않습니다.
+
+## 빈 텍스트 보정 후속 제출 (2026-08-31)
+
+위 1번 차단은 범위 재편이나 하네스 변경 없이 해결할 제출 경로를 검증했습니다. 원래 dirty patch를 별도 복구 산출물로 보존한 뒤 Hero 버튼 보정 두 줄만 최종 적용 단계로 보류하고 독립 보정을 `26a6f1a`로 제출했습니다(247 tests PASS). 정식 `task-restack`으로 main `ba04c88`에 올리고 Hero 보정도 모두 복구·재제출했습니다(256 tests PASS). 부분 보정을 최종 완료로 처리하지 않았으며 수동 merge·metadata 수정·lease 강제 해제는 없었습니다.
+
+최종 코드 제출은 `wysiwyg-optional-20260831`의 `eacd8d4f3bd3722763fa4860ecafb8f2d1991cb1`입니다. 기존 원래 PATHS를 유지합니다. 비중복 시험 task `wysiwyg-optional-tests-20260831`은 이 코드 SHA를 기준으로 단위/E2E 시험, Unreleased, 후속 문서만 소유합니다. 두 task는 `task-integrate-batch`에서 함께 검증·통합하며 최종 통합 SHA는 Git/coordination 기록으로 확인합니다.
+
+추가로 확인·보정한 조건:
+
+- Puck 0.23.0의 편집 필드는 `value`, 읽기 전용 richtext는 `content`, Puck Render는 Suspense의 자식으로 값을 전달합니다. 원래 helper가 읽기 전용 정상 본문을 빈 값으로 오판하는 assertion 실패를 먼저 재현하고 보정했습니다.
+- 일반 텍스트의 `<안내>`나 `&nbsp;`는 문구 자체입니다. HTML 빈 문단과 같은 기준으로 지우지 않도록 plain/richtext 모드를 구분합니다.
+- CTA 본문은 별도 sidebar richtext 필드가 없는 canvas-only 편집 대상입니다. 비어도 PC 편집 입력칸을 유지해 내용을 다시 넣을 수 있게 하고, 읽기 전용 미리보기에서는 빈 본문을 제외합니다. 입력 칸은 문서 콘텐츠나 발행본에 추가하지 않습니다.
+- `optionalCanvasText.test.tsx`는 빈 값/정상 값/태그 모양 문구, Hero 두 레이아웃, CTA/Contact/Heading 및 실제 Puck Render/Suspense를 검증합니다.
+- `optionalCanvasText.spec.ts`는 1440/768/390 host 폭의 표시, 빈 본문 재입력, 미리보기 전환, 저장/새로고침, 실제 PHP 발행본을 검증합니다. 이 제출 시점의 소스 존재를 실제 E2E 통과로 표시하지 않습니다. 통합 runtime에서 실행 후 결과를 별도로 보고합니다.
+
+이 후속 제출로 이전의 **작업 범위 재편 승인 요청은 불필요해졌습니다.** 공개 CSS의 렌더 증거 갱신, 대표 콘텐츠 사용자 확인, 최종 통합/릴리스 조건은 그대로 남습니다.

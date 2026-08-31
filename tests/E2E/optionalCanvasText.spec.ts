@@ -67,6 +67,11 @@ test('keeps optional text recoverable in edit mode and consistent in readonly vi
     const body = page.frameLocator(CANVAS).locator('[data-block-type="cta"] [data-g7pb-inline-field="body"] [contenteditable="true"]');
     await body.fill('');
     await expect(body).toBeVisible();
+    await page.getByTestId('page-builder-viewport-768').click();
+    await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'preview');
+    await expect(page.frameLocator(CANVAS).locator('[data-block-type="cta"] [data-g7pb-inline-field="body"]')).toHaveCount(0);
+    await page.getByTestId('page-builder-viewport-1280').click();
+    await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'edit');
     await body.fill(BODY);
     await expect(body).toHaveText(BODY);
     const saved = page.waitForResponse(response => response.request().method() === 'PUT'

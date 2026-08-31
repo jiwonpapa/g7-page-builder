@@ -211,7 +211,9 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
   await expect(controls).toHaveCount(1);
   await editor.getByTestId('page-builder-site-part-set-save').click();
   await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
-  await editor.getByText('세트', { exact: true }).click();
+  if (!await editor.getByTestId('page-builder-site-part-set-presets').isVisible()) {
+    await editor.getByText('세트', { exact: true }).click();
+  }
   await editor.getByTestId('page-builder-site-part-set-presets').getByRole('button', { name: /미니멀/ }).click();
   await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(0);
   await page.keyboard.press('ControlOrMeta+z');

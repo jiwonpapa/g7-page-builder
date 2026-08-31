@@ -23,6 +23,7 @@ Usage:
   coord-harness.sh restack --task ID --new-base-ref REF
   coord-harness.sh restack-squash --task ID --new-base-ref REF
   coord-harness.sh replace-submitted --task NEW_ID --supersedes OLD_ID [--base-ref REF]
+  coord-harness.sh replace-submitted-expanded --task NEW_ID --supersedes OLD_ID --paths CSV [--base-ref REF]
   coord-harness.sh integrate --task ID --integration-task ID
   coord-harness.sh integrate-batch --tasks ID1,ID2[,IDN...] --integration-task ID
   coord-harness.sh verify --task ID
@@ -362,6 +363,58 @@ csv_has() {
       IFS="$old_ifs"
       return 0
     fi
+  done
+  IFS="$old_ifs"
+  return 1
+}
+
+csv_contains_all_exact() {
+  local required_csv="$1"
+  local candidate_csv="$2"
+  local item
+  local old_ifs="$IFS"
+  [[ -n "$required_csv" ]] || return 0
+  IFS=','
+  for item in $required_csv; do
+    if ! csv_has "$candidate_csv" "$item"; then
+      IFS="$old_ifs"
+      return 1
+    fi
+  done
+  IFS="$old_ifs"
+  return 0
+}
+
+csv_has_addition() {
+  local candidate_csv="$1"
+  local inherited_csv="$2"
+  local item
+  local old_ifs="$IFS"
+  [[ -n "$candidate_csv" ]] || return 1
+  IFS=','
+  for item in $candidate_csv; do
+    if ! csv_has "$inherited_csv" "$item"; then
+      IFS="$old_ifs"
+      return 0
+    fi
+  done
+  IFS="$old_ifs"
+  return 1
+}
+
+csv_has_duplicate() {
+  local csv="$1"
+  local seen=''
+  local item
+  local old_ifs="$IFS"
+  [[ -n "$csv" ]] || return 1
+  IFS=','
+  for item in $csv; do
+    if csv_has "$seen" "$item"; then
+      IFS="$old_ifs"
+      return 0
+    fi
+    seen="${seen:+$seen,}$item"
   done
   IFS="$old_ifs"
   return 1
@@ -1122,11 +1175,29 @@ command_restack_squash() {
 }
 
 command_replace_submitted() {
+  local scope_mode="$1"
+  shift
   parse_common_args "$@"
   validate_task_id "$TASK_ID"
   validate_task_id "$SUPERSEDES_TASK"
   [[ "$TASK_ID" != "$SUPERSEDES_TASK" ]] \
     || fail '새 task ID와 supersedes task ID는 달라야 합니다.'
+  case "$scope_mode" in
+    inherited)
+      [[ -z "$PATHS_CSV" && -z "$AREAS_CSV" && -z "$PROFILE" ]] \
+        || fail '일반 교체는 PATHS·AREAS·PROFILE을 정확히 상속합니다.'
+      ;;
+    expanded)
+      [[ -n "$PATHS_CSV" ]] \
+        || fail '승인된 범위확장 교체에는 PATHS가 필요합니다.'
+      [[ -z "$AREAS_CSV" && -z "$PROFILE" ]] \
+        || fail '범위확장 교체도 AREAS·PROFILE은 정확히 상속합니다.'
+      validate_paths "$PATHS_CSV"
+      csv_has_duplicate "$PATHS_CSV" \
+        && fail '범위확장 PATHS에는 중복 prefix를 허용하지 않습니다.'
+      ;;
+    *) fail "지원하지 않는 submitted-task 교체 모드입니다: $scope_mode" ;;
+  esac
   [[ -z "$(git status --porcelain)" ]] \
     || fail '깨끗한 새 worktree에서만 submitted task를 교체할 수 있습니다.'
   [[ "$repo_root" != "$main_worktree" ]] \
@@ -1155,6 +1226,14 @@ command_replace_submitted() {
   local old_profile="$META_PROFILE"
   local old_submitted_sha="$META_SUBMITTED_SHA"
   local old_submitted_at="$META_SUBMITTED_AT"
+  local replacement_paths="$old_paths"
+  if [[ "$scope_mode" == expanded ]]; then
+    csv_contains_all_exact "$old_paths" "$PATHS_CSV" \
+      || fail '범위확장 PATHS는 기존 PATHS 항목을 정확히 모두 포함해야 합니다.'
+    csv_has_addition "$PATHS_CSV" "$old_paths" \
+      || fail '범위확장 PATHS에는 기존 PATHS 이외의 새 항목이 필요합니다.'
+    replacement_paths="$PATHS_CSV"
+  fi
   [[ -n "$old_worktree" && -d "$old_worktree" ]] \
     || fail "교체할 submitted task worktree를 찾지 못했습니다: $old_worktree"
   old_worktree="$(cd "$old_worktree" && pwd -P)"
@@ -1214,14 +1293,14 @@ command_replace_submitted() {
     [[ "$existing_task" == "$SUPERSEDES_TASK" ]] && continue
     existing_paths="$(field "$existing" paths)"
     existing_areas="$(field "$existing" areas)"
-    csv_paths_overlap "$old_paths" "$existing_paths" \
-      && fail "상속 PATHS가 task $existing_task와 겹칩니다: $existing_paths"
+    csv_paths_overlap "$replacement_paths" "$existing_paths" \
+      && fail "교체 PATHS가 task ${existing_task}와 겹칩니다: $existing_paths"
     csv_areas_overlap "$old_areas" "$existing_areas" \
-      && fail "상속 AREAS가 task $existing_task와 겹칩니다: $existing_areas"
+      && fail "상속 AREAS가 task ${existing_task}와 겹칩니다: $existing_areas"
     [[ "$(field "$existing" worktree)" != "$repo_root" ]] \
-      || fail "새 worktree를 task $existing_task가 이미 소유하고 있습니다."
+      || fail "새 worktree를 task ${existing_task}가 이미 소유하고 있습니다."
     [[ "$(field "$existing" branch)" != "$new_branch" ]] \
-      || fail "새 branch를 task $existing_task가 이미 소유하고 있습니다."
+      || fail "새 branch를 task ${existing_task}가 이미 소유하고 있습니다."
   done
 
   local replaced_at
@@ -1252,7 +1331,7 @@ command_replace_submitted() {
   META_WORKTREE="$repo_root"
   META_BRANCH="$new_branch"
   META_BASE_SHA="$new_base_sha"
-  META_PATHS="$old_paths"
+  META_PATHS="$replacement_paths"
   META_AREAS="$old_areas"
   META_PROFILE="$old_profile"
   META_CREATED_AT="$replaced_at"
@@ -1289,7 +1368,11 @@ command_replace_submitted() {
   replace_rollback_active=0
   release_mutex
   release_task_lock
-  note "REPLACED_SUBMITTED task=$TASK_ID supersedes=$SUPERSEDES_TASK base=$new_base_sha paths=${old_paths:-none} areas=${old_areas:-none} profile=$old_profile"
+  if [[ "$scope_mode" == expanded ]]; then
+    note "REPLACED_SUBMITTED_EXPANDED task=$TASK_ID supersedes=$SUPERSEDES_TASK base=$new_base_sha paths=${replacement_paths:-none} areas=${old_areas:-none} profile=$old_profile"
+  else
+    note "REPLACED_SUBMITTED task=$TASK_ID supersedes=$SUPERSEDES_TASK base=$new_base_sha paths=${replacement_paths:-none} areas=${old_areas:-none} profile=$old_profile"
+  fi
 }
 
 assert_integration_owner() {
@@ -1788,7 +1871,8 @@ case "$command_name" in
   resubmit) command_resubmit "$@" ;;
   restack) command_restack "$@" ;;
   restack-squash) command_restack_squash "$@" ;;
-  replace-submitted) command_replace_submitted "$@" ;;
+  replace-submitted) command_replace_submitted inherited "$@" ;;
+  replace-submitted-expanded) command_replace_submitted expanded "$@" ;;
   integrate) command_integrate "$@" ;;
   integrate-batch) command_integrate_batch "$@" ;;
   verify) command_verify "$@" ;;

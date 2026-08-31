@@ -148,6 +148,20 @@ make task-replace-submitted \
 
 교체 명령은 코드 delta를 복사하지 않습니다. 새 task에서 의미가 확인된 최소 변경만 다시 구현한 뒤 일반 `task-submit`으로 전체 상속 profile을 통과해야 합니다. 수동 cherry-pick·metadata 수정·claim 확장은 허용하지 않습니다.
 
+### 승인된 결합 산출물 범위확장 교체
+
+제출 뒤 기술 gate가 렌더 스냅샷·인덱스·manifest·증거 digest처럼 원 변경과 함께 생성되어야 하는 결합 산출물을 발견했고, 사용자가 새 소유 범위를 명시적으로 승인한 경우에만 범위확장 교체를 사용합니다.
+
+```bash
+make task-replace-submitted-expanded \
+  TASK=editor-rich-boundary-with-evidence \
+  SUPERSEDES=editor-rich-boundary \
+  PATHS=resources/css/page-builder-public.css,resources/block-packs/builtin-core/thumbnails/generated,resources/block-packs/builtin-core/manifest.json,resources/block-packs/builtin-core/quality-evidence.json \
+  BASE_REF=<reviewed-base-sha>
+```
+
+하네스는 기존 `PATHS` 항목을 문자열 그대로 모두 포함하고 새 항목이 최소 하나 있는 중복 없는 `PATHS`만 허용합니다. `AREAS`와 `PROFILE`은 기존 제출에서 정확히 상속하며 낮출 수 없습니다. 확장 전체를 다른 active task와 다시 충돌 검사하고, 기존 제출 SHA·worktree·branch는 일반 교체와 동일한 `superseded` history로 보존합니다. 이 명령도 코드를 복사하지 않으므로 새 task에서 변경과 결합 산출물을 함께 다시 만들고 제출 gate를 통과해야 합니다.
+
 ## 6. Local 통합
 
 Local 통합 채팅에서 실행합니다.

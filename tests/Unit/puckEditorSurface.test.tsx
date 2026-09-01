@@ -719,6 +719,12 @@ describe('Puck editor surface contract', () => {
   });
 
   it('keeps structured inline copy visible in every official Page Kit', async () => {
+    const localBusinessTestimonial = localBusinessPageKit.blocks
+      .find((block) => block.type === 'trust.testimonials-01');
+    const localBusinessTestimonialName = (localBusinessTestimonial?.props as {
+      items?: Array<{ name?: string }>;
+    }).items?.[0]?.name;
+    expect(localBusinessTestimonialName).toBeTypeOf('string');
     const cases: Array<{ document: PageBuilderDocument; checks: Array<[string, string]> }> = [
       {
         document: companyPageKit as unknown as PageBuilderDocument,
@@ -740,7 +746,7 @@ describe('Puck editor surface contract', () => {
         document: localBusinessPageKit as unknown as PageBuilderDocument,
         checks: [
           ['[data-block-type="process-timeline"] [data-g7pb-inline-field="items.0.body"]', '방문 희망 시간'],
-          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.name"]', '김민지'],
+          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.name"]', localBusinessTestimonialName!],
         ],
       },
       {
@@ -1208,7 +1214,10 @@ describe('Puck editor surface contract', () => {
     expect(gallery.textContent).toContain('이미지 + 텍스트');
     expect(gallery.textContent).toContain('아이콘 목록');
     expect(gallery.textContent).toContain('섹션 시작 제목');
-    expect(gallery.textContent).toContain('제품 소개 히어로');
+    const serviceHeroLabel = builtinManifest.presets
+      .find((preset) => preset.preset_id === 'hero.service-intro')?.label.ko;
+    expect(serviceHeroLabel).toBeTypeOf('string');
+    expect(gallery.textContent).toContain(serviceHeroLabel!);
     expect(gallery.textContent).toContain('특징 목록');
     expect(gallery.textContent).toContain('행동 유도');
     expect(gallery.textContent).toContain('연락처');

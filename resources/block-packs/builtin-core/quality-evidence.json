@@ -3034,10 +3034,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:pricing.compact",
       "source_digests": {
-        "content": "b03c80ea616b9e305094f5904d23285730ee0826ef5604f32f209eb5d0740702",
+        "content": "3cceeef485e373d488d083d4847adee3434c6f09439d7e4946b7a4da2cc4675f",
         "rights": "71047eff74fb9791627a39278d9185406448e727033812efa72ec7dda291cb04",
-        "render": "04dc1ed4988a499b862af8b453d73b6fb18bf86e50fd2f0136f1dca9e8e49bf9",
-        "editing": "a49dfbe37ddd1d9f1287916b449f813d3a7a4015c77392cc1134e0c70b6dcf64"
+        "render": "1d7596fc22f3608ce7203ce70582247967296640774f55ff9fafdd642eb36e38",
+        "editing": "49e5ddc5d58abc3478793389219c3823b4464f744431dd88755e6f47023d0c91"
       },
       "reviews": {
         "content": {
@@ -3059,10 +3059,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:pricing.editorial",
       "source_digests": {
-        "content": "c4a98dd1f8240f53063e816f12fbaca51988cf7e60c0df054e68e3762bd67d25",
+        "content": "051d6fe50be77c87efa8872a9bde63a6bbecaddb5cd5a57d5366150288e47d8c",
         "rights": "3e7059f67d4e2b3da34c54ba446e3372bc466c3cf54a9d23203f7f8960af73a0",
-        "render": "a32b9a7678facfe1734161d8b7d26b8dc9f8f6fa277a2ef387cb15d314fd65b0",
-        "editing": "9f3c8dc278fb9a7ed0289b9cb684623886b82b0ecc5aa4c90117a2ef80b7b0c0"
+        "render": "7b46546e0e699c6b7e534594b37214cf0b787a823094b4e4a6f6b2c274127e4f",
+        "editing": "634f42ffdbd38edc6aeb3e448b65a646997a10fe55a359e1a6f1968c62dba291"
       },
       "reviews": {
         "content": {
@@ -3084,10 +3084,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:team.grid",
       "source_digests": {
-        "content": "86870c0a2ebdf0402defe37dd97ed645f308f5ebf0d5bc6f63ca1e4ec0da1f03",
+        "content": "cc741807f6b7cfeb5de4cd0e23168baa466feda6ccadb09049a127244924776c",
         "rights": "d8e9c72bf804d24199135402d1731d45bb5485486ba8e67634b9e4ef966ddc81",
-        "render": "dde33c8712dc3e1faec7db143d12262eb88baf0ff5af041c4b6d0d9b54f788f5",
-        "editing": "a3b3ddc8134efff45aa51d59f2d06f945cc1386991dfa6562c74f623b2c0085a"
+        "render": "ebd93e48a9ac734f0a47a8685a6271993ccaf591bf04c0ba9915945a41f9d43c",
+        "editing": "69f3fec484e569899368f60db38583e8ea9cdb9e1184b8562b79e7978c91ed88"
       },
       "reviews": {
         "content": {
@@ -3109,10 +3109,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:team.editorial",
       "source_digests": {
-        "content": "a1e1c46c400684c8205f5fe53cf3586b28543b40aacc835ba4d7d9b1050b770b",
+        "content": "2fbb6a2eed4979b6d9fe7cf19a8f9f8f25f564f37f53f45b2a9582cfc61830c7",
         "rights": "8f7aedfb423abf25b41884c13caf0bfd591ef832973f62e48a38ed761c27c997",
-        "render": "05976bbfe7ac384b159d4f92628f812ce744ad68b49d2da591e22dd0dcfe0eba",
-        "editing": "839b52c9a350cdbbccc5fee0b07030decd893490fb3554c8f3d1f3b7bc8c99c8"
+        "render": "3d513f3536e4d00356792607d1c0b91cba948b5cb6ff873cf7c913d17878166b",
+        "editing": "e712cbf8d6a7a10788f6eb6635682a6be93dabb8375f30fa3adb68e40902781a"
       },
       "reviews": {
         "content": {
@@ -3134,10 +3134,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:team.featured",
       "source_digests": {
-        "content": "ea312eb7c1e10578d8e01ed15d2786bfb69af4014887bbc3d6ed666868ec62df",
+        "content": "cea5734524ee023202d9fb20b6386a4b32ba93546d133df060f15887b6edf3fe",
         "rights": "b9020a92c87b969fc4b77fb8f291fc75ddf545fc746a46cbd25efc519ad07362",
-        "render": "65f215e0895b1a259b2a8260505fd2ac9b1c0be081d76830b040c22e20b56b55",
-        "editing": "863d72e18d1900e9a70f94b7cf1fe3c38e40ee48adae54aa566568d83c9356f8"
+        "render": "e2ccffdc06f094624a886088e7ef5cbd495a91789df2ff6c5f8ad423f7f3629a",
+        "editing": "7570279a1921eecbd102166105ff9cb493df0b30de60a888c543326175f2f443"
       },
       "reviews": {
         "content": {
@@ -3234,10 +3234,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.grid",
       "source_digests": {
-        "content": "19140966f931af4780e99fa769f0d9fa49748303bbc38ad3f5f7c1379148ba66",
+        "content": "07d5f56bb20688679ac08eace8b8dac2818e7c391e0af8cb95affdceb8ea42e8",
         "rights": "37babb237a6c43d8f62fee0992653294a74773c92c4ac36e8d24763bd6ed3dc9",
-        "render": "4d7bda952575236099138a9b91c7ac51ddb2489ef42ab055a53aaa7ddb2de9fa",
-        "editing": "82cd9c3e7eee4ec5ab592860c21fe3e27865a5f614febef907a108acb5719a66"
+        "render": "0e92eea741cfeb928048ff463373a805dc4688e0c7b0d369d330e251263ce11c",
+        "editing": "a1832868547a68c90e365ae62a06befe4137a2adf5855502073df3250d8245b8"
       },
       "reviews": {
         "content": {
@@ -3259,10 +3259,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.spotlight",
       "source_digests": {
-        "content": "34c57ef58f841295939f4005f1cf361ab7b29bde65f20057b2f8e9d24fcd13b7",
+        "content": "228c852dc2fe924580a9558de501d6da5086610bd2df427dda6a73ff14af3bc1",
         "rights": "b0013248a5816b1bce2ea2e3965dfdf1d6d83c89bb97270006f10480bdb4d912",
-        "render": "ad08ab938e51d8b32e0d3888cea04a4a8580f5955b535d2f04dc0c5929c5dc47",
-        "editing": "54489c5214488780cf7fa3a9dfaf7ac419236bfa4bb6079f065e2e4104613f47"
+        "render": "2808d0b6c577860481fca01de594d49b6cb25088dd9dd1642d9635b9103c5fe2",
+        "editing": "ba0233c581028e39a204697282716d3b8a57904179153095654edcb3c73cf0dd"
       },
       "reviews": {
         "content": {
@@ -3284,10 +3284,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.split",
       "source_digests": {
-        "content": "a7069f2a56771f2a99a7292ce079a2aa50e30cb94f71c13c0dd9b3f37652fe83",
+        "content": "e751ebfbe074fab1c9fb72b7e598ec0017fa4d311a7143836ac3c6f2617be0cd",
         "rights": "14038daf9c94fde52e0d1e2ab763f32873a19c8d7cd910e24da37f5d4060986a",
-        "render": "bc6651ab18924fa6ed45bb1cbda32be81333743d351490144ab253f0bf7bf5c0",
-        "editing": "b2a2c167ee8090fa726930feb0df7500e28e84f050722f52bf8c547149b0cf01"
+        "render": "042b5be52fc26f23de56c5340bbb5940fbc4b5e87b9d83fa17608b4bcb3ed3cc",
+        "editing": "9b43d10f731924bb3da82cb8067e6e4da4cefc81870f30c49aadd539447d91b5"
       },
       "reviews": {
         "content": {

@@ -103,6 +103,19 @@
         { "id": "stats.split", "decision": "modified", "reason": "분할형 성과 수치를 가상 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
         { "id": "pricing.cards", "decision": "modified", "reason": "가격·플랜 조건을 예시로 명시하고 루트 행동을 플랜별 문의 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-C-03",
+      "items": [
+        { "id": "pricing.compact", "decision": "modified", "reason": "compact 가격·플랜 조건을 예시로 명시하고 루트 행동을 플랜별 문의 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "pricing.editorial", "decision": "modified", "reason": "에디토리얼 가격·플랜 조건을 예시로 명시하고 루트 행동을 플랜별 문의 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "team.grid", "decision": "modified", "reason": "그리드형 이름·역할·사진을 실제 임직원으로 오인하지 않도록 가상 팀으로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "team.editorial", "decision": "modified", "reason": "에디토리얼 이름·역할·사진을 실제 임직원으로 오인하지 않도록 가상 팀으로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "team.featured", "decision": "modified", "reason": "강조형 이름·역할·사진을 실제 임직원으로 오인하지 않도록 가상 팀으로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "testimonials.grid", "decision": "modified", "reason": "그리드형 고객 후기와 성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "testimonials.spotlight", "decision": "modified", "reason": "강조형 고객 후기와 성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "testimonials.split", "decision": "modified", "reason": "분할형 고객 후기와 성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

@@ -1,12 +1,12 @@
 # 제품화 호환 결정 ADR-001
 
-상태: 1차 결정, 후속 구현 대상. 이번에는 schema·제품 버전·DB를 변경하지 않습니다.
+상태: 3차 최소 구현 반영. 4차 기본 생성·전환 UI 결정과 제품 버전 발행은 후속입니다.
 
 ## 결정: v1 의미를 바꾸지 않고 v2 도입
 
-현재 schema는 재귀 slots를 표현하지만 PageBuilderDocument는 v1만 받고 Puck adapter/PHP compiler는 비어 있지 않은 slots를 거부합니다. 구조형 문서와 기기별 값을 실제 지원하려면 저장·복원·Pack 호환을 함께 바꿔야 합니다. 따라서 이미 배포한 v1의 의미를 몰래 확장하지 않습니다.
+`PageBuilderDocument`·Puck adapter·PHP compiler는 3-B에서 최소 v2 구조를 읽고 저장·발행하도록 연결했습니다. 구조형 문서와 기기별 값을 전부 지원하려면 저장·복원·Pack 호환을 함께 바꿔야 하므로 이미 배포한 v1의 의미는 확장하지 않습니다.
 
-- 신규 문서 계약: `g7-page-builder/v2`, schema 파일은 별도 `schemas/page-builder-document-v2.schema.json`로 추가할 예정입니다. v1 파일·fixture·reader를 유지합니다.
+- 신규 문서 계약은 `g7-page-builder/v2`입니다. 현행 `schemas/page-builder-document.schema.json`은 기존 v1 `$id`와 v1 금지 규칙을 유지하면서 v1/v2를 조건부 판정하는 호환 schema로 운용합니다. 파일 분리는 계약 안전성에 이득이 확인될 때 별도 변경으로 진행하며 경로만 바꿔 동일 계약을 중복하지 않습니다.
 - v2는 기존 root blocks와 block ID/version을 보존하며 신설 layout 3종과 제한된 responsive 객체를 추가합니다.
 - 3차 최소 경로가 통과하기 전에는 일반 신규 문서도 v1입니다. 4차 제품 흐름 통과 후 v2 기본 생성 전환을 통합 게이트에서 결정합니다.
 - v1을 여는 것만으로 v2로 저장하지 않습니다. 최초 구조 기능 사용 시 전환 영향을 안내하고 동의한 저장에서 새 v2 revision을 만듭니다. 취소·검증 실패는 기존 draft/revision/publication을 변경하지 않습니다.
@@ -16,8 +16,8 @@
 
 | 값 | 현행 근거 | 구현 시 결정 |
 |---|---|---|
-| document schema_version | g7-page-builder/v1 | v2 별도 reader/validator/compiler 경로 추가 |
-| compiler_version | HtmlDocumentCompiler의 0.16.0 | G7 템플릿 sanitizer 안전 표식 계약을 추가했으며 v2 compiler 경로는 착수 당시 최신 버전에서 다시 결정 |
+| document schema_version | g7-page-builder/v1·v2 | 한 호환 schema에서 버전별 조건을 적용하고 runtime은 canonical version을 그대로 보존 |
+| compiler_version | HtmlDocumentCompiler의 0.17.0 | v1 sanitizer 안전 출력과 v2 최소 Section/Columns 재귀 출력을 함께 판정 |
 | block_version | manifest의 각 정수 | 기존 version의 의미 보존. 새 layout은 최초 1, 비호환 props 변경은 새 정수 |
 | Pack manifest/품질 계약 | 각각 v1 | 편집/검증 증거 변경은 별도 버전. 구형 승인 자동 승격 금지 |
 | module/package/lock | 0.30.0 | 0.y.z의 공개 계약 추가·변경이므로 후속 기능 릴리스 MINOR. 실제 번호는 version lease에서 결정 |

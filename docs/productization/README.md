@@ -37,6 +37,8 @@
 
 3-B는 [최소 중첩 실행 기록](phase-3-minimum-nesting.md)에 따라 Puck slot과 canonical v2, PHP 재귀 compiler를 `Section → 2열 Columns → Heading/RichText` 한 경로로 연결합니다. 일반 문서 생성은 계속 v1이고 Layout Columns를 root 라이브러리에 직접 노출하지 않습니다. 작업트리의 fixture·TS/PHP 단위 검사는 통과했으며 DB/G7 실제 브라우저 결과는 제출·통합 뒤 full profile 결과로 확정합니다. 3-C 경계·복구, 4차 구조 UI, 5차 사용자 Section, 사람 심사와 배포는 완료로 표시하지 않습니다.
 
+3-C는 [경계·복구 실행 기록](phase-3-boundaries.md)에 따라 Puck 변환·공통 TS/PHP 한도·DB 저장 원자성·v1 revision 메타데이터·마지막 정상 발행본을 한 부정 시험 흐름으로 닫습니다. Stack과 전체 구조 UI를 추가하지 않고, 아직 미지원인 구조의 compile 실패도 publication pointer를 바꾸지 않는지 판정합니다. 4차 구조 조작·반응형·전환 UI는 별도 차수입니다.
+
 사용자의 남은 차수 연속 추진 지시에 따라 **3-A1의 순수 문서 트리·공통 구조 정책**을 독립 준비 배치로 진행합니다. [3-A1 실행 기록](phase-3-tree.md)에 TS/PHP 공통 fixture, 이동/복제/열 축소의 원본 보존과 실제 검증 범위를 기록합니다. 아직 기존 어댑터·API·발행에 연결하지 않았으며 2차 합격 또는 3차 기능 완료를 뜻하지 않습니다. 현재 공개 CSS 통합은 최신 썸네일 증거 140개와 기존 작업의 소유 범위가 맞지 않아 자동 취소됐습니다. 소유권/증거 조정, 사람 심사, 운영 배포처럼 필요한 승인은 마지막으로 모으고, 그 경계를 우회하지 않습니다.
 
 1. 차수별 정확한 파일 범위와 검증 profile을 소유한 worktree에서 작업합니다.

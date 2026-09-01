@@ -41,7 +41,8 @@ describe('phase 6 quality decision', () => {
     for (const id of pageKitIds) {
       const item = quality.items.find((candidate) => candidate.id === id)!;
       expect(item.kind, id).toBe('page-kit');
-      expect(item.sha256, id).toBe(sha256(item.source));
+      expect(item.source, id).toBeTypeOf('string');
+      expect(item.sha256, id).toBe(sha256(item.source!));
       expect(inventory.page_kits.find((candidate) => candidate.id === id)?.review_status, id)
         .toBe('not-reviewed-under-v2');
     }

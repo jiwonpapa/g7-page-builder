@@ -659,6 +659,9 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-card-grid--layout-numbered .g7pb-card-grid__items { grid-template-columns: 1fr; }
 .g7pb-card-grid--layout-numbered .g7pb-card-grid__item { display: grid; grid-template-columns: 5rem minmax(10rem, .6fr) minmax(0, 1.4fr) auto; gap: 1rem; align-items: center; padding-inline: 0; border-inline: 0; }
 .g7pb-card-grid--layout-numbered .g7pb-card-grid__kicker { font-family: ui-monospace, monospace; font-size: 1.5rem; }
+@media (max-width: 840px) {
+    .g7pb-testimonials--split { grid-template-columns: 1fr; }
+}
 @media (max-width: 800px) {
     .g7pb-hero--layout-product, .g7pb-hero--layout-editorial, .g7pb-hero--layout-device,
     .g7pb-features--layout-editorial, .g7pb-logo-cloud--layout-panel, .g7pb-stats--layout-split,

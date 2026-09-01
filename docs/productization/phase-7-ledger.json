@@ -64,6 +64,19 @@
         { "id": "divider.section-break", "decision": "maintained", "reason": "섹션 구분 용도와 라벨이 명확하며 추가 데이터 의존성이 없음", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
         { "id": "blockquote.customer-voice", "decision": "modified", "reason": "실제 고객 오인 가능성이 있는 인용을 가상 사례로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-B-03",
+      "items": [
+        { "id": "articles.list", "decision": "modified", "reason": "목록형 기사 4개의 루트 링크를 각 이야기 상세 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "articles.grid", "decision": "modified", "reason": "그리드형 기사 4개의 루트 링크를 각 이야기 상세 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "articles.featured", "decision": "modified", "reason": "강조형 기사 4개의 루트 링크를 각 이야기 상세 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "articles.editorial", "decision": "modified", "reason": "에디토리얼 기사 4개의 루트 링크를 각 이야기 상세 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "card-grid.grid", "decision": "maintained", "reason": "상담·구축·운영 카드와 개별 경로가 구체적으로 제공됨", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "card-grid.rail", "decision": "maintained", "reason": "동일 서비스 정보를 가로 탐색 구조로 일관되게 표현함", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "card-grid.editorial", "decision": "maintained", "reason": "에디토리얼 카드 변형의 정보 계층과 연결 경로가 완결됨", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "card-grid.numbered", "decision": "maintained", "reason": "번호형 서비스 순서와 행동 경로가 명확함", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

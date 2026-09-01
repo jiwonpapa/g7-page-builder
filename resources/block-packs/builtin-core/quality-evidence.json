@@ -759,10 +759,10 @@
     {
       "catalog_id": "block:trust.logo-carousel-01@1",
       "source_digests": {
-        "content": "8dcc3f5521376035f802243e455636b32a2647cf71c4be80391c19da2308e3e7",
+        "content": "383446a07b60476cdc0e7252cf55531ea24f064107c8ba519c62b2843003637d",
         "rights": "65abc186ef9789ba6c4486b9fe4eef51903e3fd894912a7ad1490a27dbe57873",
-        "render": "a73bd0c92bc9c4c4658c7ae1e11e12c613ee394f1de174377ef92b3de15a4b7e",
-        "editing": "6377e02c834c9da5ee901b13b1fccb4260090bd2ea32ee34f36e1e887665b267"
+        "render": "d4ca6465d4e345ffd5099b45d51de5e4a9bd27f3bc9370032dc509345349974a",
+        "editing": "6334c2a48f2bc60721e209e33c325c0ea571bd4fb82c65d5983ccc99363ea346"
       },
       "reviews": {
         "content": {
@@ -2034,10 +2034,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:logo-carousel.customers",
       "source_digests": {
-        "content": "d75311bafe16191ef117451162eaa0a30c549a745eb976bd029bf9566a935ead",
+        "content": "29b24d64536ba9fb3a4f4ea53551b73b683c0f4551eda2a979fe120b100f269d",
         "rights": "adad975980e3ab6588e130bb0a9306c8aee5897eae3a36341046718274f4c1da",
-        "render": "abaa6a2363d375fa5bb21da079e3d81265929ac457b19f1dba5de2f9e4dbde36",
-        "editing": "200261ed97086ef70b7632d1c7a719fd9b3025cf7cb7025d1a1eb85d10530b16"
+        "render": "6f7c7c81f18ab404991b2f9d4d3b11c4ebeb894c0848831d884cbf7cedbf6ae8",
+        "editing": "80dd97927b35029d9aba568322aaa469e3a20dbfe0f38ca86e49ec1facf9c291"
       },
       "reviews": {
         "content": {
@@ -3334,10 +3334,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:articles.list",
       "source_digests": {
-        "content": "bdda0d7b37a996a5af4a4368e0bec4264651e8239abdb8b8d26cd8fc21d840f1",
+        "content": "76fd2ede317e17ce80eb0dff9f459b6c039120b8a58f89df80aa7641a6a6913b",
         "rights": "8940855e3630330b4242de453dce0d0a4a1c024bc9c65da76ad273dd3f8eb1da",
-        "render": "ec4ee96348e5d664863678fe611494b92203a37046f1d18d6739283ce6ff5683",
-        "editing": "a892d116100e8484e10e5e8c7245bfab96a84f23956f5c488b47768bc1b3c7ba"
+        "render": "1a113e2f90fd1d3544575d64d40957f776e9aca3ce71546dd03bcdfceca86870",
+        "editing": "5a4998a09ec3971a33ce42dd069c43790802690790a8f23b96eea915d16e8abf"
       },
       "reviews": {
         "content": {
@@ -3359,10 +3359,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:articles.grid",
       "source_digests": {
-        "content": "5dcf01c16ca67e49a35cd475609707b633ab51c986306ab7dbdcfe33518710a7",
+        "content": "cab024f812e001d942e492725d84fe29633acad0fbaefaa14b988806d3a3c970",
         "rights": "2990b2facdc68e00ce00b4645b38beecf836a0acd16032409b5fcd415a3eaa11",
-        "render": "7d9a88e3015ab9ecbaa149ad5e4feab0a18b62bf1d617aec8992d50efa4fa584",
-        "editing": "afc184481a495aebe89747803476b67951a28cdad09971f52b77f6120ee10347"
+        "render": "aeddd3434b5fc42bfcbf80ad8db2c6706bd83bf18b63597ed62bff0be8abc2fb",
+        "editing": "b506c9aceee8d9c2ada25f5f6715335da8b54241aa6f7614a40792004c79ede5"
       },
       "reviews": {
         "content": {
@@ -3384,10 +3384,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:articles.featured",
       "source_digests": {
-        "content": "bf82b705a632720305d2496b61b556ff9b019df91ba7892a59c9b83dd1f92fbe",
+        "content": "ed18eca05aa12442888d80e5c5d9d9c175116151909cf30c1a735f70114b13ad",
         "rights": "044d80e548fd82f06ce325cd594522419e2b62d0fd2499af1a844d985d6afda0",
-        "render": "74d7aa03e206e534077118653a8d07edd641c8f84511157988ea728e43329d8b",
-        "editing": "37be5d23d1df49f16a2cecfc48aa33e761ce76ebc98848e5c7b975a75f96c6a6"
+        "render": "581f3099c2ca9103a7ee76da65aa7c61dc0d380672ab9f6bb1860617dd9da39d",
+        "editing": "f0eb58621fe10d0d389c36d4542824aa546038d6aaedfaf03018ff12d2c1f8e9"
       },
       "reviews": {
         "content": {
@@ -3409,10 +3409,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:articles.editorial",
       "source_digests": {
-        "content": "4d90bbe41986514059769e96fd50778a506cb28187893b8adc9d78097ed86fc8",
+        "content": "f91ddc40d261b56d3e7dc921002468eeb4847ec0ed2311e3206897a350b5bc2e",
         "rights": "bd428feb2667e0b4f1e48e7a1c1fd5a4aad4321c696e78e63ab38c0ede8c5ef3",
-        "render": "fc376fdbda90fddf0a3eb45ba8f713c8621a4b48320f5a94c87d35f5d5452e4d",
-        "editing": "ea3ea592a8b358b5a52f6302a95a307d10f56df51c8a74500ef61757bd1d1fa1"
+        "render": "502bd8442af553800ac7c7d43b7ed606ebf1ed43fe13b143eedaf537ed031697",
+        "editing": "a4f0012ac255510127d86c5fea38729c61d8e1a2b97f329c416b4d054dcae252"
       },
       "reviews": {
         "content": {

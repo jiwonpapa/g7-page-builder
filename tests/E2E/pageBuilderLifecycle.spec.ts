@@ -2191,3 +2191,127 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     await api.dispose();
   }
 });
+
+test('edits, reloads, publishes, restores, and republishes a nested two-column layout', async ({
+  context,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'PC is the supported editing surface for nested layouts.');
+  test.setTimeout(180_000);
+
+  const authToken = await authenticateAdmin(context);
+  await recoverOwnedE2eArtifacts(authToken);
+  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const slug = `g7pb-e2e-desktop-${runId}`;
+  const originalHeading = `Nested original ${runId}`;
+  const changedHeading = `Nested changed ${runId}`;
+  const body = `Nested body ${runId}`;
+  const api = await playwrightRequest.newContext({
+    baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
+    extraHTTPHeaders: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const ownershipJournalPath = await writeE2eOwnershipJournal(`nested-${runId}`, [slug]);
+
+  try {
+    const createResponse = await api.post('/api/modules/jiwonpapa-page_builder/admin/documents', {
+      data: { title: `Nested layout ${runId}`, slug, locale: 'ko', mode: 'canvas', shell_mode: 'none' },
+    });
+    expect(createResponse.ok()).toBe(true);
+    const created = await createResponse.json() as {
+      data?: { document?: Record<string, unknown>; lock_version?: unknown };
+    };
+    const documentId = created.data?.document?.document_id;
+    expect(documentId).toMatch(DOCUMENT_ID_PATTERN);
+    expect(typeof created.data?.lock_version).toBe('number');
+
+    const document = {
+      ...created.data?.document,
+      schema_version: 'g7-page-builder/v2',
+      shell_mode: 'none',
+      blocks: [{
+        instance_id: crypto.randomUUID(),
+        type: 'layout.section-01',
+        block_version: 1,
+        props: { width: 'standard', spacing: 'normal' },
+        slots: { content: [{
+          instance_id: crypto.randomUUID(),
+          type: 'layout.columns-01',
+          block_version: 1,
+          props: { columns: 2, ratio: '1:2', gap: 'normal' },
+          slots: {
+            column1: [{
+              instance_id: crypto.randomUUID(),
+              type: 'content.heading-01',
+              block_version: 1,
+              props: { eyebrow: 'NESTED', heading: originalHeading, level: 2, anchor: '' },
+            }],
+            column2: [{
+              instance_id: crypto.randomUUID(),
+              type: 'content.rich-text-01',
+              block_version: 1,
+              props: { content: `<p>${body}</p>`, measure: 'wide' },
+            }],
+          },
+        }] },
+      }],
+    };
+    const initialDraftResponse = await api.put(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/draft`, {
+      data: { document, expected_lock_version: created.data?.lock_version },
+    });
+    expect(initialDraftResponse.ok(), await initialDraftResponse.text()).toBe(true);
+
+    const editorResponse = await page.goto(`${EDITOR_PATH}?document=${documentId}`);
+    expect(editorResponse?.ok()).toBe(true);
+    await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    const frame = page.frameLocator('iframe');
+    await expect(frame.getByTestId('page-builder-layout-section')).toBeVisible();
+    await expect(frame.getByTestId('page-builder-layout-columns')).toBeVisible();
+    const nestedHeading = frame.locator(
+      '[data-g7pb-inline-field="heading"][contenteditable], [data-g7pb-inline-field="heading"] [contenteditable]',
+    );
+    await expect(nestedHeading).toHaveCount(1);
+    await nestedHeading.fill(changedHeading);
+    await saveDraft(page);
+
+    await page.reload();
+    await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    await expect(frame.getByText(changedHeading, { exact: true })).toBeVisible();
+    await publish(page);
+
+    const publicResponse = await page.goto(`/pages/${slug}`);
+    expect(publicResponse?.ok()).toBe(true);
+    await expect(page.locator('.g7pb-layout-section')).toBeVisible();
+    await expect(page.locator('.g7pb-layout-columns--1-2')).toBeVisible();
+    await expect(page.getByText(changedHeading, { exact: true })).toBeVisible();
+    await expect(page.getByText(body, { exact: true })).toBeVisible();
+
+    const currentResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`);
+    const current = await currentResponse.json() as { data?: { lock_version?: unknown } };
+    expect(typeof current.data?.lock_version).toBe('number');
+    const restoreResponse = await api.post(
+      `/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}/revisions/2/restore`,
+      { data: { expected_lock_version: current.data?.lock_version } },
+    );
+    expect(restoreResponse.ok(), await restoreResponse.text()).toBe(true);
+
+    const stillPublished = await page.goto(`/pages/${slug}`);
+    expect(stillPublished?.ok()).toBe(true);
+    await expect(page.getByText(changedHeading, { exact: true })).toBeVisible();
+
+    await page.goto(`${EDITOR_PATH}?document=${documentId}`);
+    await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    await expect(frame.getByText(originalHeading, { exact: true })).toBeVisible();
+    await publish(page);
+    await page.goto(`/pages/${slug}`);
+    await expect(page.getByText(originalHeading, { exact: true })).toBeVisible();
+  } finally {
+    await cleanupE2eArtifacts(authToken, [slug], null);
+    await removeE2eOwnershipJournal(ownershipJournalPath);
+    await api.dispose();
+  }
+});

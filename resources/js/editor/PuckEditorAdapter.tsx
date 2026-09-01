@@ -46,6 +46,10 @@ import {
   catalogPuckBlockToCanonical,
   type CatalogEditorComponents,
 } from './catalogBlocks';
+import {
+  layoutCatalogComponentConfigs,
+  type LayoutCatalogEditorComponents,
+} from './layoutCatalogBlocks';
 import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS, BUILTIN_BLOCK_PRESETS, BUILTIN_CORE_MANIFEST } from '../blocks/builtinCatalog';
 import type { BlockCatalogItem } from '../blocks/types';
 import {
@@ -112,6 +116,7 @@ import {
 } from './pageDesignTokens';
 import {
   BLOCK_CONTAINER_FIELDS,
+  blockContainerEditorProps,
   blockContainerClassName,
   mergeBlockContainerAppearance,
 } from './blockAppearance';
@@ -141,6 +146,8 @@ import {
   CTA_BLOCK_TYPE,
   FEATURES_BLOCK_TYPE,
   HERO_BLOCK_TYPE,
+  LAYOUT_COLUMNS_BLOCK_TYPE,
+  LAYOUT_SECTION_BLOCK_TYPE,
   type ContactBlockProps,
   type BlockAppearance,
   type BlockMotion,
@@ -154,6 +161,7 @@ import {
   type ElementAppearanceMap,
   type SitePartResource,
 } from '../documents/types';
+import { validateLayoutDocument } from '../documents/layoutPolicy';
 
 interface HeroEditorProps {
   eyebrow: string;
@@ -221,7 +229,7 @@ interface ContactEditorProps {
   motion: BlockMotion;
 }
 
-interface EditorComponents extends CatalogEditorComponents {
+interface EditorComponents extends CatalogEditorComponents, LayoutCatalogEditorComponents {
   Hero: HeroEditorProps;
   Features: FeaturesEditorProps;
   Cta: CtaEditorProps;
@@ -627,7 +635,37 @@ function contactToEditorProps(props: Record<string, unknown>): ContactEditorProp
   };
 }
 
-function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'][number] {
+function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['content'][number] {
+  if (block.type === LAYOUT_SECTION_BLOCK_TYPE) {
+    const width = block.props.width === 'wide' || block.props.width === 'full' ? block.props.width : 'standard';
+    const spacing = block.props.spacing === 'compact' || block.props.spacing === 'spacious' ? block.props.spacing : 'normal';
+    return {
+      type: 'LayoutSection',
+      props: {
+        id: block.instance_id,
+        width,
+        spacing,
+        content: (block.slots?.content ?? []).map(canonicalBlockToPuck),
+      },
+    } as unknown as PuckEditorData['content'][number];
+  }
+
+  if (block.type === LAYOUT_COLUMNS_BLOCK_TYPE) {
+    const ratio = block.props.ratio === '1:2' || block.props.ratio === '2:1' ? block.props.ratio : '1:1';
+    const gap = block.props.gap === 'compact' || block.props.gap === 'spacious' ? block.props.gap : 'normal';
+    return {
+      type: 'LayoutColumns',
+      props: {
+        id: block.instance_id,
+        columns: '2',
+        ratio,
+        gap,
+        column1: (block.slots?.column1 ?? []).map(canonicalBlockToPuck),
+        column2: (block.slots?.column2 ?? []).map(canonicalBlockToPuck),
+      },
+    } as unknown as PuckEditorData['content'][number];
+  }
+
   if (hasNonEmptySlots(block)) {
     throw new Error(`MVP block cannot contain nested slots: ${block.instance_id}`);
   }
@@ -704,7 +742,20 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
   throw new Error(`Unsupported PageBuilder block: ${block.type}`);
 }
 
+function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'][number] {
+  const converted = canonicalBlockToPuckRaw(block);
+  return {
+    ...converted,
+    props: {
+      ...converted.props,
+      ...blockContainerEditorProps(block.props.appearance),
+      __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',
+    },
+  } as unknown as PuckEditorData['content'][number];
+}
+
 export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSession {
+  if (document.schema_version === 'g7-page-builder/v2') validateLayoutDocument(document);
   return canonicalDocumentToPuck(document, canonicalBlockToPuck);
 }
 
@@ -729,7 +780,24 @@ function puckBlockToCanonical(
   let supportsContainerAppearance = true;
   let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps | Record<string, unknown>;
 
-  if (block.type === 'Hero') {
+  if (block.type === 'LayoutSection') {
+    type = LAYOUT_SECTION_BLOCK_TYPE;
+    blockVersion = 1;
+    supportsContainerAppearance = false;
+    props = {
+      width: block.props.width === 'wide' || block.props.width === 'full' ? block.props.width : 'standard',
+      spacing: block.props.spacing === 'compact' || block.props.spacing === 'spacious' ? block.props.spacing : 'normal',
+    };
+  } else if (block.type === 'LayoutColumns') {
+    type = LAYOUT_COLUMNS_BLOCK_TYPE;
+    blockVersion = 1;
+    supportsContainerAppearance = false;
+    props = {
+      columns: 2,
+      ratio: block.props.ratio === '1:2' || block.props.ratio === '2:1' ? block.props.ratio : '1:1',
+      gap: block.props.gap === 'compact' || block.props.gap === 'spacious' ? block.props.gap : 'normal',
+    };
+  } else if (block.type === 'Hero') {
     const editorProps = block.props as typeof block.props & HeroEditorProps;
     type = HERO_BLOCK_TYPE;
     const heroProps: HeroBlockProps = {
@@ -878,7 +946,17 @@ function puckBlockToCanonical(
     canonical.visibility = { audience: visibilityAudience };
   }
 
-  if (metadata.hadSlots) {
+  if (block.type === 'LayoutSection') {
+    const children = Array.isArray(block.props.content) ? block.props.content : [];
+    canonical.slots = { content: children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)) };
+  } else if (block.type === 'LayoutColumns') {
+    const column1 = Array.isArray(block.props.column1) ? block.props.column1 : [];
+    const column2 = Array.isArray(block.props.column2) ? block.props.column2 : [];
+    canonical.slots = {
+      column1: column1.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)),
+      column2: column2.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)),
+    };
+  } else if (metadata.hadSlots) {
     canonical.slots = {};
   }
 
@@ -1138,7 +1216,7 @@ function withBlockContainerFields<TComponents extends Record<string, { fields?: 
       options={field.options}
     />,
   }]));
-  return Object.fromEntries(Object.entries(components).map(([name, component]) => [name, {
+  return Object.fromEntries(Object.entries(components).map(([name, component]) => [name, name.startsWith('Layout') ? component : {
     ...component,
     fields: markRequiredInspectorFields({
       ...(component.fields ?? {}),
@@ -1363,6 +1441,11 @@ function ContactPreview({
 
 export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = {
   categories: {
+    layout: {
+      title: '구조 레이아웃',
+      components: ['LayoutSection'],
+      defaultExpanded: true,
+    },
     content: {
       title: '콘텐츠 블록',
       components: ['Heading', 'RichText', 'ImageText', 'IconList', 'Hero', 'HeroSlider', 'Features', 'Cta', 'Buttons', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
@@ -1389,6 +1472,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
     },
   },
   components: withBlockContainerFields({
+    ...layoutCatalogComponentConfigs,
     ...catalogComponentConfigs,
     Hero: {
       label: 'Hero',
@@ -2960,6 +3044,13 @@ export function PuckEditorAdapter({
   const runtimePuckConfig = useMemo(() => {
     const baseConfig = {
       ...pageBuilderPuckConfig,
+      categories: {
+        ...pageBuilderPuckConfig.categories,
+        layout: {
+          ...pageBuilderPuckConfig.categories?.layout,
+          visible: document.schema_version === 'g7-page-builder/v2',
+        },
+      },
       components: {
         ...pageBuilderPuckConfig.components,
         ...externalEditorComponents(),
@@ -2972,7 +3063,7 @@ export function PuckEditorAdapter({
       return [type, { ...component, fields: applyEditorContentPolicy(component.fields, false) }];
     })) as Config<EditorComponents, PageDesignProps>['components'];
     return { ...baseConfig, components };
-  }, [viewportPolicy.canEdit]);
+  }, [document.schema_version, viewportPolicy.canEdit]);
   const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);

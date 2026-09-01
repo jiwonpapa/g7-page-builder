@@ -1,4 +1,5 @@
 import type { PageBuilderBlock, PageBuilderDocument, ScalarToken } from '../documents/types';
+import { validateLayoutDocument } from '../documents/layoutPolicy';
 import type { PuckEditorData } from './PuckEditorAdapter';
 import { blockContainerEditorProps } from './blockAppearance';
 import { pageDesignToTokens, tokensToPageDesign } from './pageDesignTokens';
@@ -45,8 +46,7 @@ function cloneTokens(tokens: Record<string, ScalarToken> | undefined): Record<st
 export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBlock: (block: PageBuilderBlock) => PuckEditorData['content'][number]): PuckEditorSession {
   const metadata: Record<string, BlockRoundTripMetadata> = {};
   const convertedBlocks = document.blocks.map(convertBlock);
-  for (const [index, block] of document.blocks.entries()) {
-    const initialPuckBlock = convertedBlocks[index];
+  const collectMetadata = (block: PageBuilderBlock, initialPuckBlock: PuckEditorData['content'][number]): void => {
     const initialLayoutValue = (initialPuckBlock.props as Record<string, unknown>).layout;
     metadata[block.instance_id.toLowerCase()] = {
       blockVersion: block.block_version,
@@ -61,6 +61,17 @@ export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBl
         || Object.prototype.hasOwnProperty.call(block.props, 'interval')
         || Object.prototype.hasOwnProperty.call(block.props, 'loop'),
     };
+    for (const [slotName, children] of Object.entries(block.slots ?? {})) {
+      const convertedChildren = (initialPuckBlock.props as Record<string, unknown>)[slotName];
+      if (!Array.isArray(convertedChildren)) continue;
+      children.forEach((child, index) => {
+        const convertedChild = convertedChildren[index] as PuckEditorData['content'][number] | undefined;
+        if (convertedChild) collectMetadata(child, convertedChild);
+      });
+    }
+  };
+  for (const [index, block] of document.blocks.entries()) {
+    collectMetadata(block, convertedBlocks[index]);
   }
 
   return {
@@ -119,6 +130,10 @@ export function puckDocumentToCanonical(
   const tokens = pageDesignToTokens(data.root.props, context.document.tokens);
   if (context.document.hadTokens || Object.keys(tokens).length > 0) {
     document.tokens = tokens;
+  }
+
+  if (document.schema_version === 'g7-page-builder/v2') {
+    validateLayoutDocument(document);
   }
 
   return document;

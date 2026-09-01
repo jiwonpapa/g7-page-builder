@@ -57,6 +57,21 @@ final class DomainContractsTest extends TestCase
         );
     }
 
+    public function test_document_accepts_schema_v2_when_the_layout_policy_is_valid(): void
+    {
+        $document = new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000001',
+            slug: 'page-builder',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: [],
+            blocks: [],
+            schemaVersion: 'g7-page-builder/v2',
+        );
+
+        self::assertSame('g7-page-builder/v2', $document->schemaVersion);
+    }
+
     public function test_document_rejects_unsupported_schema_version(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -68,6 +83,28 @@ final class DomainContractsTest extends TestCase
             locale: 'ko',
             tokens: [],
             blocks: [],
+            schemaVersion: 'g7-page-builder/v3',
+        );
+    }
+
+    public function test_document_rejects_an_invalid_schema_v2_layout(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('parent: blocks.0');
+
+        new PageBuilderDocument(
+            documentId: '00000000-0000-4000-8000-000000000001',
+            slug: 'page-builder',
+            mode: 'canvas',
+            locale: 'ko',
+            tokens: [],
+            blocks: [[
+                'instance_id' => '00000000-0000-4000-8000-000000000002',
+                'type' => 'layout.columns-01',
+                'block_version' => 1,
+                'props' => ['columns' => 2, 'ratio' => '1:1', 'gap' => 'normal'],
+                'slots' => ['column1' => [], 'column2' => []],
+            ]],
             schemaVersion: 'g7-page-builder/v2',
         );
     }

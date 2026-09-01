@@ -720,10 +720,14 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
       const descendants = Array.from(element.querySelectorAll('*')).map(child => {
         const childStyle = getComputedStyle(child);
         return { tag: child.tagName, font: childStyle.font, lineHeight: childStyle.lineHeight,
+          letterSpacing: childStyle.letterSpacing, overflowWrap: childStyle.overflowWrap,
+          whiteSpace: childStyle.whiteSpace, wordBreak: childStyle.wordBreak,
           height: child.getBoundingClientRect().height, display: childStyle.display };
       });
       return { context, descendants, parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, width: rect.width, height: rect.height, color: style.color, fontSize: style.fontSize,
-        fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
+        fontFamily: style.fontFamily, fontWeight: style.fontWeight, letterSpacing: style.letterSpacing,
+        lineHeight: style.lineHeight, overflowWrap: style.overflowWrap, whiteSpace: style.whiteSpace,
+        wordBreak: style.wordBreak };
     };
     return {
       id: (block as HTMLElement).dataset.blockId, type: (block as HTMLElement).dataset.blockType,
@@ -786,7 +790,9 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
           ))) ?? element;
         const style = getComputedStyle(typographyElement);
         const actual: Record<string, unknown> = { width: rect.width, height: rect.height, color: style.color,
-          fontSize: style.fontSize, fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
+          fontSize: style.fontSize, fontFamily: style.fontFamily, fontWeight: style.fontWeight,
+          letterSpacing: style.letterSpacing, lineHeight: style.lineHeight, overflowWrap: style.overflowWrap,
+          whiteSpace: style.whiteSpace, wordBreak: style.wordBreak };
         const differences = Object.keys(actual).filter((property) => property in editor && (
           typeof actual[property] === 'number'
             ? Math.abs(Number(actual[property]) - Number(editor[property])) > numericTolerance

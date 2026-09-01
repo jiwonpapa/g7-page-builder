@@ -211,9 +211,23 @@ describe('isolated canonical document envelope adapter', () => {
     const session = canonicalToPuck(document);
     expect(puckToCanonical(session.data, session.context)).toEqual(document);
 
-    const v2Context = structuredClone(session.context);
-    v2Context.document.schemaVersion = 'g7-page-builder/v2';
-    expect(() => puckToCanonical(session.data, v2Context)).toThrow(/^byte_limit:/);
+    expect(() => activateStructureEditing(session.data, session.context)).toThrow(/^byte_limit:/);
+    expect(session.context.document.schemaVersion).toBe('g7-page-builder/v1');
+    expect(document.schema_version).toBe('g7-page-builder/v1');
+  });
+
+  it('activates v2 structure editing atomically without mutating the v1 session', () => {
+    const document: PageBuilderDocument = {
+      schema_version: 'g7-page-builder/v1',
+      document_id: '00000000-0000-4000-8000-000000000031',
+      slug: 'activate-structure', locale: 'ko', mode: 'canvas', blocks: [],
+    };
+    const session = canonicalToPuck(document);
+
+    const activated = activateStructureEditing(session.data, session.context);
+
+    expect(activated.document.schema_version).toBe('g7-page-builder/v2');
+    expect(activated.context.document.schemaVersion).toBe('g7-page-builder/v2');
     expect(session.context.document.schemaVersion).toBe('g7-page-builder/v1');
     expect(document.schema_version).toBe('g7-page-builder/v1');
   });
@@ -271,6 +285,7 @@ describe('isolated canonical document envelope adapter', () => {
 });
 
 const {
+  activateStructureEditing,
   canonicalToPuck,
   pageBuilderPuckConfig,
   puckToCanonical,

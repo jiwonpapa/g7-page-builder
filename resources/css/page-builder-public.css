@@ -433,7 +433,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-video iframe { display: block; width: 100%; height: 100%; border: 0; }
 .g7pb-video figcaption { padding-top: 1rem; color: var(--g7pb-page-muted, #526071); line-height: 1.65; }
 .g7pb-logo-carousel .g7pb-section-heading, .g7pb-testimonial-slider .g7pb-section-heading { margin-bottom: 1.5rem; }
-.g7pb-logo-carousel .g7pb-hero-slider__slide { min-width: 22%; min-height: 8rem; flex: 0 0 22%; place-content: center; padding: 1.5rem; border-inline-end: 1px solid var(--g7pb-page-border, #dfe2e8); text-align: center; }
+.g7pb-logo-carousel .g7pb-hero-slider__slide { min-width: 22%; min-height: 8rem; flex: 0 0 22%; grid-template-columns: 1fr; place-content: center; padding: 1.5rem; border-inline-end: 1px solid var(--g7pb-page-border, #dfe2e8); text-align: center; }
 .g7pb-logo-carousel .g7pb-hero-slider__controls button, .g7pb-testimonial-slider .g7pb-hero-slider__controls button { border-color: var(--g7pb-page-border, #dfe2e8); background: transparent; }
 .g7pb-logo-carousel__slide a { display: grid; place-items: center; color: inherit; text-decoration: none; }
 .g7pb-logo-carousel__image { width: min(9rem, 100%); height: 3.5rem; min-height: 0; object-fit: contain; filter: grayscale(1); opacity: .8; }
@@ -441,7 +441,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-testimonial-slider__rating { color: #f59e0b !important; letter-spacing: .1em; }
 .g7pb-testimonial-slider__quote { max-width: 26ch; margin: 1rem 0 2rem; font-size: clamp(1.6rem, 4vw, 3.2rem); line-height: 1.25; letter-spacing: -.035em; }
 .g7pb-testimonial-slider footer { display: flex; gap: .85rem; align-items: center; }
-.g7pb-testimonial-slider footer figure { width: 3rem; height: 3rem; overflow: hidden; margin: 0; border-radius: 50%; }
+.g7pb-testimonial-slider footer figure { width: 3rem; height: 3rem; min-height: 3rem; overflow: hidden; margin: 0; border-radius: 50%; }
 .g7pb-testimonial-slider__avatar { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
 .g7pb-testimonial-slider cite { display: grid; font-style: normal; }
 .g7pb-testimonial-slider cite span { color: var(--g7pb-page-muted, #526071); font-size: .82rem; }

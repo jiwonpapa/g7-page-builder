@@ -8,7 +8,7 @@
 
 ### Changed
 
-- 통합 검증은 최신 신뢰 SHA 이후 변경 경로를 분류해 문서·조정 하네스·릴리스 오케스트레이션에는 scoped gate를 적용하고, 제품 런타임 영향 변경 또는 기준 SHA 부재에만 전체 품질 게이트를 실행합니다.
+- 통합 검증은 최신 신뢰 SHA 이후 변경 경로를 `scoped`, `frontend`, `php`, `mixed`, `g7`, `full`로 분류하며 migration·route/layout·lifecycle·미분류 핵심 경로, 기준 SHA 부재 또는 명시적 RC에만 전체 품질 게이트를 실행합니다.
 
 ## [0.31.0] - 2026-09-01
 

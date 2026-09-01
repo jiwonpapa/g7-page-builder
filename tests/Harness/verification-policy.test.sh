@@ -8,6 +8,8 @@ trap 'rm -rf -- "$temp_root"' EXIT
 repo="$temp_root/repo"
 hook="$temp_root/scoped-hook.sh"
 hook_record="$temp_root/scoped-hook.tsv"
+profile_hook="$temp_root/profile-hook.sh"
+profile_record="$temp_root/profile-hook.tsv"
 
 fail() {
   printf 'verification-policy.test: %s\n' "$*" >&2
@@ -27,6 +29,8 @@ run_harness_with_hook() {
     G7PB_COORD_TESTING=1 \
     G7PB_COORD_TEST_SCOPED_VERIFY_HOOK="$hook" \
     G7PB_COORD_TEST_SCOPED_VERIFY_RECORD="$hook_record" \
+    G7PB_COORD_TEST_INTEGRATION_PROFILE_HOOK="$profile_hook" \
+    G7PB_COORD_TEST_PROFILE_RECORD="$profile_record" \
       "$harness" "$@"
   )
 }
@@ -40,7 +44,7 @@ meta_field() {
 git init -b main "$repo" >/dev/null
 git -C "$repo" config user.name 'Verification Policy Test'
 git -C "$repo" config user.email 'verification-policy@example.test'
-mkdir -p "$repo/docs" "$repo/src/Application"
+mkdir -p "$repo/docs" "$repo/src/Application" "$repo/resources/js" "$repo/database/migrations"
 printf 'base\n' > "$repo/docs/guide.md"
 printf 'base\n' > "$repo/src/Application/runtime.php"
 git -C "$repo" add .
@@ -52,6 +56,13 @@ set -euo pipefail
 printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$G7PB_COORD_TEST_SCOPED_VERIFY_RECORD"
 HOOK
 chmod +x "$hook"
+
+cat > "$profile_hook" <<'HOOK'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$G7PB_COORD_TEST_PROFILE_RECORD"
+HOOK
+chmod +x "$profile_hook"
 
 run_harness claim --task integration-full --areas integration,runtime --profile harness >/dev/null
 first_output="$(run_harness verify --task integration-full)"
@@ -85,14 +96,44 @@ git -C "$repo" add src/Application/runtime.php
 git -C "$repo" commit -m 'feat: runtime verification candidate' >/dev/null
 run_harness claim --task integration-runtime --areas integration,runtime --profile harness >/dev/null
 runtime_output="$(run_harness_with_hook verify --task integration-runtime)"
-printf '%s\n' "$runtime_output" | grep -q 'mode=full.*trigger=src/Application/runtime.php' \
-  || fail 'runtime change did not escalate to full verification'
+printf '%s\n' "$runtime_output" | grep -q 'mode=php.*changed=1' \
+  || fail 'application PHP change did not select the PHP profile'
 [[ "$(wc -l < "$hook_record" | tr -d ' ')" == 1 ]] \
-  || fail 'full verification incorrectly executed the scoped hook'
+  || fail 'PHP verification incorrectly executed the scoped hook'
+[[ "$(awk -F '\t' 'NR == 1 { print $1 }' "$profile_record")" == php ]] \
+  || fail 'PHP verification did not execute the PHP profile hook'
 runtime_meta="$repo/.git/g7pb-coordination-v1/tasks/integration-runtime.meta"
-[[ "$(meta_field "$runtime_meta" verified_mode)" == full ]] \
-  || fail 'runtime full verification mode was not recorded'
+[[ "$(meta_field "$runtime_meta" verified_mode)" == php ]] \
+  || fail 'PHP verification mode was not recorded'
 run_harness finish --task integration-runtime >/dev/null
+
+printf 'export const editor = true;\n' > "$repo/resources/js/editor.ts"
+git -C "$repo" add resources/js/editor.ts
+git -C "$repo" commit -m 'feat: frontend verification candidate' >/dev/null
+run_harness claim --task integration-frontend --areas integration,runtime --profile harness >/dev/null
+frontend_output="$(run_harness_with_hook verify --task integration-frontend)"
+printf '%s\n' "$frontend_output" | grep -q 'mode=frontend.*changed=1' \
+  || fail 'frontend-only change did not select the frontend profile'
+[[ "$(awk -F '\t' 'NR == 2 { print $1 }' "$profile_record")" == frontend ]] \
+  || fail 'frontend verification did not execute the frontend profile hook'
+frontend_meta="$repo/.git/g7pb-coordination-v1/tasks/integration-frontend.meta"
+[[ "$(meta_field "$frontend_meta" verified_mode)" == frontend ]] \
+  || fail 'frontend verification mode was not recorded'
+run_harness finish --task integration-frontend >/dev/null
+
+printf '<?php return [];\n' > "$repo/database/migrations/0001.php"
+git -C "$repo" add database/migrations/0001.php
+git -C "$repo" commit -m 'feat: migration verification candidate' >/dev/null
+run_harness claim --task integration-migration --areas integration,runtime --profile harness >/dev/null
+migration_output="$(run_harness_with_hook verify --task integration-migration)"
+printf '%s\n' "$migration_output" | grep -q 'mode=full.*trigger=database/migrations/0001.php' \
+  || fail 'migration change did not escalate to full verification'
+[[ "$(wc -l < "$profile_record" | tr -d ' ')" == 2 ]] \
+  || fail 'full migration verification executed a narrower profile hook'
+migration_meta="$repo/.git/g7pb-coordination-v1/tasks/integration-migration.meta"
+[[ "$(meta_field "$migration_meta" verified_mode)" == full ]] \
+  || fail 'migration full verification mode was not recorded'
+run_harness finish --task integration-migration >/dev/null
 
 run_harness claim --task integration-reuse --areas integration,runtime --profile harness >/dev/null
 reuse_output="$(run_harness_with_hook verify --task integration-reuse)"
@@ -103,4 +144,13 @@ printf '%s\n' "$reuse_output" | grep -q 'VERIFY_REUSED.*source_mode=full' \
 run_harness release-guard --task integration-reuse >/dev/null
 run_harness finish --task integration-reuse >/dev/null
 
-printf 'verification-policy.test: PASS full-baseline scoped-docs full-runtime reuse-head\n'
+run_harness claim --task integration-explicit-full --areas integration,runtime --profile harness >/dev/null
+explicit_output="$(run_harness_with_hook verify --task integration-explicit-full --full)"
+printf '%s\n' "$explicit_output" | grep -q 'mode=full.*trigger=explicit-full' \
+  || fail 'explicit full verification did not override HEAD reuse'
+explicit_meta="$repo/.git/g7pb-coordination-v1/tasks/integration-explicit-full.meta"
+[[ "$(meta_field "$explicit_meta" verified_mode)" == full ]] \
+  || fail 'explicit full verification mode was not recorded'
+run_harness finish --task integration-explicit-full >/dev/null
+
+printf 'verification-policy.test: PASS full-baseline scoped-docs php-application frontend-resource full-migration reuse-head explicit-full\n'

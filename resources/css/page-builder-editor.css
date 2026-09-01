@@ -2145,7 +2145,7 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-preview-hero-split--layout-screenshot { grid-template-columns: minmax(16rem, .7fr) minmax(28rem, 1.3fr); }
 .g7pb-preview-hero-split--layout-screenshot figure { aspect-ratio: 16 / 10; padding: .65rem; border: 1px solid var(--g7pb-theme-border); background: #111827; box-shadow: 0 2rem 4rem rgb(15 23 42 / 15%); }
 .g7pb-preview-hero-split--layout-overlap { grid-template-columns: repeat(12, minmax(0, 1fr)); min-height: 42rem; }
-.g7pb-preview-hero-split--layout-overlap .g7pb-preview-hero-split__copy { z-index: 2; min-width: 0; grid-column: 1 / span 7; padding: clamp(2rem, 5vw, 4rem); background: rgb(255 255 255 / 90%); box-shadow: 0 2rem 5rem rgb(15 23 42 / 12%); }
+.g7pb-preview-hero-split--layout-overlap .g7pb-preview-hero-split__copy { z-index: 2; min-width: 0; grid-column: 1 / span 7; grid-row: 1; padding: clamp(2rem, 5vw, 4rem); background: rgb(255 255 255 / 90%); box-shadow: 0 2rem 5rem rgb(15 23 42 / 12%); }
 .g7pb-preview-hero-split--layout-overlap figure { min-width: 0; grid-column: 6 / -1; grid-row: 1; height: 38rem; }
 .g7pb-preview-hero-split--layout-offset { align-items: end; }
 .g7pb-preview-hero-split--layout-offset .g7pb-preview-hero-split__copy { align-self: start; padding-top: clamp(3rem, 8vw, 8rem); }

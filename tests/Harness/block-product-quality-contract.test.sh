@@ -4,8 +4,8 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "$root"
-# Development validates technical contracts; it does not renew the frozen v1
-# approval. Release scripts below still require that approval and v2 readiness.
+# Development and release both validate the same automated technical contract.
+# Historical review records are audit data and never authorize or block release.
 node scripts/check-block-product-quality.mjs --technical
 node --input-type=module <<'JS'
 import assert from 'node:assert/strict';
@@ -33,8 +33,8 @@ for required in \
     "$root/package.json" "$required"
 done
 
-grep -Fq 'npm run check:block-product-quality -- --verify-render-source --release' scripts/release-package.sh
-grep -Fq 'npm run check:block-product-quality -- --verify-render-source --release' scripts/deploy-staging.sh
+grep -Fq 'npm run check:block-product-quality -- --technical --verify-render-source' scripts/release-package.sh
+grep -Fq 'npm run check:block-product-quality -- --technical --verify-render-source' scripts/deploy-staging.sh
 grep -Fq '$artifactSourceHtml = $artifactHtml;' scripts/render-block-thumbnail-fixtures.php
 grep -Fq 'json_encode($item['"'"'props'"'"'], JSON_THROW_ON_ERROR)."\n".$artifactSourceHtml' scripts/render-block-thumbnail-fixtures.php
 

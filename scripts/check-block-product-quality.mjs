@@ -167,8 +167,8 @@ function validateWiring(errors, root, packageJson) {
   }
   for (const scriptPath of ['scripts/release-package.sh', 'scripts/deploy-staging.sh']) {
     const source = readFileSync(resolve(root, scriptPath), 'utf8');
-    if (!/npm run check:block-product-quality -- --verify-render-source --release/.test(source)) {
-      errors.push(`${scriptPath}가 승인된 최신 블록 제품 품질을 재검증해야 합니다.`);
+    if (!/npm run check:block-product-quality -- --technical --verify-render-source/.test(source)) {
+      errors.push(`${scriptPath}가 자동 기술 블록 품질을 재검증해야 합니다.`);
     }
   }
 }

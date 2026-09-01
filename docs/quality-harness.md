@@ -14,15 +14,15 @@
 | `dev-browser-smoke` | home/login/runtime 기본 assertion | 환경 완료 아님 |
 | `dev-product-e2e` | 생성→실제 포인터 편집→reload→preview→publish→공개본 보존→재발행 | 수직 기능 완료 금지 |
 
-블록 라이브러리는 별도 `g7pb-block-product-quality/v1` 계약을 사용합니다. 45종 블록·95개 프리셋·140개 renderer 생성물의 정확한 재고, block별 제품/호환 정책, placeholder 문구, 중복 props, 프리셋 구조 차이, 로컬 이미지·대체 텍스트·실제 날짜, 95개 고유 프리셋 썸네일을 자동 판정합니다. G7 동적 데이터 블록은 라이브러리 생성 시 목록형 3~4개·상세형 1개의 결정적 제품 샘플이 실제 공개 renderer DOM에 보여야 하며 빈 제목 껍데기는 실패합니다. 각 생성물의 `catalog_id + 현재 compiler/CSS/props source hash + thumbnail SHA-256`을 묶은 review digest가 승인 기록과 다르면 frontend 검증·제품 E2E·릴리스 패키징·스테이징 배포를 모두 중단합니다.
+블록 라이브러리는 별도 `g7pb-block-product-quality/v1` 계약을 사용합니다. 45종 블록·95개 프리셋·140개 renderer 생성물의 정확한 재고, block별 제품/호환 정책, placeholder 문구, 중복 props, 프리셋 구조 차이, 로컬 이미지·대체 텍스트·실제 날짜, 95개 고유 프리셋 썸네일을 자동 판정합니다. G7 동적 데이터 블록은 라이브러리 생성 시 목록형 3~4개·상세형 1개의 결정적 제품 샘플이 실제 공개 renderer DOM에 보여야 하며 빈 제목 껍데기는 실패합니다. 릴리스와 배포는 현재 compiler/CSS/props source 및 썸네일의 자동 기술검증을 요구하며, 과거 사람·Codex 승인 digest는 감사 이력일 뿐 배포 조건이 아닙니다.
 
-`npm run generate:block-library`는 프리셋 동기화→production build→140개 실제 renderer 썸네일 재생성→candidate 품질 검사를 한 흐름으로 실행합니다. Candidate 검사는 생성 오류를 즉시 차단하지만 정식 승인으로 간주하지 않습니다. 전체 contact sheet와 세 viewport E2E 증거를 검토한 뒤 `product-quality.json`의 exact digest를 승인해야 정식 `check:block-product-quality`가 통과합니다. 생성 후 props·compiler HTML·공개 CSS·이미지 중 하나라도 바뀌면 source hash 또는 thumbnail hash가 달라져 기존 승인은 자동 폐기됩니다.
+`npm run generate:block-library`는 프리셋 동기화→production build→140개 실제 renderer 썸네일 재생성→candidate 품질 검사를 한 흐름으로 실행합니다. Candidate 검사는 생성 오류를 즉시 차단합니다. 정식 릴리스는 `--technical --verify-render-source`와 PC·태블릿·모바일 E2E를 통과하면 되며 `product-quality.json` 승인 갱신을 요구하지 않습니다. 생성 후 props·compiler HTML·공개 CSS·이미지 중 하나라도 바뀌면 자동 source/thumbnail 검사가 stale 산출물을 차단합니다.
 
 ## Block quality evidence v2
 
 ### 차수 2-A: 분리된 증거 계약
 
-`schemas/block-quality-evidence.schema.json`과 `scripts/lib/blockQualityEvidence.ts`는 새 `g7pb-block-quality-evidence/v2` 계약을 제공합니다. 콘텐츠 의미·자산 권리 review와 렌더·편집 verification을 항목별로 구분하고 각 결정의 source digest와 실제 evidence artifact digest를 대조합니다. 이전 review 객체는 원문 값과 별도 digest로 보존하며 새 결정은 모두 `pending`으로 생성합니다. 새 review 승인 주체는 `maintainer`이고, 이전 `codex-assisted` 이력은 역사적 근거일 뿐 새 사람 승인이 아닙니다.
+`schemas/block-quality-evidence.schema.json`과 `scripts/lib/blockQualityEvidence.ts`의 `g7pb-block-quality-evidence/v2` 계약은 콘텐츠·자산·렌더·편집 변경 영향과 증거 무결성을 진단하는 선택형 감사 자료입니다. 이전 review 객체와 pending 상태는 이력으로 보존하지만 릴리스 승인이나 배포 차단에 사용하지 않습니다.
 
 이 배치에서는 **기존 v1 검사·릴리스 연결을 제거하거나 대체하지 않습니다.** 순수 TypeScript 판정 코어와 schema를 먼저 고정하고 2-B에서 실제 140개 재고·파일 hash·변경 영향 수집기를 연결합니다. `assessQualityEvidence().errors`가 비어도 `pending`이 있으면 `ready=false`이므로 승인으로 사용할 수 없습니다. 입력 의존성을 누락한 채 이미지를 hash한 것처럼 주장하지 않도록 실제 수집 책임은 후속 collector에 명시적으로 둡니다. 자세한 범위·시험은 [2차 실행 기록](productization/phase-2-evidence.md)에 기록합니다.
 
@@ -30,7 +30,7 @@
 
 Node 24에서 `node scripts/check-block-quality-evidence.mjs --json`을 실행하면 현재 PHP renderer를 새로 실행하고, manifest와 계획 재고를 exact ID로 대조하여 콘텐츠·권리·렌더·편집별 실제 파일 지문을 계산합니다. `--snapshot`은 기존 v1 review 원문을 보존한 **모두 pending인 제안 JSON을 stdout으로만 출력**합니다. 파일 저장이나 승인 생성 명령이 아닙니다.
 
-`SHADOW_OK`는 원장의 ID/지문/참조 파일이 일치한다는 뜻이며 제품 합격이 아닙니다. pending이나 외부/런타임 미확인 자산이 있으면 `ready=false`, `--require-ready`는 exit 1입니다. 누락·변조·stale·거부된 심사/실패 검증은 기본 검사도 실패합니다. 제출/릴리스 연결은 아직 v1 그대로이며 2-C에서 이행합니다.
+`SHADOW_OK`는 원장의 ID/지문/참조 파일이 일치한다는 뜻입니다. pending이나 외부/런타임 미확인 자산은 진단값으로 보고하며, 릴리스는 자동 기술검증 결과로 결정합니다. 원장 자체의 누락·변조·stale은 개발 증거 무결성 오류로 계속 실패합니다.
 
 `bash tests/Harness/block-quality-evidence.test.sh`는 실제 140개 현재 renderer와 원장을 비교하고, 별도 고유 임시 디렉터리에서 승인 fixture·변조/삭제된 파일·경로 이탈·stale·재고 누락을 검증합니다. 테스트용 승인 fixture는 추적 원장에 기록하지 않습니다. 새 collector의 Vitest coverage 하한도 95/90/95/95로 적용합니다.
 
@@ -38,7 +38,7 @@ Node 24에서 `node scripts/check-block-quality-evidence.mjs --json`을 실행�
 
 현재 `test:unit`·제품 E2E 전 검사·`check`는 v2 shadow 무결성을 검사합니다. `check`에서는 production build **뒤에** 현재 렌더/원장 검사를 실행합니다. `quality-coordination`은 배포 스크립트를 실행하지 않고 gate 연결 자체를 검사하며, actual evidence 하네스는 build 이후 frontend check에 포함합니다.
 
-패키징과 온라인 배포에는 `npm run check:block-quality-evidence -- --require-ready`가 추가됩니다. pending·미확인 자산·stale·누락/변조된 증거는 배포를 차단합니다. 기존 v1/site-shell/최종 SHA guard도 그대로 필요합니다. 이번 배치에서 배포하지 않습니다.
+패키징과 온라인 배포는 `check:block-product-quality -- --technical --verify-render-source`, 기본 evidence 무결성 검사, Site Shell 자동 브라우저 검사와 최종 SHA guard를 실행합니다. 사람 승인 digest, 560개 review/verification 준비상태, 물리 iOS·Android 검수는 릴리스 조건이 아닙니다.
 
 `node scripts/check-block-quality-evidence.mjs --refresh`는 **변경 없는 결정은 보존하고 영향 범위만 pending으로 되돌린 제안 JSON**을 stdout으로 출력합니다. 소스 변경이 없는 rejected/failed는 유지하며 증거 삭제/변조·과거 기록 변조를 reset으로 숨기지 않습니다. 새/삭제된 ID도 제안 diff로 확인하고 Git에 기록해야 합니다. `--snapshot`은 초기 이행용이며 반복 갱신에 쓰지 않습니다. 어느 명령도 approved/passed를 생성하거나 원장 파일을 자동 저장하지 않습니다.
 

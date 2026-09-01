@@ -4,8 +4,10 @@ namespace Modules\Jiwonpapa\PageBuilder\Tests\UnitPhp;
 
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockCompilerRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\CallbackBlockTypeCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
+use Modules\Jiwonpapa\PageBuilder\Contracts\BlockSchemaValidatorPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
@@ -73,7 +75,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $compilers = new BlockCompilerRegistry;
         $compilers->register(new CallbackBlockTypeCompiler(
             'vendor.schema-required-01',
-            static fn (array $props): string => '<aside>'.htmlspecialchars((string) ($props['title'] ?? ''), ENT_QUOTES).'</aside>',
+            static fn (array $props): string => '<button type="button">'.htmlspecialchars((string) ($props['title'] ?? ''), ENT_QUOTES).'</button>',
         ));
         $compiler = new HtmlDocumentCompiler($registry, $compilers);
         $document = new PageBuilderDocument(
@@ -94,6 +96,29 @@ final class HtmlDocumentCompilerTest extends TestCase
             self::fail('An external block compiled without a schema validator.');
         } catch (DocumentCompileException $exception) {
             self::assertSame('G7PB_BLOCK_RUNTIME_FAILED', $exception->errorCode);
+        }
+
+        $schemas = new BlockSchemaRegistry;
+        $schemas->register(new class implements BlockSchemaValidatorPort
+        {
+            public function schemaRef(): string
+            {
+                return 'vendor:schema-required';
+            }
+
+            public function validate(array $props): void
+            {
+                if (! is_string($props['title'] ?? null)) {
+                    throw new \InvalidArgumentException('Title is required.');
+                }
+            }
+        });
+        try {
+            (new HtmlDocumentCompiler($registry, $compilers, $schemas))->compile($document, 1, 'html', 'g7-7.0.7');
+            self::fail('An external block emitted markup removed by G7 HtmlContent.');
+        } catch (DocumentCompileException $exception) {
+            self::assertSame('G7PB_TEMPLATE_MARKUP_UNSUPPORTED', $exception->errorCode);
+            self::assertStringContainsString('button', $exception->getMessage());
         }
     }
 
@@ -279,7 +304,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             '<h3>통계 <span data-g7pb-weight="bold">라벨</span></h3>',
             '<h3>가격 <span data-g7pb-weight="bold">이름</span></h3>',
             '<li>가격 <span data-g7pb-weight="bold">기능</span></li>',
-            '<summary><span>질문 <span data-g7pb-weight="bold">강조</span></span>',
+            '<div class="g7pb-faq__trigger" role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="true"><span>질문 <span data-g7pb-weight="bold">강조</span></span>',
             '<h3>과정 <span data-g7pb-weight="bold">제목</span></h3>',
             '<h3>탭 <span data-g7pb-weight="bold">제목</span></h3>',
             '<strong>비교 <span data-g7pb-weight="bold">제목</span></strong>',
@@ -857,14 +882,14 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.15.0', $catalog->compilerVersion);
+        self::assertSame('0.16.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
         self::assertStringContainsString('data-block-type="hero-slider"', (string) $sliderResult->artifact);
         self::assertStringContainsString('data-g7pb-slider', (string) $sliderResult->artifact);
         self::assertStringContainsString('data-g7pb-slider-autoplay="true"', (string) $sliderResult->artifact);
-        self::assertStringContainsString('data-g7pb-slider-prev', (string) $sliderResult->artifact);
+        self::assertStringContainsString('class="g7pb-hero-slider__controls"', (string) $sliderResult->artifact);
         self::assertStringContainsString('<progress max="100" value="74.5" data-tone="emerald">', (string) $catalog->artifact);
         self::assertStringNotContainsString('<script', (string) $catalog->artifact);
     }
@@ -874,7 +899,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->foundationDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.15.0', $result->compilerVersion);
+        self::assertSame('0.16.0', $result->compilerVersion);
         foreach (['heading', 'rich-text', 'image', 'buttons', 'image-text', 'icon-list'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -882,8 +907,8 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('<a href="/guide" rel="noopener noreferrer">내부 링크</a>', $artifact);
         self::assertStringContainsString('role="group" aria-label="페이지 행동"', $artifact);
         self::assertStringContainsString('g7pb-icon--bolt', $artifact);
-        self::assertStringContainsString('<svg class="g7pb-icon-list__icon g7pb-icon--bolt"', $artifact);
-        self::assertStringContainsString('stroke-linejoin="round" aria-hidden="true"', $artifact);
+        self::assertStringContainsString('<span class="g7pb-icon-list__icon g7pb-icon--bolt" data-g7pb-runtime-icon', $artifact);
+        self::assertStringContainsString('data-g7pb-icon-markup="&lt;path', $artifact);
         self::assertStringContainsString('data-g7pb-motion="stagger"', $artifact);
         $imageTextMedia = strpos($artifact, 'g7pb-image-text__media');
         $imageTextCopy = strpos($artifact, 'g7pb-image-text__copy');
@@ -899,7 +924,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->productionLibraryDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.15.0', $result->compilerVersion);
+        self::assertSame('0.16.0', $result->compilerVersion);
         foreach (['divider', 'blockquote', 'notice', 'card-grid', 'breadcrumbs', 'anchor-menu', 'social-links', 'image-carousel'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -909,7 +934,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('data-g7pb-slider-controls="both"', $artifact);
         self::assertStringContainsString('aria-label="1번 이미지를 선택하세요"', $artifact);
         self::assertStringContainsString('alt="제품 전시 공간"', $artifact);
-        self::assertStringContainsString('<svg class="g7pb-social-links__glyph"', $artifact);
+        self::assertStringContainsString('<span class="g7pb-social-links__glyph" data-g7pb-runtime-icon', $artifact);
         self::assertStringNotContainsString('>IG<', $artifact);
         self::assertStringNotContainsString('<script', $artifact);
         self::assertStringNotContainsString('javascript:', $artifact);
@@ -967,6 +992,11 @@ final class HtmlDocumentCompilerTest extends TestCase
             );
             $result = $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
             self::assertStringContainsString('data-testid="page-builder-rendered-block"', (string) $result->artifact, $preset['preset_id']);
+            self::assertDoesNotMatchRegularExpression(
+                '/<\s*\/?\s*(?:script|iframe|form|input|textarea|select|option|button|style|svg|details|dialog|video|audio|canvas|template|slot)\b/i',
+                (string) $result->artifact,
+                $preset['preset_id'].' must survive G7 HtmlContent without structural loss.',
+            );
         }
     }
 
@@ -1195,7 +1225,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.15.0', $result->compilerVersion);
+        self::assertSame('0.16.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -1221,9 +1251,9 @@ final class HtmlDocumentCompilerTest extends TestCase
 
         self::assertStringContainsString('data-block-type="inquiry-form"', $artifact);
         self::assertStringContainsString('data-block-id="00000000-0000-4000-8000-000000000092"', $artifact);
-        self::assertStringContainsString('action="/pages/business-contact/inquiries"', $artifact);
-        self::assertStringContainsString('name="block_instance_id"', $artifact);
-        self::assertStringContainsString('name="website"', $artifact);
+        self::assertStringContainsString('data-g7pb-form-action="/pages/business-contact/inquiries"', $artifact);
+        self::assertStringContainsString('data-g7pb-inquiry-host', $artifact);
+        self::assertStringContainsString('data-g7pb-form-kind="inquiry"', $artifact);
         self::assertStringContainsString('data-block-type="map-directions"', $artifact);
         self::assertStringContainsString('https://www.openstreetmap.org/export/embed.html?', $artifact);
         self::assertStringContainsString('href="https://www.openstreetmap.org/directions"', $artifact);
@@ -1254,12 +1284,12 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.15.0', $result->compilerVersion);
+        self::assertSame('0.16.0', $result->compilerVersion);
         foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
         self::assertStringContainsString('data-g7pb-accordion-behavior="single"', $artifact);
-        self::assertStringContainsString('<details open>', $artifact);
+        self::assertStringContainsString('data-g7pb-accordion-item data-g7pb-open="true"', $artifact);
         self::assertStringContainsString('role="tablist"', $artifact);
         self::assertStringContainsString('role="tabpanel"', $artifact);
         self::assertStringContainsString('<table>', $artifact);
@@ -1293,13 +1323,13 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseThreeDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.15.0', $result->compilerVersion);
+        self::assertSame('0.16.0', $result->compilerVersion);
         foreach (['logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
         self::assertSame(2, substr_count($artifact, ' data-g7pb-slider '));
-        self::assertStringContainsString('data-g7pb-archive-search', $artifact);
-        self::assertStringContainsString('data-g7pb-archive-filter', $artifact);
+        self::assertStringContainsString('data-g7pb-control-marker="archive-search"', $artifact);
+        self::assertStringContainsString('data-g7pb-control-marker="archive-filter"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/posts/recent?limit=12', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-ecommerce/products/new?limit=6', $artifact);
         self::assertStringContainsString('data-g7pb-product-base="/shop/products"', $artifact);
@@ -1307,6 +1337,8 @@ final class HtmlDocumentCompilerTest extends TestCase
         self::assertStringContainsString('data-g7pb-page-size="4"', $artifact);
         self::assertStringContainsString('data-g7pb-page-size="3"', $artifact);
         self::assertStringContainsString('href="/files/guide.pdf" download', $artifact);
+        self::assertStringContainsString('<p class="g7pb-testimonial-slider__quote">좋습니다.</p>', $artifact);
+        self::assertStringNotContainsString('“좋습니다.”', $artifact);
         self::assertStringNotContainsString('<script', $artifact);
     }
 
@@ -1315,7 +1347,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseFourDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.15.0', $result->compilerVersion);
+        self::assertSame('0.16.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-post-detail"', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-detail"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/notice/posts/17', $artifact);

@@ -182,7 +182,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 내부 항목 비교 통과를 전체 레이아웃 통과로 해석하면 안 됩니다. 전체 블록 높이·여백 비교는 현재 `output/playwright/parity-elements`의 진단 정보이고, 동적 G7 데이터 블록의 편집 샘플과 실제 데이터 동기화도 미완료입니다. 모든 슬라이드·빈 미디어·사용자 서식·저장 이후 상태, 세 뷰포트와 Page Kit 전체 검증을 끝내기 전에는 전체 WYSIWYG 품질 완료를 선언하지 않습니다.
 
-2026-08-31 재검증에서는 기본 프리셋 내부 비교 통과 이후 `service-conversion` 템플릿 출력에서 SVG 및 `details` 제거로 구조가 손실되는 문제가 확인되었습니다. 이 실패는 skip·허용 오차 확대·HTML 보안 필터 해제로 통과시키지 않습니다. 현행 `HtmlContent` 연동 경계와 충돌하므로, 공식 연동 방식의 변경 승인을 포함한 해결 후 전체 gate를 다시 실행해야 합니다.
+2026-08-31 재검증에서 `service-conversion` 템플릿 출력의 SVG·`details` 구조 손실을 확인했고, compiler 0.16.0에서 내장 블록을 G7 sanitizer 안전 표식으로 전환했습니다. 브라우저 런타임은 고정 SVG 자식/속성, 정확한 HTTPS 임베드 host, 고정 폼 control과 button만 복원합니다. 95개 프리셋 compiler 단위 검사는 제거 대상 구조 태그 0을 강제하며 외부 compiler의 금지 태그는 fail-closed입니다. 정적·단위 통과를 전체 해결로 해석하지 않고 95개 프리셋과 Page Kit 5종의 세 viewport 편집→저장→reload→preview 비교 및 별도 public 검사를 다시 통과해야 합니다. 외부 Code Pack stylesheet의 `<link>` 전달은 이번 내장 카탈로그 범위 밖이며 지원으로 선언하지 않습니다.
 
 - 필수 판정은 GitHub Actions가 아니라 로컬 `make quality-gate TASK=<integration-id>`와 동일 Docker runtime을 기준으로 합니다.
 - `frontend`: Node 24, `npm ci`, frontend gate, dist artifact

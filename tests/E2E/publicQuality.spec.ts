@@ -170,6 +170,7 @@ test('keeps the public page accessible and visually stable', async ({ page }, te
       'content',
       '접근성과 반응형 시각 회귀를 검증하는 고정 공개 페이지입니다.',
     );
+    await expect(page.locator('svg.g7pb-features__icon')).toHaveCount(3);
     await page.evaluate(() => document.fonts.ready);
 
     const accessibility = await new AxeBuilder({ page })

@@ -358,6 +358,10 @@ describe('Puck editor surface contract', () => {
     expect(editorCss).toContain('.g7pb-preview-rich-text__content--narrow { max-width: 48ch; }');
     expect(editorCss).toContain('.g7pb-preview-rich-text__content--standard { max-width: 65ch; }');
     expect(editorCss).toContain('.g7pb-preview-rich-text__content--wide { max-width: 80ch; }');
+    expect(editorCss).toContain('.g7pb-preview-card-grid--layout-numbered article:nth-child(n) { grid-template-columns: 1fr; }');
+    expect(editorCss).toContain('.g7pb-preview-features--layout-editorial article, .g7pb-preview-features--layout-list article { grid-template-columns: auto 1fr; }');
+    expect(editorCss).toContain('.g7pb-preview-hero--layout-backdrop .g7pb-preview-hero__media img { height: 100%; }');
+    expect(editorCss).toContain('.g7pb-preview-hero-split.g7pb-preview-hero-split--layout-offset figure { aspect-ratio: 3 / 4;');
     expect(editorCss).not.toMatch(/\.g7pb-preview-rich-text--(?:narrow|standard|wide)\s*>\s*\*/);
   });
 

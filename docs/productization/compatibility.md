@@ -17,13 +17,15 @@
 | 값 | 현행 근거 | 구현 시 결정 |
 |---|---|---|
 | document schema_version | g7-page-builder/v1 | v2 별도 reader/validator/compiler 경로 추가 |
-| compiler_version | HtmlDocumentCompiler의 0.15.0 | 출력/지원 계약 변경으로 MINOR 증가. 착수 당시 최신 버전에서 결정 |
+| compiler_version | HtmlDocumentCompiler의 0.16.0 | G7 템플릿 sanitizer 안전 표식 계약을 추가했으며 v2 compiler 경로는 착수 당시 최신 버전에서 다시 결정 |
 | block_version | manifest의 각 정수 | 기존 version의 의미 보존. 새 layout은 최초 1, 비호환 props 변경은 새 정수 |
 | Pack manifest/품질 계약 | 각각 v1 | 편집/검증 증거 변경은 별도 버전. 구형 승인 자동 승격 금지 |
 | module/package/lock | 0.30.0 | 0.y.z의 공개 계약 추가·변경이므로 후속 기능 릴리스 MINOR. 실제 번호는 version lease에서 결정 |
 | G7 호환 | 모듈 지원 선언 + 공개 API 시험 | 이 개선만으로 최소 G7 버전을 올리지 않음 |
 
 현재 HTML compiler의 target 표기는 `g7-7.0.7`입니다. 설치된 G7 7.0.8과 문자열이 다르다는 사실만으로 호환 실패나 성공을 결론내리지 않습니다. 기존 target 계약과 G7 fixture 시험을 함께 유지하며 표시 수정은 별도 영향 판단 대상입니다.
+
+0.16.0의 출력 호환 경계는 [template-sanitizer-compatibility.md](template-sanitizer-compatibility.md)에 고정합니다. 이는 v1 문서 의미를 바꾸지 않는 발행 결과 계약 변경이며, v2 구조 기능 개방과 별개입니다.
 
 Pack 최소 지원은 단순 설치 버전 숫자만으로 판단하지 않습니다. 새 layout/schema/필드 기능을 제공하는 editor·PHP compiler·schema가 모두 있는지 capability와 descriptor를 함께 검사합니다. 외부 Code Pack의 기존 정의는 자동 중첩 허용하지 않습니다.
 

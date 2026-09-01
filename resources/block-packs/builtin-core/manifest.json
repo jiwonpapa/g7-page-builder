@@ -2052,31 +2052,31 @@
       "thumbnail": "thumbnails/generated/preset-36-logo-carousel-customers.png",
       "props": {
         "eyebrow": "CUSTOMERS",
-        "heading": "신뢰받는 팀이 선택했습니다",
+        "heading": "신뢰받는 팀이 선택했습니다 · 가상 예시",
         "logos": [
           {
             "name": "Orbit",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-orbit.png",
             "imageAlt": "Orbit 로고",
-            "url": "/stories/page-operations"
+            "url": "/partners/orbit"
           },
           {
             "name": "Northstar",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-northstar.png",
             "imageAlt": "Northstar 로고",
-            "url": "/"
+            "url": "/partners/northstar"
           },
           {
             "name": "Vertex",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-vertex.png",
             "imageAlt": "Vertex 로고",
-            "url": "/"
+            "url": "/partners/vertex"
           },
           {
             "name": "Morrow",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-morrow.png",
             "imageAlt": "Morrow 로고",
-            "url": "/"
+            "url": "/partners/morrow"
           }
         ],
         "autoplay": true,
@@ -2097,14 +2097,14 @@
       "thumbnail": "thumbnails/generated/preset-37-testimonial-slider-spotlight.png",
       "props": {
         "eyebrow": "STORIES",
-        "heading": "운영 현장에서 확인한 변화",
+        "heading": "운영 현장에서 확인한 변화 · 가상 사례",
         "items": [
           {
             "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
             "name": "김민서",
             "role": "브랜드 매니저",
             "company": "오르빗",
-            "avatarSrc": "",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-customer-founder.webp",
             "avatarAlt": "김민서",
             "rating": 5
           },
@@ -2113,7 +2113,7 @@
             "name": "이도윤",
             "role": "운영 리드",
             "company": "노스스타",
-            "avatarSrc": "",
+            "avatarSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-customer-operations.webp",
             "avatarAlt": "이도윤",
             "rating": 5
           }
@@ -3048,31 +3048,31 @@
       },
       "thumbnail": "thumbnails/generated/preset-70-logo-cloud-grid.png",
       "props": {
-        "heading": "함께하는 브랜드와 파트너",
+        "heading": "함께하는 브랜드와 파트너 · 가상 예시",
         "logos": [
           {
             "name": "Orbit",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-orbit.png",
             "imageAlt": "Orbit 로고",
-            "url": "/"
+            "url": "/partners/orbit"
           },
           {
             "name": "Northstar",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-northstar.png",
             "imageAlt": "Northstar 로고",
-            "url": "/"
+            "url": "/partners/northstar"
           },
           {
             "name": "Vertex",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-vertex.png",
             "imageAlt": "Vertex 로고",
-            "url": "/"
+            "url": "/partners/vertex"
           },
           {
             "name": "Morrow",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-morrow.png",
             "imageAlt": "Morrow 로고",
-            "url": "/"
+            "url": "/partners/morrow"
           }
         ],
         "layout": "grid"
@@ -3091,31 +3091,31 @@
       },
       "thumbnail": "thumbnails/generated/preset-71-logo-cloud-panel.png",
       "props": {
-        "heading": "함께하는 브랜드와 파트너",
+        "heading": "함께하는 브랜드와 파트너 · 가상 예시",
         "logos": [
           {
             "name": "Orbit",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-orbit.png",
             "imageAlt": "Orbit 로고",
-            "url": "/"
+            "url": "/partners/orbit"
           },
           {
             "name": "Northstar",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-northstar.png",
             "imageAlt": "Northstar 로고",
-            "url": "/"
+            "url": "/partners/northstar"
           },
           {
             "name": "Vertex",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-vertex.png",
             "imageAlt": "Vertex 로고",
-            "url": "/"
+            "url": "/partners/vertex"
           },
           {
             "name": "Morrow",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-morrow.png",
             "imageAlt": "Morrow 로고",
-            "url": "/"
+            "url": "/partners/morrow"
           }
         ],
         "layout": "panel"
@@ -3135,7 +3135,7 @@
       "thumbnail": "thumbnails/generated/preset-72-stats-grid.png",
       "props": {
         "eyebrow": "RESULTS",
-        "heading": "숫자로 확인하는 변화",
+        "heading": "숫자로 확인하는 변화 · 가상 예시",
         "items": [
           {
             "icon": "users",
@@ -3173,7 +3173,7 @@
       "thumbnail": "thumbnails/generated/preset-73-stats-strip.png",
       "props": {
         "eyebrow": "RESULTS",
-        "heading": "숫자로 확인하는 변화",
+        "heading": "숫자로 확인하는 변화 · 가상 예시",
         "items": [
           {
             "icon": "users",
@@ -3211,7 +3211,7 @@
       "thumbnail": "thumbnails/generated/preset-74-stats-split.png",
       "props": {
         "eyebrow": "RESULTS",
-        "heading": "숫자로 확인하는 변화",
+        "heading": "숫자로 확인하는 변화 · 가상 예시",
         "items": [
           {
             "icon": "users",
@@ -3249,7 +3249,7 @@
       "thumbnail": "thumbnails/generated/preset-75-pricing-cards.png",
       "props": {
         "eyebrow": "PRICING",
-        "heading": "필요한 규모에 맞는 플랜",
+        "heading": "필요한 규모에 맞는 플랜 · 예시",
         "plans": [
           {
             "name": "Starter",
@@ -3262,7 +3262,7 @@
               "이메일 지원"
             ],
             "buttonLabel": "시작하기",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=starter",
             "featured": false
           },
           {
@@ -3276,7 +3276,7 @@
               "우선 지원"
             ],
             "buttonLabel": "Growth 선택",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=growth",
             "featured": true
           }
         ],
@@ -4295,8 +4295,8 @@
     "thumbnails/generated/block-27-comparison-table.png": "1757d192ac16100ab7a6bdbb20e664fd42f91c19da00f55890aaa8eceeda5be4",
     "thumbnails/generated/block-28-article-list.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
     "thumbnails/generated/block-29-video-embed.png": "3f41af01ebe79551450f25dd30e7d70194380c3f6833c66859ab429d01eaf1cd",
-    "thumbnails/generated/block-30-logo-carousel.png": "8de119fb233b1252eb0e7c9669a1ed825849d4947b15bd9d3b1ee19f9a0dec01",
-    "thumbnails/generated/block-31-testimonial-slider.png": "2024978ce14472f3064520e30fc26bc18fbc9f6f0b2d094308edb8ab786dce35",
+    "thumbnails/generated/block-30-logo-carousel.png": "7c4312022c44693fa255dc8736b913eb69cf9b230d3b18e55bbc2ed1efe45696",
+    "thumbnails/generated/block-31-testimonial-slider.png": "fb2d6aa5da7691c9099b0b4765b923deea2590c4feb28d9585dda599f3720c66",
     "thumbnails/generated/block-32-event-schedule.png": "9a991852773a081a8020dde7b057d472123672ecee91310e395e95b68e7567f7",
     "thumbnails/generated/block-33-download-resources.png": "1142771b868503546e79111a571ea7350e280b05e14b5cb7a392b9e3d19f1d31",
     "thumbnails/generated/block-34-g7-board-archive.png": "954ae989dc2b9caa81eef320b39c85be5b6356e0de0603c59ced27afb71794b2",
@@ -4346,8 +4346,8 @@
     "thumbnails/generated/preset-33-comparison-plans.png": "1757d192ac16100ab7a6bdbb20e664fd42f91c19da00f55890aaa8eceeda5be4",
     "thumbnails/generated/preset-34-articles-insights.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
     "thumbnails/generated/preset-35-video-product-tour.png": "3f41af01ebe79551450f25dd30e7d70194380c3f6833c66859ab429d01eaf1cd",
-    "thumbnails/generated/preset-36-logo-carousel-customers.png": "8de119fb233b1252eb0e7c9669a1ed825849d4947b15bd9d3b1ee19f9a0dec01",
-    "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "2024978ce14472f3064520e30fc26bc18fbc9f6f0b2d094308edb8ab786dce35",
+    "thumbnails/generated/preset-36-logo-carousel-customers.png": "7c4312022c44693fa255dc8736b913eb69cf9b230d3b18e55bbc2ed1efe45696",
+    "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "fb2d6aa5da7691c9099b0b4765b923deea2590c4feb28d9585dda599f3720c66",
     "thumbnails/generated/preset-38-events-upcoming.png": "9a991852773a081a8020dde7b057d472123672ecee91310e395e95b68e7567f7",
     "thumbnails/generated/preset-39-downloads-resource-center.png": "1142771b868503546e79111a571ea7350e280b05e14b5cb7a392b9e3d19f1d31",
     "thumbnails/generated/preset-40-g7-archive-searchable.png": "954ae989dc2b9caa81eef320b39c85be5b6356e0de0603c59ced27afb71794b2",
@@ -4380,12 +4380,12 @@
     "thumbnails/generated/preset-67-cta-centered.png": "752f4cb3334c787379836fee56d7c683616bb72f15c34048ece45bcbab9f27b4",
     "thumbnails/generated/preset-68-cta-banner.png": "cd0b29abe9afcd132a7abefe9fe12258d5a69a28d1189670af5addb082c92c2f",
     "thumbnails/generated/preset-69-cta-panel.png": "e545a69ad7fa481781d1fb56baad050aec72e704e028080dcd496643c3771346",
-    "thumbnails/generated/preset-70-logo-cloud-grid.png": "bec322a4cc6b80d22e8bf98238b110fe06b8bdf125d371e3a030046388b5ed37",
-    "thumbnails/generated/preset-71-logo-cloud-panel.png": "897a2dbd3d94d344f52c78f220c6c01e173e50d0862ae3af556558502db19b0c",
-    "thumbnails/generated/preset-72-stats-grid.png": "35f9c0be81255130954f22ad76876c99d4f6f3bac2fc29fd6067de2d32bf74b1",
-    "thumbnails/generated/preset-73-stats-strip.png": "0373f6da9d280edbc8be524ed47a896581087647c18d75fcd3130afae36b10d9",
-    "thumbnails/generated/preset-74-stats-split.png": "f5a73d3dd2b79f4455e46ce973076d3604d904e510ef816ccfef7dfbe304f5c8",
-    "thumbnails/generated/preset-75-pricing-cards.png": "eb455769688828601e07c448770b3736f05c4e82c87155185a81f1f6840b4435",
+    "thumbnails/generated/preset-70-logo-cloud-grid.png": "37e0ecdd22c46ed7c24ef6f69ead1a636df80575bb0c2b63f9f72192d2652b1c",
+    "thumbnails/generated/preset-71-logo-cloud-panel.png": "35651852725bbf028630ec2c1fadf8cd5d64cc35f1e3c9003fb6cabc89420291",
+    "thumbnails/generated/preset-72-stats-grid.png": "759c11a90a911dde8d214d8858cba7700ce0100efefb1f7673f663680031e593",
+    "thumbnails/generated/preset-73-stats-strip.png": "2e91bab6f4a65b7448b8941f215d4250200c9b02efc55ce35d11e2f7569b35d8",
+    "thumbnails/generated/preset-74-stats-split.png": "1a74a9314f4cf67df7e8baa4d064f0f5c7fe6a822a9c3fd87973bad1ed5e2a00",
+    "thumbnails/generated/preset-75-pricing-cards.png": "296b822df15a9cb620d023b6283444ef70dcf48d62ca14bb64f6e788f0155bd8",
     "thumbnails/generated/preset-76-pricing-compact.png": "da84e3b101906d4207b0e306b90c24581468fb43ca20461cce8127d461877a83",
     "thumbnails/generated/preset-77-pricing-editorial.png": "f3e0781e4e1aae5137b918ce3f31de7f888b0eae6bc262ed519cdccd3c7a7024",
     "thumbnails/generated/preset-78-team-grid.png": "3ecdfdc9fb461e6063173967a3a6888a09c86a51de70d20ca21c262d9bd032ab",

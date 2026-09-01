@@ -759,10 +759,10 @@
     {
       "catalog_id": "block:trust.logo-carousel-01@1",
       "source_digests": {
-        "content": "383446a07b60476cdc0e7252cf55531ea24f064107c8ba519c62b2843003637d",
-        "rights": "65abc186ef9789ba6c4486b9fe4eef51903e3fd894912a7ad1490a27dbe57873",
-        "render": "d4ca6465d4e345ffd5099b45d51de5e4a9bd27f3bc9370032dc509345349974a",
-        "editing": "6334c2a48f2bc60721e209e33c325c0ea571bd4fb82c65d5983ccc99363ea346"
+        "content": "8ef3f976e974f5ed0940e452e2f71dd7e8438fc2d5427d22246d0363c8d958b8",
+        "rights": "51e330624c2be1de11155363969f403950cc10917fda66baad64768ba59465eb",
+        "render": "3f0b0c4e77632c09a3b42ff1689c584c08615d90392310efbb29798051e21830",
+        "editing": "c441fee145b985a09b98dd2cf52d2a618190c6a2f1af30c0da2309e93a985692"
       },
       "reviews": {
         "content": {
@@ -784,10 +784,10 @@
     {
       "catalog_id": "block:trust.testimonial-slider-01@1",
       "source_digests": {
-        "content": "92e3b8d8cc1dc88a44b6acdbe6235f40dc91be01ab3688356df67b81b038aecd",
-        "rights": "de4b32a5ded7744e6f6ccca079469465ba364cc6940aa7616c66c566d2cb1394",
-        "render": "9bdfbe77c324c45a56017f28457a3f99171a6d0f0548ef10820c39541a37336b",
-        "editing": "23a88d6d5945208fa535fe7c60d962ce6613d6cfc51faa6a0b31ea615ca61dbf"
+        "content": "69eb8ca02c057e906a8a2cc9cccd701c47b7f054499a43861237a0c5d78b442b",
+        "rights": "6c3a5fc32a52a728d13470f079ee319ad936b52d0e00fee938fc448946373879",
+        "render": "2f9494631e80f7dd69000f0f13064cf6406a11927c8d331119ec443772560623",
+        "editing": "6d9565d79b6f1b470545b081af2bfe5e56ac04b9f0e97ff220c63301fae3a07a"
       },
       "reviews": {
         "content": {
@@ -2034,10 +2034,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:logo-carousel.customers",
       "source_digests": {
-        "content": "29b24d64536ba9fb3a4f4ea53551b73b683c0f4551eda2a979fe120b100f269d",
-        "rights": "adad975980e3ab6588e130bb0a9306c8aee5897eae3a36341046718274f4c1da",
-        "render": "6f7c7c81f18ab404991b2f9d4d3b11c4ebeb894c0848831d884cbf7cedbf6ae8",
-        "editing": "80dd97927b35029d9aba568322aaa469e3a20dbfe0f38ca86e49ec1facf9c291"
+        "content": "43de87d8225f6a1a565d50af17a178bc7ac473c7608a93722a9ac05045996927",
+        "rights": "98e49f37387dbebdb848ad0fc7593a453853b22e1f30e80f5c0eade1d486e800",
+        "render": "88d23df34f9a005ffe7415392681f9f30d578edc0b6e79fe6af48d65eced070a",
+        "editing": "1a2aaa43a068a5d32f8c0ad3ec7b1319bffb71e1c2e1d73c3630663ad5b0c428"
       },
       "reviews": {
         "content": {
@@ -2059,10 +2059,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:testimonial-slider.spotlight",
       "source_digests": {
-        "content": "dbad1a87fe5ccda0a517b7f7845af8f2632a99507463a8f371e8a50d14859f55",
-        "rights": "1ef9afb558489a3cf00bd066ce8ce18d83469a70d10bbdce7870497eabd74ad2",
-        "render": "5aa92ff2ca23f956f609fff2c554bf367ce055fe7c8aa9469dc62c0b7fce597d",
-        "editing": "c1d6770b23a6f890f3d0b45dc855390130d6d4c278cf072232d6bd1f79a4c6d2"
+        "content": "bea3d5bd0b39052d95971ffd96fec524cdb588f0029bb78f4e9b503144164321",
+        "rights": "b4d92fd5f4a87d9c0e983e9d7a3c6d0906fa453cd0b8f8ade51dae10c41f0e29",
+        "render": "b9a9d717dcc97ebfe74dc8bd35083d49979896a5544caaab0999b8c4166cc2dc",
+        "editing": "d71f85e587631acc957d5feb62f3f20cdad4994119ad21e89c51ca026b3a838f"
       },
       "reviews": {
         "content": {
@@ -2884,10 +2884,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:logo-cloud.grid",
       "source_digests": {
-        "content": "4f6bb29ef045a45d42dae5787603958626eb89fb0e45f6c33ef2f78e992511a4",
-        "rights": "8eb8d1e3c6ba68c4455b6e62895c34ae75ac14e81c5a261d7a41d6b1457759d7",
-        "render": "70f1b343d2b3e9f04dd6497190c6fa60878554e8bfa81ac65cae60a6a1459532",
-        "editing": "23e58c415a19c04e57f074112a3aed0a79f8dfa8dd9a7d8eeaf800e2b8d06325"
+        "content": "d80f8457701c368930429301ed448f5db5ae649ea08428c340f00c019e615426",
+        "rights": "c11800cf76e8b0074ef250f8a7311dc71d9115a008583c04c409df37b155514f",
+        "render": "d3729df0de2be7adabe6a8d9de0047193c85b617fa82e1145bbe857d29484cad",
+        "editing": "db7e5a49c5144a578dabb5ad4bbaed37ac44529a41e96fd4d2400dc321ea736a"
       },
       "reviews": {
         "content": {
@@ -2909,10 +2909,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:logo-cloud.panel",
       "source_digests": {
-        "content": "849b6418516f5342f6cebabc134d5bf43ae0fb8bb4305f30c793534edc482327",
-        "rights": "4eafdbcc1092451cf0bee59a9cfc8ec7851d0ee655ca07967c8924793f9413ac",
-        "render": "6df8a1c1390ba29d815673e2de5a4947f694e4493bf79b78db7bff92e43a416a",
-        "editing": "590fff69cf591083c5780d39ada229593a6892c5aab6e42c99f0d20b6b8f8845"
+        "content": "4b402a8881792e3983c79d7248e70dc73a557fe7f8e67df3b35377f8f8d0adb2",
+        "rights": "f6faf6d15706e85e854c4c72df939aafadbe59562e3735498289624ae61507a9",
+        "render": "72f1c9e98f25550bf026d19fcaa9eb94ffe58c79708d6abbf3e2149c8a7d8298",
+        "editing": "22fc699a9e6b26eaf20d2a8a4ae58369c39bbdd4a732ca44eb7120a775a1f204"
       },
       "reviews": {
         "content": {
@@ -2934,10 +2934,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:stats.grid",
       "source_digests": {
-        "content": "2896f4b0d97658cb9d380b17869511e58c91b349f491f6c043b7865aa79e3520",
+        "content": "81ca06474339dd47a440c2c020d1fe288bae931eb2e6165742fe76a715c4b5d7",
         "rights": "fa5bf469fc3948fcb5324f16880478a966c066d33643f366048eb2053c8da3b4",
-        "render": "c5d246c3585143e88d6eeb7a5a8a713fdf49bd2c9b477abcca533f0d0482bc3a",
-        "editing": "2d6e5c032d951720e35277cbcc0457d37d546ad7960aebe15b152ada42b382e3"
+        "render": "8556ce106b08091b90ca2358ad37e0560c674f44e81193214d005d536a85440f",
+        "editing": "6a8d82f371261dfa0c296d3d2e4ee0857996b013e984196076a10f9127c8a732"
       },
       "reviews": {
         "content": {
@@ -2959,10 +2959,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:stats.strip",
       "source_digests": {
-        "content": "213420b0a41a2e11ac0f7ff29532a32e1faff335b5823740d42e53646cab7f93",
+        "content": "8b7ed236ce252c66ed6cb7a0170c682ac86a8c2c1bc0a78aae6315a8b9912120",
         "rights": "543e260b77cf3f7b28783760fcef1bcc07d9662836aa084fe2d6a8caf90777bd",
-        "render": "70a3e2a103cab72f8d348a07771bb1e126d6c44db3ed76b80f355f4e378ea42c",
-        "editing": "eee810370c7fec1d779ecdc388d5ad40ea0d51bc0dc8deee6eb86f376c3c2e37"
+        "render": "6ee1f05830ff86ebf8cfd3d9c0d68f6b59ce95e1b979896e18bab24c051e3ac7",
+        "editing": "b1569be1d98be5e43d75bbc96564d51d2e4f7103895a2534c804dd1ce3f0fc58"
       },
       "reviews": {
         "content": {
@@ -2984,10 +2984,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:stats.split",
       "source_digests": {
-        "content": "1373d3cc4328719ecd047747851edaffe0b2d65c075320be3a9bfddb2998f020",
+        "content": "c4755db2ebf9c5f6eede10a6ddc89a30575ab5c5c224d5f9d91b1193dc278d2c",
         "rights": "a8da41ed2e01420c623f069efa02b3dbf035a1dd2b0aae5a360b3be9eeed275e",
-        "render": "98de61913b24e01e744f5951f51d3f574409a3e71fa23d112c6224b62c1e90a1",
-        "editing": "cf2a2c16c4dc9762d84a695cd43c871d05155d1177c09cb1a9cc9134a96296d9"
+        "render": "20242bf119c011de893c7748e6c5a9c3d7ab9bb1f110a0055ee192c7fc4dba89",
+        "editing": "5bb5a883798f060d8e25018b553600294a2fcdb8d8da3c7e0dbb79c3da412788"
       },
       "reviews": {
         "content": {
@@ -3009,10 +3009,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:pricing.cards",
       "source_digests": {
-        "content": "1e71ea334cb46acbd7503199f8abf739e57930ad5e5b6bc68be7cb50b3706619",
+        "content": "792db4957e3420d3d6ee01b046de8d79449b312f521639f1542d0fe6696fea5d",
         "rights": "49f898a49c5e9b7900b76d8a660f51fe686ea1464eee194325cedb6f39edd397",
-        "render": "fc5dbb64a164b443ecbb7b99e9a25e3cb2f7823e08beace1b433cfb481b08300",
-        "editing": "3c15c1ecad910cd9ac91a4030ebc1c16841d8c564c5c30ab5959d805023d4b19"
+        "render": "66953152a360e499840cf09b2fc1b76b562b7faf075066f5c5d1decff59037da",
+        "editing": "1682b25b31dec5f44ba1c668f4280c8dd8fc079a64b6343b04125b785cbdb2ae"
       },
       "reviews": {
         "content": {

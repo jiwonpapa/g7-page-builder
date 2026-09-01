@@ -27,6 +27,8 @@ interface Ledger {
 const qualityLedger = ledger as Ledger;
 const presets = new Map(manifest.presets.map((preset) => [preset.preset_id, preset]));
 const forbiddenCopy = /알려\s*주세요|설명해\s*주세요|첫 번째 핵심 메시지|고객의 다음 행동을 더 분명하게|제품의 핵심 가치를 한 장면에/;
+const editorCss = readFileSync(resolve('resources/css/page-builder-editor.css'), 'utf8');
+const phase3CatalogSource = readFileSync(resolve('resources/js/editor/phase3CatalogBlocks.tsx'), 'utf8');
 
 function values(value: Json, keyPattern: RegExp, key = ''): string[] {
   if (Array.isArray(value)) return value.flatMap((item) => values(item, keyPattern, key));
@@ -53,6 +55,18 @@ describe('phase 7 bounded preset quality ledger', () => {
       .filter((item) => item.batch.startsWith('7-'))
       .map((item) => item.id)
       .sort());
+  });
+
+  it('keeps the rich editor hero and slider geometry aligned with compiled output', () => {
+    expect(editorCss).toContain('word-break: keep-all');
+    expect(editorCss).toContain('.g7pb-preview-hero.g7pb-preview-hero--layout-backdrop > :is(.g7pb-preview-eyebrow, [data-g7pb-heading-level="1"]) { color: #fff; }');
+    expect(editorCss).toContain('.g7pb-preview-logo-carousel__slide { display: grid; min-width: 22%; min-height: 8rem; flex: 0 0 22%; grid-template-columns: 1fr;');
+    expect(editorCss).toContain('.g7pb-preview-logo-carousel__image { width: min(9rem, 100%); height: 3.5rem;');
+    expect(editorCss).toContain('.g7pb-preview-testimonial-slider__slide { display: grid; min-width: 100%; min-height: 22rem; flex: 0 0 100%;');
+    expect(editorCss).toContain('.g7pb-preview-testimonial-slider__slide footer figure { width: 3rem; height: 3rem; min-height: 100%;');
+    expect(phase3CatalogSource).toContain('className="g7pb-preview-logo-carousel__track"');
+    expect(phase3CatalogSource).toContain('className="g7pb-preview-testimonial-slider__track"');
+    expect(phase3CatalogSource).toContain('className="g7pb-preview-testimonial-slider__avatar"');
   });
 
   it('applies each processed item check without fabricating human or release approval', () => {

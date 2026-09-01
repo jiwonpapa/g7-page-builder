@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
+import { selectThumbnailItems } from './lib/thumbnailSelection.mjs';
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const fixtureRoot = resolve(root, 'output/playwright/block-thumbnail-fixtures');
@@ -28,12 +29,13 @@ const expectedCount = manifest.blocks.length + manifest.presets.length;
 if (!Array.isArray(index) || index.length !== expectedCount) {
   throw new Error(`Expected ${expectedCount} thumbnail fixtures, received ${Array.isArray(index) ? index.length : 'invalid index'}.`);
 }
+const selectedItems = selectThumbnailItems(index, process.argv.slice(2));
 
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 960, height: 600 }, deviceScaleFactor: 1 / 3 });
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
-  for (const item of index) {
+  for (const item of selectedItems) {
     await page.goto(pathToFileURL(resolve(fixtureRoot, item.fixture)).href, { waitUntil: 'load' });
     await page.evaluate(async () => { await document.fonts.ready; });
     await page.evaluate(() => {
@@ -98,4 +100,4 @@ if (productQuality.status !== 0) {
 }
 
 process.stdout.write(productQuality.stdout);
-process.stdout.write(`Generated ${index.length} renderer-backed block thumbnails.\n`);
+process.stdout.write(`Generated ${selectedItems.length}/${index.length} renderer-backed block thumbnails.\n`);

@@ -138,6 +138,8 @@ make task-restack-squash \
 make task-integrate-scoped TASK=<submitted-id> INTEGRATION_TASK=<integration-id>
 ```
 
+블록 프리셋 일부만 바뀌면 `npm run generate:block-thumbnails -- --catalog-id <catalog-id>`를 변경 항목 수만큼 지정합니다. fixture index와 manifest 무결성은 전체 catalog를 확인하되 브라우저 PNG 렌더는 지정 ID만 수행합니다. 인자 없이 실행할 때만 전체 썸네일을 다시 생성합니다.
+
 ### 의미 충돌 task 교체
 
 최종 tree delta 자체가 통합된 선행 작업을 중복하거나, 자동 3-way 적용으로 의미를 판단할 수 없으면 충돌을 자동 해결하지 않습니다. 검토한 새 base에서 빈 Codex-managed worktree와 명시적 branch를 만든 뒤 submitted task를 교체합니다.

@@ -309,10 +309,10 @@
     {
       "catalog_id": "block:content.contact-info-01@1",
       "source_digests": {
-        "content": "1b13a2c2d36a80a49d563dc869d4eb57bbaf058cc6c3b6bafae1ecb87137cf39",
+        "content": "6b83cf31d4e6b8b93989301a71b962b60d8cb483821b131765bb006ac26a62f6",
         "rights": "a673d95399647c4ebc64180213cb898bc880dd78bacb779d93dc4780a65fa3ef",
-        "render": "3beeef6a16b401096e2ae77b09128d7299d4603a7cb7f3074072be79c066ba8e",
-        "editing": "0e0ffb5bd443055c4254ff7177f4cb579632b6f4d1385d33d85f371c1efb2234"
+        "render": "0c072f88e732b2705bc366f4786fa53a4aecdee19b477fe3e5c65a9436b3d2d0",
+        "editing": "7f2dea34d1b23a325133ccf2acaeddcc3d5a2d34ef372288f20c3f9dfcf99410"
       },
       "reviews": {
         "content": {
@@ -334,10 +334,10 @@
     {
       "catalog_id": "block:trust.logo-cloud-01@1",
       "source_digests": {
-        "content": "536e689984bb6ea8be936ed48d1299f23948680a97b07b2e5fd4a5daff2370dd",
-        "rights": "0903563bc0fcfc20968a97ce0438c6dfaaadbcdbca0e6170204899af96532de5",
-        "render": "b239785329884efd84e817073236c71f8abe42762a3cf487e410f90fea82b2b6",
-        "editing": "b03e654563beb4a78dec6a5ab99183a21acadc31df40a2884f1e0b3f5df35be5"
+        "content": "fa8c81ef589e036b7116419653f0f50873b2f566b0e98fac56912a87c6f8bd03",
+        "rights": "dec839943d8eb4b20e461baaccb9b8f76e0967b6dad575e1b389a47a30550830",
+        "render": "91303e27859ec2d6475a3ce1073c8e487a8e2231652a478e5e3b90495027eb49",
+        "editing": "47c1cb71a5bbdd4eb830a0aa245aa20a933d3942f0130fc9bc3a05da9b9dff69"
       },
       "reviews": {
         "content": {
@@ -359,10 +359,10 @@
     {
       "catalog_id": "block:data.stats-icons-01@1",
       "source_digests": {
-        "content": "e5567ca8e0374b53fabca1e96e1ab19cd0e78750c15fa9e2892dfac1b2f27ff0",
+        "content": "8f55bdaee9418e3d372d52b480f34c0918ef39e0208f5353612d6f09493d2d05",
         "rights": "03a475f135d9603a654d955512cd2f6200f7b6e962cf71e90617aab5ee84e4aa",
-        "render": "68078df09a1d9bc74c2024f2e5b4b265903d8c35b6d59b024598ee02e657d11c",
-        "editing": "5269e25fe13ec9b91eb3f6f3cda727d0a9f46512e49d5eb483614aaa05e43336"
+        "render": "6b8e8696518a99146d5847c0c26456656564e07fe7fbce345c63307c1e30da93",
+        "editing": "85a76cb1803e047706d537f4e0998b5b813f5b2489ec807dbf91a91dd7757ff1"
       },
       "reviews": {
         "content": {
@@ -384,10 +384,10 @@
     {
       "catalog_id": "block:commerce.pricing-tiers-01@1",
       "source_digests": {
-        "content": "6e4c41797c04e7bd3a44718a4ddccf1e436153c63b117b963493238106da91c2",
+        "content": "2e34a8934962835ac5511441c5cccd381a8a380d43cbc49f8fd5ebdd4f2f5805",
         "rights": "368041e80b350148d705bdd04a43244a22635bab663beba4f953069f18fbdb1c",
-        "render": "5c0255ab5ddec7a02b5c8dfa94a48fb057214ef4bbff45f584ea7bcaa6d90bc8",
-        "editing": "436b0777e1efd05c95e25eb5176b5e4b493de8c5520aa1114c2a2de4b7699e9e"
+        "render": "bf8463b1327ea69583c40715c786b924bd5927d32180646f02fab6a2f2c59c3d",
+        "editing": "845acc5b6c9a5def6ad29fdc4b13021c62e4b85bccee7a009717571415b1a1a0"
       },
       "reviews": {
         "content": {
@@ -409,10 +409,10 @@
     {
       "catalog_id": "block:company.team-grid-01@1",
       "source_digests": {
-        "content": "dd88ec172f89ed4751de4e114ffbb2898b4e4c59282e7815261638fc3a7ee811",
+        "content": "963e0f8e41c0e2bc689c465bce9963f8cf5c0b5df9b8ddb0bbd2ec40cacfae3a",
         "rights": "162ea71ff10094a61541e4cee00b3217615de699b8420ebe7bfb0c9a2f7e5818",
-        "render": "a0f552f4c1d641ab08b6aadb3f52190404b2222e82ef62397b4fdc90c0ff4a9e",
-        "editing": "7f0d55c0916a9500b347efc201f94d59071a164b5a454b05181d7af4ed119e93"
+        "render": "8c95f51e44de066543b8fcc8df76fc0d685dcf9f03e4a133b8f2a79f37d56e9e",
+        "editing": "483540afce2d97ac78ae0774252aa8920bdc1f8dcb7d88807f4897ed508e144c"
       },
       "reviews": {
         "content": {
@@ -459,10 +459,10 @@
     {
       "catalog_id": "block:data.bar-chart-01@1",
       "source_digests": {
-        "content": "6db473110d96ef872a7d667852fab543b75117331e1d5f6e0a1259b125b4867a",
+        "content": "e97c03d9b2e50a467d4dc2e77a00ef395211909248fbc5df792cf9e81aad9a37",
         "rights": "b5ec8b91bf83b1220896b00a865826d095f8bc199e39dd2df9bcb756be8698a6",
-        "render": "36477736f4c2183bb11875491a0192da08866a020d94392c368d7b7801b99063",
-        "editing": "3c7e464b1bb09bf8855634545502b5c4eff959059ef020140167af07bb788b27"
+        "render": "0f190087c760759910a095b7a295eff76084a691ec2504a71e7ad2b4eabb74f2",
+        "editing": "2aa7ccb35e3dafba42be53e8aaa9de308713e95f4db18e5b337ea3e207a05b31"
       },
       "reviews": {
         "content": {
@@ -584,10 +584,10 @@
     {
       "catalog_id": "block:trust.testimonials-01@1",
       "source_digests": {
-        "content": "6041e9b666f454b81ec6c38ea34b669e1e6045a2886e1d954f4aa6c861cc154d",
+        "content": "9c9660e8361264cd39a238cc00bbdb568be77e2b9a0067f5e18eda32ab65e528",
         "rights": "7f952a8c0f1d2327361a79c43b27f124a0dc83fc0b567fbbdd995bef0b56dd59",
-        "render": "e7564b0b3794daf9043de7cce206667f1fd3784571eebcb07d6dbcf0624e3739",
-        "editing": "bc4c6b3a3ba14933b2c251e4e036abe2abe7a3cc63031d0e9a714f69a9a30039"
+        "render": "18176c37fc2a1c0b701ad10a0ac845ea28a4e61d87c67981bd442e731cc68ebb",
+        "editing": "3056c53802a545393dfa6d95dc35c257e17217800f5f636fcd53520463c7c52a"
       },
       "reviews": {
         "content": {
@@ -684,10 +684,10 @@
     {
       "catalog_id": "block:commerce.comparison-table-01@1",
       "source_digests": {
-        "content": "e886980d98b98b724eac823a5e4c2c4c4ccff2d41ae61489e22bbe3012dcd2f5",
+        "content": "017975c179083e482a738c850f8f9e806e374878984f6edcf12a73dacff8dbdc",
         "rights": "9fd786b14cda10de8bfa1180ca99f384b580809d484a495d449ba9771737f67f",
-        "render": "e8a6445f717708c04cdb98026ebed52e1afe5b97645a2041170ff5bffb37035f",
-        "editing": "e2b301c55c0e6bd6d5b99872ebcf327503362cab8d08c6bfe29b8c49d5a5af89"
+        "render": "4c431e64a959d95b098631d37c5e8e7c897f0e0c2e20dc6d595eab835be192b2",
+        "editing": "c137b97acf1ddfbf320c4279bc851b466ff9bdf4dd5ef305f8e1e0601bedfcec"
       },
       "reviews": {
         "content": {
@@ -1534,10 +1534,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:contact.office",
       "source_digests": {
-        "content": "7404b3487cb866e0a82749387588d08bd2e4b156be379e535bc7d752b64d8fad",
+        "content": "092538a0ecc698ae83a594f33283c3fd84532abb5fd79527d607eec581c9d860",
         "rights": "660a277d9cdc4a166ffea3214763ac5ba3c761bede5e7321fb870dbab9761b24",
-        "render": "9891723be69411c6877dd48821956c4e26ad23498edfb41a0940b855c76e3118",
-        "editing": "b66f92f61f934cf8c41324717b21487c6760665e3ba838d807860c16c037ab90"
+        "render": "cca3cfecbb1da9c947892650a6d09955d4b28893bd779bb724b4b9bc60c67df8",
+        "editing": "564f81df99dc4de8d48586f14f1fb21aca2be7643d14c228ef5d7665d2536141"
       },
       "reviews": {
         "content": {
@@ -1659,10 +1659,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:logo-cloud.partners",
       "source_digests": {
-        "content": "548b58e11ebf7fa6abf22dde1bb4021ae108b18e51eca232363a672479112906",
-        "rights": "0d54200fc91422e68760bcc5de9f416eaed72181fa2b07bb1f6490856ecb2e98",
-        "render": "fe07f25efe388deb6150da763383b66e3e1c66f0cb8d927622d1b3daa1d9e001",
-        "editing": "e80380211afefcb2469fad0f5471cd64f48f29bde4484ddf0a4a196645efe9b4"
+        "content": "0d3839551c31179483f4f8da927b66159e789dea15a3da4ce43f625292f241a3",
+        "rights": "ee39fe063012669067ae76f62ef73faf36339c7642dd0cd9125b6b8d34167d33",
+        "render": "a36fe60542eb3fa6f7354899329d53b9bdfe425fe66724315155712dcc0d4359",
+        "editing": "65ec23faefb38880c4584f2245e8c2136d3e2f744b34a86a3ae32433a8c79f3e"
       },
       "reviews": {
         "content": {
@@ -1684,10 +1684,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:stats.business-proof",
       "source_digests": {
-        "content": "3758fc7c3fae3edbca22d52f0fcec4f6dc6ccf93e005c6d80073f3b591a57193",
+        "content": "f5232f152d6083dbbb85189306e52c7d1a43f3806964dee646f4de50d0e4f088",
         "rights": "d59ffb4492db2c1d9daec203cb6e90bb49889b3eed89f0e9c4f68ec10e4aaef8",
-        "render": "71ec2bc3e955de08da413f86601bba325b3d379fb209f5ba58285d75cbc9a597",
-        "editing": "de080f0ecfc544f3f97b915ca065d96baf086710ae116c00ef1228295fc6cb4d"
+        "render": "499b9600bc64ae18d864df0b1adf2c09a14705b6b1c664da9aa0676d28f8f11a",
+        "editing": "b628320e5cbd66992175b6ef6023d620222e8a8825c8c7a71519177a7dbd7a86"
       },
       "reviews": {
         "content": {
@@ -1709,10 +1709,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:pricing.three-tier",
       "source_digests": {
-        "content": "84e65bd0bd67d47258d02ee0b62e15a7d645ec7b37935b847ffee86c58a0c094",
+        "content": "f36830ffae6b4e5b80b3773eb7c01cc7c2a6da45f0a9299d93ae2f62d038e193",
         "rights": "b248b9434042ab081171b412449d2cefce42a8770eb0a7aa5887d239e350eb35",
-        "render": "8e69db9014debe2711c7e111cea90a87fcbf0168041c0287069667644f23ed09",
-        "editing": "8928460c2a25e74833c65b416866bb50bca5beadd0ba9cd32a0a77f23db51a13"
+        "render": "13f44ea2bd262804fd8e8071b80abf83f89afe9be19ae9a16e4fc4049ea316e0",
+        "editing": "14fc6b0a560eeb42ea16e5bd1271a6bf67ebd4a0b69f0318204bc397cfe8e1b6"
       },
       "reviews": {
         "content": {
@@ -1734,10 +1734,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:team.leadership",
       "source_digests": {
-        "content": "bb586217b09d4dc02ee988106b41e3b11ee7e30a8f1576d53ad212df4f6ccb29",
+        "content": "ba4666bf4e4abb37bfd1607c03fb8f57b71f1bc3971e6a432b5c4f68c47b1ac7",
         "rights": "21d88a3275f31d721415f453199badbb0e32587ea89197803245c45cb40be28c",
-        "render": "e1f8fdda6016e596f60ee6db9e613bc7f9699c97fb7860173bdbfda785b9e348",
-        "editing": "5a5312e51a5b04dfff730370e200f7806e04a1ccb5792a35f2f42f9ec02c57d0"
+        "render": "4a40376a45c336b6647809be4f17ac3da2db956f3eb2dee301c2ef8c43e15b5c",
+        "editing": "363adfdffd2f02aabdf5dd8dc8784e9c7814dafa67f36d3eaa93ce9690a69c28"
       },
       "reviews": {
         "content": {
@@ -1784,10 +1784,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:bar-chart.quarterly",
       "source_digests": {
-        "content": "b4f802c847fb8b70b49bbfc78e71729367c0b1559e687e922bdc7d9a8ee3de5e",
+        "content": "c22c6eb7d1de08ebccc5dee235feff28501a4b709aa3226fca8d7e8aeefc8c4d",
         "rights": "ed592788034e499e583d515f808d6d9f9c9f1d1d488a5af7153a64eaa66aab02",
-        "render": "0d6ded425a0d7d21ec1157f017bdd95e30dab2acf579ce83424701b7dcfdcad0",
-        "editing": "be71ad15ff17fd0db86e144d57a583137fe303b8567942544056b357a2bbff8d"
+        "render": "5c731fd0fcf21178c0968b1fe11c861b76b30f010a5451fc7264b958ec7ac248",
+        "editing": "d31acafc209b32bf420356c8e0a667926c5555d97bd7d24860ad361fa6a7d300"
       },
       "reviews": {
         "content": {
@@ -1909,10 +1909,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:testimonials.customer-proof",
       "source_digests": {
-        "content": "3aa048bbc18a2af24aadbfbd05d74492ec367228c56201dc8436354a70d01202",
+        "content": "336b875ede940c1bedb41397d2c9814b16b73e7d6f85cc86426c1a82114eb33c",
         "rights": "435099859f31d43844d2fa9863e9c06608bc687cfb45b4c6549ca9a8933e54f8",
-        "render": "7a09862d10968763582448910a9e18e8c9facde43212502b147314fb5233c193",
-        "editing": "319c4d9d2edd337f5613ea834f0f3e2f1ca631d77234f7ba4404a21c955029da"
+        "render": "a4d3426952ba91e8ce7a749bab8464d8f48c5bcafa11ad6984ca2b35e0d597c9",
+        "editing": "0983405730fc60c41a8cdc77a580d4f4165b9915cb6bcadd3fd8846af13f1dd4"
       },
       "reviews": {
         "content": {
@@ -1959,10 +1959,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:comparison.plans",
       "source_digests": {
-        "content": "8c7479da53baa52c2a7c278bdb176fe3ccaf1ad23c61af027cb9921e0297751c",
+        "content": "9c7ee765ff9191732285481f45da7eb3f91f4b3298d632c98a95d02dc12c98a2",
         "rights": "b5f9ad68a9ce44f1f75eb4a6a2622eee5999be99ea27f34cc50b751883a9a3ac",
-        "render": "d12915267367beaa0ba416b70d3c1ad66dd31090d2a39340fd9c881e973396f5",
-        "editing": "676426a47fbc8b606dfd1686df556b5205ebf0519cc766288c26069f902a99e7"
+        "render": "b30ef9784a8df70d2318ea2fff4a99f38a00b1df94416273620660b9fc94f56c",
+        "editing": "3fc075d6cb972ec9a4b48a2f91dc3fd6deee29898a78849fd83c9890cf157739"
       },
       "reviews": {
         "content": {

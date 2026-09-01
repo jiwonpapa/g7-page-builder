@@ -77,6 +77,19 @@
         { "id": "card-grid.editorial", "decision": "maintained", "reason": "에디토리얼 카드 변형의 정보 계층과 연결 경로가 완결됨", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
         { "id": "card-grid.numbered", "decision": "maintained", "reason": "번호형 서비스 순서와 행동 경로가 명확함", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-C-01",
+      "items": [
+        { "id": "contact.office", "decision": "modified", "reason": "검증되지 않은 주소·전화·이메일을 실제 정보로 오인하지 않도록 가상 예시와 example.com으로 명시", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "logo-cloud.partners", "decision": "modified", "reason": "빈 로고·루트 링크를 로컬 파트너 자산과 개별 예시 경로로 교체하고 가상 예시로 명시", "checks": ["no-root-links", "no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "stats.business-proof", "decision": "modified", "reason": "근거가 확정되지 않은 사용자·전환·가용성 수치를 가상 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "pricing.three-tier", "decision": "modified", "reason": "가격·플랜 조건을 예시로 명시하고 루트 행동을 플랜별 문의 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "team.leadership", "decision": "modified", "reason": "실제 임직원으로 오인할 수 있는 이름·역할·사진을 가상 팀으로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "bar-chart.quarterly", "decision": "modified", "reason": "근거가 없는 분기별 수치를 가상 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "testimonials.customer-proof", "decision": "modified", "reason": "실제 고객 후기처럼 보이는 이름·회사·성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "comparison.plans", "decision": "modified", "reason": "확정 상품 조건이 아닌 페이지·블록 비교를 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

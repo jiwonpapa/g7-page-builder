@@ -31,7 +31,7 @@
 - 일반 구현 차수는 `PROFILE=scoped`로 시작하고 `make task-integrate-scoped`로 통합한다. 하네스가 실제 diff에서 변경 언어·계약·테스트를 판별해 관련 검사만 실행하며, candidate tree와 gate 이름이 같은 성공 receipt는 재사용한다. `full` 제출·통합은 버전·릴리스 계약 변경이나 사용자가 명시한 최종 RC 검증에만 사용한다.
 - 범위 검증 실패 시 실패 gate와 그 downstream만 다시 실행한다. 이미 성공한 동일 candidate tree gate를 강제로 반복하거나, 작은 수정 뒤 전체 coverage·전체 프런트·전체 E2E를 다시 실행하지 않는다. 범위 검증이 변경 소스에 대응하는 테스트를 찾지 못하면 검증을 확대하지 말고 해당 task에서 명시적 관련 테스트를 추가한다.
 - `make dev-*`, Docker 기반 `quality-*`, release·staging 명령은 runtime lease를 가진 Local integration task만 실행한다. Worktree에서 고정 `g7pb-dev` 컨테이너를 직접 조작하지 않는다.
-- 모든 제출 task가 통합되거나 동일 범위·동일 profile replacement로 보존 대체되고, 그 replacement까지 통합된 뒤 `make integration-verify TASK=<integration-id>`를 통과해야 release 명령을 사용할 수 있다. 이 명령은 최신 신뢰 검증 SHA부터 현재 HEAD까지 변경 경로를 판정해 문서·조정 하네스·릴리스 오케스트레이션만 바뀌면 scoped gate로 SHA를 승격하고, 제품 런타임·DB·프런트 렌더·CSS·공개 계약 변경 또는 신뢰 기준 부재일 때만 full `quality-gate`를 실행한다. 동일 HEAD의 검증은 재사용하며 작은 변경을 이유로 full 검증을 반복하지 않는다.
+- 모든 제출 task가 통합되거나 동일 범위·동일 profile replacement로 보존 대체되고, 그 replacement까지 통합된 뒤 `make integration-verify TASK=<integration-id>`를 통과해야 release 명령을 사용할 수 있다. 이 명령은 최신 신뢰 검증 SHA부터 현재 HEAD까지 변경 경로를 판정해 `scoped`, `frontend`, `php`, `mixed`, `g7`, `full` 중 최소 profile로 SHA를 승격한다. full은 migration·route/layout·G7 lifecycle·교차 runtime·미분류 핵심 경로, 신뢰 기준 부재 또는 명시적 `FULL=1` RC에만 사용한다. 동일 HEAD의 검증은 재사용하며 작은 변경을 이유로 full 검증을 반복하지 않는다.
 - task 채팅과 worktree는 통합 또는 `superseded` 보존 기록 전에 archive·삭제하지 않는다. dirty/untracked 파일이나 기준 SHA 이후 커밋이 있으면 lease를 강제 해제하지 않는다.
 - 현재 task의 범위는 `make coord-status`와 실제 `base_sha` 대비 diff로 판단한다. 채팅 기억이나 문서만으로 다른 task의 소유권을 추정하지 않는다.
 

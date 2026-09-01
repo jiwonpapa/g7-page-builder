@@ -69,7 +69,7 @@ task-integrate-batch:
 
 integration-verify:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) verify --task "$(TASK)"
+	@$(COORD_HARNESS) verify --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,)
 
 integration-finish:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }

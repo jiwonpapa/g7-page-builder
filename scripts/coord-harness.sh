@@ -28,7 +28,7 @@ Usage:
   coord-harness.sh integrate --task ID --integration-task ID
   coord-harness.sh integrate-scoped --task ID --integration-task ID
   coord-harness.sh integrate-batch --tasks ID1,ID2[,IDN...] --integration-task ID
-  coord-harness.sh verify --task ID
+  coord-harness.sh verify --task ID [--full]
   coord-harness.sh finish --task ID
   coord-harness.sh release --task ID
   coord-harness.sh runtime-guard --task ID
@@ -778,16 +778,57 @@ classify_verification_range() {
   VERIFICATION_MODE='reuse'
   VERIFICATION_CHANGED_COUNT=0
   VERIFICATION_FULL_PATH=''
+  local has_scoped=0
+  local has_frontend=0
+  local has_php=0
+  local has_g7=0
+  local has_full=0
   local path
   while IFS= read -r -d '' path; do
     VERIFICATION_CHANGED_COUNT=$((VERIFICATION_CHANGED_COUNT + 1))
-    if ! is_scoped_verification_path "$path"; then
-      VERIFICATION_MODE='full'
-      [[ -n "$VERIFICATION_FULL_PATH" ]] || VERIFICATION_FULL_PATH="$path"
-    elif [[ "$VERIFICATION_MODE" == reuse ]]; then
-      VERIFICATION_MODE='scoped'
+    if is_scoped_verification_path "$path"; then
+      has_scoped=1
+      continue
     fi
+    case "$path" in
+      resources/js/*|resources/css/*|tests/Unit/*|vite.config.ts|vite.*.config.ts|\
+      tsconfig.json|tsconfig.*.json|stylelint.config.*)
+        has_frontend=1
+        ;;
+      src/Domain/*|src/Application/*|src/Contracts/*|tests/UnitPhp/*)
+        has_php=1
+        ;;
+      src/Infrastructure/Gnuboard7/*|src/Providers/*|tests/Integration/*)
+        has_g7=1
+        ;;
+      database/*|module.php|module.json|resources/routes/*|resources/layouts/*|\
+      resources/views/*|routes/*|compose.yaml|Dockerfile|docker/*|tests/E2E/*|\
+      package.json|package-lock.json|composer.json|composer.lock|schemas/*|config/*)
+        has_full=1
+        [[ -n "$VERIFICATION_FULL_PATH" ]] || VERIFICATION_FULL_PATH="$path"
+        ;;
+      *)
+        has_full=1
+        [[ -n "$VERIFICATION_FULL_PATH" ]] || VERIFICATION_FULL_PATH="$path"
+        ;;
+    esac
   done < <(git diff --name-only -z "$base_sha" "$head_sha" --)
+  if [[ "$VERIFICATION_CHANGED_COUNT" == 0 ]]; then
+    VERIFICATION_MODE='reuse'
+  elif [[ "$has_full" == 1 || "$has_g7" == 1 && "$has_frontend$has_php" != 00 ]]; then
+    VERIFICATION_MODE='full'
+    [[ -n "$VERIFICATION_FULL_PATH" ]] || VERIFICATION_FULL_PATH='cross-runtime-profile'
+  elif [[ "$has_g7" == 1 ]]; then
+    VERIFICATION_MODE='g7'
+  elif [[ "$has_frontend$has_php" == 11 ]]; then
+    VERIFICATION_MODE='mixed'
+  elif [[ "$has_frontend" == 1 ]]; then
+    VERIFICATION_MODE='frontend'
+  elif [[ "$has_php" == 1 ]]; then
+    VERIFICATION_MODE='php'
+  elif [[ "$has_scoped" == 1 ]]; then
+    VERIFICATION_MODE='scoped'
+  fi
 }
 
 run_scoped_verification_profile() {
@@ -918,6 +959,7 @@ parse_common_args() {
   NEW_BASE_REF=''
   SUPERSEDES_TASK=''
   SHOW_HISTORY=0
+  FORCE_FULL=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --task) [[ $# -ge 2 ]] || fail '--task 값이 필요합니다.'; TASK_ID="$2"; shift 2 ;;
@@ -931,6 +973,7 @@ parse_common_args() {
       --new-base-ref) [[ $# -ge 2 ]] || fail '--new-base-ref 값이 필요합니다.'; NEW_BASE_REF="$2"; shift 2 ;;
       --supersedes) [[ $# -ge 2 ]] || fail '--supersedes 값이 필요합니다.'; SUPERSEDES_TASK="$2"; shift 2 ;;
       --history) SHOW_HISTORY=1; shift ;;
+      --full) FORCE_FULL=1; shift ;;
       *) fail "알 수 없는 인자입니다: $1" ;;
     esac
   done
@@ -1945,6 +1988,7 @@ command_runtime_guard() {
 command_verify() {
   parse_common_args "$@"
   validate_task_id "$TASK_ID"
+  local force_full="$FORCE_FULL"
   acquire_task_lock "$TASK_ID"
   command_runtime_guard --task "$TASK_ID"
   local file
@@ -1966,6 +2010,10 @@ command_verify() {
     verification_mode="$VERIFICATION_MODE"
     changed_count="$VERIFICATION_CHANGED_COUNT"
   fi
+  if [[ "$force_full" == 1 ]]; then
+    verification_mode='full'
+    VERIFICATION_FULL_PATH='explicit-full'
+  fi
 
   case "$verification_mode" in
     reuse)
@@ -1975,6 +2023,10 @@ command_verify() {
       note "VERIFY_SELECTED task=$TASK_ID mode=scoped base=$verification_base head=$head_sha changed=$changed_count"
       run_scoped_verification_profile \
         "$verification_base" "$head_sha" "$TASK_ID" "$META_AREAS"
+      ;;
+    frontend|php|mixed|g7)
+      note "VERIFY_SELECTED task=$TASK_ID mode=$verification_mode base=$verification_base head=$head_sha changed=$changed_count"
+      run_integration_profile "$verification_mode" "$TASK_ID" "$META_AREAS"
       ;;
     full)
       if [[ -n "${VERIFICATION_FULL_PATH:-}" ]]; then

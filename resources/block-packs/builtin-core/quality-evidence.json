@@ -2659,10 +2659,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:hero-split.overlap",
       "source_digests": {
-        "content": "312f1304768d61851805962f0657d6acddf0d8457ee8b00b873a7e07dd7c5591",
+        "content": "f6e312db98f249b64a856dfc59fe99afe7b807297ea45fcd842887c925b52a51",
         "rights": "a3ce4adde3651440d40f56669ad2d20be6f40488a942a009148a4408536bc948",
-        "render": "ad6e852aac6eae3a28ad368846b7471274794a14d52cc03d5954d91e1473621d",
-        "editing": "286e817995f7ebbe1f05c3b5f98bd89c163ef0e29c10ba3bbacc424c57345b85"
+        "render": "66a0c06848107400518b7f6db0c2746abd1ae286ece683a5ae413bce0d669e46",
+        "editing": "1792ec0afe95631bf59867eefea901009324fe1647debaf33134a3d9142ecdbb"
       },
       "reviews": {
         "content": {
@@ -2684,10 +2684,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:hero-split.offset",
       "source_digests": {
-        "content": "59184b3d330ccd3188bbad105a9f75a8b6f6433c4616e068c84339076704d9e5",
+        "content": "d8949aa08b68f8c36c939dabc077dbedcb2df8dab2fa10e07fa5eab7eb50f81a",
         "rights": "826274a4bb5fcce723663e1f8658145677b226a2d60bb3fa87e007d6a4558c89",
-        "render": "12dc03aa411dd4bcd41121285fd7bfd9ddd081901ac117642c07bbb151d6c2b8",
-        "editing": "c8ea29c3d19e3df9c66d78500c150b21b5b93eefde937b21d7971ccca866bcdf"
+        "render": "28c5a03bcf1c5956de198afe9babf3f725bad9b753a33b7cdc182e46a35fa7dc",
+        "editing": "4a406cc332a998bb9f25e318b7195d6b2586433578d5a92e84e3dfd55b489f47"
       },
       "reviews": {
         "content": {
@@ -2809,10 +2809,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:cta.centered",
       "source_digests": {
-        "content": "8677c9686450af880dcc068b08ab8982d3cb3331c02245f73596fff82fe11be8",
+        "content": "b7f65aa1e2487be44f30d595ad38908341b941fbbdd411ba1788d309c9768d85",
         "rights": "6160c59fb5cb6576fea13d0b7ca3880a94a06bdae9f092bfd06173286b4063ff",
-        "render": "da5f4d0e3923f183f0cf73b52f95610006d1c0004f8ced4a15012c221597cc11",
-        "editing": "b2fb7e0416b096a6c6e5a2d23e9895624d7e5ded244609f20618d3bab8365363"
+        "render": "301d69b231efc8d397b884f96cee778c7ff982221eb8168a6e1734f7b454dee2",
+        "editing": "34a8d3ccdd9bc0e255c955cc4629784a0dc98f2f1eae05b2d7461c28b73104bd"
       },
       "reviews": {
         "content": {
@@ -2834,10 +2834,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:cta.banner",
       "source_digests": {
-        "content": "60f63bcaf8056f01d4a82e1187490aca1ca543ac5d421ee4399d906a30685f63",
+        "content": "4cbea07e42c1ad13602538e419a7d6601fd65a71312bc2736b8dd7d8046e352b",
         "rights": "202954e285f59275fb5e845cb05814286ca9bffba23418a903da012a7a56ecb4",
-        "render": "ad1eee53e7a99d71d270a99f26f65f552aaa1c08bb770eea63ba0dcfc7928871",
-        "editing": "9dc85e7ae88b32f80e9722bda29664118f61ae4e3186e7997f97250d518beac0"
+        "render": "33e3cf0ab1b71685a84360d27ae2370f70c6165710932f488211386c2dfe718b",
+        "editing": "748f9db80d85d473084edc596bb57e9a09e2ff479d6af1f0636745ebb1c4d35a"
       },
       "reviews": {
         "content": {

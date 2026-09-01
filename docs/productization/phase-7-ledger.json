@@ -19,6 +19,19 @@
         { "id": "hero.device", "decision": "modified", "reason": "한국어 제목 줄바꿈을 보정하고 상담 진행 안내 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
         { "id": "hero-split.balanced", "decision": "modified", "reason": "한국어 제목 줄바꿈을 보정하고 팀 실행 계획 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-A-02",
+      "items": [
+        { "id": "hero-split.overlap", "decision": "modified", "reason": "겹침 구조 결함을 별도 수정한 뒤 설명용 카피와 루트 링크를 실제 지역 행사 탐색 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "hero-split.offset", "decision": "modified", "reason": "설명용 카피와 루트 링크를 공간 방문 안내 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "features.grid", "decision": "maintained", "reason": "기능 제목과 설명이 구체적이며 편집 지시문이나 행동 링크가 없음", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "features.editorial", "decision": "maintained", "reason": "같은 기능 정보를 에디토리얼 구조로 일관되게 표현하며 편집 지시문이 없음", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "features.panel", "decision": "maintained", "reason": "패널 변형의 정보 계층과 기능 설명이 제품 샘플 기준을 충족", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "features.list", "decision": "maintained", "reason": "세로 목록 변형의 항목 구조와 설명이 명확하고 편집 지시문이 없음", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "cta.centered", "decision": "modified", "reason": "보조 행동의 루트 링크를 서비스 경로로 교체하고 기존 문의 전환 문맥을 유지", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "cta.banner", "decision": "modified", "reason": "보조 행동의 루트 링크를 서비스 경로로 교체하고 기존 배너 전환 문맥을 유지", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

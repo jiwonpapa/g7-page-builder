@@ -3297,7 +3297,7 @@
       "thumbnail": "thumbnails/generated/preset-76-pricing-compact.png",
       "props": {
         "eyebrow": "PRICING",
-        "heading": "필요한 규모에 맞는 플랜",
+        "heading": "필요한 규모에 맞는 플랜 · 예시",
         "plans": [
           {
             "name": "Starter",
@@ -3310,7 +3310,7 @@
               "이메일 지원"
             ],
             "buttonLabel": "시작하기",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=starter",
             "featured": false
           },
           {
@@ -3324,7 +3324,7 @@
               "우선 지원"
             ],
             "buttonLabel": "Growth 선택",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=growth",
             "featured": true
           }
         ],
@@ -3345,7 +3345,7 @@
       "thumbnail": "thumbnails/generated/preset-77-pricing-editorial.png",
       "props": {
         "eyebrow": "PRICING",
-        "heading": "필요한 규모에 맞는 플랜",
+        "heading": "필요한 규모에 맞는 플랜 · 예시",
         "plans": [
           {
             "name": "Starter",
@@ -3358,7 +3358,7 @@
               "이메일 지원"
             ],
             "buttonLabel": "시작하기",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=starter",
             "featured": false
           },
           {
@@ -3372,7 +3372,7 @@
               "우선 지원"
             ],
             "buttonLabel": "Growth 선택",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=growth",
             "featured": true
           }
         ],
@@ -3393,7 +3393,7 @@
       "thumbnail": "thumbnails/generated/preset-78-team-grid.png",
       "props": {
         "eyebrow": "TEAM",
-        "heading": "문제를 해결하는 사람들",
+        "heading": "문제를 해결하는 사람들 · 가상 팀",
         "members": [
           {
             "name": "김하늘",
@@ -3445,7 +3445,7 @@
       "thumbnail": "thumbnails/generated/preset-79-team-editorial.png",
       "props": {
         "eyebrow": "TEAM",
-        "heading": "문제를 해결하는 사람들",
+        "heading": "문제를 해결하는 사람들 · 가상 팀",
         "members": [
           {
             "name": "김하늘",
@@ -3497,7 +3497,7 @@
       "thumbnail": "thumbnails/generated/preset-80-team-featured.png",
       "props": {
         "eyebrow": "TEAM",
-        "heading": "문제를 해결하는 사람들",
+        "heading": "문제를 해결하는 사람들 · 가상 팀",
         "members": [
           {
             "name": "김하늘",
@@ -3687,7 +3687,7 @@
       "thumbnail": "thumbnails/generated/preset-84-testimonials-grid.png",
       "props": {
         "eyebrow": "REVIEWS",
-        "heading": "고객이 경험한 변화",
+        "heading": "고객이 경험한 변화 · 가상 사례",
         "items": [
           {
             "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
@@ -3734,7 +3734,7 @@
       "thumbnail": "thumbnails/generated/preset-85-testimonials-spotlight.png",
       "props": {
         "eyebrow": "REVIEWS",
-        "heading": "고객이 경험한 변화",
+        "heading": "고객이 경험한 변화 · 가상 사례",
         "items": [
           {
             "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
@@ -3781,7 +3781,7 @@
       "thumbnail": "thumbnails/generated/preset-86-testimonials-split.png",
       "props": {
         "eyebrow": "REVIEWS",
-        "heading": "고객이 경험한 변화",
+        "heading": "고객이 경험한 변화 · 가상 사례",
         "items": [
           {
             "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
@@ -4386,17 +4386,17 @@
     "thumbnails/generated/preset-73-stats-strip.png": "2e91bab6f4a65b7448b8941f215d4250200c9b02efc55ce35d11e2f7569b35d8",
     "thumbnails/generated/preset-74-stats-split.png": "1a74a9314f4cf67df7e8baa4d064f0f5c7fe6a822a9c3fd87973bad1ed5e2a00",
     "thumbnails/generated/preset-75-pricing-cards.png": "296b822df15a9cb620d023b6283444ef70dcf48d62ca14bb64f6e788f0155bd8",
-    "thumbnails/generated/preset-76-pricing-compact.png": "da84e3b101906d4207b0e306b90c24581468fb43ca20461cce8127d461877a83",
-    "thumbnails/generated/preset-77-pricing-editorial.png": "f3e0781e4e1aae5137b918ce3f31de7f888b0eae6bc262ed519cdccd3c7a7024",
-    "thumbnails/generated/preset-78-team-grid.png": "3ecdfdc9fb461e6063173967a3a6888a09c86a51de70d20ca21c262d9bd032ab",
-    "thumbnails/generated/preset-79-team-editorial.png": "af5f4595b0f82aafa0ee62cfbdbeec3f411b381acd46fa84e4210c57494d47f5",
-    "thumbnails/generated/preset-80-team-featured.png": "90883d66148d9ca031f045c28a4a351078c3a46dd01671ce8019d7ce6bf9c8f9",
+    "thumbnails/generated/preset-76-pricing-compact.png": "df9cb8da6b2b7b5686daf81fe4d9cb83ad80898815657e5c1a11885e17f854a9",
+    "thumbnails/generated/preset-77-pricing-editorial.png": "b4a37f72ca5c714f526aa5854f6c46d17062be843a80d6e520a3f5345c836f79",
+    "thumbnails/generated/preset-78-team-grid.png": "49fb7d337ba768bcced6eabce79b91b258cb20142dcad01db9396a3f5ca99489",
+    "thumbnails/generated/preset-79-team-editorial.png": "54b0886337f0f13bf85a0fdb9a6391a02444745edabeeb68a3f5dffde1eb3df3",
+    "thumbnails/generated/preset-80-team-featured.png": "07aefd8db0e7912e48deaa95fc79368399e20f60b2e11ddd3e73611f9900496a",
     "thumbnails/generated/preset-81-gallery-grid.png": "38ba5ec7ebbadeda41ee6974036cc8371ace1996a6c9fd18d36a20668ac42708",
     "thumbnails/generated/preset-82-gallery-masonry.png": "fe650e7e76226e4f461e0b9cb36df757b9bdb94c80e05d9059e29d5bdde343c9",
     "thumbnails/generated/preset-83-gallery-filmstrip.png": "6c02dec75073138599d10a90e5caec00a0ad44bf323ed7f926cd43a8aaaad810",
-    "thumbnails/generated/preset-84-testimonials-grid.png": "36d23310d167df0b3bb0ac667c47ab07c342ae9a3492d3fb58fe10d95ec67dcd",
-    "thumbnails/generated/preset-85-testimonials-spotlight.png": "63c28f2f88d7978d7b796f9af57ba5498e83c7e74f374d0eb70970910018c17f",
-    "thumbnails/generated/preset-86-testimonials-split.png": "c8cc080a5e5b60d54df99eba08abbf4ee59dc25a2c5c4cb603810efeb1d330f0",
+    "thumbnails/generated/preset-84-testimonials-grid.png": "343d7c61cdad970c64e51f2271fe147d01ca55eb4db86fd0e70db1f6b3246668",
+    "thumbnails/generated/preset-85-testimonials-spotlight.png": "9fb0f36470d16cce58344e2e5a343c81c78894fb6b2c5d5e8e9d1d2ac614ca0a",
+    "thumbnails/generated/preset-86-testimonials-split.png": "3b3830a48afa5aab92c0d1e8ebf3db382832c0db2a76446b60c1a5709c04129d",
     "thumbnails/generated/preset-87-testimonials-quote-hero.png": "7e403a4b6f71a1c1cf88483bac7651fa24a576d69d84082e461e951e93521f75",
     "thumbnails/generated/preset-88-articles-list.png": "00b2461f9d022d0ba9e71f67618b461c10a4ff36958ba7c6103529089421ef5e",
     "thumbnails/generated/preset-89-articles-grid.png": "5536d7f38aec1ced1b271cb7264b03ee47a1c05d4e2876976549a19650d53152",

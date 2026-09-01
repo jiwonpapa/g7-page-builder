@@ -1,5 +1,14 @@
 {
   "record_version": "g7pb-phase-7-ledger/1",
   "release_status": "blocked",
-  "batches": []
+  "batches": [
+    {
+      "id": "7-A-01",
+      "items": [
+        { "id": "hero-split.product-focus", "decision": "modified", "reason": "루트 링크와 설명용 카피를 실제 상담 서비스 진입 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "notice.service-info", "decision": "maintained", "reason": "구체적인 이용 안내와 의미 있는 guide 경로가 이미 존재", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "hero.poster", "decision": "modified", "reason": "편집 지시문을 행사 일정 탐색용 포스터 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
+      ]
+    }
+  ]
 }

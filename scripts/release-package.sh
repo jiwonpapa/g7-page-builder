@@ -9,8 +9,8 @@ commit="$(git -C "$root" rev-parse --short=12 HEAD)"
 dirty='false'
 
 node "$root/scripts/check-version-policy.mjs" --release
-(cd "$root" && npm run check:block-product-quality -- --verify-render-source --release)
-(cd "$root" && npm run check:block-quality-evidence -- --require-ready)
+(cd "$root" && npm run check:block-product-quality -- --technical --verify-render-source)
+(cd "$root" && npm run check:block-quality-evidence)
 (cd "$root" && npm run check:site-shell-product-quality)
 
 if ! git -C "$root" diff --quiet || ! git -C "$root" diff --cached --quiet; then

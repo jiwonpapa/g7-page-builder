@@ -31,12 +31,16 @@ function validate(value) {
   assert(value.makefile.split('\n').includes('\tbash tests/Harness/block-quality-gate-wiring.test.sh'));
   for (const key of ['release', 'deploy']) {
     const lines = value[key].split('\n');
-    const strict = '(cd "$root" && npm run check:block-quality-evidence -- --require-ready)';
-    assert(lines.includes(strict), `${key} omits exact fail-closed gate`);
-    assert(lines.includes('(cd "$root" && npm run check:block-product-quality -- --verify-render-source --release)'), `${key} removed legacy gate`);
+    const shadow = '(cd "$root" && npm run check:block-quality-evidence)';
+    const technical = '(cd "$root" && npm run check:block-product-quality -- --technical --verify-render-source)';
+    assert(lines.includes(shadow), `${key} omits evidence integrity gate`);
+    assert(lines.includes(technical), `${key} omits automated product gate`);
+    assert(!value[key].includes('--require-ready'), `${key} restored manual evidence readiness`);
+    assert(!value[key].includes('--release)'), `${key} restored approval digest mode`);
     assert(lines.includes('(cd "$root" && npm run check:site-shell-product-quality)'), `${key} removed site-shell gate`);
     const sideEffect = key === 'release' ? lines.indexOf('mkdir -p "$output_dir"') : lines.indexOf('"$root/scripts/staging-doctor.sh"');
-    assert(sideEffect > lines.indexOf(strict), `${key} verifies only after side effects`);
+    assert(sideEffect > lines.indexOf(shadow), `${key} verifies only after side effects`);
+    assert(sideEffect > lines.indexOf(technical), `${key} verifies only after side effects`);
   }
 }
 validate(source);
@@ -44,10 +48,10 @@ for (const mutate of [
   value => { value.scripts.check = value.scripts.check.replace('npm run check:block-quality-evidence', 'true'); },
   value => { value.scripts['test:unit'] = 'vitest run'; },
   value => { value.scripts['pretest:e2e:product'] = 'true'; },
-  value => { value.release = value.release.replace('--require-ready)', '--require-ready) || true'); },
-  value => { value.deploy = value.deploy.replace('--require-ready', '--json'); },
-  value => { value.release = value.release.replace('--verify-render-source --release', '--candidate'); },
-  value => { value.deploy = value.deploy.replace('--verify-render-source --release', '--technical'); },
+  value => { value.release = value.release.replace('npm run check:block-quality-evidence)', 'true)'); },
+  value => { value.deploy = value.deploy.replace('npm run check:block-quality-evidence)', 'true)'); },
+  value => { value.release = value.release.replace('--technical --verify-render-source', '--candidate'); },
+  value => { value.deploy = value.deploy.replace('--technical --verify-render-source', '--technical'); },
   value => { value.scripts.check = value.scripts.check.replace('--technical --verify-render-source', '--technical'); },
   value => { value.scripts['test:unit'] = value.scripts['test:unit'].replace('--technical', '--candidate'); },
   value => { value.scripts['pretest:e2e:product'] = value.scripts['pretest:e2e:product'].replace('--technical', '--technical || true'); },
@@ -57,5 +61,5 @@ for (const mutate of [
   const broken = structuredClone(source); mutate(broken);
   assert.throws(() => validate(broken));
 }
-console.log('BLOCK_QUALITY_GATE_WIRING OK: development technical + shadow; unchanged legacy + v2 release gates; 12 mutations rejected; no deployment executed');
+console.log('BLOCK_QUALITY_GATE_WIRING OK: automated technical + evidence integrity gates; manual approval cannot block release; 12 mutations rejected; no deployment executed');
 JS

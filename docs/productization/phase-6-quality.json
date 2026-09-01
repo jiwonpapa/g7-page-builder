@@ -1,0 +1,76 @@
+{
+  "record_version": "g7pb-phase-6-quality/1",
+  "decision": "technical-rework-complete-human-review-and-final-rc-pending",
+  "release_status": "blocked",
+  "criteria": [
+    {
+      "id": "copy",
+      "technical_status": "passed",
+      "human_status": "pending",
+      "evidence": ["tests/Unit/representativePresetQuality.test.ts", "tests/Unit/representativePageKitQuality.test.ts"]
+    },
+    {
+      "id": "purpose",
+      "technical_status": "passed",
+      "human_status": "pending",
+      "evidence": ["docs/productization/phase-6-representatives.md"]
+    },
+    {
+      "id": "visual-hierarchy",
+      "technical_status": "passed",
+      "human_status": "pending",
+      "evidence": ["resources/block-packs/builtin-core/thumbnails/generated/index.json", "resources/store/source/screenshots"]
+    },
+    {
+      "id": "imagery",
+      "technical_status": "partial",
+      "human_status": "pending",
+      "evidence": ["resources/store/source/page-kits", "resources/store/dist/previews"]
+    },
+    {
+      "id": "content-change",
+      "technical_status": "passed",
+      "human_status": "pending",
+      "evidence": ["resources/block-packs/builtin-core/manifest.json", "resources/store/source/page-kits"]
+    },
+    {
+      "id": "responsive",
+      "technical_status": "passed",
+      "human_status": "pending",
+      "evidence": ["resources/store/source/screenshots", "scripts/generate-page-kit-screenshots.mjs"]
+    },
+    {
+      "id": "editing-completeness",
+      "technical_status": "partial",
+      "human_status": "pending",
+      "evidence": ["docs/productization/phase-4-editing-save.md", "resources/js/editor/canvasEditingContract.ts"]
+    },
+    {
+      "id": "accessibility",
+      "technical_status": "partial",
+      "human_status": "pending",
+      "evidence": ["tests/Unit/representativePresetQuality.test.ts", "scripts/generate-page-kit-screenshots.mjs"]
+    },
+    {
+      "id": "display-accuracy",
+      "technical_status": "passed",
+      "human_status": "pending",
+      "evidence": ["tests/Unit/representativePageKitQuality.test.ts", "docs/productization/content-policy.md"]
+    }
+  ],
+  "items": [
+    { "id": "hero.service-intro", "kind": "preset", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "rich-text.article-intro", "kind": "preset", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "image-text.company-story", "kind": "preset", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "features.core-benefits", "kind": "preset", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "card-grid.services", "kind": "preset", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "cta.contact", "kind": "preset", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "service-conversion", "kind": "page-kit", "source": "resources/store/source/page-kits/service-conversion/document.json", "sha256": "81afd3dc468ecdb9733106ce135651f585c90fc7c460a82afd9a0d65a5d0cc77", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "local-business", "kind": "page-kit", "source": "resources/store/source/page-kits/local-business/document.json", "sha256": "b0646600d1cd8268685c38adbd0764b07eadc26ef1c66cf8adb2272640a21025", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" },
+    { "id": "editorial-community", "kind": "page-kit", "source": "resources/store/source/page-kits/editorial-community/document.json", "sha256": "e05fceb80c286b000c843006d5fb13fd72219d49cd3ba5691460820bf8a2455b", "technical_status": "rework-complete", "human_status": "pending", "release_status": "blocked" }
+  ],
+  "blockers": [
+    "human-copy-visual-rights-and-business-facts-approval",
+    "phase-8-final-rc"
+  ]
+}

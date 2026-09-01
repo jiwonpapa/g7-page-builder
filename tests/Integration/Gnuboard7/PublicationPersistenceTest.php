@@ -709,7 +709,7 @@ final class PublicationPersistenceTest extends TestCase
 
         $restored = $service->restoreRevision($changed->document->documentId, $nested->revision, $changed->lockVersion, null);
         self::assertSame('왼쪽 제목', $restored->document->blocks[0]['slots']['content'][0]['slots']['column1'][0]['props']['heading']);
-        self::assertSame($publishedSnapshot->activeArtifactSha256, $restored->activeArtifactSha256);
+        self::assertSame($publishedSnapshot->artifactSha256, $restored->activeArtifactSha256);
         self::assertStringContainsString('왼쪽 제목', $service->findPublished('nested-layout-flow')?->artifact ?? '');
     }
 

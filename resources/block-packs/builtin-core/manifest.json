@@ -2182,7 +2182,7 @@
             "fileType": "PDF",
             "fileSize": "2.4 MB",
             "buttonLabel": "다운로드",
-            "url": "/resources/service-guide"
+            "url": "/contact?resource=service-guide"
           },
           {
             "title": "운영 체크리스트",
@@ -2190,7 +2190,7 @@
             "fileType": "PDF",
             "fileSize": "780 KB",
             "buttonLabel": "다운로드",
-            "url": "/resources/operations-checklist"
+            "url": "/contact?resource=operations-checklist"
           }
         ]
       }

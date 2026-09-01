@@ -834,10 +834,10 @@
     {
       "catalog_id": "block:content.download-resources-01@1",
       "source_digests": {
-        "content": "9125ff70ca9b3ad8087c27c731137ad00b3cf66c12dbca2902909ffb9535aa98",
-        "rights": "a25098c66de95b021810086bcc9565d0c31dcb6046f3c5a23209dfd13f0cb54e",
-        "render": "597abe2b5d0a46fbc4218d9c2f23bb636d5518a77c3754d47e1b43052d493fcc",
-        "editing": "0ff9cf958f8526593ed23d946eb91d7f89b38ad6ccf709d4ca43f89eac95531e"
+        "content": "9692ebdf35723b8b5ae6569d4f1c2b6007c054b25e85f5ee2ce5d02aed5e991b",
+        "rights": "95f361700d9b5d1eeeece0f50b3dd6845316d92ccd211c94d1a3179f73537e83",
+        "render": "6d59a2a7e2e5dbe283d903a27292f470c99fd64ec00eba0d2881e01bae5ab461",
+        "editing": "2e899352fb564b973cccff181bb30efd54dac97eceffdbec2b537b91890e8349"
       },
       "reviews": {
         "content": {
@@ -2109,10 +2109,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:downloads.resource-center",
       "source_digests": {
-        "content": "b51cd51e1d108382369714a127202783ec545577b9a3a08b8bcf1deb0009177a",
-        "rights": "8c0f3c1f257fcb5aaba4affde4dafa34ad1b2f16061d960334804624b4f32831",
-        "render": "a0fa0bc618cbdc20ae8ebddfd9932c2471d62a6b53f29d9158f4641c49b580c2",
-        "editing": "77ad5867097017db672f145c75336d6127a1f935c45d490cecc3d78aa00cddcd"
+        "content": "69e56171375ff3d8360243880c7638eb734b7640a9faf6535b22f2ef1b0db0ca",
+        "rights": "a2b92c46cba2ff934cd2ddd2c58c8cc2a7133fb024c0c72153c03f6d66a1fdbe",
+        "render": "ef2c8492d98960f231b58610f1c8cfc1e220d91acd6320a859df4637e976f34b",
+        "editing": "003b6f1f539fe251a79dc8d91c3b4c4af458334e01baf419d696b85d6fac8f64"
       },
       "reviews": {
         "content": {

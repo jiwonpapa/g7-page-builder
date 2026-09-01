@@ -1414,12 +1414,12 @@
       },
       "thumbnail": "thumbnails/generated/preset-19-hero-split-product-focus.png",
       "props": {
-        "eyebrow": "PRODUCT",
-        "title": "제품의 핵심 가치를 한 장면에",
-        "body": "가장 중요한 변화와 다음 행동을 이미지 옆에서 설명합니다.",
+        "eyebrow": "상담 운영",
+        "title": "상담 준비부터 실행 점검까지 한 화면에서",
+        "body": "현재 상황을 정리하고 우선순위와 실행 범위를 빠르게 확인합니다.",
         "primaryCta": {
-          "label": "제품 보기",
-          "url": "/"
+          "label": "서비스 살펴보기",
+          "url": "/services"
         },
         "mediaPosition": "right",
         "layout": "screenshot",
@@ -2632,12 +2632,12 @@
       },
       "thumbnail": "thumbnails/generated/preset-56-hero-poster.png",
       "props": {
-        "eyebrow": "새로운 시작",
-        "title": "고객의 다음 행동을 더 분명하게",
-        "body": "<p>누구를 위해 어떤 문제를 해결하는지 한 문장으로 알려주세요.</p>",
+        "eyebrow": "2026 현장 컨퍼런스",
+        "title": "배우고 연결하는 하루",
+        "body": "<p>실무 세션과 동료의 경험을 한 자리에서 만나 다음 프로젝트의 실마리를 찾으세요.</p>",
         "primaryCta": {
-          "label": "시작하기",
-          "url": "/"
+          "label": "행사 일정 보기",
+          "url": "/events"
         },
         "alignment": "center",
         "layout": "poster",
@@ -4329,7 +4329,7 @@
     "thumbnails/generated/preset-16-contact-office.png": "4366021908f7258ba90d154f2498c994e12da398603113eb2f46818157969da8",
     "thumbnails/generated/preset-17-faq-basic.png": "06eab16a594688cbb1cd3e6a898eeac4a64646c731c9b1cea74cdf76313e5104",
     "thumbnails/generated/preset-18-process-four-step.png": "31b0b9bf78e32fb4f28df9e1382fd1e9a5fca2307f5bb804a27249d105f7179c",
-    "thumbnails/generated/preset-19-hero-split-product-focus.png": "f403b9b93bf6793ac7d94e991c51332664d3051a90adda99cacbfd6eac94d319",
+    "thumbnails/generated/preset-19-hero-split-product-focus.png": "2deb563cdc483139d98a46636437fea230d2501d382960423a35d30f74fa6c89",
     "thumbnails/generated/preset-20-hero-slider-campaign.png": "5989b7b62ff70e4b7019891d82ad09a07b311ddb9c6f51b8754e9f2fd32c01bb",
     "thumbnails/generated/preset-21-logo-cloud-partners.png": "a161aa5d08571dafa099aadb5b4b66ad457793252806c5d21d40582d150d76d9",
     "thumbnails/generated/preset-22-stats-business-proof.png": "291e5dc03499f26b3b52123ef6d788bf77c5d9fd6b2708e5384054ff9d3270d3",
@@ -4366,7 +4366,7 @@
     "thumbnails/generated/preset-53-inquiry-reservation.png": "0005f2c3e546d8773c777460c155342f4f92f0cdbe5d195a45fb7a3a64cbb73f",
     "thumbnails/generated/preset-54-inquiry-application.png": "2135c41105f928ea79554fc054ddcc53762ee5a349b1cf76af21f9fcd7454463",
     "thumbnails/generated/preset-55-inquiry-newsletter.png": "da969de002be7e7f9649ca8489ffcd560331ec6de1bf2c46d3165a7c10afef78",
-    "thumbnails/generated/preset-56-hero-poster.png": "35439a10643201dbcd88039b66a2043bbf002c34f39ab0a8f9bb21aaf626cd77",
+    "thumbnails/generated/preset-56-hero-poster.png": "82151e8fda1fc87e44cde9dbb1b3ab2dd318454ae070ac6208abe38e68a8e8f8",
     "thumbnails/generated/preset-57-hero-backdrop.png": "dc676753a0ff438a9e4299f6c24526f30f3f4127506d2f50213b25ade15eca11",
     "thumbnails/generated/preset-58-hero-editorial.png": "e10c151263514f6ba8a4d411c7911270315f98473cec7387e35276af983586db",
     "thumbnails/generated/preset-59-hero-device.png": "9e3655603bb583c34dbb4e3fc0e203981c9413e4790f1a9dc77bfcf1e79be97e",

@@ -148,6 +148,12 @@
         { "id": "gallery.grid", "decision": "maintained", "reason": "그리드형 5개 현장 이미지와 대체텍스트·캡션이 모두 채워짐", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
         { "id": "gallery.masonry", "decision": "maintained", "reason": "masonry형 5개 현장 이미지와 대체텍스트·캡션이 모두 채워짐", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-D-03",
+      "items": [
+        { "id": "gallery.filmstrip", "decision": "maintained", "reason": "filmstrip형 5개 현장 이미지와 대체텍스트·캡션이 모두 채워져 있음", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

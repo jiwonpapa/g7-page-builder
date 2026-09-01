@@ -2,6 +2,7 @@
 set -euo pipefail
 
 readonly PROGRAM="coord-harness"
+readonly SCOPED_MAX_PATHS=24
 
 fail() {
   printf '%s: %s\n' "$PROGRAM" "$*" >&2
@@ -34,6 +35,7 @@ Usage:
   coord-harness.sh release-guard --task ID
 
 Profiles: scoped, frontend, php, mixed, g7, docs, full
+Scoped profile: PATHS must contain 1-24 leaf files; directory claims are rejected.
 Exclusive areas: integration, runtime, migration, shared-contract, version
 EOF
 }
@@ -457,6 +459,28 @@ validate_paths() {
   IFS="$old_ifs"
 }
 
+validate_scoped_leaf_paths() {
+  local profile="$1"
+  local csv="$2"
+  local worktree="$3"
+  local item
+  local count=0
+  local old_ifs="$IFS"
+  [[ "$profile" == scoped ]] || return 0
+  [[ -n "$csv" ]] || fail 'scoped PROFILE은 정확한 파일 PATHS가 필요합니다.'
+  IFS=','
+  for item in $csv; do
+    count=$((count + 1))
+    if [[ -d "$worktree/$item" ]]; then
+      IFS="$old_ifs"
+      fail "scoped PROFILE은 디렉터리 PATHS를 허용하지 않습니다: $item"
+    fi
+  done
+  IFS="$old_ifs"
+  [[ "$count" -le "$SCOPED_MAX_PATHS" ]] \
+    || fail "scoped PROFILE의 PATHS 상한은 ${SCOPED_MAX_PATHS}개입니다: actual=$count"
+}
+
 field() {
   local file="$1"
   local key="$2"
@@ -603,6 +627,7 @@ collect_and_check_changed_paths_at() {
   local worktree="$1"
   local base_sha="$2"
   local allowed_csv="$3"
+  validate_scoped_leaf_paths "${META_PROFILE:-}" "$allowed_csv" "$worktree"
   local path
   local failed=0
   while IFS= read -r -d '' path; do
@@ -832,6 +857,7 @@ command_claim() {
   validate_profile "$PROFILE"
   validate_paths "$PATHS_CSV"
   validate_areas "$AREAS_CSV"
+  validate_scoped_leaf_paths "$PROFILE" "$PATHS_CSV" "$repo_root"
   [[ -n "$PATHS_CSV" || -n "$AREAS_CSV" ]] || fail 'PATHS 또는 독점 AREAS 중 하나는 필요합니다.'
   [[ -z "$(git status --porcelain)" ]] || fail '깨끗한 worktree에서만 task를 시작할 수 있습니다.'
 

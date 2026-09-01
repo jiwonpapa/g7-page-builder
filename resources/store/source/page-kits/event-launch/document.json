@@ -18,12 +18,12 @@
       "type": "content.hero-split-01",
       "block_version": 1,
       "props": {
-        "eyebrow": "2026 FORWARD CONFERENCE",
+        "eyebrow": "2026 FORWARD CONFERENCE · 가상 행사",
         "title": "다음 변화를 만드는 사람들이 만납니다",
         "body": "하루 동안 이어지는 발표와 대화에서 실제 실행 경험과 다음 기회를 확인하세요.",
         "primaryCta": {
           "label": "참가 신청하기",
-          "url": "/"
+          "url": "/contact?event=forward-2026"
         },
         "image": {
           "src": "g7pb-media://image-1",
@@ -31,7 +31,7 @@
         },
         "mediaPosition": "left",
         "appearance": {
-          "surface": "contrast",
+          "surface": "default",
           "spacing": "spacious"
         },
         "layout": "overlap"
@@ -50,7 +50,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "EVENT AT A GLANCE",
-        "heading": "한눈에 보는 행사 정보",
+        "heading": "한눈에 보는 행사 정보 · 가상 예시",
         "items": [
           {
             "icon": "target",
@@ -84,7 +84,7 @@
         "layout": "strip"
       },
       "motion": {
-        "preset": "counter",
+        "preset": "reveal",
         "intensity": "normal",
         "trigger": "once",
         "stagger_ms": 60
@@ -97,7 +97,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "PROGRAM",
-        "heading": "집중해서 듣고 충분히 이야기하는 일정",
+        "heading": "집중해서 듣고 충분히 이야기하는 일정 · 가상 일정",
         "items": [
           {
             "date": "2026-10-24",
@@ -106,7 +106,7 @@
             "location": "메인 스테이지",
             "description": "올해의 변화와 다음 실행 과제를 함께 살펴봅니다.",
             "buttonLabel": "세션 보기",
-            "buttonUrl": "/"
+            "buttonUrl": "/contact?event=forward-2026&session=opening"
           },
           {
             "date": "2026-10-24",
@@ -115,7 +115,7 @@
             "location": "메인 스테이지",
             "description": "만드는 순간 이후를 고려한 제품 결정 사례를 공유합니다.",
             "buttonLabel": "세션 보기",
-            "buttonUrl": "/"
+            "buttonUrl": "/contact?event=forward-2026&session=operations"
           },
           {
             "date": "2026-10-24",
@@ -124,7 +124,7 @@
             "location": "세션룸 A",
             "description": "서로 다른 조직의 실행 경험을 질문 중심으로 나눕니다.",
             "buttonLabel": "세션 보기",
-            "buttonUrl": "/"
+            "buttonUrl": "/contact?event=forward-2026&session=roundtable"
           },
           {
             "date": "2026-10-24",
@@ -133,7 +133,7 @@
             "location": "라운지",
             "description": "연사와 참가자가 다음 협업 가능성을 연결합니다.",
             "buttonLabel": "행사 안내",
-            "buttonUrl": "/"
+            "buttonUrl": "/contact?event=forward-2026&session=closing"
           }
         ],
         "layout": "agenda",
@@ -156,7 +156,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "SPEAKERS",
-        "heading": "현장에서 답을 만들어온 연사",
+        "heading": "현장에서 답을 만들어온 연사 · 가상 연사",
         "members": [
           {
             "name": "김하늘",
@@ -210,7 +210,7 @@
       "type": "trust.logo-cloud-01",
       "block_version": 1,
       "props": {
-        "heading": "행사를 함께 만드는 파트너",
+        "heading": "행사를 함께 만드는 파트너 · 가상 예시",
         "logos": [
           {
             "name": "Northstar",
@@ -257,7 +257,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "ATTENDEE GUIDE",
-        "heading": "참가 전에 확인하세요",
+        "heading": "참가 전에 확인하세요 · 가상 행사 안내",
         "items": [
           {
             "question": "참가 신청은 언제 마감되나요?",
@@ -297,7 +297,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "REGISTER",
-        "heading": "행사 참가를 신청하세요",
+        "heading": "행사 참가 신청 · 가상 예시",
         "description": "신청 내용을 확인한 뒤 참석 확정과 행사 안내를 보내드립니다.",
         "formKind": "application",
         "submitLabel": "참가 신청 보내기",

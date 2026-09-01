@@ -23,7 +23,7 @@
         "body": "복잡한 문제를 이해하기 쉬운 제품과 서비스로 바꾸는 팀을 소개합니다.",
         "primaryCta": {
           "label": "서비스 보기",
-          "url": "/"
+          "url": "/services"
         },
         "image": {
           "src": "g7pb-media://image-1",
@@ -87,7 +87,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "성과",
-        "heading": "숫자로 보는 우리의 경험",
+        "heading": "숫자로 보는 우리의 경험 · 가상 예시",
         "items": [
           {
             "icon": "users",
@@ -115,7 +115,7 @@
         "layout": "editorial"
       },
       "motion": {
-        "preset": "counter",
+        "preset": "reveal",
         "intensity": "subtle",
         "trigger": "once",
         "stagger_ms": 100
@@ -128,7 +128,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "팀",
-        "heading": "문제를 끝까지 해결하는 사람들",
+        "heading": "문제를 끝까지 해결하는 사람들 · 가상 팀",
         "members": [
           {
             "name": "김기획",
@@ -175,7 +175,7 @@
       "block_version": 1,
       "props": {
         "eyebrow": "함께 만든 변화",
-        "heading": "팀 안에 실행 기준이 남았습니다",
+        "heading": "팀 안에 실행 기준이 남았습니다 · 가상 사례",
         "items": [
           {
             "quote": "기획과 제작을 따로 설명하지 않아도 한 흐름으로 정리돼 의사결정이 빨라졌습니다.",
@@ -220,7 +220,7 @@
         "body": "목표와 현재 상황을 알려주시면 필요한 범위부터 함께 정리합니다.",
         "primaryLink": {
           "label": "문의하기",
-          "url": "/"
+          "url": "/contact"
         },
         "secondaryLink": {
           "label": "로그인",

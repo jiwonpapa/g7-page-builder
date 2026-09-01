@@ -116,7 +116,7 @@
     "preset:jiwonpapa/builtin-core:features.list": "c60472b71c613b3f63cdc384c48c64a4fba04b323899dd4e0845461a0a407c41",
     "preset:jiwonpapa/builtin-core:cta.centered": "97defc236dc26d1281bf5d04f10cd4fbd224aeff48bf49513153b960930ef629",
     "preset:jiwonpapa/builtin-core:cta.banner": "3d757b30f8e18ebeb4917811e2131eff8b2e15d9c69b34e1899c93b21ffc41f2",
-    "preset:jiwonpapa/builtin-core:cta.panel": "589fa2ca5ddd9f5a3fc4237fd50adee220363e10ecc8b31db6abd9f407304f2c",
+    "preset:jiwonpapa/builtin-core:cta.panel": "1f688f3b8a075d3ceee69f1ed54a5b751e9a07915a4714ea26eb43f1f935ef07",
     "preset:jiwonpapa/builtin-core:logo-cloud.grid": "970114219a7fe4b43a202efe2ed70152f8a47a3bdf0f962fb72ca0d3d6864b32",
     "preset:jiwonpapa/builtin-core:logo-cloud.panel": "572b23cd0ada51b5cae1ce43d1c1c81ea977f66aedd834605e31322ec7046f2e",
     "preset:jiwonpapa/builtin-core:stats.grid": "49803d813e9f8f2ad3e1e8ecdbc4cdf08d71b775a04d4de2ecdb059528d08797",

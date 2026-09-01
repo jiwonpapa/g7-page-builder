@@ -14,7 +14,15 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.15.0';
+    public const COMPILER_VERSION = '0.16.0';
+
+    /** @var list<string> */
+    private const TEMPLATE_FORBIDDEN_TAGS = [
+        'script', 'noscript', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'portal',
+        'form', 'input', 'textarea', 'select', 'option', 'button', 'style', 'meta', 'base',
+        'body', 'head', 'html', 'title', 'svg', 'math', 'audio', 'video', 'source', 'track', 'canvas',
+        'details', 'dialog', 'plaintext', 'xmp', 'listing', 'marquee', 'noframes', 'noembed', 'template', 'slot',
+    ];
 
     /** @var array<string, string> */
     private const DESIGN_TOKEN_DEFAULTS = [
@@ -313,6 +321,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                     $this->blockCompilers->compile($definition->compiler, $props),
                 );
                 $compiledBlock = $this->applyElementAppearances($compiledBlock, $props, $type);
+                $this->assertTemplateCompatibleMarkup($compiledBlock, "Block {$index}");
             } catch (DocumentCompileException $exception) {
                 throw $exception;
             } catch (\Throwable) {
@@ -335,12 +344,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             fn (string $url): string => '<link rel="stylesheet" href="'.$this->escapeAttribute($url).'">',
             array_keys($styleUrls),
         );
-        $customPaletteStyle = $this->customPaletteStyle($document);
-        $body = ($customPaletteStyle === '' ? '' : $customPaletteStyle."\n")
-            .'<div class="'.$this->designClassName($document).'">'."\n"
+        $customPaletteStyle = $this->customPaletteDeclarations($document);
+        $body = '<div class="'.$this->designClassName($document).'"'.($customPaletteStyle === '' ? '' : ' style="'.$this->escapeAttribute($customPaletteStyle).'"').'>'."\n"
             .implode("\n", $sections)."\n"
             .'</div>';
         $artifact = implode("\n", [...$styles, $body]);
+        $this->assertTemplateCompatibleMarkup($artifact, 'Compiled document');
         $warnings = $heroCount > 1
             ? ["Hero 계열 블록이 {$heroCount}개 있습니다. 첫 화면 집중도가 낮아질 수 있습니다."]
             : [];
@@ -382,7 +391,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return implode(' ', $classes);
     }
 
-    private function customPaletteStyle(PageBuilderDocument $document): string
+    private function customPaletteDeclarations(PageBuilderDocument $document): string
     {
         if (! $this->hasCustomPalette($document)) {
             return '';
@@ -398,7 +407,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $declarations[] = '--g7pb-custom-tone-'.$suffix.':'.strtolower($value);
         }
 
-        return '<style>.g7pb-theme-custom-palette{'.implode(';', $declarations).'}</style>';
+        return implode(';', $declarations);
     }
 
     private function hasCustomPalette(PageBuilderDocument $document): bool
@@ -1218,7 +1227,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<article class="g7pb-hero-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($slides).'"><div class="g7pb-hero-slider__copy">'.$copy.'</div><figure>'.$media.'</figure></article>';
         }
 
-        return '<section class="g7pb-block g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="'.($loop ? 'true' : 'false').'" aria-label="대표 콘텐츠 슬라이더"><div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $compiled).'</div></div><div class="g7pb-hero-slider__controls"><button type="button" data-g7pb-slider-prev aria-label="이전 슬라이드">←</button><div class="g7pb-hero-slider__dots" data-g7pb-slider-dots aria-label="슬라이드 선택"></div><button type="button" data-g7pb-slider-next aria-label="다음 슬라이드">→</button>'.($autoplay ? '<button type="button" data-g7pb-slider-toggle aria-label="자동 재생 일시 정지">일시 정지</button>' : '').'</div><p class="g7pb-hero-slider__status" data-g7pb-slider-status aria-live="polite"></p></section>';
+        return '<section class="g7pb-block g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="hero-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="'.($loop ? 'true' : 'false').'" aria-label="대표 콘텐츠 슬라이더"><div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $compiled).'</div></div><div class="g7pb-hero-slider__controls"><div class="g7pb-hero-slider__dots" data-g7pb-slider-dots aria-label="슬라이드 선택"></div></div><p class="g7pb-hero-slider__status" data-g7pb-slider-status aria-live="polite"></p></section>';
     }
 
     /**
@@ -1584,20 +1593,22 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('Inquiry form kind is invalid.');
         }
 
-        $phone = $showPhone ? '<label><span>전화번호</span><input type="tel" name="phone" maxlength="40" autocomplete="tel"></label>' : '';
-        $subject = $showSubject ? '<label class="g7pb-inquiry-form__wide"><span>문의 제목</span><input type="text" name="subject" maxlength="200"></label>' : '';
+        $phone = $showPhone ? '<label><span>전화번호</span><span data-g7pb-form-control="input" data-g7pb-control-type="tel" data-g7pb-control-name="phone" data-g7pb-control-maxlength="40" data-g7pb-control-autocomplete="tel"></span></label>' : '';
+        $subject = $showSubject ? '<label class="g7pb-inquiry-form__wide"><span>문의 제목</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="subject" data-g7pb-control-maxlength="200"></span></label>' : '';
 
         return '<section class="g7pb-block g7pb-inquiry '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="inquiry-form">'
             .'<div class="g7pb-inquiry__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : ($this->hasCanonicalRichTextMarkup($description) ? '<div class="g7pb-inquiry__description">'.$this->sanitizeRichText($description).'</div>' : '<p>'.$this->formatText($description).'</p>')).'</div>'
-            .'<form class="g7pb-inquiry-form" method="post" action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-inquiry-form data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escapeAttribute($successMessage).'">'
-            .'<input type="hidden" name="form_kind" value="'.$kind.'"><input type="hidden" name="block_instance_id" value=""><input type="hidden" name="started_at" value="">'
-            .'<label class="g7pb-inquiry-form__honeypot" aria-hidden="true"><span>웹사이트</span><input type="text" name="website" tabindex="-1" autocomplete="off"></label>'
-            .'<label><span>이름</span><input type="text" name="name" maxlength="120" autocomplete="name" required></label>'
-            .'<label><span>이메일</span><input type="email" name="email" maxlength="320" autocomplete="email" required></label>'.$phone.$subject
-            .'<label class="g7pb-inquiry-form__wide"><span>문의 내용</span><textarea name="message" maxlength="5000" rows="6" required></textarea></label>'
-            .'<label class="g7pb-inquiry-form__consent"><input type="checkbox" name="privacy" value="1" required><span>'.$this->escape($privacyLabel).'</span></label>'
-            .'<div class="g7pb-inquiry-form__footer"><button type="submit">'.$this->escape($submitLabel).'</button><p role="status" aria-live="polite" data-g7pb-form-status></p></div>'
-            .'</form></section>';
+            .'<div class="g7pb-inquiry-form" data-g7pb-inquiry-host data-g7pb-inquiry-form data-g7pb-form-action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escapeAttribute($successMessage).'" data-g7pb-privacy-label="'.$this->escapeAttribute($privacyLabel).'" data-g7pb-submit-label="'.$this->escapeAttribute($submitLabel).'" data-g7pb-show-phone="'.($showPhone ? 'true' : 'false').'" data-g7pb-show-subject="'.($showSubject ? 'true' : 'false').'">'
+            .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="form_kind" data-g7pb-control-value="'.$kind.'"></span>'
+            .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="block_instance_id"></span>'
+            .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="started_at"></span>'
+            .'<label class="g7pb-inquiry-form__honeypot" aria-hidden="true"><span>웹사이트</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="website" data-g7pb-control-tabindex="-1" data-g7pb-control-autocomplete="off"></span></label>'
+            .'<label><span>이름</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="name" data-g7pb-control-maxlength="120" data-g7pb-control-autocomplete="name" data-g7pb-control-required="true"></span></label>'
+            .'<label><span>이메일</span><span data-g7pb-form-control="input" data-g7pb-control-type="email" data-g7pb-control-name="email" data-g7pb-control-maxlength="320" data-g7pb-control-autocomplete="email" data-g7pb-control-required="true"></span></label>'.$phone.$subject
+            .'<label class="g7pb-inquiry-form__wide"><span>문의 내용</span><span data-g7pb-form-control="textarea" data-g7pb-control-name="message" data-g7pb-control-maxlength="5000" data-g7pb-control-rows="6" data-g7pb-control-required="true"></span></label>'
+            .'<label class="g7pb-inquiry-form__consent"><span data-g7pb-form-control="input" data-g7pb-control-type="checkbox" data-g7pb-control-name="privacy" data-g7pb-control-value="1" data-g7pb-control-required="true"></span><span data-g7pb-privacy-copy>'.$this->escape($privacyLabel).'</span></label>'
+            .'<div class="g7pb-inquiry-form__footer"><span data-g7pb-form-control="button" data-g7pb-control-type="submit" data-g7pb-submit-copy>'.$this->escape($submitLabel).'</span><p role="status" aria-live="polite" data-g7pb-form-status></p></div></div>'
+            .'</section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1634,10 +1645,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             };
             $bbox = implode(',', [$longitude - $delta, $latitude - $delta, $longitude + $delta, $latitude + $delta]);
             $src = 'https://www.openstreetmap.org/export/embed.html?bbox='.rawurlencode($bbox).'&marker='.rawurlencode($latitude.','.$longitude);
-            $map = '<iframe title="'.$this->escapeAttribute($address).' 지도" src="'.$this->escapeAttribute($src).'" loading="lazy" referrerpolicy="no-referrer"></iframe>';
+            $map = $this->embedPlaceholder('map-openstreetmap', $src, $address.' 지도');
         } elseif ($provider === 'google') {
             $src = 'https://www.google.com/maps?q='.rawurlencode($latitude.','.$longitude).'&z='.$zoom.'&output=embed';
-            $map = '<iframe title="'.$this->escapeAttribute($address).' 지도" src="'.$this->escapeAttribute($src).'" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>';
+            $map = $this->embedPlaceholder('map-google', $src, $address.' 지도');
         }
         $details = '<address><strong>'.$this->escape($address).'</strong>'
             .($phone === '' ? '' : '<span class="g7pb-map__phone">'.$this->escape($phone).'</span>')
@@ -1716,7 +1727,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $this->assertOnlyKeys($item, ['question', 'answer'], "FAQ item {$index}");
             $question = $this->requiredInlineRichTextString($item, 'question', 300);
             $answer = $this->requiredString($item, 'answer', 4000);
-            $compiled[] = '<details'.($openFirst && $index === 0 ? ' open' : '').'><summary><span>'.$this->sanitizePromotedInlineRichText($question).'</span><i aria-hidden="true">+</i></summary><div class="g7pb-faq__answer">'.$this->sanitizeRichText($answer).'</div></details>';
+            $open = $openFirst && $index === 0;
+            $compiled[] = '<div class="g7pb-faq__item" data-g7pb-accordion-item data-g7pb-open="'.($open ? 'true' : 'false').'">'
+                .'<div class="g7pb-faq__trigger" role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="'.($open ? 'true' : 'false').'"><span>'.$this->sanitizePromotedInlineRichText($question).'</span><i aria-hidden="true">+</i></div>'
+                .'<div class="g7pb-faq__answer" data-g7pb-accordion-panel>'.$this->sanitizeRichText($answer).'</div></div>';
         }
 
         return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
@@ -1796,7 +1810,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $itemHeading = $this->requiredInlineRichTextString($item, 'heading', 200);
             $body = $this->requiredString($item, 'body', 4000);
             $selected = $initialTab === $index;
-            $buttons[] = '<button type="button" role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</button>';
+            $buttons[] = '<span data-g7pb-runtime-button role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</span>';
             $bodyMarkup = $this->hasRichTextMarkup($body)
                 ? '<div class="g7pb-tabs__body">'.$this->sanitizeRichText($body).'</div>'
                 : '<p>'.$this->formatText($body).'</p>';
@@ -1935,7 +1949,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         $captionMarkup = $caption === '' ? '' : '<figcaption>'.($this->hasCanonicalRichTextMarkup($caption) ? $this->sanitizeRichText($caption) : $this->formatText($caption)).'</figcaption>';
 
-        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'"><iframe src="'.$this->escapeAttribute($src).'" title="'.$this->escapeAttribute($this->inlinePlainText($heading)).'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>'.$captionMarkup.'</figure></section>';
+        $embed = $this->embedPlaceholder('video-'.$provider, $src, $this->inlinePlainText($heading));
+
+        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'">'.$embed.'</div>'.$captionMarkup.'</figure></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2008,7 +2024,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
             $quoteMarkup = $this->hasRichTextMarkup($quote)
                 ? '<div class="g7pb-testimonial-slider__quote">'.$this->sanitizeRichText($quote).'</div>'
-                : '<p class="g7pb-testimonial-slider__quote">“'.$this->formatText($quote).'”</p>';
+                : '<p class="g7pb-testimonial-slider__quote">'.$this->formatText($quote).'</p>';
             $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p>'.$quoteMarkup.'<footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
@@ -2115,7 +2131,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $endpoint = $source === 'popular' ? "/api/modules/sirsoft-board/boards/popular?period={$period}&limit={$limit}" : "/api/modules/sirsoft-board/boards/posts/recent?limit={$limit}";
         $hidden = $audience === 'all' ? '' : ' hidden';
         $tools = ($showSearch || $showBoardFilter)
-            ? '<div class="g7pb-archive__tools">'.($showSearch ? '<label><span class="g7pb-visually-hidden">게시글 제목 검색</span><input type="search" data-g7pb-archive-search placeholder="제목 검색"></label>' : '').($showBoardFilter ? '<label><span class="g7pb-visually-hidden">게시판 선택</span><select data-g7pb-archive-filter><option value="">전체 게시판</option></select></label>' : '').'</div>'
+            ? '<div class="g7pb-archive__tools">'
+                .($showSearch ? '<label><span class="g7pb-visually-hidden">게시글 제목 검색</span><span data-g7pb-form-control="input" data-g7pb-control-type="search" data-g7pb-control-placeholder="제목 검색" data-g7pb-control-marker="archive-search"></span></label>' : '')
+                .($showBoardFilter ? '<label><span class="g7pb-visually-hidden">게시판 선택</span><span data-g7pb-form-control="select" data-g7pb-control-marker="archive-filter">전체 게시판</span></label>' : '')
+                .'</div>'
             : '';
 
         return '<section class="g7pb-block g7pb-dynamic g7pb-board-archive '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-board-archive" data-g7pb-data-source="post-archive" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).$tools.'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts g7pb-board-archive__items" data-g7pb-data-list aria-busy="true"></div>'.$this->compilePagination('게시글').'</section>';
@@ -2202,7 +2221,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private function compilePagination(string $label): string
     {
-        return '<nav class="g7pb-dynamic-pagination" data-g7pb-pagination aria-label="'.$this->escapeAttribute($label).' 페이지" hidden><button type="button" data-g7pb-page-prev>이전</button><span data-g7pb-page-status aria-live="polite">1 / 1</span><button type="button" data-g7pb-page-next>다음</button></nav>';
+        return '<nav class="g7pb-dynamic-pagination" data-g7pb-pagination aria-label="'.$this->escapeAttribute($label).' 페이지" hidden><span data-g7pb-runtime-button data-g7pb-page-prev>이전</span><span data-g7pb-page-status aria-live="polite">1 / 1</span><span data-g7pb-runtime-button data-g7pb-page-next>다음</span></nav>';
     }
 
     private function compileSectionHeading(?string $eyebrow, string $heading): string
@@ -2529,7 +2548,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 default => null,
             },
             'privacyLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*['.$hasClass('g7pb-inquiry-form__consent').']/span)[1]' : null,
-            'submitLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*['.$hasClass('g7pb-inquiry-form__footer').']/button)[1]' : null,
+            'submitLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*[@data-g7pb-submit-copy])[1]' : null,
             'directionsLabel' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__intro').']//address/a)[1]' : null,
             'hours' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__hours').'])[1]' : null,
             'parking' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__parking').'])[1]' : null,
@@ -2603,8 +2622,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             self::TESTIMONIALS_TYPE => $collection === 'items' ? $this->testimonialElementXPath('g7pb-testimonials__items', 'blockquote', $index, $leaf, $hasClass) : null,
             self::TESTIMONIAL_SLIDER_TYPE => $collection === 'items' ? $this->testimonialElementXPath('g7pb-hero-slider__track', 'blockquote', $index, $leaf, $hasClass) : null,
             self::FAQ_ACCORDION_TYPE => $collection === 'items' ? match ($leaf) {
-                'question' => '(.//*['.$hasClass('g7pb-faq__items').']/details)['.$index.']/summary/span',
-                'answer' => '(.//*['.$hasClass('g7pb-faq__items').']/details)['.$index.']/div',
+                'question' => '(.//*['.$hasClass('g7pb-faq__items').']/*['.$hasClass('g7pb-faq__item').'])['.$index.']/*['.$hasClass('g7pb-faq__trigger').']/span',
+                'answer' => '(.//*['.$hasClass('g7pb-faq__items').']/*['.$hasClass('g7pb-faq__item').'])['.$index.']/*['.$hasClass('g7pb-faq__answer').']',
                 default => null,
             } : null,
             self::PROCESS_TIMELINE_TYPE => $collection === 'items' ? match ($leaf) {
@@ -2614,7 +2633,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 default => null,
             } : null,
             self::TABS_TYPE => $collection === 'items' ? match ($leaf) {
-                'label' => '(.//*['.$hasClass('g7pb-tabs__list').']/button)['.$index.']',
+                'label' => '(.//*['.$hasClass('g7pb-tabs__list').']/*[@data-g7pb-tab])['.$index.']',
                 'heading' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/h3',
                 'body' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/*[('.$hasClass('g7pb-tabs__body').') or self::p]',
                 default => null,
@@ -3318,7 +3337,26 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         };
         $markup = self::CATALOG_ICON_MARKUP[$resolved] ?? self::CATALOG_ICON_MARKUP['check'];
 
-        return '<svg class="'.$this->escapeAttribute($className).'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'.$markup.'</svg>';
+        return '<span class="'.$this->escapeAttribute($className).'" data-g7pb-runtime-icon data-g7pb-icon-markup="'.$this->escapeAttribute($markup).'" aria-hidden="true"></span>';
+    }
+
+    private function embedPlaceholder(
+        string $kind,
+        string $src,
+        string $title,
+    ): string {
+        return '<span data-g7pb-embed data-g7pb-embed-kind="'.$this->escapeAttribute($kind).'" data-g7pb-embed-src="'.$this->escapeAttribute($src).'" data-g7pb-embed-title="'.$this->escapeAttribute($title).'"></span>';
+    }
+
+    private function assertTemplateCompatibleMarkup(string $html, string $context): void
+    {
+        $pattern = '/<\s*\/?\s*('.implode('|', array_map(static fn (string $tag): string => preg_quote($tag, '/'), self::TEMPLATE_FORBIDDEN_TAGS)).')\b/i';
+        if (preg_match($pattern, $html, $matches) === 1) {
+            throw new DocumentCompileException(
+                $context.' contains markup removed by the active G7 HtmlContent sanitizer: '.strtolower($matches[1]).'.',
+                'G7PB_TEMPLATE_MARKUP_UNSUPPORTED',
+            );
+        }
     }
 
     private function escape(string $value): string

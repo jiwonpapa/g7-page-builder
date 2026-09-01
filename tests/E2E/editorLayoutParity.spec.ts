@@ -372,6 +372,11 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<numbe
   await page.evaluate(() => new Promise<void>((resolveAnimation) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolveAnimation()));
   }));
+  await expect.poll(
+    () => page.locator(CANVAS_IFRAME).evaluate((element) => (
+      (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0
+    )),
+  ).toBe(width);
   return width;
 }
 
@@ -705,7 +710,12 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
         while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
         if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
       }
-      const style = getComputedStyle(element);
+      const typographyElement = [element, ...Array.from(element.querySelectorAll<HTMLElement>('*'))]
+        .reverse()
+        .find((candidate) => Array.from(candidate.childNodes).some((node) => (
+          node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== ''
+        ))) ?? element;
+      const style = getComputedStyle(typographyElement);
       const context = { lang: element.closest('[lang]')?.getAttribute('lang'), mode: element.ownerDocument.compatMode };
       const descendants = Array.from(element.querySelectorAll('*')).map(child => {
         const childStyle = getComputedStyle(child);
@@ -735,6 +745,18 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
     const failures: Array<Record<string, unknown>> = [];
     const geometry: Array<Record<string, unknown>> = [];
     let checked = 0;
+    // The editor exposes every FAQ answer for direct canvas editing. Expand the
+    // compiled counterpart only for geometry comparison so hidden panels are
+    // measured against the same visible editing state without changing the
+    // published accordion behavior.
+    for (const block of blocks) {
+      for (const item of block.querySelectorAll<HTMLElement>('[data-g7pb-accordion-item]')) {
+        item.dataset.g7pbOpen = 'true';
+        item.querySelector<HTMLElement>('[data-g7pb-accordion-trigger]')?.setAttribute('aria-expanded', 'true');
+        const panel = item.querySelector<HTMLElement>('[data-g7pb-accordion-panel]');
+        if (panel) panel.hidden = false;
+      }
+    }
     const normalize = (text: string | null) => (text ?? '').replace(/\s+/g, ' ').trim();
     const tree = (element: Element, depth = 0): unknown => {
       const s = getComputedStyle(element); const r = element.getBoundingClientRect();
@@ -757,7 +779,12 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
           while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
           if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
         }
-        const style = getComputedStyle(element);
+        const typographyElement = [element, ...Array.from(element.querySelectorAll<HTMLElement>('*'))]
+          .reverse()
+          .find((candidate) => Array.from(candidate.childNodes).some((node) => (
+            node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== ''
+          ))) ?? element;
+        const style = getComputedStyle(typographyElement);
         const actual: Record<string, unknown> = { width: rect.width, height: rect.height, color: style.color,
           fontSize: style.fontSize, fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
         const differences = Object.keys(actual).filter((property) => property in editor && (
@@ -783,7 +810,8 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
         const score = (element: HTMLElement): number => {
           const tag = element.tagName.toLowerCase();
           if (field.field === 'caption' && tag === 'figcaption') return 100;
-          if (field.field.endsWith('.answer') && tag === 'div' && element.parentElement?.tagName === 'DETAILS') return 110;
+          if (field.field.endsWith('.answer') && tag === 'div'
+            && (element.parentElement?.tagName === 'DETAILS' || element.classList.contains('g7pb-faq__answer'))) return 110;
           if (field.tag === 'div') return /__(body|summary|description|quote)/.test(element.className) ? 100 : tag === 'p' ? 80 : tag === 'div' ? 10 : 0;
           return tag === field.tag ? 100 : /^(h[1-4]|figcaption|small|strong|cite)$/.test(tag) ? 60 : 0;
         };

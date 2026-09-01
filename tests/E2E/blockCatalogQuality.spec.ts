@@ -198,6 +198,10 @@ async function expectDeterministicVisualBlock(
         : null,
     };
   });
+  // Element screenshots may perform their own canonical scroll once. Warm that
+  // browser path before the two captures that form the determinism contract.
+  await block.screenshot(VISUAL_CAPTURE_OPTIONS);
+  await waitForVisualBlockStability(block);
   const beforeFirstCapture = await captureState();
   const firstCapture = await block.screenshot(VISUAL_CAPTURE_OPTIONS);
   const afterFirstCapture = await captureState();

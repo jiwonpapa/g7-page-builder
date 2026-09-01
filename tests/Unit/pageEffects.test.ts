@@ -10,7 +10,6 @@ import {
   bootServiceActions,
   bootTabs,
   ensureSliderControls,
-  ensureSiteShellButtons,
   parseCounterText,
 } from '../../resources/js/public/pageEffects';
 
@@ -54,6 +53,64 @@ describe('published page effects runtime', () => {
     expect(document.activeElement).toBe(tabs[0]);
     expect(panels[0].hidden).toBe(false);
     expect(panels[1].hidden).toBe(true);
+  });
+
+  it('hydrates only fixed safe controls after G7 HtmlContent removes interactive tags', () => {
+    document.body.innerHTML = `
+      <span class="g7pb-features__icon" data-g7pb-runtime-icon
+        data-g7pb-icon-markup="&lt;path d=&quot;M20 6 9 17l-5-5&quot;&gt;&lt;/path&gt;"></span>
+      <section data-g7pb-accordion data-g7pb-accordion-behavior="single">
+        <div data-g7pb-accordion-item data-g7pb-open="true"><div role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="true">첫 질문</div><div data-g7pb-accordion-panel>첫 답변</div></div>
+        <div data-g7pb-accordion-item data-g7pb-open="false"><div role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="false">둘째 질문</div><div data-g7pb-accordion-panel>둘째 답변</div></div>
+      </section>
+      <section data-g7pb-tabs data-g7pb-tabs-initial="0"><div role="tablist">
+        <span data-g7pb-runtime-button role="tab">기획</span><span data-g7pb-runtime-button role="tab">운영</span>
+      </div><article role="tabpanel">기획 내용</article><article role="tabpanel">운영 내용</article></section>
+      <span data-g7pb-embed data-g7pb-embed-kind="video-youtube" data-g7pb-embed-src="https://www.youtube-nocookie.com/embed/abcDEF12345?rel=0" data-g7pb-embed-title="소개" data-g7pb-embed-referrer="strict-origin-when-cross-origin" data-g7pb-embed-fullscreen="true"></span>
+      <div class="g7pb-inquiry-form" data-g7pb-inquiry-host data-g7pb-inquiry-form data-g7pb-form-action="/pages/contact/inquiries" data-g7pb-form-kind="quote" data-g7pb-success-message="완료">
+        <span data-g7pb-form-control="input" data-g7pb-control-type="tel" data-g7pb-control-name="phone"></span>
+        <div class="g7pb-inquiry-form__footer"><span data-g7pb-form-control="button" data-g7pb-control-type="submit">상담 요청</span><p data-g7pb-form-status></p></div>
+      </div>
+      <div><span data-g7pb-form-control="input" data-g7pb-control-type="search" data-g7pb-control-marker="archive-search"></span><span data-g7pb-form-control="select" data-g7pb-control-marker="archive-filter">전체 게시판</span></div>
+      <nav data-g7pb-pagination><span data-g7pb-runtime-button data-g7pb-page-prev>이전</span><span data-g7pb-runtime-button data-g7pb-page-next>다음</span></nav>`;
+
+    bootPageEffects(document, window);
+
+    const icon = document.querySelector<SVGElement>('svg.g7pb-features__icon');
+    expect(icon?.querySelector('path')?.getAttribute('d')).toBe('M20 6 9 17l-5-5');
+    expect(document.querySelectorAll('button[role="tab"]')).toHaveLength(2);
+    expect(document.querySelectorAll('[data-g7pb-pagination] button')).toHaveLength(2);
+    expect(document.querySelector('iframe')?.src).toContain('www.youtube-nocookie.com/embed/abcDEF12345');
+    expect(document.querySelector('form[data-g7pb-inquiry-form]')?.getAttribute('action')).toBe('/pages/contact/inquiries');
+    expect(document.querySelector('input[name="phone"]')).not.toBeNull();
+    expect(document.querySelector('input[name="subject"]')).toBeNull();
+    expect(document.querySelector('button[type="submit"]')?.textContent).toBe('상담 요청');
+    expect(document.querySelector('[data-g7pb-archive-search]')).not.toBeNull();
+    expect(document.querySelector('[data-g7pb-archive-filter]')).not.toBeNull();
+    const hydratedForm = document.querySelector('form[data-g7pb-inquiry-form]');
+    bootPageEffects(document, window);
+    expect(document.querySelector('form[data-g7pb-inquiry-form]')).toBe(hydratedForm);
+
+    const items = Array.from(document.querySelectorAll<HTMLElement>('[data-g7pb-accordion-item]'));
+    expect(items[1].querySelector<HTMLElement>('[data-g7pb-accordion-panel]')?.hidden).toBe(true);
+    items[1].querySelector<HTMLElement>('[data-g7pb-accordion-trigger]')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(items[0].dataset.g7pbOpen).toBe('false');
+    expect(items[1].dataset.g7pbOpen).toBe('true');
+  });
+
+  it('does not hydrate arbitrary icon nodes or unapproved embed hosts', () => {
+    document.body.innerHTML = `
+      <span data-g7pb-runtime-icon data-g7pb-icon-markup="&lt;script&gt;alert(1)&lt;/script&gt;"></span>
+      <span data-g7pb-runtime-icon data-g7pb-icon-markup="&lt;path onload=&quot;alert&quot;&gt;&lt;/path&gt;"></span>
+      <span data-g7pb-embed data-g7pb-embed-kind="video-youtube" data-g7pb-embed-src="https://attacker.example/embed/1"></span>`;
+
+    bootPageEffects(document, window);
+
+    expect(document.querySelector('script')).toBeNull();
+    expect(document.querySelector('svg')).toBeNull();
+    expect(document.querySelector('iframe')).toBeNull();
+    expect(document.querySelectorAll('[data-g7pb-runtime-icon]')).toHaveLength(2);
+    expect(document.querySelector('[data-g7pb-embed]')).not.toBeNull();
   });
 
   it('parses localized numeric labels while preserving their prefix and suffix', () => {
@@ -131,7 +188,7 @@ describe('published page effects runtime', () => {
         <span data-g7pb-submenu-toggle aria-expanded="false"><span>⌄</span></span>
       </nav>`;
 
-    ensureSiteShellButtons(document);
+    bootPageEffects(document, window);
 
     expect(document.querySelector('[data-g7pb-menu-toggle]')?.tagName).toBe('BUTTON');
     expect(document.querySelector('[data-g7pb-menu-backdrop]')?.tagName).toBe('BUTTON');

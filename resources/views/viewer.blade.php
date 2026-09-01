@@ -38,7 +38,7 @@
         @endif
     @endif
     <link rel="stylesheet" href="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-public.css') }}">
-    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source=') || str_contains($page->artifact, 'data-g7pb-visibility-audience=') || str_contains($page->artifact, 'data-g7pb-inquiry-form') || str_contains($page->artifact, 'data-g7pb-accordion') || str_contains($page->artifact, 'data-g7pb-tabs'))
+    @if (!empty($siteShell) || !empty($siteHeaderHtml) || str_contains($page->artifact, 'data-g7pb-motion=') || str_contains($page->artifact, 'data-g7pb-slider') || str_contains($page->artifact, 'data-g7pb-data-source=') || str_contains($page->artifact, 'data-g7pb-visibility-audience=') || str_contains($page->artifact, 'data-g7pb-inquiry-form') || str_contains($page->artifact, 'data-g7pb-accordion') || str_contains($page->artifact, 'data-g7pb-tabs') || str_contains($page->artifact, 'data-g7pb-runtime-icon') || str_contains($page->artifact, 'data-g7pb-embed') || str_contains($page->artifact, 'data-g7pb-form-control') || str_contains($page->artifact, 'data-g7pb-runtime-button'))
         <script defer src="{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js') }}"></script>
     @endif
 </head>

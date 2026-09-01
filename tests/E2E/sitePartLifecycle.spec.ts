@@ -120,19 +120,33 @@ async function restoreAndPublish(api: APIRequestContext, kind: SitePartKind, ori
 
 async function dragLibraryBlockBefore(page: Page, component: string, target: Locator): Promise<void> {
   const source = page.locator(`[data-testid="drawer-item:${component}"]:visible`).first();
-  await source.scrollIntoViewIfNeeded();
-  await target.scrollIntoViewIfNeeded();
-  const sourceBox = await source.boundingBox();
-  const targetBox = await target.boundingBox();
-  if (!sourceBox || !targetBox) throw new Error(`Could not resolve Site Part drag geometry for ${component}.`);
+  const inserted = component === 'Announcement'
+    ? page.frameLocator('iframe').first().locator('.g7pb-site-announcement')
+    : null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await expect(source).toBeVisible();
+    await expect(target).toBeVisible();
+    await source.scrollIntoViewIfNeeded();
+    await target.scrollIntoViewIfNeeded();
+    const sourceBox = await source.boundingBox();
+    const targetBox = await target.boundingBox();
+    if (!sourceBox || !targetBox) throw new Error(`Could not resolve Site Part drag geometry for ${component}.`);
 
-  await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(120);
-  await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 12, sourceBox.y + sourceBox.height / 2, { steps: 4 });
-  await page.mouse.move(targetBox.x + 24, targetBox.y + 4, { steps: 24 });
-  await page.waitForTimeout(180);
-  await page.mouse.up();
+    await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(180);
+    await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 12, sourceBox.y + sourceBox.height / 2, { steps: 6 });
+    await page.mouse.move(targetBox.x + 24, targetBox.y + 4, { steps: 36 });
+    await page.waitForTimeout(300);
+    await page.mouse.up();
+    if (!inserted) return;
+    try {
+      await inserted.waitFor({ state: 'visible', timeout: attempt === 0 ? 4_000 : 10_000 });
+      return;
+    } catch (error) {
+      if (attempt === 1) throw error;
+    }
+  }
 }
 
 async function globalPublicPageUrl(api: APIRequestContext, locale: string): Promise<string | null> {
@@ -216,6 +230,7 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
   }
   await editor.getByTestId('page-builder-site-part-set-presets').getByRole('button', { name: /미니멀/ }).click();
   await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(0);
+  await expect(editor.getByRole('button', { name: '실행 취소', exact: true })).toBeEnabled();
   await page.keyboard.press('ControlOrMeta+z');
   await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(1);
   await editor.getByRole('button', { name: '다시 실행', exact: true }).click();
@@ -249,6 +264,7 @@ for (const kind of ['header', 'footer'] as const) {
       await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
       await apply(kind === 'header' ? /미니멀/ : /컴팩트/);
       await expect(distinguishingBlock).toHaveCount(0);
+      await expect(editor.getByRole('button', { name: '실행 취소', exact: true })).toBeEnabled();
       await page.keyboard.press('ControlOrMeta+z');
       await expect(distinguishingBlock).toHaveCount(1);
       await editor.getByRole('button', { name: '다시 실행', exact: true }).click();

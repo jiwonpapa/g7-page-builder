@@ -10,7 +10,7 @@ note() {
   printf 'quality-scoped: %s\n' "$*"
 }
 
-[[ $# -ge 2 ]] || fail 'usage: quality-scoped.sh submission BASE_SHA | integration BASE_SHA SUBMITTED_SHA TASK AREAS'
+[[ $# -ge 2 ]] || fail 'usage: quality-scoped.sh submission BASE_SHA | integration|verification BASE_SHA HEAD_SHA TASK AREAS'
 
 mode="$1"
 base_sha="$2"
@@ -38,11 +38,15 @@ ts_sources=()
 ts_tests=()
 css_files=()
 harness_tests=()
+shell_scripts=()
+node_scripts=()
 needs_evidence=0
 needs_store=0
 needs_version=0
 needs_phase7_quality=0
 phase7_quality_test_changed=0
+needs_coordination_contract=0
+needs_release_contract=0
 for path in "${changed[@]}"; do
   case "$path" in
     tests/UnitPhp/*.php|tests/Integration/*.php|tests/Integration/**/*.php)
@@ -57,6 +61,10 @@ for path in "${changed[@]}"; do
       css_files+=("$path") ;;
   esac
   case "$path" in
+    *.sh) shell_scripts+=("$path") ;;
+    *.mjs) node_scripts+=("$path") ;;
+  esac
+  case "$path" in
     tests/Harness/*.test.sh) harness_tests+=("$path") ;;
     resources/block-packs/*|docs/productization/inventory.json|tests/Fixtures/block-quality-states.json)
       needs_evidence=1 ;;
@@ -68,6 +76,13 @@ for path in "${changed[@]}"; do
       needs_phase7_quality=1 ;;
     tests/Unit/phase7PresetQuality.test.ts)
       phase7_quality_test_changed=1 ;;
+  esac
+  case "$path" in
+    AGENTS.md|Makefile|scripts/coord-harness.sh|scripts/quality-scoped.sh|tests/Harness/verification-policy.test.sh)
+      needs_coordination_contract=1 ;;
+    scripts/release-package.sh|scripts/deploy-staging.sh|scripts/check-block-product-quality.mjs|\
+    scripts/check-block-quality-evidence.mjs|scripts/check-site-shell-product-quality.mjs)
+      needs_release_contract=1 ;;
   esac
 done
 
@@ -134,6 +149,29 @@ run_harness_submission() {
   done
 }
 
+run_script_syntax() {
+  local file
+  if [[ "${#shell_scripts[@]}" -gt 0 ]]; then
+    for file in "${shell_scripts[@]}"; do
+      bash -n "$file"
+    done
+  fi
+  if [[ "${#node_scripts[@]}" -gt 0 ]]; then
+    for file in "${node_scripts[@]}"; do
+      node --check "$file"
+    done
+  fi
+}
+
+run_coordination_contract() {
+  bash tests/Harness/coord-harness.test.sh
+}
+
+run_release_contract() {
+  bash tests/Harness/block-product-quality-contract.test.sh
+  bash tests/Harness/block-quality-gate-wiring.test.sh
+}
+
 compose=(docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.yaml)
 module_dir=/var/www/g7/modules/jiwonpapa-page_builder
 
@@ -181,6 +219,9 @@ run_phase7_quality() {
 case "$mode" in
   submission)
     gate diff-check run_diff_check
+    if [[ "${#shell_scripts[@]}" -gt 0 || "${#node_scripts[@]}" -gt 0 ]]; then
+      gate script-syntax run_script_syntax
+    fi
     if [[ "${#php_sources[@]}" -gt 0 || "${#php_tests[@]}" -gt 0 ]]; then
       gate php-focused run_php_submission
     fi
@@ -188,6 +229,8 @@ case "$mode" in
       gate frontend-focused run_frontend_submission
     fi
     [[ "${#harness_tests[@]}" == 0 ]] || gate harness-focused run_harness_submission
+    [[ "$needs_coordination_contract" == 0 ]] || gate coordination-contract run_coordination_contract
+    [[ "$needs_release_contract" == 0 ]] || gate release-contract run_release_contract
     [[ "$needs_evidence" == 0 ]] || gate evidence run_evidence_check
     [[ "$needs_store" == 0 ]] || gate store run_store_check
     [[ "$needs_version" == 0 ]] || gate version run_version_check
@@ -199,11 +242,35 @@ case "$mode" in
       || fail 'integration requires submitted SHA and integration task'
     [[ "$(git rev-parse "$submitted_sha^{commit}")" == "$submitted_sha" ]] \
       || fail 'submitted SHA is invalid'
-    if [[ "$areas" == *migration* || "$areas" == *shared-contract* || "${#php_sources[@]}" -gt 0 ]]; then
+    if [[ "$areas" == *migration* || "$areas" == *version* || "${#php_sources[@]}" -gt 0 ]]; then
       gate runtime-sync run_runtime_sync
       gate g7-phpstan run_g7_phpstan
       gate g7-focused-tests run_g7_tests
     fi
+    if [[ "${#shell_scripts[@]}" -gt 0 || "${#node_scripts[@]}" -gt 0 ]]; then
+      gate script-syntax run_script_syntax
+    fi
+    [[ "${#harness_tests[@]}" == 0 ]] || gate harness-focused run_harness_submission
+    [[ "$needs_coordination_contract" == 0 ]] || gate coordination-contract run_coordination_contract
+    [[ "$needs_release_contract" == 0 ]] || gate release-contract run_release_contract
+    [[ "$needs_evidence" == 0 ]] || gate evidence run_evidence_check
+    [[ "$needs_store" == 0 ]] || gate store run_store_check
+    [[ "$needs_version" == 0 ]] || gate version run_version_check
+    ;;
+  verification)
+    [[ -n "$submitted_sha" && -n "$integration_task" ]] \
+      || fail 'verification requires head SHA and integration task'
+    [[ "$(git rev-parse "$submitted_sha^{commit}")" == "$submitted_sha" ]] \
+      || fail 'verification head SHA is invalid'
+    [[ "$submitted_sha" == "$(git rev-parse HEAD)" ]] \
+      || fail 'verification head SHA does not match the current checkout'
+    gate diff-check run_diff_check
+    if [[ "${#shell_scripts[@]}" -gt 0 || "${#node_scripts[@]}" -gt 0 ]]; then
+      gate script-syntax run_script_syntax
+    fi
+    [[ "${#harness_tests[@]}" == 0 ]] || gate harness-focused run_harness_submission
+    [[ "$needs_coordination_contract" == 0 ]] || gate coordination-contract run_coordination_contract
+    [[ "$needs_release_contract" == 0 ]] || gate release-contract run_release_contract
     [[ "$needs_evidence" == 0 ]] || gate evidence run_evidence_check
     [[ "$needs_store" == 0 ]] || gate store run_store_check
     [[ "$needs_version" == 0 ]] || gate version run_version_check

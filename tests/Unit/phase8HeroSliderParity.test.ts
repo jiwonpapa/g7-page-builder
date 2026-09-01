@@ -10,5 +10,6 @@ describe('hero slider editor parity', () => {
     expect(catalogSource).toContain('style={{ order: index === activeIndex ? -1 : index }}');
     expect(catalogSource).not.toContain('hidden={activeIndex !== index}');
     expect(lifecycleSource).toContain('await expect(visibleSliderInlineFields).toHaveCount(8);');
+    expect(lifecycleSource).toContain('await expect(slider.locator(\'[data-slide-index="0"]\')).toBeVisible();');
   });
 });

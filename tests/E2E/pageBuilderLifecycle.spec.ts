@@ -1464,7 +1464,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       await slider.getByTestId('page-builder-slider-next').click();
       await expect(slider.getByTestId('page-builder-slider-slide-1')).toHaveAttribute('aria-pressed', 'true');
       await expect(slider.locator('[data-slide-index="1"]')).toBeVisible();
-      await expect(slider.locator('[data-slide-index="0"]')).toBeHidden();
+      await expect(slider.locator('[data-slide-index="0"]')).toBeVisible();
     }
     await addBlockFromGallery(page, 'cta');
     await revealBlockLibrary(page);

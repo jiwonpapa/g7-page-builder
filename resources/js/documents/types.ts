@@ -817,6 +817,26 @@ export interface RouteCatalogResource {
   routes: RouteCatalogEntry[];
 }
 
+export interface SectionPatternResource {
+  schema_version: 'g7-page-builder/section-pattern/v1';
+  pattern_id: string;
+  title: string;
+  category: string;
+  source_document_schema: 'g7-page-builder/v2';
+  section: PageBuilderBlock;
+  required_blocks: string[];
+  asset_references: string[];
+  preview: { kind: 'section-summary'; block_count: number };
+  created_at: string;
+  updated_at: string;
+  compatible: boolean;
+  compatibility_error: string | null;
+}
+
+export interface SectionPatternListResource {
+  items: SectionPatternResource[];
+}
+
 export interface DocumentResource {
   document: PageBuilderDocument;
   title: string;

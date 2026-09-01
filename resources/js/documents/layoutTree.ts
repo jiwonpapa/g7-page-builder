@@ -81,6 +81,15 @@ export function cloneLayoutNode<T extends LayoutDocument>(document: T, id: strin
   return accept(next);
 }
 
+export function cloneLayoutSubtree(node: PageBuilderBlock, newId: () => string): PageBuilderBlock {
+  const document = { blocks: [structuredClone(node)] };
+  validateLayoutDocument(document);
+  for (const { node: child } of locations(document)) child.instance_id = newId();
+  validateLayoutDocument(document);
+
+  return document.blocks[0]!;
+}
+
 export function deleteLayoutNode<T extends LayoutDocument>(document: T, id: string, confirmed = false): LayoutChange<T> {
   const next = copy(document);
   const source = requireLocation(next, id);

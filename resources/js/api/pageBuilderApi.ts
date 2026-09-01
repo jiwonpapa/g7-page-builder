@@ -22,6 +22,8 @@ import type {
   RevisionListResource,
   RevisionResource,
   RouteCatalogResource,
+  SectionPatternListResource,
+  SectionPatternResource,
 } from '../documents/types';
 import type {
   BlockCatalogResource,
@@ -235,6 +237,28 @@ export class PageBuilderApiClient {
 
   async getRouteCatalog(): Promise<RouteCatalogResource> {
     return this.request<RouteCatalogResource>('/routes/catalog');
+  }
+
+  async listSectionPatterns(): Promise<SectionPatternListResource> {
+    return this.request<SectionPatternListResource>('/section-patterns');
+  }
+
+  async createSectionPattern(input: {
+    title: string;
+    category: string;
+    source_document_schema: 'g7-page-builder/v2';
+    section: PageBuilderDocument['blocks'][number];
+  }): Promise<SectionPatternResource> {
+    return this.request<SectionPatternResource>('/section-patterns', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteSectionPattern(patternId: string): Promise<{ pattern_id: string }> {
+    return this.request<{ pattern_id: string }>(`/section-patterns/${encodeURIComponent(patternId)}`, {
+      method: 'DELETE',
+    });
   }
 
   async getRevision(documentId: string, revision: number): Promise<RevisionResource> {

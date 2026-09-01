@@ -559,10 +559,10 @@
     {
       "catalog_id": "block:location.map-directions-01@1",
       "source_digests": {
-        "content": "37a1445554953cf7dc7aef184d6dcb2b4221ec0a4f0d2c0ad7949a5c8e099175",
+        "content": "31583f67aa8f686de89fc60ee4acb2d738a51d2e45ee2e8d03bc0444d7ff5e63",
         "rights": "a3f778854d05c16ae4916d14d81222056674f1f618db24a30000bab125ba6d02",
-        "render": "1d20fb0af5b533d8faeab94ae08abf8776464037a5160e5f651c8dbea14caee0",
-        "editing": "4d929e69281bfe37f0ef8fc2049c3c9fe0a16c0f63929b31b6208e6018f9c4c7"
+        "render": "ce169d34c48c7c9df281dcfe42f093d48dc3fcc7d9913eb1d1d2c2e8256510c0",
+        "editing": "dbc56828b3b18f377bbbd30d2fd43d78f302c996cf06d6a550345262d9a8aee8"
       },
       "reviews": {
         "content": {
@@ -734,10 +734,10 @@
     {
       "catalog_id": "block:media.video-embed-01@1",
       "source_digests": {
-        "content": "02c820f2af80e0a0fcbc1261daf465ba70c10c0ff6e6841cdcb31fd61e72b9d3",
+        "content": "12e1cc3012e6577045fe46c900cb17b29180c4ae8e5e5e9feae672a1d11014dc",
         "rights": "73ab20a9e2f82da39829ac99bf497879b942511d598530140ca89aa717aefa61",
-        "render": "1d79e2d7ccdf109add067f704a2f254d0dac1ed50ab7c2d49dbae908e1f645a8",
-        "editing": "8875ffcfc33be531c90c0f76e49cca8980d5155982064bc9006adcfdbb099a6f"
+        "render": "4ac30cb9aa3a334abe2185dedf22acbd193104df2a98964e05175400250a88fc",
+        "editing": "b85a97ff85c316d5479c0740a8634972fc2471a483b95dd7daadd8bb57a566c7"
       },
       "reviews": {
         "content": {
@@ -809,10 +809,10 @@
     {
       "catalog_id": "block:content.event-schedule-01@1",
       "source_digests": {
-        "content": "7ba2358d832ab4561b4ba97d3e8ac1e7ee3650e4a13f36ef44577c6c53c09fe6",
+        "content": "05be9a71f7bcaaa8585ad3cdc65ff420884edcce18352e37247775f46844327c",
         "rights": "8b4e0e711c90ccdf2686ef03cc595fa458425e3e4da1bb7656d3066dd9e64edb",
-        "render": "68f5be4507f2446d6c46fc09527085dfe6fa05471e0abc6114a1d1f6bde00ef0",
-        "editing": "c322135f799e7524ebc08190a8dc178f585d9f959bea1dfa59cdcef4275f849c"
+        "render": "50320e7e3fd9536cc41b65862ae195e9255133c50512c3ffcf4b08948aa4a164",
+        "editing": "8e722e17e19433ad0114a089883b656618021da6336b957f92af9d1866a6f033"
       },
       "reviews": {
         "content": {
@@ -834,10 +834,10 @@
     {
       "catalog_id": "block:content.download-resources-01@1",
       "source_digests": {
-        "content": "c48c9a96edc7b1a67dc7f59d3fea1ab26972547957cc969df71938a1fa8f4ee6",
-        "rights": "e15c2e4cc632eb60199e0899fa2365904037be064bdd1ab375c1a68c058b9e2b",
-        "render": "65af79bd93cb43b2985fb6211a9991dd1cdfac0bd9ae79003fa8ae22f6e612de",
-        "editing": "d241ca8044678355e5b4686256a6cd300612a2c0d1851fbb43e86de2a54a7375"
+        "content": "9125ff70ca9b3ad8087c27c731137ad00b3cf66c12dbca2902909ffb9535aa98",
+        "rights": "a25098c66de95b021810086bcc9565d0c31dcb6046f3c5a23209dfd13f0cb54e",
+        "render": "597abe2b5d0a46fbc4218d9c2f23bb636d5518a77c3754d47e1b43052d493fcc",
+        "editing": "0ff9cf958f8526593ed23d946eb91d7f89b38ad6ccf709d4ca43f89eac95531e"
       },
       "reviews": {
         "content": {
@@ -1884,10 +1884,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:map.office",
       "source_digests": {
-        "content": "1ed5f3e5455fadd7c0c75280092c2b3638cb97ac8a0a11758e0de9311ebd4e99",
+        "content": "a6aa7775f3f3e618d7b7dd5aa89fb0d75e55fafb124c2f0839006021f9f2ead5",
         "rights": "816021afd3414f171f4a287635e636fc6cc7886bcc506c9454d88b3c35a59b92",
-        "render": "9d3f3ead466afa3efb57a7c7d582e2267fa650e67718518e2a45274be25f13fe",
-        "editing": "04c83a51ed3d6943faf0eff3bdb5e2d7a5a3a7d19b0158a1bb9ecd44af14f78f"
+        "render": "66b9e37c2cc4ff899669e1a4882b11385a154d93bb1b57e7c0afa19f8f607bfe",
+        "editing": "17e148371680bbed35bee02db2ee767c630f405d023dac7e2ed46aa3c50d5c9a"
       },
       "reviews": {
         "content": {
@@ -2009,10 +2009,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:video.product-tour",
       "source_digests": {
-        "content": "bfb8dd944a8744dd7bc3b9571035947207bf3b47dcc54c9f34d8263b56d7512a",
+        "content": "647ad8ef799ce62a78babc90976bfdfc2b9bbe70525bc7f1a4b023c675aa3499",
         "rights": "44a50b008227131d37c42ba5b19a327d8c49425d1f881059771aea0ad09c8dde",
-        "render": "76a682b9333dfb1e4b73ca4de2d49680f5fee77882be4d1db2fbb496764881e7",
-        "editing": "7c1b10aaacd6bb97d16ed7d7f63aab6c84701b83267e7b8f7cc211cae98224ab"
+        "render": "5aea7245e8c99edb8993481f045c7d3c5cdb227bc39f29c9e8006d4e7ccd106c",
+        "editing": "590070abd866008cbbe92b5acd9d87a1137c2562d23b5447517716013fc46039"
       },
       "reviews": {
         "content": {
@@ -2084,10 +2084,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:events.upcoming",
       "source_digests": {
-        "content": "258668ca7b0c99a732eef96dc19b9854338d02128a0a69c423965ccfcb29e54c",
+        "content": "be394a8cf38bb9c5a5d4e75a59ed1e085c2a55da037aa7d67508c131aa26f81c",
         "rights": "f8f9c08892b221f3a267d87f167795cd1ac0f02c96fbf4eceaef419243a11b2d",
-        "render": "a620a43114c687a469c139a2c1208c438037d0a0e0690223926a1084ada1ced1",
-        "editing": "e3bcb200681e2794dd0fac8a0366048d4da912477b84772fdf4c9b0621e5db22"
+        "render": "4bebbe9472d3ef49fc44873063950588cbef8e1821d4f93242f9760dd9fc1e58",
+        "editing": "5423781880a3efd16a28f938c8add372ede3cb89d884aeb1a452146b86b0ce2f"
       },
       "reviews": {
         "content": {
@@ -2109,10 +2109,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:downloads.resource-center",
       "source_digests": {
-        "content": "1dd09617cc8f351290f284a3cb4b6b71a93e8187dc7a5428c434ba82aaa3b529",
-        "rights": "826216cfd749af6e3f0a3e948746ee9c6574e2f4d4d766babb643107b312a4e3",
-        "render": "9df3fb3089cf42d94897f5aaee5f51554f4171b18d94223d5d5ba26e1c1467e6",
-        "editing": "b39ab365a91ce7b37b590ebbb173fe4659d6093b540bd06a1d0b2425f85f991b"
+        "content": "b51cd51e1d108382369714a127202783ec545577b9a3a08b8bcf1deb0009177a",
+        "rights": "8c0f3c1f257fcb5aaba4affde4dafa34ad1b2f16061d960334804624b4f32831",
+        "render": "a0fa0bc618cbdc20ae8ebddfd9932c2471d62a6b53f29d9158f4641c49b580c2",
+        "editing": "77ad5867097017db672f145c75336d6127a1f935c45d490cecc3d78aa00cddcd"
       },
       "reviews": {
         "content": {

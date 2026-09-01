@@ -41,6 +41,8 @@ harness_tests=()
 needs_evidence=0
 needs_store=0
 needs_version=0
+needs_phase7_quality=0
+phase7_quality_test_changed=0
 for path in "${changed[@]}"; do
   case "$path" in
     tests/UnitPhp/*.php|tests/Integration/*.php|tests/Integration/**/*.php)
@@ -62,6 +64,10 @@ for path in "${changed[@]}"; do
       needs_store=1 ;;
     module.json|package.json|package-lock.json|CHANGELOG.md)
       needs_version=1 ;;
+    resources/block-packs/builtin-core/manifest.json|docs/productization/phase-7-ledger.json)
+      needs_phase7_quality=1 ;;
+    tests/Unit/phase7PresetQuality.test.ts)
+      phase7_quality_test_changed=1 ;;
   esac
 done
 
@@ -165,6 +171,13 @@ run_version_check() {
     npm run check:version
 }
 
+run_phase7_quality() {
+  local major
+  major="$(node -p 'process.versions.node.split(".")[0]')"
+  [[ "$major" == 24 ]] || fail "Node 24 required; current=$(node --version)"
+  npx vitest run tests/Unit/phase7PresetQuality.test.ts
+}
+
 case "$mode" in
   submission)
     gate diff-check run_diff_check
@@ -178,6 +191,8 @@ case "$mode" in
     [[ "$needs_evidence" == 0 ]] || gate evidence run_evidence_check
     [[ "$needs_store" == 0 ]] || gate store run_store_check
     [[ "$needs_version" == 0 ]] || gate version run_version_check
+    [[ "$needs_phase7_quality" == 0 || "$phase7_quality_test_changed" == 1 ]] \
+      || gate phase7-quality run_phase7_quality
     ;;
   integration)
     [[ -n "$submitted_sha" && -n "$integration_task" ]] \

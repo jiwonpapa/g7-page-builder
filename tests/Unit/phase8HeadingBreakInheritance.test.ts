@@ -7,8 +7,9 @@ const editorCss = readFileSync(resolve('resources/css/page-builder-editor.css'),
 describe('Phase 8 heading wrapping parity', () => {
   it('keeps the public word-break policy inside matching editable heading descendants', () => {
     expect(editorCss).toContain('.g7pb-preview-hero [data-g7pb-heading-level="1"] *');
+    expect(editorCss).toContain('.g7pb-preview-block[data-block-type="hero"] .g7pb-preview-hero-split [data-g7pb-heading-level="1"] *');
     expect(editorCss).toContain('.g7pb-preview-hero-slider [data-g7pb-heading-level="2"] *');
-    expect(editorCss).not.toContain('.g7pb-preview-hero-split [data-g7pb-heading-level="1"] *');
+    expect(editorCss).not.toMatch(/^\.g7pb-preview-hero-split \[data-g7pb-heading-level="1"\] \*/m);
     expect(editorCss).toMatch(/heading-level="2"\]\s+\*\s*\{[^}]*overflow-wrap:\s*anywhere\s*!important;[^}]*word-break:\s*keep-all\s*!important/);
   });
 });

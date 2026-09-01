@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import cases from '../Fixtures/layout-policy-cases.json';
 import manifest from '../../resources/block-packs/builtin-core/manifest.json';
 import { compactJsonBytes, layoutAllowsChild, layoutPolicy, LayoutPolicyError, validateLayoutDocument } from '../../resources/js/documents/layoutPolicy';
+import type { LayoutDocument } from '../../resources/js/documents/layoutPolicy';
 import { cloneLayoutNode, deleteLayoutNode, findLayoutNode, moveLayoutNode, resizeLayoutColumns } from '../../resources/js/documents/layoutTree';
 import type { PageBuilderBlock } from '../../resources/js/documents/types';
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const fresh = () => structuredClone(cases.valid);
+type FixtureDocument = typeof cases.valid & LayoutDocument;
+const fresh = (): FixtureDocument => structuredClone(cases.valid) as FixtureDocument;
 const leaf = (n: number): PageBuilderBlock => ({ instance_id: id(n), type: 'content.heading-01', block_version: 1, props: { heading: '제목' } });
 function mutate(value: unknown, path: Array<string | number>, replacement: unknown): void {
   const [key, ...rest] = path;

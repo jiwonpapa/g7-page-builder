@@ -127,6 +127,9 @@
         "visibility": {
           "$ref": "#/$defs/visibility"
         },
+        "responsive": {
+          "$ref": "#/$defs/blockResponsive"
+        },
         "slots": {
           "type": "object",
           "propertyNames": {
@@ -646,6 +649,70 @@
         "weight": { "enum": ["regular", "medium", "semibold", "bold"] },
         "align": { "enum": ["left", "center", "right"] },
         "tone": { "enum": ["default", "muted", "accent", "contrast", "custom1", "custom2", "custom3", "custom4"] }
+      }
+    },
+    "responsiveAppearanceOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "surface": { "enum": ["default", "soft", "contrast"] },
+        "spacing": { "enum": ["compact", "normal", "spacious"] },
+        "textScale": { "enum": ["compact", "balanced", "large"] },
+        "textAlign": { "enum": ["left", "center", "right"] },
+        "containerWidth": { "enum": ["inherit", "narrow", "standard", "wide", "full"] },
+        "containerAlign": { "enum": ["left", "center", "right", "stretch"] },
+        "minHeight": { "enum": ["auto", "compact", "medium", "large", "viewport"] },
+        "verticalAlign": { "enum": ["start", "center", "end"] }
+      }
+    },
+    "responsiveLayoutTablet": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "width": { "enum": ["standard", "wide", "full"] },
+        "spacing": { "enum": ["compact", "normal", "spacious"] },
+        "columns": { "enum": [1, 2] },
+        "gap": { "enum": ["none", "compact", "normal", "spacious"] }
+      }
+    },
+    "responsiveLayoutMobile": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "width": { "enum": ["standard", "wide", "full"] },
+        "spacing": { "enum": ["compact", "normal", "spacious"] },
+        "columns": { "const": 1 },
+        "gap": { "enum": ["none", "compact", "normal", "spacious"] }
+      }
+    },
+    "responsiveTabletOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "appearance": { "$ref": "#/$defs/responsiveAppearanceOverride" },
+        "layout": { "$ref": "#/$defs/responsiveLayoutTablet" }
+      }
+    },
+    "responsiveMobileOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "appearance": { "$ref": "#/$defs/responsiveAppearanceOverride" },
+        "layout": { "$ref": "#/$defs/responsiveLayoutMobile" }
+      }
+    },
+    "blockResponsive": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "tablet": { "$ref": "#/$defs/responsiveTabletOverride" },
+        "mobile": { "$ref": "#/$defs/responsiveMobileOverride" }
       }
     },
     "motion": {

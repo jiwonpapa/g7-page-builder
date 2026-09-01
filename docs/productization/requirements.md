@@ -2,7 +2,7 @@
 
 상태: 1차 시험 명세. 아래 ‘구현 배치’는 예정이며 현재 통과 표시가 아닙니다. 실제 실행 결과는 phase-1-evidence.md와 각 차수 종료 기록에 남깁니다.
 
-3-B는 LAY-01의 Section→2열 Columns→Heading/RichText 성공 경로와 COMP-01의 v1 유지 기반을 연결했습니다. 3-C는 금지 구조·상한·Puck 변환 원자성·v1 메타데이터 복원·마지막 정상본 부정 시험을 [3-C 실행 기록](phase-3-boundaries.md)에 연결합니다. 4-A는 [구조 조작 실행 기록](phase-4-structure.md)에서 Stack·1/2/3열·허용 leaf·열 축소/삭제 확인을 canonical/Puck/PHP에 연결합니다. LAY-04의 실제 포인터와 한 Undo 단위, 반응형·전환·저장 경쟁은 4-B·4-C 완료 조건으로 남습니다.
+3-B는 LAY-01의 Section→2열 Columns→Heading/RichText 성공 경로와 COMP-01의 v1 유지 기반을 연결했습니다. 3-C는 금지 구조·상한·Puck 변환 원자성·v1 메타데이터 복원·마지막 정상본 부정 시험을 [3-C 실행 기록](phase-3-boundaries.md)에 연결합니다. 4-A는 [구조 조작 실행 기록](phase-4-structure.md)에서 Stack·1/2/3열·허용 leaf·열 축소/삭제 확인을 canonical/Puck/PHP에 연결합니다. 4-B는 [반응형 실행 기록](phase-4-responsive.md)에서 공통값과 태블릿·모바일 override, 초기화 상속, preview/PHP class 계약을 연결합니다. LAY-04의 실제 포인터 한 Undo 단위와 v1→v2 전환·저장 경쟁은 4-C, 최종 화면 회귀는 8-A 완료 조건으로 남습니다.
 
 | ID | 요구사항·합격 사례 | 구현 배치 | 시험 층/기존 재사용 지점 |
 |---|---|---|---|

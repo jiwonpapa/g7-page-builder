@@ -120,6 +120,33 @@ describe('PageBuilderDocument v1 schema', () => {
     expect(validate(invalidColumns)).toBe(false);
   });
 
+  it('accepts finite tablet/mobile overrides and rejects content or arbitrary breakpoints', () => {
+    const responsive = structuredClone(layoutFixture) as unknown as {
+      blocks: Array<{ responsive?: Record<string, unknown>; slots: { content: Array<{ responsive?: Record<string, unknown> }> } }>;
+    };
+    responsive.blocks[0]!.responsive = {
+      tablet: { appearance: { surface: 'contrast', textAlign: 'center' }, layout: { width: 'wide' } },
+      mobile: { appearance: { spacing: 'compact' }, layout: { width: 'standard' } },
+    };
+    responsive.blocks[0]!.slots.content[0]!.responsive = {
+      tablet: { layout: { columns: 2, gap: 'normal' } },
+      mobile: { layout: { columns: 1, gap: 'compact' } },
+    };
+    expect(validate(responsive), JSON.stringify(validate.errors)).toBe(true);
+
+    const contentOverride = structuredClone(responsive);
+    contentOverride.blocks[0]!.responsive = { mobile: { appearance: { heading: '문서 내용 변경 금지' } } };
+    expect(validate(contentOverride)).toBe(false);
+
+    const arbitraryBreakpoint = structuredClone(responsive);
+    arbitraryBreakpoint.blocks[0]!.responsive = { desktop: { appearance: { surface: 'soft' } } };
+    expect(validate(arbitraryBreakpoint)).toBe(false);
+
+    const invalidMobileColumns = structuredClone(responsive);
+    invalidMobileColumns.blocks[0]!.slots.content[0]!.responsive = { mobile: { layout: { columns: 2 } } };
+    expect(validate(invalidMobileColumns)).toBe(false);
+  });
+
   it('accepts all eight production-library blocks and rejects unsafe structural values', () => {
     const productionDocument = {
       ...structuredClone(fixture),

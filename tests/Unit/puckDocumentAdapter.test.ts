@@ -84,6 +84,36 @@ describe('isolated canonical document envelope adapter', () => {
     expect(puckToCanonical(session.data, session.context)).toEqual(document);
   });
 
+  it('round-trips nested responsive overrides and removes a reset override from canonical storage', () => {
+    const document = structuredClone(layoutFixture) as PageBuilderDocument;
+    const section = document.blocks[0]!;
+    const columns = section.slots!.content[0]!;
+    const heading = columns.slots!.column1[0]!;
+    section.responsive = { tablet: { layout: { width: 'wide' } } };
+    columns.responsive = {
+      tablet: { layout: { columns: 2, gap: 'spacious' } },
+      mobile: { layout: { columns: 1, gap: 'compact' } },
+    };
+    heading.responsive = {
+      tablet: { appearance: { surface: 'contrast' } },
+      mobile: { appearance: { spacing: 'compact' } },
+    };
+
+    const session = canonicalToPuck(document);
+    const editorSection = session.data.content[0]!;
+    const editorColumns = ((editorSection.props as Record<string, unknown>).content as PuckEditorData['content'])[0]!;
+    const editorHeading = ((editorColumns.props as Record<string, unknown>).column1 as PuckEditorData['content'])[0]!;
+    expect((editorSection.props as Record<string, unknown>).responsiveOverrides).toEqual(section.responsive);
+    expect((editorColumns.props as Record<string, unknown>).responsiveOverrides).toEqual(columns.responsive);
+    expect((editorHeading.props as Record<string, unknown>).responsiveOverrides).toEqual(heading.responsive);
+    expect(puckToCanonical(session.data, session.context)).toEqual(document);
+
+    delete (editorHeading.props as Record<string, unknown>).responsiveOverrides;
+    const reset = puckToCanonical(session.data, session.context);
+    expect(reset.blocks[0]!.slots!.content[0]!.slots!.column1[0]!).not.toHaveProperty('responsive');
+    expect(reset.blocks[0]!.slots!.content[0]!.responsive).toEqual(columns.responsive);
+  });
+
   it('preserves existing SEO metadata across an ordinary content edit without sharing references', () => {
     const document = structuredClone(documentFixture);
     document.seo = { title: '검색 제목', description: '검색 설명', og_image_url: '/storage/share.webp', robots: 'noindex' };

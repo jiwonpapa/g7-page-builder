@@ -91,6 +91,34 @@ export interface ElementAppearance {
 
 export type ElementAppearanceMap = Record<string, ElementAppearance>;
 
+export interface ResponsiveAppearanceOverride {
+  surface?: BlockAppearance['surface'];
+  spacing?: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  containerWidth?: NonNullable<BlockAppearance['containerWidth']>;
+  containerAlign?: NonNullable<BlockAppearance['containerAlign']>;
+  minHeight?: NonNullable<BlockAppearance['minHeight']>;
+  verticalAlign?: NonNullable<BlockAppearance['verticalAlign']>;
+}
+
+export interface ResponsiveLayoutOverride {
+  width?: LayoutSectionBlockProps['width'];
+  spacing?: LayoutSectionBlockProps['spacing'];
+  columns?: 1 | 2;
+  gap?: LayoutColumnsBlockProps['gap'];
+}
+
+export interface BlockResponsiveOverride {
+  appearance?: ResponsiveAppearanceOverride;
+  layout?: ResponsiveLayoutOverride;
+}
+
+export interface BlockResponsiveOverrides {
+  tablet?: BlockResponsiveOverride;
+  mobile?: BlockResponsiveOverride;
+}
+
 export type BlockMotionPreset = 'none' | 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
 
 export interface BlockMotion {
@@ -727,6 +755,7 @@ export interface PageBuilderBlock<TProps extends Record<string, unknown> = Recor
   props: TProps;
   motion?: BlockMotion;
   visibility?: BlockVisibility;
+  responsive?: BlockResponsiveOverrides;
   slots?: Record<string, PageBuilderBlock[]>;
 }
 

@@ -7,10 +7,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const budgets = [
   { path: 'resources/css/page-builder-core.css', raw: 18_000 },
   { path: 'resources/css/page-builder-manager.css', raw: 20_000 },
-  { path: 'resources/css/page-builder-editor.css', raw: 160_000 },
+  { path: 'resources/css/page-builder-editor.css', raw: 180_000 },
   { path: 'resources/css/page-builder-editor-wysiwyg.css', raw: 2_000 },
   { path: 'resources/css/page-builder-site-part.css', raw: 1_000 },
-  { path: 'resources/css/page-builder-public.css', raw: 90_000 },
+  { path: 'resources/css/page-builder-public.css', raw: 105_000 },
   { path: 'resources/css/page-builder-site-shell.css', raw: 9_000 },
   { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
   { path: 'dist/css/page-builder-editor.css', gzip: 45_000 },

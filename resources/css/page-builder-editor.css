@@ -2554,3 +2554,93 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-preview-image-carousel__controls > span > button { width: .6rem; height: .6rem; padding: 0; border: 0; border-radius: 999px; color: inherit; background: currentColor; opacity: .35; }
 .g7pb-preview-image-carousel__controls > span > button[aria-pressed='true'] { width: 1.8rem; opacity: 1; }
 .g7pb-preview-image-carousel__status { margin: .5rem 0 0; font-size: .75rem; text-align: center; opacity: .72; }
+
+.g7pb-layout-inspector-control fieldset { display: grid; gap: .55rem; margin: 0; padding: .65rem; border: 1px solid color-mix(in srgb, currentColor 16%, transparent); border-radius: .55rem; }
+.g7pb-layout-inspector-control fieldset + fieldset { margin-top: .6rem; }
+.g7pb-layout-inspector-control legend { padding-inline: .25rem; font-size: .76rem; font-weight: 800; }
+.g7pb-layout-inspector-control fieldset > button { justify-self: end; }
+.g7pb-layout-inspector-control .g7pb-design-field small { display: block; margin-top: .2rem; color: var(--g7pb-page-muted, #64748b); font-size: .68rem; }
+
+/* Puck iframe width is the responsive viewport; overrides stay independent per device. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .g7pb-preview-layout-columns--1-1-1, .g7pb-tablet-layout-columns--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g7pb-tablet-layout-columns--1 { grid-template-columns: minmax(0, 1fr); }
+  .g7pb-tablet-layout-gap--none { gap: 0; }
+  .g7pb-tablet-layout-gap--compact { gap: .5rem; }
+  .g7pb-tablet-layout-gap--normal { gap: 1rem; }
+  .g7pb-tablet-layout-gap--spacious { gap: 1.5rem; }
+  .g7pb-tablet-layout-spacing--compact { padding-block: 1.5rem; }
+  .g7pb-tablet-layout-spacing--normal { padding-block: clamp(2.5rem, 5vw, 4.5rem); }
+  .g7pb-tablet-layout-spacing--spacious { padding-block: clamp(4rem, 8vw, 7rem); }
+  .g7pb-tablet-layout-width--standard > :last-child { width: min(calc(100% - 2.5rem), var(--g7pb-theme-content-width)); margin-inline: auto; }
+  .g7pb-tablet-layout-width--wide > :last-child { width: min(calc(100% - 2.5rem), 90rem); margin-inline: auto; }
+  .g7pb-tablet-layout-width--full > :last-child { width: 100%; }
+  .g7pb-tablet-appearance-surface--default > :first-child { background: var(--g7pb-page-bg, #fff); color: var(--g7pb-page-text, #172033); }
+  .g7pb-tablet-appearance-surface--soft > :first-child { background: var(--g7pb-page-panel, #f3f1ed); color: var(--g7pb-page-text, #172033); }
+  .g7pb-tablet-appearance-surface--contrast > :first-child { --g7pb-page-muted: #cbd3df; background: #172033; color: #fff; }
+  .g7pb-tablet-appearance-spacing--compact > :first-child { padding-block: clamp(2.5rem, 6vw, 4.25rem); }
+  .g7pb-tablet-appearance-spacing--normal > :first-child { padding-block: clamp(3.5rem, 8vw, 8rem); }
+  .g7pb-tablet-appearance-spacing--spacious > :first-child { padding-block: clamp(5rem, 11vw, 9.5rem); }
+  .g7pb-tablet-appearance-text-scale--compact { font-size: .9375em; }
+  .g7pb-tablet-appearance-text-scale--balanced { font-size: 1em; }
+  .g7pb-tablet-appearance-text-scale--large { font-size: 1.125em; }
+  .g7pb-tablet-appearance-text-align--left { text-align: left; }
+  .g7pb-tablet-appearance-text-align--center { text-align: center; }
+  .g7pb-tablet-appearance-text-align--right { text-align: right; }
+  .g7pb-tablet-appearance-container-width--inherit { --g7pb-preview-content-width: var(--g7pb-theme-content-width); }
+  .g7pb-tablet-appearance-container-width--narrow { --g7pb-preview-content-width: 48rem; }
+  .g7pb-tablet-appearance-container-width--standard { --g7pb-preview-content-width: 72rem; }
+  .g7pb-tablet-appearance-container-width--wide { --g7pb-preview-content-width: 88rem; }
+  .g7pb-tablet-appearance-container-width--full > * { width: 100%; padding-inline: 0; }
+  .g7pb-tablet-appearance-container-align--left > * { padding-right: max(1.25rem, calc(100vw - var(--g7pb-preview-content-width) - 1.25rem)); padding-left: 1.25rem; }
+  .g7pb-tablet-appearance-container-align--right > * { padding-right: 1.25rem; padding-left: max(1.25rem, calc(100vw - var(--g7pb-preview-content-width) - 1.25rem)); }
+  .g7pb-tablet-appearance-min-height--auto { min-height: auto; }
+  .g7pb-tablet-appearance-min-height--compact { min-height: 18rem; }
+  .g7pb-tablet-appearance-min-height--medium { min-height: 32rem; }
+  .g7pb-tablet-appearance-min-height--large { min-height: 44rem; }
+  .g7pb-tablet-appearance-min-height--viewport { min-height: 100svh; }
+  .g7pb-tablet-appearance-vertical-align--start { display: grid; align-content: start; }
+  .g7pb-tablet-appearance-vertical-align--center { display: grid; align-content: center; }
+  .g7pb-tablet-appearance-vertical-align--end { display: grid; align-content: end; }
+}
+@media (max-width: 639px) {
+  .g7pb-preview-layout-columns, .g7pb-preview-layout-columns--1-2, .g7pb-preview-layout-columns--2-1,
+  .g7pb-preview-layout-columns--1-1-1, .g7pb-mobile-layout-columns--1 { grid-template-columns: minmax(0, 1fr); }
+  .g7pb-mobile-layout-gap--none { gap: 0; }
+  .g7pb-mobile-layout-gap--compact { gap: .5rem; }
+  .g7pb-mobile-layout-gap--normal { gap: 1rem; }
+  .g7pb-mobile-layout-gap--spacious { gap: 1.5rem; }
+  .g7pb-mobile-layout-spacing--compact { padding-block: 1.5rem; }
+  .g7pb-mobile-layout-spacing--normal { padding-block: clamp(2.5rem, 5vw, 4.5rem); }
+  .g7pb-mobile-layout-spacing--spacious { padding-block: clamp(4rem, 8vw, 7rem); }
+  .g7pb-mobile-layout-width--standard > :last-child { width: min(calc(100% - 2.5rem), var(--g7pb-theme-content-width)); margin-inline: auto; }
+  .g7pb-mobile-layout-width--wide > :last-child { width: min(calc(100% - 2.5rem), 90rem); margin-inline: auto; }
+  .g7pb-mobile-layout-width--full > :last-child { width: 100%; }
+  .g7pb-mobile-appearance-surface--default > :first-child { background: var(--g7pb-page-bg, #fff); color: var(--g7pb-page-text, #172033); }
+  .g7pb-mobile-appearance-surface--soft > :first-child { background: var(--g7pb-page-panel, #f3f1ed); color: var(--g7pb-page-text, #172033); }
+  .g7pb-mobile-appearance-surface--contrast > :first-child { --g7pb-page-muted: #cbd3df; background: #172033; color: #fff; }
+  .g7pb-mobile-appearance-spacing--compact > :first-child { padding-block: clamp(2.5rem, 6vw, 4.25rem); }
+  .g7pb-mobile-appearance-spacing--normal > :first-child { padding-block: clamp(3.5rem, 8vw, 8rem); }
+  .g7pb-mobile-appearance-spacing--spacious > :first-child { padding-block: clamp(5rem, 11vw, 9.5rem); }
+  .g7pb-mobile-appearance-text-scale--compact { font-size: .9375em; }
+  .g7pb-mobile-appearance-text-scale--balanced { font-size: 1em; }
+  .g7pb-mobile-appearance-text-scale--large { font-size: 1.125em; }
+  .g7pb-mobile-appearance-text-align--left { text-align: left; }
+  .g7pb-mobile-appearance-text-align--center { text-align: center; }
+  .g7pb-mobile-appearance-text-align--right { text-align: right; }
+  .g7pb-mobile-appearance-container-width--inherit { --g7pb-preview-content-width: var(--g7pb-theme-content-width); }
+  .g7pb-mobile-appearance-container-width--narrow { --g7pb-preview-content-width: 48rem; }
+  .g7pb-mobile-appearance-container-width--standard { --g7pb-preview-content-width: 72rem; }
+  .g7pb-mobile-appearance-container-width--wide { --g7pb-preview-content-width: 88rem; }
+  .g7pb-mobile-appearance-container-width--full > * { width: 100%; padding-inline: 0; }
+  .g7pb-mobile-appearance-container-align--left > * { padding-right: max(1.25rem, calc(100vw - var(--g7pb-preview-content-width) - 1.25rem)); padding-left: 1.25rem; }
+  .g7pb-mobile-appearance-container-align--right > * { padding-right: 1.25rem; padding-left: max(1.25rem, calc(100vw - var(--g7pb-preview-content-width) - 1.25rem)); }
+  .g7pb-mobile-appearance-min-height--auto { min-height: auto; }
+  .g7pb-mobile-appearance-min-height--compact { min-height: 18rem; }
+  .g7pb-mobile-appearance-min-height--medium { min-height: 32rem; }
+  .g7pb-mobile-appearance-min-height--large { min-height: 44rem; }
+  .g7pb-mobile-appearance-min-height--viewport { min-height: 100svh; }
+  .g7pb-mobile-appearance-vertical-align--start { display: grid; align-content: start; }
+  .g7pb-mobile-appearance-vertical-align--center { display: grid; align-content: center; }
+  .g7pb-mobile-appearance-vertical-align--end { display: grid; align-content: end; }
+}

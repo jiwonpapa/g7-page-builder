@@ -14,7 +14,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.18.0';
+    public const COMPILER_VERSION = '0.19.0';
 
     private const LAYOUT_SECTION_TYPE = 'layout.section-01';
 
@@ -357,6 +357,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $type,
                 $block['motion'] ?? null,
                 $block['visibility'] ?? null,
+                $block['responsive'] ?? null,
                 $type === self::LAYOUT_STACK_TYPE ? 'div' : 'section',
             );
         }
@@ -404,7 +405,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException("{$path} failed schema validation or compilation.", 'G7PB_BLOCK_RUNTIME_FAILED');
         }
 
-        return $this->withBlockRuntime($compiled, $instanceId, $type, $block['motion'] ?? null, $block['visibility'] ?? null);
+        return $this->withBlockRuntime($compiled, $instanceId, $type, $block['motion'] ?? null, $block['visibility'] ?? null, $block['responsive'] ?? null);
     }
 
     /**
@@ -2396,12 +2397,27 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         string $type,
         mixed $motion,
         mixed $visibility,
+        mixed $responsive,
         string $rootTag = 'section',
     ): string {
         if (! in_array($rootTag, ['section', 'div'], true)) {
             throw new DocumentCompileException('Compiled block root tag is invalid.');
         }
         $attributes = 'data-block-id="'.$this->escapeAttribute($instanceId).'"';
+
+        $responsiveClasses = $this->responsiveClasses($responsive, $type);
+        if ($responsiveClasses !== '') {
+            $decorated = preg_replace(
+                '/^<'.preg_quote($rootTag, '/').' class="/',
+                '<'.$rootTag.' class="'.$responsiveClasses.' ',
+                $markup,
+                1,
+            );
+            if (! is_string($decorated) || $decorated === $markup) {
+                throw new DocumentCompileException('Compiled block responsive root is missing.');
+            }
+            $markup = $decorated;
+        }
 
         if ($motion !== null) {
             if (! is_array($motion)) {
@@ -2456,6 +2472,96 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         return $compiled;
+    }
+
+    private function responsiveClasses(mixed $value, string $type): string
+    {
+        if ($value === null) {
+            return '';
+        }
+        if (! is_array($value) || $value === [] || array_is_list($value)) {
+            throw new DocumentCompileException('Block responsive override must be a non-empty object.');
+        }
+        $this->assertOnlyKeys($value, ['tablet', 'mobile'], 'Block responsive');
+        $classes = [];
+        foreach (['tablet', 'mobile'] as $viewport) {
+            if (! array_key_exists($viewport, $value)) {
+                continue;
+            }
+            $override = $value[$viewport];
+            if (! is_array($override) || $override === [] || array_is_list($override)) {
+                throw new DocumentCompileException("Block {$viewport} override must be a non-empty object.");
+            }
+            $this->assertOnlyKeys($override, ['appearance', 'layout'], "Block {$viewport}");
+            if (array_key_exists('appearance', $override)) {
+                $appearance = $override['appearance'];
+                if (! is_array($appearance) || $appearance === [] || array_is_list($appearance)) {
+                    throw new DocumentCompileException("Block {$viewport} appearance must be a non-empty object.");
+                }
+                $this->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign', 'containerWidth', 'containerAlign', 'minHeight', 'verticalAlign'], "Block {$viewport} appearance");
+                $options = [
+                    'surface' => ['default', 'soft', 'contrast'],
+                    'spacing' => ['compact', 'normal', 'spacious'],
+                    'textScale' => ['compact', 'balanced', 'large'],
+                    'textAlign' => ['left', 'center', 'right'],
+                    'containerWidth' => ['inherit', 'narrow', 'standard', 'wide', 'full'],
+                    'containerAlign' => ['left', 'center', 'right', 'stretch'],
+                    'minHeight' => ['auto', 'compact', 'medium', 'large', 'viewport'],
+                    'verticalAlign' => ['start', 'center', 'end'],
+                ];
+                $cssKeys = [
+                    'surface' => 'surface', 'spacing' => 'spacing', 'textScale' => 'text-scale', 'textAlign' => 'text-align',
+                    'containerWidth' => 'container-width', 'containerAlign' => 'container-align', 'minHeight' => 'min-height',
+                    'verticalAlign' => 'vertical-align',
+                ];
+                foreach ($appearance as $key => $item) {
+                    if (! is_string($key) || ! isset($options[$key], $cssKeys[$key]) || ! is_string($item) || ! in_array($item, $options[$key], true)) {
+                        throw new DocumentCompileException("Block {$viewport} appearance {$key} is invalid.");
+                    }
+                    $classes[] = "g7pb-{$viewport}-appearance-{$cssKeys[$key]}--{$item}";
+                }
+            }
+            if (! array_key_exists('layout', $override)) {
+                continue;
+            }
+            $layout = $override['layout'];
+            if (! is_array($layout) || $layout === [] || array_is_list($layout)) {
+                throw new DocumentCompileException("Block {$viewport} layout must be a non-empty object.");
+            }
+            $allowed = match ($type) {
+                self::LAYOUT_SECTION_TYPE => ['width', 'spacing'],
+                self::LAYOUT_COLUMNS_TYPE => ['columns', 'gap'],
+                self::LAYOUT_STACK_TYPE => ['gap'],
+                default => [],
+            };
+            if ($allowed === [] || array_diff(array_keys($layout), $allowed) !== []) {
+                throw new DocumentCompileException("Block {$viewport} layout is not supported for {$type}.");
+            }
+            foreach ($layout as $key => $item) {
+                if (! is_string($key)) {
+                    throw new DocumentCompileException("Block {$viewport} layout key is invalid.");
+                }
+                if ($key === 'columns') {
+                    $valid = $viewport === 'mobile' ? $item === 1 : in_array($item, [1, 2], true);
+                } elseif ($key === 'width') {
+                    $valid = is_string($item) && in_array($item, ['standard', 'wide', 'full'], true);
+                } elseif ($key === 'spacing') {
+                    $valid = is_string($item) && in_array($item, ['compact', 'normal', 'spacious'], true);
+                } else {
+                    $valid = is_string($item) && in_array($item, ['none', 'compact', 'normal', 'spacious'], true);
+                }
+                if (! $valid) {
+                    throw new DocumentCompileException("Block {$viewport} layout {$key} is invalid.");
+                }
+                $classes[] = "g7pb-{$viewport}-layout-{$key}--{$item}";
+            }
+        }
+
+        if ($classes === []) {
+            throw new DocumentCompileException('Block responsive override cannot be empty.');
+        }
+
+        return implode(' ', $classes);
     }
 
     /**

@@ -32,6 +32,12 @@
         { "id": "cta.centered", "decision": "modified", "reason": "보조 행동의 루트 링크를 서비스 경로로 교체하고 기존 문의 전환 문맥을 유지", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
         { "id": "cta.banner", "decision": "modified", "reason": "보조 행동의 루트 링크를 서비스 경로로 교체하고 기존 배너 전환 문맥을 유지", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-A-03",
+      "items": [
+        { "id": "cta.panel", "decision": "modified", "reason": "보조 행동의 루트 링크를 서비스 경로로 교체하고 기존 패널 전환 문맥을 유지", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

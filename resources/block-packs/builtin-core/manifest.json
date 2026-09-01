@@ -3029,7 +3029,7 @@
         },
         "secondaryLink": {
           "label": "서비스 보기",
-          "url": "/"
+          "url": "/services"
         },
         "theme": "dark",
         "layout": "panel"

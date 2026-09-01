@@ -21,6 +21,7 @@
 
 ### Added
 
+- Puck native slot·DnD·레이어·history를 유지하면서 v2 구조 편집을 Section, 1/2/3열 Columns, Stack, 허용 기본 요소 5종까지 확장합니다. 열 축소 시 제거 열의 콘텐츠를 마지막 열로 순서대로 이동하기 전 확인하고, 자식이 있는 구조 삭제도 내부 콘텐츠 수를 확인합니다. JSON schema·canonical 왕복·PHP compiler 0.18.0·실제 저장/발행 흐름을 같은 계약으로 검증합니다.
 - 중첩 문서의 경계·복구 회귀를 추가합니다. Puck 변환과 TS/PHP 저장 경계에서 불법 부모·slot·중복 ID·501번째 노드·201번째 slot 자식·1 MiB 초과를 원자적으로 거부하고, 기본 목록 첫 편집과 명시적 빈 값은 보존합니다. 검증·컴파일 실패 시 draft revision과 마지막 정상 발행본 hash가 바뀌지 않는 DB 통합 시험을 포함합니다.
 - Puck의 정식 slot 필드를 사용하는 `g7-page-builder/v2` 최소 중첩 경로를 추가합니다. Section 안의 2열 Columns와 제목·본문을 canonical 원본으로 왕복하고, 같은 구조를 TypeScript/PHP 정책·JSON schema·재귀 HTML compiler에서 검증합니다. 기존 v1 문서는 열기만 해도 변환하지 않으며 일반 카탈로그 기본값도 v1을 유지합니다.
 - 중첩 제목 편집→저장→재로드→미리보기→발행→과거 revision 복원→재발행을 fixture·단위·DB 통합·실제 브라우저 흐름으로 연결합니다. 구조형 compiler는 0.17.0이며 실패 시 기존 publication pointer를 바꾸지 않는 기존 prepare/commit 경계를 유지합니다.

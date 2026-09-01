@@ -2192,7 +2192,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
   }
 });
 
-test('edits, reloads, publishes, restores, and republishes a nested two-column layout', async ({
+test('edits, reloads, publishes, restores, and republishes three columns with a nested Stack', async ({
   context,
   page,
 }, testInfo) => {
@@ -2206,6 +2206,7 @@ test('edits, reloads, publishes, restores, and republishes a nested two-column l
   const originalHeading = `Nested original ${runId}`;
   const changedHeading = `Nested changed ${runId}`;
   const body = `Nested body ${runId}`;
+  const thirdColumn = `Nested third ${runId}`;
   const api = await playwrightRequest.newContext({
     baseURL: BASE_URL,
     ignoreHTTPSErrors: true,
@@ -2242,7 +2243,7 @@ test('edits, reloads, publishes, restores, and republishes a nested two-column l
           instance_id: crypto.randomUUID(),
           type: 'layout.columns-01',
           block_version: 1,
-          props: { columns: 2, ratio: '1:2', gap: 'normal' },
+          props: { columns: 3, ratio: '1:1:1', gap: 'none' },
           slots: {
             column1: [{
               instance_id: crypto.randomUUID(),
@@ -2255,6 +2256,18 @@ test('edits, reloads, publishes, restores, and republishes a nested two-column l
               type: 'content.rich-text-01',
               block_version: 1,
               props: { content: `<p>${body}</p>`, measure: 'wide' },
+            }],
+            column3: [{
+              instance_id: crypto.randomUUID(),
+              type: 'layout.stack-01',
+              block_version: 1,
+              props: { gap: 'spacious' },
+              slots: { content: [{
+                instance_id: crypto.randomUUID(),
+                type: 'content.divider-01',
+                block_version: 1,
+                props: { variant: 'solid', width: 'standard', label: thirdColumn },
+              }] },
             }],
           },
         }] },
@@ -2271,6 +2284,7 @@ test('edits, reloads, publishes, restores, and republishes a nested two-column l
     const frame = page.frameLocator('iframe');
     await expect(frame.getByTestId('page-builder-layout-section')).toBeVisible();
     await expect(frame.getByTestId('page-builder-layout-columns')).toBeVisible();
+    await expect(frame.getByTestId('page-builder-layout-stack')).toBeVisible();
     const nestedHeading = frame.locator(
       '[data-g7pb-inline-field="heading"][contenteditable], [data-g7pb-inline-field="heading"] [contenteditable]',
     );
@@ -2286,9 +2300,11 @@ test('edits, reloads, publishes, restores, and republishes a nested two-column l
     const publicResponse = await page.goto(`/pages/${slug}`);
     expect(publicResponse?.ok()).toBe(true);
     await expect(page.locator('.g7pb-layout-section')).toBeVisible();
-    await expect(page.locator('.g7pb-layout-columns--1-2')).toBeVisible();
+    await expect(page.locator('.g7pb-layout-columns--1-1-1')).toBeVisible();
+    await expect(page.locator('.g7pb-layout-stack--gap-spacious')).toBeVisible();
     await expect(page.getByText(changedHeading, { exact: true })).toBeVisible();
     await expect(page.getByText(body, { exact: true })).toBeVisible();
+    await expect(page.getByText(thirdColumn, { exact: true })).toBeVisible();
 
     const currentResponse = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${documentId}`);
     const current = await currentResponse.json() as { data?: { lock_version?: unknown } };

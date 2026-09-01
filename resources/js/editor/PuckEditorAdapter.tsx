@@ -148,6 +148,7 @@ import {
   HERO_BLOCK_TYPE,
   LAYOUT_COLUMNS_BLOCK_TYPE,
   LAYOUT_SECTION_BLOCK_TYPE,
+  LAYOUT_STACK_BLOCK_TYPE,
   type ContactBlockProps,
   type BlockAppearance,
   type BlockMotion,
@@ -651,17 +652,35 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
   }
 
   if (block.type === LAYOUT_COLUMNS_BLOCK_TYPE) {
-    const ratio = block.props.ratio === '1:2' || block.props.ratio === '2:1' ? block.props.ratio : '1:1';
-    const gap = block.props.gap === 'compact' || block.props.gap === 'spacious' ? block.props.gap : 'normal';
+    const columns = block.props.columns === 1 || block.props.columns === 3 ? block.props.columns : 2;
+    const ratios = columns === 1 ? ['1'] : columns === 3 ? ['1:1:1'] : ['1:1', '1:2', '2:1'];
+    const ratio = typeof block.props.ratio === 'string' && ratios.includes(block.props.ratio)
+      ? block.props.ratio : ratios[0]!;
+    const gap = block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
+      ? block.props.gap : 'normal';
     return {
       type: 'LayoutColumns',
       props: {
         id: block.instance_id,
-        columns: '2',
+        columns: String(columns),
         ratio,
         gap,
         column1: (block.slots?.column1 ?? []).map(canonicalBlockToPuck),
-        column2: (block.slots?.column2 ?? []).map(canonicalBlockToPuck),
+        ...(columns >= 2 ? { column2: (block.slots?.column2 ?? []).map(canonicalBlockToPuck) } : {}),
+        ...(columns >= 3 ? { column3: (block.slots?.column3 ?? []).map(canonicalBlockToPuck) } : {}),
+      },
+    } as unknown as PuckEditorData['content'][number];
+  }
+
+  if (block.type === LAYOUT_STACK_BLOCK_TYPE) {
+    const gap = block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
+      ? block.props.gap : 'normal';
+    return {
+      type: 'LayoutStack',
+      props: {
+        id: block.instance_id,
+        gap,
+        content: (block.slots?.content ?? []).map(canonicalBlockToPuck),
       },
     } as unknown as PuckEditorData['content'][number];
   }
@@ -792,10 +811,21 @@ function puckBlockToCanonical(
     type = LAYOUT_COLUMNS_BLOCK_TYPE;
     blockVersion = 1;
     supportsContainerAppearance = false;
+    const columns = block.props.columns === '1' ? 1 : block.props.columns === '3' ? 3 : 2;
+    const ratios = columns === 1 ? ['1'] : columns === 3 ? ['1:1:1'] : ['1:1', '1:2', '2:1'];
     props = {
-      columns: 2,
-      ratio: block.props.ratio === '1:2' || block.props.ratio === '2:1' ? block.props.ratio : '1:1',
-      gap: block.props.gap === 'compact' || block.props.gap === 'spacious' ? block.props.gap : 'normal',
+      columns,
+      ratio: typeof block.props.ratio === 'string' && ratios.includes(block.props.ratio) ? block.props.ratio : ratios[0],
+      gap: block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
+        ? block.props.gap : 'normal',
+    };
+  } else if (block.type === 'LayoutStack') {
+    type = LAYOUT_STACK_BLOCK_TYPE;
+    blockVersion = 1;
+    supportsContainerAppearance = false;
+    props = {
+      gap: block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
+        ? block.props.gap : 'normal',
     };
   } else if (block.type === 'Hero') {
     const editorProps = block.props as typeof block.props & HeroEditorProps;
@@ -950,12 +980,16 @@ function puckBlockToCanonical(
     const children = Array.isArray(block.props.content) ? block.props.content : [];
     canonical.slots = { content: children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)) };
   } else if (block.type === 'LayoutColumns') {
-    const column1 = Array.isArray(block.props.column1) ? block.props.column1 : [];
-    const column2 = Array.isArray(block.props.column2) ? block.props.column2 : [];
-    canonical.slots = {
-      column1: column1.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)),
-      column2: column2.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)),
-    };
+    const columns = canonical.props.columns === 1 || canonical.props.columns === 3 ? canonical.props.columns : 2;
+    const blockProps = block.props as Record<string, unknown>;
+    canonical.slots = Object.fromEntries(Array.from({ length: columns }, (_, index) => {
+      const name = `column${index + 1}`;
+      const children = Array.isArray(blockProps[name]) ? blockProps[name] as unknown[] : [];
+      return [name, children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context))];
+    }));
+  } else if (block.type === 'LayoutStack') {
+    const children = Array.isArray(block.props.content) ? block.props.content : [];
+    canonical.slots = { content: children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)) };
   } else if (metadata.hadSlots) {
     canonical.slots = {};
   }
@@ -1445,6 +1479,10 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       title: '구조 레이아웃',
       components: ['LayoutSection'],
       defaultExpanded: true,
+    },
+    layoutInternal: {
+      components: ['LayoutColumns', 'LayoutStack'],
+      visible: false,
     },
     content: {
       title: '콘텐츠 블록',

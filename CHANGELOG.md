@@ -8,7 +8,7 @@
 
 ### Changed
 
-- 통합 검증은 최신 신뢰 SHA 이후 변경 경로를 `scoped`, `frontend`, `php`, `mixed`, `g7`, `full`로 분류하며 migration·route/layout·lifecycle·미분류 핵심 경로, 기준 SHA 부재 또는 명시적 RC에만 전체 품질 게이트를 실행합니다.
+- 통합 검증은 최신 신뢰 SHA 이후 변경 경로를 `scoped`, `frontend`, `php`, `mixed`, `g7`, `full`로 분류하며 migration·route/layout·lifecycle·미분류 핵심 경로, 기준 SHA 부재 또는 명시적 RC에만 전체 품질 게이트를 실행합니다. 동일 candidate tree에서 이미 통과한 focused gate receipt는 최종 검증에서 재사용합니다.
 
 ## [0.31.0] - 2026-09-01
 

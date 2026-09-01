@@ -92,7 +92,7 @@ gate() {
   local name="$1"
   shift
   local receipt=''
-  if [[ "$mode" == integration ]]; then
+  if [[ "$mode" == integration || "$mode" == verification ]]; then
     [[ "$candidate_tree" =~ ^[a-f0-9]{40,64}$ ]] || fail 'integration candidate tree is missing'
     [[ -n "$receipt_root" ]] || fail 'integration receipt directory is missing'
     mkdir -p "$receipt_root"

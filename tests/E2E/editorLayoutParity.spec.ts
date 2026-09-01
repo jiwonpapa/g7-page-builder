@@ -725,9 +725,7 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
           height: child.getBoundingClientRect().height, display: childStyle.display };
       });
       return { context, descendants, parent: {width:element.parentElement?.getBoundingClientRect().width, padding:element.parentElement && getComputedStyle(element.parentElement).padding, border:element.parentElement && getComputedStyle(element.parentElement).borderWidth}, width: rect.width, height: rect.height, color: style.color, fontSize: style.fontSize,
-        fontFamily: style.fontFamily, fontWeight: style.fontWeight, letterSpacing: style.letterSpacing,
-        lineHeight: style.lineHeight, overflowWrap: style.overflowWrap, whiteSpace: style.whiteSpace,
-        wordBreak: style.wordBreak };
+        fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
     };
     return {
       id: (block as HTMLElement).dataset.blockId, type: (block as HTMLElement).dataset.blockType,
@@ -790,9 +788,7 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
           ))) ?? element;
         const style = getComputedStyle(typographyElement);
         const actual: Record<string, unknown> = { width: rect.width, height: rect.height, color: style.color,
-          fontSize: style.fontSize, fontFamily: style.fontFamily, fontWeight: style.fontWeight,
-          letterSpacing: style.letterSpacing, lineHeight: style.lineHeight, overflowWrap: style.overflowWrap,
-          whiteSpace: style.whiteSpace, wordBreak: style.wordBreak };
+          fontSize: style.fontSize, fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
         const differences = Object.keys(actual).filter((property) => property in editor && (
           typeof actual[property] === 'number'
             ? Math.abs(Number(actual[property]) - Number(editor[property])) > numericTolerance

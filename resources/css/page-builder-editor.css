@@ -1037,9 +1037,11 @@ body:has(.g7pb-selected-block-actionbar) {
 
 .g7pb-preview-hero :is(h1, [data-g7pb-heading-level="1"]) { max-width: 18ch; margin: 0; font-size: clamp(2.5rem, 7vw, 5.75rem); line-height: 1.02; letter-spacing: -.04em; }
 .g7pb-preview-hero :is(h1, [data-g7pb-heading-level="1"]),
+.g7pb-preview-block[data-block-type="hero"] .g7pb-preview-hero-split [data-g7pb-heading-level="1"],
 .g7pb-preview-hero-slider :is(h2, [data-g7pb-heading-level="2"]) { overflow-wrap: anywhere; word-break: keep-all; }
 
 .g7pb-preview-hero [data-g7pb-heading-level="1"] *,
+.g7pb-preview-block[data-block-type="hero"] .g7pb-preview-hero-split [data-g7pb-heading-level="1"] *,
 .g7pb-preview-hero-slider [data-g7pb-heading-level="2"] * { overflow-wrap: anywhere !important; word-break: keep-all !important; }
 
 .g7pb-preview-richtext {

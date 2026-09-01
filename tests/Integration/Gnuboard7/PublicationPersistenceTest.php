@@ -779,7 +779,7 @@ final class PublicationPersistenceTest extends TestCase
         }
     }
 
-    public function test_unsupported_v2_layout_compile_failure_keeps_the_last_good_publication(): void
+    public function test_nested_v2_leaf_compile_failure_keeps_the_last_good_publication(): void
     {
         $service = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
         $created = $service->create('구조 발행 안전성', 'nested-layout-last-good', 'ko', null, 'builder');
@@ -800,9 +800,15 @@ final class PublicationPersistenceTest extends TestCase
                 'props' => ['gap' => 'normal'],
                 'slots' => ['content' => [[
                     'instance_id' => '00000000-0000-4000-8000-000000000103',
-                    'type' => 'content.heading-01',
+                    'type' => 'media.image-01',
                     'block_version' => 1,
-                    'props' => ['eyebrow' => '', 'heading' => '아직 미지원 구조', 'level' => 2, 'anchor' => ''],
+                    'props' => [
+                        'src' => 'javascript:alert(1)',
+                        'alt' => '안전하지 않은 이미지',
+                        'caption' => '',
+                        'linkUrl' => '',
+                        'aspectRatio' => 'auto',
+                    ],
                     'slots' => [],
                 ]]],
             ]]],
@@ -812,7 +818,7 @@ final class PublicationPersistenceTest extends TestCase
 
         try {
             $service->preparePublication($draft->document->documentId, $draft->lockVersion, null);
-            self::fail('An unsupported v2 Stack produced a publication candidate.');
+            self::fail('An unsafe nested image produced a publication candidate.');
         } catch (DocumentCompileException) {
             $stillPublished = $service->findPublished('nested-layout-last-good');
             self::assertNotNull($stillPublished);

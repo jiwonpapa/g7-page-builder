@@ -14,11 +14,13 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.17.0';
+    public const COMPILER_VERSION = '0.18.0';
 
     private const LAYOUT_SECTION_TYPE = 'layout.section-01';
 
     private const LAYOUT_COLUMNS_TYPE = 'layout.columns-01';
+
+    private const LAYOUT_STACK_TYPE = 'layout.stack-01';
 
     /** @var list<string> */
     private const TEMPLATE_FORBIDDEN_TAGS = [
@@ -336,7 +338,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException("{$path} has an invalid version, props, or slots value.");
         }
 
-        if (in_array($type, [self::LAYOUT_SECTION_TYPE, self::LAYOUT_COLUMNS_TYPE], true)) {
+        if (in_array($type, [self::LAYOUT_SECTION_TYPE, self::LAYOUT_COLUMNS_TYPE, self::LAYOUT_STACK_TYPE], true)) {
             $compiled = $this->compileLayoutBlock(
                 $type,
                 $version,
@@ -349,7 +351,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $styleUrls,
             );
 
-            return $this->withBlockRuntime($compiled, $instanceId, $type, $block['motion'] ?? null, $block['visibility'] ?? null);
+            return $this->withBlockRuntime(
+                $compiled,
+                $instanceId,
+                $type,
+                $block['motion'] ?? null,
+                $block['visibility'] ?? null,
+                $type === self::LAYOUT_STACK_TYPE ? 'div' : 'section',
+            );
         }
 
         if ($slots !== []) {
@@ -433,18 +442,35 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             return '<section class="g7pb-layout-section g7pb-layout-section--'.$width.' g7pb-layout-section--'.$spacing.'" data-testid="page-builder-rendered-layout" data-block-type="layout-section"><div class="g7pb-layout-section__inner">'.$content.'</div></section>';
         }
 
+        if ($type === self::LAYOUT_STACK_TYPE) {
+            $this->assertOnlyKeys($props, ['gap'], $path);
+            $gap = $this->requiredString($props, 'gap', 16);
+            if (! in_array($gap, ['none', 'compact', 'normal', 'spacious'], true)
+                || array_diff(array_keys($slots), ['content']) !== []) {
+                throw new DocumentCompileException("{$path} has invalid Stack properties or slots.");
+            }
+            $content = $this->compileLayoutSlot($slots['content'] ?? [], $path.'.content', $document, $heroCount, $headingAnchors, $styleUrls);
+
+            return '<div class="g7pb-layout-stack g7pb-layout-stack--gap-'.$gap.'" data-testid="page-builder-rendered-layout" data-block-type="layout-stack">'.$content.'</div>';
+        }
+
         $this->assertOnlyKeys($props, ['columns', 'ratio', 'gap'], $path);
         $columns = $props['columns'] ?? null;
         $ratio = $this->requiredString($props, 'ratio', 16);
         $gap = $this->requiredString($props, 'gap', 16);
-        if ($columns !== 2
-            || ! in_array($ratio, ['1:1', '1:2', '2:1'], true)
-            || ! in_array($gap, ['compact', 'normal', 'spacious'], true)
-            || array_diff(array_keys($slots), ['column1', 'column2']) !== []) {
+        $ratios = [1 => ['1'], 2 => ['1:1', '1:2', '2:1'], 3 => ['1:1:1']];
+        $expectedSlots = is_int($columns) && isset($ratios[$columns])
+            ? array_map(static fn (int $column): string => 'column'.$column, range(1, $columns))
+            : [];
+        if (! is_int($columns)
+            || ! isset($ratios[$columns])
+            || ! in_array($ratio, $ratios[$columns], true)
+            || ! in_array($gap, ['none', 'compact', 'normal', 'spacious'], true)
+            || array_diff(array_keys($slots), $expectedSlots) !== []) {
             throw new DocumentCompileException("{$path} has invalid Columns properties or slots.");
         }
         $columnsMarkup = [];
-        foreach ([1, 2] as $column) {
+        foreach (range(1, $columns) as $column) {
             $slotName = 'column'.$column;
             $content = $this->compileLayoutSlot($slots[$slotName] ?? [], $path.'.'.$slotName, $document, $heroCount, $headingAnchors, $styleUrls);
             $columnsMarkup[] = '<div class="g7pb-layout-columns__column" data-g7pb-layout-column="'.$column.'">'.$content.'</div>';
@@ -2364,8 +2390,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return '<img class="'.$className.'" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="'.$loading.'">';
     }
 
-    private function withBlockRuntime(string $markup, string $instanceId, string $type, mixed $motion, mixed $visibility): string
-    {
+    private function withBlockRuntime(
+        string $markup,
+        string $instanceId,
+        string $type,
+        mixed $motion,
+        mixed $visibility,
+        string $rootTag = 'section',
+    ): string {
+        if (! in_array($rootTag, ['section', 'div'], true)) {
+            throw new DocumentCompileException('Compiled block root tag is invalid.');
+        }
         $attributes = 'data-block-id="'.$this->escapeAttribute($instanceId).'"';
 
         if ($motion !== null) {
@@ -2410,14 +2445,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException('Block visibility audience is invalid.');
             }
             $attributes .= ' data-g7pb-visibility-audience="'.$this->escapeAttribute($audience).'"';
-            if ($audience !== 'all' && preg_match('/^<section\b[^>]*\shidden(?:\s|>)/', $markup) !== 1) {
+            if ($audience !== 'all' && preg_match('/^<'.preg_quote($rootTag, '/').'\b[^>]*\shidden(?:\s|>)/', $markup) !== 1) {
                 $attributes .= ' hidden';
             }
         }
 
-        $compiled = preg_replace('/^<section /', '<section '.$attributes.' ', $markup, 1);
+        $compiled = preg_replace('/^<'.preg_quote($rootTag, '/').' /', '<'.$rootTag.' '.$attributes.' ', $markup, 1);
         if (! is_string($compiled) || $compiled === $markup) {
-            throw new DocumentCompileException('Compiled block markup has no section root.');
+            throw new DocumentCompileException('Compiled block markup has no supported root.');
         }
 
         return $compiled;

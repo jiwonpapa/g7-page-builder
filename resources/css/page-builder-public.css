@@ -158,13 +158,21 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-layout-section--wide .g7pb-layout-section__inner { width: min(calc(100% - 2.5rem), 90rem); }
 .g7pb-layout-section--full .g7pb-layout-section__inner { width: 100%; }
 .g7pb-layout-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.g7pb-layout-columns--1 { grid-template-columns: minmax(0, 1fr); }
+.g7pb-layout-columns--1-1-1 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g7pb-layout-columns--1-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
 .g7pb-layout-columns--2-1 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.g7pb-layout-columns--gap-none { gap: 0; }
 .g7pb-layout-columns--gap-compact { gap: .5rem; }
 .g7pb-layout-columns--gap-normal { gap: 1rem; }
 .g7pb-layout-columns--gap-spacious { gap: 1.5rem; }
 .g7pb-layout-columns__column { min-width: 0; }
 .g7pb-layout-columns__column > .g7pb-block { padding: 1rem; }
+.g7pb-layout-stack { display: grid; }
+.g7pb-layout-stack--gap-none { gap: 0; }
+.g7pb-layout-stack--gap-compact { gap: .5rem; }
+.g7pb-layout-stack--gap-normal { gap: 1rem; }
+.g7pb-layout-stack--gap-spacious { gap: 1.5rem; }
 /* Keep native text defaults independent of a host template's CSS reset. */
 .g7pb-block :where(h3) { margin-block: 1em; font-size: 1.17em; line-height: normal; }
 .g7pb-block :where(h4) { margin-block: 1.33em; font-size: 1em; line-height: normal; }
@@ -762,7 +770,7 @@ body { margin: 0; color: #172033; background: #fff; }
 .g7pb-motion-active [data-g7pb-motion='parallax-soft'][data-g7pb-motion-intensity='strong'] { --g7pb-parallax-distance: 3.25rem; }
 .g7pb-motion-active [data-g7pb-motion='parallax-soft'] .g7pb-motion-parallax-target { transform: translate3d(0, calc(var(--g7pb-motion-progress, 0) * var(--g7pb-parallax-distance)), 0) scale(1.035); will-change: transform; }
 @media (max-width: 700px) {
-    .g7pb-layout-columns, .g7pb-layout-columns--1-2, .g7pb-layout-columns--2-1 { grid-template-columns: 1fr; }
+    .g7pb-layout-columns, .g7pb-layout-columns--1-2, .g7pb-layout-columns--2-1, .g7pb-layout-columns--1-1-1 { grid-template-columns: 1fr; }
     .g7pb-cta, .g7pb-contact, .g7pb-inquiry, .g7pb-map { grid-template-columns: 1fr; }
     .g7pb-inquiry-form { grid-template-columns: 1fr; }
     .g7pb-inquiry-form > * { grid-column: 1; }

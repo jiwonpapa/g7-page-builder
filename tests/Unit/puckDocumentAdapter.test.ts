@@ -62,6 +62,28 @@ describe('isolated canonical document envelope adapter', () => {
     expect(puckToCanonical(session.data, session.context)).toEqual(document);
   });
 
+  it('round-trips three columns and a nested Stack through Puck without vendor state', () => {
+    const document = structuredClone(layoutFixture) as PageBuilderDocument;
+    const columns = document.blocks[0]!.slots!.content[0]!;
+    columns.props = { columns: 3, ratio: '1:1:1', gap: 'none' };
+    columns.slots!.column3 = [{
+      instance_id: '10000000-0000-4000-8000-000000000006',
+      type: 'layout.stack-01', block_version: 1, props: { gap: 'spacious' },
+      slots: { content: [{
+        instance_id: '10000000-0000-4000-8000-000000000007',
+        type: 'content.divider-01', block_version: 1,
+        props: { label: '세 번째 열', variant: 'solid', width: 'standard' },
+      }] },
+    }];
+
+    const session = canonicalToPuck(document);
+    const section = session.data.content[0]!.props as Record<string, unknown>;
+    const editorColumns = (section.content as PuckEditorData['content'])[0]!;
+    expect(editorColumns.props).toMatchObject({ columns: '3', ratio: '1:1:1', gap: 'none' });
+    expect(((editorColumns.props as Record<string, unknown>).column3 as PuckEditorData['content'])[0]?.type).toBe('LayoutStack');
+    expect(puckToCanonical(session.data, session.context)).toEqual(document);
+  });
+
   it('preserves existing SEO metadata across an ordinary content edit without sharing references', () => {
     const document = structuredClone(documentFixture);
     document.seo = { title: '검색 제목', description: '검색 설명', og_image_url: '/storage/share.webp', robots: 'noindex' };

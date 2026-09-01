@@ -284,6 +284,10 @@
           "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/layoutColumnsProps" } } }
         },
         {
+          "if": { "properties": { "type": { "const": "layout.stack-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/layoutStackProps" } } }
+        },
+        {
           "$ref": "#/$defs/richTextEnvelopeOverlay"
         }
       ]
@@ -716,9 +720,22 @@
       "additionalProperties": false,
       "required": ["columns", "ratio", "gap"],
       "properties": {
-        "columns": { "const": 2 },
-        "ratio": { "enum": ["1:1", "1:2", "2:1"] },
-        "gap": { "enum": ["compact", "normal", "spacious"] }
+        "columns": { "enum": [1, 2, 3] },
+        "ratio": { "enum": ["1", "1:1", "1:2", "2:1", "1:1:1"] },
+        "gap": { "enum": ["none", "compact", "normal", "spacious"] }
+      },
+      "oneOf": [
+        { "properties": { "columns": { "const": 1 }, "ratio": { "const": "1" } } },
+        { "properties": { "columns": { "const": 2 }, "ratio": { "enum": ["1:1", "1:2", "2:1"] } } },
+        { "properties": { "columns": { "const": 3 }, "ratio": { "const": "1:1:1" } } }
+      ]
+    },
+    "layoutStackProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gap"],
+      "properties": {
+        "gap": { "enum": ["none", "compact", "normal", "spacious"] }
       }
     },
     "imageBlockProps": {

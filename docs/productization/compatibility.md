@@ -1,6 +1,6 @@
 # 제품화 호환 결정 ADR-001
 
-상태: 3차 최소 구현 반영. 4차 기본 생성·전환 UI 결정과 제품 버전 발행은 후속입니다.
+상태: 4-A 제한 구조 구현 반영. 4-B 반응형과 4-C 기본 생성·전환 UI 결정, 제품 버전 발행은 후속입니다.
 
 ## 결정: v1 의미를 바꾸지 않고 v2 도입
 
@@ -17,7 +17,7 @@
 | 값 | 현행 근거 | 구현 시 결정 |
 |---|---|---|
 | document schema_version | g7-page-builder/v1·v2 | 한 호환 schema에서 버전별 조건을 적용하고 runtime은 canonical version을 그대로 보존 |
-| compiler_version | HtmlDocumentCompiler의 0.17.0 | v1 sanitizer 안전 출력과 v2 최소 Section/Columns 재귀 출력을 함께 판정 |
+| compiler_version | HtmlDocumentCompiler의 0.18.0 | v1 sanitizer 안전 출력과 v2 Section/1·2·3열 Columns/Stack 재귀 출력을 함께 판정 |
 | block_version | manifest의 각 정수 | 기존 version의 의미 보존. 새 layout은 최초 1, 비호환 props 변경은 새 정수 |
 | Pack manifest/품질 계약 | 각각 v1 | 편집/검증 증거 변경은 별도 버전. 구형 승인 자동 승격 금지 |
 | module/package/lock | 0.30.0 | 0.y.z의 공개 계약 추가·변경이므로 후속 기능 릴리스 MINOR. 실제 번호는 version lease에서 결정 |

@@ -25,6 +25,7 @@ Usage:
   coord-harness.sh replace-submitted --task NEW_ID --supersedes OLD_ID [--base-ref REF]
   coord-harness.sh replace-submitted-expanded --task NEW_ID --supersedes OLD_ID --paths CSV [--base-ref REF]
   coord-harness.sh integrate --task ID --integration-task ID
+  coord-harness.sh integrate-scoped --task ID --integration-task ID
   coord-harness.sh integrate-batch --tasks ID1,ID2[,IDN...] --integration-task ID
   coord-harness.sh verify --task ID
   coord-harness.sh finish --task ID
@@ -32,7 +33,7 @@ Usage:
   coord-harness.sh runtime-guard --task ID
   coord-harness.sh release-guard --task ID
 
-Profiles: frontend, php, mixed, g7, docs, full
+Profiles: scoped, frontend, php, mixed, g7, docs, full
 Exclusive areas: integration, runtime, migration, shared-contract, version
 EOF
 }
@@ -344,7 +345,7 @@ validate_task_id() {
 
 validate_profile() {
   case "$1" in
-    frontend|php|mixed|g7|docs|full) ;;
+    scoped|frontend|php|mixed|g7|docs|full) ;;
     harness)
       [[ "${G7PB_COORD_TESTING:-0}" == 1 ]] || fail 'harness profile은 하네스 자체 시험에서만 허용합니다.'
       ;;
@@ -644,6 +645,9 @@ run_submission_profile() {
     fail 'TEST_MODE submission profile failure'
   fi
   case "$profile" in
+    scoped)
+      bash scripts/quality-scoped.sh submission "$META_BASE_SHA"
+      ;;
     frontend)
       require_node_24
       npm run check:editor-acceptance
@@ -672,6 +676,27 @@ run_submission_profile() {
       ;;
     *) fail "지원하지 않는 PROFILE입니다: $profile" ;;
   esac
+}
+
+run_scoped_integration_profile() {
+  local task_base="$1"
+  local submitted_sha="$2"
+  local integration_task="$3"
+  local task_areas="${4:-}"
+  local candidate_tree="$5"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 ]]; then
+    if [[ -n "${G7PB_COORD_TEST_SCOPED_INTEGRATION_HOOK:-}" ]]; then
+      [[ -x "$G7PB_COORD_TEST_SCOPED_INTEGRATION_HOOK" ]] \
+        || fail 'TEST_MODE scoped integration hook is not executable'
+      "$G7PB_COORD_TEST_SCOPED_INTEGRATION_HOOK" \
+        "$task_base" "$submitted_sha" "$integration_task" "$task_areas" "$candidate_tree"
+    fi
+    return 0
+  fi
+  G7PB_SCOPED_RECEIPT_DIR="$state_root/gate-receipts" \
+  G7PB_SCOPED_CANDIDATE_TREE="$candidate_tree" \
+    bash scripts/quality-scoped.sh integration \
+      "$task_base" "$submitted_sha" "$integration_task" "$task_areas"
 }
 
 run_integration_profile() {
@@ -1489,6 +1514,7 @@ command_integrate() {
   assert_integration_owner "$INTEGRATION_TASK"
   [[ -z "$(git status --porcelain)" ]] || fail '깨끗한 통합 worktree에서만 병합할 수 있습니다.'
   local integration_profile="$META_PROFILE"
+  local integration_mode="${INTEGRATION_MODE:-standard}"
   local integration_owner_meta_file="$META_FILE"
   local integration_owner_meta_hash
   integration_owner_meta_hash="$(git hash-object "$integration_owner_meta_file")"
@@ -1527,7 +1553,12 @@ command_integrate() {
     if [[ "$task_worktree" == "$repo_root" ]]; then
       integration_finalize_expected_heads[0]="$(git rev-parse HEAD)"
     fi
-    run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"
+    if [[ "$integration_mode" == scoped ]]; then
+      run_scoped_integration_profile \
+        "$task_base" "$submitted_sha" "$INTEGRATION_TASK" "$task_areas" "$(git write-tree)"
+    else
+      run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"
+    fi
     assert_integration_owner_unchanged \
       "$INTEGRATION_TASK" "$integration_owner_meta_file" "$integration_owner_meta_hash"
     [[ -f "$task_meta_file" && "$(git hash-object "$task_meta_file")" == "$task_meta_hash" ]] \
@@ -1566,7 +1597,13 @@ command_integrate() {
   git merge --no-ff --no-commit "$submitted_sha" \
     || fail 'Git 임시 병합이 실패했습니다.'
 
-  if ! run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"; then
+  local candidate_tree
+  candidate_tree="$(git write-tree)"
+  if [[ "$integration_mode" == scoped ]]; then
+    run_scoped_integration_profile \
+      "$task_base" "$submitted_sha" "$INTEGRATION_TASK" "$task_areas" "$candidate_tree" \
+      || fail '범위 통합 검증이 실패해 병합을 중단합니다.'
+  elif ! run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"; then
     fail '통합 검증이 실패해 병합을 중단합니다.'
   fi
 
@@ -1585,7 +1622,7 @@ command_integrate() {
   integration_sha="$(git rev-parse HEAD)"
   finalize_integrated_tasks "$integration_sha"
   release_task_lock
-  note "INTEGRATED task=$TASK_ID submitted=$submitted_sha integration=$integration_sha integration_profile=$integration_profile"
+  note "INTEGRATED task=$TASK_ID submitted=$submitted_sha integration=$integration_sha integration_profile=$integration_profile validation_mode=$integration_mode"
 }
 
 command_integrate_batch() {
@@ -1873,7 +1910,8 @@ case "$command_name" in
   restack-squash) command_restack_squash "$@" ;;
   replace-submitted) command_replace_submitted inherited "$@" ;;
   replace-submitted-expanded) command_replace_submitted expanded "$@" ;;
-  integrate) command_integrate "$@" ;;
+  integrate) INTEGRATION_MODE=standard command_integrate "$@" ;;
+  integrate-scoped) INTEGRATION_MODE=scoped command_integrate "$@" ;;
   integrate-batch) command_integrate_batch "$@" ;;
   verify) command_verify "$@" ;;
   finish) command_finish "$@" ;;

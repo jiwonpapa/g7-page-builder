@@ -959,9 +959,9 @@
       },
       "thumbnail": "thumbnails/generated/preset-05-image-landscape.png",
       "props": {
-        "src": "",
-        "alt": "",
-        "caption": "이미지를 설명하는 캡션",
+        "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-park.webp",
+        "alt": "공원에서 대화를 나누는 지역 주민",
+        "caption": "지역 공원에서 이어진 주민 모임",
         "linkUrl": "",
         "aspectRatio": "16:9"
       }
@@ -981,9 +981,9 @@
       },
       "thumbnail": "thumbnails/generated/preset-06-image-square.png",
       "props": {
-        "src": "",
-        "alt": "",
-        "caption": "이미지 제목 또는 출처",
+        "src": "/modules/jiwonpapa-page_builder/store/previews/company-launch-team-design.webp",
+        "alt": "밝은 업무 공간의 디자인 담당자",
+        "caption": "디자인 담당자 프로필",
         "linkUrl": "",
         "aspectRatio": "1:1",
         "appearance": {
@@ -1009,13 +1009,13 @@
       "props": {
         "items": [
           {
-            "label": "시작하기",
-            "url": "/",
+            "label": "서비스 보기",
+            "url": "/services",
             "variant": "primary"
           },
           {
-            "label": "자세히 보기",
-            "url": "/",
+            "label": "도입 문의",
+            "url": "/contact",
             "variant": "secondary"
           }
         ],
@@ -1039,13 +1039,13 @@
       "props": {
         "items": [
           {
-            "label": "무료로 시작",
-            "url": "/",
+            "label": "상담 시작하기",
+            "url": "/contact",
             "variant": "primary"
           },
           {
-            "label": "도입 문의",
-            "url": "/contact",
+            "label": "진행 과정 보기",
+            "url": "/process",
             "variant": "text"
           }
         ],
@@ -1072,16 +1072,16 @@
       "thumbnail": "thumbnails/generated/preset-09-image-text-product-story.png",
       "props": {
         "eyebrow": "제품 기능",
-        "heading": "복잡한 작업을 더 단순하게",
-        "body": "<p>사용자가 실제로 얻게 되는 변화와 사용 장면을 구체적으로 설명해 주세요.</p>",
+        "heading": "상담부터 실행 계획까지 한 흐름으로",
+        "body": "<p>현재 운영 방식을 함께 살피고 우선순위와 다음 실행 단계를 구체적으로 정리합니다.</p>",
         "image": {
-          "src": "",
-          "alt": ""
+          "src": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+          "alt": "상담을 진행하는 서비스 담당자"
         },
         "mediaPosition": "left",
         "primaryLink": {
-          "label": "기능 살펴보기",
-          "url": "/"
+          "label": "서비스 살펴보기",
+          "url": "/services"
         }
       }
     },
@@ -4271,9 +4271,9 @@
     "thumbnails/generated/block-03-hero-slider.png": "c3d7c9b3ea754d21aca71be4ba93c53f0a24be59a57de06fb1dc25ee8dd4962d",
     "thumbnails/generated/block-04-heading.png": "9b0b610b3e88f22fb938075afe80914ad8135aa32741e58777cf23e6619e39d2",
     "thumbnails/generated/block-05-rich-text.png": "1a7f571271363189e1f4e8423e03f9e1f73855e509a0c4434f96343a4b6a6ed6",
-    "thumbnails/generated/block-06-image.png": "ae4c3330c2da10426548ff2be6767a68098b2c79994216ac38db1f3a228b7fbd",
-    "thumbnails/generated/block-07-buttons.png": "aa38d176365711ccd7ecb89a46c12ad1eb9cd3c7b52e214c50e00674582e6b10",
-    "thumbnails/generated/block-08-image-text.png": "565352641a0c472cd9baa141b2e5432154def147afa894b58ce5e8d7c261baa4",
+    "thumbnails/generated/block-06-image.png": "20302864c15828c0005bc882c9577308a887814142a96295c207165cf5881e87",
+    "thumbnails/generated/block-07-buttons.png": "9610a776b67d867297f9d3fa3fb9fc9ca6dd9b2a857a9a1afdfb0eaf1818ada9",
+    "thumbnails/generated/block-08-image-text.png": "b547eb7dfca76284b6d8bb2f59500c20540399ac2061d12be17a0369a9b30244",
     "thumbnails/generated/block-09-icon-list.png": "abace7dfa80cb82cc38e36c3ee514690239f3ea79894ffda110ddb92a4cc27e2",
     "thumbnails/generated/block-10-features.png": "8ccf3d433db52592d021552d054a800fbb231bd5a0ee6115a797c344127db75e",
     "thumbnails/generated/block-11-cta.png": "bffa3af7d603b8f2eb6f2ed82f582f09913638f242ca0cf485d222df9378d784",
@@ -4315,11 +4315,11 @@
     "thumbnails/generated/preset-02-heading-compact-title.png": "6c974cf5416fa5626719870010473600d8c89a23a12b5ef3c30fc45dcb99d701",
     "thumbnails/generated/preset-03-rich-text-article-intro.png": "1a7f571271363189e1f4e8423e03f9e1f73855e509a0c4434f96343a4b6a6ed6",
     "thumbnails/generated/preset-04-rich-text-policy.png": "c0985d6357da23cc451c875dca373d55b51f30655a3f159048e44540d3b8d612",
-    "thumbnails/generated/preset-05-image-landscape.png": "ae4c3330c2da10426548ff2be6767a68098b2c79994216ac38db1f3a228b7fbd",
-    "thumbnails/generated/preset-06-image-square.png": "cdafc85583d5f8246ff471e62418afd2f1a81af08395a1c2cc72cc900b91e393",
-    "thumbnails/generated/preset-07-buttons-primary-secondary.png": "aa38d176365711ccd7ecb89a46c12ad1eb9cd3c7b52e214c50e00674582e6b10",
-    "thumbnails/generated/preset-08-buttons-centered-actions.png": "fa5a0e0af1cf62f388f4e5aff8d280b062f44bd09ce3dcc663e47bb7ebe36aa6",
-    "thumbnails/generated/preset-09-image-text-product-story.png": "565352641a0c472cd9baa141b2e5432154def147afa894b58ce5e8d7c261baa4",
+    "thumbnails/generated/preset-05-image-landscape.png": "20302864c15828c0005bc882c9577308a887814142a96295c207165cf5881e87",
+    "thumbnails/generated/preset-06-image-square.png": "34d53e54cbddfe784c8e286c98c0b32223f6c4acdde545d20ea3e57a32879ce3",
+    "thumbnails/generated/preset-07-buttons-primary-secondary.png": "9610a776b67d867297f9d3fa3fb9fc9ca6dd9b2a857a9a1afdfb0eaf1818ada9",
+    "thumbnails/generated/preset-08-buttons-centered-actions.png": "a342874aa33b90ec5fcb3d17e9328349ae04603d1be31347474724daa2c31836",
+    "thumbnails/generated/preset-09-image-text-product-story.png": "b547eb7dfca76284b6d8bb2f59500c20540399ac2061d12be17a0369a9b30244",
     "thumbnails/generated/preset-10-image-text-company-story.png": "331ff427639bab93d451d1e6e7766f69429304dc894935a7aeda3fffe3b2a369",
     "thumbnails/generated/preset-11-icon-list-benefits.png": "abace7dfa80cb82cc38e36c3ee514690239f3ea79894ffda110ddb92a4cc27e2",
     "thumbnails/generated/preset-12-icon-list-checklist.png": "3cebf430c39c3719beca25b89f33b0b31c0569d642d78f8a7530540ce939882b",

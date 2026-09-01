@@ -2463,7 +2463,7 @@
       },
       "thumbnail": "thumbnails/generated/preset-50-social-links-official.png",
       "props": {
-        "heading": "공식 채널",
+        "heading": "공식 채널 · 예시",
         "items": [
           {
             "network": "instagram",
@@ -2502,17 +2502,17 @@
         "heading": "공간을 미리 만나보세요",
         "images": [
           {
-            "src": "",
+            "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero-space.webp",
             "alt": "밝은 상담 공간",
             "caption": "편안한 상담 공간"
           },
           {
-            "src": "",
+            "src": "/modules/jiwonpapa-page_builder/store/previews/local-business-hero.webp",
             "alt": "제품 전시 공간",
             "caption": "제품 전시 공간"
           },
           {
-            "src": "",
+            "src": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
             "alt": "휴식 공간",
             "caption": "여유로운 휴식 공간"
           }
@@ -4309,8 +4309,8 @@
     "thumbnails/generated/block-41-card-grid.png": "aa9bf8be3beb7a8691d45ab49c704b64adc20ae403721ba7ccf6b19e6e33dc28",
     "thumbnails/generated/block-42-breadcrumbs.png": "d5d9998207d60f23b4a90d0a758e3c3469124a5b024ce640449a66d81d5700ca",
     "thumbnails/generated/block-43-anchor-menu.png": "1f7ba00cab863dcf3790084550b5871720e4a821574170bed69f416e84d57477",
-    "thumbnails/generated/block-44-social-links.png": "adedd33e8725734ba8cf4a183deda193254e34c978b8d60524c3805bc7c8a4e7",
-    "thumbnails/generated/block-45-image-carousel.png": "fc752d0d8a96c4aaa602c4b99df321ba14fbb2cfe20f39f6a3f9a5c293da7786",
+    "thumbnails/generated/block-44-social-links.png": "1597b5bc9654f06c80123f4fff9d0dac021edbf53d1d454b7bcab989e5a90bf5",
+    "thumbnails/generated/block-45-image-carousel.png": "2d014c2ee01dec10ef8dc3d61516624f734eb270f61dadc4ffba03c56ed230c6",
     "thumbnails/generated/preset-01-heading-section-intro.png": "9b0b610b3e88f22fb938075afe80914ad8135aa32741e58777cf23e6619e39d2",
     "thumbnails/generated/preset-02-heading-compact-title.png": "6c974cf5416fa5626719870010473600d8c89a23a12b5ef3c30fc45dcb99d701",
     "thumbnails/generated/preset-03-rich-text-article-intro.png": "1a7f571271363189e1f4e8423e03f9e1f73855e509a0c4434f96343a4b6a6ed6",
@@ -4360,8 +4360,8 @@
     "thumbnails/generated/preset-47-card-grid-services.png": "aa9bf8be3beb7a8691d45ab49c704b64adc20ae403721ba7ccf6b19e6e33dc28",
     "thumbnails/generated/preset-48-breadcrumbs-detail-page.png": "d5d9998207d60f23b4a90d0a758e3c3469124a5b024ce640449a66d81d5700ca",
     "thumbnails/generated/preset-49-anchor-menu-long-page.png": "1f7ba00cab863dcf3790084550b5871720e4a821574170bed69f416e84d57477",
-    "thumbnails/generated/preset-50-social-links-official.png": "adedd33e8725734ba8cf4a183deda193254e34c978b8d60524c3805bc7c8a4e7",
-    "thumbnails/generated/preset-51-image-carousel-space-tour.png": "fc752d0d8a96c4aaa602c4b99df321ba14fbb2cfe20f39f6a3f9a5c293da7786",
+    "thumbnails/generated/preset-50-social-links-official.png": "1597b5bc9654f06c80123f4fff9d0dac021edbf53d1d454b7bcab989e5a90bf5",
+    "thumbnails/generated/preset-51-image-carousel-space-tour.png": "2d014c2ee01dec10ef8dc3d61516624f734eb270f61dadc4ffba03c56ed230c6",
     "thumbnails/generated/preset-52-inquiry-quote.png": "b72bd346f729a624aac13eb49064a52a586770fa436a0c7f577676a5223690a7",
     "thumbnails/generated/preset-53-inquiry-reservation.png": "0005f2c3e546d8773c777460c155342f4f92f0cdbe5d195a45fb7a3a64cbb73f",
     "thumbnails/generated/preset-54-inquiry-application.png": "2135c41105f928ea79554fc054ddcc53762ee5a349b1cf76af21f9fcd7454463",

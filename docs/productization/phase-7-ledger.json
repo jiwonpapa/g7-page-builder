@@ -135,6 +135,19 @@
         { "id": "breadcrumbs.detail-page", "decision": "maintained", "reason": "홈·서비스·현재 위치의 breadcrumb 의미가 명확하며 홈 루트 링크는 의도된 탐색 경로임", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
         { "id": "anchor-menu.long-page", "decision": "maintained", "reason": "소개·서비스·문의 anchor 탐색 구조가 완결됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-D-02",
+      "items": [
+        { "id": "social-links.official", "decision": "modified", "reason": "실제 공식 계정으로 오인할 수 있는 범용 SNS 링크를 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "image-carousel.space-tour", "decision": "modified", "reason": "빈 공간 이미지 3장을 로컬 공간·상점 자산으로 채워 캐러셀 미디어를 완결", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "inquiry.quote", "decision": "maintained", "reason": "견적 요청 목적·제출·성공·개인정보 동의 문구가 구체적으로 제공됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "inquiry.reservation", "decision": "maintained", "reason": "예약 신청 목적·제출·성공·개인정보 동의 문구가 구체적으로 제공됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "inquiry.application", "decision": "maintained", "reason": "참가 신청 목적·제출·성공·개인정보 동의 문구가 구체적으로 제공됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "inquiry.newsletter", "decision": "maintained", "reason": "뉴스레터 구독 목적과 최소 입력 구성이 명확함", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "gallery.grid", "decision": "maintained", "reason": "그리드형 5개 현장 이미지와 대체텍스트·캡션이 모두 채워짐", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "gallery.masonry", "decision": "maintained", "reason": "masonry형 5개 현장 이미지와 대체텍스트·캡션이 모두 채워짐", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

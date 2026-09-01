@@ -1109,10 +1109,10 @@
     {
       "catalog_id": "block:navigation.social-links-01@1",
       "source_digests": {
-        "content": "3b2708b0738a2c828e13041a5b7dd4413cda9fc1c4597d3376725578988a3a6a",
+        "content": "15272723a07d499d791092665d6d7742541dad4e9f58914318a6421f2e0a306f",
         "rights": "1450e016518ee35de0ce493a887c71986dd5f10b1bea45994f6af0c5883e6423",
-        "render": "b7d299590e32ec5a846235ab50a812441f92d2d70445c94724b4e0412088c975",
-        "editing": "ac11a9b9423e5be8e705e13cb6fcb5d7d3f3ae23e9d9bec9f39102d70e8eba22"
+        "render": "c5c4ce61283777b6a785855729dbae8faa9ae48f14974567c2cf9207548f0bf7",
+        "editing": "7c014935dce53bcea11d04f52af6397b3d545694af8643981601f31c0ba703c2"
       },
       "reviews": {
         "content": {
@@ -1134,10 +1134,10 @@
     {
       "catalog_id": "block:media.image-carousel-01@1",
       "source_digests": {
-        "content": "5650341e893ebcc525fc014b3b7bf9918c9be6177e5d760b4d9e44a5eda82276",
-        "rights": "ce4a46c0d216213c99636e8c2d40951eb784bf4a450832b95398f15939db39b4",
-        "render": "126f170e73591c7bde4a1995e014591bbc21f0b76ea5d4e66a158aaca9008407",
-        "editing": "4458e1f6e18e1dd7b9553ae10adaa6523111a472be2f2569c4103c0ae25f4845"
+        "content": "36a04ee4c945b09c6562a9cdc0b4d1abfe1e2093b9049ef595722d8e4b9cc605",
+        "rights": "919924179fb2508651170f0bc8cf81bafc0ce1a8fc7cd9e2aa7a1cdfbb027e9c",
+        "render": "769efecba55231cc15647e2fe09bb1df6df860da88b91673d4d9ebdb43f04e5c",
+        "editing": "a64e851d5d86f2e12c3ff2f4a8ddbc9865e84129b5fa17b753bd51f0fc0dd316"
       },
       "reviews": {
         "content": {
@@ -2384,10 +2384,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:social-links.official",
       "source_digests": {
-        "content": "33ae124c36081bd788e94de164658c880e761ebe9b48c368c4236fdceb1f552b",
+        "content": "974f9e73961c5173ef6fb4f9cf580f7ece3304443a2f65ce85de4104ee406ca7",
         "rights": "0b8d09c7ec9ab93dde8215ad011edb3c6082935d6d286b2d4bd8c8ce31b6c8c3",
-        "render": "87057902fd07a5f8105483a1182b86feccd6f5a12b7a880e590e285943403a69",
-        "editing": "07bc47c50ab7880db7426362e8399b220bb5494c0f69bb2cf2a405e62de1825b"
+        "render": "56ed93411706816d61d62ab333578fb72b1aa95f13b54db3dc6a5b87ffa2a734",
+        "editing": "c2abd6792a9d082e532c91330570d94b3095b528202a284efcfc38f31b7f258e"
       },
       "reviews": {
         "content": {
@@ -2409,10 +2409,10 @@
     {
       "catalog_id": "preset:jiwonpapa/builtin-core:image-carousel.space-tour",
       "source_digests": {
-        "content": "621d242238d9efdd5f19e27400a74a4d8558a188185223ee5c9b965c6f3de037",
-        "rights": "1ac6bf970bc9ec0f82c6b4c6cfdb6c37364687a32eda144902e5b1ee3d369f7b",
-        "render": "cd8b068972ecf137aa9699b59975a67e9e5b4d2c602c21d7f932fa15ee89c3c4",
-        "editing": "b1372d9d6eae0e3657168435889449f1dd2b3de33f7de678c8cc7ce4939e467f"
+        "content": "d8371001509617cf65a671d62590292ea53a514fb0af9cad90ff37953ec794f1",
+        "rights": "fcb490b038a4412480b2fbbb66574d67cef5103f470f0054e3648d70a163735b",
+        "render": "ddf591ecd0ed62be8c88ebf4197f3333b4a8f61feee9af4f568ef8dfd14db491",
+        "editing": "ebe3a399750de8b5589dc27e3e7c89277cbeb2726aaa054f5f3639c52c3ee277"
       },
       "reviews": {
         "content": {

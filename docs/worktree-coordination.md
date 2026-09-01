@@ -128,6 +128,16 @@ make task-restack-squash \
 
 소유 PATHS 범위, 기존 submission profile, task 잠금, metadata ancestry 검사는 일반 `task-restack`과 동일하게 유지됩니다. 충돌·scope 위반·profile 실패·metadata commit 전 중단 신호에서는 HEAD와 index·worktree를 이전 submitted SHA로 원자적 복구합니다. 성공할 때만 base/submitted SHA와 이전 SHA, 재적층 시각, 누적 이력을 갱신합니다.
 
+### 범위 고정 검증과 재시도 receipt
+
+일반 구현은 `PROFILE=scoped`로 제출하고 `make task-integrate-scoped`로 통합합니다. 실제 base 대비 diff에서 PHP·TypeScript·CSS·Store·품질 원장·변경 테스트를 분류해 관련 검사만 실행합니다. 변경한 소스에 대응하는 변경 테스트가 없으면 전체 검증으로 확대하지 않고 제출을 실패시킵니다.
+
+통합 gate 성공은 candidate tree와 gate 이름에 묶인 receipt로 기록합니다. 같은 tree의 재시도는 성공 gate를 재사용하고 실패 gate부터 다시 실행합니다. 전체 coverage·전체 프런트·전체 브라우저 검증은 `integration-verify`의 최종 RC gate에서 한 번 실행합니다.
+
+```bash
+make task-integrate-scoped TASK=<submitted-id> INTEGRATION_TASK=<integration-id>
+```
+
 ### 의미 충돌 task 교체
 
 최종 tree delta 자체가 통합된 선행 작업을 중복하거나, 자동 3-way 적용으로 의미를 판단할 수 없으면 충돌을 자동 해결하지 않습니다. 검토한 새 base에서 빈 Codex-managed worktree와 명시적 branch를 만든 뒤 submitted task를 교체합니다.

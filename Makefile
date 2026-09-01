@@ -6,7 +6,7 @@ BASE_REF ?= HEAD
 
 .NOTPARALLEL:
 
-.PHONY: coord-start coord-status coord-check coord-release task-submit task-resubmit task-restack task-restack-squash task-replace-submitted task-replace-submitted-expanded task-integrate task-integrate-batch integration-verify integration-finish runtime-guard release-guard check-agent-policy quality-coordination dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
+.PHONY: coord-start coord-status coord-check coord-release task-submit task-resubmit task-restack task-restack-squash task-replace-submitted task-replace-submitted-expanded task-integrate task-integrate-scoped task-integrate-batch integration-verify integration-finish runtime-guard release-guard check-agent-policy quality-coordination dev-bootstrap dev-doctor dev-build dev-up dev-install dev-deps dev-build-assets dev-sync quality-php quality-php-coverage quality-frontend quality-g7 quality-gate dev-check dev-browser-smoke dev-infra-e2e dev-product-e2e dev-e2e dev-verify dev-status dev-logs dev-shell dev-credentials dev-down dev-reset staging-doctor release-package deploy-staging smoke-staging
 
 coord-start:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
@@ -56,6 +56,11 @@ task-integrate:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
 	@$(COORD_HARNESS) integrate --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)"
+
+task-integrate-scoped:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) integrate-scoped --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)"
 
 task-integrate-batch:
 	@test -n "$(TASKS)" || { echo 'TASKS is required.' >&2; exit 2; }

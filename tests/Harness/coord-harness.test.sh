@@ -1156,6 +1156,31 @@ grep -q 'AREAS가 겹칩니다' "$temp_root/expected-failure.log" \
   }
 assert_submitted_batch_rollback 'overlapping area rejection'
 
+setup_batch_fixture 'scoped-single-integration'
+scoped_hook="$temp_root/scoped-hook.sh"
+scoped_record="$temp_root/scoped-hook-record.tsv"
+cat > "$scoped_hook" <<'HOOK'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" "$5" >> "$G7PB_COORD_TEST_SCOPED_RECORD"
+HOOK
+chmod +x "$scoped_hook"
+(
+  cd "$batch_repo"
+  G7PB_COORD_TESTING=1 \
+  G7PB_COORD_TEST_SCOPED_INTEGRATION_HOOK="$scoped_hook" \
+  G7PB_COORD_TEST_SCOPED_RECORD="$scoped_record" \
+    "$harness" integrate-scoped \
+      --task first-task \
+      --integration-task integration-task >/dev/null
+)
+[[ "$(wc -l < "$scoped_record" | tr -d ' ')" == 1 ]] \
+  || fail 'scoped integration did not execute its scoped gate exactly once'
+[[ "$(git -C "$batch_repo" show HEAD:first/file.txt)" == 'submitted first' ]] \
+  || fail 'scoped integration did not merge the submitted tree'
+[[ -f "$batch_state/tasks/second-task.meta" && ! -e "$batch_state/tasks/first-task.meta" ]] \
+  || fail 'scoped integration finalized the wrong task metadata'
+
 grep -q '^dev-up: runtime-guard' "$root/Makefile" \
   || fail 'Makefile dev-up runtime guard missing'
 grep -q '^task-restack:' "$root/Makefile" \
@@ -1168,6 +1193,8 @@ grep -q '^task-replace-submitted-expanded:' "$root/Makefile" \
   || fail 'Makefile task-replace-submitted-expanded target missing'
 grep -q '^task-integrate-batch:' "$root/Makefile" \
   || fail 'Makefile task-integrate-batch target missing'
+grep -q '^task-integrate-scoped:' "$root/Makefile" \
+  || fail 'Makefile task-integrate-scoped target missing'
 grep -q '^release-package: release-guard' "$root/Makefile" \
   || fail 'Makefile release guard missing'
 grep -q '^## Parallel work and integration' "$root/AGENTS.md" \

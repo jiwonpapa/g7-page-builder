@@ -90,6 +90,19 @@
         { "id": "testimonials.customer-proof", "decision": "modified", "reason": "실제 고객 후기처럼 보이는 이름·회사·성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
         { "id": "comparison.plans", "decision": "modified", "reason": "확정 상품 조건이 아닌 페이지·블록 비교를 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-C-02",
+      "items": [
+        { "id": "logo-carousel.customers", "decision": "modified", "reason": "빈 고객 로고와 잘못 연결된 링크를 로컬 파트너 자산·개별 경로로 교체하고 가상 예시로 명시", "checks": ["no-root-links", "no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "testimonial-slider.spotlight", "decision": "modified", "reason": "빈 고객 아바타를 로컬 자산으로 채우고 후기를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "logo-cloud.grid", "decision": "modified", "reason": "그리드형 빈 로고·루트 링크를 로컬 자산·파트너 경로로 교체하고 가상 예시로 명시", "checks": ["no-root-links", "no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "logo-cloud.panel", "decision": "modified", "reason": "패널형 빈 로고·루트 링크를 로컬 자산·파트너 경로로 교체하고 가상 예시로 명시", "checks": ["no-root-links", "no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "stats.grid", "decision": "modified", "reason": "그리드형 성과 수치를 가상 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "stats.strip", "decision": "modified", "reason": "띠형 성과 수치를 가상 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "stats.split", "decision": "modified", "reason": "분할형 성과 수치를 가상 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "pricing.cards", "decision": "modified", "reason": "가격·플랜 조건을 예시로 명시하고 루트 행동을 플랜별 문의 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

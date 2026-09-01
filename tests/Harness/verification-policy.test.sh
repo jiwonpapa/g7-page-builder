@@ -3,6 +3,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 harness="$root/scripts/coord-harness.sh"
+quality_scoped="$root/scripts/quality-scoped.sh"
 temp_root="$(mktemp -d "${TMPDIR:-/tmp}/g7pb-verification-policy.XXXXXX")"
 trap 'rm -rf -- "$temp_root"' EXIT
 repo="$temp_root/repo"
@@ -153,4 +154,37 @@ explicit_meta="$repo/.git/g7pb-coordination-v1/tasks/integration-explicit-full.m
   || fail 'explicit full verification mode was not recorded'
 run_harness finish --task integration-explicit-full >/dev/null
 
-printf 'verification-policy.test: PASS full-baseline scoped-docs php-application frontend-resource full-migration reuse-head explicit-full\n'
+receipt_repo="$temp_root/receipt-repo"
+receipt_dir="$temp_root/receipts"
+git init -b main "$receipt_repo" >/dev/null
+git -C "$receipt_repo" config user.name 'Verification Receipt Test'
+git -C "$receipt_repo" config user.email 'verification-receipt@example.test'
+mkdir -p "$receipt_repo/scripts" "$receipt_dir"
+printf '#!/usr/bin/env bash\ntrue\n' > "$receipt_repo/scripts/sample.sh"
+chmod +x "$receipt_repo/scripts/sample.sh"
+git -C "$receipt_repo" add .
+git -C "$receipt_repo" commit -m 'test: receipt base' >/dev/null
+receipt_base="$(git -C "$receipt_repo" rev-parse HEAD)"
+printf '#!/usr/bin/env bash\nset -euo pipefail\ntrue\n' > "$receipt_repo/scripts/sample.sh"
+git -C "$receipt_repo" add scripts/sample.sh
+git -C "$receipt_repo" commit -m 'test: receipt candidate' >/dev/null
+receipt_head="$(git -C "$receipt_repo" rev-parse HEAD)"
+receipt_tree="$(git -C "$receipt_repo" rev-parse HEAD^{tree})"
+integration_receipt_output="$(
+  cd "$receipt_repo"
+  G7PB_SCOPED_RECEIPT_DIR="$receipt_dir" \
+  G7PB_SCOPED_CANDIDATE_TREE="$receipt_tree" \
+    bash "$quality_scoped" integration "$receipt_base" "$receipt_head" receipt-task ''
+)"
+printf '%s\n' "$integration_receipt_output" | grep -q 'PASSED gate=script-syntax' \
+  || fail 'integration did not create the focused gate receipt'
+verification_receipt_output="$(
+  cd "$receipt_repo"
+  G7PB_SCOPED_RECEIPT_DIR="$receipt_dir" \
+  G7PB_SCOPED_CANDIDATE_TREE="$receipt_tree" \
+    bash "$quality_scoped" verification "$receipt_base" "$receipt_head" receipt-task ''
+)"
+printf '%s\n' "$verification_receipt_output" | grep -q 'REUSED gate=script-syntax' \
+  || fail 'verification repeated an already successful candidate-tree gate'
+
+printf 'verification-policy.test: PASS full-baseline scoped-docs php-application frontend-resource full-migration reuse-head explicit-full receipt-reuse\n'

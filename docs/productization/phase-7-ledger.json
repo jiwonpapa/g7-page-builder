@@ -38,6 +38,19 @@
       "items": [
         { "id": "cta.panel", "decision": "modified", "reason": "보조 행동의 루트 링크를 서비스 경로로 교체하고 기존 패널 전환 문맥을 유지", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-B-01",
+      "items": [
+        { "id": "heading.section-intro", "decision": "maintained", "reason": "섹션 도입용 제목과 eyebrow가 구체적이며 추가 행동이나 미디어 의존성이 없음", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "heading.compact-title", "decision": "maintained", "reason": "짧은 하위 제목 용도와 compact 표현이 명확함", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "rich-text.policy", "decision": "maintained", "reason": "이용 전 확인 항목이 완결된 목록 문맥으로 제공됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "image.landscape", "decision": "modified", "reason": "빈 미디어와 설명용 캡션을 지역 모임 현장 이미지·대체텍스트·캡션으로 교체", "checks": ["media-present", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "image.square", "decision": "modified", "reason": "빈 미디어와 설명용 캡션을 팀 구성원 프로필 이미지·대체텍스트·캡션으로 교체", "checks": ["media-present", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "buttons.primary-secondary", "decision": "modified", "reason": "두 루트 링크를 서비스 탐색과 도입 문의 경로로 교체", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "buttons.centered-actions", "decision": "modified", "reason": "루트 링크와 추상 행동을 상담 및 진행 과정 경로로 교체", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "image-text.product-story", "decision": "modified", "reason": "편집 지시문·빈 이미지·루트 링크를 실제 상담 흐름과 현장 이미지로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

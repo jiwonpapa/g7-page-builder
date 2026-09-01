@@ -22,6 +22,7 @@
 
 - 동시 구현은 채팅별 Codex-managed Git worktree 하나와 task 하나로 분리한다. 기본 Local checkout은 통합과 단일 `g7pb-dev` runtime 전용이다.
 - 모든 구현 task는 깨끗한 기준 SHA에서 `make coord-start TASK=<id> PATHS=<comma-separated-prefixes> PROFILE=<profile>`로 시작한다. migration·공개 계약·버전 파일은 각각 `AREAS=migration`, `shared-contract`, `version` 독점 lease를 함께 얻는다.
+- `PROFILE=scoped`는 24개 이하의 정확한 파일 PATHS만 claim할 수 있다. 디렉터리 prefix나 포괄 경로는 하네스가 시작·제출 시 거부하며, 범위를 더 넓혀야 하면 별도 task로 분리한다.
 - task가 claim하지 않은 파일은 수정하지 않는다. 범위가 늘어나면 기존 task를 억지로 확장하지 말고 충돌 task가 없는지 확인한 뒤 새 task로 다시 시작하거나 통합 담당자에게 이관한다.
 - Worktree에서는 `make task-submit TASK=<id>`만 사용해 범위검사·프로필 검증·커밋·제출 SHA 기록을 완료한다. 제출 전 수동 merge, 다른 task branch 수정, shared Local checkout 직접 수정은 금지한다.
 - 새 기준과 의미 충돌한 submitted task를 다시 작성해야 할 때는 수동 release나 metadata 수정을 하지 않는다. 별도 clean worktree에서 `make task-replace-submitted TASK=<new-id> SUPERSEDES=<submitted-id> BASE_REF=<reviewed-sha>`만 사용하며, 하네스가 기존 PATHS·AREAS·PROFILE을 그대로 상속하고 원본 제출 SHA·worktree를 `superseded` history로 보존해야 한다.

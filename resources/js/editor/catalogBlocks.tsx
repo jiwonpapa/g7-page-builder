@@ -646,7 +646,7 @@ function HeroSliderPreview(props: HeroSliderEditorProps & { id: string }): React
       <div className={`g7pb-preview-hero-slider ${surfaceClass(props.surface, props.spacing, props.textScale, props.textAlign)}`}>
         <div className="g7pb-preview-hero-slider__viewport">
           <div className="g7pb-preview-hero-slider__track">
-            {slides.map((slide, index) => <article key={index} data-slide-index={index} hidden={activeIndex !== index}>
+            {slides.map((slide, index) => <article key={index} data-slide-index={index} style={{ order: index === activeIndex ? -1 : index }}>
               <div className="g7pb-preview-hero-slider__copy">
                 <small data-g7pb-inline-field={`slides.${index}.eyebrow`}>{slide.eyebrow}</small>
                 <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath={`slides.${index}.title`}>{slide.title}</RichTextCanvasField>

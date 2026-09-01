@@ -9,6 +9,16 @@
         { "id": "notice.service-info", "decision": "maintained", "reason": "구체적인 이용 안내와 의미 있는 guide 경로가 이미 존재", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
         { "id": "hero.poster", "decision": "modified", "reason": "편집 지시문을 행사 일정 탐색용 포스터 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-A-01b",
+      "items": [
+        { "id": "hero-slider.campaign", "decision": "modified", "reason": "canonical 기본 블록과 함께 비어 있던 미디어 및 placeholder 행동을 방문과 이야기 탐색 흐름으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "hero.backdrop", "decision": "modified", "reason": "공통 대비 결함을 고치고 편집 지시문을 방문 예약 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "hero.editorial", "decision": "modified", "reason": "한국어 제목 줄바꿈을 보정하고 지역 이야기 탐색 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "hero.device", "decision": "modified", "reason": "한국어 제목 줄바꿈을 보정하고 상담 진행 안내 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "hero-split.balanced", "decision": "modified", "reason": "한국어 제목 줄바꿈을 보정하고 팀 실행 계획 문맥으로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

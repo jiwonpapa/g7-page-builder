@@ -121,6 +121,12 @@ import {
   mergeBlockContainerAppearance,
 } from './blockAppearance';
 import {
+  createResponsiveAppearanceField,
+  hasResponsiveOverrides,
+  normalizeResponsiveOverrides,
+  responsiveClassName,
+} from './responsiveBlockStyle';
+import {
   clearVisibleClipContract,
   currentInteractionRects,
   exposeVisibleClipContract,
@@ -768,6 +774,7 @@ function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'
     props: {
       ...converted.props,
       ...blockContainerEditorProps(block.props.appearance),
+      responsiveOverrides: normalizeResponsiveOverrides(block.responsive),
       __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',
     },
   } as unknown as PuckEditorData['content'][number];
@@ -789,6 +796,7 @@ function puckBlockToCanonical(
     hadAppearance: false,
     hadMotion: false,
     hadVisibility: false,
+    hadResponsive: false,
     hadLayout: true,
     initialLayout: null,
     hadPageSize: true,
@@ -968,6 +976,9 @@ function puckBlockToCanonical(
   }
 
   const internalProps = block.props as Record<string, unknown>;
+  const responsive = normalizeResponsiveOverrides(internalProps.responsiveOverrides);
+  delete canonical.props.responsiveOverrides;
+  if (hasResponsiveOverrides(responsive)) canonical.responsive = responsive;
   const visibilityAudience = internalProps.__g7pbVisibilityAudience === 'guest'
     || internalProps.__g7pbVisibilityAudience === 'member'
     ? internalProps.__g7pbVisibilityAudience
@@ -999,6 +1010,25 @@ function puckBlockToCanonical(
 
 export function puckToCanonical(data: PuckEditorData, context: PuckAdapterContext): PageBuilderDocument {
   return puckDocumentToCanonical(data, context, puckBlockToCanonical);
+}
+
+function flattenPuckBlocks(blocks: PuckEditorData['content']): PuckEditorData['content'] {
+  const flattened: PuckEditorData['content'] = [];
+  const visit = (block: PuckEditorData['content'][number]): void => {
+    flattened.push(block);
+    for (const candidate of Object.values(block.props as Record<string, unknown>)) {
+      if (!Array.isArray(candidate)) continue;
+      for (const child of candidate) {
+        if (typeof child !== 'object' || child === null) continue;
+        const item = child as Record<string, unknown>;
+        if (typeof item.type === 'string' && typeof item.props === 'object' && item.props !== null) {
+          visit(child as PuckEditorData['content'][number]);
+        }
+      }
+    }
+  };
+  blocks.forEach(visit);
+  return flattened;
 }
 
 function safeLink(value: unknown): string {
@@ -1235,7 +1265,7 @@ function markRequiredInspectorFields(fields: Record<string, unknown>): Record<st
 function withBlockContainerFields<TComponents extends Record<string, { fields?: Record<string, unknown> }>>(
   components: TComponents,
 ): TComponents {
-  const stableFields = Object.fromEntries(Object.entries(BLOCK_CONTAINER_FIELDS).map(([name, field]) => [name, {
+  const containerFields = Object.fromEntries(Object.entries(BLOCK_CONTAINER_FIELDS).map(([name, field]) => [name, {
     type: 'custom' as const,
     label: field.label,
     render: ({ value, onChange, readOnly }: {
@@ -1250,6 +1280,7 @@ function withBlockContainerFields<TComponents extends Record<string, { fields?: 
       options={field.options}
     />,
   }]));
+  const stableFields = { ...containerFields, responsiveOverrides: createResponsiveAppearanceField() };
   return Object.fromEntries(Object.entries(components).map(([name, component]) => [name, name.startsWith('Layout') ? component : {
     ...component,
     fields: markRequiredInspectorFields({
@@ -3393,10 +3424,11 @@ export function PuckEditorAdapter({
     }),
   ), [data.content]);
   const canvasBlockAppearances = useMemo<Record<string, string>>(() => Object.fromEntries(
-    data.content.flatMap((block) => {
+    flattenPuckBlocks(data.content).flatMap((block) => {
       const rawId = asString(block.props.id);
-      const appearance = mergeBlockContainerAppearance(undefined, block.props as Record<string, unknown>);
-      const className = blockContainerClassName(appearance ?? { surface: 'default', spacing: 'normal' });
+      const blockProps = block.props as Record<string, unknown>;
+      const appearance = mergeBlockContainerAppearance(undefined, blockProps);
+      const className = `${blockContainerClassName(appearance ?? { surface: 'default', spacing: 'normal' })} ${responsiveClassName(blockProps.responsiveOverrides)}`.trim();
       return [[rawId, className], [idToUuid(rawId), className]];
     }),
   ), [data.content]);

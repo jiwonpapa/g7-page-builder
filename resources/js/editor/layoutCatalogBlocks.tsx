@@ -1,6 +1,7 @@
 import React from 'react';
 import { usePuck, type Config, type Slot } from '@puckeditor/core';
-import type { BlockAppearance, BlockMotion, ElementAppearanceMap } from '../documents/types';
+import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, ElementAppearanceMap } from '../documents/types';
+import { createResponsiveLayoutField, responsiveClassName } from './responsiveBlockStyle';
 
 interface LayoutInternalEditorProps {
   surface?: BlockAppearance['surface'];
@@ -9,6 +10,7 @@ interface LayoutInternalEditorProps {
   motion?: BlockMotion;
   structureInsert?: string;
   structureDelete?: string;
+  responsiveOverrides?: BlockResponsiveOverrides;
 }
 
 export interface LayoutSectionEditorProps extends LayoutInternalEditorProps {
@@ -261,11 +263,12 @@ export const layoutCatalogComponentConfigs: Config<LayoutCatalogEditorComponents
       spacing: { type: 'radio', label: '세로 여백', options: [
         { label: '좁게', value: 'compact' }, { label: '기본', value: 'normal' }, { label: '넓게', value: 'spacious' },
       ] },
+      responsiveOverrides: createResponsiveLayoutField('section'),
       content: { type: 'slot', allow: [...SECTION_COMPONENTS] },
       structureDelete: STRUCTURE_DELETE_FIELD,
     },
-    render: ({ content: Content, width, spacing }) => (
-      <section className={`g7pb-preview-layout-section g7pb-preview-layout-section--${width} g7pb-preview-layout-section--${spacing}`} data-testid="page-builder-layout-section">
+    render: ({ content: Content, width, spacing, responsiveOverrides }) => (
+      <section className={`g7pb-preview-layout-section g7pb-preview-layout-section--${width} g7pb-preview-layout-section--${spacing} ${responsiveClassName(responsiveOverrides)}`.trim()} data-testid="page-builder-layout-section">
         <span className="g7pb-preview-layout-label">Section</span><Content minEmptyHeight={120} />
       </section>
     ),
@@ -278,6 +281,7 @@ export const layoutCatalogComponentConfigs: Config<LayoutCatalogEditorComponents
       columns: { type: 'custom', label: '열 수', render: ({ value, readOnly }) => <ColumnsCountField value={value} readOnly={readOnly} /> },
       ratio: { type: 'radio', label: '열 비율', options: [...COLUMN_RATIO_OPTIONS['2']] },
       gap: GAP_FIELD,
+      responsiveOverrides: createResponsiveLayoutField('columns'),
       structureInsert: { type: 'custom', label: '중첩 Stack', render: ({ readOnly }) => <StructureInsertField readOnly={readOnly} /> },
       column1: { type: 'slot', allow: [...COLUMN_COMPONENTS] },
       column2: { type: 'slot', allow: [...COLUMN_COMPONENTS] },
@@ -291,8 +295,8 @@ export const layoutCatalogComponentConfigs: Config<LayoutCatalogEditorComponents
         ratio: { type: 'radio', label: '열 비율', options: [...COLUMN_RATIO_OPTIONS[columns]] },
       } as typeof fields;
     },
-    render: ({ column1: Column1, column2: Column2, column3: Column3, columns, ratio, gap }) => (
-      <div className={`g7pb-preview-layout-columns g7pb-preview-layout-columns--count-${columns} g7pb-preview-layout-columns--${ratio.replaceAll(':', '-')} g7pb-preview-layout-columns--gap-${gap}`} data-testid="page-builder-layout-columns">
+    render: ({ column1: Column1, column2: Column2, column3: Column3, columns, ratio, gap, responsiveOverrides }) => (
+      <div className={`g7pb-preview-layout-columns g7pb-preview-layout-columns--count-${columns} g7pb-preview-layout-columns--${ratio.replaceAll(':', '-')} g7pb-preview-layout-columns--gap-${gap} ${responsiveClassName(responsiveOverrides)}`.trim()} data-testid="page-builder-layout-columns">
         <div className="g7pb-preview-layout-columns__column"><span>1열</span><Column1 minEmptyHeight={96} /></div>
         {Number(columns) >= 2 && Column2 ? <div className="g7pb-preview-layout-columns__column"><span>2열</span><Column2 minEmptyHeight={96} /></div> : null}
         {Number(columns) >= 3 && Column3 ? <div className="g7pb-preview-layout-columns__column"><span>3열</span><Column3 minEmptyHeight={96} /></div> : null}
@@ -305,10 +309,11 @@ export const layoutCatalogComponentConfigs: Config<LayoutCatalogEditorComponents
     permissions: { delete: false },
     fields: {
       gap: GAP_FIELD,
+      responsiveOverrides: createResponsiveLayoutField('stack'),
       content: { type: 'slot', allow: [...LEAF_COMPONENTS] },
       structureDelete: STRUCTURE_DELETE_FIELD,
     },
-    render: ({ content: Content, gap }) => <div className={`g7pb-preview-layout-stack g7pb-preview-layout-stack--gap-${gap}`} data-testid="page-builder-layout-stack">
+    render: ({ content: Content, gap, responsiveOverrides }) => <div className={`g7pb-preview-layout-stack g7pb-preview-layout-stack--gap-${gap} ${responsiveClassName(responsiveOverrides)}`.trim()} data-testid="page-builder-layout-stack">
       <span className="g7pb-preview-layout-label">Stack</span><Content minEmptyHeight={96} />
     </div>,
   },

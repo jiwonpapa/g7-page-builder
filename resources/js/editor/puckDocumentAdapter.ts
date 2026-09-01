@@ -12,6 +12,7 @@ interface BlockRoundTripMetadata {
   hadAppearance: boolean;
   hadMotion: boolean;
   hadVisibility: boolean;
+  hadResponsive: boolean;
   hadLayout: boolean;
   initialLayout: string | null;
   hadPageSize: boolean;
@@ -54,6 +55,7 @@ export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBl
       hadAppearance: Object.prototype.hasOwnProperty.call(block.props, 'appearance'),
       hadMotion: Object.prototype.hasOwnProperty.call(block, 'motion'),
       hadVisibility: Object.prototype.hasOwnProperty.call(block, 'visibility'),
+      hadResponsive: Object.prototype.hasOwnProperty.call(block, 'responsive'),
       hadLayout: Object.prototype.hasOwnProperty.call(block.props, 'layout'),
       initialLayout: typeof initialLayoutValue === 'string' ? initialLayoutValue : null,
       hadPageSize: Object.prototype.hasOwnProperty.call(block.props, 'pageSize'),

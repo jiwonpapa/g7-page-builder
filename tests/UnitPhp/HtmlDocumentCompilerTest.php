@@ -27,7 +27,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($document, 7, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="layout-section"', $artifact);
         self::assertStringContainsString('g7pb-layout-columns--1-2', $artifact);
         self::assertStringContainsString('data-g7pb-layout-column="1"', $artifact);
@@ -59,13 +59,62 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 8, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         self::assertStringContainsString('g7pb-layout-columns--1-1-1', $artifact);
         self::assertStringContainsString('g7pb-layout-columns--gap-none', $artifact);
         self::assertStringContainsString('data-g7pb-layout-column="3"', $artifact);
         self::assertStringContainsString('data-block-type="layout-stack"', $artifact);
         self::assertStringContainsString('g7pb-layout-stack--gap-spacious', $artifact);
         self::assertStringContainsString('세 번째 열', $artifact);
+    }
+
+    public function test_compiles_typed_responsive_overrides_to_the_shared_class_contract(): void
+    {
+        $contents = file_get_contents(dirname(__DIR__).'/Contract/document-layout-v2.fixture.json');
+        self::assertIsString($contents);
+        $payload = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+        $payload['blocks'][0]['responsive'] = [
+            'tablet' => ['appearance' => ['surface' => 'contrast', 'textAlign' => 'center'], 'layout' => ['width' => 'wide']],
+            'mobile' => ['appearance' => ['spacing' => 'compact'], 'layout' => ['width' => 'standard']],
+        ];
+        $payload['blocks'][0]['slots']['content'][0]['responsive'] = [
+            'tablet' => ['layout' => ['columns' => 2, 'gap' => 'spacious']],
+            'mobile' => ['layout' => ['columns' => 1, 'gap' => 'compact']],
+        ];
+        $payload['blocks'][0]['slots']['content'][0]['slots']['column1'][0]['responsive'] = [
+            'tablet' => ['appearance' => ['surface' => 'soft']],
+            'mobile' => ['appearance' => ['textScale' => 'compact']],
+        ];
+
+        $result = $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 9, 'html', 'g7-7.0.7');
+        $artifact = (string) $result->artifact;
+
+        self::assertSame('0.19.0', $result->compilerVersion);
+        foreach ([
+            'g7pb-tablet-appearance-surface--contrast', 'g7pb-tablet-appearance-text-align--center',
+            'g7pb-tablet-layout-width--wide', 'g7pb-mobile-layout-width--standard',
+            'g7pb-tablet-layout-columns--2', 'g7pb-mobile-layout-columns--1',
+            'g7pb-tablet-appearance-surface--soft', 'g7pb-mobile-appearance-text-scale--compact',
+        ] as $className) {
+            self::assertStringContainsString($className, $artifact);
+        }
+    }
+
+    public function test_rejects_responsive_content_keys_and_layout_on_leaf_blocks(): void
+    {
+        $payload = $this->document('<p>본문</p>')->toArray();
+        $payload['blocks'][0]['responsive'] = ['mobile' => ['appearance' => ['title' => '금지']]];
+        try {
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+            self::fail('A responsive content override compiled successfully.');
+        } catch (DocumentCompileException) {
+            self::addToAssertionCount(1);
+        }
+
+        $payload = $this->document('<p>본문</p>')->toArray();
+        $payload['blocks'][0]['responsive'] = ['tablet' => ['layout' => ['columns' => 2]]];
+        $this->expectException(DocumentCompileException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
     }
 
     public function test_compiler_is_deterministic_for_all_mvp_blocks(): void
@@ -932,7 +981,7 @@ final class HtmlDocumentCompilerTest extends TestCase
             'g7-7.0.7',
         );
 
-        self::assertSame('0.18.0', $catalog->compilerVersion);
+        self::assertSame('0.19.0', $catalog->compilerVersion);
         foreach (['hero-split', 'logo-cloud', 'stats', 'pricing', 'team', 'gallery', 'bar-chart'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', (string) $catalog->artifact);
         }
@@ -949,7 +998,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->foundationDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         foreach (['heading', 'rich-text', 'image', 'buttons', 'image-text', 'icon-list'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -974,7 +1023,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->productionLibraryDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         foreach (['divider', 'blockquote', 'notice', 'card-grid', 'breadcrumbs', 'anchor-menu', 'social-links', 'image-carousel'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -1275,7 +1324,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         );
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-recent-posts"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/popular?period=week&amp;limit=6', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-grid"', $artifact);
@@ -1334,7 +1383,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseTwoDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         foreach (['testimonials', 'faq-accordion', 'process-timeline', 'tabs', 'comparison-table', 'article-list', 'video-embed'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -1373,7 +1422,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseThreeDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         foreach (['logo-carousel', 'testimonial-slider', 'event-schedule', 'download-resources', 'g7-board-archive', 'g7-product-showcase'] as $type) {
             self::assertStringContainsString('data-block-type="'.$type.'"', $artifact);
         }
@@ -1397,7 +1446,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $result = $this->builtInCompiler()->compile($this->phaseFourDocument(), 1, 'html', 'g7-7.0.7');
         $artifact = (string) $result->artifact;
 
-        self::assertSame('0.18.0', $result->compilerVersion);
+        self::assertSame('0.19.0', $result->compilerVersion);
         self::assertStringContainsString('data-block-type="g7-post-detail"', $artifact);
         self::assertStringContainsString('data-block-type="g7-product-detail"', $artifact);
         self::assertStringContainsString('/api/modules/sirsoft-board/boards/notice/posts/17', $artifact);

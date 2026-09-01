@@ -97,7 +97,13 @@ run_diff_check() {
 
 run_php_submission() {
   composer validate --no-check-publish
-  local files=("${php_sources[@]}" "${php_tests[@]}")
+  local files=()
+  if (( ${#php_sources[@]} > 0 )); then
+    files+=("${php_sources[@]}")
+  fi
+  if (( ${#php_tests[@]} > 0 )); then
+    files+=("${php_tests[@]}")
+  fi
   [[ "${#files[@]}" == 0 ]] || vendor/bin/pint --test "${files[@]}"
   [[ "${#php_sources[@]}" == 0 ]] \
     || vendor/bin/phpstan analyse -c phpstan.neon.dist --memory-limit=1G --no-progress "${php_sources[@]}"

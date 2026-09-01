@@ -1316,7 +1316,6 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-preview-hero-slider article { display: grid; flex: 0 0 100%; min-width: 0; grid-template-columns: 1.1fr .9fr; min-height: 30rem; overflow: hidden; padding-left: 1.1rem; border: 1px solid rgb(255 255 255 / 16%); border-radius: 1rem; background: rgb(255 255 255 / 7%); }
 .g7pb-preview-hero-slider article[hidden] { display: none; }
 .g7pb-preview-hero-slider article > div:not([data-g7pb-richtext-field]) { align-self: center; padding: clamp(2rem, 6vw, 5rem); }
-.g7pb-preview-hero-slider article > .g7pb-preview-hero-slider__copy { padding-bottom: calc(clamp(2rem, 6vw, 5rem) + .15rem); }
 .g7pb-preview-hero-slider :is(h2, [data-g7pb-heading-level="2"]) { margin: .8rem 0 1.1rem; font-size: clamp(2.5rem, 6vw, 5rem); line-height: 1.02; letter-spacing: -.055em; }
 .g7pb-preview-hero-slider :is(p, [data-g7pb-richtext-display="div"], [data-g7pb-richtext-display="p"]) { color: #cbd3df; line-height: 1.7; }
 .g7pb-preview-hero-slider article div > span { display: inline-flex; margin-top: 20px; color: #fff; font-weight: 750; }

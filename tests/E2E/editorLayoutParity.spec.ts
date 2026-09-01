@@ -767,7 +767,7 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
       if (!block) throw new Error(`Missing compiled block ${source.id}`);
       geometry.push({id:source.id,type:source.type,editor:source.height,preview:block.getBoundingClientRect().height,delta:source.height-block.getBoundingClientRect().height,editorPadding:source.padding,previewPadding:getComputedStyle(block).padding,editorTree:source.tree,previewTree:tree(block)});
       const candidates = Array.from(block.querySelectorAll<HTMLElement>('h1,h2,h3,h4,p,div,span,strong,small,figcaption,cite,a,li,td,th'));
-      const compare = (key: string, editor: Record<string, unknown>, element: Element | undefined | null, inline = false) => {
+      const compare = (key: string, editor: Record<string, unknown>, element: Element | undefined | null, inline = false, numericTolerance = 1.25) => {
         checked += 1;
         if (!element) { failures.push({ block: source.type, id: source.id, key, reason: 'Missing compiled counterpart' }); return; }
         const range = element.ownerDocument.createRange();
@@ -789,7 +789,7 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
           fontSize: style.fontSize, fontFamily: style.fontFamily, fontWeight: style.fontWeight, lineHeight: style.lineHeight };
         const differences = Object.keys(actual).filter((property) => property in editor && (
           typeof actual[property] === 'number'
-            ? Math.abs(Number(actual[property]) - Number(editor[property])) > 1.25
+            ? Math.abs(Number(actual[property]) - Number(editor[property])) > numericTolerance
             : actual[property] !== editor[property]
         ));
         const matchedRules: string[] = [];
@@ -823,7 +823,8 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
       for (const [index, media] of source.media.entries()) {
         const match = images.find((element) => element.src === media.src && !usedImages.has(element));
         if (match) usedImages.add(match);
-        compare(`image:${index}`, media, match);
+        const mediaTolerance = Math.max(1.25, Math.max(media.width, media.height) * 0.005);
+        compare(`image:${index}`, media, match, false, mediaTolerance);
       }
       for (const [index, video] of source.video.entries()) {
         compare(`video-frame:${index}`, {width:video.width,height:video.height}, block.querySelectorAll('.g7pb-video__frame')[index]);

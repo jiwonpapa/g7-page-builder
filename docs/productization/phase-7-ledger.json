@@ -122,6 +122,19 @@
       "items": [
         { "id": "testimonials.quote-hero", "decision": "modified", "reason": "대형 인용형 고객 후기와 성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-D-01",
+      "items": [
+        { "id": "gallery.project-scenes", "decision": "maintained", "reason": "5개 현장 이미지와 대체텍스트·캡션이 모두 채워져 갤러리 문맥이 완결됨", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "inquiry.general", "decision": "maintained", "reason": "문의 항목·성공 안내·개인정보 동의 문구가 구체적으로 제공됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "map.office", "decision": "modified", "reason": "주소·좌표·운영시간·주차 정보를 실제 사업장으로 오인하지 않도록 가상 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "video.product-tour", "decision": "modified", "reason": "외부 샘플 video ID를 실제 제품 영상으로 오인하지 않도록 예시로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "events.upcoming", "decision": "modified", "reason": "미확정 행사 일정을 가상 예시로 명시하고 루트 행동을 행사별 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "downloads.resource-center", "decision": "modified", "reason": "미확정 자료명·파일 크기를 가상 예시로 명시하고 루트 행동을 자료별 문의 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "breadcrumbs.detail-page", "decision": "maintained", "reason": "홈·서비스·현재 위치의 breadcrumb 의미가 명확하며 홈 루트 링크는 의도된 탐색 경로임", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "anchor-menu.long-page", "decision": "maintained", "reason": "소개·서비스·문의 anchor 탐색 구조가 완결됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

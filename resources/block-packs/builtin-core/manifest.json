@@ -1820,9 +1820,9 @@
       "thumbnail": "thumbnails/generated/preset-30-map-office.png",
       "props": {
         "eyebrow": "LOCATION",
-        "heading": "방문을 환영합니다",
+        "heading": "방문 안내 · 가상 예시",
         "description": "주소와 교통 정보를 확인해 주세요.",
-        "address": "서울특별시 중구 세종대로 110",
+        "address": "서울특별시 중구 세종대로 110 (가상 예시)",
         "latitude": 37.5665,
         "longitude": 126.978,
         "zoom": 16,
@@ -2031,8 +2031,8 @@
       "thumbnail": "thumbnails/generated/preset-35-video-product-tour.png",
       "props": {
         "eyebrow": "VIDEO",
-        "heading": "제품을 2분 안에 살펴보세요",
-        "caption": "핵심 제작 흐름을 영상으로 확인합니다.",
+        "heading": "제품 소개 영상 · 예시",
+        "caption": "샘플 영상으로 임베드 구성을 확인합니다.",
         "provider": "youtube",
         "videoId": "M7lc1UVf-VE",
         "ratio": "16:9"
@@ -2136,7 +2136,7 @@
       "thumbnail": "thumbnails/generated/preset-38-events-upcoming.png",
       "props": {
         "eyebrow": "EVENTS",
-        "heading": "만나고 배우는 시간",
+        "heading": "행사 일정 · 가상 예시",
         "items": [
           {
             "date": "2026-09-03",
@@ -2145,7 +2145,7 @@
             "location": "온라인",
             "description": "핵심 기능을 살펴봅니다.",
             "buttonLabel": "참가 신청",
-            "buttonUrl": "/"
+            "buttonUrl": "/events/webinar"
           },
           {
             "date": "2026-09-12",
@@ -2154,7 +2154,7 @@
             "location": "서울 스튜디오",
             "description": "발행 운영 방법을 실습합니다.",
             "buttonLabel": "자세히 보기",
-            "buttonUrl": "/"
+            "buttonUrl": "/events/workshop"
           }
         ],
         "layout": "agenda"
@@ -2174,7 +2174,7 @@
       "thumbnail": "thumbnails/generated/preset-39-downloads-resource-center.png",
       "props": {
         "eyebrow": "RESOURCES",
-        "heading": "필요한 자료를 받아보세요",
+        "heading": "자료 목록 · 가상 예시",
         "items": [
           {
             "title": "서비스 소개서",
@@ -2182,7 +2182,7 @@
             "fileType": "PDF",
             "fileSize": "2.4 MB",
             "buttonLabel": "다운로드",
-            "url": "/"
+            "url": "/contact?resource=service-guide"
           },
           {
             "title": "운영 체크리스트",
@@ -2190,7 +2190,7 @@
             "fileType": "PDF",
             "fileSize": "780 KB",
             "buttonLabel": "다운로드",
-            "url": "/"
+            "url": "/contact?resource=operations-checklist"
           }
         ]
       }
@@ -4287,18 +4287,18 @@
     "thumbnails/generated/block-19-g7-recent-posts.png": "98548cf311a5d13c21d86f31520d4338566ffb0ebbdff0c90441a316916b8ecb",
     "thumbnails/generated/block-20-g7-product-grid.png": "3ed3929789f8a3a8ce15b94cb677d9bed7846a982af9295f781cb8328279858c",
     "thumbnails/generated/block-21-inquiry-form.png": "3ad202623864b8d5df7b8ba158060b12cd20843546a5fbdf551b59832fd0ca72",
-    "thumbnails/generated/block-22-map-directions.png": "258bca143c7bace468e9194831eff49b56f971db61b81e0479506264738ee7f5",
+    "thumbnails/generated/block-22-map-directions.png": "35ac1e589c4d775dd908483cb1b743aafc99a59333c6569e3deb913745db24a2",
     "thumbnails/generated/block-23-testimonials.png": "3c1ea911c7903a0d8166da20b5a28dbcd3657ad93d557e17c0efd3ac60d83671",
     "thumbnails/generated/block-24-faq-accordion.png": "06eab16a594688cbb1cd3e6a898eeac4a64646c731c9b1cea74cdf76313e5104",
     "thumbnails/generated/block-25-process-timeline.png": "31b0b9bf78e32fb4f28df9e1382fd1e9a5fca2307f5bb804a27249d105f7179c",
     "thumbnails/generated/block-26-tabs.png": "e198af9466a79d4f3fcd64007f00b5caaaaeee95692779edad69b590cb5f94e0",
     "thumbnails/generated/block-27-comparison-table.png": "1757d192ac16100ab7a6bdbb20e664fd42f91c19da00f55890aaa8eceeda5be4",
     "thumbnails/generated/block-28-article-list.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
-    "thumbnails/generated/block-29-video-embed.png": "3f41af01ebe79551450f25dd30e7d70194380c3f6833c66859ab429d01eaf1cd",
+    "thumbnails/generated/block-29-video-embed.png": "95aa0045394a6e09db4418c3904c1d30ab33733f7a38307c6edaa2b3a50786ec",
     "thumbnails/generated/block-30-logo-carousel.png": "7c4312022c44693fa255dc8736b913eb69cf9b230d3b18e55bbc2ed1efe45696",
     "thumbnails/generated/block-31-testimonial-slider.png": "fb2d6aa5da7691c9099b0b4765b923deea2590c4feb28d9585dda599f3720c66",
-    "thumbnails/generated/block-32-event-schedule.png": "9a991852773a081a8020dde7b057d472123672ecee91310e395e95b68e7567f7",
-    "thumbnails/generated/block-33-download-resources.png": "1142771b868503546e79111a571ea7350e280b05e14b5cb7a392b9e3d19f1d31",
+    "thumbnails/generated/block-32-event-schedule.png": "e1f6a5c1faf0e1403635d7c9d84d89886c2881a3239da7e4258b939933a526c1",
+    "thumbnails/generated/block-33-download-resources.png": "0ae1b794ef072b04685699c43b006f97e00d608250eccbfe1f46769b5b5101ea",
     "thumbnails/generated/block-34-g7-board-archive.png": "954ae989dc2b9caa81eef320b39c85be5b6356e0de0603c59ced27afb71794b2",
     "thumbnails/generated/block-35-g7-product-showcase.png": "92fb3e9a07da27b86c56cb2a058f8dd210d7fdd66f194bcfc8802504a560810e",
     "thumbnails/generated/block-36-g7-post-detail.png": "ec622946601ebffd526a8fa894f45d1e075a27cc59ecd263f0b15842fb836e1d",
@@ -4340,16 +4340,16 @@
     "thumbnails/generated/preset-27-g7-posts-latest.png": "98548cf311a5d13c21d86f31520d4338566ffb0ebbdff0c90441a316916b8ecb",
     "thumbnails/generated/preset-28-g7-products-new.png": "3ed3929789f8a3a8ce15b94cb677d9bed7846a982af9295f781cb8328279858c",
     "thumbnails/generated/preset-29-inquiry-general.png": "3ad202623864b8d5df7b8ba158060b12cd20843546a5fbdf551b59832fd0ca72",
-    "thumbnails/generated/preset-30-map-office.png": "258bca143c7bace468e9194831eff49b56f971db61b81e0479506264738ee7f5",
+    "thumbnails/generated/preset-30-map-office.png": "35ac1e589c4d775dd908483cb1b743aafc99a59333c6569e3deb913745db24a2",
     "thumbnails/generated/preset-31-testimonials-customer-proof.png": "3c1ea911c7903a0d8166da20b5a28dbcd3657ad93d557e17c0efd3ac60d83671",
     "thumbnails/generated/preset-32-tabs-service-guide.png": "e198af9466a79d4f3fcd64007f00b5caaaaeee95692779edad69b590cb5f94e0",
     "thumbnails/generated/preset-33-comparison-plans.png": "1757d192ac16100ab7a6bdbb20e664fd42f91c19da00f55890aaa8eceeda5be4",
     "thumbnails/generated/preset-34-articles-insights.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
-    "thumbnails/generated/preset-35-video-product-tour.png": "3f41af01ebe79551450f25dd30e7d70194380c3f6833c66859ab429d01eaf1cd",
+    "thumbnails/generated/preset-35-video-product-tour.png": "95aa0045394a6e09db4418c3904c1d30ab33733f7a38307c6edaa2b3a50786ec",
     "thumbnails/generated/preset-36-logo-carousel-customers.png": "7c4312022c44693fa255dc8736b913eb69cf9b230d3b18e55bbc2ed1efe45696",
     "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "fb2d6aa5da7691c9099b0b4765b923deea2590c4feb28d9585dda599f3720c66",
-    "thumbnails/generated/preset-38-events-upcoming.png": "9a991852773a081a8020dde7b057d472123672ecee91310e395e95b68e7567f7",
-    "thumbnails/generated/preset-39-downloads-resource-center.png": "1142771b868503546e79111a571ea7350e280b05e14b5cb7a392b9e3d19f1d31",
+    "thumbnails/generated/preset-38-events-upcoming.png": "e1f6a5c1faf0e1403635d7c9d84d89886c2881a3239da7e4258b939933a526c1",
+    "thumbnails/generated/preset-39-downloads-resource-center.png": "0ae1b794ef072b04685699c43b006f97e00d608250eccbfe1f46769b5b5101ea",
     "thumbnails/generated/preset-40-g7-archive-searchable.png": "954ae989dc2b9caa81eef320b39c85be5b6356e0de0603c59ced27afb71794b2",
     "thumbnails/generated/preset-41-g7-showcase-featured.png": "92fb3e9a07da27b86c56cb2a058f8dd210d7fdd66f194bcfc8802504a560810e",
     "thumbnails/generated/preset-42-g7-post-detail-featured.png": "ec622946601ebffd526a8fa894f45d1e075a27cc59ecd263f0b15842fb836e1d",

@@ -157,8 +157,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-service-conversion-1.1.0.zip",
-                "sha256": "1a4f49dd310d8aba7b2866b6fdaa93d53d1afc5d318701257e89f8a04ffe27df",
-                "bytes": 121068
+                "sha256": "f2365023284eb41d65f285f1dbf35a8a1bed4d37dfbc3b74dfaaf32101d4ad5b",
+                "bytes": 121036
             },
             "requirements": {
                 "blocks": [
@@ -225,8 +225,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-local-business-1.1.0.zip",
-                "sha256": "e644fab1866e170c43c0f50985c26a9238302338ac378faaf85237ace576439e",
-                "bytes": 191326
+                "sha256": "ef2d75caaac650668ae2cefddb47fab709864338c44d1ee7612c44bc6ab2af5b",
+                "bytes": 191378
             },
             "requirements": {
                 "blocks": [
@@ -365,8 +365,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-editorial-community-1.1.0.zip",
-                "sha256": "58d4d67658decf4600249e3219c914d75c0dd1362620d89a2d6a2c42171ab329",
-                "bytes": 860230
+                "sha256": "40cd14517eca09fe13935f06878fd0be0b9882b744a18c7b09a652ed9be65048",
+                "bytes": 860374
             },
             "requirements": {
                 "blocks": [

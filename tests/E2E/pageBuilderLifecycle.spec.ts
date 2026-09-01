@@ -1454,7 +1454,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const sliderInlineFields = slider.locator('[contenteditable]');
     const visibleSliderInlineFields = slider.locator('[contenteditable]:visible');
     await expect(sliderInlineFields).toHaveCount(8);
-    await expect(visibleSliderInlineFields).toHaveCount(4);
+    await expect(visibleSliderInlineFields).toHaveCount(8);
     if (testInfo.project.name === 'desktop') {
       await visibleSliderInlineFields.first().scrollIntoViewIfNeeded();
       await visibleSliderInlineFields.first().hover();

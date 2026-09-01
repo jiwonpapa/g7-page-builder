@@ -21,6 +21,7 @@
 
 ### Added
 
+- 기존 v1 문서에서 Section·Columns·Stack을 처음 사용하기 전에 전환 영향과 비가역 경계를 안내하고 명시적 동의를 받는 구조 편집 진입을 추가합니다. 취소·검증 실패는 기존 문서와 공개본을 바꾸지 않으며, 동의한 v2 초안만 기존 자동 저장·충돌·재시도 경로를 사용합니다.
 - 블록 공통 스타일에 태블릿·모바일별 유한 override를 추가합니다. 모바일 초기화는 값을 복사하지 않고 override를 삭제해 공통값 상속으로 돌아가며, 태블릿 지정값은 독립적으로 유지합니다. Section·Columns·Stack의 폭·열·간격과 일반 블록의 배경·여백·글자 비율·정렬·컨테이너 값을 canonical/Puck/PHP compiler 0.19.0의 동일한 class 계약으로 출력합니다. 임의 breakpoint·콘텐츠·링크·raw style은 저장하지 않습니다.
 - 반응형 CSS 증가분을 반영해 원본 개발 CSS 상한은 editor 180 KB, public 105 KB로 조정하되 실제 배포 gzip 상한(editor 45 KB, public 18 KB)은 유지합니다.
 - Puck native slot·DnD·레이어·history를 유지하면서 v2 구조 편집을 Section, 1/2/3열 Columns, Stack, 허용 기본 요소 5종까지 확장합니다. 열 축소 시 제거 열의 콘텐츠를 마지막 열로 순서대로 이동하기 전 확인하고, 자식이 있는 구조 삭제도 내부 콘텐츠 수를 확인합니다. JSON schema·canonical 왕복·PHP compiler 0.18.0·실제 저장/발행 흐름을 같은 계약으로 검증합니다.

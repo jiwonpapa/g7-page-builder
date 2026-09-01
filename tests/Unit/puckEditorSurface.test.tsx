@@ -222,6 +222,45 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('requires explicit consent before a v1 document enables structure editing', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    const onDirty = vi.fn();
+    const onChange = vi.fn();
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<PuckEditorAdapter document={fixture} revisionKey={0} iframeEnabled={false}
+        onDirty={onDirty} onChange={onChange} onPublish={() => undefined} />);
+    });
+
+    const enable = await eventually<HTMLButtonElement>('[data-testid="page-builder-enable-structure"]');
+    await act(async () => { enable.click(); });
+    const dialog = await eventually<HTMLElement>('[data-testid="page-builder-structure-dialog"]');
+    expect(dialog.textContent).toContain('기존 내용·SEO·공개 페이지는 유지됩니다.');
+
+    await act(async () => {
+      dialog.querySelector<HTMLButtonElement>('[data-testid="page-builder-structure-cancel"]')?.click();
+    });
+    expect(document.querySelector('[data-testid="page-builder-structure-dialog"]')).toBeNull();
+    expect(onDirty).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+
+    await act(async () => { enable.click(); });
+    const confirm = await eventually<HTMLButtonElement>('[data-testid="page-builder-structure-confirm"]');
+    await act(async () => { confirm.click(); });
+
+    expect(onDirty).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0]?.[0]).toMatchObject({
+      schema_version: 'g7-page-builder/v2',
+      document_id: fixture.document_id,
+      blocks: fixture.blocks,
+    });
+    expect(document.querySelector('[data-testid="page-builder-enable-structure"]')).toBeNull();
+  });
+
   it('uses canonical document language without changing host language or emitting document edits', async () => {
     const hostLanguage = document.documentElement.lang;
     document.documentElement.lang = 'en';

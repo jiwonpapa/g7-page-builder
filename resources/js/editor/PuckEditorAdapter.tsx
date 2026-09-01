@@ -1012,6 +1012,22 @@ export function puckToCanonical(data: PuckEditorData, context: PuckAdapterContex
   return puckDocumentToCanonical(data, context, puckBlockToCanonical);
 }
 
+export function activateStructureEditing(
+  data: PuckEditorData,
+  context: PuckAdapterContext,
+): { document: PageBuilderDocument; context: PuckAdapterContext } {
+  const nextContext: PuckAdapterContext = {
+    ...context,
+    document: {
+      ...context.document,
+      schemaVersion: 'g7-page-builder/v2',
+    },
+  };
+  const nextDocument = puckToCanonical(data, nextContext);
+
+  return { document: nextDocument, context: nextContext };
+}
+
 function flattenPuckBlocks(blocks: PuckEditorData['content']): PuckEditorData['content'] {
   const flattened: PuckEditorData['content'] = [];
   const visit = (block: PuckEditorData['content'][number]): void => {
@@ -3110,6 +3126,11 @@ export function PuckEditorAdapter({
   }), [canvasViewportWidth, disabled, hostWidth]);
   const editingDisabled = !viewportPolicy.canEdit;
   const api = useMemo(() => new PageBuilderApiClient(), []);
+  const [structureEditingEnabled, setStructureEditingEnabled] = useState(
+    document.schema_version === 'g7-page-builder/v2',
+  );
+  const [structureDialogOpen, setStructureDialogOpen] = useState(false);
+  const [structureActivationError, setStructureActivationError] = useState<string | null>(null);
   const runtimePuckConfig = useMemo(() => {
     const baseConfig = {
       ...pageBuilderPuckConfig,
@@ -3117,7 +3138,7 @@ export function PuckEditorAdapter({
         ...pageBuilderPuckConfig.categories,
         layout: {
           ...pageBuilderPuckConfig.categories?.layout,
-          visible: document.schema_version === 'g7-page-builder/v2',
+          visible: structureEditingEnabled,
         },
       },
       components: {
@@ -3132,7 +3153,7 @@ export function PuckEditorAdapter({
       return [type, { ...component, fields: applyEditorContentPolicy(component.fields, false) }];
     })) as Config<EditorComponents, PageDesignProps>['components'];
     return { ...baseConfig, components };
-  }, [document.schema_version, viewportPolicy.canEdit]);
+  }, [structureEditingEnabled, viewportPolicy.canEdit]);
   const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
   const contextRef = useRef(initialSession.context);
   const [data, setData] = useState(initialSession.data);
@@ -3292,6 +3313,12 @@ export function PuckEditorAdapter({
   }, [document.document_id, revisionKey]);
 
   useEffect(() => {
+    setStructureEditingEnabled(document.schema_version === 'g7-page-builder/v2');
+    setStructureDialogOpen(false);
+    setStructureActivationError(null);
+  }, [document.document_id, revisionKey]);
+
+  useEffect(() => {
     let active = true;
     try {
       if (!window.localStorage.getItem(ADMIN_AUTH_TOKEN_KEY)) return undefined;
@@ -3352,9 +3379,35 @@ export function PuckEditorAdapter({
     setCanvasViewportWidth(width);
   }, []);
 
+  const enableStructureEditing = useCallback((): void => {
+    try {
+      const activated = activateStructureEditing(latestDataRef.current, contextRef.current);
+      contextRef.current = activated.context;
+      setStructureEditingEnabled(true);
+      setStructureDialogOpen(false);
+      setStructureActivationError(null);
+      onDirty?.();
+      onChange(activated.document);
+    } catch (error) {
+      setStructureActivationError(error instanceof Error
+        ? `현재 문서는 구조 편집으로 전환할 수 없습니다. ${error.message}`
+        : '현재 문서는 구조 편집으로 전환할 수 없습니다.');
+    }
+  }, [onChange, onDirty]);
+
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
     headerActions: () => <>
+      {!structureEditingEnabled && <button
+        type="button"
+        className="g7pb-button g7pb-button--quiet"
+        data-testid="page-builder-enable-structure"
+        disabled={editingDisabled}
+        onClick={() => {
+          setStructureActivationError(null);
+          setStructureDialogOpen(true);
+        }}
+      >구조 편집 사용</button>}
       <ConnectedHeaderControls
         editingDisabled={editingDisabled}
         viewportDisabled={disabled}
@@ -3368,7 +3421,7 @@ export function PuckEditorAdapter({
     actionBar: (props: { children: React.ReactNode; label?: string; parentAction?: React.ReactNode }) => (
       <SelectedBlockActionBar {...props} disabled={editingDisabled} />
     ),
-  }), [disabled, editingDisabled, handleViewportChange]);
+  }), [disabled, editingDisabled, handleViewportChange, structureEditingEnabled]);
 
   const emitCanonical = (nextData: PuckEditorData): PageBuilderDocument => {
     latestDataRef.current = nextData;
@@ -3465,6 +3518,23 @@ export function PuckEditorAdapter({
             닫기
           </button>
         </div>
+      )}
+      {structureDialogOpen && createPortal(
+        <div className="g7pb-dialog-backdrop" data-testid="page-builder-structure-dialog">
+          <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-structure-heading">
+            <p className="g7pb-kicker">문서 구조 버전 전환</p>
+            <h2 id="g7pb-structure-heading">Section·Columns·Stack 구조 편집을 사용하시겠습니까?</h2>
+            <p>기존 내용·SEO·공개 페이지는 유지됩니다. 동의하면 현재 초안이 v2로 전환되어 자동 저장 대상이 되며, 단순 편집만으로 v1으로 되돌아가지는 않습니다.</p>
+            {structureActivationError && <p role="alert">{structureActivationError}</p>}
+            <div className="g7pb-dialog__actions">
+              <button type="button" className="g7pb-button g7pb-button--quiet"
+                data-testid="page-builder-structure-cancel" onClick={() => setStructureDialogOpen(false)}>취소</button>
+              <button type="button" className="g7pb-button g7pb-button--primary"
+                data-testid="page-builder-structure-confirm" onClick={enableStructureEditing}>구조 편집 사용</button>
+            </div>
+          </section>
+        </div>,
+        globalThis.document.body,
       )}
       <BlockCatalogContext.Provider value={blockCatalogContext}>
         <EditorViewportPolicyContext.Provider value={viewportPolicy}>

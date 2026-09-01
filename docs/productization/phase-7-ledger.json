@@ -116,6 +116,12 @@
         { "id": "testimonials.spotlight", "decision": "modified", "reason": "강조형 고객 후기와 성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" },
         { "id": "testimonials.split", "decision": "modified", "reason": "분할형 고객 후기와 성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-C-04",
+      "items": [
+        { "id": "testimonials.quote-hero", "decision": "modified", "reason": "대형 인용형 고객 후기와 성과 문구를 가상 사례로 명시", "checks": ["no-instruction-copy", "media-present", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

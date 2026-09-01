@@ -83,6 +83,122 @@ describe('isolated canonical document envelope adapter', () => {
     expect(document).not.toHaveProperty('shell_mode');
   });
 
+  it('inserts the first child into an empty v2 Section and preserves explicit empty content', () => {
+    const document = structuredClone(layoutFixture) as PageBuilderDocument;
+    const section = document.blocks[0]!;
+    section.slots = { content: [] };
+    const before = structuredClone(document);
+    const session = canonicalToPuck(document);
+    const edited = structuredClone(session.data);
+    const content = (edited.content[0]!.props as Record<string, unknown>);
+    content.content = [{
+      type: 'LayoutColumns',
+      props: {
+        id: '00000000-0000-4000-8000-000000000010',
+        columns: '2', ratio: '1:1', gap: 'normal',
+        column1: [{
+          type: 'Heading',
+          props: {
+            id: '00000000-0000-4000-8000-000000000011',
+            eyebrow: '', heading: '첫 자식', level: '2', anchor: '',
+          },
+        }],
+        column2: [{
+          type: 'RichText',
+          props: {
+            id: '00000000-0000-4000-8000-000000000012',
+            content: '', measure: 'standard',
+          },
+        }],
+      },
+    }];
+
+    const restored = puckToCanonical(edited, session.context);
+    expect(restored.blocks[0]!.slots?.content).toHaveLength(1);
+    expect(restored.blocks[0]!.slots?.content[0]!.slots?.column1[0]!.props.heading).toBe('첫 자식');
+    expect(restored.blocks[0]!.slots?.content[0]!.slots?.column2[0]!.props.content).toBe('');
+    expect(restored.schema_version).toBe('g7-page-builder/v2');
+    expect(document).toEqual(before);
+  });
+
+  it('keeps the complete rendered default list when its first item is edited', () => {
+    const document: PageBuilderDocument = {
+      schema_version: 'g7-page-builder/v1',
+      document_id: '00000000-0000-4000-8000-000000000020',
+      slug: 'default-list-first-edit', locale: 'ko', mode: 'canvas', blocks: [],
+    };
+    const session = canonicalToPuck(document);
+    const buttons = pageBuilderPuckConfig.components.Buttons as unknown as {
+      defaultProps: { items: Array<{ label: string; url: string; variant: string }>; alignment: string };
+    };
+    const props = structuredClone(buttons.defaultProps);
+    props.items[0]!.label = '첫 버튼 수정';
+    const edited: PuckEditorData = {
+      ...session.data,
+      content: [{
+        type: 'Buttons',
+        props: { id: '00000000-0000-4000-8000-000000000021', ...props },
+      }] as PuckEditorData['content'],
+    };
+
+    const restored = puckToCanonical(edited, session.context);
+    expect(restored.blocks[0]!.props.items).toEqual([
+      { label: '첫 버튼 수정', url: '/', variant: 'primary' },
+      { label: '문의하기', url: '/contact', variant: 'secondary' },
+    ]);
+  });
+
+  it('keeps an oversized legacy document on v1 when an explicit v2 conversion is rejected', () => {
+    const document: PageBuilderDocument = {
+      schema_version: 'g7-page-builder/v1',
+      document_id: '00000000-0000-4000-8000-000000000030',
+      slug: 'legacy-over-v2-byte-limit', locale: 'ko', mode: 'canvas',
+      tokens: { legacy_payload: '한'.repeat(400_000) },
+      blocks: [],
+    };
+    const session = canonicalToPuck(document);
+    expect(puckToCanonical(session.data, session.context)).toEqual(document);
+
+    const v2Context = structuredClone(session.context);
+    v2Context.document.schemaVersion = 'g7-page-builder/v2';
+    expect(() => puckToCanonical(session.data, v2Context)).toThrow(/^byte_limit:/);
+    expect(session.context.document.schemaVersion).toBe('g7-page-builder/v1');
+    expect(document.schema_version).toBe('g7-page-builder/v1');
+  });
+
+  it('rejects Puck-produced illegal parents, duplicate IDs and slot overflow atomically', () => {
+    const document = structuredClone(layoutFixture) as PageBuilderDocument;
+    const session = canonicalToPuck(document);
+    const beforeData = structuredClone(session.data);
+    const beforeDocument = structuredClone(document);
+
+    const illegalRoot = structuredClone(session.data);
+    illegalRoot.content = [structuredClone(
+      ((session.data.content[0]!.props as Record<string, unknown>).content as PuckEditorData['content'])[0]!,
+    )];
+    expect(() => puckToCanonical(illegalRoot, session.context)).toThrow(/^parent:/);
+
+    const duplicate = structuredClone(session.data);
+    const duplicateColumns = ((duplicate.content[0]!.props as Record<string, unknown>).content as PuckEditorData['content'])[0]!;
+    const duplicateHeading = ((duplicateColumns.props as Record<string, unknown>).column1 as PuckEditorData['content'])[0]!;
+    duplicateHeading.props.id = duplicate.content[0]!.props.id;
+    expect(() => puckToCanonical(duplicate, session.context)).toThrow(/^duplicate_id:/);
+
+    const overflow = structuredClone(session.data);
+    const overflowColumns = ((overflow.content[0]!.props as Record<string, unknown>).content as PuckEditorData['content'])[0]!;
+    (overflowColumns.props as Record<string, unknown>).column1 = Array.from({ length: 201 }, (_, index) => ({
+      type: 'Heading',
+      props: {
+        id: `00000000-0000-4000-8000-${String(index + 100).padStart(12, '0')}`,
+        eyebrow: '', heading: `제목 ${index + 1}`, level: '2', anchor: '',
+      },
+    })) as PuckEditorData['content'];
+    expect(() => puckToCanonical(overflow, session.context)).toThrow(/^slot_limit:/);
+
+    expect(session.data).toEqual(beforeData);
+    expect(document).toEqual(beforeDocument);
+  });
+
   it('preserves flat document metadata and delegates each block conversion once', async () => {
     const { canonicalDocumentToPuck, puckDocumentToCanonical } = await import('../../resources/js/editor/puckDocumentAdapter');
     const document = structuredClone(documentFixture);

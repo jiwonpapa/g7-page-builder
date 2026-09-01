@@ -620,9 +620,17 @@ final class PublicationPersistenceTest extends TestCase
             $this->builtInCompiler(),
         );
         $created = $service->create('리비전 복구', 'revision-origin', 'ko', null);
+        $originalPayload = $this->documentPayload($created->document->documentId, 'revision-origin', 'ko');
+        $originalPayload['shell_mode'] = 'builder';
+        $originalPayload['seo'] = [
+            'title' => '원본 검색 제목',
+            'description' => '원본 리비전의 검색 설명입니다.',
+            'og_image_url' => '/storage/revision-original.webp',
+            'robots' => 'noindex',
+        ];
         $original = $service->saveDraft(
             $created->document->documentId,
-            $this->documentPayload($created->document->documentId, 'revision-origin', 'ko'),
+            $originalPayload,
             $created->lockVersion,
             null,
         );
@@ -664,6 +672,11 @@ final class PublicationPersistenceTest extends TestCase
         self::assertSame('revision-origin', $restored->document->slug);
         self::assertSame('ko', $restored->document->locale);
         self::assertSame('리비전 복구', $restored->title);
+        self::assertSame('g7-page-builder/v1', $restored->document->schemaVersion);
+        self::assertSame('builder', $restored->document->shellMode);
+        self::assertSame('원본 검색 제목', $restored->document->seo?->title);
+        self::assertSame('noindex', $restored->document->seo?->robots);
+        self::assertSame([1, 1], array_column($restored->document->blocks, 'block_version'));
         self::assertSame($published->artifactSha256, $restored->activeArtifactSha256);
         self::assertSame('revision-origin', $restored->activePublicSlug);
 
@@ -711,6 +724,125 @@ final class PublicationPersistenceTest extends TestCase
         self::assertSame('왼쪽 제목', $restored->document->blocks[0]['slots']['content'][0]['slots']['column1'][0]['props']['heading']);
         self::assertSame($publishedSnapshot->artifactSha256, $restored->activeArtifactSha256);
         self::assertStringContainsString('왼쪽 제목', $service->findPublished('nested-layout-flow')?->artifact ?? '');
+    }
+
+    public function test_invalid_v2_layout_saves_are_atomic_and_do_not_replace_the_last_good_publication(): void
+    {
+        $service = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
+        $created = $service->create('중첩 경계', 'nested-layout-boundaries', 'ko', null, 'builder');
+        $contents = file_get_contents(dirname(__DIR__, 2).'/Contract/document-layout-v2.fixture.json');
+        self::assertIsString($contents);
+        $payload = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+        $payload['document_id'] = $created->document->documentId;
+        $payload['slug'] = 'nested-layout-boundaries';
+        $payload['shell_mode'] = 'builder';
+        $valid = $service->saveDraft($created->document->documentId, $payload, $created->lockVersion, null);
+        $candidate = $service->preparePublication($valid->document->documentId, $valid->lockVersion, null);
+        $published = $service->commitPublication($candidate->token);
+        $before = $service->get($valid->document->documentId);
+        $beforeHistory = count($service->revisions($before->document->documentId));
+
+        $duplicate = $before->document->toArray();
+        $duplicate['blocks'][0]['slots']['content'][0]['instance_id'] = $duplicate['blocks'][0]['instance_id'];
+
+        $illegalParent = $before->document->toArray();
+        $illegalParent['blocks'][0]['slots']['content'][0]['slots']['column1'][0]['type'] = 'layout.columns-01';
+
+        $inactiveSlot = $before->document->toArray();
+        $inactiveSlot['blocks'][0]['slots']['content'][0]['slots']['column3'] = [];
+
+        $tooManyNodes = $before->document->toArray();
+        $tooManyNodes['blocks'] = array_map(static fn (int $index): array => [
+            'instance_id' => sprintf('00000000-0000-4000-8000-%012d', $index),
+            'type' => 'content.heading-01',
+            'block_version' => 1,
+            'props' => ['eyebrow' => '', 'heading' => '경계 제목', 'level' => 2, 'anchor' => ''],
+            'slots' => [],
+        ], range(1, 501));
+
+        $tooLarge = $before->document->toArray();
+        $tooLarge['tokens']['oversized'] = str_repeat('x', 1048576);
+
+        foreach ([$duplicate, $illegalParent, $inactiveSlot, $tooManyNodes, $tooLarge] as $invalid) {
+            try {
+                $service->saveDraft($before->document->documentId, $invalid, $before->lockVersion, null);
+                self::fail('An invalid v2 boundary payload changed the draft.');
+            } catch (\InvalidArgumentException) {
+                $after = $service->get($before->document->documentId);
+                self::assertSame($before->lockVersion, $after->lockVersion);
+                self::assertSame($before->revision, $after->revision);
+                self::assertSame($before->document->toArray(), $after->document->toArray());
+                self::assertSame($published->artifactSha256, $after->activeArtifactSha256);
+                self::assertCount($beforeHistory, $service->revisions($before->document->documentId));
+                self::assertSame($published->representationSha256(), $service->findPublished('nested-layout-boundaries')?->representationSha256());
+            }
+        }
+    }
+
+    public function test_unsupported_v2_layout_compile_failure_keeps_the_last_good_publication(): void
+    {
+        $service = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
+        $created = $service->create('구조 발행 안전성', 'nested-layout-last-good', 'ko', null, 'builder');
+        $candidate = $service->preparePublication($created->document->documentId, $created->lockVersion, null);
+        $published = $service->commitPublication($candidate->token);
+
+        $payload = $created->document->toArray();
+        $payload['schema_version'] = 'g7-page-builder/v2';
+        $payload['blocks'] = [[
+            'instance_id' => '00000000-0000-4000-8000-000000000101',
+            'type' => 'layout.section-01',
+            'block_version' => 1,
+            'props' => ['width' => 'standard', 'spacing' => 'normal'],
+            'slots' => ['content' => [[
+                'instance_id' => '00000000-0000-4000-8000-000000000102',
+                'type' => 'layout.stack-01',
+                'block_version' => 1,
+                'props' => ['gap' => 'normal'],
+                'slots' => ['content' => [[
+                    'instance_id' => '00000000-0000-4000-8000-000000000103',
+                    'type' => 'content.heading-01',
+                    'block_version' => 1,
+                    'props' => ['eyebrow' => '', 'heading' => '아직 미지원 구조', 'level' => 2, 'anchor' => ''],
+                    'slots' => [],
+                ]]],
+            ]]],
+        ]];
+        $draft = $service->saveDraft($created->document->documentId, $payload, $created->lockVersion, null);
+        self::assertSame($published->artifactSha256, $draft->activeArtifactSha256);
+
+        try {
+            $service->preparePublication($draft->document->documentId, $draft->lockVersion, null);
+            self::fail('An unsupported v2 Stack produced a publication candidate.');
+        } catch (DocumentCompileException) {
+            $stillPublished = $service->findPublished('nested-layout-last-good');
+            self::assertNotNull($stillPublished);
+            self::assertSame($published->artifactSha256, $stillPublished->artifactSha256);
+            self::assertSame($published->representationSha256(), $stillPublished->representationSha256());
+        }
+    }
+
+    public function test_v1_document_above_the_v2_byte_limit_survives_a_rejected_upgrade(): void
+    {
+        $service = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
+        $created = $service->create('v1 크기 호환', 'legacy-byte-limit', 'ko', null);
+        $payload = $this->documentPayload($created->document->documentId, 'legacy-byte-limit', 'ko');
+        $payload['tokens']['legacy_payload'] = str_repeat('한', 400000);
+        $legacy = $service->saveDraft($created->document->documentId, $payload, $created->lockVersion, null);
+        self::assertSame('g7-page-builder/v1', $legacy->document->schemaVersion);
+
+        $upgrade = $legacy->document->toArray();
+        $upgrade['schema_version'] = 'g7-page-builder/v2';
+        try {
+            $service->saveDraft($legacy->document->documentId, $upgrade, $legacy->lockVersion, null);
+            self::fail('An oversized v1 document was upgraded to v2.');
+        } catch (\InvalidArgumentException) {
+            $after = $service->get($legacy->document->documentId);
+            self::assertSame($legacy->lockVersion, $after->lockVersion);
+            self::assertSame($legacy->revision, $after->revision);
+            self::assertSame('g7-page-builder/v1', $after->document->schemaVersion);
+            self::assertSame(400000, mb_strlen((string) $after->document->tokens['legacy_payload']));
+            self::assertSame($legacy->document->toArray(), $after->document->toArray());
+        }
     }
 
     public function test_unpublish_invalidates_every_prepared_publication_candidate(): void

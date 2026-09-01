@@ -2,7 +2,7 @@
 
 상태: 1차 시험 명세. 아래 ‘구현 배치’는 예정이며 현재 통과 표시가 아닙니다. 실제 실행 결과는 phase-1-evidence.md와 각 차수 종료 기록에 남깁니다.
 
-3-B 현재 범위는 LAY-01의 Section→2열 Columns→Heading/RichText 성공 경로와 COMP-01의 v1 유지·명시적 v2 저장 기반입니다. 금지 구조·상한·마지막 정상본의 전체 부정 시험은 3-C이며, 실제 결과는 [3-B 실행 기록](phase-3-minimum-nesting.md)과 통합 full profile로 판정합니다.
+3-B는 LAY-01의 Section→2열 Columns→Heading/RichText 성공 경로와 COMP-01의 v1 유지 기반을 연결했습니다. 3-C는 금지 구조·상한·Puck 변환 원자성·v1 메타데이터 복원·마지막 정상본 부정 시험을 [3-C 실행 기록](phase-3-boundaries.md)에 연결합니다. 실제 통과 여부는 각 task의 full 통합 profile로 판정하며, 4차 UI 범위를 앞당겨 완료로 표시하지 않습니다.
 
 | ID | 요구사항·합격 사례 | 구현 배치 | 시험 층/기존 재사용 지점 |
 |---|---|---|---|

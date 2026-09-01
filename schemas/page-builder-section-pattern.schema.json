@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g7devops.com/schemas/page-builder-section-pattern.schema.json",
+  "title": "G7 Page Builder Section Pattern",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pattern_id", "title", "category", "source_document_schema", "section", "required_blocks", "asset_references", "preview", "created_at", "updated_at", "compatible"],
+  "properties": {
+    "schema_version": { "const": "g7-page-builder/section-pattern/v1" },
+    "pattern_id": { "type": "string", "format": "uuid" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "category": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,63}$" },
+    "source_document_schema": { "const": "g7-page-builder/v2" },
+    "section": {
+      "type": "object",
+      "required": ["instance_id", "type", "block_version", "props", "slots"],
+      "properties": {
+        "instance_id": { "type": "string", "format": "uuid" },
+        "type": { "const": "layout.section-01" },
+        "block_version": { "const": 1 },
+        "props": { "type": "object" },
+        "slots": { "type": "object" }
+      }
+    },
+    "required_blocks": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^.+@[1-9][0-9]*$" } },
+    "asset_references": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 2048 } },
+    "preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "block_count"],
+      "properties": {
+        "kind": { "const": "section-summary" },
+        "block_count": { "type": "integer", "minimum": 1, "maximum": 500 }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "compatible": { "type": "boolean" },
+    "compatibility_error": { "type": ["string", "null"], "maxLength": 500 }
+  }
+}

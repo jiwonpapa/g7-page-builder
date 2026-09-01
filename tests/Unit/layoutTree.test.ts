@@ -3,7 +3,7 @@ import cases from '../Fixtures/layout-policy-cases.json';
 import manifest from '../../resources/block-packs/builtin-core/manifest.json';
 import { compactJsonBytes, layoutAllowsChild, layoutPolicy, LayoutPolicyError, validateLayoutDocument } from '../../resources/js/documents/layoutPolicy';
 import type { LayoutDocument } from '../../resources/js/documents/layoutPolicy';
-import { cloneLayoutNode, deleteLayoutNode, findLayoutNode, moveLayoutNode, resizeLayoutColumns } from '../../resources/js/documents/layoutTree';
+import { cloneLayoutNode, cloneLayoutSubtree, deleteLayoutNode, findLayoutNode, moveLayoutNode, resizeLayoutColumns } from '../../resources/js/documents/layoutTree';
 import type { PageBuilderBlock } from '../../resources/js/documents/types';
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -106,6 +106,16 @@ describe('atomic canonical tree operations', () => {
     expect(findLayoutNode(result, id(103))?.node).toHaveProperty('responsive');
     expect(() => cloneLayoutNode(document, id(2), { parentId: null, slot: 'blocks', index: 1 }, () => id(2))).toThrow(/^duplicate_id:/);
     expect(document.blocks).toHaveLength(1);
+  });
+  it('clones a stored Section pattern independently without a source document envelope', () => {
+    let sequence = 200;
+    const source = structuredClone(fresh().blocks[0]);
+    const cloned = cloneLayoutSubtree(source, () => id(sequence++));
+    expect(cloned.instance_id).toBe(id(200));
+    expect(cloned.slots?.content[0]?.instance_id).toBe(id(201));
+    expect(cloned.slots?.content[0]?.slots?.column1[0]?.props).toEqual(source.slots?.content[0]?.slots?.column1[0]?.props);
+    (cloned.slots!.content[0]!.slots!.column1[0]!.props as Record<string, unknown>).heading = '독립 수정';
+    expect((source.slots?.content[0]?.slots?.column1[0]?.props as Record<string, unknown>).heading).not.toBe('독립 수정');
   });
   it('requires structural deletion confirmation and keeps the original reference when declined', () => {
     const document = fresh();

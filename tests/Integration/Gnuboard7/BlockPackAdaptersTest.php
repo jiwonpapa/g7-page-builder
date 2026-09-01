@@ -21,23 +21,28 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockCatalogService;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockPackManager;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\GitHubBlockPackService;
+use Modules\Jiwonpapa\PageBuilder\Application\Patterns\SectionPatternService;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackArchivePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackReleaseSourcePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockUsagePort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackInstallation;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackRelease;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackState;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackUsage;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\StoredBlockPack;
+use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\BlockPacks\LaravelBlockPackAssetUrlAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockCatalogController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockPackController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSectionPatternController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\BlockPackAssetController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockFavoriteAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockPackRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockUsageAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSectionPatternRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\DocumentRecord;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\RevisionRecord;
 use PHPUnit\Framework\TestCase;
@@ -222,6 +227,42 @@ final class BlockPackAdaptersTest extends TestCase
         self::assertSame(404, $controller->favorite($this->request('PUT', [
             'catalog_id' => 'block:missing.block@1', 'favorite' => true,
         ]))->getStatusCode());
+    }
+
+    public function test_section_pattern_http_contract_persists_actor_owned_canonical_subtrees(): void
+    {
+        $compiler = $this->createStub(DocumentCompilerPort::class);
+        $compiler->method('compile')->willReturnCallback(static fn ($document): CompileResult => new CompileResult(
+            'test', $document->documentId, 1, 'html', 'g7-html-v1', '<section></section>', hash('sha256', '<section></section>'),
+        ));
+        $controller = new AdminSectionPatternController(new SectionPatternService(
+            new EloquentSectionPatternRepository,
+            $compiler,
+            $this->registry,
+        ));
+        $section = [
+            'instance_id' => '00000000-0000-4000-8000-000000000001',
+            'type' => 'layout.section-01',
+            'block_version' => 1,
+            'props' => ['width' => 'standard', 'spacing' => 'normal'],
+            'slots' => ['content' => []],
+        ];
+
+        $stored = $controller->store($this->request('POST', [
+            'title' => '두 열 소개', 'category' => 'custom',
+            'source_document_schema' => 'g7-page-builder/v2', 'section' => $section,
+        ]));
+        self::assertSame(201, $stored->getStatusCode());
+        $resource = $this->json($stored)['data'];
+        self::assertSame($section, $resource['section']);
+        self::assertSame(['layout.section-01@1'], $resource['required_blocks']);
+
+        $listed = $this->json($controller->index($this->request('GET')))['data']['items'];
+        self::assertCount(1, $listed);
+        self::assertTrue($listed[0]['compatible']);
+        self::assertSame(200, $controller->destroy($this->request('DELETE'), $resource['pattern_id'])->getStatusCode());
+        self::assertSame([], $this->json($controller->index($this->request('GET')))['data']['items']);
+        self::assertSame(404, $controller->destroy($this->request('DELETE'), $resource['pattern_id'])->getStatusCode());
     }
 
     public function test_pack_http_contract_installs_changes_state_checks_github_and_blocks_in_use_removal(): void

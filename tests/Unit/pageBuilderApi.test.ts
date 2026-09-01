@@ -80,6 +80,34 @@ describe('PageBuilderApiClient', () => {
     expect(fetchImpl.mock.calls[0][0]).toBe(`${PAGE_BUILDER_API_PREFIX}/routes/catalog`);
   });
 
+  it('lists, stores, and deletes actor-owned canonical Section patterns', async () => {
+    const pattern = {
+      schema_version: 'g7-page-builder/section-pattern/v1' as const,
+      pattern_id: '123e4567-e89b-42d3-a456-426614174088',
+      title: '두 열 소개', category: 'custom', source_document_schema: 'g7-page-builder/v2' as const,
+      section: { instance_id: '123e4567-e89b-42d3-a456-426614174089', type: 'layout.section-01', block_version: 1, props: { width: 'standard', spacing: 'normal' }, slots: { content: [] } },
+      required_blocks: ['layout.section-01@1'], asset_references: [],
+      preview: { kind: 'section-summary' as const, block_count: 1 },
+      created_at: '2026-09-01T00:00:00+00:00', updated_at: '2026-09-01T00:00:00+00:00',
+      compatible: true, compatibility_error: null,
+    };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { items: [pattern] } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: pattern }, 201))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { pattern_id: pattern.pattern_id } }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+
+    await expect(client.listSectionPatterns()).resolves.toEqual({ items: [pattern] });
+    await client.createSectionPattern({
+      title: pattern.title, category: pattern.category, source_document_schema: 'g7-page-builder/v2', section: pattern.section,
+    });
+    await client.deleteSectionPattern(pattern.pattern_id);
+
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(`${PAGE_BUILDER_API_PREFIX}/section-patterns`);
+    expect(JSON.parse(String(fetchImpl.mock.calls[1]?.[1]?.body))).toMatchObject({ title: '두 열 소개', section: pattern.section });
+    expect(fetchImpl.mock.calls[2]?.[1]?.method).toBe('DELETE');
+  });
+
   it('uses typed endpoints for listing, creating, and atomically activating Header and Footer sets', async () => {
     const setId = '123e4567-e89b-42d3-a456-426614174099';
     const set = { id: setId, title: '회사 기본형', locale: 'ko', is_active: false, is_ready: true };

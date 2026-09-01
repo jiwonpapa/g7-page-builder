@@ -261,6 +261,45 @@ describe('Puck editor surface contract', () => {
     expect(document.querySelector('[data-testid="page-builder-enable-structure"]')).toBeNull();
   });
 
+  it('inserts an actor-owned Section pattern as one independent canonical copy', async () => {
+    const v2 = structuredClone(layoutFixture) as PageBuilderDocument;
+    const sourceSection = structuredClone(v2.blocks[0]!);
+    vi.spyOn(PageBuilderApiClient.prototype, 'listSectionPatterns').mockResolvedValue({ items: [{
+      schema_version: 'g7-page-builder/section-pattern/v1',
+      pattern_id: '123e4567-e89b-42d3-a456-426614174088', title: '두 열 소개', category: 'custom',
+      source_document_schema: 'g7-page-builder/v2', section: sourceSection,
+      required_blocks: ['layout.section-01@1'], asset_references: [],
+      preview: { kind: 'section-summary', block_count: 4 },
+      created_at: '2026-09-01T00:00:00+00:00', updated_at: '2026-09-01T00:00:00+00:00',
+      compatible: true, compatibility_error: null,
+    }] });
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    const onChange = vi.fn();
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<PuckEditorAdapter document={v2} revisionKey={0} iframeEnabled={false}
+        onChange={onChange} onPublish={() => undefined} />);
+    });
+    const library = await eventually<HTMLButtonElement>('[data-testid="page-builder-section-patterns"]');
+    await act(async () => { library.click(); });
+    const insert = await eventually<HTMLButtonElement>('[data-testid="page-builder-pattern-insert"]');
+    await act(async () => {
+      insert.click();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    });
+
+    const changed = onChange.mock.calls.at(-1)?.[0] as PageBuilderDocument | undefined;
+    expect(changed?.blocks).toHaveLength(2);
+    expect(changed?.blocks[1]?.type).toBe('layout.section-01');
+    expect(changed?.blocks[1]?.instance_id).not.toBe(sourceSection.instance_id);
+    expect(changed?.blocks[1]?.slots?.content[0]?.instance_id).not.toBe(sourceSection.slots?.content[0]?.instance_id);
+    changed!.blocks[1]!.props.spacing = 'compact';
+    expect(sourceSection.props.spacing).not.toBe('compact');
+  });
+
   it('uses canonical document language without changing host language or emitting document edits', async () => {
     const hostLanguage = document.documentElement.lang;
     document.documentElement.lang = 'en';

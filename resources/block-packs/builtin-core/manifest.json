@@ -1306,10 +1306,10 @@
       },
       "thumbnail": "thumbnails/generated/preset-16-contact-office.png",
       "props": {
-        "heading": "문의와 방문 안내",
-        "address": "서울특별시 중구 세종대로 110",
+        "heading": "문의와 방문 안내 · 가상 예시",
+        "address": "서울특별시 중구 세종대로 110 (가상 예시)",
         "phone": "02-0000-0000",
-        "email": "hello@g7studio.kr",
+        "email": "hello@example.com",
         "cta": {
           "label": "상담 요청",
           "url": "/contact"
@@ -1480,31 +1480,31 @@
       },
       "thumbnail": "thumbnails/generated/preset-21-logo-cloud-partners.png",
       "props": {
-        "heading": "함께하는 브랜드와 파트너",
+        "heading": "함께하는 브랜드와 파트너 · 가상 예시",
         "logos": [
           {
             "name": "Orbit",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-orbit.png",
             "imageAlt": "Orbit 로고",
-            "url": "/"
+            "url": "/partners/orbit"
           },
           {
             "name": "Northstar",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-northstar.png",
             "imageAlt": "Northstar 로고",
-            "url": "/"
+            "url": "/partners/northstar"
           },
           {
             "name": "Vertex",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-vertex.png",
             "imageAlt": "Vertex 로고",
-            "url": "/"
+            "url": "/partners/vertex"
           },
           {
             "name": "Morrow",
-            "imageSrc": "",
+            "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/event-launch-partner-morrow.png",
             "imageAlt": "Morrow 로고",
-            "url": "/"
+            "url": "/partners/morrow"
           }
         ],
         "layout": "strip"
@@ -1524,7 +1524,7 @@
       "thumbnail": "thumbnails/generated/preset-22-stats-business-proof.png",
       "props": {
         "eyebrow": "RESULTS",
-        "heading": "숫자로 확인하는 변화",
+        "heading": "숫자로 확인하는 변화 · 가상 예시",
         "items": [
           {
             "icon": "users",
@@ -1562,7 +1562,7 @@
       "thumbnail": "thumbnails/generated/preset-23-pricing-three-tier.png",
       "props": {
         "eyebrow": "PRICING",
-        "heading": "필요한 규모에 맞는 플랜",
+        "heading": "필요한 규모에 맞는 플랜 · 예시",
         "plans": [
           {
             "name": "Starter",
@@ -1575,7 +1575,7 @@
               "이메일 지원"
             ],
             "buttonLabel": "시작하기",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=starter",
             "featured": false
           },
           {
@@ -1589,7 +1589,7 @@
               "우선 지원"
             ],
             "buttonLabel": "Growth 선택",
-            "buttonUrl": "/",
+            "buttonUrl": "/contact?plan=growth",
             "featured": true
           }
         ],
@@ -1610,7 +1610,7 @@
       "thumbnail": "thumbnails/generated/preset-24-team-leadership.png",
       "props": {
         "eyebrow": "TEAM",
-        "heading": "문제를 해결하는 사람들",
+        "heading": "문제를 해결하는 사람들 · 가상 팀",
         "members": [
           {
             "name": "김하늘",
@@ -1708,7 +1708,7 @@
       "thumbnail": "thumbnails/generated/preset-26-bar-chart-quarterly.png",
       "props": {
         "eyebrow": "DATA",
-        "heading": "분기별 핵심 지표",
+        "heading": "분기별 핵심 지표 · 가상 예시",
         "description": "같은 기준으로 측정한 값을 비교합니다.",
         "unit": "%",
         "items": [
@@ -1848,7 +1848,7 @@
       "thumbnail": "thumbnails/generated/preset-31-testimonials-customer-proof.png",
       "props": {
         "eyebrow": "REVIEWS",
-        "heading": "고객이 경험한 변화",
+        "heading": "고객이 경험한 변화 · 가상 사례",
         "items": [
           {
             "quote": "필요한 정보를 찾는 시간이 크게 줄었습니다.",
@@ -1931,7 +1931,7 @@
       "thumbnail": "thumbnails/generated/preset-33-comparison-plans.png",
       "props": {
         "eyebrow": "COMPARE",
-        "heading": "상황에 맞는 구성을 비교하세요",
+        "heading": "상황별 구성 비교 · 예시",
         "columns": [
           {
             "title": "기본",
@@ -4277,22 +4277,22 @@
     "thumbnails/generated/block-09-icon-list.png": "abace7dfa80cb82cc38e36c3ee514690239f3ea79894ffda110ddb92a4cc27e2",
     "thumbnails/generated/block-10-features.png": "8ccf3d433db52592d021552d054a800fbb231bd5a0ee6115a797c344127db75e",
     "thumbnails/generated/block-11-cta.png": "bffa3af7d603b8f2eb6f2ed82f582f09913638f242ca0cf485d222df9378d784",
-    "thumbnails/generated/block-12-contact.png": "4366021908f7258ba90d154f2498c994e12da398603113eb2f46818157969da8",
-    "thumbnails/generated/block-13-logo-cloud.png": "a161aa5d08571dafa099aadb5b4b66ad457793252806c5d21d40582d150d76d9",
-    "thumbnails/generated/block-14-stats.png": "291e5dc03499f26b3b52123ef6d788bf77c5d9fd6b2708e5384054ff9d3270d3",
-    "thumbnails/generated/block-15-pricing.png": "7370b37ab1d5170ae3f3d803d389183d1559b228e9e89e98f9ee64e525f18ec5",
-    "thumbnails/generated/block-16-team.png": "f24975af293cdd4b20df693adc7f724b01cdf0b5d3772cdf6fd56a201f4d5bd4",
+    "thumbnails/generated/block-12-contact.png": "ad0128e1278554cf123c03bc9a7dd22fc49e9a4235cfe8aa8ff13c72067fdac9",
+    "thumbnails/generated/block-13-logo-cloud.png": "def94703205d2aa18e4a8ea656c79555a1fd4b533ada048527d6a807ea645522",
+    "thumbnails/generated/block-14-stats.png": "219202f17161bd879d3507abc290450c470f2c16fd5cfc1c3716974ccf26759e",
+    "thumbnails/generated/block-15-pricing.png": "ea3b6229ff62f573ccfade0f943411a70ffdd39133ce064094e4766213e505c1",
+    "thumbnails/generated/block-16-team.png": "41bf66ac8c7a82f22fa945826f33c973316f580e275230218bb323b83b36f358",
     "thumbnails/generated/block-17-gallery.png": "901b367073353c600b780ed24d0c7d388de306b973c2fbbdaaeb2b2fb138b242",
-    "thumbnails/generated/block-18-bar-chart.png": "a89a174561f51c7d1f9bd31171bc50153ec3386042ee6ec31196e510a6db268a",
+    "thumbnails/generated/block-18-bar-chart.png": "17ba92feeb4cdfcbb301c57935f3a266ec7a8dff17695b85938428b10d21a6d0",
     "thumbnails/generated/block-19-g7-recent-posts.png": "98548cf311a5d13c21d86f31520d4338566ffb0ebbdff0c90441a316916b8ecb",
     "thumbnails/generated/block-20-g7-product-grid.png": "3ed3929789f8a3a8ce15b94cb677d9bed7846a982af9295f781cb8328279858c",
     "thumbnails/generated/block-21-inquiry-form.png": "3ad202623864b8d5df7b8ba158060b12cd20843546a5fbdf551b59832fd0ca72",
     "thumbnails/generated/block-22-map-directions.png": "258bca143c7bace468e9194831eff49b56f971db61b81e0479506264738ee7f5",
-    "thumbnails/generated/block-23-testimonials.png": "88f260f1200d56977773347a3688161e0c16d24e9e993474891a7bf7ad680da8",
+    "thumbnails/generated/block-23-testimonials.png": "3c1ea911c7903a0d8166da20b5a28dbcd3657ad93d557e17c0efd3ac60d83671",
     "thumbnails/generated/block-24-faq-accordion.png": "06eab16a594688cbb1cd3e6a898eeac4a64646c731c9b1cea74cdf76313e5104",
     "thumbnails/generated/block-25-process-timeline.png": "31b0b9bf78e32fb4f28df9e1382fd1e9a5fca2307f5bb804a27249d105f7179c",
     "thumbnails/generated/block-26-tabs.png": "e198af9466a79d4f3fcd64007f00b5caaaaeee95692779edad69b590cb5f94e0",
-    "thumbnails/generated/block-27-comparison-table.png": "1de75acd08e20017a2a5dab31a2a531096f19c155afdda2f8767c4b201508a4e",
+    "thumbnails/generated/block-27-comparison-table.png": "1757d192ac16100ab7a6bdbb20e664fd42f91c19da00f55890aaa8eceeda5be4",
     "thumbnails/generated/block-28-article-list.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
     "thumbnails/generated/block-29-video-embed.png": "3f41af01ebe79551450f25dd30e7d70194380c3f6833c66859ab429d01eaf1cd",
     "thumbnails/generated/block-30-logo-carousel.png": "8de119fb233b1252eb0e7c9669a1ed825849d4947b15bd9d3b1ee19f9a0dec01",
@@ -4326,24 +4326,24 @@
     "thumbnails/generated/preset-13-hero-service-intro.png": "22d9e362b86cfa0abefb23e8a47636bdaeb7486bb883dabc6134d8c57d429f26",
     "thumbnails/generated/preset-14-features-core-benefits.png": "8ccf3d433db52592d021552d054a800fbb231bd5a0ee6115a797c344127db75e",
     "thumbnails/generated/preset-15-cta-contact.png": "bffa3af7d603b8f2eb6f2ed82f582f09913638f242ca0cf485d222df9378d784",
-    "thumbnails/generated/preset-16-contact-office.png": "4366021908f7258ba90d154f2498c994e12da398603113eb2f46818157969da8",
+    "thumbnails/generated/preset-16-contact-office.png": "ad0128e1278554cf123c03bc9a7dd22fc49e9a4235cfe8aa8ff13c72067fdac9",
     "thumbnails/generated/preset-17-faq-basic.png": "06eab16a594688cbb1cd3e6a898eeac4a64646c731c9b1cea74cdf76313e5104",
     "thumbnails/generated/preset-18-process-four-step.png": "31b0b9bf78e32fb4f28df9e1382fd1e9a5fca2307f5bb804a27249d105f7179c",
     "thumbnails/generated/preset-19-hero-split-product-focus.png": "2deb563cdc483139d98a46636437fea230d2501d382960423a35d30f74fa6c89",
     "thumbnails/generated/preset-20-hero-slider-campaign.png": "c3d7c9b3ea754d21aca71be4ba93c53f0a24be59a57de06fb1dc25ee8dd4962d",
-    "thumbnails/generated/preset-21-logo-cloud-partners.png": "a161aa5d08571dafa099aadb5b4b66ad457793252806c5d21d40582d150d76d9",
-    "thumbnails/generated/preset-22-stats-business-proof.png": "291e5dc03499f26b3b52123ef6d788bf77c5d9fd6b2708e5384054ff9d3270d3",
-    "thumbnails/generated/preset-23-pricing-three-tier.png": "7370b37ab1d5170ae3f3d803d389183d1559b228e9e89e98f9ee64e525f18ec5",
-    "thumbnails/generated/preset-24-team-leadership.png": "f24975af293cdd4b20df693adc7f724b01cdf0b5d3772cdf6fd56a201f4d5bd4",
+    "thumbnails/generated/preset-21-logo-cloud-partners.png": "def94703205d2aa18e4a8ea656c79555a1fd4b533ada048527d6a807ea645522",
+    "thumbnails/generated/preset-22-stats-business-proof.png": "219202f17161bd879d3507abc290450c470f2c16fd5cfc1c3716974ccf26759e",
+    "thumbnails/generated/preset-23-pricing-three-tier.png": "ea3b6229ff62f573ccfade0f943411a70ffdd39133ce064094e4766213e505c1",
+    "thumbnails/generated/preset-24-team-leadership.png": "41bf66ac8c7a82f22fa945826f33c973316f580e275230218bb323b83b36f358",
     "thumbnails/generated/preset-25-gallery-project-scenes.png": "901b367073353c600b780ed24d0c7d388de306b973c2fbbdaaeb2b2fb138b242",
-    "thumbnails/generated/preset-26-bar-chart-quarterly.png": "a89a174561f51c7d1f9bd31171bc50153ec3386042ee6ec31196e510a6db268a",
+    "thumbnails/generated/preset-26-bar-chart-quarterly.png": "17ba92feeb4cdfcbb301c57935f3a266ec7a8dff17695b85938428b10d21a6d0",
     "thumbnails/generated/preset-27-g7-posts-latest.png": "98548cf311a5d13c21d86f31520d4338566ffb0ebbdff0c90441a316916b8ecb",
     "thumbnails/generated/preset-28-g7-products-new.png": "3ed3929789f8a3a8ce15b94cb677d9bed7846a982af9295f781cb8328279858c",
     "thumbnails/generated/preset-29-inquiry-general.png": "3ad202623864b8d5df7b8ba158060b12cd20843546a5fbdf551b59832fd0ca72",
     "thumbnails/generated/preset-30-map-office.png": "258bca143c7bace468e9194831eff49b56f971db61b81e0479506264738ee7f5",
-    "thumbnails/generated/preset-31-testimonials-customer-proof.png": "88f260f1200d56977773347a3688161e0c16d24e9e993474891a7bf7ad680da8",
+    "thumbnails/generated/preset-31-testimonials-customer-proof.png": "3c1ea911c7903a0d8166da20b5a28dbcd3657ad93d557e17c0efd3ac60d83671",
     "thumbnails/generated/preset-32-tabs-service-guide.png": "e198af9466a79d4f3fcd64007f00b5caaaaeee95692779edad69b590cb5f94e0",
-    "thumbnails/generated/preset-33-comparison-plans.png": "1de75acd08e20017a2a5dab31a2a531096f19c155afdda2f8767c4b201508a4e",
+    "thumbnails/generated/preset-33-comparison-plans.png": "1757d192ac16100ab7a6bdbb20e664fd42f91c19da00f55890aaa8eceeda5be4",
     "thumbnails/generated/preset-34-articles-insights.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
     "thumbnails/generated/preset-35-video-product-tour.png": "3f41af01ebe79551450f25dd30e7d70194380c3f6833c66859ab429d01eaf1cd",
     "thumbnails/generated/preset-36-logo-carousel-customers.png": "8de119fb233b1252eb0e7c9669a1ed825849d4947b15bd9d3b1ee19f9a0dec01",

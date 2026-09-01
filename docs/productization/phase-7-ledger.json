@@ -154,6 +154,17 @@
       "items": [
         { "id": "gallery.filmstrip", "decision": "maintained", "reason": "filmstrip형 5개 현장 이미지와 대체텍스트·캡션이 모두 채워져 있음", "checks": ["no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-E-01",
+      "items": [
+        { "id": "g7-posts.latest", "decision": "maintained", "reason": "최근 게시글 capability·기간·limit·빈 상태가 명확하고 실제 결과는 런타임 adapter가 제공", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "g7-products.new", "decision": "maintained", "reason": "신상품 capability·개수·상세 기본 경로·빈 상태가 명확함", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "g7-archive.searchable", "decision": "maintained", "reason": "검색·게시판 필터·기간·page size·빈 상태의 아카이브 구성이 완결됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "g7-showcase.featured", "decision": "maintained", "reason": "추천 상품 capability·레이아웃·상세 기본 경로·빈 상태가 명확함", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "g7-post-detail.featured", "decision": "maintained", "reason": "게시판·게시글 식별자·상세 경로·실패 상태가 구체적으로 제공됨", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "g7-product-detail.featured", "decision": "maintained", "reason": "SAMPLE 상품 키·상세 경로·실패 상태가 동적 상세 예시로 명확함", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.jiwonpapa.dev/g7-page-builder/document-v1.json",
-  "title": "G7 Page Builder Document v1",
+  "title": "G7 Page Builder Document v1/v2 compatibility schema",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "document_id", "slug", "mode", "locale", "blocks"],
   "properties": {
     "schema_version": {
-      "const": "g7-page-builder/v1"
+      "enum": ["g7-page-builder/v1", "g7-page-builder/v2"]
     },
     "document_id": {
       "type": "string",
@@ -73,6 +73,25 @@
       }
     }
   },
+  "allOf": [{
+    "if": {
+      "properties": { "schema_version": { "const": "g7-page-builder/v1" } },
+      "required": ["schema_version"]
+    },
+    "then": {
+      "properties": {
+        "blocks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "not": { "enum": ["layout.section-01", "layout.columns-01", "layout.stack-01"] } }
+            }
+          }
+        }
+      }
+    }
+  }],
   "$defs": {
     "inlineRichTextString": {
       "type": "string",
@@ -255,6 +274,14 @@
         {
           "if": { "properties": { "type": { "const": "media.image-carousel-01" } }, "required": ["type"] },
           "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/imageCarouselProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "layout.section-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/layoutSectionProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "layout.columns-01" } }, "required": ["type"] },
+          "then": { "properties": { "block_version": { "const": 1 }, "props": { "$ref": "#/$defs/layoutColumnsProps" } } }
         },
         {
           "$ref": "#/$defs/richTextEnvelopeOverlay"
@@ -673,6 +700,25 @@
         "content": { "$ref": "#/$defs/blockRichTextString", "type": "string", "minLength": 1 },
         "measure": { "enum": ["narrow", "standard", "wide"] },
         "appearance": { "$ref": "#/$defs/appearance" }
+      }
+    },
+    "layoutSectionProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "spacing"],
+      "properties": {
+        "width": { "enum": ["standard", "wide", "full"] },
+        "spacing": { "enum": ["compact", "normal", "spacious"] }
+      }
+    },
+    "layoutColumnsProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "ratio", "gap"],
+      "properties": {
+        "columns": { "const": 2 },
+        "ratio": { "enum": ["1:1", "1:2", "2:1"] },
+        "gap": { "enum": ["compact", "normal", "spacious"] }
       }
     },
     "imageBlockProps": {

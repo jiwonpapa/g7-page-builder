@@ -8,6 +8,7 @@ import fixture from '../Contract/document-v1.fixture.json';
 import ctaContactFixture from '../Contract/document-cta-contact-v1.fixture.json';
 import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import foundationFixture from '../Contract/document-foundation-v1.fixture.json';
+import layoutFixture from '../Contract/document-layout-v2.fixture.json';
 import compileFixture from '../Contract/compile-result-v1.fixture.json';
 import compileSchema from '../../schemas/compile-result.schema.json';
 import schema from '../../schemas/page-builder-document.schema.json';
@@ -103,6 +104,20 @@ describe('PageBuilderDocument v1 schema', () => {
 
   it('accepts all six typed foundation blocks', () => {
     expect(validate(foundationFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('accepts the typed v2 Section and two-column document but keeps layouts out of v1', () => {
+    expect(validate(layoutFixture), JSON.stringify(validate.errors)).toBe(true);
+
+    const legacyEnvelope = structuredClone(layoutFixture) as { schema_version: string };
+    legacyEnvelope.schema_version = 'g7-page-builder/v1';
+    expect(validate(legacyEnvelope)).toBe(false);
+
+    const invalidColumns = structuredClone(layoutFixture) as unknown as {
+      blocks: Array<{ slots: { content: Array<{ props: Record<string, unknown> }> } }>;
+    };
+    invalidColumns.blocks[0]!.slots.content[0]!.props.columns = 3;
+    expect(validate(invalidColumns)).toBe(false);
   });
 
   it('accepts all eight production-library blocks and rejects unsafe structural values', () => {

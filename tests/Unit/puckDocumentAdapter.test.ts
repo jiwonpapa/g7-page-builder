@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { PuckEditorData } from '../../resources/js/editor/PuckEditorAdapter';
 import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
+import layoutFixture from '../Contract/document-layout-v2.fixture.json';
 import {
   ANCHOR_MENU_BLOCK_TYPE,
   ARTICLE_LIST_BLOCK_TYPE,
@@ -52,6 +53,15 @@ class TestResizeObserver {
 globalThis.ResizeObserver = TestResizeObserver;
 
 describe('isolated canonical document envelope adapter', () => {
+  it('round-trips the v2 Section and two-column Puck slots without storing Puck state', () => {
+    const document = structuredClone(layoutFixture) as PageBuilderDocument;
+    const session = canonicalToPuck(document);
+    expect(session.data.content[0]?.type).toBe('LayoutSection');
+    const sectionContent = (session.data.content[0]?.props as Record<string, unknown> | undefined)?.content;
+    expect(Array.isArray(sectionContent) && sectionContent[0]?.type).toBe('LayoutColumns');
+    expect(puckToCanonical(session.data, session.context)).toEqual(document);
+  });
+
   it('preserves existing SEO metadata across an ordinary content edit without sharing references', () => {
     const document = structuredClone(documentFixture);
     document.seo = { title: '검색 제목', description: '검색 설명', og_image_url: '/storage/share.webp', robots: 'noindex' };

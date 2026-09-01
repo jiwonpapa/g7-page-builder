@@ -13,6 +13,7 @@ import editorialPageKit from '../../resources/store/source/page-kits/editorial-c
 import eventPageKit from '../../resources/store/source/page-kits/event-launch/document.json';
 import localBusinessPageKit from '../../resources/store/source/page-kits/local-business/document.json';
 import servicePageKit from '../../resources/store/source/page-kits/service-conversion/document.json';
+import layoutFixture from '../Contract/document-layout-v2.fixture.json';
 
 const FULL_CATALOG_RENDER_TIMEOUT_MS = 15_000;
 
@@ -66,7 +67,7 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { Puck } = await import('@puckeditor/core');
-const { PuckEditorAdapter, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { PuckEditorAdapter, canonicalToPuck, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
 const {
   createRichTextField,
   RichTextCanvasField,
@@ -277,7 +278,9 @@ describe('Puck editor surface contract', () => {
 
   it('renders every built-in block without rich-text DOM nesting errors', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const content = Object.entries(pageBuilderPuckConfig.components).map(([type, config], index) => ({
+    const leafComponents = Object.entries(pageBuilderPuckConfig.components)
+      .filter(([type]) => !type.startsWith('Layout'));
+    const content = leafComponents.map(([type, config], index) => ({
       type,
       props: {
         ...config.defaultProps,
@@ -310,6 +313,30 @@ describe('Puck editor surface contract', () => {
     const consoleErrors = consoleError.mock.calls.map((call) => call.map(String).join(' '));
     expect(consoleErrors).toEqual([]);
   }, FULL_CATALOG_RENDER_TIMEOUT_MS);
+
+  it('renders the v2 Section and Columns slots with their nested heading and body', async () => {
+    const session = canonicalToPuck(structuredClone(layoutFixture) as PageBuilderDocument);
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+
+    await act(async () => {
+      root.render(<Puck
+        config={pageBuilderPuckConfig}
+        data={session.data}
+        iframe={{ enabled: false }}
+        onChange={() => undefined}
+        onPublish={() => undefined}
+      />);
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    });
+
+    expect(container.querySelector('[data-testid="page-builder-layout-section"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="page-builder-layout-columns"]')).not.toBeNull();
+    expect(container.textContent).toContain('왼쪽 제목');
+    expect(container.textContent).toContain('오른쪽 본문은 저장·재로드·발행에서도 유지됩니다.');
+  });
 
   it('keeps rich-text visual blocks full width while measuring only their content', async () => {
     const measures = ['narrow', 'standard', 'wide'] as const;
@@ -486,6 +513,7 @@ describe('Puck editor surface contract', () => {
 
   it('provides stable container controls to every built-in block', () => {
     for (const [component, config] of Object.entries(pageBuilderPuckConfig.components)) {
+      if (component.startsWith('Layout')) continue;
       expect(config.fields, component).toMatchObject({
         containerWidth: { type: 'custom' },
         containerAlign: { type: 'custom' },

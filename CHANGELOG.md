@@ -21,6 +21,8 @@
 
 ### Added
 
+- Puck의 정식 slot 필드를 사용하는 `g7-page-builder/v2` 최소 중첩 경로를 추가합니다. Section 안의 2열 Columns와 제목·본문을 canonical 원본으로 왕복하고, 같은 구조를 TypeScript/PHP 정책·JSON schema·재귀 HTML compiler에서 검증합니다. 기존 v1 문서는 열기만 해도 변환하지 않으며 일반 카탈로그 기본값도 v1을 유지합니다.
+- 중첩 제목 편집→저장→재로드→미리보기→발행→과거 revision 복원→재발행을 fixture·단위·DB 통합·실제 브라우저 흐름으로 연결합니다. 구조형 compiler는 0.17.0이며 실패 시 기존 publication pointer를 바꾸지 않는 기존 prepare/commit 경계를 유지합니다.
 - G7 템플릿 sanitizer 호환 계약과 회귀시험을 추가합니다. 95개 내장 프리셋의 컴파일 결과에 제거 대상 구조 태그가 없는지 검사하고, 임의 SVG 노드·승인되지 않은 임베드 호스트·외부 컴파일러의 금지 태그를 fail-closed로 차단합니다.
 - 실제 포인터 본문 삭제·재입력 회귀에서 outgoing canonical 저장 요청의 SEO와 서버 GET/reload, preview 본문, 공개 title/description/robots·검색 제외 헤더를 함께 검사합니다. 기존 서버 SEO 보존 fallback이 프런트 왕복 누락을 가리지 않도록 경계를 나눕니다.
 - 분리된 문서 변환 및 중첩 트리/정책 파일의 coverage 하한을 강제하고, 공유 구조 정책·TS/PHP fixture 변경을 품질 증거의 렌더/편집 의존성에 포함합니다.

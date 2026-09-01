@@ -678,6 +678,41 @@ final class PublicationPersistenceTest extends TestCase
         self::assertCount(4, $service->revisions($unpublished->document->documentId));
     }
 
+    public function test_v2_nested_layout_survives_save_preview_publish_reload_and_revision_restore(): void
+    {
+        $service = new PageBuilderService(new EloquentPageBuilderRepository, $this->builtInCompiler());
+        $created = $service->create('중첩 레이아웃', 'nested-layout-flow', 'ko', null);
+        $contents = file_get_contents(dirname(__DIR__, 2).'/Contract/document-layout-v2.fixture.json');
+        self::assertIsString($contents);
+        $payload = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+        $payload['document_id'] = $created->document->documentId;
+        $payload['slug'] = 'nested-layout-flow';
+
+        $nested = $service->saveDraft($created->document->documentId, $payload, $created->lockVersion, null);
+        self::assertSame('g7-page-builder/v2', $nested->document->schemaVersion);
+        self::assertSame('왼쪽 제목', $nested->document->blocks[0]['slots']['content'][0]['slots']['column1'][0]['props']['heading']);
+
+        $preview = $service->renderPreview($service->preview($nested->document->documentId, $nested->lockVersion, null)->token);
+        self::assertNotNull($preview);
+        self::assertStringContainsString('g7pb-layout-columns--1-2', $preview->artifact);
+
+        $candidate = $service->preparePublication($nested->document->documentId, $nested->lockVersion, null);
+        $publishedSnapshot = $service->commitPublication($candidate->token);
+        $published = $service->findPublished('nested-layout-flow');
+        self::assertNotNull($published);
+        self::assertStringContainsString('오른쪽 본문은 저장·재로드·발행에서도 유지됩니다.', $published->artifact);
+
+        $changedPayload = $nested->document->toArray();
+        $changedPayload['blocks'][0]['slots']['content'][0]['slots']['column1'][0]['props']['heading'] = '수정한 제목';
+        $changed = $service->saveDraft($nested->document->documentId, $changedPayload, $nested->lockVersion, null);
+        self::assertSame('수정한 제목', $changed->document->blocks[0]['slots']['content'][0]['slots']['column1'][0]['props']['heading']);
+
+        $restored = $service->restoreRevision($changed->document->documentId, $nested->revision, $changed->lockVersion, null);
+        self::assertSame('왼쪽 제목', $restored->document->blocks[0]['slots']['content'][0]['slots']['column1'][0]['props']['heading']);
+        self::assertSame($publishedSnapshot->activeArtifactSha256, $restored->activeArtifactSha256);
+        self::assertStringContainsString('왼쪽 제목', $service->findPublished('nested-layout-flow')?->artifact ?? '');
+    }
+
     public function test_unpublish_invalidates_every_prepared_publication_candidate(): void
     {
         $service = new PageBuilderService(

@@ -1,4 +1,10 @@
 export const PAGE_BUILDER_SCHEMA_VERSION = 'g7-page-builder/v1' as const;
+export const PAGE_BUILDER_SCHEMA_V2 = 'g7-page-builder/v2' as const;
+export type PageBuilderSchemaVersion = typeof PAGE_BUILDER_SCHEMA_VERSION | typeof PAGE_BUILDER_SCHEMA_V2;
+
+export const LAYOUT_SECTION_BLOCK_TYPE = 'layout.section-01' as const;
+export const LAYOUT_COLUMNS_BLOCK_TYPE = 'layout.columns-01' as const;
+export const LAYOUT_STACK_BLOCK_TYPE = 'layout.stack-01' as const;
 
 export const HERO_BLOCK_TYPE = 'content.hero-centered-01' as const;
 export const FEATURES_BLOCK_TYPE = 'content.features-grid-01' as const;
@@ -531,6 +537,21 @@ export interface RichTextBlockProps {
   appearance?: BlockAppearance;
 }
 
+export interface LayoutSectionBlockProps {
+  width: 'standard' | 'wide' | 'full';
+  spacing: 'compact' | 'normal' | 'spacious';
+}
+
+export interface LayoutColumnsBlockProps {
+  columns: 1 | 2 | 3;
+  ratio: '1' | '1:1' | '1:2' | '2:1' | '1:1:1';
+  gap: 'none' | 'compact' | 'normal' | 'spacious';
+}
+
+export interface LayoutStackBlockProps {
+  gap: 'none' | 'compact' | 'normal' | 'spacious';
+}
+
 export interface ImageBlockProps {
   src: string;
   alt: string;
@@ -726,7 +747,7 @@ export type ContactBlock = PageBuilderBlock<ContactBlockProps & Record<string, u
 };
 
 export interface PageBuilderDocument {
-  schema_version: typeof PAGE_BUILDER_SCHEMA_VERSION;
+  schema_version: PageBuilderSchemaVersion;
   document_id: string;
   slug: string;
   mode: 'canvas';

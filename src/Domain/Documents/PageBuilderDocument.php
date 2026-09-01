@@ -35,7 +35,7 @@ final readonly class PageBuilderDocument
             throw new \InvalidArgumentException('Page document id must be a UUID.');
         }
 
-        if ($this->schemaVersion !== 'g7-page-builder/v1') {
+        if (! in_array($this->schemaVersion, ['g7-page-builder/v1', 'g7-page-builder/v2'], true)) {
             throw new \InvalidArgumentException('Page schema version is not supported.');
         }
 
@@ -64,6 +64,20 @@ final readonly class PageBuilderDocument
         }
 
         self::assertValidTokens($this->tokens);
+
+        if ($this->schemaVersion === 'g7-page-builder/v2') {
+            self::layoutPolicy()->validate([
+                'schema_version' => $this->schemaVersion,
+                'document_id' => $this->documentId,
+                'slug' => $this->slug,
+                'mode' => $this->mode,
+                'locale' => $this->locale,
+                'tokens' => $this->tokens,
+                'blocks' => $this->blocks,
+                'shell_mode' => $this->shellMode,
+                ...($this->seo instanceof PageSeoMetadata ? ['seo' => $this->seo->toArray()] : []),
+            ]);
+        }
     }
 
     /**
@@ -144,5 +158,18 @@ final readonly class PageBuilderDocument
                 throw new \InvalidArgumentException("Page design token {$name} is invalid.");
             }
         }
+    }
+
+    private static function layoutPolicy(): LayoutPolicy
+    {
+        static $policy = null;
+
+        if (! $policy instanceof LayoutPolicy) {
+            $path = dirname(__DIR__, 3).'/schemas/layout-policy-v1.json';
+            $source = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+            $policy = new LayoutPolicy($source);
+        }
+
+        return $policy;
     }
 }

@@ -14,7 +14,11 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
-    public const COMPILER_VERSION = '0.16.0';
+    public const COMPILER_VERSION = '0.17.0';
+
+    private const LAYOUT_SECTION_TYPE = 'layout.section-01';
+
+    private const LAYOUT_COLUMNS_TYPE = 'layout.columns-01';
 
     /** @var list<string> */
     private const TEMPLATE_FORBIDDEN_TAGS = [
@@ -260,7 +264,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('The requested compiler target is not supported.');
         }
 
-        if ($document->schemaVersion !== 'g7-page-builder/v1') {
+        if (! in_array($document->schemaVersion, ['g7-page-builder/v1', 'g7-page-builder/v2'], true)) {
             throw new DocumentCompileException('The page document schema is not supported.');
         }
 
@@ -270,73 +274,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $styleUrls = [];
 
         foreach ($document->blocks as $index => $block) {
-            $type = $block['type'] ?? null;
-            $version = $block['block_version'] ?? null;
-            $instanceId = $block['instance_id'] ?? null;
-            $props = $block['props'] ?? null;
-            $slots = $block['slots'] ?? [];
-
-            if (! is_string($instanceId) || ! $this->isUuid($instanceId)) {
-                throw new DocumentCompileException("Block {$index} has an invalid instance id.");
-            }
-
-            if (! is_string($type) || ! is_int($version) || ! is_array($props) || ! is_array($slots)) {
-                throw new DocumentCompileException("Block {$index} has an invalid version, props, or slots value.");
-            }
-
-            if ($slots !== []) {
-                throw new DocumentCompileException("Block {$index} uses slots that are not supported by the first vertical slice.");
-            }
-
-            $definition = $this->blockRegistry->definition($type, $version);
-            if ($definition === null || ! $this->blockCompilers->has($definition->compiler)) {
-                throw new DocumentCompileException("Block {$index} has an unsupported type or compiler.");
-            }
-
-            if (in_array($type, [self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE], true)) {
-                $heroCount++;
-            }
-            if ($type === self::HEADING_TYPE && is_string($props['anchor'] ?? null) && $props['anchor'] !== '') {
-                if (isset($headingAnchors[$props['anchor']])) {
-                    throw new DocumentCompileException("Heading anchor {$props['anchor']} is duplicated.");
-                }
-                $headingAnchors[$props['anchor']] = true;
-            }
-            if ($definition->packId !== 'jiwonpapa/builtin-core' && $this->blockAssets !== null) {
-                foreach ($this->blockAssets->styleUrls($definition->packId, $definition->packVersion) as $styleUrl) {
-                    $styleUrls[$styleUrl] = true;
-                }
-            }
-
-            try {
-                if ($definition->packId !== 'jiwonpapa/builtin-core') {
-                    if ($this->blockSchemas === null || ! $this->blockSchemas->has($definition->schemaRef)) {
-                        throw new \DomainException('Block schema validator is not registered.');
-                    }
-                    $this->blockSchemas->validate($definition->schemaRef, $props);
-                }
-                $compiledBlock = str_replace(
-                    '__G7PB_PAGE_SLUG__',
-                    rawurlencode($document->slug),
-                    $this->blockCompilers->compile($definition->compiler, $props),
-                );
-                $compiledBlock = $this->applyElementAppearances($compiledBlock, $props, $type);
-                $this->assertTemplateCompatibleMarkup($compiledBlock, "Block {$index}");
-            } catch (DocumentCompileException $exception) {
-                throw $exception;
-            } catch (\Throwable) {
-                throw new DocumentCompileException(
-                    "Block {$index} failed schema validation or compilation.",
-                    'G7PB_BLOCK_RUNTIME_FAILED',
-                );
-            }
-
-            $sections[] = $this->withBlockRuntime(
-                $compiledBlock,
-                $instanceId,
-                $type,
-                $block['motion'] ?? null,
-                $block['visibility'] ?? null,
+            $sections[] = $this->compileBlock(
+                $block,
+                "Block {$index}",
+                $document,
+                $heroCount,
+                $headingAnchors,
+                $styleUrls,
             );
         }
 
@@ -364,6 +308,173 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             artifactSha256: hash('sha256', $artifact),
             warnings: $warnings,
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $block
+     * @param  array<string, bool>  $headingAnchors
+     * @param  array<string, bool>  $styleUrls
+     */
+    private function compileBlock(
+        array $block,
+        string $path,
+        PageBuilderDocument $document,
+        int &$heroCount,
+        array &$headingAnchors,
+        array &$styleUrls,
+    ): string {
+        $type = $block['type'] ?? null;
+        $version = $block['block_version'] ?? null;
+        $instanceId = $block['instance_id'] ?? null;
+        $props = $block['props'] ?? null;
+        $slots = $block['slots'] ?? [];
+
+        if (! is_string($instanceId) || ! $this->isUuid($instanceId)) {
+            throw new DocumentCompileException("{$path} has an invalid instance id.");
+        }
+        if (! is_string($type) || ! is_int($version) || ! is_array($props) || ! is_array($slots)) {
+            throw new DocumentCompileException("{$path} has an invalid version, props, or slots value.");
+        }
+
+        if (in_array($type, [self::LAYOUT_SECTION_TYPE, self::LAYOUT_COLUMNS_TYPE], true)) {
+            $compiled = $this->compileLayoutBlock(
+                $type,
+                $version,
+                $props,
+                $slots,
+                $path,
+                $document,
+                $heroCount,
+                $headingAnchors,
+                $styleUrls,
+            );
+
+            return $this->withBlockRuntime($compiled, $instanceId, $type, $block['motion'] ?? null, $block['visibility'] ?? null);
+        }
+
+        if ($slots !== []) {
+            throw new DocumentCompileException("{$path} uses slots that are not supported by this block.");
+        }
+
+        $definition = $this->blockRegistry->definition($type, $version);
+        if ($definition === null || ! $this->blockCompilers->has($definition->compiler)) {
+            throw new DocumentCompileException("{$path} has an unsupported type or compiler.");
+        }
+        if (in_array($type, [self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE], true)) {
+            $heroCount++;
+        }
+        if ($type === self::HEADING_TYPE && is_string($props['anchor'] ?? null) && $props['anchor'] !== '') {
+            if (isset($headingAnchors[$props['anchor']])) {
+                throw new DocumentCompileException("Heading anchor {$props['anchor']} is duplicated.");
+            }
+            $headingAnchors[$props['anchor']] = true;
+        }
+        if ($definition->packId !== 'jiwonpapa/builtin-core' && $this->blockAssets !== null) {
+            foreach ($this->blockAssets->styleUrls($definition->packId, $definition->packVersion) as $styleUrl) {
+                $styleUrls[$styleUrl] = true;
+            }
+        }
+
+        try {
+            if ($definition->packId !== 'jiwonpapa/builtin-core') {
+                if ($this->blockSchemas === null || ! $this->blockSchemas->has($definition->schemaRef)) {
+                    throw new \DomainException('Block schema validator is not registered.');
+                }
+                $this->blockSchemas->validate($definition->schemaRef, $props);
+            }
+            $compiled = str_replace(
+                '__G7PB_PAGE_SLUG__',
+                rawurlencode($document->slug),
+                $this->blockCompilers->compile($definition->compiler, $props),
+            );
+            $compiled = $this->applyElementAppearances($compiled, $props, $type);
+            $this->assertTemplateCompatibleMarkup($compiled, $path);
+        } catch (DocumentCompileException $exception) {
+            throw $exception;
+        } catch (\Throwable) {
+            throw new DocumentCompileException("{$path} failed schema validation or compilation.", 'G7PB_BLOCK_RUNTIME_FAILED');
+        }
+
+        return $this->withBlockRuntime($compiled, $instanceId, $type, $block['motion'] ?? null, $block['visibility'] ?? null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $props
+     * @param  array<string, list<array<string, mixed>>>  $slots
+     * @param  array<string, bool>  $headingAnchors
+     * @param  array<string, bool>  $styleUrls
+     */
+    private function compileLayoutBlock(
+        string $type,
+        int $version,
+        array $props,
+        array $slots,
+        string $path,
+        PageBuilderDocument $document,
+        int &$heroCount,
+        array &$headingAnchors,
+        array &$styleUrls,
+    ): string {
+        if ($version !== 1 || $document->schemaVersion !== 'g7-page-builder/v2') {
+            throw new DocumentCompileException("{$path} has an unsupported layout version.");
+        }
+
+        if ($type === self::LAYOUT_SECTION_TYPE) {
+            $this->assertOnlyKeys($props, ['width', 'spacing'], $path);
+            $width = $this->requiredString($props, 'width', 16);
+            $spacing = $this->requiredString($props, 'spacing', 16);
+            if (! in_array($width, ['standard', 'wide', 'full'], true)
+                || ! in_array($spacing, ['compact', 'normal', 'spacious'], true)
+                || array_diff(array_keys($slots), ['content']) !== []) {
+                throw new DocumentCompileException("{$path} has invalid Section properties or slots.");
+            }
+            $content = $this->compileLayoutSlot($slots['content'] ?? [], $path.'.content', $document, $heroCount, $headingAnchors, $styleUrls);
+
+            return '<section class="g7pb-layout-section g7pb-layout-section--'.$width.' g7pb-layout-section--'.$spacing.'" data-testid="page-builder-rendered-layout" data-block-type="layout-section"><div class="g7pb-layout-section__inner">'.$content.'</div></section>';
+        }
+
+        $this->assertOnlyKeys($props, ['columns', 'ratio', 'gap'], $path);
+        $columns = $props['columns'] ?? null;
+        $ratio = $this->requiredString($props, 'ratio', 16);
+        $gap = $this->requiredString($props, 'gap', 16);
+        if ($columns !== 2
+            || ! in_array($ratio, ['1:1', '1:2', '2:1'], true)
+            || ! in_array($gap, ['compact', 'normal', 'spacious'], true)
+            || array_diff(array_keys($slots), ['column1', 'column2']) !== []) {
+            throw new DocumentCompileException("{$path} has invalid Columns properties or slots.");
+        }
+        $columnsMarkup = [];
+        foreach ([1, 2] as $column) {
+            $slotName = 'column'.$column;
+            $content = $this->compileLayoutSlot($slots[$slotName] ?? [], $path.'.'.$slotName, $document, $heroCount, $headingAnchors, $styleUrls);
+            $columnsMarkup[] = '<div class="g7pb-layout-columns__column" data-g7pb-layout-column="'.$column.'">'.$content.'</div>';
+        }
+
+        return '<section class="g7pb-layout-columns g7pb-layout-columns--'.str_replace(':', '-', $ratio).' g7pb-layout-columns--gap-'.$gap.'" data-testid="page-builder-rendered-layout" data-block-type="layout-columns">'.implode('', $columnsMarkup).'</section>';
+    }
+
+    /**
+     * @param  array<int, mixed>  $children
+     * @param  array<string, bool>  $headingAnchors
+     * @param  array<string, bool>  $styleUrls
+     */
+    private function compileLayoutSlot(
+        array $children,
+        string $path,
+        PageBuilderDocument $document,
+        int &$heroCount,
+        array &$headingAnchors,
+        array &$styleUrls,
+    ): string {
+        $compiled = [];
+        foreach ($children as $index => $child) {
+            if (! is_array($child)) {
+                throw new DocumentCompileException("{$path}.{$index} is not a block.");
+            }
+            $compiled[] = $this->compileBlock($child, "{$path}.{$index}", $document, $heroCount, $headingAnchors, $styleUrls);
+        }
+
+        return implode('', $compiled);
     }
 
     public function supports(string $targetFormat, string $targetEngineVersion): bool

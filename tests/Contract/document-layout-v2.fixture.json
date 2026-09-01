@@ -1,0 +1,63 @@
+{
+  "schema_version": "g7-page-builder/v2",
+  "document_id": "10000000-0000-4000-8000-000000000001",
+  "slug": "layout-two-columns",
+  "mode": "canvas",
+  "locale": "ko",
+  "shell_mode": "template",
+  "tokens": {
+    "design.palette": "indigo",
+    "design.width": "standard"
+  },
+  "blocks": [
+    {
+      "instance_id": "10000000-0000-4000-8000-000000000002",
+      "type": "layout.section-01",
+      "block_version": 1,
+      "props": {
+        "width": "standard",
+        "spacing": "normal"
+      },
+      "slots": {
+        "content": [
+          {
+            "instance_id": "10000000-0000-4000-8000-000000000003",
+            "type": "layout.columns-01",
+            "block_version": 1,
+            "props": {
+              "columns": 2,
+              "ratio": "1:2",
+              "gap": "normal"
+            },
+            "slots": {
+              "column1": [
+                {
+                  "instance_id": "10000000-0000-4000-8000-000000000004",
+                  "type": "content.heading-01",
+                  "block_version": 1,
+                  "props": {
+                    "eyebrow": "중첩 레이아웃",
+                    "heading": "왼쪽 제목",
+                    "level": 2,
+                    "anchor": "nested-layout"
+                  }
+                }
+              ],
+              "column2": [
+                {
+                  "instance_id": "10000000-0000-4000-8000-000000000005",
+                  "type": "content.rich-text-01",
+                  "block_version": 1,
+                  "props": {
+                    "content": "<p>오른쪽 본문은 저장·재로드·발행에서도 유지됩니다.</p>",
+                    "measure": "wide"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

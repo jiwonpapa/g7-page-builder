@@ -23,7 +23,7 @@
         "body": "현재 상황을 함께 정리하고 가장 필요한 변화부터 현실적인 순서로 제안합니다.",
         "primaryCta": {
           "label": "상담 요청하기",
-          "url": "/"
+          "url": "/contact"
         },
         "image": {
           "src": "g7pb-media://image-1",
@@ -117,7 +117,7 @@
             "title": "운영 점검",
             "body": "실제 사용 결과를 확인하고 다음 개선 범위를 정리합니다.",
             "linkLabel": "상담 신청",
-            "linkUrl": "/"
+            "linkUrl": "/contact"
           }
         ],
         "layout": "horizontal",
@@ -139,34 +139,34 @@
       "type": "trust.testimonials-01",
       "block_version": 1,
       "props": {
-        "eyebrow": "고객 경험",
-        "heading": "설명보다 결과가 먼저 보였습니다",
+        "eyebrow": "적용 시나리오",
+        "heading": "운영팀이 기대할 수 있는 변화",
         "items": [
           {
             "quote": "해야 할 일이 많았는데 우선순위가 분명해져 팀이 바로 움직일 수 있었습니다.",
-            "name": "김지현",
-            "role": "운영 책임자",
-            "company": "로컬 브랜드",
+            "name": "운영팀 사례 A",
+            "role": "가상 적용 시나리오",
+            "company": "샘플 콘텐츠",
             "avatarSrc": "g7pb-media://image-2",
-            "avatarAlt": "고객 김지현의 프로필 사진",
+            "avatarAlt": "운영팀 적용 시나리오를 위한 샘플 인물 이미지",
             "rating": 5
           },
           {
             "quote": "회의가 길어지는 대신 결정 근거와 다음 행동이 한 장에 정리됐습니다.",
-            "name": "박준호",
-            "role": "대표",
-            "company": "전문 서비스 기업",
+            "name": "운영팀 사례 B",
+            "role": "가상 적용 시나리오",
+            "company": "샘플 콘텐츠",
             "avatarSrc": "g7pb-media://image-3",
-            "avatarAlt": "고객 박준호의 프로필 사진",
+            "avatarAlt": "의사결정 개선 시나리오를 위한 샘플 인물 이미지",
             "rating": 5
           },
           {
             "quote": "구축 이후에도 스스로 운영할 수 있는 기준을 남겨준 점이 좋았습니다.",
-            "name": "이서윤",
-            "role": "브랜드 매니저",
-            "company": "성장 기업",
+            "name": "운영팀 사례 C",
+            "role": "가상 적용 시나리오",
+            "company": "샘플 콘텐츠",
             "avatarSrc": "g7pb-media://image-4",
-            "avatarAlt": "고객 이서윤의 프로필 사진",
+            "avatarAlt": "운영 정착 시나리오를 위한 샘플 인물 이미지",
             "rating": 5
           }
         ],

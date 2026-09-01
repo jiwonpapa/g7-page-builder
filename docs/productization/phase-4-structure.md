@@ -1,7 +1,7 @@
 # 4-A 구조 조작 실행 기록
 
 기준 SHA: `784cf28e65e97cbe466a41028f16d25466e65ad5`  
-task: `productization-phase4a-structure-editing-20260901`
+task: `productization-phase4a-structure-budget-20260901` (`productization-phase4a-structure-editing-20260901` 대체)
 
 ## 구현 범위
 
@@ -25,5 +25,6 @@ task: `productization-phase4a-structure-editing-20260901`
 - canonical↔Puck은 3열과 nested Stack을 왕복하고, PHP는 같은 fixture를 공개 HTML로 컴파일합니다.
 - DB 통합의 마지막 정상 발행본 시험은 이제 지원되는 Stack 자체가 아니라 Stack 안의 schema-valid/compile-invalid 이미지 URL로 실패를 발생시켜 publication pointer 불변을 계속 검사합니다.
 - 실제 브라우저 흐름은 3열·Stack 문서의 제목 편집→저장→reload→발행→revision 복원→재발행을 확인합니다.
+- 구조 검사기 추가 후 editor source CSS는 158,690 bytes입니다. 내부 raw 상한만 별도 task에서 157,000→160,000 bytes로 조정하고 production gzip 45KB·editor JS 500KB 상한은 유지합니다.
 
 4-A는 반응형 override·기기별 상속(4-B), 저장 중 편집·Undo 경계와 v1→v2 전환 UX(4-C), 사람 콘텐츠/권리/시각 승인, 운영 배포를 완료로 표시하지 않습니다.

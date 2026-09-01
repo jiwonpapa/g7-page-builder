@@ -49,10 +49,10 @@ describe('phase 7 bounded preset quality ledger', () => {
     });
     expect(new Set(itemIds).size).toBe(itemIds.length);
     for (const id of itemIds) expect(presets.has(id), id).toBe(true);
-    expect(itemIds.toSorted()).toEqual(inventory.presets
+    expect(itemIds.slice().sort()).toEqual(inventory.presets
       .filter((item) => item.batch.startsWith('7-'))
       .map((item) => item.id)
-      .toSorted());
+      .sort());
   });
 
   it('applies each processed item check without fabricating human or release approval', () => {
@@ -63,7 +63,7 @@ describe('phase 7 bounded preset quality ledger', () => {
         expect(item.release_status, item.id).toBe('blocked');
         expect(item.reason.trim().length, item.id).toBeGreaterThan(0);
         expect(item.checks.length, item.id).toBeGreaterThan(0);
-        const props = presets.get(item.id)!.props as Json;
+        const props = presets.get(item.id)!.props as unknown as Json;
         for (const check of item.checks) {
           if (check === 'no-root-links') expect(values(props, /(?:url|Url)$/), item.id).not.toContain('/');
           if (check === 'no-instruction-copy') expect(JSON.stringify(props), item.id).not.toMatch(forbiddenCopy);
@@ -79,7 +79,7 @@ describe('phase 7 bounded preset quality ledger', () => {
   });
 
   it('binds both remaining Page Kits to the same bounded checks and blocks release', () => {
-    expect(qualityLedger.page_kits.map((item) => item.id).toSorted())
+    expect(qualityLedger.page_kits.map((item) => item.id).sort())
       .toEqual(['company-launch', 'event-launch']);
     for (const item of qualityLedger.page_kits) {
       expect(item.human_status, item.id).toBe('pending');

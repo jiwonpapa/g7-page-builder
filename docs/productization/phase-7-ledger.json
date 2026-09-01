@@ -51,6 +51,19 @@
         { "id": "buttons.centered-actions", "decision": "modified", "reason": "루트 링크와 추상 행동을 상담 및 진행 과정 경로로 교체", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
         { "id": "image-text.product-story", "decision": "modified", "reason": "편집 지시문·빈 이미지·루트 링크를 실제 상담 흐름과 현장 이미지로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" }
       ]
+    },
+    {
+      "id": "7-B-02",
+      "items": [
+        { "id": "icon-list.benefits", "decision": "maintained", "reason": "운영 장점 4개가 구체적이며 행동 링크나 미디어 의존성이 없음", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "icon-list.checklist", "decision": "maintained", "reason": "시작 전 확인 항목이 완결된 체크리스트 문맥으로 제공됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "faq.basic", "decision": "maintained", "reason": "시작·반응형·수정 절차의 질문과 답변이 구체적임", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "process.four-step", "decision": "modified", "reason": "마지막 단계의 루트 링크를 발행 안내 경로로 교체", "checks": ["no-root-links", "no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "tabs.service-guide", "decision": "maintained", "reason": "기획·제작·운영 탭의 정보 구조와 설명이 완결됨", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "articles.insights", "decision": "modified", "reason": "기사 4개의 루트 링크를 각 이야기 상세 경로로 교체", "checks": ["no-root-links", "no-instruction-copy", "media-present"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "divider.section-break", "decision": "maintained", "reason": "섹션 구분 용도와 라벨이 명확하며 추가 데이터 의존성이 없음", "checks": ["no-instruction-copy"], "human_status": "pending", "release_status": "blocked" },
+        { "id": "blockquote.customer-voice", "decision": "modified", "reason": "실제 고객 오인 가능성이 있는 인용을 가상 사례로 명시", "checks": ["no-instruction-copy", "sample-claims"], "human_status": "pending", "release_status": "blocked" }
+      ]
     }
   ]
 }

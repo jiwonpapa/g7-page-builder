@@ -1395,7 +1395,7 @@
             "title": "검토와 발행",
             "body": "기기별 화면을 확인한 뒤 공개합니다.",
             "linkLabel": "발행 안내",
-            "linkUrl": "/"
+            "linkUrl": "/publishing-guide"
           }
         ],
         "layout": "horizontal"
@@ -1984,7 +1984,7 @@
             "date": "2026-08-21",
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
             "imageAlt": "더 빠른 페이지 운영을 위한 구조",
-            "url": "/"
+            "url": "/stories/page-operations"
           },
           {
             "category": "브랜드",
@@ -1993,7 +1993,7 @@
             "date": "2026-08-18",
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/editorial-community-story-shop.webp",
             "imageAlt": "지역의 이야기를 시각 언어로 만드는 법",
-            "url": "/"
+            "url": "/stories/local-visual-language"
           },
           {
             "category": "인사이트",
@@ -2002,7 +2002,7 @@
             "date": "2026-08-15",
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
             "imageAlt": "행동을 만드는 랜딩 페이지의 순서",
-            "url": "/"
+            "url": "/stories/landing-page-flow"
           },
           {
             "category": "인터뷰",
@@ -2011,7 +2011,7 @@
             "date": "2026-08-12",
             "imageSrc": "/modules/jiwonpapa-page_builder/store/previews/local-business-customer-neighbor.webp",
             "imageAlt": "현장에서 발견한 운영의 기준",
-            "url": "/"
+            "url": "/stories/operations-standards"
           }
         ],
         "layout": "magazine"
@@ -2324,7 +2324,7 @@
       "props": {
         "quote": "복잡했던 운영이 한결 단순해졌습니다.",
         "citation": "김민서",
-        "role": "브랜드 매니저",
+        "role": "브랜드 매니저 · 가상 사례",
         "alignment": "left",
         "variant": "mark"
       }
@@ -4304,7 +4304,7 @@
     "thumbnails/generated/block-36-g7-post-detail.png": "ec622946601ebffd526a8fa894f45d1e075a27cc59ecd263f0b15842fb836e1d",
     "thumbnails/generated/block-37-g7-product-detail.png": "56a4ffb9273f23e3f0a4b3b7067fb055282dda742f867fecc07bcd61c0eee3b5",
     "thumbnails/generated/block-38-divider.png": "0a2df7df90fc4d3ea5eff877fc84b253170158900629d94fdc59ac46b9a31932",
-    "thumbnails/generated/block-39-blockquote.png": "0415f73f555f55786a61e7689bb89bd6a76662d22a104578c16af897ba43bb61",
+    "thumbnails/generated/block-39-blockquote.png": "4be4b8994cc9b2a7b33e131c06efd0e053a05651b8b642f48a38f64cef99d4b9",
     "thumbnails/generated/block-40-notice.png": "5c1f5e85cf63151df3cae9d5137c239313dec4624ab07a4b823edacc79a70335",
     "thumbnails/generated/block-41-card-grid.png": "aa9bf8be3beb7a8691d45ab49c704b64adc20ae403721ba7ccf6b19e6e33dc28",
     "thumbnails/generated/block-42-breadcrumbs.png": "d5d9998207d60f23b4a90d0a758e3c3469124a5b024ce640449a66d81d5700ca",
@@ -4355,7 +4355,7 @@
     "thumbnails/generated/preset-42-g7-post-detail-featured.png": "ec622946601ebffd526a8fa894f45d1e075a27cc59ecd263f0b15842fb836e1d",
     "thumbnails/generated/preset-43-g7-product-detail-featured.png": "56a4ffb9273f23e3f0a4b3b7067fb055282dda742f867fecc07bcd61c0eee3b5",
     "thumbnails/generated/preset-44-divider-section-break.png": "0a2df7df90fc4d3ea5eff877fc84b253170158900629d94fdc59ac46b9a31932",
-    "thumbnails/generated/preset-45-blockquote-customer-voice.png": "0415f73f555f55786a61e7689bb89bd6a76662d22a104578c16af897ba43bb61",
+    "thumbnails/generated/preset-45-blockquote-customer-voice.png": "4be4b8994cc9b2a7b33e131c06efd0e053a05651b8b642f48a38f64cef99d4b9",
     "thumbnails/generated/preset-46-notice-service-info.png": "5c1f5e85cf63151df3cae9d5137c239313dec4624ab07a4b823edacc79a70335",
     "thumbnails/generated/preset-47-card-grid-services.png": "aa9bf8be3beb7a8691d45ab49c704b64adc20ae403721ba7ccf6b19e6e33dc28",
     "thumbnails/generated/preset-48-breadcrumbs-detail-page.png": "d5d9998207d60f23b4a90d0a758e3c3469124a5b024ce640449a66d81d5700ca",

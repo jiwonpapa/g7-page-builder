@@ -908,16 +908,16 @@
       "block_version": 1,
       "category": "basic",
       "label": {
-        "ko": "소개 본문",
-        "en": "Introductory copy"
+        "ko": "서비스 소개 본문",
+        "en": "Service introduction"
       },
       "description": {
-        "ko": "서비스나 회사 소개에 바로 쓰는 2문단 본문입니다.",
-        "en": "Start service or company copy with two readable paragraphs."
+        "ko": "문제, 해결 방식, 기대 결과를 두 문단으로 설명합니다.",
+        "en": "Explain the problem, approach, and expected outcome in two readable paragraphs."
       },
       "thumbnail": "thumbnails/generated/preset-03-rich-text-article-intro.png",
       "props": {
-        "content": "<p>고객이 겪는 문제와 우리가 제공하는 해결 방법을 구체적으로 설명해 주세요.</p><p><strong>핵심 차이</strong>와 기대할 수 있는 결과를 짧은 문장으로 이어가면 이해가 빨라집니다.</p>",
+        "content": "<p>운영 과정에서 반복되는 확인과 전달 업무를 줄이고, 팀이 중요한 판단에 집중할 수 있도록 일하는 흐름을 정리합니다.</p><p><strong>현황 진단부터 실행 계획까지</strong> 한 단계씩 함께 점검하며, 담당자가 이후에도 직접 운영할 수 있는 기준을 남깁니다.</p>",
         "measure": "standard"
       }
     },
@@ -1100,16 +1100,16 @@
       },
       "thumbnail": "thumbnails/generated/preset-10-image-text-company-story.png",
       "props": {
-        "eyebrow": "우리가 일하는 방식",
-        "heading": "좋은 결과는 분명한 과정에서 시작됩니다",
-        "body": "<p>어떤 기준으로 판단하고 고객과 어떻게 협력하는지 소개해 주세요.</p>",
+        "eyebrow": "HOW WE WORK",
+        "heading": "현장을 이해하고 실행 가능한 답을 만듭니다",
+        "body": "<p>요청받은 결과만 전달하지 않습니다. 담당자와 함께 현재 흐름을 살피고, 우선순위를 정한 뒤, 운영에 남는 기준과 문서를 만듭니다.</p>",
         "image": {
-          "src": "",
-          "alt": ""
+          "src": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero-team.webp",
+          "alt": "회의 테이블에서 프로젝트 자료를 검토하는 팀"
         },
         "mediaPosition": "right",
         "primaryLink": {
-          "label": "회사 소개",
+          "label": "일하는 방식 보기",
           "url": "/about"
         },
         "appearance": {
@@ -1207,25 +1207,25 @@
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
-        "ko": "제품 소개 히어로"
+        "ko": "전문 서비스 히어로"
       },
       "description": {
-        "ko": "메시지와 실제 제품 이미지를 좌우로 구성합니다."
+        "ko": "대상, 제공 가치, 상담 행동과 현장 이미지를 한 화면에 제시합니다."
       },
       "thumbnail": "thumbnails/generated/preset-13-hero-service-intro.png",
       "props": {
-        "eyebrow": "새로운 시작",
-        "title": "고객의 다음 행동을 더 분명하게",
-        "body": "<p>누구를 위해 어떤 문제를 해결하는지 한 문장으로 알려주세요.</p>",
+        "eyebrow": "OPERATIONS PARTNER",
+        "title": "운영을 단순하고 분명하게",
+        "body": "<p>흩어진 업무 흐름을 진단하고, 팀이 바로 실행할 수 있는 운영 기준과 개선 계획을 만듭니다.</p>",
         "primaryCta": {
-          "label": "시작하기",
-          "url": "/"
+          "label": "무료 상담 요청",
+          "url": "/contact"
         },
         "alignment": "left",
         "layout": "product",
         "image": {
-          "src": "/modules/jiwonpapa-page_builder/store/previews/company-launch-hero.webp",
-          "alt": "고객과 대화하는 서비스 담당자"
+          "src": "/modules/jiwonpapa-page_builder/store/previews/service-conversion-hero-consultation.webp",
+          "alt": "테이블에서 운영 계획을 함께 검토하는 컨설턴트와 고객"
         }
       }
     },
@@ -1235,29 +1235,29 @@
       "block_version": 1,
       "category": "hero-conversion",
       "label": {
-        "ko": "벤토 기능 소개"
+        "ko": "핵심 장점 소개"
       },
       "description": {
         "ko": "큰 핵심 기능과 작은 보조 기능을 크기가 다른 패널로 보여줍니다."
       },
       "thumbnail": "thumbnails/generated/preset-14-features-core-benefits.png",
       "props": {
-        "title": "필요한 기능을 한눈에",
+        "title": "실행까지 이어지는 세 가지 기준",
         "items": [
           {
             "icon": "bolt",
-            "title": "빠른 제작",
-            "body": "검증된 블록으로 페이지를 구성합니다."
+            "title": "현황을 빠르게 파악",
+            "body": "인터뷰와 자료 검토로 막히는 지점을 먼저 찾습니다."
           },
           {
             "icon": "palette",
-            "title": "일관된 표현",
-            "body": "디자인 토큰으로 화면의 통일감을 지킵니다."
+            "title": "우선순위를 명확하게",
+            "body": "효과와 난도를 기준으로 실행 순서를 함께 정합니다."
           },
           {
             "icon": "shield",
-            "title": "안전한 운영",
-            "body": "초안과 발행본을 분리해 운영합니다."
+            "title": "운영 가능한 결과",
+            "body": "담당자가 이어서 쓸 수 있는 기준과 문서를 남깁니다."
           }
         ],
         "layout": "bento"
@@ -1277,15 +1277,15 @@
       "thumbnail": "thumbnails/generated/preset-15-cta-contact.png",
       "props": {
         "eyebrow": "다음 단계",
-        "heading": "필요한 구성을 함께 정리하세요",
-        "body": "목표와 일정에 맞는 도입 방법을 안내합니다.",
+        "heading": "어디서부터 바꿔야 할지 함께 정리해 보세요",
+        "body": "현재 상황과 목표를 알려주시면 우선 확인할 항목과 현실적인 진행 방법을 안내합니다.",
         "primaryLink": {
           "label": "문의하기",
           "url": "/contact"
         },
         "secondaryLink": {
-          "label": "서비스 보기",
-          "url": "/"
+          "label": "진행 방식 보기",
+          "url": "/process"
         },
         "theme": "dark",
         "layout": "split"
@@ -2355,41 +2355,41 @@
       "block_version": 1,
       "category": "content",
       "label": {
-        "ko": "벤토 서비스 카드"
+        "ko": "서비스 구성 안내"
       },
       "description": {
         "ko": "핵심 서비스와 보조 서비스를 다른 크기로 강조합니다."
       },
       "thumbnail": "thumbnails/generated/preset-47-card-grid-services.png",
       "props": {
-        "eyebrow": "SERVICES",
-        "heading": "필요한 서비스를 선택하세요",
+        "eyebrow": "WHAT WE DO",
+        "heading": "상황에 맞는 단계부터 시작하세요",
         "items": [
           {
             "kicker": "01",
-            "title": "상담",
-            "body": "목표와 일정을 함께 정리합니다.",
-            "linkLabel": "상담 보기",
-            "linkUrl": "/consulting"
+            "title": "운영 진단",
+            "body": "현재 업무 흐름과 병목을 파악하고 개선 우선순위를 정합니다.",
+            "linkLabel": "진단 범위 보기",
+            "linkUrl": "/services/audit"
           },
           {
             "kicker": "02",
-            "title": "구축",
-            "body": "검증된 흐름으로 결과물을 만듭니다.",
-            "linkLabel": "구축 보기",
-            "linkUrl": "/build"
+            "title": "실행 설계",
+            "body": "담당자, 일정, 도구를 연결해 실제로 움직이는 계획을 만듭니다.",
+            "linkLabel": "설계 과정 보기",
+            "linkUrl": "/services/design"
           },
           {
             "kicker": "03",
-            "title": "운영",
-            "body": "발행 이후 개선을 지원합니다.",
-            "linkLabel": "운영 보기",
-            "linkUrl": "/operation"
+            "title": "정착 지원",
+            "body": "실행 결과를 점검하고 팀이 스스로 운영할 수 있도록 기준을 다듬습니다.",
+            "linkLabel": "지원 방식 보기",
+            "linkUrl": "/services/enablement"
           }
         ],
         "columns": 3,
-        "variant": "outlined",
-        "layout": "bento"
+        "variant": "plain",
+        "layout": "grid"
       }
     },
     {
@@ -4266,17 +4266,17 @@
     ]
   },
   "files": {
-    "thumbnails/generated/block-01-hero.png": "02f361bbd95fc65369f8090cbbbb4140fcf757928f83521871d5822e062332f1",
+    "thumbnails/generated/block-01-hero.png": "64035414e977ff5d397499feb4a34e76460d515b2db665540d29cb52dc2b3556",
     "thumbnails/generated/block-02-hero-split.png": "00048a369f93d26ffbcbc7d60bea764a9adb09494211f36933a685805c1d3cca",
     "thumbnails/generated/block-03-hero-slider.png": "5989b7b62ff70e4b7019891d82ad09a07b311ddb9c6f51b8754e9f2fd32c01bb",
     "thumbnails/generated/block-04-heading.png": "9b0b610b3e88f22fb938075afe80914ad8135aa32741e58777cf23e6619e39d2",
-    "thumbnails/generated/block-05-rich-text.png": "a1aed882e259dbdf3ee471b08f502e20994357f7fe3b3dc3796380c15a04a9f7",
+    "thumbnails/generated/block-05-rich-text.png": "1a7f571271363189e1f4e8423e03f9e1f73855e509a0c4434f96343a4b6a6ed6",
     "thumbnails/generated/block-06-image.png": "ae4c3330c2da10426548ff2be6767a68098b2c79994216ac38db1f3a228b7fbd",
     "thumbnails/generated/block-07-buttons.png": "aa38d176365711ccd7ecb89a46c12ad1eb9cd3c7b52e214c50e00674582e6b10",
     "thumbnails/generated/block-08-image-text.png": "565352641a0c472cd9baa141b2e5432154def147afa894b58ce5e8d7c261baa4",
     "thumbnails/generated/block-09-icon-list.png": "abace7dfa80cb82cc38e36c3ee514690239f3ea79894ffda110ddb92a4cc27e2",
-    "thumbnails/generated/block-10-features.png": "3c3034e350cd289250d1d2cd3b49f6f9fd85cc8de7cd61594b4cb8a3f57328e5",
-    "thumbnails/generated/block-11-cta.png": "2684d9f236e00f3aa54c2cd494c0fb67c1337d2d116659819accd5b069ce9f42",
+    "thumbnails/generated/block-10-features.png": "8ccf3d433db52592d021552d054a800fbb231bd5a0ee6115a797c344127db75e",
+    "thumbnails/generated/block-11-cta.png": "bffa3af7d603b8f2eb6f2ed82f582f09913638f242ca0cf485d222df9378d784",
     "thumbnails/generated/block-12-contact.png": "4366021908f7258ba90d154f2498c994e12da398603113eb2f46818157969da8",
     "thumbnails/generated/block-13-logo-cloud.png": "a161aa5d08571dafa099aadb5b4b66ad457793252806c5d21d40582d150d76d9",
     "thumbnails/generated/block-14-stats.png": "291e5dc03499f26b3b52123ef6d788bf77c5d9fd6b2708e5384054ff9d3270d3",
@@ -4306,26 +4306,26 @@
     "thumbnails/generated/block-38-divider.png": "0a2df7df90fc4d3ea5eff877fc84b253170158900629d94fdc59ac46b9a31932",
     "thumbnails/generated/block-39-blockquote.png": "0415f73f555f55786a61e7689bb89bd6a76662d22a104578c16af897ba43bb61",
     "thumbnails/generated/block-40-notice.png": "5c1f5e85cf63151df3cae9d5137c239313dec4624ab07a4b823edacc79a70335",
-    "thumbnails/generated/block-41-card-grid.png": "19002c4d5f8d8f934bc1dd4bd54b3c01357fea75974b1632b1b5decb5043fdaa",
+    "thumbnails/generated/block-41-card-grid.png": "aa9bf8be3beb7a8691d45ab49c704b64adc20ae403721ba7ccf6b19e6e33dc28",
     "thumbnails/generated/block-42-breadcrumbs.png": "d5d9998207d60f23b4a90d0a758e3c3469124a5b024ce640449a66d81d5700ca",
     "thumbnails/generated/block-43-anchor-menu.png": "1f7ba00cab863dcf3790084550b5871720e4a821574170bed69f416e84d57477",
     "thumbnails/generated/block-44-social-links.png": "adedd33e8725734ba8cf4a183deda193254e34c978b8d60524c3805bc7c8a4e7",
     "thumbnails/generated/block-45-image-carousel.png": "fc752d0d8a96c4aaa602c4b99df321ba14fbb2cfe20f39f6a3f9a5c293da7786",
     "thumbnails/generated/preset-01-heading-section-intro.png": "9b0b610b3e88f22fb938075afe80914ad8135aa32741e58777cf23e6619e39d2",
     "thumbnails/generated/preset-02-heading-compact-title.png": "6c974cf5416fa5626719870010473600d8c89a23a12b5ef3c30fc45dcb99d701",
-    "thumbnails/generated/preset-03-rich-text-article-intro.png": "a1aed882e259dbdf3ee471b08f502e20994357f7fe3b3dc3796380c15a04a9f7",
+    "thumbnails/generated/preset-03-rich-text-article-intro.png": "1a7f571271363189e1f4e8423e03f9e1f73855e509a0c4434f96343a4b6a6ed6",
     "thumbnails/generated/preset-04-rich-text-policy.png": "c0985d6357da23cc451c875dca373d55b51f30655a3f159048e44540d3b8d612",
     "thumbnails/generated/preset-05-image-landscape.png": "ae4c3330c2da10426548ff2be6767a68098b2c79994216ac38db1f3a228b7fbd",
     "thumbnails/generated/preset-06-image-square.png": "cdafc85583d5f8246ff471e62418afd2f1a81af08395a1c2cc72cc900b91e393",
     "thumbnails/generated/preset-07-buttons-primary-secondary.png": "aa38d176365711ccd7ecb89a46c12ad1eb9cd3c7b52e214c50e00674582e6b10",
     "thumbnails/generated/preset-08-buttons-centered-actions.png": "fa5a0e0af1cf62f388f4e5aff8d280b062f44bd09ce3dcc663e47bb7ebe36aa6",
     "thumbnails/generated/preset-09-image-text-product-story.png": "565352641a0c472cd9baa141b2e5432154def147afa894b58ce5e8d7c261baa4",
-    "thumbnails/generated/preset-10-image-text-company-story.png": "7129b1ca284028f0408712305e2b18d97ca758fdf37e03a77b390000f700402d",
+    "thumbnails/generated/preset-10-image-text-company-story.png": "331ff427639bab93d451d1e6e7766f69429304dc894935a7aeda3fffe3b2a369",
     "thumbnails/generated/preset-11-icon-list-benefits.png": "abace7dfa80cb82cc38e36c3ee514690239f3ea79894ffda110ddb92a4cc27e2",
     "thumbnails/generated/preset-12-icon-list-checklist.png": "3cebf430c39c3719beca25b89f33b0b31c0569d642d78f8a7530540ce939882b",
-    "thumbnails/generated/preset-13-hero-service-intro.png": "02f361bbd95fc65369f8090cbbbb4140fcf757928f83521871d5822e062332f1",
-    "thumbnails/generated/preset-14-features-core-benefits.png": "3c3034e350cd289250d1d2cd3b49f6f9fd85cc8de7cd61594b4cb8a3f57328e5",
-    "thumbnails/generated/preset-15-cta-contact.png": "2684d9f236e00f3aa54c2cd494c0fb67c1337d2d116659819accd5b069ce9f42",
+    "thumbnails/generated/preset-13-hero-service-intro.png": "64035414e977ff5d397499feb4a34e76460d515b2db665540d29cb52dc2b3556",
+    "thumbnails/generated/preset-14-features-core-benefits.png": "8ccf3d433db52592d021552d054a800fbb231bd5a0ee6115a797c344127db75e",
+    "thumbnails/generated/preset-15-cta-contact.png": "bffa3af7d603b8f2eb6f2ed82f582f09913638f242ca0cf485d222df9378d784",
     "thumbnails/generated/preset-16-contact-office.png": "4366021908f7258ba90d154f2498c994e12da398603113eb2f46818157969da8",
     "thumbnails/generated/preset-17-faq-basic.png": "06eab16a594688cbb1cd3e6a898eeac4a64646c731c9b1cea74cdf76313e5104",
     "thumbnails/generated/preset-18-process-four-step.png": "31b0b9bf78e32fb4f28df9e1382fd1e9a5fca2307f5bb804a27249d105f7179c",
@@ -4357,7 +4357,7 @@
     "thumbnails/generated/preset-44-divider-section-break.png": "0a2df7df90fc4d3ea5eff877fc84b253170158900629d94fdc59ac46b9a31932",
     "thumbnails/generated/preset-45-blockquote-customer-voice.png": "0415f73f555f55786a61e7689bb89bd6a76662d22a104578c16af897ba43bb61",
     "thumbnails/generated/preset-46-notice-service-info.png": "5c1f5e85cf63151df3cae9d5137c239313dec4624ab07a4b823edacc79a70335",
-    "thumbnails/generated/preset-47-card-grid-services.png": "19002c4d5f8d8f934bc1dd4bd54b3c01357fea75974b1632b1b5decb5043fdaa",
+    "thumbnails/generated/preset-47-card-grid-services.png": "aa9bf8be3beb7a8691d45ab49c704b64adc20ae403721ba7ccf6b19e6e33dc28",
     "thumbnails/generated/preset-48-breadcrumbs-detail-page.png": "d5d9998207d60f23b4a90d0a758e3c3469124a5b024ce640449a66d81d5700ca",
     "thumbnails/generated/preset-49-anchor-menu-long-page.png": "1f7ba00cab863dcf3790084550b5871720e4a821574170bed69f416e84d57477",
     "thumbnails/generated/preset-50-social-links-official.png": "adedd33e8725734ba8cf4a183deda193254e34c978b8d60524c3805bc7c8a4e7",

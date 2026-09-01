@@ -2516,7 +2516,7 @@
       "block_version": 1,
       "supply_kind": "element-preset",
       "batch": "6-A",
-      "review_status": "not-reviewed-under-v2",
+      "review_status": "technical-rework-complete-human-review-pending",
       "required_states": [
         "default",
         "long-copy",
@@ -2619,7 +2619,7 @@
       "block_version": 1,
       "supply_kind": "section-candidate",
       "batch": "6-A",
-      "review_status": "not-reviewed-under-v2",
+      "review_status": "technical-rework-complete-human-review-pending",
       "required_states": [
         "default",
         "long-copy",
@@ -2664,7 +2664,7 @@
       "block_version": 1,
       "supply_kind": "section-candidate",
       "batch": "6-A",
-      "review_status": "not-reviewed-under-v2",
+      "review_status": "technical-rework-complete-human-review-pending",
       "required_states": [
         "default",
         "long-copy",
@@ -2679,7 +2679,7 @@
       "block_version": 1,
       "supply_kind": "section-candidate",
       "batch": "6-A",
-      "review_status": "not-reviewed-under-v2",
+      "review_status": "technical-rework-complete-human-review-pending",
       "required_states": [
         "default",
         "long-copy",
@@ -2694,7 +2694,7 @@
       "block_version": 1,
       "supply_kind": "section-candidate",
       "batch": "6-A",
-      "review_status": "not-reviewed-under-v2",
+      "review_status": "technical-rework-complete-human-review-pending",
       "required_states": [
         "default",
         "long-copy",
@@ -3187,7 +3187,7 @@
       "block_version": 1,
       "supply_kind": "section-candidate",
       "batch": "6-A",
-      "review_status": "not-reviewed-under-v2",
+      "review_status": "technical-rework-complete-human-review-pending",
       "required_states": [
         "default",
         "long-copy",

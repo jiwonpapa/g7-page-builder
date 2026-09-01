@@ -513,6 +513,8 @@ load_task() {
   META_INTEGRATED_AT="$(field "$file" integrated_at)"
   META_VERIFIED_SHA="$(field "$file" verified_sha)"
   META_VERIFIED_AT="$(field "$file" verified_at)"
+  META_VERIFIED_MODE="$(field "$file" verified_mode)"
+  META_VERIFIED_BASE_SHA="$(field "$file" verified_base_sha)"
   META_PREVIOUS_BASE_SHA="$(field "$file" previous_base_sha)"
   META_PREVIOUS_SUBMITTED_SHA="$(field "$file" previous_submitted_sha)"
   META_RESTACKED_AT="$(field "$file" restacked_at)"
@@ -541,6 +543,8 @@ write_task() {
     printf 'integrated_at\t%s\n' "$META_INTEGRATED_AT"
     printf 'verified_sha\t%s\n' "$META_VERIFIED_SHA"
     printf 'verified_at\t%s\n' "$META_VERIFIED_AT"
+    printf 'verified_mode\t%s\n' "$META_VERIFIED_MODE"
+    printf 'verified_base_sha\t%s\n' "$META_VERIFIED_BASE_SHA"
     printf 'previous_base_sha\t%s\n' "$META_PREVIOUS_BASE_SHA"
     printf 'previous_submitted_sha\t%s\n' "$META_PREVIOUS_SUBMITTED_SHA"
     printf 'restacked_at\t%s\n' "$META_RESTACKED_AT"
@@ -722,6 +726,88 @@ run_scoped_integration_profile() {
   G7PB_SCOPED_CANDIDATE_TREE="$candidate_tree" \
     bash scripts/quality-scoped.sh integration \
       "$task_base" "$submitted_sha" "$integration_task" "$task_areas"
+}
+
+find_latest_verified_ancestor() {
+  local head_sha="$1"
+  LATEST_VERIFIED_SHA=''
+  LATEST_VERIFIED_MODE=''
+  local best_distance=''
+  local directory
+  local file
+  local candidate
+  local distance
+  local mode
+  for directory in "$tasks_dir" "$history_dir"; do
+    [[ -d "$directory" ]] || continue
+    for file in "$directory"/*.meta; do
+      [[ -e "$file" ]] || continue
+      candidate="$(field "$file" verified_sha)"
+      [[ -n "$candidate" ]] || continue
+      git cat-file -e "$candidate^{commit}" 2>/dev/null || continue
+      git merge-base --is-ancestor "$candidate" "$head_sha" || continue
+      distance="$(git rev-list --count "$candidate..$head_sha")"
+      if [[ -z "$best_distance" || "$distance" -lt "$best_distance" ]]; then
+        mode="$(field "$file" verified_mode)"
+        LATEST_VERIFIED_SHA="$candidate"
+        LATEST_VERIFIED_MODE="${mode:-full}"
+        best_distance="$distance"
+      fi
+    done
+  done
+}
+
+is_scoped_verification_path() {
+  local path="$1"
+  case "$path" in
+    *.md|docs/*|tests/Harness/*|Makefile|AGENTS.md|\
+    scripts/coord-harness.sh|scripts/quality-scoped.sh|\
+    scripts/release-package.sh|scripts/deploy-staging.sh|\
+    scripts/staging-doctor.sh|scripts/remote-deploy-staging.sh|scripts/smoke-staging.sh|\
+    scripts/check-block-product-quality.mjs|scripts/check-block-quality-evidence.mjs|\
+    scripts/check-site-shell-product-quality.mjs|scripts/check-version-policy.mjs)
+      return 0
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+classify_verification_range() {
+  local base_sha="$1"
+  local head_sha="$2"
+  VERIFICATION_MODE='reuse'
+  VERIFICATION_CHANGED_COUNT=0
+  VERIFICATION_FULL_PATH=''
+  local path
+  while IFS= read -r -d '' path; do
+    VERIFICATION_CHANGED_COUNT=$((VERIFICATION_CHANGED_COUNT + 1))
+    if ! is_scoped_verification_path "$path"; then
+      VERIFICATION_MODE='full'
+      [[ -n "$VERIFICATION_FULL_PATH" ]] || VERIFICATION_FULL_PATH="$path"
+    elif [[ "$VERIFICATION_MODE" == reuse ]]; then
+      VERIFICATION_MODE='scoped'
+    fi
+  done < <(git diff --name-only -z "$base_sha" "$head_sha" --)
+}
+
+run_scoped_verification_profile() {
+  local base_sha="$1"
+  local head_sha="$2"
+  local integration_task="$3"
+  local task_areas="${4:-}"
+  if [[ "${G7PB_COORD_TESTING:-0}" == 1 ]]; then
+    if [[ -n "${G7PB_COORD_TEST_SCOPED_VERIFY_HOOK:-}" ]]; then
+      [[ -x "$G7PB_COORD_TEST_SCOPED_VERIFY_HOOK" ]] \
+        || fail 'TEST_MODE scoped verification hook is not executable'
+      "$G7PB_COORD_TEST_SCOPED_VERIFY_HOOK" \
+        "$base_sha" "$head_sha" "$integration_task" "$task_areas"
+    fi
+    return 0
+  fi
+  G7PB_SCOPED_RECEIPT_DIR="$state_root/gate-receipts" \
+  G7PB_SCOPED_CANDIDATE_TREE="$(git rev-parse "$head_sha^{tree}")" \
+    bash scripts/quality-scoped.sh verification \
+      "$base_sha" "$head_sha" "$integration_task" "$task_areas"
 }
 
 run_integration_profile() {
@@ -908,6 +994,8 @@ command_claim() {
   META_INTEGRATED_AT=''
   META_VERIFIED_SHA=''
   META_VERIFIED_AT=''
+  META_VERIFIED_MODE=''
+  META_VERIFIED_BASE_SHA=''
   META_PREVIOUS_BASE_SHA=''
   META_PREVIOUS_SUBMITTED_SHA=''
   META_RESTACKED_AT=''
@@ -1392,6 +1480,8 @@ command_replace_submitted() {
   META_INTEGRATED_AT=''
   META_VERIFIED_SHA=''
   META_VERIFIED_AT=''
+  META_VERIFIED_MODE=''
+  META_VERIFIED_BASE_SHA=''
   META_PREVIOUS_BASE_SHA=''
   META_PREVIOUS_SUBMITTED_SHA=''
   META_RESTACKED_AT=''
@@ -1864,20 +1954,53 @@ command_verify() {
   done
   [[ -z "$(git status --porcelain)" ]] || fail '전체 검증 전 통합 worktree가 깨끗해야 합니다.'
 
-  if [[ "${G7PB_COORD_TESTING:-0}" == 1 ]]; then
-    note 'TEST_MODE quality-gate skipped'
-  else
-    make quality-gate TASK="$TASK_ID"
+  local head_sha
+  local verification_base=''
+  local verification_mode='full'
+  local changed_count='unknown'
+  head_sha="$(git rev-parse HEAD)"
+  find_latest_verified_ancestor "$head_sha"
+  if [[ -n "$LATEST_VERIFIED_SHA" ]]; then
+    verification_base="$LATEST_VERIFIED_SHA"
+    classify_verification_range "$verification_base" "$head_sha"
+    verification_mode="$VERIFICATION_MODE"
+    changed_count="$VERIFICATION_CHANGED_COUNT"
   fi
+
+  case "$verification_mode" in
+    reuse)
+      note "VERIFY_REUSED task=$TASK_ID sha=$head_sha source_mode=$LATEST_VERIFIED_MODE"
+      ;;
+    scoped)
+      note "VERIFY_SELECTED task=$TASK_ID mode=scoped base=$verification_base head=$head_sha changed=$changed_count"
+      run_scoped_verification_profile \
+        "$verification_base" "$head_sha" "$TASK_ID" "$META_AREAS"
+      ;;
+    full)
+      if [[ -n "${VERIFICATION_FULL_PATH:-}" ]]; then
+        note "VERIFY_SELECTED task=$TASK_ID mode=full base=$verification_base head=$head_sha changed=$changed_count trigger=$VERIFICATION_FULL_PATH"
+      else
+        note "VERIFY_SELECTED task=$TASK_ID mode=full base=${verification_base:-none} head=$head_sha reason=no-trusted-baseline"
+      fi
+      if [[ "${G7PB_COORD_TESTING:-0}" == 1 ]]; then
+        note 'TEST_MODE quality-gate skipped'
+      else
+        make quality-gate TASK="$TASK_ID"
+      fi
+      ;;
+    *) fail "지원하지 않는 검증 mode입니다: $verification_mode" ;;
+  esac
 
   acquire_mutex
   load_task "$TASK_ID"
-  META_VERIFIED_SHA="$(git rev-parse HEAD)"
+  META_VERIFIED_SHA="$head_sha"
   META_VERIFIED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  META_VERIFIED_MODE="$verification_mode"
+  META_VERIFIED_BASE_SHA="$verification_base"
   write_task "$META_FILE"
   release_mutex
   release_task_lock
-  note "VERIFIED task=$TASK_ID sha=$META_VERIFIED_SHA"
+  note "VERIFIED task=$TASK_ID sha=$META_VERIFIED_SHA mode=$META_VERIFIED_MODE base=${META_VERIFIED_BASE_SHA:-none} changed=$changed_count"
 }
 
 command_release_guard() {
@@ -1886,9 +2009,9 @@ command_release_guard() {
   command_runtime_guard --task "$TASK_ID"
   load_task "$TASK_ID"
   [[ -n "$META_VERIFIED_SHA" ]] || fail 'integration-verify 기록이 없습니다.'
-  [[ "$META_VERIFIED_SHA" == "$(git rev-parse HEAD)" ]] || fail '검증 이후 HEAD가 바뀌었습니다. integration-verify를 다시 실행하십시오.'
+  [[ "$META_VERIFIED_SHA" == "$(git rev-parse HEAD)" ]] || fail '검증 이후 HEAD가 바뀌었습니다. 위험도 자동 판정을 위해 integration-verify를 실행하십시오.'
   [[ -z "$(git status --porcelain)" ]] || fail '릴리스 전 worktree가 깨끗해야 합니다.'
-  note "RELEASE_OK task=$TASK_ID sha=$META_VERIFIED_SHA"
+  note "RELEASE_OK task=$TASK_ID sha=$META_VERIFIED_SHA mode=${META_VERIFIED_MODE:-legacy-full}"
 }
 
 command_finish() {

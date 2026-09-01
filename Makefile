@@ -91,6 +91,7 @@ check-agent-policy:
 
 quality-coordination: check-agent-policy
 	bash tests/Harness/coord-harness.test.sh
+	bash tests/Harness/verification-policy.test.sh
 	npm run check:editor-acceptance
 	bash tests/Harness/editor-acceptance-contract.test.sh
 	bash tests/Harness/block-product-quality-contract.test.sh

@@ -61,7 +61,7 @@ Worktree의 제출 준비에는 Node 24뿐 아니라 PHP 8.5·Composer 의존성
 - frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`와 `check:editor-layout-parity`를 실행합니다. 기존 상호작용 증거와 함께 Puck iframe의 scoped `border-box`, 공개 출력과 같은 content-width 공식, 편집기·발행 CSS의 동일 WYSIWYG 타이포 규칙, 45종을 모두 포함하는 95개 프리셋과 공식 마켓 적용 API로 미디어까지 해소한 Page Kit 5종의 가로 overflow·좌우 content edge·대표 텍스트 computed style·줄 수 비교가 빠지면 제출을 거부합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
-- `integration-verify`는 다른 active/submitted task가 없는 상태에서 전체 `quality-gate`를 실행합니다. 검증 SHA 이후 변경이 있으면 release guard가 패키징과 스테이징을 중지합니다.
+- `integration-verify`는 다른 active/submitted task가 없는 상태에서 최신 신뢰 검증 SHA와 현재 HEAD의 실제 변경 경로를 판정합니다. 문서·조정 하네스·릴리스 오케스트레이션만 바뀌면 변경된 shell/Node 문법, 하네스 회귀시험, 버전·릴리스 계약만 scoped로 실행하고 현재 SHA를 승격합니다. 제품 런타임·DB·프런트 렌더·CSS·공개 계약이 바뀌거나 신뢰 가능한 기준 SHA가 없을 때만 전체 `quality-gate`를 실행합니다. 동일 HEAD는 이전 검증을 재사용하며 release guard는 위험도 판정을 거치지 않은 새 HEAD만 중지합니다.
 - shell 회귀시험은 격리된 임시 Git 저장소와 3개 worktree를 만들어 lease 중복, 범위 밖 변경, 자동 제출, runtime 차단, 순차 병합, 검증·완료 history를 확인합니다.
 
 명령과 장애 처리는 [Worktree coordination 하네스](worktree-coordination.md)에 정의합니다.
@@ -187,7 +187,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 - 필수 판정은 GitHub Actions가 아니라 로컬 `make quality-gate TASK=<integration-id>`와 동일 Docker runtime을 기준으로 합니다.
 - `frontend`: Node 24, `npm ci`, frontend gate, dist artifact
 - `php`: PHP 8.5, `composer install`, PHP gate
-- 현재 G7 설치·TLS·인증·제품 lifecycle 통합은 runtime lease를 가진 로컬 고정 checkout의 `make integration-verify TASK=<integration-id>`로 검사합니다.
+- 현재 G7 설치·TLS·인증·제품 lifecycle 통합은 제품·런타임 영향 경로가 바뀐 경우 runtime lease를 가진 로컬 고정 checkout의 `make integration-verify TASK=<integration-id>`가 full gate로 검사합니다. 문서·하네스·릴리스 오케스트레이션 변경은 같은 명령의 scoped 판정을 사용하며 제품 E2E를 다시 실행하지 않습니다.
 - Header Site Part 반응형 검증은 Puck 태블릿·모바일 viewport에서 간격·정렬·메뉴 방식 재정의와 초기화를 실제 조작하고, 하단 시트를 열어 편집 iframe·발행 화면의 바닥 정렬·전체 폭·backdrop·Escape focus 복귀까지 확인합니다. 모바일 폭에서 메뉴를 정적으로 펼쳐 보이는 것만으로 통과시키지 않습니다.
 - `quality-g7`은 G7 7.0.8 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
 - TLS·관리자 인증·실제 module route를 포함하는 `dev-product-e2e`는 로컬 통합 필수 gate입니다. 호스팅형 CI나 외부 secret은 필수조건이 아닙니다.

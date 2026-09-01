@@ -1,6 +1,26 @@
 {
   "record_version": "g7pb-phase-7-ledger/1",
   "release_status": "blocked",
+  "page_kits": [
+    {
+      "id": "company-launch",
+      "source": "resources/store/source/page-kits/company-launch/document.json",
+      "decision": "modified",
+      "reason": "루트 행동을 실제 서비스·문의 경로로 연결하고 미확정 수치·팀·후기를 가상 예시로 명시",
+      "checks": ["no-root-links", "media-present", "sample-claims"],
+      "human_status": "pending",
+      "release_status": "blocked"
+    },
+    {
+      "id": "event-launch",
+      "source": "resources/store/source/page-kits/event-launch/document.json",
+      "decision": "modified",
+      "reason": "가상 행사임을 전 구간에 명시하고 신청·세션 행동을 구체적인 문의 경로로 연결",
+      "checks": ["no-root-links", "media-present", "sample-claims"],
+      "human_status": "pending",
+      "release_status": "blocked"
+    }
+  ],
   "batches": [
     {
       "id": "7-A-01",

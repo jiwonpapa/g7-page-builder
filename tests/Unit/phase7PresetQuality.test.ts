@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import manifest from '../../resources/block-packs/builtin-core/manifest.json';
+import inventory from '../../docs/productization/inventory.json';
 import ledger from '../../docs/productization/phase-7-ledger.json';
 
 type Check = 'no-root-links' | 'no-instruction-copy' | 'media-present' | 'sample-claims';
@@ -12,9 +15,13 @@ interface LedgerItem {
   human_status: 'pending';
   release_status: 'blocked';
 }
+interface PageKitLedgerItem extends LedgerItem {
+  source: string;
+}
 interface Ledger {
   record_version: 'g7pb-phase-7-ledger/1';
   release_status: 'blocked';
+  page_kits: PageKitLedgerItem[];
   batches: Array<{ id: string; items: LedgerItem[] }>;
 }
 const qualityLedger = ledger as Ledger;
@@ -42,6 +49,10 @@ describe('phase 7 bounded preset quality ledger', () => {
     });
     expect(new Set(itemIds).size).toBe(itemIds.length);
     for (const id of itemIds) expect(presets.has(id), id).toBe(true);
+    expect(itemIds.toSorted()).toEqual(inventory.presets
+      .filter((item) => item.batch.startsWith('7-'))
+      .map((item) => item.id)
+      .toSorted());
   });
 
   it('applies each processed item check without fabricating human or release approval', () => {
@@ -63,6 +74,26 @@ describe('phase 7 bounded preset quality ledger', () => {
           }
           if (check === 'sample-claims') expect(JSON.stringify(props), item.id).toMatch(/샘플|예시|가상/);
         }
+      }
+    }
+  });
+
+  it('binds both remaining Page Kits to the same bounded checks and blocks release', () => {
+    expect(qualityLedger.page_kits.map((item) => item.id).toSorted())
+      .toEqual(['company-launch', 'event-launch']);
+    for (const item of qualityLedger.page_kits) {
+      expect(item.human_status, item.id).toBe('pending');
+      expect(item.release_status, item.id).toBe('blocked');
+      expect(item.reason.trim().length, item.id).toBeGreaterThan(0);
+      const document = JSON.parse(readFileSync(resolve(item.source), 'utf8')) as Json;
+      for (const check of item.checks) {
+        if (check === 'no-root-links') expect(values(document, /(?:url|Url)$/), item.id).not.toContain('/');
+        if (check === 'media-present') {
+          const media = values(document, /(?:src|Src)$/);
+          expect(media.length, item.id).toBeGreaterThan(0);
+          expect(media.every((source) => source.trim().length > 0), item.id).toBe(true);
+        }
+        if (check === 'sample-claims') expect(JSON.stringify(document), item.id).toMatch(/샘플|예시|가상/);
       }
     }
   });

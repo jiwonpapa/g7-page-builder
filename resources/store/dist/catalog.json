@@ -89,8 +89,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-company-launch-1.1.0.zip",
-                "sha256": "7654831dd58ae0c7819c26a1f00c87b66a72dd3edf81e89bd9b578810c80f274",
-                "bytes": 207458
+                "sha256": "639287f09b29ababf59c90867a13471aeae9dfbbad195f9682b9068b2f9a4b19",
+                "bytes": 207489
             },
             "requirements": {
                 "blocks": [
@@ -293,8 +293,8 @@
             },
             "artifact": {
                 "url": "https://g7devops.com/modules/jiwonpapa-page_builder/store/artifacts/jiwonpapa-event-launch-1.1.0.zip",
-                "sha256": "e06278ca0c5b90d4dc32a0ee421bae42fa5047f12855fa4d233ff4f439dc6e7a",
-                "bytes": 232337
+                "sha256": "611b813f8ab034358654fb354bbb9208c09a7009bbded94fe8562f71b3a08176",
+                "bytes": 232418
             },
             "requirements": {
                 "blocks": [

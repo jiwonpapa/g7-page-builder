@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import type { Config } from '@puckeditor/core';
+import { CatalogBlockFrame as BlockFrame } from './CatalogBlockFrame';
 import {
   createMotionField,
   DEFAULT_BLOCK_MOTION,
-  motionPreviewAttributes,
   normalizeBlockMotion,
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import { CatalogIcon, type CatalogIconName } from './catalogIcon';
-import { CanvasCurrentElementStylesContext, decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasBlockAppearanceClass, useCanvasElementStyles } from './canvasEditingContract';
+import { normalizeElementAppearanceMap } from './canvasEditingContract';
 import {
   canonicalPhase2BlockToPuck,
   phase2CatalogComponentConfigs,
@@ -591,13 +591,6 @@ function normalizeBars(value: unknown): BarChartItem[] {
   }));
 }
 
-function BlockFrame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
-  const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
-  const containerClassName = useCanvasBlockAppearanceClass(id);
-  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
-    onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
-    {...motionPreviewAttributes(motion)}><CanvasCurrentElementStylesContext.Provider value={resolvedElementStyles}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</CanvasCurrentElementStylesContext.Provider></section>;
-}
 
 function ImageOrPlaceholder({ src, alt, label }: { src: string; alt: string; label: string }): React.ReactElement {
   const safe = safeUrl(src);

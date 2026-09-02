@@ -55,6 +55,13 @@ task-replace-submitted:
 	@test -n "$(SUPERSEDES)" || { echo 'SUPERSEDES is required.' >&2; exit 2; }
 	@$(COORD_HARNESS) replace-submitted --task "$(TASK)" --supersedes "$(SUPERSEDES)" --base-ref "$(BASE_REF)"
 
+.PHONY: task-replace-active
+task-replace-active:
+	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
+	@test -n "$(SUPERSEDES)" || { echo 'SUPERSEDES is required.' >&2; exit 2; }
+	@test -n "$(BASE_REF)" && test "$(BASE_REF)" != HEAD || { echo 'Reviewed BASE_REF is required.' >&2; exit 2; }
+	@$(COORD_HARNESS) replace-active --task "$(TASK)" --supersedes "$(SUPERSEDES)" --base-ref "$(BASE_REF)"
+
 task-replace-submitted-expanded:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@test -n "$(SUPERSEDES)" || { echo 'SUPERSEDES is required.' >&2; exit 2; }

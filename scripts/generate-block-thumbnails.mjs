@@ -11,11 +11,18 @@ const fixtureRoot = resolve(root, 'output/playwright/block-thumbnail-fixtures');
 const thumbnailRoot = resolve(root, 'resources/block-packs/builtin-core/thumbnails/generated');
 const manifestPath = resolve(root, 'resources/block-packs/builtin-core/manifest.json');
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+const available = [
+  ...manifest.blocks.map(item => ({ catalog_id: `block:${item.block_id}@${item.block_version}` })),
+  ...manifest.presets.map(item => ({ catalog_id: `preset:${manifest.pack_id}:${item.preset_id}` })),
+];
+const requested = selectThumbnailItems(available, process.argv.slice(2));
+const scoped = requested.length !== available.length;
 
 await mkdir(fixtureRoot, { recursive: true });
 await mkdir(thumbnailRoot, { recursive: true });
 
-const fixtureBuild = spawnSync('php', [resolve(root, 'scripts/render-block-thumbnail-fixtures.php'), fixtureRoot], {
+const fixtureBuild = spawnSync('php', [resolve(root, 'scripts/render-block-thumbnail-fixtures.php'), fixtureRoot,
+  '--ids', requested.map(item => item.catalog_id).join(',')], {
   cwd: root,
   encoding: 'utf8',
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -25,11 +32,11 @@ if (fixtureBuild.status !== 0) {
 }
 
 const index = JSON.parse(await readFile(resolve(fixtureRoot, 'index.json'), 'utf8'));
-const expectedCount = manifest.blocks.length + manifest.presets.length;
+const expectedCount = requested.length;
 if (!Array.isArray(index) || index.length !== expectedCount) {
   throw new Error(`Expected ${expectedCount} thumbnail fixtures, received ${Array.isArray(index) ? index.length : 'invalid index'}.`);
 }
-const selectedItems = selectThumbnailItems(index, process.argv.slice(2));
+const selectedItems = index;
 
 const browser = await chromium.launch({ headless: true });
 try {
@@ -63,33 +70,34 @@ try {
 const paths = new Map(index.map((item) => [item.catalog_id, `thumbnails/generated/${item.filename}`]));
 for (const definition of manifest.blocks) {
   const catalogId = `block:${definition.block_id}@${definition.block_version}`;
-  definition.thumbnail = paths.get(catalogId);
+  if (paths.has(catalogId)) definition.thumbnail = paths.get(catalogId);
 }
 for (const preset of manifest.presets) {
   const catalogId = `preset:${manifest.pack_id}:${preset.preset_id}`;
-  preset.thumbnail = paths.get(catalogId);
+  if (paths.has(catalogId)) preset.thumbnail = paths.get(catalogId);
 }
 manifest.pack_version = '0.15.0';
-manifest.files = Object.fromEntries(await Promise.all(index.map(async (item) => {
+manifest.files = { ...manifest.files, ...Object.fromEntries(await Promise.all(index.map(async (item) => {
   const path = `thumbnails/generated/${item.filename}`;
   const contents = await readFile(resolve(thumbnailRoot, item.filename));
   return [path, createHash('sha256').update(contents).digest('hex')];
-})));
+}))) };
 await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+const previousIndex = scoped ? JSON.parse(await readFile(resolve(thumbnailRoot, 'index.json'), 'utf8')) : {};
 await writeFile(resolve(thumbnailRoot, 'index.json'), `${JSON.stringify({
   viewport: '960px',
   output: '320x200 PNG from a fixed 960x600 public-renderer crop',
-  count: index.length,
-  sources: Object.fromEntries(index.map((item) => [item.catalog_id, item.source_hash])),
-  dynamic_samples: Object.fromEntries(index
+  count: available.length,
+  sources: { ...previousIndex.sources, ...Object.fromEntries(index.map((item) => [item.catalog_id, item.source_hash])) },
+  dynamic_samples: { ...Object.fromEntries(Object.entries(previousIndex.dynamic_samples ?? {}).filter(([id]) => !paths.has(id))), ...Object.fromEntries(index
     .filter((item) => item.dynamic_sample_count > 0)
-    .map((item) => [item.catalog_id, item.dynamic_sample_count])),
+    .map((item) => [item.catalog_id, item.dynamic_sample_count])) },
 }, null, 2)}\n`);
 
 const productQuality = spawnSync(process.execPath, [
   resolve(root, 'scripts/check-block-product-quality.mjs'),
   '--candidate',
-  '--verify-render-source',
+  ...(scoped ? [] : ['--verify-render-source']),
 ], {
   cwd: root,
   encoding: 'utf8',
@@ -100,4 +108,4 @@ if (productQuality.status !== 0) {
 }
 
 process.stdout.write(productQuality.stdout);
-process.stdout.write(`Generated ${selectedItems.length}/${index.length} renderer-backed block thumbnails.\n`);
+process.stdout.write(`Generated ${selectedItems.length}/${available.length} renderer-backed block thumbnails.\n`);

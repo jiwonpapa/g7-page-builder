@@ -11,6 +11,16 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 $root = dirname(__DIR__);
 $output = $argv[1] ?? $root.'/output/block-thumbnail-fixtures';
+$requestedIds = null;
+for ($argument = 2; $argument < $argc; $argument++) {
+    if ($argv[$argument] !== '--ids' || $requestedIds !== null || ! isset($argv[$argument + 1])) {
+        throw new RuntimeException('Usage: render-block-thumbnail-fixtures.php OUTPUT [--ids id,id]');
+    }
+    $requestedIds = explode(',', $argv[++$argument]);
+    if (in_array('', $requestedIds, true) || count(array_unique($requestedIds)) !== count($requestedIds)) {
+        throw new RuntimeException('Renderer IDs must be nonempty and unique.');
+    }
+}
 if (! str_starts_with($output, '/') || str_contains($output, "\0")) {
     throw new RuntimeException('Thumbnail fixture output must be an absolute path.');
 }
@@ -213,8 +223,16 @@ foreach ($manifest['presets'] as $index => $preset) {
     ];
 }
 
+$availableIds = array_column($catalog, 'catalog_id');
+if ($requestedIds !== null && array_diff($requestedIds, $availableIds) !== []) {
+    throw new RuntimeException('Unknown renderer IDs: '.implode(', ', array_diff($requestedIds, $availableIds)));
+}
 $index = [];
 foreach ($catalog as $position => $item) {
+    // Keep the original position: stable identities must not change for a scoped render.
+    if ($requestedIds !== null && ! in_array($item['catalog_id'], $requestedIds, true)) {
+        continue;
+    }
     $document = PageBuilderDocument::fromArray([
         'schema_version' => 'g7-page-builder/v1',
         'document_id' => sprintf('20000000-0000-4000-8000-%012d', $position + 1),

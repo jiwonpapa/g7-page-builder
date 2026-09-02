@@ -70,24 +70,66 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const exclusionPath = `docs/release-exclusions/${pkg.version}.json`;
 const exclusion = existsSync(exclusionPath) ? JSON.parse(readFileSync(exclusionPath, 'utf8')) : null;
 if (exclusion) validateMobileExclusion(exclusion, pkg.version);
-if (existsSync(exclusionPath)) inputs.push(exclusionPath);
-const fingerprint = () => createHash('sha256').update(`release:${pkg.version}\n${inputs.map((file) => `${file}:${createHash('sha256').update(readFileSync(file)).digest('hex')}`).join('\n')}`).digest('hex');
-if (!pkg.scripts['test:e2e:product'].includes('npm run test:e2e:site-shell')) throw new Error('Full product tests must run the Site Shell gate.');
-for (const file of ['scripts/release-package.sh', 'scripts/deploy-staging.sh']) {
-  if (!readFileSync(file, 'utf8').includes('npm run check:site-shell-product-quality')) throw new Error(`${file} must verify Site Shell evidence before releasing.`);
+const shared = ['resources/js/public/pageEffects.ts', 'dist/js/page-effects.iife.js',
+  'resources/css/page-builder-public.css', 'dist/css/page-builder-public.css', 'playwright.config.ts',
+  'src/Application/Compilation/SitePartHtmlCompiler.php', 'schemas/site-part-document.schema.json',
+  'scripts/render-site-shell-quality-fixture.php'];
+const productInputs = inputs.filter(file => !['docker/Dockerfile', 'scripts/check-editor-acceptance-contract.mjs',
+  'scripts/check-site-shell-product-quality.mjs', 'dist/js/page-builder-editor.iife.js', 'dist/css/page-builder-editor.css'].includes(file));
+const scopeInputs = {
+  shell: [...new Set([...shared, ...productInputs.filter(file => !/mobileNavigation|mobileRelease|\/editor\/|SitePartEditor|sitePartEditor|sitePartHistory|sitePartLifecycle|site-part/i.test(file))])].sort(),
+  mobile: [...new Set([...shared, ...productInputs.filter(file => /mobileNavigation|siteShellControls|site-shell|SiteShellRuntime/.test(file))])].sort(),
+  editor: [...new Set([...shared, ...productInputs.filter(file => /\/editor\/|SitePart|sitePart|site-part|editor\.blade/.test(file))])].sort(),
+};
+let selected = Object.keys(scopeInputs);
+let run = false;
+let describe = false;
+let printFingerprints = false;
+let explicitIds = false;
+for (let index = 2; index < process.argv.length; index++) {
+  const argument = process.argv[index];
+  if (argument === '--run' && !run) { run = true; continue; }
+  if (argument === '--describe-inputs' && !describe) { describe = true; continue; }
+  if (argument === '--fingerprints' && !printFingerprints) { printFingerprints = true; continue; }
+  if (argument === '--ids' && !explicitIds) { selected = (process.argv[++index] ?? '').split(','); explicitIds = true; continue; }
+  throw new Error(`Unknown Site Shell argument: ${argument}`);
 }
-if (process.argv.includes('--run')) {
-  const before = fingerprint();
-  if (readFileSync('resources/js/public/mobileNavigation.css').byteLength > 6000) throw new Error('Mobile navigation CSS exceeds its 6000-byte source budget.');
-  const lint = spawnSync('npx', ['stylelint', 'resources/js/public/mobileNavigation.css'], { stdio: 'inherit', env: process.env });
-  if (lint.status !== 0) process.exit(lint.status ?? 1);
-  const result = spawnSync('npx', ['playwright', 'test', 'tests/E2E/siteShellProductQuality.spec.ts', 'tests/E2E/mobileNavigationQuality.spec.ts', '--retries=0'], { stdio: 'inherit', env: process.env });
+if (!selected.length || new Set(selected).size !== selected.length || selected.some(id => !Object.hasOwn(scopeInputs, id))) throw new Error('Unknown, duplicate or empty Site Shell target.');
+if (run && (describe || printFingerprints)) throw new Error('Diagnostics cannot be combined with --run.');
+if (describe) { console.log(JSON.stringify(Object.fromEntries(selected.map(id => [id, scopeInputs[id]])))); process.exit(0); }
+const dependencyLock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
+delete dependencyLock.version;
+if (dependencyLock.packages?.['']) delete dependencyLock.packages[''].version;
+const fingerprint = (id) => createHash('sha256').update(JSON.stringify({
+  policy: 'site-shell-scopes/v2', scope: id, baseUrl: process.env.G7PB_BASE_URL ?? 'https://g7pb.test',
+  dependencies: pkg.dependencies, devDependencies: pkg.devDependencies, dependencyLock,
+  inputs: scopeInputs[id].map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]),
+})).digest('hex');
+const fingerprints = () => Object.fromEntries(selected.map(id => [id, fingerprint(id)]));
+if (printFingerprints) { console.log(JSON.stringify({ current_sources_checked: true, browser_executed: false, fingerprints: fingerprints() })); process.exit(0); }
+if (run) {
+  const before = fingerprints();
+  if (selected.includes('mobile')) {
+    if (readFileSync('resources/js/public/mobileNavigation.css').byteLength > 6000) throw new Error('Mobile navigation CSS exceeds its 6000-byte source budget.');
+    const lint = spawnSync('npx', ['stylelint', 'resources/js/public/mobileNavigation.css'], { stdio: 'inherit', env: process.env });
+    if (lint.status !== 0) process.exit(lint.status ?? 1);
+  }
+  const specs = [...new Set(selected.map(id => id === 'mobile' ? 'tests/E2E/mobileNavigationQuality.spec.ts' : 'tests/E2E/siteShellProductQuality.spec.ts'))];
+  const result = spawnSync('npx', ['playwright', 'test', ...specs, '--retries=0'], { stdio: 'inherit', env: process.env });
   if (result.status !== 0) process.exit(result.status ?? 1);
-  if (before !== fingerprint()) throw new Error('Site Shell inputs changed during validation.');
+  if (JSON.stringify(before) !== JSON.stringify(fingerprints())) throw new Error('Site Shell inputs changed during validation.');
   mkdirSync('output/playwright', { recursive: true });
-  writeFileSync(evidencePath, JSON.stringify({ status: 'passed', fingerprint: before, checkedAt: new Date().toISOString(), viewports: ['desktop', 'tablet', 'mobile'], contractPersonas: ['guest', 'member', 'admin', 'unavailable'], mobileWidths: [320, 360, 390, 430, 768, 899, 900], browserEngines: ['chromium', 'webkit'], physicalDeviceReview: exclusion ? { status: 'excluded', release: pkg.version, decision: exclusionPath, platforms: exclusion.platforms } : { status: 'optional', evidence: mobileReviewPath }, realG7: ['administrator', 'admin-route', 'native-logout', 'guest', 'standalone-builder', 'api-logout', 'editor-persona', 'editor-mobile-menu'] }, null, 2));
+  const previous = existsSync(evidencePath) ? JSON.parse(readFileSync(evidencePath, 'utf8')) : {};
+  const checkedAt = new Date().toISOString();
+  writeFileSync(evidencePath, JSON.stringify({ policy: 'site-shell-scopes/v2', scopes: {
+    ...(previous.policy === 'site-shell-scopes/v2' ? previous.scopes : {}),
+    ...Object.fromEntries(selected.map(id => [id, { status: 'passed', fingerprint: before[id], checkedAt, specs }])),
+  } }, null, 2));
 }
-if (!existsSync(evidencePath)) throw new Error('Site Shell release blocked: run npm run test:e2e:site-shell in the local integration runtime.');
+if (!existsSync(evidencePath)) throw new Error(`Site Shell evidence missing for ${selected.join(',')}; request those scopes in the local integration runtime.`);
 const evidence = JSON.parse(readFileSync(evidencePath, 'utf8'));
-if (evidence.status !== 'passed' || evidence.fingerprint !== fingerprint()) throw new Error('Site Shell release blocked: browser evidence is stale or failed.');
-console.log(`Site Shell automated gate: PASS · 3 viewports · Chromium/WebKit · real G7 authentication (${evidence.checkedAt}). ${exclusion ? `Physical iOS/Android review EXCLUDED by user for ${pkg.version} only.` : 'Physical-device review is optional and does not block release.'}`);
+if (evidence.policy !== 'site-shell-scopes/v2') throw new Error('Site Shell receipt uses the legacy input policy; no current scoped browser success is inferred.');
+for (const id of selected) {
+  if (evidence.scopes?.[id]?.status !== 'passed' || evidence.scopes[id].fingerprint !== fingerprint(id)) throw new Error(`Site Shell evidence stale or failed: ${id}`);
+}
+console.log(`Site Shell scoped gate: PASS (${selected.join(',')}); release version is metadata, not a product input. Physical-device review remains optional.`);

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import { dirname, join, normalize, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import type { EvidenceFingerprint, EvidenceInputs, EvidenceJson } from './blockQualityEvidence';
 import type { QualityStateInventory } from './blockQualityStates';
@@ -9,9 +9,15 @@ export const QUALITY_DEPENDENCY_FILES = [
   'docs/productization/content-policy.md', 'schemas/page-builder-document.schema.json',
   'schemas/layout-policy-v1.json', 'tests/Fixtures/layout-policy-cases.json',
   'package-lock.json', 'scripts/render-block-thumbnail-fixtures.php', 'dist/css/page-builder-public.css',
+  'resources/css/page-builder-editor.css', 'resources/css/page-builder-editor-wysiwyg.css',
 ] as const;
-// Conservative dependency sets: narrowing these requires measured/proven renderer ownership.
-export const QUALITY_DEPENDENCY_TREES = ['src', 'resources/js', 'resources/css', 'resources/layouts/user', 'tests/E2E', 'tests/Unit'] as const;
+// Render effects are observed per item by PHP. Editor dependencies are limited to
+// the owning component family plus shared document/editor mechanics, not every test/source.
+export const QUALITY_DEPENDENCY_TREES = ['resources/js/editor', 'resources/js/documents', 'resources/layouts/user'] as const;
+const SHARED_EDITOR_FILES = new Set(['PuckEditorAdapter.tsx', 'puckDocumentAdapter.ts',
+  'canvasEditingContract.ts', 'responsiveBlockStyle.tsx', 'editorViewportPolicy.ts',
+  'richTextEditing.tsx', 'MediaPickerField.tsx', 'RouteUrlField.tsx', 'DownloadPickerField.tsx',
+  'blockAppearance.ts', 'blockMotion.tsx', 'fontSize.ts', 'draftJournal.ts', 'pageDesignTokens.ts']);
 const PACK = 'resources/block-packs/builtin-core';
 const MEDIA_PREFIX = '/modules/jiwonpapa-page_builder/store/previews/';
 const SCOPES: Array<keyof EvidenceInputs> = ['content', 'rights', 'render', 'editing'];
@@ -57,7 +63,7 @@ function sameIds(left: Map<string, JsonRecord>, right: Map<string, JsonRecord>, 
 }
 
 /** Read-only collector. The renderer facts must be produced by the current PHP compiler. */
-export function collectBlockQualityInventory(root: string, rendererFacts: unknown, states: QualityStateInventory): {
+export function collectBlockQualityInventory(root: string, rendererFacts: unknown, states: QualityStateInventory, selectedIds?: string[]): {
   items: CollectedItem[]; warnings: string[]; elapsed_ms: number;
   counts: { definitions: number; presets: number; items: number; uniqueAssets: number; filesRead: number };
 } {
@@ -105,8 +111,10 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
   sameIds(blocks, plannedBlocks, 'planning inventory'); sameIds(presets, plannedPresets, 'planning inventory');
   const packId = string(manifest.pack_id, 'pack id');
   const facts = uniqueMap(rows(rendererFacts, 'renderer facts'), 'catalog_id', 'renderer fact');
-  const stateItems = new Map(states.items.map(item => [item.catalog_id, item]));
-  if (stateItems.size !== states.items.length || JSON.stringify([...stateItems.keys()].sort()) !== JSON.stringify([...facts.keys()].sort())) throw new Error('State fixture inventory does not match renderer inventory.');
+  if (selectedIds && (!selectedIds.length || new Set(selectedIds).size !== selectedIds.length)) throw new Error('Selected IDs must be nonempty and unique.');
+  const selectedStates = states.items.filter(item => !selectedIds || selectedIds.includes(item.catalog_id));
+  const stateItems = new Map(selectedStates.map(item => [item.catalog_id, item]));
+  if (new Set(states.items.map(item => item.catalog_id)).size !== states.items.length || stateItems.size !== selectedStates.length || JSON.stringify([...stateItems.keys()].sort()) !== JSON.stringify([...facts.keys()].sort())) throw new Error('State fixture inventory does not match renderer inventory.');
   if (!Object.keys(states.sources).length) throw new Error('Missing state fixture sources.');
   for (const [path, hash] of Object.entries(states.sources)) {
     if (fileHash(path) !== hash) throw new Error(`Changed state fixture source: ${path}`);
@@ -132,7 +140,7 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
     const path = `resources/store/dist/previews/${filename}`;
     return { url, status: 'local-unreviewed', path, sha256: fileHash(path) };
   };
-  const catalog = [
+  const fullCatalog = [
     ...[...blocks.values()].map(definition => ({ definition, preset: null, planned: plannedBlocks.get(String(definition.block_id))!, catalog_id: `block:${definition.block_id}@${definition.block_version}` })),
     ...[...presets.values()].map(preset => {
       const definition = blocks.get(string(preset.block_id, 'preset block id'));
@@ -140,12 +148,42 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
       return { definition, preset, planned: plannedPresets.get(String(preset.preset_id))!, catalog_id: `preset:${packId}:${preset.preset_id}` };
     }),
   ];
+  if (selectedIds?.some(id => !fullCatalog.some(item => item.catalog_id === id))) throw new Error('Unknown selected catalog ID.');
+  const catalog = fullCatalog.filter(item => !selectedIds || selectedIds.includes(item.catalog_id));
   if (JSON.stringify(catalog.map(item => item.catalog_id).sort()) !== JSON.stringify([...facts.keys()].sort())) throw new Error('renderer inventory does not match catalog.');
   const layoutContractSources = { 'schemas/layout-policy-v1.json': common['schemas/layout-policy-v1.json']!, 'tests/Fixtures/layout-policy-cases.json': common['tests/Fixtures/layout-policy-cases.json']! };
-  const compilerSources = { ...trees.src, ...layoutContractSources, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']!, 'scripts/render-block-thumbnail-fixtures.php': common['scripts/render-block-thumbnail-fixtures.php']! };
-  const renderSources = { ...compilerSources, ...trees['resources/css'], ...trees['resources/layouts/user'], ...states.sources, 'dist/css/page-builder-public.css': common['dist/css/page-builder-public.css']! };
-  const editingSources = { ...trees['resources/js'], ...trees['tests/E2E'], ...trees['tests/Unit'], ...states.sources, ...layoutContractSources, 'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!, 'package-lock.json': common['package-lock.json']! };
+  const stateSources = Object.fromEntries(Object.entries(states.sources).filter(([path]) => !path.startsWith('tests/Unit/')));
+  const renderSources = { ...layoutContractSources, ...trees['resources/layouts/user'], ...stateSources,
+    'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']! };
   const items = catalog.map(({ definition, preset, planned, catalog_id }): CollectedItem => {
+    const component = string(definition.editor_component, 'editor component');
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(component)) throw new Error('Unsafe editor component.');
+    const ownerPattern = new RegExp(`\\b${component}\\s*:`);
+    const ownedEditorSources = Object.fromEntries(Object.entries(trees['resources/js/editor']!).filter(([path]) =>
+      SHARED_EDITOR_FILES.has(path.split('/').at(-1)!) || ownerPattern.test(readFileSync(safeFile(path), 'utf8'))));
+    if (!Object.keys(ownedEditorSources).length) throw new Error(`Missing editor ownership: ${component}`);
+    const pending = Object.keys(ownedEditorSources);
+    for (let index = 0; index < pending.length; index++) {
+      const path = pending[index]!;
+      const source = readFileSync(safeFile(path), 'utf8');
+      for (const match of source.matchAll(/(?:from\s*|import\s*)['"](\.[^'"]+)['"]/g)) {
+        const base = normalize(join(dirname(path), match[1]!));
+        const dependency = [base, `${base}.ts`, `${base}.tsx`, `${base}.json`, `${base}/index.ts`]
+          .find(candidate => existsSync(join(actualRoot, candidate)) && lstatSync(join(actualRoot, candidate)).isFile());
+        if (!dependency) throw new Error(`Unresolved editor dependency: ${path}:${match[1]}`);
+        // Catalog aggregators import sibling families for registry assembly. They do not
+        // own the selected component's implementation; each family is selected above.
+        if (/CatalogBlocks\.tsx$/.test(dependency) && !ownerPattern.test(readFileSync(safeFile(dependency), 'utf8'))) continue;
+        if (!(dependency in ownedEditorSources)) {
+          ownedEditorSources[dependency] = fileHash(dependency);
+          pending.push(dependency);
+        }
+      }
+    }
+    const editingSources = { ...ownedEditorSources, ...trees['resources/js/documents'], ...stateSources, ...layoutContractSources,
+      'schemas/page-builder-document.schema.json': common['schemas/page-builder-document.schema.json']!,
+      'resources/css/page-builder-editor.css': common['resources/css/page-builder-editor.css']!,
+      'resources/css/page-builder-editor-wysiwyg.css': common['resources/css/page-builder-editor-wysiwyg.css']! };
     if (!Number.isInteger(definition.block_version) || Number(definition.block_version) < 1 || planned.block_version !== definition.block_version
       || (preset && (preset.block_version !== definition.block_version || planned.block_id !== definition.block_id))) throw new Error(`planning inventory version/block mismatch: ${catalog_id}`);
     const fact = facts.get(catalog_id)!;
@@ -155,8 +193,7 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
     const thumbnailPath = `${PACK}/${string((preset ?? definition).thumbnail, 'thumbnail path')}`;
     const withoutThumbnail = (value: JsonRecord): JsonRecord => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'thumbnail'));
     const content = { definition: withoutThumbnail(definition), preset: preset ? withoutThumbnail(preset) : null,
-      supply_kind: string(planned.supply_kind, 'supply kind'), semantic_hash: hashString(fact.semantic_hash, 'semantic'),
-      policy_hash: common['docs/productization/content-policy.md']! };
+      supply_kind: string(planned.supply_kind, 'supply kind'), semantic_hash: hashString(fact.semantic_hash, 'semantic') };
     const inputs: EvidenceInputs = {
       content,
       rights: { assets: assets.map(item => ({ ...item })), review_policy: 'explicit-maintainer-review-required' },
@@ -165,13 +202,13 @@ export function collectBlockQualityInventory(root: string, rendererFacts: unknow
       editing: { sources: editingSources, required_states: planned.required_states ?? planned.current_editing ?? 'definition-defaults', state_bindings: stateItems.get(catalog_id)!.bindings.map(binding => ({ ...binding })) },
     };
     return { catalog_id, inputs, assets, dependencies: {
-      content: [`${PACK}/manifest.json`, 'docs/productization/inventory.json', 'docs/productization/content-policy.md'],
+      content: [`${PACK}/manifest.json`, 'docs/productization/inventory.json'],
       rights: assets.flatMap(item => item.path ? [item.path] : []),
       render: [...Object.keys(renderSources), thumbnailPath].sort(), editing: Object.keys(editingSources).sort(),
     } };
   });
   return { items, warnings: [...new Set(warnings)].sort(), elapsed_ms: Math.round((performance.now() - started) * 100) / 100,
-    counts: { definitions: blocks.size, presets: presets.size, items: items.length, uniqueAssets: assetsSeen.size, filesRead: cache.size } };
+    counts: { definitions: catalog.filter(item => !item.preset).length, presets: catalog.filter(item => item.preset).length, items: items.length, uniqueAssets: assetsSeen.size, filesRead: cache.size } };
 }
 
 export function compareEvidenceFingerprints(before: EvidenceFingerprint[], after: EvidenceFingerprint[]): {

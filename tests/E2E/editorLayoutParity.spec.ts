@@ -160,6 +160,19 @@ const sourcePageKitSlugs = readdirSync(resolve('resources/store/source/page-kits
   .sort();
 const declaredPageKitSlugs = pageKitManifest.kits.map((kit) => kit.slug);
 
+function selectedTargets(name: string, available: string[]): Set<string> | undefined {
+  const value = process.env[name];
+  if (value === undefined) return undefined;
+  const selected = value.split(',');
+  if (!selected.length || new Set(selected).size !== selected.length || selected.some(id => !id || !available.includes(id))) {
+    throw new Error(`${name} contains empty, duplicate or unknown targets.`);
+  }
+  return new Set(selected);
+}
+const selectedKitIds = selectedTargets('G7PB_PAGE_KIT_IDS', declaredPageKitSlugs);
+const selectedPresetIds = selectedTargets('G7PB_PRESET_IDS', builtinManifest.presets.map(item => item.preset_id));
+if (selectedKitIds && selectedPresetIds) throw new Error('Select Page Kits or presets in separate layout runs.');
+
 const pageKitScenarios = pageKitManifest.kits
   .map((kit): PageKitScenario => {
     const source = JSON.parse(readFileSync(
@@ -197,7 +210,7 @@ function rekeyBlocks(blocks: Array<Record<string, unknown>>): Array<Record<strin
 }
 
 function presetScenario(): DraftScenario {
-  const blocks = builtinManifest.presets.map((preset, index) => ({
+  const blocks = builtinManifest.presets.filter(preset => !selectedPresetIds || selectedPresetIds.has(preset.preset_id)).map((preset, index) => ({
     instance_id: instanceId(index),
     type: preset.block_id,
     block_version: preset.block_version,
@@ -1148,8 +1161,7 @@ test(boundary === 'language'
 });
 }
 
-test('keeps every built-in block preset and Page Kit inside the editor/preview layout contract', async ({ context, page }, testInfo) => {
-  test.setTimeout(360_000);
+function assertCatalogInventory(): void {
   expect(builtinManifest.blocks.length).toBeGreaterThan(0);
   const activeBlocks = builtinManifest.blocks.filter((block) => (
     !block.capabilities.includes('editor.compatibility-only')
@@ -1165,7 +1177,11 @@ test('keeps every built-in block preset and Page Kit inside the editor/preview l
   expect(new Set(builtinManifest.presets.map((preset) => preset.block_id))).toEqual(
     new Set(activeBlocks.map((block) => block.block_id)),
   );
+}
 
+if (!selectedKitIds) test('ALL_PRESET_LAYOUT_GATE: selected built-in presets preserve editor/preview layout', async ({ context, page }, testInfo) => {
+  test.setTimeout(360_000);
+  assertCatalogInventory();
   const { api } = await authenticate(context);
   const ownedDocuments: OwnedDocument[] = [];
   await context.route(/^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//, (route) => route.abort());
@@ -1177,15 +1193,27 @@ test('keeps every built-in block preset and Page Kit inside the editor/preview l
       await putScenario(api, presetDocument, preset);
       await assertScenario(context, page, presetDocument, preset, testInfo.project.name);
     });
-    for (const scenario of pageKitScenarios) {
-      const pageKitDocument = await applyPageKit(api, scenario, testInfo.project.name, ownedDocuments);
-      await test.step(scenario.label, async () => {
-        await assertScenario(context, page, pageKitDocument, scenario, testInfo.project.name);
-      });
-    }
   } finally {
     await page.close();
     for (const owned of ownedDocuments.reverse()) await purgeDocument(api, owned);
     await api.dispose();
   }
 });
+
+for (const scenario of pageKitScenarios.filter(item => !selectedPresetIds && (!selectedKitIds || selectedKitIds.has(item.slug)))) {
+  test(`${scenario.label}: editor/preview layout`, async ({ context, page }, testInfo) => {
+    test.setTimeout(360_000);
+    assertCatalogInventory();
+    const { api } = await authenticate(context);
+    const ownedDocuments: OwnedDocument[] = [];
+    await context.route(/^https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)\//, (route) => route.abort());
+    try {
+      const pageKitDocument = await applyPageKit(api, scenario, testInfo.project.name, ownedDocuments);
+      await assertScenario(context, page, pageKitDocument, scenario, testInfo.project.name);
+    } finally {
+      await page.close();
+      for (const owned of ownedDocuments.reverse()) await purgeDocument(api, owned);
+      await api.dispose();
+    }
+  });
+}

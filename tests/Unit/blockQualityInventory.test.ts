@@ -2,7 +2,9 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { fingerprintEvidence } from '../../scripts/lib/blockQualityEvidence';
+import { createPendingEvidence, fingerprintEvidence } from '../../scripts/lib/blockQualityEvidence';
+// @ts-expect-error The Node CLI exposes a read-only JS diagnostic interface without a declaration file.
+import { inspectStoredEvidence } from '../../scripts/check-block-quality-evidence.mjs';
 import { collectBlockQualityInventory as collectInventory, compareEvidenceFingerprints, QUALITY_DEPENDENCY_FILES, QUALITY_DEPENDENCY_TREES } from '../../scripts/lib/blockQualityInventory';
 import { collectBlockQualityStates, QUALITY_STATE_SOURCE_FILES } from '../../scripts/lib/blockQualityStates';
 import stateFixtures from '../Fixtures/block-quality-states.json';
@@ -27,6 +29,7 @@ function fixture(): string {
   temporary.push(root);
   for (const path of QUALITY_DEPENDENCY_FILES) write(root, path, '{}');
   for (const path of QUALITY_DEPENDENCY_TREES) write(root, `${path}/sample.txt`, 'dependency');
+  write(root, 'resources/js/editor/Demo.tsx', 'export const components = { Demo: {} };');
   for (const path of QUALITY_STATE_SOURCE_FILES) write(root, path, 'state input');
   write(root, QUALITY_STATE_SOURCE_FILES[0], JSON.stringify(stateFixtures));
   write(root, 'resources/block-packs/builtin-core/manifest.json', JSON.stringify({ pack_id: 'jiwonpapa/builtin-core', blocks: [block], presets: [preset] }));
@@ -94,16 +97,60 @@ describe('actual block quality dependency inventory', () => {
     expect(result.changed[0]!.scopes).toEqual(['content', 'render', 'editing']);
   });
 
-  it('detects same-URL asset replacement, shared compiler changes and new editor files', () => {
+  it('detects same-URL assets, actual per-item compiler output and owning editor changes', () => {
     const root = fixture(); const before = fingerprints(root);
     write(root, 'resources/store/dist/previews/demo.webp', 'replacement bytes');
     expect(compareEvidenceFingerprints(before, fingerprints(root)).changed.every(item => item.scopes.includes('rights'))).toBe(true);
     const afterAsset = fingerprints(root);
-    write(root, 'src/new-compiler.php', '<?php // changed');
-    expect(compareEvidenceFingerprints(afterAsset, fingerprints(root)).changed[0]!.scopes).toEqual(['render', 'editing']);
-    const afterCompiler = fingerprints(root);
-    write(root, 'resources/js/new-editor.ts', 'export const changed = true;');
-    expect(compareEvidenceFingerprints(afterCompiler, fingerprints(root)).changed[0]!.scopes).toEqual(['editing']);
+    const changed = facts().map(item => ({ ...item, source_hash: 'b'.repeat(64) }));
+    expect(compareEvidenceFingerprints(afterAsset, fingerprints(root, changed)).changed[0]!.scopes).toEqual(['render', 'editing']);
+    const afterCompiler = fingerprints(root, changed);
+    write(root, 'resources/js/editor/Demo.tsx', 'export const components = { Demo: { changed: true } };');
+    expect(compareEvidenceFingerprints(afterCompiler, fingerprints(root, changed)).changed[0]!.scopes).toEqual(['editing']);
+  });
+
+  it('does not invalidate product decisions for policy prose, unrelated source or unrelated tests', () => {
+    const root = fixture(); const before = fingerprints(root);
+    write(root, 'docs/productization/content-policy.md', 'clarified audit procedure');
+    write(root, 'src/UnrelatedService.php', '<?php // unrelated');
+    write(root, 'tests/E2E/unrelated.spec.ts', '// unrelated');
+    write(root, 'tests/Unit/unrelated.test.ts', '// unrelated');
+    write(root, 'resources/js/editor/Other.tsx', 'export const Other = { Other: { changed: true } };');
+    expect(compareEvidenceFingerprints(before, fingerprints(root)).changed).toEqual([]);
+  });
+
+  it('follows owning component helper imports without including sibling catalog families', () => {
+    const root = fixture();
+    write(root, 'resources/js/editor/Demo.tsx', "import { helper } from './demoHelper'; export const components = { Demo: helper };");
+    write(root, 'resources/js/editor/demoHelper.ts', 'export const helper = 1;');
+    const before = fingerprints(root);
+    write(root, 'resources/js/editor/demoHelper.ts', 'export const helper = 2;');
+    expect(compareEvidenceFingerprints(before, fingerprints(root)).changed.map(item => item.scopes)).toEqual([['editing'], ['editing']]);
+  });
+
+  it('accepts only exact nonempty selected renderer inventories', () => {
+    const root = fixture(); const states = collectBlockQualityStates(root);
+    const result = collectInventory(root, facts().slice(0, 1), states, [ids[0]!]);
+    expect(result.items.map(item => item.catalog_id)).toEqual([ids[0]]);
+    expect(result.counts).toMatchObject({ definitions: 1, presets: 0, items: 1 });
+    expect(() => collectInventory(root, [], states, [])).toThrow('nonempty');
+    expect(() => collectInventory(root, facts(), states, [ids[0]!, ids[0]!])).toThrow('unique');
+    expect(() => collectInventory(root, [], states, ['unknown'])).toThrow('Unknown');
+  });
+
+  it('preserves historical ledger decisions as diagnostics without implicit rendering or policy migration', () => {
+    const root = fixture();
+    const legacy = { source_path: 'resources/block-packs/builtin-core/product-quality.json', record: { status: 'historical' } };
+    write(root, legacy.source_path, JSON.stringify({ approval: legacy.record }));
+    const ledger = createPendingEvidence(fingerprints(root), legacy);
+    write(root, 'resources/block-packs/builtin-core/quality-evidence.json', JSON.stringify(ledger));
+    const before = readFileSync(join(root, 'resources/block-packs/builtin-core/quality-evidence.json'), 'utf8');
+    write(root, 'docs/productization/content-policy.md', 'new audit procedure, not a product change');
+    const result = inspectStoredEvidence(root, [ids[0]]);
+    expect(result).toMatchObject({ mode: 'diagnostic', current_sources_checked: false, ready: null, release_authorized: false, errors: [] });
+    expect(readFileSync(join(root, 'resources/block-packs/builtin-core/quality-evidence.json'), 'utf8')).toBe(before);
+    write(root, legacy.source_path, JSON.stringify({ approval: { status: 'tampered' } }));
+    expect(inspectStoredEvidence(root, [ids[0]]).errors).toContain('legacy-review-does-not-match-preserved-v1-record');
   });
 
   it('records external assets as unresolved without fetching or claiming their bytes', () => {
@@ -165,14 +212,15 @@ describe('actual block quality dependency inventory', () => {
       expect(() => collectBlockQualityInventory(root, facts())).toThrow();
     }
     const empty = fixture();
-    rmSync(join(empty, 'src/sample.txt'));
+    rmSync(join(empty, 'resources/js/editor/sample.txt'));
+    rmSync(join(empty, 'resources/js/editor/Demo.tsx'));
     expect(() => collectBlockQualityInventory(empty, facts())).toThrow('Empty dependency tree');
     const linked = fixture();
-    symlinkSync(join(linked, 'src/sample.txt'), join(linked, 'src/link.txt'));
+    symlinkSync(join(linked, 'resources/js/editor/sample.txt'), join(linked, 'resources/js/editor/link.txt'));
     expect(() => collectBlockQualityInventory(linked, facts())).toThrow('symlink');
     const linkedTree = fixture();
-    rmSync(join(linkedTree, 'src'), { recursive: true });
-    symlinkSync(join(linkedTree, 'resources/js'), join(linkedTree, 'src'));
+    rmSync(join(linkedTree, 'resources/js/editor'), { recursive: true });
+    symlinkSync(join(linkedTree, 'resources/js/documents'), join(linkedTree, 'resources/js/editor'));
     expect(() => collectBlockQualityInventory(linkedTree, facts())).toThrow('symlink');
   });
 

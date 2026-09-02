@@ -11,6 +11,54 @@ class Inputs:
     reusable: bool
 
 
+def php_references(source):
+    """Conservative lexical class references, independent of installed PHP.
+
+    This is a dependency graph, not PHP validation. PHPStan/the architecture
+    tokenizer validate syntax and layering. Unresolved dynamic forms disable
+    receipts; same-namespace names and imported aliases are still traversed.
+    """
+    clean = re.sub(r"'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"|/\*[\s\S]*?\*/|//[^\n]*|\#(?!\[)[^\n]*", " ", source)
+    complete = not bool(re.search(r"\b(?:require|include|file_get_contents|glob|scandir|ReflectionClass)\b|new\s+\$|<<<", clean))
+    name = r"\\?[A-Za-z_][A-Za-z0-9_]*(?:\\[A-Za-z_][A-Za-z0-9_]*)*"
+    declarations = list(re.finditer(r"\bnamespace\s+(" + name + r")\s*[;{]", clean))
+    regions = [("", clean[:declarations[0].start()] if declarations else clean)]
+    regions.extend((match.group(1).strip("\\"), clean[match.end():declarations[i + 1].start() if i + 1 < len(declarations) else len(clean)])
+                   for i, match in enumerate(declarations))
+    references, imports = set(), set()
+    for namespace, body in regions:
+        aliases = {}
+        for match in re.finditer(r"\buse\s+(?!\()([^;]+);", body):
+            statement = match.group(1).strip()
+            if statement.startswith(("function ", "const ")):
+                continue
+            group = re.fullmatch(r"(.+?)\\\s*\{([^{}]+)\}", statement)
+            if "{" in statement and group is None:
+                complete = False  # Trait adaptation is not an import declaration.
+                continue
+            prefix, members = (group.group(1).strip("\\") + "\\", group.group(2)) if group else ("", statement)
+            for item in members.split(","):
+                imported = re.fullmatch(r"\s*(" + name + r")(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?\s*", item)
+                if imported is None:
+                    complete = False
+                    continue
+                target = prefix + imported.group(1).lstrip("\\")
+                aliases[(imported.group(2) or target.rsplit("\\", 1)[-1]).lower()] = target
+                imports.add(target)
+        for symbol in re.findall(r"(?<![A-Za-z0-9_$\\])" + name, body):
+            if symbol.startswith("\\"):
+                references.add(symbol.lstrip("\\"))
+                continue
+            first, _, tail = symbol.partition("\\")
+            if first.lower() == "namespace":
+                references.add(namespace + ("\\" + tail if tail else ""))
+            elif first.lower() in aliases:
+                references.add(aliases[first.lower()] + ("\\" + tail if tail else ""))
+            else:
+                references.add((namespace + "\\" if namespace else "") + symbol)
+    return references | imports, imports, complete
+
+
 def source_inputs(root: Path, entry: str) -> Inputs:
     root = root.resolve()
     files: set[str] = set()
@@ -41,16 +89,17 @@ def source_inputs(root: Path, entry: str) -> Inputs:
             return
         source = path.read_text()
         if path.suffix == ".php":
-            # Dynamic PHP loading and file IO cannot be proven by an import scan.
-            if re.search(r"\b(?:require|include|file_get_contents|glob|scandir|ReflectionClass)\b|new\s+\$", source):
-                complete = False
-            for symbol in re.findall(r"(?<![\w\\])\\?([A-Z][\w]*(?:\\[\w]+)+)", source):
+            references, imports, understood = php_references(source)
+            complete = complete and understood
+            for symbol in references:
                 for namespace, directory in sorted(namespaces.items(), key=lambda item: -len(item[0])):
                     if symbol.startswith(namespace):
                         if not isinstance(directory, str):
                             complete = False
                             break
-                        visit(root / directory / (symbol[len(namespace):].replace("\\", "/") + ".php"))
+                        candidate = root / directory / (symbol[len(namespace):].replace("\\", "/") + ".php")
+                        if candidate.is_file() or (symbol in imports and not candidate.with_suffix("").is_dir()):
+                            visit(candidate)
                         break
             return
         if re.search(r"\b(?:readFileSync|readFile|readdirSync|globSync)\s*\(|\bimport\s*\(\s*[^'\"\s]", source):

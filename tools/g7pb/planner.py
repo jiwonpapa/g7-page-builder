@@ -211,9 +211,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                       or (p.startswith(("resources/js/", "resources/css/", "src/")) and p.endswith((".ts", ".tsx", ".js", ".php", ".css")))]
     if design_targets:
         product_sources = any(p.startswith(("resources/", "src/")) for p in design_targets)
-        external_controller = controller_root.resolve() != root.resolve()
+        # A task changing the guard must exercise its proposed guard/rules. An
+        # older product worktree instead uses the verified controller's rules.
+        policy_root = root if any(p in DESIGN_INPUTS for p in plan.paths) else controller_root
+        external_controller = policy_root.resolve() != root.resolve()
         def controller_file(path):
-            return str(controller_root / path) if external_controller else path
+            return str(policy_root / path) if external_controller else path
         command = (["bash", controller_file("scripts/check-boundaries.sh")] if product_sources
                    else ["node", controller_file("scripts/check-design-architecture.mjs")])
         if external_controller:

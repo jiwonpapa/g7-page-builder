@@ -61,3 +61,34 @@ class InputTests(unittest.TestCase):
     def test_php_dynamic_data_never_reuses_unproven_success(self):
         self.write("test.php", "<?php $data = file_get_contents($path);")
         self.assertFalse(source_inputs(self.root, "test.php").reusable)
+
+    def test_php_same_namespace_dependency_is_transitive(self):
+        self.write("composer.json", json.dumps({"autoload": {"psr-4": {"Project\\": "src/"}}}))
+        self.write("test.php", "<?php use Project\\Documents\\PageBuilderDocument;")
+        self.write("src/Documents/PageBuilderDocument.php", "<?php namespace Project\\Documents; final class PageBuilderDocument { public function theme(): array { return PageDesignTokens::defaults(); } }")
+        self.write("src/Documents/PageDesignTokens.php", "<?php namespace Project\\Documents; final class PageDesignTokens {}")
+        graph = source_inputs(self.root, "test.php")
+        self.assertTrue(graph.reusable)
+        self.assertEqual(graph.files, ("composer.json", "src/Documents/PageBuilderDocument.php", "src/Documents/PageDesignTokens.php", "test.php"))
+
+    def test_php_aliases_group_imports_and_namespace_alias_children(self):
+        self.write("composer.json", json.dumps({"autoload": {"psr-4": {"Project\\": "src/"}}}))
+        self.write("test.php", "<?php namespace Client; use Project\\Documents\\{PageDesignTokens as Theme, Document}; use Project\\Nested as Nodes; new Nodes\\Child; Theme::defaults();")
+        for name in ("Documents/PageDesignTokens", "Documents/Document", "Nested/Child"):
+            self.write("src/" + name + ".php", "<?php final class " + name.split("/")[-1] + " {}")
+        graph = source_inputs(self.root, "test.php")
+        self.assertTrue(graph.reusable)
+        self.assertEqual(set(graph.files), {"composer.json", "test.php", "src/Documents/PageDesignTokens.php", "src/Documents/Document.php", "src/Nested/Child.php"})
+
+    def test_php_comments_and_strings_do_not_import_classes(self):
+        self.write("composer.json", json.dumps({"autoload": {"psr-4": {"Project\\": "src/"}}}))
+        self.write("test.php", "<?php namespace Project; // new Hidden();\n $example = 'Hidden'; /* use Project\\Hidden; */")
+        self.write("src/Hidden.php", "<?php class Hidden {}")
+        self.assertEqual(source_inputs(self.root, "test.php").files, ("composer.json", "test.php"))
+
+    def test_php_missing_import_and_dynamic_class_do_not_reuse(self):
+        self.write("composer.json", json.dumps({"autoload": {"psr-4": {"Project\\": "src/"}}}))
+        self.write("test.php", "<?php use Project\\Missing as Alias; new $runtimeClass;")
+        graph = source_inputs(self.root, "test.php")
+        self.assertFalse(graph.reusable)
+        self.assertIn("src/Missing.php", graph.files)

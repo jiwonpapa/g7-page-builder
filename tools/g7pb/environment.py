@@ -14,6 +14,8 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -64,12 +66,66 @@ def file_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def npm_script_inputs(root: Path, scripts: dict, names: tuple[str, ...]) -> dict:
+    """Track literal local build/install entry points, not an inferred whole repo."""
+    selected, files, pending = {}, {}, [name for name in names if name in scripts]
+    while pending:
+        name = pending.pop()
+        if name in selected:
+            continue
+        body = scripts[name]
+        if not isinstance(body, str) or any(marker in body for marker in ("$", chr(96), "*")):
+            raise ValueError(f"new build-input evidence required for dynamic npm script: {name}")
+        selected[name] = body
+        lexer = shlex.shlex(body, posix=True, punctuation_chars=";&|")
+        lexer.whitespace_split, lexer.commenters = True, ""
+        commands, current = [], []
+        for token in lexer:
+            if token in ("&&", "||", ";"):
+                if current:
+                    commands.append(current)
+                    current = []
+            elif token == "|":
+                raise ValueError(f"new build-input evidence required for piped npm script: {name}")
+            else:
+                current.append(token)
+        if current:
+            commands.append(current)
+        for argv in commands:
+            while argv and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", argv[0]):
+                argv.pop(0)
+            if not argv:
+                continue
+            if argv[0] == "npm" and len(argv) >= 3 and argv[1] in ("run", "run-script"):
+                target = argv[2]
+                if target not in scripts:
+                    raise ValueError(f"new build-input evidence required: missing npm script {target}")
+                pending.extend(hook for hook in ("pre" + target, target, "post" + target) if hook in scripts)
+                continue
+            if argv[0] in ("vite", "echo", "printf"):
+                continue  # Vite configuration/helpers and project sources are build_inputs.
+            entry = argv[1] if argv[0] in ("node", "bash", "sh", "python", "python3", "php") and len(argv) > 1 else argv[0]
+            path = (root / entry).resolve()
+            if entry.startswith("-") or not path.is_relative_to(root.resolve()) or not path.is_file():
+                raise ValueError(f"new build-input evidence required for npm script entry: {entry}")
+            files[str(path.relative_to(root.resolve()))] = file_digest(path)
+    return {"scripts": dict(sorted(selected.items())), "entry_files": dict(sorted(files.items()))}
+
+
 def dependency_inputs(root: Path, kind: str) -> dict:
     """Version labels do not change installed dependencies; install configuration does."""
     manifest = json.loads((root / ("package.json" if kind == "npm" else "composer.json")).read_text())
     lock = json.loads((root / ("package-lock.json" if kind == "npm" else "composer.lock")).read_text())
     manifest.pop("version", None)
     if kind == "npm":
+        install_fields = ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies",
+                          "peerDependenciesMeta", "overrides", "workspaces", "engines", "devEngines",
+                          "os", "cpu", "libc", "packageManager", "bundledDependencies", "bundleDependencies",
+                          "allowScripts", "config")
+        lifecycle = npm_script_inputs(root, manifest.get("scripts", {}), (
+            "preinstall", "install", "postinstall", "prepublish", "preprepare", "prepare", "postprepare"))
+        manifest = {key: manifest[key] for key in install_fields if key in manifest}
+        manifest["lifecycle"] = lifecycle
         lock.pop("version", None)
         lock.get("packages", {}).get("", {}).pop("version", None)
     configs = [".npmrc"] if kind == "npm" else ["auth.json"]
@@ -235,10 +291,12 @@ def build_inputs(root: Path) -> dict:
 
 
 def build(runtime: Runtime, apply: bool = False) -> dict:
+    manifest = json.loads((runtime.root / "package.json").read_text())
+    wiring = npm_script_inputs(runtime.root, manifest.get("scripts", {}), ("prebuild", "build", "postbuild"))
     dependencies = prepare(runtime, ["npm"], apply)
     fingerprint = digest({"sources": build_inputs(runtime.root), "dependencies": dependencies[0]["fingerprint"],
                           "environment": {key: value for key, value in os.environ.items() if key.startswith("VITE_")},
-                          "command": ["npm", "run", "build"]})
+                          "command": ["npm", "run", "build"], "build_wiring": wiring})
     outputs = lambda: {str(p.relative_to(runtime.root)): file_digest(p) for p in (runtime.root / "dist").rglob("*") if p.is_file()}
     state, artifacts = read_state(runtime.root), outputs()
     key = runtime.kind + ":build"

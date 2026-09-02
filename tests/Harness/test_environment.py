@@ -78,6 +78,37 @@ class EnvironmentTests(unittest.TestCase):
         self.write("package-lock.json", {"version": "1.0.1", "packages": {"": {"version": "1.0.1"}, "node_modules/x": {"version": "1"}}})
         self.assertEqual(env.prepare(self.runtime, ["npm"], True)[0]["status"], "reused")
 
+    def test_non_install_script_changes_do_not_reinstall_but_lifecycle_changes_do(self):
+        manifest = {"dependencies": {"x": "1"}, "scripts": {
+            "test": "vitest run", "check": "tsc --noEmit", "build": "vite build", "postinstall": "echo ready"}}
+        self.write("package.json", manifest)
+        env.prepare(self.runtime, ["npm"], True)
+        manifest["scripts"].update(test="vitest run focused.test.ts", check="tsc --pretty", build="vite build --minify")
+        self.write("package.json", manifest)
+        self.assertEqual(env.prepare(self.runtime, ["npm"], True)[0]["status"], "reused")
+        manifest["scripts"]["postinstall"] = "echo changed"
+        self.write("package.json", manifest)
+        self.assertEqual(env.prepare(self.runtime, ["npm"], True)[0]["status"], "installed")
+        self.assertEqual(self.runtime.commands.count(env.INSTALL["npm"]), 2)
+
+    def test_build_script_and_referenced_file_changes_need_new_build_not_install(self):
+        manifest = {"dependencies": {"x": "1"}, "scripts": {
+            "build": "npm run bundle", "bundle": "node scripts/build.mjs"}}
+        self.write("scripts/build.mjs", "console.log('first build')")
+        self.write("package.json", manifest)
+        env.build(self.runtime, True)
+        manifest["scripts"]["build"] = "npm run bundle -- --production"
+        self.write("package.json", manifest)
+        self.assertEqual(env.build(self.runtime)["build"], "required")
+        env.build(self.runtime, True)
+        self.write("scripts/build.mjs", "console.log('changed build')")
+        self.assertEqual(env.build(self.runtime)["build"], "required")
+        self.assertEqual(self.runtime.commands.count(env.INSTALL["npm"]), 1)
+        manifest["scripts"]["build"] = "node $BUILD_SCRIPT"
+        self.write("package.json", manifest)
+        with self.assertRaisesRegex(ValueError, "new build-input evidence required"):
+            env.build(self.runtime)
+
     def test_dependency_tool_or_installed_metadata_change_invalidates(self):
         env.prepare(self.runtime, ["npm"], True)
         self.write("package-lock.json", {"packages": {"node_modules/x": {"version": "2"}}})

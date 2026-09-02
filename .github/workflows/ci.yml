@@ -2,72 +2,108 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
-jobs:
-  coordination:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - run: make check-agent-policy
-      - run: bash tests/Harness/coord-harness.test.sh
+permissions:
+  contents: read
 
-  frontend:
+# A feature branch is checked by its PR, not again by a second push workflow.
+concurrency:
+  group: scoped-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scoped:
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
+      PYTHONDONTWRITEBYTECODE: '1'
+      BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
     steps:
       - uses: actions/checkout@v5
-      - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
-          extensions: zip
-          tools: composer
-          coverage: none
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Resolve the same verification plan as local development
+        id: plan
+        run: |
+          mkdir -p .runtime
+          python3 scripts/g7pb.py plan --base "$BASE_REF" --phase ci --json > .runtime/ci-plan.json
+          python3 - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          plan = json.loads(Path('.runtime/ci-plan.json').read_text())
+          if plan.get('unresolved'):
+              print('Unresolved scope; no automatic full validation:', plan['unresolved'], file=sys.stderr)
+              sys.exit(1)
+          required = plan['requirements']
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              for name in ('node', 'php', 'g7', 'browser'):
+                  if not isinstance(required[name], bool):
+                      raise ValueError(f'Invalid requirement: {name}')
+                  print(f'{name}={str(required[name]).lower()}', file=output)
+          PY
       - uses: actions/setup-node@v4
+        if: steps.plan.outputs.node == 'true'
         with:
           node-version: 24.19.0
           cache: npm
-      - run: sudo apt-get update && sudo apt-get install -y ripgrep
-      - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: npm ci
-      - run: npm run check
-        env:
-          TZ: Asia/Seoul
-      - uses: actions/upload-artifact@v4
-        with:
-          name: module-dist
-          path: dist
-
-  php:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
+        if: steps.plan.outputs.php == 'true' || steps.plan.outputs.g7 == 'true'
         with:
           php-version: '8.5'
+          extensions: zip, mbstring, pdo_sqlite, sqlite3
           tools: composer
           coverage: none
-      - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: composer check
-
-  g7-contract:
-    runs-on: ubuntu-latest
-    steps:
+      - uses: actions/cache@v4
+        if: steps.plan.outputs.node == 'true' || steps.plan.outputs.php == 'true'
+        with:
+          path: |
+            node_modules
+            vendor
+            .runtime/harness/environment.json
+          key: g7pb-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.plan.outputs.node }}-${{ steps.plan.outputs.php }}-${{ steps.plan.outputs.g7 }}-${{ hashFiles('package-lock.json', 'composer.lock') }}
+          restore-keys: g7pb-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.plan.outputs.node }}-${{ steps.plan.outputs.php }}-${{ steps.plan.outputs.g7 }}-
+      - name: Prepare only selected Node dependencies
+        if: steps.plan.outputs.node == 'true'
+        run: python3 scripts/g7pb.py environment deps --only npm --apply
+      - name: Prepare only selected PHP dependencies
+        if: steps.plan.outputs.php == 'true' || steps.plan.outputs.g7 == 'true'
+        run: python3 scripts/g7pb.py environment deps --only composer --apply
       - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+        if: steps.plan.outputs.g7 == 'true'
         with:
           repository: gnuboard/g7
           ref: 0e8b625436df7fb30cf1632f42d9d6bcb39ac37b
           path: .runtime/gnuboard7
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/cache@v4
+        if: steps.plan.outputs.g7 == 'true'
         with:
-          php-version: '8.5'
-          extensions: mbstring, pdo_sqlite, sqlite3
-          tools: composer
-          coverage: xdebug
-      - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: composer install --no-interaction --no-progress --prefer-dist
-        working-directory: .runtime/gnuboard7
-      - run: vendor/bin/phpstan analyse --autoload-file=.runtime/gnuboard7/vendor/autoload.php -c phpstan-g7.neon.dist --memory-limit=1G --no-progress
-      - run: mkdir -p output/coverage
-      - run: XDEBUG_MODE=coverage vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/UnitPhp tests/Integration --coverage-clover output/coverage/php-clover.xml --coverage-filter src
-      - run: php scripts/check-php-coverage.php output/coverage/php-clover.xml
+          path: |
+            .runtime/gnuboard7/vendor
+            .runtime/gnuboard7/.runtime/harness/environment.json
+          key: g7pb-g7-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.runtime/gnuboard7/composer.lock') }}
+      - name: Prepare pinned public G7 contract dependencies
+        if: steps.plan.outputs.g7 == 'true'
+        run: python3 scripts/g7pb.py environment deps --root .runtime/gnuboard7 --only composer --apply
+      - name: Require a prepared isolated browser runtime
+        if: steps.plan.outputs.browser == 'true'
+        run: |
+          echo '::error::This hosted runner has no installed/authenticated G7 browser runtime. Run the selected browser gates in the lease-owned integration runtime; this is not a passed or skipped browser test.'
+          exit 1
+      - name: Execute only the selected gates
+        run: python3 scripts/g7pb.py run --base "$BASE_REF" --phase ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-plan
+          path: .runtime/ci-plan.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: success() && hashFiles('dist/**') != ''
+        with:
+          name: module-dist
+          path: dist

@@ -1,4 +1,5 @@
-import type { BlockAppearance } from '../documents/types';
+import type { BlockAppearance, ElementAppearance, ElementAppearanceMap } from '../documents/types';
+import { normalizeFontSizeRem } from './fontSize';
 
 export interface BlockContainerEditorProps {
   containerWidth: NonNullable<BlockAppearance['containerWidth']>;
@@ -33,13 +34,52 @@ const WIDTHS = new Set<NonNullable<BlockAppearance['containerWidth']>>(['inherit
 const CONTAINER_ALIGNS = new Set<NonNullable<BlockAppearance['containerAlign']>>(['left', 'center', 'right', 'stretch']);
 const HEIGHTS = new Set<NonNullable<BlockAppearance['minHeight']>>(['auto', 'compact', 'medium', 'large', 'viewport']);
 const VERTICAL_ALIGNS = new Set<NonNullable<BlockAppearance['verticalAlign']>>(['start', 'center', 'end']);
+const ELEMENT_FONTS = new Set<NonNullable<ElementAppearance['font']>>(['inherit', 'system', 'modern', 'serif', 'mono']);
+const ELEMENT_SIZES = new Set<NonNullable<ElementAppearance['size']>>(['small', 'base', 'large', 'xlarge']);
+const ELEMENT_WEIGHTS = new Set<NonNullable<ElementAppearance['weight']>>(['regular', 'medium', 'semibold', 'bold']);
+const ELEMENT_TONES = new Set<NonNullable<ElementAppearance['tone']>>([
+  'default', 'muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4',
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 function record(value: unknown): Record<string, unknown> {
-  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+  return isRecord(value) ? value : {};
 }
 
 function preset<T extends string>(values: ReadonlySet<T>, value: unknown): T | undefined {
-  return typeof value === 'string' && values.has(value as T) ? value as T : undefined;
+  for (const allowed of values) {
+    if (allowed === value) return allowed;
+  }
+  return undefined;
+}
+
+function validatedElementAppearanceMap(value: unknown): ElementAppearanceMap | undefined {
+  if (!isRecord(value)) return undefined;
+  const entries: [string, ElementAppearance][] = [];
+  for (const [path, source] of Object.entries(value)) {
+    if (!isRecord(source)) continue;
+    const { font, fontSizeRem, size, weight, align, tone, ...extensions } = source;
+    const validFont = preset(ELEMENT_FONTS, font);
+    const validFontSizeRem = normalizeFontSizeRem(fontSizeRem);
+    const validSize = preset(ELEMENT_SIZES, size);
+    const validWeight = preset(ELEMENT_WEIGHTS, weight);
+    const validAlign = preset(TEXT_ALIGNS, align);
+    const validTone = preset(ELEMENT_TONES, tone);
+    const appearance: ElementAppearance = {
+      ...extensions,
+      ...(validFont !== undefined ? { font: validFont } : {}),
+      ...(validFontSizeRem !== undefined ? { fontSizeRem: validFontSizeRem } : {}),
+      ...(validFontSizeRem === undefined && validSize !== undefined ? { size: validSize } : {}),
+      ...(validWeight !== undefined ? { weight: validWeight } : {}),
+      ...(validAlign !== undefined ? { align: validAlign } : {}),
+      ...(validTone !== undefined ? { tone: validTone } : {}),
+    };
+    entries.push([path, appearance]);
+  }
+  return Object.fromEntries(entries);
 }
 
 export function normalizeBlockAppearance(
@@ -101,21 +141,28 @@ export function mergeBlockContainerAppearance(
 ): BlockAppearance | undefined {
   const existing = record(current);
   const container = blockContainerEditorProps(editor);
-  const next: Record<string, unknown> = { ...existing };
-  delete next.containerWidth;
-  delete next.containerAlign;
-  delete next.minHeight;
-  delete next.verticalAlign;
+  const {
+    surface, spacing, textScale, textAlign, elements,
+    containerWidth: _width, containerAlign: _align, minHeight: _height, verticalAlign: _vertical,
+    ...extensions
+  } = existing;
+  const validTextScale = preset(TEXT_SCALES, textScale);
+  const validTextAlign = preset(TEXT_ALIGNS, textAlign);
+  const validElements = validatedElementAppearanceMap(elements);
+  const next: Partial<BlockAppearance> = {
+    ...extensions,
+    ...(validTextScale !== undefined ? { textScale: validTextScale } : {}),
+    ...(validTextAlign !== undefined ? { textAlign: validTextAlign } : {}),
+    ...(validElements !== undefined ? { elements: validElements } : {}),
+  };
   if (container.containerWidth !== 'inherit') next.containerWidth = container.containerWidth;
   if (container.containerAlign !== 'center') next.containerAlign = container.containerAlign;
   if (container.minHeight !== 'auto') next.minHeight = container.minHeight;
   if (container.verticalAlign !== 'start') next.verticalAlign = container.verticalAlign;
-  if (Object.keys(next).length > 0 && typeof next.surface !== 'string') {
-    next.surface = editor.surface === 'soft' || editor.surface === 'contrast' ? editor.surface : 'default';
-  }
-  if (Object.keys(next).length > 0 && typeof next.spacing !== 'string') {
-    next.spacing = editor.spacing === 'compact' || editor.spacing === 'spacious' ? editor.spacing : 'normal';
-  }
-  if (Object.keys(next).length === 0) return undefined;
-  return next as unknown as BlockAppearance;
+  if (Object.keys(next).length === 0 && surface === undefined && spacing === undefined) return undefined;
+  return {
+    ...next,
+    surface: preset(SURFACES, surface) ?? preset(SURFACES, editor.surface) ?? 'default',
+    spacing: preset(SPACINGS, spacing) ?? preset(SPACINGS, editor.spacing) ?? 'normal',
+  };
 }

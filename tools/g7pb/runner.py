@@ -19,6 +19,12 @@ def digest_gate(root, gate):
         files[name] = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else "missing"
     body = {"version": 2, "gate": gate.name, "argv": gate.argv, "env": gate.env,
             "platform": platform.platform(), "python": platform.python_version(), "files": files}
+    # Preserve receipts for unchanged ordinary checks. Only gates using the new
+    # execution/dependency contract get extra fingerprint fields.
+    if gate.execution != "runtime":
+        body["execution"] = gate.execution
+    if gate.depends_on:
+        body["depends_on"] = gate.depends_on
     for tool in gate.requires:
         if tool in {"node", "php"}:
             body[tool] = subprocess.check_output([tool, "--version"], text=True).splitlines()[0]
@@ -35,6 +41,13 @@ def receipt_directory(root):
 def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
     if plan.unresolved:
         raise ValueError("Scope unresolved; nothing executed:\n" + "\n".join(plan.unresolved))
+    preceding = set()
+    for gate in plan.gates:
+        if gate.execution not in {"runtime", "controller"}:
+            raise ValueError(f"Unknown gate execution location: {gate.execution}")
+        if gate.name in preceding or not set(gate.depends_on).issubset(preceding):
+            raise ValueError(f"Gate dependency must appear exactly once before {gate.name}: {gate.depends_on}")
+        preceding.add(gate.name)
     root = Path(root)
     executor = executor or subprocess.run
     receipts = Path(receipts) if receipts else receipt_directory(root)
@@ -47,6 +60,9 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             print(f"DEFERRED gate={gate.name}; required during integration, NOT acceptance", flush=True)
             results.append({"gate": gate.name, "status": "deferred", "executions": 0})
             continue
+        completed = {item["gate"] for item in results if item["status"] in {"passed", "reused"}}
+        if not set(gate.depends_on).issubset(completed):
+            raise ValueError(f"Required predecessor did not pass: {gate.name}")
         if gate.runtime and not task and os.environ.get("CI") != "true":
             raise ValueError(f"Runtime lease required: {gate.name}")
         if gate.runtime and os.environ.get("CI") == "true" and "browser" in gate.requires and not os.environ.get("G7PB_BASE_URL"):
@@ -64,15 +80,25 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
                 print(f"REUSED gate={gate.name}", flush=True)
                 results.append({"gate": gate.name, "status": "reused", "executions": 0})
                 continue
-        environment = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **dict(gate.env)}
+        environment = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+        for name, value in gate.env:
+            if value is None:
+                environment.pop(name, None)
+            else:
+                environment[name] = value
         if task:
             environment["TASK"] = task
         started = time.monotonic()
         print(f"RUN gate={gate.name} reason={gate.reason}", flush=True)
         argv = list(gate.argv)
-        if gate.runtime and task and os.environ.get("CI") != "true" and argv[0] != "make":
+        if gate.runtime and gate.execution == "runtime" and task and os.environ.get("CI") != "true" and argv[0] != "make":
             from .environment import Runtime
-            argv = Runtime(root, "docker", task).command(argv)
+            # Docker exec does not inherit host-side env overrides. Carry only
+            # the plan's explicit non-secret selectors into the runtime command.
+            remove = [part for key, value in gate.env if value is None for part in ("-u", key)]
+            assign = [f"{key}={value}" for key, value in gate.env if value is not None]
+            selected = ["env", *remove, *assign, *argv] if gate.env else argv
+            argv = Runtime(root, "docker", task).command(selected)
         result = executor(argv, cwd=root, env=environment, check=False)
         record = {"key": key, "gate": gate.name, "status": "passed" if result.returncode == 0 else "failed",
                   "executions": 1, "seconds": round(time.monotonic() - started, 3), "inputs": gate.inputs}

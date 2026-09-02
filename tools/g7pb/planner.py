@@ -1,11 +1,13 @@
 """Shared change-to-check policy. Unknown inputs never become a full run."""
 import ast
+from dataclasses import replace
 import json
 from pathlib import Path
 import subprocess
 from .model import Gate, Plan
 from .inputs import source_inputs
-from .browser_requirements import scenarios_for
+from .browser_requirements import BROWSER_ENVIRONMENT, scenarios_for
+from .environment import build_inputs, sync_plan
 
 
 DESIGN_INPUTS = (
@@ -85,16 +87,16 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     controller_root = Path(__file__).resolve().parents[2]
     plan = Plan(sorted(set(paths)), full=full, phase=phase)
     gates = {}
-    def add(name, argv, inputs, reason, requires=(), runtime=False, reusable=True):
+    def add(name, argv, inputs, reason, requires=(), runtime=False, reusable=True, env=(), execution="runtime", depends_on=()):
         prior = gates.get(name)
         inputs = set(inputs) | (set(prior.inputs) if prior else set())
-        gates[name] = Gate(name, tuple(argv), tuple(sorted(inputs)), reason, runtime, (), tuple(requires), reusable,
-                           runtime and phase == "submission")
+        gates[name] = Gate(name, tuple(argv), tuple(sorted(inputs)), reason, runtime, tuple(env), tuple(requires), reusable,
+                           runtime and phase == "submission", execution, tuple(depends_on))
     def python_test(path, cause=""):
         if not (root / path).is_file():
             plan.unresolved.append(f"Missing infrastructure test: {path}")
             return
-        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name == "test_editor_contracts.py" else ()
+        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py"} else ()
         add("python:" + path, ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/Harness", "-p", Path(path).name],
             [*python_inputs(root, path), *([cause] if cause else [])], "Changed Python module or dependency", requires,
             reusable=Path(path).name not in {"test_editor_contracts.py", "test_boundary_command.py"})
@@ -110,6 +112,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/check-editor-acceptance-contract.mjs": ("editor_contracts",),
         "scripts/check-editor-layout-parity.mjs": ("editor_contracts",),
         "scripts/lib/editorContractRegistration.mjs": ("editor_contracts",),
+        "playwright.config.ts": ("browser_registration",),
     }
     command_contracts = {"tests/Harness/" + name for name in (
         "block-quality-evidence.test.sh", "block-quality-gate-wiring.test.sh", "block-product-quality-contract.test.sh")}
@@ -146,9 +149,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         elif path.startswith("tests/E2E/"):
             if file.suffix in {".ts", ".tsx"}:
                 # Test-registration refactors do not claim that the product ran.
-                if product_changed:
-                    add("browser:" + path, ["npx", "--no-install", "playwright", "test", path, "--retries=0"], [path, "playwright.config.ts", "package-lock.json"], "Changed browser scenario and product", ("node", "php", "g7", "browser"), True)
-                else:
+                if product_changed and not full:
+                    add("browser:" + path, ["npx", "--no-install", "playwright", "test", path, "--retries=0"], [path, "playwright.config.ts", "package-lock.json"], "Changed browser scenario and product", ("node", "php", "g7", "browser"), True, env=BROWSER_ENVIRONMENT)
+                elif not full:
                     add("browser-registration:" + path, ["npx", "--no-install", "playwright", "test", path, "--list", "--reporter=line"], [path, "playwright.config.ts", "package-lock.json"], "Harness-only test collection; NOT product/browser acceptance", ("node",), reusable=False)
             else:
                 plan.unresolved.append(f"Select the owning browser scenario for {path}")
@@ -254,11 +257,19 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             if not (root / scenario.spec).is_file():
                 plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
                 continue
-            argv = ["npx", "--no-install", "playwright", "test", scenario.spec, "--retries=0"]
-            argv.extend(f"--project={project}" for project in scenario.projects)
-            add("browser:" + scenario.spec, argv,
+            name = "browser:" + scenario.spec
+            # A changed spec requests all its tests. Source mapping must not
+            # overwrite that explicit scope with a narrower title/preset filter.
+            if name in gates:
+                continue
+            try:
+                environment = scenario.environment(root)
+            except (ValueError, OSError, KeyError) as error:
+                plan.unresolved.append(f"Browser target selection required: {error}")
+                continue
+            add(name, scenario.arguments(),
                 [*plan.paths, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
-                "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True)
+                "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment)
     if content:
         try:
             from .content import select_changes
@@ -271,5 +282,27 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             plan.unresolved.append(f"Content selection required: {error}")
     if full:
         add("full-product", ["make", "quality-gate"], plan.paths, "Explicit full runtime/RC scope", ("node", "php", "g7", "browser"), True)
-    plan.gates = list(gates.values())
+    browser_gates = [gate for name, gate in gates.items() if name.startswith("browser:")]
+    plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:")]
+    if browser_gates:
+        # The controller orchestrates the installed runtime; never execute its
+        # Docker-aware environment command inside Docker a second time. build()
+        # verifies source/env AND existing artifact hashes before reusing assets.
+        runtime = "local" if phase == "ci" else "docker"
+        command = ["python3", "-B", str(controller_root / "scripts/g7pb.py"), "environment"]
+        controller_inputs = [str(controller_root / p) for p in python_inputs(controller_root, "tools/g7pb/environment.py")]
+        inputs = [*build_inputs(root), "package.json", "package-lock.json", ".npmrc", *controller_inputs]
+        before = []
+        selected_sync = sync_plan(plan.paths)
+        if selected_sync["actions"]:
+            add("browser-runtime-sync", [*command, "sync", "--root", str(root.resolve()), "--runtime", runtime,
+                "--paths", *plan.paths, "--apply"], [*plan.paths, *controller_inputs],
+                "Apply only changed G7 declarations/views before browser execution", ("node", "php", "g7", "browser"),
+                True, reusable=False, execution="controller")
+            before.append(gates["browser-runtime-sync"])
+        add("browser-assets", [*command, "build", "--root", str(root.resolve()), "--runtime", runtime, "--apply"], inputs,
+            "Require candidate source/env/dist fingerprint before browser execution; reuse only matching assets",
+            ("node", "g7", "browser"), True, reusable=False, execution="controller", depends_on=[g.name for g in before])
+        plan.gates.extend([*before, gates["browser-assets"]])
+        plan.gates.extend(replace(gate, depends_on=("browser-assets",)) for gate in browser_gates)
     return plan

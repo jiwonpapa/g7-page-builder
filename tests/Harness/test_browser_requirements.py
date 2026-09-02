@@ -1,14 +1,16 @@
 from pathlib import Path
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, TEXT, PARITY, SITE_PART, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, SITE_PART, CATALOG_PREFIXES, scenarios_for
+import json
+import re
 from tools.g7pb.planner import build_plan
 
 
 class BrowserRequirementsTests(unittest.TestCase):
     def test_existing_behavior_selected_without_modifying_spec(self):
         self.assertEqual(scenarios_for(["resources/js/editor/richTextEditing.tsx"]), (TEXT,))
-        self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])), {PAGE, TEXT})
+        self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])), {PAGE, TEXT, STRUCTURE_THEME})
 
     def test_sources_deduplicate_workflows_and_do_not_select_unrelated_store(self):
         self.assertEqual(scenarios_for(["resources/js/editor/fontSize.ts", "resources/js/editor/richTextEditing.tsx"]), (TEXT,))
@@ -16,8 +18,10 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(scenarios_for(["README.md", "tools/g7pb/planner.py"]), ())
 
     def test_layout_rendering_uses_real_parity_scenario(self):
-        self.assertEqual(scenarios_for(["resources/js/editor/catalogBlocks.tsx"]), (PARITY,))
-        self.assertEqual(scenarios_for(["resources/js/editor/layoutCatalogBlocks.tsx"]), (PAGE,))
+        catalog = scenarios_for(["resources/js/editor/catalogBlocks.tsx"])[0]
+        self.assertEqual(catalog.spec, PARITY.spec)
+        self.assertEqual(catalog.preset_prefixes, CATALOG_PREFIXES["catalogBlocks.tsx"])
+        self.assertEqual(set(scenarios_for(["resources/js/editor/layoutCatalogBlocks.tsx"])), {NESTED, STRUCTURE_THEME})
 
     def test_missing_required_scenario_does_not_silently_pass(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -49,6 +53,44 @@ class BrowserRequirementsTests(unittest.TestCase):
                 self.assertTrue(plan.requirements["browser"])
                 self.assertEqual(gate.deferred, phase == "submission")
                 self.assertTrue(gate.runtime)
+
+    def test_nested_command_never_selects_temporary_home_or_all_presets(self):
+        selected = scenarios_for(["resources/js/editor/layoutEditorCommands.ts"])
+        self.assertEqual(set(selected), {NESTED, STRUCTURE_THEME})
+        self.assertIn("--grep", NESTED.arguments())
+        self.assertNotIn("temporary home", NESTED.arguments()[-1])
+
+    def test_shared_helpers_select_ten_named_presets_and_no_page_kit(self):
+        root = Path(__file__).resolve().parents[2]
+        environment = dict(PARITY.environment(root))
+        self.assertEqual(len(environment["G7PB_PRESET_IDS"].split(",")), 10)
+        self.assertIsNone(environment["G7PB_PAGE_KIT_IDS"])
+        self.assertIsNone(environment["G7PB_PARITY_CANDIDATE_DIST"])
+        self.assertFalse(re.search(PARITY.arguments()[-1], "PAGE_KIT_LAYOUT_GATE: unrelated: editor/preview layout"))
+
+    def test_each_catalog_selects_only_declared_families_and_unions_without_duplicates(self):
+        root = Path(__file__).resolve().parents[2]
+        manifest = json.loads((root / "resources/block-packs/builtin-core/manifest.json").read_text())
+        for name, prefixes in CATALOG_PREFIXES.items():
+            with self.subTest(catalog=name):
+                scenario = scenarios_for(["resources/js/editor/" + name])[0]
+                actual = set(dict(scenario.environment(root))["G7PB_PRESET_IDS"].split(","))
+                expected = {p["preset_id"] for p in manifest["presets"] if p["preset_id"].split(".")[0] in prefixes}
+                self.assertEqual(actual, expected)
+                self.assertLess(len(actual), len(manifest["presets"]))
+        selected = scenarios_for(["resources/js/editor/richTextEditing.tsx", "resources/js/editor/canvasEditingContract.ts"])
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(set(selected[0].titles), set(TEXT.titles + CONTROLS.titles))
+
+    def test_missing_preset_selector_is_an_error_not_full_catalog_fallback(self):
+        from dataclasses import replace
+        with self.assertRaisesRegex(ValueError, "No declared parity preset"):
+            replace(PARITY, preset_prefixes=("unknown-preset-family",)).environment(Path(__file__).resolve().parents[2])
+
+    def test_compiler_collaborators_have_separate_behavior_scopes(self):
+        self.assertEqual(scenarios_for(["src/Application/Compilation/RichTextSanitizer.php"]), (TEXT,))
+        self.assertEqual(scenarios_for(["src/Application/Compilation/CompilationUrlPolicy.php"]), (PAGE,))
+        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (PARITY,))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import type { PageBuilderBlock, PageBuilderDocument } from '../../resources/js/documents/types';
+import { replacePuckRichTextField } from './support/richTextInput';
 import {
   authenticateEditorInteractionAdmin,
   cleanupOwnedEditorInteractionDocument,
@@ -257,8 +258,7 @@ test.describe('Editor structure and theme contracts', () => {
       const stacks = frame.getByTestId('page-builder-layout-stack');
       const heading = frame.locator('[data-g7pb-inline-field="heading"][contenteditable], [data-g7pb-inline-field="heading"] [contenteditable]');
       await expect(heading).toHaveCount(1);
-      await heading.click();
-      await heading.fill(COPY.editedHeading);
+      await replacePuckRichTextField(page, heading, COPY.editedHeading, 'nested heading');
       await expect(frame.getByText(COPY.siblingBody, { exact: true })).toBeVisible();
       // Editing inline text need not select its Puck container. Select each
       // structure explicitly through Outline's visible row button.

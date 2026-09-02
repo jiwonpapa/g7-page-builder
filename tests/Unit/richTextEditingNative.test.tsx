@@ -23,6 +23,7 @@ afterEach(() => {
   for (const cleanup of mounted.splice(0)) cleanup();
   document.body.replaceChildren();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 function editorState(overrides: Record<string, boolean> = {}): Record<string, boolean> {
@@ -48,7 +49,7 @@ function renderInlineMenu(
   field: ReturnType<typeof createRichTextField>,
   editor: unknown,
   readOnly = false,
-): { container: HTMLDivElement; rerender: (nextState: Record<string, boolean>) => Promise<void> } {
+): { container: HTMLDivElement; rerender: (nextState: Record<string, boolean>, next?: { editor?: unknown; readOnly?: boolean }) => Promise<void> } {
   const InlineMenu = field.renderInlineMenu;
   const container = document.createElement('div');
   document.body.append(container);
@@ -57,7 +58,9 @@ function renderInlineMenu(
 
   return {
     container,
-    rerender: async (nextState: Record<string, boolean>): Promise<void> => {
+    rerender: async (nextState: Record<string, boolean>, next?: { editor?: unknown; readOnly?: boolean }): Promise<void> => {
+      if (next && 'editor' in next) editor = next.editor;
+      if (next?.readOnly !== undefined) readOnly = next.readOnly;
       await act(async () => {
         root.render(
           <InlineMenu editor={editor as never} editorState={nextState as never} readOnly={readOnly}>
@@ -70,6 +73,101 @@ function renderInlineMenu(
 }
 
 describe('Puck-native rich-text editing', () => {
+  function markEditor() {
+    const chain = { focus: vi.fn(() => chain), setMark: vi.fn(() => chain), unsetMark: vi.fn(() => chain), run: vi.fn(() => true) };
+    return { state: { selection: { empty: false, from: 3, to: 7 } }, chain: vi.fn(() => chain), operations: chain };
+  }
+
+  async function pointer(element: Element, type: 'pointerdown' | 'pointerup'): Promise<void> {
+    await act(async () => { element.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, button: 0, pointerId: 71, pointerType: 'touch',
+    })); });
+  }
+
+  async function openFont(container: HTMLElement): Promise<HTMLButtonElement> {
+    const trigger = container.querySelector('[data-testid="page-builder-richtext-font"]');
+    if (!trigger) throw new Error('Expected the font control');
+    await pointer(trigger, 'pointerdown');
+    const option = [...document.body.querySelectorAll<HTMLButtonElement>('[role="option"]')]
+      .find(element => element.textContent?.includes('명조'));
+    if (!option) throw new Error('Expected the serif option');
+    return option;
+  }
+
+  it('does not let a delayed font close dismiss a subsequently opened tone menu', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const editor = markEditor();
+    const rendered = renderInlineMenu(createRichTextField('본문'), editor);
+    await rendered.rerender(editorState());
+    const option = await openFont(rendered.container);
+    await pointer(option, 'pointerdown');
+    await pointer(option, 'pointerup');
+    const tone = rendered.container.querySelector('[data-testid="page-builder-richtext-tone"]');
+    if (!tone) throw new Error('Expected the tone control');
+    await pointer(tone, 'pointerdown');
+    expect(tone.getAttribute('aria-expanded')).toBe('true');
+    await act(async () => { vi.advanceTimersByTime(60); });
+    expect(tone.getAttribute('aria-expanded')).toBe('true');
+    expect(document.body.querySelector('[role="listbox"]')?.getAttribute('aria-label')).toBe('선택한 글자 색상');
+    expect(editor.operations.run).toHaveBeenCalledOnce();
+  });
+
+  it('does not reopen narrow advanced controls by keyboard after becoming readonly', async () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 360 });
+    try {
+      const rendered = renderInlineMenu(createRichTextField('본문'), markEditor());
+      await rendered.rerender(editorState());
+      const more = rendered.container.querySelector<HTMLButtonElement>('[data-testid="page-builder-richtext-more"]');
+      if (!more) throw new Error('Expected narrow advanced control');
+      await pointer(more, 'pointerdown');
+      expect(document.body.querySelector('[data-testid="page-builder-richtext-advanced-panel"]')).not.toBeNull();
+      await rendered.rerender(editorState(), { readOnly: true });
+      expect(document.body.querySelector('[data-testid="page-builder-richtext-advanced-panel"]')).toBeNull();
+      await act(async () => { more.click(); });
+      expect(document.body.querySelector('[data-testid="page-builder-richtext-advanced-panel"]')).toBeNull();
+      expect(more.disabled).toBe(true);
+      await rendered.rerender(editorState(), { readOnly: false });
+      await act(async () => { more.click(); });
+      expect(document.body.querySelector('[data-testid="page-builder-richtext-advanced-panel"]')).not.toBeNull();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+    }
+  });
+
+  it.each(['editor', 'readonly'] as const)('discards a pending option gesture after %s changes and permits a fresh gesture', async (change) => {
+    const first = markEditor();
+    const second = markEditor();
+    const rendered = renderInlineMenu(createRichTextField('본문'), first);
+    await rendered.rerender(editorState());
+    const staleOption = await openFont(rendered.container);
+    await pointer(staleOption, 'pointerdown');
+    await rendered.rerender(editorState(), change === 'editor' ? { editor: second } : { readOnly: true });
+    await pointer(staleOption, 'pointerup');
+    expect(first.operations.run).not.toHaveBeenCalled();
+    expect(second.operations.run).not.toHaveBeenCalled();
+    expect(staleOption.isConnected).toBe(false);
+    await rendered.rerender(editorState(), { editor: second, readOnly: false });
+    const freshOption = await openFont(rendered.container);
+    await pointer(freshOption, 'pointerdown');
+    await pointer(freshOption, 'pointerup');
+    expect(second.operations.run).toHaveBeenCalledOnce();
+  });
+
+  it('discards the previous editor link form on an editor switch', async () => {
+    const first = { ...markEditor(), getAttributes: vi.fn(() => ({ href: '/first' })) };
+    const second = { ...markEditor(), getAttributes: vi.fn(() => ({ href: '/second' })) };
+    const rendered = renderInlineMenu(createRichTextField('본문'), first);
+    await rendered.rerender(editorState());
+    const button = rendered.container.querySelector<HTMLButtonElement>('[aria-label="링크 편집"]');
+    await act(async () => button?.click());
+    expect(document.body.querySelector<HTMLInputElement>('input[aria-label="링크 주소"]')?.value).toBe('/first');
+    await rendered.rerender(editorState(), { editor: second });
+    expect(document.body.querySelector('input[aria-label="링크 주소"]')).toBeNull();
+    await act(async () => button?.click());
+    expect(document.body.querySelector<HTMLInputElement>('input[aria-label="링크 주소"]')?.value).toBe('/second');
+  });
+
   it('renders from Puck editorState inside RichTextMenu without direct subscriptions', async () => {
     const editor = {
       state: { selection: { empty: true, from: 8, to: 8 } },

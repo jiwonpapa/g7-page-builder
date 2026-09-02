@@ -18,7 +18,7 @@ from .state import CoordError, MetadataTransaction, Store, defer_interrupts, new
 
 PROFILES = {"scoped", "frontend", "php", "mixed", "g7", "docs", "full"}
 AREAS = {"integration", "runtime", "migration", "shared-contract", "version"}
-COMMANDS = ("claim status check submit resubmit restack restack-squash replace-submitted "
+COMMANDS = ("claim status check submit resubmit restack restack-squash replace-active replace-submitted "
             "replace-submitted-expanded integrate integrate-scoped integrate-batch verify "
             "finish release runtime-guard release-guard").split()
 
@@ -324,6 +324,11 @@ class Coordinator:
                 transaction.commit()
                 self.fault("AFTER_REPLACE_METADATA")
         note(f"{'REPLACED_SUBMITTED_EXPANDED' if expanded else 'REPLACED_SUBMITTED'} task={args.task} supersedes={args.supersedes} base={base} paths={paths or 'none'} areas={old['areas'] or 'none'} profile={old['profile']}")
+
+    def replace_active(self, args) -> None:
+        from .active_replacement import replace_active
+        evidence = replace_active(self, args, owned_paths=owned_paths, validate_paths=validate_paths, allowed_areas=AREAS)
+        note(f"REPLACED_ACTIVE task={args.task} supersedes={args.supersedes} base={self.git.head()} evidence={evidence}")
 
     def integrate(self, args) -> None:
         batch = args.command == "integrate-batch"

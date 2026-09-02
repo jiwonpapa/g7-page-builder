@@ -1,5 +1,6 @@
 import type { Data } from '@puckeditor/core';
-import type { BlockAppearance, BlockMotion, CtaBlockProps, ElementAppearanceMap, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/types';
+import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, BlockVisibility, CtaBlockProps, ElementAppearanceMap, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/types';
+import type { BlockContainerEditorProps } from './blockAppearance';
 import type { CatalogEditorComponents } from './catalogBlocks';
 import type { LayoutCatalogEditorComponents } from './layoutCatalogBlocks';
 import type { PageDesignProps } from './pageDesignTokens';
@@ -70,11 +71,20 @@ export interface ContactEditorProps {
   motion: BlockMotion;
 }
 
-export interface EditorComponents extends CatalogEditorComponents, LayoutCatalogEditorComponents {
+interface BuiltInEditorComponents extends CatalogEditorComponents, LayoutCatalogEditorComponents {
   Hero: HeroEditorProps;
   Features: FeaturesEditorProps;
   Cta: CtaEditorProps;
   Contact: ContactEditorProps;
 }
+
+export type CommonEditorProps = Partial<BlockContainerEditorProps> & {
+  responsiveOverrides?: BlockResponsiveOverrides;
+  __g7pbVisibilityAudience?: BlockVisibility['audience'];
+};
+
+export type EditorComponents = {
+  [Name in keyof BuiltInEditorComponents]: BuiltInEditorComponents[Name] & CommonEditorProps;
+};
 
 export type PuckEditorData = Data<EditorComponents, PageDesignProps>;

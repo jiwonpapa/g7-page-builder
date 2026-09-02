@@ -91,6 +91,47 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertIn("--grep", NESTED.arguments())
         self.assertNotIn("temporary home", NESTED.arguments()[-1])
 
+    def test_typed_puck_helpers_select_only_their_existing_code_workflows(self):
+        expected = {
+            "resources/js/editor/blockInspectorFields.tsx": (PAGE,),
+            "resources/js/editor/puckLayoutData.ts": (NESTED, STRUCTURE_THEME),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            for path, scenarios in expected.items():
+                with self.subTest(path=path):
+                    selected = scenarios_for([path])
+                    self.assertEqual(set(selected), set(scenarios))
+                    for scenario in selected:
+                        self.assertEqual(scenario.projects, ("desktop",))
+                        self.assertEqual(scenario.preset_prefixes, ())
+                        self.assertTrue(all(value is None for _, value in scenario.environment(Path(directory))))
+                        self.assertNotIn("ALL_PRESET_LAYOUT_GATE", " ".join(scenario.arguments()))
+            together = scenarios_for([*expected, "resources/js/editor/layoutEditorCommands.ts"])
+            self.assertEqual(len(together), 2)
+            lifecycle = next(scenario for scenario in together if scenario.spec == PAGE.spec)
+            self.assertEqual(set(lifecycle.titles), set(PAGE.titles + NESTED.titles))
+
+    def test_typed_puck_helpers_require_units_and_defer_only_runtime_execution(self):
+        for source in ("resources/js/editor/blockInspectorFields.tsx", "resources/js/editor/puckLayoutData.ts"):
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                unit = "tests/Unit/" + Path(source).stem + ".test.ts"
+                files = {source: "export const fixture = 1;", unit: "import '../../" + source + "';"}
+                files.update({scenario.spec: "import {test} from '@playwright/test';" for scenario in scenarios_for([source])})
+                for name, content in files.items():
+                    path = root / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(content)
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(source=source, phase=phase):
+                        plan = build_plan(root, [source], phase=phase)
+                        self.assertFalse(plan.full)
+                        self.assertIn("unit:" + unit, {gate.name for gate in plan.gates})
+                        browsers = [gate for gate in plan.gates if gate.name.startswith("browser:")]
+                        self.assertEqual({gate.name for gate in browsers}, {"browser:" + item.spec for item in scenarios_for([source])})
+                        self.assertTrue(all(gate.runtime for gate in browsers))
+                        self.assertTrue(all(gate.deferred == (phase == "submission") for gate in browsers))
+
     def test_shared_helpers_select_ten_named_presets_and_no_page_kit(self):
         root = Path(__file__).resolve().parents[2]
         environment = dict(PARITY.environment(root))

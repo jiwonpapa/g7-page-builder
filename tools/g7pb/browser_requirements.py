@@ -89,6 +89,8 @@ RULES = (
     (("resources/js/editor/PuckDocumentBoundary.tsx", "resources/js/editor/editorDocumentBoundary.ts",
       "resources/js/editor/draftPersistence.ts"), (DOCUMENT_BOUNDARY,)),
     (("resources/js/editor/layout*", "resources/js/documents/layout*"), (NESTED, STRUCTURE_THEME)),
+    (("resources/js/editor/puckLayoutData.ts",), (NESTED, STRUCTURE_THEME)),
+    (("resources/js/editor/blockInspectorFields.tsx",), (PAGE,)),
     (("resources/js/editor/richText*", "resources/js/editor/fontSize.ts"), (TEXT,)),
     (("resources/js/editor/canvas*",), (TEXT, CONTROLS)),
     (("resources/js/editor/editorOverlaySafeZone.ts", "resources/js/editor/editorViewportPolicy.ts"), (CONTROLS,)),

@@ -1175,17 +1175,8 @@
       "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Puck document conversion, rendering and editor coordination still share one adapter.",
       "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
       "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 2758,
-        "29602f305a410e25451d4f61c6a0b05075e9cdefdbfca1f2d4068b6682e32f11": 20097
-      }
-    },
-    {
-      "path": "resources/js/editor/PuckEditorAdapter.tsx",
-      "rule": "TS-UNSAFE",
-      "reason": "Existing Puck or legacy record conversion bypasses inference with double or never assertions; only exact audited bridges are retained.",
-      "resolveWhen": "Construct the declared result after runtime validation or use typed partial dispatch, then remove these exact unsafe assertions.",
-      "fingerprints": {
-        "b8ae5b1552228d86a42d4bedbd7375d6f59b81c6c14ae022869d22d942d72ec3": 1
+        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 2645,
+        "29602f305a410e25451d4f61c6a0b05075e9cdefdbfca1f2d4068b6682e32f11": 19349
       }
     },
     {
@@ -1205,27 +1196,6 @@
       "fingerprints": {
         "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 851,
         "29602f305a410e25451d4f61c6a0b05075e9cdefdbfca1f2d4068b6682e32f11": 13392
-      }
-    },
-    {
-      "path": "resources/js/editor/layoutCatalogBlocks.tsx",
-      "rule": "TS-UNSAFE",
-      "reason": "Existing Puck or legacy record conversion bypasses inference with double or never assertions; only exact audited bridges are retained.",
-      "resolveWhen": "Construct the declared result after runtime validation or use typed partial dispatch, then remove these exact unsafe assertions.",
-      "fingerprints": {
-        "aabd48e3461369289f9419129daa0d8545c331843f46209b8b97b6b21fc8b03f": 1,
-        "ccd14a972ad6ab6d15fcdb52c23abfb172495bfd4e30ba3fae05c7d4bbf73ccb": 1,
-        "63351152442ac73d634e09a3de395f631975fa69604f99926f9781c530c91d11": 1,
-        "c01d2c4bf5bae71ccd3fe7f3fe19f4a45a34dbce752d5ba3c6a89075278980a7": 1
-      }
-    },
-    {
-      "path": "resources/js/editor/puckDocumentAdapter.ts",
-      "rule": "TS-UNSAFE",
-      "reason": "Existing Puck or legacy record conversion bypasses inference with a double assertion; only this exact bridge is retained.",
-      "resolveWhen": "Construct the declared result after runtime validation, or isolate a typed vendor boundary and remove the double assertion.",
-      "fingerprints": {
-        "585efcc4035c3f7c82cce8ecbac19954c1ed988a3a2e3c78e9e7c7598e7dc94b": 1
       }
     },
     {

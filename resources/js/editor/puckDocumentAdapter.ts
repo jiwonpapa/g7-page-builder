@@ -1,6 +1,7 @@
 import type { PageBuilderBlock, PageBuilderDocument, ScalarToken } from '../documents/types';
 import { validateLayoutDocument } from '../documents/layoutPolicy';
-import type { PuckEditorData } from './PuckEditorAdapter';
+import type { PuckEditorData } from './puckEditorTypes';
+import { puckLayoutSlot } from './puckLayoutData';
 import { blockContainerEditorProps } from './blockAppearance';
 import { pageDesignToTokens, tokensToPageDesign } from './pageDesignTokens';
 
@@ -48,7 +49,7 @@ export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBl
   const metadata: Record<string, BlockRoundTripMetadata> = {};
   const convertedBlocks = document.blocks.map(convertBlock);
   const collectMetadata = (block: PageBuilderBlock, initialPuckBlock: PuckEditorData['content'][number]): void => {
-    const initialLayoutValue = (initialPuckBlock.props as Record<string, unknown>).layout;
+    const initialLayoutValue = 'layout' in initialPuckBlock.props ? initialPuckBlock.props.layout : undefined;
     metadata[block.instance_id.toLowerCase()] = {
       blockVersion: block.block_version,
       hadSlots: Object.prototype.hasOwnProperty.call(block, 'slots'),
@@ -64,10 +65,10 @@ export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBl
         || Object.prototype.hasOwnProperty.call(block.props, 'loop'),
     };
     for (const [slotName, children] of Object.entries(block.slots ?? {})) {
-      const convertedChildren = (initialPuckBlock.props as Record<string, unknown>)[slotName];
-      if (!Array.isArray(convertedChildren)) continue;
+      const convertedChildren = puckLayoutSlot(initialPuckBlock, slotName);
+      if (!convertedChildren) continue;
       children.forEach((child, index) => {
-        const convertedChild = convertedChildren[index] as PuckEditorData['content'][number] | undefined;
+        const convertedChild = convertedChildren[index];
         if (convertedChild) collectMetadata(child, convertedChild);
       });
     }
@@ -81,14 +82,11 @@ export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBl
       root: { props: tokensToPageDesign(document.tokens) },
       content: document.blocks.map((block, index) => {
         const puckBlock = convertedBlocks[index];
-        return {
-          ...puckBlock,
-          props: {
-            ...puckBlock.props,
-            ...blockContainerEditorProps(block.props.appearance),
+        return Object.assign({}, puckBlock, {
+          props: Object.assign({}, puckBlock.props, blockContainerEditorProps(block.props.appearance), {
             __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',
-          },
-        } as unknown as PuckEditorData['content'][number];
+          }),
+        });
       }),
     },
     context: {

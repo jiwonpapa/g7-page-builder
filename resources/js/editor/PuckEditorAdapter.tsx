@@ -1,5 +1,6 @@
 import { activateStructureEditing, asString, canonicalBlockToPuck, canonicalToPuck, DEFAULT_FEATURES, idToUuid, isSplitHeroLayout, normalizeFeatureItems, normalizeTheme, puckBlockToCanonical, puckToCanonical } from './puckBlockCodec';
 import { editorInsertionDestination, editorItemLocations, resolveEditorSelection } from './puckEditorSelection';
+import { StableSelectField, withBlockContainerFields } from './blockInspectorFields';
 import { PuckDocumentBoundary, usePuckDocumentBoundary } from './PuckDocumentBoundary';
 import type { ContactEditorProps, CtaEditorProps, EditorComponents, FeaturesEditorProps, HeroEditorProps, PuckEditorData } from './puckEditorTypes';
 export { activateStructureEditing, canonicalToPuck, puckToCanonical } from './puckBlockCodec';
@@ -52,7 +53,6 @@ import {
 } from '../blocks/runtimeRegistry';
 import type { BlockCatalogItem } from '../blocks/types';
 import {
-  BLOCK_CONTAINER_FIELDS,
   blockContainerClassName,
   mergeBlockContainerAppearance,
 } from './blockAppearance';
@@ -129,7 +129,6 @@ import {
   type PageDesignProps,
 } from './pageDesignTokens';
 import {
-  createResponsiveAppearanceField,
   responsiveClassName,
 } from './responsiveBlockStyle';
 import {
@@ -471,49 +470,6 @@ function StableInputField({
   );
 }
 
-function StableSelectField<TValue extends string>({
-  value,
-  onChange,
-  readOnly,
-  testId,
-  options,
-  label,
-  help,
-}: {
-  value: TValue;
-  onChange: (value: TValue) => void;
-  readOnly?: boolean;
-  testId: string;
-  options: Array<{ label: string; value: TValue }>;
-  label?: string;
-  help?: string;
-}): React.ReactElement {
-  const [draftValue, setDraftValue] = useState(value);
-  useEffect(() => setDraftValue(value), [value]);
-
-  return (
-    <label className={label ? 'g7pb-design-field' : undefined}>
-      {label ? <span>{label}</span> : null}
-      {help ? <small>{help}</small> : null}
-      <select
-        className="g7pb-field-control"
-        data-testid={testId}
-        value={draftValue}
-        disabled={readOnly}
-        onChange={(event) => {
-          const nextValue = event.target.value as TValue;
-          setDraftValue(nextValue);
-          onChange(nextValue);
-        }}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 function StableColorField({
   value,
   onChange,
@@ -550,50 +506,6 @@ function createPageColorField(label: string, testId: string) {
       readOnly?: boolean;
     }) => <StableColorField value={value} onChange={onChange} readOnly={readOnly} testId={testId} label={label} />,
   };
-}
-
-const REQUIRED_INSPECTOR_FIELD_NAMES = new Set(['alt', 'imageAlt', 'avatarAlt']);
-
-function markRequiredInspectorFields(fields: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(fields).map(([name, field]) => {
-    if (!field || typeof field !== 'object' || Array.isArray(field)) return [name, field];
-    const next = { ...(field as Record<string, unknown>) };
-    if (REQUIRED_INSPECTOR_FIELD_NAMES.has(name) && typeof next.label === 'string' && !next.label.includes('(필수)')) {
-      next.label = `${next.label} (필수)`;
-    }
-    if (next.arrayFields && typeof next.arrayFields === 'object' && !Array.isArray(next.arrayFields)) {
-      next.arrayFields = markRequiredInspectorFields(next.arrayFields as Record<string, unknown>);
-    }
-    return [name, next];
-  }));
-}
-
-function withBlockContainerFields<TComponents extends Record<string, { fields?: Record<string, unknown> }>>(
-  components: TComponents,
-): TComponents {
-  const containerFields = Object.fromEntries(Object.entries(BLOCK_CONTAINER_FIELDS).map(([name, field]) => [name, {
-    type: 'custom' as const,
-    label: field.label,
-    render: ({ value, onChange, readOnly }: {
-      value: string;
-      onChange: (value: string) => void;
-      readOnly?: boolean;
-    }) => <StableSelectField
-      value={value}
-      onChange={onChange}
-      readOnly={readOnly}
-      testId={`page-builder-block-${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`}
-      options={field.options}
-    />,
-  }]));
-  const stableFields = { ...containerFields, responsiveOverrides: createResponsiveAppearanceField() };
-  return Object.fromEntries(Object.entries(components).map(([name, component]) => [name, name.startsWith('Layout') ? component : {
-    ...component,
-    fields: markRequiredInspectorFields({
-      ...(component.fields ?? {}),
-      ...stableFields,
-    }),
-  }])) as unknown as TComponents;
 }
 
 function BlockFrame({

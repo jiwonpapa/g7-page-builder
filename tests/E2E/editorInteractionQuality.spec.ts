@@ -610,6 +610,60 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<voi
       { x: visible.left + insetX, y: visible.bottom - insetY },
       { x: visible.right - insetX, y: visible.bottom - insetY },
     ];
+    const points = candidates.map((point) => {
+      const hit = element.ownerDocument.elementFromPoint(point.x, point.y);
+      return {
+        ...point,
+        hit: hit === element || (hit !== null && element.contains(hit)),
+        hitClassName: hit instanceof HTMLElement ? hit.className : '',
+        hitTag: hit?.tagName ?? '',
+      };
+    });
+    const diagnostics = points[0]?.hit ? undefined : (() => {
+      const snapshot = (target: Element) => {
+        const computed = view.getComputedStyle(target);
+        const bounds = target.getBoundingClientRect();
+        return {
+          isConnected: target.isConnected,
+          className: target.getAttribute('class'),
+          style: target.getAttribute('style'),
+          computed: {
+            visibility: computed.visibility,
+            display: computed.display,
+            pointerEvents: computed.pointerEvents,
+            opacity: computed.opacity,
+          },
+          rect: {
+            bottom: bounds.bottom,
+            height: bounds.height,
+            left: bounds.left,
+            right: bounds.right,
+            top: bounds.top,
+            width: bounds.width,
+          },
+        };
+      };
+      const layer = element.closest('.g7pb-richtext-floating-layer');
+      return {
+        control: snapshot(element),
+        floatingLayer: layer ? {
+          ...snapshot(layer),
+          ready: layer.getAttribute('data-g7pb-floating-ready'),
+        } : null,
+        actionBars: Array.from(element.ownerDocument.querySelectorAll('[data-g7pb-selected-block-actionbar="true"]')).map((actionBar) => ({
+          ...snapshot(actionBar),
+          ready: actionBar.getAttribute('data-g7pb-safe-zone-ready'),
+          placement: actionBar.getAttribute('data-g7pb-safe-zone-placement'),
+          rangeActive: actionBar.getAttribute('data-g7pb-range-editing-active'),
+          safeClip: {
+            left: actionBar.getAttribute('data-g7pb-safe-clip-left'),
+            top: actionBar.getAttribute('data-g7pb-safe-clip-top'),
+            right: actionBar.getAttribute('data-g7pb-safe-clip-right'),
+            bottom: actionBar.getAttribute('data-g7pb-safe-clip-bottom'),
+          },
+        })),
+      };
+    })();
     return {
       controlRect: {
         bottom: rect.bottom,
@@ -619,15 +673,8 @@ async function assertPointerReachable(page: Page, control: Locator): Promise<voi
         top: rect.top,
         width: rect.width,
       },
-      points: candidates.map((point) => {
-        const hit = element.ownerDocument.elementFromPoint(point.x, point.y);
-        return {
-          ...point,
-          hit: hit === element || (hit !== null && element.contains(hit)),
-          hitClassName: hit instanceof HTMLElement ? hit.className : '',
-          hitTag: hit?.tagName ?? '',
-        };
-      }),
+      points,
+      diagnostics,
       viewport: { height: view.innerHeight, width: view.innerWidth },
     };
   });

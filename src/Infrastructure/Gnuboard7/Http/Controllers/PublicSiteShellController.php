@@ -5,32 +5,30 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controller
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 
 final class PublicSiteShellController
 {
     public function __construct(
         private readonly SitePartService $siteParts,
-        private readonly SitePartHtmlCompiler $compiler,
     ) {}
 
     public function show(Request $request): JsonResponse
     {
-        $locale = $request->query('locale', $request->getLocale());
+        $explicitLocale = $request->query->has('locale');
+        $locale = $explicitLocale ? $request->query('locale') : app()->getLocale();
         if (! is_string($locale) || preg_match('/^[a-z]{2,3}(?:-[A-Z]{2})?$/', $locale) !== 1) {
             return $this->disabled('invalid-locale');
         }
 
         try {
-            $header = $this->siteParts->published('header', $locale);
-            $footer = $this->siteParts->published('footer', $locale);
-            if ($header === null || $footer === null) {
+            $published = $this->siteParts->publishedSet($locale);
+            if ($published === null || $published->header === null || $published->footer === null) {
                 return $this->disabled('not-published');
             }
 
-            $headerArtifact = $this->compiler->compile($header->document, $header->revision);
-            $footerArtifact = $this->compiler->compile($footer->document, $footer->revision);
+            $headerArtifact = $published->header;
+            $footerArtifact = $published->footer;
             $representation = hash('sha256', implode(':', [
                 $locale,
                 $headerArtifact->artifactSha256,
@@ -47,13 +45,17 @@ final class PublicSiteShellController
                         'header_html' => $headerArtifact->html,
                         'footer_html' => $footerArtifact->html,
                         'artifact_sha256' => $representation,
-                        'compiler_version' => SitePartHtmlCompiler::COMPILER_VERSION,
-                        'header_revision' => $header->revision,
-                        'footer_revision' => $footer->revision,
+                        'compiler_version' => $headerArtifact->compilerVersion,
+                        'footer_compiler_version' => $footerArtifact->compilerVersion,
+                        'header_revision' => $headerArtifact->sourceRevision,
+                        'footer_revision' => $footerArtifact->sourceRevision,
                     ],
                 ],
             ], 200, [
-                'Cache-Control' => 'public, max-age=30, stale-while-revalidate=300',
+                // G7 may negotiate locale from an authenticated user's preference.
+                // Only an explicit locale URL is safe for shared cache reuse.
+                'Cache-Control' => $explicitLocale ? 'public, max-age=30, stale-while-revalidate=300' : 'no-store',
+                'Vary' => 'Accept-Language',
                 'ETag' => '"'.$representation.'"',
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\Throwable $exception) {
@@ -81,6 +83,7 @@ final class PublicSiteShellController
             ],
         ], 200, [
             'Cache-Control' => 'no-store',
+            'Vary' => 'Accept-Language',
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 }

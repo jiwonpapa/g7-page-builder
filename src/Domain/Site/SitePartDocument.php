@@ -7,18 +7,22 @@ namespace Modules\Jiwonpapa\PageBuilder\Domain\Site;
  */
 final readonly class SitePartDocument
 {
+    /** @var list<array<string, mixed>> */
+    public array $blocks;
+
     /**
      * @param  array<string, string|int|float|bool|null>  $tokens
-     * @param  list<array<string, mixed>>  $blocks
+     * @param  list<array<string, mixed>>|SitePartBlocks  $blocks
      */
     public function __construct(
         public string $sitePartId,
         public string $kind,
         public string $locale,
         public array $tokens,
-        public array $blocks,
+        array|SitePartBlocks $blocks,
         public string $schemaVersion = 'g7-page-builder/site-part/v1',
     ) {
+        $this->blocks = ($blocks instanceof SitePartBlocks ? $blocks : SitePartBlocks::fromArray($blocks))->toArray();
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $this->sitePartId) !== 1) {
             throw new \InvalidArgumentException('Site Part id must be a UUID.');
         }
@@ -89,6 +93,33 @@ final readonly class SitePartDocument
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
+        return self::fromPayload($data);
+    }
+
+    /** @param array<string, mixed> $data */
+    public static function fromStoredArray(array $data): self
+    {
+        $blocks = $data['blocks'] ?? null;
+        if (! is_array($blocks) || ! array_is_list($blocks)) {
+            throw new \InvalidArgumentException('Site Part blocks must be a list.');
+        }
+        foreach ($blocks as $block) {
+            if (! is_array($block)) {
+                throw new \InvalidArgumentException('Each Site Part block must be an object.');
+            }
+        }
+
+        return self::fromPayload($data, SitePartBlocks::fromStoredArray($blocks));
+    }
+
+    public function assertWritable(): void
+    {
+        SitePartBlocks::fromArray($this->blocks);
+    }
+
+    /** @param array<string, mixed> $data */
+    private static function fromPayload(array $data, ?SitePartBlocks $storedBlocks = null): self
+    {
         $tokens = $data['tokens'] ?? [];
         $blocks = $data['blocks'] ?? null;
         if (! is_array($tokens) || ! is_array($blocks)) {
@@ -110,7 +141,7 @@ final readonly class SitePartDocument
             kind: self::requiredString($data, 'kind'),
             locale: self::requiredString($data, 'locale'),
             tokens: $tokens,
-            blocks: array_values($blocks),
+            blocks: $storedBlocks ?? SitePartBlocks::fromArray($blocks),
             schemaVersion: self::requiredString($data, 'schema_version'),
         );
     }

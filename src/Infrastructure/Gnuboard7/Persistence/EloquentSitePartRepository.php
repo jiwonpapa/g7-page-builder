@@ -4,9 +4,12 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
@@ -17,6 +20,8 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\Si
 
 final class EloquentSitePartRepository implements SitePartRepository
 {
+    public function __construct(private readonly SitePartArtifactPort $artifacts = new EloquentSitePartArtifactStore) {}
+
     public function createSet(
         string $title,
         SitePartDocument $header,
@@ -79,6 +84,11 @@ final class EloquentSitePartRepository implements SitePartRepository
                 || $header->active_revision === null || $footer->active_revision === null) {
                 throw new \InvalidArgumentException('Header와 Footer를 모두 발행한 뒤 사용할 수 있습니다.');
             }
+            foreach ([$header, $footer] as $part) {
+                if (! DB::table('g7pb_site_part_artifacts')->where('site_part_id', $part->id)->where('source_revision', $part->active_revision)->exists()) {
+                    throw new \InvalidArgumentException('Prepare the published Site Part artifacts before activating this set.');
+                }
+            }
 
             $updatedAt = new \DateTimeImmutable;
             SitePartSetRecord::query()->where('locale', $locale)->where('is_active', true)->update([
@@ -130,8 +140,10 @@ final class EloquentSitePartRepository implements SitePartRepository
         int $headerExpectedLockVersion,
         int $footerExpectedLockVersion,
         ?int $actorId,
+        SitePartArtifact $headerArtifact,
+        SitePartArtifact $footerArtifact,
     ): SitePartSetSnapshot {
-        return DB::transaction(function () use ($setId, $headerExpectedLockVersion, $footerExpectedLockVersion, $actorId): SitePartSetSnapshot {
+        return DB::transaction(function () use ($setId, $headerExpectedLockVersion, $footerExpectedLockVersion, $actorId, $headerArtifact, $footerArtifact): SitePartSetSnapshot {
             /** @var Collection<int, SitePartRecord> $parts */
             $parts = SitePartRecord::query()->where('set_id', $setId)->orderBy('kind')->lockForUpdate()->get()->keyBy('kind');
             $header = $parts->get('header');
@@ -143,6 +155,9 @@ final class EloquentSitePartRepository implements SitePartRepository
             $this->assertLock($footer, $footerExpectedLockVersion);
             $updatedAt = new \DateTimeImmutable;
             foreach ([$header, $footer] as $record) {
+                $artifact = $record->kind === 'header' ? $headerArtifact : $footerArtifact;
+                $this->assertPublicationArtifact($record, $artifact);
+                $this->artifacts->store($record->id, $artifact);
                 if ($record->active_revision === $record->current_revision) {
                     continue;
                 }
@@ -201,6 +216,11 @@ final class EloquentSitePartRepository implements SitePartRepository
         return $this->snapshot($record, $record->active_revision);
     }
 
+    public function findPublishedSet(string $locale): ?PublishedSitePartSet
+    {
+        return $this->artifacts->findPublishedSet($locale);
+    }
+
     public function listRevisions(string $sitePartId, int $limit): array
     {
         /** @var Collection<int, SitePartRevisionRecord> $records */
@@ -242,11 +262,13 @@ final class EloquentSitePartRepository implements SitePartRepository
         });
     }
 
-    public function publish(string $sitePartId, int $expectedLockVersion, ?int $actorId): SitePartSnapshot
+    public function publish(string $sitePartId, int $expectedLockVersion, ?int $actorId, SitePartArtifact $artifact): SitePartSnapshot
     {
-        return DB::transaction(function () use ($sitePartId, $expectedLockVersion, $actorId): SitePartSnapshot {
+        return DB::transaction(function () use ($sitePartId, $expectedLockVersion, $actorId, $artifact): SitePartSnapshot {
             $record = $this->lock($sitePartId);
             $this->assertLock($record, $expectedLockVersion);
+            $this->assertPublicationArtifact($record, $artifact);
+            $this->artifacts->store($record->id, $artifact);
             if ($record->active_revision === $record->current_revision) {
                 return $this->snapshot($record);
             }
@@ -280,6 +302,14 @@ final class EloquentSitePartRepository implements SitePartRepository
         if ($record->lock_version !== $expectedLockVersion) {
             throw new LockConflictException($record->lock_version);
         }
+    }
+
+    private function assertPublicationArtifact(SitePartRecord $record, SitePartArtifact $artifact): void
+    {
+        if ($artifact->sourceRevision !== $record->current_revision || $artifact->kind !== $record->kind) {
+            throw new LockConflictException($record->lock_version);
+        }
+        $this->snapshot($record)->document->assertWritable();
     }
 
     private function snapshot(SitePartRecord $record, ?int $revisionNumber = null): SitePartSnapshot
@@ -384,6 +414,7 @@ final class EloquentSitePartRepository implements SitePartRepository
         int $revision,
         ?int $actorId,
     ): void {
+        $document->assertWritable();
         SitePartRevisionRecord::query()->create([
             'id' => $this->uuidV4(),
             'site_part_id' => $document->sitePartId,
@@ -405,7 +436,7 @@ final class EloquentSitePartRepository implements SitePartRepository
             throw new \RuntimeException('Stored Site Part JSON is invalid.');
         }
 
-        return SitePartDocument::fromArray($data);
+        return SitePartDocument::fromStoredArray($data);
     }
 
     private function uuidV4(): string

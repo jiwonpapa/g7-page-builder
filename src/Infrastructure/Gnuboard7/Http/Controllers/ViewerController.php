@@ -6,10 +6,10 @@ use App\Seo\SeoMiddleware;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SiteShellSnapshot;
@@ -23,7 +23,6 @@ final class ViewerController
         private readonly PageBuilderService $service,
         private readonly SiteShellService $siteShellService,
         private readonly SitePartService $sitePartService,
-        private readonly SitePartHtmlCompiler $sitePartCompiler,
         private readonly ?SeoMiddleware $seo = null,
     ) {}
 
@@ -96,8 +95,9 @@ final class ViewerController
         }
 
         $siteShell = $this->siteShell($page);
-        $siteHeader = $this->sitePart('header', $page);
-        $siteFooter = $this->sitePart('footer', $page);
+        $publishedParts = $this->siteParts($page);
+        $siteHeader = $publishedParts?->header;
+        $siteFooter = $publishedParts?->footer;
 
         return response()
             ->view('g7-page-builder::viewer', [
@@ -128,8 +128,9 @@ final class ViewerController
         }
 
         $siteShell = $this->siteShell($page);
-        $siteHeader = $this->sitePart('header', $page);
-        $siteFooter = $this->sitePart('footer', $page);
+        $publishedParts = $this->siteParts($page);
+        $siteHeader = $publishedParts?->header;
+        $siteFooter = $publishedParts?->footer;
         $etag = '"'.$this->representationSha256($page, $siteShell, $siteHeader, $siteFooter).'"';
 
         if ($request->header('If-None-Match') === $etag) {
@@ -187,21 +188,16 @@ final class ViewerController
         }
     }
 
-    private function sitePart(string $kind, RenderedPage $page): ?SitePartArtifact
+    private function siteParts(RenderedPage $page): ?PublishedSitePartSet
     {
         if (! in_array($page->shellMode, ['builder', 'global'], true)) {
             return null;
         }
 
         try {
-            $snapshot = $this->sitePartService->published($kind, $page->locale);
-
-            return $snapshot === null
-                ? null
-                : $this->sitePartCompiler->compile($snapshot->document, $snapshot->revision);
+            return $this->sitePartService->publishedSet($page->locale);
         } catch (\Throwable $exception) {
             Log::warning('Page Builder Site Part was skipped.', [
-                'kind' => $kind,
                 'locale' => $page->locale,
                 'exception' => $exception,
             ]);

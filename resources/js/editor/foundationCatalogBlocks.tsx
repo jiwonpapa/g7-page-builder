@@ -1,24 +1,17 @@
 import React from 'react';
 import type { Config } from '@puckeditor/core';
+import { CatalogBlockFrame as Frame } from './CatalogBlockFrame';
 
 import {
   createMotionField,
   DEFAULT_BLOCK_MOTION,
-  motionPreviewAttributes,
   normalizeBlockMotion,
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import { CatalogIcon, type CatalogIconName } from './catalogIcon';
-import {
-  decorateCanvasElementStyles,
-  CanvasCurrentElementStylesContext,
-  normalizeElementAppearanceMap,
-  notifyCanvasElementSelection,
-  useCanvasBlockAppearanceClass,
-  useCanvasElementStyles,
-} from './canvasEditingContract';
+import { normalizeElementAppearanceMap } from './canvasEditingContract';
 import {
   BUTTONS_BLOCK_TYPE,
   HEADING_BLOCK_TYPE,
@@ -279,13 +272,6 @@ function surfaceClass(props: AppearanceEditorProps): string {
   return `g7pb-preview-surface--${props.surface} g7pb-preview-spacing--${props.spacing} g7pb-text-scale--${props.textScale ?? 'balanced'} g7pb-text-align--${props.textAlign ?? 'left'}`;
 }
 
-function Frame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
-  const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
-  const containerClassName = useCanvasBlockAppearanceClass(id);
-  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
-    onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
-    {...motionPreviewAttributes(motion)}><CanvasCurrentElementStylesContext.Provider value={resolvedElementStyles}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</CanvasCurrentElementStylesContext.Provider></section>;
-}
 
 function Media({ src, alt, label }: { src: string; alt: string; label: string }): React.ReactElement {
   const safe = safeImage(src);

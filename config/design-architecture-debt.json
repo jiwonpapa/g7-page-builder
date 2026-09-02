@@ -1166,8 +1166,8 @@
       "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Several independent catalog renderers share one module.",
       "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
       "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 851,
-        "29602f305a410e25451d4f61c6a0b05075e9cdefdbfca1f2d4068b6682e32f11": 13392
+        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 844,
+        "29602f305a410e25451d4f61c6a0b05075e9cdefdbfca1f2d4068b6682e32f11": 13267
       }
     },
     {

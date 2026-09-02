@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import type { Config, Field } from '@puckeditor/core';
+import { CatalogBlockFrame as Frame } from './CatalogBlockFrame';
 
 import {
   createMotionField,
   DEFAULT_BLOCK_MOTION,
-  motionPreviewAttributes,
   normalizeBlockMotion,
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
-import { CanvasCurrentElementStylesContext, decorateCanvasElementStyles, normalizeElementAppearanceMap, notifyCanvasElementSelection, useCanvasBlockAppearanceClass, useCanvasElementStyles } from './canvasEditingContract';
+import { normalizeElementAppearanceMap } from './canvasEditingContract';
 import {
   ARTICLE_LIST_BLOCK_TYPE,
   COMPARISON_TABLE_BLOCK_TYPE,
@@ -327,13 +327,6 @@ function surfaceClass(props: AppearanceEditorProps): string {
   return `g7pb-preview-surface--${props.surface} g7pb-preview-spacing--${props.spacing} g7pb-text-scale--${props.textScale ?? 'balanced'} g7pb-text-align--${props.textAlign ?? 'left'}`;
 }
 
-function Frame({ id, type, motion, elementStyles, children }: { id: string; type: string; motion: BlockMotion; elementStyles?: ElementAppearanceMap; children: React.ReactNode }): React.ReactElement {
-  const resolvedElementStyles = useCanvasElementStyles(id, elementStyles);
-  const containerClassName = useCanvasBlockAppearanceClass(id);
-  return <section className={`g7pb-preview-block ${containerClassName}`.trim()} data-testid="page-builder-block" data-block-id={id} data-block-type={type}
-    onPointerDownCapture={(event) => notifyCanvasElementSelection(event, id, type)}
-    {...motionPreviewAttributes(motion)}><CanvasCurrentElementStylesContext.Provider value={resolvedElementStyles}>{decorateCanvasElementStyles(children, resolvedElementStyles)}</CanvasCurrentElementStylesContext.Provider></section>;
-}
 
 function TestimonialsPreview(props: TestimonialsEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="testimonials" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-testimonials g7pb-preview-testimonials--${props.layout} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header><div>{normalizeTestimonials(props.items).map((item, index) => <blockquote key={`${item.name}-${index}`}><span aria-label={`${item.rating}점`}>{'★'.repeat(item.rating)}</span><RichTextCanvasField fieldPath={`items.${index}.quote`} className="g7pb-preview-richtext g7pb-preview-testimonial-quote">{inlineArrayContent(props.items, index, 'quote', item.quote)}</RichTextCanvasField><footer>{safeUrl(item.avatarSrc) ? <img data-g7pb-media-field={`items.${index}.avatarSrc`} src={item.avatarSrc} alt={item.avatarAlt} /> : <i data-g7pb-media-field={`items.${index}.avatarSrc`} aria-hidden="true">{inlineArrayText(props.items, index, 'name', item.name).slice(0, 1)}</i>}<cite><strong data-g7pb-inline-field={`items.${index}.name`}>{inlineArrayContent(props.items, index, 'name', item.name)}</strong><small><span data-g7pb-inline-field={`items.${index}.role`}>{inlineArrayContent(props.items, index, 'role', item.role)}</span> · <span data-g7pb-inline-field={`items.${index}.company`}>{inlineArrayContent(props.items, index, 'company', item.company)}</span></small></cite></footer></blockquote>)}</div></div></Frame>;
@@ -352,7 +345,7 @@ function TabsPreview(props: TabsEditorProps & { id: string }): React.ReactElemen
   const configured = Math.min(Number(props.initialTab), Math.max(items.length - 1, 0));
   const [selected, setSelected] = useState(configured);
   const active = Math.min(selected, Math.max(items.length - 1, 0));
-  return <Frame id={props.id} type="tabs" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-tabs g7pb-preview-tabs--${props.tabVariant} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header><div className="g7pb-preview-tabs__list" role="tablist" onClick={(event) => event.stopPropagation()}>{items.map((item, index) => <button type="button" role="tab" aria-selected={active === index} key={`${item.label}-${index}`} onClick={() => setSelected(index)}><span data-g7pb-inline-field={`items.${index}.label`}>{inlineArrayContent(props.items, index, 'label', item.label)}</span></button>)}</div>{items.map((item, index) => <article role="tabpanel" hidden={active !== index} key={`${item.heading}-${index}`}><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.heading`}>{inlineArrayContent(props.items, index, 'heading', item.heading)}</RichTextCanvasField><RichTextCanvasField fieldPath={`items.${index}.body`}>{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField></article>)}</div></Frame>;
+  return <Frame id={props.id} type="tabs" motion={props.motion} elementStyles={props.elementStyles}><div className={`g7pb-preview-tabs g7pb-preview-tabs--${props.tabVariant} ${surfaceClass(props)}`}><header><small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small><RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField></header><div className="g7pb-preview-tabs__list" role="tablist" data-puck-overlay-portal="true" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>{items.map((item, index) => <button type="button" role="tab" aria-selected={active === index} key={`${item.label}-${index}`} onClick={() => setSelected(index)}><span data-g7pb-inline-field={`items.${index}.label`}>{inlineArrayContent(props.items, index, 'label', item.label)}</span></button>)}</div>{items.map((item, index) => <article role="tabpanel" hidden={active !== index} key={`${item.heading}-${index}`}><RichTextCanvasField as="h3" className="g7pb-preview-richtext" fieldPath={`items.${index}.heading`}>{inlineArrayContent(props.items, index, 'heading', item.heading)}</RichTextCanvasField><RichTextCanvasField fieldPath={`items.${index}.body`}>{inlineArrayContent(props.items, index, 'body', item.body)}</RichTextCanvasField></article>)}</div></Frame>;
 }
 
 function ComparisonPreview(props: ComparisonTableEditorProps & { id: string }): React.ReactElement {

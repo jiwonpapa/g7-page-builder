@@ -157,7 +157,9 @@ async function selectOutlineBlock(page: Page, item: PageBuilderBlock, label: str
   await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
   const row = page.locator(`[data-puck-layer-tree-id="${item.instance_id}"]`);
   await expect(row).toBeVisible();
-  await row.getByRole('button', { name: label, exact: true }).click();
+  const button = row.getByRole('button', { name: label, exact: true }).and(row.locator('button'));
+  await expect(button).toHaveCount(1);
+  await button.click();
   await expect(page.getByRole('heading', { name: label, exact: true })).toBeVisible();
 }
 

@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { readEditorSourceGraph } from './lib/editorSourceGraph.mjs';
+import { readCssGraph } from './lib/editorCssSources.mjs';
 
 const evidencePath = 'output/playwright/site-shell-product.json';
 const mobileReviewPath = 'output/playwright/mobile-navigation-manual-review.json';
@@ -70,7 +72,15 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const exclusionPath = `docs/release-exclusions/${pkg.version}.json`;
 const exclusion = existsSync(exclusionPath) ? JSON.parse(readFileSync(exclusionPath, 'utf8')) : null;
 if (exclusion) validateMobileExclusion(exclusion, pkg.version);
-const shared = ['resources/js/public/pageEffects.ts', 'dist/js/page-effects.iife.js',
+// The public entry is shared by all three receipts. Follow its real emitted
+// imports/reexports and CSS imports so extracted owners cannot leave a receipt
+// unchanged while an older dist is still present. This reads code, never renders
+// catalog content or selects additional browser scenarios.
+const publicGraph = await readEditorSourceGraph(process.cwd(), ['resources/js/public/pageEffects.ts']);
+const publicCss = await readCssGraph(process.cwd(), publicGraph.files.filter(file => file.endsWith('.css')));
+const shared = [...publicGraph.files, ...publicCss.files,
+  'scripts/check-site-shell-product-quality.mjs', 'scripts/lib/editorSourceGraph.mjs', 'scripts/lib/editorCssSources.mjs',
+  'dist/js/page-effects.iife.js',
   'resources/css/page-builder-public.css', 'dist/css/page-builder-public.css', 'playwright.config.ts',
   'src/Application/Compilation/SitePartHtmlCompiler.php', 'schemas/site-part-document.schema.json',
   'scripts/render-site-shell-quality-fixture.php'];

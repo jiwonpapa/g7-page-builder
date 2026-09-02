@@ -5,6 +5,9 @@ import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import layoutFixture from '../Contract/document-layout-v2.fixture.json';
 import type { PuckEditorItem } from '../../resources/js/editor/puckLayoutData';
 import {
+  type PageBuilderDocument,
+} from '../../resources/js/documents/types';
+import {
   ANCHOR_MENU_BLOCK_TYPE,
   ARTICLE_LIST_BLOCK_TYPE,
   BLOCKQUOTE_BLOCK_TYPE,
@@ -42,8 +45,7 @@ import {
   TESTIMONIALS_BLOCK_TYPE,
   TESTIMONIAL_SLIDER_BLOCK_TYPE,
   VIDEO_EMBED_BLOCK_TYPE,
-  type PageBuilderDocument,
-} from '../../resources/js/documents/types';
+} from '../../resources/js/documents/builtinBlockContracts';
 
 class TestResizeObserver {
   observe(): void {}

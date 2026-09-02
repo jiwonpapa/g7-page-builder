@@ -1,6 +1,7 @@
 import type { Data } from '@puckeditor/core';
 import type { ExternalEditorComponents } from '../blocks/externalEditorData';
-import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, BlockVisibility, CtaBlockProps, ElementAppearanceMap, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/types';
+import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, BlockVisibility, ElementAppearanceMap } from '../documents/types';
+import type { CtaBlockProps, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/builtinBlockContracts';
 import type { BlockContainerEditorProps } from './blockAppearance';
 import type { CatalogEditorComponents } from './catalogBlocks';
 import type { LayoutCatalogEditorComponents } from './layoutCatalogBlocks';

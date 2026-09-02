@@ -1,5 +1,7 @@
 import { expect, request as playwrightRequest, test, type BrowserContext, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
+import { SitePartSetFixture, fixtureLocale, gotoOwnedSiteShell } from './support/sitePartSetFixture';
+
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 type SitePartKind = 'header' | 'footer';
 
@@ -11,34 +13,7 @@ function visibleTestId(page: Page, testId: string): Locator {
   return page.locator(`[data-testid="${testId}"]:visible`);
 }
 
-interface SitePartResource {
-  set_id?: string | null;
-  title: string;
-  document: {
-    schema_version: 'g7-page-builder/site-part/v1';
-    site_part_id: string;
-    kind: SitePartKind;
-    locale: string;
-    tokens: Record<string, string | number | boolean | null>;
-    blocks: Array<{ instance_id: string; type: string; block_version: number; props: Record<string, unknown>; slots: Record<string, unknown> }>;
-  };
-  lock_version: number;
-  revision: number;
-  active_revision: number | null;
-  status: 'draft' | 'published_with_changes' | 'published';
-}
-
-interface SitePartSetResource {
-  id: string;
-  title: string;
-  locale: string;
-  is_active: boolean;
-  is_ready: boolean;
-  header: { active_revision: number | null; status: SitePartResource['status'] };
-  footer: { active_revision: number | null; status: SitePartResource['status'] };
-}
-
-test.use({ screenshot: 'off', trace: 'off', video: 'off' });
+test.use({ locale: 'ko-KR', screenshot: 'off', trace: 'off', video: 'off' });
 
 function credentials(): { email: string; password: string } {
   const email = process.env.G7PB_ADMIN_EMAIL;
@@ -72,52 +47,6 @@ async function adminApi(token: string): Promise<APIRequestContext> {
   });
 }
 
-async function readOrBootstrap(api: APIRequestContext, kind: SitePartKind, locale: string): Promise<SitePartResource> {
-  let response = await api.get(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}?locale=${encodeURIComponent(locale)}`);
-  if (response.status() === 404) {
-    response = await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}/bootstrap`, { data: { locale } });
-  }
-  expect(response.ok()).toBe(true);
-  const payload = await response.json() as { success?: boolean; data?: SitePartResource };
-  if (payload.success !== true || !payload.data) throw new Error(`${kind} Site Part API returned no resource.`);
-  return payload.data;
-}
-
-async function listSitePartSets(api: APIRequestContext, locale: string): Promise<SitePartSetResource[]> {
-  const response = await api.get(`/api/modules/jiwonpapa-page_builder/admin/site-part-sets?locale=${encodeURIComponent(locale)}`);
-  expect(response.ok()).toBe(true);
-  const payload = await response.json() as { data?: { items?: SitePartSetResource[] } };
-  return payload.data?.items ?? [];
-}
-
-async function ensureSetPartPublished(api: APIRequestContext, set: SitePartSetResource, kind: SitePartKind): Promise<void> {
-  const query = new URLSearchParams({ locale: set.locale, set_id: set.id });
-  const response = await api.get(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}?${query.toString()}`);
-  expect(response.ok()).toBe(true);
-  const payload = await response.json() as { data?: SitePartResource };
-  const resource = payload.data;
-  if (!resource) throw new Error(`${kind} Site Part set resource is missing.`);
-  if (resource.active_revision !== null) return;
-  const publish = await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}/publish`, {
-    data: { locale: set.locale, set_id: set.id, expected_lock_version: resource.lock_version },
-  });
-  expect(publish.ok()).toBe(true);
-}
-
-async function restoreAndPublish(api: APIRequestContext, kind: SitePartKind, original: SitePartResource): Promise<void> {
-  const current = await readOrBootstrap(api, kind, original.document.locale);
-  const save = await api.put(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}/draft`, {
-    data: { locale: original.document.locale, title: original.title, document: original.document, expected_lock_version: current.lock_version },
-  });
-  expect(save.ok()).toBe(true);
-  const savedPayload = await save.json() as { data?: SitePartResource };
-  if (!savedPayload.data) throw new Error('Site Part restore returned no resource.');
-  const publish = await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-parts/${kind}/publish`, {
-    data: { locale: original.document.locale, expected_lock_version: savedPayload.data.lock_version },
-  });
-  expect(publish.ok()).toBe(true);
-}
-
 async function dragLibraryBlockBefore(page: Page, component: string, target: Locator): Promise<void> {
   const source = page.locator(`[data-testid="drawer-item:${component}"]:visible`).first();
   const inserted = component === 'Announcement'
@@ -147,20 +76,6 @@ async function dragLibraryBlockBefore(page: Page, component: string, target: Loc
       if (attempt === 1) throw error;
     }
   }
-}
-
-async function globalPublicPageUrl(api: APIRequestContext, locale: string): Promise<string | null> {
-  const response = await api.get('/api/modules/jiwonpapa-page_builder/admin/documents?page=1&per_page=100&status=active');
-  if (!response.ok()) return null;
-  const payload = await response.json() as {
-    success?: boolean;
-    data?: { items?: Array<{ public_url?: unknown; document?: { locale?: unknown; shell_mode?: unknown } }> };
-  };
-  const item = payload.data?.items?.find((candidate) =>
-    typeof candidate.public_url === 'string'
-      && candidate.document?.locale === locale
-      && candidate.document?.shell_mode === 'builder');
-  return typeof item?.public_url === 'string' ? item.public_url : null;
 }
 
 async function verifySetWorkspaceTools(page: Page): Promise<void> {
@@ -202,7 +117,7 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
   }
   const canvas = page.frameLocator('iframe').first();
   const controls = canvas.locator('.g7pb-site-header [data-g7pb-system-controls]');
-  const account = controls.getByRole('button', { name: '계정 메뉴', exact: true });
+  const account = controls.locator('[data-g7pb-shell-toggle="account"]');
   for (let repeat = 0; repeat < 3; repeat += 1) {
     const header = await canvas.locator('.g7pb-site-header').boundingBox();
     if (!header) throw new Error('Header selection geometry is missing.');
@@ -243,12 +158,12 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
 for (const kind of ['header', 'footer'] as const) {
   test(`replaces ${kind} presets through native canvas history and persists the visible result`, async ({ page, context }) => {
     const api = await adminApi(await authenticate(context));
-    let original: SitePartResource | null = null;
+    const fixture = new SitePartSetFixture(api, await fixtureLocale(page));
     let fixtureId: string | null = null;
     try {
+      await fixture.start(page);
+      const locale = fixture.locale;
       await page.goto(sitePartPath(kind));
-      const locale = await page.getByTestId('page-builder-site-part-editor-root').getAttribute('data-locale') ?? 'ko';
-      original = await readOrBootstrap(api, kind, locale);
       const editor = page.getByTestId('page-builder-site-part-editor');
       const presets = editor.getByTestId('page-builder-site-part-presets');
       const canvas = page.frameLocator('iframe').first();
@@ -278,7 +193,7 @@ for (const kind of ['header', 'footer'] as const) {
       await expect(distinguishingBlock).toHaveCount(0);
       await editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true }).click();
       await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
-      const saved = await readOrBootstrap(api, kind, locale);
+      const saved = await fixture.read(kind);
       expect(saved.document.blocks.map((block) => block.type)).toEqual([kind === 'header' ? 'site.header.navigation-01' : 'site.footer.simple-01']);
       await page.reload();
       await expect(canvas.locator(kind === 'header' ? '.g7pb-site-header' : '.g7pb-site-footer')).toBeVisible();
@@ -294,6 +209,8 @@ for (const kind of ['header', 'footer'] as const) {
       const started = new Promise<void>((resolve) => { saveStarted = resolve; });
       const draftUrl = `**/site-parts/${kind}/draft`;
       await page.route(draftUrl, async (route) => {
+        const requestData = route.request().postDataJSON() as { set_id?: string };
+        expect(requestData.set_id).toBe(fixture.primaryId);
         const response = await route.fetch();
         saveStarted();
         await held;
@@ -346,7 +263,7 @@ for (const kind of ['header', 'footer'] as const) {
       await expect(editor.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
     } finally {
       await page.goto('about:blank');
-      if (original) await restoreAndPublish(api, kind, original);
+      fixture.restore();
       if (fixtureId) {
         const current = await api.get(`/api/modules/jiwonpapa-page_builder/admin/documents/${fixtureId}`);
         expect(current.ok()).toBe(true);
@@ -360,7 +277,6 @@ for (const kind of ['header', 'footer'] as const) {
 }
 
 test('edits and publishes the Header as an independent responsive Puck Site Part', async ({ page, context }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'Site Part interaction is covered once; page lifecycle owns all three viewports.');
   const token = await authenticate(context);
   const api = await adminApi(token);
   const changedBrand = `Site Part E2E ${Date.now()}`;
@@ -368,12 +284,13 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
   const childLabel = `하위 기능 ${Date.now()}`;
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  let original: SitePartResource | null = null;
+  const fixture = new SitePartSetFixture(api, await fixtureLocale(page));
 
   try {
+    await fixture.start(page);
     await page.goto(sitePartPath('header'));
-    const locale = await page.getByTestId('page-builder-site-part-editor-root').getAttribute('data-locale') ?? 'ko';
-    original = await readOrBootstrap(api, 'header', locale);
+    const locale = fixture.locale;
+    const original = await fixture.read('header');
     const originalBrand = String(original.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.brand_name ?? '사이트 이름');
     const seededDocument = structuredClone(original.document);
     const seededNavigationBlock = seededDocument.blocks.find((block) => block.type === 'site.header.navigation-01');
@@ -388,11 +305,14 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     seededNavigation[0] = { ...seededNavigation[0], label: mobileMenuLabel, children: [{ label: childLabel, url: '/pages/features' }] };
     seededNavigationBlock.props.navigation = seededNavigation;
     const seedResponse = await api.put('/api/modules/jiwonpapa-page_builder/admin/site-parts/header/draft', {
-      data: { locale, title: original.title, document: seededDocument, expected_lock_version: original.lock_version },
+      data: { locale, set_id: original.set_id, title: original.title, document: seededDocument, expected_lock_version: original.lock_version },
     });
     expect(seedResponse.ok()).toBe(true);
     await page.reload();
     await expect(page.getByTestId('page-builder-site-part-editor')).toBeVisible();
+    const secondary = await fixture.create();
+    const secondaryBefore = await fixture.read('header', secondary.id);
+    await fixture.activate(secondary.id);
     await expect(page.getByText('Header 편집', { exact: true })).toBeVisible();
     await expect(page.getByText('Header · 내비게이션', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('기기 버튼을 바꾸면 우측의 기기별 표시 설정도 함께 바뀝니다.')).toBeVisible();
@@ -489,8 +409,12 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     expect((await publishResponse).ok()).toBe(true);
     await expect(page.getByRole('alert')).toContainText('Header 발행을 완료했습니다.');
 
-    const published = await readOrBootstrap(api, 'header', locale);
+    const published = await fixture.read('header');
     expect(published.status).toBe('published');
+    expect(published.set_id).toBe(fixture.primaryId);
+    const secondaryAfter = await fixture.read('header', secondary.id);
+    expect(secondaryAfter).toEqual(secondaryBefore);
+    await fixture.activate(fixture.primaryId);
     expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.brand_name).toBe(changedBrand);
     expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.mobile_menu_style).toBe('drawer-right');
     expect(published.document.blocks.find((block) => block.type === 'site.header.navigation-01')?.props.responsive).toEqual({
@@ -500,9 +424,10 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
     expect(publishedNavigation[0]?.children).toEqual([{ label: childLabel, url: '/pages/features' }]);
     expect(published.document.blocks.some((block) => block.type === 'site.header.announcement-01')).toBe(true);
 
-    const publicUrl = await globalPublicPageUrl(api, locale);
-    if (publicUrl) {
-      await page.goto(publicUrl);
+    {
+      // The owned active pair must render on a real public route; never skip
+      // this contract based on whether unrelated page documents happen to exist.
+      await gotoOwnedSiteShell(page, '/', locale);
       await expect(page.getByTestId('page-builder-site-header')).toContainText(changedBrand);
       await expect(page.locator('.g7pb-site-subnav').getByText(childLabel, { exact: true })).toBeAttached();
       await page.setViewportSize({ width: 390, height: 844 });
@@ -512,10 +437,15 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       await expect(publicMobileMenu).toHaveAttribute('data-g7pb-mobile-menu-style', 'sheet-bottom');
       await expect(publicMobileMenu).toHaveAttribute('data-g7pb-menu-style', 'sheet-bottom');
       await expect(page.locator('[data-g7pb-menu-backdrop]')).toBeVisible();
+      // Backdrop visibility starts with the sheet's 180ms entrance animation.
+      // Observe the actual bottom edge; a persistent offset still fails at 2px.
+      await expect.poll(async () => {
+        const box = await publicMobileMenu.boundingBox();
+        return box ? Math.abs(box.y + box.height - page.viewportSize()!.height) : Number.POSITIVE_INFINITY;
+      }).toBeLessThanOrEqual(2);
       const drawerBox = await publicMobileMenu.boundingBox();
       expect(drawerBox?.x ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
       expect(drawerBox?.width ?? 0).toBeGreaterThanOrEqual(page.viewportSize()!.width - 2);
-      expect(Math.abs((drawerBox?.y ?? 0) + (drawerBox?.height ?? 0) - page.viewportSize()!.height)).toBeLessThanOrEqual(2);
       const submenuToggle = page.locator('[data-g7pb-submenu-toggle]').first();
       await submenuToggle.click();
       await expect(submenuToggle).toHaveAttribute('aria-expanded', 'true');
@@ -525,21 +455,18 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       await expect(page.locator('[data-g7pb-menu-toggle]')).toBeFocused();
     }
   } finally {
-    if (original) await restoreAndPublish(api, 'header', original);
-    await api.dispose();
+    try { fixture.restore(); } finally { await api.dispose(); }
   }
 });
 
 test('opens the Footer as a separate visual Site Part with preview cards', async ({ page, context }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'Site Part interaction is covered once; page lifecycle owns all three viewports.');
   const token = await authenticate(context);
   const api = await adminApi(token);
-  let original: SitePartResource | null = null;
+  const fixture = new SitePartSetFixture(api, await fixtureLocale(page));
   try {
+    await fixture.start(page);
     await page.goto(sitePartPath('footer'));
-    const locale = await page.getByTestId('page-builder-site-part-editor-root').getAttribute('data-locale') ?? 'ko';
-    const resource = await readOrBootstrap(api, 'footer', locale);
-    original = resource;
+    const resource = await fixture.read('footer');
     await expect(page.getByTestId('page-builder-site-part-editor')).toHaveAttribute('data-kind', 'footer');
     await expect(page.getByText('Footer 편집', { exact: true })).toBeVisible();
     await expect(page.getByTestId('page-builder-site-part-presets').getByRole('button')).toHaveCount(3);
@@ -566,43 +493,21 @@ test('opens the Footer as a separate visual Site Part with preview cards', async
     await expect(footerNavigation).toBeVisible();
     expect(resource.document.kind).toBe('footer');
   } finally {
-    if (original) await restoreAndPublish(api, 'footer', original);
-    await api.dispose();
+    try { fixture.restore(); } finally { await api.dispose(); }
   }
 });
 
 test('manages multiple Header and Footer pairs from one top-level workspace', async ({ page, context }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'The paired Site Part workspace is edited on PC.');
   const token = await authenticate(context);
   const api = await adminApi(token);
-  let originalActive: SitePartSetResource | null = null;
+  const fixture = new SitePartSetFixture(api, await fixtureLocale(page));
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
   try {
+    await fixture.start(page);
+    const target = await fixture.create();
     await page.goto('/modules/jiwonpapa-page_builder/admin/site-parts');
-    const workspaceRoot = page.getByTestId('page-builder-site-part-editor-root');
-    const locale = await workspaceRoot.getAttribute('data-locale') ?? 'ko';
-    await expect(page.getByTestId('page-builder-site-part-set').first()).toBeVisible();
-    let sets = await listSitePartSets(api, locale);
-    originalActive = sets.find((set) => set.is_active) ?? null;
-    if (!originalActive) throw new Error('The default Header/Footer set must be active.');
-    await ensureSetPartPublished(api, originalActive, 'header');
-    await ensureSetPartPublished(api, originalActive, 'footer');
-    sets = await listSitePartSets(api, locale);
-    originalActive = sets.find((set) => set.id === originalActive?.id) ?? originalActive;
-
-    let target = sets.find((set) => !set.is_active) ?? null;
-    if (!target) {
-      const create = await api.post('/api/modules/jiwonpapa-page_builder/admin/site-part-sets', {
-        data: { locale, title: 'E2E 통합 세트' },
-      });
-      expect(create.ok()).toBe(true);
-      const payload = await create.json() as { data?: SitePartSetResource };
-      target = payload.data ?? null;
-    }
-    if (!target) throw new Error('A secondary Header/Footer set could not be prepared.');
-
     await page.reload();
     await expect(page.getByTestId('page-builder-site-part-workspace')).toBeVisible();
     await expect(page.getByRole('heading', { name: '헤더·푸터', exact: true })).toBeVisible();
@@ -639,17 +544,13 @@ test('manages multiple Header and Footer pairs from one top-level workspace', as
     const activate = page.getByTestId('page-builder-site-part-set-activate');
     await expect(activate).toBeEnabled();
     const activateResponse = page.waitForResponse((response) => response.url().includes(`/site-part-sets/${target?.id}/activate`) && response.request().method() === 'POST');
+    fixture.prepareActivation(target.id);
     await activate.click();
     expect((await activateResponse).ok()).toBe(true);
+    fixture.checkpointActivation();
     await expect(targetButton).toContainText('사용 중');
     expect(pageErrors, pageErrors.join('\n')).toEqual([]);
   } finally {
-    if (originalActive) {
-      const restore = await api.post(`/api/modules/jiwonpapa-page_builder/admin/site-part-sets/${originalActive.id}/activate`, {
-        data: { locale: originalActive.locale },
-      });
-      expect(restore.ok()).toBe(true);
-    }
-    await api.dispose();
+    try { fixture.restore(); } finally { await api.dispose(); }
   }
 });

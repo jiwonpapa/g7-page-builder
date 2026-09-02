@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { Field } from '@puckeditor/core';
 
 import { PageBuilderApiClient, PageBuilderApiError } from '../api/pageBuilderApi';
-import type { MediaAssetResource } from '../documents/types';
+import type { MediaAssetResource } from '../api/resources';
 
 const api = new PageBuilderApiClient();
 const DOWNLOAD_ACCEPT = '.pdf,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';

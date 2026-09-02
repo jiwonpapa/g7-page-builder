@@ -11,7 +11,8 @@ import {
   PageBuilderApiError,
   buildAdminLoginUrl,
 } from '../api/pageBuilderApi';
-import type { DocumentResource, PageBuilderDocument } from '../documents/types';
+import type { PageBuilderDocument } from '../documents/types';
+import type { DocumentResource } from '../api/resources';
 import { normalizeDocumentTransport } from '../documents/normalizeDocumentTransport';
 import { LayoutPolicyError, validateLayoutDocument } from '../documents/layoutPolicy';
 import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';

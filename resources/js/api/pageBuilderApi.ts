@@ -1,5 +1,11 @@
 import { normalizeDocumentTransport } from '../documents/normalizeDocumentTransport';
 import type {
+  SitePartDocument,
+  SitePartKind,
+  PageBuilderDocument,
+  PageSeoMetadata,
+} from '../documents/types';
+import type {
   ApiEnvelope,
   DocumentListResource,
   DocumentResource,
@@ -9,14 +15,10 @@ import type {
   SiteShellResource,
   FormSubmissionListResource,
   FormSubmissionResource,
-  SitePartDocument,
-  SitePartKind,
   SitePartResource,
   SitePartSetResource,
   SitePartSetEditorResource,
   SitePartRevisionResource,
-  PageBuilderDocument,
-  PageSeoMetadata,
   PreviewResource,
   PublicationCommit,
   PublicationPreparation,
@@ -25,7 +27,7 @@ import type {
   RouteCatalogResource,
   SectionPatternListResource,
   SectionPatternResource,
-} from '../documents/types';
+} from './resources';
 import type {
   BlockCatalogResource,
   BlockPackListResource,
@@ -38,6 +40,8 @@ import type {
   PageKitApplyResource,
   PageKitExportInput,
 } from '../store/types';
+
+export type { DocumentResource, FormSubmissionResource, MediaAssetResource, RevisionSummary, SitePartResource } from './resources';
 
 export const PAGE_BUILDER_API_PREFIX = '/api/modules/jiwonpapa-page_builder/admin';
 export const PAGE_BUILDER_MANAGER_PATH = '/admin/page-builder';

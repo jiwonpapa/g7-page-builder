@@ -46,7 +46,7 @@ import { createPortal } from 'react-dom';
 import { EditorPortal } from './EditorPortal';
 import { SectionPatternControls } from './SectionPatternControls';
 
-import { ADMIN_AUTH_TOKEN_KEY, PageBuilderApiClient } from '../api/pageBuilderApi';
+import { ADMIN_AUTH_TOKEN_KEY, PageBuilderApiClient, type SitePartResource } from '../api/pageBuilderApi';
 import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS, BUILTIN_BLOCK_PRESETS, BUILTIN_CORE_MANIFEST } from '../blocks/builtinCatalog';
 import {
   externalEditorComponents,
@@ -150,7 +150,6 @@ import {
   type ElementAppearanceMap,
   type PageBuilderBlock,
   type PageBuilderDocument,
-  type SitePartResource,
 } from '../documents/types';
 
 interface FullSiteCanvasValue {

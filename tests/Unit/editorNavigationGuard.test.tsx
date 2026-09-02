@@ -1,7 +1,8 @@
 import React, { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { DocumentResource, PageBuilderDocument } from '../../resources/js/documents/types';
+import type { PageBuilderDocument } from '../../resources/js/documents/types';
+import type { DocumentResource } from '../../resources/js/api/resources';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 

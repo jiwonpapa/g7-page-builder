@@ -1,5 +1,5 @@
 import type { BlockPackResource } from '../blocks/types';
-import type { DocumentResource } from '../documents/types';
+import type { DocumentResource } from '../api/resources';
 
 export type OfficialStoreProductType = 'block_pack' | 'page_kit';
 

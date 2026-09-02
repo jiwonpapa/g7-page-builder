@@ -10,10 +10,8 @@ import { SitePartSetLayoutContext, SitePartSetTools, SitePartSetFields, SITE_PAR
 import { PageBuilderApiClient, PageBuilderApiError } from '../api/pageBuilderApi';
 import type {
   SitePartKind,
-  SitePartResource,
-  SitePartSetEditorResource,
-  SitePartSetResource,
 } from '../documents/types';
+import type { SitePartResource, SitePartSetEditorResource, SitePartSetResource } from '../api/resources';
 import {
   type SitePartPuckData,
   type SitePartSetPresetKey,

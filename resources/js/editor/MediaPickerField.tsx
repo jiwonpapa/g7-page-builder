@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { Field } from '@puckeditor/core';
 
 import { PageBuilderApiClient, PageBuilderApiError } from '../api/pageBuilderApi';
-import type { MediaAssetResource } from '../documents/types';
+import type { MediaAssetResource } from '../api/resources';
 
 const api = new PageBuilderApiClient();
 export const OPEN_MEDIA_PICKER_EVENT = 'g7pb:open-selected-media-picker';

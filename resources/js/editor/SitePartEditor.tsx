@@ -23,7 +23,8 @@ import {
   PageBuilderApiClient,
   PageBuilderApiError,
 } from '../api/pageBuilderApi';
-import type { SitePartKind, SitePartResource } from '../documents/types';
+import type { SitePartKind } from '../documents/types';
+import type { SitePartResource } from '../api/resources';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import {

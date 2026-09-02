@@ -23,14 +23,14 @@ import {
   PageBuilderApiClient,
   PageBuilderApiError,
   buildAdminLoginUrl,
+  type DocumentResource,
+  type FormSubmissionResource,
+  type MediaAssetResource,
+  type RevisionSummary,
 } from '../api/pageBuilderApi';
 import type {
-  DocumentResource,
-  FormSubmissionResource,
-  MediaAssetResource,
   PageSeoMetadata,
   PageShellMode,
-  RevisionSummary,
 } from '../documents/types';
 import type { BlockPackResource, GitHubBlockPackCheckResource } from '../blocks/types';
 import type { OfficialStoreCatalogResource, OfficialStoreProduct } from '../store/types';

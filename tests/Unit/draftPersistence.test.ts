@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DocumentResource, PageBuilderDocument } from '../../resources/js/documents/types';
+import type { PageBuilderDocument } from '../../resources/js/documents/types';
+import type { DocumentResource } from '../../resources/js/api/resources';
 import { createDraftPersistence } from '../../resources/js/editor/draftPersistence';
 
 function deferred<T>() {

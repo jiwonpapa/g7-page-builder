@@ -13,7 +13,33 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\ZipPageKitArchiveAdapter;
 require dirname(__DIR__).'/vendor/autoload.php';
 
 $root = dirname(__DIR__);
-$baseUrl = rtrim($argv[1] ?? 'https://g7devops.com/modules/jiwonpapa-page_builder/store', '/');
+$baseUrl = 'https://g7devops.com/modules/jiwonpapa-page_builder/store';
+$dist = $root.'/resources/store/dist';
+$selectedKits = null;
+for ($argument = 1; $argument < $argc; $argument++) {
+    $option = $argv[$argument];
+    if (in_array($option, ['--output-dir', '--kits'], true)) {
+        $value = $argv[++$argument] ?? '';
+        if ($value === '' || str_starts_with($value, '--')) {
+            throw new RuntimeException("Missing value: {$option}");
+        }
+        if ($option === '--output-dir') {
+            if (! str_starts_with($value, '/') || str_contains($value, "\0")) {
+                throw new RuntimeException('Store output directory must be absolute.');
+            }
+            $dist = rtrim($value, '/');
+        } else {
+            $selectedKits = explode(',', $value);
+            if (in_array('', $selectedKits, true) || count(array_unique($selectedKits)) !== count($selectedKits)) {
+                throw new RuntimeException('Kit IDs must be nonempty and unique.');
+            }
+        }
+    } elseif ($argument === 1 && ! str_starts_with($option, '--')) {
+        $baseUrl = rtrim($option, '/');
+    } else {
+        throw new RuntimeException("Unknown store argument: {$option}");
+    }
+}
 if (filter_var($baseUrl, FILTER_VALIDATE_URL) === false || ! str_starts_with($baseUrl, 'https://')) {
     fwrite(STDERR, "Store base URL must be HTTPS.\n");
     exit(1);
@@ -23,7 +49,6 @@ if (! is_string($storeBasePath) || $storeBasePath === '' || ! str_starts_with($s
     throw new RuntimeException('Store base URL path is invalid.');
 }
 $source = $root.'/resources/store/source';
-$dist = $root.'/resources/store/dist';
 $catalogMeta = json_decode(
     (string) file_get_contents("{$source}/catalog-meta.json"),
     true,
@@ -68,16 +93,18 @@ $packManifest['files'] = [$packAssetPath => hash('sha256', $packAsset)];
 $packArtifactName = 'jiwonpapa-marketing-presets-1.0.0.zip';
 $packArtifactPath = "{$dist}/artifacts/{$packArtifactName}";
 $zip = new ZipArchive;
-if ($zip->open($packArtifactPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-    throw new RuntimeException('Cannot create Block Pack artifact.');
-}
-$zip->addFromString('manifest.json', $json($packManifest));
-$zip->addFromString($packAssetPath, $packAsset);
-$zip->setMtimeName('manifest.json', 315532800);
-$zip->setMtimeName($packAssetPath, 315532800);
-$zip->close();
+if ($selectedKits === null) {
+    if ($zip->open($packArtifactPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+        throw new RuntimeException('Cannot create Block Pack artifact.');
+    }
+    $zip->addFromString('manifest.json', $json($packManifest));
+    $zip->addFromString($packAssetPath, $packAsset);
+    $zip->setMtimeName('manifest.json', 315532800);
+    $zip->setMtimeName($packAssetPath, 315532800);
+    $zip->close();
 
-$copy("{$packSource}/{$packAssetPath}", "{$dist}/previews/marketing-presets.svg");
+    $copy("{$packSource}/{$packAssetPath}", "{$dist}/previews/marketing-presets.svg");
+}
 
 $artifact = static function (string $path, string $url): array {
     $bytes = filesize($path);
@@ -103,6 +130,9 @@ if (! is_array($pageKitManifest)
     throw new RuntimeException('Official Page Kit manifest is invalid.');
 }
 $pageKitDefinitions = $pageKitManifest['kits'];
+if ($selectedKits !== null && array_diff($selectedKits, array_column($pageKitDefinitions, 'slug')) !== []) {
+    throw new RuntimeException('Unknown Page Kit IDs: '.implode(', ', array_diff($selectedKits, array_column($pageKitDefinitions, 'slug'))));
+}
 $pageKitVersion = $pageKitManifest['page_kit_version'];
 $seenPageKitSlugs = [];
 $declaredPageKitSlugs = [];
@@ -154,6 +184,9 @@ $compiler = new HtmlDocumentCompiler($blockRegistry);
 $pageProducts = [];
 foreach ($pageKitDefinitions as $definition) {
     $slug = $definition['slug'];
+    if ($selectedKits !== null && ! in_array($slug, $selectedKits, true)) {
+        continue;
+    }
     $kitSource = "{$source}/page-kits/{$slug}";
     $documentValue = json_decode(
         (string) file_get_contents("{$kitSource}/document.json"),
@@ -309,7 +342,7 @@ $catalog = [
                 'screenshots' => [],
                 'demo_url' => null,
             ],
-            'artifact' => $artifact($packArtifactPath, "{$baseUrl}/artifacts/{$packArtifactName}"),
+            'artifact' => $artifact($selectedKits === null ? $packArtifactPath : $root.'/resources/store/dist/artifacts/'.$packArtifactName, "{$baseUrl}/artifacts/{$packArtifactName}"),
             'requirements' => ['blocks' => [
                 ['block_id' => 'content.hero-centered-01', 'block_version' => 1],
                 ['block_id' => 'content.cta-split-01', 'block_version' => 1],
@@ -318,6 +351,18 @@ $catalog = [
         ...$pageProducts,
     ],
 ];
+
+if ($selectedKits !== null) {
+    // Reuse unrelated catalog entries; selecting one Kit never regenerates another ZIP.
+    $existing = json_decode((string) file_get_contents($root.'/resources/store/dist/catalog.json'), true, 128, JSON_THROW_ON_ERROR);
+    $replacements = array_column($pageProducts, null, 'product_id');
+    $catalog['products'] = array_map(static fn (array $product): array => $replacements[$product['product_id']] ?? $product, $existing['products']);
+    foreach (array_keys($replacements) as $id) {
+        if (! in_array($id, array_column($existing['products'], 'product_id'), true)) {
+            $catalog['products'][] = $replacements[$id];
+        }
+    }
+}
 
 file_put_contents("{$dist}/catalog.json", $json($catalog), LOCK_EX);
 fwrite(STDOUT, 'Built official free store with '.count($catalog['products'])." products.\n");

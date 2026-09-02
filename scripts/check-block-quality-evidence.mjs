@@ -16,13 +16,14 @@ const LEGACY = `${PACK}/product-quality.json`;
 const json = path => JSON.parse(readFileSync(path, 'utf8'));
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 
-/** Always collect current PHP output; a saved fixture index is not current evidence. */
-export function collectCurrentEvidence(root = ROOT) {
+/** Current output is collected only for an explicitly selected set. */
+export function collectCurrentEvidence(root = ROOT, selectedIds) {
+  if (!Array.isArray(selectedIds) || !selectedIds.length || new Set(selectedIds).size !== selectedIds.length) throw new Error('Current rendering requires explicit nonempty unique IDs.');
   const started = performance.now();
   const output = mkdtempSync(join(tmpdir(), 'g7pb-quality-evidence-'));
   let facts;
   try {
-    const rendered = spawnSync('php', [join(root, 'scripts/render-block-thumbnail-fixtures.php'), output], {
+    const rendered = spawnSync('php', [join(root, 'scripts/render-block-thumbnail-fixtures.php'), output, '--ids', selectedIds.join(',')], {
       cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000,
     });
     if (rendered.status !== 0) throw new Error(`Current PHP renderer failed: ${rendered.error?.message ?? ''}\n${rendered.stdout}${rendered.stderr}`);
@@ -32,19 +33,22 @@ export function collectCurrentEvidence(root = ROOT) {
     rmSync(output, { recursive: true, force: true });
   }
   const renderMs = performance.now() - started;
-  const states = collectBlockQualityStates(root);
-  const inventory = collectBlockQualityInventory(root, facts, states);
+  const allStates = collectBlockQualityStates(root);
+  const states = { ...allStates, items: allStates.items.filter(item => selectedIds.includes(item.catalog_id)) };
+  const inventory = collectBlockQualityInventory(root, facts, allStates, selectedIds);
   const current = inventory.items.map(item => fingerprintEvidence(item.catalog_id, item.inputs));
   const legacyRecord = json(join(root, LEGACY)).approval;
   const snapshot = createPendingEvidence(current, { source_path: LEGACY, record: legacyRecord });
   const legacySources = json(join(root, `${PACK}/thumbnails/generated/index.json`)).sources;
   const legacySourceChanges = facts.filter(item => legacySources[item.catalog_id] !== item.source_hash).map(item => item.catalog_id);
-  return { inventory, current, snapshot, legacySourceChanges, renderMs, started, states };
+  return { inventory, current, snapshot, legacySourceChanges, renderMs, started, states, selectedIds };
 }
 
 function inspectCandidate(root, collected) {
   const { current, snapshot } = collected;
-  const candidate = json(join(root, LEDGER));
+  const stored = json(join(root, LEDGER));
+  const candidate = collected.selectedIds && Array.isArray(stored.items)
+    ? { ...stored, items: stored.items.filter(item => collected.selectedIds.includes(item.catalog_id)) } : stored;
   let assessment = assessQualityEvidence(candidate, current, {});
   const artifacts = {};
   const artifactErrors = [];
@@ -73,13 +77,15 @@ function inspectCandidate(root, collected) {
   return { candidate, assessment, artifacts, artifactErrors, schemaValid };
 }
 
-export function proposeQualityEvidenceRefresh(root = ROOT, collected = collectCurrentEvidence(root)) {
+export function proposeQualityEvidenceRefresh(root = ROOT, collected) {
+  if (!collected) throw new Error('Refresh requires an explicit collected selection; it is never run automatically.');
   const { candidate, artifacts, artifactErrors } = inspectCandidate(root, collected);
   if (artifactErrors.length) throw new Error(`Cannot refresh unreadable/corrupt evidence: ${artifactErrors.join(', ')}`);
   return refreshQualityEvidence(candidate, collected.current, artifacts);
 }
 
-export function checkQualityEvidence(root = ROOT, collected = collectCurrentEvidence(root)) {
+export function checkQualityEvidence(root = ROOT, collected) {
+  if (!collected) throw new Error('Current evidence requires an explicit collected selection.');
   const { inventory, current, snapshot } = collected;
   const { candidate, assessment, artifactErrors, schemaValid } = inspectCandidate(root, collected);
   const comparable = schemaValid && !assessment.errors.includes('duplicate-item');
@@ -100,30 +106,50 @@ export function checkQualityEvidence(root = ROOT, collected = collectCurrentEvid
   };
 }
 
+export function inspectStoredEvidence(root = ROOT, selectedIds) {
+  const stored = json(join(root, LEDGER));
+  const items = Array.isArray(stored.items) ? stored.items.filter(item => !selectedIds || selectedIds.includes(item.catalog_id)) : [];
+  const snapshot = createPendingEvidence([], { source_path: LEGACY, record: json(join(root, LEGACY)).approval });
+  const collected = { current: items, selectedIds, snapshot };
+  const { assessment, artifactErrors } = inspectCandidate(root, collected);
+  const failures = [...assessment.errors, ...artifactErrors];
+  if (selectedIds?.some(id => !items.some(item => item.catalog_id === id))) failures.push('inventory-mismatch');
+  return { mode: 'diagnostic', source_policy: 'scoped-inputs/v1', current_sources_checked: false,
+    status: failures.length ? 'invalid' : 'stored-integrity-valid', errors: failures,
+    pending_count: assessment.pending.length, stored_ready: assessment.ready,
+    ready: null, release_authorized: false,
+    note: 'Stored v2 decisions are preserved. Their older input policy is not migrated or treated as current product evidence.' };
+}
+
 function main(args) {
   if (Number(process.versions.node.split('.')[0]) !== 24) throw new Error('Quality evidence CLI requires Node 24.');
-  if (args.some(arg => !['--json', '--snapshot', '--refresh', '--require-ready'].includes(arg))
-    || (args.some(arg => ['--snapshot', '--refresh'].includes(arg)) && args.length !== 1)) throw new Error('Usage: node scripts/check-block-quality-evidence.mjs [--json] [--require-ready] | --snapshot | --refresh');
-  const collected = collectCurrentEvidence();
-  if (args.includes('--snapshot')) {
-    // Emits a proposal only: never writes a ledger, approval or successful verification.
-    process.stdout.write(`${JSON.stringify(collected.snapshot, null, 2)}\n`);
-    return;
+  let selectedIds;
+  let technical = false;
+  for (let index = 0; index < args.length; index++) {
+    if (args[index] === '--json') continue;
+    if (args[index] === '--technical' && !technical) { technical = true; continue; }
+    if (args[index] === '--ids' && selectedIds === undefined) { selectedIds = (args[++index] ?? '').split(','); continue; }
+    throw new Error('Usage: check-block-quality-evidence.mjs [--json] [--ids id,id] [--technical]. Generation and ledger refresh are separate explicit operations.');
   }
-  if (args.includes('--refresh')) {
-    process.stdout.write(`${JSON.stringify(proposeQualityEvidenceRefresh(ROOT, collected), null, 2)}\n`);
-    return;
+  const manifest = json(join(ROOT, `${PACK}/manifest.json`));
+  const available = [...manifest.blocks.map(item => `block:${item.block_id}@${item.block_version}`), ...manifest.presets.map(item => `preset:${manifest.pack_id}:${item.preset_id}`)];
+  if (selectedIds && (!selectedIds.length || new Set(selectedIds).size !== selectedIds.length || selectedIds.some(id => !available.includes(id)))) throw new Error('Unknown, empty or duplicate evidence target.');
+  if (technical && !selectedIds) throw new Error('Technical rendering requires --ids; full collection is never implicit.');
+  const diagnostic = inspectStoredEvidence(ROOT, selectedIds);
+  let report = diagnostic;
+  if (technical) {
+    const collected = collectCurrentEvidence(ROOT, selectedIds);
+    const current = checkQualityEvidence(ROOT, collected);
+    report = { mode: 'technical', ids: selectedIds, status: collected.legacySourceChanges.length ? 'failed' : 'passed',
+      current_sources_checked: true, source_policy: 'scoped-inputs/v1',
+      technical_errors: collected.legacySourceChanges.map(id => `stale-thumbnail:${id}`),
+      diagnostic: { ...diagnostic, impact: current.impact, input_policy_comparison: 'diagnostic-only-not-a-release-gate' },
+      release_authorized: false, ledger_written: false, counts: collected.inventory.counts };
+    if (report.technical_errors.length) process.exitCode = 1;
   }
-  const report = checkQualityEvidence(ROOT, collected);
-  if (args.includes('--json')) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
-  else {
-    const status = !report.shadow_valid ? 'FAIL' : args.includes('--require-ready') && !report.ready ? 'NOT_READY' : 'SHADOW_OK';
-    process.stdout.write(`BLOCK_QUALITY_EVIDENCE ${status}: ${report.counts.items} items; ${report.pending_count} pending; ready=${report.ready}\n`);
-    process.stdout.write(`Changed scopes: ${JSON.stringify(report.changed_by_scope)}; ${report.timings_ms.total}ms\n`);
-    for (const warning of report.warnings) process.stdout.write(`WARNING ${warning}\n`);
-    for (const error of report.errors) process.stderr.write(`${error}\n`);
-  }
-  if (!report.shadow_valid || (args.includes('--require-ready') && !report.ready)) process.exitCode = 1;
+  // Integrity errors remain real errors; review pending/policy migration never request regeneration.
+  if (diagnostic.errors.length) process.exitCode = 1;
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

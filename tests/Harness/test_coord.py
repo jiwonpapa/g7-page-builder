@@ -288,6 +288,29 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual((path / "b/file.txt").read_text(), "unfinished independent user work\n")
         self.assertFalse(list((self.state / "history").glob("independent-task.*.meta")))
 
+    def test_old_release_receipt_does_not_expand_the_current_integration_delta(self):
+        self.call(self.repo, "claim", "--task", "old-integration", "--areas", "integration,runtime", "--profile", "frontend")
+        self.call(self.repo, "verify", "--task", "old-integration", "--full")
+        self.call(self.repo, "finish", "--task", "old-integration")
+        (self.repo / "upstream/file.txt").write_text("earlier completed work\n")
+        self.git("add", "upstream/file.txt")
+        self.git("commit", "-m", "earlier work outside this integration")
+        start = self.git("rev-parse", "HEAD")
+        self.submit_task()
+        self.integration()
+        self.call(self.repo, "integrate-scoped", "--task", "first-task", "--integration-task", "integration-task")
+
+        with patch.object(Coordinator, "quality") as quality:
+            self.call(self.repo, "verify", "--task", "integration-task")
+            quality.assert_called_once()
+            self.assertEqual(quality.call_args.args, ("verification", start))
+            self.assertFalse(quality.call_args.kwargs["full"])
+        self.assertEqual(self.meta("integration-task")["verified_base_sha"], start)
+        self.assertEqual(self.git("diff", "--name-only", start, "HEAD"), "a/file.txt")
+        with patch.object(Coordinator, "quality") as quality:
+            self.assertIn("VERIFY_REUSED", self.call(self.repo, "verify", "--task", "integration-task"))
+            quality.assert_not_called()
+
     def test_unintegrated_submitted_task_still_blocks_verification(self):
         self.submit_task()
         self.integration()

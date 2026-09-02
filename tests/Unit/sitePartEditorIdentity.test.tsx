@@ -1,7 +1,8 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SitePartKind, SitePartResource } from '../../resources/js/documents/types';
+import type { SitePartKind } from '../../resources/js/documents/types';
+import type { SitePartResource } from '../../resources/js/api/resources';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };

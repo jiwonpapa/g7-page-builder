@@ -5,7 +5,7 @@ import {
   parseRouteTargetOptions,
   resolveRoutePath,
 } from '../../resources/js/editor/RouteUrlField';
-import type { RouteCatalogEntry } from '../../resources/js/documents/types';
+import type { RouteCatalogEntry } from '../../resources/js/api/resources';
 
 const routes: RouteCatalogEntry[] = [
   {

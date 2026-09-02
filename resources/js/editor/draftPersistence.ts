@@ -1,4 +1,5 @@
-import type { DocumentResource, PageBuilderDocument } from '../documents/types';
+import type { PageBuilderDocument } from '../documents/types';
+import type { DocumentResource } from '../api/resources';
 
 interface DraftSnapshot {
   document: PageBuilderDocument | null;

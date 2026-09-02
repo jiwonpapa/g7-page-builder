@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { Puck, usePuck, type Config, type Plugin } from '@puckeditor/core';
 import { Check, Layers3, ListTree, Monitor, PanelLeft, PanelRight, Plus, Redo2, Smartphone, Tablet, Undo2 } from 'lucide-react';
-import type { SitePartSetResource } from '../documents/types';
+import type { SitePartSetResource } from '../api/resources';
 import type { SitePartComponents, SitePartPuckData, SitePartSetPresetKey } from './sitePartDocumentAdapter';
 import { useSitePartHistory } from './useSitePartHistory';
 

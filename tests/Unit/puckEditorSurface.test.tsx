@@ -8,7 +8,8 @@ import type { Config, UsePuckData } from '@puckeditor/core';
 import type { EditorComponents } from '../../resources/js/editor/puckEditorTypes';
 import type { PageDesignProps } from '../../resources/js/editor/pageDesignTokens';
 
-import type { PageBuilderDocument, SitePartResource } from '../../resources/js/documents/types';
+import type { PageBuilderDocument } from '../../resources/js/documents/types';
+import type { SitePartResource } from '../../resources/js/api/resources';
 import { CANVAS_ELEMENT_MESSAGE } from '../../resources/js/editor/canvasEditingContract';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
 import companyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';

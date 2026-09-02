@@ -6,7 +6,7 @@ import {
   PageBuilderApiError,
   buildAdminLoginUrl,
 } from '../../resources/js/api/pageBuilderApi';
-import type { DocumentResource } from '../../resources/js/documents/types';
+import type { DocumentResource } from '../../resources/js/api/resources';
 import { normalizeDocumentTransport } from '../../resources/js/documents/normalizeDocumentTransport';
 import { moveLayoutNode } from '../../resources/js/documents/layoutTree';
 import { validateLayoutDocument } from '../../resources/js/documents/layoutPolicy';

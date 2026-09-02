@@ -8,10 +8,8 @@ import {
 } from '../api/pageBuilderApi';
 import type {
   SitePartKind,
-  SitePartResource,
-  SitePartSetPartSummary,
-  SitePartSetResource,
 } from '../documents/types';
+import type { SitePartResource, SitePartSetPartSummary, SitePartSetResource } from '../api/resources';
 import { SitePartSetEditor } from './SitePartSetEditor';
 
 interface SitePartWorkspaceProps {

@@ -11,11 +11,7 @@ import {
 } from 'lucide-react';
 
 import { PageBuilderApiClient } from '../api/pageBuilderApi';
-import type {
-  DocumentResource,
-  RouteCatalogEntry,
-  RouteCatalogResource,
-} from '../documents/types';
+import type { DocumentResource, RouteCatalogEntry, RouteCatalogResource } from '../api/resources';
 
 const api = new PageBuilderApiClient();
 export const OPEN_ROUTE_PICKER_EVENT = 'g7pb:open-selected-route-picker';

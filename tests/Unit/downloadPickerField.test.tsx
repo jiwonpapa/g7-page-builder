@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PageBuilderApiClient } from '../../resources/js/api/pageBuilderApi';
-import type { MediaAssetResource } from '../../resources/js/documents/types';
+import type { MediaAssetResource } from '../../resources/js/api/resources';
 import { createDownloadField } from '../../resources/js/editor/DownloadPickerField';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });

@@ -46,11 +46,29 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.transport.calls.clear()
 
     def test_explicit_smoke_observes_db_failure_after_a_previous_success(self):
+        self.assert_failure_requires_recheck(smoke_only=True)
+
+    def test_forced_smoke_failure_cannot_reuse_a_previous_success(self):
+        self.assert_failure_requires_recheck(force=True)
+
+    def assert_failure_requires_recheck(self, **options):
         self.transport.database_ready = False
         with self.assertRaisesRegex(ValueError, "Site Part artifacts are missing"):
-            release.deploy(self.root, self.transport, self.archive, smoke_only=True)
+            release.deploy(self.root, self.transport, self.archive, **options)
         self.assertEqual(self.transport.calls, ["status", "smoke"])
         self.assertEqual(self.transport.applied_sha, self.archive["sha256"])
+        self.transport.calls.clear()
+        with self.assertRaisesRegex(ValueError, "Site Part artifacts are missing"):
+            release.deploy(self.root, self.transport, self.archive)
+        self.assertEqual(self.transport.calls, ["status", "smoke"])
+
+        self.transport.database_ready = True
+        self.transport.calls.clear()
+        self.assertEqual(release.deploy(self.root, self.transport, self.archive)["smoke"], "passed")
+        self.assertEqual(self.transport.calls, ["status", "smoke"])
+        self.transport.calls.clear()
+        self.assertEqual(release.deploy(self.root, self.transport, self.archive)["smoke"], "reused")
+        self.assertEqual(self.transport.calls, ["status"])
 
     def test_each_explicit_smoke_runs_even_after_a_successful_explicit_smoke(self):
         for _ in range(2):

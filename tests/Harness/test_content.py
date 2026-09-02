@@ -264,29 +264,134 @@ function compile($document, ...$arguments) { return (object) ['artifact' => '<h1
             self.assertNotEqual(failed.returncode, 0)
         self.assertFalse((self.root / "mock-invalid/index.json").exists())
 
-    def test_shell_scope_digest_ignores_release_number_and_unrelated_editor_input(self):
+    def shell_fingerprint_fixture(self):
         repository = Path(__file__).resolve().parents[2]
         script = "scripts/check-site-shell-product-quality.mjs"
-        self.write(script, (repository / script).read_text())
+        for path in (script, "scripts/lib/editorSourceGraph.mjs", "scripts/lib/editorCssSources.mjs"):
+            self.write(path, (repository / path).read_text())
+        (self.root / "node_modules").symlink_to(repository / "node_modules", target_is_directory=True)
         self.write("package.json", {"version": "1.0.0", "dependencies": {}, "devDependencies": {}})
         self.write("package-lock.json", {"version": "1.0.0", "packages": {"": {"version": "1.0.0"}}})
-        command = ["node", str(self.root / script), "--ids", "mobile"]
+        self.write("tsconfig.json", {"compilerOptions": {"module": "ESNext", "verbatimModuleSyntax": True}})
+        self.write("resources/js/public/pageEffects.ts", """
+import { value } from './publicRuntime';
+import './siteShellControls';
+import './mobileNavigation';
+import '../../css/page-builder-public.css';
+export const bootPageEffects = () => value;
+""")
+        self.write("resources/js/public/publicRuntime.ts", "export { value } from './publicValues';")
+        self.write("resources/js/public/publicValues.ts", "export const value = 'original';")
+        self.write("resources/js/public/siteShellControls.ts", "export const controls = true;")
+        self.write("resources/js/public/mobileNavigation.ts", "import './mobileNavigation.css'; export const mobile = true;")
+        self.write("resources/js/public/mobileNavigation.css", ".navigation {display:block}")
+        self.write("resources/css/page-builder-public.css", "@import './page-builder-theme.css';")
+        self.write("resources/css/page-builder-theme.css", ":root {--fixture: red}")
+        command = ["node", str(self.root / script)]
         described = subprocess.run([*command, "--describe-inputs"], cwd=self.root, check=True, capture_output=True, text=True)
-        for path in json.loads(described.stdout)["mobile"]:
-            self.write(path, "fixture")
+        for paths in json.loads(described.stdout).values():
+            for path in paths:
+                # Real graph helpers, config and sources must stay executable.
+                if not (self.root / path).exists():
+                    self.write(path, "fixture")
+        return command
 
-        def fingerprints():
-            result = subprocess.run([*command, "--fingerprints"], cwd=self.root, check=True, capture_output=True, text=True)
-            return json.loads(result.stdout)
+    def shell_fingerprints(self, command):
+        result = subprocess.run([*command, "--fingerprints"], cwd=self.root, check=True, capture_output=True, text=True)
+        return json.loads(result.stdout)
 
-        before = fingerprints()
+    def test_shell_scope_digest_ignores_release_number_and_unrelated_editor_input(self):
+        command = [*self.shell_fingerprint_fixture(), "--ids", "mobile"]
+        before = self.shell_fingerprints(command)
         self.write("package.json", {"version": "1.0.1", "dependencies": {}, "devDependencies": {}})
         self.write("package-lock.json", {"version": "1.0.1", "packages": {"": {"version": "1.0.1"}}})
         self.write("resources/js/editor/SitePartEditor.tsx", "unrelated editor fixture")
-        self.assertEqual(before, fingerprints())
-        self.write("resources/js/public/mobileNavigation.ts", "changed mobile fixture")
-        self.assertNotEqual(before, fingerprints())
+        self.assertEqual(before, self.shell_fingerprints(command))
+        self.write("resources/js/public/mobileNavigation.ts", "export const mobile = 'changed';")
+        self.assertNotEqual(before, self.shell_fingerprints(command))
         self.assertFalse(before["browser_executed"])
+
+    def test_shell_scope_digest_tracks_extracted_helper_without_rebuilding_dist(self):
+        command = self.shell_fingerprint_fixture()
+        before = self.shell_fingerprints(command)
+        artifacts = {str(path): path.read_bytes() for path in (self.root / "dist").rglob("*") if path.is_file()}
+        self.write("resources/js/public/publicValues.ts", "export const value = 'changed helper';")
+        after = self.shell_fingerprints(command)
+        for scope in ("shell", "mobile", "editor"):
+            with self.subTest(scope=scope):
+                self.assertNotEqual(before["fingerprints"][scope], after["fingerprints"][scope],
+                                    "A connected public helper changed while dist stayed fixed")
+        self.assertEqual(artifacts, {str(path): path.read_bytes() for path in (self.root / "dist").rglob("*") if path.is_file()})
+        self.assertTrue(after["current_sources_checked"])
+        self.assertFalse(after["browser_executed"])
+
+    def test_shell_scope_inputs_follow_runtime_reexports_css_and_compiler_config_only(self):
+        command = self.shell_fingerprint_fixture()
+        self.write("tsconfig.json", {"extends": "./tsconfig.public.json"})
+        self.write("tsconfig.public.json", {"compilerOptions": {"module": "ESNext", "verbatimModuleSyntax": True}})
+        self.write("resources/js/public/publicRuntime.ts", """
+export { value } from './publicValues';
+import type { Unused } from './typeOnly';
+// import './commentOnly';
+const documentation = "import './stringOnly'";
+""")
+        disconnected = ["resources/js/public/" + name + ".ts" for name in ("typeOnly", "commentOnly", "stringOnly", "unconnected")]
+        for path in disconnected:
+            self.write(path, "export type Unused = string;")
+        described = subprocess.run([*command, "--describe-inputs"], cwd=self.root, check=True, capture_output=True, text=True)
+        inputs = json.loads(described.stdout)
+        self.assertEqual(set(inputs), {"shell", "mobile", "editor"})
+        for scope, paths in inputs.items():
+            with self.subTest(scope=scope):
+                for path in ["resources/js/public/publicRuntime.ts", "resources/js/public/publicValues.ts",
+                             "resources/css/page-builder-theme.css", "tsconfig.json", "tsconfig.public.json",
+                             "scripts/check-site-shell-product-quality.mjs", "scripts/lib/editorSourceGraph.mjs",
+                             "scripts/lib/editorCssSources.mjs"]:
+                    self.assertIn(path, paths)
+                self.assertTrue(set(disconnected).isdisjoint(paths))
+        before = self.shell_fingerprints(command)
+        for path in disconnected:
+            self.write(path, "export type Unused = number;")
+        self.assertEqual(before, self.shell_fingerprints(command))
+        for path, value in [
+            ("resources/css/page-builder-theme.css", ":root {--fixture: blue}"),
+            ("tsconfig.public.json", {"compilerOptions": {"module": "ESNext", "verbatimModuleSyntax": False}}),
+        ]:
+            with self.subTest(changed=path):
+                before = self.shell_fingerprints(command)
+                self.write(path, value)
+                after = self.shell_fingerprints(command)
+                for scope in inputs:
+                    self.assertNotEqual(before["fingerprints"][scope], after["fingerprints"][scope])
+
+    def test_shell_scope_fingerprints_fail_closed_for_unresolved_public_imports(self):
+        command = self.shell_fingerprint_fixture()
+        for source, error in [
+            ("export { value } from './missing';", "Missing editor source import"),
+            ("import './pageEffects'; export const value = 1;", "Circular editor source import"),
+            ("const target = './publicValues'; import(target); export const value = 1;", "Dynamic editor source import"),
+            ("import '../../../../outside.ts'; export const value = 1;", "Editor source escapes root"),
+        ]:
+            with self.subTest(error=error):
+                self.write("resources/js/public/publicRuntime.ts", source)
+                failed = subprocess.run([*command, "--fingerprints"], cwd=self.root, capture_output=True, text=True)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertIn(error, failed.stderr)
+                self.assertNotIn("current_sources_checked", failed.stdout)
+
+    def test_shell_scope_fingerprints_fail_closed_for_unresolved_css_imports(self):
+        command = self.shell_fingerprint_fixture()
+        for source, error in [
+            ("@import './missing.css';", "Missing CSS import"),
+            ("@import './page-builder-public.css';", "Circular CSS import"),
+            ("@import url(var(--stylesheet));", "Unsupported CSS import"),
+        ]:
+            with self.subTest(error=error):
+                self.write("resources/css/page-builder-theme.css", source)
+                failed = subprocess.run([*command, "--fingerprints"], cwd=self.root, capture_output=True, text=True)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertIn(error, failed.stderr)
+                self.assertNotIn("current_sources_checked", failed.stdout)
 
 
 if __name__ == "__main__":

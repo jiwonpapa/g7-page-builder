@@ -234,7 +234,7 @@ export async function readEditorSourceGraph(subject, entries = [EDITOR_ENTRY]) {
     if (ts.isPropertyAccessExpression(node)) return member(node.expression, node.name.text, seen) ?? node;
     return node;
   };
-  const member = (input, name, seen) => {
+  const member = (input, name, seen, resolveMember = true) => {
     let object = value(input, seen);
     if (object && ts.isCallExpression(object)) {
       const callee = value(object.expression, seen);
@@ -249,12 +249,13 @@ export async function readEditorSourceGraph(subject, entries = [EDITOR_ENTRY]) {
       if (returns.length !== 1) return undefined;
       object = value(returns[0], seen);
     }
-    if (!object || !ts.isObjectLiteralExpression(object)) return undefined;
+    if (!object || !ts.isObjectLiteralExpression(object) || object.properties.some(ts.isSpreadAssignment)) return undefined;
     const properties = object.properties.filter(item => item.name?.getText() === name);
     if (properties.length !== 1) return undefined;
     const property = properties[0];
-    return value(ts.isShorthandPropertyAssignment(property) ? property.name
-      : ts.isPropertyAssignment(property) ? property.initializer : undefined, seen);
+    const expression = ts.isShorthandPropertyAssignment(property) ? property.name
+      : ts.isPropertyAssignment(property) ? property.initializer : undefined;
+    return resolveMember ? value(expression, seen) : expression;
   };
   const sameValue = (left, right) => {
     const a = value(left), b = value(right);
@@ -263,13 +264,51 @@ export async function readEditorSourceGraph(subject, entries = [EDITOR_ENTRY]) {
     return ts.isPropertyAccessExpression(a) && ts.isPropertyAccessExpression(b)
       && a.name.text === b.name.text && sameValue(a.expression, b.expression);
   };
+  // Resolve a single local hook's explicit parameter/argument wiring. This is
+  // value provenance, not execution: multiple callers, defaults and spreads are
+  // deliberately unresolved rather than selecting an arbitrary input.
+  const inputBinding = (input, seen = new Set()) => {
+    let node = input;
+    if (!node || seen.has(node)) return undefined;
+    seen = new Set([...seen, node]);
+    if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isNonNullExpression(node)) return inputBinding(node.expression, seen);
+    if (ts.isIdentifier(node)) node = symbol(node)?.valueDeclaration ?? symbol(node)?.declarations?.[0] ?? node;
+    if (ts.isVariableDeclaration(node) && node.initializer) return inputBinding(node.initializer, seen);
+    if (ts.isPropertyAccessExpression(node)) {
+      const receiver = inputBinding(node.expression, seen);
+      return receiver && { node: receiver.node, members: [...receiver.members, node.name.text] };
+    }
+    const binding = ts.isBindingElement(node) && ts.isObjectBindingPattern(node.parent) ? node : undefined;
+    if (binding && ts.isVariableDeclaration(binding.parent.parent)) {
+      return inputBinding(member(binding.parent.parent.initializer, (binding.propertyName ?? binding.name).getText(), new Set(), false), seen);
+    }
+    const parameter = ts.isParameter(node) ? node : binding && ts.isParameter(binding.parent.parent) ? binding.parent.parent : undefined;
+    if (parameter) {
+      if (parameter.initializer || parameter.dotDotDotToken || binding?.initializer || binding?.dotDotDotToken) return undefined;
+      const owner = parameter.parent;
+      const calls = find(candidate => ts.isCallExpression(candidate) && value(candidate.expression) === owner);
+      if (calls.length !== 1 || !owner.parameters) return undefined;
+      if (calls[0].arguments.some(ts.isSpreadElement)) return undefined;
+      const argument = calls[0].arguments[owner.parameters.indexOf(parameter)];
+      return inputBinding(binding ? member(argument, (binding.propertyName ?? binding.name).getText(), new Set(), false) : argument, seen);
+    }
+    if (ts.isCallExpression(node) && isImportReference(node.expression, 'useMemo', 'react')) {
+      const factory = node.arguments[0];
+      if (!factory || !ts.isArrowFunction(factory)) return undefined;
+      const body = factory.body;
+      return inputBinding(ts.isBlock(body) ? body.statements.length === 1 && ts.isReturnStatement(body.statements[0]) ? body.statements[0].expression : undefined : body, seen);
+    }
+    return { node, members: [] };
+  };
   return {
     files: [...new Set([...modules.keys()].map(file => relative(root, file)).concat([...configFiles]))].sort(),
     nodes(name) { return namedNodes.get(name) ?? []; },
     find,
     value,
     sameValue,
+    inputBinding,
     member(input, name) { return member(input, name, new Set()); },
+    memberExpression(input, name) { return member(input, name, new Set(), false); },
     isImportReference,
     usesImport(owner, imported, moduleName) {
       const nodes = namedNodes.get(owner) ?? [];

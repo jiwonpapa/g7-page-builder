@@ -71,6 +71,36 @@ MANAGER_STORE = BrowserScenario("tests/E2E/managerCodeContracts.spec.ts", titles
 MANAGER_INBOX = replace(MANAGER_STORE, titles=(
     "keeps synthetic inquiry actions bound to their pending item",))
 MOBILE_NAV = BrowserScenario("tests/E2E/mobileNavigationQuality.spec.ts")
+PUBLIC_DATA = BrowserScenario("tests/E2E/publicRuntimeLifecycle.spec.ts", titles=(
+    "loads synthetic public data and filters the loaded rows without another request",))
+PUBLIC_CONTROLS = replace(PUBLIC_DATA, titles=(
+    "hydrates typed public controls and submits only the active inquiry form",))
+PUBLIC_MOTION = replace(PUBLIC_DATA, titles=(
+    "initializes synthetic sliders and motion from the shipped bundle",))
+PUBLIC_SHELL = replace(PUBLIC_DATA, titles=(
+    "hydrates synthetic shell controls and keeps service requests explicit",))
+
+# P1-P3 preserve the existing public/responsive and shell contracts. These
+# additional desktop scenarios use synthetic DOM/API fixtures with the shipped
+# bundle, not catalog content or real account/inquiry service acceptance.
+PUBLIC_CODE_SCOPES = {
+    **{"resources/js/public/" + name: (PUBLIC, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL)
+       for name in ("pageEffects.ts", "publicRuntime.ts")},
+    "resources/js/public/publicValues.ts": (PUBLIC, PUBLIC_DATA, PUBLIC_SHELL),
+    **{"resources/js/public/" + name: (PUBLIC, PUBLIC_DATA) for name in (
+        "publicDataRendering.ts", "publicArchiveControls.ts", "publicDataRuntime.ts",
+    )},
+    "resources/js/public/publicHydration.ts": (PUBLIC, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL),
+    **{"resources/js/public/" + name: (PUBLIC, PUBLIC_CONTROLS) for name in (
+        "publicContentControls.ts", "publicInquiryForms.ts",
+    )},
+    **{"resources/js/public/" + name: (PUBLIC, PUBLIC_MOTION) for name in (
+        "publicMotion.ts", "publicSliders.ts",
+    )},
+    **{"resources/js/public/" + name: (SITE_SHELL, PUBLIC_SHELL) for name in (
+        "siteShellControls.ts", "siteShellRuntime.ts", "siteShellActions.ts",
+    )},
+}
 CATALOG_FRAME = BrowserScenario("tests/E2E/editorCatalogCode.spec.ts", titles=(
     "catalog frames preserve selection appearance and motion across families",))
 CATALOG_FIELDS = replace(CATALOG_FRAME, titles=(
@@ -179,9 +209,9 @@ RULES = (
 def scenarios_for(paths):
     selected = set()
     for path in paths:
-        catalog = CATALOG_CODE_SCOPES.get(path)
-        if catalog:
-            selected.update(catalog)
+        owned = CATALOG_CODE_SCOPES.get(path) or PUBLIC_CODE_SCOPES.get(path)
+        if owned:
+            selected.update(owned)
             continue
         for patterns, scenarios in RULES:
             if any(fnmatchcase(path, pattern) for pattern in patterns):

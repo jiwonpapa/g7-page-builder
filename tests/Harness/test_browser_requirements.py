@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, scenarios_for
 import re
 import subprocess
 from tools.g7pb.planner import build_plan
@@ -78,7 +78,126 @@ EXTRACTED_CATALOG_SCOPES = {
 }
 
 
+def public_roles(*roles):
+    return replace(PUBLIC_DATA, titles=tuple(sorted({title for role in roles for title in role.titles})))
+
+
+PUBLIC_ALL = public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL)
+# Reviewed behavior ownership, independently enumerated from the dispatcher.
+# Values contains record/text/URL conversion used by data and shell rendering;
+# counter parsing/formatting remains with motion, not this common value helper.
+EXTRACTED_PUBLIC_SCOPES = {
+    "pageEffects.ts": {PUBLIC, PUBLIC_ALL},
+    "publicRuntime.ts": {PUBLIC, PUBLIC_ALL},
+    "publicValues.ts": {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_SHELL)},
+    "publicDataRendering.ts": {PUBLIC, PUBLIC_DATA},
+    "publicArchiveControls.ts": {PUBLIC, PUBLIC_DATA},
+    "publicDataRuntime.ts": {PUBLIC, PUBLIC_DATA},
+    "publicHydration.ts": {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL)},
+    "publicContentControls.ts": {PUBLIC, PUBLIC_CONTROLS},
+    "publicInquiryForms.ts": {PUBLIC, PUBLIC_CONTROLS},
+    "publicMotion.ts": {PUBLIC, PUBLIC_MOTION},
+    "publicSliders.ts": {PUBLIC, PUBLIC_MOTION},
+    "siteShellControls.ts": {SITE_SHELL, PUBLIC_SHELL},
+    "siteShellRuntime.ts": {SITE_SHELL, PUBLIC_SHELL},
+    "siteShellActions.ts": {SITE_SHELL, PUBLIC_SHELL},
+}
+
+
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_public_owners_keep_responsive_shell_and_exact_synthetic_roles(self):
+        self.assertEqual(set(PUBLIC_CODE_SCOPES), {"resources/js/public/" + name for name in EXTRACTED_PUBLIC_SCOPES})
+        for name, expected in EXTRACTED_PUBLIC_SCOPES.items():
+            with self.subTest(source=name):
+                selected = scenarios_for(["resources/js/public/" + name])
+                self.assertEqual(set(selected), expected)
+                self.assertTrue({PARITY.spec, STORE.spec}.isdisjoint(item.spec for item in selected))
+                for scenario in selected:
+                    self.assertEqual(scenario.preset_prefixes, ())
+                    self.assertTrue(all(value is None for _, value in scenario.environment(Path("."))))
+                    if scenario.spec == PUBLIC_DATA.spec:
+                        self.assertEqual(scenario.projects, ("desktop",))
+        self.assertEqual(PUBLIC.projects, ("desktop", "tablet", "mobile"))
+        self.assertEqual(scenarios_for(["resources/js/public/newUnreviewedOwner.ts"]), (PUBLIC,))
+        for extension in ("ts", "css"):
+            self.assertEqual(scenarios_for(["resources/js/public/mobileNavigation." + extension]), (MOBILE_NAV,))
+        sources = ["resources/js/public/" + name for name in EXTRACTED_PUBLIC_SCOPES]
+        self.assertEqual(set(scenarios_for(sources)), {PUBLIC, SITE_SHELL, PUBLIC_ALL})
+        self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))
+
+    def test_public_owners_keep_transitive_units_and_runtime_only_after_submission(self):
+        for name, expected in EXTRACTED_PUBLIC_SCOPES.items():
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = "resources/js/public/" + name
+                facade = "resources/js/public/runtimeFacade.ts"
+                unit = "tests/Unit/publicRuntime.test.ts"
+                files = {
+                    source: "export const fixture = 1;",
+                    facade: "export { fixture } from './" + name + "';",
+                    unit: "import '../../" + facade + "';",
+                    **{scenario.spec: "import {test} from '@playwright/test';" for scenario in expected},
+                }
+                for path, content in files.items():
+                    target = root / path
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(content)
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(source=name, phase=phase):
+                        plan = build_plan(root, [source], base="missing-reviewed-base", phase=phase)
+                        self.assertFalse(plan.full)
+                        self.assertEqual(plan.unresolved, [])
+                        gates = {gate.name: gate for gate in plan.gates}
+                        self.assertIn(source, gates["unit:" + unit].inputs)
+                        self.assertIn(facade, gates["unit:" + unit].inputs)
+                        self.assertIn("typecheck", gates)
+                        self.assertFalse(any(key.startswith(("content:", "browser-registration:")) for key in gates))
+                        self.assertEqual({key for key in gates if key.startswith("browser:")},
+                                         {"browser:" + scenario.spec for scenario in expected})
+                        for scenario in expected:
+                            gate = gates["browser:" + scenario.spec]
+                            self.assertTrue(gate.runtime)
+                            self.assertEqual(gate.deferred, phase == "submission")
+                            self.assertEqual(gate.depends_on, ("browser-assets",))
+                            self.assertIn(source, gate.inputs)
+                            self.assertEqual({arg for arg in gate.argv if arg.startswith("--project=")},
+                                             {"--project=" + project for project in scenario.projects})
+                            self.assertEqual(set(gate.browser_expectations), {
+                                (project, title) for project in scenario.projects for title in scenario.titles})
+                            self.assertTrue(all(value is None for _, value in gate.env))
+
+    def test_public_source_missing_synthetic_scenario_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = "resources/js/public/publicSliders.ts"
+            files = {source: "export const fixture = 1;",
+                     "tests/Unit/publicRuntime.test.ts": "import '../../" + source + "';",
+                     PUBLIC.spec: "import {test} from '@playwright/test';"}
+            for path, content in files.items():
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content)
+            plan = build_plan(root, [source], phase="integration")
+            self.assertFalse(plan.full)
+            self.assertIn("Missing required browser scenario: " + PUBLIC_DATA.spec, plan.unresolved)
+
+    def test_public_spec_definition_collects_without_running_product_or_content(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            spec = root / PUBLIC_DATA.spec
+            spec.parent.mkdir(parents=True)
+            spec.write_text("import {test} from '@playwright/test';")
+            for phase in ("submission", "integration", "verification", "ci"):
+                with self.subTest(phase=phase):
+                    plan = build_plan(root, [PUBLIC_DATA.spec], phase=phase)
+                    self.assertFalse(plan.full)
+                    self.assertEqual(plan.unresolved, [])
+                    gates = {gate.name: gate for gate in plan.gates}
+                    gate = gates["browser-registration:" + PUBLIC_DATA.spec]
+                    self.assertIn("--list", gate.argv)
+                    self.assertFalse(gate.runtime)
+                    self.assertFalse(any(name.startswith(("browser:", "content:")) for name in gates))
+
     def test_manager_requests_select_synthetic_contracts_and_keep_page_workflow(self):
         for name, expected in EXTRACTED_MANAGER_SCOPES.items():
             with self.subTest(source=name):

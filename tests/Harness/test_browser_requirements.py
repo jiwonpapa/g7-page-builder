@@ -20,6 +20,29 @@ class BrowserRequirementsTests(unittest.TestCase):
             self.assertEqual(scenarios_for([path]), (STRUCTURE_THEME,))
         self.assertEqual(SITE_SHELL.projects, ("desktop",))
 
+    def test_block_appearance_selects_theme_and_text_without_preset_input(self):
+        selected = scenarios_for(["resources/js/editor/blockAppearance.ts"])
+        self.assertEqual(set(selected), {STRUCTURE_THEME, TEXT})
+        self.assertNotIn(PARITY.spec, {scenario.spec for scenario in selected})
+        # A code contract must not read the preset manifest or inherit a manual
+        # catalog selector, even when no content files exist at the subject root.
+        with tempfile.TemporaryDirectory() as directory:
+            for scenario in selected:
+                with self.subTest(spec=scenario.spec):
+                    self.assertEqual(scenario.projects, ("desktop",))
+                    self.assertEqual(scenario.preset_prefixes, ())
+                    self.assertNotIn("ALL_PRESET_LAYOUT_GATE", " ".join(scenario.arguments()))
+                    environment = dict(scenario.environment(Path(directory)))
+                    self.assertIsNone(environment["G7PB_PRESET_IDS"])
+                    self.assertIsNone(environment["G7PB_PAGE_KIT_IDS"])
+                    self.assertTrue(all(value is None for value in environment.values()))
+
+    def test_block_appearance_scope_keeps_other_style_parity_contracts(self):
+        for path in ("resources/js/editor/responsiveBlockStyle.tsx",
+                     "src/Application/Compilation/ElementAppearanceCompiler.php"):
+            with self.subTest(source=path):
+                self.assertEqual(scenarios_for([path]), (PARITY,))
+
     def test_sources_deduplicate_workflows_and_do_not_select_unrelated_store(self):
         self.assertEqual(scenarios_for(["resources/js/editor/fontSize.ts", "resources/js/editor/richTextEditing.tsx"]), (TEXT,))
         self.assertEqual(scenarios_for(["src/Application/Compilation/SitePartHtmlCompiler.php"]), (SITE_PART,))

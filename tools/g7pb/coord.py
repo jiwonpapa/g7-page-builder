@@ -430,6 +430,11 @@ class Coordinator:
         previous = self.latest_verified(head)
         require(previous is not None or args.full, "신뢰할 검증 기준이 없습니다. 전체 검증이 필요하면 --full을 명시하십시오.")
         base = previous["verified_sha"] if previous else ""
+        # A historical release receipt establishes trust, but must not widen this
+        # integration's delta to unrelated work completed before its clean start.
+        # Keep a newer verified descendant for reuse; explicit full stays full.
+        if previous and not args.full and self.git.ancestor(base, meta["base_sha"]):
+            base = meta["base_sha"]
         full = bool(args.full)
         paths = self.git.paths(base, head) if base else []
         policy_full = full

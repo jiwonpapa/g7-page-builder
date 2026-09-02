@@ -84,8 +84,9 @@ CATALOG_PREFIXES = {
 RULES = (
     # Document transactions and shared style contracts use synthetic code fixtures,
     # not preset/catalog content sweeps. Catalog modules retain their own mapping.
-    (("resources/js/editor/PuckEditorAdapter.tsx", "resources/js/editor/PuckDocumentBoundary.tsx",
-      "resources/js/editor/editorDocumentBoundary.ts", "resources/js/editor/main.tsx",
+    (("resources/js/editor/PuckEditorAdapter.tsx",), (PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY)),
+    (("resources/js/editor/main.tsx",), (PAGE, DOCUMENT_BOUNDARY)),
+    (("resources/js/editor/PuckDocumentBoundary.tsx", "resources/js/editor/editorDocumentBoundary.ts",
       "resources/js/editor/draftPersistence.ts"), (DOCUMENT_BOUNDARY,)),
     (("resources/js/editor/layout*", "resources/js/documents/layout*"), (NESTED, STRUCTURE_THEME)),
     (("resources/js/editor/richText*", "resources/js/editor/fontSize.ts"), (TEXT,)),
@@ -103,7 +104,7 @@ RULES = (
     (("resources/js/public/*", "resources/css/page-effects*"), (PUBLIC,)),
     (("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css"), (STRUCTURE_THEME,)),
     (("resources/js/store/*", "src/Application/Store/*", "src/Domain/Store/*", "src/Infrastructure/Store/*"), (STORE,)),
-    (("resources/js/editor/PuckEditorAdapter.tsx", "resources/js/editor/puckBlockCodec.ts", "resources/js/editor/puckDocumentAdapter.ts"), (PAGE, TEXT, STRUCTURE_THEME)),
+    (("resources/js/editor/puckBlockCodec.ts", "resources/js/editor/puckDocumentAdapter.ts"), (PAGE, TEXT, STRUCTURE_THEME)),
     (("resources/css/page-builder-editor*",), (CONTROLS, STRUCTURE_THEME)),
     (("resources/css/page-builder-site-part*",), (SITE_PART,)),
     (("resources/css/page-builder-core.css",), (STRUCTURE_THEME,)),

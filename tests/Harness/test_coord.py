@@ -402,5 +402,10 @@ class LegacyCompatibilityTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout[-10000:] + result.stderr[-15000:])
 
 
+def load_tests(loader, _tests, _pattern):
+    """The one-off legacy migration fixture is explicit, not repeated by discovery."""
+    return unittest.TestSuite(loader.loadTestsFromTestCase(case) for case in (StateTests, CoordinatorTests))
+
+
 if __name__ == "__main__":
     unittest.main()

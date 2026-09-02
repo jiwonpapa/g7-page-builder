@@ -3,6 +3,8 @@ COMPOSE := docker compose --project-name g7pb-dev --env-file .env.docker.local -
 COORD_HARNESS := ./scripts/coord-harness.sh
 PROFILE ?= scoped
 BASE_REF ?= HEAD
+DEPS ?= all
+SYNC_BASE ?=
 
 .PHONY: infra-plan infra-check
 infra-plan:
@@ -97,12 +99,11 @@ check-agent-policy:
 	@grep -Fq '<!-- policy:cleanup-approval-orchestration:v1:end -->' AGENTS.md || { echo 'Cleanup approval policy end marker missing.' >&2; exit 2; }
 
 quality-coordination: check-agent-policy
-	bash tests/Harness/coord-harness.test.sh
-	bash tests/Harness/verification-policy.test.sh
-	npm run check:editor-acceptance
-	bash tests/Harness/editor-acceptance-contract.test.sh
-	bash tests/Harness/block-product-quality-contract.test.sh
-	bash tests/Harness/block-quality-gate-wiring.test.sh
+	python3 -B -m unittest discover -s tests/Harness -p 'test_*.py'
+
+# Explicit one-time migration compatibility check; never part of ordinary gates.
+quality-coordination-compat:
+	PYTHONPATH=tests/Harness python3 -B -m unittest test_coord.LegacyCompatibilityTests
 
 dev-bootstrap: runtime-guard
 	./scripts/dev-bootstrap.sh
@@ -121,32 +122,33 @@ dev-install: runtime-guard
 	./scripts/dev-install.sh
 
 dev-deps: runtime-guard
-	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
-		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
-		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
-		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && composer install --no-interaction --no-progress --prefer-dist && npm ci'
+	python3 scripts/g7pb.py environment deps --runtime docker --task "$(TASK)" --only "$(DEPS)" --apply
+
+dev-npm: runtime-guard
+	python3 scripts/g7pb.py environment deps --runtime docker --task "$(TASK)" --only npm --apply
+
+dev-composer: runtime-guard
+	python3 scripts/g7pb.py environment deps --runtime docker --task "$(TASK)" --only composer --apply
 
 dev-build-assets: runtime-guard
-	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
-		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
-		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
-		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm ci && npm run build'
+	python3 scripts/g7pb.py environment build --runtime docker --task "$(TASK)" --apply
 
-dev-sync: runtime-guard dev-build-assets
-	./scripts/dev-sync-module.sh
+dev-sync: runtime-guard
+	@test -n "$(SYNC_BASE)" || { echo 'SYNC_BASE is required; no implicit full sync.' >&2; exit 2; }
+	python3 scripts/g7pb.py environment sync --runtime docker --task "$(TASK)" --base "$(SYNC_BASE)" --apply
 
-quality-php: runtime-guard dev-deps
+quality-php: runtime-guard dev-composer
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && composer check'
 
-quality-php-coverage: runtime-guard dev-deps
+quality-php-coverage: runtime-guard dev-composer
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e XDEBUG_MODE=coverage \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && mkdir -p output/coverage && vendor/bin/phpunit --bootstrap tests/Integration/bootstrap.php tests/UnitPhp tests/Integration --coverage-clover output/coverage/php-clover.xml --coverage-filter src && php scripts/check-php-coverage.php output/coverage/php-clover.xml'
 
-quality-frontend: runtime-guard dev-deps
+quality-frontend: runtime-guard dev-npm
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
@@ -225,11 +227,11 @@ dev-reset: runtime-guard
 staging-doctor:
 	./scripts/staging-doctor.sh
 
-release-package: release-guard
-	./scripts/release-package.sh
+release-package:
+	TASK="$(TASK)" ./scripts/release-package.sh
 
-deploy-staging: release-guard
-	./scripts/deploy-staging.sh
+deploy-staging:
+	TASK="$(TASK)" ./scripts/deploy-staging.sh
 
-smoke-staging: release-guard
-	./scripts/smoke-staging.sh
+smoke-staging:
+	TASK="$(TASK)" ./scripts/smoke-staging.sh

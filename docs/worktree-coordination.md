@@ -241,6 +241,6 @@ task 채팅을 먼저 archive하면 Codex-managed worktree가 정리될 수 있�
 | 제출 task의 기준 SHA 변경 | 소유 Worktree에서 `task-restack TASK=<id> NEW_BASE_REF=<sha>`를 실행합니다. 중복 commit 역사 때문에 rebase가 충돌하면 `task-restack-squash`로 최종 delta만 재적층합니다. 최종 delta도 의미 충돌이면 `task-replace-submitted`로 새 task에 claim을 원자적 이관합니다. |
 | profile gate 실패 | 제출 Worktree에서 수정 후 다시 submit합니다. |
 | runtime guard 실패 | 기본 Local의 integration+runtime task에서 `TASK=`를 지정합니다. |
-| release guard 실패 | active task, dirty 상태, 검증 SHA를 확인하고 `integration-verify`를 재실행합니다. |
+| release guard 실패 | 미통합 submitted task, dirty 상태, 검증 SHA를 확인합니다. 독립 active 작업은 보존하며 강제 종료하지 않습니다. 필요한 변경 범위만 확인하고 무조건 전체 검증하지 않습니다. |
 
 하네스 상태를 수동 편집하거나 `.git/g7pb-coordination-v1`을 삭제해 lease를 우회하지 않습니다.

@@ -66,8 +66,9 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 });
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
-const { Puck } = await import('@puckeditor/core');
+const { Puck, usePuck } = await import('@puckeditor/core');
 const { PuckEditorAdapter, canonicalToPuck, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { layoutCatalogComponentConfigs } = await import('../../resources/js/editor/layoutCatalogBlocks');
 const {
   createRichTextField,
   RichTextCanvasField,
@@ -222,6 +223,35 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('does not overwrite newer nested content with a previously confirmed column merge', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    const current: { state?: ReturnType<typeof usePuck> } = {};
+    function Probe(): React.ReactElement { current.state = usePuck(); return <></>; }
+    const data = canonicalToPuck(structuredClone(layoutFixture) as PageBuilderDocument).data;
+    const selector = { index: 0, zone: `${data.content[0].props.id}:content` };
+    const config = { ...pageBuilderPuckConfig, components: { ...pageBuilderPuckConfig.components, ...layoutCatalogComponentConfigs } };
+    await act(async () => {
+      root.render(<Puck config={config} data={data} ui={{ itemSelector: selector }} iframe={{ enabled: false }}>
+        <Probe /><Puck.Fields />
+      </Puck>);
+    });
+    const count = await eventually<HTMLElement>('[data-testid="page-builder-layout-column-count"]');
+    await act(async () => { count.querySelector<HTMLButtonElement>('button')?.click(); });
+    const confirm = await eventually<HTMLElement>('[data-testid="page-builder-layout-column-confirm"]');
+    const selected = current.state?.selectedItem;
+    if (!selected) throw new Error('Columns must be selected');
+    const changed = structuredClone(selected);
+    changed.props.gap = 'spacious';
+    await act(async () => { current.state?.dispatch({ type: 'replace', destinationIndex: selector.index, destinationZone: selector.zone, data: changed }); });
+    await act(async () => { Array.from(confirm.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent === '이동 후 변경')?.click(); });
+    expect(current.state?.selectedItem?.props.columns).toBe('2');
+    expect(current.state?.selectedItem?.props.gap).toBe('spacious');
+    expect(document.body.textContent).toContain('확인 중에 구조가 변경되었습니다.');
+  });
+
   it('requires explicit consent before a v1 document enables structure editing', async () => {
     const container = document.createElement('div');
     document.body.append(container);

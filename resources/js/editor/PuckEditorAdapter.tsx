@@ -1,131 +1,101 @@
-import { canonicalDocumentToPuck, puckDocumentToCanonical, type PuckAdapterContext, type PuckEditorSession } from './puckDocumentAdapter';
+import { activateStructureEditing, asString, canonicalBlockToPuck, canonicalToPuck, DEFAULT_FEATURES, idToUuid, isSplitHeroLayout, normalizeFeatureItems, normalizeTheme, puckBlockToCanonical, puckToCanonical } from './puckBlockCodec';
+import { editorInsertionDestination, editorItemLocations, resolveEditorSelection } from './puckEditorSelection';
+import type { ContactEditorProps, CtaEditorProps, EditorComponents, FeaturesEditorProps, HeroEditorProps, PuckEditorData } from './puckEditorTypes';
+export { activateStructureEditing, canonicalToPuck, puckToCanonical } from './puckBlockCodec';
 export type { PuckAdapterContext, PuckEditorSession } from './puckDocumentAdapter';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import {
-  Ban,
+  ActionBar,
+  createUsePuck,
+  Puck,
+  type Config,
+  type PuckAction,
+  type Viewports,
+} from '@puckeditor/core';
+import '@puckeditor/core/puck.css';
+import {
   AlignCenter,
   AlignLeft,
   AlignRight,
   ArrowDown,
   ArrowUp,
+  Ban,
   Blocks,
   Copy,
   ImageOff,
   ImagePlus,
   Link2,
   Monitor,
+  Moon,
   Paintbrush,
   Plus,
-  Moon,
-  Sun,
+  Settings2,
   Smartphone,
   Sparkles,
   Star,
-  Settings2,
+  Sun,
   Tablet,
   Trash2,
   X,
 } from 'lucide-react';
-import {
-  ActionBar,
-  createUsePuck,
-  Puck,
-  type Config,
-  type Data,
-  type PuckAction,
-  type Viewports,
-} from '@puckeditor/core';
-import '@puckeditor/core/puck.css';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { EditorPortal } from './EditorPortal';
+import { SectionPatternControls } from './SectionPatternControls';
 
-import {
-  CatalogGalleryThumbnail,
-  canonicalCatalogBlockToPuck,
-  catalogComponentConfigs,
-  catalogPuckBlockToCanonical,
-  type CatalogEditorComponents,
-} from './catalogBlocks';
-import {
-  layoutCatalogComponentConfigs,
-  type LayoutCatalogEditorComponents,
-} from './layoutCatalogBlocks';
+import { ADMIN_AUTH_TOKEN_KEY, PageBuilderApiClient } from '../api/pageBuilderApi';
 import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS, BUILTIN_BLOCK_PRESETS, BUILTIN_CORE_MANIFEST } from '../blocks/builtinCatalog';
-import type { BlockCatalogItem } from '../blocks/types';
 import {
-  externalBlockForComponent,
-  externalBlockForDocument,
   externalEditorComponents,
   isEditorComponentRegistered,
 } from '../blocks/runtimeRegistry';
-import { ADMIN_AUTH_TOKEN_KEY, PageBuilderApiClient } from '../api/pageBuilderApi';
-import {
-  createMotionField,
-  DEFAULT_BLOCK_MOTION,
-  motionPreviewAttributes,
-  normalizeBlockMotion,
-} from './blockMotion';
-import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
-import { CatalogIcon, type CatalogIconName } from './catalogIcon';
-import { FONT_SIZE_REM_OPTIONS, normalizeFontSizeRem } from './fontSize';
-import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
-import { canvasTextValue } from './foundationCatalogBlocks';
-import {
-  createInlineRichTextField,
-  createRichTextField,
-  richTextRangeAnchorFromSelection,
-  RICH_TEXT_RANGE_STATE_MESSAGE,
-  RichTextCanvasField,
-} from './richTextEditing';
-import {
-  CANVAS_ELEMENT_MESSAGE,
-  collectionLimit,
-  notifyCanvasElementSelection,
-  resolveMediaFieldPath,
-  resolveRouteFieldPath,
-  decorateCanvasElementStyles,
-  normalizeElementAppearance,
-  normalizeElementAppearanceMap,
-  remapCollectionElementAppearanceMap,
-  shouldAutoOpenCanvasTextTools,
-  CanvasBlockAppearanceContext,
-  CanvasCurrentElementStylesContext,
-  CanvasElementStylesContext,
-  useCanvasBlockAppearanceClass,
-  useCanvasElementStyles,
-  setValueAtPath,
-  valueAtPath,
-  type CanvasElementSelection,
-} from './canvasEditingContract';
-import {
-  INITIAL_CANVAS_CONTEXT_STATE,
-  canvasContextRangeAnchor,
-  canvasContextRangeActive,
-  canvasContextSelection,
-  normalizeCanvasRangeAnchor,
-  reduceCanvasContextState,
-  type CanvasRangeAnchor,
-  type CanvasContextAction,
-} from './canvasContextState';
-import { SitePartEditor, AnnouncementPreview, FooterColumnsPreview, FooterSimplePreview, HeaderNavigationPreview } from './SitePartEditor';
-import { sitePartCanonicalToPuck, type SitePartComponents } from './sitePartDocumentAdapter';
-import {
-  pageDesignClassName,
-  pageDesignCustomCss,
-  type PageDesignProps,
-} from './pageDesignTokens';
+import type { BlockCatalogItem } from '../blocks/types';
 import {
   BLOCK_CONTAINER_FIELDS,
-  blockContainerEditorProps,
   blockContainerClassName,
   mergeBlockContainerAppearance,
 } from './blockAppearance';
 import {
-  createResponsiveAppearanceField,
-  hasResponsiveOverrides,
-  normalizeResponsiveOverrides,
-  responsiveClassName,
-} from './responsiveBlockStyle';
+  createMotionField,
+  DEFAULT_BLOCK_MOTION,
+  motionPreviewAttributes,
+} from './blockMotion';
+import {
+  canvasContextRangeActive,
+  canvasContextRangeAnchor,
+  canvasContextSelection,
+  INITIAL_CANVAS_CONTEXT_STATE,
+  normalizeCanvasRangeAnchor,
+  reduceCanvasContextState,
+  type CanvasContextAction,
+  type CanvasRangeAnchor,
+} from './canvasContextState';
+import {
+  CANVAS_ELEMENT_MESSAGE,
+  CanvasBlockAppearanceContext,
+  CanvasCurrentElementStylesContext,
+  CanvasElementStylesContext,
+  collectionLimit,
+  decorateCanvasElementStyles,
+  normalizeElementAppearance,
+  normalizeElementAppearanceMap,
+  notifyCanvasElementSelection,
+  remapCollectionElementAppearanceMap,
+  resolveMediaFieldPath,
+  resolveRouteFieldPath,
+  setValueAtPath,
+  shouldAutoOpenCanvasTextTools,
+  useCanvasBlockAppearanceClass,
+  useCanvasElementStyles,
+  valueAtPath,
+  type CanvasElementSelection,
+} from './canvasEditingContract';
+import {
+  catalogComponentConfigs,
+  CatalogGalleryThumbnail,
+  type CatalogEditorComponents,
+} from './catalogBlocks';
+import { CatalogIcon, type CatalogIconName } from './catalogIcon';
 import {
   clearVisibleClipContract,
   currentInteractionRects,
@@ -140,110 +110,47 @@ import {
   applyEditorContentPolicy,
   initialEditorCanvasWidth,
   PC_EDITOR_MIN_HOST_WIDTH,
-  PC_EDITOR_VIEWPORT_WIDTH,
   PC_EDITOR_POLICY_NOTICE,
+  PC_EDITOR_VIEWPORT_WIDTH,
   resolveEditorViewportPolicy,
   type EditorFieldContract,
   type EditorViewportPolicy,
 } from './editorViewportPolicy';
+import { FONT_SIZE_REM_OPTIONS, normalizeFontSizeRem } from './fontSize';
+import { canvasTextValue } from './foundationCatalogBlocks';
+import {
+  layoutCatalogComponentConfigs,
+} from './layoutCatalogBlocks';
+import { CanvasMediaPicker, createMediaField } from './MediaPickerField';
+import {
+  pageDesignClassName,
+  pageDesignCustomCss,
+  type PageDesignProps,
+} from './pageDesignTokens';
+import {
+  createResponsiveAppearanceField,
+  responsiveClassName,
+} from './responsiveBlockStyle';
+import {
+  createInlineRichTextField,
+  createRichTextField,
+  RICH_TEXT_RANGE_STATE_MESSAGE,
+  RichTextCanvasField,
+  richTextRangeAnchorFromSelection,
+} from './richTextEditing';
+import { CanvasRoutePicker, createRouteUrlField } from './RouteUrlField';
+import { sitePartCanonicalToPuck, type SitePartComponents } from './sitePartDocumentAdapter';
+import { AnnouncementPreview, FooterColumnsPreview, FooterSimplePreview, HeaderNavigationPreview, SitePartEditor } from './SitePartEditor';
 
 import {
-  CONTACT_BLOCK_TYPE,
-  CTA_BLOCK_TYPE,
-  FEATURES_BLOCK_TYPE,
-  HERO_BLOCK_TYPE,
-  LAYOUT_COLUMNS_BLOCK_TYPE,
   LAYOUT_SECTION_BLOCK_TYPE,
-  LAYOUT_STACK_BLOCK_TYPE,
-  type ContactBlockProps,
-  type BlockAppearance,
   type BlockMotion,
-  type CtaBlockProps,
-  type FeatureItem,
-  type FeaturesBlockProps,
-  type HeroBlockProps,
-  type PageBuilderBlock,
-  type PageBuilderDocument,
-  type SectionPatternResource,
   type ElementAppearance,
   type ElementAppearanceMap,
+  type PageBuilderBlock,
+  type PageBuilderDocument,
   type SitePartResource,
 } from '../documents/types';
-import { validateLayoutDocument } from '../documents/layoutPolicy';
-import { cloneLayoutSubtree } from '../documents/layoutTree';
-
-interface HeroEditorProps {
-  eyebrow: string;
-  title: string;
-  body: string;
-  primaryLabel: string;
-  primaryUrl: string;
-  imageSrc: string;
-  imageAlt: string;
-  alignment: 'left' | 'center';
-  mediaPosition: 'left' | 'right';
-  layout: NonNullable<HeroBlockProps['layout']> | 'classic';
-  surface: BlockAppearance['surface'];
-  spacing: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  elementStyles?: ElementAppearanceMap;
-  motion: BlockMotion;
-}
-
-interface FeaturesEditorProps {
-  title: string;
-  items: FeatureItem[];
-  layout: NonNullable<FeaturesBlockProps['layout']>;
-  surface: BlockAppearance['surface'];
-  spacing: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  elementStyles?: ElementAppearanceMap;
-  motion: BlockMotion;
-}
-
-interface CtaEditorProps {
-  eyebrow: string;
-  heading: string;
-  body: string;
-  primaryLabel: string;
-  primaryUrl: string;
-  secondaryLabel: string;
-  secondaryUrl: string;
-  theme: 'light' | 'dark';
-  layout: NonNullable<CtaBlockProps['layout']>;
-  surface: BlockAppearance['surface'];
-  spacing: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  elementStyles?: ElementAppearanceMap;
-  motion: BlockMotion;
-}
-
-interface ContactEditorProps {
-  heading: string;
-  address: string;
-  phone: string;
-  email: string;
-  ctaLabel: string;
-  ctaUrl: string;
-  mapLabel: string;
-  mapUrl: string;
-  surface: BlockAppearance['surface'];
-  spacing: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  elementStyles?: ElementAppearanceMap;
-  motion: BlockMotion;
-}
-
-interface EditorComponents extends CatalogEditorComponents, LayoutCatalogEditorComponents {
-  Hero: HeroEditorProps;
-  Features: FeaturesEditorProps;
-  Cta: CtaEditorProps;
-  Contact: ContactEditorProps;
-}
 
 interface FullSiteCanvasValue {
   locale: PageBuilderDocument['locale'];
@@ -313,7 +220,7 @@ function FullSiteRoot({ children, design }: { children: React.ReactNode; design:
   </div>;
 }
 
-export type PuckEditorData = Data<EditorComponents, PageDesignProps>;
+export type { PuckEditorData } from './puckEditorTypes';
 
 const MOTION_PRESET_FAMILIES: Readonly<Record<string, readonly BlockMotion['preset'][]>> = Object.freeze({
   Hero: ['parallax-soft', 'reveal'],
@@ -370,9 +277,6 @@ interface PuckEditorAdapterProps {
   onPublish: (document: PageBuilderDocument) => void | Promise<void>;
 }
 
-const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i;
-const SAFE_ICONS = new Set(['sparkles', 'shield', 'bolt', 'heart']);
-
 const DEFAULT_HERO: HeroEditorProps = {
   eyebrow: '새로운 페이지',
   title: '방문자가 바로 이해하는 한 문장',
@@ -386,18 +290,6 @@ const DEFAULT_HERO: HeroEditorProps = {
   layout: 'product',
   surface: 'default',
   spacing: 'spacious',
-  motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_FEATURES: FeaturesEditorProps = {
-  title: '선택해야 하는 이유',
-  items: [
-    { icon: 'sparkles', title: '빠른 시작', body: '완성 블록을 골라 바로 편집합니다.' },
-    { icon: 'shield', title: '안전한 발행', body: '검증된 결과만 공개 페이지에 반영합니다.' },
-  ],
-  layout: 'bento',
-  surface: 'soft',
-  spacing: 'normal',
   motion: { ...DEFAULT_BLOCK_MOTION },
 };
 
@@ -436,617 +328,12 @@ export const PAGE_BUILDER_VIEWPORTS: Viewports = [
   { width: 1280, height: 'auto', label: 'PC', icon: 'Monitor' },
 ];
 
-function asString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback;
-}
-
-function normalizeAlignment(value: unknown): HeroEditorProps['alignment'] {
-  return value === 'left' ? 'left' : 'center';
-}
-
-function normalizeTheme(value: unknown): CtaEditorProps['theme'] {
-  return value === 'dark' ? 'dark' : 'light';
-}
-
-function normalizeHeroLayout(value: unknown): HeroEditorProps['layout'] {
-  return value === 'product' || value === 'poster' || value === 'backdrop' || value === 'editorial' || value === 'device'
-    || value === 'balanced' || value === 'screenshot' || value === 'overlap' || value === 'offset'
-    ? value
-    : 'classic';
-}
-
-function isSplitHeroLayout(layout: HeroEditorProps['layout']): layout is 'balanced' | 'screenshot' | 'overlap' | 'offset' {
-  return layout === 'balanced' || layout === 'screenshot' || layout === 'overlap' || layout === 'offset';
-}
-
-function normalizeFeaturesLayout(value: unknown): FeaturesEditorProps['layout'] {
-  return value === 'bento' || value === 'editorial' || value === 'panel' || value === 'list' ? value : 'grid';
-}
-
-function normalizeCtaLayout(value: unknown): CtaEditorProps['layout'] {
-  return value === 'centered' || value === 'banner' || value === 'panel' ? value : 'split';
-}
-
-function normalizeSurface(value: unknown, fallback: BlockAppearance['surface'] = 'default'): BlockAppearance['surface'] {
-  return value === 'soft' || value === 'contrast' || value === 'default' ? value : fallback;
-}
-
-function normalizeSpacing(value: unknown, fallback: BlockAppearance['spacing'] = 'normal'): BlockAppearance['spacing'] {
-  return value === 'compact' || value === 'spacious' || value === 'normal' ? value : fallback;
-}
-
-function appearanceToEditorProps(
-  value: unknown,
-  fallback: BlockAppearance,
-): Pick<HeroEditorProps, 'surface' | 'spacing' | 'textScale' | 'textAlign' | 'elementStyles'> {
-  const appearance = typeof value === 'object' && value !== null
-    ? value as Record<string, unknown>
-    : {};
-
-  return {
-    surface: normalizeSurface(appearance.surface, fallback.surface),
-    spacing: normalizeSpacing(appearance.spacing, fallback.spacing),
-    textScale: appearance.textScale === 'compact' || appearance.textScale === 'large' ? appearance.textScale : 'balanced',
-    textAlign: appearance.textAlign === 'center' || appearance.textAlign === 'right' ? appearance.textAlign : 'left',
-    elementStyles: normalizeElementAppearanceMap(appearance.elements),
-  };
-}
-
-function editorAppearance(
-  surface: unknown,
-  spacing: unknown,
-  fallback: BlockAppearance,
-  textScale?: unknown,
-  textAlign?: unknown,
-  elementStyles?: unknown,
-): BlockAppearance {
-  const appearance: BlockAppearance = {
-    surface: normalizeSurface(surface, fallback.surface),
-    spacing: normalizeSpacing(spacing, fallback.spacing),
-  };
-  if (textScale === 'compact' || textScale === 'large') appearance.textScale = textScale;
-  if (textAlign === 'center' || textAlign === 'right') appearance.textAlign = textAlign;
-  const elements = normalizeElementAppearanceMap(elementStyles);
-  if (Object.keys(elements).length > 0) appearance.elements = elements;
-  return appearance;
-}
-
-function normalizeFeatureItems(value: unknown): FeatureItem[] {
-  if (!Array.isArray(value)) {
-    return DEFAULT_FEATURES.items.map((item) => ({ ...item }));
-  }
-
-  return value.slice(0, 6).map((item) => {
-    const record = typeof item === 'object' && item !== null ? (item as Record<string, unknown>) : {};
-    const icon = asString(record.icon, 'sparkles');
-
-    return {
-      icon: SAFE_ICONS.has(icon) ? icon : 'sparkles',
-      title: asString(record.title),
-      body: asString(record.body),
-    };
-  });
-}
-
 function inlineArrayContent(value: unknown, index: number, key: string, fallback: string): React.ReactNode {
   const item = Array.isArray(value) && typeof value[index] === 'object' && value[index] !== null
     ? value[index] as Record<string, unknown>
     : {};
   const candidate = item[key];
   return React.isValidElement(candidate) || typeof candidate === 'string' ? candidate : fallback;
-}
-
-function hasNonEmptySlots(block: PageBuilderBlock): boolean {
-  return Boolean(block.slots && Object.values(block.slots).some((slot) => slot.length > 0));
-}
-
-function idToUuid(id: unknown): string {
-  const source = asString(id, 'page-builder-block');
-  const uuid = source.match(UUID_PATTERN)?.[0];
-  if (uuid) {
-    return uuid.toLowerCase();
-  }
-
-  // Stable UUIDv5-shaped fallback for malformed or legacy Puck IDs.
-  const bytes = new Uint8Array(16);
-  let state = 0x811c9dc5;
-  for (let index = 0; index < source.length; index += 1) {
-    state ^= source.charCodeAt(index);
-    state = Math.imul(state, 0x01000193);
-    bytes[index % 16] = (bytes[index % 16] + (state >>> ((index % 4) * 8))) & 0xff;
-  }
-  bytes[6] = (bytes[6] & 0x0f) | 0x50;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function heroToEditorProps(props: Record<string, unknown>): HeroEditorProps {
-  const cta = typeof props.primaryCta === 'object' && props.primaryCta !== null
-    ? (props.primaryCta as Record<string, unknown>)
-    : {};
-  const image = typeof props.image === 'object' && props.image !== null
-    ? (props.image as Record<string, unknown>)
-    : {};
-
-  return {
-    eyebrow: asString(props.eyebrow),
-    title: asString(props.title),
-    body: asString(props.body),
-    primaryLabel: asString(cta.label),
-    primaryUrl: asString(cta.url),
-    imageSrc: asString(image.src),
-    imageAlt: asString(image.alt),
-    alignment: normalizeAlignment(props.alignment),
-    mediaPosition: props.mediaPosition === 'left' ? 'left' : 'right',
-    layout: normalizeHeroLayout(props.layout),
-    ...appearanceToEditorProps(props.appearance, { surface: 'default', spacing: 'spacious' }),
-    motion: { ...DEFAULT_BLOCK_MOTION },
-  };
-}
-
-function featuresToEditorProps(props: Record<string, unknown>): FeaturesEditorProps {
-  return {
-    title: asString(props.title),
-    items: normalizeFeatureItems(props.items),
-    layout: normalizeFeaturesLayout(props.layout),
-    ...appearanceToEditorProps(props.appearance, { surface: 'soft', spacing: 'normal' }),
-    motion: { ...DEFAULT_BLOCK_MOTION },
-  };
-}
-
-function linkToEditorProps(value: unknown): { label: string; url: string } {
-  const link = typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)
-    : {};
-
-  return {
-    label: asString(link.label),
-    url: asString(link.url),
-  };
-}
-
-function ctaToEditorProps(props: Record<string, unknown>): CtaEditorProps {
-  const primary = linkToEditorProps(props.primaryLink);
-  const secondary = linkToEditorProps(props.secondaryLink);
-
-  return {
-    eyebrow: asString(props.eyebrow),
-    heading: asString(props.heading),
-    body: asString(props.body),
-    primaryLabel: primary.label,
-    primaryUrl: primary.url,
-    secondaryLabel: secondary.label,
-    secondaryUrl: secondary.url,
-    theme: normalizeTheme(props.theme),
-    layout: normalizeCtaLayout(props.layout),
-    ...appearanceToEditorProps(props.appearance, { surface: 'soft', spacing: 'normal' }),
-    motion: { ...DEFAULT_BLOCK_MOTION },
-  };
-}
-
-function contactToEditorProps(props: Record<string, unknown>): ContactEditorProps {
-  const cta = linkToEditorProps(props.cta);
-  const mapLink = linkToEditorProps(props.mapLink);
-
-  return {
-    heading: asString(props.heading),
-    address: asString(props.address),
-    phone: asString(props.phone),
-    email: asString(props.email),
-    ctaLabel: cta.label,
-    ctaUrl: cta.url,
-    mapLabel: mapLink.label,
-    mapUrl: mapLink.url,
-    ...appearanceToEditorProps(props.appearance, { surface: 'default', spacing: 'normal' }),
-    motion: { ...DEFAULT_BLOCK_MOTION },
-  };
-}
-
-function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['content'][number] {
-  if (block.type === LAYOUT_SECTION_BLOCK_TYPE) {
-    const width = block.props.width === 'wide' || block.props.width === 'full' ? block.props.width : 'standard';
-    const spacing = block.props.spacing === 'compact' || block.props.spacing === 'spacious' ? block.props.spacing : 'normal';
-    return {
-      type: 'LayoutSection',
-      props: {
-        id: block.instance_id,
-        width,
-        spacing,
-        content: (block.slots?.content ?? []).map(canonicalBlockToPuck),
-      },
-    } as unknown as PuckEditorData['content'][number];
-  }
-
-  if (block.type === LAYOUT_COLUMNS_BLOCK_TYPE) {
-    const columns = block.props.columns === 1 || block.props.columns === 3 ? block.props.columns : 2;
-    const ratios = columns === 1 ? ['1'] : columns === 3 ? ['1:1:1'] : ['1:1', '1:2', '2:1'];
-    const ratio = typeof block.props.ratio === 'string' && ratios.includes(block.props.ratio)
-      ? block.props.ratio : ratios[0]!;
-    const gap = block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
-      ? block.props.gap : 'normal';
-    return {
-      type: 'LayoutColumns',
-      props: {
-        id: block.instance_id,
-        columns: String(columns),
-        ratio,
-        gap,
-        column1: (block.slots?.column1 ?? []).map(canonicalBlockToPuck),
-        ...(columns >= 2 ? { column2: (block.slots?.column2 ?? []).map(canonicalBlockToPuck) } : {}),
-        ...(columns >= 3 ? { column3: (block.slots?.column3 ?? []).map(canonicalBlockToPuck) } : {}),
-      },
-    } as unknown as PuckEditorData['content'][number];
-  }
-
-  if (block.type === LAYOUT_STACK_BLOCK_TYPE) {
-    const gap = block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
-      ? block.props.gap : 'normal';
-    return {
-      type: 'LayoutStack',
-      props: {
-        id: block.instance_id,
-        gap,
-        content: (block.slots?.content ?? []).map(canonicalBlockToPuck),
-      },
-    } as unknown as PuckEditorData['content'][number];
-  }
-
-  if (hasNonEmptySlots(block)) {
-    throw new Error(`MVP block cannot contain nested slots: ${block.instance_id}`);
-  }
-
-  if (block.type === HERO_BLOCK_TYPE) {
-    return {
-      type: 'Hero',
-      props: {
-        id: block.instance_id,
-        ...heroToEditorProps(block.props),
-        motion: normalizeBlockMotion(block.motion),
-      },
-    };
-  }
-
-  if (block.type === FEATURES_BLOCK_TYPE) {
-    return {
-      type: 'Features',
-      props: {
-        id: block.instance_id,
-        ...featuresToEditorProps(block.props),
-        motion: normalizeBlockMotion(block.motion),
-      },
-    };
-  }
-
-  if (block.type === CTA_BLOCK_TYPE) {
-    return {
-      type: 'Cta',
-      props: {
-        id: block.instance_id,
-        ...ctaToEditorProps(block.props),
-        motion: normalizeBlockMotion(block.motion),
-      },
-    };
-  }
-
-  if (block.type === CONTACT_BLOCK_TYPE) {
-    return {
-      type: 'Contact',
-      props: {
-        id: block.instance_id,
-        ...contactToEditorProps(block.props),
-        motion: normalizeBlockMotion(block.motion),
-      },
-    };
-  }
-
-  const catalogBlock = canonicalCatalogBlockToPuck(block);
-  if (catalogBlock) {
-    return {
-      type: catalogBlock.type,
-      props: {
-        id: block.instance_id,
-        ...catalogBlock.props,
-        motion: normalizeBlockMotion(block.motion),
-      },
-    } as unknown as PuckEditorData['content'][number];
-  }
-
-  const externalBlock = externalBlockForDocument(block.type, block.block_version);
-  if (externalBlock) {
-    return {
-      type: externalBlock.editor_component,
-      props: {
-        ...block.props,
-        id: block.instance_id,
-        motion: normalizeBlockMotion(block.motion),
-        __g7pbBlockVersion: block.block_version,
-      },
-    } as unknown as PuckEditorData['content'][number];
-  }
-
-  throw new Error(`Unsupported PageBuilder block: ${block.type}`);
-}
-
-function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'][number] {
-  const converted = canonicalBlockToPuckRaw(block);
-  return {
-    ...converted,
-    props: {
-      ...converted.props,
-      ...blockContainerEditorProps(block.props.appearance),
-      responsiveOverrides: normalizeResponsiveOverrides(block.responsive),
-      __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',
-    },
-  } as unknown as PuckEditorData['content'][number];
-}
-
-export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSession {
-  if (document.schema_version === 'g7-page-builder/v2') validateLayoutDocument(document);
-  return canonicalDocumentToPuck(document, canonicalBlockToPuck);
-}
-
-function puckBlockToCanonical(
-  block: PuckEditorData['content'][number],
-  context: PuckAdapterContext,
-): PageBuilderBlock {
-  const instanceId = idToUuid(block.props.id);
-  const metadata = context.blocks[instanceId] ?? {
-    blockVersion: 1,
-    hadSlots: true,
-    hadAppearance: false,
-    hadMotion: false,
-    hadVisibility: false,
-    hadResponsive: false,
-    hadLayout: true,
-    initialLayout: null,
-    hadPageSize: true,
-    hadSliderSettings: false,
-  };
-  let type: string;
-  let blockVersion = metadata.blockVersion;
-  let supportsContainerAppearance = true;
-  let props: HeroBlockProps | FeaturesBlockProps | CtaBlockProps | ContactBlockProps | Record<string, unknown>;
-
-  if (block.type === 'LayoutSection') {
-    type = LAYOUT_SECTION_BLOCK_TYPE;
-    blockVersion = 1;
-    supportsContainerAppearance = false;
-    props = {
-      width: block.props.width === 'wide' || block.props.width === 'full' ? block.props.width : 'standard',
-      spacing: block.props.spacing === 'compact' || block.props.spacing === 'spacious' ? block.props.spacing : 'normal',
-    };
-  } else if (block.type === 'LayoutColumns') {
-    type = LAYOUT_COLUMNS_BLOCK_TYPE;
-    blockVersion = 1;
-    supportsContainerAppearance = false;
-    const columns = block.props.columns === '1' ? 1 : block.props.columns === '3' ? 3 : 2;
-    const ratios = columns === 1 ? ['1'] : columns === 3 ? ['1:1:1'] : ['1:1', '1:2', '2:1'];
-    props = {
-      columns,
-      ratio: typeof block.props.ratio === 'string' && ratios.includes(block.props.ratio) ? block.props.ratio : ratios[0],
-      gap: block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
-        ? block.props.gap : 'normal',
-    };
-  } else if (block.type === 'LayoutStack') {
-    type = LAYOUT_STACK_BLOCK_TYPE;
-    blockVersion = 1;
-    supportsContainerAppearance = false;
-    props = {
-      gap: block.props.gap === 'none' || block.props.gap === 'compact' || block.props.gap === 'spacious'
-        ? block.props.gap : 'normal',
-    };
-  } else if (block.type === 'Hero') {
-    const editorProps = block.props as typeof block.props & HeroEditorProps;
-    type = HERO_BLOCK_TYPE;
-    const heroProps: HeroBlockProps = {
-      eyebrow: asString(editorProps.eyebrow),
-      title: asString(editorProps.title),
-      body: asString(editorProps.body),
-      alignment: normalizeAlignment(editorProps.alignment),
-    };
-    const layout = normalizeHeroLayout(editorProps.layout);
-    if (layout !== 'classic') heroProps.layout = layout;
-    if (isSplitHeroLayout(layout)) heroProps.mediaPosition = editorProps.mediaPosition === 'left' ? 'left' : 'right';
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'spacious' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
-    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'spacious' || appearance.textScale || appearance.textAlign || appearance.elements) {
-      heroProps.appearance = appearance;
-    }
-    const primaryLabel = asString(editorProps.primaryLabel);
-    const primaryUrl = asString(editorProps.primaryUrl);
-    const imageSrc = asString(editorProps.imageSrc);
-    const imageAlt = asString(editorProps.imageAlt);
-    if (primaryLabel || primaryUrl) {
-      heroProps.primaryCta = { label: primaryLabel, url: primaryUrl };
-    }
-    if (imageSrc || imageAlt) {
-      heroProps.image = { src: imageSrc, alt: imageAlt };
-    }
-    props = heroProps;
-  } else if (block.type === 'Features') {
-    const editorProps = block.props as typeof block.props & FeaturesEditorProps;
-    type = FEATURES_BLOCK_TYPE;
-    props = {
-      title: asString(editorProps.title),
-      items: normalizeFeatureItems(editorProps.items),
-      layout: normalizeFeaturesLayout(editorProps.layout),
-    };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
-    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
-      props.appearance = appearance;
-    }
-  } else if (block.type === 'Cta') {
-    const editorProps = block.props as typeof block.props & CtaEditorProps;
-    type = CTA_BLOCK_TYPE;
-    const ctaProps: CtaBlockProps = {
-      eyebrow: asString(editorProps.eyebrow),
-      heading: asString(editorProps.heading),
-      body: asString(editorProps.body),
-      theme: normalizeTheme(editorProps.theme),
-      layout: normalizeCtaLayout(editorProps.layout),
-    };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'soft', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
-    if (metadata.hadAppearance || appearance.surface !== 'soft' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
-      ctaProps.appearance = appearance;
-    }
-    const primaryLabel = asString(editorProps.primaryLabel);
-    const primaryUrl = asString(editorProps.primaryUrl);
-    const secondaryLabel = asString(editorProps.secondaryLabel);
-    const secondaryUrl = asString(editorProps.secondaryUrl);
-    if (primaryLabel || primaryUrl) {
-      ctaProps.primaryLink = { label: primaryLabel, url: primaryUrl };
-    }
-    if (secondaryLabel || secondaryUrl) {
-      ctaProps.secondaryLink = { label: secondaryLabel, url: secondaryUrl };
-    }
-    props = ctaProps;
-  } else if (block.type === 'Contact') {
-    const editorProps = block.props as typeof block.props & ContactEditorProps;
-    type = CONTACT_BLOCK_TYPE;
-    const contactProps: ContactBlockProps = {
-      heading: asString(editorProps.heading),
-      address: asString(editorProps.address),
-      phone: asString(editorProps.phone),
-      email: asString(editorProps.email),
-    };
-    const appearance = editorAppearance(editorProps.surface, editorProps.spacing, { surface: 'default', spacing: 'normal' }, editorProps.textScale, editorProps.textAlign, editorProps.elementStyles);
-    if (metadata.hadAppearance || appearance.surface !== 'default' || appearance.spacing !== 'normal' || appearance.textScale || appearance.textAlign || appearance.elements) {
-      contactProps.appearance = appearance;
-    }
-    const ctaLabel = asString(editorProps.ctaLabel);
-    const ctaUrl = asString(editorProps.ctaUrl);
-    const mapLabel = asString(editorProps.mapLabel);
-    const mapUrl = asString(editorProps.mapUrl);
-    if (ctaLabel || ctaUrl) {
-      contactProps.cta = { label: ctaLabel, url: ctaUrl };
-    }
-    if (mapLabel || mapUrl) {
-      contactProps.mapLink = { label: mapLabel, url: mapUrl };
-    }
-    props = contactProps;
-  } else {
-    const catalogBlock = catalogPuckBlockToCanonical(
-      (block as { type: string }).type,
-      block.props as Record<string, unknown>,
-      metadata.hadAppearance,
-      metadata.hadSliderSettings,
-    );
-    if (!catalogBlock) {
-      const externalBlock = externalBlockForComponent((block as { type: string }).type);
-      if (!externalBlock) {
-        throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
-      }
-      const externalProps = { ...block.props } as Record<string, unknown>;
-      delete externalProps.id;
-      delete externalProps.motion;
-      delete externalProps.__g7pbBlockVersion;
-      delete externalProps.__g7pbVisibilityAudience;
-      type = externalBlock.block_id;
-      blockVersion = externalBlock.block_version;
-      supportsContainerAppearance = false;
-      props = externalProps;
-    } else {
-      type = catalogBlock.type;
-      props = catalogBlock.props;
-    }
-  }
-
-  const canonical: PageBuilderBlock = {
-    instance_id: instanceId,
-    type,
-    block_version: blockVersion,
-    props: props as unknown as Record<string, unknown>,
-  };
-
-  if (supportsContainerAppearance) {
-    const appearance = mergeBlockContainerAppearance(canonical.props.appearance, block.props as Record<string, unknown>);
-    if (appearance) canonical.props.appearance = appearance;
-    else delete canonical.props.appearance;
-  }
-
-  if (!metadata.hadPageSize) {
-    delete canonical.props.pageSize;
-  }
-  if (!metadata.hadLayout && canonical.props.layout === metadata.initialLayout) {
-    delete canonical.props.layout;
-  }
-
-  const motion = normalizeBlockMotion(block.props.motion);
-  if (metadata.hadMotion || motion.preset !== 'none') {
-    canonical.motion = motion;
-  }
-
-  const internalProps = block.props as Record<string, unknown>;
-  const responsive = normalizeResponsiveOverrides(internalProps.responsiveOverrides);
-  delete canonical.props.responsiveOverrides;
-  if (hasResponsiveOverrides(responsive)) canonical.responsive = responsive;
-  const visibilityAudience = internalProps.__g7pbVisibilityAudience === 'guest'
-    || internalProps.__g7pbVisibilityAudience === 'member'
-    ? internalProps.__g7pbVisibilityAudience
-    : 'all';
-  if (metadata.hadVisibility || visibilityAudience !== 'all') {
-    canonical.visibility = { audience: visibilityAudience };
-  }
-
-  if (block.type === 'LayoutSection') {
-    const children = Array.isArray(block.props.content) ? block.props.content : [];
-    canonical.slots = { content: children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)) };
-  } else if (block.type === 'LayoutColumns') {
-    const columns = canonical.props.columns === 1 || canonical.props.columns === 3 ? canonical.props.columns : 2;
-    const blockProps = block.props as Record<string, unknown>;
-    canonical.slots = Object.fromEntries(Array.from({ length: columns }, (_, index) => {
-      const name = `column${index + 1}`;
-      const children = Array.isArray(blockProps[name]) ? blockProps[name] as unknown[] : [];
-      return [name, children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context))];
-    }));
-  } else if (block.type === 'LayoutStack') {
-    const children = Array.isArray(block.props.content) ? block.props.content : [];
-    canonical.slots = { content: children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)) };
-  } else if (metadata.hadSlots) {
-    canonical.slots = {};
-  }
-
-  return canonical;
-}
-
-export function puckToCanonical(data: PuckEditorData, context: PuckAdapterContext): PageBuilderDocument {
-  return puckDocumentToCanonical(data, context, puckBlockToCanonical);
-}
-
-export function activateStructureEditing(
-  data: PuckEditorData,
-  context: PuckAdapterContext,
-): { document: PageBuilderDocument; context: PuckAdapterContext } {
-  const nextContext: PuckAdapterContext = {
-    ...context,
-    document: {
-      ...context.document,
-      schemaVersion: 'g7-page-builder/v2',
-    },
-  };
-  const nextDocument = puckToCanonical(data, nextContext);
-
-  return { document: nextDocument, context: nextContext };
-}
-
-function flattenPuckBlocks(blocks: PuckEditorData['content']): PuckEditorData['content'] {
-  const flattened: PuckEditorData['content'] = [];
-  const visit = (block: PuckEditorData['content'][number]): void => {
-    flattened.push(block);
-    for (const candidate of Object.values(block.props as Record<string, unknown>)) {
-      if (!Array.isArray(candidate)) continue;
-      for (const child of candidate) {
-        if (typeof child !== 'object' || child === null) continue;
-        const item = child as Record<string, unknown>;
-        if (typeof item.type === 'string' && typeof item.props === 'object' && item.props !== null) {
-          visit(child as PuckEditorData['content'][number]);
-        }
-      }
-    }
-  };
-  blocks.forEach(visit);
-  return flattened;
 }
 
 function safeLink(value: unknown): string {
@@ -2093,19 +1380,20 @@ function BlockGalleryThumbnail({ item }: { item: BlockGalleryItem }): React.Reac
 
 function StableAddBlockControls({
   dispatch,
-  contentLength,
+  data,
   selectedIndex,
   selectedZone,
   disabled,
 }: {
   dispatch: (action: PuckAction) => void;
-  contentLength: number;
+  data: PuckEditorData;
   selectedIndex: number | null;
   selectedZone: string;
   disabled: boolean;
 }): React.ReactElement {
   const { items, toggleFavorite } = React.useContext(BlockCatalogContext);
   const [open, setOpen] = useState(false);
+  const [insertionError, setInsertionError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [packId, setPackId] = useState('');
@@ -2186,16 +1474,22 @@ function StableAddBlockControls({
   }, [open]);
 
   const insert = (item: BlockGalleryItem): void => {
-    const destinationIndex = selectedZone === 'root:default-zone' && selectedIndex !== null
-      ? selectedIndex + 1
-      : contentLength;
+    let destination;
+    try {
+      destination = editorInsertionDestination(data, selectedIndex === null ? null : { index: selectedIndex, zone: selectedZone }, item.type);
+    } catch {
+      setInsertionError('선택한 위치에는 이 블럭을 추가할 수 없습니다. 다른 구역을 선택해 주세요.');
+      return;
+    }
+    setInsertionError(null);
+    const destinationIndex = destination.index;
     const instanceId = idToUuid(`${item.catalogId}:${Date.now()}:${Math.random()}`);
 
     dispatch({
       type: 'insert',
       componentType: item.type,
       destinationIndex,
-      destinationZone: 'root:default-zone',
+      destinationZone: destination.zone,
       id: instanceId,
     });
     if (item.presetProps) {
@@ -2209,8 +1503,9 @@ function StableAddBlockControls({
       dispatch({
         type: 'replace',
         destinationIndex,
-        destinationZone: 'root:default-zone',
+        destinationZone: destination.zone,
         data: presetBlock,
+        recordHistory: false,
       });
     }
     dispatch({
@@ -2218,7 +1513,7 @@ function StableAddBlockControls({
       ui: {
         itemSelector: {
           index: destinationIndex,
-          zone: 'root:default-zone',
+          zone: destination.zone,
         },
       },
       recordHistory: false,
@@ -2255,6 +1550,7 @@ function StableAddBlockControls({
               <button type="button" className="g7pb-block-gallery__close" aria-label="블록 갤러리 닫기"
                 onClick={() => setOpen(false)}><X size={20} aria-hidden="true" /></button>
             </header>
+            {insertionError && <p role="alert">{insertionError}</p>}
             <div className="g7pb-block-gallery__tabs" role="tablist" aria-label="블록 라이브러리 형식">
               {([['all', '전체'], ['definition', '블록 종류'], ['preset', '완성 섹션']] as const).map(([value, label]) => (
                 <button type="button" role="tab" key={value} aria-selected={kind === value}
@@ -2389,7 +1685,6 @@ function StableHeaderControls({
     dispatch({
       type: 'setData',
       data: {
-        ...data,
         content: data.content.map((block, index) => ({
           ...block,
           props: {
@@ -2397,7 +1692,7 @@ function StableHeaderControls({
             motion: motionPlan[index] ?? { ...DEFAULT_BLOCK_MOTION, preset: 'reveal' },
           },
         })),
-      } as never,
+      },
       recordHistory: true,
     });
   };
@@ -2406,12 +1701,11 @@ function StableHeaderControls({
     dispatch({
       type: 'setData',
       data: {
-        ...data,
         content: data.content.map((block) => ({
           ...block,
           props: { ...block.props, motion: { ...DEFAULT_BLOCK_MOTION } },
         })),
-      } as never,
+      },
       recordHistory: true,
     });
   };
@@ -2427,7 +1721,7 @@ function StableHeaderControls({
   const setColorMode = (colorMode: PageDesignProps['colorMode']): void => {
     dispatch({
       type: 'setData',
-      data: { ...data, root: { ...data.root, props: { ...data.root.props, colorMode } } } as never,
+      data: (previous) => ({ root: { ...previous.root, props: { ...previous.root.props, colorMode } } }),
       recordHistory: true,
     });
   };
@@ -2470,8 +1764,8 @@ function StableHeaderControls({
         ))}
       </div>
       <StableAddBlockControls
+        data={data}
         dispatch={dispatch}
-        contentLength={contentLength}
         selectedIndex={selectedIndex}
         selectedZone={selectedZone}
         disabled={editingDisabled}
@@ -2490,10 +1784,27 @@ function ConnectedHeaderControls({
   viewportDisabled: boolean;
 }): React.ReactElement {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
+  const selectedItemId = usePageBuilderPuck((state) => state.selectedItem?.props.id ?? null);
   const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
-  const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
+  const previousSelectedId = useRef<string | null>(null);
+  const canvasUi = React.useContext(CanvasEditingUiContext);
+  useEffect(() => {
+    const previous = previousSelectedId.current;
+    previousSelectedId.current = selectedItemId;
+    // Outline navigation has no canvas pointer event. Retire its old element
+    // target without discarding a fresh pointer selection for the new block.
+    const selector = selectedIndex === null ? null : { index: selectedIndex, zone: selectedZone };
+    if (previous !== selectedItemId && canvasUi?.selection
+      && (!selectedItemId || !resolveEditorSelection(data, selector, canvasUi.selection.blockId))) {
+      canvasUi.setSelection(null);
+      canvasUi.setTextToolsOpen(false);
+      canvasUi.setMediaDialogOpen(false);
+      canvasUi.setRouteDialogOpen(false);
+    }
+  }, [selectedItemId, selectedIndex, selectedZone, data, canvasUi]);
+  const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
   const viewportState = usePageBuilderPuck((state) => state.appState.ui.viewports);
 
   useEffect(() => {
@@ -2516,160 +1827,15 @@ function ConnectedHeaderControls({
   );
 }
 
-function ConnectedSectionPatternControls({
-  disabled,
-  resolveSection,
-}: {
-  disabled: boolean;
-  resolveSection: (block: PuckEditorData['content'][number]) => PageBuilderBlock;
-}): React.ReactElement {
-  const api = useMemo(() => new PageBuilderApiClient(), []);
-  const dispatch = usePageBuilderPuck((state) => state.dispatch);
-  const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
-  const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
-  const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
-  const selectedSection = selectedZone === 'root:default-zone' && selectedIndex !== null
-    && data.content[selectedIndex]?.type === 'LayoutSection'
-    ? data.content[selectedIndex] : null;
-  const [dialog, setDialog] = useState<'save' | 'library' | null>(null);
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('custom');
-  const [patterns, setPatterns] = useState<SectionPatternResource[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadPatterns = useCallback(async (): Promise<void> => {
-    setBusy(true);
-    setError(null);
-    try {
-      setPatterns((await api.listSectionPatterns()).items);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '내 패턴을 불러오지 못했습니다.');
-    } finally {
-      setBusy(false);
-    }
-  }, [api]);
-
-  const openLibrary = (): void => {
-    setDialog('library');
-    void loadPatterns();
-  };
-  const save = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    if (!selectedSection) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const pattern = await api.createSectionPattern({
-        title: title.trim(),
-        category,
-        source_document_schema: 'g7-page-builder/v2',
-        section: resolveSection(selectedSection),
-      });
-      setPatterns((current) => [pattern, ...current.filter((item) => item.pattern_id !== pattern.pattern_id)]);
-      setTitle('');
-      setDialog('library');
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '선택한 구역을 저장하지 못했습니다.');
-    } finally {
-      setBusy(false);
-    }
-  };
-  const insertPattern = (pattern: SectionPatternResource): void => {
-    if (!pattern.compatible) return;
-    const freshSection = cloneLayoutSubtree(pattern.section, () => (
-      globalThis.crypto?.randomUUID?.() ?? idToUuid(`pattern:${pattern.pattern_id}:${Date.now()}:${Math.random()}`)
-    ));
-    const puckSection = canonicalBlockToPuck(freshSection);
-    const destinationIndex = selectedZone === 'root:default-zone' && selectedIndex !== null
-      ? selectedIndex + 1 : data.content.length;
-    const content = [...data.content];
-    content.splice(destinationIndex, 0, puckSection);
-    dispatch({
-      type: 'setData',
-      data: { ...data, content } as never,
-      recordHistory: true,
-    });
-    dispatch({
-      type: 'setUi',
-      ui: { itemSelector: { index: destinationIndex, zone: 'root:default-zone' } },
-      recordHistory: false,
-    });
-    setDialog(null);
-  };
-  const deletePattern = async (patternId: string): Promise<void> => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.deleteSectionPattern(patternId);
-      setPatterns((current) => current.filter((item) => item.pattern_id !== patternId));
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '내 패턴을 삭제하지 못했습니다.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return <>
-    <button type="button" className="g7pb-button g7pb-button--quiet"
-      data-testid="page-builder-save-section-pattern" disabled={disabled || !selectedSection}
-      title={selectedSection ? '선택한 Section 전체를 저장합니다.' : '저장할 Section을 먼저 선택하세요.'}
-      onClick={() => { setError(null); setDialog('save'); }}>선택 구역 저장</button>
-    <button type="button" className="g7pb-button g7pb-button--quiet"
-      data-testid="page-builder-section-patterns" disabled={disabled} onClick={openLibrary}>내 패턴</button>
-    {dialog && createPortal(
-      <div className="g7pb-dialog-backdrop" data-testid="page-builder-section-pattern-dialog">
-        <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-pattern-heading">
-          <p className="g7pb-kicker">{dialog === 'save' ? '선택한 Section' : '재사용 구역'}</p>
-          <h2 id="g7pb-pattern-heading">{dialog === 'save' ? '내 패턴으로 저장' : '내 패턴'}</h2>
-          {error && <p role="alert">{error}</p>}
-          {dialog === 'save' ? <form onSubmit={(event) => void save(event)}>
-            <label>패턴 이름<input value={title} required maxLength={120} autoFocus
-              data-testid="page-builder-pattern-title" onChange={(event) => setTitle(event.currentTarget.value)} /></label>
-            <label>분류<select value={category} onChange={(event) => setCategory(event.currentTarget.value)}>
-              <option value="custom">사용자 구역</option><option value="hero">첫 화면</option>
-              <option value="content">본문</option><option value="conversion">전환</option>
-            </select></label>
-            <p>HTML이 아니라 현재 canonical Section subtree를 저장합니다. 이미 삽입한 구역과 이후 수정은 서로 동기화되지 않습니다.</p>
-            <div className="g7pb-dialog__actions">
-              <button type="button" className="g7pb-button g7pb-button--quiet" onClick={() => setDialog(null)}>취소</button>
-              <button type="submit" className="g7pb-button g7pb-button--primary"
-                data-testid="page-builder-pattern-save-confirm" disabled={busy}>{busy ? '저장 중' : '저장'}</button>
-            </div>
-          </form> : <>
-            {busy && patterns.length === 0 ? <p role="status">내 패턴을 불러오는 중입니다.</p> : null}
-            {!busy && patterns.length === 0 ? <p>저장한 구역이 없습니다. Section을 선택한 뒤 `선택 구역 저장`을 사용하세요.</p> : null}
-            {patterns.map((pattern) => <article key={pattern.pattern_id} data-testid="page-builder-pattern-item">
-              <div><strong>{pattern.title}</strong><span>{pattern.category} · {pattern.preview.block_count}개 블록</span></div>
-              {!pattern.compatible ? <p role="status">{pattern.compatibility_error}</p> : null}
-              <div className="g7pb-dialog__actions">
-                <button type="button" className="g7pb-button g7pb-button--quiet" disabled={busy}
-                  onClick={() => void deletePattern(pattern.pattern_id)}>삭제</button>
-                <button type="button" className="g7pb-button g7pb-button--primary" disabled={busy || !pattern.compatible}
-                  data-testid="page-builder-pattern-insert" onClick={() => insertPattern(pattern)}>독립 복사본 삽입</button>
-              </div>
-            </article>)}
-            <div className="g7pb-dialog__actions"><button type="button" className="g7pb-button g7pb-button--quiet"
-              onClick={() => setDialog(null)}>닫기</button></div>
-          </>}
-        </section>
-      </div>,
-      globalThis.document.body,
-    )}
-  </>;
-}
-
 function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.ReactElement | null {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
   const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
-  const selectionIndex = canvasUi?.selection
-    ? data.content.findIndex((block) => idToUuid(asString(block.props.id)) === canvasUi.selection?.blockId)
-    : -1;
-  const blockIndex = selectionIndex >= 0 ? selectionIndex : selectedZone === 'root:default-zone' ? selectedIndex : null;
-  const selectedBlock = blockIndex !== null ? data.content[blockIndex] : null;
+  const location = resolveEditorSelection(data, selectedIndex === null ? null : { index: selectedIndex, zone: selectedZone }, canvasUi?.selection?.blockId);
+  const selectedBlock = location?.item;
+  const blockIndex = location?.selector.index ?? null;
   if (!canvasUi?.textToolsOpen || canvasUi.rangeEditingActive || canvasUi.mediaDialogOpen || canvasUi.routeDialogOpen || !selectedBlock || blockIndex === null) return null;
   const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'
     ? selectedBlock.props.surface : 'default';
@@ -2690,9 +1856,9 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const routeFieldPath = fieldPath ? resolveRouteFieldPath(selectedBlock.type, fieldPath) : null;
   const update = (patch: Record<string, unknown>): void => {
     dispatch({
-      type: 'replace', destinationIndex: blockIndex, destinationZone: 'root:default-zone',
-      data: { ...selectedBlock, props: { ...selectedBlock.props, ...patch } } as never,
-      ui: { itemSelector: { index: blockIndex, zone: 'root:default-zone' } }, recordHistory: true,
+      type: 'replace', destinationIndex: blockIndex, destinationZone: location!.selector.zone,
+      data: { ...selectedBlock, props: { ...selectedBlock.props, ...patch } },
+      ui: { itemSelector: location!.selector }, recordHistory: true,
     });
   };
 
@@ -2792,11 +1958,9 @@ function ConnectedCanvasDialogs({ disabled }: { disabled: boolean }): React.Reac
   const canvasUi = React.useContext(CanvasEditingUiContext);
   if (!canvasUi || disabled || canvasUi.rangeEditingActive) return null;
 
-  const selectionIndex = canvasUi.selection
-    ? data.content.findIndex((block) => idToUuid(asString(block.props.id)) === canvasUi.selection?.blockId)
-    : -1;
-  const blockIndex = selectionIndex >= 0 ? selectionIndex : selectedZone === 'root:default-zone' ? selectedIndex : null;
-  const selectedBlock = blockIndex !== null ? data.content[blockIndex] : null;
+  const location = resolveEditorSelection(data, selectedIndex === null ? null : { index: selectedIndex, zone: selectedZone }, canvasUi?.selection?.blockId);
+  const selectedBlock = location?.item;
+  const blockIndex = location?.selector.index ?? null;
   if (!selectedBlock || blockIndex === null) return null;
 
   const defaultRouteFieldPath = selectedBlock.type === 'Hero' || selectedBlock.type === 'HeroSplit' || selectedBlock.type === 'Cta'
@@ -2809,8 +1973,8 @@ function ConnectedCanvasDialogs({ disabled }: { disabled: boolean }): React.Reac
     : selectedBlock.type === 'Hero' || selectedBlock.type === 'HeroSplit' ? 'imageSrc' : null;
   const updateSelectedPath = (path: string, value: unknown): void => {
     dispatch({
-      type: 'replace', destinationIndex: blockIndex, destinationZone: 'root:default-zone',
-      data: { ...selectedBlock, props: setValueAtPath(selectedBlock.props, path, value) } as never,
+      type: 'replace', destinationIndex: blockIndex, destinationZone: location!.selector.zone,
+      data: { ...selectedBlock, props: { ...setValueAtPath(selectedBlock.props, path, value), id: selectedBlock.props.id } },
       recordHistory: true,
     });
   };
@@ -2990,19 +2154,19 @@ function SelectedBlockActionBar({
 }): React.ReactElement {
   const dispatch = usePageBuilderPuck((state) => state.dispatch);
   const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
-  const contentLength = usePageBuilderPuck((state) => state.appState.data.content.length);
-  const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
-  const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
+  const rawSelector = usePageBuilderPuck((state) => state.appState.ui.itemSelector ?? null);
   const currentViewportWidth = usePageBuilderPuck((state) => state.appState.ui.viewports.current.width);
   const narrowCanvas = typeof currentViewportWidth === 'number' && currentViewportWidth <= NARROW_CANVAS_MAX_WIDTH;
   const actionBarRef = useSelectedActionBarSafeZone(true);
   const canvasUi = React.useContext(CanvasEditingUiContext);
-  const selectedBlock = selectedZone === 'root:default-zone' && selectedIndex !== null
-    ? data.content[selectedIndex]
-    : null;
+  const location = resolveEditorSelection(data, rawSelector ? { ...rawSelector, zone: rawSelector.zone ?? 'root:default-zone' } : null);
+  const selectedBlock = location?.item;
+  const selectedIndex = location?.selector.index ?? null;
+  const selectedZone = location?.selector.zone ?? 'root:default-zone';
+  const contentLength = editorItemLocations(data).filter(({ selector }) => selector.zone === selectedZone).length;
   if (!canvasUi) throw new Error('Canvas editing UI provider is unavailable.');
   const {
-    selection: elementSelection,
+    selection: rawElementSelection,
     rangeEditingActive,
     rangeAnchor,
     setSelection: setElementSelection,
@@ -3011,6 +2175,8 @@ function SelectedBlockActionBar({
     textToolsOpen,
     setTextToolsOpen,
   } = canvasUi;
+  const elementSelection = selectedBlock && rawElementSelection?.blockId === idToUuid(selectedBlock.props.id)
+    ? rawElementSelection : null;
 
   const defaultRouteFieldPath = selectedBlock?.type === 'Hero' || selectedBlock?.type === 'HeroSplit' || selectedBlock?.type === 'Cta'
     ? 'primaryUrl' : selectedBlock?.type === 'Contact' ? 'ctaUrl' : null;
@@ -3038,12 +2204,12 @@ function SelectedBlockActionBar({
       sourceIndex: selectedIndex,
       destinationIndex,
       destinationZone: selectedZone,
-      recordHistory: false,
+      recordHistory: true,
     });
     dispatch({
       type: 'setUi',
       ui: { itemSelector: { index: destinationIndex, zone: selectedZone } },
-      recordHistory: true,
+      recordHistory: false,
     });
   };
 
@@ -3053,7 +2219,7 @@ function SelectedBlockActionBar({
       type: 'replace',
       destinationIndex: selectedIndex,
       destinationZone: selectedZone,
-      data: { ...selectedBlock, props: nextProps } as never,
+      data: { ...selectedBlock, props: { ...nextProps, id: selectedBlock.props.id } },
       ui: { itemSelector: { index: selectedIndex, zone: selectedZone } },
       recordHistory: true,
     });
@@ -3145,7 +2311,10 @@ function SelectedBlockActionBar({
           {!rangeEditingActive && selectedBlock ? <ActionBar.Action
             label={styleActionLabel}
             aria-label={styleActionLabel}
-            disabled={disabled} onClick={() => setTextToolsOpen((open) => !open)}>
+            disabled={disabled} onClick={() => {
+              if (!elementSelection) setElementSelection(null);
+              setTextToolsOpen((open) => !open);
+            }}>
             {elementStyleTarget
               ? <Paintbrush size={16} data-testid="page-builder-element-style-open" aria-hidden="true" />
               : <Settings2 size={16} data-testid="page-builder-block-style-open" aria-hidden="true" />}
@@ -3561,7 +2730,7 @@ export function PuckEditorAdapter({
           setStructureDialogOpen(true);
         }}
       >구조 편집 사용</button>}
-      {structureEditingEnabled && <ConnectedSectionPatternControls
+      {structureEditingEnabled && <SectionPatternControls
         disabled={editingDisabled}
         resolveSection={resolvePatternSection}
       />}
@@ -3627,14 +2796,14 @@ export function PuckEditorAdapter({
     setTextToolsOpen: setCanvasTextToolsOpen,
   }), [canvasElementSelection, canvasMediaDialogOpen, canvasRouteDialogOpen, canvasTextToolsOpen, rangeAnchor, rangeEditingActive]);
   const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(() => Object.fromEntries(
-    data.content.flatMap((block) => {
+    editorItemLocations(data).flatMap(({ item: block }) => {
       const rawId = asString(block.props.id);
       const styles = normalizeElementAppearanceMap(block.props.elementStyles);
       return [[rawId, styles], [idToUuid(rawId), styles]];
     }),
   ), [data.content]);
   const canvasBlockAppearances = useMemo<Record<string, string>>(() => Object.fromEntries(
-    flattenPuckBlocks(data.content).flatMap((block) => {
+    editorItemLocations(data).map(({ item }) => item).flatMap((block) => {
       const rawId = asString(block.props.id);
       const blockProps = block.props as Record<string, unknown>;
       const appearance = mergeBlockContainerAppearance(undefined, blockProps);
@@ -3676,7 +2845,7 @@ export function PuckEditorAdapter({
           </button>
         </div>
       )}
-      {structureDialogOpen && createPortal(
+      {structureDialogOpen && <EditorPortal>
         <div className="g7pb-dialog-backdrop" data-testid="page-builder-structure-dialog">
           <section className="g7pb-dialog" role="dialog" aria-modal="true" aria-labelledby="g7pb-structure-heading">
             <p className="g7pb-kicker">문서 구조 버전 전환</p>
@@ -3690,9 +2859,8 @@ export function PuckEditorAdapter({
                 data-testid="page-builder-structure-confirm" onClick={enableStructureEditing}>구조 편집 사용</button>
             </div>
           </section>
-        </div>,
-        globalThis.document.body,
-      )}
+        </div>
+      </EditorPortal>}
       <BlockCatalogContext.Provider value={blockCatalogContext}>
         <EditorViewportPolicyContext.Provider value={viewportPolicy}>
         <FullSiteCanvasContext.Provider value={fullSiteCanvas}>

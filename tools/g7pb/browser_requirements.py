@@ -66,6 +66,10 @@ PUBLIC = BrowserScenario("tests/E2E/publicQuality.spec.ts", ("desktop", "tablet"
 SITE_PART = BrowserScenario("tests/E2E/sitePartLifecycle.spec.ts")
 SITE_SHELL = BrowserScenario("tests/E2E/globalSiteShellRoutes.spec.ts")
 STORE = BrowserScenario("tests/E2E/officialStore.spec.ts")
+MANAGER_STORE = BrowserScenario("tests/E2E/managerCodeContracts.spec.ts", titles=(
+    "manages synthetic store and pack requests without crossing dialog owners",))
+MANAGER_INBOX = replace(MANAGER_STORE, titles=(
+    "keeps synthetic inquiry actions bound to their pending item",))
 MOBILE_NAV = BrowserScenario("tests/E2E/mobileNavigationQuality.spec.ts")
 
 # These groups follow the components declared by each catalog module. All its
@@ -82,6 +86,12 @@ CATALOG_PREFIXES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    # Manager UI requests use synthetic API responses. Real catalog content,
+    # installation, and store approval remain the separate STORE contract.
+    (("resources/js/manager/PageBuilderManager.tsx",), (PAGE, MANAGER_STORE, MANAGER_INBOX)),
+    (("resources/js/manager/useManagerStore.ts", "resources/js/manager/ManagerStoreDialogs.tsx",
+      "resources/js/manager/useManagerBlockPacks.ts", "resources/js/manager/ManagerBlockPacksDialog.tsx"), (MANAGER_STORE,)),
+    (("resources/js/manager/ManagerInboxDialog.tsx",), (MANAGER_INBOX,)),
     # Document transactions and shared style contracts use synthetic code fixtures,
     # not preset/catalog content sweeps. Catalog modules retain their own mapping.
     (("resources/js/editor/PuckEditorAdapter.tsx",), (PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY)),

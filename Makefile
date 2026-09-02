@@ -1,8 +1,15 @@
 SHELL := /bin/bash
 COMPOSE := docker compose --project-name g7pb-dev --env-file .env.docker.local -f compose.yaml
 COORD_HARNESS := ./scripts/coord-harness.sh
-PROFILE ?= mixed
+PROFILE ?= scoped
 BASE_REF ?= HEAD
+
+.PHONY: infra-plan infra-check
+infra-plan:
+	python3 -B scripts/g7pb.py plan --base "$(BASE_REF)" --json
+
+infra-check:
+	python3 -B scripts/g7pb.py run --base "$(BASE_REF)" --phase submission
 
 .NOTPARALLEL:
 

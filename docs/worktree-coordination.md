@@ -16,7 +16,7 @@ coordination 상태는 모든 worktree가 공유하는 Git common directory의 `
 6. 통합은 기본 Local worktree의 integration task만 수행합니다.
 7. 통합 전 `git merge-tree --write-tree --messages`로 충돌을 확인하고, `--no-commit` 임시 병합 상태에서 profile gate를 다시 실행합니다.
 8. 검증 실패 시 merge를 abort하며 자동으로 의미 충돌을 해결하지 않습니다.
-9. 모든 task 통합 뒤 전체 `quality-gate`를 통과한 HEAD만 패키징·스테이징할 수 있습니다.
+9. 모든 task 통합 뒤 변경 영향에 해당하는 검사 계획을 통과한 HEAD만 패키징·스테이징할 수 있습니다. 전체 RC는 명시적 요청입니다.
 10. dirty/untracked 파일이나 미통합 커밋이 있는 task lease는 강제로 해제하지 않습니다.
 
 ## 작업 profile
@@ -132,7 +132,7 @@ make task-restack-squash \
 
 일반 구현은 `PROFILE=scoped`로 제출하고 `make task-integrate-scoped`로 통합합니다. 실제 base 대비 diff에서 PHP·TypeScript·CSS·Store·품질 원장·변경 테스트를 분류해 관련 검사만 실행합니다. 변경한 소스에 대응하는 변경 테스트가 없으면 전체 검증으로 확대하지 않고 제출을 실패시킵니다.
 
-통합 gate 성공은 candidate tree와 gate 이름에 묶인 receipt로 기록합니다. 같은 tree의 재시도는 성공 gate를 재사용하고 실패 gate부터 다시 실행합니다. 전체 coverage·전체 프런트·전체 브라우저 검증은 `integration-verify`의 최종 RC gate에서 한 번 실행합니다.
+성공 결과는 검사 명령·대상·관련 파일·환경에 묶습니다. 제출·통합·최종확인은 같은 입력을 재사용하며 무관한 파일이나 SHA 변화만으로 반복하지 않습니다. runtime 상태는 소스 tree만으로 재사용하지 않습니다. 전체 coverage·전체 브라우저 검사는 명시적 full RC 범위에서만 실행합니다.
 
 ```bash
 make task-integrate-scoped TASK=<submitted-id> INTEGRATION_TASK=<integration-id>
@@ -212,7 +212,7 @@ make smoke-staging TASK=integration-20260820
 make integration-finish TASK=integration-20260820
 ```
 
-`integration-verify`는 전체 `quality-gate`를 실행하고 검증 SHA를 기록합니다. 이후 HEAD 또는 tracked/untracked 상태가 바뀌면 release guard가 실패합니다. 변경을 반영한 뒤 전체 검증을 다시 실행해야 합니다.
+`integration-verify`는 Python 제어부가 선택한 관련 검사와 기존 성공 입력을 확인하고 검증 SHA를 기록합니다. HEAD가 바뀌면 변경 영향만 다시 판정합니다. 미분류 입력은 명시적 범위 지정이 필요하며 자동 전체검증을 하지 않습니다. `FULL=1`은 공유 런타임/계약 또는 최종 RC의 명시적 전체검증 요청입니다.
 
 ## 8. 취소와 보존
 

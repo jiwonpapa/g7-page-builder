@@ -1,4 +1,5 @@
 import type { PageBuilderBlock, PageBuilderDocument, ScalarToken } from '../documents/types';
+import { isExternalEditorItem } from '../blocks/externalEditorData';
 import { validateLayoutDocument } from '../documents/layoutPolicy';
 import type { PuckEditorData } from './puckEditorTypes';
 import { puckLayoutSlot } from './puckLayoutData';
@@ -82,6 +83,7 @@ export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBl
       root: { props: tokensToPageDesign(document.tokens) },
       content: document.blocks.map((block, index) => {
         const puckBlock = convertedBlocks[index];
+        if (isExternalEditorItem(puckBlock)) return puckBlock;
         return Object.assign({}, puckBlock, {
           props: Object.assign({}, puckBlock.props, blockContainerEditorProps(block.props.appearance), {
             __g7pbVisibilityAudience: block.visibility?.audience ?? 'all',

@@ -1,6 +1,9 @@
 import React from 'react';
 import type { ComponentConfig } from '@puckeditor/core';
 import { BUILTIN_BLOCK_DEFINITIONS } from './builtinCatalog';
+import { adaptExternalEditor } from './externalEditorAdapter';
+import { externalEditorName, type ExternalEditorName, type ExternalWrappedConfig } from './externalEditorData';
+import type { BlockCatalogItem } from './types';
 
 export interface ExternalBlockEditorDescriptor {
   block_id: string;
@@ -77,14 +80,15 @@ export function hasExternalEditorRegistration(packId: string, packVersion: strin
   return registrations.has(registrationIdentity(packId, packVersion));
 }
 
-export function externalEditorComponents(): Record<string, ComponentConfig<Record<string, unknown>>> {
-  const components: Record<string, ComponentConfig<Record<string, unknown>>> = {};
+export function externalEditorComponents(): Record<ExternalEditorName, ExternalWrappedConfig> {
+  const components: Record<ExternalEditorName, ExternalWrappedConfig> = {};
   for (const registration of registrations.values()) {
     for (const [key, component] of Object.entries(registration.components)) {
-      if (Object.prototype.hasOwnProperty.call(components, key)) {
+      const name = externalEditorName(key);
+      if (Object.prototype.hasOwnProperty.call(components, name)) {
         throw new Error(`External Block Pack editor component is duplicated: ${key}`);
       }
-      components[key] = component;
+      components[name] = adaptExternalEditor(component);
     }
   }
 
@@ -103,7 +107,7 @@ export function externalBlockForDocument(blockId: string, blockVersion: number):
 
 export function externalBlockForComponent(editorComponent: string): ExternalBlockEditorDescriptor | null {
   for (const registration of registrations.values()) {
-    const block = registration.blocks.find((candidate) => candidate.editor_component === editorComponent);
+    const block = registration.blocks.find((candidate) => externalEditorName(candidate.editor_component) === editorComponent);
     if (block) return block;
   }
 
@@ -111,5 +115,27 @@ export function externalBlockForComponent(editorComponent: string): ExternalBloc
 }
 
 export function isEditorComponentRegistered(editorComponent: string): boolean {
-  return Object.prototype.hasOwnProperty.call(externalEditorComponents(), editorComponent);
+  return Array.from(registrations.values()).some((registration) =>
+    Object.prototype.hasOwnProperty.call(registration.components, editorComponent));
+}
+
+function ownsName<Name extends string>(components: Record<Name, unknown>, name: string): name is Name {
+  return Object.prototype.hasOwnProperty.call(components, name);
+}
+
+export function catalogEditorName<Name extends string>(
+  item: Pick<BlockCatalogItem, 'block_id' | 'block_version' | 'editor_component'>,
+  builtins: Record<Name, unknown>,
+): Name | ExternalEditorName | null {
+  if (ownsName(builtins, item.editor_component)) return item.editor_component;
+  const descriptor = externalBlockForDocument(item.block_id, item.block_version);
+  return descriptor?.editor_component === item.editor_component ? externalEditorName(descriptor.editor_component) : null;
+}
+
+export function externalEditorDefaults(component: string): Record<string, unknown> {
+  for (const registration of registrations.values()) {
+    const definition = registration.components[component];
+    if (definition) return definition.defaultProps ?? {};
+  }
+  return {};
 }

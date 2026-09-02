@@ -1,4 +1,5 @@
-import { externalBlockForComponent, externalBlockForDocument } from '../blocks/runtimeRegistry';
+import { externalBlockForComponent, externalEditorDefaults, externalBlockForDocument } from '../blocks/runtimeRegistry';
+import { externalEditorName, externalEditorProps, isExternalEditorItem, canonicalExternalProps, canonicalExternalMetadata } from '../blocks/externalEditorData';
 import { layoutPolicy, validateLayoutDocument } from '../documents/layoutPolicy';
 import { CONTACT_BLOCK_TYPE, CTA_BLOCK_TYPE, FEATURES_BLOCK_TYPE, HERO_BLOCK_TYPE, LAYOUT_COLUMNS_BLOCK_TYPE, LAYOUT_SECTION_BLOCK_TYPE, LAYOUT_STACK_BLOCK_TYPE, type BlockAppearance, type ContactBlockProps, type CtaBlockProps, type FeatureItem, type FeaturesBlockProps, type HeroBlockProps, type PageBuilderBlock, type PageBuilderDocument } from '../documents/types';
 import { blockContainerEditorProps, mergeBlockContainerAppearance } from './blockAppearance';
@@ -338,14 +339,12 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
   const externalBlock = externalBlockForDocument(block.type, block.block_version);
   if (externalBlock) {
     return {
-      type: externalBlock.editor_component,
+      type: externalEditorName(externalBlock.editor_component),
       props: {
-        ...block.props,
+        ...externalEditorProps(block, externalEditorDefaults(externalBlock.editor_component)),
         id: block.instance_id,
-        motion: normalizeBlockMotion(block.motion),
-        __g7pbBlockVersion: block.block_version,
       },
-    } as unknown as PuckEditorData['content'][number];
+    };
   }
 
   throw new Error(`Unsupported PageBuilder block: ${block.type}`);
@@ -353,6 +352,7 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
 
 export function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['content'][number] {
   const converted = canonicalBlockToPuckRaw(block);
+  if (isExternalEditorItem(converted)) return converted;
   // The raw converter created a new props object; augment that object without
   // erasing the discriminated type/props relationship through a double cast.
   Object.assign(converted.props, blockContainerEditorProps(block.props.appearance), {
@@ -372,6 +372,12 @@ export function puckBlockToCanonical(
   context: PuckAdapterContext,
 ): PageBuilderBlock {
   const instanceId = idToUuid(block.props.id);
+  if (isExternalEditorItem(block)) {
+    const descriptor = externalBlockForComponent(block.type);
+    if (!descriptor) throw new Error(`Unsupported Puck component: ${block.type}`);
+    return { instance_id: instanceId, type: descriptor.block_id, block_version: descriptor.block_version,
+      props: canonicalExternalProps(block.props), ...canonicalExternalMetadata(block.props.metadata) };
+  }
   const metadata = context.blocks[instanceId] ?? {
     blockVersion: 1,
     hadSlots: true,
@@ -512,24 +518,9 @@ export function puckBlockToCanonical(
       metadata.hadAppearance,
       metadata.hadSliderSettings,
     );
-    if (!catalogBlock) {
-      const externalBlock = externalBlockForComponent((block as { type: string }).type);
-      if (!externalBlock) {
-        throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
-      }
-      const externalProps = { ...block.props } as Record<string, unknown>;
-      delete externalProps.id;
-      delete externalProps.motion;
-      delete externalProps.__g7pbBlockVersion;
-      delete externalProps.__g7pbVisibilityAudience;
-      type = externalBlock.block_id;
-      blockVersion = externalBlock.block_version;
-      supportsContainerAppearance = false;
-      props = externalProps;
-    } else {
-      type = catalogBlock.type;
-      props = catalogBlock.props;
-    }
+    if (!catalogBlock) throw new Error(`Unsupported Puck component: ${(block as { type: string }).type}`);
+    type = catalogBlock.type;
+    props = catalogBlock.props;
   }
 
   const canonical: PageBuilderBlock = {

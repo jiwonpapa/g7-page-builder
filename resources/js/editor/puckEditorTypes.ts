@@ -1,4 +1,5 @@
 import type { Data } from '@puckeditor/core';
+import type { ExternalEditorComponents } from '../blocks/externalEditorData';
 import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, BlockVisibility, CtaBlockProps, ElementAppearanceMap, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/types';
 import type { BlockContainerEditorProps } from './blockAppearance';
 import type { CatalogEditorComponents } from './catalogBlocks';
@@ -85,6 +86,6 @@ export type CommonEditorProps = Partial<BlockContainerEditorProps> & {
 
 export type EditorComponents = {
   [Name in keyof BuiltInEditorComponents]: BuiltInEditorComponents[Name] & CommonEditorProps;
-};
+} & ExternalEditorComponents;
 
 export type PuckEditorData = Data<EditorComponents, PageDesignProps>;

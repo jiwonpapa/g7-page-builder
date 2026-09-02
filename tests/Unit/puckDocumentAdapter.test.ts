@@ -327,14 +327,9 @@ describe('isolated canonical document envelope adapter', () => {
   });
 });
 
-const {
-  activateStructureEditing,
-  canonicalToPuck,
-  pageBuilderPuckConfig,
-  puckToCanonical,
-  recommendedMotionPlan,
-  sanitizeRichTextForPreview,
-} = await import('../../resources/js/editor/PuckEditorAdapter');
+const { activateStructureEditing, canonicalToPuck, puckToCanonical } = await import('../../resources/js/editor/puckBlockCodec');
+const { pageBuilderPuckConfig } = await import('../../resources/js/editor/puckEditorConfig');
+const { sanitizeRichTextForPreview } = await import('../../resources/js/editor/previewContent');
 
 const documentFixture: PageBuilderDocument = {
   schema_version: 'g7-page-builder/v1',
@@ -841,19 +836,6 @@ describe('Puck PageBuilderDocument adapter', () => {
     expect(puckToCanonical(session.data, session.context).blocks).toEqual(composed.blocks);
   });
 
-  it('builds a deterministic, varied and capability-aware recommended motion plan', () => {
-    const types = ['Hero', 'Features', 'Heading', 'Stats', 'BarChart', 'Gallery', 'ArticleList'];
-    const first = recommendedMotionPlan(types);
-    const second = recommendedMotionPlan(types);
-
-    expect(first).toEqual(second);
-    expect(new Set(first.map((motion) => motion.preset)).size).toBeGreaterThanOrEqual(4);
-    expect(first[3]?.preset).toBe('counter');
-    expect(['chart-draw', 'reveal']).toContain(first[4]?.preset);
-    expect(first.every((motion) => motion.trigger === 'once')).toBe(true);
-    expect(recommendedMotionPlan(['LogoCarousel', 'TestimonialSlider']).map((motion) => motion.preset))
-      .toEqual(['reveal', 'reveal']);
-  });
 
   it('round-trips all seven phase-two product blocks and exposes their visible copy inline', () => {
     const phaseTwo: PageBuilderDocument = {

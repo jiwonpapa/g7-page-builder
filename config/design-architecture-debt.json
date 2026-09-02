@@ -1161,16 +1161,6 @@
       }
     },
     {
-      "path": "resources/js/editor/PuckEditorAdapter.tsx",
-      "rule": "SOURCE-SIZE",
-      "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Puck document conversion, rendering and editor coordination still share one adapter.",
-      "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
-      "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 1755,
-        "29602f305a410e25451d4f61c6a0b05075e9cdefdbfca1f2d4068b6682e32f11": 13718
-      }
-    },
-    {
       "path": "resources/js/editor/catalogBlocks.tsx",
       "rule": "SOURCE-SIZE",
       "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Several independent catalog renderers share one module.",

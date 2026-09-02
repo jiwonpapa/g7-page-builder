@@ -66,7 +66,9 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { Puck, usePuck } = await import('@puckeditor/core');
-const { PuckEditorAdapter, canonicalToPuck, puckToCanonical, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { PuckEditorAdapter } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { canonicalToPuck, puckToCanonical } = await import('../../resources/js/editor/puckBlockCodec');
+const { pageBuilderPuckConfig } = await import('../../resources/js/editor/puckEditorConfig');
 const { layoutCatalogComponentConfigs } = await import('../../resources/js/editor/layoutCatalogBlocks');
 const {
   createRichTextField,

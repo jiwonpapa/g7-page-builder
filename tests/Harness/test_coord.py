@@ -153,6 +153,25 @@ class CoordinatorTests(unittest.TestCase):
         self.assertTrue(output.startswith("KIND\tTASK"))
         self.assertFalse(self.state.exists())
 
+    def test_development_finish_preserves_history_without_release_promotion(self):
+        self.integration()
+        with patch.object(Coordinator, "quality", side_effect=AssertionError("no validation on development finish")):
+            output = self.call(self.repo, "finish", "--task", "integration-task", "--without-release")
+        self.assertIn("FINISHED_UNRELEASED", output)
+        self.assertFalse((self.state / "tasks/integration-task.meta").exists())
+        records = [read_meta(path) for path in (self.state / "history").glob("*.meta")]
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["status"], "complete-unreleased")
+        self.assertEqual(records[0]["integration_sha"], self.base)
+        self.assertFalse(records[0]["verified_sha"])
+
+    def test_development_finish_cannot_discard_a_submitted_task(self):
+        self.submit_task()
+        self.integration()
+        with self.assertRaises(CoordError):
+            self.call(self.repo, "finish", "--task", "integration-task", "--without-release")
+        self.assertEqual(self.meta("first-task")["status"], "submitted")
+
     def test_production_quality_delegates_to_only_common_planner_cli(self):
         calls = []
         def runner(args, cwd, **kwargs):

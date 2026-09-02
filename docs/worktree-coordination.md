@@ -202,6 +202,11 @@ batch는 충돌을 덮거나 검증을 줄이는 수단이 아닙니다. claim�
 
 ## 7. 전체 검증과 릴리스
 
+배포 없는 개발·하네스 작업은 모든 submitted task를 통합하고 Local이 clean이면
+`make integration-finish TASK=<id> NO_RELEASE=1`로 종료합니다. `complete-unreleased`
+이력에 실제 통합 SHA를 남기되 검증 SHA를 새로 만들지 않습니다. 작업 종료를 위해
+배포용 전체검사를 실행하지 않으며, 추후 배포는 release guard를 별도로 통과해야 합니다.
+
 모든 구현 task가 통합되어 active task가 통합 task 하나만 남았을 때 실행합니다.
 
 ```bash

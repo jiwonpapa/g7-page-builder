@@ -32,7 +32,7 @@ def python_inputs(root, entry):
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 candidate = node.value
-                if not candidate.startswith('/') and '/' in candidate and (root / candidate).is_file() and (root / candidate).resolve().is_relative_to(root.resolve()):
+                if candidate.startswith(('tools/', 'scripts/', 'tests/', 'resources/', 'schemas/', 'config/')) and (root / candidate).is_file() and (root / candidate).resolve().is_relative_to(root.resolve()):
                     if candidate.endswith('.py'):
                         visit(candidate)
                     else:
@@ -45,6 +45,8 @@ def python_inputs(root, entry):
             elif isinstance(node, ast.Import):
                 modules = [a.name for a in node.names]
             for module in modules:
+                if module == 'g7pb' or module.startswith('g7pb.'):
+                    module = 'tools.' + module
                 if module.startswith("tools.g7pb."):
                     visit(module.replace(".", "/") + ".py")
     visit(entry)

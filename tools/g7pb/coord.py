@@ -454,6 +454,13 @@ class Coordinator:
 
     def finish(self, args) -> None:
         self.store.lock(args.task)
+        if args.without_release:
+            meta = self.integration_owner(args.task)
+            require(self.git.clean(), "개발 통합 완료 전 worktree가 깨끗해야 합니다.")
+            self.only_task(args.task)
+            self.archive(meta, "complete-unreleased", integration_sha=self.git.head(), integrated_at=timestamp())
+            note(f"FINISHED_UNRELEASED task={args.task}; no release verification or deployment claimed")
+            return
         meta = self.release_guard(args)
         self.only_task(args.task)
         self.archive(meta, "complete")
@@ -467,12 +474,12 @@ class Coordinator:
         self.archive(meta, "cancelled")
         note(f"RELEASED task={args.task}")
 
-    def archive(self, meta: dict[str, str], status: str) -> None:
+    def archive(self, meta: dict[str, str], status: str, **updates: str) -> None:
         with self.store.mutex(), defer_interrupts(), MetadataTransaction() as transaction:
             self.store.unchanged(meta)
-            if status == "complete":
+            if status in ("complete", "complete-unreleased"):
                 self.only_task(meta["task"])
-            transaction.write(self.store.history_path(meta["task"]), dict(meta, status=status))
+            transaction.write(self.store.history_path(meta["task"]), dict(meta, status=status, **updates))
             transaction.delete(self.store.path(meta["task"]))
             transaction.commit()
 
@@ -491,6 +498,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--base-ref", default="HEAD")
     result.add_argument("--history", action="store_true")
     result.add_argument("--full", action="store_true")
+    result.add_argument("--without-release", action="store_true")
     return result
 
 

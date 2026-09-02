@@ -1,94 +1,15 @@
 import React from 'react';
 import type { Config } from '@puckeditor/core';
 import { CatalogBlockFrame as Frame } from './CatalogBlockFrame';
-
-import {
-  createMotionField,
-  DEFAULT_BLOCK_MOTION,
-  normalizeBlockMotion,
-} from './blockMotion';
+import { type HeadingEditorProps, type RichTextEditorProps, type ImageEditorProps, type ButtonsEditorProps, type ImageTextEditorProps, type IconListEditorProps, type FoundationCatalogEditorComponents, ICON_OPTIONS, DEFAULT_HEADING, DEFAULT_RICH_TEXT, DEFAULT_IMAGE, DEFAULT_BUTTONS, DEFAULT_IMAGE_TEXT, DEFAULT_ICON_LIST, asRecord, normalizeButtons, normalizeIconItems } from './foundationCatalogData';
+export type { HeadingEditorProps, RichTextEditorProps, ImageEditorProps, ButtonsEditorProps, ImageTextEditorProps, IconListEditorProps, FoundationCatalogEditorComponents, FoundationComponentType } from './foundationCatalogData';
+export { canonicalFoundationBlockToPuck, foundationPuckBlockToCanonical } from './foundationCatalogCodec';
+import { createMotionField } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import { CatalogIcon, type CatalogIconName } from './catalogIcon';
-import { normalizeElementAppearanceMap } from './canvasEditingContract';
-import {
-  BUTTONS_BLOCK_TYPE,
-  HEADING_BLOCK_TYPE,
-  ICON_LIST_BLOCK_TYPE,
-  IMAGE_BLOCK_TYPE,
-  IMAGE_TEXT_BLOCK_TYPE,
-  RICH_TEXT_BLOCK_TYPE,
-  type BlockAppearance,
-  type BlockMotion,
-  type ButtonItem,
-  type ElementAppearanceMap,
-  type IconListItem,
-  type PageBuilderBlock,
-} from '../documents/types';
-
-interface AppearanceEditorProps {
-  surface: BlockAppearance['surface'];
-  spacing: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  elementStyles?: ElementAppearanceMap;
-  motion: BlockMotion;
-}
-
-export interface HeadingEditorProps extends AppearanceEditorProps {
-  eyebrow: string;
-  heading: string;
-  level: '2' | '3' | '4';
-  anchor: string;
-}
-
-export interface RichTextEditorProps extends AppearanceEditorProps {
-  content: string;
-  measure: 'narrow' | 'standard' | 'wide';
-}
-
-export interface ImageEditorProps extends AppearanceEditorProps {
-  src: string;
-  alt: string;
-  caption: string;
-  linkUrl: string;
-  aspectRatio: 'auto' | '16:9' | '4:3' | '1:1';
-}
-
-export interface ButtonsEditorProps extends AppearanceEditorProps {
-  items: ButtonItem[];
-  alignment: 'left' | 'center' | 'right';
-}
-
-export interface ImageTextEditorProps extends AppearanceEditorProps {
-  eyebrow: string;
-  heading: string;
-  body: string;
-  imageSrc: string;
-  imageAlt: string;
-  mediaPosition: 'left' | 'right';
-  primaryLabel: string;
-  primaryUrl: string;
-}
-
-export interface IconListEditorProps extends AppearanceEditorProps {
-  eyebrow: string;
-  heading: string;
-  items: IconListItem[];
-  layout: 'single' | 'two-column';
-}
-
-export interface FoundationCatalogEditorComponents {
-  Heading: HeadingEditorProps;
-  RichText: RichTextEditorProps;
-  Image: ImageEditorProps;
-  Buttons: ButtonsEditorProps;
-  ImageText: ImageTextEditorProps;
-  IconList: IconListEditorProps;
-}
-
-export type FoundationComponentType = keyof FoundationCatalogEditorComponents;
+import type { AppearanceEditorProps } from './catalogAppearance';
 
 const SURFACE_OPTIONS = [
   { label: '기본', value: 'default' },
@@ -102,64 +23,6 @@ const SPACING_OPTIONS = [
   { label: '넓게', value: 'spacious' },
 ];
 
-const ICON_OPTIONS = [
-  { label: '번개', value: 'bolt' },
-  { label: '확인', value: 'check' },
-  { label: '코드', value: 'code' },
-  { label: '글로브', value: 'globe' },
-  { label: '하트', value: 'heart' },
-  { label: '레이어', value: 'layers' },
-  { label: '모바일', value: 'mobile' },
-  { label: '팔레트', value: 'palette' },
-  { label: '보호', value: 'shield' },
-  { label: '반짝임', value: 'sparkles' },
-  { label: '별', value: 'star' },
-];
-
-const DEFAULT_HEADING: HeadingEditorProps = {
-  eyebrow: '섹션 안내', heading: '이 섹션의 핵심을 한 문장으로', level: '2', anchor: '',
-  surface: 'default', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_RICH_TEXT: RichTextEditorProps = {
-  content: '<p>방문자가 이해해야 할 내용을 읽기 편한 문단으로 작성해 주세요.</p><p><strong>중요한 문장</strong>은 굵게 강조하고 목록이나 링크를 활용할 수 있습니다.</p>',
-  measure: 'standard', surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_IMAGE: ImageEditorProps = {
-  src: '', alt: '', caption: '이미지를 설명하는 캡션을 입력하세요.', linkUrl: '', aspectRatio: 'auto',
-  surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_BUTTONS: ButtonsEditorProps = {
-  items: [
-    { label: '자세히 보기', url: '/', variant: 'primary' },
-    { label: '문의하기', url: '/contact', variant: 'secondary' },
-  ],
-  alignment: 'left', surface: 'default', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_IMAGE_TEXT: ImageTextEditorProps = {
-  eyebrow: '핵심 소개', heading: '이미지와 설명을 함께 전달하세요',
-  body: '<p>제품, 서비스, 공간처럼 시각 자료와 설명을 함께 봐야 이해가 빠른 내용을 구성합니다.</p>',
-  imageSrc: '', imageAlt: '', mediaPosition: 'left', primaryLabel: '자세히 보기', primaryUrl: '/',
-  surface: 'soft', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_ICON_LIST: IconListEditorProps = {
-  eyebrow: '핵심 포인트', heading: '빠르게 훑어보는 주요 내용',
-  items: [
-    { icon: 'check', title: '분명한 정보', body: '한 항목에는 하나의 핵심만 담아 이해를 돕습니다.' },
-    { icon: 'bolt', title: '빠른 탐색', body: '짧은 제목과 설명으로 필요한 내용을 바로 찾습니다.' },
-    { icon: 'shield', title: '일관된 품질', body: '검증된 구조와 디자인 토큰으로 페이지 흐름을 지킵니다.' },
-  ],
-  layout: 'two-column', surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-function asString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback;
-}
-
 /** Puck replaces inline strings with elements; truthiness is not content presence. */
 export function canvasTextValue(value: unknown, format: 'richtext' | 'plain' = 'richtext'): string {
   if (typeof value === 'string') {
@@ -172,82 +35,10 @@ export function canvasTextValue(value: unknown, format: 'richtext' | 'plain' = '
   return canvasTextValue(props.children, format);
 }
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-}
-
-function normalizeArray<T>(value: unknown, fallback: T[], max: number, map: (item: Record<string, unknown>) => T): T[] {
-  const source = Array.isArray(value) ? value : fallback;
-  return source.slice(0, max).map((item) => map(asRecord(item)));
-}
-
 function inlineArrayContent(value: unknown, index: number, key: string, fallback: string): React.ReactNode {
   const item = Array.isArray(value) ? asRecord(value[index]) : {};
   const candidate = item[key];
   return React.isValidElement(candidate) || typeof candidate === 'string' ? candidate : fallback;
-}
-
-function normalizeButtons(value: unknown): ButtonItem[] {
-  return normalizeArray(value, DEFAULT_BUTTONS.items, 3, (item) => ({
-    label: asString(item.label),
-    url: asString(item.url),
-    variant: item.variant === 'secondary' || item.variant === 'text' ? item.variant : 'primary',
-  }));
-}
-
-function normalizeIconItems(value: unknown): IconListItem[] {
-  return normalizeArray(value, DEFAULT_ICON_LIST.items, 8, (item) => {
-    const icon = asString(item.icon);
-    return {
-      icon: ICON_OPTIONS.some((option) => option.value === icon) ? icon : 'check',
-      title: asString(item.title),
-      body: asString(item.body),
-    };
-  });
-}
-
-function normalizeAnchor(value: unknown): string {
-  const normalized = asString(value).trim().toLocaleLowerCase('en-US')
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-  if (!normalized) return '';
-  const anchored = /^[a-z]/.test(normalized) ? normalized : `section-${normalized}`;
-  return anchored.slice(0, 80).replace(/-+$/g, '');
-}
-
-function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance & { elementStyles?: ElementAppearanceMap } {
-  const record = asRecord(value);
-  const resolved: BlockAppearance = {
-    surface: record.surface === 'soft' || record.surface === 'contrast' ? record.surface : fallback.surface,
-    spacing: record.spacing === 'compact' || record.spacing === 'spacious' ? record.spacing : fallback.spacing,
-  };
-  if (record.textScale === 'compact' || record.textScale === 'large') resolved.textScale = record.textScale;
-  if (record.textAlign === 'center' || record.textAlign === 'right') resolved.textAlign = record.textAlign;
-  const elements = normalizeElementAppearanceMap(record.elementStyles ?? record.elements);
-  return Object.keys(elements).length > 0 ? { ...resolved, elementStyles: elements } : resolved;
-}
-
-function common(block: PageBuilderBlock, fallback: BlockAppearance): Pick<AppearanceEditorProps, 'surface' | 'spacing' | 'textScale' | 'textAlign' | 'elementStyles' | 'motion'> {
-  return { ...appearance(block.props.appearance, fallback), motion: normalizeBlockMotion(block.motion) };
-}
-
-function attachAppearance(props: Record<string, unknown>, raw: Record<string, unknown>, fallback: BlockAppearance, include: boolean): Record<string, unknown> {
-  const next = { ...props };
-  const editor = appearance({
-    surface: raw.surface, spacing: raw.spacing, textScale: raw.textScale, textAlign: raw.textAlign,
-    elementStyles: raw.elementStyles,
-  }, fallback);
-  const { elementStyles, ...resolved } = editor;
-  const canonical: BlockAppearance = {
-    ...resolved,
-    ...(elementStyles && Object.keys(elementStyles).length > 0 ? { elements: elementStyles } : {}),
-  };
-  if (include || canonical.surface !== fallback.surface || canonical.spacing !== fallback.spacing
-    || canonical.textScale || canonical.textAlign || canonical.elements) next.appearance = canonical;
-  return next;
 }
 
 function safeLink(value: string): string {
@@ -271,7 +62,6 @@ function safeImage(value: string): string | null {
 function surfaceClass(props: AppearanceEditorProps): string {
   return `g7pb-preview-surface--${props.surface} g7pb-preview-spacing--${props.spacing} g7pb-text-scale--${props.textScale ?? 'balanced'} g7pb-text-align--${props.textAlign ?? 'left'}`;
 }
-
 
 function Media({ src, alt, label }: { src: string; alt: string; label: string }): React.ReactElement {
   const safe = safeImage(src);
@@ -439,30 +229,3 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
   },
 };
 
-export function canonicalFoundationBlockToPuck(block: PageBuilderBlock): { type: FoundationComponentType; props: FoundationCatalogEditorComponents[FoundationComponentType] } | null {
-  const props = block.props;
-  if (block.type === HEADING_BLOCK_TYPE) return { type: 'Heading', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), level: props.level === 3 ? '3' : props.level === 4 ? '4' : '2', anchor: asString(props.anchor), ...common(block, { surface: 'default', spacing: 'compact' }) } };
-  if (block.type === RICH_TEXT_BLOCK_TYPE) return { type: 'RichText', props: { content: asString(props.content), measure: props.measure === 'narrow' || props.measure === 'wide' ? props.measure : 'standard', ...common(block, { surface: 'default', spacing: 'normal' }) } };
-  if (block.type === IMAGE_BLOCK_TYPE) return { type: 'Image', props: { src: asString(props.src), alt: asString(props.alt), caption: asString(props.caption), linkUrl: asString(props.linkUrl), aspectRatio: props.aspectRatio === '16:9' || props.aspectRatio === '4:3' || props.aspectRatio === '1:1' ? props.aspectRatio : 'auto', ...common(block, { surface: 'default', spacing: 'normal' }) } };
-  if (block.type === BUTTONS_BLOCK_TYPE) return { type: 'Buttons', props: { items: normalizeButtons(props.items), alignment: props.alignment === 'center' || props.alignment === 'right' ? props.alignment : 'left', ...common(block, { surface: 'default', spacing: 'compact' }) } };
-  if (block.type === IMAGE_TEXT_BLOCK_TYPE) {
-    const image = asRecord(props.image); const link = asRecord(props.primaryLink);
-    return { type: 'ImageText', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), body: asString(props.body), imageSrc: asString(image.src), imageAlt: asString(image.alt), mediaPosition: props.mediaPosition === 'right' ? 'right' : 'left', primaryLabel: asString(link.label), primaryUrl: asString(link.url), ...common(block, { surface: 'soft', spacing: 'normal' }) } };
-  }
-  if (block.type === ICON_LIST_BLOCK_TYPE) return { type: 'IconList', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), items: normalizeIconItems(props.items), layout: props.layout === 'single' ? 'single' : 'two-column', ...common(block, { surface: 'default', spacing: 'normal' }) } };
-  return null;
-}
-
-export function foundationPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean): { type: string; props: Record<string, unknown> } | null {
-  if (type === 'Heading') return { type: HEADING_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), level: raw.level === '3' ? 3 : raw.level === '4' ? 4 : 2, anchor: normalizeAnchor(raw.anchor) }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
-  if (type === 'RichText') return { type: RICH_TEXT_BLOCK_TYPE, props: attachAppearance({ content: asString(raw.content), measure: raw.measure === 'narrow' || raw.measure === 'wide' ? raw.measure : 'standard' }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
-  if (type === 'Image') return { type: IMAGE_BLOCK_TYPE, props: attachAppearance({ src: asString(raw.src), alt: asString(raw.alt), caption: asString(raw.caption), linkUrl: asString(raw.linkUrl), aspectRatio: raw.aspectRatio === '16:9' || raw.aspectRatio === '4:3' || raw.aspectRatio === '1:1' ? raw.aspectRatio : 'auto' }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
-  if (type === 'Buttons') return { type: BUTTONS_BLOCK_TYPE, props: attachAppearance({ items: normalizeButtons(raw.items), alignment: raw.alignment === 'center' || raw.alignment === 'right' ? raw.alignment : 'left' }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
-  if (type === 'ImageText') {
-    const props: Record<string, unknown> = { eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), body: asString(raw.body), image: { src: asString(raw.imageSrc), alt: asString(raw.imageAlt) }, mediaPosition: raw.mediaPosition === 'right' ? 'right' : 'left' };
-    if (asString(raw.primaryLabel) || asString(raw.primaryUrl)) props.primaryLink = { label: asString(raw.primaryLabel), url: asString(raw.primaryUrl) };
-    return { type: IMAGE_TEXT_BLOCK_TYPE, props: attachAppearance(props, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
-  }
-  if (type === 'IconList') return { type: ICON_LIST_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), items: normalizeIconItems(raw.items), layout: raw.layout === 'single' ? 'single' : 'two-column' }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
-  return null;
-}

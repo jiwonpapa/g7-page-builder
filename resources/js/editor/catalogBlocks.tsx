@@ -3,14 +3,13 @@ import type { Config } from '@puckeditor/core';
 import { CatalogBlockFrame as BlockFrame } from './CatalogBlockFrame';
 import {
   createMotionField,
-  DEFAULT_BLOCK_MOTION,
-  normalizeBlockMotion,
 } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import { CatalogIcon, type CatalogIconName } from './catalogIcon';
-import { normalizeElementAppearanceMap } from './canvasEditingContract';
+import { DEFAULT_BLOCK_MOTION, normalizeBlockMotion } from './blockMotionData';
+import { appearance as normalizeCatalogAppearance, attachAppearance } from './catalogAppearance';
 import {
   canonicalPhase2BlockToPuck,
   phase2CatalogComponentConfigs,
@@ -30,11 +29,10 @@ import {
   type Phase4CatalogEditorComponents,
 } from './phase4CatalogBlocks';
 import {
-  canonicalFoundationBlockToPuck,
   foundationCatalogComponentConfigs,
-  foundationPuckBlockToCanonical,
   type FoundationCatalogEditorComponents,
 } from './foundationCatalogBlocks';
+import { canonicalFoundationBlockToPuck, foundationPuckBlockToCanonical } from './foundationCatalogCodec';
 import {
   canonicalProductionBlockToPuck,
   productionCatalogComponentConfigs,
@@ -440,24 +438,8 @@ function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
 }
 
-function normalizeSurface(value: unknown, fallback: BlockAppearance['surface']): BlockAppearance['surface'] {
-  return value === 'default' || value === 'soft' || value === 'contrast' ? value : fallback;
-}
-
-function normalizeSpacing(value: unknown, fallback: BlockAppearance['spacing']): BlockAppearance['spacing'] {
-  return value === 'compact' || value === 'normal' || value === 'spacious' ? value : fallback;
-}
-
 function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance & { elementStyles?: ElementAppearanceMap } {
-  const record = asRecord(value);
-  const resolved: BlockAppearance = {
-    surface: normalizeSurface(record.surface, fallback.surface),
-    spacing: normalizeSpacing(record.spacing, fallback.spacing),
-  };
-  if (record.textScale === 'compact' || record.textScale === 'large') resolved.textScale = record.textScale;
-  if (record.textAlign === 'center' || record.textAlign === 'right') resolved.textAlign = record.textAlign;
-  const elements = normalizeElementAppearanceMap(record.elementStyles ?? record.elements);
-  return Object.keys(elements).length > 0 ? { ...resolved, elementStyles: elements } : resolved;
+  return normalizeCatalogAppearance(asRecord(value), fallback);
 }
 
 function safeUrl(value: string): string | null {
@@ -590,7 +572,6 @@ function normalizeBars(value: unknown): BarChartItem[] {
     tone: item.tone === 'indigo' || item.tone === 'emerald' || item.tone === 'amber' ? item.tone : 'blue',
   }));
 }
-
 
 function ImageOrPlaceholder({ src, alt, label }: { src: string; alt: string; label: string }): React.ReactElement {
   const safe = safeUrl(src);
@@ -847,16 +828,6 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
   if (block.type === INQUIRY_FORM_BLOCK_TYPE) return { type: 'InquiryForm', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), formKind: ['quote', 'reservation', 'application', 'newsletter'].includes(asString(props.formKind)) ? asString(props.formKind) as InquiryFormKind : 'inquiry', submitLabel: asString(props.submitLabel, '문의 보내기'), successMessage: asString(props.successMessage, '문의가 접수되었습니다.'), privacyLabel: asString(props.privacyLabel, '개인정보 수집 및 이용에 동의합니다.'), showPhone: props.showPhone !== false, showSubject: props.showSubject !== false, ...appearance(props.appearance, { surface: 'soft', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   if (block.type === MAP_DIRECTIONS_BLOCK_TYPE) return { type: 'MapDirections', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), description: asString(props.description), address: asString(props.address), latitude: typeof props.latitude === 'number' ? props.latitude : 37.5665, longitude: typeof props.longitude === 'number' ? props.longitude : 126.978, zoom: ['12', '14', '18'].includes(String(props.zoom)) ? String(props.zoom) as MapDirectionsEditorProps['zoom'] : '16', provider: props.provider === 'image' || props.provider === 'google' || props.provider === 'none' ? props.provider : 'openstreetmap', mapImageSrc: asString(props.mapImageSrc), mapImageAlt: asString(props.mapImageAlt), directionsLabel: asString(props.directionsLabel, '길찾기'), directionsUrl: asString(props.directionsUrl, 'https://www.openstreetmap.org/'), phone: asString(props.phone), hours: asString(props.hours), parking: asString(props.parking), ...appearance(props.appearance, { surface: 'default', spacing: 'normal' }), motion: normalizeBlockMotion(block.motion) } };
   return null;
-}
-
-function attachAppearance(props: Record<string, unknown>, raw: Record<string, unknown>, fallback: BlockAppearance, include: boolean): Record<string, unknown> {
-  const next = { ...props };
-  const editor = appearance({ surface: raw.surface, spacing: raw.spacing, textScale: raw.textScale, textAlign: raw.textAlign,
-    elementStyles: raw.elementStyles }, fallback);
-  const { elementStyles, ...resolved } = editor;
-  const canonical: BlockAppearance = { ...resolved, ...(elementStyles && Object.keys(elementStyles).length > 0 ? { elements: elementStyles } : {}) };
-  if (include || canonical.surface !== fallback.surface || canonical.spacing !== fallback.spacing || canonical.textScale || canonical.textAlign || canonical.elements) next.appearance = canonical;
-  return next;
 }
 
 export function catalogPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean, includeSliderSettings = false): { type: string; props: Record<string, unknown> } | null {

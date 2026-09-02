@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { BlockAppearance, ElementAppearance } from '../../resources/js/documents/types';
+import type { BlockAppearance, ElementAppearance } from '../../resources/js/documents/blockPresentation';
 import {
   blockContainerEditorProps,
   mergeBlockContainerAppearance,

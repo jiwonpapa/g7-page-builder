@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { ElementAppearance, ElementAppearanceMap } from '../documents/types';
+import type { ElementAppearance, ElementAppearanceMap } from '../documents/blockPresentation';
 import { elementFontSizeClassName, normalizeFontSizeRem } from './fontSize';
 
 export const CANVAS_ELEMENT_MESSAGE = 'g7pb:canvas-element-selected';

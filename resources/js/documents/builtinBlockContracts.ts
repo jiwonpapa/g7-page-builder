@@ -1,4 +1,5 @@
-import type { BlockAppearance, DynamicAudience, PageBuilderBlock, PageBuilderCallToAction, PageBuilderImage, PageBuilderLink } from './types';
+import type { DynamicAudience, PageBuilderBlock, PageBuilderCallToAction, PageBuilderImage, PageBuilderLink } from './types';
+import type { BlockAppearance } from './blockPresentation';
 
 export const HERO_BLOCK_TYPE = 'content.hero-centered-01' as const;
 

@@ -1,6 +1,8 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import * as documentContracts from '../../resources/js/documents/types';
 import * as builtinContracts from '../../resources/js/documents/builtinBlockContracts';
+import type * as presentationContracts from '../../resources/js/documents/blockPresentation';
+import * as layoutContracts from '../../resources/js/documents/layoutContracts';
 
 const expectedBlockIds = [
   { name: 'HERO_BLOCK_TYPE', id: 'content.hero-centered-01' },
@@ -117,6 +119,76 @@ describe('canonical document and built-in contract ownership', () => {
       instance_id: '10000000-0000-4000-8000-000000000003',
       type: 'content.hero-centered-01', block_version: 1,
       props: { eyebrow: '', title: 'Contract', body: '', alignment: 'left' },
+    });
+  });
+
+  it('keeps layout ID literals available from both the owner and document entry point', () => {
+    const ids = [
+      { name: 'LAYOUT_SECTION_BLOCK_TYPE', id: 'layout.section-01' },
+      { name: 'LAYOUT_COLUMNS_BLOCK_TYPE', id: 'layout.columns-01' },
+      { name: 'LAYOUT_STACK_BLOCK_TYPE', id: 'layout.stack-01' },
+    ] as const;
+    for (const { name, id } of ids) {
+      expect(layoutContracts[name]).toBe(id);
+      expect(documentContracts[name]).toBe(layoutContracts[name]);
+    }
+  });
+
+  it('preserves presentation and layout aliases, including legacy responsive and optional values', () => {
+    expectTypeOf<documentContracts.BlockAppearance>().toEqualTypeOf<presentationContracts.BlockAppearance>();
+    expectTypeOf<documentContracts.ElementAppearance>().toEqualTypeOf<presentationContracts.ElementAppearance>();
+    expectTypeOf<documentContracts.ElementAppearanceMap>().toEqualTypeOf<presentationContracts.ElementAppearanceMap>();
+    expectTypeOf<documentContracts.ResponsiveAppearanceOverride>().toEqualTypeOf<presentationContracts.ResponsiveAppearanceOverride>();
+    expectTypeOf<documentContracts.ResponsiveLayoutOverride>().toEqualTypeOf<presentationContracts.ResponsiveLayoutOverride>();
+    expectTypeOf<documentContracts.BlockResponsiveOverride>().toEqualTypeOf<presentationContracts.BlockResponsiveOverride>();
+    expectTypeOf<documentContracts.BlockResponsiveOverrides>().toEqualTypeOf<presentationContracts.BlockResponsiveOverrides>();
+    expectTypeOf<documentContracts.BlockMotionPreset>().toEqualTypeOf<presentationContracts.BlockMotionPreset>();
+    expectTypeOf<documentContracts.BlockMotion>().toEqualTypeOf<presentationContracts.BlockMotion>();
+    expectTypeOf<documentContracts.LayoutSectionBlockProps>().toEqualTypeOf<layoutContracts.LayoutSectionBlockProps>();
+    expectTypeOf<documentContracts.LayoutColumnsBlockProps>().toEqualTypeOf<layoutContracts.LayoutColumnsBlockProps>();
+    expectTypeOf<documentContracts.LayoutStackBlockProps>().toEqualTypeOf<layoutContracts.LayoutStackBlockProps>();
+    expectTypeOf<presentationContracts.ResponsiveLayoutOverride['columns']>().toEqualTypeOf<1 | 2 | undefined>();
+    expectTypeOf<layoutContracts.LayoutColumnsBlockProps['columns']>().toEqualTypeOf<1 | 2 | 3>();
+    expectTypeOf<presentationContracts.ElementAppearance['size']>().toEqualTypeOf<'small' | 'base' | 'large' | 'xlarge' | undefined>();
+    expectTypeOf<presentationContracts.ElementAppearance['fontSizeRem']>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<presentationContracts.BlockMotion['stagger_ms']>().toEqualTypeOf<60 | 100 | 160>();
+  });
+
+  it('keeps Page and Site Part JSON envelopes with null tokens and omitted overrides', () => {
+    const appearance: presentationContracts.BlockAppearance = {
+      surface: 'contrast', spacing: 'normal', elements: { title: { size: 'large', fontSizeRem: 1.5 } },
+    };
+    const sectionProps = { width: 'wide', spacing: 'normal' } satisfies layoutContracts.LayoutSectionBlockProps;
+    const responsive: presentationContracts.BlockResponsiveOverrides = { tablet: { layout: { columns: 2 } } };
+    const page: documentContracts.PageBuilderDocument = {
+      schema_version: 'g7-page-builder/v2', document_id: '10000000-0000-4000-8000-000000000004',
+      slug: 'contract', mode: 'canvas', locale: 'ko', shell_mode: 'global', tokens: { inherited: null },
+      blocks: [{
+        instance_id: '10000000-0000-4000-8000-000000000005',
+        type: layoutContracts.LAYOUT_SECTION_BLOCK_TYPE, block_version: 1, props: sectionProps, responsive,
+        slots: { content: [{
+          instance_id: '10000000-0000-4000-8000-000000000006',
+          type: builtinContracts.HEADING_BLOCK_TYPE, block_version: 1, props: { text: 'Contract', appearance },
+        }] },
+      }],
+    };
+    const pageJson = JSON.parse(JSON.stringify(page));
+    expect(pageJson.schema_version).toBe('g7-page-builder/v2');
+    expect(pageJson.shell_mode).toBe('global');
+    expect(pageJson.tokens).toEqual({ inherited: null });
+    expect(pageJson.blocks[0].props).toEqual({ width: 'wide', spacing: 'normal' });
+    expect(pageJson.blocks[0].responsive).toEqual({ tablet: { layout: { columns: 2 } } });
+    expect(pageJson.blocks[0]).not.toHaveProperty('motion');
+    expect(pageJson.blocks[0].slots.content[0].props.appearance).toEqual({
+      surface: 'contrast', spacing: 'normal', elements: { title: { size: 'large', fontSizeRem: 1.5 } },
+    });
+    const sitePart: documentContracts.SitePartDocument = {
+      schema_version: 'g7-page-builder/site-part/v1', site_part_id: '10000000-0000-4000-8000-000000000007',
+      kind: 'header', locale: 'ko', tokens: { inherited: null }, blocks: [],
+    };
+    expect(JSON.parse(JSON.stringify(sitePart))).toEqual({
+      schema_version: 'g7-page-builder/site-part/v1', site_part_id: '10000000-0000-4000-8000-000000000007',
+      kind: 'header', locale: 'ko', tokens: { inherited: null }, blocks: [],
     });
   });
 });

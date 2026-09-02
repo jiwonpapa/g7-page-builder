@@ -367,6 +367,8 @@ final class AdminDocumentController
             return $this->domainError($request, 422, $exception->errorCode, $exception->getMessage());
         } catch (SlugAlreadyExistsException $exception) {
             return $this->domainError($request, 409, 'G7PB_PUBLIC_SLUG_CONFLICT', $exception->getMessage());
+        } catch (PublicationCommitException $exception) {
+            return $this->domainError($request, 409, 'G7PB_PUBLICATION_INVALID', $exception->getMessage());
         } catch (\Throwable $exception) {
             return $this->unexpected($request, $exception);
         }

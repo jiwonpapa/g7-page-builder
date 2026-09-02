@@ -11,10 +11,23 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
+use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use PHPUnit\Framework\TestCase;
 
 final class PageBuilderServiceTest extends TestCase
 {
+    public function test_archived_document_cannot_compile_or_prepare_a_publication(): void
+    {
+        $snapshot = new DocumentSnapshot($this->document(), 'Fixture', 2, 1, archivedAt: new \DateTimeImmutable);
+        $repository = $this->createMock(PageBuilderRepository::class);
+        $repository->expects(self::once())->method('find')->willReturn($snapshot);
+        $repository->expects(self::never())->method('storePublicationCandidate');
+        $compiler = $this->createMock(DocumentCompilerPort::class);
+        $compiler->expects(self::never())->method('compile');
+        $this->expectException(PublicationCommitException::class);
+        (new PageBuilderService($repository, $compiler))->preparePublication($snapshot->document->documentId, 2, 1);
+    }
+
     public function test_preview_does_not_issue_a_token_when_the_draft_cannot_compile(): void
     {
         $snapshot = new DocumentSnapshot(

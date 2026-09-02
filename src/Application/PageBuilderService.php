@@ -11,6 +11,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\DocumentNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
+use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\RevisionNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PreparedPublication;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PreviewTicket;
@@ -272,6 +273,9 @@ final class PageBuilderService
 
         if ($snapshot->lockVersion !== $expectedLockVersion) {
             throw new LockConflictException($snapshot->lockVersion);
+        }
+        if ($snapshot->archivedAt !== null) {
+            throw new PublicationCommitException('An archived page must be restored before publication.');
         }
 
         $result = $this->compiler->compile(

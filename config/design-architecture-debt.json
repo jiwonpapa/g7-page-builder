@@ -1171,15 +1171,6 @@
       }
     },
     {
-      "path": "resources/js/editor/richTextEditing.tsx",
-      "rule": "SOURCE-SIZE",
-      "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Rich-text schema, input and floating toolbar responsibilities still share one module.",
-      "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
-      "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 901
-      }
-    },
-    {
       "path": "resources/js/manager/PageBuilderManager.tsx",
       "rule": "SOURCE-SIZE",
       "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Document management, store, revision and metadata views still share one module.",

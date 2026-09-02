@@ -3,7 +3,8 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from tools.g7pb.planner import build_plan, changed_paths, python_inputs, content_policy, checker_controller_root
+from tools.g7pb.planner import BROWSER_HELPER_SPECS, build_plan, changed_paths, python_inputs, content_policy, checker_controller_root
+from tools.g7pb.inputs import source_inputs
 from tools.g7pb.runner import digest_gate
 
 
@@ -51,9 +52,9 @@ class PlannerTests(unittest.TestCase):
             self.assertEqual(gate.deferred, phase == "submission")
             self.assertIn("browser-assets", gate.depends_on)
 
-    def test_rich_text_helper_selects_only_its_two_registration_specs(self):
+    def test_rich_text_helper_selects_only_its_registered_consumer_specs(self):
         helper = "tests/E2E/support/richTextInput.ts"
-        specs = ("tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts")
+        specs = BROWSER_HELPER_SPECS[helper]
         self.write(helper, "export const replacePuckRichTextField = () => {}")
         for spec in specs:
             self.write(spec, "import {replacePuckRichTextField} from './support/richTextInput'")
@@ -63,18 +64,20 @@ class PlannerTests(unittest.TestCase):
                 self.assertFalse(plan.unresolved)
                 self.assertFalse(plan.full)
                 browser = [gate for gate in plan.gates if gate.name.startswith("browser-registration:")]
-                self.assertEqual(len(browser), 2)
+                self.assertEqual(len(browser), len(specs))
                 self.assertEqual({gate.name for gate in browser}, {"browser-registration:" + spec for spec in specs})
                 for gate in browser:
                     self.assertIn(helper, gate.inputs)
+                    self.assertIn(gate.name.removeprefix("browser-registration:"), gate.inputs)
                     self.assertIn("--list", gate.argv)
                     self.assertNotIn("--grep", gate.argv)
+                    self.assertFalse(gate.deferred)
                 self.assertFalse(any(gate.runtime for gate in plan.gates))
                 self.assertFalse(any(gate.name.startswith(("browser:", "content:")) for gate in plan.gates))
 
     def test_rich_text_helper_with_product_preserves_runtime_and_deferred_gates(self):
         helper = "tests/E2E/support/richTextInput.ts"
-        specs = ("tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts")
+        specs = BROWSER_HELPER_SPECS[helper]
         source = "resources/js/title.ts"
         self.write(helper, "export const replacePuckRichTextField = () => {}")
         for spec in specs:
@@ -87,15 +90,36 @@ class PlannerTests(unittest.TestCase):
                 self.assertFalse(plan.unresolved)
                 self.assertFalse(plan.full)
                 browser = [gate for gate in plan.gates if gate.name.startswith("browser:")]
+                self.assertEqual(len(browser), len(specs))
                 self.assertEqual({gate.name for gate in browser}, {"browser:" + spec for spec in specs})
                 for gate in browser:
                     self.assertIn(helper, gate.inputs)
+                    self.assertIn(gate.name.removeprefix("browser:"), gate.inputs)
                     self.assertIn("--retries=0", gate.argv)
                     self.assertNotIn("--list", gate.argv)
                     self.assertTrue(gate.runtime)
                     self.assertEqual(gate.deferred, phase == "submission")
                     self.assertIn("browser-assets", gate.depends_on)
                 self.assertFalse(any(gate.name.startswith(("browser-registration:", "content:")) for gate in plan.gates))
+
+    def test_rich_text_helper_registration_matches_actual_spec_dependency_consumers(self):
+        repository = Path(__file__).resolve().parents[2]
+        helper = "tests/E2E/support/richTextInput.ts"
+        registered = BROWSER_HELPER_SPECS[helper]
+        self.assertTrue((repository / helper).is_file())
+        self.assertTrue(registered)
+        self.assertEqual(len(registered), len(set(registered)))
+        specs = {path.relative_to(repository).as_posix() for path in (repository / "tests/E2E").rglob("*")
+                 if path.is_file() and path.name.endswith((".spec.ts", ".spec.tsx"))}
+        self.assertTrue(set(registered).issubset(specs), "Every registered consumer must be a real spec")
+        consumers = set()
+        for spec in sorted(specs):
+            # Read local import dependencies without running fixture I/O or a browser.
+            dependencies = source_inputs(repository, spec, runtime=False)
+            self.assertTrue(dependencies.reusable, f"Unresolved spec imports: {spec}")
+            if helper in dependencies.files:
+                consumers.add(spec)
+        self.assertEqual(set(registered), consumers, "Helper registration must match its actual dependency consumers exactly")
 
     def test_unknown_browser_support_cannot_be_collected_as_zero_test_spec(self):
         self.write("tests/E2E/support/unknown.ts", "export const a=1")

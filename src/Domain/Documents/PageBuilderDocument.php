@@ -79,6 +79,8 @@ final readonly class PageBuilderDocument
      */
     public static function fromArray(array $data): self
     {
+        PageDocumentWritePolicy::validate($data);
+
         return self::fromPayload($data);
     }
 

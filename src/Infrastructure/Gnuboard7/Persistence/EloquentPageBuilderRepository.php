@@ -9,7 +9,6 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
-use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDesignTokens;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\DocumentNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
@@ -302,6 +301,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         DB::transaction(function () use ($result, $expectedLockVersion, $tokenHash, $expiresAt, $actorId): void {
             $record = $this->lockDocument($result->documentId);
             $this->assertLockVersion($record, $expectedLockVersion);
+            $this->assertPublishable($record);
 
             if ($record->current_revision !== $result->sourceRevision || ! is_string($result->artifact)) {
                 throw new LockConflictException($record->lock_version);
@@ -352,6 +352,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             }
 
             $record = $this->lockDocument($publication->document_id);
+            $this->assertPublishable($record);
 
             if (
                 $record->current_revision !== $publication->source_revision
@@ -512,7 +513,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         /** @var DocumentRecord|null $record */
         $record = DocumentRecord::query()->find($publication->document_id);
 
-        if (! $record instanceof DocumentRecord || $record->active_publication_id !== $publication->id) {
+        if (! $record instanceof DocumentRecord || $record->archived_at !== null || $record->active_publication_id !== $publication->id) {
             return null;
         }
 
@@ -546,6 +547,9 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
 
             if ($enabled && (! is_string($record->active_publication_id) || $record->active_publication_id === '')) {
                 throw new PublicationCommitException('Only a published page can be assigned as the home page.');
+            }
+            if ($enabled) {
+                $this->assertPublishable($record);
             }
 
             if ((bool) $record->is_home === $enabled) {
@@ -583,7 +587,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
     public function findPublishedHome(): ?RenderedPage
     {
         /** @var DocumentRecord|null $record */
-        $record = DocumentRecord::query()->where('is_home', true)->first();
+        $record = DocumentRecord::query()->where('is_home', true)->whereNull('archived_at')->first();
 
         if (! $record instanceof DocumentRecord || ! is_string($record->active_publication_id)) {
             return null;
@@ -716,7 +720,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         ?int $actorId,
     ): void {
         // A recovered historical document is readable, but is never a write exemption.
-        PageDesignTokens::fromArray($document->tokens);
+        PageBuilderDocument::fromArray($document->toArray());
         RevisionRecord::query()->create([
             'id' => $this->uuidV4(),
             'document_id' => $document->documentId,
@@ -738,6 +742,13 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         }
 
         return PageBuilderDocument::fromStoredArray($data);
+    }
+
+    private function assertPublishable(DocumentRecord $record): void
+    {
+        if ($record->archived_at !== null) {
+            throw new PublicationCommitException('An archived page must be restored before publication.');
+        }
     }
 
     private function renderedPage(DocumentRecord $record, PublicationRecord $publication): RenderedPage

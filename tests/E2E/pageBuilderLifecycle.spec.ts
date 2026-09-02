@@ -554,6 +554,8 @@ async function activatePuckRichTextField(page: Page, field: Locator, label: stri
   await expect(field, `${label} must be visible before rich-text activation`).toBeVisible();
   await field.scrollIntoViewIfNeeded();
   await field.hover();
+  // Puck's temporary fallback is also contenteditable; wait for the actual Tiptap input.
+  await expect(field).toHaveClass(/\bProseMirror\b/);
   await expect(field).toHaveAttribute('contenteditable', 'true');
   await activatePointerTarget(page, field, label);
   await expect(field).toBeEditable();
@@ -984,9 +986,9 @@ async function selectAndEditHero(
   await expect(inlineSubtitle).toHaveCount(1);
   await expect(inlineBody).toHaveCount(1);
   await expect(inlineButton).toHaveCount(1);
-  await activatePointerTarget(page, inlineTitle, 'Hero title');
-  await expect(inlineTitle).toBeEditable();
+  await activatePuckRichTextField(page, inlineTitle, 'Hero title');
   await inlineTitle.fill(title);
+  await expect(inlineTitle).toHaveText(title);
   if (directCanvas) {
     await activatePuckPlainTextField(page, inlineSubtitle, 'Hero eyebrow');
     await inlineSubtitle.fill(subtitle);
@@ -997,7 +999,7 @@ async function selectAndEditHero(
     await (await revealInspectorField(page, 'page-builder-hero-subtitle')).fill(subtitle);
     await (await revealInspectorField(page, 'page-builder-hero-primary-label')).fill(buttonLabel);
   }
-  await expect(inlineTitle).toContainText(title);
+  await expect(inlineTitle).toHaveText(title);
   await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(subtitle);
 }
 
@@ -1011,9 +1013,9 @@ async function selectAndEditFeatures(
   await expect(features).toHaveCount(1);
   await selectEditorBlock(page, 'features');
   const headingField = editorInlineField(page, 'features', 'title');
-  await activatePointerTarget(page, headingField, 'Features heading');
-  await expect(headingField).toBeEditable();
+  await activatePuckRichTextField(page, headingField, 'Features heading');
   await headingField.fill(heading);
+  await expect(headingField).toHaveText(heading);
   const itemFields = [
     [editorInlineField(page, 'features', 'items.0.title'), itemTitle, 'Features first item title'],
     [editorInlineField(page, 'features', 'items.0.body'), itemBody, 'Features first item body'],
@@ -1038,9 +1040,9 @@ async function selectAndEditCta(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
   );
   const headingField = inline('heading');
-  await activatePointerTarget(page, headingField, 'CTA heading');
-  await expect(headingField).toBeEditable();
+  await activatePuckRichTextField(page, headingField, 'CTA heading');
   await headingField.fill(heading);
+  await expect(headingField).toHaveText(heading);
   await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
   await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
   for (const [field, value] of [['body', body], ['primaryLabel', primaryLabel]] as const) {
@@ -1061,9 +1063,9 @@ async function selectAndEditContact(
   await expect(contact).toHaveCount(1);
   await selectEditorBlock(page, 'contact');
   const headingField = editorInlineField(page, 'contact', 'heading');
-  await activatePointerTarget(page, headingField, 'Contact heading');
-  await expect(headingField).toBeEditable();
+  await activatePuckRichTextField(page, headingField, 'Contact heading');
   await headingField.fill(heading);
+  await expect(headingField).toHaveText(heading);
   await (await revealInspectorField(page, 'page-builder-contact-address')).fill(address);
   await (await revealInspectorField(page, 'page-builder-contact-phone')).fill('02-9876-5432');
   await (await revealInspectorField(page, 'page-builder-contact-email')).fill(email);
@@ -1674,7 +1676,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(await revealInspectorField(page, 'page-builder-design-custom-1-dark')).toHaveValue('#b3d4ff');
 
     await selectEditorBlock(page, 'hero');
-    await expect(editorInlineField(page, 'hero', 'title')).toContainText(heroTitle);
+    await expect(editorInlineField(page, 'hero', 'title')).toHaveText(heroTitle);
     await expect(await revealInspectorField(page, 'page-builder-hero-subtitle')).toHaveValue(heroSubtitle);
     if (testInfo.project.name === 'desktop') {
       await expect(await revealInspectorField(page, 'page-builder-hero-primary-url')).toHaveValue('/register');
@@ -1684,16 +1686,16 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
     await expect(editorBlock(page, 'hero').getByText(heroButtonLabel, { exact: true })).toBeVisible();
     await selectEditorBlock(page, 'features');
-    await expect(editorInlineField(page, 'features', 'title')).toContainText(featuresHeading);
+    await expect(editorInlineField(page, 'features', 'title')).toHaveText(featuresHeading);
     await expect(editorInlineField(page, 'features', 'items.0.title')).toHaveText(featureTitle);
     await expect(editorInlineField(page, 'features', 'items.0.body')).toHaveText(featureBody);
     await selectEditorBlock(page, 'cta');
-    await expect(editorInlineField(page, 'cta', 'heading')).toContainText(ctaHeading);
+    await expect(editorInlineField(page, 'cta', 'heading')).toHaveText(ctaHeading);
     await expect(editorInlineField(page, 'cta', 'body')).toContainText(ctaBody);
     await expect(await revealInspectorField(page, 'page-builder-cta-primary-label')).toHaveValue(ctaPrimaryLabel);
     await expect(await revealInspectorField(page, 'page-builder-cta-theme')).toHaveValue('dark');
     await selectEditorBlock(page, 'contact');
-    await expect(editorInlineField(page, 'contact', 'heading')).toContainText(contactHeading);
+    await expect(editorInlineField(page, 'contact', 'heading')).toHaveText(contactHeading);
     await expect(await revealInspectorField(page, 'page-builder-contact-address')).toHaveValue(contactAddress);
     await expect(await revealInspectorField(page, 'page-builder-contact-email')).toHaveValue(contactEmail);
 

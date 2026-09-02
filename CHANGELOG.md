@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- G7 템플릿·중첩 열 안의 블록과 편집 미리보기가 브라우저 전체 폭으로 여백을 계산해 넓은 화면에서 본문 폭이 0으로 줄어들던 오류를 수정합니다. 여백은 실제 부모 폭을 따르고, 분할 Hero·프로젝트 목록은 컨테이너 폭에 따라 세로로 전환합니다.
+
 ### Changed
 
 - 통합 검증은 최신 신뢰 SHA 이후 변경 경로를 `scoped`, `frontend`, `php`, `mixed`, `g7`, `full`로 분류하며 migration·route/layout·lifecycle·미분류 핵심 경로, 기준 SHA 부재 또는 명시적 RC에만 전체 품질 게이트를 실행합니다. 동일 candidate tree에서 이미 통과한 focused gate receipt는 최종 검증에서 재사용합니다.

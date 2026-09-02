@@ -1,4 +1,5 @@
-import type { InquiryFormKind, PageBuilderBlock, PageBuilderDocument, SitePartDocument, SiteShellLink } from '../documents/types';
+import type { PageBuilderBlock, PageBuilderDocument, SitePartDocument, SiteShellLink } from '../documents/types';
+import type { InquiryFormKind } from '../documents/builtinBlockContracts';
 
 export interface RouteCatalogEntry {
   id: string;

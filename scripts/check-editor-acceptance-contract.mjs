@@ -48,7 +48,7 @@ export function validateEditorMutationBoundary(graph) {
   const boundaryError = '미리보기 모드의 유출된 Puck 변경은 canonical 문서에 반영하면 안 됩니다.';
   const roots = graph.nodes('PuckEditorAdapter');
   const pucks = graph.find(node => (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))
-    && node.tagName.getText() === 'Puck' && isExpression(attribute(node, 'config'), 'runtimePuckConfig'));
+    && graph.isImportReference(node.tagName, 'Puck', '@puckeditor/core') && isExpression(attribute(node, 'config'), 'runtimePuckConfig'));
   const puck = pucks[0];
   const permissions = puck && attribute(puck, 'permissions');
   const mutationNames = ['edit', 'insert', 'delete', 'duplicate', 'drag'];
@@ -63,16 +63,25 @@ export function validateEditorMutationBoundary(graph) {
       && item.name.getText() === name && ts.isPrefixUnaryExpression(item.initializer)
       && item.initializer.operator === ts.SyntaxKind.ExclamationToken && graph.value(item.initializer.operand) === disabledBinding))) errors.push(permissionError);
 
-  const hooks = graph.find(node => ts.isCallExpression(node) && ts.isIdentifier(node.expression)
-    && node.expression.text === 'usePuckDocumentBoundary');
+  const boundaries = graph.nodes('usePuckDocumentBoundary');
+  const boundary = boundaries.length === 1 ? boundaries[0] : undefined;
+  const hooks = graph.find(node => ts.isCallExpression(node) && boundary && graph.value(node.expression) === boundary);
   const options = hooks[0]?.arguments[1];
   const optionValue = options && ts.isObjectLiteralExpression(options)
     ? options.properties.find(item => ts.isPropertyAssignment(item) && item.name.getText() === 'canEdit')?.initializer : undefined;
   const optionCanEdit = isExpression(optionValue, 'viewportPolicy.canEdit') && disabled && ts.isBinaryExpression(disabledBinding)
     && ts.isPrefixUnaryExpression(disabledBinding.left) && graph.sameValue(disabledBinding.left.operand, optionValue);
-  const boundary = graph.nodes('usePuckDocumentBoundary')[0];
+  const ownedBoundary = hooks.length === 1 ? graph.member(hooks[0], 'boundary') : undefined;
+  const ownedRecovery = hooks.length === 1 ? graph.member(hooks[0], 'recovering') : undefined;
+  // Match the actual hook return, not a same-spelled receiver or an object that
+  // spreads the safe boundary and overrides one of its mutation callbacks.
+  const boundaryMember = (input, name) => {
+    const member = graph.value(input);
+    return member && ts.isPropertyAccessExpression(member) && member.name.text === name
+      && graph.sameValue(member.expression, ownedBoundary);
+  };
   const recoveryConnected = disabled && ts.isBinaryExpression(disabledBinding)
-    && within(boundary, node => node === graph.value(disabledBinding.right)).length;
+    && graph.sameValue(disabledBinding.right, ownedRecovery);
   const assessment = graph.nodes('assessEditorCandidate')[0];
   const accept = within(boundary, node => ts.isVariableDeclaration(node) && node.name.getText() === 'accept')[0]?.initializer;
   const acceptStatements = accept?.body && ts.isBlock(accept.body) ? [...accept.body.statements] : [];
@@ -90,19 +99,21 @@ export function validateEditorMutationBoundary(graph) {
   const changesGuarded = acceptStatements.some(node => ts.isIfStatement(node) && isExpression(node.expression, 'result.changed')
     && within(node.thenStatement, item => ts.isCallExpression(item) && isExpression(item.expression, 'optionsRef.current.onChange')).length
     && within(node.thenStatement, item => ts.isCallExpression(item) && isExpression(item.expression, 'optionsRef.current.onDirty')).length);
-  const recoveryMounted = graph.find(node => (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))
-    && node.tagName.getText() === 'PuckDocumentBoundary' && isExpression(attribute(node, 'boundary'), 'boundary')).length;
+  const recoveryComponents = graph.nodes('PuckDocumentBoundary');
+  const recoveryNodes = graph.find(node => (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))
+    && recoveryComponents.length === 1 && graph.value(node.tagName) === recoveryComponents[0]);
+  const recoveryMounted = recoveryNodes.length === 1 && graph.sameValue(attribute(recoveryNodes[0], 'boundary'), ownedBoundary);
   const preservedHistory = ['historyAfterRejectedCommand', 'api.history.setHistories', 'api.history.setHistoryIndex'].every(name =>
     within(boundary, node => ts.isCallExpression(node) && isExpression(node.expression, name)).length);
   const onPublish = puck && attribute(puck, 'onPublish');
   const publishStatements = onPublish?.body && ts.isBlock(onPublish.body) ? [...onPublish.body.statements] : [];
   const publishGuarded = publishStatements[0] && ts.isIfStatement(publishStatements[0])
     && graph.value(publishStatements[0].expression) === disabledBinding && ts.isReturnStatement(publishStatements[0].thenStatement)
-    && within(onPublish, node => ts.isCallExpression(node) && isExpression(node.expression, 'boundary.acceptForPublish')).length;
+    && within(onPublish, node => ts.isCallExpression(node) && boundaryMember(node.expression, 'acceptForPublish')).length;
   if (!puck || hooks.length !== 1 || !optionCanEdit || !recoveryConnected || !readonlyRejected || !recoveryBlocked
     || rejectIndex < 0 || writeIndex <= rejectIndex || !changesGuarded || !recoveryMounted || !preservedHistory || !publishGuarded
-    || !isExpression(attribute(puck, 'onAction'), 'boundary.onAction')
-    || !isExpression(attribute(puck, 'onChange'), 'boundary.onChange')) errors.push(boundaryError);
+    || !boundaryMember(attribute(puck, 'onAction'), 'onAction')
+    || !boundaryMember(attribute(puck, 'onChange'), 'onChange')) errors.push(boundaryError);
   return errors;
 }
 

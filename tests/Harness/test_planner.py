@@ -175,6 +175,54 @@ class PlannerTests(unittest.TestCase):
         self.assertFalse(plan.unresolved)
         self.assertIn("python:tests/Harness/test_release.py", [gate.name for gate in plan.gates])
 
+    def browser_fixture(self):
+        self.write("resources/js/editor/richTextEditing.tsx", "export const value = 1;")
+        self.write("tests/Unit/richTextEditing.test.ts", "import '../../resources/js/editor/richTextEditing';")
+        self.write("tests/E2E/editorInteractionQuality.spec.ts", "test('rich text', async()=>{});")
+
+    def test_product_browser_has_one_ordered_candidate_build_in_all_phases(self):
+        self.browser_fixture()
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, ["resources/js/editor/richTextEditing.tsx"], phase=phase)
+                names = [g.name for g in plan.gates]
+                assets = next(g for g in plan.gates if g.name == "browser-assets")
+                browser = next(g for g in plan.gates if g.name.startswith("browser:"))
+                self.assertEqual(names.count("browser-assets"), 1)
+                self.assertLess(names.index(assets.name), names.index(browser.name))
+                self.assertEqual(browser.depends_on, (assets.name,))
+                self.assertEqual(assets.execution, "controller")
+                self.assertEqual(assets.deferred, phase == "submission")
+                self.assertEqual(assets.argv[assets.argv.index("--runtime") + 1], "local" if phase == "ci" else "docker")
+                self.assertEqual(assets.argv[assets.argv.index("--root") + 1], str(self.root.resolve()))
+                self.assertTrue(Path(assets.argv[2]).is_absolute())
+                self.assertIn("resources/js/editor/richTextEditing.tsx", assets.inputs)
+                self.assertTrue(any(p.endswith("tools/g7pb/environment.py") for p in assets.inputs))
+                self.assertFalse(assets.reusable)  # build() owns artifact-aware reuse.
+                self.assertNotIn("browser-runtime-sync", names)
+
+    def test_changed_spec_scope_is_not_overwritten_by_source_mapping(self):
+        self.browser_fixture()
+        spec = "tests/E2E/editorInteractionQuality.spec.ts"
+        plan = build_plan(self.root, ["resources/js/editor/richTextEditing.tsx", spec], phase="integration")
+        browser = next(g for g in plan.gates if g.name == "browser:" + spec)
+        self.assertNotIn("--grep", browser.argv)
+        self.assertEqual(browser.depends_on, ("browser-assets",))
+        self.assertEqual(plan.gates[-1], browser)
+
+    def test_test_only_collection_does_not_prepare_runtime(self):
+        plan = build_plan(self.root, ["tests/E2E/editorInteractionQuality.spec.ts"])
+        self.assertFalse(any(g.runtime for g in plan.gates))
+        self.assertNotIn("browser-assets", [g.name for g in plan.gates])
+
+    def test_pc_only_registration_change_selects_focused_harness(self):
+        self.write("tests/Harness/test_browser_registration.py", "pass")
+        plan = build_plan(self.root, ["playwright.config.ts"])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.requirements["browser"])
+        self.assertEqual([g.name for g in plan.gates], ["python:tests/Harness/test_browser_registration.py"])
+        self.assertTrue(plan.requirements["node"])
+
 
 if __name__ == "__main__":
     unittest.main()

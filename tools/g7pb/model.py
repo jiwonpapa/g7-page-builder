@@ -9,10 +9,12 @@ class Gate:
     inputs: tuple[str, ...]
     reason: str
     runtime: bool = False
-    env: tuple[tuple[str, str], ...] = ()
+    env: tuple[tuple[str, str | None], ...] = ()
     requires: tuple[str, ...] = ()
     reusable: bool = True
     deferred: bool = False
+    execution: str = "runtime"
+    depends_on: tuple[str, ...] = ()
 
 
 @dataclass

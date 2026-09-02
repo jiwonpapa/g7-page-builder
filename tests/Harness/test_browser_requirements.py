@@ -1,7 +1,8 @@
 from pathlib import Path
+from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, CATALOG_PREFIXES, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, CATALOG_PREFIXES, scenarios_for
 import json
 import re
 from tools.g7pb.planner import build_plan
@@ -11,6 +12,91 @@ class BrowserRequirementsTests(unittest.TestCase):
     def test_existing_behavior_selected_without_modifying_spec(self):
         self.assertEqual(scenarios_for(["resources/js/editor/richTextEditing.tsx"]), (TEXT,))
         self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])), {PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY})
+
+    def test_extracted_editor_render_boundaries_keep_their_own_behavior_scope(self):
+        text_and_controls = replace(TEXT, titles=tuple(sorted(TEXT.titles + CONTROLS.titles)))
+        expected = {
+            "puckEditorConfig.tsx": {PAGE, TEXT, STRUCTURE_THEME},
+            "puckBuiltinPreviews.tsx": {PAGE, TEXT, STRUCTURE_THEME},
+            "previewContent.ts": {PAGE, TEXT},
+            "FullSiteCanvas.tsx": {TEMPLATE, TEXT},
+            "puckEditorContexts.ts": {TEMPLATE, text_and_controls, STRUCTURE_THEME},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            for name, contracts in expected.items():
+                with self.subTest(source=name):
+                    selected = scenarios_for(["resources/js/editor/" + name])
+                    self.assertEqual(set(selected), contracts)
+                    self.assertNotIn(PARITY.spec, {scenario.spec for scenario in selected})
+                    for scenario in selected:
+                        self.assertEqual(scenario.projects, ("desktop",))
+                        self.assertEqual(scenario.preset_prefixes, ())
+                        self.assertTrue(all(value is None for _, value in scenario.environment(Path(directory))))
+                        self.assertNotIn("ALL_PRESET_LAYOUT_GATE", " ".join(scenario.arguments()))
+
+    def test_render_split_deduplicates_titles_without_losing_adapter_transactions(self):
+        sources = ["resources/js/editor/" + name for name in (
+            "puckEditorConfig.tsx", "puckBuiltinPreviews.tsx", "previewContent.ts",
+            "FullSiteCanvas.tsx", "puckEditorContexts.ts",
+        )]
+        selected = {scenario.spec: scenario for scenario in scenarios_for(sources)}
+        self.assertEqual(set(selected), {PAGE.spec, TEXT.spec, STRUCTURE_THEME.spec})
+        self.assertEqual(set(selected[PAGE.spec].titles), set(PAGE.titles + TEMPLATE.titles))
+        self.assertEqual(set(selected[TEXT.spec].titles), set(TEXT.titles + CONTROLS.titles))
+        self.assertEqual(selected[STRUCTURE_THEME.spec], STRUCTURE_THEME)
+        together = {scenario.spec: scenario for scenario in scenarios_for([
+            *sources, "resources/js/editor/PuckEditorAdapter.tsx",
+        ])}
+        self.assertEqual(together, {**selected, DOCUMENT_BOUNDARY.spec: DOCUMENT_BOUNDARY})
+        self.assertTrue(all(not scenario.preset_prefixes for scenario in together.values()))
+
+    def test_new_render_source_uses_transitive_unit_and_requires_runtime_only_at_integration(self):
+        for name in ("puckEditorConfig.tsx", "puckBuiltinPreviews.tsx", "previewContent.ts",
+                     "FullSiteCanvas.tsx", "puckEditorContexts.ts"):
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = "resources/js/editor/" + name
+                facade = "resources/js/editor/PuckEditorAdapter.tsx"
+                unit = "tests/Unit/existingEditorSurface.test.tsx"
+                scenarios = scenarios_for([source])
+                files = {
+                    source: "export const fixture = 1;",
+                    facade: "export { fixture } from './" + name + "';",
+                    unit: "import '../../resources/js/editor/PuckEditorAdapter';",
+                    **{scenario.spec: "import {test} from '@playwright/test';" for scenario in scenarios},
+                }
+                for path, content in files.items():
+                    file = root / path
+                    file.parent.mkdir(parents=True, exist_ok=True)
+                    file.write_text(content)
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(source=name, phase=phase):
+                        plan = build_plan(root, [source], phase=phase)
+                        self.assertFalse(plan.full)
+                        gates = {gate.name: gate for gate in plan.gates}
+                        self.assertIn("unit:" + unit, gates)
+                        self.assertIn(source, gates["unit:" + unit].inputs)
+                        self.assertIn(facade, gates["unit:" + unit].inputs)
+                        browsers = {key: gate for key, gate in gates.items() if key.startswith("browser:")}
+                        self.assertEqual(set(browsers), {"browser:" + scenario.spec for scenario in scenarios})
+                        self.assertFalse(any(key.startswith("content:") for key in gates))
+                        for gate in browsers.values():
+                            self.assertTrue(gate.runtime)
+                            self.assertEqual(gate.deferred, phase == "submission")
+                            self.assertIn(source, gate.inputs)
+                            self.assertEqual(gate.depends_on, ("browser-assets",))
+                            self.assertTrue(all(value is None for _, value in gate.env))
+
+    def test_new_render_source_without_related_unit_is_not_accepted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = "resources/js/editor/puckBuiltinPreviews.tsx"
+            path = root / source
+            path.parent.mkdir(parents=True)
+            path.write_text("export const fixture = 1;")
+            plan = build_plan(root, [source])
+            self.assertIn("No related test for " + source + "; add/declare a focused test", plan.unresolved)
+            self.assertFalse(plan.full)
 
     def test_document_transactions_and_shared_styles_use_code_fixtures_not_preset_sweeps(self):
         self.assertEqual(set(scenarios_for(["resources/js/editor/main.tsx"])), {PAGE, DOCUMENT_BOUNDARY})

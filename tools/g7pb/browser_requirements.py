@@ -85,6 +85,14 @@ RULES = (
     # Document transactions and shared style contracts use synthetic code fixtures,
     # not preset/catalog content sweeps. Catalog modules retain their own mapping.
     (("resources/js/editor/PuckEditorAdapter.tsx",), (PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY)),
+    # Extracted config and built-in previews retain canonical editing, inline
+    # text, and nested/style contracts when changed without the adapter facade.
+    (("resources/js/editor/puckEditorConfig.tsx", "resources/js/editor/puckBuiltinPreviews.tsx"), (PAGE, TEXT, STRUCTURE_THEME)),
+    (("resources/js/editor/previewContent.ts",), (PAGE, TEXT)),
+    # The full-site canvas and shared contexts own template chrome, editing
+    # permissions, and pointer/selection propagation, not preset content quality.
+    (("resources/js/editor/FullSiteCanvas.tsx",), (TEMPLATE, TEXT)),
+    (("resources/js/editor/puckEditorContexts.ts",), (TEMPLATE, TEXT, CONTROLS, STRUCTURE_THEME)),
     (("resources/js/editor/main.tsx",), (PAGE, DOCUMENT_BOUNDARY)),
     (("resources/js/editor/PuckDocumentBoundary.tsx", "resources/js/editor/editorDocumentBoundary.ts",
       "resources/js/editor/draftPersistence.ts"), (DOCUMENT_BOUNDARY,)),

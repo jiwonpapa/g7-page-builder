@@ -41,6 +41,12 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
     receipts.mkdir(parents=True, exist_ok=True)
     results = []
     for gate in plan.gates:
+        if gate.deferred:
+            if plan.phase != "submission" or not gate.runtime:
+                raise ValueError(f"Only submission runtime gates may be deferred: {gate.name}")
+            print(f"DEFERRED gate={gate.name}; required during integration, NOT acceptance", flush=True)
+            results.append({"gate": gate.name, "status": "deferred", "executions": 0})
+            continue
         if gate.runtime and not task and os.environ.get("CI") != "true":
             raise ValueError(f"Runtime lease required: {gate.name}")
         if gate.runtime and os.environ.get("CI") == "true" and "browser" in gate.requires and not os.environ.get("G7PB_BASE_URL"):

@@ -52,7 +52,43 @@ class PlannerTests(unittest.TestCase):
         self.write("tests/Unit/title.test.ts", "import {title} from '../../resources/js/title'")
         plan = build_plan(self.root, ["resources/js/title.ts"])
         self.assertFalse(plan.unresolved)
-        self.assertEqual({g.name for g in plan.gates}, {"unit:tests/Unit/title.test.ts", "typecheck"})
+        self.assertEqual({g.name for g in plan.gates}, {"unit:tests/Unit/title.test.ts", "typecheck", "architecture"})
+
+    def test_normative_docs_select_structure_check_not_product_full(self):
+        plan = build_plan(self.root, ["AGENTS.md", "docs/development-constitution.md"])
+        self.assertEqual([g.name for g in plan.gates], ["architecture"])
+        self.assertFalse(plan.requirements["browser"])
+        self.assertFalse(plan.full)
+        self.assertTrue(any(p.endswith("config/design-architecture.json") for p in plan.gates[0].inputs))
+
+    def test_verified_controller_checks_the_owning_worktree(self):
+        self.write("resources/js/title.ts", "export const title = 1")
+        self.write("tests/Unit/title.test.ts", "import '../../resources/js/title'")
+        gate = next(g for g in build_plan(self.root, ["resources/js/title.ts"]).gates if g.name == "architecture")
+        self.assertEqual(gate.argv[gate.argv.index("--root") + 1], str(self.root.resolve()))
+        self.assertTrue(Path(gate.argv[1]).is_absolute())
+        self.assertNotEqual(Path(gate.argv[1]).parent.parent, self.root)
+        self.assertIn("resources/js/title.ts", gate.inputs)
+        self.assertTrue(any(Path(p).is_absolute() and p.endswith("design-architecture.json") for p in gate.inputs))
+
+    def test_php_source_requires_static_analysis_and_boundaries(self):
+        self.write("src/Domain/Example.php", "<?php class Example {}")
+        self.write("tests/UnitPhp/ExampleTest.php", "<?php class ExampleTest {}")
+        plan = build_plan(self.root, ["src/Domain/Example.php"])
+        self.assertTrue({"php-lint", "phpstan:core", "architecture"}.issubset(g.name for g in plan.gates))
+        static = next(g for g in plan.gates if g.name == "phpstan:core")
+        self.assertEqual(static.argv[-1], "src/Domain/Example.php")
+        self.assertFalse(static.runtime)
+
+    def test_related_transitive_import_is_selected_but_source_comment_is_not(self):
+        self.write("resources/js/a.ts", "export const a = 1")
+        self.write("resources/js/b.ts", "export {a} from './a'")
+        self.write("tests/Unit/consumer.test.ts", "import '../../resources/js/b'")
+        self.write("tests/Unit/unrelated.test.ts", "// a.ts is mentioned here")
+        plan = build_plan(self.root, ["resources/js/a.ts"])
+        names = {g.name for g in plan.gates}
+        self.assertIn("unit:tests/Unit/consumer.test.ts", names)
+        self.assertNotIn("unit:tests/Unit/unrelated.test.ts", names)
 
     def test_python_tracks_imports_not_unrelated_sources(self):
         self.write("tools/g7pb/a.py", "from .model import Gate")

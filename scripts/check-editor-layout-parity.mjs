@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
 
 const REQUIRED_SPEC = 'tests/E2E/editorLayoutParity.spec.ts';
 const CATALOG_VISUAL_SPEC = 'tests/E2E/blockCatalogQuality.spec.ts';
@@ -61,9 +62,7 @@ export async function validateEditorLayoutParity(root) {
   if (typeof scripts.check !== 'string' || !scripts.check.includes('npm run check:editor-layout-parity')) {
     errors.push('npm run check가 편집/미리보기 레이아웃 계약 검사를 포함해야 합니다.');
   }
-  if (typeof scripts['test:unit'] !== 'string' || !scripts['test:unit'].startsWith('npm run check:editor-layout-parity &&')) {
-    errors.push('frontend task-submit의 test:unit가 레이아웃 계약 검사를 먼저 실행해야 합니다.');
-  }
+  errors.push(...validateFocusedUnitCommand(scripts), ...validateEditorTestRegistration(spec, REQUIRED_SPEC));
   if (typeof scripts['test:e2e:product'] !== 'string' || !scripts['test:e2e:product'].includes(REQUIRED_SPEC)) {
     errors.push(`test:e2e:product가 ${REQUIRED_SPEC}를 반드시 실행해야 합니다.`);
   }
@@ -115,8 +114,8 @@ export async function validateEditorLayoutParity(root) {
       '편집기와 공개 출력이 공유하는 content-width 변수가 필요합니다.'],
     [/\.g7pb-preview-block\s*>\s*\*\s*\{\s*width:\s*100%;\s*max-width:\s*100%;\s*margin-inline:\s*0;/,
       '편집 block wrapper가 공개 block과 다른 inline margin으로 자식을 재배치하면 안 됩니다.'],
-    [/padding-inline:\s*max\(1\.25rem,\s*calc\(\(100vw\s*-\s*var\(--g7pb-preview-content-width,\s*var\(--g7pb-theme-content-width\)\)\)\s*\/\s*2\)\)/,
-      '편집기 centered content edge는 공개 출력의 100vw 공식을 사용해야 합니다.'],
+    // The existing parity E2E compares both content edges. A container-based
+    // formula is legitimate; pinning its CSS spelling prevented that refactor.
     [/\.g7pb-preview-block\.g7pb-container-align--left:not\(\.g7pb-container-width--full\)\s*>\s*\*/,
       '왼쪽 container alignment 최종 override가 필요합니다.'],
     [/\.g7pb-preview-block\.g7pb-container-align--right:not\(\.g7pb-container-width--full\)\s*>\s*\*/,

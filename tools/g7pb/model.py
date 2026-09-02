@@ -12,6 +12,7 @@ class Gate:
     env: tuple[tuple[str, str], ...] = ()
     requires: tuple[str, ...] = ()
     reusable: bool = True
+    deferred: bool = False
 
 
 @dataclass
@@ -20,6 +21,7 @@ class Plan:
     gates: list[Gate] = field(default_factory=list)
     unresolved: list[str] = field(default_factory=list)
     full: bool = False
+    phase: str = "verification"
 
     @property
     def requirements(self):

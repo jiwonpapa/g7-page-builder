@@ -81,6 +81,25 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(self.calls, [["one-test"], ["one-test"]])
         self.assertEqual(list(self.receipts.glob("*.json")), [])
 
+    def test_submission_deferral_is_not_a_success_receipt(self):
+        gate = Gate("browser", ("browser",), ("a",), "required integration", runtime=True, deferred=True)
+        code, records = execute(self.root, Plan(["a"], [gate], phase="submission"), receipts=self.receipts, executor=self.executor)
+        self.assertEqual(code, 0)
+        self.assertEqual(records, [{"gate": "browser", "status": "deferred", "executions": 0}])
+        self.assertEqual(self.calls, [])
+        self.assertEqual(list(self.receipts.glob("*.json")), [])
+
+    def test_integration_cannot_accept_a_deferred_runtime_gate(self):
+        gate = Gate("browser", ("browser",), ("a",), "required", runtime=True, deferred=True)
+        for phase in ("integration", "verification", "ci"):
+            with self.subTest(phase=phase), self.assertRaisesRegex(ValueError, "Only submission"):
+                execute(self.root, Plan(["a"], [gate], phase=phase), receipts=self.receipts, executor=self.executor)
+
+    def test_non_runtime_gate_cannot_be_deferred(self):
+        gate = Gate("types", ("types",), ("a",), "required", deferred=True)
+        with self.assertRaisesRegex(ValueError, "Only submission"):
+            execute(self.root, Plan(["a"], [gate], phase="submission"), receipts=self.receipts, executor=self.executor)
+
 
 if __name__ == "__main__":
     unittest.main()

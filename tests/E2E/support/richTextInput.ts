@@ -83,12 +83,13 @@ export async function activatePointerTarget(
 }
 
 async function activatePuckRichTextField(page: Page, field: Locator, label: string): Promise<void> {
+  // Puck mounts Tiptap without hover. Its editable fallback can detach while
+  // scrolling, so establish the actual input before any pointer/scroll action.
+  await expect(field).toHaveClass(/\bProseMirror\b/);
+  await expect(field).toHaveAttribute('contenteditable', 'true');
   await expect(field, `${label} must be visible before rich-text activation`).toBeVisible();
   await field.scrollIntoViewIfNeeded();
   await field.hover();
-  // Puck's temporary fallback is also contenteditable; wait for the actual Tiptap input.
-  await expect(field).toHaveClass(/\bProseMirror\b/);
-  await expect(field).toHaveAttribute('contenteditable', 'true');
   await activatePointerTarget(page, field, label);
   await expect(field).toBeEditable();
 }

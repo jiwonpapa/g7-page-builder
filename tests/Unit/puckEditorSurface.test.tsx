@@ -12,11 +12,6 @@ import type { PageBuilderDocument } from '../../resources/js/documents/types';
 import type { SitePartResource } from '../../resources/js/api/resources';
 import { CANVAS_ELEMENT_MESSAGE } from '../../resources/js/editor/canvasEditingContract';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
-import companyPageKit from '../../resources/store/source/page-kits/company-launch/document.json';
-import editorialPageKit from '../../resources/store/source/page-kits/editorial-community/document.json';
-import eventPageKit from '../../resources/store/source/page-kits/event-launch/document.json';
-import localBusinessPageKit from '../../resources/store/source/page-kits/local-business/document.json';
-import servicePageKit from '../../resources/store/source/page-kits/service-conversion/document.json';
 import layoutFixture from '../Contract/document-layout-v2.fixture.json';
 
 const FULL_CATALOG_RENDER_TIMEOUT_MS = 15_000;
@@ -211,12 +206,12 @@ async function eventuallyBlockTypes(expected: string[]): Promise<void> {
   expect(actual).toEqual(expected);
 }
 
-async function eventuallyContains(selector: string, expected: string): Promise<void> {
+async function eventuallyContains(selector: string, expected: string): Promise<HTMLElement> {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const element = document.querySelector<HTMLElement>(selector)
       ?? document.querySelector('iframe')?.contentDocument?.querySelector<HTMLElement>(selector);
     if (element?.textContent?.includes(expected)) {
-      return;
+      return element;
     }
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -790,51 +785,70 @@ describe('Puck editor surface contract', () => {
     expect(document.querySelector('[data-testid="page-builder-context-panel"]')).toBeNull();
   });
 
-  it('keeps structured inline copy visible in every official Page Kit', async () => {
-    const localBusinessTestimonial = localBusinessPageKit.blocks
-      .find((block) => block.type === 'trust.testimonials-01');
-    const localBusinessTestimonialName = (localBusinessTestimonial?.props as {
-      items?: Array<{ name?: string }>;
-    }).items?.[0]?.name;
-    expect(localBusinessTestimonialName).toBeTypeOf('string');
-    const cases: Array<{ document: PageBuilderDocument; checks: Array<[string, string]> }> = [
+  it('keeps nested inline field values and formatting visible across synthetic renderer families', async () => {
+    const block = (type: string, props: Record<string, unknown>): PageBuilderDocument['blocks'][number] => ({
+      instance_id: crypto.randomUUID(), type, block_version: 1, props, slots: {},
+    });
+    const source = (blocks: PageBuilderDocument['blocks']): PageBuilderDocument => ({
+      ...fixture, document_id: crypto.randomUUID(), shell_mode: 'none', blocks,
+    });
+    const cases: Array<{ document: PageBuilderDocument; checks: Array<[string, string, boolean?]> }> = [
       {
-        document: companyPageKit as unknown as PageBuilderDocument,
+        document: source([
+          block('data.stats-icons-01', { items: [{ value: 'SYNTH_STATS_VALUE', label: 'Metric' }] }),
+          block('company.team-grid-01', { members: [{ name: 'SYNTH_TEAM_NAME', role: 'Role', bio: 'Biography', avatarSrc: '', avatarAlt: '' }] }),
+          block('trust.testimonials-01', { items: [{ quote: '<p><strong>SYNTH_QUOTE</strong></p>', name: 'Author', role: '', company: '', avatarSrc: '', avatarAlt: '', rating: 5 }] }),
+        ]),
         checks: [
-          ['[data-block-type="stats"] [data-g7pb-inline-field="items.0.value"]', '120+'],
-          ['[data-block-type="team"] [data-g7pb-inline-field="members.0.name"]', '김기획'],
-          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.quote"]', '기획과 제작'],
+          ['[data-block-type="stats"] [data-g7pb-inline-field="items.0.value"]', 'SYNTH_STATS_VALUE'],
+          ['[data-block-type="team"] [data-g7pb-inline-field="members.0.name"]', 'SYNTH_TEAM_NAME'],
+          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.quote"]', 'SYNTH_QUOTE', true],
         ],
       },
       {
-        document: servicePageKit as unknown as PageBuilderDocument,
+        document: source([
+          block('content.icon-list-01', { items: [{ icon: 'sparkles', title: '<p><strong>SYNTH_ICON_TITLE</strong></p>', body: 'Body' }] }),
+          block('content.process-timeline-01', { items: [{ title: '<p><strong>SYNTH_PROCESS_TITLE</strong></p>', body: 'Body', linkLabel: '', linkUrl: '' }] }),
+          block('content.faq-accordion-01', { items: [{ question: '<p><strong>SYNTH_QUESTION_A</strong></p>', answer: 'Answer' }] }),
+        ]),
         checks: [
-          ['[data-block-type="icon-list"] [data-g7pb-inline-field="items.0.title"]', '문제 정의'],
-          ['[data-block-type="process-timeline"] [data-g7pb-inline-field="items.0.title"]', '현재 확인'],
-          ['[data-block-type="faq-accordion"] [data-g7pb-inline-field="items.0.question"]', '요청 범위'],
+          ['[data-block-type="icon-list"] [data-g7pb-inline-field="items.0.title"]', 'SYNTH_ICON_TITLE', true],
+          ['[data-block-type="process-timeline"] [data-g7pb-inline-field="items.0.title"]', 'SYNTH_PROCESS_TITLE', true],
+          ['[data-block-type="faq-accordion"] [data-g7pb-inline-field="items.0.question"]', 'SYNTH_QUESTION_A', true],
         ],
       },
       {
-        document: localBusinessPageKit as unknown as PageBuilderDocument,
+        document: source([
+          block('content.process-timeline-01', { items: [{ title: 'Title', body: '<p><strong>SYNTH_PROCESS_BODY</strong></p>', linkLabel: '', linkUrl: '' }] }),
+          block('trust.testimonials-01', { items: [{ quote: 'Quote', name: 'SYNTH_AUTHOR_NAME', role: '', company: '', avatarSrc: '', avatarAlt: '', rating: 5 }] }),
+        ]),
         checks: [
-          ['[data-block-type="process-timeline"] [data-g7pb-inline-field="items.0.body"]', '방문 희망 시간'],
-          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.name"]', localBusinessTestimonialName!],
+          ['[data-block-type="process-timeline"] [data-g7pb-inline-field="items.0.body"]', 'SYNTH_PROCESS_BODY', true],
+          ['[data-block-type="testimonials"] [data-g7pb-inline-field="items.0.name"]', 'SYNTH_AUTHOR_NAME'],
         ],
       },
       {
-        document: eventPageKit as unknown as PageBuilderDocument,
+        document: source([
+          block('content.event-schedule-01', { items: [{ date: '2026-09-01', time: '14:00', title: '<p><strong>SYNTH_EVENT_TITLE</strong></p>', location: 'Location', description: 'Description', buttonLabel: '', buttonUrl: '' }] }),
+          block('trust.logo-cloud-01', { logos: [{ name: 'SYNTH_LOGO_NAME', imageSrc: '', imageAlt: '', url: '' }] }),
+          block('content.faq-accordion-01', { items: [{ question: '<p><strong>SYNTH_QUESTION_B</strong></p>', answer: 'Answer' }] }),
+        ]),
         checks: [
-          ['[data-block-type="event-schedule"] [data-g7pb-inline-field="items.0.title"]', '오프닝 키노트'],
-          ['[data-block-type="logo-cloud"] [data-g7pb-inline-field="logos.0.name"]', 'Northstar'],
-          ['[data-block-type="faq-accordion"] [data-g7pb-inline-field="items.0.question"]', '참가 신청'],
+          ['[data-block-type="event-schedule"] [data-g7pb-inline-field="items.0.title"]', 'SYNTH_EVENT_TITLE', true],
+          ['[data-block-type="logo-cloud"] [data-g7pb-inline-field="logos.0.name"]', 'SYNTH_LOGO_NAME'],
+          ['[data-block-type="faq-accordion"] [data-g7pb-inline-field="items.0.question"]', 'SYNTH_QUESTION_B', true],
         ],
       },
       {
-        document: editorialPageKit as unknown as PageBuilderDocument,
+        document: source([
+          block('content.article-list-01', { items: [{ title: '<p><strong>SYNTH_ARTICLE_TITLE</strong></p>', category: '', date: '2026-09-01', excerpt: 'Excerpt', imageSrc: '', imageAlt: '', url: '/' }] }),
+          block('content.event-schedule-01', { items: [{ date: '2026-09-01', time: '14:00', title: 'Event', location: 'SYNTH_EVENT_LOCATION', description: 'Description', buttonLabel: '', buttonUrl: '' }] }),
+          block('content.download-resources-01', { items: [{ title: '<p><strong>SYNTH_DOWNLOAD_TITLE</strong></p>', description: 'Description', fileType: 'PDF', fileSize: '', buttonLabel: 'Download', url: '/' }] }),
+        ]),
         checks: [
-          ['[data-block-type="article-list"] [data-g7pb-inline-field="items.0.title"]', '한 자리를 오래'],
-          ['[data-block-type="event-schedule"] [data-g7pb-inline-field="items.0.location"]', '중앙도서관 앞'],
-          ['[data-block-type="download-resources"] [data-g7pb-inline-field="items.0.title"]', '동네 인터뷰 질문지'],
+          ['[data-block-type="article-list"] [data-g7pb-inline-field="items.0.title"]', 'SYNTH_ARTICLE_TITLE', true],
+          ['[data-block-type="event-schedule"] [data-g7pb-inline-field="items.0.location"]', 'SYNTH_EVENT_LOCATION'],
+          ['[data-block-type="download-resources"] [data-g7pb-inline-field="items.0.title"]', 'SYNTH_DOWNLOAD_TITLE', true],
         ],
       },
     ];
@@ -843,14 +857,15 @@ describe('Puck editor surface contract', () => {
     const root = createRoot(container);
     mounted.push(() => act(() => root.unmount()));
 
-    for (const [index, pageKit] of cases.entries()) {
+    for (const [index, scenario] of cases.entries()) {
       await act(async () => {
-        root.render(<PuckEditorAdapter key={pageKit.document.document_id} document={pageKit.document} revisionKey={index} iframeEnabled={false}
+        root.render(<PuckEditorAdapter key={scenario.document.document_id} document={scenario.document} revisionKey={index} iframeEnabled={false}
           onChange={() => undefined} onPublish={() => undefined} />);
         await new Promise((resolve) => setTimeout(resolve, 20));
       });
-      for (const [selector, expected] of pageKit.checks) {
-        await eventuallyContains(selector, expected);
+      for (const [selector, expected, formatted] of scenario.checks) {
+        const field = await eventuallyContains(selector, expected);
+        if (formatted) expect(field.querySelector('strong')?.textContent).toContain(expected);
       }
     }
   }, 15_000);

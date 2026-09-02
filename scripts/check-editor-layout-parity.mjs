@@ -6,6 +6,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
 import { readCssGraph, cssPropertyValues } from './lib/editorCssSources.mjs';
+import { readEditorSourceGraph, EDITOR_ENTRY } from './lib/editorSourceGraph.mjs';
 
 const REQUIRED_SPEC = 'tests/E2E/editorLayoutParity.spec.ts';
 const CATALOG_VISUAL_SPEC = 'tests/E2E/blockCatalogQuality.spec.ts';
@@ -30,14 +31,15 @@ function usesSystemFont(css, selector) {
 
 export async function validateEditorLayoutParity(root) {
   const errors = [];
+  const graph = await readEditorSourceGraph(root);
   const [packageSource, editorGraph, publicGraph, adapter, catalogSource, productionSource, overlaySource, spec, catalogVisualSpec] = await Promise.all([
     source(root, 'package.json'),
     readCssGraph(root, ['resources/css/page-builder-editor.css']),
     readCssGraph(root, ['resources/css/page-builder-public.css']),
-    source(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
-    source(root, 'resources/js/editor/catalogBlocks.tsx'),
-    source(root, 'resources/js/editor/productionCatalogBlocks.tsx'),
-    source(root, 'resources/js/editor/editorOverlaySafeZone.ts'),
+    graph.source(EDITOR_ENTRY),
+    graph.declaration('LogoCloudPreview'),
+    graph.declaration('NoticePreview'),
+    graph.source('resources/js/editor/editorOverlaySafeZone.ts'),
     source(root, REQUIRED_SPEC),
     source(root, CATALOG_VISUAL_SPEC),
   ]);
@@ -183,7 +185,7 @@ export async function validateEditorLayoutParity(root) {
   requirePattern(errors, productionSource,
     /function NoticePreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2" className="g7pb-preview-richtext g7pb-preview-notice__title" fieldPath="title">/,
     '안내 블록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');
-  const heroPreviewSource = adapter.match(/function HeroPreview[\s\S]*?\n}\n\nfunction FeaturesPreview/)?.[0] ?? '';
+  const heroPreviewSource = graph.declaration('HeroPreview');
   if (heroPreviewSource.includes('g7pb-preview-hero__copy')) {
     errors.push('편집기 Hero는 공개 Hero와 같은 direct grid child 구조를 사용해야 합니다.');
   }

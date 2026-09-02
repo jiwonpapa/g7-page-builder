@@ -4,6 +4,21 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/g7pb-editor-acceptance.XXXXXX")"
 trap 'rm -rf "$fixture_root"' EXIT
+node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" >"$fixture_root/source-files"
+
+source_owner() {
+  local path
+  if [[ "$1" == '@Puck' ]]; then
+    path="$(node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" --puck-owner)"
+  elif [[ "$1" == 'call:applyEditorContentPolicy' ]]; then
+    path="$(node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" --call-owner applyEditorContentPolicy --argument component.fields)"
+  elif [[ "$1" == call:* ]]; then
+    path="$(node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" --call-owner "${1#call:}")"
+  else
+    path="$(node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" --owner "$1")"
+  fi
+  printf '%s/%s\n' "$fixture_root/fixture" "$path"
+}
 
 copy_fixture() {
   rm -rf "$fixture_root/fixture"
@@ -44,6 +59,10 @@ copy_fixture() {
     "$fixture_root/fixture/schemas/site-part-document.schema.json"
   cp "$repo_root/src/Application/Compilation/SitePartHtmlCompiler.php" \
     "$fixture_root/fixture/src/Application/Compilation/SitePartHtmlCompiler.php"
+  while IFS= read -r path; do
+    mkdir -p "$fixture_root/fixture/$(dirname "$path")"
+    cp "$repo_root/$path" "$fixture_root/fixture/$path"
+  done <"$fixture_root/source-files"
 }
 
 expect_failure() {
@@ -366,7 +385,7 @@ expect_failure 'Playwright mobile project가 필요합니다.'
 
 copy_fixture
 perl -0pi -e 's/g7pb:richtext-range-state/g7pb:richtext-range-active/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RICH_TEXT_RANGE_STATE_MESSAGE)"
 expect_failure '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'
 
 copy_fixture
@@ -376,12 +395,12 @@ expect_failure '캔버스 선택 대상은 단일 판별 상태 계약으로 정
 
 copy_fixture
 perl -0pi -e 's/canvasContextRangeActive\(canvasContextState\)/false/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner rangeEditingActive)"
 expect_failure '요소와 범위 상태는 단일 캔버스 컨텍스트에서 파생해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/RichTextMenu/RichTextToolbar/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner G7RichTextInlineMenu)"
 expect_failure '공식 Puck RichTextMenu를 직접 사용해야 합니다.'
 
 copy_fixture
@@ -396,22 +415,22 @@ expect_failure '선택 글자 벌룬 E2E는 실제 Range 근접도와 요소 도
 
 copy_fixture
 perl -0pi -e 's/function G7RichTextInlineMenu\(\{ editor,/function G7RichTextInlineMenu({ children, editor,/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner G7RichTextInlineMenu)"
 expect_failure '이동 중 click을 잃는 Puck 기본 inline B/I/U children을 중복 렌더하면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/onPointerDownCapture=\{applyFromPointer\}/onClick={applyFromPointer}/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner NativeRangeControl)"
 expect_failure '부분 글자 B/I/U는 이동하는 Puck ActionBar의 click 유실 전 pointerdown capture에서 적용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/onPointerUp=\{\(event\) => chooseFromPointer\(event, option\.value\)\}/onClick={(event) => chooseFromPointer(event, option.value)}/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RangeChoiceMenu)"
 expect_failure '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/scheduleCloseAfterPointer\(\);/onClose();/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RangeChoiceMenu)"
 expect_failure '선택 글자 옵션은 같은 pointer의 pointerup에서 한 번만 적용하고 compatibility click까지 portal을 유지한 뒤 닫혀야 합니다.'
 
 copy_fixture
@@ -471,77 +490,77 @@ expect_failure '부분 텍스트 포인터 E2E는 PC 편집 뷰포트에서 한 
 
 copy_fixture
 perl -0pi -e 's/toggleBold\(\)\.run\(\)/toggleStrike().run()/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner call:toggleBold)"
 expect_failure '부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/title="링크 편집"/title="주소 편집"/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner G7RichTextInlineMenu)"
 expect_failure '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e "s/import \{ createPortal \} from 'react-dom';//" \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RichTextFloatingLayer)"
 expect_failure '선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/data-g7pb-safe-clip-left/data-g7pb-unsafe-left/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RichTextFloatingLayer)"
 expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/data-puck-rte-menu="portal"/data-g7pb-rte-menu="portal"/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RichTextFloatingLayer)"
 expect_failure '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/FLOATING_LAYER_STABLE_FRAMES = 3/FLOATING_LAYER_STABLE_FRAMES = 1/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RichTextFloatingLayer)"
 expect_failure '선택 글자 floating layer는 연속 세 프레임의 배치가 같을 때만 노출되어야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/new ownerWindow\.MutationObserver\(invalidatePlacement\)/new ownerWindow.MutationObserver(schedule)/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RichTextFloatingLayer)"
 expect_failure '선택 글자 floating layer는 safe-zone 변경 시 즉시 숨기고 안정 배치를 다시 계산해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{ref\} align="end"/<div/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+perl -0pi -e 's/<RichTextFloatingLayer anchorRef=\{ref\} align="end"/<RichTextFloatingLayer anchorRef={triggerRef} align="end"/' \
+  "$(source_owner G7RichTextInlineMenu)"
 expect_failure '글꼴·크기·굵기·색상 option과 링크 form 모두 같은 floating portal 계약을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/editorState\?\.g7HasSelection/editorState?.legacySelection/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner G7RichTextInlineMenu)"
 expect_failure 'inline menu 표시는 Puck editorState의 선택 상태만 사용해야 합니다.'
 
 copy_fixture
-printf '\nconst bookmarkRef = { current: { from: 1, to: 2 } };\n' \
-  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+perl -0pi -e 's/const rangeActive = Boolean/const bookmarkRef = React.useRef(null); void bookmarkRef; const rangeActive = Boolean/' \
+  "$(source_owner G7RichTextInlineMenu)"
 expect_failure 'Puck selection 외 별도 bookmark 상태를 두면 안 됩니다.'
 
 copy_fixture
 printf '\neditor.chain().setTextSelection({ from: 1, to: 2 }).run();\n' \
-  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  >>"$(source_owner G7RichTextInlineMenu)"
 expect_failure '툴바 명령에서 선택 범위를 수동 복원하면 안 됩니다.'
 
 copy_fixture
 printf '\neditor.on("selectionUpdate", () => undefined);\n' \
-  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  >>"$(source_owner G7RichTextInlineMenu)"
 expect_failure 'inline menu가 Tiptap selection/transaction을 직접 구독하면 안 됩니다.'
 
 copy_fixture
 printf '\nwindow.addEventListener("blur", () => undefined);\n' \
-  >>"$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  >>"$(source_owner G7RichTextInlineMenu)"
 expect_failure 'inline menu가 window blur로 선택 범위를 접으면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/data-g7pb-richtext-field="true"/data-g7pb-richtext-field="true" data-puck-overlay-portal="true"/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RichTextCanvasField)"
 expect_failure '제품 rich-text wrapper가 Puck의 overlay portal 속성을 복제하면 안 됩니다.'
 
 copy_fixture
 perl -0pi -e 's/data-g7pb-richtext-field="true"/data-g7pb-richtext-field="true" onPointerDown={(event) => event.stopPropagation()}/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner RichTextCanvasField)"
 expect_failure '제품 rich-text wrapper가 Puck의 drag isolation을 복제하면 안 됩니다.'
 
 copy_fixture
@@ -551,7 +570,7 @@ expect_failure '요소 선택 계약에서 DOM Selection으로 범위 상태를 
 
 copy_fixture
 perl -0pi -e 's/visible: false/visible: true/' \
-  "$fixture_root/fixture/resources/js/editor/richTextEditing.tsx"
+  "$(source_owner createRichTextField)"
 expect_failure 'richtext는 캔버스에서만 편집하고 Puck sidebar 중복 필드는 숨겨야 합니다.'
 
 copy_fixture
@@ -561,7 +580,7 @@ expect_failure '우측 sidebar의 중복 richtext 편집기 부재 gate가 필�
 
 copy_fixture
 perl -0pi -e 's/page-builder-element-style-open/page-builder-text-tools-open/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner SelectedBlockActionBar)"
 expect_failure 'ActionBar는 T 버튼 대신 요소 전체 스타일과 블록 설정을 구분해야 합니다.'
 
 copy_fixture
@@ -590,17 +609,17 @@ expect_failure '미리보기 모드는 모든 inline-editable 필드를 읽기 �
 
 copy_fixture
 perl -0pi -e 's/applyEditorContentPolicy\(component\.fields, false\)/component.fields/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner call:applyEditorContentPolicy)"
 expect_failure 'Puck runtime config는 미리보기 모드에 읽기 전용 필드 계약을 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/edit: viewportPolicy\.canEdit/edit: true/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+perl -0pi -e 's/edit: !editingDisabled/edit: true/' \
+  "$(source_owner @Puck)"
 expect_failure 'Puck의 모든 mutation 권한은 단일 viewport policy에 연결되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(const updateCanonical = \(nextData: PuckEditorData\): void => \{)\n    if \(!viewportPolicy\.canEdit\) return;/$1/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+perl -0pi -e 's/current\.canEdit && !recovery/current.canEdit/' \
+  "$(source_owner usePuckDocumentBoundary)"
 expect_failure '미리보기 모드의 유출된 Puck 변경은 canonical 문서에 반영하면 안 됩니다.'
 
 copy_fixture

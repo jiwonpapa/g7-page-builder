@@ -255,20 +255,17 @@ class PlannerTests(unittest.TestCase):
         self.assertNotEqual(Path(verified.__file__).resolve(), (self.root / "tools/g7pb/content.py").resolve())
         self.assertFalse(hasattr(verified, "MARKER"))
 
-    def test_style_artifact_check_defers_and_runs_only_after_candidate_build(self):
-        from types import SimpleNamespace
-        policy = SimpleNamespace(
-            select_changes=lambda root, base, paths: [{"kind": "style", "ids": ["page-theme"]}],
-            plan=lambda root, kind, ids: {"requires_build": True})
-        self.browser_fixture()
+    def test_style_artifact_check_defers_after_build_without_reading_content_inventory(self):
+        self.write("resources/css/page-builder-public.css", ".fixture {}")
+        self.write("tests/E2E/editorStructureTheme.spec.ts", "test('code fixture',async()=>{});")
         for phase in ("submission", "integration", "verification", "ci"):
-            with self.subTest(phase=phase), patch("tools.g7pb.planner.content_policy", return_value=policy):
-                plan = build_plan(self.root, ["resources/css/scoped-fixture.css", "resources/js/editor/richTextEditing.tsx"], phase=phase)
-            # Unknown CSS browser fixtures may be unresolved, but ordering and
-            # the artifact contract itself must remain explicit in the plan.
+            with self.subTest(phase=phase), patch("tools.g7pb.planner.content_policy", side_effect=AssertionError("CSS must not load catalog")):
+                plan = build_plan(self.root, ["resources/css/page-builder-public.css"], phase=phase)
+            self.assertFalse(plan.unresolved)
             names = [g.name for g in plan.gates]
-            artifact = next(g for g in plan.gates if g.name.startswith("content:style:"))
+            artifact = next(g for g in plan.gates if g.name == "style-assets")
             browser = next(g for g in plan.gates if g.name.startswith("browser:"))
+            self.assertEqual(artifact.argv, ("node", "scripts/check-assets.mjs"))
             self.assertTrue(artifact.runtime)
             self.assertEqual(artifact.deferred, phase == "submission")
             self.assertEqual(artifact.depends_on, ("browser-assets",))
@@ -276,15 +273,16 @@ class PlannerTests(unittest.TestCase):
             self.assertLess(names.index(artifact.name), names.index(browser.name))
             self.assertIn(artifact.name, browser.depends_on)
             self.assertEqual(names.count("browser-assets"), 1)
+            self.assertFalse(any(name.startswith("content:") for name in names))
+            self.assertFalse(any("editorLayoutParity" in name for name in names))
             self.assertNotIn("full-product", names)
 
     def test_candidate_policy_change_can_declare_new_style_ids_before_integration(self):
         self.write("tools/g7pb/content.py", "def select_changes(root, base, paths): return [{'kind':'style','ids':['candidate-style']}]\n"
                    "def plan(root, kind, ids): return {'requires_build': True}\n")
         self.write("tests/Harness/test_content.py", "pass")
-        self.write("resources/css/page-builder-manager.css", ".manager {}")
-        self.write("tests/E2E/pageBuilderLifecycle.spec.ts", "test('case',async()=>{});")
-        plan = build_plan(self.root, ["tools/g7pb/content.py", "resources/css/page-builder-manager.css"])
+        self.write("resources/store/source/page-kits/candidate/document.json", "{}")
+        plan = build_plan(self.root, ["tools/g7pb/content.py", "resources/store/source/page-kits/candidate/document.json"])
         self.assertFalse(plan.unresolved)
         self.assertIn("python:tests/Harness/test_content.py", [g.name for g in plan.gates])
         artifact = next(g for g in plan.gates if g.name == "content:style:candidate-style")

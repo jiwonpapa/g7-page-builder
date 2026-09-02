@@ -222,7 +222,6 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("syntax:" + path, ["php", "-l", path], [path], "Changed migration syntax", ("php",))
         elif path.endswith(".css"):
             css.append(path)
-            content.append(path)
         elif path.startswith(("resources/store/", "resources/block-packs/")):
             content.append(path)
         elif path in {"package.json", "package-lock.json", "module.json"}:
@@ -288,8 +287,16 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         add("architecture", command, [*design_targets, *(controller_file(p) for p in (*DESIGN_INPUTS, *NORMATIVE_DOCS)), *boundary_inputs,
                                       controller_file("scripts/check-boundaries.sh"), controller_file("package-lock.json"), "module.php", "package-lock.json"],
             "Changed implementation or normative architecture policy", ("node", "php"))
+    artifact_names = set()
     if css:
         add("css", ["npx", "--no-install", "stylelint", *css], [*css, "stylelint.config.mjs", "package-lock.json"], "Changed CSS only", ("node",))
+        if not full:
+            # Styles are code inputs. Their artifact check must not discover or
+            # validate catalog content just to reach check-assets.
+            add("style-assets", ["node", "scripts/check-assets.mjs"],
+                [*css, "scripts/check-assets.mjs", "package-lock.json"], "Built CSS/JS artifact integrity",
+                ("node", "php", "g7", "browser"), True, reusable=False)
+            artifact_names.add("style-assets")
     for test in php_tests:
         g7 = test.startswith("tests/Integration/")
         argv = ["vendor/bin/phpunit"] + (["--bootstrap", "tests/Integration/bootstrap.php"] if g7 else []) + [test]
@@ -329,7 +336,6 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add(name, scenario.arguments(),
                 [*plan.paths, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
                 "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment, browser_expectations=expectations)
-    artifact_names = set()
     if content:
         try:
             policy = content_policy(root, plan.paths)

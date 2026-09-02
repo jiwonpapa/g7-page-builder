@@ -1,6 +1,7 @@
 """Shared change-to-check policy. Unknown inputs never become a full run."""
 import ast
 from dataclasses import replace
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -19,6 +20,10 @@ NORMATIVE_DOCS = {
     "AGENTS.md", "docs/architecture.md", "docs/development-constitution.md",
     "docs/productization/editing-policy.md", "docs/productization/requirements.md",
     "docs/quality-harness.md", "docs/worktree-coordination.md",
+}
+EDITOR_CHECKERS = {
+    "scripts/check-editor-acceptance-contract.mjs": ("scripts/lib/editorContractRegistration.mjs",),
+    "scripts/check-editor-layout-parity.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorCssSources.mjs"),
 }
 
 
@@ -82,6 +87,29 @@ def related_tests(root, sources, changed, directory, suffixes):
     return sorted(selected)
 
 
+def content_policy(root, paths):
+    from . import content
+    # The candidate policy must be testable before the verified controller can
+    # know its new IDs. Product-only tasks keep the verified controller policy.
+    if "tools/g7pb/content.py" not in paths or Path(content.__file__).resolve() == (root / "tools/g7pb/content.py").resolve():
+        return content
+    spec = importlib.util.spec_from_file_location("g7pb_candidate_content", root / "tools/g7pb/content.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def checker_controller_root(subject, controller):
+    if subject.resolve() != controller.resolve() or not (subject / ".git").exists():
+        return controller
+    common = Path(git(subject, "rev-parse", "--git-common-dir").strip())
+    common = (subject / common).resolve() if not common.is_absolute() else common.resolve()
+    local = common.parent
+    if Path(git(local, "rev-parse", "--show-toplevel").strip()).resolve() != local:
+        raise ValueError("Cannot identify the same-repository Local checker controller")
+    return local
+
+
 def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission", full=False):
     root = Path(root)
     controller_root = Path(__file__).resolve().parents[2]
@@ -97,9 +125,23 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             plan.unresolved.append(f"Missing infrastructure test: {path}")
             return
         requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py"} else ()
+        environment, controller_inputs = (), []
+        if Path(path).name == "test_editor_contracts.py":
+            verified = checker_controller_root(root, controller_root)
+            selected = {}
+            for script, helpers in EDITOR_CHECKERS.items():
+                inputs = (script, *helpers)
+                candidate = any(item in plan.paths for item in inputs)
+                policy_root = root if candidate else verified
+                if not candidate and (policy_root / ".git").exists():
+                    git(policy_root, "ls-files", "--error-unmatch", *inputs)
+                    git(policy_root, "diff", "--quiet", "HEAD", "--", *inputs)
+                selected[script] = str((policy_root / script).resolve())
+                controller_inputs.extend(str((policy_root / item).resolve()) for item in inputs)
+            environment = (("G7PB_EDITOR_CONTRACT_CHECKERS", json.dumps(selected, sort_keys=True)),)
         add("python:" + path, ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/Harness", "-p", Path(path).name],
-            [*python_inputs(root, path), *([cause] if cause else [])], "Changed Python module or dependency", requires,
-            reusable=Path(path).name not in {"test_editor_contracts.py", "test_boundary_command.py"})
+            [*python_inputs(root, path), *controller_inputs, *([cause] if cause else [])], "Changed Python module or dependency", requires,
+            reusable=Path(path).name not in {"test_editor_contracts.py", "test_boundary_command.py"}, env=environment)
     py_tests = sorted(p.relative_to(root).as_posix() for p in (root / "tests/Harness").glob("test_*.py"))
     ts_sources, ts_tests, php_sources, php_tests, css, content = [], [], [], [], [], []
     mapping = {
@@ -112,6 +154,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/check-editor-acceptance-contract.mjs": ("editor_contracts",),
         "scripts/check-editor-layout-parity.mjs": ("editor_contracts",),
         "scripts/lib/editorContractRegistration.mjs": ("editor_contracts",),
+        "scripts/lib/editorCssSources.mjs": ("editor_contracts",),
         "playwright.config.ts": ("browser_registration",),
     }
     command_contracts = {"tests/Harness/" + name for name in (
@@ -270,21 +313,31 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add(name, scenario.arguments(),
                 [*plan.paths, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
                 "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment)
+    artifact_names = set()
     if content:
         try:
-            from .content import select_changes
-            for item in select_changes(root, base, content):
+            policy = content_policy(root, plan.paths)
+            for item in policy.select_changes(root, base, content):
                 kind, ids = item["kind"], item["ids"]
                 if not ids:
                     raise ValueError(f"Empty content target: {kind}")
-                add("content:" + kind + ":" + ",".join(ids), ["python3", "-B", "scripts/g7pb.py", "content", "check", "--kind", kind, "--ids", ",".join(ids)], [*content, *python_inputs(root, "tools/g7pb/content.py")], "Changed content and declared consumers", ("node", "php"), reusable=False)
-        except (ImportError, ValueError) as error:
+                required_build = policy.plan(root, kind, ids).get("requires_build", False)
+                if not isinstance(required_build, bool):
+                    raise ValueError(f"Invalid requires_build contract for {kind}")
+                name = "content:" + kind + ":" + ",".join(ids)
+                add(name, ["python3", "-B", "scripts/g7pb.py", "content", "check", "--kind", kind, "--ids", ",".join(ids)],
+                    [*content, *python_inputs(root, "tools/g7pb/content.py")], "Changed content and declared consumers",
+                    ("node", "php", "g7", "browser") if required_build else ("node", "php"), required_build, reusable=False)
+                if required_build:
+                    artifact_names.add(name)
+        except (ImportError, ValueError, OSError) as error:
             plan.unresolved.append(f"Content selection required: {error}")
     if full:
         add("full-product", ["make", "quality-gate"], plan.paths, "Explicit full runtime/RC scope", ("node", "php", "g7", "browser"), True)
     browser_gates = [gate for name, gate in gates.items() if name.startswith("browser:")]
-    plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:")]
-    if browser_gates:
+    artifacts = [gate for name, gate in gates.items() if name in artifact_names]
+    plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:") and name not in artifact_names]
+    if browser_gates or artifacts:
         # The controller orchestrates the installed runtime; never execute its
         # Docker-aware environment command inside Docker a second time. build()
         # verifies source/env AND existing artifact hashes before reusing assets.
@@ -304,5 +357,6 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             "Require candidate source/env/dist fingerprint before browser execution; reuse only matching assets",
             ("node", "g7", "browser"), True, reusable=False, execution="controller", depends_on=[g.name for g in before])
         plan.gates.extend([*before, gates["browser-assets"]])
-        plan.gates.extend(replace(gate, depends_on=("browser-assets",)) for gate in browser_gates)
+        plan.gates.extend(replace(gate, depends_on=("browser-assets",)) for gate in artifacts)
+        plan.gates.extend(replace(gate, depends_on=("browser-assets", *sorted(artifact_names))) for gate in browser_gates)
     return plan

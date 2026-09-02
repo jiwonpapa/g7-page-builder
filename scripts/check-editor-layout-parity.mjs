@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
+import { readCssGraph, cssPropertyValues } from './lib/editorCssSources.mjs';
 
 const REQUIRED_SPEC = 'tests/E2E/editorLayoutParity.spec.ts';
 const CATALOG_VISUAL_SPEC = 'tests/E2E/blockCatalogQuality.spec.ts';
@@ -22,18 +23,17 @@ function requirePattern(errors, value, pattern, message) {
   if (!pattern.test(value)) errors.push(message);
 }
 
-function customPropertyValue(css, property) {
-  const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return css.match(new RegExp(`${escaped}\\s*:\\s*([^;]+);`))?.[1].trim() ?? '';
+function usesSystemFont(css, selector) {
+  const values = cssPropertyValues(css, selector, 'font-family');
+  return values.length > 0 && values.every(value => /^system-ui\s*,/.test(value));
 }
 
 export async function validateEditorLayoutParity(root) {
   const errors = [];
-  const [packageSource, editorCss, wysiwygCss, publicCss, adapter, catalogSource, productionSource, overlaySource, spec, catalogVisualSpec] = await Promise.all([
+  const [packageSource, editorGraph, publicGraph, adapter, catalogSource, productionSource, overlaySource, spec, catalogVisualSpec] = await Promise.all([
     source(root, 'package.json'),
-    source(root, 'resources/css/page-builder-editor.css'),
-    source(root, 'resources/css/page-builder-editor-wysiwyg.css'),
-    source(root, 'resources/css/page-builder-public.css'),
+    readCssGraph(root, ['resources/css/page-builder-editor.css']),
+    readCssGraph(root, ['resources/css/page-builder-public.css']),
     source(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
     source(root, 'resources/js/editor/catalogBlocks.tsx'),
     source(root, 'resources/js/editor/productionCatalogBlocks.tsx'),
@@ -41,14 +41,19 @@ export async function validateEditorLayoutParity(root) {
     source(root, REQUIRED_SPEC),
     source(root, CATALOG_VISUAL_SPEC),
   ]);
-  const css = `${editorCss}\n${wysiwygCss}`;
+  const editorCss = editorGraph.css;
+  const publicCss = publicGraph.css;
+  const css = editorCss;
   const packageJson = JSON.parse(packageSource);
   const scripts = packageJson.scripts ?? {};
   const puckVersion = packageJson.dependencies?.['@puckeditor/core'];
 
-  const editorRadius = customPropertyValue(css, '--g7pb-theme-radius');
-  const publicRadius = customPropertyValue(publicCss, '--g7pb-theme-radius');
-  if (editorRadius !== '1rem' || publicRadius !== '1rem') {
+  const radiusValues = [
+    [...cssPropertyValues(editorCss, '.g7pb-preview-page', '--g7pb-theme-radius'),
+      ...cssPropertyValues(editorCss, '.g7pb-document-theme', '--g7pb-theme-radius')],
+    cssPropertyValues(publicCss, '.g7pb-document-theme', '--g7pb-theme-radius'),
+  ];
+  if (radiusValues.some(values => values.length === 0 || values.some(value => value !== '1rem'))) {
     errors.push('편집기와 공개 출력의 기본 radius는 동일한 1rem 계약이어야 합니다.');
   }
 
@@ -164,12 +169,14 @@ export async function validateEditorLayoutParity(root) {
     'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
   requirePattern(errors, publicCss, /\.g7pb-logo-cloud\s+h2\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.2;/,
     'Logo Cloud 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
-  requirePattern(errors, editorCss,
-    /\.g7pb-theme-font-modern\s*\{\s*font-family:\s*system-ui,[^}]+\}[\s\S]*\.g7pb-document-theme \[data-g7pb-font='modern'\]\s*\{\s*font-family:\s*system-ui,/,
-    '편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.');
-  requirePattern(errors, publicCss,
-    /:root\s*\{[^}]*font-family:\s*system-ui,[^}]+\}[\s\S]*\.g7pb-theme-font-modern\s*\{\s*font-family:\s*system-ui,[^}]+\}[\s\S]*\[data-g7pb-font='modern'\]\s*\{\s*font-family:\s*system-ui,/,
-    '공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.');
+  if (!usesSystemFont(editorCss, '.g7pb-theme-font-modern')
+    || !usesSystemFont(editorCss, ".g7pb-document-theme [data-g7pb-font='modern']")) {
+    errors.push('편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.');
+  }
+  if (!usesSystemFont(publicCss, ':root') || !usesSystemFont(publicCss, '.g7pb-theme-font-modern')
+    || !usesSystemFont(publicCss, "[data-g7pb-font='modern']")) {
+    errors.push('공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.');
+  }
   requirePattern(errors, catalogSource,
     /function LogoCloudPreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2"[^>]*fieldPath="heading">/,
     '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');

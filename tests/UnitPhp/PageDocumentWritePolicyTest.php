@@ -35,6 +35,15 @@ final class PageDocumentWritePolicyTest extends TestCase
         yield 'list slots' => [['slots' => [[]]]];
         yield 'map children' => [['slots' => ['content' => ['key' => self::block()]]]];
         yield 'unknown envelope field' => [['vendor_state' => []]];
+        yield 'motion string' => [['motion' => 'invalid']];
+        yield 'motion null' => [['motion' => null]];
+        yield 'motion enum' => [['motion' => ['preset' => 'reveal', 'intensity' => 'invalid', 'trigger' => 'once', 'stagger_ms' => 100]]];
+        yield 'visibility enum' => [['visibility' => ['audience' => 'administrator']]];
+        yield 'responsive empty' => [['responsive' => []]];
+        yield 'responsive scalar' => [['responsive' => 'invalid']];
+        yield 'responsive nested enum' => [['responsive' => ['mobile' => ['appearance' => ['surface' => 'invalid']]]]];
+        yield 'responsive content injection' => [['responsive' => ['mobile' => ['appearance' => ['title' => 'invalid']]]]];
+        yield 'responsive layout on leaf' => [['responsive' => ['mobile' => ['layout' => ['columns' => 1]]]]];
     }
 
     public function test_root_maps_are_rejected_without_silent_reindexing(): void
@@ -108,6 +117,17 @@ final class PageDocumentWritePolicyTest extends TestCase
             'type' => 'vendor.future-01', 'block_version' => 7, 'props' => ['draft' => null],
         ]);
         self::assertSame($data['blocks'], PageBuilderDocument::fromArray($data)->blocks);
+    }
+
+    public function test_valid_settings_round_trip_while_recovery_preserves_invalid_old_settings(): void
+    {
+        $data = self::document();
+        $data['blocks'][0]['motion'] = ['preset' => 'reveal', 'intensity' => 'subtle', 'trigger' => 'once', 'stagger_ms' => 100];
+        $data['blocks'][0]['visibility'] = ['audience' => 'member'];
+        $data['blocks'][0]['responsive'] = ['mobile' => ['appearance' => ['surface' => 'soft']]];
+        self::assertSame($data['blocks'], PageBuilderDocument::fromArray($data)->blocks);
+        $data['blocks'][0]['motion'] = 'invalid';
+        self::assertSame($data['blocks'], PageBuilderDocument::fromStoredArray($data)->blocks);
     }
 
     /** @return array<string, mixed> */

@@ -51,7 +51,19 @@ final class PageDocumentWritePolicy
                 self::reject($path.'.block_version');
             }
             $props = self::object($block['props'], $path.'.props');
-            self::knownBlock($type, $version, $props, $data['schema_version'], $path, $schema);
+            $layoutFields = self::knownBlock($type, $version, $props, $data['schema_version'], $path, $schema);
+            foreach (['motion' => 'motion', 'visibility' => 'visibility', 'responsive' => 'blockResponsive'] as $field => $definition) {
+                if (array_key_exists($field, $block)) {
+                    self::settings($block[$field], $schema['$defs'][$definition], $path.'.'.$field, $schema['$defs']);
+                }
+            }
+            /** @var array<string, array{layout?: array<string, mixed>}> $responsive */
+            $responsive = $block['responsive'] ?? [];
+            foreach ($responsive as $viewport => $override) {
+                if (isset($override['layout']) && array_diff(array_keys($override['layout']), $layoutFields) !== []) {
+                    self::reject($path.'.responsive.'.$viewport.'.layout');
+                }
+            }
             $slots = self::object($block['slots'] ?? [], $path.'.slots');
             if (array_key_exists('slots', $block) && $block['slots'] === null) {
                 self::reject($path.'.slots');
@@ -70,8 +82,9 @@ final class PageDocumentWritePolicy
     /**
      * @param  array<string, mixed>  $props
      * @param  array{properties: array<string, mixed>, required: list<string>, '$defs': array<string, array<string, mixed>>}  $schema
+     * @return list<string>
      */
-    private static function knownBlock(string $type, int|float $version, array $props, mixed $schemaVersion, string $path, array $schema): void
+    private static function knownBlock(string $type, int|float $version, array $props, mixed $schemaVersion, string $path, array $schema): array
     {
         $versions = self::builtinVersions();
         if (isset($versions[$type]) && $version != $versions[$type]) {
@@ -100,9 +113,53 @@ final class PageDocumentWritePolicy
                         self::reject($path.'.props.'.$field);
                     }
                 }
+
+                return array_keys($properties);
+            }
+
+            return [];
+        }
+
+        return [];
+    }
+
+    /** Only the envelope setting definitions are visited; content props are excluded.
+     * @param  array<string, mixed>  $rule
+     * @param  array<string, array<string, mixed>>  $definitions
+     */
+    private static function settings(mixed $value, array $rule, string $path, array $definitions): void
+    {
+        if (isset($rule['$ref']) && is_string($rule['$ref'])) {
+            self::settings($value, $definitions[substr($rule['$ref'], strlen('#/$defs/'))], $path, $definitions);
+
+            return;
+        }
+        if (isset($rule['enum']) && is_array($rule['enum'])) {
+            if (! in_array($value, $rule['enum'], true)) {
+                self::reject($path);
             }
 
             return;
+        }
+        if (array_key_exists('const', $rule)) {
+            if ($value !== $rule['const']) {
+                self::reject($path);
+            }
+
+            return;
+        }
+        if (($rule['type'] ?? null) !== 'object') {
+            throw new \LogicException('Unsupported envelope setting schema: '.$path);
+        }
+        $object = self::object($value, $path);
+        self::fields($object, $rule, $path);
+        if (isset($rule['minProperties']) && count($object) < $rule['minProperties']) {
+            self::reject($path);
+        }
+        /** @var array<string, array<string, mixed>> $properties */
+        $properties = $rule['properties'];
+        foreach ($object as $field => $setting) {
+            self::settings($setting, $properties[$field], $path.'.'.$field, $definitions);
         }
     }
 
@@ -129,7 +186,7 @@ final class PageDocumentWritePolicy
         /** @var array<string, mixed> $properties */
         $properties = $definition['properties'];
         /** @var list<string> $required */
-        $required = $definition['required'];
+        $required = $definition['required'] ?? [];
         if (array_diff(array_keys($value), array_keys($properties)) !== [] || array_diff($required, array_keys($value)) !== []) {
             self::reject($path.' (fields)');
         }

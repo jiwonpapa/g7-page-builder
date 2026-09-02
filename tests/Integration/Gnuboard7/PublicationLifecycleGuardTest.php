@@ -158,4 +158,15 @@ final class PublicationLifecycleGuardTest extends TestCase
         $result = new CompileResult('test', $snapshot->document->documentId, $snapshot->revision, 'html', 'fixture', $artifact, hash('sha256', $artifact));
         $this->repository->storePublicationCandidate($result, $snapshot->lockVersion, hash('sha256', $token), new \DateTimeImmutable('+1 minute'), 1);
     }
+
+    public function test_invalid_envelope_setting_returns_400_without_advancing_the_revision(): void
+    {
+        $data = $this->snapshot->document->toArray();
+        $data['blocks'] = [['instance_id' => '00000000-0000-4000-8000-000000000002', 'type' => 'content.hero-centered-01', 'block_version' => 1, 'props' => [], 'motion' => 'invalid']];
+        $controller = new AdminDocumentController(new PageBuilderService($this->repository, $this->createStub(DocumentCompilerPort::class)));
+        $response = $controller->saveDraft(Request::create('/fixture', 'PUT', ['expected_lock_version' => 1, 'document' => $data]), $this->snapshot->document->documentId);
+        self::assertSame(400, $response->getStatusCode());
+        self::assertSame(1, RevisionRecord::query()->count());
+        self::assertSame(1, $this->repository->find($this->snapshot->document->documentId)?->lockVersion);
+    }
 }

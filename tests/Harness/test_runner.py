@@ -66,6 +66,21 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(self.run_plan([]), (0, []))
         self.assertEqual(list(self.receipts.glob("*.json")), [])
 
+    def test_changed_input_during_execution_cannot_create_success(self):
+        def mutate(argv, **kwargs):
+            (self.root / "a").write_text("changed during execution")
+            return subprocess.CompletedProcess(argv, 0)
+        with self.assertRaisesRegex(ValueError, "Inputs changed"):
+            self.run_plan([self.gate()], mutate)
+        self.assertEqual(list(self.receipts.glob("*.json")), [])
+
+    def test_incomplete_input_graph_disables_reuse_not_scope(self):
+        gate = Gate("dynamic", ("one-test",), ("a",), "dynamic input", reusable=False)
+        self.run_plan([gate])
+        self.run_plan([gate])
+        self.assertEqual(self.calls, [["one-test"], ["one-test"]])
+        self.assertEqual(list(self.receipts.glob("*.json")), [])
+
 
 if __name__ == "__main__":
     unittest.main()

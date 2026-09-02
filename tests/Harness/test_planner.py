@@ -65,10 +65,46 @@ class PlannerTests(unittest.TestCase):
         plan = build_plan(self.root, ["tools/g7pb/a.py"])
         self.assertEqual(len([g for g in plan.gates if g.name.startswith("python:")]), 1)
 
-    def test_browser_change_selects_only_that_spec(self):
+    def test_harness_only_browser_change_collects_only_that_spec(self):
         plan = build_plan(self.root, ["tests/E2E/a.spec.ts"])
         self.assertEqual(len(plan.gates), 1)
-        self.assertEqual(plan.gates[0].argv, ("npx", "playwright", "test", "tests/E2E/a.spec.ts", "--retries=0"))
+        self.assertEqual(plan.gates[0].argv, ("npx", "--no-install", "playwright", "test", "tests/E2E/a.spec.ts", "--list", "--reporter=line"))
+        self.assertFalse(plan.gates[0].runtime)
+        self.assertFalse(plan.requirements["browser"])
+
+    def test_browser_with_product_change_requires_runtime(self):
+        plan = build_plan(self.root, ["tests/E2E/a.spec.ts", "src/Changed.php"])
+        gate = next(g for g in plan.gates if g.name.startswith("browser:"))
+        self.assertTrue(gate.runtime)
+        self.assertIn("--retries=0", gate.argv)
+
+    def test_mapped_controller_input_is_in_the_success_key(self):
+        self.write("tests/Harness/test_planner.py", "pass")
+        self.write("tests/Harness/test_runner.py", "pass")
+        plan = build_plan(self.root, ["Makefile", "scripts/quality-scoped.sh"])
+        for gate in plan.gates:
+            if gate.name.startswith("python:"):
+                self.assertIn("Makefile", gate.inputs)
+                self.assertIn("scripts/quality-scoped.sh", gate.inputs)
+
+    def test_scripts_only_change_does_not_request_product_full(self):
+        self.write("package.json", json.dumps({"version": "1", "scripts": {"test": "new"}}))
+        self.write("tests/Harness/test_commands.py", "pass")
+        with patch("tools.g7pb.planner.git", return_value=json.dumps({"version": "1", "scripts": {"test": "old"}})):
+            plan = build_plan(self.root, ["package.json"])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertIn("python:tests/Harness/test_commands.py", [g.name for g in plan.gates])
+
+    def test_unit_key_tracks_transitive_sources_and_disables_dynamic_reuse(self):
+        self.write("tests/Unit/a.test.ts", "import '../../resources/js/a';")
+        self.write("resources/js/a.ts", "import './b';")
+        self.write("resources/js/b.ts", "export const b = 1;")
+        gate = build_plan(self.root, ["tests/Unit/a.test.ts"]).gates[0]
+        self.assertIn("resources/js/b.ts", gate.inputs)
+        self.assertTrue(gate.reusable)
+        self.write("resources/js/b.ts", "readFileSync(name)")
+        self.assertFalse(build_plan(self.root, ["tests/Unit/a.test.ts"]).gates[0].reusable)
 
     def test_full_requires_explicit_request(self):
         self.assertTrue(build_plan(self.root, ["database/migrations/a.php"]).unresolved)

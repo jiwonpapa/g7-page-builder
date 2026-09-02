@@ -11,6 +11,7 @@ class Gate:
     runtime: bool = False
     env: tuple[tuple[str, str], ...] = ()
     requires: tuple[str, ...] = ()
+    reusable: bool = True
 
 
 @dataclass

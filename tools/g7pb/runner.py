@@ -17,7 +17,7 @@ def digest_gate(root, gate):
         if path.is_dir():
             raise ValueError(f"Gate input must be a file: {name}")
         files[name] = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else "missing"
-    body = {"version": 1, "gate": gate.name, "argv": gate.argv, "env": gate.env,
+    body = {"version": 2, "gate": gate.name, "argv": gate.argv, "env": gate.env,
             "platform": platform.platform(), "python": platform.python_version(), "files": files}
     for tool in gate.requires:
         if tool in {"node", "php"}:
@@ -49,7 +49,7 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             subprocess.run(["bash", "scripts/coord-harness.sh", "runtime-guard", "--task", task], cwd=root, check=True)
         key = digest_gate(root, gate)
         receipt = receipts / (key + ".json")
-        if not gate.runtime and receipt.exists():
+        if gate.reusable and not gate.runtime and receipt.exists():
             try:
                 previous = json.loads(receipt.read_text())
             except (ValueError, OSError):
@@ -63,14 +63,20 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             environment["TASK"] = task
         started = time.monotonic()
         print(f"RUN gate={gate.name} reason={gate.reason}", flush=True)
-        result = executor(list(gate.argv), cwd=root, env=environment, check=False)
+        argv = list(gate.argv)
+        if gate.runtime and task and os.environ.get("CI") != "true" and argv[0] != "make":
+            from .environment import Runtime
+            argv = Runtime(root, "docker", task).command(argv)
+        result = executor(argv, cwd=root, env=environment, check=False)
         record = {"key": key, "gate": gate.name, "status": "passed" if result.returncode == 0 else "failed",
                   "executions": 1, "seconds": round(time.monotonic() - started, 3), "inputs": gate.inputs}
         results.append(record)
         if result.returncode:
             print(f"FAILED gate={gate.name}; no retry or escalation", flush=True)
             return result.returncode, results
-        if not gate.runtime:
+        if digest_gate(root, gate) != key:
+            raise ValueError(f"Inputs changed while {gate.name} ran; no successful receipt recorded")
+        if gate.reusable and not gate.runtime:
             fd, staged = tempfile.mkstemp(prefix="receipt-", dir=receipts)
             try:
                 with os.fdopen(fd, "w") as stream:

@@ -6,6 +6,18 @@ Customer PHP/React runtime, document schemas and existing content are not rewrit
 Python is a local/CI controller. Shell is limited to process/remote-operation adapters.
 No deployment, full-catalog generation or product E2E is part of this tool migration.
 
+The migration preserves the existing Local integration record when its owner
+explicitly authorizes handoff; it does not delete other worktrees or rewrite their
+changes. Harness-only browser definition edits use selected Playwright collection
+(`--list`), not a claim that the product was exercised in a browser.
+
+`scripts/coord-harness.sh` is a Python entry shim. `quality-coordination` runs the
+Python harness tests; the previous full shell compatibility fixture remains an
+explicit one-time `quality-coordination-compat` command, outside routine checks.
+`dev-sync` requires `SYNC_BASE` and no longer builds assets. PHP and frontend
+checks prepare only Composer and npm respectively. Release wrappers pass TASK
+to the Python release guard instead of running content audits themselves.
+
 | Phase | Deliverable | Bounded evidence |
 | --- | --- | --- |
 | 1 | One Python plan/runner, input-scoped receipts, no automatic full fallback | Planner selection and mocked invocation counts |

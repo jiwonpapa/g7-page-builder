@@ -10,6 +10,7 @@ import time
 import uuid
 from .model import Plan
 from .state import task_id
+from .browser_verdict import browser_verdict
 
 
 def digest_gate(root, gate):
@@ -27,6 +28,8 @@ def digest_gate(root, gate):
         body["execution"] = gate.execution
     if gate.depends_on:
         body["depends_on"] = gate.depends_on
+    if gate.browser_expectations:
+        body["browser_expectations"] = gate.browser_expectations
     for tool in gate.requires:
         if tool in {"node", "php"}:
             body[tool] = subprocess.check_output([tool, "--version"], text=True).splitlines()[0]
@@ -51,7 +54,7 @@ def browser_evidence(root, gate, task, key):
         raise ValueError("Browser evidence directory must remain inside the checkout")
     absolute.mkdir(parents=True, exist_ok=False)
     return {"directory": directory.as_posix(), "results": (directory / "results").as_posix(),
-            "report": (directory / "report").as_posix()}
+            "report": (directory / "report").as_posix(), "json": (directory / "results.json").as_posix()}
 
 
 def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
@@ -103,8 +106,9 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
         argv = list(gate.argv)
         if evidence:
             # Both host cwd and Docker's module cwd address these relative paths.
-            argv.extend(["--output", evidence["results"]])
+            argv.extend(["--forbid-only", "--reporter=list,html,json", "--output", evidence["results"]])
             overrides["PLAYWRIGHT_HTML_OUTPUT_DIR"] = evidence["report"]
+            overrides["PLAYWRIGHT_JSON_OUTPUT_FILE"] = evidence["json"]
             print(f"EVIDENCE gate={gate.name} directory={evidence['directory']}", flush=True)
             (root / evidence["directory"] / "execution.json").write_text(json.dumps({
                 "key": key, "gate": gate.name, "status": "running", "evidence": evidence,
@@ -129,19 +133,28 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             selected = ["env", *remove, *assign, *argv] if overrides else argv
             argv = Runtime(root, "docker", task).command(selected)
         result = executor(argv, cwd=root, env=environment, check=False)
-        record = {"key": key, "gate": gate.name, "status": "passed" if result.returncode == 0 else "failed",
+        returncode = result.returncode
+        verdict = {}
+        if evidence and not returncode:
+            try:
+                verdict["browser_verdict"] = browser_verdict(root / evidence["json"], gate.browser_expectations)
+            except ValueError as error:
+                returncode = 1
+                verdict["verdict_error"] = str(error)
+                print(f"BROWSER_REJECTED gate={gate.name}: {error}", flush=True)
+        record = {"key": key, "gate": gate.name, "status": "passed" if returncode == 0 else "failed", **verdict,
                   "executions": 1, "seconds": round(time.monotonic() - started, 3), "inputs": gate.inputs}
-        if not result.returncode and digest_gate(root, gate) != key:
+        if not returncode and digest_gate(root, gate) != key:
             raise ValueError(f"Inputs changed while {gate.name} ran; no successful receipt recorded")
         if evidence:
             record["evidence"] = evidence
             (root / evidence["directory"] / "execution.json").write_text(json.dumps({
-                **record, "returncode": result.returncode, "task": task, "phase": plan.phase,
+                **record, "returncode": returncode, "process_returncode": result.returncode, "task": task, "phase": plan.phase,
             }, indent=2) + "\n")
         results.append(record)
-        if result.returncode:
+        if returncode:
             print(f"FAILED gate={gate.name}; no retry or escalation", flush=True)
-            return result.returncode, results
+            return returncode, results
         if gate.reusable and not gate.runtime:
             fd, staged = tempfile.mkstemp(prefix="receipt-", dir=receipts)
             try:

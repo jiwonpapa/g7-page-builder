@@ -112,6 +112,26 @@ class CoordinatorTests(unittest.TestCase):
         self.env.start()
         self.addCleanup(self.env.stop)
 
+    def test_formal_entry_rejects_testing_and_fault_environment(self):
+        for overrides in ({"G7PB_COORD_TESTING": "1"}, {"G7PB_COORD_TESTING": "0", "G7PB_COORD_TEST_FAIL_SUBMISSION_PROFILE": "1"}):
+            with self.subTest(overrides=overrides), patch.dict(os.environ, overrides):
+                with self.assertRaisesRegex(CoordError, "테스트 모드"):
+                    Coordinator(self.repo)
+
+    def test_fixture_cannot_address_the_real_worktree_or_foreign_state(self):
+        with self.assertRaisesRegex(CoordError, "분리된 임시"):
+            Coordinator(ROOT, fixture_root=self.top)
+        with patch.dict(os.environ, {"G7PB_COORD_STATE_DIR": str(ROOT / ".git/foreign-state")}):
+            with self.assertRaisesRegex(CoordError, "분리된 임시"):
+                Coordinator(self.repo, fixture_root=self.top)
+
+    def test_formal_cli_fails_before_dispatch_with_testing_environment(self):
+        result = subprocess.run([sys.executable, "-B", str(ROOT / "scripts/g7pb.py"), "coord", "status"],
+                                cwd=self.repo, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("테스트 모드", result.stderr)
+        self.assertFalse((self.state / "tasks").exists())
+
     def git(self, *args, root=None):
         result = execute(["git", *args], root or self.repo)
         return result.stdout.decode().strip()
@@ -119,7 +139,7 @@ class CoordinatorTests(unittest.TestCase):
     def call(self, root, *args, env=None, runner=execute):
         output = io.StringIO()
         with patch.dict(os.environ, env or {}), redirect_stdout(output):
-            coordinator = Coordinator(root, runner)
+            coordinator = Coordinator(root, runner, fixture_root=self.top)
             try:
                 coordinator.dispatch(parser().parse_args(args))
             finally:
@@ -402,7 +422,7 @@ class CoordinatorTests(unittest.TestCase):
         hook.chmod(0o700)
         environment = dict(os.environ, PYTHONPATH=str(ROOT), G7PB_COORD_TESTING="1",
                            G7PB_COORD_TEST_INTEGRATION_PROFILE_HOOK=str(hook))
-        process = subprocess.Popen([sys.executable, "-m", "tools.g7pb.coord", "integrate", "--task", "first-task",
+        process = subprocess.Popen([sys.executable, str(ROOT / "tests/Harness/coord_fixture.py"), "--fixture-root", str(self.top), "integrate", "--task", "first-task",
                                     "--integration-task", "integration-task"], cwd=self.repo, env=environment,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
@@ -429,7 +449,7 @@ class LegacyCompatibilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="g7pb-python-legacy-") as directory:
             temporary = Path(directory)
             launcher = temporary / "coord"
-            launcher.write_text(f"#!{sys.executable}\nimport sys\nsys.path.insert(0, {str(ROOT)!r})\nfrom tools.g7pb.coord import main\nraise SystemExit(main())\n")
+            launcher.write_text(f"#!{sys.executable}\nimport sys\nsys.path.insert(0, {str(ROOT)!r})\nfrom pathlib import Path\nfrom tools.g7pb.coord import main\nraise SystemExit(main(fixture_root=Path({str(temporary)!r})))\n")
             launcher.chmod(0o700)
             source = (ROOT / "tests/Harness/coord-harness.test.sh").read_text()
             source = source.replace('root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"', f'root="{ROOT}"')
@@ -440,6 +460,7 @@ class LegacyCompatibilityTests(unittest.TestCase):
             fixture.write_text(source)
             environment = {key: value for key, value in os.environ.items()
                            if key != "G7PB_COORD_STATE_DIR" and not key.startswith("G7PB_COORD_TEST_")}
+            environment["TMPDIR"] = str(temporary)
             result = subprocess.run(["bash", str(fixture)], env=environment, capture_output=True, text=True, timeout=120)
             self.assertEqual(result.returncode, 0, result.stdout[-10000:] + result.stderr[-15000:])
 

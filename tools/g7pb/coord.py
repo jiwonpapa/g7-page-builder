@@ -82,12 +82,25 @@ def legacy_batch_label(profiles: list[str]) -> str:
 
 
 class Coordinator:
-    def __init__(self, cwd: Path | None = None, runner=execute) -> None:
+    def __init__(self, cwd: Path | None = None, runner=execute, *, fixture_root: Path | None = None) -> None:
         self.git = Git(cwd or Path.cwd(), runner)
         self.runner = runner
-        self.testing = os.environ.get("G7PB_COORD_TESTING") == "1"
-        root = Path(os.environ.get("G7PB_COORD_STATE_DIR", str(self.git.common / "g7pb-coordination-v1")))
-        self.store = Store(root, self.fault)
+        default_state = self.git.common / "g7pb-coordination-v1"
+        state_root = Path(os.environ.get("G7PB_COORD_STATE_DIR", str(default_state))).resolve()
+        self.testing = fixture_root is not None
+        if self.testing:
+            fixture = fixture_root.resolve()
+            controller = Path(__file__).resolve().parents[2]
+            require(fixture.is_dir() and self.git.root.is_relative_to(fixture)
+                    and self.git.common.is_relative_to(fixture) and state_root.is_relative_to(fixture)
+                    and not controller.is_relative_to(fixture) and not fixture.is_relative_to(controller),
+                    "테스트 fixture는 controller·실제 Git/state와 분리된 임시 저장소여야 합니다.")
+        else:
+            require(os.environ.get("G7PB_COORD_TESTING") not in {"1", "true"}
+                    and not any(key.startswith("G7PB_COORD_TEST_") and value for key, value in os.environ.items()),
+                    "정식 coordination 명령에는 테스트 모드·fault hook을 허용하지 않습니다.")
+            require(state_root == default_state.resolve(), "정식 coordination state 경로는 Git common directory에 고정됩니다.")
+        self.store = Store(state_root, self.fault)
 
     def fault(self, name: str) -> None:
         if not self.testing:
@@ -507,7 +520,7 @@ def parser() -> argparse.ArgumentParser:
     return result
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, fixture_root: Path | None = None) -> int:
     args = parser().parse_args(argv)
     coordinator = None
     handlers = {}
@@ -516,7 +529,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         for signum in (signal.SIGINT, signal.SIGTERM):
             handlers[signum] = signal.signal(signum, interrupt)
-        coordinator = Coordinator()
+        coordinator = Coordinator(fixture_root=fixture_root)
         coordinator.dispatch(args)
         return 0
     except Interrupted as error:

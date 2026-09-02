@@ -15,6 +15,7 @@ class Gate:
     deferred: bool = False
     execution: str = "runtime"
     depends_on: tuple[str, ...] = ()
+    browser_expectations: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass

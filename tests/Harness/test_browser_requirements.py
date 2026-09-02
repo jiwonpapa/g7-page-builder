@@ -1,7 +1,7 @@
 from pathlib import Path
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, SITE_PART, CATALOG_PREFIXES, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, CATALOG_PREFIXES, scenarios_for
 import json
 import re
 from tools.g7pb.planner import build_plan
@@ -10,7 +10,15 @@ from tools.g7pb.planner import build_plan
 class BrowserRequirementsTests(unittest.TestCase):
     def test_existing_behavior_selected_without_modifying_spec(self):
         self.assertEqual(scenarios_for(["resources/js/editor/richTextEditing.tsx"]), (TEXT,))
-        self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])), {PAGE, TEXT, STRUCTURE_THEME})
+        self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])), {DOCUMENT_BOUNDARY})
+
+    def test_document_transactions_and_shared_styles_use_code_fixtures_not_preset_sweeps(self):
+        for path in ("resources/js/editor/PuckEditorAdapter.tsx", "resources/js/editor/PuckDocumentBoundary.tsx",
+                     "resources/js/editor/editorDocumentBoundary.ts", "resources/js/editor/main.tsx", "resources/js/editor/draftPersistence.ts"):
+            self.assertEqual(scenarios_for([path]), (DOCUMENT_BOUNDARY,))
+        for path in ("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css", "resources/css/page-builder-core.css"):
+            self.assertEqual(scenarios_for([path]), (STRUCTURE_THEME,))
+        self.assertEqual(SITE_SHELL.projects, ("desktop",))
 
     def test_sources_deduplicate_workflows_and_do_not_select_unrelated_store(self):
         self.assertEqual(scenarios_for(["resources/js/editor/fontSize.ts", "resources/js/editor/richTextEditing.tsx"]), (TEXT,))

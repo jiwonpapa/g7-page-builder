@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import process from 'node:process';
+import ts from 'typescript';
 import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
 
 const REQUIRED_SPEC = 'tests/E2E/editorInteractionQuality.spec.ts';
@@ -20,6 +21,35 @@ async function text(root, path) {
 
 function requirePattern(errors, source, pattern, message) {
   if (!pattern.test(source)) errors.push(message);
+}
+
+function validatePcOnlyEditorTests(source, root) {
+  const message = 'Playwright가 실제 편집 E2E 목록을 PC 전용 계약으로 고정해야 합니다.';
+  const tree = ts.createSourceFile('playwright.config.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const declarations = tree.statements.filter(ts.isVariableStatement)
+    .flatMap((statement) => [...statement.declarationList.declarations])
+    .filter((declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === 'PC_ONLY_EDITOR_TESTS');
+  let initializer = declarations[0]?.initializer;
+  while (initializer && ts.isParenthesizedExpression(initializer)) initializer = initializer.expression;
+  if (tree.parseDiagnostics.length || declarations.length !== 1 || !(declarations[0].parent.flags & ts.NodeFlags.Const)
+    || !initializer || !ts.isRegularExpressionLiteral(initializer)) {
+    return [`${message} PC_ONLY_EDITOR_TESTS의 정적 정규식 선언이 필요합니다.`];
+  }
+  const literal = initializer.getText(tree);
+  const separator = literal.lastIndexOf('/');
+  let matcher;
+  try { matcher = new RegExp(literal.slice(1, separator), literal.slice(separator + 1)); }
+  catch { return [`${message} 정규식을 해석할 수 없습니다.`]; }
+  const matches = (name) => {
+    matcher.lastIndex = 0;
+    return matcher.test(resolve(root, `tests/E2E/${name}.spec.ts`));
+  };
+  const required = ['editorInteractionQuality', 'editorPerformance', 'pageBuilderLifecycle', 'sitePartLifecycle'];
+  const responsive = ['editorLayoutParity', 'publicQuality', 'infrastructure'];
+  return [
+    ...required.filter((name) => !matches(name)).map((name) => `${message} ${name}.spec.ts가 누락됐습니다.`),
+    ...responsive.filter(matches).map((name) => `${message} 반응형 ${name}.spec.ts까지 제외하면 안 됩니다.`),
+  ];
 }
 
 export async function validateEditorAcceptanceContract(root) {
@@ -93,8 +123,7 @@ export async function validateEditorAcceptanceContract(root) {
     requirePattern(errors, playwrightConfig, new RegExp(`name:\\s*['"]${project}['"]`),
       `Playwright ${project} project가 필요합니다.`);
   }
-  requirePattern(errors, playwrightConfig, /const PC_ONLY_EDITOR_TESTS = \/\(\?:editorInteractionQuality\|editorPerformance\|pageBuilderLifecycle\|sitePartLifecycle\)\\\.spec\\\.ts\//,
-    'Playwright가 실제 편집 E2E 목록을 PC 전용 계약으로 고정해야 합니다.');
+  errors.push(...validatePcOnlyEditorTests(playwrightConfig, root));
   for (const project of ['tablet', 'mobile']) {
     requirePattern(errors, playwrightConfig, new RegExp(`name:\\s*['"]${project}['"][\\s\\S]{0,100}testIgnore:\\s*PC_ONLY_EDITOR_TESTS`),
       `Playwright ${project} project는 실제 편집 E2E를 실행하면 안 됩니다.`);

@@ -60,7 +60,49 @@ expect_failure() {
   }
 }
 
+set_pc_only_pattern() {
+  node --input-type=module - "$fixture_root/fixture/playwright.config.ts" "$1" <<'JS'
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
+const [path, pattern] = process.argv.slice(2);
+const source = readFileSync(path, 'utf8');
+const changed = source.replace(/const PC_ONLY_EDITOR_TESTS\s*=[^\n]+;/,
+  () => `const PC_ONLY_EDITOR_TESTS = ${pattern};`);
+assert.notEqual(changed, source, 'PC-only fixture mutation must change the declaration');
+writeFileSync(path, changed);
+JS
+}
+
 node "$repo_root/scripts/check-editor-acceptance-contract.mjs" --root "$repo_root"
+
+for pattern in \
+  '/(?:editorInteractionQuality|editorPerformance|pageBuilderLifecycle|sitePartLifecycle)\.spec\.ts/' \
+  '/(?:sitePartLifecycle|editorStructureTheme|pageBuilderLifecycle|editorPerformance|editorInteractionQuality)\.spec\.ts/' \
+  '(/(?:editorStructureTheme|sitePartLifecycle|pageBuilderLifecycle|editorPerformance|editorInteractionQuality)\.spec\.ts$/i)'; do
+  copy_fixture
+  set_pc_only_pattern "$pattern"
+  node "$repo_root/scripts/check-editor-acceptance-contract.mjs" --root "$fixture_root/fixture"
+done
+
+for missing in editorInteractionQuality editorPerformance pageBuilderLifecycle sitePartLifecycle; do
+  copy_fixture
+  remaining='|editorInteractionQuality|editorPerformance|editorStructureTheme|pageBuilderLifecycle|sitePartLifecycle|'
+  remaining="${remaining/|$missing|/|}"
+  remaining="${remaining#|}"
+  remaining="${remaining%|}"
+  set_pc_only_pattern "/(?:$remaining)\\.spec\\.ts/"
+  expect_failure "$missing.spec.ts가 누락됐습니다."
+done
+
+copy_fixture
+set_pc_only_pattern '/.*/'
+expect_failure '반응형 editorLayoutParity.spec.ts까지 제외하면 안 됩니다.'
+
+copy_fixture
+set_pc_only_pattern '/missing/'
+printf '\n// const PC_ONLY_EDITOR_TESTS = /(?:editorInteractionQuality|editorPerformance|pageBuilderLifecycle|sitePartLifecycle)\\.spec\\.ts/;\n' \
+  >>"$fixture_root/fixture/playwright.config.ts"
+expect_failure 'editorInteractionQuality.spec.ts가 누락됐습니다.'
 
 copy_fixture
 perl -0pi -e 's/sheet-bottom/sheet-removed/g' \

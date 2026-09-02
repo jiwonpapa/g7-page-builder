@@ -179,8 +179,10 @@ describe('Puck-native rich-text editing', () => {
       expect(advanced?.style.getPropertyValue('--g7pb-richtext-floating-top')).toBe('83px');
       expect(more?.getAttribute('aria-expanded')).toBe('true');
     } finally {
-      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
-      window.dispatchEvent(new Event('resize'));
+      await act(async () => {
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+        window.dispatchEvent(new Event('resize'));
+      });
     }
   });
 

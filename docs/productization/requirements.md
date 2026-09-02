@@ -1,5 +1,7 @@
 # 요구사항-검증 대응표
 
+이 문서는 [개발 헌법](../development-constitution.md)을 따릅니다. 아래 요구사항의 범위와 합격 기준은 실제 구현·화면 증거로 확인하며, 현 구현의 제한으로 요구를 축소하지 않습니다.
+
 상태: 1차 시험 명세. 아래 ‘구현 배치’는 예정이며 현재 통과 표시가 아닙니다. 실제 실행 결과는 phase-1-evidence.md와 각 차수 종료 기록에 남깁니다.
 
 3-B는 LAY-01의 Section→2열 Columns→Heading/RichText 성공 경로와 COMP-01의 v1 유지 기반을 연결했습니다. 3-C는 금지 구조·상한·Puck 변환 원자성·v1 메타데이터 복원·마지막 정상본 부정 시험을 [3-C 실행 기록](phase-3-boundaries.md)에 연결합니다. 4-A는 [구조 조작 실행 기록](phase-4-structure.md)에서 Stack·1/2/3열·허용 leaf·열 축소/삭제 확인을 canonical/Puck/PHP에 연결합니다. 4-B는 [반응형 실행 기록](phase-4-responsive.md)에서 공통값과 태블릿·모바일 override, 초기화 상속, preview/PHP class 계약을 연결합니다. LAY-04의 실제 포인터 한 Undo 단위와 v1→v2 전환·저장 경쟁은 4-C, 최종 화면 회귀는 8-A 완료 조건으로 남습니다.
@@ -52,17 +54,19 @@
 - `tests/E2E/editorLayoutParity.spec.ts`
 - `tests/E2E/blockCatalogQuality.spec.ts`
 
-## 2차 착수 카드 — 다음 코드 범위
+## 2차 착수 카드 — 초기 계획 기록
 
 목표는 승인 증거 분리이며 콘텐츠 디자인이나 중첩 구현을 섞지 않습니다.
 
 | 배치 | 실제 후보 파일/범위 | 검증·lease |
 |---|---|---|
 | 2-A | schemas/block-product-quality.schema.json, resources/block-packs/builtin-core/product-quality.json | shared-contract, 버전된 의미/권리·렌더/편집 증거와 구형 이력 보존 |
-| 2-B | scripts/check-block-product-quality.mjs, 해당 썸네일 증거/의존성 계산, docs/quality-harness.md | 변경 영향 unknown이면 전체 검사, 기존 안전 gate와 나란히 비교 |
-| 2-C | tests/Unit/blockProductQuality.test.ts, 관련 tests/Harness, CHANGELOG.md | 코드 영향에 맞는 frontend/mixed/full profile; 자동 승인/coverage 축소 금지 |
+| 2-B | scripts/check-block-product-quality.mjs, 해당 썸네일 증거/의존성 계산, docs/quality-harness.md | 변경 영향이 unknown이면 범위 오류로 중단하고 관련 입력·검사를 명시; 전체검증 자동 확대 금지 |
+| 2-C | tests/Unit/blockProductQuality.test.ts, 관련 tests/Harness, CHANGELOG.md | 일반 구현은 scoped 변경 계획 사용; 자동 승인·무관한 전체검증·coverage 기준 축소 금지 |
 
-정확한 PATHS는 1차 통합 SHA와 기존 활성 task 해소 뒤 다시 claim합니다. 현재 tests/Unit·CHANGELOG·docs/quality-harness는 다른 task가 소유하므로 이 1차에서 수정하지 않습니다. 필수 실패 사례를 먼저 작성한 뒤 구현하고, 기능상 의존하지만 소유권이 분리된 제출물만 기존 batch 통합 하네스를 사용합니다.
+이 표는 당시의 후보 범위이며 현재 lease를 선언하지 않습니다. 착수 시 `coord-status`와 기준 SHA 대비 diff를 확인하고, 일반 구현은 `PROFILE=scoped`로 24개 이하의 정확한 파일 PATHS를 claim합니다. 필수 실패 사례와 관련 기존 시험을 연결하고, 기능상 의존하지만 소유권이 분리된 제출물만 batch 통합 하네스를 사용합니다.
+
+제출·통합·최종확인·CI는 같은 Python 계획으로 관련 검사를 선택합니다. Worktree의 runtime·브라우저·빌드 산출물 검사는 `DEFERRED`로 기록하고, Local integration/runtime 소유자가 후보 build와 관련 행동 검증을 완료해야 통합합니다. 소스 변경 없는 E2E 정의·등록 작업은 수집 검사이며 제품 브라우저 성공으로 보고하지 않습니다. 공유 런타임·계약 또는 RC 전체검증은 사유를 명시한 `FULL=1`로 요청하며, 미분류 입력을 전체검증으로 덮지 않습니다.
 
 ## 완료 판정
 

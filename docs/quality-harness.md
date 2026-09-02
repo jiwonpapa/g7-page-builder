@@ -1,8 +1,16 @@
 # Quality harness
 
+이 문서는 [개발 헌법](development-constitution.md)의 설계 규칙과 증거 구분을 따릅니다.
+
 ## 판정 원칙
 
 환경 smoke와 제품 acceptance를 분리합니다. 스크린샷 두 장을 제품 E2E로 부르지 않습니다.
+
+일반 구현은 `PROFILE=scoped`와 24개 이하의 정확한 파일 PATHS를 사용합니다. 제출·통합·최종확인·CI는 같은 Python 계획으로 변경에 관련된 검사만 선택합니다. 미분류 입력은 범위 오류로 중단하며 전체검증으로 자동 확대하지 않습니다. 공유 런타임·계약 또는 RC 전체검증은 사유를 명시한 `FULL=1` 요청으로 구분합니다.
+
+Worktree에서는 선택된 정적·단위 검사를 수행하고, 실제 G7 연동·브라우저·빌드 산출물 검사는 `DEFERRED`로 기록합니다. 이는 성공·skip·제품 승인에 해당하지 않습니다. Local integration/runtime 소유자가 후보 소스·환경·실제 dist 지문을 확인한 build를 준비하고, 관련 자산 검사→브라우저 검사를 통과해야 통합합니다. 소스 변경 없는 E2E 정의·등록 변경은 선택 spec 수집과 관련 하네스 검사로 확인합니다.
+
+아래는 명시적으로 호출하는 전체 품질 명령의 목적입니다. 이 목록 전체가 일반 scoped 제출마다 실행되는 것은 아닙니다.
 
 | Gate | 목적 | 실패 시 |
 |---|---|---|
@@ -50,18 +58,18 @@ Node 24에서 `node scripts/check-block-quality-evidence.mjs --json`을 실행�
 
 CLI의 `state_fixtures` 수치는 적용 관계이며 실제 브라우저 실행·심사 합격 수가 아닙니다. 저장/발행은 실제 제품 E2E, 외부 데이터 연동은 별도 G7 통합 시험이 계속 필요합니다. [2-D 증거와 제한](productization/phase-2-states.md)을 참고합니다.
 
-Worktree의 제출 준비에는 Node 24뿐 아니라 PHP 8.5·Composer 의존성과 현재 `npm run build` 결과가 필요합니다. 소스/시험 변경 후 build→변경 영향 확인→`--refresh` 제안 diff 검토/적용→shadow 및 단위시험→`task-submit` 순서입니다. 원장을 최신화한 것과 실제 화면/심사의 완료는 구분하며, 최종 제품 심사 때까지 pending을 유지합니다.
+Worktree의 제출 준비에는 선택된 검사에 필요한 Node 24 또는 PHP 8.5·의존성만 요구합니다. 단순 소스·시험 변경에 전체 build나 원장 갱신을 일괄 요구하지 않습니다. 선택된 콘텐츠 검사가 결합 산출물 갱신을 요구하면 해당 파일의 소유 범위 안에서 제안 diff를 검토합니다. runtime·빌드 산출물 검사는 제출에서 `DEFERRED`, Local 통합에서 후보 build 뒤 필수 실행으로 연결합니다. 원장을 최신화한 것과 실제 화면·심사의 완료는 구분합니다.
 
 ## Worktree coordination
 
-- 모든 구현 Worktree는 깨끗한 기준 SHA, 소유 path prefix, 검증 profile을 `coord-start`로 등록합니다.
+- 모든 구현 Worktree는 깨끗한 기준 SHA와 소유 범위를 `coord-start`로 등록합니다. 일반 구현의 `PROFILE=scoped`는 24개 이하의 정확한 파일 PATHS만 허용합니다.
 - coordination state는 Git common directory에만 저장하며 모든 worktree가 같은 active lease를 읽습니다.
 - 상·하위 path prefix 중복과 `integration`, `runtime`, `migration`, `shared-contract`, `version` AREA 중복을 시작 단계에서 차단합니다.
 - `task-submit`은 기준 SHA 대비 committed·staged·unstaged·untracked 파일을 검사하고 claim 밖 변경이 있으면 커밋하지 않습니다.
-- frontend `task-submit`은 타입·단위시험 전에 `check:editor-acceptance`와 `check:editor-layout-parity`를 실행합니다. 기존 상호작용 증거와 함께 Puck iframe의 scoped `border-box`, 공개 출력과 같은 content-width 공식, 편집기·발행 CSS의 동일 WYSIWYG 타이포 규칙, 45종을 모두 포함하는 95개 프리셋과 공식 마켓 적용 API로 미디어까지 해소한 Page Kit 5종의 가로 overflow·좌우 content edge·대표 텍스트 computed style·줄 수 비교가 빠지면 제출을 거부합니다.
+- `task-submit`은 변경 소스와 관련된 정적 계약·타입·단위 검사를 선택합니다. `check:editor-acceptance`와 `check:editor-layout-parity`의 등록·CSS 계약 검사는 실제 UI 동작 증거를 대신하지 않습니다. 변경 소스에 매핑된 spec·프리셋·기기별 범위는 Local에서 실행하며, 전체 95개 프리셋·Page Kit 5종 품질을 선언하려면 그 전체 범위의 별도 실행 증거가 필요합니다.
 - `task-integrate`는 Local integration task만 실행하며 merge-tree 사전검사, `--no-commit` 임시 병합, profile gate를 통과한 경우에만 merge commit을 만듭니다.
 - 고정 `g7pb-dev`를 사용하는 모든 Docker 품질 명령은 Local의 `integration,runtime` lease와 `TASK=`를 요구합니다.
-- `integration-verify`는 다른 active/submitted task가 없는 상태에서 최신 신뢰 검증 SHA와 현재 HEAD의 실제 변경 경로를 판정합니다. 문서·조정 하네스·릴리스 오케스트레이션은 `scoped`, JS·CSS는 `frontend`, 순수 PHP 도메인·애플리케이션은 `php`, 양쪽 변경은 `mixed`, G7 Adapter는 `g7` profile을 사용합니다. migration·route/layout·module lifecycle·교차 runtime·미분류 핵심 경로, 신뢰 가능한 기준 SHA 부재 또는 `make integration-verify ... FULL=1`인 명시적 RC만 전체 `quality-gate`를 실행합니다. 동일 HEAD는 이전 검증을 재사용하며 release guard는 위험도 판정을 거치지 않은 새 HEAD만 중지합니다.
+- 모든 제출분 통합 뒤 `integration-verify`는 최신 신뢰 기준과 현재 HEAD의 실제 변경에 대한 Python 검사 계획을 사용합니다. 명령·대상·의존 입력·도구 환경이 같은 비runtime 성공만 재사용합니다. runtime 상태를 소스 SHA만으로 재사용하지 않으며, 입력이 불완전하면 재사용을 금지합니다. 미분류 입력은 오류이고 공유 런타임·계약 또는 RC 전체검증은 명시적 `FULL=1` 요청입니다. 새 기준 부재를 이유로 무관한 전체검증을 자동 실행하지 않습니다.
 - shell 회귀시험은 격리된 임시 Git 저장소와 3개 worktree를 만들어 lease 중복, 범위 밖 변경, 자동 제출, runtime 차단, 순차 병합, 검증·완료 history를 확인합니다.
 
 명령과 장애 처리는 [Worktree coordination 하네스](worktree-coordination.md)에 정의합니다.
@@ -170,7 +178,7 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 제품 흐름이 미구현이면 test를 `skip`하지 않고 해당 제품 gate를 미통과 상태로 보고합니다.
 
-`scripts/check-editor-acceptance-contract.mjs`는 위 20번·22번과 PC 전용 mutation 권한, `scripts/check-editor-layout-parity.mjs`는 19번·21번을 정적 계약으로 잠급니다. PC 편집 spec을 제품 E2E 목록에서 빼거나 태블릿·모바일에서 다시 실행하도록 바꾸거나 retry/skip을 추가해도 실패합니다. Site Part viewport 상태·상속·초기화·schema enum·compiler data 계약·편집/공개 CSS·실제 하단 시트 E2E 중 하나를 제거해도 실패합니다. Puck iframe의 scoped box model, WYSIWYG 타이포 규칙, 45종 전체 presentation 검사, 95개 프리셋·Page Kit 5종의 세 viewport 가로 overflow·content edge·computed typography·줄 수 비교를 제거해도 `quality-frontend`, `task-submit`, `dev-product-e2e`가 실패합니다. 정적 계약 통과는 브라우저 성공을 대신하지 않으며, 전체 통합에서는 전용 E2E가 실제 runtime에서 다시 실행됩니다.
+`scripts/check-editor-acceptance-contract.mjs`와 `scripts/check-editor-layout-parity.mjs`는 편집·Site Part·레이아웃 시나리오의 실제 등록, PC 전용 편집 범위, 문서/CSS 계약을 검사합니다. 등록은 TypeScript AST와 정규식의 실제 spec 매칭으로 확인하고, 공유 CSS는 import된 원본까지 읽습니다. 정적 계약 통과는 위 사용자 흐름의 성공 증거가 아닙니다. scoped 계획은 변경된 동작에 연결된 브라우저 범위를 선택하며, 전체 카탈로그·Page Kit 품질 완료를 선언할 때는 전체 요구에 맞는 별도 실행 결과가 필요합니다.
 
 ## 자동화와 로컬 통합
 
@@ -184,10 +192,9 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 
 2026-08-31 재검증에서 `service-conversion` 템플릿 출력의 SVG·`details` 구조 손실을 확인했고, compiler 0.16.0에서 내장 블록을 G7 sanitizer 안전 표식으로 전환했습니다. 브라우저 런타임은 고정 SVG 자식/속성, 정확한 HTTPS 임베드 host, 고정 폼 control과 button만 복원합니다. 95개 프리셋 compiler 단위 검사는 제거 대상 구조 태그 0을 강제하며 외부 compiler의 금지 태그는 fail-closed입니다. 정적·단위 통과를 전체 해결로 해석하지 않고 95개 프리셋과 Page Kit 5종의 세 viewport 편집→저장→reload→preview 비교 및 별도 public 검사를 다시 통과해야 합니다. 외부 Code Pack stylesheet의 `<link>` 전달은 이번 내장 카탈로그 범위 밖이며 지원으로 선언하지 않습니다.
 
-- 필수 판정은 GitHub Actions가 아니라 로컬 `make quality-gate TASK=<integration-id>`와 동일 Docker runtime을 기준으로 합니다.
-- `frontend`: Node 24, `npm ci`, frontend gate, dist artifact
-- `php`: PHP 8.5, `composer install`, PHP gate
-- 현재 G7 설치·TLS·인증·제품 lifecycle 전체 확인은 migration·route/layout·module lifecycle 변경 또는 명시적 RC에서만 `make integration-verify TASK=<integration-id> FULL=1`로 실행합니다. 일반 프런트·PHP·G7 Adapter 변경은 자동 선택된 해당 profile을 사용하며 무관한 coverage와 제품 E2E를 다시 실행하지 않습니다.
+- 필수 판정은 제출·통합·최종확인·CI가 공유하는 Python 검사 계획입니다. 제품 브라우저 검사는 Local의 integration/runtime lease 아래 설치·인증된 G7에서 실행합니다. 현재 호스팅형 CI는 이 브라우저 환경이 없어 해당 요구가 선택되면 실패하며, 성공이나 skip으로 보고하지 않습니다.
+- 선택된 프런트 검사는 Node 24, PHP 검사는 PHP 8.5와 해당 의존성을 사용합니다. 도구·lockfile·명령·소스 입력이 일치할 때만 준비 결과를 재사용합니다.
+- 현재 G7 설치·TLS·인증·제품 lifecycle 전체 확인은 공유 런타임·계약 또는 RC의 명시적 `make integration-verify TASK=<integration-id> FULL=1` 요청으로 실행합니다. 일반 변경은 관련 검사만 선택하며 무관한 coverage와 전체 제품 E2E를 반복하지 않습니다.
 - Header Site Part 반응형 검증은 Puck 태블릿·모바일 viewport에서 간격·정렬·메뉴 방식 재정의와 초기화를 실제 조작하고, 하단 시트를 열어 편집 iframe·발행 화면의 바닥 정렬·전체 폭·backdrop·Escape focus 복귀까지 확인합니다. 모바일 폭에서 메뉴를 정적으로 펼쳐 보이는 것만으로 통과시키지 않습니다.
 - `quality-g7`은 G7 7.0.8 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
-- TLS·관리자 인증·실제 module route를 포함하는 `dev-product-e2e`는 로컬 통합 필수 gate입니다. 호스팅형 CI나 외부 secret은 필수조건이 아닙니다.
+- TLS·관리자 인증·실제 module route를 사용하는 브라우저 동작은 선택된 범위에서 Local 통합 필수 gate입니다. 명시적 전체 RC에는 `dev-product-e2e` 전체 범위가 포함됩니다. scoped 브라우저의 결과·HTML 보고서·실패 재시도 기록은 gate별 고유 `output/playwright/gates/` 경로에 보존합니다.

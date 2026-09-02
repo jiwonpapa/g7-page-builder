@@ -1,5 +1,7 @@
 # Worktree coordination harness
 
+이 문서는 [개발 헌법](development-constitution.md)의 책임 분리·검증·증거 원칙을 따릅니다.
+
 ## 목적
 
 여러 Codex 채팅이 같은 저장소를 동시에 수정할 때 파일 덮어쓰기뿐 아니라 merge 경쟁, migration 번호 충돌, 고정 Docker runtime 오검증을 차단합니다. Git worktree는 파일 checkout을 분리하지만 병합과 단일 `g7pb-dev` runtime을 자동 직렬화하지 않으므로 이 저장소 하네스가 그 경계를 담당합니다.
@@ -9,28 +11,25 @@ coordination 상태는 모든 worktree가 공유하는 Git common directory의 `
 ## 강제 원칙
 
 1. 작업 task는 깨끗한 기준 SHA에서 시작합니다.
-2. task마다 수정 가능한 저장소 상대 path prefix를 정확히 claim합니다.
+2. 일반 구현은 `PROFILE=scoped`로 24개 이하의 정확한 저장소 상대 파일 PATHS를 claim합니다. 디렉터리·glob은 허용하지 않습니다.
 3. 같은 prefix 또는 상·하위 prefix를 다른 task가 claim하면 시작을 거부합니다.
 4. `integration`, `runtime`, `migration`, `shared-contract`, `version`은 독점 AREA입니다.
-5. Worktree task는 범위검사와 지정 profile 검증을 통과해야 자동 커밋·제출됩니다.
+5. Worktree task는 범위검사와 선택된 정적·단위 검사를 통과해야 자동 커밋·제출됩니다. runtime·브라우저·빌드 산출물 검사는 `DEFERRED`로 기록하고 Local 통합에서 필수 실행합니다.
 6. 통합은 기본 Local worktree의 integration task만 수행합니다.
-7. 통합 전 `git merge-tree --write-tree --messages`로 충돌을 확인하고, `--no-commit` 임시 병합 상태에서 profile gate를 다시 실행합니다.
+7. 통합 전 `git merge-tree --write-tree --messages`로 충돌을 확인하고, `--no-commit` 임시 병합 상태에서 같은 Python 검사 계획을 적용합니다. 동일 입력의 비runtime 성공은 재사용하고 미완료 runtime 검사는 실제 실행합니다.
 8. 검증 실패 시 merge를 abort하며 자동으로 의미 충돌을 해결하지 않습니다.
 9. 모든 task 통합 뒤 변경 영향에 해당하는 검사 계획을 통과한 HEAD만 패키징·스테이징할 수 있습니다. 전체 RC는 명시적 요청입니다.
 10. dirty/untracked 파일이나 미통합 커밋이 있는 task lease는 강제로 해제하지 않습니다.
 
 ## 작업 profile
 
-| Profile | Worktree 제출 검증 | Local 통합 검증 |
+| 구분 | Worktree 제출 검증 | Local 통합 검증 |
 |---|---|---|
-| `frontend` | Node 24, typecheck, Vitest unit | Docker `quality-frontend` |
-| `php` | PHP 8.5, `composer check` | Docker `quality-php` |
-| `mixed` | PHP와 Frontend 제출 검증 | Docker `dev-check` |
-| `g7` | 독립 PHP gate | 설치된 G7의 `quality-g7` |
-| `docs` | version, boundary, coordination test | coordination + frontend 정책 gate |
-| `full` | PHP와 Frontend 제출 검증 | 전체 `quality-gate` |
+| `PROFILE=scoped` — 일반 구현 | 실제 변경·관련 기존 시험에서 선택; runtime 검사는 DEFERRED | 후보 변경에 대한 같은 계획과 필수 runtime 검사 |
+| 기존 `frontend/php/mixed/g7/docs/full` label | 보존 task의 metadata 호환용; Python 변경 계획 사용 | label만으로 전체 명령을 선택하지 않음 |
+| 명시적 `FULL=1` 요청 | 일반 제출의 기본값이 아님 | 공유 런타임·계약 또는 RC 사유를 명시한 전체검증 |
 
-Worktree의 Node는 반드시 24여야 합니다. Codex Local Environment setup이나 별도 version manager로 Node 24와 `npm ci`, `composer install`을 준비합니다. Worktree가 고정 Docker 컨테이너를 빌려 쓰는 방식은 허용하지 않습니다.
+선택된 Node 검사는 Node 24, PHP 검사는 PHP 8.5를 사용하며 필요한 의존성만 준비합니다. Worktree가 고정 Docker 컨테이너를 빌려 쓰는 방식은 허용하지 않습니다. `DEFERRED`는 제품 성공이나 skip이 아니며 통합 시 검증 의무가 남았다는 뜻입니다.
 
 ## 1. Local 통합 task 시작
 
@@ -39,11 +38,11 @@ Worktree의 Node는 반드시 24여야 합니다. Codex Local Environment setup�
 ```bash
 make coord-start \
   TASK=integration-20260820 \
-  AREAS=integration,runtime,version \
-  PROFILE=full
+  AREAS=integration,runtime \
+  PROFILE=docs
 ```
 
-통합 task는 직접 제품 코드를 작성하지 않으므로 보통 `PATHS`가 없습니다. 통합 중 별도의 버전·문서 수정이 필요하면 시작할 때 해당 파일 prefix를 명시하거나 별도 task로 처리합니다.
+통합 task는 직접 제품 코드를 작성하지 않으므로 보통 `PATHS`가 없습니다. 위 `docs` label은 빈 PATHS의 통합 소유권을 등록하며, 실제 검증은 통합 변경에 대한 Python 계획으로 선택합니다. 버전·문서 수정은 해당 파일과 필요한 AREA를 claim한 별도 구현 task로 처리합니다.
 
 ## 2. Worktree 구현 task 시작
 
@@ -52,21 +51,21 @@ Codex 새 채팅에서 `Worktree`를 선택하고 같은 깨끗한 기준 브랜
 ```bash
 make coord-start \
   TASK=editor-inline-toolbar \
-  PATHS=resources/js/editor,resources/css/page-builder.css,tests/Unit/puckEditorSurface.test.tsx \
-  PROFILE=frontend
+  PATHS=resources/js/editor/PuckEditorAdapter.tsx,resources/css/page-builder-editor.css,tests/Unit/puckEditorSurface.test.tsx \
+  PROFILE=scoped
 ```
 
 Migration이나 공개 계약을 수정하는 작업은 독점 AREA를 추가합니다.
 
 ```bash
 make coord-start \
-  TASK=block-pack-storage \
-  PATHS=src/Domain/Blocks,src/Application/Blocks,database/migrations,tests/UnitPhp \
-  AREAS=migration,shared-contract \
-  PROFILE=php
+  TASK=block-pack-contract \
+  PATHS=src/Domain/Blocks/BlockPackManifest.php,tests/UnitPhp/BlockPackContractTest.php \
+  AREAS=shared-contract \
+  PROFILE=scoped
 ```
 
-PATHS는 glob이 아니라 파일 또는 디렉터리 prefix입니다. 공백, 절대경로, `..`, `*`, `?`는 허용하지 않습니다.
+일반 `scoped` PATHS는 1~24개 정확한 파일입니다. 공백, 절대경로, `..`, glob, 디렉터리는 허용하지 않습니다. 범위를 넓혀야 하면 다른 task와 충돌을 확인한 뒤 별도 task로 나누며 기존 claim을 수동 변경하지 않습니다. migration 변경에는 `AREAS=migration`, 버전 변경에는 `AREAS=version`을 함께 확보합니다. AREA 확보가 전체검증의 자동 실행을 뜻하지는 않습니다.
 
 ## 3. 작업 중 상태와 범위 확인
 
@@ -87,7 +86,7 @@ make task-submit TASK=editor-inline-toolbar
 다음 순서가 자동 실행됩니다.
 
 1. 소유 path 검사
-2. profile별 Worktree gate
+2. Python이 선택한 Worktree gate와 runtime DEFERRED 기록
 3. gate가 만든 추가 변경을 포함한 재검사
 4. 허용된 변경 전체 stage
 5. `task(<id>): submit worktree changes` 커밋
@@ -130,9 +129,11 @@ make task-restack-squash \
 
 ### 범위 고정 검증과 재시도 receipt
 
-일반 구현은 `PROFILE=scoped`로 제출하고 `make task-integrate-scoped`로 통합합니다. 실제 base 대비 diff에서 PHP·TypeScript·CSS·Store·품질 원장·변경 테스트를 분류해 관련 검사만 실행합니다. 변경한 소스에 대응하는 변경 테스트가 없으면 전체 검증으로 확대하지 않고 제출을 실패시킵니다.
+일반 구현은 `PROFILE=scoped`로 제출하고 `make task-integrate-scoped`로 통합합니다. 실제 base 대비 diff에서 PHP·TypeScript·CSS·Store·품질 원장·변경 테스트를 분류해 관련 검사만 실행합니다. 관련 기존 시험은 수정하지 않아도 선택할 수 있습니다. 대응 시험이나 변경 분류가 없으면 범위 오류로 중단하며 전체검증으로 자동 확대하지 않습니다.
 
-성공 결과는 검사 명령·대상·관련 파일·환경에 묶습니다. 제출·통합·최종확인은 같은 입력을 재사용하며 무관한 파일이나 SHA 변화만으로 반복하지 않습니다. runtime 상태는 소스 tree만으로 재사용하지 않습니다. 전체 coverage·전체 브라우저 검사는 명시적 full RC 범위에서만 실행합니다.
+성공 결과는 검사 명령·대상·관련 파일·도구 환경에 묶습니다. 제출·통합·최종확인은 같은 입력의 비runtime 검사를 재사용하며 무관한 파일이나 SHA 변화만으로 반복하지 않습니다. 입력 의존성을 확정할 수 없으면 재사용만 금지하고 검사 범위는 확대하지 않습니다. runtime gate는 소스 tree만으로 성공을 재사용하지 않습니다. 후보 build 준비는 소스·환경·실제 dist 지문이 모두 같을 때만 재사용합니다. 전체 coverage·전체 브라우저 검사는 명시적 full 범위에서 실행합니다.
+
+Worktree에서 보류한 runtime 검사는 Local integration/runtime lease 아래 build 준비→관련 산출물 검사→관련 브라우저 순서로 수행합니다. 제품 소스가 바뀌지 않은 E2E 정의·등록 작업은 spec 수집과 하네스 회귀로 확인하며 제품 브라우저 성공으로 보고하지 않습니다. 제출·통합·최종확인·CI가 같은 계획을 사용하며, 현재 호스팅형 CI는 설치·인증된 G7 브라우저 환경이 없어 browser 요구를 선택하면 실패합니다.
 
 ```bash
 make task-integrate-scoped TASK=<submitted-id> INTEGRATION_TASK=<integration-id>
@@ -168,7 +169,7 @@ make task-replace-submitted \
 make task-replace-submitted-expanded \
   TASK=editor-rich-boundary-with-evidence \
   SUPERSEDES=editor-rich-boundary \
-  PATHS=resources/css/page-builder-public.css,resources/block-packs/builtin-core/thumbnails/generated,resources/block-packs/builtin-core/manifest.json,resources/block-packs/builtin-core/quality-evidence.json \
+  PATHS=resources/css/page-builder-public.css,resources/block-packs/builtin-core/thumbnails/generated/block-26-tabs.png,resources/block-packs/builtin-core/manifest.json,resources/block-packs/builtin-core/quality-evidence.json \
   BASE_REF=<reviewed-base-sha>
 ```
 
@@ -179,12 +180,12 @@ make task-replace-submitted-expanded \
 Local 통합 채팅에서 실행합니다.
 
 ```bash
-make task-integrate \
+make task-integrate-scoped \
   TASK=editor-inline-toolbar \
   INTEGRATION_TASK=integration-20260820
 ```
 
-하네스는 제출 Worktree의 존재와 clean 상태, 기준 ancestry, 제출 commit을 확인합니다. 충돌 사전검사 후 임시 merge를 만들고 Docker profile gate를 실행합니다. 성공할 때만 merge commit을 만들고 task lease를 history의 `integrated` 상태로 이동합니다.
+하네스는 제출 Worktree의 존재와 clean 상태, 기준 ancestry, 제출 commit을 확인합니다. 충돌 사전검사 후 임시 merge의 변경에 대한 Python 계획을 실행합니다. 일치하는 비runtime 성공은 재사용하고 필요한 runtime 검사는 소유 Local에서 수행합니다. 성공할 때만 merge commit을 만들고 task lease를 history의 `integrated` 상태로 이동합니다.
 
 충돌이나 gate 실패 시 통합 commit은 생성되지 않습니다. 공유 스키마·Provider·route·CSS 의미 충돌은 통합 담당자가 범위를 재배정한 뒤 새 제출로 해결합니다.
 
@@ -196,7 +197,7 @@ make task-integrate-batch \
   INTEGRATION_TASK=integration-20260820
 ```
 
-batch 통합은 task ID를 정규화해 중복을 거부하고, 모든 제출 metadata·소유 worktree·branch·HEAD·claim 비중첩을 잠근 상태에서 재검증합니다. 충돌 없는 하나의 임시 merge 위에서 포함된 profile 중 가장 강한 gate를 정확히 한 번 실행합니다. gate·Git commit·모든 task의 `integrated` history 기록이 모두 성공해야 완료되며, 실패나 종료 신호가 발생하면 main HEAD와 active `submitted` metadata를 함께 원복합니다. 모든 history 기록이 이미 완료된 뒤 종료된 경우에는 commit과 완결된 history를 함께 보존합니다.
+batch 통합은 task ID를 정규화해 중복을 거부하고, 모든 제출 metadata·소유 worktree·branch·HEAD·claim 비중첩을 잠근 상태에서 재검증합니다. 충돌 없는 하나의 임시 merge의 결합 변경을 Python 계획 하나로 검사하여 같은 gate를 중복 실행하지 않습니다. 기존 profile label의 강도는 호환 metadata이며 자동 전체검증 조건이 아닙니다. gate·Git commit·모든 task의 `integrated` history 기록이 모두 성공해야 완료되며, 실패나 종료 신호가 발생하면 main HEAD와 active `submitted` metadata를 함께 원복합니다. 모든 history 기록이 이미 완료된 뒤 종료된 경우에는 commit과 완결된 history를 함께 보존합니다.
 
 batch는 충돌을 덮거나 검증을 줄이는 수단이 아닙니다. claim이 겹치거나 독립적으로 제출되지 않은 변경은 범위를 재배정하고 다시 제출합니다.
 

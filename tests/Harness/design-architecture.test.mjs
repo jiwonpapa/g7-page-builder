@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +29,7 @@ function fixture(t) {
   };
   write('config/design-architecture.json', JSON.stringify(policy));
   write(policy.debtFile, JSON.stringify(baseDebt()));
+  for (const path of policy.normativeFiles) write(path, 'See docs/development-constitution.md');
   write(policy.constitution, policy.rules.map((rule) => `\`${rule}\``).join('\n'));
   return { root, write };
 }
@@ -223,16 +225,60 @@ test('a compressed TypeScript file cannot bypass the structural size rule', () =
   assert.ok(result.some((item) => item.rule === 'SOURCE-SIZE' && item.detail.includes('AST nodes')));
 });
 
-test('selected source is scoped while constitution edits trigger complete static assessment', (t) => {
+test('every normative document triggers complete static assessment while source changes stay scoped', (t) => {
   const { root, write } = fixture(t);
   write('resources/js/documents/good.ts', 'export const x = 1;');
   write('resources/js/documents/bad.ts', "import React from 'react';");
   const selected = auditArchitecture(root, ['resources/js/documents/good.ts']);
   assert.deepEqual(selected.checked, ['resources/js/documents/good.ts']);
   assert.equal(selected.errors.length, 0);
-  const complete = auditArchitecture(root, [policy.constitution]);
-  assert.equal(complete.checked.length, 2);
-  assert.equal(complete.errors.length, 1);
+  for (const path of policy.normativeFiles) {
+    const complete = auditArchitecture(root, [path]);
+    assert.equal(complete.scope, 'all-product-sources', path);
+    assert.equal(complete.checked.length, 2, path);
+    assert.equal(complete.errors.length, 1, path);
+    assert.deepEqual(complete.normativeChecked, [path]);
+  }
+});
+
+test('the real Python planner selects that same document set in every phase without a runtime gate', (t) => {
+  const { root, write } = fixture(t);
+  write('resources/js/documents/bad.ts', "import React from 'react';");
+  const plans = JSON.parse(execFileSync('python3', ['-B', '-c', `
+import json,sys
+from pathlib import Path
+from tools.g7pb.planner import NORMATIVE_DOCS, build_plan
+root = Path(sys.argv[1])
+print(json.dumps({"documents": sorted(NORMATIVE_DOCS), "plans": [
+    build_plan(root, [path], phase=phase).to_dict()
+    for path in sorted(NORMATIVE_DOCS)
+    for phase in ("submission", "integration", "verification", "ci")
+], "plannerInputs": [build_plan(Path.cwd(), [path]).to_dict()
+    for path in ("tools/g7pb/planner.py", "tools/g7pb/model.py")]}))
+`, root], { cwd: repository, encoding: 'utf8' }));
+  assert.deepEqual(plans.documents, [...policy.normativeFiles].sort());
+  for (const plan of plans.plans) {
+    assert.deepEqual(plan.unresolved, []);
+    assert.equal(plan.full, false);
+    assert.equal(plan.requirements.browser, false);
+    assert.deepEqual(plan.gates.map((gate) => gate.name), ['architecture']);
+    const gate = plan.gates[0];
+    assert.equal(gate.runtime, false);
+    assert.equal(gate.deferred, false);
+    assert.deepEqual(gate.argv.slice(-2), ['--files', plan.paths[0]]);
+    assert.equal(gate.argv[gate.argv.indexOf('--root') + 1], realpathSync(root));
+    for (const path of policy.normativeFiles) assert.ok(gate.inputs.includes(join(repository, path)), path);
+    assert.ok(gate.inputs.includes('resources/js/documents/bad.ts'));
+  }
+  for (const plan of plans.plannerInputs) {
+    assert.deepEqual(plan.unresolved, []);
+    const gate = plan.gates.find((candidate) => candidate.name === 'design-architecture-tests');
+    assert.ok(gate, plan.paths[0]);
+    assert.equal(gate.runtime, false);
+    assert.ok(gate.inputs.includes('tools/g7pb/planner.py'));
+    assert.ok(gate.inputs.includes('tools/g7pb/model.py'));
+    assert.ok(gate.inputs.includes('config/design-architecture.json'));
+  }
 });
 
 test('a verified controller can inspect a subject without trusting subject policy changes', (t) => {
@@ -246,12 +292,35 @@ test('a verified controller can inspect a subject without trusting subject polic
 test('normative changes are read from the subject even with a separate controller', (t) => {
   const controller = fixture(t);
   const subject = fixture(t);
-  subject.write('AGENTS.md', 'Old rules without a constitution reference');
-  assert.throws(() => auditArchitecture(subject.root, ['AGENTS.md'], controller.root), /must reference/);
-  subject.write('AGENTS.md', 'See docs/development-constitution.md');
-  assert.deepEqual(auditArchitecture(subject.root, ['AGENTS.md'], controller.root).normativeChecked, ['AGENTS.md']);
+  subject.write('resources/js/documents/bad.ts', "import React from 'react';");
+  for (const path of policy.normativeFiles.filter((path) => path !== policy.constitution)) {
+    subject.write(path, 'Old rules without a constitution reference');
+    assert.throws(() => auditArchitecture(subject.root, [path], controller.root), /must reference/, path);
+    subject.write(path, 'See docs/development-constitution.md');
+    const result = auditArchitecture(subject.root, [path], controller.root);
+    assert.deepEqual(result.normativeChecked, [path]);
+    assert.equal(result.scope, 'all-product-sources');
+    assert.equal(result.errors.length, 1);
+  }
   subject.write(policy.constitution, 'No declared rule IDs');
   assert.throws(() => auditArchitecture(subject.root, [policy.constitution], controller.root), /Subject constitution omits/);
+});
+
+test('configuration cannot omit or duplicate any required normative document', (t) => {
+  const { root, write } = fixture(t);
+  for (const path of policy.normativeFiles) {
+    const documents = policy.normativeFiles.filter((candidate) => candidate !== path);
+    for (const normativeFiles of [documents, [...documents, documents[0]]]) {
+      write('config/design-architecture.json', JSON.stringify({ ...policy, normativeFiles }));
+      assert.throws(() => readPolicy(root), /Required normative documents/, path);
+    }
+  }
+  for (const normativeFiles of [null, [], 'AGENTS.md']) {
+    write('config/design-architecture.json', JSON.stringify({ ...policy, normativeFiles }));
+    assert.throws(() => readPolicy(root), /Required normative documents/);
+  }
+  write('config/design-architecture.json', JSON.stringify({ ...policy, constitution: 'docs/other.md' }));
+  assert.throws(() => readPolicy(root), /constitution cannot be redirected/);
 });
 
 test('rules missing from the constitution fail instead of quietly dropping enforcement', (t) => {

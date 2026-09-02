@@ -87,6 +87,34 @@ async function eventually<T extends Element>(selector: string): Promise<T> {
 }
 
 describe('editor unsaved navigation guard', () => {
+  it('keeps the document library and error notice visible when a v2 document is malformed', async () => {
+    window.localStorage.setItem('auth_token', 'test-token');
+    vi.spyOn(PageBuilderApiClient.prototype, 'listBlockPacks').mockResolvedValue({ items: [] });
+    vi.spyOn(PageBuilderApiClient.prototype, 'getDocument').mockResolvedValue({
+      ...resource,
+      document: { ...resource.document, schema_version: 'g7-page-builder/v2', blocks: [{
+        instance_id: '00000000-0000-4000-8000-000000000001', type: 'content.heading-01', block_version: 1,
+        props: { heading: '손상된 구조' }, slots: { invalid: [] },
+      }] },
+    });
+    const preview = vi.spyOn(PageBuilderApiClient.prototype, 'createPreview');
+    const save = vi.spyOn(PageBuilderApiClient.prototype, 'saveDraft');
+    const container = document.createElement('div');
+    document.body.append(container);
+    let unmount = (): void => undefined;
+    await act(async () => {
+      unmount = mountPageBuilderEditor(container, { documentId: resource.document.document_id });
+    });
+    expect((await eventually<HTMLElement>('[role="alert"]')).textContent).toContain('문서의 블록 구성이 올바르지 않아');
+    expect(container.querySelector('[data-testid="page-builder-manager-link"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="mock-editor-dirty"]')).toBeNull();
+    expect(container.querySelector('[data-testid="page-builder-save"]')).toBeNull();
+    expect(container.querySelector('[data-testid="page-builder-create"]')).toBeNull();
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+    await act(async () => { unmount(); });
+  });
+
   it('restores an exact-lock browser journal before rendering the editor', async () => {
     window.localStorage.setItem('auth_token', 'test-token');
     window.localStorage.setItem(`g7pb:draft-journal:v1:${resource.document.document_id}`, JSON.stringify({

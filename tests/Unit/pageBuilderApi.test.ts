@@ -7,6 +7,9 @@ import {
   buildAdminLoginUrl,
 } from '../../resources/js/api/pageBuilderApi';
 import type { DocumentResource } from '../../resources/js/documents/types';
+import { normalizeDocumentTransport } from '../../resources/js/documents/normalizeDocumentTransport';
+import { moveLayoutNode } from '../../resources/js/documents/layoutTree';
+import { validateLayoutDocument } from '../../resources/js/documents/layoutPolicy';
 
 const documentResource: DocumentResource = {
   title: '테스트 페이지',
@@ -40,6 +43,68 @@ function jsonResponse(payload: unknown, status = 200): Response {
 }
 
 describe('PageBuilderApiClient', () => {
+  it('decodes PHP empty slot maps on load and save without losing nested content', async () => {
+    const headingId = '00000000-0000-4000-8000-000000000001';
+    const sectionId = '00000000-0000-4000-8000-000000000002';
+    const wire = {
+      ...documentResource,
+      document: {
+        ...documentResource.document, schema_version: 'g7-page-builder/v2', tokens: [],
+        blocks: [
+          { instance_id: headingId, type: 'content.heading-01', block_version: 1, props: { heading: '유지할 제목', items: [] }, slots: [] },
+          { instance_id: sectionId, type: 'layout.section-01', block_version: 1, props: [], slots: [] },
+        ],
+      },
+    };
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: wire }))
+      .mockImplementationOnce(async (_url, init) => {
+        const saved = JSON.parse(String(init?.body)).document;
+        saved.blocks[0].slots.content[0].slots = [];
+        return jsonResponse({ success: true, data: { ...wire, document: saved, lock_version: 8 } });
+      });
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+    const loaded = await client.getDocument(documentResource.document.document_id);
+    expect(loaded.document.tokens).toEqual({});
+    expect(loaded.document.blocks[0].slots).toEqual({});
+    expect(loaded.document.blocks[1].props).toEqual({});
+    const moved = moveLayoutNode(loaded.document, headingId, { parentId: sectionId, slot: 'content', index: 0 });
+    const saved = await client.saveDraft(moved.document_id, moved, loaded.lock_version);
+    const child = saved.document.blocks[0].slots!.content[0];
+    expect(child).toMatchObject({ instance_id: headingId, props: { heading: '유지할 제목', items: [] }, slots: {} });
+    expect(JSON.parse(JSON.stringify(saved.document)).blocks[0].slots.content).toHaveLength(1);
+    expect(wire.document.blocks[0].slots).toEqual([]);
+  });
+
+  it('normalizes revision, Site Part and Section pattern envelopes without changing real lists', () => {
+    const node = { instance_id: '00000000-0000-4000-8000-000000000001', type: 'content.heading-01', block_version: 1, props: { items: [] }, slots: [] };
+    const envelope = {
+      items: [{ document: { ...documentResource.document, blocks: [node] } }],
+      header: { document: { schema_version: 'g7-page-builder/site-part/v1', tokens: [], blocks: [{ ...node, slots: { systemControls: [node] } }] } },
+      pattern: { schema_version: 'g7-page-builder/section-pattern/v1', section: { ...node, slots: { content: [node] } }, asset_references: [] },
+      unrelated: { slots: [], props: [] },
+    };
+    const result = normalizeDocumentTransport(envelope);
+    expect(result.items[0].document.blocks[0].slots).toEqual({});
+    expect(result.header.document.blocks[0].slots.systemControls[0].slots).toEqual({});
+    expect(result.pattern.section.slots.content[0].slots).toEqual({});
+    expect(result.pattern.asset_references).toEqual([]);
+    expect(result.unrelated).toEqual({ slots: [], props: [] });
+  });
+
+  it.each([null, [1], { unknown: [] }, { content: {} }])('preserves malformed v2 slots for strict validation: %j', async (slots) => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ success: true, data: {
+      ...documentResource,
+      document: { ...documentResource.document, schema_version: 'g7-page-builder/v2', blocks: [{
+        instance_id: '00000000-0000-4000-8000-000000000001', type: 'layout.section-01', block_version: 1, props: {}, slots,
+      }] },
+    } }));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+    const loaded = await client.getDocument(documentResource.document.document_id);
+    expect(loaded.document.blocks[0].slots).toEqual(slots);
+    expect(() => validateLayoutDocument(loaded.document)).toThrow();
+  });
+
   it('loads the module-owned document list without using the bundled page API', async () => {
     const listResource = {
       items: [documentResource],

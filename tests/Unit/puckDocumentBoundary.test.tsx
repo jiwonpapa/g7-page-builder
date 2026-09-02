@@ -14,7 +14,7 @@ const { Puck, usePuck } = await import('@puckeditor/core');
 const { canonicalToPuck } = await import('../../resources/js/editor/puckBlockCodec');
 const { PuckDocumentBoundary, usePuckDocumentBoundary } = await import('../../resources/js/editor/PuckDocumentBoundary');
 type EditorApi = ReturnType<typeof usePuck<Config<EditorComponents, PageDesignProps>>>;
-const { pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { pageBuilderPuckConfig } = await import('../../resources/js/editor/puckEditorConfig');
 const config: Config<EditorComponents, PageDesignProps> = {
   components: {
     ...pageBuilderPuckConfig.components,
@@ -33,7 +33,7 @@ function fixture(count: number): PageBuilderDocument {
 const cleanups: Array<() => void> = [];
 afterEach(async () => { await act(async () => { cleanups.splice(0).forEach((cleanup) => cleanup()); }); vi.useRealTimers(); });
 
-async function mount(source: PageBuilderDocument) {
+async function mount(source: PageBuilderDocument, strict = false) {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   const host = document.createElement('div'); document.body.append(host);
   const root = createRoot(host);
@@ -41,12 +41,15 @@ async function mount(source: PageBuilderDocument) {
   let api: EditorApi | null = null;
   let canonical = source;
   let editable = true;
+  let capturedBoundary: ReturnType<typeof usePuckDocumentBoundary>['boundary'] | null = null;
+  let mounted = true;
   const dirty = vi.fn();
   const changed = vi.fn((value: PageBuilderDocument) => { canonical = value; });
   function Capture() { api = usePuck<Config<EditorComponents, PageDesignProps>>(); return null; }
   function Editor() {
     const context = useRef(initial.context);
     const { boundary, data, recovering, message } = usePuckDocumentBoundary(initial, { context, canEdit: editable, onDirty: dirty, onChange: changed });
+    capturedBoundary = boundary;
     // Only synthetic Heading/Section/Stack instances are rendered and checked.
     return <><output data-recovering={recovering}>{message}</output>
       <Puck config={config} data={data} iframe={{ enabled: false }}
@@ -54,16 +57,19 @@ async function mount(source: PageBuilderDocument) {
         overrides={{ headerActions: () => <><Capture /><PuckDocumentBoundary boundary={boundary} /></> }} />
     </>;
   }
-  await act(async () => { root.render(<Editor />); });
+  const render = () => root.render(strict ? <React.StrictMode><Editor /></React.StrictMode> : <Editor />);
+  await act(async () => { render(); });
   await act(async () => { await vi.advanceTimersByTimeAsync(0); });
-  cleanups.push(() => { root.unmount(); host.remove(); });
+  const unmount = () => { if (mounted) { mounted = false; root.unmount(); host.remove(); } };
+  cleanups.push(unmount);
   const current = (): EditorApi => { if (!api) throw new Error('Missing public Puck API'); return api; };
   const command = async (run: (value: EditorApi) => void) => { await act(async () => { run(current()); }); };
   // Advance only Puck's documented 250ms history debounce; assertions inspect actual public state.
   const record = async () => { await act(async () => { await vi.advanceTimersByTimeAsync(251); }); };
   const count = () => host.querySelectorAll('[data-synthetic-heading]').length;
-  const readonly = async () => { editable = false; await act(async () => { root.render(<Editor />); }); };
-  return { host, current, command, record, count, readonly, dirty, changed, canonical: () => canonical, initial };
+  const readonly = async () => { editable = false; await act(async () => { render(); }); };
+  const callbacks = () => { if (!capturedBoundary) throw new Error('Missing boundary callbacks'); return capturedBoundary; };
+  return { host, current, command, record, count, readonly, dirty, changed, canonical: () => canonical, initial, callbacks, unmount };
 }
 
 function nestedZone(source: PageBuilderDocument): string { return `${source.blocks[0].instance_id}:content`; }
@@ -106,11 +112,11 @@ describe('real Puck public command boundary', () => {
     expect(test.current().selectedItem?.props.id).toBe(source.blocks[0].slots!.content[0].instance_id);
   }, 15_000);
 
-  it('preserves past and redo after an invalid drag from an undone state', async () => {
+  it.each([false, true])('preserves past and redo after an invalid drag from an undone state (StrictMode=%s)', async (strict) => {
     const source = fixture(1);
     source.blocks[0].slots!.content.push({ instance_id: crypto.randomUUID(), type: 'layout.stack-01', block_version: 1,
       props: { gap: 'normal' }, slots: { content: [] } });
-    const test = await mount(source);
+    const test = await mount(source, strict);
     await replaceTitle(test, 'Valid future'); await test.record();
     await test.command((api) => api.history.back());
     expect(test.canonical().blocks[0].slots!.content[0].props.heading).toBe('Initial');
@@ -120,6 +126,8 @@ describe('real Puck public command boundary', () => {
     await test.command((api) => api.dispatch({ type: 'move', sourceZone: nestedZone(source), sourceIndex: 1,
       destinationZone: 'root:default-zone', destinationIndex: 1 }));
     await test.record();
+    expect(test.host.querySelector('output')?.dataset.recovering).toBe('false');
+    expect(test.current().appState.data).toEqual(test.callbacks().currentData());
     expect(test.current().appState.ui.isDragging).toBe(false);
     expect(test.current().history.histories).toEqual(pastAndFuture);
     expect(test.current().history.hasFuture).toBe(true);
@@ -127,6 +135,31 @@ describe('real Puck public command boundary', () => {
     expect(test.canonical().blocks[0].slots!.content[0].props.heading).toBe('Valid future');
     await test.command((api) => api.history.back());
     expect(test.canonical().blocks[0].slots!.content[0].props.heading).toBe('Initial');
+  });
+
+  it.each([false, true])('ignores an earlier actual candidate after disposal (StrictMode=%s)', async (strict) => {
+    const test = await mount(fixture(1), strict);
+    await replaceTitle(test, 'Earlier'); await test.record();
+    const earlier = test.current().appState;
+    await replaceTitle(test, 'Latest'); await test.record();
+    const latest = test.current().appState;
+    const callbacks = test.callbacks(), accepted = callbacks.currentData(), api = test.current();
+    const saved = structuredClone(test.canonical());
+    expect(saved.blocks[0].slots!.content[0].props.heading).toBe('Latest');
+    expect(earlier.data).not.toEqual(latest.data);
+    const dirtyCalls = test.dirty.mock.calls.length, changeCalls = test.changed.mock.calls.length;
+    await act(async () => test.unmount());
+    await act(async () => {
+      callbacks.onAction({ type: 'setData', data: earlier.data }, earlier, latest);
+      callbacks.onChange(earlier.data);
+      callbacks.connect(api);
+      callbacks.finishRecovery();
+      expect(callbacks.acceptForPublish(earlier.data)).toBeNull();
+    });
+    expect(callbacks.currentData()).toBe(accepted);
+    expect(test.canonical()).toEqual(saved);
+    expect(test.dirty).toHaveBeenCalledTimes(dirtyCalls);
+    expect(test.changed).toHaveBeenCalledTimes(changeCalls);
   });
 
   it('retains a valid edit pending debounce before a rejected command', async () => {

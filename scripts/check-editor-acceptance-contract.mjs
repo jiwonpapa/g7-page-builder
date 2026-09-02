@@ -41,6 +41,43 @@ function attribute(node, name) {
   return value && ts.isJsxExpression(value) ? value.expression : undefined;
 }
 
+function viewportPermissionInput(graph, input) {
+  const binding = graph.inputBinding(input);
+  const policies = graph.nodes('resolveEditorViewportPolicy');
+  return binding && binding.members.length === 1 && binding.members[0] === 'canEdit'
+    && ts.isCallExpression(binding.node) && policies.length === 1 && graph.value(binding.node.expression) === policies[0]
+    ? binding : undefined;
+}
+
+/** Both live selection transitions must reject the boundary's readonly input. */
+export function validateCanvasSelectionPermissions(graph) {
+  const message = '미리보기 모드에서는 요소·범위 선택 메시지를 수용하면 안 됩니다.';
+  const boundaries = graph.nodes('usePuckDocumentBoundary');
+  const hooks = graph.find(node => ts.isCallExpression(node) && boundaries.length === 1
+    && graph.value(node.expression) === boundaries[0]);
+  const permission = hooks.length === 1 && viewportPermissionInput(graph, graph.memberExpression(hooks[0].arguments[1], 'canEdit'));
+  const transitions = graph.nodes('transitionCanvasContext');
+  if (!permission || transitions.length !== 1) return [message];
+  for (const action of ['selection.accept', 'range.change']) {
+    const calls = graph.find(node => {
+      if (!ts.isCallExpression(node) || !graph.sameValue(node.expression, transitions[0].initializer)) return false;
+      const type = graph.value(graph.memberExpression(node.arguments[0], 'type'));
+      return type && ts.isStringLiteral(type) && type.text === action;
+    });
+    if (calls.length !== 1) return [message];
+    let owner = calls[0].parent;
+    while (owner && !ts.isFunctionLike(owner)) owner = owner.parent;
+    const guard = owner?.body && ts.isBlock(owner.body) ? owner.body.statements[0] : undefined;
+    const condition = guard && ts.isIfStatement(guard) ? graph.value(guard.expression) : undefined;
+    const input = condition && ts.isPrefixUnaryExpression(condition) && condition.operator === ts.SyntaxKind.ExclamationToken
+      ? viewportPermissionInput(graph, condition.operand) : undefined;
+    if (!guard || !ts.isIfStatement(guard) || guard.elseStatement || !ts.isReturnStatement(guard.thenStatement)
+      || guard.thenStatement.expression || !input || input.node !== permission.node
+      || input.members.join('.') !== permission.members.join('.')) return [message];
+  }
+  return [];
+}
+
 /** Check the current native mutation boundary, never a retired function name. */
 export function validateEditorMutationBoundary(graph) {
   const errors = [];
@@ -56,7 +93,9 @@ export function validateEditorMutationBoundary(graph) {
     ? permissions.properties.find(item => ts.isPropertyAssignment(item) && item.name.getText() === 'edit')?.initializer : undefined;
   const disabledBinding = permissionValue && ts.isPrefixUnaryExpression(permissionValue) && permissionValue.operator === ts.SyntaxKind.ExclamationToken
     ? graph.value(permissionValue.operand) : undefined;
-  const disabled = isExpression(disabledBinding, '!viewportPolicy.canEdit || recovering');
+  const disabled = disabledBinding && ts.isBinaryExpression(disabledBinding)
+    && disabledBinding.operatorToken.kind === ts.SyntaxKind.BarBarToken
+    && ts.isPrefixUnaryExpression(disabledBinding.left) && disabledBinding.left.operator === ts.SyntaxKind.ExclamationToken;
   if (roots.length !== 1 || pucks.length !== 1 || !permissions || !ts.isObjectLiteralExpression(permissions)
     || permissions.properties.length !== mutationNames.length || !disabled
     || mutationNames.some(name => !permissions.properties.some(item => ts.isPropertyAssignment(item)
@@ -67,10 +106,11 @@ export function validateEditorMutationBoundary(graph) {
   const boundary = boundaries.length === 1 ? boundaries[0] : undefined;
   const hooks = graph.find(node => ts.isCallExpression(node) && boundary && graph.value(node.expression) === boundary);
   const options = hooks[0]?.arguments[1];
-  const optionValue = options && ts.isObjectLiteralExpression(options)
-    ? options.properties.find(item => ts.isPropertyAssignment(item) && item.name.getText() === 'canEdit')?.initializer : undefined;
-  const optionCanEdit = isExpression(optionValue, 'viewportPolicy.canEdit') && disabled && ts.isBinaryExpression(disabledBinding)
-    && ts.isPrefixUnaryExpression(disabledBinding.left) && graph.sameValue(disabledBinding.left.operand, optionValue);
+  const optionValue = graph.memberExpression(options, 'canEdit');
+  const optionInput = viewportPermissionInput(graph, optionValue);
+  const disabledInput = disabled && graph.inputBinding(disabledBinding.left.operand);
+  const optionCanEdit = disabled && optionInput && disabledInput
+    && disabledInput.node === optionInput.node && disabledInput.members.join('.') === optionInput.members.join('.');
   const ownedBoundary = hooks.length === 1 ? graph.member(hooks[0], 'boundary') : undefined;
   const ownedRecovery = hooks.length === 1 ? graph.member(hooks[0], 'recovering') : undefined;
   // Match the actual hook return, not a same-spelled receiver or an object that
@@ -426,13 +466,12 @@ export async function validateEditorAcceptanceContract(root) {
     [viewportPolicySource, /field\.arrayFields[\s\S]{0,220}field\.objectFields[\s\S]{0,220}field\.filterFields/, '읽기 전용 필드 변환은 array·object·filter 중첩 필드까지 재귀 적용해야 합니다.'],
     [adapterSource, /fields: applyEditorContentPolicy\(component\.fields, false\)/, 'Puck runtime config는 미리보기 모드에 읽기 전용 필드 계약을 적용해야 합니다.'],
     [adapterSource, /data-editing-mode=\{viewportPolicy\.mode\}/, '에디터 루트가 현재 편집·미리보기 모드를 노출해야 합니다.'],
-    [adapterSource, /const accept = \(selection: CanvasElementSelection\): void => \{\s*if \(!viewportPolicy\.canEdit\) return;[\s\S]{0,180}transitionCanvasContext\(\{ type: ['"]selection\.accept['"], selection \}\)/, '미리보기 모드에서는 요소·범위 선택 메시지를 수용하면 안 됩니다.'],
     [layoutSpec, /const expectedMode = projectName === ['"]desktop['"] \? ['"]edit['"] : ['"]preview['"]/, '페이지 킷 레이아웃 E2E가 PC 편집과 태블릿·모바일 미리보기를 구분해야 합니다.'],
     [layoutSpec, /viewportMutations[\s\S]{0,220}viewport switch must not persist document data/, '뷰포트 전환이 문서를 저장하지 않는 회귀 gate가 필요합니다.'],
     [layoutSpec, /expectedMode === ['"]preview['"][\s\S]{0,180}locator\(['"]\[contenteditable=['"]true['"]\]['"]\)[\s\S]{0,100}toHaveCount\(0\)/, '태블릿·모바일 미리보기에는 편집 가능한 DOM이 없어야 합니다.'],
   ];
   for (const [source, pattern, message] of requiredViewportPolicy) requirePattern(errors, source, pattern, message);
-  errors.push(...validateEditorMutationBoundary(graph));
+  errors.push(...validateEditorMutationBoundary(graph), ...validateCanvasSelectionPermissions(graph));
   const requiredCanvasContextState = [
     [canvasContextSource, /export type CanvasContextTarget =[\s\S]*kind: ['"]none['"][\s\S]*kind: ['"]block['"][\s\S]*kind: ['"]text-element['"][\s\S]*kind: ['"]text-range['"][\s\S]*kind: ['"]media['"][\s\S]*kind: ['"]action['"]/, '캔버스 선택 대상은 단일 판별 상태 계약으로 정의해야 합니다.'],
     [canvasContextSource, /export function reduceCanvasContextState\([\s\S]*action\.type === ['"]selection\.accept['"][\s\S]*action\.type === ['"]selection\.replace['"][\s\S]*action\.type === ['"]range\.change['"][\s\S]*state\.target\.kind !== ['"]text-element['"][\s\S]*state\.target\.kind !== ['"]text-range['"]/, '요소 선택과 글자 범위 전이는 단일 reducer에서 정규화해야 합니다.'],

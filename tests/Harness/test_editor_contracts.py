@@ -16,7 +16,7 @@ SOURCE_GRAPH = "scripts/lib/editorSourceGraph.mjs"
 
 
 class EditorContractTests(unittest.TestCase):
-    def source_graph(self, root, entries=None, owner=None, boundary=False, binding=False, target=None):
+    def source_graph(self, root, entries=None, owner=None, boundary=False, binding=False, target=None, selection=False):
         helper = os.environ.get("G7PB_EDITOR_SOURCE_GRAPH", str(ROOT / SOURCE_GRAPH))
         selected = json.loads(os.environ.get("G7PB_EDITOR_CONTRACT_CHECKERS", "{}"))
         checker = selected.get(CHECKERS[0], str(ROOT / CHECKERS[0]))
@@ -24,11 +24,17 @@ class EditorContractTests(unittest.TestCase):
                 "const {readEditorSourceGraph}=await import(pathToFileURL(args.helper));"
                 "try{const graph=await readEditorSourceGraph(args.root,args.entries??undefined);"
                 "const result={files:graph.files};if(args.owner==='@Puck'){result.owner=graph.jsxOwner('Puck','config','runtimePuckConfig');}"
-                "else if(args.owner){result.owner=graph.owner(args.owner);result.declaration=graph.declaration(args.owner);}"
+                "else if(args.owner){result.owner=graph.owner(args.owner);result.declaration=graph.declaration(args.owner);"
+                "const n=graph.nodes(args.owner)[0]?.initializer;if(n){const source=n.getSourceFile().text;result.initializer={"
+                "text:n.getText(),left:ts.isBinaryExpression(n)?n.left.getText():null,"
+                "start:[...source.slice(0,n.getStart())].length,end:[...source.slice(0,n.end)].length};}}"
                 "if(args.boundary){const {validateEditorMutationBoundary}=await import(pathToFileURL(args.checker));"
                 "result.errors=validateEditorMutationBoundary(graph);}"
+                "if(args.selection){const {validateCanvasSelectionPermissions}=await import(pathToFileURL(args.checker));"
+                "result.errors=validateCanvasSelectionPermissions(graph);}"
                 "if(args.binding){const nodes=graph.find(n=>ts.isJsxAttribute(n)&&n.name.text==='disabled');"
-                "result.binding=graph.value(nodes[0].initializer.expression).getText();}"
+                "result.binding=graph.value(nodes[0].initializer.expression).getText();"
+                "result.inputResolved=Boolean(graph.inputBinding(nodes[0].initializer.expression));}"
                 "if(args.target){const nodes=graph.find(n=>(ts.isJsxSelfClosingElement(n)||ts.isJsxOpeningElement(n))"
                 "&&n.tagName.getText()===args.target&&(args.target!=='Puck'||n.attributes.properties.some(p=>"
                 "ts.isJsxAttribute(p)&&p.name.text==='config'&&p.initializer?.expression?.getText()==='runtimePuckConfig')));"
@@ -36,12 +42,13 @@ class EditorContractTests(unittest.TestCase):
                 "const n=nodes[0],attribute=n.attributes.properties.find(p=>ts.isJsxAttribute(p)&&p.name.text===(args.target==='Puck'?'onChange':'boundary'));"
                 "const value=attribute?.initializer?.expression,receiver=args.target==='Puck'&&value&&ts.isPropertyAccessExpression(value)?value.expression:value;"
                 "if(!receiver||!ts.isIdentifier(receiver))throw Error('Expected an explicit boundary receiver');"
-                "result.target={file:relative(args.root,n.getSourceFile().fileName),start:n.getStart(),end:n.end,text:n.getText(),receiver:receiver.text};}"
+                "const source=n.getSourceFile().text;result.target={file:relative(args.root,n.getSourceFile().fileName),"
+                "start:[...source.slice(0,n.getStart())].length,end:[...source.slice(0,n.end)].length,text:n.getText(),receiver:receiver.text};}"
                 "console.log(JSON.stringify(result));}"
                 "catch(error){console.log(JSON.stringify({error:error.message}));}")
         result = subprocess.run(["node", "--input-type=module", "-e", code, json.dumps({
             "root": str(root.resolve()), "helper": helper, "checker": checker, "entries": entries,
-            "owner": owner, "boundary": boundary, "binding": binding, "target": target,
+            "owner": owner, "boundary": boundary, "binding": binding, "target": target, "selection": selection,
         })], cwd=ROOT, text=True, capture_output=True, check=True)
         return json.loads(result.stdout)
 
@@ -136,6 +143,89 @@ class EditorContractTests(unittest.TestCase):
             (root / "entry.tsx").write_text("import {useSession} from './session';export function entry(){const ignored=useSession();const editingDisabled=false;return <Puck disabled={editingDisabled} data-result={ignored}/>;}")
             self.assertEqual(self.source_graph(root, ["entry.tsx"], binding=True)["binding"], "false")
 
+    def test_spread_arguments_cannot_supply_positional_permission_provenance(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-editor-spread-input-") as directory:
+            root = Path(directory)
+            source = ("function useSession(unused,canEdit,...extra){return <Puck disabled={canEdit}/>;}"
+                      "export function entry(){const viewportPolicy={canEdit:false};"
+                      "return useSession(0,viewportPolicy.canEdit);}")
+            (root / "entry.tsx").write_text(source)
+            self.assertTrue(self.source_graph(root, ["entry.tsx"], binding=True)["inputResolved"])
+            # Runtime canEdit receives true; AST argument 1 is not parameter 1.
+            (root / "entry.tsx").write_text(source.replace(
+                "useSession(0,viewportPolicy.canEdit)",
+                "useSession(...[0,true],viewportPolicy.canEdit)",
+            ))
+            self.assertFalse(self.source_graph(root, ["entry.tsx"], binding=True)["inputResolved"])
+
+    def test_current_canvas_selection_uses_the_mutation_boundary_permission(self):
+        result = self.source_graph(ROOT, selection=True)
+        self.assertNotIn("error", result)
+        self.assertEqual(result["errors"], [])
+
+    def test_moved_canvas_selection_accepts_aliases_but_rejects_disconnected_guards(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-editor-canvas-permission-") as directory:
+            root = Path(directory)
+            caller = """
+import {resolveEditorViewportPolicy, usePuckDocumentBoundary} from './policy';
+import {useCanvasEditingUi as useCanvas} from './canvas';
+export function entry() {
+  const viewportPolicy = resolveEditorViewportPolicy();
+  const permission = viewportPolicy.canEdit;
+  const boundary = usePuckDocumentBoundary(null, {canEdit: permission});
+  const canvas = useCanvas(null, permission);
+  return <Puck boundary={boundary} canvas={canvas}/>;
+}
+"""
+            canvas = """
+import {useEffect} from 'react';
+export function useCanvasEditingUi(data, editAllowed) {
+  const transitionCanvasContext = (action) => action;
+  useEffect(() => {
+    const accept = (selection) => {
+      if (!editAllowed) return;
+      transitionCanvasContext({type: 'selection.accept', selection});
+    };
+    const acceptRangeState = (active) => {
+      if (!editAllowed) return;
+      transitionCanvasContext({type: 'range.change', active});
+    };
+    window.addEventListener('message', event => accept(event.data));
+    window.addEventListener('range', event => acceptRangeState(event.detail));
+  }, [editAllowed]);
+  return data;
+}
+"""
+            self.write_sources(root, {
+                "entry.tsx": caller,
+                "canvas.tsx": canvas,
+                "policy.ts": "export function resolveEditorViewportPolicy(){return {canEdit:false};}"
+                             "export function usePuckDocumentBoundary(data,options){return options;}",
+            })
+            check = lambda: self.source_graph(root, ["entry.tsx"], selection=True)
+            self.assertEqual(check()["errors"], [])
+            # Names and the owning module may change without changing inputs.
+            (root / "canvas.tsx").write_text(canvas.replace("acceptRangeState", "receiveRange").replace("accept =", "receiveSelection =").replace("=> accept(", "=> receiveSelection("))
+            self.assertEqual(check()["errors"], [])
+            (root / "canvas.tsx").write_text(canvas)
+            for broken in (
+                caller.replace("useCanvas(null, permission)", "useCanvas(null, true)"),
+                caller.replace("useCanvas(null, permission)", "useCanvas(null, resolveEditorViewportPolicy().canEdit)"),
+            ):
+                (root / "entry.tsx").write_text(broken)
+                result = check()
+                self.assertNotIn("error", result)
+                self.assertTrue(result["errors"])
+            (root / "entry.tsx").write_text(caller)
+            for name in ("accept", "acceptRangeState"):
+                with self.subTest(unguarded=name):
+                    before = "const " + name + " = (" + ("selection" if name == "accept" else "active") + ") => {\n      if (!editAllowed) return;"
+                    self.assertEqual(canvas.count(before), 1)
+                    (root / "canvas.tsx").write_text(canvas.replace(before, before.replace("if (!editAllowed) return;", ""), 1))
+                    result = check()
+                    self.assertNotIn("error", result)
+                    self.assertTrue(result["errors"])
+
     def test_type_only_reference_cannot_make_a_loaded_function_a_runtime_owner(self):
         with tempfile.TemporaryDirectory(prefix="g7pb-editor-type-owner-") as directory:
             root = Path(directory)
@@ -202,11 +292,11 @@ class EditorContractTests(unittest.TestCase):
             self.write_sources(root, {
                 "resources/js/editor/usePageBuilderSession.ts": """
 import {usePuckDocumentBoundary as useDocumentBoundary} from './PuckDocumentBoundary';
-export function usePageBuilderSession(initialSession, contextRef, viewportPolicy, onDirty, onChange) {
+export function usePageBuilderSession({initialSession, contextRef, canEdit: editAllowed, onDirty, onChange}) {
   const {boundary: canonicalBoundary, data, recovering} = useDocumentBoundary(initialSession, {
-    context: contextRef, canEdit: viewportPolicy.canEdit, onDirty, onChange,
+    context: contextRef, canEdit: editAllowed, onDirty, onChange,
   });
-  const editingDisabled = !viewportPolicy.canEdit || recovering;
+  const editingDisabled = !editAllowed || recovering;
   return {boundary: canonicalBoundary, data, recovering, editingDisabled};
 }
 """,
@@ -214,11 +304,13 @@ export function usePageBuilderSession(initialSession, contextRef, viewportPolicy
 import {Puck} from '@puckeditor/core';
 import {PuckDocumentBoundary} from './PuckDocumentBoundary';
 import {usePageBuilderSession} from './usePageBuilderSession';
+import {resolveEditorViewportPolicy} from './editorViewportPolicy';
 export function PuckEditorAdapter(props) {
   return <IsolatedSession key={JSON.stringify([props.document.document_id, props.revisionKey])} {...props}/>;
 }
-function IsolatedSession({initialSession, contextRef, viewportPolicy, onDirty, onChange, onPublish}) {
-  const {boundary, data, recovering, editingDisabled} = usePageBuilderSession(initialSession, contextRef, viewportPolicy, onDirty, onChange);
+function IsolatedSession({initialSession, contextRef, onDirty, onChange, onPublish}) {
+  const viewportPolicy = resolveEditorViewportPolicy({disabled: false, hostWidth: 1280, canvasWidth: 1280});
+  const {boundary, data, recovering, editingDisabled} = usePageBuilderSession({initialSession, contextRef, canEdit: viewportPolicy.canEdit, onDirty, onChange});
   const runtimePuckConfig = {};
   return <><Puck config={runtimePuckConfig} data={data}
     permissions={{edit: !editingDisabled, insert: !editingDisabled, delete: !editingDisabled, duplicate: !editingDisabled, drag: !editingDisabled}}
@@ -233,6 +325,21 @@ function IsolatedSession({initialSession, contextRef, viewportPolicy, onDirty, o
             })
             self.assertEqual(self.source_graph(root, boundary=True)["errors"], [])
             self.assertEqual(self.source_graph(root, owner="editingDisabled")["owner"], "resources/js/editor/usePageBuilderSession.ts")
+            caller = root / "resources/js/editor/PuckEditorAdapter.tsx"
+            caller_source = caller.read_text()
+            self.assertEqual(caller_source.count("canEdit: viewportPolicy.canEdit"), 1)
+            shorthand = caller_source.replace("  const {boundary, data, recovering, editingDisabled}",
+                "  const canEdit = viewportPolicy.canEdit;\n  const {boundary, data, recovering, editingDisabled}", 1)
+            caller.write_text(shorthand.replace("canEdit: viewportPolicy.canEdit", "canEdit", 1))
+            self.assertEqual(self.source_graph(root, boundary=True)["errors"], [])
+            for broken in (caller_source.replace("canEdit: viewportPolicy.canEdit", "canEdit: true", 1),
+                           shorthand.replace("canEdit: viewportPolicy.canEdit", "canEdit: true", 1),
+                           caller_source.replace("canEdit: viewportPolicy.canEdit", "canEdit: viewportPolicy.canEdit, ...{canEdit: true}", 1)):
+                caller.write_text(broken)
+                result = self.source_graph(root, boundary=True)
+                self.assertNotIn("error", result)
+                self.assertTrue(result["errors"])
+            caller.write_text(caller_source)
             for tag, member, replacement in (("Puck", "onChange", "() => undefined"),
                                               ("Puck", "onAction", "() => undefined"),
                                               ("Puck", "acceptForPublish", "() => null"),
@@ -260,28 +367,34 @@ function IsolatedSession({initialSession, contextRef, viewportPolicy, onDirty, o
                 shutil.copyfile(ROOT / name, target)
             changes = (
                 ("@Puck", "edit: !editingDisabled", "edit: true"),
-                ("editingDisabled", "!viewportPolicy.canEdit || recovering", "!viewportPolicy.canEdit"),
+                ("editingDisabled", None, None),
                 ("@Puck", "onChange={boundary.onChange}", "onChange={onChange}"),
                 ("usePuckDocumentBoundary", "current.canEdit && !recovery", "current.canEdit"),
                 ("assessEditorCandidate", "changed && !canEdit", "false"),
             )
             for owner, before, after in changes:
-                name = self.source_graph(root, owner=owner)["owner"]
+                owned = self.source_graph(root, owner=owner)
+                name = owned["owner"]
                 with self.subTest(path=name, mutation=before):
                     path = root / name
                     content = path.read_text()
-                    self.assertIn(before, content)
-                    path.write_text(content.replace(before, after, 1) + "\n// " + before + "\n")
+                    if owner == "editingDisabled":
+                        initializer = owned["initializer"]
+                        self.assertIsNotNone(initializer["left"])
+                        path.write_text(content[:initializer["start"]] + initializer["left"] + content[initializer["end"]:] + "\n// " + initializer["text"] + "\n")
+                    else:
+                        self.assertIn(before, content)
+                        path.write_text(content.replace(before, after, 1) + "\n// " + before + "\n")
                     result = self.source_graph(root, boundary=True)
                     self.assertNotIn("error", result)
                     self.assertTrue(result["errors"])
                     path.write_text(content)
-            disabled_file = root / self.source_graph(root, owner="editingDisabled")["owner"]
+            disabled_owner = self.source_graph(root, owner="editingDisabled")
+            disabled_file = root / disabled_owner["owner"]
             source = disabled_file.read_text()
-            original_declaration = "const editingDisabled = !viewportPolicy.canEdit || recovering;"
-            self.assertIn(original_declaration, source)
-            disabled_file.write_text(source.replace(original_declaration,
-                "const editingDisabled = false; const shadow = () => { " + original_declaration + " return editingDisabled; }; shadow();", 1))
+            initializer = disabled_owner["initializer"]
+            shadow = "false; const shadow = () => { const editingDisabled = " + initializer["text"] + "; return editingDisabled; }; shadow()"
+            disabled_file.write_text(source[:initializer["start"]] + shadow + source[initializer["end"]:])
             self.assertTrue(self.source_graph(root, boundary=True)["errors"])
             disabled_file.write_text(source)
             facade = root / "resources/js/editor/PuckEditorAdapter.tsx"

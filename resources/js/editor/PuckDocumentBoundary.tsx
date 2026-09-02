@@ -70,7 +70,7 @@ export function usePuckDocumentBoundary(initial: PuckEditorSession, options: Bou
       queueMicrotask(restore);
     };
     const accept = (candidate: PuckEditorData): PageBuilderDocument | null => {
-      if (repairing) return null;
+      if (!mounted || repairing) return null;
       const result = prepared?.data === candidate ? prepared.result : assess(candidate);
       prepared = null;
       if (!result.accepted) { reject(result.message); return null; }
@@ -83,27 +83,29 @@ export function usePuckDocumentBoundary(initial: PuckEditorSession, options: Bou
       }
       return result.document;
     };
+    const connect = (current: EditorApi): void => {
+      if (!mounted) return;
+      if (!api) {
+        // Puck adds an empty zones map before its first onChange. Keep that
+        // equivalent initial representation so history comparison is exact.
+        const normalized = assess(current.appState.data);
+        if (normalized.accepted && !normalized.changed) acceptedData = current.appState.data;
+      }
+      api = current;
+    };
     return {
       currentData: () => acceptedData,
       onChange: (candidate: PuckEditorData): void => { accept(candidate); },
       acceptForPublish: accept,
       onAction: (_action: PuckAction, candidate: EditorState, before: EditorState): void => {
-        if (repairing) return;
+        if (!mounted || repairing) return;
         previousState = before;
         // Selection/hover-only actions cannot change the canonical document.
         prepared = candidate.data === before.data ? null : { data: candidate.data, result: assess(candidate.data) };
       },
-      connect: (current: EditorApi): void => {
-        if (!api) {
-          // Puck adds an empty zones map before its first onChange. Keep that
-          // equivalent initial representation so history comparison is exact.
-          const normalized = assess(current.appState.data);
-          if (normalized.accepted && !normalized.changed) acceptedData = current.appState.data;
-        }
-        api = current;
-      },
+      connect,
       finishRecovery: (): void => {
-        if (!api || !recovery || repairing || api.history.histories === recovery.histories) return;
+        if (!mounted || !api || !recovery || repairing || api.history.histories === recovery.histories) return;
         const recorded = api.history.histories[api.history.index];
         if (!recorded || !sameEditorData(recorded.state.data, recovery.state.data)) return;
         const plan = historyAfterRejectedCommand(recovery.histories, recovery.index, recorded);
@@ -118,12 +120,11 @@ export function usePuckDocumentBoundary(initial: PuckEditorSession, options: Bou
           setRecovering(false);
         } finally { repairing = false; }
       },
-      activate: (): void => { mounted = true; },
-      dispose: (): void => { mounted = false; api = null; },
+      activate: (current: EditorApi): void => { mounted = true; connect(current); },
+      dispose: (): void => { mounted = false; api = null; prepared = null; },
     };
   }, [initial]);
   useEffect(() => {
-    boundary.activate();
     setData(initial.data);
     setMessage(null);
     setRecovering(false);
@@ -134,7 +135,15 @@ export function usePuckDocumentBoundary(initial: PuckEditorSession, options: Bou
 
 export function PuckDocumentBoundary({ boundary }: { boundary: ReturnType<typeof usePuckDocumentBoundary>['boundary'] }): React.ReactElement | null {
   const api = usePuck<Config<EditorComponents, PageDesignProps>>();
+  const currentApi = useRef(api);
+  currentApi.current = api;
   boundary.connect(api);
+  useEffect(() => {
+    // StrictMode replays cleanup/setup without another render. Reconnect the
+    // current public API in the same setup that reactivates this boundary.
+    boundary.activate(currentApi.current);
+    return boundary.dispose;
+  }, [boundary]);
   useEffect(() => { boundary.finishRecovery(); }, [boundary, api.history.histories, api.history.index]);
   return null;
 }

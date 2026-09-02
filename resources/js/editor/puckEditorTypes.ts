@@ -1,6 +1,6 @@
 import type { Data } from '@puckeditor/core';
 import type { ExternalEditorComponents } from '../blocks/externalEditorData';
-import type { BlockVisibility } from '../documents/types';
+import type { BlockVisibility, PageBuilderDocument } from '../documents/types';
 import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, ElementAppearanceMap } from '../documents/blockPresentation';
 import type { CtaBlockProps, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/builtinBlockContracts';
 import type { BlockContainerEditorProps } from './blockAppearance';
@@ -91,3 +91,13 @@ export type EditorComponents = {
 } & ExternalEditorComponents;
 
 export type PuckEditorData = Data<EditorComponents, PageDesignProps>;
+
+export interface PuckEditorAdapterProps {
+  document: PageBuilderDocument;
+  revisionKey: number;
+  disabled?: boolean;
+  iframeEnabled?: boolean;
+  onDirty?: () => void;
+  onChange: (document: PageBuilderDocument) => void;
+  onPublish: (document: PageBuilderDocument) => void | Promise<void>;
+}

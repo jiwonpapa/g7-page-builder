@@ -1,3 +1,5 @@
+import { externalEditorComponents } from '../blocks/runtimeRegistry';
+import { applyEditorContentPolicy, type EditorFieldContract } from './editorViewportPolicy';
 import React, { useEffect, useState } from 'react';
 import type { Config } from '@puckeditor/core';
 import type { ContactEditorProps, CtaEditorProps, EditorComponents, HeroEditorProps } from './puckEditorTypes';
@@ -520,3 +522,27 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
   },
 };
 
+
+export function createRuntimePuckConfig(structureEditingEnabled: boolean, editingDisabled: boolean): Config<EditorComponents, PageDesignProps> {
+    const baseConfig = {
+      ...pageBuilderPuckConfig,
+      categories: {
+        ...pageBuilderPuckConfig.categories,
+        layout: {
+          ...pageBuilderPuckConfig.categories?.layout,
+          visible: structureEditingEnabled,
+        },
+      },
+      components: {
+        ...pageBuilderPuckConfig.components,
+        ...externalEditorComponents(),
+      },
+    } as Config<EditorComponents, PageDesignProps>;
+    if (!editingDisabled) return baseConfig;
+    const components = Object.fromEntries(Object.entries(baseConfig.components).map(([type, candidate]) => {
+      const component = candidate as typeof candidate & { fields?: Record<string, EditorFieldContract> };
+      if (!component.fields) return [type, component];
+      return [type, { ...component, fields: applyEditorContentPolicy(component.fields, false) }];
+    })) as Config<EditorComponents, PageDesignProps>['components'];
+    return { ...baseConfig, components };
+}

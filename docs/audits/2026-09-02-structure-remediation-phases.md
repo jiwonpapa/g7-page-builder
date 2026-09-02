@@ -35,6 +35,47 @@
 
 크기 대상은 `documents/types.ts`, `PuckEditorAdapter.tsx`, `catalogBlocks.tsx`, `richTextEditing.tsx`, `PageBuilderManager.tsx`, `pageEffects.ts`, `HtmlDocumentCompiler.php`, `page-builder-editor.css`다. TS의 줄 수와 AST 크기가 동시에 초과한 경우 진단이 둘이므로 파일 수와 구분한다.
 
+## 순차 실행 단위
+
+### 1차 — 타입·문서 경계
+
+1. **1-A: 외부 입력 검증.** `blockAppearance.ts`와 `canvasContextState.ts`의 2개 우회 단언을 검증 후 명시 타입 구성으로 교체한다. 정상 구형 외형·요소 스타일·기본값 생략·입력 불변을 보존한다.
+2. **1-B: Puck 기본 데이터.** layout hook의 제네릭과 선택 union, 열 조작 dispatch, 기본 slot props, 문서 envelope 보강, 설정 field 조합의 6개 우회 단언을 정리한다. 잘못된 타입의 값을 Puck 데이터로 포장하지 않는다.
+3. **1-C: 외부 Block Pack 데이터.** 등록된 외부 컴포넌트와 기본 컴포넌트의 타입 경계를 명시해 codec의 남은 단언을 해소한다. 동적 외부 컴포넌트를 기본 블록 타입으로 거짓 선언하지 않고, 기본 블록 판별의 정밀도도 유지한다. 외부 원본 props와 Puck 인스턴스/편집 metadata는 별도 payload 경계로 분리하고 기본 블록 공통 보강·삭제 로직을 통과시키지 않는다. 공개 등록 이름과 canonical JSON은 유지한다. 외부 ComponentConfig의 defaultProps/fields/render/resolver 연결을 정의하고 충돌 키를 포함한 전체 props 왕복·신규 삽입·복제·Undo·필드 수정으로 확인한다. 단순 접두사 변경이나 삭제 목록 확대만으로 완료하지 않는다.
+4. **1-D: 도메인·응답 계약.** 문서/블록/스타일 타입의 소유권을 나누고 API 응답 DTO를 API 쪽으로 이동한다. 소비 파일 수가 24개를 넘으면 책임 묶음별로 나누며 도메인→API 재수출을 임시 호환책으로 사용하지 않는다.
+
+1-A에는 `blockAppearance.ts`가 기존 프리셋 비교를 선택하던 하네스 연결의 별도 선행 수정이 필요하다. 이 파일은 합성 테마/구조 및 실제 글자 편집 검사로 연결하고, 아직 수정하지 않은 카탈로그·반응형 렌더러의 검사 정책을 한꺼번에 변경하지 않는다.
+
+1-D는 현재 소비 관계에 따라 다음 세 단위로 실행한다. 경로·타입 이름의 변경만으로 원본 JSON 계약이 바뀌지 않으며, 런타임 의미를 바꾸는 수정은 별도로 기록한다.
+
+- **1-D1, 24파일:** API DTO 24개·184줄을 `api/resources.ts`로 옮기고 관련 소비자 21파일을 함께 변경한다. `types.ts`는 약 726줄로 내려가므로 크기 예외를 제거한다. 이미 상한인 Manager에는 별도 import를 덧붙이지 않고 API 클라이언트의 명시적 type export와 기존 API import를 이용한다. 정의 소유자는 `api/resources.ts`다.
+- **1-D2, 13파일:** 기본 블록 식별자·Props/Item·구체 타입·기존 판별 함수를 `documents/builtinBlockContracts.ts`로 옮기고 실제 소비자를 바꾼다. API DTO의 `InquiryFormKind` 참조도 새 소유자로 연결한다.
+- **1-D3, 19파일:** 공통 외형/동작/반응형을 `documents/blockPresentation.ts`, 구조 설정을 `documents/layoutContracts.ts`로 분리한다. `types.ts`는 범용 노드와 원본 Page/Site Part 문서의 실선언을 남긴다.
+
+### 2·3차 — UI와 공개 runtime
+
+2차는 Puck 설정·블록 렌더, 연결 상태·명령, 선택 도구·대화상자, 리치텍스트 모델·입력·도구 순으로 분리한다. 안정적인 React 컴포넌트/slot 함수 식별자와 히스토리가 유지돼야 한다.
+
+3차는 관리자 목록·리비전·메타데이터·스토어, 카탈로그 공통 Frame, 카탈로그 codec/필드/렌더, 공개 데이터/필터, 공개 효과 초기화·해제 순으로 분리한다. 카탈로그 Frame은 같은 선택·외형·motion 연결의 중복을 줄이되 기본 블록의 문구·상품성 평가는 하지 않는다.
+
+### 4차 — PHP 컴파일러
+
+1. **4-A: 공통 검증·동작.** 속성 판별/오류 메시지의 `BlockPropertyReader`, 반응형/motion/visibility의 `BlockRuntimeCompiler`, 기존 타입 ID 소유자를 분리한다. 기존 compiler 한 파일의 87% coverage 하한을 본체+추출 객체의 같은 검사 범위로 보존하고 누락/미달 시 실패하게 한다. 파일 분리로 검증 하한을 낮추지 않는다.
+2. **4-B: 기본 요소 렌더러.** Heading/RichText/Image/Buttons/ImageText/IconList 6종을 기존 renderer 계약으로 분리한다. 기대 출력 해시는 변경하지 않는다.
+3. **4-C 이후: 나머지 렌더러.** 관련 책임별 6~10종씩, 각 단위 정확 24파일 이내로 나눈다. renderer가 본체를 역참조하는 wrapper/trait 추출은 사용하지 않는다.
+4. **4-마감: 문서 조율.** 재귀 레이아웃과 진단 수집을 정리해 본체 크기 예외를 실제로 제거한다. 타입 ID·등록 우선권·검증 순서·escaping·compiler 버전과 출력 형식을 보존한다.
+
+### 5차 — 스타일·테마
+
+1. **5-A: 검사 계약.** `check-editor-layout-parity.mjs`의 `!important` 문자열 강제를 실제 계산 결과 검사로 전환한다. 기본 제목 700, 사용자 regular 400, 기존 Features 행간 기대값을 유지하고 충돌하는 host CSS를 합성 fixture에 넣는다.
+2. **5-B: 편집 UI 토큰.** 기존 core 의미 토큰을 editor/manager/Site Part 컨트롤에서 재사용한다. 경고·오류·선택·그림자는 전경·배경·테두리를 함께 정의한다.
+3. **5-C: 페이지 표면 토큰.** editor/public의 배경·글자·보조글자·테두리를 기존 theme 계약으로 통일한다. light/dark/system, 카드 중첩, 명시 색, iframe을 함께 검증한다.
+4. **5-D: Site Shell.** Header/Footer/메뉴의 중복 기본값을 자체 테마 범위로 통일한다. 페이지 root 밖 출력·투명 헤더·불투명 메뉴·숨김·포커스 복귀·drawer 위치를 보존한다.
+5. **5-E: 글자 우선순위.** 기본값→블록 외형→사용자 설정→Puck 입력 상속 순서를 명시하고 반복 selector와 대체 가능한 important를 제거한다. 접근성 숨김·reduced-motion 등 강제 선언은 일괄 삭제하지 않는다.
+6. **5-F: 책임별 CSS 분리.** 토큰과 우선순위 정리가 끝난 UI chrome/라이브러리/캔버스/블록 외형/사용자 글자 규칙부터 분리한다. 새 경로에 정확한 합성 코드 검사를 연결하고 전체 카탈로그 검사로 확대하지 않는다. 각 CSS 파일은 1,000줄 이하로 유지한다.
+
+남겨야 하는 기존 vendor·접근성 예외는 근거와 검증을 기록하며, 제거하지 않은 항목을 해소 건수에 포함하지 않는다. `@layer` 추가나 Stylelint 통과만으로 cascade 동등성을 주장하지 않는다.
+
 ## 운영·인프라 경계
 
 인증된 G7 runtime이 없는 hosted CI는 실제 브라우저 통과로 인정하지 않는다. 차수별 제품 검증은 소유권을 확보한 Local runtime에서 수행한다. hosted CI용 runtime/인증과 최초 Site Part 발행 결과 이행은 별도 환경 결정·실행 증거가 필요하며, 로컬 코드 정비만으로 해결됐다고 보고하지 않는다.
@@ -43,7 +84,11 @@
 
 | 단위 | 상태 | 범위·증거 |
 | --- | --- | --- |
-| 계획 | 작성 | 기준·순서·완료 조건 정의. 구현 완료가 아님 |
-| 1차 | 준비 | 실제 입력 경계와 소비 파일을 확인해 정확 소유 범위를 확정 |
+| 계획 | 작성 | 기준·순서·완료 조건 및 소유 범위별 실행 단위 정의 |
+| 1-A | 완료 | 우회 단언 9→7. 입력 준비 검사 보완 후 실제 브라우저 8개 통과. 검증 SHA `a2836a4` |
+| 1-B | 완료 | 우회 단언 7→1, 정적 부채 1,077→1,071. 실제 브라우저 8개 통과. 검증 SHA `b4fb157` |
+| 1-C | 다음 실행 | 외부 payload와 편집 metadata 분리, ComponentConfig adapter와 전체 props 보존 |
+| 1-D | 예정 | 도메인/API 계약 분리 3단위 |
+| 2~6차 | 예정 | 위 순서와 완료 조건에 따라 실행 |
 
-완료된 단위의 제출 SHA, 통합 SHA, 선택 검사, 부채 전후 수치를 이 문서 또는 연결된 차수 보고서에 기록한다. 다음 차수의 계획을 작성했다는 이유로 해당 차수를 완료 처리하지 않는다.
+[1차 구현·실패 보완·검증 기록](2026-09-02-structure-phase-1.md)에 제출/통합 SHA, 실제 검사, 부채 전후 수치를 기록한다. 다음 차수의 계획을 작성했다는 이유로 해당 차수를 완료 처리하지 않는다.

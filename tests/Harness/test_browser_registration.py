@@ -11,7 +11,7 @@ from tools.g7pb.model import Gate, Plan
 from tools.g7pb.runner import execute
 
 ROOT = Path(__file__).resolve().parents[2]
-PC_ONLY = ("editorInteractionQuality", "editorPerformance", "editorStructureTheme", "pageBuilderLifecycle", "sitePartLifecycle")
+PC_ONLY = ("editorInteractionQuality", "editorPerformance", "editorStructureTheme", "editorDocumentBoundary", "pageBuilderLifecycle", "sitePartLifecycle", "globalSiteShellRoutes")
 
 
 def registered_tests(report):
@@ -63,6 +63,31 @@ class BrowserRegistrationTests(unittest.TestCase):
         self.assertEqual(len(actual), len(titles))
         self.assertEqual({title for _, title, _ in actual}, titles)
         self.assertEqual({project for _, _, project in actual}, {"desktop"})
+
+    def test_only_skip_and_missing_required_case_cannot_report_success(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-browser-verdict-") as directory:
+            root = Path(directory)
+            (root / "node_modules").symlink_to(ROOT / "node_modules", target_is_directory=True)
+            (root / "playwright.config.ts").write_text((ROOT / "playwright.config.ts").read_text())
+            specs = root / "tests/E2E"
+            specs.mkdir(parents=True)
+            variants = {
+                "only": "test('failure',()=>{expect(1).toBe(2)}); test.only('required',()=>{});",
+                "skip": "test.skip('required',()=>{});",
+                "missing": "test('other',()=>{});",
+            }
+            for name, source in variants.items():
+                spec = "tests/E2E/" + name + ".spec.ts"
+                (root / spec).write_text("import {test,expect} from '@playwright/test';\n" + source)
+                gate = Gate("browser:" + spec, (str(ROOT / "node_modules/.bin/playwright"), "test", spec, "--project=desktop", "--retries=0"),
+                            (spec, "playwright.config.ts"), "isolated verdict fixture", runtime=True,
+                            browser_expectations=(("desktop", "required"),))
+                with patch.dict(os.environ, {"CI": "true", "G7PB_BASE_URL": "http://never-contacted.invalid"}):
+                    code, records = execute(root, Plan([], [gate]), receipts=root / "receipts",
+                        executor=lambda argv, **kwargs: subprocess.run(argv, **kwargs, capture_output=True, text=True))
+                self.assertNotEqual(code, 0, name)
+                self.assertEqual(records[0]["status"], "failed", name)
+                self.assertFalse(list((root / "receipts").glob("*.json")))
 
     def test_separate_commands_and_failed_retries_keep_real_playwright_artifacts(self):
         # These fixtures use only Node files/attachments, never page/browser/G7.

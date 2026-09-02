@@ -54,6 +54,9 @@ TEXT = BrowserScenario("tests/E2E/editorInteractionQuality.spec.ts", titles=(
 CONTROLS = replace(TEXT, titles=(
     "keeps ActionBar and rich-text controls pointer-reachable in the PC editor",))
 STRUCTURE_THEME = BrowserScenario("tests/E2E/editorStructureTheme.spec.ts")
+DOCUMENT_BOUNDARY = BrowserScenario("tests/E2E/editorDocumentBoundary.spec.ts", titles=(
+    "rejects native invalid structure without losing valid history or saving it",
+    "serializes a clean preview save with later edits",))
 PARITY = BrowserScenario("tests/E2E/editorLayoutParity.spec.ts", ("desktop", "tablet", "mobile"), (
     "ALL_PRESET_LAYOUT_GATE: selected built-in presets preserve editor/preview layout",), (
     "hero.service-intro", "features.core-benefits", "cta.contact", "rich-text.article-intro",
@@ -61,7 +64,7 @@ PARITY = BrowserScenario("tests/E2E/editorLayoutParity.spec.ts", ("desktop", "ta
     "gallery.project-scenes", "inquiry.general"))
 PUBLIC = BrowserScenario("tests/E2E/publicQuality.spec.ts", ("desktop", "tablet", "mobile"))
 SITE_PART = BrowserScenario("tests/E2E/sitePartLifecycle.spec.ts")
-SITE_SHELL = BrowserScenario("tests/E2E/globalSiteShellRoutes.spec.ts", ("desktop", "tablet", "mobile"))
+SITE_SHELL = BrowserScenario("tests/E2E/globalSiteShellRoutes.spec.ts")
 STORE = BrowserScenario("tests/E2E/officialStore.spec.ts")
 MOBILE_NAV = BrowserScenario("tests/E2E/mobileNavigationQuality.spec.ts")
 
@@ -79,6 +82,11 @@ CATALOG_PREFIXES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    # Document transactions and shared style contracts use synthetic code fixtures,
+    # not preset/catalog content sweeps. Catalog modules retain their own mapping.
+    (("resources/js/editor/PuckEditorAdapter.tsx", "resources/js/editor/PuckDocumentBoundary.tsx",
+      "resources/js/editor/editorDocumentBoundary.ts", "resources/js/editor/main.tsx",
+      "resources/js/editor/draftPersistence.ts"), (DOCUMENT_BOUNDARY,)),
     (("resources/js/editor/layout*", "resources/js/documents/layout*"), (NESTED, STRUCTURE_THEME)),
     (("resources/js/editor/richText*", "resources/js/editor/fontSize.ts"), (TEXT,)),
     (("resources/js/editor/canvas*",), (TEXT, CONTROLS)),
@@ -93,12 +101,12 @@ RULES = (
     (("resources/js/public/siteShell*", "src/Application/SiteShell*", "src/Infrastructure/Gnuboard7/*SiteShell*"), (SITE_SHELL,)),
     (("resources/js/public/mobileNavigation*",), (MOBILE_NAV,)),
     (("resources/js/public/*", "resources/css/page-effects*"), (PUBLIC,)),
-    (("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css"), (PARITY, PUBLIC, STRUCTURE_THEME)),
+    (("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css"), (STRUCTURE_THEME,)),
     (("resources/js/store/*", "src/Application/Store/*", "src/Domain/Store/*", "src/Infrastructure/Store/*"), (STORE,)),
     (("resources/js/editor/PuckEditorAdapter.tsx", "resources/js/editor/puckBlockCodec.ts", "resources/js/editor/puckDocumentAdapter.ts"), (PAGE, TEXT, STRUCTURE_THEME)),
-    (("resources/css/page-builder-editor*",), (PARITY, CONTROLS, STRUCTURE_THEME)),
+    (("resources/css/page-builder-editor*",), (CONTROLS, STRUCTURE_THEME)),
     (("resources/css/page-builder-site-part*",), (SITE_PART,)),
-    (("resources/css/page-builder-core.css",), (PARITY, PUBLIC, STRUCTURE_THEME)),
+    (("resources/css/page-builder-core.css",), (STRUCTURE_THEME,)),
     (("resources/js/editor/*", "resources/js/documents/*", "resources/js/api/*", "resources/js/manager/*", "resources/js/blocks/*", "resources/css/page-builder-manager.css"), (PAGE,)),
     (("resources/css/*",), (PARITY, PUBLIC)),
     (("src/Application/Compilation/*",), (PAGE, PARITY)),

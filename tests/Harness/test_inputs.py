@@ -33,11 +33,18 @@ class InputTests(unittest.TestCase):
         self.assertEqual(source_inputs(self.root, "test.ts").files, ("a.ts", "test.ts"))
 
     def test_unknown_dynamic_io_or_alias_disables_only_receipt_reuse(self):
-        for source in ["import(name)", "readFileSync(path)", "import a from '@/a';"]:
+        for source in ["import(name)", "require(name)", "readFileSync(path)", "import a from '@/a';",
+                       "import {readFileSync as read} from 'node:fs'; read(path);",
+                       "import {readFile as load} from 'fs/promises'; await load(path);"]:
             self.write("test.ts", source)
             graph = source_inputs(self.root, "test.ts")
             self.assertFalse(graph.reusable)
             self.assertEqual(graph.files, ("test.ts",))
+
+    def test_type_graph_does_not_execute_runtime_fixture_reads(self):
+        self.write("test.ts", "import {readFileSync as read} from 'node:fs'; read(path);")
+        self.assertTrue(source_inputs(self.root, "test.ts", runtime=False).reusable)
+        self.assertFalse(source_inputs(self.root, "test.ts").reusable)
 
     def test_missing_import_is_recorded_without_broad_fallback(self):
         self.write("test.ts", "import './deleted';")
@@ -61,6 +68,14 @@ class InputTests(unittest.TestCase):
     def test_php_dynamic_data_never_reuses_unproven_success(self):
         self.write("test.php", "<?php $data = file_get_contents($path);")
         self.assertFalse(source_inputs(self.root, "test.php").reusable)
+
+    def test_explicit_migration_glob_records_each_input_but_never_reuses_dynamic_load(self):
+        self.write("tests/Integration/Gnuboard7/ExampleTest.php", "<?php foreach (glob(dirname(__DIR__, 3).'/database/migrations/*.php') ?: [] as $file) { require $file; }")
+        self.write("database/migrations/001_first.php", "<?php return new stdClass;")
+        self.write("database/migrations/002_second.php", "<?php return new stdClass;")
+        graph = source_inputs(self.root, "tests/Integration/Gnuboard7/ExampleTest.php")
+        self.assertFalse(graph.reusable)
+        self.assertTrue({"database/migrations/001_first.php", "database/migrations/002_second.php"} <= set(graph.files))
 
     def test_php_same_namespace_dependency_is_transitive(self):
         self.write("composer.json", json.dumps({"autoload": {"psr-4": {"Project\\": "src/"}}}))

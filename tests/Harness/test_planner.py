@@ -42,6 +42,29 @@ class PlannerTests(unittest.TestCase):
         self.assertTrue(plan.unresolved)
         self.assertNotIn("full-product", [g.name for g in plan.gates])
 
+    def test_migration_selects_real_loading_integration_test_and_syntax_without_full(self):
+        migration = "database/migrations/001_fixture.php"
+        test = "tests/Integration/Gnuboard7/FixtureTest.php"
+        self.write(migration, "<?php return new stdClass;")
+        self.write(test, "<?php foreach(glob(dirname(__DIR__, 3).'/database/migrations/*.php') ?: [] as $file) require $file;")
+        for phase in ("submission", "integration"):
+            plan = build_plan(self.root, [migration], phase=phase)
+            self.assertFalse(plan.unresolved)
+            self.assertFalse(plan.full)
+            self.assertEqual({g.name for g in plan.gates}, {"syntax:" + migration, "php:" + test})
+            gate = next(g for g in plan.gates if g.name == "php:" + test)
+            self.assertIn(migration, gate.inputs)
+            self.assertEqual(gate.deferred, phase == "submission")
+            self.assertTrue(gate.runtime)
+            self.assertFalse(gate.reusable)
+            self.assertFalse(plan.requirements["browser"])
+
+    def test_unknown_migration_consumer_is_an_error_not_full(self):
+        self.write("database/migrations/001_fixture.php", "<?php return new stdClass;")
+        plan = build_plan(self.root, ["database/migrations/001_fixture.php"])
+        self.assertTrue(plan.unresolved)
+        self.assertFalse(plan.full)
+
     def test_php_without_related_tests_does_not_pass(self):
         self.write("src/Domain/Example.php", "<?php class Example {}")
         plan = build_plan(self.root, ["src/Domain/Example.php"])
@@ -111,7 +134,8 @@ class PlannerTests(unittest.TestCase):
 
     def test_harness_only_browser_change_collects_only_that_spec(self):
         plan = build_plan(self.root, ["tests/E2E/a.spec.ts"])
-        self.assertEqual(len(plan.gates), 1)
+        self.assertEqual(len(plan.gates), 2)
+        self.assertEqual(plan.gates[1].name, "typecheck")
         self.assertEqual(plan.gates[0].argv, ("npx", "--no-install", "playwright", "test", "tests/E2E/a.spec.ts", "--list", "--reporter=line"))
         self.assertFalse(plan.gates[0].runtime)
         self.assertFalse(plan.requirements["browser"])
@@ -220,7 +244,7 @@ class PlannerTests(unittest.TestCase):
         plan = build_plan(self.root, ["playwright.config.ts"])
         self.assertFalse(plan.unresolved)
         self.assertFalse(plan.requirements["browser"])
-        self.assertEqual([g.name for g in plan.gates], ["python:tests/Harness/test_browser_registration.py"])
+        self.assertEqual([g.name for g in plan.gates], ["python:tests/Harness/test_browser_registration.py", "typecheck"])
         self.assertTrue(plan.requirements["node"])
 
     def test_only_changed_content_policy_uses_candidate_subject_registry(self):

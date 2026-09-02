@@ -19,8 +19,17 @@ class RunnerTests(unittest.TestCase):
         self.receipts = self.root / "receipts"
         self.calls = []
 
+    def write_browser_result(self, environment):
+        if "PLAYWRIGHT_JSON_OUTPUT_FILE" not in environment:
+            return
+        path = self.root / environment["PLAYWRIGHT_JSON_OUTPUT_FILE"]
+        path.write_text(json.dumps({"errors": [], "stats": {"expected": 1, "skipped": 0, "unexpected": 0, "flaky": 0},
+            "suites": [{"specs": [{"title": "fixture", "ok": True, "tests": [{"projectName": "desktop",
+                "expectedStatus": "passed", "status": "expected", "results": [{"status": "passed"}]}]}]}]}))
+
     def executor(self, argv, **kwargs):
         self.calls.append(argv)
+        self.write_browser_result(kwargs["env"])
         return subprocess.CompletedProcess(argv, 0)
 
     def run_plan(self, gates, executor=None):
@@ -120,8 +129,10 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(self.calls[0], list(assets.argv))
         self.assertEqual(self.calls[1][:2], ["docker", "compose"])
         evidence = records[1]["evidence"]
-        self.assertEqual(self.calls[1][-10:], ["env", "-u", "G7PB_PAGE_KIT_IDS", "G7PB_PRESET_IDS=hero.service-intro",
-                         "PLAYWRIGHT_HTML_OUTPUT_DIR=" + evidence["report"], "npx", "playwright", "test", "--output", evidence["results"]])
+        self.assertIn("G7PB_PRESET_IDS=hero.service-intro", self.calls[1])
+        self.assertIn("PLAYWRIGHT_JSON_OUTPUT_FILE=" + evidence["json"], self.calls[1])
+        self.assertIn("--forbid-only", self.calls[1])
+        self.assertEqual(self.calls[1][-2:], ["--output", evidence["results"]])
         self.assertFalse(Path(evidence["report"]).is_absolute())
         self.assertTrue(evidence["directory"].startswith("output/playwright/gates/owner/"))
         self.assertEqual([r["gate"] for r in records], [assets.name, browser.name])
@@ -165,6 +176,7 @@ class RunnerTests(unittest.TestCase):
             output = self.root / argv[-1]
             output.mkdir(parents=True)
             (output / "failure.txt").write_text("first failure" if failing else "retry result")
+            self.write_browser_result(kwargs["env"])
             return subprocess.CompletedProcess(argv, int(failing))
         with patch.dict("os.environ", {"CI": "true", "G7PB_BASE_URL": "http://fixture.invalid",
                                        "PLAYWRIGHT_HTML_OUTPUT_DIR": "/foreign/report"}):
@@ -253,6 +265,7 @@ class RunnerTests(unittest.TestCase):
                 statuses.append(build(runtime, True)["build"])
             else:
                 self.assertEqual((self.root / BUILD_OUTPUTS[0]).read_text(), source.read_text())
+                self.write_browser_result(kwargs["env"])
             return subprocess.CompletedProcess(argv, 0)
         gates = [replace(g, inputs=("resources/js/app.ts",)) for g in self.runtime_pair()]
         with patch.dict("os.environ", {"CI": ""}), patch("tools.g7pb.runner.subprocess.run"):

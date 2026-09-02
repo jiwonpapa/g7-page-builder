@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 from .model import Gate, Plan
 from .inputs import source_inputs
+from .typecheck_inputs import typecheck_inputs
 from .browser_requirements import BROWSER_ENVIRONMENT, scenarios_for
 from .environment import build_inputs, sync_plan
 
@@ -115,16 +116,16 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     controller_root = Path(__file__).resolve().parents[2]
     plan = Plan(sorted(set(paths)), full=full, phase=phase)
     gates = {}
-    def add(name, argv, inputs, reason, requires=(), runtime=False, reusable=True, env=(), execution="runtime", depends_on=()):
+    def add(name, argv, inputs, reason, requires=(), runtime=False, reusable=True, env=(), execution="runtime", depends_on=(), browser_expectations=()):
         prior = gates.get(name)
         inputs = set(inputs) | (set(prior.inputs) if prior else set())
         gates[name] = Gate(name, tuple(argv), tuple(sorted(inputs)), reason, runtime, tuple(env), tuple(requires), reusable,
-                           runtime and phase == "submission", execution, tuple(depends_on))
+                           runtime and phase == "submission", execution, tuple(depends_on), tuple(browser_expectations))
     def python_test(path, cause=""):
         if not (root / path).is_file():
             plan.unresolved.append(f"Missing infrastructure test: {path}")
             return
-        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py"} else ()
+        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py"} else ()
         environment, controller_inputs = (), []
         if Path(path).name == "test_editor_contracts.py":
             verified = checker_controller_root(root, controller_root)
@@ -151,6 +152,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             "Architecture contract regression", ("node", "php"))
     py_tests = sorted(p.relative_to(root).as_posix() for p in (root / "tests/Harness").glob("test_*.py"))
     ts_sources, ts_tests, php_sources, php_tests, css, content = [], [], [], [], [], []
+    migrations = []
     mapping = {
         "Makefile": ("planner", "runner"), "scripts/quality-scoped.sh": ("planner", "runner"),
         "scripts/coord-harness.sh": ("coord",) if (root / "tests/Harness/test_coord.py").exists() else ("planner",),
@@ -214,6 +216,10 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             ts_sources.append(path)
         elif path.startswith("src/") and path.endswith(".php"):
             php_sources.append(path)
+        elif path.startswith("database/migrations/") and path.endswith(".php"):
+            if not full:
+                migrations.append(path)
+            add("syntax:" + path, ["php", "-l", path], [path], "Changed migration syntax", ("php",))
         elif path.endswith(".css"):
             css.append(path)
             content.append(path)
@@ -252,15 +258,15 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("syntax:" + path, ["node", "--check", path], [path], "Changed JavaScript syntax", ("node",))
     try:
         ts_tests = related_tests(root, ts_sources, ts_tests, "tests/Unit", (".test.ts", ".test.tsx"))
-        php_tests = related_tests(root, php_sources, php_tests, "tests", ("Test.php",))
+        php_tests = related_tests(root, [*php_sources, *migrations], php_tests, "tests", ("Test.php",))
     except ValueError as error:
         plan.unresolved.append(str(error))
     for test in ts_tests:
         graph = source_inputs(root, test)
         add("unit:" + test, ["npx", "--no-install", "vitest", "run", test], [*graph.files, *ts_sources, "package-lock.json", "vite.config.ts", "tsconfig.json"], "Related unit behavior", ("node",), reusable=graph.reusable)
-    if ts_sources:
-        inputs = [p.relative_to(root).as_posix() for p in (root / "resources/js").rglob("*") if p.suffix in {".ts", ".tsx"}]
-        add("typecheck", ["npm", "run", "typecheck"], [*inputs, "tsconfig.json", "package-lock.json"], "TypeScript type graph", ("node",))
+    if ts_sources or ts_tests or any(p.startswith("tests/E2E/") and p.endswith((".ts", ".tsx")) or p == "playwright.config.ts" for p in plan.paths):
+        graph = typecheck_inputs(root)
+        add("typecheck", ["npm", "run", "typecheck"], graph.files, "TypeScript command and configured type graph", ("node",), reusable=graph.reusable)
     design_targets = [p for p in plan.paths if p in NORMATIVE_DOCS or p in DESIGN_INPUTS
                       or (p.startswith(("resources/js/", "resources/css/", "src/")) and p.endswith((".ts", ".tsx", ".js", ".php", ".css")))]
     if design_targets:
@@ -311,7 +317,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             name = "browser:" + scenario.spec
             # A changed spec requests all its tests. Source mapping must not
             # overwrite that explicit scope with a narrower title/preset filter.
+            expectations = tuple((project, title) for project in scenario.projects for title in scenario.titles)
             if name in gates:
+                gates[name] = replace(gates[name], browser_expectations=tuple(sorted(set(gates[name].browser_expectations + expectations))))
                 continue
             try:
                 environment = scenario.environment(root)
@@ -320,7 +328,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 continue
             add(name, scenario.arguments(),
                 [*plan.paths, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
-                "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment)
+                "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment, browser_expectations=expectations)
     artifact_names = set()
     if content:
         try:

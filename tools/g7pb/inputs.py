@@ -59,7 +59,7 @@ def php_references(source):
     return references | imports, imports, complete
 
 
-def source_inputs(root: Path, entry: str) -> Inputs:
+def source_inputs(root: Path, entry: str, *, runtime: bool = True) -> Inputs:
     root = root.resolve()
     files: set[str] = set()
     complete = True
@@ -89,6 +89,23 @@ def source_inputs(root: Path, entry: str) -> Inputs:
             return
         source = path.read_text()
         if path.suffix == ".php":
+            # Resolve the fixture's explicit migration glob without executing PHP.
+            # Its dynamic load remains non-reusable; these files select the test.
+            pattern = r"glob\s*\(\s*dirname\s*\(\s*__DIR__\s*,\s*([1-9][0-9]*)\s*\)\s*\.\s*['\"](/[^'\"]+)['\"]\s*\)"
+            for match in re.finditer(pattern, source):
+                directory = path.parent
+                for _ in range(min(int(match.group(1)), 100)):
+                    directory = directory.parent
+                if int(match.group(1)) > 100 or not directory.resolve().is_relative_to(root):
+                    complete = False
+                    continue
+                selected = match.group(2).lstrip("/")
+                if ".." in Path(selected).parts:
+                    complete = False
+                    continue
+                for dependency in directory.glob(selected):
+                    if dependency.is_file():
+                        visit(dependency)
             references, imports, understood = php_references(source)
             complete = complete and understood
             for symbol in references:
@@ -102,7 +119,10 @@ def source_inputs(root: Path, entry: str) -> Inputs:
                             visit(candidate)
                         break
             return
-        if re.search(r"\b(?:readFileSync|readFile|readdirSync|globSync)\s*\(|\bimport\s*\(\s*[^'\"\s]", source):
+        if runtime and (re.search(r"\b(?:readFileSync|readFile|readdirSync|globSync)\s*\(|\b(?:import|require)\s*\(\s*[^'\"\s]", source)
+                        or re.search(r"['\"](?:node:)?fs(?:/promises)?['\"]", source)):
+            # A filesystem import may be aliased/destructured before invocation.
+            # Type checking reads syntax/imports, not the program's runtime I/O.
             complete = False
         imports = re.findall(r"\b(?:from|import)\s*['\"]([^'\"]+)['\"]|\b(?:import|require)\s*\(\s*['\"]([^'\"]+)['\"]", source)
         for pair in imports:

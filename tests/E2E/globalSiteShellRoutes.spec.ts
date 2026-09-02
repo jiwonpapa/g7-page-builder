@@ -54,8 +54,7 @@ async function publishCurrent(api: APIRequestContext, kind: SitePartKind, locale
   return payload.data;
 }
 
-test('applies one fail-safe Page Builder Header and Footer across representative G7 user routes', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'The route matrix is structural and runs once on desktop.');
+test('applies one fail-safe Page Builder Header and Footer across representative G7 user routes', async ({ page }) => {
   const initialResponse = await page.goto('/');
   expect(initialResponse?.ok()).toBe(true);
   const locale = ((await page.locator('html').getAttribute('lang')) || 'ko').split('-')[0];

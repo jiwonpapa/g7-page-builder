@@ -602,7 +602,9 @@ describe('Puck PageBuilderDocument adapter', () => {
     };
     const session = canonicalToPuck(animated);
 
-    expect(session.data.content[0].props.motion).toEqual(animated.blocks[0].motion);
+    const block = session.data.content[0];
+    if (block.type !== 'Hero') throw new Error('The motion fixture must remain a Hero');
+    expect(block.props.motion).toEqual(animated.blocks[0].motion);
     expect(puckToCanonical(session.data, session.context)).toEqual(animated);
   });
 

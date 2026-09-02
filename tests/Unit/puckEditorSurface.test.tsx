@@ -273,7 +273,7 @@ describe('Puck editor surface contract', () => {
     function Probe(): React.ReactElement { current.state = usePuck(); return <></>; }
     const data = canonicalToPuck(structuredClone(layoutFixture) as PageBuilderDocument).data;
     const selector = { index: 0, zone: `${data.content[0].props.id}:content` };
-    const config = { ...pageBuilderPuckConfig, components: { ...pageBuilderPuckConfig.components, ...layoutCatalogComponentConfigs } };
+    const config: Config<EditorComponents, PageDesignProps> = { ...pageBuilderPuckConfig, components: { ...pageBuilderPuckConfig.components, ...layoutCatalogComponentConfigs } };
     await act(async () => {
       root.render(<Puck config={config} data={data} ui={{ itemSelector: selector }} iframe={{ enabled: false }}>
         <Probe /><Puck.Fields />

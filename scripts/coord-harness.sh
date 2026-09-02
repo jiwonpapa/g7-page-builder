@@ -1760,7 +1760,7 @@ command_integrate() {
   candidate_tree="$(git write-tree)"
   if [[ "$integration_mode" == scoped ]]; then
     run_scoped_integration_profile \
-      "$task_base" "$submitted_sha" "$INTEGRATION_TASK" "$task_areas" "$candidate_tree" \
+      "$integration_start_sha" "$submitted_sha" "$INTEGRATION_TASK" "$task_areas" "$candidate_tree" \
       || fail '범위 통합 검증이 실패해 병합을 중단합니다.'
   elif ! run_integration_profile "$task_profile" "$INTEGRATION_TASK" "$task_areas"; then
     fail '통합 검증이 실패해 병합을 중단합니다.'

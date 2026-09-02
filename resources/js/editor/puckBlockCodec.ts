@@ -6,12 +6,15 @@ import type { BlockAppearance } from '../documents/blockPresentation';
 import { LAYOUT_COLUMNS_BLOCK_TYPE, LAYOUT_SECTION_BLOCK_TYPE, LAYOUT_STACK_BLOCK_TYPE } from '../documents/layoutContracts';
 import { CONTACT_BLOCK_TYPE, CTA_BLOCK_TYPE, FEATURES_BLOCK_TYPE, HERO_BLOCK_TYPE, type ContactBlockProps, type CtaBlockProps, type FeatureItem, type FeaturesBlockProps, type HeroBlockProps } from '../documents/builtinBlockContracts';
 import { blockContainerEditorProps, mergeBlockContainerAppearance } from './blockAppearance';
-import { DEFAULT_BLOCK_MOTION, normalizeBlockMotion } from './blockMotion';
-import { normalizeElementAppearanceMap } from './canvasEditingContract';
+import { DEFAULT_BLOCK_MOTION, normalizeBlockMotion } from './blockMotionData';
+import { normalizeElementAppearanceMap } from './elementAppearanceData';
 import { canonicalCatalogBlockToPuck, catalogPuckBlockToCanonical } from './catalogBlocks';
 import { canonicalDocumentToPuck, puckDocumentToCanonical, type PuckAdapterContext, type PuckEditorSession } from './puckDocumentAdapter';
 import type { ContactEditorProps, CtaEditorProps, FeaturesEditorProps, HeroEditorProps, PuckEditorData } from './puckEditorTypes';
 import { hasResponsiveOverrides, normalizeResponsiveOverrides } from './responsiveBlockStyle';
+
+import { normalizeSurface, normalizeSpacing } from './catalogAppearance';
+export { normalizeSurface, normalizeSpacing } from './catalogAppearance';
 
 // The canonical↔vendor boundary owns conversion and normalization. It has no
 // editor selection, API calls, portals, React state or DOM responsibilities.
@@ -59,14 +62,6 @@ export function normalizeFeaturesLayout(value: unknown): FeaturesEditorProps['la
 
 export function normalizeCtaLayout(value: unknown): CtaEditorProps['layout'] {
   return value === 'centered' || value === 'banner' || value === 'panel' ? value : 'split';
-}
-
-export function normalizeSurface(value: unknown, fallback: BlockAppearance['surface'] = 'default'): BlockAppearance['surface'] {
-  return value === 'soft' || value === 'contrast' || value === 'default' ? value : fallback;
-}
-
-export function normalizeSpacing(value: unknown, fallback: BlockAppearance['spacing'] = 'normal'): BlockAppearance['spacing'] {
-  return value === 'compact' || value === 'spacious' || value === 'normal' ? value : fallback;
 }
 
 function appearanceToEditorProps(

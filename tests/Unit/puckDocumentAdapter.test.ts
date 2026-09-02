@@ -918,6 +918,26 @@ describe('Puck PageBuilderDocument adapter', () => {
     expect(components.G7PostDetail.fields.boardSlug.contentEditable).not.toBe(true);
   });
 
+  it.each([
+    { type: HEADING_BLOCK_TYPE, props: { eyebrow: '', heading: 'Heading sentinel', level: 2, anchor: '' } },
+    { type: BUTTONS_BLOCK_TYPE, props: { items: [{ label: 'Action sentinel', url: '/sentinel', variant: 'primary' }], alignment: 'left' } },
+    { type: IMAGE_TEXT_BLOCK_TYPE, props: { eyebrow: '', heading: 'Image sentinel', body: '<p>Body</p>', image: { src: '', alt: '' }, mediaPosition: 'left' } },
+  ])('preserves explicit foundation appearance through both conversion directions: $type', ({ type, props }) => {
+    const appearance = { surface: 'default', spacing: 'normal' };
+    const source: PageBuilderDocument = { ...documentFixture, blocks: [{
+      instance_id: '123e4567-e89b-42d3-a456-426614174030', type, block_version: 1,
+      props: { ...props, appearance }, slots: {},
+    }] };
+    const before = structuredClone(source);
+    const session = canonicalToPuck(source);
+    expect(session.data.content[0]?.props).toMatchObject(appearance);
+    expect(puckToCanonical(session.data, session.context)).toEqual(source);
+    const edited = structuredClone(session.data);
+    Object.assign(edited.content[0]!.props, appearance);
+    expect(puckToCanonical(edited, session.context)).toEqual(source);
+    expect(source).toEqual(before);
+  });
+
   it('round-trips all six foundation blocks and keeps visible copy directly editable', () => {
     const foundation: PageBuilderDocument = {
       ...documentFixture,

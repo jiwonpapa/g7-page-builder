@@ -157,6 +157,27 @@ describe('editor tool owners through real Puck', () => {
     expect(test.canonical()).toEqual(test.source);
   });
 
+  it('keeps normal spacing after a Buttons collection command and native Undo', async () => {
+    const test = await mount();
+    await test.settleHistory();
+    await test.command([updateCanvasContext(test.location(test.buttons.instance_id), { spacing: 'normal' })]);
+    const expected = structuredClone(test.source);
+    const expectedButtons = expected.blocks[0].slots!.content[2];
+    const appearance = expectedButtons.props.appearance;
+    if (!appearance || typeof appearance !== 'object' || Array.isArray(appearance)) throw new Error('Missing appearance');
+    expectedButtons.props.appearance = { ...appearance, spacing: 'normal' };
+    expect(test.canonical()).toEqual(expected);
+    await test.settleHistory();
+    const duplicate = updateCanvasCollection(test.location(test.buttons.instance_id), 'items', 0, 'duplicate');
+    if (!duplicate) throw new Error('Missing duplicate plan');
+    await test.command([duplicate.action]);
+    expect(test.canonical().blocks[0].slots!.content[2].props.appearance).toMatchObject({ spacing: 'normal' });
+    await test.settleHistory(); await test.undo();
+    expect(test.canonical()).toEqual(expected);
+    await test.undo();
+    expect(test.canonical()).toEqual(test.source);
+  });
+
   it('preserves external payload and metadata at context and path replacement boundaries', () => {
     const payload = { id: 'payload-id', puck: 'payload-puck', editMode: 'payload-edit', title: 'Original', motion: { own: true } };
     const metadata = { visibility: { audience: 'member' as const }, emptySlotNames: ['body'] };

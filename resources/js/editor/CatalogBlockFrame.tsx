@@ -1,6 +1,6 @@
 import React from 'react';
 import type { BlockMotion, ElementAppearanceMap } from '../documents/blockPresentation';
-import { motionPreviewAttributes } from './blockMotion';
+import { motionPreviewAttributes } from './blockMotionData';
 import {
   CanvasCurrentElementStylesContext,
   decorateCanvasElementStyles,

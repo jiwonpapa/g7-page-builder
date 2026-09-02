@@ -14,6 +14,8 @@ const COPY = {
   heroBody: '기본 배경의 본문은 페이지 테마를 따릅니다.',
   contactAddress: '부드러운 배경의 주소도 읽을 수 있습니다.',
   cardBody: '대비 구역 안의 카드는 배경과 글자색을 함께 유지합니다.',
+  pricingName: '테마 코드 검증 플랜',
+  pricingBody: '가격 카드의 배경과 글자색을 함께 검증합니다.',
   nestedHeading: '원래 중첩 제목',
   editedHeading: '수정한 중첩 제목',
   siblingBody: '다른 열의 내용은 그대로 남아 있습니다.',
@@ -40,6 +42,14 @@ function themeBlocks(): PageBuilderBlock[] {
         { icon: 'shield', title: '두 번째 카드', body: '<p>독립 카드의 텍스트입니다.</p>' },
       ],
       appearance: { surface: 'contrast', spacing: 'compact' },
+    }),
+    block('commerce.pricing-tiers-01', {
+      eyebrow: 'FIXTURE', heading: '가격 카드 테마 계약', layout: 'cards',
+      plans: [COPY.pricingName, '두 번째 검증 플랜'].map((name, index) => ({
+        name, price: `${index + 1}`, period: '월', description: index === 0 ? `<p>${COPY.pricingBody}</p>` : '<p>테스트 데이터</p>',
+        features: ['검증 항목'], buttonLabel: '확인', buttonUrl: '/fixture', featured: false,
+      })),
+      appearance: { surface: 'default', spacing: 'compact' },
     }),
   ];
 }
@@ -216,6 +226,8 @@ test.describe('Editor structure and theme contracts', () => {
             [frame.getByText('theme@example.com', { exact: true }), preview.getByText('theme@example.com', { exact: true })],
             [frame.getByText(COPY.cardBody, { exact: true }), preview.getByText(COPY.cardBody, { exact: true })],
             [frame.getByText('첫 번째 카드', { exact: true }), preview.getByText('첫 번째 카드', { exact: true })],
+            [frame.getByText(COPY.pricingName, { exact: true }), preview.getByText(COPY.pricingName, { exact: true })],
+            [frame.getByText(COPY.pricingBody, { exact: true }), preview.getByText(COPY.pricingBody, { exact: true })],
           ];
           for (const [editorText, publicText] of pairs) {
             await expect(editorText).toBeVisible();

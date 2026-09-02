@@ -1173,11 +1173,10 @@
     {
       "path": "resources/js/manager/PageBuilderManager.tsx",
       "rule": "SOURCE-SIZE",
-      "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Document management, store, revision and metadata views still share one module.",
+      "reason": "Store, block-pack and inbox owners have been separated; document lists, revisions and metadata still share this module. The reduced non-empty-line ceiling cannot increase.",
       "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
       "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 1597,
-        "29602f305a410e25451d4f61c6a0b05075e9cdefdbfca1f2d4068b6682e32f11": 11987
+        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 1011
       }
     },
     {

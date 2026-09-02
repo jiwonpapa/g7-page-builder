@@ -15,7 +15,7 @@ function heading(): PageBuilderBlock {
 }
 
 function buttons(): PageBuilderBlock {
-  return block('content.buttons-01', { alignment: 'left', items: [
+  return block('action.buttons-01', { alignment: 'left', items: [
     { label: token('action'), url: '/fixture-a', variant: 'primary' },
     { label: token('action'), url: '/fixture-b', variant: 'secondary' },
   ] });
@@ -77,7 +77,7 @@ async function resource(api: APIRequestContext, id: string): Promise<{ document:
 }
 
 async function withFixture(page: Page, context: BrowserContext, project: string, blocks: PageBuilderBlock[],
-  run: (api: APIRequestContext, owned: OwnedEditorInteractionDocument) => Promise<void>): Promise<void> {
+  run: (api: APIRequestContext, owned: OwnedEditorInteractionDocument, baseline: PageBuilderDocument) => Promise<void>): Promise<void> {
   const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
   const errors: string[] = [];
   const watch = (target: Page): void => { target.on('pageerror', (error) => errors.push(error.message)); };
@@ -92,10 +92,24 @@ async function withFixture(page: Page, context: BrowserContext, project: string,
     const seeded = await api.put(`${API}/${owned.documentId}/draft`, {
       data: { document, expected_lock_version: initial.lock_version },
     });
-    expect(seeded.ok(), `Catalog fixture rejected (${seeded.status()})`).toBe(true);
+    if (!seeded.ok()) {
+      const payload = await seeded.json().catch(() => null) as { message?: unknown; errors?: unknown; data?: { errors?: unknown } } | null;
+      // Only validation diagnostics from this owned synthetic document; never
+      // include authentication headers or an unexpected HTML error page.
+      const diagnostic = JSON.stringify({ message: payload?.message, errors: payload?.data?.errors ?? payload?.errors }).slice(0, 4000);
+      throw new Error(`Catalog fixture rejected (${seeded.status()}): ${diagnostic}`);
+    }
+    // Compare persistence against the server-accepted representation, before
+    // the editor opens. No codec output is used to manufacture the expectation.
+    const baseline = (await resource(api, owned.documentId)).document;
+    expect(baseline.schema_version).toBe(document.schema_version);
+    expect(baseline.shell_mode).toBe(document.shell_mode);
+    expect(baseline.tokens).toEqual(document.tokens);
+    expect(baseline.blocks.map(({ instance_id, type, block_version }) => ({ instance_id, type, block_version })))
+      .toEqual(blocks.map(({ instance_id, type, block_version }) => ({ instance_id, type, block_version })));
     expect((await page.goto(`${EDITOR}?document=${owned.documentId}`))?.ok()).toBe(true);
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-    await run(api, owned);
+    await run(api, owned, baseline);
     expect(errors, 'Catalog code must not raise an uncaught browser exception.').toEqual([]);
   } catch (error) {
     if (!page.isClosed()) {
@@ -147,6 +161,32 @@ async function selectOutlineBlock(page: Page, item: PageBuilderBlock, label: str
   await expect(page.getByRole('heading', { name: label, exact: true })).toBeVisible();
 }
 
+async function selectTab(page: Page, item: PageBuilderBlock, index: number): Promise<void> {
+  await selectOutlineBlock(page, item, '탭 콘텐츠');
+  const container = canvasBlock(page, item);
+  const tab = container.getByRole('tab').nth(index);
+  await expect(tab).toBeVisible();
+  await tab.scrollIntoViewIfNeeded();
+  const target = await tab.evaluate((button) => {
+    const rect = button.getBoundingClientRect();
+    const label = button.querySelector('[data-g7pb-inline-field]')?.getBoundingClientRect();
+    const style = getComputedStyle(button);
+    const padding = Number.parseFloat(style.paddingLeft);
+    const position = { x: Number.parseFloat(style.borderLeftWidth) + padding / 2, y: rect.height / 2 };
+    const x = rect.left + position.x, y = rect.top + position.y;
+    return { position, padding, button: rect.toJSON(), label: label?.toJSON(),
+      outsideLabel: Boolean(label && (x < label.left || x > label.right || y < label.top || y > label.bottom)),
+      hitsButton: button.ownerDocument.elementFromPoint(x, y) === button };
+  });
+  // The Puck inline label consumes clicks for text editing. Activate the
+  // button's measured padding once, without targeting that editable child.
+  expect(target, 'Tab activation must hit the button itself outside its editable label').toMatchObject({ outsideLabel: true, hitsButton: true });
+  expect(target.padding).toBeGreaterThan(0);
+  await activatePointerTarget(page, tab, `tab ${index + 1} button padding`, target.position);
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(container.getByRole('tabpanel', { includeHidden: true }).nth(index)).toBeVisible();
+}
+
 async function selectCanvasField(page: Page, input: Locator, item: PageBuilderBlock, field: string): Promise<void> {
   const observed = page.evaluate(async ({ blockId, fieldPath }) => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -176,7 +216,10 @@ test.describe.configure({ retries: 0 });
 
 test('catalog frames preserve selection appearance and motion across families', async ({ page, context }, info) => {
   const cases = frameCases();
-  await withFixture(page, context, info.project.name, cases.map(({ item }) => item), async (api, owned) => {
+  await withFixture(page, context, info.project.name, cases.map(({ item }) => item), async (api, owned, baseline) => {
+    expect(baseline.blocks).toMatchObject(cases.map(({ item }) => ({
+      motion: item.motion, props: { appearance: item.props.appearance },
+    })));
     for (const { item, field } of cases) {
       const container = canvasBlock(page, item);
       await expect(container).toHaveClass(/g7pb-container-width--wide/);
@@ -191,13 +234,14 @@ test('catalog frames preserve selection appearance and motion across families', 
       await selectCanvasField(page, input, item, field);
     }
     await save(page, owned.documentId);
-    expect((await resource(api, owned.documentId)).document.blocks).toEqual(cases.map(({ item }) => item));
+    expect((await resource(api, owned.documentId)).document).toEqual(baseline);
   });
 });
 
 test('catalog fields and interactive previews retain edited values', async ({ page, context }, info) => {
   const hero = slider(), plans = pricing(), tabbed = tabs();
   const slideTitle = token('edited-slide'), feature = token('edited-feature'), tabBody = token('edited-panel');
+  const tabLabel = token('edited-tab');
   await withFixture(page, context, info.project.name, [hero, plans, tabbed], async (api, owned) => {
     const heroCanvas = canvasBlock(page, hero);
     await activatePointerTarget(page, heroCanvas.getByTestId('page-builder-slider-slide-1'), 'second slide');
@@ -211,7 +255,21 @@ test('catalog fields and interactive previews retain edited values', async ({ pa
     await expect(heroCanvas.locator('[data-slide-index="1"]')).toHaveCSS('order', '-1');
     await replacePuckRichTextField(page, richField(canvasBlock(page, plans), 'plans.0.features.0'), feature, 'nested pricing feature');
     const tabCanvas = canvasBlock(page, tabbed);
-    await activatePointerTarget(page, tabCanvas.getByRole('tab').nth(1), 'second tab');
+    await selectTab(page, tabbed, 1);
+    const labelInput = tabCanvas.getByRole('tab').nth(1).locator('[contenteditable]').first();
+    await labelInput.hover();
+    await expect(labelInput).toHaveAttribute('contenteditable', 'plaintext-only');
+    await activatePointerTarget(page, labelInput, 'second tab label text');
+    await expect(labelInput).toBeFocused();
+    const previousLabel = await labelInput.textContent();
+    await page.keyboard.press('ControlOrMeta+A');
+    await expect.poll(() => labelInput.evaluate((element) => {
+      const selection = element.ownerDocument.getSelection();
+      return { text: selection?.toString(), ownsSelection: Boolean(selection?.anchorNode && selection.focusNode
+        && element.contains(selection.anchorNode) && element.contains(selection.focusNode)) };
+    })).toEqual({ text: previousLabel, ownsSelection: true });
+    await page.keyboard.insertText(tabLabel);
+    await expect(tabCanvas.getByRole('tab').nth(1)).toHaveText(tabLabel);
     await replacePuckRichTextField(page, richField(tabCanvas, 'items.1.body'), tabBody, 'second tab body');
     await expect(tabCanvas.getByRole('tab').nth(1)).toHaveAttribute('aria-selected', 'true');
     await expect(heroCanvas.getByTestId('page-builder-slider-slide-1')).toHaveAttribute('aria-pressed', 'true');
@@ -222,12 +280,13 @@ test('catalog fields and interactive previews retain edited values', async ({ pa
     expect(saved.blocks).toMatchObject([
       { instance_id: hero.instance_id, props: { slides: [expect.any(Object), { title: expect.stringContaining(slideTitle) }] } },
       { instance_id: plans.instance_id, props: { plans: [{ features: [expect.stringContaining(feature)] }, expect.any(Object)] } },
-      { instance_id: tabbed.instance_id, props: { items: [expect.any(Object), { body: expect.stringContaining(tabBody) }] } },
+      { instance_id: tabbed.instance_id, props: { items: [expect.any(Object), { label: tabLabel, body: expect.stringContaining(tabBody) }] } },
     ]);
     await page.reload();
     await expect(richField(canvasBlock(page, hero), 'slides.1.title')).toHaveText(slideTitle);
     await expect(richField(canvasBlock(page, plans), 'plans.0.features.0')).toHaveText(feature);
-    await activatePointerTarget(page, canvasBlock(page, tabbed).getByRole('tab').nth(1), 'saved second tab');
+    await selectTab(page, tabbed, 1);
+    await expect(canvasBlock(page, tabbed).getByRole('tab').nth(1)).toHaveText(tabLabel);
     await expect(richField(canvasBlock(page, tabbed), 'items.1.body')).toHaveText(tabBody);
     await save(page, owned.documentId);
     expect((await resource(api, owned.documentId)).document.blocks).toEqual(saved.blocks);
@@ -242,7 +301,8 @@ test('catalog conversion preserves nested documents through save and reentry', a
   });
   const section = block('layout.section-01', { width: 'standard', spacing: 'compact' }, { content: [columns] });
   const edited = token('nested-edited');
-  await withFixture(page, context, info.project.name, [section], async (api, owned) => {
+  await withFixture(page, context, info.project.name, [section], async (api, owned, baseline) => {
+    const originalColumns = baseline.blocks[0].slots!.content[0];
     await replacePuckRichTextField(page, richField(canvasBlock(page, title), 'heading'), edited, 'nested heading');
     await save(page, owned.documentId);
     const saved = (await resource(api, owned.documentId)).document;
@@ -252,8 +312,8 @@ test('catalog conversion preserves nested documents through save and reentry', a
     expect(savedColumns.slots!.column1.map((item) => item.instance_id)).toEqual([title.instance_id, actions.instance_id]);
     expect(savedColumns.slots!.column1[0].props.heading).toContain(edited);
     expect(savedColumns.slots!.column1[0].props).not.toHaveProperty('appearance');
-    expect(savedColumns.slots!.column1[1]).toEqual(actions);
-    expect(savedColumns.slots!.column2).toEqual([body]);
+    expect(savedColumns.slots!.column1[1]).toEqual(originalColumns.slots!.column1[1]);
+    expect(savedColumns.slots!.column2).toEqual(originalColumns.slots!.column2);
     const preview = await context.newPage();
     try {
       expect((await preview.goto(await previewUrl(api, owned.documentId)))?.ok()).toBe(true);

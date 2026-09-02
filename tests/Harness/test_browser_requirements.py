@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, CATALOG_PREFIXES, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_PREFIXES, scenarios_for
 import json
 import re
 from tools.g7pb.planner import build_plan
@@ -30,8 +30,92 @@ EXTRACTED_EDITING_SCOPES = {
     "richTextInlineMenu.tsx": {TEXT_AND_CONTROLS},
 }
 
+MANAGER_CODE = replace(MANAGER_STORE, titles=tuple(sorted(MANAGER_STORE.titles + MANAGER_INBOX.titles)))
+EXTRACTED_MANAGER_SCOPES = {
+    "useManagerStore.ts": MANAGER_STORE,
+    "ManagerStoreDialogs.tsx": MANAGER_STORE,
+    "useManagerBlockPacks.ts": MANAGER_STORE,
+    "ManagerBlockPacksDialog.tsx": MANAGER_STORE,
+    "ManagerInboxDialog.tsx": MANAGER_INBOX,
+}
+
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_manager_requests_select_synthetic_contracts_and_keep_page_workflow(self):
+        for name, expected in EXTRACTED_MANAGER_SCOPES.items():
+            with self.subTest(source=name):
+                self.assertEqual(scenarios_for(["resources/js/manager/" + name]), (expected,))
+                self.assertEqual(expected.projects, ("desktop",))
+                self.assertEqual(expected.preset_prefixes, ())
+                self.assertNotIn(STORE.spec, expected.arguments())
+                self.assertTrue(all(value is None for _, value in expected.environment(Path("."))))
+        selected = scenarios_for(["resources/js/manager/PageBuilderManager.tsx"])
+        self.assertEqual(set(selected), {PAGE, MANAGER_CODE})
+        self.assertEqual(scenarios_for(["resources/js/manager/" + name for name in EXTRACTED_MANAGER_SCOPES]), (MANAGER_CODE,))
+        self.assertEqual(scenarios_for(["resources/js/store/types.ts"]), (STORE,))
+
+    def test_document_manager_owners_retain_the_existing_page_contract(self):
+        for name in ("useManagerDocuments.ts", "ManagerDocumentList.tsx", "ManagerDocumentDialogs.tsx",
+                     "useManagerMetadata.ts", "ManagerMetadataDialog.tsx", "useManagerRevisions.ts",
+                     "ManagerRevisionsDialogs.tsx", "managerDocumentPresentation.ts"):
+            with self.subTest(source=name):
+                self.assertEqual(scenarios_for(["resources/js/manager/" + name]), (PAGE,))
+
+    def test_manager_owners_keep_related_units_and_require_their_runtime_scenario(self):
+        owners = {**EXTRACTED_MANAGER_SCOPES, "PageBuilderManager.tsx": MANAGER_CODE}
+        for name, expected in owners.items():
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = "resources/js/manager/" + name
+                facade = "resources/js/manager/PageBuilderManager.tsx"
+                unit = "tests/Unit/managerBehavior.test.tsx"
+                scenarios = {expected, PAGE} if source == facade else {expected}
+                files = {
+                    facade: "export { fixture } from './" + name + "';",
+                    source: "export const fixture = 1;",
+                    unit: "import '../../" + facade + "';",
+                    **{scenario.spec: "import {test} from '@playwright/test';" for scenario in scenarios},
+                }
+                for path, content in files.items():
+                    target = root / path
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(content)
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(source=name, phase=phase):
+                        plan = build_plan(root, [source], base="missing-reviewed-base", phase=phase)
+                        self.assertFalse(plan.full)
+                        self.assertEqual(plan.unresolved, [])
+                        gates = {gate.name: gate for gate in plan.gates}
+                        self.assertIn(source, gates["unit:" + unit].inputs)
+                        self.assertIn("typecheck", gates)
+                        self.assertFalse(any(key.startswith(("content:", "browser-registration:")) for key in gates))
+                        self.assertEqual({key for key in gates if key.startswith("browser:")},
+                                         {"browser:" + scenario.spec for scenario in scenarios})
+                        for scenario in scenarios:
+                            gate = gates["browser:" + scenario.spec]
+                            self.assertTrue(gate.runtime)
+                            self.assertEqual(gate.deferred, phase == "submission")
+                            self.assertEqual(gate.depends_on, ("browser-assets",))
+                            self.assertEqual(set(gate.browser_expectations), {("desktop", title) for title in scenario.titles})
+                            self.assertIn(source, gate.inputs)
+                            self.assertTrue(all(value is None for _, value in gate.env))
+
+    def test_manager_spec_only_changes_collect_without_product_acceptance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            spec = root / MANAGER_STORE.spec
+            spec.parent.mkdir(parents=True)
+            spec.write_text("import {test} from '@playwright/test';")
+            for phase in ("submission", "integration", "verification", "ci"):
+                plan = build_plan(root, [MANAGER_STORE.spec], base="missing-reviewed-base", phase=phase)
+                self.assertFalse(plan.full)
+                self.assertEqual(plan.unresolved, [])
+                gates = {gate.name: gate for gate in plan.gates}
+                gate = gates["browser-registration:" + MANAGER_STORE.spec]
+                self.assertIn("--list", gate.argv)
+                self.assertFalse(gate.runtime)
+                self.assertFalse(any(name.startswith(("browser:", "content:")) for name in gates))
+
     def test_existing_behavior_selected_without_modifying_spec(self):
         self.assertEqual(scenarios_for(["resources/js/editor/richTextEditing.tsx"]), (TEXT,))
         self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])), {PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY})

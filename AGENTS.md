@@ -72,6 +72,18 @@
 - 임의 class·Tailwind·inline style·raw HTML·JavaScript field를 문서 계약이나 편집기에 추가하지 않는다.
 - Layout Editor는 `PageBuilderDocument`와 생성된 발행본을 열거나 저장하지 않는다.
 
+## Development constitution and enforcement
+
+- PHP·TypeScript·JavaScript·CSS의 설계 기준은 `docs/development-constitution.md`를 따른다. 언어가 섞여 있다는 이유로 중복 계약·우회 단언·거대 조정 파일을 허용하지 않는다.
+- G7 Layout Editor는 기술 스택·편집 방법·설정·JSON 활용·편집창과 상태 구조를 연구하는 참조 대상이다. 편집기 구현·내부 런타임·문서 원본·저장 엔진을 가져와 제품의 필수 의존성으로 만들지 않는다.
+- 제품 요구와 현재 구현 한계를 구분한다. 기존 블록의 내부 구조 편집과 중첩 삽입·이동·삭제는 목표 요구이며, 미구현을 영구 제외 정책으로 바꿔 완료 처리하지 않는다.
+- 문서 규칙·변경 명령·화면 상태·외부 어댑터의 책임을 분리한다. 조정 컴포넌트는 이들을 연결하며 자체 검증·변환·통신 규칙을 복제하지 않는다.
+- 타입 단언은 실행 시 검증을 대체하지 않는다. 신규 explicit `any`·`as unknown as`·`as never`·금지 계층 import는 구조 gate에서 실패한다.
+- 스타일은 의미 토큰과 공통 컨트롤을 재사용한다. 테마 토큰의 소유 파일, portal/iframe 전달, 사용자 스타일과 vendor 보정의 우선순위를 명시한다.
+- `node scripts/check-design-architecture.mjs`가 규칙과 기존 부채를 검사한다. 변경 범위는 `--files`로 전달하며 규범 문서·규칙 변경은 전체 제품 소스의 정적 구조만 재검사한다.
+- 기존 부채는 `config/design-architecture-debt.json`의 정확 파일·규칙·지문·상한·이유·해소조건으로 제한한다. 신규 위반, 다른 위치로 복제, 기존 상한 증가는 허용하지 않는다. 부채 이동·정리도 검토 가능한 변경으로 기록하고 자동 baseline 갱신은 만들지 않는다.
+- 구조 gate 통과는 실제 편집 기능·접근성·배포 성공을 뜻하지 않는다. 변경 목적과 관련된 동작·브라우저 증거를 별도로 확인한다.
+
 ## Compatibility
 
 - 공개 계약과 문서 스키마는 SemVer를 따른다.

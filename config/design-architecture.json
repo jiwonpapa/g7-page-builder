@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "constitution": "docs/development-constitution.md",
+  "normativeFiles": ["AGENTS.md", "docs/development-constitution.md", "docs/productization/editing-policy.md"],
+  "sourceRoots": ["resources/js", "resources/css", "src"],
+  "rules": ["TS-BOUNDARY", "TS-UNSAFE", "G7-INTERNAL", "PHP-BOUNDARY", "SOURCE-SIZE", "CSS-COLOR", "CSS-IMPORTANT", "CSS-SPECIFICITY"],
+  "sourceSize": { "ts": 800, "tsx": 800, "js": 800, "php": 800, "css": 1000 },
+  "maxTypeScriptNodes": 10000,
+  "typescriptLayers": [
+    {"from": "resources/js/documents/", "localPrefixes": ["resources/js/documents/", "schemas/"], "localFiles": [], "packages": []},
+    {"from": "resources/js/api/", "localPrefixes": ["resources/js/api/", "resources/js/documents/"], "localFiles": ["resources/js/blocks/types.ts", "resources/js/store/types.ts"], "packages": []},
+    {"from": "resources/js/public/", "localPrefixes": ["resources/js/public/", "resources/js/documents/"], "localFiles": ["resources/css/page-builder-public.css", "resources/css/page-builder-site-part-responsive.css", "resources/css/page-builder-site-shell.css", "resources/css/page-builder-theme.css"], "packages": ["embla-carousel", "embla-carousel-autoplay"]}
+  ],
+  "phpNamespace": "Modules\\Jiwonpapa\\PageBuilder\\",
+  "phpLayers": {"Domain": ["Domain"], "Contracts": ["Contracts", "Domain"], "Application": ["Application", "Contracts", "Domain"]},
+  "phpForbiddenNamespaces": ["App", "Illuminate", "Modules\\Sirsoft"],
+  "cssTokenSources": ["resources/css/page-builder-core.css", "resources/css/page-builder-theme.css"],
+  "debtFile": "config/design-architecture-debt.json"
+}

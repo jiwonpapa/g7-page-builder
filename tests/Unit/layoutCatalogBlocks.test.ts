@@ -13,12 +13,24 @@ import {
   resizeLayoutColumnsEditorProps,
   type LayoutColumnsEditorProps,
 } from '../../resources/js/editor/layoutCatalogBlocks';
+import { resizeLayoutColumnsEditorProps as domainBackedResize } from '../../resources/js/editor/layoutEditorCommands';
 
 const item = (type: string, id: string, props: Record<string, unknown> = {}) => ({
   type, props: { id, ...props },
 });
 
 describe('Puck layout structure controls', () => {
+  it('rejects an impossible merge before confirmation without dropping any content', () => {
+    const source = {
+      columns: '2', ratio: '1:1', gap: 'normal',
+      column1: Array.from({ length: 101 }, (_, index) => item('Heading', `10000000-0000-4000-8000-${String(index).padStart(12, '0')}`)),
+      column2: Array.from({ length: 100 }, (_, index) => item('Heading', `20000000-0000-4000-8000-${String(index).padStart(12, '0')}`)),
+    } as LayoutColumnsEditorProps & Record<string, unknown>;
+    const before = structuredClone(source);
+    expect(() => domainBackedResize(source, '1')).toThrow('slot_limit:');
+    expect(source).toEqual(before);
+  });
+
   it('moves removed columns to the final active column in order without mutating the source', () => {
     const source = {
       columns: '3', ratio: '1:1:1', gap: 'normal',

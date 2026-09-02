@@ -1,0 +1,41 @@
+/* Shared page design tokens. Editor canvas and compiled viewer import this source. */
+.g7pb-document-theme {
+  --g7pb-theme-accent: #4f46e5;
+  --g7pb-theme-accent-soft: #eef2ff;
+  --g7pb-theme-accent-strong: #312e81;
+  --g7pb-theme-radius: 1rem;
+  --g7pb-theme-content-width: 72rem;
+  --g7pb-theme-body-size: 1rem;
+  --g7pb-page-bg: #fff;
+  --g7pb-page-text: #172033;
+  --g7pb-page-muted: #526071;
+  --g7pb-page-panel: #f3f1ed;
+  --g7pb-page-border: #dfe2e8;
+  --g7pb-theme-fg: var(--g7pb-page-text);
+  --g7pb-theme-muted: var(--g7pb-page-muted);
+  --g7pb-theme-border: var(--g7pb-page-border);
+  /* Resolve cards at the page boundary so a contrast section cannot split their foreground/background pair. */
+  --g7pb-card-bg: var(--g7pb-page-bg);
+  --g7pb-card-text: var(--g7pb-page-text);
+  --g7pb-card-muted: var(--g7pb-page-muted);
+  background: var(--g7pb-page-bg);
+  color: var(--g7pb-page-text);
+  font-size: var(--g7pb-theme-body-size);
+}
+.g7pb-theme-palette-blue { --g7pb-theme-accent: #2563eb; --g7pb-theme-accent-soft: #eff6ff; --g7pb-theme-accent-strong: #1e40af; }
+.g7pb-theme-palette-emerald { --g7pb-theme-accent: #059669; --g7pb-theme-accent-soft: #ecfdf5; --g7pb-theme-accent-strong: #065f46; }
+.g7pb-theme-palette-amber { --g7pb-theme-accent: #d97706; --g7pb-theme-accent-soft: #fffbeb; --g7pb-theme-accent-strong: #92400e; }
+.g7pb-theme-palette-rose { --g7pb-theme-accent: #e11d48; --g7pb-theme-accent-soft: #fff1f2; --g7pb-theme-accent-strong: #9f1239; }
+.g7pb-theme-palette-slate { --g7pb-theme-accent: #475569; --g7pb-theme-accent-soft: #f1f5f9; --g7pb-theme-accent-strong: #1e293b; }
+.g7pb-theme-font-system { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.g7pb-theme-font-modern { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.g7pb-theme-font-serif { font-family: Georgia, "Noto Serif KR", "Times New Roman", serif; }
+.g7pb-theme-radius-sharp { --g7pb-theme-radius: .125rem; }
+.g7pb-theme-radius-round { --g7pb-theme-radius: 1.75rem; }
+.g7pb-theme-width-narrow { --g7pb-theme-content-width: 56rem; }
+.g7pb-theme-width-wide { --g7pb-theme-content-width: 88rem; }
+.g7pb-theme-scale-compact { --g7pb-theme-body-size: .9375rem; }
+.g7pb-theme-scale-large { --g7pb-theme-body-size: 1.125rem; }
+.g7pb-theme-mode-light, .g7pb-theme-mode-system { color-scheme: light; --g7pb-page-bg: #fff; --g7pb-page-text: #172033; --g7pb-page-muted: #526071; --g7pb-page-panel: #f3f1ed; --g7pb-page-border: #dfe2e8; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-light); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-light); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-light); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-light); }
+.g7pb-theme-mode-dark { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
+@media (prefers-color-scheme: dark) { .g7pb-theme-mode-system { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); } }

@@ -14,6 +14,13 @@ from typing import Sequence
 PACK = "resources/block-packs/builtin-core/manifest.json"
 KITS = "resources/store/source/page-kits/manifest.json"
 SHELL_IDS = ("shell", "mobile", "editor")
+STYLE_IMPACTS = {
+    "resources/css/page-builder-core.css": ("editor-ui",),
+    "resources/css/page-builder-editor.css": ("editor-ui", "page-theme"),
+    "resources/css/page-builder-public.css": ("page-theme",),
+    "resources/css/page-builder-theme.css": ("page-theme",),
+}
+STYLE_IDS = ("editor-ui", "page-theme")
 
 
 def read_json(path: Path):
@@ -27,6 +34,7 @@ def catalog(root: Path) -> dict[str, list[str]]:
         "block": [f"block:{item['block_id']}@{item['block_version']}" for item in pack["blocks"]],
         "preset": [f"preset:{pack['pack_id']}:{item['preset_id']}" for item in pack["presets"]],
         "site-shell": list(SHELL_IDS),
+        "style": list(STYLE_IDS),
     }
     for kind, ids in result.items():
         if not ids or len(set(ids)) != len(ids):
@@ -101,8 +109,12 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
             if not names:
                 raise ValueError(f"Unowned Kit screenshot: {path}")
             add("kit", names)
-        elif path in {"src/Application/Compilation/HtmlDocumentCompiler.php", "resources/css/page-builder-public.css",
-                      "resources/css/page-builder-core.css", "resources/css/page-builder-editor-wysiwyg.css"}:
+        elif path in STYLE_IMPACTS:
+            # Shared CSS changes a presentation contract, not catalog identities.
+            # Asset integrity is read-only; source build and browser proof remain separate gates.
+            add("style", STYLE_IMPACTS[path])
+        elif path in {"src/Application/Compilation/HtmlDocumentCompiler.php",
+                      "resources/css/page-builder-editor-wysiwyg.css"}:
             # Shared code alone does not prove which rendered products changed.
             # Neither a representative sample nor automatic full promotion is evidence.
             raise ValueError(f"Shared content input has no proven target scope: {path}; select explicit --ids or --all")
@@ -146,6 +158,12 @@ def check_store(root: Path, ids: list[str], all_items: bool = False, run=subproc
 
 
 def plan(root: Path, kind: str, ids: list[str], all_items: bool = False) -> dict:
+    if kind == "style":
+        return {"kind": kind, "ids": ids, "mode": "existing-artifact-integrity",
+                "product_written": False, "ledger_written": False, "browser_executed": False,
+                "source_build_verified": False, "catalog_render_verified": False, "requires_build": True,
+                "command": ["node", "scripts/check-assets.mjs"],
+                "browser_followup": {"spec": "tests/E2E/editorStructureTheme.spec.ts", "project": "desktop"}}
     command = (["node", "scripts/check-site-shell-product-quality.mjs", "--ids", ",".join(ids)]
                if kind == "site-shell" else ["node", "scripts/check-block-quality-evidence.mjs", "--technical", "--ids", ",".join(ids), "--json"])
     return {"kind": kind, "ids": ids, "mode": "technical", "product_written": False,
@@ -158,7 +176,7 @@ def plan(root: Path, kind: str, ids: list[str], all_items: bool = False) -> dict
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["inspect", "check"])
-    parser.add_argument("--kind", choices=["kit", "block", "preset", "site-shell"], required=True)
+    parser.add_argument("--kind", choices=["kit", "block", "preset", "site-shell", "style"], required=True)
     parser.add_argument("--ids")
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--json", action="store_true")

@@ -7,15 +7,6 @@ namespace Modules\Jiwonpapa\PageBuilder\Domain\Documents;
  */
 final readonly class PageBuilderDocument
 {
-    /** @var array<string, list<string>> */
-    private const DESIGN_TOKEN_OPTIONS = [
-        'design.palette' => ['indigo', 'blue', 'emerald', 'amber', 'rose', 'slate'],
-        'design.font' => ['system', 'modern', 'serif'],
-        'design.radius' => ['sharp', 'soft', 'round'],
-        'design.width' => ['narrow', 'standard', 'wide'],
-        'design.scale' => ['compact', 'balanced', 'large'],
-    ];
-
     /**
      * @param  array<string, string|int|float|bool|null>  $tokens
      * @param  array<int, array<string, mixed>>  $blocks
@@ -63,7 +54,7 @@ final readonly class PageBuilderDocument
             throw new \InvalidArgumentException('Page document has too many blocks.');
         }
 
-        self::assertValidTokens($this->tokens);
+        PageDesignTokens::fromArray($this->tokens);
 
         if ($this->schemaVersion === 'g7-page-builder/v2') {
             self::layoutPolicy()->validate([
@@ -141,23 +132,6 @@ final readonly class PageBuilderDocument
         }
 
         return $value;
-    }
-
-    /**
-     * @param  array<mixed>  $tokens
-     */
-    private static function assertValidTokens(array $tokens): void
-    {
-        foreach ($tokens as $name => $value) {
-            if (! is_string($name) || (! is_scalar($value) && $value !== null)) {
-                throw new \InvalidArgumentException('Page token value is invalid.');
-            }
-
-            if (isset(self::DESIGN_TOKEN_OPTIONS[$name])
-                && (! is_string($value) || ! in_array($value, self::DESIGN_TOKEN_OPTIONS[$name], true))) {
-                throw new \InvalidArgumentException("Page design token {$name} is invalid.");
-            }
-        }
     }
 
     private static function layoutPolicy(): LayoutPolicy

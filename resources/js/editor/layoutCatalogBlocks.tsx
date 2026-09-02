@@ -1,7 +1,13 @@
-import React from 'react';
+import { assertEditorInsertion } from './puckEditorSelection';
+import type { EditorComponents, PuckEditorData } from './puckEditorTypes';
+import type { PageDesignProps } from './pageDesignTokens';
 import { usePuck, type Config, type Slot } from '@puckeditor/core';
+import React from 'react';
+import { layoutPolicy } from '../documents/layoutPolicy';
 import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, ElementAppearanceMap } from '../documents/types';
+import { allowedLayoutComponents, resizeLayoutColumnsEditorProps, type LayoutColumnsResizeResult } from './layoutEditorCommands';
 import { createResponsiveLayoutField, responsiveClassName } from './responsiveBlockStyle';
+export { resizeLayoutColumnsEditorProps } from './layoutEditorCommands';
 
 interface LayoutInternalEditorProps {
   surface?: BlockAppearance['surface'];
@@ -47,18 +53,14 @@ type LayoutPuckItem = {
   props: Record<string, unknown> & { id: string };
 };
 
-const LEAF_COMPONENTS = ['Heading', 'RichText', 'Image', 'Buttons', 'Divider'] as const;
-const SECTION_COMPONENTS = ['LayoutColumns', 'LayoutStack', ...LEAF_COMPONENTS] as const;
-const COLUMN_COMPONENTS = ['LayoutStack', ...LEAF_COMPONENTS] as const;
-const COLUMN_RATIO_OPTIONS: Record<LayoutColumnCount, ReadonlyArray<{ label: string; value: LayoutColumnRatio }>> = {
-  '1': [{ label: '1열', value: '1' }],
-  '2': [
-    { label: '1 : 1', value: '1:1' },
-    { label: '1 : 2', value: '1:2' },
-    { label: '2 : 1', value: '2:1' },
-  ],
-  '3': [{ label: '1 : 1 : 1', value: '1:1:1' }],
-};
+const LEAF_COMPONENTS = allowedLayoutComponents('stack');
+const SECTION_COMPONENTS = allowedLayoutComponents('section');
+const COLUMN_COMPONENTS = allowedLayoutComponents('columns');
+const COLUMN_RATIO_OPTIONS = Object.fromEntries(
+  Object.entries(layoutPolicy.ratios).map(([count, ratios]) => [count, ratios.map((ratio) => ({
+    label: ratio === '1' ? '1열' : ratio.split(':').join(' : '), value: ratio,
+  }))]),
+);
 
 function newLayoutId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
@@ -78,52 +80,32 @@ function nestedItemCount(items: Slot): number {
   }, 0);
 }
 
-export interface LayoutColumnsResizeResult {
-  props: LayoutColumnsEditorProps & Record<string, unknown>;
-  movedNodes: number;
-  targetSlot: `column${1 | 2 | 3}`;
-}
-
-export function resizeLayoutColumnsEditorProps(
-  value: LayoutColumnsEditorProps & Record<string, unknown>,
-  columns: LayoutColumnCount,
-): LayoutColumnsResizeResult {
-  const count = Number(columns) as 1 | 2 | 3;
-  const currentCount = Number(value.columns) as 1 | 2 | 3;
-  const targetSlot = `column${count}` as LayoutColumnsResizeResult['targetSlot'];
-  const removed = Array.from({ length: Math.max(0, currentCount - count) }, (_, index) => (
-    slotValue(value, `column${count + index + 1}`)
-  )).flat();
-  const allowedRatios = COLUMN_RATIO_OPTIONS[columns].map(({ value: ratio }) => ratio);
-  const ratio = allowedRatios.includes(value.ratio) ? value.ratio : allowedRatios[0]!;
-  const props = structuredClone(value) as LayoutColumnsEditorProps & Record<string, unknown>;
-  props.columns = columns;
-  props.ratio = ratio;
-  for (let index = 1; index <= count; index++) props[`column${index}`] = slotValue(props, `column${index}`);
-  props[targetSlot] = [...slotValue(props, targetSlot), ...removed];
-  for (let index = count + 1; index <= 3; index++) delete props[`column${index}`];
-  return { props, movedNodes: nestedItemCount(removed), targetSlot };
-}
-
 function useSelectedLayoutItem(): {
   item: LayoutPuckItem | null;
   dispatch: ReturnType<typeof usePuck>['dispatch'];
   selector: { index: number; zone: string } | null;
+  data: PuckEditorData;
 } {
-  const { dispatch, getSelectorForId, selectedItem } = usePuck();
+  const { dispatch, getSelectorForId, selectedItem, appState } = usePuck<Config<EditorComponents, PageDesignProps>>();
   const item = selectedItem as LayoutPuckItem | null;
   const selector = item ? getSelectorForId(item.props.id) ?? null : null;
-  return { item, dispatch, selector };
+  return { item, dispatch, selector, data: appState.data };
 }
 
 function ColumnsCountField({ value, readOnly }: { value: LayoutColumnCount; readOnly?: boolean }): React.ReactElement {
   const { item, dispatch, selector } = useSelectedLayoutItem();
-  const [pending, setPending] = React.useState<LayoutColumnsResizeResult | null>(null);
+  const [pending, setPending] = React.useState<(LayoutColumnsResizeResult & { sourceId: string; sourceFingerprint: string }) | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
-  React.useEffect(() => setPending(null), [value]);
+  React.useEffect(() => setPending(null), [value, item?.props.id]);
 
-  const apply = (result: LayoutColumnsResizeResult): void => {
-    if (!item || !selector || item.type !== 'LayoutColumns') return;
+  const apply = (result: LayoutColumnsResizeResult, source?: { sourceId: string; sourceFingerprint: string }): void => {
+    if (readOnly || !item || !selector || item.type !== 'LayoutColumns') return;
+    if (source && (source.sourceId !== item.props.id || source.sourceFingerprint !== JSON.stringify(item.props))) {
+      setPending(null);
+      setError('확인 중에 구조가 변경되었습니다. 현재 내용을 확인하고 다시 선택해 주세요.');
+      return;
+    }
     dispatch({
       type: 'replace', destinationIndex: selector.index, destinationZone: selector.zone,
       data: { ...item, props: result.props } as never,
@@ -133,11 +115,17 @@ function ColumnsCountField({ value, readOnly }: { value: LayoutColumnCount; read
   };
   const request = (next: LayoutColumnCount): void => {
     if (!item || item.type !== 'LayoutColumns' || next === value) return;
-    const result = resizeLayoutColumnsEditorProps(
-      item.props as unknown as LayoutColumnsEditorProps & Record<string, unknown>, next,
-    );
-    if (result.movedNodes > 0 && Number(next) < Number(value)) setPending(result);
-    else apply(result);
+    try {
+      const result = resizeLayoutColumnsEditorProps(
+        item.props as unknown as LayoutColumnsEditorProps & Record<string, unknown>, next,
+      );
+      setError(null);
+      if (result.movedNodes > 0 && Number(next) < Number(value)) setPending({ ...result, sourceId: item.props.id, sourceFingerprint: JSON.stringify(item.props) });
+      else apply(result);
+    } catch {
+      setPending(null);
+      setError('이 열들을 합치면 구조 제한을 초과합니다. 콘텐츠를 다른 구역으로 옮긴 뒤 다시 시도해 주세요.');
+    }
   };
 
   return <div className="g7pb-layout-inspector-control" data-testid="page-builder-layout-column-count">
@@ -145,30 +133,37 @@ function ColumnsCountField({ value, readOnly }: { value: LayoutColumnCount; read
       {(['1', '2', '3'] as const).map((count) => <button type="button" key={count}
         disabled={readOnly} aria-pressed={value === count} onClick={() => request(count)}>{count}열</button>)}
     </div>
+    {error && <p role="alert">{error}</p>}
     {pending ? <div className="g7pb-layout-inspector-confirm" role="alert" data-testid="page-builder-layout-column-confirm">
       <strong>{pending.movedNodes}개 콘텐츠를 {pending.targetSlot} 끝으로 이동합니다.</strong>
       <span>열을 줄여도 콘텐츠는 삭제하지 않고 기존 순서를 유지합니다.</span>
       <div><button type="button" onClick={() => setPending(null)}>취소</button>
-        <button type="button" onClick={() => apply(pending)}>이동 후 변경</button></div>
+        <button type="button" disabled={readOnly} onClick={() => apply(pending, pending)}>이동 후 변경</button></div>
     </div> : null}
   </div>;
 }
 
 function StructureInsertField({ readOnly }: { readOnly?: boolean }): React.ReactElement {
-  const { item, dispatch } = useSelectedLayoutItem();
+  const { item, dispatch, data } = useSelectedLayoutItem();
   const [message, setMessage] = React.useState('');
 
   if (!item || (item.type !== 'LayoutSection' && item.type !== 'LayoutColumns')) return <></>;
 
   const insert = (zoneName: string, componentType: 'LayoutColumns' | 'LayoutStack', columns: LayoutColumnCount = '2'): void => {
     const items = slotValue(item.props, zoneName);
-    if (items.length >= 200) {
-      setMessage(`${zoneName}은 최대 200개까지 배치할 수 있습니다.`);
+    if (items.length >= layoutPolicy.limits.slot_children) {
+      setMessage(`${zoneName}은 최대 ${layoutPolicy.limits.slot_children}개까지 배치할 수 있습니다.`);
       return;
     }
     const id = newLayoutId();
     const destinationZone = `${item.props.id}:${zoneName}`;
     const destinationIndex = items.length;
+    try {
+      assertEditorInsertion(data, { index: destinationIndex, zone: destinationZone }, componentType);
+    } catch {
+      setMessage('이 위치에 구조를 추가하면 문서 제한을 초과합니다. 다른 구역을 선택해 주세요.');
+      return;
+    }
     dispatch({ type: 'insert', componentType, destinationIndex, destinationZone, id, recordHistory: true });
     if (componentType === 'LayoutColumns' && columns !== '2') {
       dispatch({
@@ -208,19 +203,25 @@ function StructureInsertField({ readOnly }: { readOnly?: boolean }): React.React
 
 function StructureDeleteField({ readOnly }: { readOnly?: boolean }): React.ReactElement {
   const { item, dispatch, selector } = useSelectedLayoutItem();
-  const [pending, setPending] = React.useState(false);
+  const [pending, setPending] = React.useState<{ id: string; fingerprint: string } | null>(null);
+  React.useEffect(() => setPending(null), [item?.props.id]);
   if (!item || !['LayoutSection', 'LayoutColumns', 'LayoutStack'].includes(item.type)) return <></>;
   const childCount = nestedItemCount(['content', 'column1', 'column2', 'column3'].flatMap((name) => slotValue(item.props, name)));
   const remove = (): void => {
-    if (!selector) return;
+    if (readOnly || !selector) return;
+    if (pending && (pending.id !== item.props.id || pending.fingerprint !== JSON.stringify(item.props))) {
+      setPending(null);
+      return;
+    }
     dispatch({ type: 'remove', index: selector.index, zone: selector.zone, recordHistory: true });
   };
   return <div className="g7pb-layout-inspector-control g7pb-layout-inspector-control--danger" data-testid="page-builder-layout-delete">
-    <button type="button" disabled={readOnly} onClick={() => childCount > 0 ? setPending(true) : remove()}>구조 삭제</button>
+    <button type="button" disabled={readOnly} onClick={() => childCount > 0
+      ? setPending({ id: item.props.id, fingerprint: JSON.stringify(item.props) }) : remove()}>구조 삭제</button>
     {pending ? <div className="g7pb-layout-inspector-confirm" role="alert">
       <strong>내부 콘텐츠 {childCount}개도 함께 삭제됩니다.</strong>
-      <div><button type="button" onClick={() => setPending(false)}>취소</button>
-        <button type="button" onClick={remove}>구조와 콘텐츠 삭제</button></div>
+      <div><button type="button" onClick={() => setPending(null)}>취소</button>
+        <button type="button" disabled={readOnly} onClick={remove}>구조와 콘텐츠 삭제</button></div>
     </div> : null}
   </div>;
 }

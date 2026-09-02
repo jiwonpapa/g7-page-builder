@@ -1,0 +1,80 @@
+import type { Data } from '@puckeditor/core';
+import type { BlockAppearance, BlockMotion, CtaBlockProps, ElementAppearanceMap, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/types';
+import type { CatalogEditorComponents } from './catalogBlocks';
+import type { LayoutCatalogEditorComponents } from './layoutCatalogBlocks';
+import type { PageDesignProps } from './pageDesignTokens';
+
+export interface HeroEditorProps {
+  eyebrow: string;
+  title: string;
+  body: string;
+  primaryLabel: string;
+  primaryUrl: string;
+  imageSrc: string;
+  imageAlt: string;
+  alignment: 'left' | 'center';
+  mediaPosition: 'left' | 'right';
+  layout: NonNullable<HeroBlockProps['layout']> | 'classic';
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
+  motion: BlockMotion;
+}
+
+export interface FeaturesEditorProps {
+  title: string;
+  items: FeatureItem[];
+  layout: NonNullable<FeaturesBlockProps['layout']>;
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
+  motion: BlockMotion;
+}
+
+export interface CtaEditorProps {
+  eyebrow: string;
+  heading: string;
+  body: string;
+  primaryLabel: string;
+  primaryUrl: string;
+  secondaryLabel: string;
+  secondaryUrl: string;
+  theme: 'light' | 'dark';
+  layout: NonNullable<CtaBlockProps['layout']>;
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
+  motion: BlockMotion;
+}
+
+export interface ContactEditorProps {
+  heading: string;
+  address: string;
+  phone: string;
+  email: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  mapLabel: string;
+  mapUrl: string;
+  surface: BlockAppearance['surface'];
+  spacing: BlockAppearance['spacing'];
+  textScale?: NonNullable<BlockAppearance['textScale']>;
+  textAlign?: NonNullable<BlockAppearance['textAlign']>;
+  elementStyles?: ElementAppearanceMap;
+  motion: BlockMotion;
+}
+
+export interface EditorComponents extends CatalogEditorComponents, LayoutCatalogEditorComponents {
+  Hero: HeroEditorProps;
+  Features: FeaturesEditorProps;
+  Cta: CtaEditorProps;
+  Contact: ContactEditorProps;
+}
+
+export type PuckEditorData = Data<EditorComponents, PageDesignProps>;

@@ -11,6 +11,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDesignTokens;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
@@ -28,38 +29,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         'form', 'input', 'textarea', 'select', 'option', 'button', 'style', 'meta', 'base',
         'body', 'head', 'html', 'title', 'svg', 'math', 'audio', 'video', 'source', 'track', 'canvas',
         'details', 'dialog', 'plaintext', 'xmp', 'listing', 'marquee', 'noframes', 'noembed', 'template', 'slot',
-    ];
-
-    /** @var array<string, string> */
-    private const DESIGN_TOKEN_DEFAULTS = [
-        'design.color_mode' => 'light',
-        'design.palette' => 'indigo',
-        'design.font' => 'modern',
-        'design.radius' => 'soft',
-        'design.width' => 'standard',
-        'design.scale' => 'balanced',
-    ];
-
-    /** @var array<string, list<string>> */
-    private const DESIGN_TOKEN_OPTIONS = [
-        'design.color_mode' => ['light', 'dark', 'system'],
-        'design.palette' => ['indigo', 'blue', 'emerald', 'amber', 'rose', 'slate'],
-        'design.font' => ['system', 'modern', 'serif'],
-        'design.radius' => ['sharp', 'soft', 'round'],
-        'design.width' => ['narrow', 'standard', 'wide'],
-        'design.scale' => ['compact', 'balanced', 'large'],
-    ];
-
-    /** @var array<string, string> */
-    private const CUSTOM_COLOR_TOKEN_DEFAULTS = [
-        'design.custom_color_1_light' => '#2456df',
-        'design.custom_color_1_dark' => '#8ba7ff',
-        'design.custom_color_2_light' => '#059669',
-        'design.custom_color_2_dark' => '#6ee7b7',
-        'design.custom_color_3_light' => '#d97706',
-        'design.custom_color_3_dark' => '#fbbf24',
-        'design.custom_color_4_light' => '#e11d48',
-        'design.custom_color_4_dark' => '#fda4af',
     ];
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
@@ -154,55 +123,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private const IMAGE_CAROUSEL_TYPE = 'media.image-carousel-01';
 
-    /** @var array<string, list<string>> */
-    private const ROOT_ELEMENT_FIELDS = [
-        self::HEADING_TYPE => ['eyebrow', 'heading'],
-        self::RICH_TEXT_TYPE => ['content'],
-        self::IMAGE_TYPE => ['caption'],
-        self::BUTTONS_TYPE => [],
-        self::IMAGE_TEXT_TYPE => ['eyebrow', 'heading', 'body', 'primaryLabel'],
-        self::ICON_LIST_TYPE => ['eyebrow', 'heading'],
-        self::HERO_TYPE => ['eyebrow', 'title', 'body', 'primaryLabel'],
-        self::FEATURES_TYPE => ['title'],
-        self::CTA_TYPE => ['eyebrow', 'heading', 'body', 'primaryLabel', 'secondaryLabel'],
-        self::CONTACT_TYPE => ['heading', 'address', 'phone', 'email', 'ctaLabel', 'mapLabel'],
-        self::HERO_SPLIT_TYPE => ['eyebrow', 'title', 'body', 'primaryLabel'],
-        self::HERO_SLIDER_TYPE => [],
-        self::LOGO_CLOUD_TYPE => ['heading'],
-        self::STATS_TYPE => ['eyebrow', 'heading'],
-        self::PRICING_TYPE => ['eyebrow', 'heading'],
-        self::TEAM_TYPE => ['eyebrow', 'heading'],
-        self::GALLERY_TYPE => ['eyebrow', 'heading'],
-        self::BAR_CHART_TYPE => ['eyebrow', 'heading', 'description', 'unit'],
-        self::G7_RECENT_POSTS_TYPE => ['eyebrow', 'heading'],
-        self::G7_PRODUCT_GRID_TYPE => ['eyebrow', 'heading'],
-        self::INQUIRY_FORM_TYPE => ['eyebrow', 'heading', 'description', 'privacyLabel', 'submitLabel'],
-        self::MAP_DIRECTIONS_TYPE => ['eyebrow', 'heading', 'description', 'address', 'phone', 'hours', 'parking', 'directionsLabel'],
-        self::TESTIMONIALS_TYPE => ['eyebrow', 'heading'],
-        self::FAQ_ACCORDION_TYPE => ['eyebrow', 'heading'],
-        self::PROCESS_TIMELINE_TYPE => ['eyebrow', 'heading'],
-        self::TABS_TYPE => ['eyebrow', 'heading'],
-        self::COMPARISON_TABLE_TYPE => ['eyebrow', 'heading'],
-        self::ARTICLE_LIST_TYPE => ['eyebrow', 'heading'],
-        self::VIDEO_EMBED_TYPE => ['eyebrow', 'heading', 'caption'],
-        self::LOGO_CAROUSEL_TYPE => ['eyebrow', 'heading'],
-        self::TESTIMONIAL_SLIDER_TYPE => ['eyebrow', 'heading'],
-        self::EVENT_SCHEDULE_TYPE => ['eyebrow', 'heading'],
-        self::DOWNLOAD_RESOURCES_TYPE => ['eyebrow', 'heading'],
-        self::G7_BOARD_ARCHIVE_TYPE => ['eyebrow', 'heading'],
-        self::G7_PRODUCT_SHOWCASE_TYPE => ['eyebrow', 'heading'],
-        self::G7_POST_DETAIL_TYPE => ['eyebrow', 'heading', 'linkLabel'],
-        self::G7_PRODUCT_DETAIL_TYPE => ['eyebrow', 'heading', 'buttonLabel'],
-        self::DIVIDER_TYPE => ['label'],
-        self::BLOCKQUOTE_TYPE => ['quote', 'citation', 'role'],
-        self::NOTICE_TYPE => ['title', 'body', 'actionLabel'],
-        self::CARD_GRID_TYPE => ['eyebrow', 'heading'],
-        self::BREADCRUMBS_TYPE => ['currentLabel'],
-        self::ANCHOR_MENU_TYPE => ['label'],
-        self::SOCIAL_LINKS_TYPE => ['heading'],
-        self::IMAGE_CAROUSEL_TYPE => ['eyebrow', 'heading'],
-    ];
-
     /** @var list<string> */
     private const FEATURE_ICONS = [
         'bolt',
@@ -246,13 +166,20 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private BlockCompilerRegistry $blockCompilers;
 
+    private readonly RichTextSanitizer $richText;
+
     public function __construct(
         private readonly BlockRegistry $blockRegistry,
         ?BlockCompilerRegistry $blockCompilers = null,
         private readonly ?BlockSchemaRegistry $blockSchemas = null,
         private readonly ?BlockPackAssetUrlPort $blockAssets = null,
+        private readonly DocumentThemeCompiler $theme = new DocumentThemeCompiler,
+        private readonly CompilationUrlPolicy $urls = new CompilationUrlPolicy,
+        private readonly ElementAppearanceCompiler $elementAppearances = new ElementAppearanceCompiler,
+        ?RichTextSanitizer $richText = null,
     ) {
         $this->blockCompilers = $blockCompilers ?? new BlockCompilerRegistry;
+        $this->richText = $richText ?? new RichTextSanitizer($this->urls);
         $this->registerBuiltInCompilers();
     }
 
@@ -290,8 +217,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             fn (string $url): string => '<link rel="stylesheet" href="'.$this->escapeAttribute($url).'">',
             array_keys($styleUrls),
         );
-        $customPaletteStyle = $this->customPaletteDeclarations($document);
-        $body = '<div class="'.$this->designClassName($document).'"'.($customPaletteStyle === '' ? '' : ' style="'.$this->escapeAttribute($customPaletteStyle).'"').'>'."\n"
+        $design = PageDesignTokens::fromArray($document->tokens);
+        $customPaletteStyle = $this->theme->customPaletteDeclarations($design);
+        $body = '<div class="'.$this->theme->className($design).'"'.($customPaletteStyle === '' ? '' : ' style="'.$this->escapeAttribute($customPaletteStyle).'"').'>'."\n"
             .implode("\n", $sections)."\n"
             .'</div>';
         $artifact = implode("\n", [...$styles, $body]);
@@ -397,7 +325,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 rawurlencode($document->slug),
                 $this->blockCompilers->compile($definition->compiler, $props),
             );
-            $compiled = $this->applyElementAppearances($compiled, $props, $type);
+            $compiled = $this->elementAppearances->apply($compiled, $props, $type);
             $this->assertTemplateCompatibleMarkup($compiled, $path);
         } catch (DocumentCompileException $exception) {
             throw $exception;
@@ -509,56 +437,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return $targetFormat === 'html' && $targetEngineVersion === self::TARGET_ENGINE_VERSION;
     }
 
-    private function designClassName(PageBuilderDocument $document): string
-    {
-        $classes = ['g7pb-document-theme'];
-
-        foreach (self::DESIGN_TOKEN_DEFAULTS as $token => $default) {
-            $value = $document->tokens[$token] ?? $default;
-            if (! is_string($value) || ! in_array($value, self::DESIGN_TOKEN_OPTIONS[$token], true)) {
-                throw new DocumentCompileException("Page design token {$token} is invalid.");
-            }
-            $suffix = $token === 'design.color_mode' ? 'mode' : str_replace('design.', '', $token);
-            $classes[] = "g7pb-theme-{$suffix}-{$value}";
-        }
-
-        if ($this->hasCustomPalette($document)) {
-            $classes[] = 'g7pb-theme-custom-palette';
-        }
-
-        return implode(' ', $classes);
-    }
-
-    private function customPaletteDeclarations(PageBuilderDocument $document): string
-    {
-        if (! $this->hasCustomPalette($document)) {
-            return '';
-        }
-
-        $declarations = [];
-        foreach (self::CUSTOM_COLOR_TOKEN_DEFAULTS as $token => $default) {
-            $value = $document->tokens[$token] ?? $default;
-            if (! is_string($value) || preg_match('/^#[0-9a-f]{6}$/iD', $value) !== 1) {
-                throw new DocumentCompileException("Page design token {$token} is invalid.");
-            }
-            $suffix = str_replace(['design.custom_color_', '_'], ['', '-'], $token);
-            $declarations[] = '--g7pb-custom-tone-'.$suffix.':'.strtolower($value);
-        }
-
-        return implode(';', $declarations);
-    }
-
-    private function hasCustomPalette(PageBuilderDocument $document): bool
-    {
-        foreach (array_keys(self::CUSTOM_COLOR_TOKEN_DEFAULTS) as $token) {
-            if (array_key_exists($token, $document->tokens)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private function registerBuiltInCompilers(): void
     {
         /** @var array<string, \Closure(array<string, mixed>): string> $compilers */
@@ -635,7 +513,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $anchorAttribute = $anchor === '' ? '' : ' id="'.$this->escapeAttribute($anchor).'"';
 
         return '<section class="g7pb-block g7pb-heading-block '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="heading">'
-            .$eyebrowMarkup.'<h'.$level.' class="g7pb-heading-block__heading"'.$anchorAttribute.'>'.$this->sanitizeInlineRichText($heading).'</h'.$level.'></section>';
+            .$eyebrowMarkup.'<h'.$level.' class="g7pb-heading-block__heading"'.$anchorAttribute.'>'.$this->richText->sanitizeInlineRichText($heading).'</h'.$level.'></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -649,7 +527,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('Rich text measure is invalid.');
         }
 
-        return '<section class="g7pb-block g7pb-rich-text '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="rich-text"><div class="g7pb-rich-text__content g7pb-rich-text__content--'.$measure.'">'.$this->sanitizeRichText($content).'</div></section>';
+        return '<section class="g7pb-block g7pb-rich-text '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="rich-text"><div class="g7pb-rich-text__content g7pb-rich-text__content--'.$measure.'">'.$this->richText->sanitizeRichText($content).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -667,7 +545,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         $media = $this->compileCatalogImage($src, $alt, 'g7pb-image-block__image', '이미지를 선택하세요');
         if ($linkUrl !== '') {
-            $this->assertAllowedUrl($linkUrl, 'Image link');
+            $this->urls->assertAllowedUrl($linkUrl, 'Image link');
             $media = '<a class="g7pb-image-block__link" href="'.$this->escapeAttribute($linkUrl).'">'.$media.'</a>';
         }
         $captionMarkup = $caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>';
@@ -700,7 +578,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! in_array($variant, ['primary', 'secondary', 'text'], true)) {
                 throw new DocumentCompileException("Button item {$index} variant is invalid.");
             }
-            $this->assertAllowedUrl($url, "Button item {$index}");
+            $this->urls->assertAllowedUrl($url, "Button item {$index}");
             $compiled[] = '<a class="g7pb-button g7pb-button--'.$variant.'" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
         }
 
@@ -729,7 +607,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $alt = $this->optionalString($image, 'alt', 300) ?? '';
         $media = '<figure class="g7pb-image-text__media">'.$this->compileCatalogImage($src, $alt, 'g7pb-image-text__image', '대표 이미지를 선택하세요').'</figure>';
         $copy = '<div class="g7pb-image-text__copy">'.($eyebrow === null || $eyebrow === '' ? '' : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>')
-            .'<h2>'.$this->sanitizeInlineRichText($heading).'</h2>'.($body === '' ? '' : '<div class="g7pb-image-text__body">'.$this->sanitizeRichText($body).'</div>')
+            .'<h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2>'.($body === '' ? '' : '<div class="g7pb-image-text__body">'.$this->richText->sanitizeRichText($body).'</div>')
             .($primaryLink === null ? '' : $this->compileActionLink($primaryLink, 'Image text primary link', 'g7pb-button g7pb-button--primary')).'</div>';
         $content = $media.$copy;
 
@@ -763,10 +641,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! in_array($icon, self::FEATURE_ICONS, true)) {
                 throw new DocumentCompileException("Icon list item {$index} uses an unsupported icon.");
             }
-            $bodyMarkup = $this->hasCanonicalRichTextMarkup($body)
-                ? '<div class="g7pb-icon-list__body">'.$this->sanitizeRichText($body).'</div>'
+            $bodyMarkup = $this->richText->hasCanonicalRichTextMarkup($body)
+                ? '<div class="g7pb-icon-list__body">'.$this->richText->sanitizeRichText($body).'</div>'
                 : '<p>'.$this->formatText($body).'</p>';
-            $compiled[] = '<li class="g7pb-icon-list__item">'.$this->catalogIconSvg($icon, 'g7pb-icon-list__icon g7pb-icon--'.$icon).'<div><h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.'</div></li>';
+            $compiled[] = '<li class="g7pb-icon-list__item">'.$this->catalogIconSvg($icon, 'g7pb-icon-list__icon g7pb-icon--'.$icon).'<div><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.'</div></li>';
         }
 
         return '<section class="g7pb-block g7pb-icon-list g7pb-icon-list--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="icon-list">'.$this->compileSectionHeading($eyebrow, $heading).'<ul class="g7pb-icon-list__items">'.implode('', $compiled).'</ul></section>';
@@ -806,8 +684,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         $roleMarkup = $role === '' ? '' : '<span class="g7pb-blockquote__role">'.$this->escape($role).'</span>';
 
-        $quoteMarkup = $this->hasRichTextMarkup($quote)
-            ? '<div class="g7pb-blockquote__quote">'.$this->sanitizeRichText($quote).'</div>'
+        $quoteMarkup = $this->richText->hasRichTextMarkup($quote)
+            ? '<div class="g7pb-blockquote__quote">'.$this->richText->sanitizeRichText($quote).'</div>'
             : '<p class="g7pb-blockquote__quote">'.$this->formatText($quote).'</p>';
 
         return '<section class="g7pb-block g7pb-blockquote g7pb-blockquote--'.$alignment.' g7pb-blockquote--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="blockquote"><blockquote>'.$quoteMarkup.'<footer><cite>'.$this->escape($citation).'</cite>'.$roleMarkup.'</footer></blockquote></section>';
@@ -831,16 +709,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
         $action = '';
         if ($actionLabel !== '') {
-            $this->assertAllowedUrl($actionUrl, 'Notice action');
+            $this->urls->assertAllowedUrl($actionUrl, 'Notice action');
             $action = '<a class="g7pb-content-notice__action" href="'.$this->escapeAttribute($actionUrl).'">'.$this->escape($actionLabel).'<span aria-hidden="true"> →</span></a>';
         }
         $role = $tone === 'critical' ? 'alert' : 'note';
 
-        $bodyMarkup = $this->hasRichTextMarkup($body)
-            ? '<div class="g7pb-content-notice__body">'.$this->sanitizeRichText($body).'</div>'
+        $bodyMarkup = $this->richText->hasRichTextMarkup($body)
+            ? '<div class="g7pb-content-notice__body">'.$this->richText->sanitizeRichText($body).'</div>'
             : '<p class="g7pb-content-notice__body">'.$this->formatText($body).'</p>';
 
-        return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->sanitizePromotedInlineRichText($title).'</h2>'.$bodyMarkup.'</div>'.$action.'</section>';
+        return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->richText->sanitizePromotedInlineRichText($title).'</h2>'.$bodyMarkup.'</div>'.$action.'</section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -879,13 +757,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $link = '';
             if ($linkLabel !== '') {
-                $this->assertAllowedUrl($linkUrl, "Card grid item {$index}");
+                $this->urls->assertAllowedUrl($linkUrl, "Card grid item {$index}");
                 $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).'<span aria-hidden="true"> →</span></a>';
             }
-            $bodyMarkup = $body === '' ? '' : ($this->hasRichTextMarkup($body)
-                ? '<div class="g7pb-card-grid__body">'.$this->sanitizeRichText($body).'</div>'
+            $bodyMarkup = $body === '' ? '' : ($this->richText->hasRichTextMarkup($body)
+                ? '<div class="g7pb-card-grid__body">'.$this->richText->sanitizeRichText($body).'</div>'
                 : '<p class="g7pb-card-grid__body">'.$this->formatText($body).'</p>');
-            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</article>';
+            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-card-grid--layout-'.$layout;
@@ -911,7 +789,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $this->assertOnlyKeys($item, ['label', 'url'], "Breadcrumb item {$index}");
             $label = $this->requiredString($item, 'label', 120);
             $url = $this->requiredString($item, 'url', 2048);
-            $this->assertPageOrHttpsUrl($url, "Breadcrumb item {$index}");
+            $this->urls->assertPageOrHttpsUrl($url, "Breadcrumb item {$index}");
             $compiled[] = '<li><a href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a></li>';
         }
         $compiled[] = '<li aria-current="page">'.$this->escape($currentLabel).'</li>';
@@ -980,11 +858,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! in_array($network, $networks, true)) {
                 throw new DocumentCompileException("Social link item {$index} network is invalid.");
             }
-            $this->assertPageOrHttpsUrl($url, "Social link item {$index}");
+            $this->urls->assertPageOrHttpsUrl($url, "Social link item {$index}");
             $compiled[] = '<li><a class="g7pb-social-links__link g7pb-social-links__link--'.$network.'" href="'.$this->escapeAttribute($url).'" rel="noopener noreferrer"><span class="g7pb-social-links__icon" aria-hidden="true">'.$this->catalogIconSvg($network, 'g7pb-social-links__glyph').'</span><span>'.$this->escape($label).'</span></a></li>';
         }
 
-        return '<section class="g7pb-block g7pb-social-links g7pb-social-links--'.$variant.' g7pb-social-links--'.$alignment.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="social-links"><nav aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).'"><h2>'.$this->sanitizeInlineRichText($heading).'</h2><ul>'.implode('', $compiled).'</ul></nav></section>';
+        return '<section class="g7pb-block g7pb-social-links g7pb-social-links--'.$variant.' g7pb-social-links--'.$alignment.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="social-links"><nav aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'"><h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2><ul>'.implode('', $compiled).'</ul></nav></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1018,7 +896,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $slides[] = '<figure class="g7pb-hero-slider__slide g7pb-image-carousel__slide">'.$media.($caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>').'</figure>';
         }
 
-        return '<section class="g7pb-block g7pb-hero-slider g7pb-image-carousel g7pb-image-carousel--'.str_replace(':', '-', $aspectRatio).' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="image-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" data-g7pb-slider-controls="'.$controls.'" aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+        return '<section class="g7pb-block g7pb-hero-slider g7pb-image-carousel g7pb-image-carousel--'.str_replace(':', '-', $aspectRatio).' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="image-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" data-g7pb-slider-controls="'.$controls.'" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
     }
 
     /**
@@ -1054,10 +932,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if ($eyebrow !== null && $eyebrow !== '') {
                 $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
             }
-            $copy[] = '<h1>'.$this->sanitizeInlineRichText($title).'</h1>';
+            $copy[] = '<h1>'.$this->richText->sanitizeInlineRichText($title).'</h1>';
             if ($body !== null && $body !== '') {
-                $copy[] = $this->hasCanonicalRichTextMarkup($body)
-                    ? '<div class="g7pb-hero-split__body">'.$this->sanitizeRichText($body).'</div>'
+                $copy[] = $this->richText->hasCanonicalRichTextMarkup($body)
+                    ? '<div class="g7pb-hero-split__body">'.$this->richText->sanitizeRichText($body).'</div>'
                     : '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
             }
             if ($cta !== null) {
@@ -1085,23 +963,23 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $parts[] = '<p class="g7pb-hero__eyebrow">'.$this->escape($eyebrow).'</p>';
         }
 
-        $parts[] = '<h1 class="g7pb-hero__title">'.$this->sanitizeInlineRichText($title).'</h1>';
+        $parts[] = '<h1 class="g7pb-hero__title">'.$this->richText->sanitizeInlineRichText($title).'</h1>';
 
         if ($body !== null && $body !== '') {
-            $parts[] = '<div class="g7pb-hero__body">'.$this->sanitizeRichText($body).'</div>';
+            $parts[] = '<div class="g7pb-hero__body">'.$this->richText->sanitizeRichText($body).'</div>';
         }
 
         if ($cta !== null) {
             $label = $this->requiredString($cta, 'label', 120);
             $url = $this->requiredString($cta, 'url', 2048);
-            $this->assertAllowedUrl($url, 'Hero CTA');
+            $this->urls->assertAllowedUrl($url, 'Hero CTA');
             $parts[] = '<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
         }
 
         if ($image !== null) {
             $src = $this->requiredString($image, 'src', 2048);
             $alt = $this->optionalString($image, 'alt', 300) ?? '';
-            $this->assertAllowedImageUrl($src);
+            $this->urls->assertAllowedImageUrl($src);
             $parts[] = '<img class="g7pb-hero__image" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="eager">';
         }
 
@@ -1142,15 +1020,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Feature item {$index} uses an unsupported icon.");
             }
 
-            $bodyMarkup = $this->hasCanonicalRichTextMarkup($body)
-                ? '<div class="g7pb-features__body">'.$this->sanitizeRichText($body).'</div>'
+            $bodyMarkup = $this->richText->hasCanonicalRichTextMarkup($body)
+                ? '<div class="g7pb-features__body">'.$this->richText->sanitizeRichText($body).'</div>'
                 : '<p>'.$this->formatText($body).'</p>';
-            $compiledItems[] = '<article class="g7pb-features__item">'.$this->catalogIconSvg($icon, 'g7pb-features__icon g7pb-icon--'.$icon).'<h3>'.$this->sanitizePromotedInlineRichText($itemTitle).'</h3>'.$bodyMarkup.'</article>';
+            $compiledItems[] = '<article class="g7pb-features__item">'.$this->catalogIconSvg($icon, 'g7pb-features__icon g7pb-icon--'.$icon).'<h3>'.$this->richText->sanitizePromotedInlineRichText($itemTitle).'</h3>'.$bodyMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-features--layout-'.$layout;
 
-        return '<section class="g7pb-block g7pb-features'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="features"><h2 class="g7pb-features__title">'.$this->sanitizeInlineRichText($title).'</h2><div class="g7pb-features__grid">'.implode('', $compiledItems).'</div></section>';
+        return '<section class="g7pb-block g7pb-features'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="features"><h2 class="g7pb-features__title">'.$this->richText->sanitizeInlineRichText($title).'</h2><div class="g7pb-features__grid">'.implode('', $compiledItems).'</div></section>';
     }
 
     /**
@@ -1182,10 +1060,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         if ($eyebrow !== null && $eyebrow !== '') {
             $copy[] = '<p class="g7pb-cta__eyebrow">'.$this->escape($eyebrow).'</p>';
         }
-        $copy[] = '<h2 class="g7pb-cta__heading">'.$this->sanitizeInlineRichText($heading).'</h2>';
+        $copy[] = '<h2 class="g7pb-cta__heading">'.$this->richText->sanitizeInlineRichText($heading).'</h2>';
         if ($body !== null && $body !== '') {
-            $copy[] = $this->hasCanonicalRichTextMarkup($body)
-                ? '<div class="g7pb-cta__body">'.$this->sanitizeRichText($body).'</div>'
+            $copy[] = $this->richText->hasCanonicalRichTextMarkup($body)
+                ? '<div class="g7pb-cta__body">'.$this->richText->sanitizeRichText($body).'</div>'
                 : '<p class="g7pb-cta__body">'.$this->formatText($body).'</p>';
         }
 
@@ -1223,7 +1101,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $address = $this->requiredString($props, 'address', 1000);
         $phone = $this->requiredString($props, 'phone', 40);
         $email = $this->requiredString($props, 'email', 320);
-        $phoneHref = $this->phoneHref($phone);
+        $phoneHref = $this->urls->phoneHref($phone);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
 
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
@@ -1244,7 +1122,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             ? ''
             : '<div class="g7pb-contact__actions">'.implode('', $actions).'</div>';
 
-        return '<section class="g7pb-block g7pb-contact '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="contact"><div class="g7pb-contact__heading"><p class="g7pb-contact__eyebrow">Contact</p><h2>'.$this->sanitizeInlineRichText($heading).'</h2></div><address class="g7pb-contact__details"><p>'.$this->formatText($address).'</p><a href="'.$this->escapeAttribute($phoneHref).'">'.$this->escape($phone).'</a><a href="'.$this->escapeAttribute('mailto:'.$email).'">'.$this->escape($email).'</a></address>'.$actionMarkup.'</section>';
+        return '<section class="g7pb-block g7pb-contact '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="contact"><div class="g7pb-contact__heading"><p class="g7pb-contact__eyebrow">Contact</p><h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2></div><address class="g7pb-contact__details"><p>'.$this->formatText($address).'</p><a href="'.$this->escapeAttribute($phoneHref).'">'.$this->escape($phone).'</a><a href="'.$this->escapeAttribute('mailto:'.$email).'">'.$this->escape($email).'</a></address>'.$actionMarkup.'</section>';
     }
 
     /**
@@ -1276,10 +1154,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         if ($eyebrow !== null && $eyebrow !== '') {
             $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
         }
-        $copy[] = '<h1>'.$this->sanitizeInlineRichText($title).'</h1>';
+        $copy[] = '<h1>'.$this->richText->sanitizeInlineRichText($title).'</h1>';
         if ($body !== null && $body !== '') {
-            $copy[] = $this->hasRichTextMarkup($body)
-                ? '<div class="g7pb-hero-split__body">'.$this->sanitizeRichText($body).'</div>'
+            $copy[] = $this->richText->hasRichTextMarkup($body)
+                ? '<div class="g7pb-hero-split__body">'.$this->richText->sanitizeRichText($body).'</div>'
                 : '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
         }
 
@@ -1343,15 +1221,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $buttonUrl = $this->requiredString($slide, 'buttonUrl', 2048);
             $imageSrc = $this->optionalString($slide, 'imageSrc', 2048) ?? '';
             $imageAlt = $this->optionalString($slide, 'imageAlt', 300) ?? '';
-            $this->assertAllowedUrl($buttonUrl, "Slider Hero item {$index}");
+            $this->urls->assertAllowedUrl($buttonUrl, "Slider Hero item {$index}");
 
             $copy = $eyebrow === null || $eyebrow === ''
                 ? ''
                 : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
-            $copy .= '<h2>'.$this->sanitizePromotedInlineRichText($title).'</h2>';
+            $copy .= '<h2>'.$this->richText->sanitizePromotedInlineRichText($title).'</h2>';
             if ($body !== null && $body !== '') {
-                $copy .= $this->hasRichTextMarkup($body)
-                    ? '<div class="g7pb-hero-slider__body">'.$this->sanitizeRichText($body).'</div>'
+                $copy .= $this->richText->hasRichTextMarkup($body)
+                    ? '<div class="g7pb-hero-slider__body">'.$this->richText->sanitizeRichText($body).'</div>'
                     : '<p>'.$this->formatText($body).'</p>';
             }
             $copy .= '<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a>';
@@ -1400,7 +1278,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 ? '<span>'.$this->escape($name).'</span>'
                 : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-cloud__image', $name);
             if ($url !== '') {
-                $this->assertAllowedUrl($url, "Logo item {$index}");
+                $this->urls->assertAllowedUrl($url, "Logo item {$index}");
                 $visual = '<a href="'.$this->escapeAttribute($url).'" aria-label="'.$this->escapeAttribute($name).'">'.$visual.'</a>';
             }
             $items[] = '<li>'.$visual.'</li>';
@@ -1408,7 +1286,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         $layoutClass = $layout === null ? '' : ' g7pb-logo-cloud--layout-'.$layout;
 
-        return '<section class="g7pb-block g7pb-logo-cloud'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-cloud"><h2>'.$this->sanitizeInlineRichText($heading).'</h2><ul>'.implode('', $items).'</ul></section>';
+        return '<section class="g7pb-block g7pb-logo-cloud'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-cloud"><h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2><ul>'.implode('', $items).'</ul></section>';
     }
 
     /**
@@ -1444,10 +1322,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $value = $this->requiredString($item, 'value', 80);
             $label = $this->requiredInlineRichTextString($item, 'label', 120);
             $detail = $this->optionalRichTextString($item, 'detail', 500) ?? '';
-            $detailMarkup = $this->hasCanonicalRichTextMarkup($detail)
-                ? '<div class="g7pb-stats__detail">'.$this->sanitizeRichText($detail).'</div>'
+            $detailMarkup = $this->richText->hasCanonicalRichTextMarkup($detail)
+                ? '<div class="g7pb-stats__detail">'.$this->richText->sanitizeRichText($detail).'</div>'
                 : '<p>'.$this->formatText($detail).'</p>';
-            $compiled[] = '<article>'.$this->catalogIconSvg($icon, 'g7pb-stats__icon g7pb-stats__icon--'.$icon).'<strong>'.$this->escape($value).'</strong><h3>'.$this->sanitizePromotedInlineRichText($label).'</h3>'.$detailMarkup.'</article>';
+            $compiled[] = '<article>'.$this->catalogIconSvg($icon, 'g7pb-stats__icon g7pb-stats__icon--'.$icon).'<strong>'.$this->escape($value).'</strong><h3>'.$this->richText->sanitizePromotedInlineRichText($label).'</h3>'.$detailMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-stats--layout-'.$layout;
@@ -1492,7 +1370,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $buttonUrl = $this->requiredString($plan, 'buttonUrl', 2048);
             $featured = $this->requiredBoolean($plan, 'featured');
             $features = $plan['features'] ?? null;
-            $this->assertAllowedUrl($buttonUrl, "Pricing plan {$index}");
+            $this->urls->assertAllowedUrl($buttonUrl, "Pricing plan {$index}");
 
             if (! is_array($features) || count($features) < 1 || count($features) > 12) {
                 throw new DocumentCompileException("Pricing plan {$index} features are invalid.");
@@ -1504,14 +1382,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                     "Pricing plan {$index} feature {$featureIndex}",
                     200,
                 );
-                $featureItems[] = '<li>'.$this->sanitizePromotedInlineRichText($feature).'</li>';
+                $featureItems[] = '<li>'.$this->richText->sanitizePromotedInlineRichText($feature).'</li>';
             }
             $featuredClass = $featured ? ' g7pb-pricing__plan--featured' : '';
             $badge = $featured ? '<span class="g7pb-pricing__badge">추천</span>' : '';
-            $descriptionMarkup = $this->hasCanonicalRichTextMarkup($description)
-                ? '<div class="g7pb-pricing__description">'.$this->sanitizeRichText($description).'</div>'
+            $descriptionMarkup = $this->richText->hasCanonicalRichTextMarkup($description)
+                ? '<div class="g7pb-pricing__description">'.$this->richText->sanitizeRichText($description).'</div>'
                 : '<p>'.$this->formatText($description).'</p>';
-            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->sanitizePromotedInlineRichText($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong><span>'.$this->escape($period).'</span></p>'.$descriptionMarkup.'<ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
+            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->richText->sanitizePromotedInlineRichText($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong><span>'.$this->escape($period).'</span></p>'.$descriptionMarkup.'<ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-pricing--layout-'.$layout;
@@ -1553,11 +1431,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name, 'g7pb-team__image', mb_substr($name, 0, 1));
             $memberName = '<h3>'.$this->escape($name).'</h3>';
             if ($profileUrl !== '') {
-                $this->assertAllowedUrl($profileUrl, "Team member {$index}");
+                $this->urls->assertAllowedUrl($profileUrl, "Team member {$index}");
                 $memberName = '<h3><a href="'.$this->escapeAttribute($profileUrl).'">'.$this->escape($name).'</a></h3>';
             }
-            $bioMarkup = $this->hasCanonicalRichTextMarkup($bio)
-                ? '<div class="g7pb-team__bio">'.$this->sanitizeRichText($bio).'</div>'
+            $bioMarkup = $this->richText->hasCanonicalRichTextMarkup($bio)
+                ? '<div class="g7pb-team__bio">'.$this->richText->sanitizeRichText($bio).'</div>'
                 : '<p>'.$this->formatText($bio).'</p>';
             $compiled[] = '<article><figure>'.$media.'</figure>'.$memberName.'<strong>'.$this->escape($role).'</strong>'.$bioMarkup.'</article>';
         }
@@ -1643,8 +1521,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $compiled[] = '<label><span><span>'.$this->escape($label).'</span><strong>'.$this->escape($formattedValue).'<span class="g7pb-bar-chart__unit">'.$this->escape($unit).'</span></strong></span><progress max="100" value="'.$this->escapeAttribute($formattedValue).'" data-tone="'.$tone.'">'.$this->escape($formattedValue).'</progress></label>';
         }
 
-        $descriptionMarkup = $description === '' ? '' : ($this->hasCanonicalRichTextMarkup($description)
-            ? '<div class="g7pb-bar-chart__description">'.$this->sanitizeRichText($description).'</div>'
+        $descriptionMarkup = $description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description)
+            ? '<div class="g7pb-bar-chart__description">'.$this->richText->sanitizeRichText($description).'</div>'
             : '<p>'.$this->formatText($description).'</p>');
 
         return '<section class="g7pb-block g7pb-bar-chart '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="bar-chart"><figure><figcaption>'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.'</figcaption><div class="g7pb-bar-chart__plot">'.implode('', $compiled).'</div></figure></section>';
@@ -1735,7 +1613,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $subject = $showSubject ? '<label class="g7pb-inquiry-form__wide"><span>문의 제목</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="subject" data-g7pb-control-maxlength="200"></span></label>' : '';
 
         return '<section class="g7pb-block g7pb-inquiry '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="inquiry-form">'
-            .'<div class="g7pb-inquiry__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : ($this->hasCanonicalRichTextMarkup($description) ? '<div class="g7pb-inquiry__description">'.$this->sanitizeRichText($description).'</div>' : '<p>'.$this->formatText($description).'</p>')).'</div>'
+            .'<div class="g7pb-inquiry__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description) ? '<div class="g7pb-inquiry__description">'.$this->richText->sanitizeRichText($description).'</div>' : '<p>'.$this->formatText($description).'</p>')).'</div>'
             .'<div class="g7pb-inquiry-form" data-g7pb-inquiry-host data-g7pb-inquiry-form data-g7pb-form-action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escapeAttribute($successMessage).'" data-g7pb-privacy-label="'.$this->escapeAttribute($privacyLabel).'" data-g7pb-submit-label="'.$this->escapeAttribute($submitLabel).'" data-g7pb-show-phone="'.($showPhone ? 'true' : 'false').'" data-g7pb-show-subject="'.($showSubject ? 'true' : 'false').'">'
             .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="form_kind" data-g7pb-control-value="'.$kind.'"></span>'
             .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="block_instance_id"></span>'
@@ -1772,7 +1650,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         if (! in_array($provider, ['image', 'openstreetmap', 'google', 'none'], true)) {
             throw new DocumentCompileException('Map provider is invalid.');
         }
-        $this->assertAllowedUrl($directionsUrl, 'Directions link');
+        $this->urls->assertAllowedUrl($directionsUrl, 'Directions link');
 
         $map = '<div class="g7pb-map__placeholder" role="img" aria-label="'.$this->escapeAttribute($address).' 지도 자리"><span>지도 표시 안 함</span></div>';
         if ($provider === 'image') {
@@ -1794,8 +1672,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             .($parking === '' ? '' : '<span class="g7pb-map__parking">'.$this->formatText($parking).'</span>')
             .'<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($directionsUrl).'">'.$this->escape($directionsLabel).'</a></address>';
 
-        $descriptionMarkup = $description === '' ? '' : ($this->hasCanonicalRichTextMarkup($description)
-            ? '<div class="g7pb-map__description">'.$this->sanitizeRichText($description).'</div>'
+        $descriptionMarkup = $description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description)
+            ? '<div class="g7pb-map__description">'.$this->richText->sanitizeRichText($description).'</div>'
             : '<p>'.$this->formatText($description).'</p>');
 
         return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
@@ -1834,7 +1712,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
                 .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
-            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><div class="g7pb-testimonials__quote">'.$this->sanitizeRichText($quote).'</div><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
+            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><div class="g7pb-testimonials__quote">'.$this->richText->sanitizeRichText($quote).'</div><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
         return '<section class="g7pb-block g7pb-testimonials g7pb-testimonials--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonials">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-testimonials__items">'.implode('', $compiled).'</div></section>';
@@ -1867,8 +1745,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $answer = $this->requiredString($item, 'answer', 4000);
             $open = $openFirst && $index === 0;
             $compiled[] = '<div class="g7pb-faq__item" data-g7pb-accordion-item data-g7pb-open="'.($open ? 'true' : 'false').'">'
-                .'<div class="g7pb-faq__trigger" role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="'.($open ? 'true' : 'false').'"><span>'.$this->sanitizePromotedInlineRichText($question).'</span><i aria-hidden="true">+</i></div>'
-                .'<div class="g7pb-faq__answer" data-g7pb-accordion-panel>'.$this->sanitizeRichText($answer).'</div></div>';
+                .'<div class="g7pb-faq__trigger" role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="'.($open ? 'true' : 'false').'"><span>'.$this->richText->sanitizePromotedInlineRichText($question).'</span><i aria-hidden="true">+</i></div>'
+                .'<div class="g7pb-faq__answer" data-g7pb-accordion-panel>'.$this->richText->sanitizeRichText($answer).'</div></div>';
         }
 
         return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
@@ -1905,13 +1783,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $link = '';
             if ($linkUrl !== '') {
-                $this->assertAllowedUrl($linkUrl, "Process step {$index}");
+                $this->urls->assertAllowedUrl($linkUrl, "Process step {$index}");
                 $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).' <span aria-hidden="true">→</span></a>';
             }
-            $bodyMarkup = $this->hasRichTextMarkup($body)
-                ? '<div class="g7pb-process__body">'.$this->sanitizeRichText($body).'</div>'
+            $bodyMarkup = $this->richText->hasRichTextMarkup($body)
+                ? '<div class="g7pb-process__body">'.$this->richText->sanitizeRichText($body).'</div>'
                 : '<p>'.$this->formatText($body).'</p>';
-            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</li>';
+            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</li>';
         }
 
         return '<section class="g7pb-block g7pb-process g7pb-process--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="process-timeline">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
@@ -1949,13 +1827,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $body = $this->requiredString($item, 'body', 4000);
             $selected = $initialTab === $index;
             $buttons[] = '<span data-g7pb-runtime-button role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</span>';
-            $bodyMarkup = $this->hasRichTextMarkup($body)
-                ? '<div class="g7pb-tabs__body">'.$this->sanitizeRichText($body).'</div>'
+            $bodyMarkup = $this->richText->hasRichTextMarkup($body)
+                ? '<div class="g7pb-tabs__body">'.$this->richText->sanitizeRichText($body).'</div>'
                 : '<p>'.$this->formatText($body).'</p>';
-            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->sanitizePromotedInlineRichText($itemHeading).'</h3>'.$bodyMarkup.'</article>';
+            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->richText->sanitizePromotedInlineRichText($itemHeading).'</h3>'.$bodyMarkup.'</article>';
         }
 
-        return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
+        return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1986,7 +1864,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $this->assertOnlyKeys($column, ['title', 'description'], "Comparison column {$index}");
             $title = $this->requiredInlineRichTextString($column, 'title', 120);
             $description = $this->optionalInlineRichTextString($column, 'description', 300) ?? '';
-            $headings[] = '<th scope="col"'.($highlight === $index ? ' class="is-highlighted"' : '').'><strong>'.$this->sanitizePromotedInlineRichText($title).'</strong>'.($description === '' ? '' : '<span>'.$this->sanitizePromotedInlineRichText($description).'</span>').'</th>';
+            $headings[] = '<th scope="col"'.($highlight === $index ? ' class="is-highlighted"' : '').'><strong>'.$this->richText->sanitizePromotedInlineRichText($title).'</strong>'.($description === '' ? '' : '<span>'.$this->richText->sanitizePromotedInlineRichText($description).'</span>').'</th>';
         }
 
         $compiledRows = [];
@@ -2007,10 +1885,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 }
                 $cells[] = '<td'.($highlight === $columnIndex ? ' class="is-highlighted"' : '').'>'.$this->formatText($value).'</td>';
             }
-            $compiledRows[] = '<tr><th scope="row">'.$this->sanitizePromotedInlineRichText($feature).'</th>'.implode('', $cells).'</tr>';
+            $compiledRows[] = '<tr><th scope="row">'.$this->richText->sanitizePromotedInlineRichText($feature).'</th>'.implode('', $cells).'</tr>';
         }
 
-        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll" role="region" aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).' 비교표" tabindex="0"><table><caption class="g7pb-visually-hidden">'.$this->escape($this->inlinePlainText($heading)).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
+        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll" role="region" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).' 비교표" tabindex="0"><table><caption class="g7pb-visually-hidden">'.$this->escape($this->richText->inlinePlainText($heading)).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2048,17 +1926,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $imageSrc = $this->optionalString($item, 'imageSrc', 2048) ?? '';
             $imageAlt = $this->optionalString($item, 'imageAlt', 300) ?? '';
             $url = $this->requiredString($item, 'url', 2048);
-            $this->assertAllowedUrl($url, "Article item {$index}");
-            $plainTitle = $this->promotedInlinePlainText($title, allowLinks: false);
+            $this->urls->assertAllowedUrl($url, "Article item {$index}");
+            $plainTitle = $this->richText->promotedInlinePlainText($title, allowLinks: false);
             $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $plainTitle, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
             $meta = array_filter([
                 $category === '' ? '' : '<span>'.$this->escape($category).'</span>',
                 $date === '' ? '' : '<time datetime="'.$this->escapeAttribute($date).'">'.$this->escape($date).'</time>',
             ]);
-            $summaryMarkup = $this->hasRichTextMarkup($summary)
-                ? '<div class="g7pb-articles__summary">'.$this->sanitizeRichText($summary).'</div>'
+            $summaryMarkup = $this->richText->hasRichTextMarkup($summary)
+                ? '<div class="g7pb-articles__summary">'.$this->richText->sanitizeRichText($summary).'</div>'
                 : '<p>'.$this->formatText($summary).'</p>';
-            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->sanitizePromotedInlineRichText($title, allowLinks: false).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
+            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->richText->sanitizePromotedInlineRichText($title, allowLinks: false).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
         }
 
         return '<section class="g7pb-block g7pb-articles g7pb-articles--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="article-list">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-articles__items">'.implode('', $compiled).'</div></section>';
@@ -2085,9 +1963,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             ? 'https://www.youtube-nocookie.com/embed/'.$videoId.'?rel=0'
             : 'https://player.vimeo.com/video/'.$videoId;
 
-        $captionMarkup = $caption === '' ? '' : '<figcaption>'.($this->hasCanonicalRichTextMarkup($caption) ? $this->sanitizeRichText($caption) : $this->formatText($caption)).'</figcaption>';
+        $captionMarkup = $caption === '' ? '' : '<figcaption>'.($this->richText->hasCanonicalRichTextMarkup($caption) ? $this->richText->sanitizeRichText($caption) : $this->formatText($caption)).'</figcaption>';
 
-        $embed = $this->embedPlaceholder('video-'.$provider, $src, $this->inlinePlainText($heading));
+        $embed = $this->embedPlaceholder('video-'.$provider, $src, $this->richText->inlinePlainText($heading));
 
         return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'">'.$embed.'</div>'.$captionMarkup.'</figure></section>';
     }
@@ -2120,13 +1998,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 ? '<span>'.$this->escape($name).'</span>'
                 : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-carousel__image', $name);
             if ($url !== '') {
-                $this->assertAllowedUrl($url, "Logo carousel item {$index}");
+                $this->urls->assertAllowedUrl($url, "Logo carousel item {$index}");
                 $visual = '<a href="'.$this->escapeAttribute($url).'" aria-label="'.$this->escapeAttribute($name).'">'.$visual.'</a>';
             }
             $slides[] = '<div class="g7pb-hero-slider__slide g7pb-logo-carousel__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($logos).'">'.$visual.'</div>';
         }
 
-        return '<section class="g7pb-block g7pb-logo-carousel g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+        return '<section class="g7pb-block g7pb-logo-carousel g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2160,13 +2038,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
                 .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
-            $quoteMarkup = $this->hasRichTextMarkup($quote)
-                ? '<div class="g7pb-testimonial-slider__quote">'.$this->sanitizeRichText($quote).'</div>'
+            $quoteMarkup = $this->richText->hasRichTextMarkup($quote)
+                ? '<div class="g7pb-testimonial-slider__quote">'.$this->richText->sanitizeRichText($quote).'</div>'
                 : '<p class="g7pb-testimonial-slider__quote">'.$this->formatText($quote).'</p>';
             $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p>'.$quoteMarkup.'<footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
-        return '<section class="g7pb-block g7pb-testimonial-slider g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonial-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($this->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+        return '<section class="g7pb-block g7pb-testimonial-slider g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonial-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2200,13 +2078,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $action = '';
             if ($buttonUrl !== '') {
-                $this->assertAllowedUrl($buttonUrl, "Event item {$index}");
+                $this->urls->assertAllowedUrl($buttonUrl, "Event item {$index}");
                 $action = '<a href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).' <span aria-hidden="true">→</span></a>';
             }
-            $descriptionMarkup = $this->hasRichTextMarkup($description)
-                ? '<div class="g7pb-events__description">'.$this->sanitizeRichText($description).'</div>'
+            $descriptionMarkup = $this->richText->hasRichTextMarkup($description)
+                ? '<div class="g7pb-events__description">'.$this->richText->sanitizeRichText($description).'</div>'
                 : '<p>'.$this->formatText($description).'</p>';
-            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.$action.'</article></li>';
+            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.$action.'</article></li>';
         }
 
         return '<section class="g7pb-block g7pb-events g7pb-events--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="event-schedule">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
@@ -2236,13 +2114,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $fileSize = $this->optionalString($item, 'fileSize', 40) ?? '';
             $buttonLabel = $this->requiredString($item, 'buttonLabel', 120);
             $url = $this->requiredString($item, 'url', 2048);
-            $this->assertAllowedUrl($url, "Download resource {$index}");
+            $this->urls->assertAllowedUrl($url, "Download resource {$index}");
             $fileMeta = '<span class="g7pb-downloads__file-type">'.$this->escape($fileType).'</span>'
                 .($fileSize === '' ? '' : '<i aria-hidden="true"> · </i><span class="g7pb-downloads__file-size">'.$this->escape($fileSize).'</span>');
-            $descriptionMarkup = $description === '' ? '' : ($this->hasRichTextMarkup($description)
-                ? '<div class="g7pb-downloads__description">'.$this->sanitizeRichText($description).'</div>'
+            $descriptionMarkup = $description === '' ? '' : ($this->richText->hasRichTextMarkup($description)
+                ? '<div class="g7pb-downloads__description">'.$this->richText->sanitizeRichText($description).'</div>'
                 : '<p>'.$this->formatText($description).'</p>');
-            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'" download>'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
+            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'" download>'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
         }
 
         return '<section class="g7pb-block g7pb-downloads '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="download-resources">'.$this->compileSectionHeading($eyebrow, $heading).'<ul>'.implode('', $compiled).'</ul></section>';
@@ -2325,7 +2203,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             || ! in_array($audience, ['all', 'guest', 'member'], true)) {
             throw new DocumentCompileException('G7 post detail configuration is invalid.');
         }
-        $this->assertAllowedUrl($detailUrl, 'G7 post detail');
+        $this->urls->assertAllowedUrl($detailUrl, 'G7 post detail');
         $endpoint = '/api/modules/sirsoft-board/boards/'.rawurlencode($boardSlug).'/posts/'.$postId;
         $hidden = $audience === 'all' ? '' : ' hidden';
 
@@ -2350,7 +2228,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             || ! in_array($audience, ['all', 'guest', 'member'], true)) {
             throw new DocumentCompileException('G7 product detail configuration is invalid.');
         }
-        $this->assertAllowedUrl($detailUrl, 'G7 product detail');
+        $this->urls->assertAllowedUrl($detailUrl, 'G7 product detail');
         $endpoint = '/api/modules/sirsoft-ecommerce/products/'.rawurlencode($productKey);
         $hidden = $audience === 'all' ? '' : ' hidden';
 
@@ -2368,7 +2246,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             ? ''
             : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
 
-        return '<header class="g7pb-section-heading">'.$eyebrowMarkup.'<h2>'.$this->sanitizeInlineRichText($heading).'</h2></header>';
+        return '<header class="g7pb-section-heading">'.$eyebrowMarkup.'<h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2></header>';
     }
 
     private function compileCatalogImage(
@@ -2386,7 +2264,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('Image alternative text is required.');
         }
 
-        $this->assertAllowedImageUrl($src);
+        $this->urls->assertAllowedImageUrl($src);
 
         return '<img class="'.$className.'" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="'.$loading.'">';
     }
@@ -2630,346 +2508,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     }
 
     /**
-     * @param  array<string, mixed>  $props
-     */
-    private function applyElementAppearances(string $markup, array $props, string $type): string
-    {
-        $appearance = $this->optionalMap($props, 'appearance') ?? [];
-        $elements = $appearance['elements'] ?? [];
-        if ($elements === []) {
-            return $markup;
-        }
-        if (! is_array($elements) || count($elements) > 100) {
-            throw new DocumentCompileException('Element appearance map is invalid.');
-        }
-
-        $document = new \DOMDocument('1.0', 'UTF-8');
-        $previous = libxml_use_internal_errors(true);
-        $loaded = $document->loadHTML(
-            '<?xml encoding="UTF-8"><div data-g7pb-compile-root>'.$markup.'</div>',
-            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
-        );
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
-        if (! $loaded) {
-            throw new DocumentCompileException('Compiled block could not be decorated.');
-        }
-
-        $rootNodes = (new \DOMXPath($document))->query('//*[@data-g7pb-compile-root]');
-        $root = $rootNodes instanceof \DOMNodeList ? $rootNodes->item(0) : null;
-        if (! $root instanceof \DOMElement) {
-            throw new DocumentCompileException('Compiled block decoration root is missing.');
-        }
-        $xpath = new \DOMXPath($document);
-        foreach ($elements as $fieldPath => $style) {
-            if (! is_string($fieldPath) || preg_match('/^[A-Za-z][A-Za-z0-9]*(?:\.\d+)?(?:\.[A-Za-z][A-Za-z0-9]*)?$/D', $fieldPath) !== 1 || ! is_array($style)) {
-                throw new DocumentCompileException('Element appearance field path is invalid.');
-            }
-            $selector = $this->elementAppearanceXPath($type, $fieldPath);
-            $targets = $selector === null ? false : $xpath->query($selector, $root);
-            if (! $targets instanceof \DOMNodeList || $targets->length === 0) {
-                if ($this->isEmptyOptionalAppearanceTarget($type, $props, $fieldPath)) {
-                    continue;
-                }
-                throw new DocumentCompileException("Element appearance target {$fieldPath} is not supported by block {$type}.");
-            }
-            $classes = $this->elementAppearanceClasses($style);
-            foreach ($targets as $target) {
-                if ($target instanceof \DOMElement) {
-                    $target->setAttribute('class', trim($target->getAttribute('class').' '.$classes));
-                }
-            }
-        }
-
-        $compiled = '';
-        foreach ($root->childNodes as $child) {
-            $compiled .= $document->saveHTML($child);
-        }
-
-        return $compiled;
-    }
-
-    /** @param array<string, mixed> $style */
-    private function elementAppearanceClasses(array $style): string
-    {
-        $this->assertOnlyKeys($style, ['font', 'fontSizeRem', 'size', 'weight', 'align', 'tone'], 'Element appearance');
-        if ($style === []) {
-            throw new DocumentCompileException('Element appearance cannot be empty.');
-        }
-        $font = $this->optionalString($style, 'font', 16);
-        $fontSizeRem = $style['fontSizeRem'] ?? null;
-        $size = $this->optionalString($style, 'size', 16);
-        $weight = $this->optionalString($style, 'weight', 16);
-        $align = $this->optionalString($style, 'align', 16);
-        $tone = $this->optionalString($style, 'tone', 16);
-        if ($font !== null && ! in_array($font, ['inherit', 'system', 'modern', 'serif', 'mono'], true)) {
-            throw new DocumentCompileException('Element appearance font is invalid.');
-        }
-        if ($size !== null && ! in_array($size, ['small', 'base', 'large', 'xlarge'], true)) {
-            throw new DocumentCompileException('Element appearance size is invalid.');
-        }
-        if ($fontSizeRem !== null && (! is_int($fontSizeRem) && ! is_float($fontSizeRem))) {
-            throw new DocumentCompileException('Element appearance font size is invalid.');
-        }
-        $fontSizeIndex = $fontSizeRem === null ? false : array_search(
-            (float) $fontSizeRem,
-            [0.75, 0.875, 1.0, 1.125, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0],
-            true,
-        );
-        if ($fontSizeRem !== null && $fontSizeIndex === false) {
-            throw new DocumentCompileException('Element appearance font size is invalid.');
-        }
-        if ($fontSizeRem !== null && $size !== null) {
-            throw new DocumentCompileException('Element appearance cannot combine legacy and explicit font sizes.');
-        }
-        if ($weight !== null && ! in_array($weight, ['regular', 'medium', 'semibold', 'bold'], true)) {
-            throw new DocumentCompileException('Element appearance weight is invalid.');
-        }
-        if ($align !== null && ! in_array($align, ['left', 'center', 'right'], true)) {
-            throw new DocumentCompileException('Element appearance alignment is invalid.');
-        }
-        if ($tone !== null && ! in_array($tone, ['default', 'muted', 'accent', 'contrast'], true)) {
-            throw new DocumentCompileException('Element appearance tone is invalid.');
-        }
-
-        return implode(' ', array_filter([
-            $font === null ? null : 'g7pb-element-font--'.$font,
-            $fontSizeIndex === false ? null : 'g7pb-element-font-size--'.[12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 96][$fontSizeIndex],
-            $size === null ? null : 'g7pb-element-size--'.$size,
-            $weight === null ? null : 'g7pb-element-weight--'.$weight,
-            $align === null ? null : 'g7pb-element-align--'.$align,
-            $tone === null ? null : 'g7pb-element-tone--'.$tone,
-        ]));
-    }
-
-    private function elementAppearanceXPath(string $type, string $fieldPath): ?string
-    {
-        if (! str_contains($fieldPath, '.') && ! in_array($fieldPath, self::ROOT_ELEMENT_FIELDS[$type] ?? [], true)) {
-            return null;
-        }
-
-        $hasClass = static fn (string $class): string => "contains(concat(' ', normalize-space(@class), ' '), ' {$class} ')";
-
-        $root = match ($fieldPath) {
-            'eyebrow' => '(.//*['.$hasClass('g7pb-section-eyebrow').' or '.$hasClass('g7pb-hero__eyebrow').' or '.$hasClass('g7pb-cta__eyebrow').'])[1]',
-            'heading' => match ($type) {
-                self::LOGO_CLOUD_TYPE => '(.//h2)[1]',
-                self::CTA_TYPE => '(.//*['.$hasClass('g7pb-cta__heading').'])[1]',
-                self::HEADING_TYPE => '(.//*['.$hasClass('g7pb-heading-block__heading').'])[1]',
-                self::IMAGE_TEXT_TYPE => '(.//*['.$hasClass('g7pb-image-text__copy').']/h2)[1]',
-                self::SOCIAL_LINKS_TYPE => '(.//h2)[1]',
-                default => '(.//*['.$hasClass('g7pb-section-heading').']/h2 | .//*['.$hasClass('g7pb-contact__heading').']/h2)[1]',
-            },
-            'title' => match ($type) {
-                self::HERO_TYPE => '(.//*['.$hasClass('g7pb-hero__title').'])[1]',
-                self::FEATURES_TYPE => '(.//*['.$hasClass('g7pb-features__title').'])[1]',
-                self::HERO_SPLIT_TYPE => '(.//*['.$hasClass('g7pb-hero-split__copy').']/h1)[1]',
-                self::NOTICE_TYPE => '(.//*['.$hasClass('g7pb-content-notice__title').'])[1]',
-                default => null,
-            },
-            'body' => match ($type) {
-                self::HERO_TYPE => '(.//*['.$hasClass('g7pb-hero__body').'])[1]',
-                self::CTA_TYPE => '(.//*['.$hasClass('g7pb-cta__body').'])[1]',
-                self::HERO_SPLIT_TYPE => '(.//*['.$hasClass('g7pb-hero-split__body').'])[1]',
-                self::IMAGE_TEXT_TYPE => '(.//*['.$hasClass('g7pb-image-text__body').'])[1]',
-                self::NOTICE_TYPE => '(.//*['.$hasClass('g7pb-content-notice__body').'])[1]',
-                default => null,
-            },
-            'content' => $type === self::RICH_TEXT_TYPE ? '(.//*['.$hasClass('g7pb-rich-text__content').'])[1]' : null,
-            'primaryLabel' => '(.//a['.$hasClass('g7pb-button--primary').'])[1]',
-            'secondaryLabel' => '(.//a['.$hasClass('g7pb-button--secondary').'])[1]',
-            'linkLabel' => $type === self::G7_POST_DETAIL_TYPE ? '(.//a['.$hasClass('g7pb-data-detail__action').'])[1]' : null,
-            'buttonLabel' => $type === self::G7_PRODUCT_DETAIL_TYPE ? '(.//a['.$hasClass('g7pb-data-detail__action').'])[1]' : null,
-            'ctaLabel' => $type === self::CONTACT_TYPE ? '(.//a['.$hasClass('g7pb-button--primary').'])[1]' : null,
-            'mapLabel' => $type === self::CONTACT_TYPE ? '(.//a['.$hasClass('g7pb-button--secondary').'])[1]' : null,
-            'address' => match ($type) {
-                self::CONTACT_TYPE => '(.//*['.$hasClass('g7pb-contact__details').']/p)[1]',
-                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__intro').']//address/strong)[1]',
-                default => null,
-            },
-            'phone' => match ($type) {
-                self::CONTACT_TYPE => '(.//*['.$hasClass('g7pb-contact__details').']/a[starts-with(@href, "tel:")])[1]',
-                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__phone').'])[1]',
-                default => null,
-            },
-            'email' => $type === self::CONTACT_TYPE ? '(.//*['.$hasClass('g7pb-contact__details').']/a[starts-with(@href, "mailto:")])[1]' : null,
-            'description' => match ($type) {
-                self::BAR_CHART_TYPE => '(.//figcaption/*[('.$hasClass('g7pb-bar-chart__description').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))])[1]',
-                self::INQUIRY_FORM_TYPE => '(.//*['.$hasClass('g7pb-inquiry__intro').']/*[('.$hasClass('g7pb-inquiry__description').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))])[1]',
-                self::MAP_DIRECTIONS_TYPE => '(.//*['.$hasClass('g7pb-map__intro').']/*[('.$hasClass('g7pb-map__description').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))])[1]',
-                default => null,
-            },
-            'privacyLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*['.$hasClass('g7pb-inquiry-form__consent').']/span)[1]' : null,
-            'submitLabel' => $type === self::INQUIRY_FORM_TYPE ? '(.//*[@data-g7pb-submit-copy])[1]' : null,
-            'directionsLabel' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__intro').']//address/a)[1]' : null,
-            'hours' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__hours').'])[1]' : null,
-            'parking' => $type === self::MAP_DIRECTIONS_TYPE ? '(.//*['.$hasClass('g7pb-map__parking').'])[1]' : null,
-            'caption' => in_array($type, [self::IMAGE_TYPE, self::VIDEO_EMBED_TYPE], true) ? '(.//figcaption)[1]' : null,
-            'unit' => $type === self::BAR_CHART_TYPE ? './/*['.$hasClass('g7pb-bar-chart__unit').']' : null,
-            'label' => match ($type) {
-                self::DIVIDER_TYPE => '(.//*['.$hasClass('g7pb-divider__label').'])[1]',
-                self::ANCHOR_MENU_TYPE => '(.//nav/strong)[1]',
-                default => null,
-            },
-            'quote' => $type === self::BLOCKQUOTE_TYPE ? '(.//*['.$hasClass('g7pb-blockquote__quote').'])[1]' : null,
-            'citation' => $type === self::BLOCKQUOTE_TYPE ? '(.//cite)[1]' : null,
-            'role' => $type === self::BLOCKQUOTE_TYPE ? '(.//*['.$hasClass('g7pb-blockquote__role').'])[1]' : null,
-            'actionLabel' => $type === self::NOTICE_TYPE ? '(.//*['.$hasClass('g7pb-content-notice__action').'])[1]' : null,
-            'currentLabel' => $type === self::BREADCRUMBS_TYPE ? '(.//li[@aria-current="page"])[1]' : null,
-            default => null,
-        };
-        if ($root !== null) {
-            return $root;
-        }
-
-        if (preg_match('/^([A-Za-z]+)\.(\d+)\.([A-Za-z]+)$/D', $fieldPath, $match) !== 1) {
-            return null;
-        }
-        [, $collection, $zeroIndex, $leaf] = $match;
-        $index = ((int) $zeroIndex) + 1;
-
-        return match ($type) {
-            self::BUTTONS_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//*['.$hasClass('g7pb-buttons__items').']/a)['.$index.']' : null,
-            self::ICON_LIST_TYPE => $collection === 'items' ? match ($leaf) {
-                'title' => '(.//*['.$hasClass('g7pb-icon-list__item').'])['.$index.']//h3',
-                'body' => '(.//*['.$hasClass('g7pb-icon-list__item').'])['.$index.']//*[('.$hasClass('g7pb-icon-list__body').') or self::p][1]',
-                default => null,
-            } : null,
-            self::FEATURES_TYPE => $collection === 'items' ? match ($leaf) {
-                'title' => '(.//*['.$hasClass('g7pb-features__item').'])['.$index.']/h3',
-                'body' => '(.//*['.$hasClass('g7pb-features__item').'])['.$index.']/*[('.$hasClass('g7pb-features__body').') or self::p][1]',
-                default => null,
-            } : null,
-            self::HERO_SLIDER_TYPE => $collection === 'slides' ? match ($leaf) {
-                'eyebrow' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//*['.$hasClass('g7pb-section-eyebrow').']',
-                'title' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//h2',
-                'body' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//*['.$hasClass('g7pb-hero-slider__copy').']/*[('.$hasClass('g7pb-hero-slider__body').') or (self::p and not('.$hasClass('g7pb-section-eyebrow').'))]',
-                'buttonLabel' => '(.//*['.$hasClass('g7pb-hero-slider__slide').'])['.$index.']//a',
-                default => null,
-            } : null,
-            self::LOGO_CLOUD_TYPE => $collection === 'logos' && $leaf === 'name' ? '(.//ul/li)['.$index.']//*[self::span][1]' : null,
-            self::LOGO_CAROUSEL_TYPE => $collection === 'logos' && $leaf === 'name' ? '(.//*['.$hasClass('g7pb-logo-carousel__slide').'])['.$index.']//*[self::span][1]' : null,
-            self::STATS_TYPE => $collection === 'items' ? match ($leaf) {
-                'value' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/strong',
-                'label' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/h3',
-                'detail' => '(.//*['.$hasClass('g7pb-stats__grid').']/article)['.$index.']/*[('.$hasClass('g7pb-stats__detail').') or self::p][1]',
-                default => null,
-            } : null,
-            self::PRICING_TYPE => $collection === 'plans' ? match ($leaf) {
-                'name' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/h3',
-                'price' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']//*['.$hasClass('g7pb-pricing__price').']/strong',
-                'period' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']//*['.$hasClass('g7pb-pricing__price').']/span',
-                'description' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/*[('.$hasClass('g7pb-pricing__description').') or (self::p and not('.$hasClass('g7pb-pricing__price').'))][1]',
-                'buttonLabel' => '(.//*['.$hasClass('g7pb-pricing__plan').'])['.$index.']/a',
-                default => null,
-            } : null,
-            self::TEAM_TYPE => $collection === 'members' ? match ($leaf) {
-                'name' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/h3',
-                'role' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/strong',
-                'bio' => '(.//*['.$hasClass('g7pb-team__grid').']/article)['.$index.']/*[('.$hasClass('g7pb-team__bio').') or self::p][1]',
-                default => null,
-            } : null,
-            self::GALLERY_TYPE => $collection === 'images' && $leaf === 'caption' ? '(.//*['.$hasClass('g7pb-gallery__grid').']/figure)['.$index.']/figcaption' : null,
-            self::BAR_CHART_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//*['.$hasClass('g7pb-bar-chart__plot').']/label)['.$index.']/span/span' : null,
-            self::TESTIMONIALS_TYPE => $collection === 'items' ? $this->testimonialElementXPath('g7pb-testimonials__items', 'blockquote', $index, $leaf, $hasClass) : null,
-            self::TESTIMONIAL_SLIDER_TYPE => $collection === 'items' ? $this->testimonialElementXPath('g7pb-hero-slider__track', 'blockquote', $index, $leaf, $hasClass) : null,
-            self::FAQ_ACCORDION_TYPE => $collection === 'items' ? match ($leaf) {
-                'question' => '(.//*['.$hasClass('g7pb-faq__items').']/*['.$hasClass('g7pb-faq__item').'])['.$index.']/*['.$hasClass('g7pb-faq__trigger').']/span',
-                'answer' => '(.//*['.$hasClass('g7pb-faq__items').']/*['.$hasClass('g7pb-faq__item').'])['.$index.']/*['.$hasClass('g7pb-faq__answer').']',
-                default => null,
-            } : null,
-            self::PROCESS_TIMELINE_TYPE => $collection === 'items' ? match ($leaf) {
-                'title' => '(.//ol/li)['.$index.']/h3',
-                'body' => '(.//ol/li)['.$index.']/*[('.$hasClass('g7pb-process__body').') or self::p]',
-                'linkLabel' => '(.//ol/li)['.$index.']/a',
-                default => null,
-            } : null,
-            self::TABS_TYPE => $collection === 'items' ? match ($leaf) {
-                'label' => '(.//*['.$hasClass('g7pb-tabs__list').']/*[@data-g7pb-tab])['.$index.']',
-                'heading' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/h3',
-                'body' => '(.//*['.$hasClass('g7pb-tabs__panels').']/article)['.$index.']/*[('.$hasClass('g7pb-tabs__body').') or self::p]',
-                default => null,
-            } : null,
-            self::COMPARISON_TABLE_TYPE => match ($collection) {
-                'columns' => match ($leaf) {
-                    'title' => '(.//thead/tr/th[position() > 1])['.$index.']/strong',
-                    'description' => '(.//thead/tr/th[position() > 1])['.$index.']/span',
-                    default => null,
-                },
-                'rows' => $leaf === 'feature' ? '(.//tbody/tr)['.$index.']/th' : null,
-                default => null,
-            },
-            self::ARTICLE_LIST_TYPE => $collection === 'items' ? match ($leaf) {
-                'category' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//*['.$hasClass('g7pb-articles__meta').']/span',
-                'date' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//*['.$hasClass('g7pb-articles__meta').']/time',
-                'title' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//h3',
-                'summary' => '(.//*['.$hasClass('g7pb-articles__items').']/article)['.$index.']//h3/following-sibling::*[1][('.$hasClass('g7pb-articles__summary').') or self::p]',
-                default => null,
-            } : null,
-            self::EVENT_SCHEDULE_TYPE => $collection === 'items' ? match ($leaf) {
-                'date' => '(.//ol/li)['.$index.']/time/strong',
-                'time' => '(.//ol/li)['.$index.']/time/span',
-                'location' => '(.//ol/li)['.$index.']//*['.$hasClass('g7pb-events__location').']',
-                'title' => '(.//ol/li)['.$index.']//h3',
-                'description' => '(.//ol/li)['.$index.']//article/*[('.$hasClass('g7pb-events__description').') or (self::p and not('.$hasClass('g7pb-events__location').'))]',
-                'buttonLabel' => '(.//ol/li)['.$index.']//article/a',
-                default => null,
-            } : null,
-            self::DOWNLOAD_RESOURCES_TYPE => $collection === 'items' ? match ($leaf) {
-                'title' => '(.//ul/li)['.$index.']//h3',
-                'description' => '(.//ul/li)['.$index.']//h3/following-sibling::*[1][('.$hasClass('g7pb-downloads__description').') or self::p]',
-                'fileType' => '(.//ul/li)['.$index.']//*['.$hasClass('g7pb-downloads__file-type').']',
-                'fileSize' => '(.//ul/li)['.$index.']//*['.$hasClass('g7pb-downloads__file-size').']',
-                'buttonLabel' => '(.//ul/li)['.$index.']/a',
-                default => null,
-            } : null,
-            self::CARD_GRID_TYPE => $collection === 'items' ? match ($leaf) {
-                'kicker' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']//*['.$hasClass('g7pb-card-grid__kicker').']',
-                'title' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']/h3',
-                'body' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']//*['.$hasClass('g7pb-card-grid__body').']',
-                'linkLabel' => '(.//*['.$hasClass('g7pb-card-grid__item').'])['.$index.']/a',
-                default => null,
-            } : null,
-            self::BREADCRUMBS_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//ol/li/a)['.$index.']' : null,
-            self::ANCHOR_MENU_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//nav/ul/li/a)['.$index.']' : null,
-            self::SOCIAL_LINKS_TYPE => $collection === 'items' && $leaf === 'label' ? '(.//nav/ul/li/a/span[last()])['.$index.']' : null,
-            self::IMAGE_CAROUSEL_TYPE => $collection === 'images' && $leaf === 'caption' ? '(.//*['.$hasClass('g7pb-image-carousel__slide').'])['.$index.']/figcaption' : null,
-            default => null,
-        };
-    }
-
-    /** @param array<string, mixed> $props */
-    private function isEmptyOptionalAppearanceTarget(string $type, array $props, string $fieldPath): bool
-    {
-        return match ([$type, $fieldPath]) {
-            [self::HEADING_TYPE, 'eyebrow'],
-            [self::IMAGE_TYPE, 'caption'],
-            [self::IMAGE_TEXT_TYPE, 'eyebrow'],
-            [self::IMAGE_TEXT_TYPE, 'body'],
-            [self::ICON_LIST_TYPE, 'eyebrow'] => ($props[$fieldPath] ?? '') === '',
-            [self::DIVIDER_TYPE, 'label'],
-            [self::BLOCKQUOTE_TYPE, 'role'] => ($props[$fieldPath] ?? '') === '',
-            [self::NOTICE_TYPE, 'actionLabel'] => ($props['actionLabel'] ?? '') === '',
-            [self::IMAGE_TEXT_TYPE, 'primaryLabel'] => ! is_array($props['primaryLink'] ?? null),
-            default => false,
-        };
-    }
-
-    /** @param callable(string): string $hasClass */
-    private function testimonialElementXPath(string $containerClass, string $itemTag, int $index, string $leaf, callable $hasClass): ?string
-    {
-        $base = '(.//*['.$hasClass($containerClass).']/'.$itemTag.')['.$index.']';
-
-        return match ($leaf) {
-            'quote' => $base.'/*['.$hasClass(str_contains($containerClass, 'slider') ? 'g7pb-testimonial-slider__quote' : 'g7pb-testimonials__quote').']',
-            'name' => $base.'//cite/strong',
-            'role' => $base.'//cite/*['.$hasClass('g7pb-testimonial-role').']',
-            'company' => $base.'//cite/*['.$hasClass('g7pb-testimonial-company').']',
-            default => null,
-        };
-    }
-
-    /**
      * @param  array<string, mixed>  $link
      */
     private function compileActionLink(array $link, string $property, string $className): string
@@ -2977,7 +2515,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->assertOnlyKeys($link, ['label', 'url'], $property);
         $label = $this->requiredString($link, 'label', 120);
         $url = $this->requiredString($link, 'url', 2048);
-        $this->assertAllowedUrl($url, $property);
+        $this->urls->assertAllowedUrl($url, $property);
 
         return '<a class="'.$className.'" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
     }
@@ -3110,7 +2648,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         bool $allowLinks = true,
         ?string $property = null,
     ): void {
-        $plainText = $this->promotedRichTextPlainText($value, $inline, $allowLinks);
+        $plainText = $this->richText->promotedRichTextPlainText($value, $inline, $allowLinks);
         if ($required && trim($plainText) === '') {
             throw new DocumentCompileException($this->requiredFieldMessage($property ?? 'content'));
         }
@@ -3232,84 +2770,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
     }
 
-    private function assertAllowedUrl(string $url, string $property): void
-    {
-        if ($url === '#g7-action-logout' || $this->isRelativeUrl($url) || $this->isHttpsUrl($url) || $this->isMailtoUrl($url) || $this->isTelUrl($url)) {
-            return;
-        }
-
-        throw new DocumentCompileException("{$property} URL is not allowed.");
-    }
-
-    private function assertAllowedImageUrl(string $url): void
-    {
-        if ($this->isRelativeUrl($url) || $this->isHttpsUrl($url)) {
-            return;
-        }
-
-        throw new DocumentCompileException('Image URL is not allowed.');
-    }
-
-    private function assertPageOrHttpsUrl(string $url, string $property): void
-    {
-        if ($this->isRelativeUrl($url) || $this->isHttpsUrl($url)) {
-            return;
-        }
-
-        throw new DocumentCompileException("{$property} URL is not allowed.");
-    }
-
-    private function isRelativeUrl(string $url): bool
-    {
-        return str_starts_with($url, '/')
-            && ! str_starts_with($url, '//')
-            && ! str_contains($url, '\\')
-            && preg_match('/[\x00-\x20\x7f]/', $url) !== 1;
-    }
-
-    private function isHttpsUrl(string $url): bool
-    {
-        if (preg_match('/[\x00-\x20\x7f]/', $url) === 1 || filter_var($url, FILTER_VALIDATE_URL) === false) {
-            return false;
-        }
-
-        return strtolower((string) parse_url($url, PHP_URL_SCHEME)) === 'https'
-            && is_string(parse_url($url, PHP_URL_HOST))
-            && parse_url($url, PHP_URL_HOST) !== '';
-    }
-
-    private function isMailtoUrl(string $url): bool
-    {
-        if (! str_starts_with(strtolower($url), 'mailto:')) {
-            return false;
-        }
-
-        $email = substr($url, 7);
-
-        return $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-    }
-
-    private function isTelUrl(string $url): bool
-    {
-        return preg_match('/^tel:\+?[0-9][0-9.-]{2,39}$/i', $url) === 1;
-    }
-
-    private function phoneHref(string $phone): string
-    {
-        if (preg_match('/^\+?[0-9][0-9 .()\-]{2,39}$/', $phone) !== 1) {
-            throw new DocumentCompileException('Contact phone is invalid.');
-        }
-
-        $normalized = preg_replace('/[ .()\-]/', '', $phone);
-        $href = 'tel:'.($normalized ?? '');
-
-        if (! $this->isTelUrl($href)) {
-            throw new DocumentCompileException('Contact phone is invalid.');
-        }
-
-        return $href;
-    }
-
     private function isUuid(string $value): bool
     {
         return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $value) === 1;
@@ -3318,260 +2778,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private function formatText(string $value): string
     {
         return nl2br($this->escape($value), false);
-    }
-
-    private function hasRichTextMarkup(string $value): bool
-    {
-        return preg_match('/<\/?[a-z][^>]*>/i', $value) === 1;
-    }
-
-    private function hasCanonicalInlineRichTextMarkup(string $value): bool
-    {
-        return preg_match('/^\s*<p\b[^>]*>.*<\/p>\s*$/is', $value) === 1;
-    }
-
-    private function hasCanonicalRichTextMarkup(string $value): bool
-    {
-        return preg_match('/^\s*<(?:p|h[2-4]|ol|ul|blockquote)\b/i', $value) === 1;
-    }
-
-    private function sanitizePromotedInlineRichText(string $value, bool $allowLinks = true): string
-    {
-        return $this->hasCanonicalInlineRichTextMarkup($value)
-            ? $this->sanitizeInlineRichText($value, $allowLinks)
-            : $this->escape($value);
-    }
-
-    private function promotedRichTextPlainText(string $value, bool $inline, bool $allowLinks): string
-    {
-        if ($inline) {
-            return $this->hasCanonicalInlineRichTextMarkup($value)
-                ? $this->inlinePlainText($value, $allowLinks)
-                : $value;
-        }
-        if (! $this->hasCanonicalRichTextMarkup($value)) {
-            return $value;
-        }
-
-        $sanitized = $this->sanitizeRichText($value, $allowLinks);
-        $withBreaks = preg_replace(
-            '/<br\s*\/?\s*>|<\/(?:p|h[2-4]|li|blockquote)>/i',
-            ' ',
-            $sanitized,
-        );
-        $plainText = html_entity_decode(strip_tags((string) $withBreaks), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-        return trim((string) preg_replace('/\s+/u', ' ', $plainText));
-    }
-
-    private function promotedInlinePlainText(string $value, bool $allowLinks = true): string
-    {
-        return $this->hasCanonicalInlineRichTextMarkup($value)
-            ? $this->inlinePlainText($value, $allowLinks)
-            : trim($value);
-    }
-
-    private function sanitizeRichText(string $html, bool $allowLinks = true): string
-    {
-        if (preg_match('/<(?:script|style|iframe|object|embed|svg|math|form|input|button)\b/i', $html) === 1
-            || preg_match('/\son[a-z]+\s*=/i', $html) === 1) {
-            throw new DocumentCompileException('Rich text contains unsafe markup.');
-        }
-        $this->assertRichTextLinkNesting($html, $allowLinks);
-
-        $document = new \DOMDocument('1.0', 'UTF-8');
-        $previousErrors = libxml_use_internal_errors(true);
-
-        try {
-            $loaded = $document->loadHTML(
-                '<?xml encoding="utf-8" ?><div id="g7pb-richtext-root">'.$html.'</div>',
-                LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
-            );
-        } finally {
-            libxml_clear_errors();
-            libxml_use_internal_errors($previousErrors);
-        }
-
-        if (! $loaded) {
-            throw new DocumentCompileException('Rich text is invalid.');
-        }
-
-        $root = $document->getElementById('g7pb-richtext-root');
-
-        if (! $root instanceof \DOMElement) {
-            throw new DocumentCompileException('Rich text could not be parsed.');
-        }
-
-        $this->sanitizeRichTextNode($root, $allowLinks);
-        $parts = [];
-
-        foreach ($root->childNodes as $child) {
-            $parts[] = $document->saveHTML($child);
-        }
-
-        $sanitized = implode('', $parts);
-
-        if ($sanitized === '') {
-            return '';
-        }
-
-        if (preg_match('/^<(?:p|h[2-4]|ol|ul|blockquote)\b/i', ltrim($sanitized)) !== 1) {
-            return '<p>'.$sanitized.'</p>';
-        }
-
-        return $sanitized;
-    }
-
-    private function sanitizeRichTextNode(\DOMNode $parent, bool $allowLinks): void
-    {
-        $allowed = ['p', 'h2', 'h3', 'h4', 'strong', 'em', 'u', 'span', 'a', 'ol', 'ul', 'li', 'blockquote', 'br'];
-
-        for ($child = $parent->firstChild; $child !== null;) {
-            $next = $child->nextSibling;
-
-            if ($child instanceof \DOMComment) {
-                $parent->removeChild($child);
-                $child = $next;
-
-                continue;
-            }
-
-            if ($child instanceof \DOMElement) {
-                $tag = strtolower($child->tagName);
-
-                if (! in_array($tag, $allowed, true)) {
-                    $this->sanitizeRichTextNode($child, $allowLinks);
-
-                    while ($child->firstChild !== null) {
-                        $parent->insertBefore($child->firstChild, $child);
-                    }
-
-                    $parent->removeChild($child);
-                    $child = $next;
-
-                    continue;
-                }
-
-                $attributes = [];
-                foreach ($child->attributes as $attribute) {
-                    $attributes[] = $attribute->name;
-                }
-
-                foreach ($attributes as $attribute) {
-                    $isLinkHref = $tag === 'a' && $attribute === 'href';
-                    $isTypedTextMark = $tag === 'span'
-                        && in_array($attribute, ['data-g7pb-font', 'data-g7pb-font-size-rem', 'data-g7pb-size', 'data-g7pb-weight', 'data-g7pb-tone'], true);
-                    if (! $isLinkHref && ! $isTypedTextMark) {
-                        $child->removeAttribute($attribute);
-                    }
-                }
-
-                if ($tag === 'span') {
-                    $allowedValues = [
-                        'data-g7pb-font' => ['modern', 'serif', 'mono'],
-                        'data-g7pb-font-size-rem' => ['0.75', '0.875', '1', '1.125', '1.25', '1.5', '1.75', '2', '2.25', '2.5', '3', '3.5', '4', '4.5', '5', '6'],
-                        'data-g7pb-size' => ['small', 'large', 'xlarge'],
-                        'data-g7pb-weight' => ['medium', 'semibold', 'bold'],
-                        'data-g7pb-tone' => ['muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4'],
-                    ];
-                    foreach ($allowedValues as $attribute => $values) {
-                        if ($child->hasAttribute($attribute)
-                            && ! in_array($child->getAttribute($attribute), $values, true)) {
-                            throw new DocumentCompileException('Rich text contains an unsupported typed mark.');
-                        }
-                    }
-                }
-
-                if ($tag === 'a') {
-                    $href = $child->getAttribute('href');
-                    $this->assertAllowedUrl($href, 'Rich text link');
-                    $child->setAttribute('rel', 'noopener noreferrer');
-                }
-
-                $this->sanitizeRichTextNode($child, $allowLinks);
-            } elseif (! $child instanceof \DOMText) {
-                $parent->removeChild($child);
-            }
-
-            $child = $next;
-        }
-    }
-
-    private function sanitizeInlineRichText(string $html, bool $allowLinks = true): string
-    {
-        $this->assertRichTextLinkNesting($html, $allowLinks);
-        if (! preg_match('/<(?:p|strong|em|u|span|a|br)\b/i', $html)) {
-            return $this->escape($html);
-        }
-
-        $sanitized = $this->sanitizeRichText($html, $allowLinks);
-        $document = new \DOMDocument('1.0', 'UTF-8');
-        $previousErrors = libxml_use_internal_errors(true);
-        try {
-            $loaded = $document->loadHTML(
-                '<?xml encoding="utf-8" ?><div id="g7pb-inline-root">'.$sanitized.'</div>',
-                LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
-            );
-        } finally {
-            libxml_clear_errors();
-            libxml_use_internal_errors($previousErrors);
-        }
-        $root = $loaded ? $document->getElementById('g7pb-inline-root') : null;
-        if (! $root instanceof \DOMElement) {
-            throw new DocumentCompileException('Inline rich text could not be parsed.');
-        }
-
-        $parts = [];
-        foreach ($root->childNodes as $child) {
-            if ($child instanceof \DOMText && trim($child->textContent) === '') {
-                continue;
-            }
-            if (! $child instanceof \DOMElement || strtolower($child->tagName) !== 'p') {
-                throw new DocumentCompileException('Inline rich text only supports paragraphs.');
-            }
-            if ($parts !== []) {
-                $parts[] = '<br>';
-            }
-            foreach ($child->childNodes as $inlineChild) {
-                $parts[] = $document->saveHTML($inlineChild);
-            }
-        }
-
-        return implode('', $parts);
-    }
-
-    private function inlinePlainText(string $html, bool $allowLinks = true): string
-    {
-        $sanitized = preg_replace('/<br\s*\/?\s*>/i', ' ', $this->sanitizeInlineRichText($html, $allowLinks));
-
-        return trim(html_entity_decode(strip_tags((string) $sanitized), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-    }
-
-    private function assertRichTextLinkNesting(string $html, bool $allowLinks): void
-    {
-        if (! $allowLinks && preg_match('/<\s*a\b/i', $html) === 1) {
-            throw new DocumentCompileException('Rich text links are not allowed in this field.');
-        }
-
-        preg_match_all('/<\s*(\/?)\s*a\b[^>]*>/i', $html, $matches, PREG_SET_ORDER);
-        $depth = 0;
-        foreach ($matches as $match) {
-            if ($match[1] === '/') {
-                if ($depth === 0) {
-                    throw new DocumentCompileException('Rich text link markup is invalid.');
-                }
-                $depth--;
-
-                continue;
-            }
-            if ($depth > 0) {
-                throw new DocumentCompileException('Rich text links cannot be nested.');
-            }
-            $depth++;
-        }
-        if ($depth !== 0) {
-            throw new DocumentCompileException('Rich text link markup is invalid.');
-        }
     }
 
     private function catalogIconSvg(string $name, string $className): string

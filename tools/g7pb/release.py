@@ -189,7 +189,8 @@ def deploy(root: Path, transport: Transport, archive: dict, force: bool = False,
         transport.reload(archive)
         state["phase"] = "reloaded"
         save_progress(path, state)
-    reused = state.get("phase") == "smoked" and not force
+    # An explicit check observes current DB/runtime readiness, not only file identity.
+    reused = state.get("phase") == "smoked" and not force and not smoke_only
     if not reused:
         transport.smoke(archive)
         state["phase"] = "smoked"

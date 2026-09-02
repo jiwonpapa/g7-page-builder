@@ -71,6 +71,14 @@ class PlannerTests(unittest.TestCase):
         self.assertIn("resources/js/title.ts", gate.inputs)
         self.assertTrue(any(Path(p).is_absolute() and p.endswith("design-architecture.json") for p in gate.inputs))
 
+    def test_guard_change_executes_candidate_guard_in_owning_worktree(self):
+        plan = build_plan(self.root, ["scripts/check-design-architecture.mjs", "config/design-architecture.json"])
+        gate = next(g for g in plan.gates if g.name == "architecture")
+        self.assertEqual(gate.argv[:2], ("node", "scripts/check-design-architecture.mjs"))
+        self.assertNotIn("--root", gate.argv)
+        self.assertIn("config/design-architecture.json", gate.inputs)
+        self.assertIn("design-architecture-tests", [g.name for g in plan.gates])
+
     def test_php_source_requires_static_analysis_and_boundaries(self):
         self.write("src/Domain/Example.php", "<?php class Example {}")
         self.write("tests/UnitPhp/ExampleTest.php", "<?php class ExampleTest {}")

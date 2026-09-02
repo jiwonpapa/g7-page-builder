@@ -1,7 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONTROLLER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$CONTROLLER_ROOT"
+design_args=()
+while (($#)); do
+  case "$1" in
+    --root)
+      [[ $# -ge 2 && "$2" == /* && -d "$2" ]] || { echo '--root requires an existing absolute subject directory.' >&2; exit 2; }
+      ROOT="$(cd "$2" && pwd -P)"
+      shift 2
+      ;;
+    --files)
+      [[ $# -ge 2 && -n "$2" ]] || { echo '--files requires explicit source paths.' >&2; exit 2; }
+      design_args+=(--files "$2")
+      shift 2
+      ;;
+    *) echo "Unknown boundary option: $1" >&2; exit 2 ;;
+  esac
+done
+if [[ "$ROOT" != "$CONTROLLER_ROOT" ]]; then
+  design_args+=(--root "$ROOT")
+fi
 
 if ! command -v rg >/dev/null 2>&1; then
   echo 'Architecture boundary check requires ripgrep (rg).' >&2
@@ -139,4 +159,9 @@ if ! rg -Fq "['digest']" "$ROOT/src/Infrastructure/BlockPacks/GitHubReleaseSourc
   exit 1
 fi
 
+if (("${#design_args[@]}" > 0)); then
+  node "$CONTROLLER_ROOT/scripts/check-design-architecture.mjs" "${design_args[@]}"
+else
+  node "$CONTROLLER_ROOT/scripts/check-design-architecture.mjs"
+fi
 echo 'Architecture boundaries: OK'

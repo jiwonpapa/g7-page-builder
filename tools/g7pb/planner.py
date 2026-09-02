@@ -8,6 +8,7 @@ import subprocess
 from .model import Gate, Plan
 from .inputs import source_inputs
 from .typecheck_inputs import typecheck_inputs
+from .type_import_changes import browser_sources
 from .browser_requirements import BROWSER_ENVIRONMENT, scenarios_for
 from .environment import build_inputs, sync_plan
 from .runner import SITE_PART_SPECS, SITE_PART_HELPERS
@@ -131,8 +132,10 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         if not (root / path).is_file():
             plan.unresolved.append(f"Missing infrastructure test: {path}")
             return
-        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py"} else ()
+        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py", "test_type_import_changes.py"} else ()
         environment, controller_inputs = (), []
+        if Path(path).name == "test_type_import_changes.py":
+            controller_inputs.append("package-lock.json")
         if Path(path).name == "test_site_part_fixture.py":
             requires = ("node", "php")
             controller_inputs.extend((*SITE_PART_HELPERS, "package-lock.json"))
@@ -173,6 +176,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/check-editor-layout-parity.mjs": ("editor_contracts",),
         "scripts/lib/editorContractRegistration.mjs": ("editor_contracts",),
         "scripts/lib/editorCssSources.mjs": ("editor_contracts",),
+        "scripts/lib/typeImportChanges.mjs": ("type_import_changes",),
         "playwright.config.ts": ("browser_registration",),
     }
     command_contracts = {"tests/Harness/" + name for name in (
@@ -336,7 +340,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("phpstan:g7" if adapter else "phpstan:core", argv, [*inputs, config, "composer.json", "composer.lock"],
                 "Changed PHP types and dependency contracts", ("php", "g7") if adapter else ("php",), adapter)
     if not full:
-        for scenario in scenarios_for([*ts_sources, *php_sources, *css]):
+        for scenario in scenarios_for([*browser_sources(root, ts_sources, base), *php_sources, *css]):
             if not (root / scenario.spec).is_file():
                 plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
                 continue

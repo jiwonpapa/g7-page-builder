@@ -7,7 +7,9 @@ import platform
 import subprocess
 import tempfile
 import time
+import uuid
 from .model import Plan
+from .state import task_id
 
 
 def digest_gate(root, gate):
@@ -38,7 +40,23 @@ def receipt_directory(root):
     return common.resolve() / "g7pb-coordination-v1" / "python-checks"
 
 
+def browser_evidence(root, gate, task, key):
+    if not gate.runtime or not gate.name.startswith("browser:"):
+        return None
+    # Only execution metadata is unique. Never put attempts or output paths in
+    # the declared gate, its input digest, or successful check receipts.
+    directory = Path("output/playwright/gates") / (task or "ci") / key / uuid.uuid4().hex
+    absolute = root / directory
+    if not absolute.resolve().is_relative_to(root.resolve()):
+        raise ValueError("Browser evidence directory must remain inside the checkout")
+    absolute.mkdir(parents=True, exist_ok=False)
+    return {"directory": directory.as_posix(), "results": (directory / "results").as_posix(),
+            "report": (directory / "report").as_posix()}
+
+
 def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
+    if task:
+        task_id(task)
     if plan.unresolved:
         raise ValueError("Scope unresolved; nothing executed:\n" + "\n".join(plan.unresolved))
     preceding = set()
@@ -80,8 +98,20 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
                 print(f"REUSED gate={gate.name}", flush=True)
                 results.append({"gate": gate.name, "status": "reused", "executions": 0})
                 continue
+        evidence = browser_evidence(root, gate, task, key)
+        overrides = dict(gate.env)
+        argv = list(gate.argv)
+        if evidence:
+            # Both host cwd and Docker's module cwd address these relative paths.
+            argv.extend(["--output", evidence["results"]])
+            overrides["PLAYWRIGHT_HTML_OUTPUT_DIR"] = evidence["report"]
+            print(f"EVIDENCE gate={gate.name} directory={evidence['directory']}", flush=True)
+            (root / evidence["directory"] / "execution.json").write_text(json.dumps({
+                "key": key, "gate": gate.name, "status": "running", "evidence": evidence,
+                "task": task, "phase": plan.phase,
+            }, indent=2) + "\n")
         environment = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
-        for name, value in gate.env:
+        for name, value in overrides.items():
             if value is None:
                 environment.pop(name, None)
             else:
@@ -90,24 +120,28 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             environment["TASK"] = task
         started = time.monotonic()
         print(f"RUN gate={gate.name} reason={gate.reason}", flush=True)
-        argv = list(gate.argv)
         if gate.runtime and gate.execution == "runtime" and task and os.environ.get("CI") != "true" and argv[0] != "make":
             from .environment import Runtime
             # Docker exec does not inherit host-side env overrides. Carry only
             # the plan's explicit non-secret selectors into the runtime command.
-            remove = [part for key, value in gate.env if value is None for part in ("-u", key)]
-            assign = [f"{key}={value}" for key, value in gate.env if value is not None]
-            selected = ["env", *remove, *assign, *argv] if gate.env else argv
+            remove = [part for key, value in overrides.items() if value is None for part in ("-u", key)]
+            assign = [f"{key}={value}" for key, value in overrides.items() if value is not None]
+            selected = ["env", *remove, *assign, *argv] if overrides else argv
             argv = Runtime(root, "docker", task).command(selected)
         result = executor(argv, cwd=root, env=environment, check=False)
         record = {"key": key, "gate": gate.name, "status": "passed" if result.returncode == 0 else "failed",
                   "executions": 1, "seconds": round(time.monotonic() - started, 3), "inputs": gate.inputs}
+        if not result.returncode and digest_gate(root, gate) != key:
+            raise ValueError(f"Inputs changed while {gate.name} ran; no successful receipt recorded")
+        if evidence:
+            record["evidence"] = evidence
+            (root / evidence["directory"] / "execution.json").write_text(json.dumps({
+                **record, "returncode": result.returncode, "task": task, "phase": plan.phase,
+            }, indent=2) + "\n")
         results.append(record)
         if result.returncode:
             print(f"FAILED gate={gate.name}; no retry or escalation", flush=True)
             return result.returncode, results
-        if digest_gate(root, gate) != key:
-            raise ValueError(f"Inputs changed while {gate.name} ran; no successful receipt recorded")
         if gate.reusable and not gate.runtime:
             fd, staged = tempfile.mkstemp(prefix="receipt-", dir=receipts)
             try:

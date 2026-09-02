@@ -43,6 +43,7 @@ if [[ "$operation" == smoke ]]; then
     [.[].uri] as $routes | all($required[]; . as $uri | [$routes[] | select(. == $uri)] | length == 1)' >/dev/null
   pending="$(php artisan migrate:status --path="modules/$module_id/database/migrations" --pending=true --no-ansi)"
   [[ "$pending" != *Pending* ]]
+  php artisan page-builder:site-part-artifacts --no-interaction --no-ansi
   registry="$(php artisan tinker --execute='$record = app(\App\Contracts\Repositories\ModuleRepositoryInterface::class)->findByIdentifier("jiwonpapa-page_builder"); echo $record?->version ?? "absent";' --no-ansi)"
   [[ "$registry" == "$version" ]] || { echo 'Module registry version mismatch.' >&2; exit 2; }
   catalog="$(php artisan tinker --execute='echo config("g7-page-builder.official-store.catalog_url");' --no-ansi)"
@@ -63,10 +64,13 @@ staged="$stage/$module_id"
 had_previous=false
 if [[ -d "$target" ]]; then had_previous=true; mv "$target" "$rollback"; fi
 restore_files() {
+  local failure_status=$?
+  trap - ERR
   set +e
   [[ ! -d "$target" ]] || mv "$target" "$stage/module-failed"
   if [[ "$had_previous" == true && -d "$rollback" ]]; then mv "$rollback" "$target"; fi
   echo "Apply failed; prior files restored. Failure evidence retained: $stage (DB migration is not automatically rolled back)." >&2
+  exit "$failure_status"
 }
 trap restore_files ERR
 mv "$staged" "$target"
@@ -84,6 +88,7 @@ php artisan module:refresh-layout "$module_id" --no-interaction --no-ansi
 php artisan optimize:clear --no-ansi >/dev/null
 php artisan module:cache-clear --no-ansi >/dev/null
 php artisan template:cache-clear --no-ansi >/dev/null
+php artisan page-builder:site-part-artifacts --no-interaction --no-ansi
 php artisan tinker --execute='$manager = app(\App\Extension\ModuleManager::class); $manager->loadModules(); $module = $manager->getModule("jiwonpapa-page_builder"); if ($module === null) { throw new \RuntimeException("Module is not loaded."); } $updated = app(\App\Contracts\Repositories\ModuleRepositoryInterface::class)->updateByIdentifier("jiwonpapa-page_builder", ["vendor" => $module->getVendor(), "version" => $module->getVersion(), "github_url" => $module->getGithubUrl(), "metadata" => $module->getMetadata(), "config" => $module->getConfig(), "update_available" => false, "updated_at" => now()]); if ($updated !== 1) { throw new \RuntimeException("Module registry was not updated."); }' --no-ansi
 printf '%s\n' "$artifact_sha" > "$target/.g7pb-artifact-sha256"
 trap - ERR

@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from tools.g7pb.planner import build_plan, changed_paths, python_inputs, content_policy, checker_controller_root
+from tools.g7pb.runner import digest_gate
 
 
 class PlannerTests(unittest.TestCase):
@@ -391,7 +392,11 @@ class PlannerTests(unittest.TestCase):
         helper = "scripts/lib/editorCssSources.mjs"
         self.write(parity, "export const candidate = true;")
         self.write(helper, "export const readCssGraph = () => {};")
-        plan = build_plan(self.root, [parity, helper])
+        verified = self.root / "verified-controller"
+        verified.mkdir()
+        with patch("tools.g7pb.planner.checker_controller_root", return_value=verified), \
+             patch("tools.g7pb.planner.editor_contract_inputs", return_value=["resources/js/editor/connected.tsx"]):
+            plan = build_plan(self.root, [parity])
         gate = next(g for g in plan.gates if g.name == "python:tests/Harness/test_editor_contracts.py")
         selected = json.loads(dict(gate.env)["G7PB_EDITOR_CONTRACT_CHECKERS"])
         self.assertEqual(Path(selected[parity]), (self.root / parity).resolve())
@@ -400,6 +405,45 @@ class PlannerTests(unittest.TestCase):
             self.assertIn(file, gate.inputs)
         self.assertIn(str((self.root / helper).resolve()), gate.inputs)
         self.assertTrue(any(p.endswith("scripts/lib/editorContractRegistration.mjs") and Path(p).is_absolute() for p in gate.inputs))
+
+    def test_editor_source_graph_and_legacy_fixture_changes_select_only_focused_contracts(self):
+        helper = "scripts/lib/editorSourceGraph.mjs"
+        source = "resources/js/editor/new/preview.tsx"
+        for name in (helper, "scripts/lib/editorCssSources.mjs", "scripts/lib/editorContractRegistration.mjs",
+                     "scripts/check-editor-acceptance-contract.mjs", "scripts/check-editor-layout-parity.mjs",
+                     "tests/Harness/test_editor_contracts.py", "tests/Harness/editor-acceptance-contract.test.sh",
+                     "tests/Harness/editor-layout-parity-contract.test.sh", "package-lock.json", source):
+            self.write(name, "fixture")
+        paths = [helper, "tests/Harness/editor-acceptance-contract.test.sh", "tests/Harness/editor-layout-parity-contract.test.sh"]
+        with patch("tools.g7pb.planner.editor_contract_inputs", return_value=[source, "tsconfig.json", "package-lock.json"]) as inputs:
+            plan = build_plan(self.root, paths)
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertFalse(any(gate.runtime or gate.name.startswith(("browser", "content:", "harness:")) for gate in plan.gates))
+        gate = next(gate for gate in plan.gates if gate.name == "python:tests/Harness/test_editor_contracts.py")
+        self.assertEqual(gate.requires, ("node",))
+        self.assertTrue(gate.reusable)
+        self.assertIn(source, gate.inputs)
+        self.assertIn(str((self.root / helper).resolve()), gate.inputs)
+        self.assertEqual(dict(gate.env)["G7PB_EDITOR_SOURCE_GRAPH"], str((self.root / helper).resolve()))
+        self.assertTrue(all(call.args == (self.root, (self.root / helper).resolve()) for call in inputs.call_args_list))
+        original = digest_gate(self.root, gate)
+        self.write(source, "changed owner body")
+        self.assertNotEqual(digest_gate(self.root, gate), original)
+        self.write(source, "fixture")
+        self.assertEqual(digest_gate(self.root, gate), original)
+        self.write(helper, "changed graph implementation")
+        self.assertNotEqual(digest_gate(self.root, gate), original)
+
+    def test_unresolved_editor_inputs_fail_closed_without_full_or_cache_reuse(self):
+        self.write("tests/Harness/test_editor_contracts.py", "pass")
+        with patch("tools.g7pb.planner.checker_controller_root", return_value=self.root), \
+             patch("tools.g7pb.planner.editor_contract_inputs", side_effect=ValueError("disconnected owner")):
+            plan = build_plan(self.root, ["tests/Harness/test_editor_contracts.py"])
+        self.assertFalse(plan.full)
+        self.assertTrue(any("Editor contract source inputs required" in error for error in plan.unresolved))
+        gate = next(gate for gate in plan.gates if gate.name == "python:tests/Harness/test_editor_contracts.py")
+        self.assertFalse(gate.reusable)
 
     def test_checker_bootstrap_identifies_same_git_common_local_checkout(self):
         self.write(".git", "gitdir: /shared/worktrees/subject")

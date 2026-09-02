@@ -4,6 +4,13 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/g7pb-editor-layout-parity.XXXXXX")"
 trap 'rm -rf "$fixture_root"' EXIT
+node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" >"$fixture_root/source-files"
+
+source_owner() {
+  local path
+  path="$(node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" --owner "$1")"
+  printf '%s/%s\n' "$fixture_root/fixture" "$path"
+}
 
 copy_fixture() {
   rm -rf "$fixture_root/fixture"
@@ -23,6 +30,10 @@ copy_fixture() {
     "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
   cp "$repo_root/tests/E2E/blockCatalogQuality.spec.ts" \
     "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+  while IFS= read -r path; do
+    mkdir -p "$fixture_root/fixture/$(dirname "$path")"
+    cp "$repo_root/$path" "$fixture_root/fixture/$path"
+  done <"$fixture_root/source-files"
 }
 
 theme_fixture_path() {
@@ -61,12 +72,12 @@ expect_failure 'test:unit는 선택한 Vitest만 실행해야 하며 추가 검�
 
 copy_fixture
 perl -0pi -e 's/(function LogoCloudPreview[\s\S]*?<RichTextCanvasField )as="h2"/${1}as="p"/' \
-  "$fixture_root/fixture/resources/js/editor/catalogBlocks.tsx"
+  "$(source_owner LogoCloudPreview)"
 expect_failure '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(function NoticePreview[\s\S]*?<RichTextCanvasField )as="h2"/${1}as="strong"/' \
-  "$fixture_root/fixture/resources/js/editor/productionCatalogBlocks.tsx"
+  "$(source_owner NoticePreview)"
 expect_failure '안내 블록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.'
 
 copy_fixture
@@ -91,7 +102,7 @@ expect_failure '편집기 Bar Chart 제목 폭은 공개 section heading의 48re
 
 copy_fixture
 perl -0pi -e "s/const image = safeImage\(imageSrc\);/const legacyClass = 'g7pb-preview-hero__copy'; const image = safeImage(imageSrc);/" \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner HeroPreview)"
 expect_failure '편집기 Hero는 공개 Hero와 같은 direct grid child 구조를 사용해야 합니다.'
 
 copy_fixture
@@ -156,7 +167,7 @@ expect_failure 'Puck vendor 해시 class를 모바일 메뉴 레이아웃 계약
 
 copy_fixture
 perl -0pi -e "s/data-g7pb-canvas-layout=\{narrowCanvas \? 'narrow' : 'wide'\}/data-g7pb-canvas-layout='wide'/" \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner SelectedBlockActionBar)"
 expect_failure '선택 블록 ActionBar는 Puck 실제 canvas viewport 상태를 안정적인 제품 래퍼 계약으로 내려야 합니다.'
 
 copy_fixture
@@ -176,12 +187,12 @@ expect_failure 'ActionBar 좌표는 host/canvas/Puck 렌더 scale을 측정하�
 
 copy_fixture
 perl -0pi -e 's/avoidRects: currentInteractionRects\(actionBar\)/avoidRects: []/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner useSelectedActionBarSafeZone)"
 expect_failure '공간이 부족한 ActionBar는 현재 글자 범위와 활성 편집 요소를 피하는 공통 배치 규칙을 사용해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/useSelectedActionBarSafeZone\(true\)/useSelectedActionBarSafeZone(narrowCanvas)/' \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner SelectedBlockActionBar)"
 expect_failure 'ActionBar 안전영역은 PC·태블릿·모바일 모든 canvas에서 공통 적용되어야 합니다.'
 
 copy_fixture
@@ -322,7 +333,7 @@ expect_failure '편집 block wrapper가 공개 block과 다른 inline margin으�
 
 copy_fixture
 perl -0pi -e "s/ g7pb-full-site-page--template/ g7pb-full-site-page--removed/" \
-  "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
+  "$(source_owner FullSiteRoot)"
 expect_failure 'template shell 전용 G7 Container envelope class를 편집 page root에 적용해야 합니다.'
 
 copy_fixture

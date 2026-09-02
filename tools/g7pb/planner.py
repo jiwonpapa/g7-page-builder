@@ -25,9 +25,10 @@ NORMATIVE_DOCS = frozenset(json.loads(
     (Path(__file__).resolve().parents[2] / "config/design-architecture.json").read_text()
 )["normativeFiles"])
 EDITOR_CHECKERS = {
-    "scripts/check-editor-acceptance-contract.mjs": ("scripts/lib/editorContractRegistration.mjs",),
-    "scripts/check-editor-layout-parity.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorCssSources.mjs"),
+    "scripts/check-editor-acceptance-contract.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorSourceGraph.mjs", "scripts/lib/editorCssSources.mjs"),
+    "scripts/check-editor-layout-parity.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorSourceGraph.mjs", "scripts/lib/editorCssSources.mjs"),
 }
+EDITOR_SOURCE_GRAPH = "scripts/lib/editorSourceGraph.mjs"
 BROWSER_HELPER_SPECS = {
     "tests/E2E/support/richTextInput.ts": (
         "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts",
@@ -95,6 +96,16 @@ def related_tests(root, sources, changed, directory, suffixes):
     return sorted(selected)
 
 
+def editor_contract_inputs(root, helper):
+    result = subprocess.run(["node", str(helper), "--root", str(root.resolve()), "--inputs"],
+                            capture_output=True, text=True, check=True, timeout=30)
+    paths = json.loads(result.stdout)
+    if not isinstance(paths, list) or not paths or not all(isinstance(path, str) and path
+            and not Path(path).is_absolute() and (root / path).resolve().is_relative_to(root.resolve()) for path in paths):
+        raise ValueError("Invalid editor source graph inputs")
+    return sorted(set(paths))
+
+
 def content_policy(root, paths):
     from . import content
     # The candidate policy must be testable before the verified controller can
@@ -133,7 +144,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             plan.unresolved.append(f"Missing infrastructure test: {path}")
             return
         requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py", "test_type_import_changes.py"} else ()
-        environment, controller_inputs = (), []
+        environment, controller_inputs, reusable = (), [], True
         if Path(path).name == "test_type_import_changes.py":
             controller_inputs.append("package-lock.json")
         if Path(path).name == "test_site_part_fixture.py":
@@ -151,10 +162,17 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                     git(policy_root, "diff", "--quiet", "HEAD", "--", *inputs)
                 selected[script] = str((policy_root / script).resolve())
                 controller_inputs.extend(str((policy_root / item).resolve()) for item in inputs)
-            environment = (("G7PB_EDITOR_CONTRACT_CHECKERS", json.dumps(selected, sort_keys=True)),)
+            source_helper = Path(selected[next(iter(EDITOR_CHECKERS))]).parent / "lib/editorSourceGraph.mjs"
+            environment = (("G7PB_EDITOR_CONTRACT_CHECKERS", json.dumps(selected, sort_keys=True)),
+                           ("G7PB_EDITOR_SOURCE_GRAPH", str(source_helper)))
+            try:
+                controller_inputs.extend(editor_contract_inputs(root, source_helper))
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
+                plan.unresolved.append(f"Editor contract source inputs required: {error}")
+                reusable = False
         add("python:" + path, ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/Harness", "-p", Path(path).name],
             [*python_inputs(root, path), *controller_inputs, *([cause] if cause else [])], "Changed Python module or dependency", requires,
-            reusable=Path(path).name not in {"test_editor_contracts.py", "test_boundary_command.py"}, env=environment)
+            reusable=reusable and Path(path).name != "test_boundary_command.py", env=environment)
     # The Node architecture regression invokes the real Python planner. Its
     # transitive Python/config inputs must select and invalidate that check too.
     design_python_inputs = python_inputs(root, "tools/g7pb/planner.py")
@@ -176,6 +194,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/check-editor-layout-parity.mjs": ("editor_contracts",),
         "scripts/lib/editorContractRegistration.mjs": ("editor_contracts",),
         "scripts/lib/editorCssSources.mjs": ("editor_contracts",),
+        "scripts/lib/editorSourceGraph.mjs": ("editor_contracts",),
+        "tests/Harness/editor-acceptance-contract.test.sh": ("editor_contracts",),
+        "tests/Harness/editor-layout-parity-contract.test.sh": ("editor_contracts",),
         "scripts/lib/typeImportChanges.mjs": ("type_import_changes",),
         "playwright.config.ts": ("browser_registration",),
     }

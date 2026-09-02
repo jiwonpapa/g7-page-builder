@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import ts from 'typescript';
 import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
+import { readEditorSourceGraph, EDITOR_ENTRY } from './lib/editorSourceGraph.mjs';
 
 const REQUIRED_SPEC = 'tests/E2E/editorInteractionQuality.spec.ts';
 const REQUIRED_FIXTURE = 'tests/E2E/support/editorInteractionFixture.ts';
@@ -21,6 +22,88 @@ async function text(root, path) {
 
 function requirePattern(errors, source, pattern, message) {
   if (!pattern.test(source)) errors.push(message);
+}
+
+const printer = ts.createPrinter({ removeComments: true });
+const syntax = node => node ? printer.printNode(ts.EmitHint.Unspecified, node, node.getSourceFile()).replace(/\s+/g, '') : '';
+function expression(value) {
+  return syntax(ts.createSourceFile('expression.ts', value, ts.ScriptTarget.Latest, true).statements[0]?.expression);
+}
+const isExpression = (node, value) => syntax(node) === expression(value);
+function within(node, predicate) {
+  const matches = [];
+  const visit = child => { if (predicate(child)) matches.push(child); ts.forEachChild(child, visit); };
+  if (node) visit(node);
+  return matches;
+}
+function attribute(node, name) {
+  const value = node.attributes.properties.find(item => ts.isJsxAttribute(item) && item.name.text === name)?.initializer;
+  return value && ts.isJsxExpression(value) ? value.expression : undefined;
+}
+
+/** Check the current native mutation boundary, never a retired function name. */
+export function validateEditorMutationBoundary(graph) {
+  const errors = [];
+  const permissionError = 'Puck의 모든 mutation 권한은 단일 viewport policy에 연결되어야 합니다.';
+  const boundaryError = '미리보기 모드의 유출된 Puck 변경은 canonical 문서에 반영하면 안 됩니다.';
+  const roots = graph.nodes('PuckEditorAdapter');
+  const pucks = graph.find(node => (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))
+    && node.tagName.getText() === 'Puck' && isExpression(attribute(node, 'config'), 'runtimePuckConfig'));
+  const puck = pucks[0];
+  const permissions = puck && attribute(puck, 'permissions');
+  const mutationNames = ['edit', 'insert', 'delete', 'duplicate', 'drag'];
+  const permissionValue = permissions && ts.isObjectLiteralExpression(permissions)
+    ? permissions.properties.find(item => ts.isPropertyAssignment(item) && item.name.getText() === 'edit')?.initializer : undefined;
+  const disabledBinding = permissionValue && ts.isPrefixUnaryExpression(permissionValue) && permissionValue.operator === ts.SyntaxKind.ExclamationToken
+    ? graph.value(permissionValue.operand) : undefined;
+  const disabled = isExpression(disabledBinding, '!viewportPolicy.canEdit || recovering');
+  if (roots.length !== 1 || pucks.length !== 1 || !permissions || !ts.isObjectLiteralExpression(permissions)
+    || permissions.properties.length !== mutationNames.length || !disabled
+    || mutationNames.some(name => !permissions.properties.some(item => ts.isPropertyAssignment(item)
+      && item.name.getText() === name && ts.isPrefixUnaryExpression(item.initializer)
+      && item.initializer.operator === ts.SyntaxKind.ExclamationToken && graph.value(item.initializer.operand) === disabledBinding))) errors.push(permissionError);
+
+  const hooks = graph.find(node => ts.isCallExpression(node) && ts.isIdentifier(node.expression)
+    && node.expression.text === 'usePuckDocumentBoundary');
+  const options = hooks[0]?.arguments[1];
+  const optionValue = options && ts.isObjectLiteralExpression(options)
+    ? options.properties.find(item => ts.isPropertyAssignment(item) && item.name.getText() === 'canEdit')?.initializer : undefined;
+  const optionCanEdit = isExpression(optionValue, 'viewportPolicy.canEdit') && disabled && ts.isBinaryExpression(disabledBinding)
+    && ts.isPrefixUnaryExpression(disabledBinding.left) && graph.sameValue(disabledBinding.left.operand, optionValue);
+  const boundary = graph.nodes('usePuckDocumentBoundary')[0];
+  const recoveryConnected = disabled && ts.isBinaryExpression(disabledBinding)
+    && within(boundary, node => node === graph.value(disabledBinding.right)).length;
+  const assessment = graph.nodes('assessEditorCandidate')[0];
+  const accept = within(boundary, node => ts.isVariableDeclaration(node) && node.name.getText() === 'accept')[0]?.initializer;
+  const acceptStatements = accept?.body && ts.isBlock(accept.body) ? [...accept.body.statements] : [];
+  const rejectIndex = acceptStatements.findIndex(node => ts.isIfStatement(node) && isExpression(node.expression, '!result.accepted')
+    && within(node.thenStatement, item => ts.isCallExpression(item) && isExpression(item.expression, 'reject')).length
+    && within(node.thenStatement, item => ts.isReturnStatement(item) && item.expression?.kind === ts.SyntaxKind.NullKeyword).length);
+  const writeIndex = acceptStatements.findIndex(node => within(node, item => ts.isCallExpression(item)
+    && isExpression(item.expression, 'setData')).length);
+  const readonlyRejected = within(assessment, node => ts.isIfStatement(node) && isExpression(node.expression, 'changed && !canEdit')
+    && within(node.thenStatement, item => ts.isReturnStatement(item) && item.expression && ts.isObjectLiteralExpression(item.expression)
+      && item.expression.properties.some(prop => ts.isPropertyAssignment(prop) && prop.name.getText() === 'accepted'
+        && prop.initializer.kind === ts.SyntaxKind.FalseKeyword)).length).length;
+  const recoveryBlocked = within(boundary, node => ts.isCallExpression(node) && isExpression(node.expression, 'assessEditorCandidate')
+    && isExpression(node.arguments[3], 'current.canEdit && !recovery')).length;
+  const changesGuarded = acceptStatements.some(node => ts.isIfStatement(node) && isExpression(node.expression, 'result.changed')
+    && within(node.thenStatement, item => ts.isCallExpression(item) && isExpression(item.expression, 'optionsRef.current.onChange')).length
+    && within(node.thenStatement, item => ts.isCallExpression(item) && isExpression(item.expression, 'optionsRef.current.onDirty')).length);
+  const recoveryMounted = graph.find(node => (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))
+    && node.tagName.getText() === 'PuckDocumentBoundary' && isExpression(attribute(node, 'boundary'), 'boundary')).length;
+  const preservedHistory = ['historyAfterRejectedCommand', 'api.history.setHistories', 'api.history.setHistoryIndex'].every(name =>
+    within(boundary, node => ts.isCallExpression(node) && isExpression(node.expression, name)).length);
+  const onPublish = puck && attribute(puck, 'onPublish');
+  const publishStatements = onPublish?.body && ts.isBlock(onPublish.body) ? [...onPublish.body.statements] : [];
+  const publishGuarded = publishStatements[0] && ts.isIfStatement(publishStatements[0])
+    && graph.value(publishStatements[0].expression) === disabledBinding && ts.isReturnStatement(publishStatements[0].thenStatement)
+    && within(onPublish, node => ts.isCallExpression(node) && isExpression(node.expression, 'boundary.acceptForPublish')).length;
+  if (!puck || hooks.length !== 1 || !optionCanEdit || !recoveryConnected || !readonlyRejected || !recoveryBlocked
+    || rejectIndex < 0 || writeIndex <= rejectIndex || !changesGuarded || !recoveryMounted || !preservedHistory || !publishGuarded
+    || !isExpression(attribute(puck, 'onAction'), 'boundary.onAction')
+    || !isExpression(attribute(puck, 'onChange'), 'boundary.onChange')) errors.push(boundaryError);
+  return errors;
 }
 
 function validatePcOnlyEditorTests(source, root) {
@@ -54,6 +137,7 @@ function validatePcOnlyEditorTests(source, root) {
 
 export async function validateEditorAcceptanceContract(root) {
   const errors = [];
+  const graph = await readEditorSourceGraph(root);
   const [packageSource, makefile, coordinationHarness, spec, fixture, playwrightConfig, richTextSource, adapterSource, canvasSource, canvasContextSource, viewportPolicySource, layoutSpec, sitePartSpec, sitePartEditorSource, sitePartResponsiveSource, sitePartSchema, sitePartCompiler] = await Promise.all([
     text(root, 'package.json'),
     text(root, 'Makefile'),
@@ -61,15 +145,15 @@ export async function validateEditorAcceptanceContract(root) {
     text(root, REQUIRED_SPEC),
     text(root, REQUIRED_FIXTURE),
     text(root, 'playwright.config.ts'),
-    text(root, 'resources/js/editor/richTextEditing.tsx'),
-    text(root, 'resources/js/editor/PuckEditorAdapter.tsx'),
-    text(root, 'resources/js/editor/canvasEditingContract.ts'),
-    text(root, 'resources/js/editor/canvasContextState.ts'),
-    text(root, 'resources/js/editor/editorViewportPolicy.ts'),
+    graph.source('resources/js/editor/richTextEditing.tsx'),
+    graph.source(EDITOR_ENTRY),
+    graph.source('resources/js/editor/canvasEditingContract.ts'),
+    graph.source('resources/js/editor/canvasContextState.ts'),
+    graph.source('resources/js/editor/editorViewportPolicy.ts'),
     text(root, 'tests/E2E/editorLayoutParity.spec.ts'),
     text(root, 'tests/E2E/sitePartLifecycle.spec.ts'),
-    text(root, 'resources/js/editor/SitePartEditor.tsx'),
-    text(root, 'resources/js/editor/sitePartResponsive.ts'),
+    graph.source('resources/js/editor/SitePartEditor.tsx'),
+    graph.source('resources/js/editor/sitePartResponsive.ts'),
     text(root, 'schemas/site-part-document.schema.json'),
     text(root, 'src/Application/Compilation/SitePartHtmlCompiler.php'),
   ]);
@@ -246,7 +330,6 @@ export async function validateEditorAcceptanceContract(root) {
   for (const [pattern, message] of scopedRichTextEvidence) requirePattern(errors, spec, pattern, message);
 
   const requiredRangeState = [
-    [richTextSource, /import\s*\{[^}]*RichTextMenu[^}]*\}\s*from\s*['"]@puckeditor\/core['"]/, '공식 Puck RichTextMenu를 직접 사용해야 합니다.'],
     [richTextSource, /function G7RichTextInlineMenu\(\{\s*editor,\s*editorState,\s*readOnly,/, '이동 중 click을 잃는 Puck 기본 inline B\/I\/U children을 중복 렌더하면 안 됩니다.'],
     [richTextSource, /function NativeRangeControl[\s\S]{0,1800}<RichTextMenu\.Control/, '부분 글자 B/I/U는 공식 Puck Control을 사용하는 pointer-first control이어야 합니다.'],
     [richTextSource, /onPointerDownCapture=\{applyFromPointer\}/, '부분 글자 B/I/U는 이동하는 Puck ActionBar의 click 유실 전 pointerdown capture에서 적용해야 합니다.'],
@@ -262,9 +345,7 @@ export async function validateEditorAcceptanceContract(root) {
       '선택 글자 옵션은 pointerdown에서 선택과 타깃을 유지하고 같은 pointer의 pointerup에서 한 번만 적용해야 합니다.'],
     [richTextSource, /if \(suppressCompatibilityClick\.current\) \{[\s\S]{0,140}clearPointerActivation\(\);[\s\S]{0,80}onClose\(\);[\s\S]{0,80}return;/,
       '선택 글자 옵션은 compatibility click이 발생해도 중복 적용하지 않아야 합니다.'],
-    [richTextSource, /toggleBold\(\)\.run\(\)[\s\S]{0,900}toggleItalic\(\)\.run\(\)[\s\S]{0,900}toggleUnderline\(\)\.run\(\)/, '부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.'],
     [richTextSource, /<RichTextMenu\.Control[\s\S]{0,600}title="링크 편집"/, '사용자 정의 링크 명령은 Puck RichTextMenu.Control을 사용해야 합니다.'],
-    [richTextSource, /import\s*\{\s*createPortal\s*\}\s*from\s*['"]react-dom['"]/, '선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.'],
     [richTextSource, /function RichTextFloatingLayer[\s\S]*anchorRef\.current[\s\S]*data-g7pb-safe-clip-left[\s\S]*data-g7pb-safe-clip-bottom[\s\S]*ResizeObserver[\s\S]*MutationObserver[\s\S]*createPortal\([\s\S]*data-puck-rte-menu="portal"[\s\S]*ownerDocument\.body/,
       '선택 글자 floating layer는 iframe ownerDocument와 공통 safe clip에 배치되고 Puck RTE 포커스 경계를 유지해야 합니다.'],
     [richTextSource, /const FLOATING_LAYER_STABLE_FRAMES = 3;[\s\S]*let pendingPlacement: string \| null = null;[\s\S]*let stablePlacementFrames = 0;[\s\S]*pendingPlacement === placement[\s\S]*stablePlacementFrames \+= 1[\s\S]*stablePlacementFrames >= FLOATING_LAYER_STABLE_FRAMES[\s\S]*data-g7pb-floating-ready/,
@@ -285,7 +366,17 @@ export async function validateEditorAcceptanceContract(root) {
     [adapterSource, /const elementStyleTarget =[\s\S]*?const styleActionLabel =[\s\S]*?aria-label=\{styleActionLabel\}[\s\S]*?page-builder-element-style-open[\s\S]*?page-builder-block-style-open/, 'ActionBar는 T 버튼 대신 요소 전체 스타일과 블록 설정을 구분해야 합니다.'],
   ];
   for (const [source, pattern, message] of requiredRangeState) requirePattern(errors, source, pattern, message);
-  const updateMarkSource = richTextSource.match(/const updateMark = [\s\S]*?\n  };/)?.[0] ?? '';
+  if (!graph.usesImport('G7RichTextInlineMenu', 'RichTextMenu', '@puckeditor/core')) errors.push('공식 Puck RichTextMenu를 직접 사용해야 합니다.');
+  if (!graph.usesImport('RichTextFloatingLayer', 'createPortal', 'react-dom')) errors.push('선택 글자 option과 링크 편집기는 ActionBar overflow 밖의 React portal을 사용해야 합니다.');
+  const richEntry = 'resources/js/editor/richTextEditing.tsx';
+  for (const command of ['toggleBold', 'toggleItalic', 'toggleUnderline']) {
+    const calls = graph.find(node => ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)
+      && node.expression.name.text === 'run' && ts.isCallExpression(node.expression.expression)
+      && ts.isPropertyAccessExpression(node.expression.expression.expression)
+      && node.expression.expression.expression.name.text === command, richEntry);
+    if (!calls.length) errors.push('부분 글자 B/I/U는 Puck editor의 공식 Tiptap 명령을 사용해야 합니다.');
+  }
+  const updateMarkSource = graph.declaration('updateMark');
   if (!updateMarkSource || /setOpenMenu\(/.test(updateMarkSource)) {
     errors.push('선택 글자 mark 명령은 메뉴 상태를 직접 바꾸지 않고 pointerup 수명주기에서 닫혀야 합니다.');
   }
@@ -323,8 +414,6 @@ export async function validateEditorAcceptanceContract(root) {
     [viewportPolicySource, /function applyEditorContentPolicy<[\s\S]{0,900}field\.contentEditable === true \? \{ contentEditable: false \}/, '미리보기 모드는 모든 inline-editable 필드를 읽기 전용으로 변환해야 합니다.'],
     [viewportPolicySource, /field\.arrayFields[\s\S]{0,220}field\.objectFields[\s\S]{0,220}field\.filterFields/, '읽기 전용 필드 변환은 array·object·filter 중첩 필드까지 재귀 적용해야 합니다.'],
     [adapterSource, /fields: applyEditorContentPolicy\(component\.fields, false\)/, 'Puck runtime config는 미리보기 모드에 읽기 전용 필드 계약을 적용해야 합니다.'],
-    [adapterSource, /permissions=\{\{ edit: viewportPolicy\.canEdit, insert: viewportPolicy\.canEdit, delete: viewportPolicy\.canEdit, duplicate: viewportPolicy\.canEdit, drag: viewportPolicy\.canEdit \}\}/, 'Puck의 모든 mutation 권한은 단일 viewport policy에 연결되어야 합니다.'],
-    [adapterSource, /const updateCanonical = \(nextData: PuckEditorData\): void => \{\s*if \(!viewportPolicy\.canEdit\) return;/, '미리보기 모드의 유출된 Puck 변경은 canonical 문서에 반영하면 안 됩니다.'],
     [adapterSource, /data-editing-mode=\{viewportPolicy\.mode\}/, '에디터 루트가 현재 편집·미리보기 모드를 노출해야 합니다.'],
     [adapterSource, /const accept = \(selection: CanvasElementSelection\): void => \{\s*if \(!viewportPolicy\.canEdit\) return;[\s\S]{0,180}transitionCanvasContext\(\{ type: ['"]selection\.accept['"], selection \}\)/, '미리보기 모드에서는 요소·범위 선택 메시지를 수용하면 안 됩니다.'],
     [layoutSpec, /const expectedMode = projectName === ['"]desktop['"] \? ['"]edit['"] : ['"]preview['"]/, '페이지 킷 레이아웃 E2E가 PC 편집과 태블릿·모바일 미리보기를 구분해야 합니다.'],
@@ -332,6 +421,7 @@ export async function validateEditorAcceptanceContract(root) {
     [layoutSpec, /expectedMode === ['"]preview['"][\s\S]{0,180}locator\(['"]\[contenteditable=['"]true['"]\]['"]\)[\s\S]{0,100}toHaveCount\(0\)/, '태블릿·모바일 미리보기에는 편집 가능한 DOM이 없어야 합니다.'],
   ];
   for (const [source, pattern, message] of requiredViewportPolicy) requirePattern(errors, source, pattern, message);
+  errors.push(...validateEditorMutationBoundary(graph));
   const requiredCanvasContextState = [
     [canvasContextSource, /export type CanvasContextTarget =[\s\S]*kind: ['"]none['"][\s\S]*kind: ['"]block['"][\s\S]*kind: ['"]text-element['"][\s\S]*kind: ['"]text-range['"][\s\S]*kind: ['"]media['"][\s\S]*kind: ['"]action['"]/, '캔버스 선택 대상은 단일 판별 상태 계약으로 정의해야 합니다.'],
     [canvasContextSource, /export function reduceCanvasContextState\([\s\S]*action\.type === ['"]selection\.accept['"][\s\S]*action\.type === ['"]selection\.replace['"][\s\S]*action\.type === ['"]range\.change['"][\s\S]*state\.target\.kind !== ['"]text-element['"][\s\S]*state\.target\.kind !== ['"]text-range['"]/, '요소 선택과 글자 범위 전이는 단일 reducer에서 정규화해야 합니다.'],

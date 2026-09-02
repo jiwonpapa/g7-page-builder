@@ -1171,15 +1171,6 @@
       }
     },
     {
-      "path": "resources/js/manager/PageBuilderManager.tsx",
-      "rule": "SOURCE-SIZE",
-      "reason": "Store, block-pack and inbox owners have been separated; document lists, revisions and metadata still share this module. The reduced non-empty-line ceiling cannot increase.",
-      "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
-      "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 1011
-      }
-    },
-    {
       "path": "resources/js/public/mobileNavigation.css",
       "rule": "CSS-IMPORTANT",
       "reason": "Existing host/Puck typography or accessibility overrides are retained by exact declaration; no additional priority escalation is permitted.",

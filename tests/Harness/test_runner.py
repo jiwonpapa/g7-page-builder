@@ -1,11 +1,13 @@
 from pathlib import Path
 from dataclasses import replace
 from unittest.mock import patch
+import json
 import subprocess
 import tempfile
 import unittest
 from tools.g7pb.model import Gate, Plan
-from tools.g7pb.runner import execute
+from tools.g7pb.runner import digest_gate, execute
+from tools.g7pb.state import CoordError
 
 
 class RunnerTests(unittest.TestCase):
@@ -117,7 +119,11 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(self.calls[0], list(assets.argv))
         self.assertEqual(self.calls[1][:2], ["docker", "compose"])
-        self.assertEqual(self.calls[1][-7:], ["env", "-u", "G7PB_PAGE_KIT_IDS", "G7PB_PRESET_IDS=hero.service-intro", "npx", "playwright", "test"])
+        evidence = records[1]["evidence"]
+        self.assertEqual(self.calls[1][-10:], ["env", "-u", "G7PB_PAGE_KIT_IDS", "G7PB_PRESET_IDS=hero.service-intro",
+                         "PLAYWRIGHT_HTML_OUTPUT_DIR=" + evidence["report"], "npx", "playwright", "test", "--output", evidence["results"]])
+        self.assertFalse(Path(evidence["report"]).is_absolute())
+        self.assertTrue(evidence["directory"].startswith("output/playwright/gates/owner/"))
         self.assertEqual([r["gate"] for r in records], [assets.name, browser.name])
         self.assertEqual(guard.call_count, 2)
         self.assertEqual(list(self.receipts.glob("*.json")), [])
@@ -146,6 +152,66 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual([r["status"] for r in records], ["deferred", "deferred"])
         self.assertEqual(self.calls, [])
+        self.assertFalse((self.root / "output").exists())
+
+    def test_local_browser_attempts_preserve_failures_without_changing_digest_or_scope(self):
+        browser = replace(self.runtime_pair()[1], depends_on=(), requires=("browser",))
+        later = replace(browser, name="browser:later", argv=(*browser.argv, "later.spec.ts"))
+        expected_key = digest_gate(self.root, browser)
+        observed = []
+        failing = True
+        def capture(argv, **kwargs):
+            observed.append((argv, kwargs["env"]))
+            output = self.root / argv[-1]
+            output.mkdir(parents=True)
+            (output / "failure.txt").write_text("first failure" if failing else "retry result")
+            return subprocess.CompletedProcess(argv, int(failing))
+        with patch.dict("os.environ", {"CI": "true", "G7PB_BASE_URL": "http://fixture.invalid",
+                                       "PLAYWRIGHT_HTML_OUTPUT_DIR": "/foreign/report"}):
+            code, first = execute(self.root, Plan(["a"], [browser, later]), receipts=self.receipts, executor=capture)
+            self.assertEqual(code, 1)
+            self.assertEqual(len(observed), 1)
+            failing = False
+            code, second = execute(self.root, Plan(["a"], [browser, later]), receipts=self.receipts, executor=capture)
+        self.assertEqual(code, 0)
+        self.assertEqual([record["status"] for record in first + second], ["failed", "passed", "passed"])
+        self.assertEqual(first[0]["key"], second[0]["key"])
+        self.assertEqual(digest_gate(self.root, browser), expected_key)
+        self.assertEqual(len({record["evidence"]["directory"] for record in first + second}), 3)
+        for record, (argv, environment) in zip(first + second, observed):
+            evidence = record["evidence"]
+            self.assertEqual(argv[-2:], ["--output", evidence["results"]])
+            self.assertEqual(environment["PLAYWRIGHT_HTML_OUTPUT_DIR"], evidence["report"])
+            saved = json.loads((self.root / evidence["directory"] / "execution.json").read_text())
+            self.assertEqual(saved["status"], record["status"])
+            self.assertEqual(saved["key"], record["key"])
+        self.assertEqual((self.root / first[0]["evidence"]["results"] / "failure.txt").read_text(), "first failure")
+        self.assertEqual(list(self.receipts.glob("*.json")), [])
+
+    def test_invalid_task_cannot_create_evidence_or_execute_a_guard(self):
+        for task in ("../escape", "/absolute", "nested/task", "with space", ".", "..", "x"):
+            with self.subTest(task=task), patch("tools.g7pb.runner.subprocess.run") as guard, self.assertRaises(CoordError):
+                execute(self.root, Plan(["a"], list(self.runtime_pair())), task=task,
+                        receipts=self.receipts, executor=self.executor)
+            guard.assert_not_called()
+        self.assertFalse((self.root / "output").exists())
+        self.assertEqual(self.calls, [])
+
+    def test_evidence_does_not_follow_an_output_symlink_outside_checkout(self):
+        with tempfile.TemporaryDirectory() as foreign:
+            (self.root / "output").symlink_to(foreign, target_is_directory=True)
+            browser = replace(self.runtime_pair()[1], depends_on=())
+            with patch.dict("os.environ", {"CI": "true"}), self.assertRaisesRegex(ValueError, "inside the checkout"):
+                self.run_plan([browser])
+            self.assertEqual(list(Path(foreign).iterdir()), [])
+        self.assertEqual(self.calls, [])
+
+    def test_browser_collection_remains_a_reusable_non_runtime_check(self):
+        gate = self.gate("browser:collection", ("npx", "playwright", "test", "--list"))
+        self.run_plan([gate])
+        self.run_plan([gate])
+        self.assertEqual(self.calls, [list(gate.argv)])
+        self.assertFalse((self.root / "output").exists())
 
     def test_deferred_build_cannot_support_non_deferred_browser(self):
         assets, browser = self.runtime_pair()

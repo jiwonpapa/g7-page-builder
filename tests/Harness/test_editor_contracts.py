@@ -16,11 +16,11 @@ SOURCE_GRAPH = "scripts/lib/editorSourceGraph.mjs"
 
 
 class EditorContractTests(unittest.TestCase):
-    def source_graph(self, root, entries=None, owner=None, boundary=False, binding=False):
+    def source_graph(self, root, entries=None, owner=None, boundary=False, binding=False, target=None):
         helper = os.environ.get("G7PB_EDITOR_SOURCE_GRAPH", str(ROOT / SOURCE_GRAPH))
         selected = json.loads(os.environ.get("G7PB_EDITOR_CONTRACT_CHECKERS", "{}"))
         checker = selected.get(CHECKERS[0], str(ROOT / CHECKERS[0]))
-        code = ("import {pathToFileURL} from 'node:url';import ts from 'typescript';const args=JSON.parse(process.argv[1]);"
+        code = ("import {pathToFileURL} from 'node:url';import {relative} from 'node:path';import ts from 'typescript';const args=JSON.parse(process.argv[1]);"
                 "const {readEditorSourceGraph}=await import(pathToFileURL(args.helper));"
                 "try{const graph=await readEditorSourceGraph(args.root,args.entries??undefined);"
                 "const result={files:graph.files};if(args.owner==='@Puck'){result.owner=graph.jsxOwner('Puck','config','runtimePuckConfig');}"
@@ -28,11 +28,20 @@ class EditorContractTests(unittest.TestCase):
                 "if(args.boundary){const {validateEditorMutationBoundary}=await import(pathToFileURL(args.checker));"
                 "result.errors=validateEditorMutationBoundary(graph);}"
                 "if(args.binding){const nodes=graph.find(n=>ts.isJsxAttribute(n)&&n.name.text==='disabled');"
-                "result.binding=graph.value(nodes[0].initializer.expression).getText();}console.log(JSON.stringify(result));}"
+                "result.binding=graph.value(nodes[0].initializer.expression).getText();}"
+                "if(args.target){const nodes=graph.find(n=>(ts.isJsxSelfClosingElement(n)||ts.isJsxOpeningElement(n))"
+                "&&n.tagName.getText()===args.target&&(args.target!=='Puck'||n.attributes.properties.some(p=>"
+                "ts.isJsxAttribute(p)&&p.name.text==='config'&&p.initializer?.expression?.getText()==='runtimePuckConfig')));"
+                "if(nodes.length!==1||!ts.isJsxSelfClosingElement(nodes[0]))throw Error('Expected one self-closing target');"
+                "const n=nodes[0],attribute=n.attributes.properties.find(p=>ts.isJsxAttribute(p)&&p.name.text===(args.target==='Puck'?'onChange':'boundary'));"
+                "const value=attribute?.initializer?.expression,receiver=args.target==='Puck'&&value&&ts.isPropertyAccessExpression(value)?value.expression:value;"
+                "if(!receiver||!ts.isIdentifier(receiver))throw Error('Expected an explicit boundary receiver');"
+                "result.target={file:relative(args.root,n.getSourceFile().fileName),start:n.getStart(),end:n.end,text:n.getText(),receiver:receiver.text};}"
+                "console.log(JSON.stringify(result));}"
                 "catch(error){console.log(JSON.stringify({error:error.message}));}")
         result = subprocess.run(["node", "--input-type=module", "-e", code, json.dumps({
-            "root": str(root), "helper": helper, "checker": checker, "entries": entries,
-            "owner": owner, "boundary": boundary, "binding": binding,
+            "root": str(root.resolve()), "helper": helper, "checker": checker, "entries": entries,
+            "owner": owner, "boundary": boundary, "binding": binding, "target": target,
         })], cwd=ROOT, text=True, capture_output=True, check=True)
         return json.loads(result.stdout)
 
@@ -41,6 +50,20 @@ class EditorContractTests(unittest.TestCase):
             path = root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(source)
+
+    def alias_puck_import(self, source):
+        # Replace the bound import specifier once; whitespace and line wrapping
+        # belong to the source formatter, not this mutation fixture's contract.
+        code = ("import ts from 'typescript';const source=JSON.parse(process.argv[1]);"
+                "const tree=ts.createSourceFile('fixture.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);"
+                "const matches=tree.statements.filter(n=>ts.isImportDeclaration(n)&&n.moduleSpecifier.text==='@puckeditor/core')"
+                ".flatMap(n=>n.importClause?.namedBindings&&ts.isNamedImports(n.importClause.namedBindings)?n.importClause.namedBindings.elements:[])"
+                ".filter(n=>!n.isTypeOnly&&(n.propertyName??n.name).text==='Puck');"
+                "if(matches.length!==1||matches[0].name.text!=='Puck')throw Error('Expected exactly one Puck import specifier');"
+                "const n=matches[0];console.log(JSON.stringify(source.slice(0,n.getStart())+'Puck as NativePuck'+source.slice(n.end)));")
+        result = subprocess.run(["node", "--input-type=module", "-e", code, json.dumps(source)],
+                                cwd=ROOT, text=True, capture_output=True, check=True)
+        return json.loads(result.stdout)
 
     def test_actual_alias_reexport_and_moved_owner_follow_changed_source(self):
         with tempfile.TemporaryDirectory(prefix="g7pb-editor-owner-") as directory:
@@ -113,6 +136,118 @@ class EditorContractTests(unittest.TestCase):
             (root / "entry.tsx").write_text("import {useSession} from './session';export function entry(){const ignored=useSession();const editingDisabled=false;return <Puck disabled={editingDisabled} data-result={ignored}/>;}")
             self.assertEqual(self.source_graph(root, ["entry.tsx"], binding=True)["binding"], "false")
 
+    def test_type_only_reference_cannot_make_a_loaded_function_a_runtime_owner(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-editor-type-owner-") as directory:
+            root = Path(directory)
+            self.write_sources(root, {
+                "owner.ts": "export function protectedCommand(){return 1;} export const liveValue=1;",
+                "entry.ts": "import {liveValue} from './owner';import type {protectedCommand} from './owner';"
+                            "export function entry(): ReturnType<typeof protectedCommand>{return liveValue;}",
+            })
+            result = self.source_graph(root, ["entry.ts"], "protectedCommand")
+            self.assertIn("error", result)
+            self.assertIn("found 0", result["error"])
+
+    def test_mutation_callbacks_cannot_use_a_shadow_boundary_with_overridden_members(self):
+        original = self.source_graph(ROOT)
+        with tempfile.TemporaryDirectory(prefix="g7pb-editor-boundary-members-") as directory:
+            root = Path(directory)
+            for name in original["files"]:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            target = self.source_graph(root, target="Puck")["target"]
+            path = root / target["file"]
+            source = path.read_text()
+            for member, replacement in (
+                ("onChange", "() => undefined"),
+                ("onAction", "() => undefined"),
+                ("acceptForPublish", "() => null"),
+            ):
+                with self.subTest(member=member):
+                    shadow = "{((protectedBoundary) => { const " + target["receiver"] + " = { ...protectedBoundary, " + member + ": " + replacement + " }; return " + target["text"] + "; })(" + target["receiver"] + ")}"
+                    path.write_text(source[:target["start"]] + shadow + source[target["end"]:])
+                    result = self.source_graph(root, boundary=True)
+                    self.assertNotIn("error", result)
+                    self.assertTrue(result["errors"], member)
+            path.write_text(source)
+
+    def test_recovery_component_cannot_receive_a_shadowed_boundary_receiver(self):
+        original = self.source_graph(ROOT)
+        with tempfile.TemporaryDirectory(prefix="g7pb-editor-recovery-receiver-") as directory:
+            root = Path(directory)
+            for name in original["files"]:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            target = self.source_graph(root, target="PuckDocumentBoundary")["target"]
+            path = root / target["file"]
+            source = path.read_text()
+            shadow = "{((protectedBoundary) => { const " + target["receiver"] + " = { ...protectedBoundary, finishRecovery: () => undefined }; return " + target["text"] + "; })(" + target["receiver"] + ")}"
+            path.write_text(source[:target["start"]] + shadow + source[target["end"]:])
+            result = self.source_graph(root, boundary=True)
+            self.assertNotIn("error", result)
+            self.assertTrue(result["errors"])
+
+    def test_split_session_owner_keeps_the_same_mutation_and_recovery_contract(self):
+        original = self.source_graph(ROOT)
+        with tempfile.TemporaryDirectory(prefix="g7pb-editor-split-session-") as directory:
+            root = Path(directory)
+            for name in original["files"]:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            # Keep the real boundary implementation; only its caller moves into
+            # a separate hook behind an explicitly keyed JSX session fixture.
+            self.write_sources(root, {
+                "resources/js/editor/usePageBuilderSession.ts": """
+import {usePuckDocumentBoundary as useDocumentBoundary} from './PuckDocumentBoundary';
+export function usePageBuilderSession(initialSession, contextRef, viewportPolicy, onDirty, onChange) {
+  const {boundary: canonicalBoundary, data, recovering} = useDocumentBoundary(initialSession, {
+    context: contextRef, canEdit: viewportPolicy.canEdit, onDirty, onChange,
+  });
+  const editingDisabled = !viewportPolicy.canEdit || recovering;
+  return {boundary: canonicalBoundary, data, recovering, editingDisabled};
+}
+""",
+                "resources/js/editor/PuckEditorAdapter.tsx": """
+import {Puck} from '@puckeditor/core';
+import {PuckDocumentBoundary} from './PuckDocumentBoundary';
+import {usePageBuilderSession} from './usePageBuilderSession';
+export function PuckEditorAdapter(props) {
+  return <IsolatedSession key={JSON.stringify([props.document.document_id, props.revisionKey])} {...props}/>;
+}
+function IsolatedSession({initialSession, contextRef, viewportPolicy, onDirty, onChange, onPublish}) {
+  const {boundary, data, recovering, editingDisabled} = usePageBuilderSession(initialSession, contextRef, viewportPolicy, onDirty, onChange);
+  const runtimePuckConfig = {};
+  return <><Puck config={runtimePuckConfig} data={data}
+    permissions={{edit: !editingDisabled, insert: !editingDisabled, delete: !editingDisabled, duplicate: !editingDisabled, drag: !editingDisabled}}
+    onChange={boundary.onChange} onAction={boundary.onAction}
+    onPublish={(nextData) => {
+      if (editingDisabled) return;
+      const candidate = boundary.acceptForPublish(nextData);
+      if (candidate) return onPublish(candidate);
+    }}/><PuckDocumentBoundary boundary={boundary}/></>;
+}
+""",
+            })
+            self.assertEqual(self.source_graph(root, boundary=True)["errors"], [])
+            self.assertEqual(self.source_graph(root, owner="editingDisabled")["owner"], "resources/js/editor/usePageBuilderSession.ts")
+            for tag, member, replacement in (("Puck", "onChange", "() => undefined"),
+                                              ("Puck", "onAction", "() => undefined"),
+                                              ("Puck", "acceptForPublish", "() => null"),
+                                              ("PuckDocumentBoundary", "finishRecovery", "() => undefined")):
+                with self.subTest(member=member):
+                    target = self.source_graph(root, target=tag)["target"]
+                    path = root / target["file"]
+                    source = path.read_text()
+                    shadow = "{((protectedBoundary) => { const " + target["receiver"] + " = { ...protectedBoundary, " + member + ": " + replacement + " }; return " + target["text"] + "; })(" + target["receiver"] + ")}"
+                    path.write_text(source[:target["start"]] + shadow + source[target["end"]:])
+                    result = self.source_graph(root, boundary=True)
+                    self.assertNotIn("error", result)
+                    self.assertTrue(result["errors"])
+                    path.write_text(source)
+
     def test_mutation_boundary_uses_live_permissions_recovery_and_callbacks(self):
         original = self.source_graph(ROOT, boundary=True)
         self.assertNotIn("error", original)
@@ -153,10 +288,19 @@ class EditorContractTests(unittest.TestCase):
             source = facade.read_text()
             self.assertIn("export function PuckEditorAdapter(", source)
             facade.write_text(source.replace("export function PuckEditorAdapter(", "function IsolatedEditorSession(", 1)
-                + "\nexport function PuckEditorAdapter(props: PuckEditorAdapterProps) { return <IsolatedEditorSession {...props}/>; }\n")
+                + "\nexport function PuckEditorAdapter(props: PuckEditorAdapterProps) { return <IsolatedEditorSession key={JSON.stringify([props.document.document_id, props.revisionKey])} {...props}/>; }\n")
             wrapped = self.source_graph(root, boundary=True)
             self.assertNotIn("error", wrapped)
             self.assertEqual(wrapped["errors"], [])
+            # The Puck owner may differ from the facade and session hook owner.
+            target = self.source_graph(root, target="Puck")["target"]
+            puck_file = root / target["file"]
+            puck_source = puck_file.read_text()
+            aliased = puck_source[:target["start"]] + target["text"].replace("<Puck", "<NativePuck", 1) + puck_source[target["end"]:]
+            puck_file.write_text(self.alias_puck_import(aliased))
+            named = self.source_graph(root, boundary=True)
+            self.assertNotIn("error", named)
+            self.assertEqual(named["errors"], [])
 
     def registration(self, source, scripts=None):
         code = ("import {validateEditorTestRegistration as registration, validateFocusedUnitCommand as unit} from './" + REGISTRATION + "';"

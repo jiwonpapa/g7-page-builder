@@ -134,6 +134,11 @@ export async function readEditorSourceGraph(subject, entries = [EDITOR_ENTRY]) {
       ? checker.getShorthandAssignmentValueSymbol(node.parent) : checker.getSymbolAtLocation(node);
     return value && value.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(value) : value;
   };
+  const isImportReference = (node, imported, moduleName) => (checker.getSymbolAtLocation(node)?.declarations ?? []).some(declaration => {
+    if (!ts.isImportSpecifier(declaration) || (declaration.propertyName ?? declaration.name).text !== imported || declaration.isTypeOnly) return false;
+    const statement = declaration.parent.parent.parent;
+    return ts.isImportDeclaration(statement) && !statement.importClause.isTypeOnly && statement.moduleSpecifier.text === moduleName;
+  });
   const mark = node => {
     if (!node || reachable.has(node) || !modules.has(node.getSourceFile().fileName)) return;
     reachable.add(node);
@@ -141,6 +146,8 @@ export async function readEditorSourceGraph(subject, entries = [EDITOR_ENTRY]) {
     while (top.parent && !ts.isSourceFile(top.parent)) top = top.parent;
     statements.add(top);
     const walk = current => {
+      // A loaded module's type/typeof reference is not an executed declaration.
+      if (ts.isTypeNode(current)) return;
       if (current !== node && ts.isFunctionDeclaration(current)) return;
       if (current !== node && ts.isVariableDeclaration(current) && current.initializer
         && (ts.isArrowFunction(current.initializer) || ts.isFunctionExpression(current.initializer)) && !reachable.has(current)) return;
@@ -196,6 +203,7 @@ export async function readEditorSourceGraph(subject, entries = [EDITOR_ENTRY]) {
   const find = (predicate, entry = entries[0]) => {
     const selected = descendants(entry), found = [];
     const walk = node => {
+      if (ts.isTypeNode(node)) return;
       if (ts.isFunctionDeclaration(node) && !reachable.has(node)) return;
       if (ts.isVariableDeclaration(node) && node.initializer
         && (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer)) && !reachable.has(node)) return;
@@ -261,6 +269,8 @@ export async function readEditorSourceGraph(subject, entries = [EDITOR_ENTRY]) {
     find,
     value,
     sameValue,
+    member(input, name) { return member(input, name, new Set()); },
+    isImportReference,
     usesImport(owner, imported, moduleName) {
       const nodes = namedNodes.get(owner) ?? [];
       if (nodes.length !== 1) return false;

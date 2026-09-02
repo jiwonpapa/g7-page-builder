@@ -10,6 +10,7 @@ from .inputs import source_inputs
 from .typecheck_inputs import typecheck_inputs
 from .browser_requirements import BROWSER_ENVIRONMENT, scenarios_for
 from .environment import build_inputs, sync_plan
+from .runner import SITE_PART_SPECS, SITE_PART_HELPERS
 
 
 DESIGN_INPUTS = (
@@ -127,6 +128,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             return
         requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py"} else ()
         environment, controller_inputs = (), []
+        if Path(path).name == "test_site_part_fixture.py":
+            requires = ("node", "php")
+            controller_inputs.extend((*SITE_PART_HELPERS, "package-lock.json"))
         if Path(path).name == "test_editor_contracts.py":
             verified = checker_controller_root(root, controller_root)
             selected = {}
@@ -200,14 +204,22 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             if file.exists():
                 add("harness:" + path, ["bash", path], [path, "scripts/coord-harness.sh", *python_inputs(root, "tools/g7pb/coord.py")], "Changed harness regression")
         elif path.startswith("tests/E2E/"):
-            if file.suffix in {".ts", ".tsx"}:
+            selected_specs = SITE_PART_SPECS if path in SITE_PART_HELPERS else (path,) if path.endswith((".spec.ts", ".spec.tsx")) else ()
+            if path in SITE_PART_HELPERS:
+                python_test("tests/Harness/test_site_part_fixture.py", path)
+                if file.suffix == ".php":
+                    add("syntax:" + path, ["php", "-l", path], [path], "Test-owned fixture PHP syntax", ("php",))
+            if not selected_specs:
+                plan.unresolved.append(f"Select the owning browser scenario for {path}")
+            for spec in selected_specs:
+                inputs = [*source_inputs(root, spec).files, spec, "playwright.config.ts", "package-lock.json"]
+                if spec in SITE_PART_SPECS:
+                    inputs.extend(SITE_PART_HELPERS)
                 # Test-registration refactors do not claim that the product ran.
                 if product_changed and not full:
-                    add("browser:" + path, ["npx", "--no-install", "playwright", "test", path, "--retries=0"], [path, "playwright.config.ts", "package-lock.json"], "Changed browser scenario and product", ("node", "php", "g7", "browser"), True, env=BROWSER_ENVIRONMENT)
+                    add("browser:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--retries=0"], inputs, "Changed browser scenario and product", ("node", "php", "g7", "browser"), True, env=BROWSER_ENVIRONMENT)
                 elif not full:
-                    add("browser-registration:" + path, ["npx", "--no-install", "playwright", "test", path, "--list", "--reporter=line"], [path, "playwright.config.ts", "package-lock.json"], "Harness-only test collection; NOT product/browser acceptance", ("node",), reusable=False)
-            else:
-                plan.unresolved.append(f"Select the owning browser scenario for {path}")
+                    add("browser-registration:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--list", "--reporter=line"], inputs, "Harness-only test collection; NOT product/browser acceptance", ("node",), reusable=False)
         elif path.startswith("tests/Unit/") and path.endswith((".test.ts", ".test.tsx")):
             ts_tests.append(path)
         elif path.startswith(("tests/UnitPhp/", "tests/Integration/")) and path.endswith(".php"):
@@ -356,7 +368,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             plan.unresolved.append(f"Content selection required: {error}")
     if full:
         add("full-product", ["make", "quality-gate"], plan.paths, "Explicit full runtime/RC scope", ("node", "php", "g7", "browser"), True)
-    browser_gates = [gate for name, gate in gates.items() if name.startswith("browser:")]
+    browser_gates = [replace(gate, inputs=tuple(sorted(set(gate.inputs) | set(SITE_PART_HELPERS) | set(python_inputs(root, "tools/g7pb/runner.py")))))
+                     if name.removeprefix("browser:") in SITE_PART_SPECS else gate
+                     for name, gate in gates.items() if name.startswith("browser:")]
     artifacts = [gate for name, gate in gates.items() if name in artifact_names]
     plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:") and name not in artifact_names]
     if browser_gates or artifacts:

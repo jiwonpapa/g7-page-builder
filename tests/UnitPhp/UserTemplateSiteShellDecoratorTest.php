@@ -18,14 +18,14 @@ final class UserTemplateSiteShellDecoratorTest extends TestCase
         self::assertFalse($decorator->supports('custom-user', '1.1.1', 'user'));
     }
 
-    public function test_it_injects_one_progressive_shell_source_and_preserves_native_nodes_as_fallback(): void
+    public function test_it_injects_one_query_free_progressive_shell_source_and_preserves_native_nodes_as_fallback(): void
     {
         $decorated = (new UserTemplateSiteShellDecorator)->decorate($this->layout());
 
         self::assertSame('native-content', $decorated['components'][0]['children'][5]['text']);
         self::assertSame('g7pb_site_shell', $decorated['data_sources'][1]['id']);
         self::assertSame(
-            "/api/modules/jiwonpapa-page_builder/public/site-shell?locale={{_global.locale ?? 'ko'}}",
+            '/api/modules/jiwonpapa-page_builder/public/site-shell',
             $decorated['data_sources'][1]['endpoint'],
         );
         self::assertSame('progressive', $decorated['data_sources'][1]['loading_strategy']);

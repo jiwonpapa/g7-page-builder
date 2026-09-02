@@ -17,6 +17,45 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def test_owned_site_part_helpers_select_only_three_registration_specs(self):
+        php = "tests/E2E/support/sitePartState.php"
+        helper = "tests/E2E/support/sitePartSetFixture.ts"
+        self.write(php, "<?php class Fixture {}")
+        self.write(helper, "export class Fixture {}")
+        self.write("tests/Harness/test_site_part_fixture.py", "import unittest")
+        specs = ("globalSiteShellRoutes", "sitePartLifecycle", "pageBuilderLifecycle")
+        for spec in specs:
+            self.write(f"tests/E2E/{spec}.spec.ts", "import './support/sitePartSetFixture'")
+        plan = build_plan(self.root, [php, helper])
+        self.assertFalse(plan.unresolved)
+        browser = [gate for gate in plan.gates if gate.name.startswith("browser-registration:")]
+        self.assertEqual({gate.name for gate in browser}, {"browser-registration:tests/E2E/" + spec + ".spec.ts" for spec in specs})
+        self.assertTrue(all(php in gate.inputs and helper in gate.inputs for gate in browser))
+        self.assertFalse(any(gate.runtime for gate in plan.gates))
+        self.assertFalse(any(gate.name.startswith("content:") for gate in plan.gates))
+        regression = next(g for g in plan.gates if g.name == "python:tests/Harness/test_site_part_fixture.py")
+        self.assertIn(php, regression.inputs)
+        self.assertEqual(regression.requires, ("node", "php"))
+
+    def test_owned_fixture_inputs_follow_product_browser_gates_and_defer_submission(self):
+        spec = "tests/E2E/pageBuilderLifecycle.spec.ts"
+        self.write(spec, "test('owned', ()=>{})")
+        # An explicit changed spec + product fixture selects real runtime later.
+        self.write("resources/css/fixture.css", ".fixture { display:block }")
+        for phase in ("submission", "integration"):
+            plan = build_plan(self.root, [spec, "resources/css/fixture.css"], phase=phase)
+            gate = next(g for g in plan.gates if g.name == "browser:" + spec)
+            self.assertIn("tests/E2E/support/sitePartState.php", gate.inputs)
+            self.assertIn("tests/E2E/support/sitePartSetFixture.ts", gate.inputs)
+            self.assertEqual(gate.deferred, phase == "submission")
+            self.assertIn("browser-assets", gate.depends_on)
+
+    def test_unknown_browser_support_cannot_be_collected_as_zero_test_spec(self):
+        self.write("tests/E2E/support/unknown.ts", "export const a=1")
+        plan = build_plan(self.root, ["tests/E2E/support/unknown.ts"])
+        self.assertTrue(any("owning browser scenario" in item for item in plan.unresolved))
+        self.assertFalse(any(gate.name.startswith("browser") for gate in plan.gates))
+
     def test_docs_have_no_product_gate(self):
         plan = build_plan(self.root, ["README.md"])
         self.assertEqual(plan.gates, [])

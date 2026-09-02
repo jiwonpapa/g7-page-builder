@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 from tools.g7pb.model import Gate, Plan
-from tools.g7pb.runner import digest_gate, execute
+from tools.g7pb.runner import digest_gate, execute, SITE_PART_SPECS
 from tools.g7pb.state import CoordError
 
 
@@ -37,6 +37,90 @@ class RunnerTests(unittest.TestCase):
 
     def gate(self, name="a", argv=("check",), inputs=("a",)):
         return Gate(name, argv, inputs, "test")
+
+    def fixture_gate(self, spec="tests/E2E/globalSiteShellRoutes.spec.ts"):
+        return Gate("browser:" + spec, ("npx", "playwright", "test", spec), ("a",), "owned fixture", runtime=True)
+
+    def fixture_executor(self, *, browser_code=0, cleanup_code=0, empty=False, error=None):
+        def run(argv, **kwargs):
+            self.calls.append(argv)
+            journal_path = self.root / kwargs["env"]["G7PB_SITE_PART_FIXTURE_SCOPE"]
+            journal = json.loads(journal_path.read_text())
+            if "G7PB_SITE_PART_FIXTURE_ACTION=restore-all" in argv:
+                journal["closed"] = cleanup_code == 0
+                if not cleanup_code:
+                    for item in journal["sessions"].values():
+                        item["restored"] = True
+                journal_path.write_text(json.dumps(journal))
+                return subprocess.CompletedProcess(argv, cleanup_code)
+            if not empty:
+                journal["sessions"] = {"fixture": {"restored": False}}
+                journal_path.write_text(json.dumps(journal))
+            if error:
+                raise error
+            self.write_browser_result(kwargs["env"])
+            return subprocess.CompletedProcess(argv, browser_code)
+        return run
+
+    def run_fixture(self, *, spec="tests/E2E/globalSiteShellRoutes.spec.ts", **options):
+        with patch.dict("os.environ", {"CI": ""}), patch("tools.g7pb.runner.subprocess.run"):
+            return execute(self.root, Plan(["a"], [self.fixture_gate(spec)]), task="fixture-owner",
+                           receipts=self.receipts, executor=self.fixture_executor(**options))
+
+    def test_fixture_restoration_runs_after_browser_success_and_failure(self):
+        for browser_code in (0, 3):
+            code, records = self.run_fixture(browser_code=browser_code)
+            self.assertEqual(code, browser_code)
+            self.assertEqual(records[0]["fixture_restore_returncode"], 0)
+            self.assertIn("G7PB_SITE_PART_FIXTURE_ACTION=restore-all", self.calls[-1])
+            self.assertIn("/var/www/g7", self.calls[-1])
+            self.assertEqual(self.calls[-1][-2:], ["php", "/var/www/g7/modules/jiwonpapa-page_builder/tests/E2E/support/sitePartState.php"])
+            self.assertNotIn("tinker", self.calls[-1])
+        self.assertEqual(list(self.receipts.glob("*.json")), [])
+
+    def test_cleanup_failure_overrides_browser_success_and_retains_journal(self):
+        code, records = self.run_fixture(cleanup_code=9)
+        self.assertEqual(code, 9)
+        self.assertEqual(records[0]["status"], "failed")
+        journal = self.root / records[0]["evidence"]["directory"] / "site-part-state.json"
+        self.assertTrue(journal.is_file())
+        self.assertFalse(json.loads(journal.read_text())["closed"])
+
+    def test_zero_sessions_cannot_be_reported_as_browser_success(self):
+        for spec in SITE_PART_SPECS:
+            with self.subTest(spec=spec):
+                code, records = self.run_fixture(spec=spec, empty=True)
+                self.assertEqual(code, 1)
+                self.assertIn("Missing completed", records[0]["fixture_restore_error"])
+
+    def test_page_lifecycle_uses_owned_fixture_and_restores_it(self):
+        spec = "tests/E2E/pageBuilderLifecycle.spec.ts"
+        code, records = self.run_fixture(spec=spec)
+        self.assertEqual(code, 0)
+        self.assertEqual(records[0]["fixture_restore_returncode"], 0)
+        journal = self.root / records[0]["evidence"]["directory"] / "site-part-state.json"
+        self.assertEqual(json.loads(journal.read_text())["spec"], spec)
+
+    def test_executor_exception_still_restores_and_records_failure(self):
+        code, records = self.run_fixture(error=RuntimeError("transport failed"))
+        self.assertEqual(code, 1)
+        self.assertEqual(records[0]["execution_error"], "transport failed")
+        self.assertIn("G7PB_SITE_PART_FIXTURE_ACTION=restore-all", self.calls[-1])
+
+    def test_keyboard_interrupt_restores_then_propagates_failure(self):
+        with self.assertRaises(KeyboardInterrupt):
+            self.run_fixture(error=KeyboardInterrupt())
+        self.assertIn("G7PB_SITE_PART_FIXTURE_ACTION=restore-all", self.calls[-1])
+        self.assertFalse(list(self.receipts.glob("*.json")))
+
+    def test_site_part_fixture_is_local_only_and_other_browser_gates_get_no_capability(self):
+        with patch.dict("os.environ", {"CI": "true", "G7PB_BASE_URL": "https://fixture.invalid"}), self.assertRaisesRegex(ValueError, "Local Docker"):
+            self.run_plan([self.fixture_gate()])
+        self.assertFalse(self.calls)
+        ordinary = replace(self.fixture_gate(), name="browser:tests/E2E/ordinary.spec.ts")
+        with patch.dict("os.environ", {"CI": ""}), patch("tools.g7pb.runner.subprocess.run"):
+            execute(self.root, Plan(["a"], [ordinary]), task="fixture-owner", receipts=self.receipts, executor=self.executor)
+        self.assertFalse(any("G7PB_SITE_PART_FIXTURE_SCOPE=" in word for call in self.calls for word in call))
 
     def test_success_reused_across_submission_integration(self):
         self.run_plan([self.gate()])

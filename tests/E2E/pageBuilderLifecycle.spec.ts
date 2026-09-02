@@ -1,7 +1,7 @@
 import {
   expect,
   request as playwrightRequest,
-  test,
+  test as base,
   type BrowserContext,
   type Locator,
   type Page,
@@ -9,6 +9,7 @@ import {
 } from '@playwright/test';
 import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { SitePartSetFixture, gotoOwnedSiteShell } from './support/sitePartSetFixture';
 
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const MANAGER_PATH = '/modules/jiwonpapa-page_builder/admin';
@@ -18,6 +19,34 @@ const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-
 const E2E_OWNERSHIP_DIRECTORY = join(process.cwd(), 'output', 'playwright', 'ownership');
 const E2E_DOCUMENT_SLUG_PATTERN = /^(?:managed-)?g7pb-e2e-[a-z0-9-]+-\d{13}-[a-z0-9]{6}(?:-copy)?$|^g7pb-template-e2e-\d{13}-[a-z0-9]{6}$/;
 const MOBILE_EDITOR_BREAKPOINT = 900;
+
+const test = base.extend<{ adminToken: string; ownedSiteParts: SitePartSetFixture }>({
+  adminToken: async ({ context }, use) => {
+    await use(await authenticateAdmin(context));
+  },
+  // Every selected case owns a fresh published pair, including a grep selecting
+  // only the document or nested flow. No existing Site Part is prepared/edited.
+  ownedSiteParts: [async ({ adminToken }, use) => {
+    const api = await playwrightRequest.newContext({
+      baseURL: BASE_URL,
+      ignoreHTTPSErrors: true,
+      extraHTTPHeaders: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const fixture = new SitePartSetFixture(api, 'ko');
+    try {
+      await fixture.start();
+      await use(fixture);
+    } finally {
+      try { fixture.restore(); } finally { await api.dispose(); }
+    }
+  }, { auto: true }],
+});
+
+test.use({ locale: 'ko-KR' });
 /*
  * @puckeditor/core is pinned to 0.23.0. These selectors use that pinned build's
  * semantic CSS-module prefixes only; generated build hash suffixes are never
@@ -561,6 +590,32 @@ async function activatePuckRichTextField(page: Page, field: Locator, label: stri
   await expect(field).toBeEditable();
 }
 
+async function replacePuckRichTextField(page: Page, field: Locator, value: string, label: string): Promise<void> {
+  await activatePuckRichTextField(page, field, label);
+  await expect(field, `${label} must own keyboard focus before replacement`).toBeFocused();
+  const previousText = await field.textContent() ?? '';
+  // Use the editor's native select-all command. fill() selects a DOM Range
+  // without checking that the rich-text editor has accepted that selection.
+  await page.keyboard.press('ControlOrMeta+A');
+  await expect.poll(() => field.evaluate((element) => {
+    const selection = element.ownerDocument.getSelection();
+    return {
+      focused: element.ownerDocument.activeElement === element,
+      ownsSelection: Boolean(selection?.anchorNode && selection.focusNode
+        && element.contains(selection.anchorNode) && element.contains(selection.focusNode)),
+      selectedText: selection?.toString() ?? null,
+      fieldText: element.textContent ?? '',
+    };
+  }), { message: `${label} must select its entire text before replacement` }).toEqual({
+    focused: true,
+    ownsSelection: true,
+    selectedText: previousText,
+    fieldText: previousText,
+  });
+  await page.keyboard.insertText(value);
+  await expect(field, `${label} must contain only the replacement text`).toHaveText(value);
+}
+
 async function openSelectedElementTextTools(page: Page): Promise<void> {
   const textToolsAction = page.frameLocator('iframe')
     .getByTestId('page-builder-element-style-open')
@@ -986,9 +1041,7 @@ async function selectAndEditHero(
   await expect(inlineSubtitle).toHaveCount(1);
   await expect(inlineBody).toHaveCount(1);
   await expect(inlineButton).toHaveCount(1);
-  await activatePuckRichTextField(page, inlineTitle, 'Hero title');
-  await inlineTitle.fill(title);
-  await expect(inlineTitle).toHaveText(title);
+  await replacePuckRichTextField(page, inlineTitle, title, 'Hero title');
   if (directCanvas) {
     await activatePuckPlainTextField(page, inlineSubtitle, 'Hero eyebrow');
     await inlineSubtitle.fill(subtitle);
@@ -1013,17 +1066,13 @@ async function selectAndEditFeatures(
   await expect(features).toHaveCount(1);
   await selectEditorBlock(page, 'features');
   const headingField = editorInlineField(page, 'features', 'title');
-  await activatePuckRichTextField(page, headingField, 'Features heading');
-  await headingField.fill(heading);
-  await expect(headingField).toHaveText(heading);
+  await replacePuckRichTextField(page, headingField, heading, 'Features heading');
   const itemFields = [
     [editorInlineField(page, 'features', 'items.0.title'), itemTitle, 'Features first item title'],
     [editorInlineField(page, 'features', 'items.0.body'), itemBody, 'Features first item body'],
   ] as const;
   for (const [field, value, label] of itemFields) {
-    await activatePuckRichTextField(page, field, label);
-    await field.fill(value);
-    await expect(field).toHaveText(value);
+    await replacePuckRichTextField(page, field, value, label);
   }
 }
 
@@ -1040,17 +1089,14 @@ async function selectAndEditCta(
     `[data-g7pb-inline-field="${field}"][contenteditable], [data-g7pb-inline-field="${field}"] [contenteditable]`,
   );
   const headingField = inline('heading');
-  await activatePuckRichTextField(page, headingField, 'CTA heading');
-  await headingField.fill(heading);
-  await expect(headingField).toHaveText(heading);
+  await replacePuckRichTextField(page, headingField, heading, 'CTA heading');
   await (await revealInspectorField(page, 'page-builder-cta-primary-url')).fill('/start-now');
   await (await revealInspectorField(page, 'page-builder-cta-theme')).selectOption('dark');
-  for (const [field, value] of [['body', body], ['primaryLabel', primaryLabel]] as const) {
-    const target = inline(field);
-    await activatePointerTarget(page, target, `CTA ${field}`);
-    await expect(target).toBeEditable();
-    await target.fill(value);
-  }
+  await replacePuckRichTextField(page, inline('body'), body, 'CTA body');
+  const primaryLabelField = inline('primaryLabel');
+  await activatePointerTarget(page, primaryLabelField, 'CTA primaryLabel');
+  await expect(primaryLabelField).toBeEditable();
+  await primaryLabelField.fill(primaryLabel);
 }
 
 async function selectAndEditContact(
@@ -1063,9 +1109,7 @@ async function selectAndEditContact(
   await expect(contact).toHaveCount(1);
   await selectEditorBlock(page, 'contact');
   const headingField = editorInlineField(page, 'contact', 'heading');
-  await activatePuckRichTextField(page, headingField, 'Contact heading');
-  await headingField.fill(heading);
-  await expect(headingField).toHaveText(heading);
+  await replacePuckRichTextField(page, headingField, heading, 'Contact heading');
   await (await revealInspectorField(page, 'page-builder-contact-address')).fill(address);
   await (await revealInspectorField(page, 'page-builder-contact-phone')).fill('02-9876-5432');
   await (await revealInspectorField(page, 'page-builder-contact-email')).fill(email);
@@ -1158,11 +1202,12 @@ async function expectSingleLineAction(action: Locator): Promise<void> {
 test('manages, publishes, restores, republishes, and unpublishes a page-builder document', async ({
   browser,
   context,
+  adminToken,
   page,
 }, testInfo) => {
   test.setTimeout(300_000);
 
-  const authToken = await authenticateAdmin(context);
+  const authToken = adminToken;
   await recoverOwnedE2eArtifacts(authToken);
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -2053,13 +2098,13 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 });
 
 test('renders a Page Builder page and temporary home inside the active G7 User Template', async ({
-  context,
+  adminToken,
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'The template integration gate runs once on desktop.');
   test.setTimeout(120_000);
 
-  const authToken = await authenticateAdmin(context);
+  const authToken = adminToken;
   await recoverOwnedE2eArtifacts(authToken);
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const slug = `g7pb-template-e2e-${runId}`;
@@ -2140,12 +2185,13 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     });
     expect(commitResponse.ok()).toBe(true);
 
-    const publishedResponse = await page.goto(`/pages/${slug}`);
+    const publishedResponse = await gotoOwnedSiteShell(page, `/pages/${slug}`, 'ko');
     expect(publishedResponse?.ok()).toBe(true);
     await expect(page.locator('#app')).toBeVisible();
     await expect(page.locator('.g7pb-template-page')).toBeVisible();
     await expect(page.getByText(heroTitle, { exact: true })).toBeVisible();
     await expect(page.getByTestId('page-builder-site-header')).toBeVisible();
+    await expect(page.getByTestId('page-builder-site-header')).toContainText('Owned fixture');
     await expect(page.locator('[data-block-type="hero"]')).toHaveClass(/is-inview/);
     await expect.poll(() => page.evaluate(() => {
       const config = (window as typeof window & { G7Config?: { moduleAssets?: Record<string, { css?: string; js?: string }> } }).G7Config;
@@ -2171,7 +2217,7 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
     expect(routesPayload.data?.routes?.find((route) => route.path === '/')?.layout)
       .toBe('jiwonpapa-page_builder.page_builder_home');
 
-    const homePageResponse = await page.goto('/');
+    const homePageResponse = await gotoOwnedSiteShell(page, '/', 'ko');
     expect(homePageResponse?.ok()).toBe(true);
     await expect(page.getByText(heroTitle, { exact: true })).toBeVisible();
     await expect(page.locator('.g7pb-template-page')).toBeVisible();
@@ -2195,13 +2241,13 @@ test('renders a Page Builder page and temporary home inside the active G7 User T
 });
 
 test('edits, reloads, publishes, restores, and republishes three columns with a nested Stack', async ({
-  context,
+  adminToken,
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'PC is the supported editing surface for nested layouts.');
   test.setTimeout(180_000);
 
-  const authToken = await authenticateAdmin(context);
+  const authToken = adminToken;
   await recoverOwnedE2eArtifacts(authToken);
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const slug = `g7pb-e2e-desktop-${runId}`;
@@ -2291,7 +2337,7 @@ test('edits, reloads, publishes, restores, and republishes three columns with a 
       '[data-g7pb-inline-field="heading"][contenteditable], [data-g7pb-inline-field="heading"] [contenteditable]',
     );
     await expect(nestedHeading).toHaveCount(1);
-    await nestedHeading.fill(changedHeading);
+    await replacePuckRichTextField(page, nestedHeading, changedHeading, 'Nested heading');
     await saveDraft(page);
 
     await page.reload();

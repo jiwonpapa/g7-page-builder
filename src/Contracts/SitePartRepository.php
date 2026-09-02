@@ -2,6 +2,8 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Contracts;
 
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
@@ -37,11 +39,15 @@ interface SitePartRepository
         int $headerExpectedLockVersion,
         int $footerExpectedLockVersion,
         ?int $actorId,
+        SitePartArtifact $headerArtifact,
+        SitePartArtifact $footerArtifact,
     ): SitePartSetSnapshot;
 
     public function find(string $kind, string $locale, ?string $setId = null): ?SitePartSnapshot;
 
     public function findPublished(string $kind, string $locale): ?SitePartSnapshot;
+
+    public function findPublishedSet(string $locale): ?PublishedSitePartSet;
 
     /** @return list<SitePartRevision> */
     public function listRevisions(string $sitePartId, int $limit): array;
@@ -53,5 +59,5 @@ interface SitePartRepository
         ?int $actorId,
     ): SitePartSnapshot;
 
-    public function publish(string $sitePartId, int $expectedLockVersion, ?int $actorId): SitePartSnapshot;
+    public function publish(string $sitePartId, int $expectedLockVersion, ?int $actorId, SitePartArtifact $artifact): SitePartSnapshot;
 }

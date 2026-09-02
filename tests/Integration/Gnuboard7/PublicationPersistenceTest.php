@@ -333,7 +333,7 @@ final class PublicationPersistenceTest extends TestCase
         $header = $service->bootstrap('header', 'ko', $shell, 1);
         $footer = $service->bootstrap('footer', 'ko', $shell, 1);
         $service->publish('header', 'ko', $header->lockVersion, 1);
-        $controller = new PublicSiteShellController($service, new SitePartHtmlCompiler);
+        $controller = new PublicSiteShellController($service);
 
         $partial = $controller->show(Request::create('/public/site-shell?locale=ko', 'GET'));
         self::assertFalse($partial->getData(true)['data']['shell']['enabled']);
@@ -1330,7 +1330,6 @@ final class PublicationPersistenceTest extends TestCase
             $service,
             $this->siteShellService(),
             new SitePartService(new EloquentSitePartRepository, new SitePartHtmlCompiler),
-            new SitePartHtmlCompiler,
         );
     }
 

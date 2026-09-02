@@ -6,7 +6,6 @@ use App\Seo\SeoMiddleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
@@ -68,11 +67,9 @@ final class PageBuilderHomeOverride
         $siteFooterHtml = null;
         if (in_array($page->shellMode, ['builder', 'global'], true) && $this->sitePartService !== null) {
             try {
-                $compiler = new SitePartHtmlCompiler;
-                $header = $this->sitePartService->published('header', $page->locale);
-                $footer = $this->sitePartService->published('footer', $page->locale);
-                $siteHeaderHtml = $header === null ? null : $compiler->compile($header->document, $header->revision)->html;
-                $siteFooterHtml = $footer === null ? null : $compiler->compile($footer->document, $footer->revision)->html;
+                $published = $this->sitePartService->publishedSet($page->locale);
+                $siteHeaderHtml = $published?->header?->html;
+                $siteFooterHtml = $published?->footer?->html;
             } catch (\Throwable $exception) {
                 Log::warning('Page Builder home Site Parts were skipped.', ['exception' => $exception]);
             }

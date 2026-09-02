@@ -5,6 +5,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Application;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
+use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PublishedSitePartSet;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
@@ -27,6 +28,11 @@ final class SitePartService
     public function published(string $kind, string $locale): ?SitePartSnapshot
     {
         return $this->repository->findPublished($kind, $locale);
+    }
+
+    public function publishedSet(string $locale): ?PublishedSitePartSet
+    {
+        return $this->repository->findPublishedSet($locale);
     }
 
     public function bootstrap(string $kind, string $locale, SiteShell $shell, ?int $actorId): SitePartSnapshot
@@ -112,14 +118,16 @@ final class SitePartService
     ): SitePartSetSnapshot {
         $header = $this->get('header', $locale, $setId);
         $footer = $this->get('footer', $locale, $setId);
-        $this->compiler->compile($header->document, $header->revision);
-        $this->compiler->compile($footer->document, $footer->revision);
+        $headerArtifact = $this->compiler->compile($header->document, $header->revision);
+        $footerArtifact = $this->compiler->compile($footer->document, $footer->revision);
 
         return $this->repository->publishSet(
             $setId,
             $headerExpectedLockVersion,
             $footerExpectedLockVersion,
             $actorId,
+            $headerArtifact,
+            $footerArtifact,
         );
     }
 
@@ -139,10 +147,12 @@ final class SitePartService
             throw new \InvalidArgumentException('Site Part title must not be empty.');
         }
 
-        $payload['site_part_id'] = $current->document->sitePartId;
-        $payload['kind'] = $kind;
-        $payload['locale'] = $locale;
         $document = SitePartDocument::fromArray($payload);
+        if ($document->sitePartId !== $current->document->sitePartId
+            || $document->kind !== $current->document->kind
+            || $document->locale !== $current->document->locale) {
+            throw new \InvalidArgumentException('Site Part document identity does not match the requested target.');
+        }
 
         return $this->repository->saveDraft(
             $title,
@@ -160,12 +170,13 @@ final class SitePartService
         ?string $setId = null,
     ): SitePartSnapshot {
         $current = $this->get($kind, $locale, $setId);
-        $this->compiler->compile($current->document, $current->revision);
+        $artifact = $this->compiler->compile($current->document, $current->revision);
 
         return $this->repository->publish(
             $current->document->sitePartId,
             $expectedLockVersion,
             $actorId,
+            $artifact,
         );
     }
 

@@ -33,6 +33,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageKitArchivePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\RouteCatalogPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SectionPatternRepository;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
@@ -41,6 +42,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\GitHubReleaseSourceA
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\SignedBlockPackProviderLoader;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\ZipBlockPackArchiveAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\BlockPacks\LaravelBlockPackAssetUrlAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Console\PrepareSitePartArtifactsCommand;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\BlockPackAssetController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\FormSubmissionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
@@ -53,6 +55,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentB
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockUsageAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSectionPatternRepository;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartArtifactStore;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7RouteCatalogAdapter;
@@ -186,11 +189,15 @@ final class PageBuilderServiceProvider extends ServiceProvider
             );
         });
         $this->app->bind(SitePartRepository::class, EloquentSitePartRepository::class);
+        $this->app->bind(SitePartArtifactPort::class, EloquentSitePartArtifactStore::class);
         $this->app->bind(SiteShellPort::class, EloquentSiteShellAdapter::class);
     }
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([PrepareSitePartArtifactsCommand::class]);
+        }
         $moduleRoot = dirname(__DIR__, 2);
         $kernel = $this->app->make(HttpKernelContract::class);
 

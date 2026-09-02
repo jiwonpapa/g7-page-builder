@@ -2,7 +2,9 @@
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -219,6 +221,56 @@ class ReleaseTests(unittest.TestCase):
         self.assertNotIn("1048576", doctor)
         self.assertEqual(len(release.ASSETS), 8)
         self.assertIn("dist/js/page-builder-manager.iife.js", release.ASSETS)
+
+    def test_remote_artifact_readiness_blocks_apply_and_restores_previous_files(self):
+        result, app, target, calls = self.run_remote_readiness(ready=False)
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertEqual((target / "previous.php").read_text(), "previous module")
+        self.assertFalse((target / ".g7pb-artifact-sha256").exists())
+        self.assertIn("prior files restored", result.stdout)
+        self.assertEqual(sum("page-builder:site-part-artifacts" in call for call in calls), 1)
+        self.assertFalse(any("--prepare" in call for call in calls))
+
+    def test_remote_readiness_pass_retains_recovery_copy_and_records_applied_identity(self):
+        result, app, target, calls = self.run_remote_readiness(ready=True)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertTrue((target / ".g7pb-artifact-sha256").is_file())
+        previous = list((app / "modules").glob(".*.rollback-*/previous.php"))
+        self.assertEqual(len(previous), 1)
+        self.assertEqual(previous[0].read_text(), "previous module")
+        self.assertEqual(sum("page-builder:site-part-artifacts" in call for call in calls), 1)
+        self.assertFalse(any("--prepare" in call for call in calls))
+
+    def run_remote_readiness(self, *, ready):
+        # Exercise the actual apply/rollback shell in a self-owned temporary app.
+        # PHP and flock are fake transports; no application, DB or server is used.
+        archive = self.archive()
+        app = self.root / "app"
+        target = app / "modules" / artifacts.MODULE
+        target.mkdir(parents=True)
+        (app / "artisan").write_text("fixture")
+        (target / "previous.php").write_text("previous module")
+        fakebin = self.root / "fakebin"
+        fakebin.mkdir()
+        calls = self.root / "php-calls.log"
+        php = fakebin / "php"
+        php.write_text('''#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$G7PB_FIXTURE_CALLS"
+if [[ "$2" == page-builder:site-part-artifacts ]]; then exit "$G7PB_FIXTURE_READINESS"; fi
+if [[ "$2" == tinker ]]; then printf 'active\\n'; fi
+exit 0
+''')
+        php.chmod(0o755)
+        flock = fakebin / "flock"
+        flock.write_text("#!/usr/bin/env bash\nexit 0\n")
+        flock.chmod(0o755)
+        environment = {**os.environ, "PATH": str(fakebin) + os.pathsep + os.environ["PATH"],
+                       "G7PB_FIXTURE_CALLS": str(calls), "G7PB_FIXTURE_READINESS": "0" if ready else "1"}
+        result = subprocess.run([
+            "bash", str(ROOT / "scripts/remote-deploy-staging.sh"), "apply", str(app), str(self.path),
+            archive["sha256"], self.info["release_id"], "c" * 64, VERSION, "https://fixture.invalid",
+        ], env=environment, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        return result, app, target, calls.read_text().splitlines() if calls.exists() else []
 
     def test_transport_rejects_shell_target_injection(self):
         for ssh, app, url in [("-oProxyCommand=bad", "/home/g7devops/public_html", "https://fixture.invalid"),

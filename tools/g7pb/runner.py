@@ -57,6 +57,33 @@ def browser_evidence(root, gate, task, key):
             "report": (directory / "report").as_posix(), "json": (directory / "results.json").as_posix()}
 
 
+SITE_PART_SPECS = ("tests/E2E/globalSiteShellRoutes.spec.ts", "tests/E2E/sitePartLifecycle.spec.ts",
+                   "tests/E2E/pageBuilderLifecycle.spec.ts")
+SITE_PART_HELPERS = ("tests/E2E/support/sitePartSetFixture.ts", "tests/E2E/support/sitePartState.php")
+
+
+def site_part_fixture(root, gate, task, evidence):
+    spec = gate.name.removeprefix("browser:")
+    if not evidence or spec not in SITE_PART_SPECS:
+        return None
+    if not task or os.environ.get("CI") == "true" or gate.execution != "runtime":
+        raise ValueError("Owned Site Part fixture requires the leased Local Docker runtime")
+    token = uuid.uuid4().hex + uuid.uuid4().hex
+    relative = evidence["directory"] + "/site-part-state.json"
+    (root / relative).write_text(json.dumps({"version": 1, "task": task, "spec": spec,
+        "token_hash": hashlib.sha256(token.encode()).hexdigest(), "sessions": {}, "closed": False}, indent=2) + "\n")
+    return {"G7PB_SITE_PART_FIXTURE_SCOPE": relative, "G7PB_SITE_PART_FIXTURE_TOKEN": token}
+
+
+def restore_site_part_fixture(root, task, capability, executor, environment):
+    from .environment import Runtime
+    helper = "/var/www/g7/modules/jiwonpapa-page_builder/tests/E2E/support/sitePartState.php"
+    selected = ["env", *(f"{key}={value}" for key, value in capability.items()),
+                "G7PB_SITE_PART_FIXTURE_ACTION=restore-all", "G7PB_SITE_PART_FIXTURE_INPUT={}",
+                "php", helper]
+    return executor(Runtime(root, "docker", task).command(selected, g7=True), cwd=root, env=environment, check=False)
+
+
 def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
     if task:
         task_id(task)
@@ -102,7 +129,10 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
                 results.append({"gate": gate.name, "status": "reused", "executions": 0})
                 continue
         evidence = browser_evidence(root, gate, task, key)
+        capability = site_part_fixture(root, gate, task, evidence)
         overrides = dict(gate.env)
+        if capability:
+            overrides.update(capability)
         argv = list(gate.argv)
         if evidence:
             # Both host cwd and Docker's module cwd address these relative paths.
@@ -132,9 +162,34 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             assign = [f"{key}={value}" for key, value in overrides.items() if value is not None]
             selected = ["env", *remove, *assign, *argv] if overrides else argv
             argv = Runtime(root, "docker", task).command(selected)
-        result = executor(argv, cwd=root, env=environment, check=False)
-        returncode = result.returncode
         verdict = {}
+        cleanup_code = 0
+        try:
+            result = executor(argv, cwd=root, env=environment, check=False)
+        except Exception as error:
+            result = subprocess.CompletedProcess(argv, 1)
+            verdict["execution_error"] = str(error)
+        finally:
+            if capability:
+                try:
+                    cleanup_code = restore_site_part_fixture(root, task, capability, executor, environment).returncode
+                except Exception as error:
+                    cleanup_code = 1
+                    verdict["fixture_restore_error"] = str(error)
+                journal_path = root / capability["G7PB_SITE_PART_FIXTURE_SCOPE"]
+                if not cleanup_code:
+                    try:
+                        journal = json.loads(journal_path.read_text())
+                        if (journal.get("closed") is not True or journal.get("errors") or not journal.get("sessions")
+                                or any(item.get("restored") is not True for item in journal["sessions"].values())):
+                            raise ValueError("Missing completed fixture session or recorded fixture error")
+                    except (ValueError, OSError) as error:
+                        cleanup_code = 1
+                        verdict["fixture_restore_error"] = str(error)
+                verdict["fixture_restore_returncode"] = cleanup_code
+                if cleanup_code:
+                    print(f"FIXTURE_RESTORE_FAILED gate={gate.name}; journal={journal_path}", flush=True)
+        returncode = result.returncode or cleanup_code
         if evidence and not returncode:
             try:
                 verdict["browser_verdict"] = browser_verdict(root / evidence["json"], gate.browser_expectations)

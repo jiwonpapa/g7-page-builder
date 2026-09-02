@@ -12,6 +12,11 @@ final class SitePartHtmlCompiler
 
     public function compile(SitePartDocument $document, int $sourceRevision): SitePartArtifact
     {
+        try {
+            $document->assertWritable();
+        } catch (\InvalidArgumentException $exception) {
+            throw new DocumentCompileException($exception->getMessage());
+        }
         $primaryTypes = $document->kind === 'header'
             ? ['site.header.navigation-01']
             : ['site.footer.simple-01', 'site.footer.columns-01'];

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
+use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
@@ -127,6 +128,8 @@ final class AdminSitePartController
             return $this->error($request, 409, 'G7PB_LOCK_CONFLICT', $exception->getMessage(), [
                 'current_lock_version' => $exception->currentLockVersion,
             ]);
+        } catch (DocumentCompileException|\DomainException|\InvalidArgumentException $exception) {
+            return $this->error($request, 422, 'G7PB_SITE_PART_INVALID', $exception->getMessage());
         } catch (\Throwable $exception) {
             return $this->unexpected($request, $exception);
         }

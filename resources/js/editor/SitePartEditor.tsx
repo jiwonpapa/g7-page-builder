@@ -595,6 +595,17 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';
 }
 
+/** A loaded set is the write target even when the active/default set changes. */
+function requireSitePartIdentity(next: SitePartResource, expected: Pick<SitePartEditorProps, 'kind' | 'locale' | 'setId'>, previous?: SitePartResource): string {
+  const target = next.set_id;
+  if (typeof target !== 'string' || !target.trim()) throw new Error('Site Part 세트 ID가 없어 저장·발행 대상을 확인할 수 없습니다. 다시 불러와 주세요.');
+  if ((expected.setId !== undefined && target !== expected.setId)
+    || next.document.kind !== expected.kind || next.document.locale !== expected.locale
+    || (previous && next.document.site_part_id !== previous.document.site_part_id)
+  ) throw new Error('Site Part 응답의 대상이 편집 중인 세트·문서와 일치하지 않습니다. 다시 불러와 주세요.');
+  return target;
+}
+
 export function SitePartEditor({ kind, locale, setId, embedded = false, paired = false, iframeEnabled = true, onBack, onChanged }: SitePartEditorProps): React.ReactElement {
   const [persona, setPersona] = useState<'guest' | 'member' | 'admin'>('guest');
   const api = useMemo(() => new PageBuilderApiClient(), []);
@@ -618,20 +629,21 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
   const changeRevision = useRef(0);
 
   const apply = useCallback((next: SitePartResource): void => {
+    requireSitePartIdentity(next, { kind, locale, setId });
+    const nextData = sitePartCanonicalToPuck(next.document);
     resourceRef.current = next;
     setResource(next);
-    const nextData = sitePartCanonicalToPuck(next.document);
     dataRef.current = nextData;
     setData(nextData);
     setDirty(false);
     onChanged?.(next);
-  }, [onChanged]);
+  }, [kind, locale, onChanged, setId]);
 
   useEffect(() => {
     let active = true;
     setBusy(true);
     api.getSitePart(kind, locale, setId).catch((error: unknown) => {
-      if (!setId && error instanceof PageBuilderApiError && error.status === 404) return api.bootstrapSitePart(kind, locale);
+      if (setId === undefined && error instanceof PageBuilderApiError && error.status === 404) return api.bootstrapSitePart(kind, locale);
       throw error;
     }).then((next) => { if (active) apply(next); })
       .catch((error: unknown) => { if (active) setMessage(errorMessage(error)); })
@@ -645,9 +657,11 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     setBusy(true);
     setMessage(null);
     try {
+      const targetSetId = requireSitePartIdentity(current, { kind, locale, setId });
       const savingRevision = changeRevision.current;
       const document = sitePartPuckToCanonical(dataRef.current, current.document);
-      const saved = await api.saveSitePart(kind, current.title, document, current.lock_version, setId);
+      const saved = await api.saveSitePart(kind, current.title, document, current.lock_version, targetSetId);
+      requireSitePartIdentity(saved, { kind, locale, setId: targetSetId }, current);
       if (changeRevision.current === savingRevision) apply(saved);
       else {
         // Undo/Redo can still run while saving: never replace those newer edits with the response.
@@ -661,7 +675,7 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     } finally {
       setBusy(false);
     }
-  }, [api, apply, kind, setId]);
+  }, [api, apply, kind, locale, setId]);
 
   useEffect(() => {
     if (!dirty || busy) return undefined;
@@ -680,8 +694,10 @@ export function SitePartEditor({ kind, locale, setId, embedded = false, paired =
     setBusy(true);
     setMessage(null);
     try {
+      const targetSetId = requireSitePartIdentity(saved, { kind, locale, setId });
       const publishingRevision = changeRevision.current;
-      const published = await api.publishSitePart(kind, locale, saved.lock_version, setId);
+      const published = await api.publishSitePart(kind, locale, saved.lock_version, targetSetId);
+      requireSitePartIdentity(published, { kind, locale, setId: targetSetId }, saved);
       if (changeRevision.current === publishingRevision) apply(published);
       else {
         resourceRef.current = published;

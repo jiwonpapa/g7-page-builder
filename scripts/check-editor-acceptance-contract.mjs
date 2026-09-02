@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import process from 'node:process';
+import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
 
 const REQUIRED_SPEC = 'tests/E2E/editorInteractionQuality.spec.ts';
 const REQUIRED_FIXTURE = 'tests/E2E/support/editorInteractionFixture.ts';
@@ -55,12 +56,11 @@ export async function validateEditorAcceptanceContract(root) {
     errors.push('npm run check가 편집 상호작용 계약 검사를 포함해야 합니다.');
   }
 
-  requirePattern(errors, makefile, /quality-coordination:[^\n]*\n(?:\t[^\n]*\n)*\tnpm run check:editor-acceptance/m,
-    'quality-coordination이 편집 상호작용 계약 검사를 실행해야 합니다.');
+  errors.push(...validateFocusedUnitCommand(scripts), ...validateEditorTestRegistration(spec, REQUIRED_SPEC));
   requirePattern(errors, makefile, /dev-product-e2e:[\s\S]*?npm run check:editor-acceptance && npm run test:e2e:product/,
     'dev-product-e2e가 제품 E2E 전에 편집 상호작용 계약을 검사해야 합니다.');
-  requirePattern(errors, coordinationHarness, /frontend\)[\s\S]*?npm run check:editor-acceptance[\s\S]*?npm run typecheck[\s\S]*?npm run test:unit/,
-    'frontend task-submit profile이 편집 상호작용 계약을 먼저 검사해야 합니다.');
+  // Python planner regression tests verify source-to-browser selection. Do not
+  // require retired shell profile syntax or duplicate preflights here.
 
   const forbiddenSyntheticSelection = [
     [/\.addRange\s*\(/, 'Selection.addRange로 선택 범위를 합성하면 안 됩니다.'],

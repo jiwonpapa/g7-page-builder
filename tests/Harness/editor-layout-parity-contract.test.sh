@@ -47,6 +47,16 @@ expect_failure() {
 node "$repo_root/scripts/check-editor-layout-parity.mjs" --root "$repo_root"
 
 copy_fixture
+perl -0pi -e 's/(?<![\w.])test\(/unregisteredTest(/g' \
+  "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+expect_failure '실행 가능한 Playwright test 등록이 필요합니다.'
+
+copy_fixture
+perl -0pi -e 's/"test:unit": "vitest run"/"test:unit": "npm run check:editor-layout-parity \&\& vitest run"/' \
+  "$fixture_root/fixture/package.json"
+expect_failure 'test:unit는 선택한 Vitest만 실행해야 하며 추가 검사는 Python 계획에서 선택해야 합니다.'
+
+copy_fixture
 perl -0pi -e 's/(function LogoCloudPreview[\s\S]*?<RichTextCanvasField )as="h2"/${1}as="p"/' \
   "$fixture_root/fixture/resources/js/editor/catalogBlocks.tsx"
 expect_failure '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.'
@@ -67,7 +77,7 @@ perl -0pi -e 's/(\.g7pb-preview-page \[data-g7pb-heading-level\] \{[^}]*white-sp
 expect_failure '편집 가능한 제목은 공개 heading과 같은 줄바꿈 규칙을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-hero-slider article > div \{[^}]*padding:) clamp\(2rem, 6vw, 5rem\);/${1} 72px;/' \
+perl -0pi -e 's/(\.g7pb-preview-hero-slider article > div:not\(\[data-g7pb-richtext-field\]\) \{[^}]*padding:) clamp\(2rem, 6vw, 5rem\);/${1} 72px;/' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '편집기 Hero Slider copy inset은 공개 슬라이더와 같은 유동 여백이어야 합니다.'
 
@@ -87,7 +97,7 @@ perl -0pi -e 's/(\.g7pb-preview-icon-list > header :is\(h2, \[data-g7pb-heading-
 expect_failure '편집기 Icon List 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-logo-cloud--layout-grid > div):last-child/${1}/g' \
+perl -0pi -e 's/(\.g7pb-preview-logo-cloud--layout-grid > div:not\(\[data-g7pb-richtext-field\]\)):last-child/${1}/g' \
   "$fixture_root/fixture/resources/css/page-builder-editor.css"
 expect_failure '편집기 Logo grid 열은 로고 고유 폭보다 작아질 수 있어야 합니다.'
 
@@ -353,7 +363,7 @@ perl -0pi -e 's/(@media \(max-width: )700px(\) \{\n  \.g7pb-preview-cta-split,)/
 expect_failure '편집기 FAQ·문의·지도·배너 CTA는 공개본과 같은 700px 기준에서 1열로 전환해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/ALL_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/' \
+perl -0pi -e 's/ALL_PRESET_LAYOUT_GATE/ALL_PRESET_LAYOUT_REMOVED/g' \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure '전체 프리셋 편집/미리보기 gate가 필요합니다.'
 
@@ -388,7 +398,7 @@ perl -0pi -e 's/root\.scrollWidth - root\.clientWidth/0/' \
 expect_failure 'iframe/preview document 가로 overflow 측정이 필요합니다.'
 
 copy_fixture
-perl -0pi -e "s/preview\.locator\('html'\)/preview.locator('body')/" \
+perl -0pi -e "s/preview\.locator\('html'\)/preview.locator('body')/g" \
   "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
 expect_failure 'template shell 미리보기는 G7 문서 root까지 가로 overflow를 검사해야 합니다.'
 

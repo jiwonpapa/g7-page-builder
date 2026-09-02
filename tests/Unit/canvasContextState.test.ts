@@ -128,4 +128,37 @@ describe('canvas context state', () => {
     })).toBeNull();
     expect(normalizeCanvasRangeAnchor('not-an-anchor')).toBeNull();
   });
+
+  it.each(['top', 'right', 'bottom', 'left', 'width', 'height'] as const)(
+    'requires a finite numeric %s without coercion or an omitted coordinate', (key) => {
+      const valid = { top: 20, right: 180, bottom: 44, left: 80, width: 100, height: 24 };
+      for (const value of [undefined, null, '20', false, Number.NaN, Infinity, -Infinity]) {
+        expect(normalizeCanvasRangeAnchor({ ...valid, [key]: value })).toBeNull();
+      }
+      const incomplete: Partial<typeof valid> = { ...valid };
+      delete incomplete[key];
+      expect(normalizeCanvasRangeAnchor(incomplete)).toBeNull();
+    },
+  );
+
+  it('preserves fractional and off-screen coordinates without mutating the message', () => {
+    const input = Object.freeze({ top: -20.5, right: 100.25, bottom: 5.5, left: -10.25, width: 110.5, height: 26, extra: 'message' });
+    const expected = { top: -20.5, right: 100.25, bottom: 5.5, left: -10.25, width: 110.5, height: 26 };
+    expect(normalizeCanvasRangeAnchor(input)).toEqual(expected);
+    expect(normalizeCanvasRangeAnchor(input)).not.toBe(input);
+    expect(input).toEqual({ ...expected, extra: 'message' });
+  });
+
+  it.each([
+    { right: 80 }, { right: 79 }, { bottom: 20 }, { bottom: 19 },
+    { width: 0 }, { width: -1 }, { height: 0 }, { height: -1 },
+  ])('rejects collapsed or inverted geometry %j', (override) => {
+    expect(normalizeCanvasRangeAnchor({ top: 20, right: 180, bottom: 44, left: 80, width: 100, height: 24, ...override }))
+      .toBeNull();
+  });
+
+  it('rejects arrays even when they carry coordinate properties', () => {
+    const value = Object.assign([], { top: 20, right: 180, bottom: 44, left: 80, width: 100, height: 24 });
+    expect(normalizeCanvasRangeAnchor(value)).toBeNull();
+  });
 });

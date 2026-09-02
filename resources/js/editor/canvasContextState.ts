@@ -102,11 +102,17 @@ export function canvasContextRangeAnchor(state: CanvasContextState): CanvasRange
 }
 
 export function normalizeCanvasRangeAnchor(value: unknown): CanvasRangeAnchor | null {
-  if (!value || typeof value !== 'object') return null;
-  const candidate = value as Record<string, unknown>;
-  const coordinates = ['top', 'right', 'bottom', 'left', 'width', 'height'] as const;
-  if (!coordinates.every((key) => typeof candidate[key] === 'number' && Number.isFinite(candidate[key]))) return null;
-  const anchor = Object.fromEntries(coordinates.map((key) => [key, candidate[key]])) as unknown as CanvasRangeAnchor;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (!('top' in value) || !('right' in value) || !('bottom' in value)
+    || !('left' in value) || !('width' in value) || !('height' in value)) return null;
+  const { top, right, bottom, left, width, height } = value;
+  if (typeof top !== 'number' || !Number.isFinite(top)
+    || typeof right !== 'number' || !Number.isFinite(right)
+    || typeof bottom !== 'number' || !Number.isFinite(bottom)
+    || typeof left !== 'number' || !Number.isFinite(left)
+    || typeof width !== 'number' || !Number.isFinite(width)
+    || typeof height !== 'number' || !Number.isFinite(height)) return null;
+  const anchor: CanvasRangeAnchor = { top, right, bottom, left, width, height };
   if (anchor.right <= anchor.left || anchor.bottom <= anchor.top || anchor.width <= 0 || anchor.height <= 0) return null;
   return anchor;
 }

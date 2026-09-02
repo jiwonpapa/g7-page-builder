@@ -1198,24 +1198,6 @@
       }
     },
     {
-      "path": "resources/js/editor/blockAppearance.ts",
-      "rule": "TS-UNSAFE",
-      "reason": "Existing Puck or legacy record conversion bypasses inference with a double assertion; only this exact bridge is retained.",
-      "resolveWhen": "Construct the declared result after runtime validation, or isolate a typed vendor boundary and remove the double assertion.",
-      "fingerprints": {
-        "4ebaa8ec9deab8804ecf246a92624905320a5819f944449c1e9562a28f4cc2bf": 1
-      }
-    },
-    {
-      "path": "resources/js/editor/canvasContextState.ts",
-      "rule": "TS-UNSAFE",
-      "reason": "Existing Puck or legacy record conversion bypasses inference with a double assertion; only this exact bridge is retained.",
-      "resolveWhen": "Construct the declared result after runtime validation, or isolate a typed vendor boundary and remove the double assertion.",
-      "fingerprints": {
-        "3f04fc10aebbc90908f2b1d13b4d8d303daa7b40eebe42f1ccc9475a7267caab": 1
-      }
-    },
-    {
       "path": "resources/js/editor/catalogBlocks.tsx",
       "rule": "SOURCE-SIZE",
       "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Several independent catalog renderers share one module.",

@@ -147,11 +147,12 @@ for signed_pack_contract in \
   fi
 done
 
-if ! rg -Fq "publisher_id" "$ROOT/src/Infrastructure/BlockPacks/Ed25519BlockPackSignatureVerifier.php" \
-  || ! rg -Fq "builtinEditorComponents" "$ROOT/resources/js/blocks/runtimeRegistry.ts"; then
+if ! rg -Fq "publisher_id" "$ROOT/src/Infrastructure/BlockPacks/Ed25519BlockPackSignatureVerifier.php"; then
   echo 'Code Pack trust must bind keys to publishers and prevent builtin editor component overrides.' >&2
   exit 1
 fi
+
+node "$CONTROLLER_ROOT/scripts/lib/blockPackRegistryBoundary.mjs" --root "$ROOT"
 
 if ! rg -Fq "['digest']" "$ROOT/src/Infrastructure/BlockPacks/GitHubReleaseSourceAdapter.php" \
   || ! rg -Fq "expectedSha256: \$release->sha256" "$ROOT/src/Application/Blocks/GitHubBlockPackService.php"; then

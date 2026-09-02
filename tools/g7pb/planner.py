@@ -28,6 +28,7 @@ EDITOR_CHECKERS = {
     "scripts/check-editor-acceptance-contract.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorSourceGraph.mjs", "scripts/lib/editorCssSources.mjs"),
     "scripts/check-editor-layout-parity.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorSourceGraph.mjs", "scripts/lib/editorCssSources.mjs"),
 }
+BOUNDARY_INPUTS = ("scripts/check-boundaries.sh", "scripts/lib/blockPackRegistryBoundary.mjs")
 EDITOR_SOURCE_GRAPH = "scripts/lib/editorSourceGraph.mjs"
 BROWSER_HELPER_SPECS = {
     "tests/E2E/support/richTextInput.ts": (
@@ -169,6 +170,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         if path == BROWSER_CONSUMER_TEST:
             files, reusable = consumer_inputs()
             controller_inputs.extend(files)
+        if Path(path).name == "test_boundary_command.py":
+            controller_inputs.extend((*BOUNDARY_INPUTS, "package-lock.json"))
         if Path(path).name == "test_type_import_changes.py":
             controller_inputs.append("package-lock.json")
         if Path(path).name == "test_site_part_fixture.py":
@@ -214,6 +217,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "tests/Harness/verification-policy.test.sh": ("planner", "runner"),
         "scripts/check-block-product-quality.mjs": ("product_quality_command",),
         "scripts/check-boundaries.sh": ("boundary_command",),
+        "scripts/lib/blockPackRegistryBoundary.mjs": ("boundary_command",),
         "scripts/check-editor-acceptance-contract.mjs": ("editor_contracts",),
         "scripts/check-editor-layout-parity.mjs": ("editor_contracts",),
         "scripts/lib/editorContractRegistration.mjs": ("editor_contracts",),
@@ -347,7 +351,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         product_sources = any(p.startswith(("resources/", "src/")) for p in design_targets)
         # A task changing the guard must exercise its proposed guard/rules. An
         # older product worktree instead uses the verified controller's rules.
-        policy_root = root if any(p in DESIGN_INPUTS for p in plan.paths) else controller_root
+        policy_root = root if any(p in (*DESIGN_INPUTS, *BOUNDARY_INPUTS) for p in plan.paths) else controller_root
         external_controller = policy_root.resolve() != root.resolve()
         def controller_file(path):
             return str(policy_root / path) if external_controller else path
@@ -360,7 +364,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         boundary_inputs = [p.relative_to(root).as_posix() for prefix in ("src", "resources/js", "resources/css")
                            for p in (root / prefix).rglob("*") if p.is_file()]
         add("architecture", command, [*design_targets, *(controller_file(p) for p in (*DESIGN_INPUTS, *NORMATIVE_DOCS)), *boundary_inputs,
-                                      controller_file("scripts/check-boundaries.sh"), controller_file("package-lock.json"), "module.php", "package-lock.json"],
+                                      *(controller_file(p) for p in BOUNDARY_INPUTS), controller_file("package-lock.json"), "module.php", "package-lock.json"],
             "Changed implementation or normative architecture policy", ("node", "php"))
     artifact_names = set()
     if css:

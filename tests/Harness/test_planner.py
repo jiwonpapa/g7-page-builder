@@ -117,6 +117,20 @@ class PlannerTests(unittest.TestCase):
             self.assertEqual(changed_paths(self.root, "pre-merge"), ["a", "b", "c"])
             self.assertIn("pre-merge", command.call_args_list[0].args)
 
+    def test_python_fixture_output_literals_do_not_bind_to_installed_artifacts(self):
+        self.write("tools/g7pb/fake.py", "OUTPUTS = ['dist/js/app.js', 'vendor/autoload.php', 'node_modules/.package-lock.json']")
+        before = python_inputs(self.root, "tools/g7pb/fake.py")
+        for path in ('dist/js/app.js', 'vendor/autoload.php', 'node_modules/.package-lock.json'):
+            self.write(path, "installed bytes")
+        self.assertEqual(before, python_inputs(self.root, "tools/g7pb/fake.py"))
+
+    def test_tools_path_import_alias_selects_the_existing_release_test(self):
+        self.write("tools/g7pb/artifacts.py", "pass")
+        self.write("tests/Harness/test_release.py", "from g7pb import artifacts")
+        plan = build_plan(self.root, ["tools/g7pb/artifacts.py"])
+        self.assertFalse(plan.unresolved)
+        self.assertIn("python:tests/Harness/test_release.py", [gate.name for gate in plan.gates])
+
 
 if __name__ == "__main__":
     unittest.main()

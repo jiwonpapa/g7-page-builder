@@ -82,7 +82,7 @@ integration-verify:
 
 integration-finish:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) finish --task "$(TASK)"
+	@$(COORD_HARNESS) finish --task "$(TASK)" $(if $(filter 1,$(NO_RELEASE)),--without-release,)
 
 runtime-guard:
 	@test -n "$(TASK)" || { echo 'TASK is required for the singleton runtime.' >&2; exit 2; }

@@ -34,6 +34,7 @@
 - `make dev-*`, Docker 기반 `quality-*`, release·staging 명령은 runtime lease를 가진 Local integration task만 실행한다. Worktree에서 고정 `g7pb-dev` 컨테이너를 직접 조작하지 않는다.
 - 모든 제출 task가 통합되거나 보존 replacement로 대체·통합된 뒤 `make integration-verify TASK=<integration-id>`를 사용한다. 제출·통합·최종확인·CI는 같은 Python 검사 계획을 사용한다. 통합 범위는 통합 직전 HEAD부터의 delta이며, 변경된 명령·입력에 관련된 검사만 수행한다. 미분류 경로는 범위 선언 오류로 보고하며 전체검증으로 자동 확대하지 않는다. 공유 계약/런타임 변경과 RC 전체 검증은 사유를 명시한 `FULL=1`로 요청한다. 동일 HEAD 또는 동일 검사 입력의 성공 결과를 불필요하게 반복하지 않는다.
 - task 채팅과 worktree는 통합 또는 `superseded` 보존 기록 전에 archive·삭제하지 않는다. dirty/untracked 파일이나 기준 SHA 이후 커밋이 있으면 lease를 강제 해제하지 않는다.
+- 배포를 요청하지 않은 개발 작업은 모든 제출분을 통합한 뒤 `make integration-finish TASK=<id> NO_RELEASE=1`로 종료할 수 있다. 이 명령은 원본 통합 이력을 보존하고 통합 lease만 정식 종료하며, release 검증 SHA를 현재 HEAD로 승격하거나 배포 성공을 주장하지 않는다. 배포 시에는 기존 release guard가 별도로 적용된다.
 - 현재 task의 범위는 `make coord-status`와 실제 `base_sha` 대비 diff로 판단한다. 채팅 기억이나 문서만으로 다른 task의 소유권을 추정하지 않는다.
 
 ## Architecture boundary

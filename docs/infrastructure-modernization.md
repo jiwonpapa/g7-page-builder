@@ -31,6 +31,11 @@ to the Python release guard instead of running content audits themselves.
 `python3 scripts/g7pb.py plan --base REF --json` is read-only. `run` executes that
 same selection. Unknown paths are an actionable mapping error, never permission
 to run every test. Full RC is explicit (`--full`), with a runtime owner.
+
+Development-only integration is closed using `integration-finish NO_RELEASE=1`.
+This archives the original integration record as `complete-unreleased`, retains
+its existing trust baseline, and makes no new release or deployment claim.
+Finishing a tooling change therefore does not trigger product release checks.
 No change or no executable inputs is reported as `NO_CHECKS`, not product acceptance.
 One failed gate stops; a retry reuses successful gates only when their command,
 selected inputs and tool environment match. Runtime-state checks are not persisted

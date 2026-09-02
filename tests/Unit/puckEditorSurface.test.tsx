@@ -4,6 +4,9 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Config, UsePuckData } from '@puckeditor/core';
+import type { EditorComponents } from '../../resources/js/editor/puckEditorTypes';
+import type { PageDesignProps } from '../../resources/js/editor/pageDesignTokens';
 
 import type { PageBuilderDocument, SitePartResource } from '../../resources/js/documents/types';
 import { CANVAS_ELEMENT_MESSAGE } from '../../resources/js/editor/canvasEditingContract';
@@ -67,7 +70,7 @@ Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
 
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { Puck, usePuck } = await import('@puckeditor/core');
-const { PuckEditorAdapter, canonicalToPuck, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
+const { PuckEditorAdapter, canonicalToPuck, puckToCanonical, pageBuilderPuckConfig } = await import('../../resources/js/editor/PuckEditorAdapter');
 const { layoutCatalogComponentConfigs } = await import('../../resources/js/editor/layoutCatalogBlocks');
 const {
   createRichTextField,
@@ -223,6 +226,44 @@ async function eventuallyContains(selector: string, expected: string): Promise<v
 }
 
 describe('Puck editor surface contract', () => {
+  it('dispatches an identified column merge and lets Puck undo restore both slots', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    const current: { state?: UsePuckData<Config<EditorComponents, PageDesignProps>> } = {};
+    function Probe(): React.ReactElement { current.state = usePuck<Config<EditorComponents, PageDesignProps>>(); return <></>; }
+    const originalDocument: PageBuilderDocument = { ...layoutFixture, schema_version: 'g7-page-builder/v2', mode: 'canvas', shell_mode: 'none' };
+    const session = canonicalToPuck(originalDocument);
+    const data = session.data;
+    const selector = { index: 0, zone: `${data.content[0].props.id}:content` };
+    await act(async () => {
+      root.render(<Puck config={pageBuilderPuckConfig} data={data} ui={{ itemSelector: selector }} iframe={{ enabled: false }}>
+        <Probe /><Puck.Fields />
+      </Puck>);
+    });
+    const before = current.state?.selectedItem;
+    if (!before || before.type !== 'LayoutColumns') throw new Error('Columns must be selected');
+    const count = await eventually<HTMLElement>('[data-testid="page-builder-layout-column-count"]');
+    await act(async () => { count.querySelector<HTMLButtonElement>('button')?.click(); });
+    const confirm = await eventually<HTMLElement>('[data-testid="page-builder-layout-column-confirm"]');
+    await act(async () => { Array.from(confirm.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent === '이동 후 변경')?.click(); });
+    const merged = current.state?.selectedItem;
+    if (!merged || merged.type !== 'LayoutColumns') throw new Error('Columns must remain selected');
+    expect(merged.props.id).toBe(before.props.id);
+    expect(merged.props.columns).toBe('1');
+    expect(merged.props.column1).toEqual([...before.props.column1, ...(before.props.column2 ?? [])]);
+    // Puck restores declared inactive slots as empty arrays; canonical storage omits them.
+    expect(merged.props.column2).toEqual([]);
+    for (let attempt = 0; attempt < 40 && !current.state?.history.hasPast; attempt++) {
+      await act(async () => { await new Promise((resolve) => setTimeout(resolve, 10)); });
+    }
+    expect(current.state?.history.hasPast).toBe(true);
+    await act(async () => current.state?.history.back());
+    expect(current.state?.selectedItem).toEqual(before);
+    expect(puckToCanonical(current.state!.appState.data, session.context)).toEqual(originalDocument);
+  });
+
   it('does not overwrite newer nested content with a previously confirmed column merge', async () => {
     const container = document.createElement('div');
     document.body.append(container);

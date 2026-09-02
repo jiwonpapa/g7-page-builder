@@ -8,6 +8,12 @@ export interface BlockContainerEditorProps {
   verticalAlign: NonNullable<BlockAppearance['verticalAlign']>;
 }
 
+type ContainerFields = {
+  [Name in keyof BlockContainerEditorProps]: {
+    type: 'select'; label: string; options: { label: string; value: BlockContainerEditorProps[Name] }[];
+  };
+};
+
 export const BLOCK_CONTAINER_FIELDS = {
   containerWidth: { type: 'select' as const, label: '블록 콘텐츠 폭', options: [
     { label: '페이지 설정', value: 'inherit' }, { label: '좁게', value: 'narrow' },
@@ -24,7 +30,7 @@ export const BLOCK_CONTAINER_FIELDS = {
   verticalAlign: { type: 'select' as const, label: '세로 배치', options: [
     { label: '위', value: 'start' }, { label: '가운데', value: 'center' }, { label: '아래', value: 'end' },
   ] },
-};
+} satisfies ContainerFields;
 
 const SURFACES = new Set<BlockAppearance['surface']>(['default', 'soft', 'contrast']);
 const SPACINGS = new Set<BlockAppearance['spacing']>(['compact', 'normal', 'spacious']);

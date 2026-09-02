@@ -1,12 +1,13 @@
 import { assertEditorInsertion } from './puckEditorSelection';
 import type { EditorComponents, PuckEditorData } from './puckEditorTypes';
 import type { PageDesignProps } from './pageDesignTokens';
-import { usePuck, type Config, type Slot } from '@puckeditor/core';
+import { usePuck, type Config, type Slot, type UsePuckData } from '@puckeditor/core';
 import React from 'react';
 import { layoutPolicy } from '../documents/layoutPolicy';
-import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, ElementAppearanceMap } from '../documents/types';
+import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, ElementAppearanceMap, LayoutColumnsBlockProps } from '../documents/types';
 import { allowedLayoutComponents, resizeLayoutColumnsEditorProps, type LayoutColumnsResizeResult } from './layoutEditorCommands';
 import { createResponsiveLayoutField, responsiveClassName } from './responsiveBlockStyle';
+import { puckLayoutChildren, puckLayoutSlot, type PuckEditorItem } from './puckLayoutData';
 export { resizeLayoutColumnsEditorProps } from './layoutEditorCommands';
 
 interface LayoutInternalEditorProps {
@@ -26,7 +27,7 @@ export interface LayoutSectionEditorProps extends LayoutInternalEditorProps {
 }
 
 export type LayoutColumnCount = '1' | '2' | '3';
-export type LayoutColumnRatio = '1' | '1:1' | '1:2' | '2:1' | '1:1:1';
+export type LayoutColumnRatio = LayoutColumnsBlockProps['ratio'];
 
 export interface LayoutColumnsEditorProps extends LayoutInternalEditorProps {
   columns: LayoutColumnCount;
@@ -48,11 +49,6 @@ export interface LayoutCatalogEditorComponents {
   LayoutStack: LayoutStackEditorProps;
 }
 
-type LayoutPuckItem = {
-  type: keyof LayoutCatalogEditorComponents | string;
-  props: Record<string, unknown> & { id: string };
-};
-
 const LEAF_COMPONENTS = allowedLayoutComponents('stack');
 const SECTION_COMPONENTS = allowedLayoutComponents('section');
 const COLUMN_COMPONENTS = allowedLayoutComponents('columns');
@@ -67,27 +63,18 @@ function newLayoutId(): string {
   return `layout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function slotValue(props: Record<string, unknown>, name: string): Slot {
-  return Array.isArray(props[name]) ? props[name] as Slot : [];
-}
-
-function nestedItemCount(items: Slot): number {
-  return items.reduce((total, item) => {
-    const props = (item as LayoutPuckItem).props ?? {};
-    const children = ['content', 'column1', 'column2', 'column3']
-      .flatMap((name) => slotValue(props, name));
-    return total + 1 + nestedItemCount(children);
-  }, 0);
+function nestedItemCount(items: PuckEditorItem[]): number {
+  return items.reduce((total, item) => total + 1 + nestedItemCount(puckLayoutChildren(item)), 0);
 }
 
 function useSelectedLayoutItem(): {
-  item: LayoutPuckItem | null;
-  dispatch: ReturnType<typeof usePuck>['dispatch'];
+  item: PuckEditorItem | null;
+  dispatch: UsePuckData<Config<EditorComponents, PageDesignProps>>['dispatch'];
   selector: { index: number; zone: string } | null;
   data: PuckEditorData;
 } {
   const { dispatch, getSelectorForId, selectedItem, appState } = usePuck<Config<EditorComponents, PageDesignProps>>();
-  const item = selectedItem as LayoutPuckItem | null;
+  const item = selectedItem;
   const selector = item ? getSelectorForId(item.props.id) ?? null : null;
   return { item, dispatch, selector, data: appState.data };
 }
@@ -108,7 +95,7 @@ function ColumnsCountField({ value, readOnly }: { value: LayoutColumnCount; read
     }
     dispatch({
       type: 'replace', destinationIndex: selector.index, destinationZone: selector.zone,
-      data: { ...item, props: result.props } as never,
+      data: { ...item, props: result.props },
       ui: { itemSelector: selector }, recordHistory: true,
     });
     setPending(null);
@@ -116,9 +103,7 @@ function ColumnsCountField({ value, readOnly }: { value: LayoutColumnCount; read
   const request = (next: LayoutColumnCount): void => {
     if (!item || item.type !== 'LayoutColumns' || next === value) return;
     try {
-      const result = resizeLayoutColumnsEditorProps(
-        item.props as unknown as LayoutColumnsEditorProps & Record<string, unknown>, next,
-      );
+      const result = resizeLayoutColumnsEditorProps(item.props, next);
       setError(null);
       if (result.movedNodes > 0 && Number(next) < Number(value)) setPending({ ...result, sourceId: item.props.id, sourceFingerprint: JSON.stringify(item.props) });
       else apply(result);
@@ -150,7 +135,7 @@ function StructureInsertField({ readOnly }: { readOnly?: boolean }): React.React
   if (!item || (item.type !== 'LayoutSection' && item.type !== 'LayoutColumns')) return <></>;
 
   const insert = (zoneName: string, componentType: 'LayoutColumns' | 'LayoutStack', columns: LayoutColumnCount = '2'): void => {
-    const items = slotValue(item.props, zoneName);
+    const items = puckLayoutSlot(item, zoneName) ?? [];
     if (items.length >= layoutPolicy.limits.slot_children) {
       setMessage(`${zoneName}은 최대 ${layoutPolicy.limits.slot_children}개까지 배치할 수 있습니다.`);
       return;
@@ -173,7 +158,7 @@ function StructureInsertField({ readOnly }: { readOnly?: boolean }): React.React
             id, columns, ratio: columns === '1' ? '1' : '1:1:1', gap: 'normal',
             column1: [], ...(columns !== '1' ? { column2: [] } : {}), ...(columns === '3' ? { column3: [] } : {}),
           },
-        } as never,
+        },
         recordHistory: false,
       });
     }
@@ -206,7 +191,7 @@ function StructureDeleteField({ readOnly }: { readOnly?: boolean }): React.React
   const [pending, setPending] = React.useState<{ id: string; fingerprint: string } | null>(null);
   React.useEffect(() => setPending(null), [item?.props.id]);
   if (!item || !['LayoutSection', 'LayoutColumns', 'LayoutStack'].includes(item.type)) return <></>;
-  const childCount = nestedItemCount(['content', 'column1', 'column2', 'column3'].flatMap((name) => slotValue(item.props, name)));
+  const childCount = nestedItemCount(puckLayoutChildren(item));
   const remove = (): void => {
     if (readOnly || !selector) return;
     if (pending && (pending.id !== item.props.id || pending.fingerprint !== JSON.stringify(item.props))) {
@@ -236,7 +221,7 @@ const defaultLayout = {
       column2: [{ type: 'RichText', props: { content: '<p>본문을 입력하세요.</p>', measure: 'standard' } }],
     },
   }],
-} as unknown as LayoutSectionEditorProps;
+} satisfies LayoutSectionEditorProps;
 
 const GAP_FIELD = {
   type: 'radio' as const, label: '간격', options: [
@@ -296,7 +281,7 @@ export const layoutCatalogComponentConfigs: Config<LayoutCatalogEditorComponents
       return {
         ...fields,
         ratio: { type: 'radio', label: '열 비율', options: [...COLUMN_RATIO_OPTIONS[columns]] },
-      } as typeof fields;
+      };
     },
     render: ({ column1: Column1, column2: Column2, column3: Column3, columns, ratio, gap, responsiveOverrides }) => (
       <div className={`g7pb-preview-layout-columns g7pb-preview-layout-columns--count-${columns} g7pb-preview-layout-columns--${ratio.replaceAll(':', '-')} g7pb-preview-layout-columns--gap-${gap} ${responsiveClassName(responsiveOverrides)}`.trim()} data-testid="page-builder-layout-columns">

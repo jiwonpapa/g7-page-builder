@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { PuckEditorData } from '../../resources/js/editor/PuckEditorAdapter';
 import catalogFixture from '../Contract/document-catalog-v1.fixture.json';
 import layoutFixture from '../Contract/document-layout-v2.fixture.json';
+import type { PuckEditorItem } from '../../resources/js/editor/puckLayoutData';
 import {
   ANCHOR_MENU_BLOCK_TYPE,
   ARTICLE_LIST_BLOCK_TYPE,
@@ -53,6 +54,46 @@ class TestResizeObserver {
 globalThis.ResizeObserver = TestResizeObserver;
 
 describe('isolated canonical document envelope adapter', () => {
+  it('copies only the envelope while preserving nested and non-JSON converter metadata references', async () => {
+    const { canonicalDocumentToPuck } = await import('../../resources/js/editor/puckDocumentAdapter');
+    const document: PageBuilderDocument = {
+      schema_version: 'g7-page-builder/v2', document_id: '10000000-0000-4000-8000-000000000001',
+      slug: 'synthetic-envelope', mode: 'canvas', locale: 'ko', blocks: [{
+        instance_id: '10000000-0000-4000-8000-000000000002', type: 'layout.section-01', block_version: 1,
+        props: { width: 'standard', spacing: 'normal', appearance: { surface: 'default', spacing: 'normal', containerWidth: 'wide' } },
+        visibility: { audience: 'member' }, slots: { content: [{
+          instance_id: '10000000-0000-4000-8000-000000000003', type: 'content.heading-01', block_version: 3,
+          props: { eyebrow: '', heading: 'Synthetic', level: 2, anchor: '' }, slots: {},
+        }] },
+      }],
+    };
+    const before = structuredClone(document);
+    const child: Extract<PuckEditorItem, { type: 'Heading' }> = { type: 'Heading', props: {
+      id: '10000000-0000-4000-8000-000000000003', eyebrow: '', heading: 'Synthetic', level: '2', anchor: '',
+      surface: 'default', spacing: 'normal', motion: { preset: 'none', intensity: 'subtle', trigger: 'once', stagger_ms: 100 },
+    } };
+    const metadata = { callback: () => 'kept' };
+    const converted = Object.assign({ type: 'LayoutSection', props: {
+      id: '10000000-0000-4000-8000-000000000002', width: 'standard', spacing: 'normal', content: [child],
+    }, readOnly: { width: true } } satisfies Extract<PuckEditorItem, { type: 'LayoutSection' }>, { metadata });
+    const session = canonicalDocumentToPuck(document, () => converted);
+    const actual = session.data.content[0];
+    if (actual.type !== 'LayoutSection') throw new Error('Expected section');
+    expect(actual).not.toBe(converted);
+    expect(actual.props).not.toBe(converted.props);
+    expect(actual.props.content).toBe(converted.props.content);
+    expect(actual.props.content[0]).toBe(child);
+    expect(actual.readOnly).toBe(converted.readOnly);
+    expect(actual).toHaveProperty('metadata', metadata);
+    expect(actual.props).toMatchObject({ containerWidth: 'wide', __g7pbVisibilityAudience: 'member' });
+    expect(converted.props).not.toHaveProperty('containerWidth');
+    expect(converted.props).not.toHaveProperty('__g7pbVisibilityAudience');
+    actual.props.width = 'full';
+    expect(converted.props.width).toBe('standard');
+    expect(session.context.blocks[child.props.id]).toMatchObject({ blockVersion: 3, hadSlots: true });
+    expect(document).toEqual(before);
+  });
+
   it('round-trips the v2 Section and two-column Puck slots without storing Puck state', () => {
     const document = structuredClone(layoutFixture) as PageBuilderDocument;
     const session = canonicalToPuck(document);

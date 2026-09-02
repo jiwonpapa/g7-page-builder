@@ -1,4 +1,4 @@
-/* Tailwind Preflight를 포함하지 않는다. 모든 제품 스타일은 이 편집기 루트 아래로 제한한다. */
+/* Tailwind Preflight 없이 편집기와 모듈 소유 portal에만 UI 토큰과 reset을 적용한다. */
 html:has(body.g7pb-editor-shell),
 html:has(body.g7pb-manager-shell),
 body.g7pb-editor-shell,
@@ -8,7 +8,8 @@ body.g7pb-manager-shell {
   background: #f3f1ed;
 }
 
-.g7pb-root {
+.g7pb-root,
+.g7pb-portal-surface {
   --g7pb-bg: #f3f1ed;
   --g7pb-surface: #fcfbf9;
   --g7pb-surface-strong: #ffffff;
@@ -22,12 +23,20 @@ body.g7pb-manager-shell {
   --g7pb-success: #16794a;
   --g7pb-warning: #a15c08;
   --g7pb-danger: #b42318;
+  --g7pb-focus-ring: #9ab2f7;
 
   --puck-color-interactive: var(--g7pb-accent);
   --puck-color-interactive-hover: var(--g7pb-accent-dark);
   --puck-color-focus-ring: #86a5ff;
   --puck-font-family: var(--g7pb-font-family, Inter, Pretendard, system-ui, sans-serif);
 
+  color: var(--g7pb-text);
+  font-family: var(--g7pb-font-family, Inter, Pretendard, system-ui, -apple-system, sans-serif);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.g7pb-root {
   display: flex;
   width: 100%;
   height: 100dvh;
@@ -35,27 +44,32 @@ body.g7pb-manager-shell {
   flex-direction: column;
   overflow: hidden;
   background: var(--g7pb-bg);
-  color: var(--g7pb-text);
-  font-family: var(--g7pb-font-family, Inter, Pretendard, system-ui, -apple-system, sans-serif);
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 .g7pb-root *,
 .g7pb-root *::before,
-.g7pb-root *::after {
+.g7pb-root *::after,
+.g7pb-portal-surface *,
+.g7pb-portal-surface *::before,
+.g7pb-portal-surface *::after {
   box-sizing: border-box;
 }
 
 .g7pb-root button,
 .g7pb-root input,
 .g7pb-root textarea,
-.g7pb-root select {
+.g7pb-root select,
+.g7pb-portal-surface button,
+.g7pb-portal-surface input,
+.g7pb-portal-surface textarea,
+.g7pb-portal-surface select {
   font: inherit;
 }
 
 .g7pb-root button,
-.g7pb-root a {
+.g7pb-root a,
+.g7pb-portal-surface button,
+.g7pb-portal-surface a {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -63,8 +77,13 @@ body.g7pb-manager-shell {
 .g7pb-root a:focus-visible,
 .g7pb-root input:focus-visible,
 .g7pb-root textarea:focus-visible,
-.g7pb-root select:focus-visible {
-  outline: 3px solid #9ab2f7;
+.g7pb-root select:focus-visible,
+.g7pb-portal-surface button:focus-visible,
+.g7pb-portal-surface a:focus-visible,
+.g7pb-portal-surface input:focus-visible,
+.g7pb-portal-surface textarea:focus-visible,
+.g7pb-portal-surface select:focus-visible {
+  outline: 3px solid var(--g7pb-focus-ring);
   outline-offset: 2px;
 }
 

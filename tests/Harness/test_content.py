@@ -75,12 +75,45 @@ class ContentSelectionTest(unittest.TestCase):
         self.assertEqual(result, [{"kind": "block", "ids": ["block:content.hero@1"]},
                                   {"kind": "preset", "ids": ["preset:test/core:hero.one"]}])
 
-    def test_shared_compiler_and_css_require_explicit_scope(self):
+    def test_unmapped_shared_inputs_still_require_explicit_scope(self):
         for path in ["src/Application/Compilation/HtmlDocumentCompiler.php",
-                     "resources/css/page-builder-public.css", "resources/css/page-builder-core.css",
                      "resources/css/page-builder-editor-wysiwyg.css"]:
             with self.subTest(path=path), self.assertRaisesRegex(ValueError, "select explicit --ids or --all"):
                 select_changes(self.root, "BASE", [path])
+
+    def test_shared_styles_select_presentation_contract_without_catalog_expansion(self):
+        for path, ids in [
+            ("resources/css/page-builder-core.css", ["editor-ui"]),
+            ("resources/css/page-builder-editor.css", ["editor-ui", "page-theme"]),
+            ("resources/css/page-builder-public.css", ["page-theme"]),
+            ("resources/css/page-builder-theme.css", ["page-theme"]),
+        ]:
+            with self.subTest(path=path):
+                self.assertEqual(select_changes(self.root, "BASE", [path]), [{"kind": "style", "ids": ids}])
+        self.assertEqual(select_changes(self.root, "BASE", [
+            "resources/css/page-builder-core.css", "resources/css/page-builder-theme.css",
+        ]), [{"kind": "style", "ids": ["editor-ui", "page-theme"]}])
+
+    def test_style_contract_checks_existing_assets_without_generating_or_claiming_browser_proof(self):
+        before = sorted(str(path.relative_to(self.root)) for path in self.root.rglob("*"))
+        with patch("tools.g7pb.content.subprocess.run") as run, contextlib.redirect_stdout(io.StringIO()) as output:
+            status = main(["check", "--kind", "style", "--ids", "page-theme", "--root", str(self.root)])
+        self.assertEqual(status, 0)
+        self.assertEqual(run.call_args.args[0], ["node", "scripts/check-assets.mjs"])
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["mode"], "existing-artifact-integrity")
+        self.assertTrue(result["requires_build"])
+        for flag in ["product_written", "ledger_written", "browser_executed", "source_build_verified", "catalog_render_verified"]:
+            self.assertFalse(result[flag])
+        self.assertEqual(result["browser_followup"], {"spec": "tests/E2E/editorStructureTheme.spec.ts", "project": "desktop"})
+        self.assertEqual(before, sorted(str(path.relative_to(self.root)) for path in self.root.rglob("*")))
+
+    def test_style_ids_are_exact_and_unknown_styles_do_not_expand_scope(self):
+        self.assertEqual(select(self.root, "style", "editor-ui", False), ["editor-ui"])
+        with self.assertRaisesRegex(ValueError, "Unknown style IDs"):
+            select(self.root, "style", "all-content", False)
+        with self.assertRaisesRegex(ValueError, "Unclassified content input"):
+            select_changes(self.root, "BASE", ["resources/css/new-unknown.css"])
 
     def test_deleted_block_requires_explicit_inventory_scope(self):
         old = json.loads(json.dumps(self.pack))

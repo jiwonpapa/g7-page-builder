@@ -10,12 +10,7 @@ copy_fixture() {
   mkdir -p "$fixture_root/fixture/scripts" "$fixture_root/fixture/tests/E2E" \
     "$fixture_root/fixture/resources/css" "$fixture_root/fixture/resources/js/editor"
   cp "$repo_root/package.json" "$fixture_root/fixture/package.json"
-  cp "$repo_root/resources/css/page-builder-editor.css" \
-    "$fixture_root/fixture/resources/css/page-builder-editor.css"
-  cp "$repo_root/resources/css/page-builder-editor-wysiwyg.css" \
-    "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-  cp "$repo_root/resources/css/page-builder-public.css" \
-    "$fixture_root/fixture/resources/css/page-builder-public.css"
+  cp "$repo_root/resources/css/"*.css "$fixture_root/fixture/resources/css/"
   cp "$repo_root/resources/js/editor/PuckEditorAdapter.tsx" \
     "$fixture_root/fixture/resources/js/editor/PuckEditorAdapter.tsx"
   cp "$repo_root/resources/js/editor/catalogBlocks.tsx" \
@@ -28,6 +23,14 @@ copy_fixture() {
     "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
   cp "$repo_root/tests/E2E/blockCatalogQuality.spec.ts" \
     "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
+}
+
+theme_fixture_path() {
+  if [[ -f "$fixture_root/fixture/resources/css/page-builder-theme.css" ]]; then
+    echo "$fixture_root/fixture/resources/css/page-builder-theme.css"
+  else
+    echo "$fixture_root/fixture/resources/css/page-builder-editor.css"
+  fi
 }
 
 expect_failure() {
@@ -113,7 +116,7 @@ expect_failure '편집기 Hero 제목은 공개 출력과 동일한 WYSIWYG typo
 
 copy_fixture
 perl -0pi -e 's/(--g7pb-theme-radius:) 1rem;/${1} .75rem;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+  "$(theme_fixture_path)"
 expect_failure '편집기와 공개 출력의 기본 radius는 동일한 1rem 계약이어야 합니다.'
 
 copy_fixture
@@ -253,7 +256,7 @@ expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography, fon
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-theme-font-modern \{ font-family:) system-ui,/${1} Inter, Pretendard,/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+  "$(theme_fixture_path)"
 expect_failure '편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.'
 
 copy_fixture

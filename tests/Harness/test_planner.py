@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from tools.g7pb.planner import build_plan, changed_paths, python_inputs
+from tools.g7pb.planner import build_plan, changed_paths, python_inputs, content_policy, checker_controller_root
 
 
 class PlannerTests(unittest.TestCase):
@@ -222,6 +222,86 @@ class PlannerTests(unittest.TestCase):
         self.assertFalse(plan.requirements["browser"])
         self.assertEqual([g.name for g in plan.gates], ["python:tests/Harness/test_browser_registration.py"])
         self.assertTrue(plan.requirements["node"])
+
+    def test_only_changed_content_policy_uses_candidate_subject_registry(self):
+        self.write("tools/g7pb/content.py", "MARKER = 'candidate style policy'\n")
+        candidate = content_policy(self.root, ["tools/g7pb/content.py"])
+        self.assertEqual(candidate.MARKER, "candidate style policy")
+        verified = content_policy(self.root, ["resources/css/page-builder-editor.css"])
+        self.assertNotEqual(Path(verified.__file__).resolve(), (self.root / "tools/g7pb/content.py").resolve())
+        self.assertFalse(hasattr(verified, "MARKER"))
+
+    def test_style_artifact_check_defers_and_runs_only_after_candidate_build(self):
+        from types import SimpleNamespace
+        policy = SimpleNamespace(
+            select_changes=lambda root, base, paths: [{"kind": "style", "ids": ["page-theme"]}],
+            plan=lambda root, kind, ids: {"requires_build": True})
+        self.browser_fixture()
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase), patch("tools.g7pb.planner.content_policy", return_value=policy):
+                plan = build_plan(self.root, ["resources/css/scoped-fixture.css", "resources/js/editor/richTextEditing.tsx"], phase=phase)
+            # Unknown CSS browser fixtures may be unresolved, but ordering and
+            # the artifact contract itself must remain explicit in the plan.
+            names = [g.name for g in plan.gates]
+            artifact = next(g for g in plan.gates if g.name.startswith("content:style:"))
+            browser = next(g for g in plan.gates if g.name.startswith("browser:"))
+            self.assertTrue(artifact.runtime)
+            self.assertEqual(artifact.deferred, phase == "submission")
+            self.assertEqual(artifact.depends_on, ("browser-assets",))
+            self.assertLess(names.index("browser-assets"), names.index(artifact.name))
+            self.assertLess(names.index(artifact.name), names.index(browser.name))
+            self.assertIn(artifact.name, browser.depends_on)
+            self.assertEqual(names.count("browser-assets"), 1)
+            self.assertNotIn("full-product", names)
+
+    def test_candidate_policy_change_can_declare_new_style_ids_before_integration(self):
+        self.write("tools/g7pb/content.py", "def select_changes(root, base, paths): return [{'kind':'style','ids':['candidate-style']}]\n"
+                   "def plan(root, kind, ids): return {'requires_build': True}\n")
+        self.write("tests/Harness/test_content.py", "pass")
+        self.write("resources/css/page-builder-manager.css", ".manager {}")
+        self.write("tests/E2E/pageBuilderLifecycle.spec.ts", "test('case',async()=>{});")
+        plan = build_plan(self.root, ["tools/g7pb/content.py", "resources/css/page-builder-manager.css"])
+        self.assertFalse(plan.unresolved)
+        self.assertIn("python:tests/Harness/test_content.py", [g.name for g in plan.gates])
+        artifact = next(g for g in plan.gates if g.name == "content:style:candidate-style")
+        self.assertTrue(artifact.deferred)
+        self.assertIn("tools/g7pb/content.py", artifact.inputs)
+
+    def test_non_build_content_checks_do_not_acquire_runtime_or_prepare_assets(self):
+        from types import SimpleNamespace
+        policy = SimpleNamespace(select_changes=lambda root, base, paths: [{"kind": "kit", "ids": ["landing"]}],
+                                 plan=lambda root, kind, ids: {"mode": "technical"})
+        with patch("tools.g7pb.planner.content_policy", return_value=policy):
+            plan = build_plan(self.root, ["resources/store/source/page-kits/landing/document.json"])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.gates[0].runtime)
+        self.assertNotIn("browser-assets", [g.name for g in plan.gates])
+
+    def test_editor_checkers_use_explicit_candidate_and_verified_controller_inputs(self):
+        self.write("tests/Harness/test_editor_contracts.py", "pass")
+        parity = "scripts/check-editor-layout-parity.mjs"
+        acceptance = "scripts/check-editor-acceptance-contract.mjs"
+        helper = "scripts/lib/editorCssSources.mjs"
+        self.write(parity, "export const candidate = true;")
+        self.write(helper, "export const readCssGraph = () => {};")
+        plan = build_plan(self.root, [parity, helper])
+        gate = next(g for g in plan.gates if g.name == "python:tests/Harness/test_editor_contracts.py")
+        selected = json.loads(dict(gate.env)["G7PB_EDITOR_CONTRACT_CHECKERS"])
+        self.assertEqual(Path(selected[parity]), (self.root / parity).resolve())
+        self.assertNotEqual(Path(selected[acceptance]), (self.root / acceptance).resolve())
+        for file in selected.values():
+            self.assertIn(file, gate.inputs)
+        self.assertIn(str((self.root / helper).resolve()), gate.inputs)
+        self.assertTrue(any(p.endswith("scripts/lib/editorContractRegistration.mjs") and Path(p).is_absolute() for p in gate.inputs))
+
+    def test_checker_bootstrap_identifies_same_git_common_local_checkout(self):
+        self.write(".git", "gitdir: /shared/worktrees/subject")
+        local = self.root / "verified-local"
+        with patch("tools.g7pb.planner.git", side_effect=[str(local / ".git"), str(local)]):
+            self.assertEqual(checker_controller_root(self.root, self.root), local.resolve())
+        with patch("tools.g7pb.planner.git", side_effect=[str(local / ".git"), str(local / "different")]):
+            with self.assertRaisesRegex(ValueError, "same-repository Local"):
+                checker_controller_root(self.root, self.root)
 
 
 if __name__ == "__main__":

@@ -89,10 +89,24 @@ RULES = (
     # text, and nested/style contracts when changed without the adapter facade.
     (("resources/js/editor/puckEditorConfig.tsx", "resources/js/editor/puckBuiltinPreviews.tsx"), (PAGE, TEXT, STRUCTURE_THEME)),
     (("resources/js/editor/previewContent.ts",), (PAGE, TEXT)),
-    # The full-site canvas and shared contexts own template chrome, editing
-    # permissions, and pointer/selection propagation, not preset content quality.
+    # FullSiteCanvas owns its shell context; editing contexts do not own the
+    # template/home route contract.
     (("resources/js/editor/FullSiteCanvas.tsx",), (TEMPLATE, TEXT)),
-    (("resources/js/editor/puckEditorContexts.ts",), (TEMPLATE, TEXT, CONTROLS, STRUCTURE_THEME)),
+    (("resources/js/editor/puckEditorContexts.ts",), (TEXT, CONTROLS, STRUCTURE_THEME)),
+    # Gallery transport/selection and motion commands keep the existing page
+    # workflow, including builder shell resources and batch motion controls.
+    (("resources/js/editor/blockGalleryModel.ts", "resources/js/editor/BlockGalleryControls.tsx",
+      "resources/js/editor/BlockCatalogContext.ts", "resources/js/editor/blockMotionCommands.ts",
+      "resources/js/editor/usePageBuilderResources.ts"), (PAGE,)),
+    (("resources/js/editor/EditorHeaderControls.tsx",), (PAGE, CONTROLS, STRUCTURE_THEME)),
+    (("resources/js/editor/CanvasContextControls.tsx", "resources/js/editor/SelectedBlockActionBar.tsx",
+      "resources/js/editor/useCanvasEditingUi.ts"), (PAGE, TEXT, CONTROLS)),
+    (("resources/js/editor/useSelectedActionBarSafeZone.ts", "resources/js/editor/useEditorViewport.ts"), (TEXT, CONTROLS)),
+    (("resources/js/editor/canvasItemCommands.ts",), (PAGE, TEXT)),
+    (("resources/js/editor/usePageBuilderSession.ts",), (PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY)),
+    # Rich-text models/selection/commands retain the richText* rule below;
+    # extracted floating tools also require the real pointer reachability case.
+    (("resources/js/editor/richTextFloatingLayer.tsx", "resources/js/editor/richTextInlineMenu.tsx"), (TEXT, CONTROLS)),
     (("resources/js/editor/main.tsx",), (PAGE, DOCUMENT_BOUNDARY)),
     (("resources/js/editor/PuckDocumentBoundary.tsx", "resources/js/editor/editorDocumentBoundary.ts",
       "resources/js/editor/draftPersistence.ts"), (DOCUMENT_BOUNDARY,)),

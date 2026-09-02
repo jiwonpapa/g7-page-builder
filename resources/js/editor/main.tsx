@@ -12,6 +12,8 @@ import {
   buildAdminLoginUrl,
 } from '../api/pageBuilderApi';
 import type { DocumentResource, PageBuilderDocument } from '../documents/types';
+import { normalizeDocumentTransport } from '../documents/normalizeDocumentTransport';
+import { LayoutPolicyError, validateLayoutDocument } from '../documents/layoutPolicy';
 import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';
 import { PuckEditorAdapter } from './PuckEditorAdapter';
 import { clearDraftJournal, readDraftJournal, writeDraftJournal } from './draftJournal';
@@ -76,6 +78,9 @@ function actionableCompileMessage(message: string): string | null {
 }
 
 function formatError(error: unknown): string {
+  if (error instanceof LayoutPolicyError) {
+    return '문서의 블록 구성이 올바르지 않아 편집기를 열지 못했습니다. 문서함에서 다른 문서를 열 수 있습니다.';
+  }
   if (error instanceof PageBuilderApiError) {
     const actionable = error.code === 'G7PB_COMPILE_FAILED' ? actionableCompileMessage(error.message) : null;
     if (actionable) return actionable;
@@ -91,6 +96,12 @@ function formatError(error: unknown): string {
 function isConflict(error: unknown): boolean {
   return error instanceof PageBuilderApiError &&
     (error.status === 409 || error.code === 'G7PB_LOCK_CONFLICT');
+}
+
+function readEditorDocument(document: PageBuilderDocument): PageBuilderDocument {
+  const normalized = normalizeDocumentTransport(document);
+  if (normalized.schema_version === 'g7-page-builder/v2') validateLayoutDocument(normalized);
+  return normalized;
 }
 
 function EditorShell({
@@ -162,7 +173,9 @@ function EditorShell({
     const journal = restoreJournal
       ? readDraftJournal(resource.document.document_id, resource.lock_version)
       : null;
-    const nextDocument = journal?.document ?? resource.document;
+    // Check before committing React state so malformed transport/journal data is
+    // handled by the load error path instead of unmounting the entire editor.
+    const nextDocument = readEditorDocument(journal?.document ?? resource.document);
     documentRef.current = nextDocument;
     lockVersionRef.current = resource.lock_version;
     dirtyRef.current = journal !== null;
@@ -276,6 +289,7 @@ function EditorShell({
 
     const request = api.saveDraft(snapshot.document_id, snapshot, expectedLockVersion)
       .then(async (resource) => {
+        const savedDocument = readEditorDocument(resource.document);
         lockVersionRef.current = resource.lock_version;
         setDocumentTitle(resource.title);
         setPublicUrl(resource.public_url);
@@ -285,9 +299,9 @@ function EditorShell({
             window.clearTimeout(draftJournalTimerRef.current);
             draftJournalTimerRef.current = null;
           }
-          documentRef.current = resource.document;
+          documentRef.current = savedDocument;
           dirtyRef.current = false;
-          setDocument(resource.document);
+          setDocument(savedDocument);
           setSaveState('saved');
           clearDraftJournal(resource.document.document_id);
         } else {
@@ -617,7 +631,14 @@ function EditorShell({
           onDirty={handleEditorDirty} onChange={handleDocumentChange} onPublish={() => publish()} />
       )}
 
-      {!loading && !document && (
+      {!loading && !document && requestedDocumentId && (
+        <section className="g7pb-empty-state">
+          <h1>페이지를 열지 못했습니다.</h1>
+          <p>상단의 오류 안내를 확인해 주세요.</p>
+        </section>
+      )}
+
+      {!loading && !document && !requestedDocumentId && (
         <section className="g7pb-empty-state">
           <p className="g7pb-kicker">첫 페이지</p>
           <h1>완성 블록으로 페이지를 시작하세요.</h1>

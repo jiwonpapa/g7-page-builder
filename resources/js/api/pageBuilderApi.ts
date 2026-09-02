@@ -1,3 +1,4 @@
+import { normalizeDocumentTransport } from '../documents/normalizeDocumentTransport';
 import type {
   ApiEnvelope,
   DocumentListResource,
@@ -665,7 +666,7 @@ export class PageBuilderApiClient {
       throw parseErrorPayload(payload, response.status);
     }
 
-    return parseEnvelope<T>(payload);
+    return normalizeDocumentTransport(parseEnvelope<T>(payload));
   }
 
   private async authorizedFetch(path: string, init: RequestInit = {}, accept = 'application/json'): Promise<Response> {

@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from tools.g7pb.type_import_changes import browser_sources
 from tools.g7pb.planner import build_plan
-from tools.g7pb.browser_requirements import PAGE, PARITY
+from tools.g7pb.browser_requirements import PAGE
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/lib/typeImportChanges.mjs"
@@ -54,15 +54,13 @@ class TypeImportChangeTests(unittest.TestCase):
     def test_planner_preserves_type_units_and_architecture_without_preset_sweep(self):
         with tempfile.TemporaryDirectory(prefix="g7pb-import-scope-") as directory:
             root = Path(directory)
-            source = "resources/js/editor/catalogBlocks.tsx"
+            source = "resources/js/editor/importScopeFixture.tsx"
             files = {
                 source: "import type {A} from '../documents/types'; export const value = 1;",
                 "resources/js/documents/types.ts": "export interface A { value: string }",
-                "tests/Unit/catalogBlocks.test.ts": "import '../../resources/js/editor/catalogBlocks';",
+                "resources/js/documents/builtinBlockContracts.ts": "export interface A { value: string }",
+                "tests/Unit/importScopeFixture.test.ts": "import '../../resources/js/editor/importScopeFixture';",
                 PAGE.spec: "import {test} from '@playwright/test';",
-                PARITY.spec: "import {test} from '@playwright/test';",
-                "resources/block-packs/builtin-core/manifest.json": json.dumps({"presets": [
-                    {"preset_id": name} for name in ("hero-split", "hero-slider", "logo-cloud", "stats", "pricing", "team", "gallery", "bar-chart", "g7-posts", "g7-products", "inquiry", "map")]}),
             }
             for path, content in files.items():
                 target = root / path
@@ -78,12 +76,23 @@ class TypeImportChangeTests(unittest.TestCase):
                 self.assertFalse(plan.full)
                 self.assertEqual(plan.unresolved, [])
                 self.assertIn("typecheck", names)
-                self.assertIn("unit:tests/Unit/catalogBlocks.test.ts", names)
+                self.assertIn("unit:tests/Unit/importScopeFixture.test.ts", names)
                 self.assertIn("architecture", names)
                 self.assertFalse(any(name.startswith("browser:") for name in names))
             (root / source).write_text(files[source].replace("value = 1", "value = 2"))
-            runtime = build_plan(root, [source], base="HEAD")
-            self.assertIn("browser:" + PARITY.spec, {gate.name for gate in runtime.gates})
+            # Runtime edits must retain the fixed generic-editor PAGE contract,
+            # independently of the catalog's separately tested scenario mapping.
+            for phase in ("submission", "integration", "verification", "ci"):
+                with self.subTest(runtime_phase=phase):
+                    runtime = build_plan(root, [source], base="HEAD", phase=phase)
+                    self.assertFalse(runtime.full)
+                    self.assertEqual(runtime.unresolved, [])
+                    browser = [gate for gate in runtime.gates if gate.name.startswith("browser:")]
+                    self.assertEqual({gate.name for gate in browser}, {"browser:" + PAGE.spec})
+                    for gate in browser:
+                        self.assertTrue(gate.runtime)
+                        self.assertEqual(gate.deferred, phase == "submission")
+                    self.assertFalse(any(gate.name.startswith(("browser-registration:", "content:")) for gate in runtime.gates))
             self.assertEqual(browser_sources(root, [source], "missing-ref"), [source])
             self.assertEqual(browser_sources(root, ["resources/js/documents/types.ts"], "HEAD"), ["resources/js/documents/types.ts"])
             with patch("tools.g7pb.type_import_changes.subprocess.run", side_effect=OSError("no tool")):

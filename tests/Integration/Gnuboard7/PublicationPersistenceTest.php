@@ -27,6 +27,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackState;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
@@ -44,6 +45,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentS
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\FormSubmissionRecord;
 use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -1094,6 +1096,75 @@ final class PublicationPersistenceTest extends TestCase
             self::assertSame($published->artifactSha256, $stillPublished->artifactSha256);
             self::assertSame($published->representationSha256(), $stillPublished->representationSha256());
         }
+    }
+
+    #[DataProvider('storedInvalidDesignTokens')]
+    public function test_stored_invalid_colors_remain_readable_without_writes_or_publication_changes(string $name, string $value): void
+    {
+        $repository = new EloquentPageBuilderRepository;
+        $service = new PageBuilderService($repository, $this->builtInCompiler());
+        $created = $service->create('과거 디자인 복구', 'stored-design-recovery', 'ko', null, 'builder');
+        $candidate = $service->preparePublication($created->document->documentId, $created->lockVersion, null);
+        $published = $service->commitPublication($candidate->token);
+        $before = $service->get($created->document->documentId);
+        $id = $before->document->documentId;
+        $payload = $before->document->toArray();
+        $payload['tokens'][$name] = $value;
+        $legacyJson = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        $revision = $this->database->getConnection()->table('g7pb_revisions')->where('document_id', $id)->where('revision', $before->revision);
+        $revision->update(['document_json' => $legacyJson]);
+        $controller = new AdminDocumentController($service);
+        $read = $controller->show(Request::create('/documents/'.$id), $id);
+
+        self::assertSame(200, $read->getStatusCode());
+        self::assertSame($payload['tokens'], $read->getData(true)['data']['document']['tokens']);
+        self::assertSame($legacyJson, $revision->value('document_json'));
+        $recovered = $service->get($id);
+        self::assertSame($before->lockVersion, $recovered->lockVersion);
+        self::assertSame($before->revision, $recovered->revision);
+
+        try {
+            $repository->saveDraft($recovered->document, $before->lockVersion, null);
+            self::fail('A stored value object bypassed strict revision writes.');
+        } catch (\InvalidArgumentException) {
+            self::assertSame($legacyJson, $revision->value('document_json'));
+        }
+        $copy = $payload;
+        $copy['document_id'] = '00000000-0000-4000-8000-000000000001';
+        $copy['slug'] = 'stored-design-copy';
+        try {
+            $repository->create('복구 객체 쓰기 금지', PageBuilderDocument::fromStoredArray($copy), null);
+            self::fail('A stored value object bypassed strict document creation.');
+        } catch (\InvalidArgumentException) {
+            self::assertNull($repository->find($copy['document_id']));
+        }
+
+        $request = static fn (): Request => Request::create('/documents/'.$id, 'POST', ['expected_lock_version' => $before->lockVersion]);
+        self::assertSame(422, $controller->restoreRevision($request(), $id, $before->revision)->getStatusCode());
+        self::assertSame(422, $controller->preview($request(), $id)->getStatusCode());
+        self::assertSame(422, $controller->preparePublication($request(), $id)->getStatusCode());
+        $invalidSave = $controller->saveDraft(Request::create('/documents/'.$id.'/draft', 'PUT', [
+            'expected_lock_version' => $before->lockVersion, 'document' => $payload,
+        ]), $id);
+        self::assertSame(400, $invalidSave->getStatusCode());
+        self::assertSame($legacyJson, $revision->value('document_json'));
+        self::assertCount(1, $service->revisions($id));
+        self::assertSame($before->lockVersion, $service->get($id)->lockVersion);
+        self::assertSame($published->representationSha256(), $service->findPublished('stored-design-recovery')?->representationSha256());
+
+        unset($payload['tokens'][$name]);
+        $fixed = $service->saveDraft($id, $payload, $before->lockVersion, null);
+        self::assertSame($before->revision + 1, $fixed->revision);
+        self::assertSame($payload['tokens'], $fixed->document->tokens);
+        self::assertSame($legacyJson, $revision->value('document_json'));
+        self::assertSame($published->artifactSha256, $service->findPublished('stored-design-recovery')?->artifactSha256);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function storedInvalidDesignTokens(): iterable
+    {
+        yield 'color mode' => ['design.color_mode', 'sepia'];
+        yield 'custom color' => ['design.custom_color_4_dark', 'var(--historical-color)'];
     }
 
     public function test_archive_hides_publication_and_purge_requires_archived_slug_confirmation(): void

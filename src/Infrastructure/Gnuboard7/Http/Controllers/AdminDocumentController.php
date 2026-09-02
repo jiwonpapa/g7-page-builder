@@ -229,6 +229,8 @@ final class AdminDocumentController
             return $this->lockConflict($request, $exception);
         } catch (SlugAlreadyExistsException $exception) {
             return $this->domainError($request, 409, 'G7PB_DOCUMENT_INVALID', $exception->getMessage());
+        } catch (\InvalidArgumentException $exception) {
+            return $this->domainError($request, 422, 'G7PB_DOCUMENT_INVALID', $exception->getMessage());
         } catch (\Throwable $exception) {
             return $this->unexpected($request, $exception);
         }

@@ -59,6 +59,21 @@ test('unsafe AST rules distinguish double assertions and any from validated sing
   assert.equal(inspectTypeScript(repository, 'resources/js/editor/new.ts', 'dispatch(value as never);', policy).length, 1);
 });
 
+test('transparent expression and type wrappers cannot hide a forbidden assertion', () => {
+  for (const source of [
+    'const value = (input as unknown)! as Shape;',
+    'const value = ((input as unknown) satisfies unknown) as Shape;',
+    'const value = (input as (unknown)) as Shape;',
+    'const value = (<unknown>input)! as Shape;',
+    'dispatch(input as (never));',
+  ]) assert.ok(inspectTypeScript(repository, 'resources/js/editor/new.ts', source, policy)
+    .some((item) => item.rule === 'TS-UNSAFE'), source);
+  for (const source of [
+    'const value = input! as Shape;', 'const value = (input satisfies unknown) as Shape;',
+    'const value = (input as Shape)!;', 'const value = input as unknown;',
+  ]) assert.deepEqual(inspectTypeScript(repository, 'resources/js/editor/new.ts', source, policy), [], source);
+});
+
 test('PHP lexer detects grouped imports, aliases and fully qualified framework dependencies', () => {
   for (const source of [
     '<?php use Illuminate\\Support\\{Arr, Str};', '<?php use Illuminate as Framework;',
@@ -75,6 +90,56 @@ test('PHP layer direction permits contracts and blocks inward references to appl
   assert.ok(inspectPhp({ 'src/Contracts/New.php': '<?php use Modules\\Jiwonpapa\\PageBuilder\\Application\\PageBuilderService;' }, policy).length);
 });
 
+test('PHP namespace aliases resolve before enforcing layer direction', () => {
+  for (const source of [
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain;
+      use Modules\Jiwonpapa\PageBuilder as Product;
+      $value = new Product\Infrastructure\Store\ZipPageKitArchiveAdapter();`,
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain;
+      use Modules\Jiwonpapa\{PageBuilder as Product};
+      Product\Infrastructure\Store\ZipPageKitArchiveAdapter::class;`,
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain;
+      use Modules as Extension;
+      Extension\Sirsoft\Module::class;`,
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain;
+      use Modules\Jiwonpapa\PageBuilder as Product;
+      new product\infrastructure\Store\ZipPageKitArchiveAdapter();`,
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder;
+      namespace\Infrastructure\Store\ZipPageKitArchiveAdapter::class;`,
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder;
+      Infrastructure\Store\ZipPageKitArchiveAdapter::class;`,
+    String.raw`<?php new \modules\jiwonpapa\pagebuilder\infrastructure\Store\ZipPageKitArchiveAdapter();`,
+  ]) assert.ok(inspectPhp({ 'src/Domain/New.php': source }, policy)
+    .some((item) => item.rule === 'PHP-BOUNDARY'), source);
+});
+
+test('PHP alias resolution respects namespace scope, closure capture and trait usage', () => {
+  assert.deepEqual(inspectPhp({ 'src/Application/New.php': String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Application;
+    use Modules\Jiwonpapa\{PageBuilder as Product};
+    Product\Contracts\PageBuilderRepository::class;` }, policy), []);
+  for (const source of [
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain;
+      App\LocalClass::class; namespace\App\LocalClass::class;`,
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain {
+      use Modules\Jiwonpapa\PageBuilder as Product;
+      Product\Domain\Documents\PageBuilderDocument::class;
+    } namespace Other {
+      Product\Infrastructure\Store\ZipPageKitArchiveAdapter::class;
+    }`,
+    String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain;
+      $callback = function () use ($value) { return $value; };
+      class LocalClass { use LocalTrait; }
+      use Modules\Jiwonpapa\PageBuilder as Product;
+      Product\Domain\Documents\PageBuilderDocument::class;`,
+  ]) assert.deepEqual(inspectPhp({ 'src/Domain/New.php': source }, policy), [], source);
+  const source = String.raw`<?php namespace Modules\Jiwonpapa\PageBuilder\Domain {
+    $text = "{$value}";
+    use Modules\Jiwonpapa\PageBuilder as Product;
+    class LocalClass { use Product\Infrastructure\ForbiddenTrait; }
+  }`;
+  assert.ok(inspectPhp({ 'src/Domain/New.php': source }, policy).some((item) => item.rule === 'PHP-BOUNDARY'));
+});
+
 test('CSS tokens are allowed only in named owners; component color copies are rejected', () => {
   assert.deepEqual(inspectCss('resources/css/page-builder-theme.css', '.g7pb-theme { --g7pb-page-text: #123456; color: var(--g7pb-page-text); }', policy), []);
   assert.ok(inspectCss('resources/css/new.css', '.g7pb-card { --g7pb-page-text: #123456; }', policy).some((item) => item.rule === 'CSS-COLOR'));
@@ -82,6 +147,17 @@ test('CSS tokens are allowed only in named owners; component color copies are re
   assert.ok(inspectCss('resources/css/new.css', '.g7pb-card { color: rebeccapurple; }', policy).some((item) => item.rule === 'CSS-COLOR'));
   assert.deepEqual(inspectCss('resources/css/new.css', '.g7pb-card { color: var(--g7pb-red); background: url("red.svg#abc"); }', policy), []);
   assert.deepEqual(inspectCss('resources/css/new.css', '.g7pb-card { font-family: Black; animation-name: red; }', policy), []);
+});
+
+test('CSS property casing cannot bypass literal color checks or expand token ownership', () => {
+  for (const declaration of ['COLOR: red', 'Background-Color: #abcdef', 'BoRdEr: 1px solid RGB(1 2 3)']) {
+    const source = `.g7pb-card { ${declaration}; }`;
+    assert.ok(inspectCss('resources/css/new.css', source, policy).some((item) => item.rule === 'CSS-COLOR'));
+    assert.ok(inspectCss('resources/css/page-builder-theme.css', source, policy).some((item) => item.rule === 'CSS-COLOR'));
+  }
+  assert.deepEqual(inspectCss('resources/css/page-builder-theme.css', '.g7pb-theme { --G7PB-Text: #123456; COLOR: var(--G7PB-Text); }', policy), []);
+  assert.ok(inspectCss('resources/css/new.css', '.g7pb-card { --G7PB-Text: #123456; }', policy)
+    .some((item) => item.rule === 'CSS-COLOR'));
 });
 
 test('CSS escalation rules identify importance and class repetition separately', () => {

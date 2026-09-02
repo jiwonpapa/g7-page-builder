@@ -37,7 +37,7 @@ export function inspectCss(path, source, policy) {
     const token = declaration.prop.startsWith('--');
     const identity = `${context(declaration)} | ${declaration.prop}:${declaration.value}`;
     const line = declaration.source.start.line;
-    if ((token || COLOR_PROPERTIES.test(declaration.prop)) && hasLiteralColor(declaration.value)
+    if ((token || COLOR_PROPERTIES.test(declaration.prop.toLowerCase())) && hasLiteralColor(declaration.value)
       && !(token && policy.cssTokenSources.includes(path))) {
       results.push(finding('CSS-COLOR', path, line, `Use a shared semantic token for ${declaration.prop}`, identity));
     }

@@ -8,6 +8,29 @@ import re
 from tools.g7pb.planner import build_plan
 
 
+TEXT_AND_CONTROLS = replace(TEXT, titles=tuple(sorted(TEXT.titles + CONTROLS.titles)))
+EXTRACTED_EDITING_SCOPES = {
+    "blockGalleryModel.ts": {PAGE},
+    "BlockGalleryControls.tsx": {PAGE},
+    "EditorHeaderControls.tsx": {PAGE, CONTROLS, STRUCTURE_THEME},
+    "CanvasContextControls.tsx": {PAGE, TEXT_AND_CONTROLS},
+    "SelectedBlockActionBar.tsx": {PAGE, TEXT_AND_CONTROLS},
+    "useSelectedActionBarSafeZone.ts": {TEXT_AND_CONTROLS},
+    "canvasItemCommands.ts": {PAGE, TEXT},
+    "blockMotionCommands.ts": {PAGE},
+    "BlockCatalogContext.ts": {PAGE},
+    "useEditorViewport.ts": {TEXT_AND_CONTROLS},
+    "useCanvasEditingUi.ts": {PAGE, TEXT_AND_CONTROLS},
+    "usePageBuilderResources.ts": {PAGE},
+    "usePageBuilderSession.ts": {PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY},
+    "richTextModel.ts": {TEXT},
+    "richTextSelection.tsx": {TEXT},
+    "richTextCommands.ts": {TEXT},
+    "richTextFloatingLayer.tsx": {TEXT_AND_CONTROLS},
+    "richTextInlineMenu.tsx": {TEXT_AND_CONTROLS},
+}
+
+
 class BrowserRequirementsTests(unittest.TestCase):
     def test_existing_behavior_selected_without_modifying_spec(self):
         self.assertEqual(scenarios_for(["resources/js/editor/richTextEditing.tsx"]), (TEXT,))
@@ -20,7 +43,7 @@ class BrowserRequirementsTests(unittest.TestCase):
             "puckBuiltinPreviews.tsx": {PAGE, TEXT, STRUCTURE_THEME},
             "previewContent.ts": {PAGE, TEXT},
             "FullSiteCanvas.tsx": {TEMPLATE, TEXT},
-            "puckEditorContexts.ts": {TEMPLATE, text_and_controls, STRUCTURE_THEME},
+            "puckEditorContexts.ts": {text_and_controls, STRUCTURE_THEME},
         }
         with tempfile.TemporaryDirectory() as directory:
             for name, contracts in expected.items():
@@ -97,6 +120,97 @@ class BrowserRequirementsTests(unittest.TestCase):
             plan = build_plan(root, [source])
             self.assertIn("No related test for " + source + "; add/declare a focused test", plan.unresolved)
             self.assertFalse(plan.full)
+
+    def test_extracted_editing_sources_keep_exact_code_only_workflows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for name, expected in EXTRACTED_EDITING_SCOPES.items():
+                with self.subTest(source=name):
+                    selected = scenarios_for(["resources/js/editor/" + name])
+                    self.assertEqual(set(selected), expected)
+                    self.assertNotIn(PARITY.spec, {item.spec for item in selected})
+                    for scenario in selected:
+                        self.assertEqual(scenario.projects, ("desktop",))
+                        self.assertEqual(scenario.preset_prefixes, ())
+                        self.assertTrue(all(value is None for _, value in scenario.environment(Path(directory))))
+                        self.assertNotIn("ALL_PRESET_LAYOUT_GATE", " ".join(scenario.arguments()))
+                        self.assertTrue(set(scenario.titles).isdisjoint(TEMPLATE.titles))
+        # The retained facade/default rule and the actual shell owner are not
+        # widened or stripped of their existing behavior contracts.
+        self.assertEqual(scenarios_for(["resources/js/editor/richTextEditing.tsx"]), (TEXT,))
+        self.assertEqual(set(scenarios_for(["resources/js/editor/FullSiteCanvas.tsx"])), {TEMPLATE, TEXT})
+
+    def test_extracted_editing_workflows_union_without_duplicate_or_missing_titles(self):
+        sources = ["resources/js/editor/" + name for name in EXTRACTED_EDITING_SCOPES]
+        selected = scenarios_for(sources)
+        self.assertEqual(set(selected), {PAGE, TEXT_AND_CONTROLS, STRUCTURE_THEME, DOCUMENT_BOUNDARY})
+        self.assertEqual(scenarios_for([*reversed(sources), *sources]), selected)
+        self.assertEqual(scenarios_for([*sources, "resources/js/editor/PuckEditorAdapter.tsx"]), selected)
+        with_shell = {item.spec: item for item in scenarios_for([
+            *sources, "resources/js/editor/puckEditorContexts.ts", "resources/js/editor/FullSiteCanvas.tsx",
+        ])}
+        self.assertEqual(set(with_shell[PAGE.spec].titles), set(PAGE.titles + TEMPLATE.titles))
+        self.assertEqual(with_shell[TEXT.spec], TEXT_AND_CONTROLS)
+        self.assertEqual(with_shell[STRUCTURE_THEME.spec], STRUCTURE_THEME)
+        self.assertEqual(with_shell[DOCUMENT_BOUNDARY.spec], DOCUMENT_BOUNDARY)
+
+    def test_new_editing_sources_keep_transitive_units_and_product_runtime_with_unknown_base(self):
+        for name, expected in EXTRACTED_EDITING_SCOPES.items():
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = "resources/js/editor/" + name
+                facade = "resources/js/editor/" + ("richTextEditing.tsx" if name.startswith("richText") else "PuckEditorAdapter.tsx")
+                unit = "tests/Unit/existingEditorBehavior.test.tsx"
+                files = {
+                    source: "export const fixture = 1;",
+                    facade: "export { fixture } from './" + name + "';",
+                    unit: "import '../../" + facade + "';",
+                    **{scenario.spec: "import {test} from '@playwright/test';" for scenario in expected},
+                }
+                for path, content in files.items():
+                    target = root / path
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(content)
+                # A new source or unavailable baseline must not be mistaken for
+                # an import-only edit or a harness-only collection request.
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(source=name, phase=phase):
+                        plan = build_plan(root, [source], base="missing-reviewed-base", phase=phase)
+                        self.assertFalse(plan.full)
+                        gates = {gate.name: gate for gate in plan.gates}
+                        related = gates["unit:" + unit]
+                        self.assertIn(source, related.inputs)
+                        self.assertIn(facade, related.inputs)
+                        self.assertIn("typecheck", gates)
+                        self.assertTrue(plan.requirements["browser"])
+                        self.assertFalse(any(key.startswith(("content:", "browser-registration:")) for key in gates))
+                        browsers = {key: gate for key, gate in gates.items() if key.startswith("browser:")}
+                        self.assertEqual(set(browsers), {"browser:" + scenario.spec for scenario in expected})
+                        self.assertIn("browser-assets", gates)
+                        self.assertEqual(gates["browser-assets"].deferred, phase == "submission")
+                        for scenario in expected:
+                            gate = browsers["browser:" + scenario.spec]
+                            self.assertTrue(gate.runtime)
+                            self.assertEqual(gate.deferred, phase == "submission")
+                            self.assertNotIn("--list", gate.argv)
+                            self.assertIn(source, gate.inputs)
+                            self.assertEqual(gate.depends_on, ("browser-assets",))
+                            self.assertEqual(set(gate.browser_expectations), {
+                                (project, title) for project in scenario.projects for title in scenario.titles})
+                            self.assertTrue(all(value is None for _, value in gate.env))
+
+    def test_new_editing_source_missing_units_or_required_scenario_is_rejected(self):
+        for name in EXTRACTED_EDITING_SCOPES:
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = "resources/js/editor/" + name
+                target = root / source
+                target.parent.mkdir(parents=True)
+                target.write_text("export const fixture = 1;")
+                plan = build_plan(root, [source], phase="integration")
+                self.assertIn("No related test for " + source + "; add/declare a focused test", plan.unresolved)
+                for scenario in EXTRACTED_EDITING_SCOPES[name]:
+                    self.assertIn("Missing required browser scenario: " + scenario.spec, plan.unresolved)
+                self.assertFalse(plan.full)
 
     def test_document_transactions_and_shared_styles_use_code_fixtures_not_preset_sweeps(self):
         self.assertEqual(set(scenarios_for(["resources/js/editor/main.tsx"])), {PAGE, DOCUMENT_BOUNDARY})

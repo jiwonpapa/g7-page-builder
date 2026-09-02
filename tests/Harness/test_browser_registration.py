@@ -6,12 +6,12 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE
 from tools.g7pb.model import Gate, Plan
 from tools.g7pb.runner import execute
 
 ROOT = Path(__file__).resolve().parents[2]
-PC_ONLY = ("editorInteractionQuality", "editorPerformance", "editorStructureTheme", "editorDocumentBoundary", "pageBuilderLifecycle", "sitePartLifecycle", "globalSiteShellRoutes")
+PC_ONLY = ("editorInteractionQuality", "editorPerformance", "editorStructureTheme", "editorDocumentBoundary", "editorCatalogCode", "pageBuilderLifecycle", "sitePartLifecycle", "globalSiteShellRoutes")
 
 
 def registered_tests(report):
@@ -63,6 +63,22 @@ class BrowserRegistrationTests(unittest.TestCase):
         self.assertEqual(len(actual), len(titles))
         self.assertEqual({title for _, title, _ in actual}, titles)
         self.assertEqual({project for _, _, project in actual}, {"desktop"})
+
+    def test_real_catalog_spec_registers_four_code_roles_only_on_desktop(self):
+        roles = (CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE)
+        expected_titles = {
+            "catalog frames preserve selection appearance and motion across families",
+            "catalog fields and interactive previews retain edited values",
+            "catalog conversion preserves nested documents through save and reentry",
+            "catalog responsive overrides preserve inheritance and reset",
+        }
+        self.assertEqual({title for role in roles for title in role.titles}, expected_titles)
+        actual = collect(ROOT, [CATALOG_FRAME.spec], dict(CATALOG_FRAME.environment(ROOT)))
+        self.assertEqual(set(actual), {(Path(CATALOG_FRAME.spec).name, title, "desktop") for title in expected_titles})
+        self.assertEqual(len(actual), 4)
+        selected = CATALOG_FIELDS.arguments()[4:]
+        focused = collect(ROOT, selected, dict(CATALOG_FIELDS.environment(ROOT)))
+        self.assertEqual(focused, [(Path(CATALOG_FIELDS.spec).name, CATALOG_FIELDS.titles[0], "desktop")])
 
     def test_only_skip_and_missing_required_case_cannot_report_success(self):
         with tempfile.TemporaryDirectory(prefix="g7pb-browser-verdict-") as directory:

@@ -16,11 +16,11 @@ DESIGN_INPUTS = (
     "scripts/lib/designArchitecturePolicy.mjs", "scripts/lib/designArchitectureTypeScript.mjs",
     "scripts/lib/designArchitecturePhp.mjs", "scripts/lib/designArchitectureCss.mjs",
 )
-NORMATIVE_DOCS = {
-    "AGENTS.md", "docs/architecture.md", "docs/development-constitution.md",
-    "docs/productization/editing-policy.md", "docs/productization/requirements.md",
-    "docs/quality-harness.md", "docs/worktree-coordination.md",
-}
+# The guard validates the required document set; selection reads the same
+# controller-owned configuration instead of maintaining another path list.
+NORMATIVE_DOCS = frozenset(json.loads(
+    (Path(__file__).resolve().parents[2] / "config/design-architecture.json").read_text()
+)["normativeFiles"])
 EDITOR_CHECKERS = {
     "scripts/check-editor-acceptance-contract.mjs": ("scripts/lib/editorContractRegistration.mjs",),
     "scripts/check-editor-layout-parity.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorCssSources.mjs"),
@@ -142,6 +142,13 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         add("python:" + path, ["python3", "-B", "-m", "unittest", "discover", "-s", "tests/Harness", "-p", Path(path).name],
             [*python_inputs(root, path), *controller_inputs, *([cause] if cause else [])], "Changed Python module or dependency", requires,
             reusable=Path(path).name not in {"test_editor_contracts.py", "test_boundary_command.py"}, env=environment)
+    # The Node architecture regression invokes the real Python planner. Its
+    # transitive Python/config inputs must select and invalidate that check too.
+    design_python_inputs = python_inputs(root, "tools/g7pb/planner.py")
+    def design_tests():
+        add("design-architecture-tests", ["node", "--test", "tests/Harness/design-architecture.test.mjs"],
+            [*DESIGN_INPUTS, *design_python_inputs, "tests/Harness/design-architecture.test.mjs", "package-lock.json"],
+            "Architecture contract regression", ("node", "php"))
     py_tests = sorted(p.relative_to(root).as_posix() for p in (root / "tests/Harness").glob("test_*.py"))
     ts_sources, ts_tests, php_sources, php_tests, css, content = [], [], [], [], [], []
     mapping = {
@@ -174,9 +181,10 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 affected = [f"tests/Harness/test_{Path(path).stem}.py"]
             for test in affected:
                 python_test(test, path)
+            if path in design_python_inputs:
+                design_tests()
         elif path in DESIGN_INPUTS or path == "tests/Harness/design-architecture.test.mjs":
-            add("design-architecture-tests", ["node", "--test", "tests/Harness/design-architecture.test.mjs"],
-                [*DESIGN_INPUTS, "tests/Harness/design-architecture.test.mjs", "package-lock.json"], "Architecture contract regression", ("node", "php"))
+            design_tests()
         elif path in mapping:
             for name in mapping[path]:
                 python_test(f"tests/Harness/test_{name}.py", path)
@@ -271,7 +279,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         # Boundary checks read project sources; cheap static scans are not browser/full gates.
         boundary_inputs = [p.relative_to(root).as_posix() for prefix in ("src", "resources/js", "resources/css")
                            for p in (root / prefix).rglob("*") if p.is_file()]
-        add("architecture", command, [*design_targets, *(controller_file(p) for p in DESIGN_INPUTS), *boundary_inputs,
+        add("architecture", command, [*design_targets, *(controller_file(p) for p in (*DESIGN_INPUTS, *NORMATIVE_DOCS)), *boundary_inputs,
                                       controller_file("scripts/check-boundaries.sh"), controller_file("package-lock.json"), "module.php", "package-lock.json"],
             "Changed implementation or normative architecture policy", ("node", "php"))
     if css:

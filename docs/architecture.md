@@ -1,5 +1,7 @@
 # Architecture
 
+이 문서는 [개발 헌법](development-constitution.md)의 책임·의존 방향과 검증 원칙을 따릅니다. G7 Layout Editor는 기술·편집 방식의 참고 대상이며, 그 편집기·저장 엔진을 제품 의존성으로 사용하지 않습니다.
+
 ## 결론
 
 G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목록·생성은 G7 공개 admin route/layout으로 기존 관리자 외형을 사용하고, 편집 화면은 G7 Layout Editor와 분리해 Puck을 편집기 커널로 사용합니다. 기본 공개 출력은 활성 User Template의 `_user_base`를 재사용합니다. 선택한 Header·Footer 두 Site Part가 모두 정상 발행되면 공식 post-apply filter가 활성 User Template의 사용자 라우트 전체에 연결하며, 템플릿 파일·layout JSON·DB row는 수정하지 않습니다.
@@ -97,3 +99,11 @@ G7 module-owned canonical route
 - 공개 요청에서는 Puck·Node·컴파일러를 실행하지 않고 저장된 발행본만 읽습니다.
 - 동적 효과는 canonical block의 typed `motion` 계약을 PHP compiler가 `data-g7pb-motion` 속성으로 변환합니다.
 - 공개 효과 런타임은 G7 Adapter view가 self-hosted asset으로 조건부 로드하며 Domain/Application은 브라우저 구현을 알지 않습니다.
+
+## 개발과 검증 경계
+
+일반 구현은 별도 Worktree에서 `PROFILE=scoped`와 24개 이하의 정확한 파일 PATHS로 시작합니다. 제출·통합·최종확인·CI는 같은 Python 변경 검사 계획을 사용합니다. 미분류 변경은 범위 오류이며 전체검증으로 자동 확대하지 않습니다. 공유 런타임·계약 또는 RC 전체검증은 사유를 명시한 `FULL=1` 요청으로 구분합니다.
+
+Worktree 제출은 선택된 정적·단위 검사를 수행합니다. 실제 G7 연동·브라우저 및 빌드 산출물 검사는 `DEFERRED`로 표시하고 Local의 integration/runtime lease 아래에서 수행합니다. 후보 소스·환경·실제 dist 지문이 일치한 뒤 관련 자산 검사와 브라우저 동작을 확인해야 통합할 수 있습니다. `DEFERRED`는 제품 동작 성공이 아닙니다.
+
+기존 완성 블록의 내부 구조 편집과 중첩 삽입·이동·삭제는 목표 요구로 유지합니다. 문서·검사 기준의 정비가 이 기능의 구현이나 사용자 화면 검증을 완료했다는 뜻은 아닙니다.

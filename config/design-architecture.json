@@ -1,7 +1,7 @@
 {
   "version": 1,
   "constitution": "docs/development-constitution.md",
-  "normativeFiles": ["AGENTS.md", "docs/development-constitution.md", "docs/productization/editing-policy.md"],
+  "normativeFiles": ["AGENTS.md", "docs/architecture.md", "docs/development-constitution.md", "docs/productization/editing-policy.md", "docs/productization/requirements.md", "docs/quality-harness.md", "docs/worktree-coordination.md"],
   "sourceRoots": ["resources/js", "resources/css", "src"],
   "rules": ["TS-BOUNDARY", "TS-UNSAFE", "G7-INTERNAL", "PHP-BOUNDARY", "SOURCE-SIZE", "CSS-COLOR", "CSS-IMPORTANT", "CSS-SPECIFICITY"],
   "sourceSize": { "ts": 800, "tsx": 800, "js": 800, "php": 800, "css": 1000 },

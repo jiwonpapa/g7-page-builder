@@ -4,6 +4,11 @@ import { isAbsolute, join, posix } from 'node:path';
 
 export const RULE_FILE = 'config/design-architecture.json';
 const REQUIRED_RULES = ['TS-BOUNDARY', 'TS-UNSAFE', 'G7-INTERNAL', 'PHP-BOUNDARY', 'SOURCE-SIZE', 'CSS-COLOR', 'CSS-IMPORTANT', 'CSS-SPECIFICITY'];
+const REQUIRED_NORMATIVE_FILES = [
+  'AGENTS.md', 'docs/architecture.md', 'docs/development-constitution.md',
+  'docs/productization/editing-policy.md', 'docs/productization/requirements.md',
+  'docs/quality-harness.md', 'docs/worktree-coordination.md',
+];
 export const IMPLEMENTATION_FILES = [
   'scripts/check-design-architecture.mjs',
   ...['Policy', 'TypeScript', 'Php', 'Css'].map((name) => `scripts/lib/designArchitecture${name}.mjs`),
@@ -44,6 +49,9 @@ export function readPolicy(root) {
   const policy = JSON.parse(readFileSync(join(root, RULE_FILE), 'utf8'));
   if (policy.version !== 1 || !Array.isArray(policy.rules)
     || policy.rules.length !== REQUIRED_RULES.length || REQUIRED_RULES.some((rule) => !policy.rules.includes(rule))) throw new Error('Unsupported or disabled design architecture rules');
+  if (!Array.isArray(policy.normativeFiles) || policy.normativeFiles.length !== REQUIRED_NORMATIVE_FILES.length
+    || REQUIRED_NORMATIVE_FILES.some((path) => !policy.normativeFiles.includes(path))) throw new Error('Required normative documents cannot be omitted or duplicated');
+  if (policy.constitution !== 'docs/development-constitution.md') throw new Error('The development constitution cannot be redirected');
   if (['resources/js', 'resources/css', 'src'].some((path) => !policy.sourceRoots.includes(path))) throw new Error('Product source roots cannot be silently excluded');
   if (['resources/js/documents/', 'resources/js/api/', 'resources/js/public/'].some((path) => !policy.typescriptLayers.some((layer) => layer.from === path))) throw new Error('A protected TypeScript layer is missing');
   for (const path of [policy.constitution, policy.debtFile, ...policy.normativeFiles, ...policy.sourceRoots, ...policy.cssTokenSources]) safePath(path);

@@ -154,22 +154,15 @@ function validateWiring(errors, root, packageJson) {
   if (scripts['check:block-product-quality'] !== 'node scripts/check-block-product-quality.mjs') {
     errors.push('package.json에 고정된 check:block-product-quality 명령이 필요합니다.');
   }
-  for (const key of ['check', 'test:unit', 'pretest:e2e:product']) {
-    const commands = (scripts[key] ?? '').split(' && ');
-    const technical = `npm run check:block-product-quality -- --technical${key === 'test:unit' ? '' : ' --verify-render-source'}`;
-    if (!commands.includes(technical) || !commands.includes('npm run check:block-quality-evidence')) {
-      errors.push(`${key}가 기술 품질과 v2 증거 무결성 게이트를 함께 실행해야 합니다.`);
-    }
+  if (scripts['check:block-quality-evidence'] !== 'node scripts/check-block-quality-evidence.mjs') {
+    errors.push('package.json에 고정된 check:block-quality-evidence 명령이 필요합니다.');
   }
+  // Gate selection/order belongs to the Python controller's contract tests.
+  // Independent unit runs and receipt-backed release wrappers must not embed
+  // another full validation chain merely to satisfy this product checker.
   const generator = readFileSync(resolve(root, 'scripts/generate-block-thumbnails.mjs'), 'utf8');
   if (!/check-block-product-quality\.mjs[\s\S]*--candidate[\s\S]*--verify-render-source/.test(generator)) {
     errors.push('블록 썸네일 생성 직후 candidate 제품 품질 게이트를 실행해야 합니다.');
-  }
-  for (const scriptPath of ['scripts/release-package.sh', 'scripts/deploy-staging.sh']) {
-    const source = readFileSync(resolve(root, scriptPath), 'utf8');
-    if (!/npm run check:block-product-quality -- --technical --verify-render-source/.test(source)) {
-      errors.push(`${scriptPath}가 자동 기술 블록 품질을 재검증해야 합니다.`);
-    }
   }
 }
 

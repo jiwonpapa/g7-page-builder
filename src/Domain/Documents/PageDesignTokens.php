@@ -45,6 +45,34 @@ final readonly class PageDesignTokens
     /** @param array<mixed> $values */
     public static function fromArray(array $values): self
     {
+        return new self(self::validatedValues($values, self::OPTIONS, self::CUSTOM_COLOR_DEFAULTS));
+    }
+
+    /**
+     * Recover historical values without changing the stored document. Only the
+     * recently introduced color checks differ; writes and compilation revalidate.
+     *
+     * @param  array<mixed>  $values
+     */
+    public static function fromStoredArray(array $values): self
+    {
+        return new self(self::validatedValues($values, array_diff_key(self::OPTIONS, ['design.color_mode' => true]), []));
+    }
+
+    /** @return array<string, string|int|float|bool|null> */
+    public function toArray(): array
+    {
+        return $this->values;
+    }
+
+    /**
+     * @param  array<mixed>  $values
+     * @param  array<string, list<string>>  $options
+     * @param  array<string, string>  $customColors
+     * @return array<string, string|int|float|bool|null>
+     */
+    private static function validatedValues(array $values, array $options, array $customColors): array
+    {
         $validated = [];
         foreach ($values as $name => $value) {
             if (! is_string($name) || (! is_scalar($value) && $value !== null)) {
@@ -55,18 +83,18 @@ final readonly class PageDesignTokens
             if ($name === 'design.color_mode' && $value === null) {
                 continue;
             }
-            if (isset(self::OPTIONS[$name])
-                && (! is_string($value) || ! in_array($value, self::OPTIONS[$name], true))) {
+            if (isset($options[$name])
+                && (! is_string($value) || ! in_array($value, $options[$name], true))) {
                 throw new \InvalidArgumentException("Page design token {$name} is invalid.");
             }
-            if (isset(self::CUSTOM_COLOR_DEFAULTS[$name])
+            if (isset($customColors[$name])
                 && $value !== null
                 && (! is_string($value) || preg_match('/^#[0-9a-f]{6}$/iD', $value) !== 1)) {
                 throw new \InvalidArgumentException("Page design token {$name} is invalid.");
             }
         }
 
-        return new self($validated);
+        return $validated;
     }
 
     /** @return array<string, string> */

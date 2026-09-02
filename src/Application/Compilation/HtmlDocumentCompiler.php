@@ -197,6 +197,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('The page document schema is not supported.');
         }
 
+        try {
+            $design = PageDesignTokens::fromArray($document->tokens);
+        } catch (\InvalidArgumentException $exception) {
+            throw new DocumentCompileException($exception->getMessage());
+        }
+
         $heroCount = 0;
         $headingAnchors = [];
         $sections = [];
@@ -217,7 +223,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             fn (string $url): string => '<link rel="stylesheet" href="'.$this->escapeAttribute($url).'">',
             array_keys($styleUrls),
         );
-        $design = PageDesignTokens::fromArray($document->tokens);
         $customPaletteStyle = $this->theme->customPaletteDeclarations($design);
         $body = '<div class="'.$this->theme->className($design).'"'.($customPaletteStyle === '' ? '' : ' style="'.$this->escapeAttribute($customPaletteStyle).'"').'>'."\n"
             .implode("\n", $sections)."\n"

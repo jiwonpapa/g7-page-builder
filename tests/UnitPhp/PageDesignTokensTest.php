@@ -67,6 +67,41 @@ final class PageDesignTokensTest extends TestCase
         PageDesignTokens::fromArray(['vendor.option' => ['unexpected' => true]]);
     }
 
+    public function test_stored_color_values_remain_exact_and_cannot_change_the_immutable_value_object(): void
+    {
+        $values = ['design.color_mode' => 'sepia', 'vendor.option' => false];
+        foreach (array_keys(PageDesignTokens::CUSTOM_COLOR_DEFAULTS) as $name) {
+            $values[$name] = 'historical-invalid-color';
+        }
+        $stored = PageDesignTokens::fromStoredArray($values);
+        self::assertSame($values, $stored->toArray());
+        $copy = $stored->toArray();
+        $copy['design.color_mode'] = 'light';
+        self::assertSame($values, $stored->toArray());
+
+        $this->expectException(\InvalidArgumentException::class);
+        PageDesignTokens::fromArray($stored->toArray());
+    }
+
+    public function test_stored_recovery_does_not_relax_existing_presets_or_scalar_values(): void
+    {
+        $invalid = [
+            ['design.palette' => 'rainbow'], ['design.font' => 'arbitrary'],
+            ['design.radius' => 'arbitrary'], ['design.width' => 'arbitrary'],
+            ['design.scale' => 'arbitrary'], ['design.palette' => null],
+            ['design.color_mode' => []], ['design.custom_color_1_light' => []],
+            ['vendor.option' => []], [0 => 'value'],
+        ];
+        foreach ($invalid as $values) {
+            try {
+                PageDesignTokens::fromStoredArray($values);
+                self::fail('Stored recovery accepted an invalid existing contract.');
+            } catch (\InvalidArgumentException) {
+                self::assertTrue(true);
+            }
+        }
+    }
+
     /** @param array<string, mixed> $tokens */
     private function document(array $tokens): PageBuilderDocument
     {

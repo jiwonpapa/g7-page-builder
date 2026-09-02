@@ -7,8 +7,11 @@ namespace Modules\Jiwonpapa\PageBuilder\Domain\Documents;
  */
 final readonly class PageBuilderDocument
 {
+    /** @var array<string, string|int|float|bool|null> */
+    public array $tokens;
+
     /**
-     * @param  array<string, string|int|float|bool|null>  $tokens
+     * @param  array<string, string|int|float|bool|null>|PageDesignTokens  $tokens
      * @param  array<int, array<string, mixed>>  $blocks
      */
     public function __construct(
@@ -16,7 +19,7 @@ final readonly class PageBuilderDocument
         public string $slug,
         public string $mode,
         public string $locale,
-        public array $tokens,
+        array|PageDesignTokens $tokens,
         public array $blocks,
         public string $schemaVersion = 'g7-page-builder/v1',
         public string $shellMode = 'template',
@@ -54,7 +57,7 @@ final readonly class PageBuilderDocument
             throw new \InvalidArgumentException('Page document has too many blocks.');
         }
 
-        PageDesignTokens::fromArray($this->tokens);
+        $this->tokens = ($tokens instanceof PageDesignTokens ? $tokens : PageDesignTokens::fromArray($tokens))->toArray();
 
         if ($this->schemaVersion === 'g7-page-builder/v2') {
             self::layoutPolicy()->validate([
@@ -76,6 +79,23 @@ final readonly class PageBuilderDocument
      */
     public static function fromArray(array $data): self
     {
+        return self::fromPayload($data);
+    }
+
+    /** @param array<string, mixed> $data */
+    public static function fromStoredArray(array $data): self
+    {
+        $tokens = $data['tokens'] ?? [];
+        if (! is_array($tokens)) {
+            throw new \InvalidArgumentException('Page tokens and blocks must be arrays.');
+        }
+
+        return self::fromPayload($data, PageDesignTokens::fromStoredArray($tokens));
+    }
+
+    /** @param array<string, mixed> $data */
+    private static function fromPayload(array $data, ?PageDesignTokens $storedTokens = null): self
+    {
         $tokens = $data['tokens'] ?? [];
         $blocks = $data['blocks'] ?? null;
 
@@ -94,7 +114,7 @@ final readonly class PageBuilderDocument
             slug: self::requiredString($data, 'slug'),
             mode: self::requiredString($data, 'mode'),
             locale: self::requiredString($data, 'locale'),
-            tokens: $tokens,
+            tokens: $storedTokens ?? $tokens,
             blocks: array_values($blocks),
             schemaVersion: self::requiredString($data, 'schema_version'),
             shellMode: is_string($data['shell_mode'] ?? null) ? $data['shell_mode'] : 'template',

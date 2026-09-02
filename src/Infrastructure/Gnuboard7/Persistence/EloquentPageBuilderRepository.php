@@ -9,6 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDesignTokens;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\DocumentNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
@@ -714,6 +715,8 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         int $revision,
         ?int $actorId,
     ): void {
+        // A recovered historical document is readable, but is never a write exemption.
+        PageDesignTokens::fromArray($document->tokens);
         RevisionRecord::query()->create([
             'id' => $this->uuidV4(),
             'document_id' => $document->documentId,
@@ -734,7 +737,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             throw new \RuntimeException('Stored page document JSON is invalid.');
         }
 
-        return PageBuilderDocument::fromArray($data);
+        return PageBuilderDocument::fromStoredArray($data);
     }
 
     private function renderedPage(DocumentRecord $record, PublicationRecord $publication): RenderedPage

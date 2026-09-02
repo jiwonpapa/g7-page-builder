@@ -1,8 +1,8 @@
 """Reviewed source-to-behavior mapping; selection is not browser acceptance.
 
-Each catalog file selects its declared preset families. Shared rendering helpers
-use representative contracts, with exhaustive output covered by PHP/unit tests;
-this must never silently expand to every Page Kit and every preset.
+Catalog implementation changes select synthetic role contracts. Content changes
+retain their separate bounded policy; code selection must never discover every
+Page Kit or preset through the catalog manifest.
 """
 from dataclasses import dataclass, replace
 from fnmatch import fnmatchcase
@@ -71,16 +71,42 @@ MANAGER_STORE = BrowserScenario("tests/E2E/managerCodeContracts.spec.ts", titles
 MANAGER_INBOX = replace(MANAGER_STORE, titles=(
     "keeps synthetic inquiry actions bound to their pending item",))
 MOBILE_NAV = BrowserScenario("tests/E2E/mobileNavigationQuality.spec.ts")
+CATALOG_FRAME = BrowserScenario("tests/E2E/editorCatalogCode.spec.ts", titles=(
+    "catalog frames preserve selection appearance and motion across families",))
+CATALOG_FIELDS = replace(CATALOG_FRAME, titles=(
+    "catalog fields and interactive previews retain edited values",))
+CATALOG_CODEC = replace(CATALOG_FRAME, titles=(
+    "catalog conversion preserves nested documents through save and reentry",))
+CATALOG_RESPONSIVE = replace(CATALOG_FRAME, titles=(
+    "catalog responsive overrides preserve inheritance and reset",))
 
-# These groups follow the components declared by each catalog module. All its
-# variants remain covered; unrelated Page Kits and language scenarios do not run.
-CATALOG_PREFIXES = {
-    "foundationCatalogBlocks.tsx": ("heading", "rich-text", "image", "buttons", "image-text", "icon-list"),
-    "phase2CatalogBlocks.tsx": ("testimonials", "faq", "process", "tabs", "comparison", "articles", "video"),
-    "phase3CatalogBlocks.tsx": ("logo-carousel", "testimonial-slider", "events", "downloads", "g7-archive", "g7-showcase"),
-    "phase4CatalogBlocks.tsx": ("g7-post-detail", "g7-product-detail"),
-    "productionCatalogBlocks.tsx": ("divider", "blockquote", "notice", "card-grid", "breadcrumbs", "anchor-menu", "social-links", "image-carousel"),
-    "catalogBlocks.tsx": ("hero-split", "hero-slider", "logo-cloud", "stats", "pricing", "team", "gallery", "bar-chart", "g7-posts", "g7-products", "inquiry", "map"),
+# Exact reviewed owners for K1-K5. Existing mixed modules retain all three roles
+# until their data/codec is extracted. No filename prefix invents a new exemption.
+CATALOG_CODE_SCOPES = {
+    **{"resources/js/editor/" + name: (CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC) for name in (
+        "catalogBlocks.tsx", "foundationCatalogBlocks.tsx", "phase2CatalogBlocks.tsx",
+        "phase3CatalogBlocks.tsx", "phase4CatalogBlocks.tsx", "productionCatalogBlocks.tsx",
+    )},
+    "resources/js/editor/CatalogBlockFrame.tsx": (CATALOG_FRAME, TEXT, CONTROLS),
+    **{"resources/js/editor/" + name: (CATALOG_CODEC,) for name in (
+        "foundationCatalogData.ts", "foundationCatalogCodec.ts", "phase2CatalogData.ts", "phase2CatalogCodec.ts",
+        "phase3CatalogData.ts", "phase3CatalogCodec.ts", "phase4CatalogData.ts", "phase4CatalogCodec.ts",
+        "productionCatalogData.ts", "productionCatalogCodec.ts", "catalogData.ts", "catalogCodec.ts",
+        "catalogEditorTypes.ts",
+    )},
+    **{"resources/js/editor/" + name: (CATALOG_FRAME, CATALOG_CODEC) for name in (
+        "catalogAppearance.ts", "blockMotionData.ts", "elementAppearanceData.ts",
+    )},
+    "resources/js/editor/blockMotion.tsx": (PAGE, CATALOG_FRAME, CATALOG_CODEC),
+    "resources/js/editor/canvasEditingContract.ts": (TEXT, CONTROLS, CATALOG_FRAME, CATALOG_CODEC),
+    "resources/js/editor/catalogPreviews.tsx": (CATALOG_FRAME, CATALOG_FIELDS, TEXT),
+    "resources/js/editor/catalogFields.tsx": (CATALOG_FIELDS, TEXT),
+    "resources/js/editor/CatalogGalleryThumbnail.tsx": (PAGE,),
+    "resources/js/editor/puckBlockCodec.ts": (PAGE, TEXT, STRUCTURE_THEME, CATALOG_CODEC),
+    "resources/js/editor/responsiveBlockData.ts": (CATALOG_CODEC, CATALOG_RESPONSIVE),
+    "resources/js/editor/responsiveBlockStyle.tsx": (CATALOG_CODEC, CATALOG_RESPONSIVE),
+    "resources/js/blocks/externalEditorRegistryData.ts": (PAGE, CATALOG_CODEC),
+    "resources/js/blocks/runtimeRegistry.ts": (PAGE, CATALOG_CODEC),
 }
 
 # Most-specific source rules win. Adding a scenario requires a real registered
@@ -130,7 +156,7 @@ RULES = (
     (("resources/js/editor/SectionPatternControls.tsx", "resources/js/editor/EditorPortal.tsx"), (PAGE, STRUCTURE_THEME)),
     (("resources/js/editor/pageDesignTokens.ts", "src/Domain/Documents/PageDesignTokens.php", "src/Application/Compilation/DocumentThemeCompiler.php"), (STRUCTURE_THEME, PARITY)),
     (("resources/js/editor/blockAppearance.ts",), (STRUCTURE_THEME, TEXT)),
-    (("resources/js/editor/responsiveBlockStyle.tsx", "src/Application/Compilation/ElementAppearanceCompiler.php"), (PARITY,)),
+    (("src/Application/Compilation/ElementAppearanceCompiler.php",), (PARITY,)),
     (("src/Application/Compilation/RichTextSanitizer.php",), (TEXT,)),
     (("src/Application/Compilation/CompilationUrlPolicy.php",), (PAGE,)),
     (("resources/js/editor/*SitePart*", "resources/js/editor/sitePart*", "resources/js/editor/useSitePart*", "src/*/SitePart*", "src/Domain/Site/*", "src/Application/Compilation/SitePartHtmlCompiler.php"), (SITE_PART,)),
@@ -139,7 +165,7 @@ RULES = (
     (("resources/js/public/*", "resources/css/page-effects*"), (PUBLIC,)),
     (("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css"), (STRUCTURE_THEME,)),
     (("resources/js/store/*", "src/Application/Store/*", "src/Domain/Store/*", "src/Infrastructure/Store/*"), (STORE,)),
-    (("resources/js/editor/puckBlockCodec.ts", "resources/js/editor/puckDocumentAdapter.ts"), (PAGE, TEXT, STRUCTURE_THEME)),
+    (("resources/js/editor/puckDocumentAdapter.ts",), (PAGE, TEXT, STRUCTURE_THEME)),
     (("resources/css/page-builder-editor*",), (CONTROLS, STRUCTURE_THEME)),
     (("resources/css/page-builder-site-part*",), (SITE_PART,)),
     (("resources/css/page-builder-core.css",), (STRUCTURE_THEME,)),
@@ -153,9 +179,9 @@ RULES = (
 def scenarios_for(paths):
     selected = set()
     for path in paths:
-        catalog = CATALOG_PREFIXES.get(Path(path).name) if path.startswith("resources/js/editor/") else None
+        catalog = CATALOG_CODE_SCOPES.get(path)
         if catalog:
-            selected.add(replace(PARITY, preset_prefixes=catalog))
+            selected.update(catalog)
             continue
         for patterns, scenarios in RULES:
             if any(fnmatchcase(path, pattern) for pattern in patterns):

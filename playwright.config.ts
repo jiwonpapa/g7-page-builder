@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PC_ONLY_EDITOR_TESTS = /(?:editorInteractionQuality|editorPerformance|editorStructureTheme|editorDocumentBoundary|pageBuilderLifecycle|sitePartLifecycle|globalSiteShellRoutes)\.spec\.ts/;
+const PC_ONLY_EDITOR_TESTS = /(?:editorInteractionQuality|editorPerformance|editorStructureTheme|editorDocumentBoundary|editorCatalogCode|pageBuilderLifecycle|sitePartLifecycle|globalSiteShellRoutes)\.spec\.ts/;
 
 export default defineConfig({
   testDir: './tests/E2E',

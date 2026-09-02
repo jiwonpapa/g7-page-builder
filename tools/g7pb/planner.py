@@ -32,8 +32,23 @@ EDITOR_SOURCE_GRAPH = "scripts/lib/editorSourceGraph.mjs"
 BROWSER_HELPER_SPECS = {
     "tests/E2E/support/richTextInput.ts": (
         "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts",
+        "tests/E2E/editorCatalogCode.spec.ts",
     ),
 }
+BROWSER_CONSUMER_TEST = "tests/Harness/test_planner.py"
+
+
+def browser_consumer_inputs(root):
+    """Inputs read by the helper registration audit, including unregistered specs."""
+    inputs, reusable = set(), True
+    for spec in sorted((root / "tests/E2E").rglob("*")):
+        if not spec.is_file() or not spec.name.endswith((".spec.ts", ".spec.tsx")):
+            continue
+        path = spec.relative_to(root).as_posix()
+        graph = source_inputs(root, path, runtime=False)
+        inputs.update((path, *graph.files))
+        reusable = reusable and graph.reusable
+    return tuple(sorted(inputs)), reusable
 
 
 def git(root, *args):
@@ -134,6 +149,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     controller_root = Path(__file__).resolve().parents[2]
     plan = Plan(sorted(set(paths)), full=full, phase=phase)
     gates = {}
+    consumer_graph = None
+    def consumer_inputs():
+        nonlocal consumer_graph
+        if consumer_graph is None:
+            consumer_graph = browser_consumer_inputs(root)
+        return consumer_graph
     def add(name, argv, inputs, reason, requires=(), runtime=False, reusable=True, env=(), execution="runtime", depends_on=(), browser_expectations=()):
         prior = gates.get(name)
         inputs = set(inputs) | (set(prior.inputs) if prior else set())
@@ -145,6 +166,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             return
         requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py", "test_type_import_changes.py"} else ()
         environment, controller_inputs, reusable = (), [], True
+        if path == BROWSER_CONSUMER_TEST:
+            files, reusable = consumer_inputs()
+            controller_inputs.extend(files)
         if Path(path).name == "test_type_import_changes.py":
             controller_inputs.append("package-lock.json")
         if Path(path).name == "test_site_part_fixture.py":
@@ -234,6 +258,13 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             if file.exists():
                 add("harness:" + path, ["bash", path], [path, "scripts/coord-harness.sh", *python_inputs(root, "tools/g7pb/coord.py")], "Changed harness regression")
         elif path.startswith("tests/E2E/"):
+            # A new spec can become a helper consumer without touching the
+            # dispatch map. Recheck that map when its actual input graph changes.
+            # Minimal isolated planner fixtures need not declare this repository
+            # audit; deleting the real test is handled by the missing-test gate.
+            if BROWSER_CONSUMER_TEST in py_tests and (
+                    path.endswith((".spec.ts", ".spec.tsx")) or path in consumer_inputs()[0]):
+                python_test(BROWSER_CONSUMER_TEST, path)
             selected_specs = SITE_PART_SPECS if path in SITE_PART_HELPERS else BROWSER_HELPER_SPECS.get(path, ())
             if path.endswith((".spec.ts", ".spec.tsx")):
                 selected_specs = (path,)

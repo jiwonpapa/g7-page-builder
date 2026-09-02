@@ -2,10 +2,12 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_PREFIXES, scenarios_for
-import json
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, scenarios_for
 import re
+import subprocess
 from tools.g7pb.planner import build_plan
+from tools.g7pb.model import Plan
+from tools.g7pb.runner import digest_gate, execute
 
 
 TEXT_AND_CONTROLS = replace(TEXT, titles=tuple(sorted(TEXT.titles + CONTROLS.titles)))
@@ -37,6 +39,42 @@ EXTRACTED_MANAGER_SCOPES = {
     "useManagerBlockPacks.ts": MANAGER_STORE,
     "ManagerBlockPacksDialog.tsx": MANAGER_STORE,
     "ManagerInboxDialog.tsx": MANAGER_INBOX,
+}
+
+
+def catalog_roles(*roles):
+    return replace(CATALOG_FRAME, titles=tuple(sorted({title for role in roles for title in role.titles})))
+
+
+CATALOG_MIXED = catalog_roles(CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC)
+CATALOG_STYLE = catalog_roles(CATALOG_FRAME, CATALOG_CODEC)
+CATALOG_BREAKPOINTS = catalog_roles(CATALOG_CODEC, CATALOG_RESPONSIVE)
+# Independent reviewed ownership list: a renamed/new source must not silently
+# inherit a prefix-based exception or lose its corresponding code contract.
+EXTRACTED_CATALOG_SCOPES = {
+    **{"resources/js/editor/" + name: {CATALOG_MIXED} for name in (
+        "catalogBlocks.tsx", "foundationCatalogBlocks.tsx", "phase2CatalogBlocks.tsx",
+        "phase3CatalogBlocks.tsx", "phase4CatalogBlocks.tsx", "productionCatalogBlocks.tsx",
+    )},
+    **{"resources/js/editor/" + name: {CATALOG_CODEC} for name in (
+        "foundationCatalogData.ts", "foundationCatalogCodec.ts", "phase2CatalogData.ts", "phase2CatalogCodec.ts",
+        "phase3CatalogData.ts", "phase3CatalogCodec.ts", "phase4CatalogData.ts", "phase4CatalogCodec.ts",
+        "productionCatalogData.ts", "productionCatalogCodec.ts", "catalogData.ts", "catalogCodec.ts", "catalogEditorTypes.ts",
+    )},
+    **{"resources/js/editor/" + name: {CATALOG_STYLE} for name in (
+        "catalogAppearance.ts", "blockMotionData.ts", "elementAppearanceData.ts",
+    )},
+    "resources/js/editor/CatalogBlockFrame.tsx": {CATALOG_FRAME, TEXT_AND_CONTROLS},
+    "resources/js/editor/blockMotion.tsx": {PAGE, CATALOG_STYLE},
+    "resources/js/editor/canvasEditingContract.ts": {TEXT_AND_CONTROLS, CATALOG_STYLE},
+    "resources/js/editor/catalogPreviews.tsx": {catalog_roles(CATALOG_FRAME, CATALOG_FIELDS), TEXT},
+    "resources/js/editor/catalogFields.tsx": {CATALOG_FIELDS, TEXT},
+    "resources/js/editor/CatalogGalleryThumbnail.tsx": {PAGE},
+    "resources/js/editor/puckBlockCodec.ts": {PAGE, TEXT, STRUCTURE_THEME, CATALOG_CODEC},
+    "resources/js/editor/responsiveBlockData.ts": {CATALOG_BREAKPOINTS},
+    "resources/js/editor/responsiveBlockStyle.tsx": {CATALOG_BREAKPOINTS},
+    "resources/js/blocks/externalEditorRegistryData.ts": {PAGE, CATALOG_CODEC},
+    "resources/js/blocks/runtimeRegistry.ts": {PAGE, CATALOG_CODEC},
 }
 
 
@@ -321,21 +359,17 @@ class BrowserRequirementsTests(unittest.TestCase):
                     self.assertIsNone(environment["G7PB_PAGE_KIT_IDS"])
                     self.assertTrue(all(value is None for value in environment.values()))
 
-    def test_block_appearance_scope_keeps_other_style_parity_contracts(self):
-        for path in ("resources/js/editor/responsiveBlockStyle.tsx",
-                     "src/Application/Compilation/ElementAppearanceCompiler.php"):
-            with self.subTest(source=path):
-                self.assertEqual(scenarios_for([path]), (PARITY,))
+    def test_responsive_code_scope_keeps_the_separate_php_parity_contract(self):
+        self.assertEqual(scenarios_for(["resources/js/editor/responsiveBlockStyle.tsx"]), (CATALOG_BREAKPOINTS,))
+        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (PARITY,))
 
     def test_sources_deduplicate_workflows_and_do_not_select_unrelated_store(self):
         self.assertEqual(scenarios_for(["resources/js/editor/fontSize.ts", "resources/js/editor/richTextEditing.tsx"]), (TEXT,))
         self.assertEqual(scenarios_for(["src/Application/Compilation/SitePartHtmlCompiler.php"]), (SITE_PART,))
         self.assertEqual(scenarios_for(["README.md", "tools/g7pb/planner.py"]), ())
 
-    def test_layout_rendering_uses_real_parity_scenario(self):
-        catalog = scenarios_for(["resources/js/editor/catalogBlocks.tsx"])[0]
-        self.assertEqual(catalog.spec, PARITY.spec)
-        self.assertEqual(catalog.preset_prefixes, CATALOG_PREFIXES["catalogBlocks.tsx"])
+    def test_layout_and_catalog_keep_separate_real_code_scenarios(self):
+        self.assertEqual(scenarios_for(["resources/js/editor/catalogBlocks.tsx"]), (CATALOG_MIXED,))
         self.assertEqual(set(scenarios_for(["resources/js/editor/layoutCatalogBlocks.tsx"])), {NESTED, STRUCTURE_THEME})
 
     def test_missing_required_scenario_does_not_silently_pass(self):
@@ -424,19 +458,195 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertIsNone(environment["G7PB_PARITY_CANDIDATE_DIST"])
         self.assertFalse(re.search(PARITY.arguments()[-1], "PAGE_KIT_LAYOUT_GATE: unrelated: editor/preview layout"))
 
-    def test_each_catalog_selects_only_declared_families_and_unions_without_duplicates(self):
-        root = Path(__file__).resolve().parents[2]
-        manifest = json.loads((root / "resources/block-packs/builtin-core/manifest.json").read_text())
-        for name, prefixes in CATALOG_PREFIXES.items():
-            with self.subTest(catalog=name):
-                scenario = scenarios_for(["resources/js/editor/" + name])[0]
-                actual = set(dict(scenario.environment(root))["G7PB_PRESET_IDS"].split(","))
-                expected = {p["preset_id"] for p in manifest["presets"] if p["preset_id"].split(".")[0] in prefixes}
-                self.assertEqual(actual, expected)
-                self.assertLess(len(actual), len(manifest["presets"]))
+    def test_catalog_owners_select_exact_roles_without_reading_presets(self):
+        self.assertEqual(set(CATALOG_CODE_SCOPES), set(EXTRACTED_CATALOG_SCOPES))
+        with tempfile.TemporaryDirectory() as directory:
+            for source, expected in EXTRACTED_CATALOG_SCOPES.items():
+                with self.subTest(source=source):
+                    actual = scenarios_for([source])
+                    self.assertEqual(set(actual), expected)
+                    self.assertTrue({item.spec for item in actual}.isdisjoint({PARITY.spec, STORE.spec, MANAGER_STORE.spec}))
+                    for scenario in actual:
+                        self.assertEqual(scenario.projects, ("desktop",))
+                        self.assertEqual(scenario.preset_prefixes, ())
+                        self.assertTrue(all(value is None for _, value in scenario.environment(Path(directory))))
+                        self.assertNotIn("ALL_PRESET_LAYOUT_GATE", " ".join(scenario.arguments()))
+        for unknown in ("resources/js/editor/catalogCodecExtra.ts", "resources/js/editor/phase2CatalogDataExtra.ts",
+                        "resources/js/blocks/externalEditorRegistryDataExtra.ts"):
+            self.assertEqual(scenarios_for([unknown]), (PAGE,))
+
+    def test_catalog_role_union_deduplicates_without_removing_existing_workflows(self):
+        sources = list(EXTRACTED_CATALOG_SCOPES)
+        expected = {PAGE, TEXT_AND_CONTROLS, STRUCTURE_THEME,
+                    catalog_roles(CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE)}
+        self.assertEqual(set(scenarios_for(sources)), expected)
+        self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))
         selected = scenarios_for(["resources/js/editor/richTextEditing.tsx", "resources/js/editor/canvasEditingContract.ts"])
-        self.assertEqual(len(selected), 1)
-        self.assertEqual(set(selected[0].titles), set(TEXT.titles + CONTROLS.titles))
+        self.assertEqual(set(selected), {TEXT_AND_CONTROLS, CATALOG_STYLE})
+
+    def test_catalog_owners_keep_units_typecheck_and_required_runtime_roles(self):
+        for source, expected in EXTRACTED_CATALOG_SCOPES.items():
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                facade = "resources/js/editor/catalogFacade.ts"
+                unit = "tests/Unit/catalogBehavior.test.ts"
+                # Include a transitive consumer: changing a leaf must select
+                # its established unit even when filenames do not correspond.
+                relative = "../blocks/" if "/blocks/" in source else "./"
+                files = {
+                    source: "export const fixture = 1;",
+                    facade: "export { fixture } from '" + relative + Path(source).name + "';",
+                    unit: "import '../../resources/js/editor/catalogFacade';",
+                    **{scenario.spec: "import {test} from '@playwright/test';" for scenario in expected},
+                }
+                for name, content in files.items():
+                    target = root / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(content)
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(source=source, phase=phase):
+                        plan = build_plan(root, [source], base="missing-reviewed-base", phase=phase)
+                        self.assertFalse(plan.full)
+                        self.assertEqual(plan.unresolved, [])
+                        gates = {gate.name: gate for gate in plan.gates}
+                        self.assertIn(source, gates["unit:" + unit].inputs)
+                        self.assertIn(facade, gates["unit:" + unit].inputs)
+                        self.assertIn("typecheck", gates)
+                        self.assertFalse(any(name.startswith(("content:", "browser-registration:")) for name in gates))
+                        self.assertEqual({name for name in gates if name.startswith("browser:")},
+                                         {"browser:" + scenario.spec for scenario in expected})
+                        for scenario in expected:
+                            gate = gates["browser:" + scenario.spec]
+                            self.assertTrue(gate.runtime)
+                            self.assertEqual(gate.deferred, phase == "submission")
+                            self.assertEqual(gate.depends_on, ("browser-assets",))
+                            self.assertIn(source, gate.inputs)
+                            self.assertEqual(set(gate.browser_expectations), {("desktop", title) for title in scenario.titles})
+                            self.assertTrue(all(value is None for _, value in gate.env))
+
+    def test_catalog_spec_only_change_collects_and_missing_spec_blocks_product_proof(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = "resources/js/editor/foundationCatalogCodec.ts"
+            files = {
+                source: "export const fixture = 1;",
+                "tests/Unit/catalogCodec.test.ts": "import '../../resources/js/editor/foundationCatalogCodec';",
+            }
+            for name, content in files.items():
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content)
+            plan = build_plan(root, [source], phase="integration")
+            self.assertIn("Missing required browser scenario: " + CATALOG_CODEC.spec, plan.unresolved)
+            spec = root / CATALOG_CODEC.spec
+            spec.parent.mkdir(parents=True, exist_ok=True)
+            spec.write_text("import {test} from '@playwright/test';")
+            for phase in ("submission", "integration", "verification", "ci"):
+                with self.subTest(phase=phase):
+                    plan = build_plan(root, [CATALOG_CODEC.spec], phase=phase)
+                    self.assertFalse(plan.full)
+                    self.assertEqual(plan.unresolved, [])
+                    gates = {gate.name: gate for gate in plan.gates}
+                    registration = gates["browser-registration:" + CATALOG_CODEC.spec]
+                    self.assertIn("--list", registration.argv)
+                    self.assertFalse(registration.runtime)
+                    self.assertFalse(any(name.startswith(("browser:", "content:")) for name in gates))
+
+    def test_rich_text_input_helper_change_collects_catalog_and_existing_consumers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            helper = "tests/E2E/support/richTextInput.ts"
+            specs = {PAGE.spec, STRUCTURE_THEME.spec, CATALOG_FIELDS.spec}
+            for name, content in {helper: "export const fixture = 1;",
+                                  **{spec: "import {test} from '@playwright/test'; import './support/richTextInput';" for spec in specs}}.items():
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content)
+            plan = build_plan(root, [helper], phase="integration")
+            self.assertEqual(plan.unresolved, [])
+            gates = {gate.name: gate for gate in plan.gates}
+            self.assertEqual({name for name in gates if name.startswith("browser-registration:")},
+                             {"browser-registration:" + spec for spec in specs})
+            self.assertFalse(any(name.startswith(("browser:", "content:")) for name in gates))
+            for spec in specs:
+                self.assertIn(helper, gates["browser-registration:" + spec].inputs)
+
+    def test_consumer_audit_reruns_for_new_spec_import_and_transitive_input_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            audit = "tests/Harness/test_planner.py"
+            helper = "tests/E2E/support/richTextInput.ts"
+            bridge = "tests/E2E/support/bridge.ts"
+            spec = "tests/E2E/unregistered.spec.ts"
+            def write(name, body):
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(body)
+            write(audit, "import unittest")
+            write(helper, "export const fixture = 1;")
+            for known in (PAGE.spec, STRUCTURE_THEME.spec, CATALOG_FIELDS.spec):
+                write(known, "import './support/richTextInput';")
+            calls = []
+            # This fake executor checks receipt invalidation only. The real
+            # test_planner consumer audit independently rejects wrong mappings.
+            def executor(argv, **kwargs):
+                calls.append(argv)
+                return subprocess.CompletedProcess(argv, 0)
+            def run_audit(changed):
+                plan = build_plan(root, [changed], phase="integration")
+                self.assertFalse(plan.full)
+                self.assertEqual(plan.unresolved, [])
+                self.assertFalse(any(gate.name.startswith(("browser:", "content:")) for gate in plan.gates))
+                gate = next(gate for gate in plan.gates if gate.name == "python:" + audit)
+                self.assertFalse(gate.runtime)
+                result, records = execute(root, Plan([changed], [gate]), executor=executor, receipts=root / "receipts")
+                self.assertEqual(result, 0)
+                return gate, records[0]
+
+            first, record = run_audit(helper)
+            self.assertEqual(record["status"], "passed")
+            _, reused = run_audit(helper)
+            self.assertEqual(reused["status"], "reused")
+            self.assertEqual(len(calls), 1)
+
+            write(spec, "import {test} from '@playwright/test'; test('synthetic', () => {});")
+            added, record = run_audit(spec)
+            self.assertEqual(record["status"], "passed")
+            self.assertIn(spec, added.inputs)
+            self.assertNotEqual(digest_gate(root, first), digest_gate(root, added))
+            added_key = digest_gate(root, added)
+
+            write(bridge, "export {fixture} from './richTextInput';")
+            write(spec, "import './support/bridge'; import {test} from '@playwright/test'; test('synthetic', () => {});")
+            imported, record = run_audit(spec)
+            self.assertEqual(record["status"], "passed")
+            self.assertTrue({spec, bridge, helper}.issubset(imported.inputs))
+            self.assertNotEqual(added_key, digest_gate(root, imported))
+            imported_key = digest_gate(root, imported)
+
+            write(helper, "export const fixture = 2;")
+            changed, record = run_audit(helper)
+            self.assertEqual(record["status"], "passed")
+            self.assertNotEqual(imported_key, digest_gate(root, changed))
+            self.assertEqual(len(calls), 4)
+            _, reused = run_audit(helper)
+            self.assertEqual(reused["status"], "reused")
+            self.assertEqual(len(calls), 4)
+
+    def test_unresolved_spec_imports_cannot_reuse_a_consumer_audit_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            audit = "tests/Harness/test_planner.py"
+            spec = "tests/E2E/unregistered.spec.ts"
+            for name, body in {audit: "import unittest", spec: "import './support/missing';"}.items():
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(body)
+            plan = build_plan(root, [spec], phase="integration")
+            gate = next(gate for gate in plan.gates if gate.name == "python:" + audit)
+            self.assertFalse(gate.reusable)
+            self.assertIn(spec, gate.inputs)
+            self.assertFalse(gate.runtime)
 
     def test_missing_preset_selector_is_an_error_not_full_catalog_fallback(self):
         from dataclasses import replace

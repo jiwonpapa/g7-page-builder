@@ -19,7 +19,12 @@ function resolveImport(root, path, specifier) {
 }
 
 function unwrap(node) {
-  return ts.isParenthesizedExpression(node) ? unwrap(node.expression) : node;
+  return ts.isParenthesizedExpression(node) || ts.isNonNullExpression(node) || ts.isSatisfiesExpression(node)
+    ? unwrap(node.expression) : node;
+}
+
+function unwrapType(node) {
+  return ts.isParenthesizedTypeNode(node) ? unwrapType(node.type) : node;
 }
 
 export function inspectTypeScript(root, path, source, policy) {
@@ -55,11 +60,11 @@ export function inspectTypeScript(root, path, source, policy) {
     if (node.kind === ts.SyntaxKind.AnyKeyword) report('TS-UNSAFE', node, 'Explicit any bypasses the contract',
       node.parent.getText(file).replace(/\s+/g, ' '));
     if (ts.isAsExpression(node) || ts.isTypeAssertionExpression(node)) {
-      if (node.type.kind === ts.SyntaxKind.NeverKeyword) report('TS-UNSAFE', node,
+      if (unwrapType(node.type).kind === ts.SyntaxKind.NeverKeyword) report('TS-UNSAFE', node,
         'Casting a value to never bypasses the consumer contract', node.getText(file).replace(/\s+/g, ' '));
       const inner = unwrap(node.expression);
       if ((ts.isAsExpression(inner) || ts.isTypeAssertionExpression(inner))
-        && (inner.type.kind === ts.SyntaxKind.UnknownKeyword || inner.type.kind === ts.SyntaxKind.AnyKeyword)) {
+        && [ts.SyntaxKind.UnknownKeyword, ts.SyntaxKind.AnyKeyword].includes(unwrapType(inner.type).kind)) {
         report('TS-UNSAFE', node, 'Double assertion bypasses structural validation', node.getText(file).replace(/\s+/g, ' '));
       }
     }

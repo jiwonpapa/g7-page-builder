@@ -50,6 +50,52 @@ class PlannerTests(unittest.TestCase):
             self.assertEqual(gate.deferred, phase == "submission")
             self.assertIn("browser-assets", gate.depends_on)
 
+    def test_rich_text_helper_selects_only_its_two_registration_specs(self):
+        helper = "tests/E2E/support/richTextInput.ts"
+        specs = ("tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts")
+        self.write(helper, "export const replacePuckRichTextField = () => {}")
+        for spec in specs:
+            self.write(spec, "import {replacePuckRichTextField} from './support/richTextInput'")
+        for paths in ([helper], [helper, specs[0]]):
+            with self.subTest(paths=paths):
+                plan = build_plan(self.root, paths)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(plan.full)
+                browser = [gate for gate in plan.gates if gate.name.startswith("browser-registration:")]
+                self.assertEqual(len(browser), 2)
+                self.assertEqual({gate.name for gate in browser}, {"browser-registration:" + spec for spec in specs})
+                for gate in browser:
+                    self.assertIn(helper, gate.inputs)
+                    self.assertIn("--list", gate.argv)
+                    self.assertNotIn("--grep", gate.argv)
+                self.assertFalse(any(gate.runtime for gate in plan.gates))
+                self.assertFalse(any(gate.name.startswith(("browser:", "content:")) for gate in plan.gates))
+
+    def test_rich_text_helper_with_product_preserves_runtime_and_deferred_gates(self):
+        helper = "tests/E2E/support/richTextInput.ts"
+        specs = ("tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts")
+        source = "resources/js/title.ts"
+        self.write(helper, "export const replacePuckRichTextField = () => {}")
+        for spec in specs:
+            self.write(spec, "import {replacePuckRichTextField} from './support/richTextInput'")
+        self.write(source, "export const title = 1")
+        self.write("tests/Unit/title.test.ts", "import '../../resources/js/title'")
+        for phase in ("submission", "integration"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [helper, source], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(plan.full)
+                browser = [gate for gate in plan.gates if gate.name.startswith("browser:")]
+                self.assertEqual({gate.name for gate in browser}, {"browser:" + spec for spec in specs})
+                for gate in browser:
+                    self.assertIn(helper, gate.inputs)
+                    self.assertIn("--retries=0", gate.argv)
+                    self.assertNotIn("--list", gate.argv)
+                    self.assertTrue(gate.runtime)
+                    self.assertEqual(gate.deferred, phase == "submission")
+                    self.assertIn("browser-assets", gate.depends_on)
+                self.assertFalse(any(gate.name.startswith(("browser-registration:", "content:")) for gate in plan.gates))
+
     def test_unknown_browser_support_cannot_be_collected_as_zero_test_spec(self):
         self.write("tests/E2E/support/unknown.ts", "export const a=1")
         plan = build_plan(self.root, ["tests/E2E/support/unknown.ts"])

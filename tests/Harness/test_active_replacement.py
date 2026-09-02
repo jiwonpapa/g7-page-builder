@@ -185,20 +185,30 @@ class ActiveReplacementTests(unittest.TestCase):
         self.assertEqual(self.meta(), old)
         self.assertFalse(self.git("status", "--porcelain", root=self.target))
 
-    def test_scope_overrides_outside_edits_and_existing_lease_are_rejected(self):
+    def test_scope_overrides_are_rejected(self):
         old, before = self.meta(), self.signature()
         for option in ("--paths", "--areas", "--profile"):
             with self.subTest(option=option), self.assertRaisesRegex(CoordError, "정확히 상속"):
                 self.call(self.target, *self.args, option, "outside.txt")
+        self.assert_rolled_back(old, before)
+
+    def test_outside_edits_are_rejected_without_changing_source(self):
+        # Each rejection owns a fresh Git fixture. Rewriting a tracked file back
+        # to its original bytes can leave racy index stat data for a later case.
         (self.source / "outside.txt").write_text("unowned change\n")
+        old, before = self.meta(), self.signature()
         with self.assertRaisesRegex(CoordError, "PATHS 밖"):
             self.call(self.target, *self.args)
-        (self.source / "outside.txt").write_text("base outside.txt\n")
+        self.assert_rolled_back(old, before)
+        self.assertEqual((self.source / "outside.txt").read_text(), "unowned change\n")
+
+    def test_existing_target_lease_is_rejected(self):
+        old, before = self.meta(), self.signature()
         self.call(self.target, "claim", "--task", "occupied-task", "--paths", "upstream.txt", "--profile", "scoped")
         with self.assertRaisesRegex(CoordError, "이미 소유"):
             self.call(self.target, *self.args)
-        self.assertEqual(self.meta(), old)
-        self.assertEqual(self.signature(), before)
+        self.assert_rolled_back(old, before)
+        self.assertEqual(self.meta("occupied-task")["status"], "active")
 
     def test_ancestry_and_source_branch_are_verified(self):
         for ref in ("HEAD", self.base):
@@ -236,18 +246,26 @@ class ActiveReplacementTests(unittest.TestCase):
         self.assert_rolled_back(old, before)
         self.assertEqual(self.meta("concurrent-task")["status"], "active")
 
-    def test_dirty_target_and_non_descendant_base_are_rejected_before_apply(self):
+    def test_dirty_target_is_rejected_before_apply(self):
+        old, before = self.meta(), self.signature()
         (self.target / "upstream.txt").write_text("new target user edit\n")
         with self.assertRaisesRegex(CoordError, "깨끗한"):
             self.call(self.target, *self.args)
         self.assertEqual((self.target / "upstream.txt").read_text(), "new target user edit\n")
-        (self.target / "upstream.txt").write_text("reviewed upstream\n")
+        self.assertEqual(self.meta(), old)
+        self.assertEqual(self.signature(), before)
+
+    def test_non_descendant_base_is_rejected_before_apply(self):
+        old, before = self.meta(), self.signature()
         tree = self.git("rev-parse", "HEAD^{tree}")
         unrelated = self.git("commit-tree", tree, "-m", "unrelated reviewed commit")
         self.git("reset", "--hard", unrelated, root=self.target)
         with self.assertRaisesRegex(CoordError, "후손"):
             self.call(self.target, *self.args[:-1], unrelated)
-        self.assertEqual(self.meta()["status"], "active")
+        self.assertEqual(self.meta(), old)
+        self.assertEqual(self.signature(), before)
+        self.assertEqual(self.git("rev-parse", "HEAD", root=self.target), unrelated)
+        self.assertFalse(self.git("status", "--porcelain", root=self.target))
 
     def test_ignored_target_file_is_not_overwritten(self):
         exclude = self.repo / ".git/info/exclude"

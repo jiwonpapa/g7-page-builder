@@ -224,7 +224,8 @@ final class UserTemplateSiteShellDecorator
         return [
             'id' => self::DATA_SOURCE_ID,
             'type' => 'api',
-            'endpoint' => "/api/modules/jiwonpapa-page_builder/public/site-shell?locale={{_global.locale ?? 'ko'}}",
+            // Keep G7's request locale; a synthetic query would override Accept-Language.
+            'endpoint' => '/api/modules/jiwonpapa-page_builder/public/site-shell',
             'method' => 'GET',
             'auto_fetch' => true,
             'auth_required' => false,

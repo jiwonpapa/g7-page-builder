@@ -17,6 +17,7 @@ import { LayoutPolicyError, validateLayoutDocument } from '../documents/layoutPo
 import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';
 import { PuckEditorAdapter } from './PuckEditorAdapter';
 import { clearDraftJournal, readDraftJournal, writeDraftJournal } from './draftJournal';
+import { createDraftPersistence } from './draftPersistence';
 
 export interface PageBuilderEditorOptions {
   documentId?: string;
@@ -140,7 +141,6 @@ function EditorShell({
   const dirtyRef = useRef(false);
   const editVersionRef = useRef(0);
   const loadedDocumentIdRef = useRef<string | null>(null);
-  const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const navigationBypassRef = useRef(false);
   const autoSaveTimerRef = useRef<number | null>(null);
   const draftJournalTimerRef = useRef<number | null>(null);
@@ -248,96 +248,68 @@ function EditorShell({
     };
   }, [api, applyResource, requestedDocumentId]);
 
-  const refreshPreviewTicket = useCallback(async (documentId: string, lockVersion: number): Promise<void> => {
+  const refreshPreviewTicket = useCallback(async (documentId: string, lockVersion: number, isCurrent: () => boolean): Promise<void> => {
     await api.createPreview(documentId, lockVersion)
       .then((preview) => {
+        if (!isCurrent()) return;
         setPreviewUrl(preview.preview_url);
         setPreviewExpiresAt(preview.expires_at);
       })
       .catch(() => {
         // A saved draft remains valid even when preview ticket creation fails.
+        if (!isCurrent()) return;
         setPreviewUrl(null);
         setPreviewExpiresAt(null);
       });
   }, [api]);
 
-  const saveDraft = useCallback(async function persistDraft(flushLatest = false): Promise<boolean> {
-    cancelAutoSave();
-    if (savePromiseRef.current) {
-      const saved = await savePromiseRef.current;
-      if (saved && dirtyRef.current) {
-        return persistDraft(flushLatest);
+  const persistence = useMemo(() => createDraftPersistence({
+    current: () => ({ document: documentRef.current, dirty: dirtyRef.current,
+      editVersion: editVersionRef.current, lockVersion: lockVersionRef.current }),
+    cancelScheduledSave: cancelAutoSave,
+    save: (snapshot, lockVersion) => api.saveDraft(snapshot.document_id, snapshot, lockVersion),
+    preview: refreshPreviewTicket,
+    readDocument: readEditorDocument,
+    started: () => { setSaveState('saving'); setMessage(null); },
+    resourceReceived: (resource) => {
+      lockVersionRef.current = resource.lock_version;
+      setDocumentTitle(resource.title);
+      setPublicUrl(resource.public_url);
+    },
+    saved: (resource, savedDocument) => {
+      if (draftJournalTimerRef.current !== null) {
+        window.clearTimeout(draftJournalTimerRef.current);
+        draftJournalTimerRef.current = null;
       }
-      return saved;
-    }
-
-    const snapshot = documentRef.current;
-    if (!snapshot) {
-      return false;
-    }
-    if (!dirtyRef.current) {
-      setSaveState('saving');
-      await refreshPreviewTicket(snapshot.document_id, lockVersionRef.current);
+      documentRef.current = savedDocument;
+      dirtyRef.current = false;
+      setDocument(savedDocument);
       setSaveState('saved');
-      return true;
-    }
-
-    const snapshotEditVersion = editVersionRef.current;
-    const expectedLockVersion = lockVersionRef.current;
-    setSaveState('saving');
-    setMessage(null);
-
-    const request = api.saveDraft(snapshot.document_id, snapshot, expectedLockVersion)
-      .then(async (resource) => {
-        const savedDocument = readEditorDocument(resource.document);
-        lockVersionRef.current = resource.lock_version;
-        setDocumentTitle(resource.title);
-        setPublicUrl(resource.public_url);
-        await refreshPreviewTicket(resource.document.document_id, resource.lock_version);
-        if (editVersionRef.current === snapshotEditVersion) {
-          if (draftJournalTimerRef.current !== null) {
-            window.clearTimeout(draftJournalTimerRef.current);
-            draftJournalTimerRef.current = null;
-          }
-          documentRef.current = savedDocument;
-          dirtyRef.current = false;
-          setDocument(savedDocument);
-          setSaveState('saved');
-          clearDraftJournal(resource.document.document_id);
-        } else {
-          const latestDocument = documentRef.current;
-          if (latestDocument) {
-            if (draftJournalTimerRef.current !== null) {
-              window.clearTimeout(draftJournalTimerRef.current);
-              draftJournalTimerRef.current = null;
-            }
-            writeDraftJournal(latestDocument, resource.lock_version);
-          }
-          setSaveState('dirty');
+      clearDraftJournal(resource.document.document_id);
+    },
+    cleanSaved: () => setSaveState('saved'),
+    newerEdits: (resource) => {
+      const latest = documentRef.current;
+      if (latest && resource) {
+        if (draftJournalTimerRef.current !== null) {
+          window.clearTimeout(draftJournalTimerRef.current);
+          draftJournalTimerRef.current = null;
         }
-        return true;
-      })
-      .catch((error: unknown) => {
-        if (isConflict(error)) {
-          setSaveState('conflict');
-          setMessage('서버의 초안이 먼저 변경되었습니다. 서버 버전을 다시 불러와 비교해 주세요.');
-        } else {
-          setSaveState('error');
-          setMessage(formatError(error));
-        }
-        return false;
-      })
-      .finally(() => {
-        savePromiseRef.current = null;
-      });
-
-    savePromiseRef.current = request;
-    const saved = await request;
-    if (saved && flushLatest && dirtyRef.current) {
-      return persistDraft(true);
-    }
-    return saved;
-  }, [api, cancelAutoSave, refreshPreviewTicket]);
+        writeDraftJournal(latest, resource.lock_version);
+      }
+      setSaveState('dirty');
+    },
+    failed: (error) => {
+      if (isConflict(error)) {
+        setSaveState('conflict');
+        setMessage('서버의 초안이 먼저 변경되었습니다. 서버 버전을 다시 불러와 비교해 주세요.');
+      } else {
+        setSaveState('error');
+        setMessage(formatError(error));
+      }
+    },
+  }), [api, cancelAutoSave, refreshPreviewTicket]);
+  const saveDraft = useCallback((flushLatest = false): Promise<boolean> => persistence.save(flushLatest), [persistence]);
 
   const scheduleAutoSave = useCallback((): void => {
     cancelAutoSave();

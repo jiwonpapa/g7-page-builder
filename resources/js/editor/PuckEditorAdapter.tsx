@@ -1,5 +1,6 @@
 import { activateStructureEditing, asString, canonicalBlockToPuck, canonicalToPuck, DEFAULT_FEATURES, idToUuid, isSplitHeroLayout, normalizeFeatureItems, normalizeTheme, puckBlockToCanonical, puckToCanonical } from './puckBlockCodec';
 import { editorInsertionDestination, editorItemLocations, resolveEditorSelection } from './puckEditorSelection';
+import { PuckDocumentBoundary, usePuckDocumentBoundary } from './PuckDocumentBoundary';
 import type { ContactEditorProps, CtaEditorProps, EditorComponents, FeaturesEditorProps, HeroEditorProps, PuckEditorData } from './puckEditorTypes';
 export { activateStructureEditing, canonicalToPuck, puckToCanonical } from './puckBlockCodec';
 export type { PuckAdapterContext, PuckEditorSession } from './puckDocumentAdapter';
@@ -2438,7 +2439,12 @@ export function PuckEditorAdapter({
     disabled,
     hostWidth,
   }), [canvasViewportWidth, disabled, hostWidth]);
-  const editingDisabled = !viewportPolicy.canEdit;
+  const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
+  const contextRef = useRef(initialSession.context);
+  const { boundary, data, message: documentError, recovering } = usePuckDocumentBoundary(initialSession, {
+    context: contextRef, canEdit: viewportPolicy.canEdit, onDirty, onChange,
+  });
+  const editingDisabled = !viewportPolicy.canEdit || recovering;
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const [structureEditingEnabled, setStructureEditingEnabled] = useState(
     document.schema_version === 'g7-page-builder/v2',
@@ -2460,19 +2466,14 @@ export function PuckEditorAdapter({
         ...externalEditorComponents(),
       },
     } as Config<EditorComponents, PageDesignProps>;
-    if (viewportPolicy.canEdit) return baseConfig;
+    if (!editingDisabled) return baseConfig;
     const components = Object.fromEntries(Object.entries(baseConfig.components).map(([type, candidate]) => {
       const component = candidate as typeof candidate & { fields?: Record<string, EditorFieldContract> };
       if (!component.fields) return [type, component];
       return [type, { ...component, fields: applyEditorContentPolicy(component.fields, false) }];
     })) as Config<EditorComponents, PageDesignProps>['components'];
     return { ...baseConfig, components };
-  }, [structureEditingEnabled, viewportPolicy.canEdit]);
-  const initialSession = useMemo(() => canonicalToPuck(document), [document.document_id, revisionKey]);
-  const contextRef = useRef(initialSession.context);
-  const [data, setData] = useState(initialSession.data);
-  const latestDataRef = useRef(initialSession.data);
-  const canonicalFrameRef = useRef<number | null>(null);
+  }, [structureEditingEnabled, editingDisabled]);
   const [catalogItems, setCatalogItems] = useState<ReadonlyArray<BlockGalleryItem>>(BLOCK_GALLERY_ITEMS);
   const [siteParts, setSiteParts] = useState<{ header: SitePartResource | null; footer: SitePartResource | null }>({ header: null, footer: null });
   const [sitePartMode, setSitePartMode] = useState<'header' | 'footer' | null>(null);
@@ -2611,20 +2612,9 @@ export function PuckEditorAdapter({
     };
   }, []);
 
-  useEffect(() => () => {
-    if (canonicalFrameRef.current !== null) window.cancelAnimationFrame(canonicalFrameRef.current);
-  }, []);
-
   useEffect(() => {
-    const session = canonicalToPuck(document);
-    contextRef.current = session.context;
-    latestDataRef.current = session.data;
-    if (canonicalFrameRef.current !== null) {
-      window.cancelAnimationFrame(canonicalFrameRef.current);
-      canonicalFrameRef.current = null;
-    }
-    setData(session.data);
-  }, [document.document_id, revisionKey]);
+    contextRef.current = initialSession.context;
+  }, [initialSession]);
 
   useEffect(() => {
     setStructureEditingEnabled(document.schema_version === 'g7-page-builder/v2');
@@ -2695,7 +2685,7 @@ export function PuckEditorAdapter({
 
   const enableStructureEditing = useCallback((): void => {
     try {
-      const activated = activateStructureEditing(latestDataRef.current, contextRef.current);
+      const activated = activateStructureEditing(boundary.currentData(), contextRef.current);
       contextRef.current = activated.context;
       setStructureEditingEnabled(true);
       setStructureDialogOpen(false);
@@ -2707,7 +2697,7 @@ export function PuckEditorAdapter({
         ? `현재 문서는 구조 편집으로 전환할 수 없습니다. ${error.message}`
         : '현재 문서는 구조 편집으로 전환할 수 없습니다.');
     }
-  }, [onChange, onDirty]);
+  }, [boundary, onChange, onDirty]);
   const resolvePatternSection = useCallback((block: PuckEditorData['content'][number]): PageBuilderBlock => {
     const section = puckBlockToCanonical(block, contextRef.current);
     if (section.type !== LAYOUT_SECTION_BLOCK_TYPE) {
@@ -2720,6 +2710,7 @@ export function PuckEditorAdapter({
   const overrides = useMemo(() => ({
     header: PuckHeaderLayer,
     headerActions: () => <>
+      <PuckDocumentBoundary boundary={boundary} />
       {!structureEditingEnabled && <button
         type="button"
         className="g7pb-button g7pb-button--quiet"
@@ -2747,33 +2738,7 @@ export function PuckEditorAdapter({
     actionBar: (props: { children: React.ReactNode; label?: string; parentAction?: React.ReactNode }) => (
       <SelectedBlockActionBar {...props} disabled={editingDisabled} />
     ),
-  }), [disabled, editingDisabled, handleViewportChange, resolvePatternSection, structureEditingEnabled]);
-
-  const emitCanonical = (nextData: PuckEditorData): PageBuilderDocument => {
-    latestDataRef.current = nextData;
-    const nextDocument = puckToCanonical(nextData, contextRef.current);
-    onChange(nextDocument);
-    return nextDocument;
-  };
-  const flushCanonical = (nextData = latestDataRef.current): PageBuilderDocument => {
-    if (canonicalFrameRef.current !== null) {
-      window.cancelAnimationFrame(canonicalFrameRef.current);
-      canonicalFrameRef.current = null;
-    }
-    setData(nextData);
-    return emitCanonical(nextData);
-  };
-  const updateCanonical = (nextData: PuckEditorData): void => {
-    if (!viewportPolicy.canEdit) return;
-    latestDataRef.current = nextData;
-    onDirty?.();
-    if (canonicalFrameRef.current !== null) return;
-    canonicalFrameRef.current = window.requestAnimationFrame(() => {
-      canonicalFrameRef.current = null;
-      setData(latestDataRef.current);
-      emitCanonical(latestDataRef.current);
-    });
-  };
+  }), [boundary, disabled, editingDisabled, handleViewportChange, resolvePatternSection, structureEditingEnabled]);
 
   const fullSiteCanvas = useMemo(() => ({
     locale: document.locale,
@@ -2830,8 +2795,9 @@ export function PuckEditorAdapter({
       data-editing-mode={viewportPolicy.mode}
       data-host-editing-supported={viewportPolicy.hostSupported ? 'true' : 'false'}
       data-canvas-viewport={String(viewportPolicy.canvasWidth)}
-      aria-busy={disabled}
+      aria-busy={disabled || recovering}
     >
+      {documentError && <div className="g7pb-notice" role="alert" data-testid="page-builder-document-error">{documentError}</div>}
       {heroFamilyCount > 1 && !heroWarningDismissed && (
         <div className="g7pb-editor-warning" role="status" data-testid="page-builder-hero-warning">
           <span>Hero 계열 블록이 {heroFamilyCount}개 있습니다. 사용할 수 있지만 첫 화면 집중도가 낮아질 수 있습니다.</span>
@@ -2887,14 +2853,16 @@ export function PuckEditorAdapter({
               options: PAGE_BUILDER_VIEWPORTS,
             },
           }}
-          permissions={{ edit: viewportPolicy.canEdit, insert: viewportPolicy.canEdit, delete: viewportPolicy.canEdit, duplicate: viewportPolicy.canEdit, drag: viewportPolicy.canEdit }}
+          permissions={{ edit: !editingDisabled, insert: !editingDisabled, delete: !editingDisabled, duplicate: !editingDisabled, drag: !editingDisabled }}
           overrides={overrides}
           headerTitle="페이지 블록"
           headerPath={document.slug}
-          onChange={updateCanonical}
+          onAction={boundary.onAction}
+          onChange={boundary.onChange}
           onPublish={(nextData) => {
-            if (!viewportPolicy.canEdit) return;
-            return onPublish(flushCanonical(nextData));
+            if (editingDisabled) return;
+            const candidate = boundary.acceptForPublish(nextData);
+            if (candidate) return onPublish(candidate);
           }}
         />
         </CanvasElementStylesContext.Provider>

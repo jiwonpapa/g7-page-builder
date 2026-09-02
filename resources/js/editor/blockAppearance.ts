@@ -1,4 +1,4 @@
-import type { BlockAppearance, ElementAppearance, ElementAppearanceMap } from '../documents/types';
+import type { BlockAppearance, ElementAppearance, ElementAppearanceMap } from '../documents/blockPresentation';
 import { normalizeFontSizeRem } from './fontSize';
 
 export interface BlockContainerEditorProps {

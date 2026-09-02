@@ -7,7 +7,7 @@ import type {
   BlockResponsiveOverrides,
   ResponsiveAppearanceOverride,
   ResponsiveLayoutOverride,
-} from '../documents/types';
+} from '../documents/blockPresentation';
 
 export type ResponsiveViewport = 'tablet' | 'mobile';
 export type ResponsiveLayoutKind = 'section' | 'columns' | 'stack';

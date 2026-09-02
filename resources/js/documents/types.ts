@@ -1,10 +1,8 @@
+import type { BlockMotion, BlockResponsiveOverrides } from './blockPresentation';
+
 export const PAGE_BUILDER_SCHEMA_VERSION = 'g7-page-builder/v1' as const;
 export const PAGE_BUILDER_SCHEMA_V2 = 'g7-page-builder/v2' as const;
 export type PageBuilderSchemaVersion = typeof PAGE_BUILDER_SCHEMA_VERSION | typeof PAGE_BUILDER_SCHEMA_V2;
-
-export const LAYOUT_SECTION_BLOCK_TYPE = 'layout.section-01' as const;
-export const LAYOUT_COLUMNS_BLOCK_TYPE = 'layout.columns-01' as const;
-export const LAYOUT_STACK_BLOCK_TYPE = 'layout.stack-01' as const;
 
 export type ScalarToken = string | number | boolean | null;
 
@@ -20,87 +18,10 @@ export interface PageBuilderImage {
   alt: string;
 }
 
-export interface BlockAppearance {
-  surface: 'default' | 'soft' | 'contrast';
-  spacing: 'compact' | 'normal' | 'spacious';
-  textScale?: 'compact' | 'balanced' | 'large';
-  textAlign?: 'left' | 'center' | 'right';
-  containerWidth?: 'inherit' | 'narrow' | 'standard' | 'wide' | 'full';
-  containerAlign?: 'left' | 'center' | 'right' | 'stretch';
-  minHeight?: 'auto' | 'compact' | 'medium' | 'large' | 'viewport';
-  verticalAlign?: 'start' | 'center' | 'end';
-  elements?: ElementAppearanceMap;
-}
-
-export interface ElementAppearance {
-  font?: 'inherit' | 'system' | 'modern' | 'serif' | 'mono';
-  /** Explicit user choice in rem. The editor also shows its 16px-root px equivalent. */
-  fontSizeRem?: number;
-  /** Legacy relative-size token kept for existing documents. */
-  size?: 'small' | 'base' | 'large' | 'xlarge';
-  weight?: 'regular' | 'medium' | 'semibold' | 'bold';
-  align?: 'left' | 'center' | 'right';
-  tone?: 'default' | 'muted' | 'accent' | 'contrast' | 'custom1' | 'custom2' | 'custom3' | 'custom4';
-}
-
-export type ElementAppearanceMap = Record<string, ElementAppearance>;
-
-export interface ResponsiveAppearanceOverride {
-  surface?: BlockAppearance['surface'];
-  spacing?: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  containerWidth?: NonNullable<BlockAppearance['containerWidth']>;
-  containerAlign?: NonNullable<BlockAppearance['containerAlign']>;
-  minHeight?: NonNullable<BlockAppearance['minHeight']>;
-  verticalAlign?: NonNullable<BlockAppearance['verticalAlign']>;
-}
-
-export interface ResponsiveLayoutOverride {
-  width?: LayoutSectionBlockProps['width'];
-  spacing?: LayoutSectionBlockProps['spacing'];
-  columns?: 1 | 2;
-  gap?: LayoutColumnsBlockProps['gap'];
-}
-
-export interface BlockResponsiveOverride {
-  appearance?: ResponsiveAppearanceOverride;
-  layout?: ResponsiveLayoutOverride;
-}
-
-export interface BlockResponsiveOverrides {
-  tablet?: BlockResponsiveOverride;
-  mobile?: BlockResponsiveOverride;
-}
-
-export type BlockMotionPreset = 'none' | 'reveal' | 'stagger' | 'parallax-soft' | 'counter' | 'chart-draw';
-
-export interface BlockMotion {
-  preset: BlockMotionPreset;
-  intensity: 'subtle' | 'normal' | 'strong';
-  trigger: 'once' | 'repeat';
-  stagger_ms: 60 | 100 | 160;
-}
-
 export type DynamicAudience = 'all' | 'guest' | 'member';
 
 export interface BlockVisibility {
   audience: DynamicAudience;
-}
-
-export interface LayoutSectionBlockProps {
-  width: 'standard' | 'wide' | 'full';
-  spacing: 'compact' | 'normal' | 'spacious';
-}
-
-export interface LayoutColumnsBlockProps {
-  columns: 1 | 2 | 3;
-  ratio: '1' | '1:1' | '1:2' | '2:1' | '1:1:1';
-  gap: 'none' | 'compact' | 'normal' | 'spacious';
-}
-
-export interface LayoutStackBlockProps {
-  gap: 'none' | 'compact' | 'normal' | 'spacious';
 }
 
 export interface PageBuilderBlock<TProps extends Record<string, unknown> = Record<string, unknown>> {
@@ -284,3 +205,17 @@ export type {
   CtaBlock,
   ContactBlock,
 } from './builtinBlockContracts';
+
+export type {
+  BlockAppearance,
+  ElementAppearance,
+  ElementAppearanceMap,
+  ResponsiveAppearanceOverride,
+  ResponsiveLayoutOverride,
+  BlockResponsiveOverride,
+  BlockResponsiveOverrides,
+  BlockMotionPreset,
+  BlockMotion,
+} from './blockPresentation';
+export { LAYOUT_SECTION_BLOCK_TYPE, LAYOUT_COLUMNS_BLOCK_TYPE, LAYOUT_STACK_BLOCK_TYPE } from './layoutContracts';
+export type { LayoutSectionBlockProps, LayoutColumnsBlockProps, LayoutStackBlockProps } from './layoutContracts';

@@ -1,7 +1,9 @@
 import { externalBlockForComponent, externalEditorDefaults, externalBlockForDocument } from '../blocks/runtimeRegistry';
 import { externalEditorName, externalEditorProps, isExternalEditorItem, canonicalExternalProps, canonicalExternalMetadata } from '../blocks/externalEditorData';
 import { layoutPolicy, validateLayoutDocument } from '../documents/layoutPolicy';
-import { LAYOUT_COLUMNS_BLOCK_TYPE, LAYOUT_SECTION_BLOCK_TYPE, LAYOUT_STACK_BLOCK_TYPE, type BlockAppearance, type PageBuilderBlock, type PageBuilderDocument } from '../documents/types';
+import type { PageBuilderBlock, PageBuilderDocument } from '../documents/types';
+import type { BlockAppearance } from '../documents/blockPresentation';
+import { LAYOUT_COLUMNS_BLOCK_TYPE, LAYOUT_SECTION_BLOCK_TYPE, LAYOUT_STACK_BLOCK_TYPE } from '../documents/layoutContracts';
 import { CONTACT_BLOCK_TYPE, CTA_BLOCK_TYPE, FEATURES_BLOCK_TYPE, HERO_BLOCK_TYPE, type ContactBlockProps, type CtaBlockProps, type FeatureItem, type FeaturesBlockProps, type HeroBlockProps } from '../documents/builtinBlockContracts';
 import { blockContainerEditorProps, mergeBlockContainerAppearance } from './blockAppearance';
 import { DEFAULT_BLOCK_MOTION, normalizeBlockMotion } from './blockMotion';

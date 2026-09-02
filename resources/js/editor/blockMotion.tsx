@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Field } from '@puckeditor/core';
 
-import type { BlockMotion, BlockMotionPreset } from '../documents/types';
+import type { BlockMotion, BlockMotionPreset } from '../documents/blockPresentation';
 
 export const DEFAULT_BLOCK_MOTION: BlockMotion = {
   preset: 'none',

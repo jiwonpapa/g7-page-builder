@@ -1,3 +1,4 @@
+import { editorContextProps, withEditorContextPatch, withEditorMotion } from '../blocks/externalEditorData';
 import { activateStructureEditing, asString, canonicalBlockToPuck, canonicalToPuck, DEFAULT_FEATURES, idToUuid, isSplitHeroLayout, normalizeFeatureItems, normalizeTheme, puckBlockToCanonical, puckToCanonical } from './puckBlockCodec';
 import { editorInsertionDestination, editorItemLocations, resolveEditorSelection } from './puckEditorSelection';
 import { StableSelectField, withBlockContainerFields } from './blockInspectorFields';
@@ -49,7 +50,7 @@ import { ADMIN_AUTH_TOKEN_KEY, PageBuilderApiClient } from '../api/pageBuilderAp
 import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS, BUILTIN_BLOCK_PRESETS, BUILTIN_CORE_MANIFEST } from '../blocks/builtinCatalog';
 import {
   externalEditorComponents,
-  isEditorComponentRegistered,
+  catalogEditorName,
 } from '../blocks/runtimeRegistry';
 import type { BlockCatalogItem } from '../blocks/types';
 import {
@@ -1254,17 +1255,15 @@ const BlockCatalogContext = React.createContext<BlockCatalogContextValue>({
 
 function apiCatalogItemToGalleryItem(item: BlockCatalogItem, locale: string): BlockGalleryItem | null {
   if (item.kind === 'definition' && LEGACY_LIBRARY_DEFINITION_IDS.has(item.block_id)) return null;
-  if (!Object.prototype.hasOwnProperty.call(pageBuilderPuckConfig.components, item.editor_component)
-    && !isEditorComponentRegistered(item.editor_component)) {
-    return null;
-  }
+  const type = catalogEditorName(item, pageBuilderPuckConfig.components);
+  if (!type) return null;
   const staticItem = BLOCK_GALLERY_ITEMS.find((candidate) => candidate.catalogId === item.catalog_id);
   const safeLocale = locale === 'en' ? 'en' : 'ko';
 
   return {
     catalogId: item.catalog_id,
     kind: item.kind,
-    type: item.editor_component as keyof EditorComponents,
+    type,
     testId: staticItem?.testId ?? `page-builder-block-${item.catalog_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`,
     category: BLOCK_CATEGORY_LABELS[item.category] ?? item.category,
     title: item.label[safeLocale] ?? item.label.ko,
@@ -1598,13 +1597,7 @@ function StableHeaderControls({
     dispatch({
       type: 'setData',
       data: {
-        content: data.content.map((block, index) => ({
-          ...block,
-          props: {
-            ...block.props,
-            motion: motionPlan[index] ?? { ...DEFAULT_BLOCK_MOTION, preset: 'reveal' },
-          },
-        })),
+        content: data.content.map((block, index) => withEditorMotion(block, motionPlan[index] ?? { ...DEFAULT_BLOCK_MOTION, preset: 'reveal' })),
       },
       recordHistory: true,
     });
@@ -1614,10 +1607,7 @@ function StableHeaderControls({
     dispatch({
       type: 'setData',
       data: {
-        content: data.content.map((block) => ({
-          ...block,
-          props: { ...block.props, motion: { ...DEFAULT_BLOCK_MOTION } },
-        })),
+        content: data.content.map((block) => withEditorMotion(block, { ...DEFAULT_BLOCK_MOTION })),
       },
       recordHistory: true,
     });
@@ -1750,18 +1740,18 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const selectedBlock = location?.item;
   const blockIndex = location?.selector.index ?? null;
   if (!canvasUi?.textToolsOpen || canvasUi.rangeEditingActive || canvasUi.mediaDialogOpen || canvasUi.routeDialogOpen || !selectedBlock || blockIndex === null) return null;
-  const currentSurface = selectedBlock.props.surface === 'soft' || selectedBlock.props.surface === 'contrast'
-    ? selectedBlock.props.surface : 'default';
-  const currentSpacing = selectedBlock.props.spacing === 'compact' || selectedBlock.props.spacing === 'spacious'
-    ? selectedBlock.props.spacing : 'normal';
-  const selectedInternalProps = selectedBlock.props as Record<string, unknown>;
+  const selectedInternalProps = editorContextProps(selectedBlock);
+  const currentSurface = selectedInternalProps.surface === 'soft' || selectedInternalProps.surface === 'contrast'
+    ? selectedInternalProps.surface : 'default';
+  const currentSpacing = selectedInternalProps.spacing === 'compact' || selectedInternalProps.spacing === 'spacious'
+    ? selectedInternalProps.spacing : 'normal';
   const currentVisibility = selectedInternalProps.__g7pbVisibilityAudience === 'guest'
     || selectedInternalProps.__g7pbVisibilityAudience === 'member'
     ? selectedInternalProps.__g7pbVisibilityAudience
     : 'all';
   const fieldPath = canvasUi.selection?.fieldPath ?? null;
   const isTextElement = fieldPath !== null && (canvasUi.selection?.role === 'text' || canvasUi.selection?.role === 'action');
-  const elementStyles = normalizeElementAppearanceMap(selectedBlock.props.elementStyles);
+  const elementStyles = normalizeElementAppearanceMap(editorContextProps(selectedBlock).elementStyles);
   const currentElement = normalizeElementAppearance(fieldPath ? elementStyles[fieldPath] : undefined);
   const currentFontSize = currentElement.fontSizeRem === undefined
     ? currentElement.size ? 'legacy' : 'auto'
@@ -1770,7 +1760,7 @@ function ConnectedContextPanel({ disabled }: { disabled: boolean }): React.React
   const update = (patch: Record<string, unknown>): void => {
     dispatch({
       type: 'replace', destinationIndex: blockIndex, destinationZone: location!.selector.zone,
-      data: { ...selectedBlock, props: { ...selectedBlock.props, ...patch } },
+      data: withEditorContextPatch(selectedBlock, patch),
       ui: { itemSelector: location!.selector }, recordHistory: true,
     });
   };
@@ -2168,7 +2158,7 @@ function SelectedBlockActionBar({
       return;
     }
     const nextElementStyles = remapCollectionElementAppearanceMap(
-      selectedBlock.props.elementStyles,
+      editorContextProps(selectedBlock).elementStyles,
       collection,
       operation,
       itemIndex,
@@ -2675,7 +2665,7 @@ export function PuckEditorAdapter({
   const canvasElementStyles = useMemo<Record<string, ElementAppearanceMap>>(() => Object.fromEntries(
     editorItemLocations(data).flatMap(({ item: block }) => {
       const rawId = asString(block.props.id);
-      const styles = normalizeElementAppearanceMap(block.props.elementStyles);
+      const styles = normalizeElementAppearanceMap(editorContextProps(block).elementStyles);
       return [[rawId, styles], [idToUuid(rawId), styles]];
     }),
   ), [data.content]);

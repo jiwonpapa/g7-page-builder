@@ -1180,15 +1180,6 @@
       }
     },
     {
-      "path": "resources/js/editor/puckBlockCodec.ts",
-      "rule": "TS-UNSAFE",
-      "reason": "Existing Puck or legacy record conversion bypasses inference with double or never assertions; only exact audited bridges are retained. Reviewed unchanged relocation from resources/js/editor/PuckEditorAdapter.tsx; the old allowance is retired.",
-      "resolveWhen": "Construct the declared result after runtime validation or use typed partial dispatch, then remove these exact unsafe assertions.",
-      "fingerprints": {
-        "4c7719bfe3b1a3bb71364eb9d482e8e8cd604c30f2f9adce8a86e04d34660bb9": 1
-      }
-    },
-    {
       "path": "resources/js/editor/catalogBlocks.tsx",
       "rule": "SOURCE-SIZE",
       "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Several independent catalog renderers share one module.",

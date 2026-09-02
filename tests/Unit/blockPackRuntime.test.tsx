@@ -54,8 +54,11 @@ describe('Code Block Pack editor runtime', () => {
         instance_id: '00000000-0000-4000-8000-000000000002',
         type: 'vendor.notice-01',
         block_version: 2,
-        props: { title: '서명 블록' },
-        slots: {},
+        props: { title: '서명 블록', id: 'payload-id', motion: 'payload-motion', puck: { own: true }, editMode: 'own',
+          containerWidth: 'own', containerAlign: 'own', minHeight: 'own', verticalAlign: 'own', responsiveOverrides: { own: true },
+          __g7pbVisibilityAudience: 'own', __g7pbCustom: 'own', payload: { own: true }, metadata: { own: true } },
+        motion: { preset: 'reveal', intensity: 'subtle', trigger: 'once', stagger_ms: 60 },
+        visibility: { audience: 'guest' }, responsive: { tablet: { appearance: { spacing: 'compact' } } }, slots: { empty: [] },
       }],
     };
 
@@ -63,13 +66,9 @@ describe('Code Block Pack editor runtime', () => {
     const roundTrip = puckToCanonical(session.data, session.context);
 
     expect(hasExternalEditorRegistration('vendor/runtime-blocks', '1.0.0')).toBe(true);
-    expect(externalEditorComponents()).toHaveProperty('VendorNotice');
-    expect(session.data.content[0].type).toBe('VendorNotice');
-    expect(roundTrip.blocks[0]).toMatchObject({
-      type: 'vendor.notice-01',
-      block_version: 2,
-      props: { title: '서명 블록' },
-    });
+    expect(externalEditorComponents()).toHaveProperty('External_VendorNotice');
+    expect(session.data.content[0].type).toBe('External_VendorNotice');
+    expect(roundTrip).toEqual(document);
   });
 
   it('loads active self-hosted Code Pack styles before its editor and verifies registration', async () => {

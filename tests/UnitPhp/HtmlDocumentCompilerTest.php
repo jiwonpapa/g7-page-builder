@@ -130,7 +130,8 @@ final class HtmlDocumentCompilerTest extends TestCase
         $payload = $this->document('<p>본문</p>')->toArray();
         $payload['blocks'][0]['responsive'] = ['mobile' => ['appearance' => ['title' => '금지']]];
         try {
-            $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+            // Historical malformed settings remain readable but must never compile.
+            $this->builtInCompiler()->compile(PageBuilderDocument::fromStoredArray($payload), 1, 'html', 'g7-7.0.7');
             self::fail('A responsive content override compiled successfully.');
         } catch (DocumentCompileException) {
             self::addToAssertionCount(1);
@@ -139,7 +140,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $payload = $this->document('<p>본문</p>')->toArray();
         $payload['blocks'][0]['responsive'] = ['tablet' => ['layout' => ['columns' => 2]]];
         $this->expectException(DocumentCompileException::class);
-        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromStoredArray($payload), 1, 'html', 'g7-7.0.7');
     }
 
     public function test_compiler_is_deterministic_for_all_mvp_blocks(): void
@@ -1499,7 +1500,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $payload['blocks'] = [$payload['blocks'][0]];
         $payload['blocks'][0]['visibility'] = ['audience' => 'administrator'];
         $this->expectException(DocumentCompileException::class);
-        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromStoredArray($payload), 1, 'html', 'g7-7.0.7');
     }
 
     public function test_phase_three_catalog_rejects_unsafe_resource_and_product_routes(): void

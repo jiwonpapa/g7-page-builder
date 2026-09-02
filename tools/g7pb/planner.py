@@ -27,6 +27,11 @@ EDITOR_CHECKERS = {
     "scripts/check-editor-acceptance-contract.mjs": ("scripts/lib/editorContractRegistration.mjs",),
     "scripts/check-editor-layout-parity.mjs": ("scripts/lib/editorContractRegistration.mjs", "scripts/lib/editorCssSources.mjs"),
 }
+BROWSER_HELPER_SPECS = {
+    "tests/E2E/support/richTextInput.ts": (
+        "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts",
+    ),
+}
 
 
 def git(root, *args):
@@ -204,7 +209,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             if file.exists():
                 add("harness:" + path, ["bash", path], [path, "scripts/coord-harness.sh", *python_inputs(root, "tools/g7pb/coord.py")], "Changed harness regression")
         elif path.startswith("tests/E2E/"):
-            selected_specs = SITE_PART_SPECS if path in SITE_PART_HELPERS else (path,) if path.endswith((".spec.ts", ".spec.tsx")) else ()
+            selected_specs = SITE_PART_SPECS if path in SITE_PART_HELPERS else BROWSER_HELPER_SPECS.get(path, ())
+            if path.endswith((".spec.ts", ".spec.tsx")):
+                selected_specs = (path,)
             if path in SITE_PART_HELPERS:
                 python_test("tests/Harness/test_site_part_fixture.py", path)
                 if file.suffix == ".php":

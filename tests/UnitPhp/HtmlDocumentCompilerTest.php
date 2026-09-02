@@ -18,6 +18,31 @@ final class HtmlDocumentCompilerTest extends TestCase
 {
     use CreatesBuiltInCompiler;
 
+    public function test_responsibility_extraction_preserves_existing_catalog_artifact_bytes(): void
+    {
+        // Captured from the pre-refactor compiler at bfea1aa, not from the new collaborators.
+        $documents = [
+            [$this->document('<p>안전한 본문</p>'), '1fb429fc6789a2cde6788f5e2dbe0561644749d998036ef17d5ae3e8f73221cf'],
+            [PageBuilderDocument::fromArray($this->catalogPayload()), 'dd8dccc0fe97eb24169d8240d58304ced5b483d8bd5386796c3aee1f919ab912'],
+            [$this->foundationDocument(), 'd604b0887bfe59c7aef335c344d7794c898ae03c62f85bc50d45469e842baacb'],
+            [$this->productionLibraryDocument(), '8dafc5982d2b7c815f29f07258e0f4d888342babb3532abf1e0c2b08f6605f82'],
+            [$this->dynamicDocument(), '38122438cbeb64ab6338124fbc768b90315f3a3216e3ca742ae0d3f0e8e73897'],
+            [$this->formAndMapDocument(), 'b724a63288f052319ec1e1c76af9d9b232be5c210dfd6f7f1873dd4c4a6b00bf'],
+            [$this->phaseTwoDocument(), '4c994fb9c5e7874d39b523c88a249d32fce176131f2bb4d6d43eabb91979e498'],
+            [$this->phaseThreeDocument(), 'aed8fba26aaecd7b7cfd558ac7c1ff7f4561283a0c36423bbe55c884d3e4e2c5'],
+            [$this->phaseFourDocument(), '7e12ed1bdda22ed56c338b6bf9f62a41748abb0eeaf25aa3d3abcfba785367e0'],
+        ];
+        $compiler = $this->builtInCompiler();
+        foreach ($documents as [$document, $expectedSha]) {
+            self::assertSame($expectedSha, $compiler->compile($document, 1, 'html', 'g7-7.0.7')->artifactSha256, $document->slug);
+        }
+
+        $contents = file_get_contents(dirname(__DIR__).'/Contract/document-layout-v2.fixture.json');
+        self::assertIsString($contents);
+        $layout = PageBuilderDocument::fromArray(json_decode($contents, true, flags: JSON_THROW_ON_ERROR));
+        self::assertSame('ae11827441cd95c105fe00de5d9a2afb3f3a8620a0b5331e7b197604bc226a8a', $compiler->compile($layout, 1, 'html', 'g7-7.0.7')->artifactSha256);
+    }
+
     public function test_compiles_the_v2_section_and_two_column_layout_recursively(): void
     {
         $contents = file_get_contents(dirname(__DIR__).'/Contract/document-layout-v2.fixture.json');

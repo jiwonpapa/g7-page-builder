@@ -9,8 +9,8 @@ body.g7pb-manager-shell {
   background: var(--g7pb-neutral-200);
 }
 
-body.g7pb-editor-shell,
-body.g7pb-manager-shell,
+body.g7pb-editor-shell:has(.g7pb-root),
+body.g7pb-manager-shell:has(.g7pb-root),
 .g7pb-root,
 .g7pb-portal-surface,
 .g7pb-richtext-floating-layer,

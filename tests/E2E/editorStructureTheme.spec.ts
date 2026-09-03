@@ -223,16 +223,18 @@ test.describe('Editor structure and theme contracts', () => {
           if (!payload.data?.preview_url) throw new Error('Missing compiled preview URL.');
           expect((await preview.goto(payload.data.preview_url))?.ok()).toBe(true);
           await expect(preview.locator('.g7pb-document-theme')).toHaveCSS('color-scheme', state.expected);
-          for (const pageRoot of [canvasTheme, preview.locator('.g7pb-document-theme')]) {
+          for (const [surface, pageRoot] of [['canvas', canvasTheme], ['preview', preview.locator('.g7pb-document-theme')]] as const) {
             const tokens = await pageRoot.evaluate((element) => {
               const view = element.ownerDocument.defaultView;
               if (!view) throw new Error('Missing document theme window.');
               const style = view.getComputedStyle(element);
-              return { primitive: style.getPropertyValue('--g7pb-neutral-0').trim(),
+              return { bodyClass: element.ownerDocument.body.className, ownsEditorUI: element.ownerDocument.querySelector('.g7pb-root') !== null,
+                primitive: style.getPropertyValue('--g7pb-neutral-0').trim(),
                 ui: ['--g7pb-accent', '--g7pb-surface-strong', '--g7pb-focus-ring'].map((name) => style.getPropertyValue(name).trim()) };
             });
             expect(tokens.primitive).not.toBe('');
-            expect(tokens.ui, 'UI roles must not become document theme defaults').toEqual(['', '', '']);
+            expect(tokens.ownsEditorUI, `${surface} document: ${JSON.stringify(tokens)}`).toBe(false);
+            expect(tokens.ui, `${surface}: UI roles must not become document theme defaults: ${JSON.stringify(tokens)}`).toEqual(['', '', '']);
           }
           const pairs = [
             [frame.getByText(COPY.heroBody, { exact: true }), preview.getByText(COPY.heroBody, { exact: true })],

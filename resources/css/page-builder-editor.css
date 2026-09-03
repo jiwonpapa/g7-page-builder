@@ -1,8 +1,8 @@
 @import url("./page-builder-core.css");
 @import url("./page-builder-editor-wysiwyg.css");
 
-body.g7pb-editor-shell,
-body.g7pb-manager-shell,
+body.g7pb-editor-shell:has(.g7pb-root),
+body.g7pb-manager-shell:has(.g7pb-root),
 .g7pb-root,
 .g7pb-portal-surface,
 .g7pb-richtext-floating-layer,

@@ -1,4 +1,5 @@
 import json
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -137,6 +138,106 @@ class PlannerTests(unittest.TestCase):
         self.assertTrue(plan.unresolved)
         self.assertFalse(plan.full)
         self.assertFalse(plan.gates)
+
+    def viewer_fixture(self):
+        from tools.g7pb.browser_requirements import PAGE, STRUCTURE_THEME
+        path = "resources/views/viewer.blade.php"
+        original = (Path(__file__).resolve().parents[2] / path).read_bytes().replace(
+            b'<html class="g7pb-standalone-viewer" lang=', b"<html lang=", 1)
+        self.write(path, "")
+        (self.root / path).write_bytes(original)
+        for args in (("init", "--quiet"), ("add", path),
+                     ("-c", "user.name=Harness", "-c", "user.email=harness@example.test", "-c", "core.hooksPath=/dev/null",
+                      "commit", "--quiet", "--no-gpg-sign", "-m", "owned viewer fixture")):
+            subprocess.run(["git", *args], cwd=self.root, check=True, capture_output=True)
+        base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=self.root, text=True).strip()
+        for scenario in (PAGE, STRUCTURE_THEME):
+            self.write(scenario.spec, "import {test} from '@playwright/test';test('fixture', async () => {});")
+        marked = original.replace(b"<html lang=", b'<html class="g7pb-standalone-viewer" lang=', 1)
+        self.assertNotEqual(marked, original)
+        return path, base, original, marked
+
+    def test_standalone_viewer_root_class_uses_scoped_preview_page_and_cache_sync(self):
+        from tools.g7pb.browser_requirements import PAGE, STRUCTURE_THEME
+        path, base, original, marked = self.viewer_fixture()
+        (self.root / path).write_bytes(marked)
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [path], base=base, phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(plan.full)
+                names = [g.name for g in plan.gates]
+                self.assertEqual(set(names), {"browser-runtime-sync", "browser-assets", "browser:" + PAGE.spec, "browser:" + STRUCTURE_THEME.spec})
+                sync = next(g for g in plan.gates if g.name == "browser-runtime-sync")
+                assets = next(g for g in plan.gates if g.name == "browser-assets")
+                self.assertIn(path, sync.inputs)
+                self.assertIn(path, sync.argv)
+                self.assertEqual(assets.depends_on, (sync.name,))
+                self.assertLess(names.index(sync.name), names.index(assets.name))
+                for gate in [g for g in plan.gates if g.name.startswith("browser:")]:
+                    self.assertIn(path, gate.inputs)
+                    self.assertEqual(gate.depends_on, (assets.name,))
+                    self.assertLess(names.index(assets.name), names.index(gate.name))
+                    self.assertTrue(gate.runtime)
+                    self.assertEqual(gate.deferred, phase == "submission")
+                    before = digest_gate(self.root, gate)
+                    (self.root / path).write_bytes(original)
+                    self.assertNotEqual(digest_gate(self.root, gate), before)
+                    (self.root / path).write_bytes(marked)
+                    self.assertEqual(digest_gate(self.root, gate), before)
+
+    def test_viewer_scope_rejects_every_change_beyond_the_one_static_class(self):
+        path, base, original, marked = self.viewer_fixture()
+        mutations = (
+            original, marked.replace(b"g7pb-standalone-viewer", b"g7pb-other"),
+            marked.replace(b'class="g7pb-standalone-viewer"', b'class="g7pb-standalone-viewer other"'),
+            marked.replace(b'class="g7pb-standalone-viewer"', b'class="{{ $dynamic }}"'),
+            marked.replace(b"$page->locale", b"$other->locale"),
+            marked.replace(b"{!! $page->artifact !!}", b"{!! $other->artifact !!}"),
+            marked.replace(b"page-builder-public.css", b"changed.css"),
+            marked.replace(b"@if", b"@unless", 1),
+            marked.replace(b"\n", b"\r\n"), marked + b"<!-- additional markup -->",
+        )
+        for changed in mutations:
+            with self.subTest(changed=changed[:100]):
+                (self.root / path).write_bytes(changed)
+                plan = build_plan(self.root, [path], base=base)
+                self.assertEqual(plan.unresolved, ["Explicit shared runtime/contract scope required: " + path])
+                self.assertFalse(plan.full)
+                self.assertFalse(any(g.runtime for g in plan.gates))
+        (self.root / path).write_bytes(marked)
+        self.assertTrue(build_plan(self.root, [path], base="missing-base").unresolved)
+        empty_tree = subprocess.check_output(["git", "mktree"], cwd=self.root, input=b"").decode().strip()
+        self.assertTrue(build_plan(self.root, [path], base=empty_tree).unresolved)
+        (self.root / path).unlink()
+        self.assertTrue(build_plan(self.root, [path], base=base).unresolved)
+        target = self.root / "alternate.blade.php"
+        target.write_bytes(marked)
+        (self.root / path).symlink_to(target)
+        self.assertTrue(build_plan(self.root, [path], base=base).unresolved)
+        (self.root / path).unlink()
+        (self.root / "resources/views").rmdir()
+        (self.root / "alternate-views").mkdir()
+        (self.root / "alternate-views/viewer.blade.php").write_bytes(marked)
+        (self.root / "resources/views").symlink_to(self.root / "alternate-views", target_is_directory=True)
+        self.assertTrue(build_plan(self.root, [path], base=base).unresolved)
+
+    def test_other_views_routes_and_schemas_still_require_explicit_full(self):
+        for path in ("resources/views/admin.blade.php", "resources/views/nested/viewer.blade.php",
+                     "resources/routes/user.json", "resources/layouts/user/viewer.json", "schemas/document.json"):
+            with self.subTest(path=path):
+                self.write(path, "fixture")
+                plan = build_plan(self.root, [path])
+                self.assertEqual(plan.unresolved, ["Explicit shared runtime/contract scope required: " + path])
+                self.assertFalse(plan.full)
+                full = build_plan(self.root, [path], full=True)
+                self.assertFalse(full.unresolved)
+                self.assertIn("full-product", [g.name for g in full.gates])
+        path, base, original, marked = self.viewer_fixture()
+        (self.root / path).write_bytes(marked + b"<!-- broader Blade change -->")
+        full = build_plan(self.root, [path], base=base, full=True)
+        self.assertFalse(full.unresolved)
+        self.assertIn("full-product", [g.name for g in full.gates])
 
     def test_version_number_is_not_full(self):
         self.write("package.json", json.dumps({"version": "2", "dependencies": {"a": "1"}}))

@@ -134,8 +134,8 @@ class BrowserRequirementsTests(unittest.TestCase):
                         self.assertEqual(scenario.projects, ("desktop",))
         self.assertEqual(PUBLIC.projects, ("desktop", "tablet", "mobile"))
         self.assertEqual(scenarios_for(["resources/js/public/newUnreviewedOwner.ts"]), (PUBLIC,))
-        for extension in ("ts", "css"):
-            self.assertEqual(scenarios_for(["resources/js/public/mobileNavigation." + extension]), (MOBILE_NAV,))
+        self.assertEqual(scenarios_for(["resources/js/public/mobileNavigation.ts"]), (MOBILE_NAV,))
+        self.assertEqual(set(scenarios_for(["resources/js/public/mobileNavigation.css"])), {MOBILE_NAV, PUBLIC_SHELL})
         sources = ["resources/js/public/" + name for name in EXTRACTED_PUBLIC_SCOPES]
         self.assertEqual(set(scenarios_for(sources)), {PUBLIC, SITE_SHELL, PUBLIC_ALL})
         self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))
@@ -472,14 +472,15 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(set(scenarios_for(["resources/js/editor/main.tsx"])), {PAGE, DOCUMENT_BOUNDARY})
         for path in ("resources/js/editor/PuckDocumentBoundary.tsx", "resources/js/editor/editorDocumentBoundary.ts", "resources/js/editor/draftPersistence.ts"):
             self.assertEqual(scenarios_for([path]), (DOCUMENT_BOUNDARY,))
-        for path in ("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css"):
+        for path in ("resources/css/page-builder-public.css",):
             self.assertEqual(scenarios_for([path]), (STRUCTURE_THEME,))
         self.assertEqual(SITE_SHELL.projects, ("desktop",))
 
     def test_css_owners_select_synthetic_roles_and_keep_full_policy_separate(self):
         expected = {
             "page-builder-public.css": {STRUCTURE_THEME},
-            "page-builder-theme.css": {STRUCTURE_THEME},
+            "page-builder-theme.css": {STRUCTURE_THEME, MANAGER_CODE, PUBLIC_SHELL},
+            "page-builder-site-shell.css": {SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV},
             "page-builder-core.css": {STRUCTURE_THEME, MANAGER_CODE},
             "page-builder-manager.css": {PAGE, MANAGER_CODE},
             "page-builder-editor-wysiwyg.css": {STRUCTURE_THEME},
@@ -491,7 +492,7 @@ class BrowserRequirementsTests(unittest.TestCase):
             "page-builder-editor-catalog.css": {catalog_roles(CATALOG_FRAME, CATALOG_FIELDS, CATALOG_RESPONSIVE)},
             "page-builder-editor-appearance.css": {TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE},
         }
-        self.assertEqual(set(STYLE_CODE_SCOPES), {"resources/css/" + name for name in expected})
+        self.assertEqual(set(STYLE_CODE_SCOPES), {"resources/css/" + name for name in expected} | {"resources/js/public/mobileNavigation.css"})
         with tempfile.TemporaryDirectory() as directory:
             for name, wanted in expected.items():
                 with self.subTest(name=name):
@@ -504,9 +505,15 @@ class BrowserRequirementsTests(unittest.TestCase):
         for name in ("page-builder-site-part.css", "page-builder-site-part-controls.css",
                      "page-builder-site-part-workspace.css", "page-builder-site-part-responsive.css"):
             self.assertEqual(scenarios_for(["resources/css/" + name]), (SITE_PART_HEADER,))
-        self.assertEqual(scenarios_for(["resources/js/public/mobileNavigation.css"]), (MOBILE_NAV,))
+        self.assertEqual(set(scenarios_for(["resources/js/public/mobileNavigation.css"])), {MOBILE_NAV, PUBLIC_SHELL})
         # No global exemption: legacy content/full mappings remain available.
         self.assertEqual(set(scenarios_for(["resources/css/unclassified-fixture.css"])), {PARITY, PUBLIC})
+
+    def test_standalone_viewer_has_exact_code_mapping_without_neighbor_exemptions(self):
+        self.assertEqual(set(scenarios_for(["resources/views/viewer.blade.php"])), {PAGE, STRUCTURE_THEME})
+        for path in ("resources/views/admin.blade.php", "resources/views/nested/viewer.blade.php",
+                     "resources/layouts/user/viewer.json", "resources/routes/user.json", "schemas/page-builder-document.schema.json"):
+            self.assertEqual(scenarios_for([path]), ())
 
     def test_block_appearance_selects_theme_and_text_without_preset_input(self):
         selected = scenarios_for(["resources/js/editor/blockAppearance.ts"])

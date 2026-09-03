@@ -1,6 +1,7 @@
 """Exercise the real checker entrypoints; never run a product/browser fixture."""
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import unittest
@@ -633,6 +634,99 @@ function IsolatedSession({initialSession, contextRef, onDirty, onChange, onPubli
         result = self.registration("import {test} from '@playwright/test';test('case',async()=>{});",
                                    {"test:unit": "npm run check && vitest run"})
         self.assertTrue(result["unit"])
+
+    def mutate_css_fixture(self, root, entry, expected, pattern, replacement):
+        return subprocess.run([
+            "bash", str(ROOT / "tests/Harness/editor-layout-parity-contract.test.sh"),
+            "--mutate-css", str(root), entry, str(expected), pattern, replacement,
+        ], cwd=ROOT, capture_output=True, text=True)
+
+    def test_css_fixture_mutation_follows_entry_or_extracted_owner_and_preserves_other_bytes(self):
+        pattern = r"(\.target \{ max-width:) 48rem;"
+        for moved in (False, True):
+            with self.subTest(moved=moved), tempfile.TemporaryDirectory(prefix="g7pb-css-mutation-") as directory:
+                root = Path(directory)
+                owner = "new/appearance.css" if moved else "editor.css"
+                original = '/* .target { max-width: 48rem;} */.target { max-width: 48rem; color: red;}\n'
+                files = {owner: original, "unused.css": '.target { max-width: 48rem; color: blue;}',
+                         "shared.css": '.other { max-width: 48rem; }'}
+                if moved:
+                    files["editor.css"] = '@import "./shared.css"; @import "./new/appearance.css";'
+                self.write_sources(root, files)
+                result = self.mutate_css_fixture(root, "editor.css", 1, pattern, "$1 680px;")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout), {"count": 1, "files": [owner]})
+                self.assertEqual((root / owner).read_text(), original.replace('48rem; color: red;', '680px; color: red;'))
+                for name, value in files.items():
+                    if name != owner:
+                        self.assertEqual((root / name).read_text(), value)
+
+    def test_css_fixture_validates_all_match_counts_before_any_write(self):
+        pattern = r"(\.target \{ max-width:) 48rem;"
+        cases = (
+            ({"editor.css": '.other {}', "unused.css": '.target { max-width: 48rem;}'}, 1, "$1 680px;", "found 0"),
+            ({"editor.css": '/* .target { max-width: 48rem;} */ .other {}'}, 1, "$1 680px;", "found 0"),
+            ({"editor.css": '@import "./owner.css";.target { max-width: 48rem;}',
+              "owner.css": '.target { max-width: 48rem;}'}, 1, "$1 680px;", "found 2"),
+            ({"editor.css": '.target { max-width: 48rem;}'}, 1, "$1 48rem;", "must change"),
+        )
+        for files, expected, replacement, error in cases:
+            with self.subTest(error=error), tempfile.TemporaryDirectory(prefix="g7pb-css-mutation-reject-") as directory:
+                root = Path(directory)
+                self.write_sources(root, files)
+                before = {name: (root / name).read_bytes() for name in files}
+                result = self.mutate_css_fixture(root, "editor.css", expected, pattern, replacement)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn(error, result.stderr)
+                self.assertEqual({name: (root / name).read_bytes() for name in files}, before)
+
+    def test_css_fixture_dependency_errors_leave_every_fixture_file_unchanged(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-css-mutation-edges-") as directory:
+            root = Path(directory) / "subject"
+            root.mkdir()
+            outside = root.parent / "outside.css"
+            outside.write_text('.target { max-width:48rem; }')
+            for dependency, message in (("./missing.css", "Missing CSS import"),
+                                        ("./editor.css", "Circular CSS import"),
+                                        ("../outside.css", "CSS import escapes root")):
+                with self.subTest(dependency=dependency):
+                    source = '@import "' + dependency + '"; .target { max-width:48rem; }'
+                    (root / "editor.css").write_text(source)
+                    result = self.mutate_css_fixture(root, "editor.css", 1, "48rem", "680px")
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    self.assertIn(message, result.stderr)
+                    self.assertEqual((root / "editor.css").read_text(), source)
+                    self.assertEqual(outside.read_text(), '.target { max-width:48rem; }')
+
+    def test_css_fixture_explicit_multiple_matches_change_only_the_expected_owners(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-css-mutation-multiple-") as directory:
+            root = Path(directory)
+            self.write_sources(root, {
+                "editor.css": '@import "./first.css"; @import "./second.css";',
+                "first.css": '.target:last-child {color:red;}\n.target:last-child {color:blue;}',
+                "second.css": '@media (width < 600px) {.target:last-child {color:green;}}',
+            })
+            result = self.mutate_css_fixture(root, "editor.css", 3, r"(\.target):last-child", "$1")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), {"count": 3, "files": ["first.css", "second.css"]})
+            self.assertEqual((root / "first.css").read_text(), '.target {color:red;}\n.target {color:blue;}')
+            self.assertEqual((root / "second.css").read_text(), '@media (width < 600px) {.target {color:green;}}')
+
+    def test_legacy_public_font_mutation_supports_both_approved_root_owners(self):
+        script = (ROOT / "tests/Harness/editor-layout-parity-contract.test.sh").read_text()
+        calls = re.findall(r"^fixture_css ([^\n]+) \\\n  '([^']*)' '([^']*)'", script, re.MULTILINE)
+        public = [(args.split(), pattern, replacement) for args, pattern, replacement in calls
+                  if "html" in pattern and "standalone-viewer" in pattern]
+        self.assertEqual(len(public), 1)
+        (entry, expected), pattern, replacement = public[0]
+        for selector in (":root", "html.g7pb-standalone-viewer"):
+            with self.subTest(selector=selector), tempfile.TemporaryDirectory(prefix="g7pb-css-mutation-font-") as directory:
+                root = Path(directory)
+                original = selector + ' { color-scheme: light; font-family: system-ui, sans-serif; }'
+                self.write_sources(root, {entry: original})
+                result = self.mutate_css_fixture(root, entry, int(expected), pattern, replacement)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((root / entry).read_text(), original.replace('system-ui,', 'Inter, Pretendard,'))
 
     def css_graph(self, root, entries):
         code = ("import {readCssGraph,cssPropertyValues} from './" + CSS_SOURCES + "';"

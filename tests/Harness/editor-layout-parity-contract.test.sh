@@ -2,9 +2,71 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+# Test-owned mutation utility. Keep the shared CSS graph reader read-only.
+mutate_css() {
+  node --input-type=module - "$repo_root" "$@" <<'NODE'
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
+const [controller, subject, entry, expectedText, pattern, replacement] = process.argv.slice(2);
+if (!subject || !entry || !pattern || replacement === undefined || !/^[1-9][0-9]*$/.test(expectedText ?? '')) {
+  throw new Error('CSS fixture mutation requires root, entry, positive expected count, pattern and replacement');
+}
+const root = realpathSync(subject);
+if (root === realpathSync(controller)) throw new Error('CSS fixture mutation cannot modify the source repository');
+const { readCssGraph } = await import(pathToFileURL(join(controller, 'scripts/lib/editorCssSources.mjs')));
+const postcss = createRequire(join(controller, 'package.json'))('postcss');
+const graph = await readCssGraph(root, [entry]);
+const edits = [];
+let count = 0;
+for (const file of graph.files) {
+  const path = join(root, file);
+  const source = readFileSync(path, 'utf8');
+  // A comment that quotes a selector is not a live owner. Mask it without
+  // changing offsets so replacements preserve every other original byte.
+  const comments = [];
+  postcss.parse(source).walkComments(node => comments.push([node.source.start.offset, node.source.end.offset]));
+  let visible = source;
+  for (const [start, end] of comments.reverse()) {
+    visible = visible.slice(0, start) + visible.slice(start, end).replace(/[^\r\n]/g, ' ') + visible.slice(end);
+  }
+  const matches = [...visible.matchAll(new RegExp(pattern, 'gs'))];
+  count += matches.length;
+  let changed = source;
+  for (const match of matches.reverse()) {
+    if (!match[0].length) throw new Error('CSS fixture mutation cannot target an empty match');
+    const original = source.slice(match.index, match.index + match[0].length);
+    const next = original.replace(new RegExp(pattern, 's'), replacement);
+    if (next === original) throw new Error('CSS fixture mutation must change its matched source');
+    changed = changed.slice(0, match.index) + next + changed.slice(match.index + match[0].length);
+  }
+  if (matches.length) edits.push({ path, file, source: changed });
+}
+if (count !== Number(expectedText)) throw new Error(`CSS fixture mutation expected ${expectedText} matches, found ${count}`);
+// Validate the entire closure and cardinality before the first write.
+for (const edit of edits) writeFileSync(edit.path, edit.source);
+console.log(JSON.stringify({ count, files: edits.map(edit => edit.file) }));
+NODE
+}
+
+# Focused Python tests call only this mode, never the whole compatibility suite.
+if [[ "${1:-}" == "--mutate-css" ]]; then
+  shift
+  mutate_css "$@"
+  exit 0
+fi
+
 fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/g7pb-editor-layout-parity.XXXXXX")"
 trap 'rm -rf "$fixture_root"' EXIT
 node "$repo_root/scripts/lib/editorSourceGraph.mjs" --root "$repo_root" >"$fixture_root/source-files"
+node --input-type=module - "$repo_root" >"$fixture_root/css-files" <<'NODE'
+import { pathToFileURL } from 'node:url';
+const root = process.argv[2];
+const { readCssGraph } = await import(pathToFileURL(`${root}/scripts/lib/editorCssSources.mjs`));
+const graph = await readCssGraph(root, ['resources/css/page-builder-editor.css', 'resources/css/page-builder-public.css']);
+console.log(graph.files.join('\n'));
+NODE
 
 source_owner() {
   local path
@@ -36,14 +98,15 @@ copy_fixture() {
     mkdir -p "$fixture_root/fixture/$(dirname "$path")"
     cp "$repo_root/$path" "$fixture_root/fixture/$path"
   done <"$fixture_root/source-files"
+  # Imports may point outside resources/css (for example shared mobile UI).
+  while IFS= read -r path; do
+    mkdir -p "$fixture_root/fixture/$(dirname "$path")"
+    cp "$repo_root/$path" "$fixture_root/fixture/$path"
+  done <"$fixture_root/css-files"
 }
 
-theme_fixture_path() {
-  if [[ -f "$fixture_root/fixture/resources/css/page-builder-theme.css" ]]; then
-    echo "$fixture_root/fixture/resources/css/page-builder-theme.css"
-  else
-    echo "$fixture_root/fixture/resources/css/page-builder-editor.css"
-  fi
+fixture_css() {
+  mutate_css "$fixture_root/fixture" "$@"
 }
 
 expect_failure() {
@@ -88,18 +151,18 @@ perl -0pi -e 's/ancestorTrail/removedTrail/g' \
 expect_failure '브라우저 WYSIWYG 실패에는 실제 글자 폭, 줄바꿈 속성, 편집 상태와 semantic DOM 조상 진단값이 포함되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-page \[data-g7pb-heading-level\] \{[^}]*white-space:) normal;/${1} nowrap;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-page \[data-g7pb-heading-level\] \{[^}]*white-space:) normal;' '$1 nowrap;'
 expect_failure '편집 가능한 제목은 공개 heading과 같은 줄바꿈 규칙을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-hero-slider article > div:not\(\[data-g7pb-richtext-field\]\) \{[^}]*padding:) clamp\(2rem, 6vw, 5rem\);/${1} 72px;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-hero-slider article > div:not\(\[data-g7pb-richtext-field\]\) \{[^}]*padding:) clamp\(2rem, 6vw, 5rem\);' '$1 72px;'
 expect_failure '편집기 Hero Slider copy inset은 공개 슬라이더와 같은 유동 여백이어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-bar-chart figcaption > \[data-g7pb-heading-level="2"\] \{ max-width:) 48rem;/${1} 680px;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-bar-chart figcaption > \[data-g7pb-heading-level="2"\] \{ max-width:) 48rem;' '$1 680px;'
 expect_failure '편집기 Bar Chart 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'
 
 copy_fixture
@@ -108,13 +171,13 @@ perl -0pi -e "s/const image = safeImage\(imageSrc\);/const legacyClass = 'g7pb-p
 expect_failure '편집기 Hero는 공개 Hero와 같은 direct grid child 구조를 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-icon-list > header :is\(h2, \[data-g7pb-heading-level="2"\]\) \{ max-width:) 48rem;/${1} 18ch;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-icon-list > header :is\(h2, \[data-g7pb-heading-level="2"\]\) \{ max-width:) 48rem;' '$1 18ch;'
 expect_failure '편집기 Icon List 제목 폭은 공개 section heading의 48rem 계약을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-logo-cloud--layout-grid > div:not\(\[data-g7pb-richtext-field\]\)):last-child/${1}/g' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 3 \
+  '(\.g7pb-preview-logo-cloud--layout-grid > div:not\(\[data-g7pb-richtext-field\]\)):last-child' '$1'
 expect_failure '편집기 Logo grid 열은 로고 고유 폭보다 작아질 수 있어야 합니다.'
 
 copy_fixture
@@ -123,13 +186,13 @@ perl -0pi -e 's/lineCount: Math\.max\(/lineCount: Math.min(/' \
 expect_failure 'contenteditable과 semantic heading의 줄 수는 range fragment와 실제 line box 높이를 함께 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-hero :is\(h1,[^}]*font-size: clamp\(2\.5rem, 7vw, )5\.75rem/${1}4rem/s' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-hero :is\(h1,[^}]*font-size: clamp\(2\.5rem, 7vw, )5\.75rem' '$14rem'
 expect_failure '편집기 Hero 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(--g7pb-theme-radius:) 1rem;/${1} .75rem;/' \
-  "$(theme_fixture_path)"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(--g7pb-theme-radius:) 1rem;' '$1 .75rem;'
 expect_failure '편집기와 공개 출력의 기본 radius는 동일한 1rem 계약이어야 합니다.'
 
 copy_fixture
@@ -138,28 +201,29 @@ perl -0pi -e 's/"\@puckeditor\/core": "0\.23\.0"/"\@puckeditor\/core": "^0.23.0"
 expect_failure '모바일 헤더 흐름은 검증된 Puck 0.23.0 의미 DOM 계약과 함께 고정되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-header-controls \{\n    position:) static;/${1} fixed;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-header-controls \{\n    position:) static;' '$1 fixed;'
 expect_failure '모바일 제품 header control은 Puck MenuBar 흐름 안에 배치되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-header-controls \{[^}]*position: static;)/${1}\n    z-index: 80;/s' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-header-controls \{[^}]*position: static;)' '$1
+    z-index: 80;'
 expect_failure '모바일 제품 header control에 viewport 고정 좌표나 z-index overlay를 사용하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-header-controls \{[^}]*flex:) 1 1 100%;/${1} 0 0 auto;/s' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-header-controls \{[^}]*flex:) 1 1 100%;' '$1 0 0 auto;'
 expect_failure '모바일 제품 header control은 Puck toggle과 겹치지 않는 줄바꿈 가능한 전체 폭 영역이어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(> :has\(\.g7pb-header-controls\) \{\n    display:) contents;/${1} flex;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(> :has\(\.g7pb-header-controls\) \{\n    display:) contents;' '$1 flex;'
 expect_failure '모바일 Puck tools wrapper는 헤더 grid 흐름에 메뉴를 참여시켜야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(> :has\(\.g7pb-header-controls\) \{\n    position:) static;/${1} absolute;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(> :has\(\.g7pb-header-controls\) \{\n    position:) static;' '$1 absolute;'
 expect_failure '모바일 Puck MenuBar는 절대 배치 overlay가 아닌 헤더 전체 폭 두번째 행이어야 합니다.'
 
 copy_fixture
@@ -198,58 +262,58 @@ perl -0pi -e 's/useSelectedActionBarSafeZone\(true\)/useSelectedActionBarSafeZon
 expect_failure 'ActionBar 안전영역은 PC·태블릿·모바일 모든 canvas에서 공통 적용되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{)/$1 height: 0; min-height: 0;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(div:has\(> \.g7pb-selected-block-actionbar\) \{)' '$1 height: 0; min-height: 0;'
 expect_failure 'ActionBar host 높이를 0으로 만들어 실제 컨트롤의 세로 hit area를 잘라내면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(div:has\(> \.g7pb-selected-block-actionbar\) \{ pointer-events:) none;/$1 auto;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(div:has\(> \.g7pb-selected-block-actionbar\) \{ pointer-events:) none;' '$1 auto;'
 expect_failure '이동 전 ActionBar host의 빈 hit box는 캔버스 포인터를 가로채면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-selected-block-actionbar \{[^}]*overflow:) auto hidden;/$1 hidden;/s' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-selected-block-actionbar \{[^}]*overflow:) auto hidden;' '$1 hidden;'
 expect_failure 'ActionBar는 다중 행 줄바꿈 대신 실제 높이를 가진 가로 스크롤 strip을 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/var\(--g7pb-selected-actionbar-translate-y, 0\)/0px/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  'var\(--g7pb-selected-actionbar-translate-y, 0\)' '0px'
 expect_failure 'ActionBar는 계산된 host 안전영역 위치가 준비된 뒤 실제 포인터 hit area로 노출되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(data-g7pb-safe-zone-ready=\x27true\x27\] \{ visibility:) visible;/$1 hidden;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(data-g7pb-safe-zone-ready=\x27true\x27\] \{ visibility:) visible;' '$1 hidden;'
 expect_failure 'ActionBar는 안전영역 계산 완료 상태에서만 표시되어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-selected-block-actionbar > div \{[^}]*flex-wrap:) nowrap;/$1 wrap;/s' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-selected-block-actionbar > div \{[^}]*flex-wrap:) nowrap;' '$1 wrap;'
 expect_failure 'ActionBar 컨트롤은 텍스트를 덮는 다중 행으로 줄바꿈하면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar__options\.g7pb-richtext-floating-layer,[^}]*position:) fixed;/$1 absolute;/s' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-richtext-inline-toolbar__options\.g7pb-richtext-floating-layer,[^}]*position:) fixed;' '$1 absolute;'
 expect_failure '부분 글자 선택·링크 패널은 ActionBar overflow 밖의 host 안전영역 portal layer로 열려야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar \{ width:) max-content;/${1} 100%;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-richtext-inline-toolbar \{ width:) max-content;' '$1 100%;'
 expect_failure '모바일 부분 글자 추가 서식은 한 줄 고정 폭 toolbar여야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar__choice \{ min-width: 0; flex:) 0 0 auto;/${1} 1 1 4rem;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-richtext-inline-toolbar__choice \{ min-width: 0; flex:) 0 0 auto;' '$1 1 1 4rem;'
 expect_failure '모바일 부분 글자 선택기는 늘어나거나 줄바꿈하지 않는 항목이어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-richtext-inline-toolbar__choice > button \{ width: auto; min-width:) 3\.2rem;/${1} 0;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-richtext-inline-toolbar__choice > button \{ width: auto; min-width:) 3\.2rem;' '$1 0;'
 expect_failure '모바일 부분 글자 선택 버튼은 읽을 수 있는 고정 폭 범위를 유지해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-page \*::after\s*\{\s*box-sizing:) border-box;' '$1 content-box;'
 expect_failure 'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'
 
 copy_fixture
@@ -263,43 +327,43 @@ perl -0pi -e "s/test\\('keeps explicit typography/test.skip('keeps explicit typo
 expect_failure 'typography computed-style 행동 case를 정확히 1개 등록해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-theme-font-modern \{ font-family:) system-ui,/${1} Inter, Pretendard,/' \
-  "$(theme_fixture_path)"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-theme-font-modern \{ font-family:) system-ui,' '$1 Inter, Pretendard,'
 expect_failure '편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(:root \{ color-scheme: light; font-family:) system-ui,/${1} Inter, Pretendard,/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
+fixture_css resources/css/page-builder-public.css 1 \
+  '((?::root|html\.g7pb-standalone-viewer)\s*\{[^}]*font-family:) system-ui,' '$1 Inter, Pretendard,'
 expect_failure '공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-logo-cloud h2 \{[^}]*line-height:) 1\.2;/${1} 1.5;/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
+fixture_css resources/css/page-builder-public.css 1 \
+  '(\.g7pb-logo-cloud h2 \{[^}]*line-height:) 1\.2;' '$1 1.5;'
 expect_failure 'Logo Cloud 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(> :is\(header, figcaption\) \{[^}]*max-width:) 48rem;/${1} 760px;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(> :is\(header, figcaption\) \{[^}]*max-width:) 48rem;' '$1 760px;'
 expect_failure '공통 섹션 제목 컨테이너는 공개 g7pb-section-heading과 같은 48rem 폭이어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(> header > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;/${1} 680px;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(> header > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;' '$1 680px;'
 expect_failure '공통 섹션 제목 leaf는 편집기 전용 680px 제한 없이 공개 heading 컨테이너 폭을 채워야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-richtext\.g7pb-preview-rich-text__content \{[^}]*font-size:) 1rem;/${1} 1.25rem;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-richtext\.g7pb-preview-rich-text__content \{[^}]*font-size:) 1rem;' '$1 1.25rem;'
 expect_failure '리치텍스트 본문은 편집기와 공개 출력에서 동일한 기본 1rem typography를 사용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-button \{[^}]*font-weight:) 700;/${1} 800;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-button \{[^}]*font-weight:) 700;' '$1 800;'
 expect_failure '편집기 버튼의 기본 굵기는 공개 출력과 동일해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-block > \* \{ width: 100%; max-width: 100%; )margin-inline: 0;/${1}margin-inline: auto;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-block > \* \{ width: 100%; max-width: 100%; )margin-inline: 0;' '$1margin-inline: auto;'
 expect_failure '편집 block wrapper가 공개 block과 다른 inline margin으로 자식을 재배치하면 안 됩니다.'
 
 copy_fixture
@@ -308,43 +372,43 @@ perl -0pi -e "s/ g7pb-full-site-page--template/ g7pb-full-site-page--removed/" \
 expect_failure 'template shell 전용 G7 Container envelope class를 편집 page root에 적용해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(@container \(max-width: )800px/${1}767px/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(@container \(max-width: )800px' '$1767px'
 expect_failure '편집기 Hero Split은 768px 경계에서 단일 열로 접혀야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(@media \(max-width: )800px/${1}767px/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
+fixture_css resources/css/page-builder-public.css 1 \
+  '(@media \(max-width: )800px' '$1767px'
 expect_failure '공개 Hero Split도 768px 경계에서 편집기와 동일하게 단일 열로 접혀야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-gallery__grid--4 \{ grid-template-columns: repeat\(4, )minmax\(0, 1fr\)/${1}1fr/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-gallery__grid--4 \{ grid-template-columns: repeat\(4, )minmax\(0, 1fr\)' '$11fr'
 expect_failure '편집기 Gallery grid 열은 이미지 고유 폭보다 작아질 수 있어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-gallery figure > span \{ )display: block/${1}display: inline/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-gallery figure > span \{ )display: block' '$1display: inline'
 expect_failure '편집기 Gallery media wrapper는 width가 적용되는 block formatting context여야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-hero-split--layout-overlap \{ grid-template-columns: repeat\(12, )minmax\(0, 1fr\)/${1}1fr/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-hero-split--layout-overlap \{ grid-template-columns: repeat\(12, )minmax\(0, 1fr\)' '$11fr'
 expect_failure '편집기 overlap Hero grid는 최소 콘텐츠 폭으로 캔버스를 밀면 안 됩니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-logo-cloud--layout-grid ul \{ display: grid; grid-template-columns: repeat\(4, )minmax\(0, 1fr\)/${1}1fr/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
+fixture_css resources/css/page-builder-public.css 1 \
+  '(\.g7pb-logo-cloud--layout-grid ul \{ display: grid; grid-template-columns: repeat\(4, )minmax\(0, 1fr\)' '$11fr'
 expect_failure '공개 Logo grid 열도 로고 고유 폭보다 작아질 수 있어야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-icon-list > header :is\(h2, \[data-g7pb-heading-level="2"\]\) \{[^}]*font-size: clamp\()2\.1rem, 5vw, 4\.25rem/${1}2rem, 5vw, 4rem/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(\.g7pb-preview-icon-list > header :is\(h2, \[data-g7pb-heading-level="2"\]\) \{[^}]*font-size: clamp\()2\.1rem, 5vw, 4\.25rem' '$12rem, 5vw, 4rem'
 expect_failure '편집기 Icon List 제목의 반응형 크기는 공개 section heading과 같아야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(@media \(max-width: )700px(\) \{\n  \.g7pb-preview-cta-split,)/${1}899px${2}/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor.css"
+fixture_css resources/css/page-builder-editor.css 1 \
+  '(@media \(max-width: )700px(\) \{\n  \.g7pb-preview-cta-split,)' '$1899px$2'
 expect_failure '편집기 FAQ·문의·지도·배너 CTA는 공개본과 같은 700px 기준에서 1열로 전환해야 합니다.'
 
 copy_fixture

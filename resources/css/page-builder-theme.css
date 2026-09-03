@@ -10,6 +10,14 @@ body.g7pb-manager-shell,
 html:has(body.g7pb-editor-shell),
 html:has(body.g7pb-manager-shell),
 html.g7pb-standalone-viewer,
+.g7pb-site-header,
+.g7pb-site-footer,
+.g7pb-site-announcement,
+.g7pb-site-subnav,
+.g7pb-shell-popover,
+.g7pb-mobile-menu,
+.g7pb-mobile-menu__backdrop,
+.g7pb-system-controls,
 .g7pb-document-theme {
   --g7pb-neutral-0: #fff;
   --g7pb-neutral-50: #fcfbf9;
@@ -30,6 +38,42 @@ html.g7pb-standalone-viewer,
   --g7pb-red-50: #fff4f3;
   --g7pb-red-100: #fee4e2;
   --g7pb-red-700: #b42318;
+}
+
+/* Shell surfaces follow the host theme, including panels portalled outside the page. */
+:is(.g7pb-site-header, .g7pb-site-footer, .g7pb-site-announcement, .g7pb-site-subnav, .g7pb-shell-popover, .g7pb-mobile-menu, .g7pb-mobile-menu__backdrop, .g7pb-system-controls) {
+  --g7pb-shell-text: var(--g7pb-neutral-900);
+  --g7pb-shell-muted: #526071;
+  --g7pb-shell-border: #dce2ec;
+  --g7pb-shell-surface: var(--g7pb-neutral-0);
+  --g7pb-shell-hover: #f2f5fa;
+  --g7pb-shell-input-border: #b8c4d5;
+  --g7pb-shell-accent: #2456df;
+  --g7pb-shell-accent-soft: #eef3ff;
+  --g7pb-shell-on-accent: var(--g7pb-neutral-0);
+  --g7pb-shell-danger: var(--g7pb-red-700);
+  --g7pb-shell-shadow-ink: #0f172a;
+  --g7pb-shell-scrim-ink: #0a1220;
+  --g7pb-shell-inverse: var(--g7pb-neutral-900);
+  --g7pb-shell-on-inverse: var(--g7pb-neutral-0);
+  --g7pb-shell-header-bg: color-mix(in srgb, var(--g7pb-shell-surface) 96%, transparent);
+  --g7pb-shell-footer-bg: #111827;
+  --g7pb-shell-footer-text: #d6dce6;
+  --g7pb-shell-footer-muted: #919bad;
+  --g7pb-shell-footer-border: #2d3748;
+}
+:is(html[class~='dark'], [data-theme='dark']) :is(.g7pb-site-header, .g7pb-site-footer, .g7pb-site-announcement, .g7pb-site-subnav, .g7pb-shell-popover, .g7pb-mobile-menu, .g7pb-mobile-menu__backdrop, .g7pb-system-controls) {
+  --g7pb-shell-text: #eef2f8;
+  --g7pb-shell-muted: #b8c1cf;
+  --g7pb-shell-border: #344054;
+  --g7pb-shell-surface: var(--g7pb-neutral-900);
+  --g7pb-shell-hover: #243247;
+  --g7pb-shell-input-border: #536279;
+  --g7pb-shell-accent: #8ba7ff;
+  --g7pb-shell-accent-soft: #243247;
+  --g7pb-shell-on-accent: var(--g7pb-neutral-900);
+  --g7pb-shell-danger: #fda4af;
+  --g7pb-shell-header-bg: var(--g7pb-shell-surface);
 }
 
 /* Shared page design tokens. Editor canvas and compiled viewer import this source. */

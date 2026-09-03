@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import ts from 'typescript';
+import postcss from 'postcss';
 import { fileURLToPath } from 'node:url';
 import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
 import { readCssGraph, cssPropertyValues } from './lib/editorCssSources.mjs';
@@ -27,9 +28,43 @@ function requirePattern(errors, value, pattern, message) {
   if (!pattern.test(value)) errors.push(message);
 }
 
-function usesSystemFont(css, selector) {
-  const values = cssPropertyValues(css, selector, 'font-family');
-  return values.length > 0 && values.every(value => /^system-ui\s*,/.test(value));
+function usesSystemFont(css, selectors) {
+  const normalize = value => value.trim().replaceAll('"', "'").replace(/\s+/g, ' ').replace(/\s*([(),])\s*/g, '$1');
+  const expected = new Set(selectors.map(normalize));
+  const values = [];
+  let unconditional = false;
+  postcss.parse(css).walkRules(rule => {
+    if (!rule.selectors.some(selector => expected.has(normalize(selector)))) return;
+    rule.each(node => {
+      if (node.type !== 'decl' || node.prop !== 'font-family') return;
+      values.push(node.value.trim());
+      // A print-only/dummy nested rule cannot establish the normal canvas font.
+      if (rule.parent.type === 'root') unconditional = true;
+    });
+  });
+  return unconditional && values.every(value => /^system-ui\s*,/.test(value));
+}
+
+/** Inspect connected CSS owners; computed cascade/host behavior remains a browser contract. */
+export function validateModernSystemFonts(editorCss, publicCss) {
+  const scoped = scope => [
+    `${scope} :is(.g7pb-element-font--modern, [data-g7pb-font='modern'])`,
+    `${scope} :is([data-g7pb-font='modern'], .g7pb-element-font--modern)`,
+  ];
+  const editorScoped = scoped('.g7pb-preview-page .g7pb-preview-block');
+  const publicScoped = scoped('.g7pb-document-theme .g7pb-block');
+  const errors = [];
+  if (!usesSystemFont(editorCss, ['.g7pb-theme-font-modern'])
+    || !usesSystemFont(editorCss, ['.g7pb-element-font--modern', ...editorScoped])
+    || !usesSystemFont(editorCss, [".g7pb-document-theme [data-g7pb-font='modern']", ...editorScoped])) {
+    errors.push('편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.');
+  }
+  if (!usesSystemFont(publicCss, [':root', 'html.g7pb-standalone-viewer']) || !usesSystemFont(publicCss, ['.g7pb-theme-font-modern'])
+    || !usesSystemFont(publicCss, ['.g7pb-element-font--modern', ...publicScoped])
+    || !usesSystemFont(publicCss, ["[data-g7pb-font='modern']", ...publicScoped])) {
+    errors.push('공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.');
+  }
+  return errors;
 }
 
 /** Registration only: the scoped runtime plan executes the computed-style assertions. */
@@ -197,14 +232,7 @@ export async function validateEditorLayoutParity(root) {
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
   requirePattern(errors, publicCss, /\.g7pb-logo-cloud\s+h2\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.2;/,
     'Logo Cloud 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
-  if (!usesSystemFont(editorCss, '.g7pb-theme-font-modern')
-    || !usesSystemFont(editorCss, ".g7pb-document-theme [data-g7pb-font='modern']")) {
-    errors.push('편집 캔버스 modern 글꼴은 호스트가 임의 정의할 수 없는 deterministic system stack이어야 합니다.');
-  }
-  if (!usesSystemFont(publicCss, ':root') || !usesSystemFont(publicCss, '.g7pb-theme-font-modern')
-    || !usesSystemFont(publicCss, "[data-g7pb-font='modern']")) {
-    errors.push('공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.');
-  }
+  errors.push(...validateModernSystemFonts(editorCss, publicCss));
   requirePattern(errors, catalogSource,
     /function LogoCloudPreview(?:(?!\nfunction )[\s\S])*?<RichTextCanvasField as="h2"[^>]*fieldPath="heading">/,
     '로고 목록 제목은 공개 출력과 동일한 h2 semantic 계약을 사용해야 합니다.');

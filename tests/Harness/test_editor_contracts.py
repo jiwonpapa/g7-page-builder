@@ -466,6 +466,121 @@ function IsolatedSession({initialSession, contextRef, onDirty, onChange, onPubli
             result = self.check_layout(root)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def modern_fonts(self, root):
+        selected = json.loads(os.environ.get("G7PB_EDITOR_CONTRACT_CHECKERS", "{}"))
+        checker = selected.get(CHECKERS[1], str(ROOT / CHECKERS[1]))
+        code = ("import {pathToFileURL} from 'node:url';const args=JSON.parse(process.argv[1]);"
+                "const {validateModernSystemFonts}=await import(pathToFileURL(args.checker));"
+                "const {readCssGraph}=await import(pathToFileURL(args.css));"
+                "const editor=await readCssGraph(args.root,['editor.css']);"
+                "const publicCss=await readCssGraph(args.root,['public.css']);"
+                "console.log(JSON.stringify(validateModernSystemFonts(editor.css,publicCss.css)));")
+        result = subprocess.run(["node", "--input-type=module", "-e", code, json.dumps({
+            "checker": checker, "css": str(ROOT / CSS_SOURCES), "root": str(root),
+        })], cwd=ROOT, text=True, capture_output=True, check=True)
+        return json.loads(result.stdout)
+
+    def modern_font_fixture(self, root):
+        stack = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+        editor = ".g7pb-preview-page .g7pb-preview-block :is(.g7pb-element-font--modern, [data-g7pb-font='modern'])"
+        public = ".g7pb-document-theme .g7pb-block :is(.g7pb-element-font--modern, [data-g7pb-font='modern'])"
+        self.write_sources(root, {
+            "theme.css": ".g7pb-theme-font-modern {font-family:" + stack + ";}",
+            "editor.css": '@import "./theme.css"; @import "./editor-font.css";',
+            "public.css": '@import "./theme.css"; @import "./public-font.css"; :root {font-family:' + stack + ';}',
+            "editor-font.css": editor + " {font-family:" + stack + ";}",
+            "public-font.css": public + " {font-family:" + stack + ";}",
+        })
+        return stack, editor, public
+
+    def test_modern_font_accepts_connected_scoped_and_legacy_marker_owners(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-modern-font-owner-") as directory:
+            root = Path(directory)
+            stack, editor, public = self.modern_font_fixture(root)
+            self.assertEqual(self.modern_fonts(root), [])
+            # Formatting and :is branch order are not semantic ownership changes.
+            (root / "editor-font.css").write_text(editor.replace(
+                ":is(.g7pb-element-font--modern, [data-g7pb-font='modern'])",
+                ':is( [data-g7pb-font="modern"],\n .g7pb-element-font--modern )',
+            ) + " {font-family:" + stack + ";}")
+            self.assertEqual(self.modern_fonts(root), [])
+            for name, attribute in (
+                ("editor-font.css", ".g7pb-document-theme [data-g7pb-font='modern']"),
+                ("public-font.css", "[data-g7pb-font='modern']"),
+            ):
+                (root / name).write_text(".g7pb-element-font--modern, " + attribute + " {font-family:" + stack + ";}")
+            self.assertEqual(self.modern_fonts(root), [])
+
+    def test_modern_font_accepts_standalone_root_without_hiding_a_bad_existing_owner(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-modern-font-viewer-") as directory:
+            root = Path(directory)
+            stack, _, _ = self.modern_font_fixture(root)
+            entry = root / "public.css"
+            original = entry.read_text()
+            self.assertIn(":root {font-family:", original)
+            standalone = original.replace(":root {font-family:", "html.g7pb-standalone-viewer {font-family:")
+            entry.write_text(standalone)
+            self.assertEqual(self.modern_fonts(root), [])
+            for source in (
+                standalone.replace("system-ui,", "Inter,") + ":root {font-family:" + stack + ";}",
+                original.replace("system-ui,", "Inter,") + "html.g7pb-standalone-viewer {font-family:" + stack + ";}",
+            ):
+                with self.subTest(source=source):
+                    entry.write_text(source)
+                    errors = self.modern_fonts(root)
+                    self.assertEqual(len(errors), 1, errors)
+                    self.assertIn("공개 블록 modern", errors[0])
+
+    def test_modern_font_rejects_disconnected_commented_and_unused_rules(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-modern-font-unused-") as directory:
+            root = Path(directory)
+            stack, editor, public = self.modern_font_fixture(root)
+            for name, selector, error in (
+                ("editor", editor, "편집 캔버스 modern"),
+                ("public", public, "공개 블록 modern"),
+            ):
+                rule = selector + " {font-family:" + stack + ";}"
+                owner = root / (name + "-font.css")
+                for source in ("/* " + rule + " */", ".unused " + rule, "@media print {" + rule + "}"):
+                    with self.subTest(owner=name, source=source):
+                        owner.write_text(source)
+                        errors = self.modern_fonts(root)
+                        self.assertEqual(len(errors), 1, errors)
+                        self.assertIn(error, errors[0])
+                owner.write_text(rule)
+                entry = root / (name + ".css")
+                original = entry.read_text()
+                connected = '@import "./' + name + '-font.css";'
+                self.assertIn(connected, original)
+                entry.write_text(original.replace(connected, "/* " + connected + " */"))
+                errors = self.modern_fonts(root)
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn(error, errors[0])
+                entry.write_text(original)
+
+    def test_modern_font_requires_both_markers_and_rejects_bad_live_values_despite_dummy(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-modern-font-values-") as directory:
+            root = Path(directory)
+            stack, editor, public = self.modern_font_fixture(root)
+            for name, selector, legacy, error in (
+                ("editor", editor, ".g7pb-document-theme [data-g7pb-font='modern']", "편집 캔버스 modern"),
+                ("public", public, "[data-g7pb-font='modern']", "공개 블록 modern"),
+            ):
+                owner = root / (name + "-font.css")
+                original = owner.read_text()
+                for source in (
+                    legacy + " {font-family:" + stack + ";}",
+                    ".g7pb-element-font--modern {font-family:" + stack + ";}",
+                    original.replace("system-ui,", "Inter, Pretendard,")
+                    + ".g7pb-element-font--modern, " + legacy + " {font-family:" + stack + ";}",
+                ):
+                    with self.subTest(owner=name, source=source):
+                        owner.write_text(source)
+                        errors = self.modern_fonts(root)
+                        self.assertEqual(len(errors), 1, errors)
+                        self.assertIn(error, errors[0])
+                owner.write_text(original)
+
     def typography_registration(self, source):
         selected = json.loads(os.environ.get("G7PB_EDITOR_CONTRACT_CHECKERS", "{}"))
         checker = selected.get(CHECKERS[1], str(ROOT / CHECKERS[1]))

@@ -12,16 +12,19 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockMark
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockPropertyReader;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockRuntimeCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\AnchorMenuBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ArticleListBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BarChartBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BlockquoteBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BreadcrumbsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ButtonsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\CardGridBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ComparisonTableBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ContactBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\CtaBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\DividerBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\DownloadResourcesBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\EventScheduleBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\FaqAccordionBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\FeaturesBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\GalleryBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\HeadingBlockCompiler;
@@ -36,11 +39,15 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\Lo
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\LogoCloudBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\NoticeBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\PricingBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ProcessTimelineBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\RichTextBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\SocialLinksBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\StatsBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\TabsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\TeamBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\TestimonialsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\TestimonialSliderBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\VideoEmbedBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BuiltInBlockTypes;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\HtmlEscaper;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackAssetUrlPort;
@@ -381,13 +388,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.g7-ecommerce-product-grid-01' => fn (array $props): string => $this->compileG7ProductGrid($props),
             'builtin.inquiry-form-01' => fn (array $props): string => $this->compileInquiryForm($props),
             'builtin.map-directions-01' => fn (array $props): string => $this->compileMapDirections($props),
-            'builtin.testimonials-01' => fn (array $props): string => $this->compileTestimonials($props),
-            'builtin.faq-accordion-01' => fn (array $props): string => $this->compileFaqAccordion($props),
-            'builtin.process-timeline-01' => fn (array $props): string => $this->compileProcessTimeline($props),
-            'builtin.tabs-01' => fn (array $props): string => $this->compileTabs($props),
-            'builtin.comparison-table-01' => fn (array $props): string => $this->compileComparisonTable($props),
-            'builtin.article-list-01' => fn (array $props): string => $this->compileArticleList($props),
-            'builtin.video-embed-01' => fn (array $props): string => $this->compileVideoEmbed($props),
+            'builtin.testimonials-01' => new TestimonialsBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
+            'builtin.faq-accordion-01' => new FaqAccordionBlockCompiler($this->properties, $this->appearance, $this->markup, $this->richText),
+            'builtin.process-timeline-01' => new ProcessTimelineBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
+            'builtin.tabs-01' => new TabsBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
+            'builtin.comparison-table-01' => new ComparisonTableBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
+            'builtin.article-list-01' => new ArticleListBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
+            'builtin.video-embed-01' => new VideoEmbedBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
             'builtin.logo-carousel-01' => new LogoCarouselBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
             'builtin.testimonial-slider-01' => new TestimonialSliderBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
             'builtin.event-schedule-01' => new EventScheduleBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
@@ -568,297 +575,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             : '<p>'.$this->escaper->formatText($description).'</p>');
 
         return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->markup->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileTestimonials(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Testimonials');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $items = $props['items'] ?? null;
-        $layout = $this->properties->requiredString($props, 'layout', 16);
-        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
-        if (! in_array($layout, ['grid', 'spotlight', 'split', 'wall', 'quote-hero'], true)) {
-            throw new DocumentCompileException('Testimonials layout is invalid.');
-        }
-        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
-            throw new DocumentCompileException('Testimonials must contain between two and eight items.');
-        }
-
-        $compiled = [];
-        foreach (array_values($items) as $index => $item) {
-            if (! is_array($item)) {
-                throw new DocumentCompileException("Testimonial item {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($item, ['quote', 'name', 'role', 'company', 'avatarSrc', 'avatarAlt', 'rating'], "Testimonial item {$index}");
-            $quote = $this->properties->requiredString($item, 'quote', 1200);
-            $name = $this->properties->requiredString($item, 'name', 120);
-            $role = $this->properties->optionalString($item, 'role', 120) ?? '';
-            $company = $this->properties->optionalString($item, 'company', 120) ?? '';
-            $avatarSrc = $this->properties->optionalString($item, 'avatarSrc', 2048) ?? '';
-            $avatarAlt = $this->properties->optionalString($item, 'avatarAlt', 300) ?? '';
-            $rating = $this->properties->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
-            $avatar = $this->markup->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonials__avatar', mb_substr($name, 0, 1));
-            $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escaper->escape($role).'</span>')
-                .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
-                .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escaper->escape($company).'</span>');
-            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><div class="g7pb-testimonials__quote">'.$this->richText->sanitizeRichText($quote).'</div><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escaper->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
-        }
-
-        return '<section class="g7pb-block g7pb-testimonials g7pb-testimonials--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonials">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-testimonials__items">'.implode('', $compiled).'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileFaqAccordion(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'behavior', 'openFirst', 'appearance'], 'FAQ accordion');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $items = $props['items'] ?? null;
-        $behavior = $this->properties->requiredString($props, 'behavior', 16);
-        $openFirst = $this->properties->requiredBoolean($props, 'openFirst');
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($behavior, ['single', 'multiple'], true)) {
-            throw new DocumentCompileException('FAQ accordion behavior is invalid.');
-        }
-        if (! is_array($items) || count($items) < 2 || count($items) > 12) {
-            throw new DocumentCompileException('FAQ accordion must contain between two and twelve items.');
-        }
-
-        $compiled = [];
-        foreach (array_values($items) as $index => $item) {
-            if (! is_array($item)) {
-                throw new DocumentCompileException("FAQ item {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($item, ['question', 'answer'], "FAQ item {$index}");
-            $question = $this->properties->requiredInlineRichTextString($item, 'question', 300);
-            $answer = $this->properties->requiredString($item, 'answer', 4000);
-            $open = $openFirst && $index === 0;
-            $compiled[] = '<div class="g7pb-faq__item" data-g7pb-accordion-item data-g7pb-open="'.($open ? 'true' : 'false').'">'
-                .'<div class="g7pb-faq__trigger" role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="'.($open ? 'true' : 'false').'"><span>'.$this->richText->sanitizePromotedInlineRichText($question).'</span><i aria-hidden="true">+</i></div>'
-                .'<div class="g7pb-faq__answer" data-g7pb-accordion-panel>'.$this->richText->sanitizeRichText($answer).'</div></div>';
-        }
-
-        return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileProcessTimeline(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Process timeline');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $items = $props['items'] ?? null;
-        $layout = $this->properties->requiredString($props, 'layout', 16);
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($layout, ['vertical', 'horizontal'], true)) {
-            throw new DocumentCompileException('Process timeline layout is invalid.');
-        }
-        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
-            throw new DocumentCompileException('Process timeline must contain between two and eight items.');
-        }
-
-        $compiled = [];
-        foreach (array_values($items) as $index => $item) {
-            if (! is_array($item)) {
-                throw new DocumentCompileException("Process step {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($item, ['title', 'body', 'linkLabel', 'linkUrl'], "Process step {$index}");
-            $title = $this->properties->requiredInlineRichTextString($item, 'title', 200);
-            $body = $this->properties->requiredString($item, 'body', 1500);
-            $linkLabel = $this->properties->optionalString($item, 'linkLabel', 120) ?? '';
-            $linkUrl = $this->properties->optionalString($item, 'linkUrl', 2048) ?? '';
-            if (($linkLabel === '') !== ($linkUrl === '')) {
-                throw new DocumentCompileException("Process step {$index} link requires both a label and URL.");
-            }
-            $link = '';
-            if ($linkUrl !== '') {
-                $this->urls->assertAllowedUrl($linkUrl, "Process step {$index}");
-                $link = '<a href="'.$this->escaper->escapeAttribute($linkUrl).'">'.$this->escaper->escape($linkLabel).' <span aria-hidden="true">→</span></a>';
-            }
-            $bodyMarkup = $this->richText->hasRichTextMarkup($body)
-                ? '<div class="g7pb-process__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p>'.$this->escaper->formatText($body).'</p>';
-            $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</li>';
-        }
-
-        return '<section class="g7pb-block g7pb-process g7pb-process--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="process-timeline">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileTabs(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'initialTab', 'style', 'appearance'], 'Tabs');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $items = $props['items'] ?? null;
-        $initialTab = $props['initialTab'] ?? null;
-        $style = $this->properties->requiredString($props, 'style', 16);
-        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
-        if (! in_array($style, ['underline', 'pills'], true)) {
-            throw new DocumentCompileException('Tabs style is invalid.');
-        }
-        if (! is_array($items) || count($items) < 2 || count($items) > 6) {
-            throw new DocumentCompileException('Tabs must contain between two and six items.');
-        }
-        if (! is_int($initialTab) || $initialTab < 0 || $initialTab >= count($items)) {
-            throw new DocumentCompileException('Tabs initial tab is invalid.');
-        }
-
-        $buttons = [];
-        $panels = [];
-        foreach (array_values($items) as $index => $item) {
-            if (! is_array($item)) {
-                throw new DocumentCompileException("Tab item {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($item, ['label', 'heading', 'body'], "Tab item {$index}");
-            $label = $this->properties->requiredString($item, 'label', 80);
-            $itemHeading = $this->properties->requiredInlineRichTextString($item, 'heading', 200);
-            $body = $this->properties->requiredString($item, 'body', 4000);
-            $selected = $initialTab === $index;
-            $buttons[] = '<span data-g7pb-runtime-button role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escaper->escape($label).'</span>';
-            $bodyMarkup = $this->richText->hasRichTextMarkup($body)
-                ? '<div class="g7pb-tabs__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p>'.$this->escaper->formatText($body).'</p>';
-            $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->richText->sanitizePromotedInlineRichText($itemHeading).'</h3>'.$bodyMarkup.'</article>';
-        }
-
-        return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileComparisonTable(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'columns', 'rows', 'highlightColumn', 'appearance'], 'Comparison table');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $columns = $props['columns'] ?? null;
-        $rows = $props['rows'] ?? null;
-        $highlight = $props['highlightColumn'] ?? null;
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-        if (! is_array($columns) || count($columns) < 2 || count($columns) > 4) {
-            throw new DocumentCompileException('Comparison table must contain between two and four columns.');
-        }
-        if (! is_array($rows) || count($rows) < 1 || count($rows) > 12) {
-            throw new DocumentCompileException('Comparison table must contain between one and twelve rows.');
-        }
-        if (! is_int($highlight) || $highlight < -1 || $highlight >= count($columns)) {
-            throw new DocumentCompileException('Comparison table highlighted column is invalid.');
-        }
-
-        $headings = [];
-        foreach (array_values($columns) as $index => $column) {
-            if (! is_array($column)) {
-                throw new DocumentCompileException("Comparison column {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($column, ['title', 'description'], "Comparison column {$index}");
-            $title = $this->properties->requiredInlineRichTextString($column, 'title', 120);
-            $description = $this->properties->optionalInlineRichTextString($column, 'description', 300) ?? '';
-            $headings[] = '<th scope="col"'.($highlight === $index ? ' class="is-highlighted"' : '').'><strong>'.$this->richText->sanitizePromotedInlineRichText($title).'</strong>'.($description === '' ? '' : '<span>'.$this->richText->sanitizePromotedInlineRichText($description).'</span>').'</th>';
-        }
-
-        $compiledRows = [];
-        foreach (array_values($rows) as $rowIndex => $row) {
-            if (! is_array($row)) {
-                throw new DocumentCompileException("Comparison row {$rowIndex} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($row, ['feature', 'values'], "Comparison row {$rowIndex}");
-            $feature = $this->properties->requiredInlineRichTextString($row, 'feature', 200);
-            $values = $row['values'] ?? null;
-            if (! is_array($values) || count($values) !== count($columns)) {
-                throw new DocumentCompileException("Comparison row {$rowIndex} values must match the columns.");
-            }
-            $cells = [];
-            foreach (array_values($values) as $columnIndex => $value) {
-                if (! is_string($value) || trim($value) === '' || mb_strlen($value) > 300) {
-                    throw new DocumentCompileException("Comparison row {$rowIndex} value {$columnIndex} is invalid.");
-                }
-                $cells[] = '<td'.($highlight === $columnIndex ? ' class="is-highlighted"' : '').'>'.$this->escaper->formatText($value).'</td>';
-            }
-            $compiledRows[] = '<tr><th scope="row">'.$this->richText->sanitizePromotedInlineRichText($feature).'</th>'.implode('', $cells).'</tr>';
-        }
-
-        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll" role="region" aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).' 비교표" tabindex="0"><table><caption class="g7pb-visually-hidden">'.$this->escaper->escape($this->richText->inlinePlainText($heading)).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileArticleList(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Article list');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $items = $props['items'] ?? null;
-        $layout = $this->properties->requiredString($props, 'layout', 16);
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($layout, ['list', 'grid', 'featured', 'magazine', 'editorial'], true)) {
-            throw new DocumentCompileException('Article list layout is invalid.');
-        }
-        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
-            throw new DocumentCompileException('Article list must contain between two and eight items.');
-        }
-
-        $compiled = [];
-        foreach (array_values($items) as $index => $item) {
-            if (! is_array($item)) {
-                throw new DocumentCompileException("Article item {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($item, ['category', 'title', 'summary', 'date', 'imageSrc', 'imageAlt', 'url'], "Article item {$index}");
-            $category = $this->properties->optionalString($item, 'category', 80) ?? '';
-            $title = $this->properties->requiredInlineRichTextString($item, 'title', 240, allowLinks: false);
-            $summary = $this->properties->requiredString($item, 'summary', 1200);
-            $date = $this->properties->optionalString($item, 'date', 40) ?? '';
-            if ($date !== '') {
-                $parsedDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
-                if ($parsedDate === false || $parsedDate->format('Y-m-d') !== $date) {
-                    throw new DocumentCompileException("Article item {$index} 날짜는 날짜 선택기로 입력해 주세요.");
-                }
-            }
-            $imageSrc = $this->properties->optionalString($item, 'imageSrc', 2048) ?? '';
-            $imageAlt = $this->properties->optionalString($item, 'imageAlt', 300) ?? '';
-            $url = $this->properties->requiredString($item, 'url', 2048);
-            $this->urls->assertAllowedUrl($url, "Article item {$index}");
-            $plainTitle = $this->richText->promotedInlinePlainText($title, allowLinks: false);
-            $media = $this->markup->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $plainTitle, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
-            $meta = array_filter([
-                $category === '' ? '' : '<span>'.$this->escaper->escape($category).'</span>',
-                $date === '' ? '' : '<time datetime="'.$this->escaper->escapeAttribute($date).'">'.$this->escaper->escape($date).'</time>',
-            ]);
-            $summaryMarkup = $this->richText->hasRichTextMarkup($summary)
-                ? '<div class="g7pb-articles__summary">'.$this->richText->sanitizeRichText($summary).'</div>'
-                : '<p>'.$this->escaper->formatText($summary).'</p>';
-            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escaper->escapeAttribute($url).'">'.$this->richText->sanitizePromotedInlineRichText($title, allowLinks: false).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escaper->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
-        }
-
-        return '<section class="g7pb-block g7pb-articles g7pb-articles--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="article-list">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-articles__items">'.implode('', $compiled).'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileVideoEmbed(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'caption', 'provider', 'videoId', 'ratio', 'appearance'], 'Video embed');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $caption = $this->properties->optionalRichTextString($props, 'caption', 1000) ?? '';
-        $provider = $this->properties->requiredString($props, 'provider', 16);
-        $videoId = $this->properties->requiredString($props, 'videoId', 32);
-        $ratio = $this->properties->requiredString($props, 'ratio', 8);
-        $appearance = $this->appearance->appearanceClasses($props, 'contrast', 'normal');
-        if (! in_array($provider, ['youtube', 'vimeo'], true) || preg_match('/^[A-Za-z0-9_-]{6,32}$/D', $videoId) !== 1) {
-            throw new DocumentCompileException('Video provider or identifier is invalid.');
-        }
-        if (! in_array($ratio, ['16:9', '4:3', '1:1'], true)) {
-            throw new DocumentCompileException('Video ratio is invalid.');
-        }
-        $src = $provider === 'youtube'
-            ? 'https://www.youtube-nocookie.com/embed/'.$videoId.'?rel=0'
-            : 'https://player.vimeo.com/video/'.$videoId;
-
-        $captionMarkup = $caption === '' ? '' : '<figcaption>'.($this->richText->hasCanonicalRichTextMarkup($caption) ? $this->richText->sanitizeRichText($caption) : $this->escaper->formatText($caption)).'</figcaption>';
-
-        $embed = $this->markup->embedPlaceholder('video-'.$provider, $src, $this->richText->inlinePlainText($heading));
-
-        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escaper->escapeAttribute($ratio).'">'.$embed.'</div>'.$captionMarkup.'</figure></section>';
     }
 
     /** @param array<string, mixed> $props */

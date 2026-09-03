@@ -1194,15 +1194,6 @@
         "1483458910d7dea0f1cb4b4254f981abec41cdbaa900c47e90f1f51a5862cffa": 1,
         "37acd87d24aa6dcb16131d624f5fed7d8cd1ac03624c3319256b4e3785afe039": 1
       }
-    },
-    {
-      "path": "src/Application/Compilation/HtmlDocumentCompiler.php",
-      "rule": "SOURCE-SIZE",
-      "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Document compilation and built-in block renderers still share one implementation.",
-      "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
-      "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 897
-      }
     }
   ]
 }

@@ -346,8 +346,15 @@ test('catalog responsive overrides preserve inheritance and reset', async ({ pag
     const expand = sectionRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
     if (await expand.isVisible()) await expand.click();
     await selectOutlineBlock(page, actions, '버튼 묶음');
-    const tablet = page.getByTestId('page-builder-responsive-tablet-surface');
-    const mobile = page.getByTestId('page-builder-responsive-mobile-surface');
+    const tabletGroup = page.getByRole('group', { name: '태블릿 640–1023px', exact: true });
+    const mobileGroup = page.getByRole('group', { name: '모바일 0–639px', exact: true });
+    await expect(tabletGroup).toHaveCount(1);
+    await expect(mobileGroup).toHaveCount(1);
+    const tablet = tabletGroup.getByTestId('page-builder-responsive-tablet-surface');
+    const mobile = mobileGroup.getByTestId('page-builder-responsive-mobile-surface');
+    const tabletReset = tabletGroup.getByTestId('page-builder-responsive-tablet-reset');
+    const mobileReset = mobileGroup.getByTestId('page-builder-responsive-mobile-reset');
+    for (const control of [tablet, mobile, tabletReset, mobileReset]) await expect(control).toHaveCount(1);
     await expect(tablet).toHaveValue('');
     await expect(mobile).toHaveValue('');
     await tablet.selectOption('contrast');
@@ -367,7 +374,7 @@ test('catalog responsive overrides preserve inheritance and reset', async ({ pag
       }
       expect(colors.get(820)).not.toBe(colors.get(1440));
       expect(colors.get(390)).toBe(colors.get(820));
-      await page.getByTestId('page-builder-responsive-tablet-reset').click();
+      await tabletReset.click();
       await expect(tablet).toHaveValue('');
       await expect(mobile).toHaveValue('contrast');
       await save(page, owned.documentId);

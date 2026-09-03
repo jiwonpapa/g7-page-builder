@@ -281,7 +281,17 @@ test.describe('Editor structure and theme contracts', () => {
           for (const text of [frame.getByText(COPY.cardBody, { exact: true }), preview.getByText(COPY.cardBody, { exact: true })]) {
             await expect(text).toHaveCSS('color', expectedPage.muted);
           }
+          const eyebrowPairs = ['THEME', 'Contact', 'FIXTURE'].map((text) => [
+            frame.getByText(text, { exact: true }), preview.getByText(text, { exact: true }),
+          ]);
+          for (const pair of eyebrowPairs) {
+            for (const eyebrow of pair) {
+              await expect(eyebrow).toHaveCount(1);
+              await expect(eyebrow).toHaveCSS('color', state.expected === 'light' ? 'rgb(79, 70, 229)' : 'rgb(154, 178, 255)');
+            }
+          }
           const pairs = [
+            ...eyebrowPairs,
             [frame.getByText(COPY.heroBody, { exact: true }), preview.getByText(COPY.heroBody, { exact: true })],
             [frame.getByText(COPY.contactAddress, { exact: true }), preview.getByText(COPY.contactAddress, { exact: true })],
             [frame.getByText('theme@example.com', { exact: true }), preview.getByText('theme@example.com', { exact: true })],

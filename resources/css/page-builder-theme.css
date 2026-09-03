@@ -81,6 +81,7 @@ html.g7pb-standalone-viewer,
 /* Shared page design tokens. Editor canvas and compiled viewer import this source. */
 .g7pb-document-theme {
   --g7pb-theme-accent: #4f46e5;
+  --g7pb-theme-accent-text: var(--g7pb-theme-accent);
   --g7pb-theme-accent-soft: #eef2ff;
   --g7pb-theme-accent-strong: #312e81;
   --g7pb-theme-radius: 1rem;
@@ -133,4 +134,8 @@ html.g7pb-standalone-viewer,
 .g7pb-theme-scale-large { --g7pb-theme-body-size: 1.125rem; }
 .g7pb-theme-mode-light, .g7pb-theme-mode-system { color-scheme: light; --g7pb-page-bg: var(--g7pb-neutral-0); --g7pb-page-text: var(--g7pb-neutral-900); --g7pb-page-muted: #526071; --g7pb-page-panel: var(--g7pb-neutral-200); --g7pb-page-border: #dfe2e8; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-light); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-light); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-light); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-light); }
 .g7pb-theme-mode-dark { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
-@media (prefers-color-scheme: dark) { .g7pb-theme-mode-system { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); } }
+.g7pb-theme-palette-indigo.g7pb-theme-mode-dark { --g7pb-theme-accent-text: var(--g7pb-contrast-accent); }
+@media (prefers-color-scheme: dark) {
+  .g7pb-theme-mode-system { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
+  .g7pb-theme-palette-indigo.g7pb-theme-mode-system { --g7pb-theme-accent-text: var(--g7pb-contrast-accent); }
+}

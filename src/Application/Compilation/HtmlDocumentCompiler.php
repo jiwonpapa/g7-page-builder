@@ -6,6 +6,9 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockCompilerRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\CallbackBlockTypeCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockPropertyReader;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockRuntimeCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BuiltInBlockTypes;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackAssetUrlPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
@@ -17,12 +20,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
     public const COMPILER_VERSION = '0.19.0';
 
-    private const LAYOUT_SECTION_TYPE = 'layout.section-01';
-
-    private const LAYOUT_COLUMNS_TYPE = 'layout.columns-01';
-
-    private const LAYOUT_STACK_TYPE = 'layout.stack-01';
-
     /** @var list<string> */
     private const TEMPLATE_FORBIDDEN_TAGS = [
         'script', 'noscript', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'portal',
@@ -32,96 +29,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     ];
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
-
-    private const HERO_TYPE = 'content.hero-centered-01';
-
-    private const FEATURES_TYPE = 'content.features-grid-01';
-
-    private const CTA_TYPE = 'content.cta-split-01';
-
-    private const CONTACT_TYPE = 'content.contact-info-01';
-
-    private const HERO_SPLIT_TYPE = 'content.hero-split-01';
-
-    private const HERO_SLIDER_TYPE = 'content.hero-slider-01';
-
-    private const LOGO_CLOUD_TYPE = 'trust.logo-cloud-01';
-
-    private const STATS_TYPE = 'data.stats-icons-01';
-
-    private const PRICING_TYPE = 'commerce.pricing-tiers-01';
-
-    private const TEAM_TYPE = 'company.team-grid-01';
-
-    private const GALLERY_TYPE = 'media.gallery-grid-01';
-
-    private const BAR_CHART_TYPE = 'data.bar-chart-01';
-
-    private const G7_RECENT_POSTS_TYPE = 'g7.board-recent-posts-01';
-
-    private const G7_PRODUCT_GRID_TYPE = 'g7.ecommerce-product-grid-01';
-
-    private const INQUIRY_FORM_TYPE = 'form.inquiry-01';
-
-    private const MAP_DIRECTIONS_TYPE = 'location.map-directions-01';
-
-    private const TESTIMONIALS_TYPE = 'trust.testimonials-01';
-
-    private const FAQ_ACCORDION_TYPE = 'content.faq-accordion-01';
-
-    private const PROCESS_TIMELINE_TYPE = 'content.process-timeline-01';
-
-    private const TABS_TYPE = 'content.tabs-01';
-
-    private const COMPARISON_TABLE_TYPE = 'commerce.comparison-table-01';
-
-    private const ARTICLE_LIST_TYPE = 'content.article-list-01';
-
-    private const VIDEO_EMBED_TYPE = 'media.video-embed-01';
-
-    private const LOGO_CAROUSEL_TYPE = 'trust.logo-carousel-01';
-
-    private const TESTIMONIAL_SLIDER_TYPE = 'trust.testimonial-slider-01';
-
-    private const EVENT_SCHEDULE_TYPE = 'content.event-schedule-01';
-
-    private const DOWNLOAD_RESOURCES_TYPE = 'content.download-resources-01';
-
-    private const G7_BOARD_ARCHIVE_TYPE = 'g7.board-content-archive-01';
-
-    private const G7_PRODUCT_SHOWCASE_TYPE = 'g7.ecommerce-product-showcase-01';
-
-    private const G7_POST_DETAIL_TYPE = 'g7.board-post-detail-01';
-
-    private const G7_PRODUCT_DETAIL_TYPE = 'g7.ecommerce-product-detail-01';
-
-    private const HEADING_TYPE = 'content.heading-01';
-
-    private const RICH_TEXT_TYPE = 'content.rich-text-01';
-
-    private const IMAGE_TYPE = 'media.image-01';
-
-    private const BUTTONS_TYPE = 'action.buttons-01';
-
-    private const IMAGE_TEXT_TYPE = 'media.image-text-01';
-
-    private const ICON_LIST_TYPE = 'content.icon-list-01';
-
-    private const DIVIDER_TYPE = 'content.divider-01';
-
-    private const BLOCKQUOTE_TYPE = 'content.blockquote-01';
-
-    private const NOTICE_TYPE = 'content.notice-01';
-
-    private const CARD_GRID_TYPE = 'content.card-grid-01';
-
-    private const BREADCRUMBS_TYPE = 'navigation.breadcrumbs-01';
-
-    private const ANCHOR_MENU_TYPE = 'navigation.anchor-menu-01';
-
-    private const SOCIAL_LINKS_TYPE = 'navigation.social-links-01';
-
-    private const IMAGE_CAROUSEL_TYPE = 'media.image-carousel-01';
 
     /** @var list<string> */
     private const FEATURE_ICONS = [
@@ -168,6 +75,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private readonly RichTextSanitizer $richText;
 
+    private readonly BlockPropertyReader $properties;
+
+    private readonly BlockRuntimeCompiler $runtime;
+
     public function __construct(
         private readonly BlockRegistry $blockRegistry,
         ?BlockCompilerRegistry $blockCompilers = null,
@@ -180,6 +91,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     ) {
         $this->blockCompilers = $blockCompilers ?? new BlockCompilerRegistry;
         $this->richText = $richText ?? new RichTextSanitizer($this->urls);
+        $this->properties = new BlockPropertyReader($this->richText);
+        $this->runtime = new BlockRuntimeCompiler($this->properties);
         $this->registerBuiltInCompilers();
     }
 
@@ -271,7 +184,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException("{$path} has an invalid version, props, or slots value.");
         }
 
-        if (in_array($type, [self::LAYOUT_SECTION_TYPE, self::LAYOUT_COLUMNS_TYPE, self::LAYOUT_STACK_TYPE], true)) {
+        if (in_array($type, [BuiltInBlockTypes::LAYOUT_SECTION_TYPE, BuiltInBlockTypes::LAYOUT_COLUMNS_TYPE, BuiltInBlockTypes::LAYOUT_STACK_TYPE], true)) {
             $compiled = $this->compileLayoutBlock(
                 $type,
                 $version,
@@ -284,14 +197,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $styleUrls,
             );
 
-            return $this->withBlockRuntime(
+            return $this->runtime->compile(
                 $compiled,
                 $instanceId,
                 $type,
                 $block['motion'] ?? null,
                 $block['visibility'] ?? null,
                 $block['responsive'] ?? null,
-                $type === self::LAYOUT_STACK_TYPE ? 'div' : 'section',
+                $type === BuiltInBlockTypes::LAYOUT_STACK_TYPE ? 'div' : 'section',
             );
         }
 
@@ -303,10 +216,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         if ($definition === null || ! $this->blockCompilers->has($definition->compiler)) {
             throw new DocumentCompileException("{$path} has an unsupported type or compiler.");
         }
-        if (in_array($type, [self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE], true)) {
+        if (in_array($type, [BuiltInBlockTypes::HERO_TYPE, BuiltInBlockTypes::HERO_SPLIT_TYPE, BuiltInBlockTypes::HERO_SLIDER_TYPE], true)) {
             $heroCount++;
         }
-        if ($type === self::HEADING_TYPE && is_string($props['anchor'] ?? null) && $props['anchor'] !== '') {
+        if ($type === BuiltInBlockTypes::HEADING_TYPE && is_string($props['anchor'] ?? null) && $props['anchor'] !== '') {
             if (isset($headingAnchors[$props['anchor']])) {
                 throw new DocumentCompileException("Heading anchor {$props['anchor']} is duplicated.");
             }
@@ -338,7 +251,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException("{$path} failed schema validation or compilation.", 'G7PB_BLOCK_RUNTIME_FAILED');
         }
 
-        return $this->withBlockRuntime($compiled, $instanceId, $type, $block['motion'] ?? null, $block['visibility'] ?? null, $block['responsive'] ?? null);
+        return $this->runtime->compile($compiled, $instanceId, $type, $block['motion'] ?? null, $block['visibility'] ?? null, $block['responsive'] ?? null);
     }
 
     /**
@@ -362,10 +275,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException("{$path} has an unsupported layout version.");
         }
 
-        if ($type === self::LAYOUT_SECTION_TYPE) {
-            $this->assertOnlyKeys($props, ['width', 'spacing'], $path);
-            $width = $this->requiredString($props, 'width', 16);
-            $spacing = $this->requiredString($props, 'spacing', 16);
+        if ($type === BuiltInBlockTypes::LAYOUT_SECTION_TYPE) {
+            $this->properties->assertOnlyKeys($props, ['width', 'spacing'], $path);
+            $width = $this->properties->requiredString($props, 'width', 16);
+            $spacing = $this->properties->requiredString($props, 'spacing', 16);
             if (! in_array($width, ['standard', 'wide', 'full'], true)
                 || ! in_array($spacing, ['compact', 'normal', 'spacious'], true)
                 || array_diff(array_keys($slots), ['content']) !== []) {
@@ -376,9 +289,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             return '<section class="g7pb-layout-section g7pb-layout-section--'.$width.' g7pb-layout-section--'.$spacing.'" data-testid="page-builder-rendered-layout" data-block-type="layout-section"><div class="g7pb-layout-section__inner">'.$content.'</div></section>';
         }
 
-        if ($type === self::LAYOUT_STACK_TYPE) {
-            $this->assertOnlyKeys($props, ['gap'], $path);
-            $gap = $this->requiredString($props, 'gap', 16);
+        if ($type === BuiltInBlockTypes::LAYOUT_STACK_TYPE) {
+            $this->properties->assertOnlyKeys($props, ['gap'], $path);
+            $gap = $this->properties->requiredString($props, 'gap', 16);
             if (! in_array($gap, ['none', 'compact', 'normal', 'spacious'], true)
                 || array_diff(array_keys($slots), ['content']) !== []) {
                 throw new DocumentCompileException("{$path} has invalid Stack properties or slots.");
@@ -388,10 +301,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             return '<div class="g7pb-layout-stack g7pb-layout-stack--gap-'.$gap.'" data-testid="page-builder-rendered-layout" data-block-type="layout-stack">'.$content.'</div>';
         }
 
-        $this->assertOnlyKeys($props, ['columns', 'ratio', 'gap'], $path);
+        $this->properties->assertOnlyKeys($props, ['columns', 'ratio', 'gap'], $path);
         $columns = $props['columns'] ?? null;
-        $ratio = $this->requiredString($props, 'ratio', 16);
-        $gap = $this->requiredString($props, 'gap', 16);
+        $ratio = $this->properties->requiredString($props, 'ratio', 16);
+        $gap = $this->properties->requiredString($props, 'gap', 16);
         $ratios = [1 => ['1'], 2 => ['1:1', '1:2', '2:1'], 3 => ['1:1:1']];
         $expectedSlots = is_int($columns) && isset($ratios[$columns])
             ? array_map(static fn (int $column): string => 'column'.$column, range(1, $columns))
@@ -503,11 +416,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileHeading(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'level', 'anchor', 'appearance'], 'Heading');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $level = $this->requiredIntegerChoice($props, 'level', [2, 3, 4]);
-        $anchor = $this->optionalString($props, 'anchor', 80) ?? '';
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'level', 'anchor', 'appearance'], 'Heading');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $level = $this->properties->requiredIntegerChoice($props, 'level', [2, 3, 4]);
+        $anchor = $this->properties->optionalString($props, 'anchor', 80) ?? '';
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
         if ($anchor !== '' && preg_match('/^[a-z][a-z0-9-]{0,79}$/D', $anchor) !== 1) {
             throw new DocumentCompileException('Heading anchor is invalid.');
@@ -524,9 +437,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileRichText(array $props): string
     {
-        $this->assertOnlyKeys($props, ['content', 'measure', 'appearance'], 'Rich text');
-        $content = $this->requiredString($props, 'content', 20000);
-        $measure = $this->requiredString($props, 'measure', 16);
+        $this->properties->assertOnlyKeys($props, ['content', 'measure', 'appearance'], 'Rich text');
+        $content = $this->properties->requiredString($props, 'content', 20000);
+        $measure = $this->properties->requiredString($props, 'measure', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($measure, ['narrow', 'standard', 'wide'], true)) {
             throw new DocumentCompileException('Rich text measure is invalid.');
@@ -538,12 +451,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileImage(array $props): string
     {
-        $this->assertOnlyKeys($props, ['src', 'alt', 'caption', 'linkUrl', 'aspectRatio', 'appearance'], 'Image');
-        $src = $this->optionalString($props, 'src', 2048) ?? '';
-        $alt = $this->optionalString($props, 'alt', 300) ?? '';
-        $caption = $this->optionalString($props, 'caption', 500) ?? '';
-        $linkUrl = $this->optionalString($props, 'linkUrl', 2048) ?? '';
-        $aspectRatio = $this->requiredString($props, 'aspectRatio', 16);
+        $this->properties->assertOnlyKeys($props, ['src', 'alt', 'caption', 'linkUrl', 'aspectRatio', 'appearance'], 'Image');
+        $src = $this->properties->optionalString($props, 'src', 2048) ?? '';
+        $alt = $this->properties->optionalString($props, 'alt', 300) ?? '';
+        $caption = $this->properties->optionalString($props, 'caption', 500) ?? '';
+        $linkUrl = $this->properties->optionalString($props, 'linkUrl', 2048) ?? '';
+        $aspectRatio = $this->properties->requiredString($props, 'aspectRatio', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($aspectRatio, ['auto', '16:9', '4:3', '1:1'], true)) {
             throw new DocumentCompileException('Image aspect ratio is invalid.');
@@ -561,9 +474,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileButtons(array $props): string
     {
-        $this->assertOnlyKeys($props, ['items', 'alignment', 'appearance'], 'Buttons');
+        $this->properties->assertOnlyKeys($props, ['items', 'alignment', 'appearance'], 'Buttons');
         $items = $props['items'] ?? null;
-        $alignment = $this->requiredString($props, 'alignment', 16);
+        $alignment = $this->properties->requiredString($props, 'alignment', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
         if (! is_array($items) || count($items) < 1 || count($items) > 3) {
             throw new DocumentCompileException('Buttons must contain between one and three items.');
@@ -576,10 +489,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Button item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['label', 'url', 'variant'], "Button item {$index}");
-            $label = $this->requiredString($item, 'label', 120);
-            $url = $this->requiredString($item, 'url', 2048);
-            $variant = $this->requiredString($item, 'variant', 16);
+            $this->properties->assertOnlyKeys($item, ['label', 'url', 'variant'], "Button item {$index}");
+            $label = $this->properties->requiredString($item, 'label', 120);
+            $url = $this->properties->requiredString($item, 'url', 2048);
+            $variant = $this->properties->requiredString($item, 'variant', 16);
             if (! in_array($variant, ['primary', 'secondary', 'text'], true)) {
                 throw new DocumentCompileException("Button item {$index} variant is invalid.");
             }
@@ -593,23 +506,23 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileImageText(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'body', 'image', 'mediaPosition', 'primaryLink', 'appearance'], 'Image text');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $body = $this->optionalString($props, 'body', 10000) ?? '';
-        $image = $this->optionalMap($props, 'image');
-        $mediaPosition = $this->requiredString($props, 'mediaPosition', 16);
-        $primaryLink = $this->optionalMap($props, 'primaryLink');
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'body', 'image', 'mediaPosition', 'primaryLink', 'appearance'], 'Image text');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $body = $this->properties->optionalString($props, 'body', 10000) ?? '';
+        $image = $this->properties->optionalMap($props, 'image');
+        $mediaPosition = $this->properties->requiredString($props, 'mediaPosition', 16);
+        $primaryLink = $this->properties->optionalMap($props, 'primaryLink');
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if ($image === null) {
             throw new DocumentCompileException('Image text image is required.');
         }
-        $this->assertOnlyKeys($image, ['src', 'alt'], 'Image text image');
+        $this->properties->assertOnlyKeys($image, ['src', 'alt'], 'Image text image');
         if (! in_array($mediaPosition, ['left', 'right'], true)) {
             throw new DocumentCompileException('Image text media position is invalid.');
         }
-        $src = $this->optionalString($image, 'src', 2048) ?? '';
-        $alt = $this->optionalString($image, 'alt', 300) ?? '';
+        $src = $this->properties->optionalString($image, 'src', 2048) ?? '';
+        $alt = $this->properties->optionalString($image, 'alt', 300) ?? '';
         $media = '<figure class="g7pb-image-text__media">'.$this->compileCatalogImage($src, $alt, 'g7pb-image-text__image', '대표 이미지를 선택하세요').'</figure>';
         $copy = '<div class="g7pb-image-text__copy">'.($eyebrow === null || $eyebrow === '' ? '' : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>')
             .'<h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2>'.($body === '' ? '' : '<div class="g7pb-image-text__body">'.$this->richText->sanitizeRichText($body).'</div>')
@@ -622,11 +535,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileIconList(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Icon list');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Icon list');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->requiredString($props, 'layout', 24);
+        $layout = $this->properties->requiredString($props, 'layout', 24);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! is_array($items) || count($items) < 2 || count($items) > 8) {
             throw new DocumentCompileException('Icon list must contain between two and eight items.');
@@ -639,10 +552,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Icon list item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['icon', 'title', 'body'], "Icon list item {$index}");
-            $icon = $this->requiredString($item, 'icon', 32);
-            $title = $this->requiredInlineRichTextString($item, 'title', 160);
-            $body = $this->optionalRichTextString($item, 'body', 2000) ?? '';
+            $this->properties->assertOnlyKeys($item, ['icon', 'title', 'body'], "Icon list item {$index}");
+            $icon = $this->properties->requiredString($item, 'icon', 32);
+            $title = $this->properties->requiredInlineRichTextString($item, 'title', 160);
+            $body = $this->properties->optionalRichTextString($item, 'body', 2000) ?? '';
             if (! in_array($icon, self::FEATURE_ICONS, true)) {
                 throw new DocumentCompileException("Icon list item {$index} uses an unsupported icon.");
             }
@@ -658,10 +571,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileDivider(array $props): string
     {
-        $this->assertOnlyKeys($props, ['variant', 'width', 'label', 'appearance'], 'Divider');
-        $variant = $this->requiredString($props, 'variant', 16);
-        $width = $this->requiredString($props, 'width', 16);
-        $label = $this->optionalString($props, 'label', 120) ?? '';
+        $this->properties->assertOnlyKeys($props, ['variant', 'width', 'label', 'appearance'], 'Divider');
+        $variant = $this->properties->requiredString($props, 'variant', 16);
+        $width = $this->properties->requiredString($props, 'width', 16);
+        $label = $this->properties->optionalString($props, 'label', 120) ?? '';
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
         if (! in_array($variant, ['solid', 'dashed', 'gradient'], true)) {
             throw new DocumentCompileException('Divider variant is invalid.');
@@ -677,12 +590,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileBlockquote(array $props): string
     {
-        $this->assertOnlyKeys($props, ['quote', 'citation', 'role', 'alignment', 'variant', 'appearance'], 'Blockquote');
-        $quote = $this->requiredString($props, 'quote', 2000);
-        $citation = $this->requiredString($props, 'citation', 120);
-        $role = $this->optionalString($props, 'role', 160) ?? '';
-        $alignment = $this->requiredString($props, 'alignment', 16);
-        $variant = $this->requiredString($props, 'variant', 16);
+        $this->properties->assertOnlyKeys($props, ['quote', 'citation', 'role', 'alignment', 'variant', 'appearance'], 'Blockquote');
+        $quote = $this->properties->requiredString($props, 'quote', 2000);
+        $citation = $this->properties->requiredString($props, 'citation', 120);
+        $role = $this->properties->optionalString($props, 'role', 160) ?? '';
+        $alignment = $this->properties->requiredString($props, 'alignment', 16);
+        $variant = $this->properties->requiredString($props, 'variant', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($alignment, ['left', 'center'], true) || ! in_array($variant, ['line', 'mark'], true)) {
             throw new DocumentCompileException('Blockquote alignment or variant is invalid.');
@@ -699,12 +612,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileNotice(array $props): string
     {
-        $this->assertOnlyKeys($props, ['tone', 'title', 'body', 'actionLabel', 'actionUrl', 'appearance'], 'Notice');
-        $tone = $this->requiredString($props, 'tone', 16);
-        $title = $this->requiredInlineRichTextString($props, 'title', 200);
-        $body = $this->requiredString($props, 'body', 2000);
-        $actionLabel = $this->optionalString($props, 'actionLabel', 120) ?? '';
-        $actionUrl = $this->optionalString($props, 'actionUrl', 2048) ?? '';
+        $this->properties->assertOnlyKeys($props, ['tone', 'title', 'body', 'actionLabel', 'actionUrl', 'appearance'], 'Notice');
+        $tone = $this->properties->requiredString($props, 'tone', 16);
+        $title = $this->properties->requiredInlineRichTextString($props, 'title', 200);
+        $body = $this->properties->requiredString($props, 'body', 2000);
+        $actionLabel = $this->properties->optionalString($props, 'actionLabel', 120) ?? '';
+        $actionUrl = $this->properties->optionalString($props, 'actionUrl', 2048) ?? '';
         $appearance = $this->appearanceClasses($props, 'soft', 'compact');
         if (! in_array($tone, ['info', 'success', 'warning', 'critical'], true)) {
             throw new DocumentCompileException('Notice tone is invalid.');
@@ -729,13 +642,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileCardGrid(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'columns', 'variant', 'layout', 'appearance'], 'Card grid');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'columns', 'variant', 'layout', 'appearance'], 'Card grid');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $columns = $this->requiredIntegerChoice($props, 'columns', [2, 3]);
-        $variant = $this->requiredString($props, 'variant', 16);
-        $layout = $this->optionalString($props, 'layout', 16);
+        $columns = $this->properties->requiredIntegerChoice($props, 'columns', [2, 3]);
+        $variant = $this->properties->requiredString($props, 'variant', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! is_array($items) || count($items) < 2 || count($items) > 6) {
             throw new DocumentCompileException('Card grid must contain between two and six items.');
@@ -751,12 +664,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Card grid item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['kicker', 'title', 'body', 'linkLabel', 'linkUrl'], "Card grid item {$index}");
-            $kicker = $this->optionalString($item, 'kicker', 80) ?? '';
-            $title = $this->requiredInlineRichTextString($item, 'title', 160);
-            $body = $this->optionalString($item, 'body', 1000) ?? '';
-            $linkLabel = $this->optionalString($item, 'linkLabel', 120) ?? '';
-            $linkUrl = $this->optionalString($item, 'linkUrl', 2048) ?? '';
+            $this->properties->assertOnlyKeys($item, ['kicker', 'title', 'body', 'linkLabel', 'linkUrl'], "Card grid item {$index}");
+            $kicker = $this->properties->optionalString($item, 'kicker', 80) ?? '';
+            $title = $this->properties->requiredInlineRichTextString($item, 'title', 160);
+            $body = $this->properties->optionalString($item, 'body', 1000) ?? '';
+            $linkLabel = $this->properties->optionalString($item, 'linkLabel', 120) ?? '';
+            $linkUrl = $this->properties->optionalString($item, 'linkUrl', 2048) ?? '';
             if (($linkLabel === '') !== ($linkUrl === '')) {
                 throw new DocumentCompileException("Card grid item {$index} link label and URL must be provided together.");
             }
@@ -779,9 +692,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileBreadcrumbs(array $props): string
     {
-        $this->assertOnlyKeys($props, ['items', 'currentLabel', 'appearance'], 'Breadcrumbs');
+        $this->properties->assertOnlyKeys($props, ['items', 'currentLabel', 'appearance'], 'Breadcrumbs');
         $items = $props['items'] ?? null;
-        $currentLabel = $this->requiredString($props, 'currentLabel', 160);
+        $currentLabel = $this->properties->requiredString($props, 'currentLabel', 160);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
         if (! is_array($items) || count($items) < 1 || count($items) > 6) {
             throw new DocumentCompileException('Breadcrumbs must contain between one and six parent items.');
@@ -791,9 +704,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Breadcrumb item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['label', 'url'], "Breadcrumb item {$index}");
-            $label = $this->requiredString($item, 'label', 120);
-            $url = $this->requiredString($item, 'url', 2048);
+            $this->properties->assertOnlyKeys($item, ['label', 'url'], "Breadcrumb item {$index}");
+            $label = $this->properties->requiredString($item, 'label', 120);
+            $url = $this->properties->requiredString($item, 'url', 2048);
             $this->urls->assertPageOrHttpsUrl($url, "Breadcrumb item {$index}");
             $compiled[] = '<li><a href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a></li>';
         }
@@ -805,11 +718,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileAnchorMenu(array $props): string
     {
-        $this->assertOnlyKeys($props, ['label', 'items', 'sticky', 'alignment', 'appearance'], 'Anchor menu');
-        $label = $this->requiredString($props, 'label', 120);
+        $this->properties->assertOnlyKeys($props, ['label', 'items', 'sticky', 'alignment', 'appearance'], 'Anchor menu');
+        $label = $this->properties->requiredString($props, 'label', 120);
         $items = $props['items'] ?? null;
-        $sticky = $this->requiredBoolean($props, 'sticky');
-        $alignment = $this->requiredString($props, 'alignment', 16);
+        $sticky = $this->properties->requiredBoolean($props, 'sticky');
+        $alignment = $this->properties->requiredString($props, 'alignment', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
         if (! is_array($items) || count($items) < 2 || count($items) > 8) {
             throw new DocumentCompileException('Anchor menu must contain between two and eight items.');
@@ -822,9 +735,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Anchor menu item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['label', 'anchor'], "Anchor menu item {$index}");
-            $itemLabel = $this->requiredString($item, 'label', 120);
-            $anchor = $this->requiredString($item, 'anchor', 80);
+            $this->properties->assertOnlyKeys($item, ['label', 'anchor'], "Anchor menu item {$index}");
+            $itemLabel = $this->properties->requiredString($item, 'label', 120);
+            $anchor = $this->properties->requiredString($item, 'anchor', 80);
             if (preg_match('/^[a-z][a-z0-9-]{0,79}$/D', $anchor) !== 1) {
                 throw new DocumentCompileException("Anchor menu item {$index} anchor is invalid.");
             }
@@ -838,11 +751,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileSocialLinks(array $props): string
     {
-        $this->assertOnlyKeys($props, ['heading', 'items', 'variant', 'alignment', 'appearance'], 'Social links');
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['heading', 'items', 'variant', 'alignment', 'appearance'], 'Social links');
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $variant = $this->requiredString($props, 'variant', 16);
-        $alignment = $this->requiredString($props, 'alignment', 16);
+        $variant = $this->properties->requiredString($props, 'variant', 16);
+        $alignment = $this->properties->requiredString($props, 'alignment', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
         $networks = ['instagram', 'youtube', 'facebook', 'linkedin', 'x', 'kakao', 'blog', 'website'];
         if (! is_array($items) || count($items) < 1 || count($items) > 8) {
@@ -856,10 +769,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Social link item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['network', 'label', 'url'], "Social link item {$index}");
-            $network = $this->requiredString($item, 'network', 16);
-            $label = $this->requiredString($item, 'label', 120);
-            $url = $this->requiredString($item, 'url', 2048);
+            $this->properties->assertOnlyKeys($item, ['network', 'label', 'url'], "Social link item {$index}");
+            $network = $this->properties->requiredString($item, 'network', 16);
+            $label = $this->properties->requiredString($item, 'label', 120);
+            $url = $this->properties->requiredString($item, 'url', 2048);
             if (! in_array($network, $networks, true)) {
                 throw new DocumentCompileException("Social link item {$index} network is invalid.");
             }
@@ -873,14 +786,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileImageCarousel(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'autoplay', 'interval', 'controls', 'aspectRatio', 'appearance'], 'Image carousel');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'autoplay', 'interval', 'controls', 'aspectRatio', 'appearance'], 'Image carousel');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $images = $props['images'] ?? null;
-        $autoplay = $this->requiredBoolean($props, 'autoplay');
-        $interval = $this->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
-        $controls = $this->requiredString($props, 'controls', 16);
-        $aspectRatio = $this->requiredString($props, 'aspectRatio', 16);
+        $autoplay = $this->properties->requiredBoolean($props, 'autoplay');
+        $interval = $this->properties->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
+        $controls = $this->properties->requiredString($props, 'controls', 16);
+        $aspectRatio = $this->properties->requiredString($props, 'aspectRatio', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! is_array($images) || count($images) < 2 || count($images) > 8) {
             throw new DocumentCompileException('Image carousel must contain between two and eight images.');
@@ -893,10 +806,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Image carousel item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['src', 'alt', 'caption'], "Image carousel item {$index}");
-            $src = $this->optionalString($item, 'src', 2048) ?? '';
-            $alt = $this->requiredString($item, 'alt', 300);
-            $caption = $this->optionalString($item, 'caption', 300) ?? '';
+            $this->properties->assertOnlyKeys($item, ['src', 'alt', 'caption'], "Image carousel item {$index}");
+            $src = $this->properties->optionalString($item, 'src', 2048) ?? '';
+            $alt = $this->properties->requiredString($item, 'alt', 300);
+            $caption = $this->properties->optionalString($item, 'caption', 300) ?? '';
             $media = $this->compileCatalogImage($src, $alt, 'g7pb-image-carousel__image', ($index + 1).'번 이미지를 선택하세요', $index === 0 ? 'eager' : 'lazy');
             $slides[] = '<figure class="g7pb-hero-slider__slide g7pb-image-carousel__slide">'.$media.($caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>').'</figure>';
         }
@@ -909,13 +822,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileHero(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'title', 'body', 'primaryCta', 'image', 'alignment', 'mediaPosition', 'layout', 'appearance'], 'Hero');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $title = $this->requiredInlineRichTextString($props, 'title', 200);
-        $body = $this->optionalString($props, 'body', 4000);
-        $alignment = $this->optionalString($props, 'alignment', 16) ?? 'center';
-        $layout = $this->optionalString($props, 'layout', 16);
-        $mediaPosition = $this->optionalString($props, 'mediaPosition', 16) ?? 'right';
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'title', 'body', 'primaryCta', 'image', 'alignment', 'mediaPosition', 'layout', 'appearance'], 'Hero');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $title = $this->properties->requiredInlineRichTextString($props, 'title', 200);
+        $body = $this->properties->optionalString($props, 'body', 4000);
+        $alignment = $this->properties->optionalString($props, 'alignment', 16) ?? 'center';
+        $layout = $this->properties->optionalString($props, 'layout', 16);
+        $mediaPosition = $this->properties->optionalString($props, 'mediaPosition', 16) ?? 'right';
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
         $splitLayouts = ['balanced', 'screenshot', 'overlap', 'offset'];
 
@@ -929,8 +842,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('Hero media position is invalid.');
         }
 
-        $cta = $this->optionalMap($props, 'primaryCta');
-        $image = $this->optionalMap($props, 'image');
+        $cta = $this->properties->optionalMap($props, 'primaryCta');
+        $image = $this->properties->optionalMap($props, 'image');
 
         if ($layout !== null && in_array($layout, $splitLayouts, true)) {
             $copy = [];
@@ -947,10 +860,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $copy[] = $this->compileActionLink($cta, 'Hero CTA', 'g7pb-button g7pb-button--primary');
             }
             if ($image !== null) {
-                $this->assertOnlyKeys($image, ['src', 'alt'], 'Hero image');
+                $this->properties->assertOnlyKeys($image, ['src', 'alt'], 'Hero image');
             }
-            $src = $image === null ? '' : $this->requiredString($image, 'src', 2048);
-            $alt = $image === null ? '대표 이미지' : $this->requiredString($image, 'alt', 300);
+            $src = $image === null ? '' : $this->properties->requiredString($image, 'src', 2048);
+            $alt = $image === null ? '대표 이미지' : $this->properties->requiredString($image, 'alt', 300);
             $media = '<figure class="g7pb-hero-split__media">'.$this->compileCatalogImage(
                 $src,
                 $alt,
@@ -975,15 +888,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         if ($cta !== null) {
-            $label = $this->requiredString($cta, 'label', 120);
-            $url = $this->requiredString($cta, 'url', 2048);
+            $label = $this->properties->requiredString($cta, 'label', 120);
+            $url = $this->properties->requiredString($cta, 'url', 2048);
             $this->urls->assertAllowedUrl($url, 'Hero CTA');
             $parts[] = '<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
         }
 
         if ($image !== null) {
-            $src = $this->requiredString($image, 'src', 2048);
-            $alt = $this->optionalString($image, 'alt', 300) ?? '';
+            $src = $this->properties->requiredString($image, 'src', 2048);
+            $alt = $this->properties->optionalString($image, 'alt', 300) ?? '';
             $this->urls->assertAllowedImageUrl($src);
             $parts[] = '<img class="g7pb-hero__image" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="eager">';
         }
@@ -998,9 +911,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileFeatures(array $props): string
     {
-        $title = $this->requiredInlineRichTextString($props, 'title', 200);
+        $title = $this->properties->requiredInlineRichTextString($props, 'title', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
 
         if (! is_array($items) || count($items) < 2 || count($items) > 6) {
@@ -1017,9 +930,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Feature item {$index} must be an object.");
             }
 
-            $icon = $this->requiredString($item, 'icon', 32);
-            $itemTitle = $this->requiredInlineRichTextString($item, 'title', 160);
-            $body = $this->requiredRichTextString($item, 'body', 2000);
+            $icon = $this->properties->requiredString($item, 'icon', 32);
+            $itemTitle = $this->properties->requiredInlineRichTextString($item, 'title', 160);
+            $body = $this->properties->requiredRichTextString($item, 'body', 2000);
 
             if (! in_array($icon, self::FEATURE_ICONS, true)) {
                 throw new DocumentCompileException("Feature item {$index} uses an unsupported icon.");
@@ -1041,17 +954,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileCta(array $props): string
     {
-        $this->assertOnlyKeys(
+        $this->properties->assertOnlyKeys(
             $props,
             ['eyebrow', 'heading', 'body', 'primaryLink', 'secondaryLink', 'theme', 'layout', 'appearance'],
             'CTA',
         );
 
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $body = $this->optionalRichTextString($props, 'body', 2000);
-        $theme = $this->requiredString($props, 'theme', 16);
-        $layout = $this->optionalString($props, 'layout', 16);
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $body = $this->properties->optionalRichTextString($props, 'body', 2000);
+        $theme = $this->properties->requiredString($props, 'theme', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
 
         if (! in_array($theme, ['light', 'dark'], true)) {
@@ -1073,11 +986,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         $actions = [];
-        $primaryLink = $this->optionalMap($props, 'primaryLink');
+        $primaryLink = $this->properties->optionalMap($props, 'primaryLink');
         if ($primaryLink !== null) {
             $actions[] = $this->compileActionLink($primaryLink, 'CTA primary link', 'g7pb-button g7pb-button--primary');
         }
-        $secondaryLink = $this->optionalMap($props, 'secondaryLink');
+        $secondaryLink = $this->properties->optionalMap($props, 'secondaryLink');
         if ($secondaryLink !== null) {
             $actions[] = $this->compileActionLink($secondaryLink, 'CTA secondary link', 'g7pb-button g7pb-button--secondary');
         }
@@ -1096,16 +1009,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileContact(array $props): string
     {
-        $this->assertOnlyKeys(
+        $this->properties->assertOnlyKeys(
             $props,
             ['heading', 'address', 'phone', 'email', 'cta', 'mapLink', 'appearance'],
             'Contact',
         );
 
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $address = $this->requiredString($props, 'address', 1000);
-        $phone = $this->requiredString($props, 'phone', 40);
-        $email = $this->requiredString($props, 'email', 320);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $address = $this->properties->requiredString($props, 'address', 1000);
+        $phone = $this->properties->requiredString($props, 'phone', 40);
+        $email = $this->properties->requiredString($props, 'email', 320);
         $phoneHref = $this->urls->phoneHref($phone);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
 
@@ -1114,11 +1027,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         $actions = [];
-        $cta = $this->optionalMap($props, 'cta');
+        $cta = $this->properties->optionalMap($props, 'cta');
         if ($cta !== null) {
             $actions[] = $this->compileActionLink($cta, 'Contact CTA', 'g7pb-button g7pb-button--primary');
         }
-        $mapLink = $this->optionalMap($props, 'mapLink');
+        $mapLink = $this->properties->optionalMap($props, 'mapLink');
         if ($mapLink !== null) {
             $actions[] = $this->compileActionLink($mapLink, 'Contact map link', 'g7pb-button g7pb-button--secondary');
         }
@@ -1135,17 +1048,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileHeroSplit(array $props): string
     {
-        $this->assertOnlyKeys(
+        $this->properties->assertOnlyKeys(
             $props,
             ['eyebrow', 'title', 'body', 'primaryCta', 'image', 'mediaPosition', 'layout', 'appearance'],
             'Split Hero',
         );
 
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $title = $this->requiredInlineRichTextString($props, 'title', 200);
-        $body = $this->optionalString($props, 'body', 2000);
-        $mediaPosition = $this->requiredString($props, 'mediaPosition', 16);
-        $layout = $this->optionalString($props, 'layout', 16);
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $title = $this->properties->requiredInlineRichTextString($props, 'title', 200);
+        $body = $this->properties->optionalString($props, 'body', 2000);
+        $mediaPosition = $this->properties->requiredString($props, 'mediaPosition', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
 
         if (! in_array($mediaPosition, ['left', 'right'], true)) {
@@ -1166,16 +1079,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 : '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
         }
 
-        $cta = $this->optionalMap($props, 'primaryCta');
+        $cta = $this->properties->optionalMap($props, 'primaryCta');
         if ($cta !== null) {
             $copy[] = $this->compileActionLink($cta, 'Split Hero CTA', 'g7pb-button g7pb-button--primary');
         }
 
-        $image = $this->optionalMap($props, 'image');
-        $src = $image === null ? '' : $this->requiredString($image, 'src', 2048);
-        $alt = $image === null ? '대표 이미지' : $this->requiredString($image, 'alt', 300);
+        $image = $this->properties->optionalMap($props, 'image');
+        $src = $image === null ? '' : $this->properties->requiredString($image, 'src', 2048);
+        $alt = $image === null ? '대표 이미지' : $this->properties->requiredString($image, 'alt', 300);
         if ($image !== null) {
-            $this->assertOnlyKeys($image, ['src', 'alt'], 'Split Hero image');
+            $this->properties->assertOnlyKeys($image, ['src', 'alt'], 'Split Hero image');
         }
         $media = '<figure class="g7pb-hero-split__media">'.$this->compileCatalogImage(
             $src,
@@ -1195,7 +1108,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileHeroSlider(array $props): string
     {
-        $this->assertOnlyKeys($props, ['slides', 'autoplay', 'interval', 'loop', 'appearance'], 'Slider Hero');
+        $this->properties->assertOnlyKeys($props, ['slides', 'autoplay', 'interval', 'loop', 'appearance'], 'Slider Hero');
         $slides = $props['slides'] ?? null;
         $appearance = $this->appearanceClasses($props, 'contrast', 'spacious');
         $autoplay = $props['autoplay'] ?? true;
@@ -1214,18 +1127,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($slide)) {
                 throw new DocumentCompileException("Slider Hero item {$index} must be an object.");
             }
-            $this->assertOnlyKeys(
+            $this->properties->assertOnlyKeys(
                 $slide,
                 ['eyebrow', 'title', 'body', 'buttonLabel', 'buttonUrl', 'imageSrc', 'imageAlt'],
                 "Slider Hero item {$index}",
             );
-            $eyebrow = $this->optionalString($slide, 'eyebrow', 120);
-            $title = $this->requiredInlineRichTextString($slide, 'title', 200);
-            $body = $this->optionalString($slide, 'body', 2000);
-            $buttonLabel = $this->requiredString($slide, 'buttonLabel', 120);
-            $buttonUrl = $this->requiredString($slide, 'buttonUrl', 2048);
-            $imageSrc = $this->optionalString($slide, 'imageSrc', 2048) ?? '';
-            $imageAlt = $this->optionalString($slide, 'imageAlt', 300) ?? '';
+            $eyebrow = $this->properties->optionalString($slide, 'eyebrow', 120);
+            $title = $this->properties->requiredInlineRichTextString($slide, 'title', 200);
+            $body = $this->properties->optionalString($slide, 'body', 2000);
+            $buttonLabel = $this->properties->requiredString($slide, 'buttonLabel', 120);
+            $buttonUrl = $this->properties->requiredString($slide, 'buttonUrl', 2048);
+            $imageSrc = $this->properties->optionalString($slide, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->properties->optionalString($slide, 'imageAlt', 300) ?? '';
             $this->urls->assertAllowedUrl($buttonUrl, "Slider Hero item {$index}");
 
             $copy = $eyebrow === null || $eyebrow === ''
@@ -1256,10 +1169,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileLogoCloud(array $props): string
     {
-        $this->assertOnlyKeys($props, ['heading', 'logos', 'layout', 'appearance'], 'Logo Cloud');
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['heading', 'logos', 'layout', 'appearance'], 'Logo Cloud');
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $logos = $props['logos'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
 
         if (! is_array($logos) || count($logos) < 2 || count($logos) > 12) {
@@ -1274,11 +1187,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($logo)) {
                 throw new DocumentCompileException("Logo item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($logo, ['name', 'imageSrc', 'imageAlt', 'url'], "Logo item {$index}");
-            $name = $this->requiredString($logo, 'name', 120);
-            $imageSrc = $this->optionalString($logo, 'imageSrc', 2048) ?? '';
-            $imageAlt = $this->optionalString($logo, 'imageAlt', 300) ?? '';
-            $url = $this->optionalString($logo, 'url', 2048) ?? '';
+            $this->properties->assertOnlyKeys($logo, ['name', 'imageSrc', 'imageAlt', 'url'], "Logo item {$index}");
+            $name = $this->properties->requiredString($logo, 'name', 120);
+            $imageSrc = $this->properties->optionalString($logo, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->properties->optionalString($logo, 'imageAlt', 300) ?? '';
+            $url = $this->properties->optionalString($logo, 'url', 2048) ?? '';
             $visual = $imageSrc === ''
                 ? '<span>'.$this->escape($name).'</span>'
                 : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-cloud__image', $name);
@@ -1299,11 +1212,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileStats(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Stats');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Stats');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         $icons = ['trend', 'users', 'target', 'chart'];
         if ($layout !== null && ! in_array($layout, ['grid', 'strip', 'split', 'editorial'], true)) {
@@ -1319,14 +1232,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Stats item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['icon', 'value', 'label', 'detail'], "Stats item {$index}");
-            $icon = $this->requiredString($item, 'icon', 32);
+            $this->properties->assertOnlyKeys($item, ['icon', 'value', 'label', 'detail'], "Stats item {$index}");
+            $icon = $this->properties->requiredString($item, 'icon', 32);
             if (! in_array($icon, $icons, true)) {
                 throw new DocumentCompileException("Stats item {$index} icon is invalid.");
             }
-            $value = $this->requiredString($item, 'value', 80);
-            $label = $this->requiredInlineRichTextString($item, 'label', 120);
-            $detail = $this->optionalRichTextString($item, 'detail', 500) ?? '';
+            $value = $this->properties->requiredString($item, 'value', 80);
+            $label = $this->properties->requiredInlineRichTextString($item, 'label', 120);
+            $detail = $this->properties->optionalRichTextString($item, 'detail', 500) ?? '';
             $detailMarkup = $this->richText->hasCanonicalRichTextMarkup($detail)
                 ? '<div class="g7pb-stats__detail">'.$this->richText->sanitizeRichText($detail).'</div>'
                 : '<p>'.$this->formatText($detail).'</p>';
@@ -1343,11 +1256,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compilePricing(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'plans', 'layout', 'appearance'], 'Pricing');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'plans', 'layout', 'appearance'], 'Pricing');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $plans = $props['plans'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'spacious');
         if ($layout !== null && ! in_array($layout, ['cards', 'featured', 'compact', 'editorial'], true)) {
             throw new DocumentCompileException('Pricing layout is invalid.');
@@ -1362,18 +1275,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($plan)) {
                 throw new DocumentCompileException("Pricing plan {$index} must be an object.");
             }
-            $this->assertOnlyKeys(
+            $this->properties->assertOnlyKeys(
                 $plan,
                 ['name', 'price', 'period', 'description', 'features', 'buttonLabel', 'buttonUrl', 'featured'],
                 "Pricing plan {$index}",
             );
-            $name = $this->requiredInlineRichTextString($plan, 'name', 120);
-            $price = $this->requiredString($plan, 'price', 80);
-            $period = $this->optionalString($plan, 'period', 40) ?? '';
-            $description = $this->optionalRichTextString($plan, 'description', 500) ?? '';
-            $buttonLabel = $this->requiredString($plan, 'buttonLabel', 120);
-            $buttonUrl = $this->requiredString($plan, 'buttonUrl', 2048);
-            $featured = $this->requiredBoolean($plan, 'featured');
+            $name = $this->properties->requiredInlineRichTextString($plan, 'name', 120);
+            $price = $this->properties->requiredString($plan, 'price', 80);
+            $period = $this->properties->optionalString($plan, 'period', 40) ?? '';
+            $description = $this->properties->optionalRichTextString($plan, 'description', 500) ?? '';
+            $buttonLabel = $this->properties->requiredString($plan, 'buttonLabel', 120);
+            $buttonUrl = $this->properties->requiredString($plan, 'buttonUrl', 2048);
+            $featured = $this->properties->requiredBoolean($plan, 'featured');
             $features = $plan['features'] ?? null;
             $this->urls->assertAllowedUrl($buttonUrl, "Pricing plan {$index}");
 
@@ -1382,7 +1295,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             }
             $featureItems = [];
             foreach (array_values($features) as $featureIndex => $feature) {
-                $feature = $this->requiredInlineRichTextValue(
+                $feature = $this->properties->requiredInlineRichTextValue(
                     $feature,
                     "Pricing plan {$index} feature {$featureIndex}",
                     200,
@@ -1407,11 +1320,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileTeam(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'members', 'layout', 'appearance'], 'Team');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'members', 'layout', 'appearance'], 'Team');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $members = $props['members'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if ($layout !== null && ! in_array($layout, ['grid', 'portraits', 'editorial', 'featured'], true)) {
             throw new DocumentCompileException('Team layout is invalid.');
@@ -1426,13 +1339,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($member)) {
                 throw new DocumentCompileException("Team member {$index} must be an object.");
             }
-            $this->assertOnlyKeys($member, ['name', 'role', 'bio', 'imageSrc', 'imageAlt', 'profileUrl'], "Team member {$index}");
-            $name = $this->requiredString($member, 'name', 120);
-            $role = $this->requiredString($member, 'role', 160);
-            $bio = $this->optionalRichTextString($member, 'bio', 1000) ?? '';
-            $imageSrc = $this->optionalString($member, 'imageSrc', 2048) ?? '';
-            $imageAlt = $this->optionalString($member, 'imageAlt', 300) ?? '';
-            $profileUrl = $this->optionalString($member, 'profileUrl', 2048) ?? '';
+            $this->properties->assertOnlyKeys($member, ['name', 'role', 'bio', 'imageSrc', 'imageAlt', 'profileUrl'], "Team member {$index}");
+            $name = $this->properties->requiredString($member, 'name', 120);
+            $role = $this->properties->requiredString($member, 'role', 160);
+            $bio = $this->properties->optionalRichTextString($member, 'bio', 1000) ?? '';
+            $imageSrc = $this->properties->optionalString($member, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->properties->optionalString($member, 'imageAlt', 300) ?? '';
+            $profileUrl = $this->properties->optionalString($member, 'profileUrl', 2048) ?? '';
             $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name, 'g7pb-team__image', mb_substr($name, 0, 1));
             $memberName = '<h3>'.$this->escape($name).'</h3>';
             if ($profileUrl !== '') {
@@ -1455,12 +1368,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileGallery(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'columns', 'layout', 'appearance'], 'Gallery');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'images', 'columns', 'layout', 'appearance'], 'Gallery');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $images = $props['images'] ?? null;
         $columns = $props['columns'] ?? null;
-        $layout = $this->optionalString($props, 'layout', 16);
+        $layout = $this->properties->optionalString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
 
         if (! is_int($columns) || ! in_array($columns, [2, 3, 4], true)) {
@@ -1478,10 +1391,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($image)) {
                 throw new DocumentCompileException("Gallery image {$index} must be an object.");
             }
-            $this->assertOnlyKeys($image, ['src', 'alt', 'caption'], "Gallery image {$index}");
-            $src = $this->optionalString($image, 'src', 2048) ?? '';
-            $alt = $this->requiredString($image, 'alt', 300);
-            $caption = $this->optionalString($image, 'caption', 300) ?? '';
+            $this->properties->assertOnlyKeys($image, ['src', 'alt', 'caption'], "Gallery image {$index}");
+            $src = $this->properties->optionalString($image, 'src', 2048) ?? '';
+            $alt = $this->properties->requiredString($image, 'alt', 300);
+            $caption = $this->properties->optionalString($image, 'caption', 300) ?? '';
             $media = $this->compileCatalogImage($src, $alt, 'g7pb-gallery__image', '이미지 '.($index + 1));
             $figcaption = $caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>';
             $compiled[] = '<figure>'.$media.$figcaption.'</figure>';
@@ -1497,11 +1410,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileBarChart(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'unit', 'items', 'appearance'], 'Bar Chart');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
-        $unit = $this->optionalString($props, 'unit', 20) ?? '';
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'unit', 'items', 'appearance'], 'Bar Chart');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $description = $this->properties->optionalRichTextString($props, 'description', 1000) ?? '';
+        $unit = $this->properties->optionalString($props, 'unit', 20) ?? '';
         $items = $props['items'] ?? null;
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         $tones = ['blue', 'indigo', 'emerald', 'amber'];
@@ -1515,10 +1428,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Bar Chart item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['label', 'value', 'tone'], "Bar Chart item {$index}");
-            $label = $this->requiredString($item, 'label', 120);
-            $value = $this->requiredNumber($item, 'value', 0, 100);
-            $tone = $this->requiredString($item, 'tone', 16);
+            $this->properties->assertOnlyKeys($item, ['label', 'value', 'tone'], "Bar Chart item {$index}");
+            $label = $this->properties->requiredString($item, 'label', 120);
+            $value = $this->properties->requiredNumber($item, 'value', 0, 100);
+            $tone = $this->properties->requiredString($item, 'tone', 16);
             if (! in_array($tone, $tones, true)) {
                 throw new DocumentCompileException("Bar Chart item {$index} tone is invalid.");
             }
@@ -1538,15 +1451,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileG7RecentPosts(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'emptyMessage', 'appearance'], 'G7 recent posts');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->requiredString($props, 'source', 16);
-        $period = $this->requiredString($props, 'period', 16);
-        $limit = $this->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8, 12]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->requiredIntegerChoice($props, 'pageSize', [3, 4, 6]) : 3;
-        $audience = $this->requiredString($props, 'audience', 16);
-        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'emptyMessage', 'appearance'], 'G7 recent posts');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $source = $this->properties->requiredString($props, 'source', 16);
+        $period = $this->properties->requiredString($props, 'period', 16);
+        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8, 12]);
+        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [3, 4, 6]) : 3;
+        $audience = $this->properties->requiredString($props, 'audience', 16);
+        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
 
         if (! in_array($source, ['recent', 'popular'], true)
@@ -1568,16 +1481,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileG7ProductGrid(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'columns', 'pageSize', 'audience', 'detailBasePath', 'emptyMessage', 'appearance'], 'G7 product grid');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->requiredString($props, 'source', 16);
-        $limit = $this->requiredIntegerChoice($props, 'limit', [2, 3, 4, 6, 8, 12]);
-        $columns = $this->requiredIntegerChoice($props, 'columns', [2, 3, 4]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->requiredIntegerChoice($props, 'pageSize', [2, 3, 4, 6]) : 4;
-        $audience = $this->requiredString($props, 'audience', 16);
-        $detailBasePath = $this->requiredString($props, 'detailBasePath', 200);
-        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'columns', 'pageSize', 'audience', 'detailBasePath', 'emptyMessage', 'appearance'], 'G7 product grid');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $source = $this->properties->requiredString($props, 'source', 16);
+        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [2, 3, 4, 6, 8, 12]);
+        $columns = $this->properties->requiredIntegerChoice($props, 'columns', [2, 3, 4]);
+        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [2, 3, 4, 6]) : 4;
+        $audience = $this->properties->requiredString($props, 'audience', 16);
+        $detailBasePath = $this->properties->requiredString($props, 'detailBasePath', 200);
+        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
 
         if (! in_array($source, ['latest', 'new', 'popular'], true)
@@ -1599,16 +1512,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileInquiryForm(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'formKind', 'submitLabel', 'successMessage', 'privacyLabel', 'showPhone', 'showSubject', 'appearance'], 'Inquiry form');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
-        $kind = $this->requiredString($props, 'formKind', 24);
-        $submitLabel = $this->requiredString($props, 'submitLabel', 80);
-        $successMessage = $this->requiredString($props, 'successMessage', 300);
-        $privacyLabel = $this->requiredString($props, 'privacyLabel', 300);
-        $showPhone = $this->requiredBoolean($props, 'showPhone');
-        $showSubject = $this->requiredBoolean($props, 'showSubject');
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'formKind', 'submitLabel', 'successMessage', 'privacyLabel', 'showPhone', 'showSubject', 'appearance'], 'Inquiry form');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $description = $this->properties->optionalRichTextString($props, 'description', 1000) ?? '';
+        $kind = $this->properties->requiredString($props, 'formKind', 24);
+        $submitLabel = $this->properties->requiredString($props, 'submitLabel', 80);
+        $successMessage = $this->properties->requiredString($props, 'successMessage', 300);
+        $privacyLabel = $this->properties->requiredString($props, 'privacyLabel', 300);
+        $showPhone = $this->properties->requiredBoolean($props, 'showPhone');
+        $showSubject = $this->properties->requiredBoolean($props, 'showSubject');
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($kind, ['inquiry', 'quote', 'reservation', 'application', 'newsletter'], true)) {
             throw new DocumentCompileException('Inquiry form kind is invalid.');
@@ -1635,22 +1548,22 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileMapDirections(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'mapImageSrc', 'mapImageAlt', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $description = $this->optionalRichTextString($props, 'description', 1000) ?? '';
-        $address = $this->requiredString($props, 'address', 500);
-        $latitude = $this->requiredNumber($props, 'latitude', -90, 90);
-        $longitude = $this->requiredNumber($props, 'longitude', -180, 180);
-        $zoom = $this->requiredIntegerChoice($props, 'zoom', [12, 14, 16, 18]);
-        $provider = $this->requiredString($props, 'provider', 24);
-        $mapImageSrc = $this->optionalString($props, 'mapImageSrc', 2048) ?? '';
-        $mapImageAlt = $this->optionalString($props, 'mapImageAlt', 300) ?? '';
-        $directionsLabel = $this->requiredString($props, 'directionsLabel', 80);
-        $directionsUrl = $this->requiredString($props, 'directionsUrl', 2048);
-        $phone = $this->optionalString($props, 'phone', 40) ?? '';
-        $hours = $this->optionalString($props, 'hours', 300) ?? '';
-        $parking = $this->optionalString($props, 'parking', 300) ?? '';
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'mapImageSrc', 'mapImageAlt', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $description = $this->properties->optionalRichTextString($props, 'description', 1000) ?? '';
+        $address = $this->properties->requiredString($props, 'address', 500);
+        $latitude = $this->properties->requiredNumber($props, 'latitude', -90, 90);
+        $longitude = $this->properties->requiredNumber($props, 'longitude', -180, 180);
+        $zoom = $this->properties->requiredIntegerChoice($props, 'zoom', [12, 14, 16, 18]);
+        $provider = $this->properties->requiredString($props, 'provider', 24);
+        $mapImageSrc = $this->properties->optionalString($props, 'mapImageSrc', 2048) ?? '';
+        $mapImageAlt = $this->properties->optionalString($props, 'mapImageAlt', 300) ?? '';
+        $directionsLabel = $this->properties->requiredString($props, 'directionsLabel', 80);
+        $directionsUrl = $this->properties->requiredString($props, 'directionsUrl', 2048);
+        $phone = $this->properties->optionalString($props, 'phone', 40) ?? '';
+        $hours = $this->properties->optionalString($props, 'hours', 300) ?? '';
+        $parking = $this->properties->optionalString($props, 'parking', 300) ?? '';
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($provider, ['image', 'openstreetmap', 'google', 'none'], true)) {
             throw new DocumentCompileException('Map provider is invalid.');
@@ -1687,11 +1600,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileTestimonials(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Testimonials');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Testimonials');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->requiredString($props, 'layout', 16);
+        $layout = $this->properties->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($layout, ['grid', 'spotlight', 'split', 'wall', 'quote-hero'], true)) {
             throw new DocumentCompileException('Testimonials layout is invalid.');
@@ -1705,14 +1618,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Testimonial item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['quote', 'name', 'role', 'company', 'avatarSrc', 'avatarAlt', 'rating'], "Testimonial item {$index}");
-            $quote = $this->requiredString($item, 'quote', 1200);
-            $name = $this->requiredString($item, 'name', 120);
-            $role = $this->optionalString($item, 'role', 120) ?? '';
-            $company = $this->optionalString($item, 'company', 120) ?? '';
-            $avatarSrc = $this->optionalString($item, 'avatarSrc', 2048) ?? '';
-            $avatarAlt = $this->optionalString($item, 'avatarAlt', 300) ?? '';
-            $rating = $this->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
+            $this->properties->assertOnlyKeys($item, ['quote', 'name', 'role', 'company', 'avatarSrc', 'avatarAlt', 'rating'], "Testimonial item {$index}");
+            $quote = $this->properties->requiredString($item, 'quote', 1200);
+            $name = $this->properties->requiredString($item, 'name', 120);
+            $role = $this->properties->optionalString($item, 'role', 120) ?? '';
+            $company = $this->properties->optionalString($item, 'company', 120) ?? '';
+            $avatarSrc = $this->properties->optionalString($item, 'avatarSrc', 2048) ?? '';
+            $avatarAlt = $this->properties->optionalString($item, 'avatarAlt', 300) ?? '';
+            $rating = $this->properties->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
             $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonials__avatar', mb_substr($name, 0, 1));
             $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
@@ -1726,12 +1639,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileFaqAccordion(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'behavior', 'openFirst', 'appearance'], 'FAQ accordion');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'behavior', 'openFirst', 'appearance'], 'FAQ accordion');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $behavior = $this->requiredString($props, 'behavior', 16);
-        $openFirst = $this->requiredBoolean($props, 'openFirst');
+        $behavior = $this->properties->requiredString($props, 'behavior', 16);
+        $openFirst = $this->properties->requiredBoolean($props, 'openFirst');
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($behavior, ['single', 'multiple'], true)) {
             throw new DocumentCompileException('FAQ accordion behavior is invalid.');
@@ -1745,9 +1658,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("FAQ item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['question', 'answer'], "FAQ item {$index}");
-            $question = $this->requiredInlineRichTextString($item, 'question', 300);
-            $answer = $this->requiredString($item, 'answer', 4000);
+            $this->properties->assertOnlyKeys($item, ['question', 'answer'], "FAQ item {$index}");
+            $question = $this->properties->requiredInlineRichTextString($item, 'question', 300);
+            $answer = $this->properties->requiredString($item, 'answer', 4000);
             $open = $openFirst && $index === 0;
             $compiled[] = '<div class="g7pb-faq__item" data-g7pb-accordion-item data-g7pb-open="'.($open ? 'true' : 'false').'">'
                 .'<div class="g7pb-faq__trigger" role="button" tabindex="0" data-g7pb-accordion-trigger aria-expanded="'.($open ? 'true' : 'false').'"><span>'.$this->richText->sanitizePromotedInlineRichText($question).'</span><i aria-hidden="true">+</i></div>'
@@ -1760,11 +1673,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileProcessTimeline(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Process timeline');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Process timeline');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->requiredString($props, 'layout', 16);
+        $layout = $this->properties->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($layout, ['vertical', 'horizontal'], true)) {
             throw new DocumentCompileException('Process timeline layout is invalid.');
@@ -1778,11 +1691,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Process step {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['title', 'body', 'linkLabel', 'linkUrl'], "Process step {$index}");
-            $title = $this->requiredInlineRichTextString($item, 'title', 200);
-            $body = $this->requiredString($item, 'body', 1500);
-            $linkLabel = $this->optionalString($item, 'linkLabel', 120) ?? '';
-            $linkUrl = $this->optionalString($item, 'linkUrl', 2048) ?? '';
+            $this->properties->assertOnlyKeys($item, ['title', 'body', 'linkLabel', 'linkUrl'], "Process step {$index}");
+            $title = $this->properties->requiredInlineRichTextString($item, 'title', 200);
+            $body = $this->properties->requiredString($item, 'body', 1500);
+            $linkLabel = $this->properties->optionalString($item, 'linkLabel', 120) ?? '';
+            $linkUrl = $this->properties->optionalString($item, 'linkUrl', 2048) ?? '';
             if (($linkLabel === '') !== ($linkUrl === '')) {
                 throw new DocumentCompileException("Process step {$index} link requires both a label and URL.");
             }
@@ -1803,12 +1716,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileTabs(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'initialTab', 'style', 'appearance'], 'Tabs');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'initialTab', 'style', 'appearance'], 'Tabs');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $initialTab = $props['initialTab'] ?? null;
-        $style = $this->requiredString($props, 'style', 16);
+        $style = $this->properties->requiredString($props, 'style', 16);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($style, ['underline', 'pills'], true)) {
             throw new DocumentCompileException('Tabs style is invalid.');
@@ -1826,10 +1739,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Tab item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['label', 'heading', 'body'], "Tab item {$index}");
-            $label = $this->requiredString($item, 'label', 80);
-            $itemHeading = $this->requiredInlineRichTextString($item, 'heading', 200);
-            $body = $this->requiredString($item, 'body', 4000);
+            $this->properties->assertOnlyKeys($item, ['label', 'heading', 'body'], "Tab item {$index}");
+            $label = $this->properties->requiredString($item, 'label', 80);
+            $itemHeading = $this->properties->requiredInlineRichTextString($item, 'heading', 200);
+            $body = $this->properties->requiredString($item, 'body', 4000);
             $selected = $initialTab === $index;
             $buttons[] = '<span data-g7pb-runtime-button role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</span>';
             $bodyMarkup = $this->richText->hasRichTextMarkup($body)
@@ -1844,9 +1757,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileComparisonTable(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'columns', 'rows', 'highlightColumn', 'appearance'], 'Comparison table');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'columns', 'rows', 'highlightColumn', 'appearance'], 'Comparison table');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $columns = $props['columns'] ?? null;
         $rows = $props['rows'] ?? null;
         $highlight = $props['highlightColumn'] ?? null;
@@ -1866,9 +1779,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($column)) {
                 throw new DocumentCompileException("Comparison column {$index} must be an object.");
             }
-            $this->assertOnlyKeys($column, ['title', 'description'], "Comparison column {$index}");
-            $title = $this->requiredInlineRichTextString($column, 'title', 120);
-            $description = $this->optionalInlineRichTextString($column, 'description', 300) ?? '';
+            $this->properties->assertOnlyKeys($column, ['title', 'description'], "Comparison column {$index}");
+            $title = $this->properties->requiredInlineRichTextString($column, 'title', 120);
+            $description = $this->properties->optionalInlineRichTextString($column, 'description', 300) ?? '';
             $headings[] = '<th scope="col"'.($highlight === $index ? ' class="is-highlighted"' : '').'><strong>'.$this->richText->sanitizePromotedInlineRichText($title).'</strong>'.($description === '' ? '' : '<span>'.$this->richText->sanitizePromotedInlineRichText($description).'</span>').'</th>';
         }
 
@@ -1877,8 +1790,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($row)) {
                 throw new DocumentCompileException("Comparison row {$rowIndex} must be an object.");
             }
-            $this->assertOnlyKeys($row, ['feature', 'values'], "Comparison row {$rowIndex}");
-            $feature = $this->requiredInlineRichTextString($row, 'feature', 200);
+            $this->properties->assertOnlyKeys($row, ['feature', 'values'], "Comparison row {$rowIndex}");
+            $feature = $this->properties->requiredInlineRichTextString($row, 'feature', 200);
             $values = $row['values'] ?? null;
             if (! is_array($values) || count($values) !== count($columns)) {
                 throw new DocumentCompileException("Comparison row {$rowIndex} values must match the columns.");
@@ -1899,11 +1812,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileArticleList(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Article list');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Article list');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->requiredString($props, 'layout', 16);
+        $layout = $this->properties->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($layout, ['list', 'grid', 'featured', 'magazine', 'editorial'], true)) {
             throw new DocumentCompileException('Article list layout is invalid.');
@@ -1917,20 +1830,20 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Article item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['category', 'title', 'summary', 'date', 'imageSrc', 'imageAlt', 'url'], "Article item {$index}");
-            $category = $this->optionalString($item, 'category', 80) ?? '';
-            $title = $this->requiredInlineRichTextString($item, 'title', 240, allowLinks: false);
-            $summary = $this->requiredString($item, 'summary', 1200);
-            $date = $this->optionalString($item, 'date', 40) ?? '';
+            $this->properties->assertOnlyKeys($item, ['category', 'title', 'summary', 'date', 'imageSrc', 'imageAlt', 'url'], "Article item {$index}");
+            $category = $this->properties->optionalString($item, 'category', 80) ?? '';
+            $title = $this->properties->requiredInlineRichTextString($item, 'title', 240, allowLinks: false);
+            $summary = $this->properties->requiredString($item, 'summary', 1200);
+            $date = $this->properties->optionalString($item, 'date', 40) ?? '';
             if ($date !== '') {
                 $parsedDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
                 if ($parsedDate === false || $parsedDate->format('Y-m-d') !== $date) {
                     throw new DocumentCompileException("Article item {$index} 날짜는 날짜 선택기로 입력해 주세요.");
                 }
             }
-            $imageSrc = $this->optionalString($item, 'imageSrc', 2048) ?? '';
-            $imageAlt = $this->optionalString($item, 'imageAlt', 300) ?? '';
-            $url = $this->requiredString($item, 'url', 2048);
+            $imageSrc = $this->properties->optionalString($item, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->properties->optionalString($item, 'imageAlt', 300) ?? '';
+            $url = $this->properties->requiredString($item, 'url', 2048);
             $this->urls->assertAllowedUrl($url, "Article item {$index}");
             $plainTitle = $this->richText->promotedInlinePlainText($title, allowLinks: false);
             $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $plainTitle, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
@@ -1950,13 +1863,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileVideoEmbed(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'caption', 'provider', 'videoId', 'ratio', 'appearance'], 'Video embed');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $caption = $this->optionalRichTextString($props, 'caption', 1000) ?? '';
-        $provider = $this->requiredString($props, 'provider', 16);
-        $videoId = $this->requiredString($props, 'videoId', 32);
-        $ratio = $this->requiredString($props, 'ratio', 8);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'caption', 'provider', 'videoId', 'ratio', 'appearance'], 'Video embed');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $caption = $this->properties->optionalRichTextString($props, 'caption', 1000) ?? '';
+        $provider = $this->properties->requiredString($props, 'provider', 16);
+        $videoId = $this->properties->requiredString($props, 'videoId', 32);
+        $ratio = $this->properties->requiredString($props, 'ratio', 8);
         $appearance = $this->appearanceClasses($props, 'contrast', 'normal');
         if (! in_array($provider, ['youtube', 'vimeo'], true) || preg_match('/^[A-Za-z0-9_-]{6,32}$/D', $videoId) !== 1) {
             throw new DocumentCompileException('Video provider or identifier is invalid.');
@@ -1978,12 +1891,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileLogoCarousel(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'logos', 'autoplay', 'interval', 'appearance'], 'Logo carousel');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'logos', 'autoplay', 'interval', 'appearance'], 'Logo carousel');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $logos = $props['logos'] ?? null;
-        $autoplay = $this->requiredBoolean($props, 'autoplay');
-        $interval = $this->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
+        $autoplay = $this->properties->requiredBoolean($props, 'autoplay');
+        $interval = $this->properties->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
         $appearance = $this->appearanceClasses($props, 'default', 'compact');
         if (! is_array($logos) || count($logos) < 3 || count($logos) > 12) {
             throw new DocumentCompileException('Logo carousel must contain between three and twelve logos.');
@@ -1994,11 +1907,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($logo)) {
                 throw new DocumentCompileException("Logo carousel item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($logo, ['name', 'imageSrc', 'imageAlt', 'url'], "Logo carousel item {$index}");
-            $name = $this->requiredString($logo, 'name', 120);
-            $imageSrc = $this->optionalString($logo, 'imageSrc', 2048) ?? '';
-            $imageAlt = $this->optionalString($logo, 'imageAlt', 300) ?? '';
-            $url = $this->optionalString($logo, 'url', 2048) ?? '';
+            $this->properties->assertOnlyKeys($logo, ['name', 'imageSrc', 'imageAlt', 'url'], "Logo carousel item {$index}");
+            $name = $this->properties->requiredString($logo, 'name', 120);
+            $imageSrc = $this->properties->optionalString($logo, 'imageSrc', 2048) ?? '';
+            $imageAlt = $this->properties->optionalString($logo, 'imageAlt', 300) ?? '';
+            $url = $this->properties->optionalString($logo, 'url', 2048) ?? '';
             $visual = $imageSrc === ''
                 ? '<span>'.$this->escape($name).'</span>'
                 : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-carousel__image', $name);
@@ -2015,12 +1928,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileTestimonialSlider(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'autoplay', 'interval', 'appearance'], 'Testimonial slider');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'autoplay', 'interval', 'appearance'], 'Testimonial slider');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $autoplay = $this->requiredBoolean($props, 'autoplay');
-        $interval = $this->requiredIntegerChoice($props, 'interval', [5000, 7000, 9000]);
+        $autoplay = $this->properties->requiredBoolean($props, 'autoplay');
+        $interval = $this->properties->requiredIntegerChoice($props, 'interval', [5000, 7000, 9000]);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! is_array($items) || count($items) < 2 || count($items) > 8) {
             throw new DocumentCompileException('Testimonial slider must contain between two and eight items.');
@@ -2031,14 +1944,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Testimonial slider item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['quote', 'name', 'role', 'company', 'avatarSrc', 'avatarAlt', 'rating'], "Testimonial slider item {$index}");
-            $quote = $this->requiredString($item, 'quote', 1200);
-            $name = $this->requiredString($item, 'name', 120);
-            $role = $this->optionalString($item, 'role', 120) ?? '';
-            $company = $this->optionalString($item, 'company', 120) ?? '';
-            $avatarSrc = $this->optionalString($item, 'avatarSrc', 2048) ?? '';
-            $avatarAlt = $this->optionalString($item, 'avatarAlt', 300) ?? '';
-            $rating = $this->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
+            $this->properties->assertOnlyKeys($item, ['quote', 'name', 'role', 'company', 'avatarSrc', 'avatarAlt', 'rating'], "Testimonial slider item {$index}");
+            $quote = $this->properties->requiredString($item, 'quote', 1200);
+            $name = $this->properties->requiredString($item, 'name', 120);
+            $role = $this->properties->optionalString($item, 'role', 120) ?? '';
+            $company = $this->properties->optionalString($item, 'company', 120) ?? '';
+            $avatarSrc = $this->properties->optionalString($item, 'avatarSrc', 2048) ?? '';
+            $avatarAlt = $this->properties->optionalString($item, 'avatarAlt', 300) ?? '';
+            $rating = $this->properties->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
             $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonial-slider__avatar', mb_substr($name, 0, 1));
             $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
@@ -2055,11 +1968,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileEventSchedule(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Event schedule');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Event schedule');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $layout = $this->requiredString($props, 'layout', 16);
+        $layout = $this->properties->requiredString($props, 'layout', 16);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($layout, ['agenda', 'timeline'], true) || ! is_array($items) || count($items) < 1 || count($items) > 12) {
             throw new DocumentCompileException('Event schedule configuration is invalid.');
@@ -2070,14 +1983,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Event item {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['date', 'time', 'title', 'location', 'description', 'buttonLabel', 'buttonUrl'], "Event item {$index}");
-            $date = $this->requiredString($item, 'date', 40);
-            $time = $this->optionalString($item, 'time', 40) ?? '';
-            $title = $this->requiredInlineRichTextString($item, 'title', 240);
-            $location = $this->optionalString($item, 'location', 240) ?? '';
-            $description = $this->requiredString($item, 'description', 1500);
-            $buttonLabel = $this->optionalString($item, 'buttonLabel', 120) ?? '';
-            $buttonUrl = $this->optionalString($item, 'buttonUrl', 2048) ?? '';
+            $this->properties->assertOnlyKeys($item, ['date', 'time', 'title', 'location', 'description', 'buttonLabel', 'buttonUrl'], "Event item {$index}");
+            $date = $this->properties->requiredString($item, 'date', 40);
+            $time = $this->properties->optionalString($item, 'time', 40) ?? '';
+            $title = $this->properties->requiredInlineRichTextString($item, 'title', 240);
+            $location = $this->properties->optionalString($item, 'location', 240) ?? '';
+            $description = $this->properties->requiredString($item, 'description', 1500);
+            $buttonLabel = $this->properties->optionalString($item, 'buttonLabel', 120) ?? '';
+            $buttonUrl = $this->properties->optionalString($item, 'buttonUrl', 2048) ?? '';
             if (($buttonLabel === '') !== ($buttonUrl === '')) {
                 throw new DocumentCompileException("Event item {$index} link requires both a label and URL.");
             }
@@ -2098,9 +2011,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileDownloadResources(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'appearance'], 'Download resources');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'appearance'], 'Download resources');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! is_array($items) || count($items) < 1 || count($items) > 12) {
@@ -2112,13 +2025,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (! is_array($item)) {
                 throw new DocumentCompileException("Download resource {$index} must be an object.");
             }
-            $this->assertOnlyKeys($item, ['title', 'description', 'fileType', 'fileSize', 'buttonLabel', 'url'], "Download resource {$index}");
-            $title = $this->requiredInlineRichTextString($item, 'title', 240);
-            $description = $this->optionalString($item, 'description', 1200) ?? '';
-            $fileType = $this->requiredString($item, 'fileType', 20);
-            $fileSize = $this->optionalString($item, 'fileSize', 40) ?? '';
-            $buttonLabel = $this->requiredString($item, 'buttonLabel', 120);
-            $url = $this->requiredString($item, 'url', 2048);
+            $this->properties->assertOnlyKeys($item, ['title', 'description', 'fileType', 'fileSize', 'buttonLabel', 'url'], "Download resource {$index}");
+            $title = $this->properties->requiredInlineRichTextString($item, 'title', 240);
+            $description = $this->properties->optionalString($item, 'description', 1200) ?? '';
+            $fileType = $this->properties->requiredString($item, 'fileType', 20);
+            $fileSize = $this->properties->optionalString($item, 'fileSize', 40) ?? '';
+            $buttonLabel = $this->properties->requiredString($item, 'buttonLabel', 120);
+            $url = $this->properties->requiredString($item, 'url', 2048);
             $this->urls->assertAllowedUrl($url, "Download resource {$index}");
             $fileMeta = '<span class="g7pb-downloads__file-type">'.$this->escape($fileType).'</span>'
                 .($fileSize === '' ? '' : '<i aria-hidden="true"> · </i><span class="g7pb-downloads__file-size">'.$this->escape($fileSize).'</span>');
@@ -2134,17 +2047,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileG7BoardArchive(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'showSearch', 'showBoardFilter', 'emptyMessage', 'appearance'], 'G7 board archive');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->requiredString($props, 'source', 16);
-        $period = $this->requiredString($props, 'period', 16);
-        $limit = $this->requiredIntegerChoice($props, 'limit', [6, 8, 12]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->requiredIntegerChoice($props, 'pageSize', [3, 4, 6]) : 6;
-        $audience = $this->requiredString($props, 'audience', 16);
-        $showSearch = $this->requiredBoolean($props, 'showSearch');
-        $showBoardFilter = $this->requiredBoolean($props, 'showBoardFilter');
-        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'showSearch', 'showBoardFilter', 'emptyMessage', 'appearance'], 'G7 board archive');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $source = $this->properties->requiredString($props, 'source', 16);
+        $period = $this->properties->requiredString($props, 'period', 16);
+        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [6, 8, 12]);
+        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [3, 4, 6]) : 6;
+        $audience = $this->properties->requiredString($props, 'audience', 16);
+        $showSearch = $this->properties->requiredBoolean($props, 'showSearch');
+        $showBoardFilter = $this->properties->requiredBoolean($props, 'showBoardFilter');
+        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
         if (! in_array($source, ['recent', 'popular'], true) || ! in_array($period, ['today', 'week', 'month', 'year'], true) || ! in_array($audience, ['all', 'guest', 'member'], true)) {
             throw new DocumentCompileException('G7 board archive configuration is invalid.');
@@ -2164,16 +2077,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileG7ProductShowcase(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'pageSize', 'audience', 'detailBasePath', 'layout', 'emptyMessage', 'appearance'], 'G7 product showcase');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->requiredString($props, 'source', 16);
-        $limit = $this->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->requiredIntegerChoice($props, 'pageSize', [3, 4]) : 3;
-        $audience = $this->requiredString($props, 'audience', 16);
-        $detailBasePath = $this->requiredString($props, 'detailBasePath', 200);
-        $layout = $this->requiredString($props, 'layout', 16);
-        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'pageSize', 'audience', 'detailBasePath', 'layout', 'emptyMessage', 'appearance'], 'G7 product showcase');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $source = $this->properties->requiredString($props, 'source', 16);
+        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8]);
+        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [3, 4]) : 3;
+        $audience = $this->properties->requiredString($props, 'audience', 16);
+        $detailBasePath = $this->properties->requiredString($props, 'detailBasePath', 200);
+        $layout = $this->properties->requiredString($props, 'layout', 16);
+        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($source, ['latest', 'new', 'popular'], true) || ! in_array($audience, ['all', 'guest', 'member'], true) || ! in_array($layout, ['featured', 'rail'], true) || preg_match('#^/[A-Za-z0-9/_-]*$#', $detailBasePath) !== 1) {
             throw new DocumentCompileException('G7 product showcase configuration is invalid.');
@@ -2191,16 +2104,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileG7PostDetail(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'boardSlug', 'postId', 'detailUrl', 'linkLabel', 'audience', 'showContent', 'emptyMessage', 'appearance'], 'G7 post detail');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $boardSlug = $this->requiredString($props, 'boardSlug', 80);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'boardSlug', 'postId', 'detailUrl', 'linkLabel', 'audience', 'showContent', 'emptyMessage', 'appearance'], 'G7 post detail');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $boardSlug = $this->properties->requiredString($props, 'boardSlug', 80);
         $postId = $props['postId'] ?? null;
-        $detailUrl = $this->requiredString($props, 'detailUrl', 2048);
-        $linkLabel = $this->requiredString($props, 'linkLabel', 120);
-        $audience = $this->requiredString($props, 'audience', 16);
-        $showContent = $this->requiredBoolean($props, 'showContent');
-        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $detailUrl = $this->properties->requiredString($props, 'detailUrl', 2048);
+        $linkLabel = $this->properties->requiredString($props, 'linkLabel', 120);
+        $audience = $this->properties->requiredString($props, 'audience', 16);
+        $showContent = $this->properties->requiredBoolean($props, 'showContent');
+        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
         $appearance = $this->appearanceClasses($props, 'default', 'normal');
 
         if (preg_match('/^[a-z0-9][a-z0-9_-]{0,79}$/D', $boardSlug) !== 1
@@ -2218,15 +2131,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     /** @param array<string, mixed> $props */
     private function compileG7ProductDetail(array $props): string
     {
-        $this->assertOnlyKeys($props, ['eyebrow', 'heading', 'productKey', 'detailUrl', 'buttonLabel', 'audience', 'showDescription', 'emptyMessage', 'appearance'], 'G7 product detail');
-        $eyebrow = $this->optionalString($props, 'eyebrow', 120);
-        $heading = $this->requiredInlineRichTextString($props, 'heading', 200);
-        $productKey = $this->requiredString($props, 'productKey', 100);
-        $detailUrl = $this->requiredString($props, 'detailUrl', 2048);
-        $buttonLabel = $this->requiredString($props, 'buttonLabel', 120);
-        $audience = $this->requiredString($props, 'audience', 16);
-        $showDescription = $this->requiredBoolean($props, 'showDescription');
-        $emptyMessage = $this->requiredString($props, 'emptyMessage', 300);
+        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'productKey', 'detailUrl', 'buttonLabel', 'audience', 'showDescription', 'emptyMessage', 'appearance'], 'G7 product detail');
+        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
+        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
+        $productKey = $this->properties->requiredString($props, 'productKey', 100);
+        $detailUrl = $this->properties->requiredString($props, 'detailUrl', 2048);
+        $buttonLabel = $this->properties->requiredString($props, 'buttonLabel', 120);
+        $audience = $this->properties->requiredString($props, 'audience', 16);
+        $showDescription = $this->properties->requiredBoolean($props, 'showDescription');
+        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
         $appearance = $this->appearanceClasses($props, 'soft', 'normal');
 
         if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/D', $productKey) !== 1
@@ -2274,210 +2187,21 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         return '<img class="'.$className.'" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="'.$loading.'">';
     }
 
-    private function withBlockRuntime(
-        string $markup,
-        string $instanceId,
-        string $type,
-        mixed $motion,
-        mixed $visibility,
-        mixed $responsive,
-        string $rootTag = 'section',
-    ): string {
-        if (! in_array($rootTag, ['section', 'div'], true)) {
-            throw new DocumentCompileException('Compiled block root tag is invalid.');
-        }
-        $attributes = 'data-block-id="'.$this->escapeAttribute($instanceId).'"';
-
-        $responsiveClasses = $this->responsiveClasses($responsive, $type);
-        if ($responsiveClasses !== '') {
-            $decorated = preg_replace(
-                '/^<'.preg_quote($rootTag, '/').' class="/',
-                '<'.$rootTag.' class="'.$responsiveClasses.' ',
-                $markup,
-                1,
-            );
-            if (! is_string($decorated) || $decorated === $markup) {
-                throw new DocumentCompileException('Compiled block responsive root is missing.');
-            }
-            $markup = $decorated;
-        }
-
-        if ($motion !== null) {
-            if (! is_array($motion)) {
-                throw new DocumentCompileException('Block motion must be an object.');
-            }
-
-            $this->assertOnlyKeys($motion, ['preset', 'intensity', 'trigger', 'stagger_ms'], 'Block motion');
-            $preset = $this->requiredString($motion, 'preset', 32);
-            $intensity = $this->requiredString($motion, 'intensity', 16);
-            $trigger = $this->requiredString($motion, 'trigger', 16);
-            $stagger = $motion['stagger_ms'] ?? null;
-
-            if (! in_array($preset, $this->allowedMotionPresets($type), true)) {
-                throw new DocumentCompileException('Block motion preset is not supported for this block type.');
-            }
-            if (! in_array($intensity, ['subtle', 'normal', 'strong'], true)) {
-                throw new DocumentCompileException('Block motion intensity is invalid.');
-            }
-            if (! in_array($trigger, ['once', 'repeat'], true)) {
-                throw new DocumentCompileException('Block motion trigger is invalid.');
-            }
-            if (! is_int($stagger) || ! in_array($stagger, [60, 100, 160], true)) {
-                throw new DocumentCompileException('Block motion stagger interval is invalid.');
-            }
-
-            if ($preset !== 'none') {
-                $attributes .= ' data-g7pb-motion="'.$this->escapeAttribute($preset).'"';
-                $attributes .= ' data-g7pb-motion-intensity="'.$this->escapeAttribute($intensity).'"';
-                $attributes .= ' data-g7pb-motion-trigger="'.$this->escapeAttribute($trigger).'"';
-                $attributes .= ' data-g7pb-motion-stagger="'.$stagger.'"';
-            }
-        }
-
-        if ($visibility !== null) {
-            if (! is_array($visibility)) {
-                throw new DocumentCompileException('Block visibility must be an object.');
-            }
-            $this->assertOnlyKeys($visibility, ['audience'], 'Block visibility');
-            $audience = $this->requiredString($visibility, 'audience', 16);
-            if (! in_array($audience, ['all', 'guest', 'member'], true)) {
-                throw new DocumentCompileException('Block visibility audience is invalid.');
-            }
-            $attributes .= ' data-g7pb-visibility-audience="'.$this->escapeAttribute($audience).'"';
-            if ($audience !== 'all' && preg_match('/^<'.preg_quote($rootTag, '/').'\b[^>]*\shidden(?:\s|>)/', $markup) !== 1) {
-                $attributes .= ' hidden';
-            }
-        }
-
-        $compiled = preg_replace('/^<'.preg_quote($rootTag, '/').' /', '<'.$rootTag.' '.$attributes.' ', $markup, 1);
-        if (! is_string($compiled) || $compiled === $markup) {
-            throw new DocumentCompileException('Compiled block markup has no supported root.');
-        }
-
-        return $compiled;
-    }
-
-    private function responsiveClasses(mixed $value, string $type): string
-    {
-        if ($value === null) {
-            return '';
-        }
-        if (! is_array($value) || $value === [] || array_is_list($value)) {
-            throw new DocumentCompileException('Block responsive override must be a non-empty object.');
-        }
-        $this->assertOnlyKeys($value, ['tablet', 'mobile'], 'Block responsive');
-        $classes = [];
-        foreach (['tablet', 'mobile'] as $viewport) {
-            if (! array_key_exists($viewport, $value)) {
-                continue;
-            }
-            $override = $value[$viewport];
-            if (! is_array($override) || $override === [] || array_is_list($override)) {
-                throw new DocumentCompileException("Block {$viewport} override must be a non-empty object.");
-            }
-            $this->assertOnlyKeys($override, ['appearance', 'layout'], "Block {$viewport}");
-            if (array_key_exists('appearance', $override)) {
-                $appearance = $override['appearance'];
-                if (! is_array($appearance) || $appearance === [] || array_is_list($appearance)) {
-                    throw new DocumentCompileException("Block {$viewport} appearance must be a non-empty object.");
-                }
-                $this->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign', 'containerWidth', 'containerAlign', 'minHeight', 'verticalAlign'], "Block {$viewport} appearance");
-                $options = [
-                    'surface' => ['default', 'soft', 'contrast'],
-                    'spacing' => ['compact', 'normal', 'spacious'],
-                    'textScale' => ['compact', 'balanced', 'large'],
-                    'textAlign' => ['left', 'center', 'right'],
-                    'containerWidth' => ['inherit', 'narrow', 'standard', 'wide', 'full'],
-                    'containerAlign' => ['left', 'center', 'right', 'stretch'],
-                    'minHeight' => ['auto', 'compact', 'medium', 'large', 'viewport'],
-                    'verticalAlign' => ['start', 'center', 'end'],
-                ];
-                $cssKeys = [
-                    'surface' => 'surface', 'spacing' => 'spacing', 'textScale' => 'text-scale', 'textAlign' => 'text-align',
-                    'containerWidth' => 'container-width', 'containerAlign' => 'container-align', 'minHeight' => 'min-height',
-                    'verticalAlign' => 'vertical-align',
-                ];
-                foreach ($appearance as $key => $item) {
-                    if (! is_string($key) || ! isset($options[$key], $cssKeys[$key]) || ! is_string($item) || ! in_array($item, $options[$key], true)) {
-                        throw new DocumentCompileException("Block {$viewport} appearance {$key} is invalid.");
-                    }
-                    $classes[] = "g7pb-{$viewport}-appearance-{$cssKeys[$key]}--{$item}";
-                }
-            }
-            if (! array_key_exists('layout', $override)) {
-                continue;
-            }
-            $layout = $override['layout'];
-            if (! is_array($layout) || $layout === [] || array_is_list($layout)) {
-                throw new DocumentCompileException("Block {$viewport} layout must be a non-empty object.");
-            }
-            $allowed = match ($type) {
-                self::LAYOUT_SECTION_TYPE => ['width', 'spacing'],
-                self::LAYOUT_COLUMNS_TYPE => ['columns', 'gap'],
-                self::LAYOUT_STACK_TYPE => ['gap'],
-                default => [],
-            };
-            if ($allowed === [] || array_diff(array_keys($layout), $allowed) !== []) {
-                throw new DocumentCompileException("Block {$viewport} layout is not supported for {$type}.");
-            }
-            foreach ($layout as $key => $item) {
-                if (! is_string($key)) {
-                    throw new DocumentCompileException("Block {$viewport} layout key is invalid.");
-                }
-                if ($key === 'columns') {
-                    $valid = $viewport === 'mobile' ? $item === 1 : in_array($item, [1, 2], true);
-                } elseif ($key === 'width') {
-                    $valid = is_string($item) && in_array($item, ['standard', 'wide', 'full'], true);
-                } elseif ($key === 'spacing') {
-                    $valid = is_string($item) && in_array($item, ['compact', 'normal', 'spacious'], true);
-                } else {
-                    $valid = is_string($item) && in_array($item, ['none', 'compact', 'normal', 'spacious'], true);
-                }
-                if (! $valid) {
-                    throw new DocumentCompileException("Block {$viewport} layout {$key} is invalid.");
-                }
-                $classes[] = "g7pb-{$viewport}-layout-{$key}--{$item}";
-            }
-        }
-
-        if ($classes === []) {
-            throw new DocumentCompileException('Block responsive override cannot be empty.');
-        }
-
-        return implode(' ', $classes);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function allowedMotionPresets(string $type): array
-    {
-        return match ($type) {
-            self::HERO_TYPE, self::HERO_SPLIT_TYPE, self::HERO_SLIDER_TYPE => ['none', 'reveal', 'parallax-soft'],
-            self::FEATURES_TYPE, self::LOGO_CLOUD_TYPE, self::PRICING_TYPE, self::TEAM_TYPE, self::TESTIMONIALS_TYPE, self::PROCESS_TIMELINE_TYPE, self::ARTICLE_LIST_TYPE, self::G7_RECENT_POSTS_TYPE, self::G7_PRODUCT_GRID_TYPE, self::EVENT_SCHEDULE_TYPE, self::DOWNLOAD_RESOURCES_TYPE, self::G7_BOARD_ARCHIVE_TYPE, self::G7_PRODUCT_SHOWCASE_TYPE, self::ICON_LIST_TYPE, self::CARD_GRID_TYPE, self::SOCIAL_LINKS_TYPE => ['none', 'reveal', 'stagger'],
-            self::STATS_TYPE => ['none', 'reveal', 'stagger', 'counter'],
-            self::GALLERY_TYPE, self::IMAGE_CAROUSEL_TYPE => ['none', 'reveal', 'stagger', 'parallax-soft'],
-            self::BAR_CHART_TYPE => ['none', 'reveal', 'chart-draw'],
-            self::CTA_TYPE, self::CONTACT_TYPE, self::INQUIRY_FORM_TYPE, self::MAP_DIRECTIONS_TYPE, self::FAQ_ACCORDION_TYPE, self::TABS_TYPE, self::COMPARISON_TABLE_TYPE, self::VIDEO_EMBED_TYPE, self::LOGO_CAROUSEL_TYPE, self::TESTIMONIAL_SLIDER_TYPE, self::HEADING_TYPE, self::RICH_TEXT_TYPE, self::IMAGE_TYPE, self::BUTTONS_TYPE, self::IMAGE_TEXT_TYPE, self::G7_POST_DETAIL_TYPE, self::G7_PRODUCT_DETAIL_TYPE, self::DIVIDER_TYPE, self::BLOCKQUOTE_TYPE, self::NOTICE_TYPE, self::BREADCRUMBS_TYPE, self::ANCHOR_MENU_TYPE => ['none', 'reveal'],
-            default => ['none'],
-        };
-    }
-
     /**
      * @param  array<string, mixed>  $props
      */
     private function appearanceClasses(array $props, string $defaultSurface, string $defaultSpacing): string
     {
-        $appearance = $this->optionalMap($props, 'appearance') ?? [];
-        $this->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign', 'containerWidth', 'containerAlign', 'minHeight', 'verticalAlign', 'elements'], 'Block appearance');
-        $surface = $this->optionalString($appearance, 'surface', 16) ?? $defaultSurface;
-        $spacing = $this->optionalString($appearance, 'spacing', 16) ?? $defaultSpacing;
-        $textScale = $this->optionalString($appearance, 'textScale', 16) ?? 'balanced';
-        $textAlign = $this->optionalString($appearance, 'textAlign', 16) ?? 'left';
-        $containerWidth = $this->optionalString($appearance, 'containerWidth', 16) ?? 'inherit';
-        $containerAlign = $this->optionalString($appearance, 'containerAlign', 16) ?? 'center';
-        $minHeight = $this->optionalString($appearance, 'minHeight', 16) ?? 'auto';
-        $verticalAlign = $this->optionalString($appearance, 'verticalAlign', 16) ?? 'start';
+        $appearance = $this->properties->optionalMap($props, 'appearance') ?? [];
+        $this->properties->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign', 'containerWidth', 'containerAlign', 'minHeight', 'verticalAlign', 'elements'], 'Block appearance');
+        $surface = $this->properties->optionalString($appearance, 'surface', 16) ?? $defaultSurface;
+        $spacing = $this->properties->optionalString($appearance, 'spacing', 16) ?? $defaultSpacing;
+        $textScale = $this->properties->optionalString($appearance, 'textScale', 16) ?? 'balanced';
+        $textAlign = $this->properties->optionalString($appearance, 'textAlign', 16) ?? 'left';
+        $containerWidth = $this->properties->optionalString($appearance, 'containerWidth', 16) ?? 'inherit';
+        $containerAlign = $this->properties->optionalString($appearance, 'containerAlign', 16) ?? 'center';
+        $minHeight = $this->properties->optionalString($appearance, 'minHeight', 16) ?? 'auto';
+        $verticalAlign = $this->properties->optionalString($appearance, 'verticalAlign', 16) ?? 'start';
 
         if (! in_array($surface, ['default', 'soft', 'contrast'], true)) {
             throw new DocumentCompileException('Block appearance surface is invalid.');
@@ -2517,262 +2241,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
      */
     private function compileActionLink(array $link, string $property, string $className): string
     {
-        $this->assertOnlyKeys($link, ['label', 'url'], $property);
-        $label = $this->requiredString($link, 'label', 120);
-        $url = $this->requiredString($link, 'url', 2048);
+        $this->properties->assertOnlyKeys($link, ['label', 'url'], $property);
+        $label = $this->properties->requiredString($link, 'label', 120);
+        $url = $this->properties->requiredString($link, 'url', 2048);
         $this->urls->assertAllowedUrl($url, $property);
 
         return '<a class="'.$className.'" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     */
-    private function requiredString(array $values, string $key, int $maxLength): string
-    {
-        $value = $values[$key] ?? null;
-
-        if (! is_string($value) || trim($value) === '') {
-            throw new DocumentCompileException($this->requiredFieldMessage($key));
-        }
-        if (mb_strlen($value) > $maxLength) {
-            throw new DocumentCompileException($this->fieldLengthMessage($key, $maxLength));
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     */
-    private function optionalString(array $values, string $key, int $maxLength): ?string
-    {
-        $value = $values[$key] ?? null;
-
-        if ($value === null) {
-            return null;
-        }
-
-        if (! is_string($value) || mb_strlen($value) > $maxLength) {
-            throw new DocumentCompileException("Property {$key} must be a string within its length limit.");
-        }
-
-        return $value;
-    }
-
-    /** @param array<string, mixed> $values */
-    private function requiredInlineRichTextString(
-        array $values,
-        string $key,
-        int $maxLength,
-        bool $allowLinks = true,
-    ): string {
-        return $this->requiredInlineRichTextValue(
-            $values[$key] ?? null,
-            "Property {$key}",
-            $maxLength,
-            $allowLinks,
-        );
-    }
-
-    /** @param array<string, mixed> $values */
-    private function optionalInlineRichTextString(
-        array $values,
-        string $key,
-        int $maxLength,
-        bool $allowLinks = true,
-    ): ?string {
-        $value = $values[$key] ?? null;
-        if ($value === null) {
-            return null;
-        }
-        if (! is_string($value)) {
-            throw new DocumentCompileException("Property {$key} must be a string within its length limit.");
-        }
-
-        $this->assertPromotedRichTextLength($value, $maxLength, inline: true, allowLinks: $allowLinks);
-
-        return $value;
-    }
-
-    /** @param array<string, mixed> $values */
-    private function requiredRichTextString(array $values, string $key, int $maxLength): string
-    {
-        $value = $values[$key] ?? null;
-        if (! is_string($value)) {
-            throw new DocumentCompileException($this->requiredFieldMessage($key));
-        }
-
-        $this->assertPromotedRichTextLength($value, $maxLength, required: true, property: $key);
-
-        return $value;
-    }
-
-    /** @param array<string, mixed> $values */
-    private function optionalRichTextString(array $values, string $key, int $maxLength): ?string
-    {
-        $value = $values[$key] ?? null;
-        if ($value === null) {
-            return null;
-        }
-        if (! is_string($value)) {
-            throw new DocumentCompileException("Property {$key} must be a string within its length limit.");
-        }
-
-        $this->assertPromotedRichTextLength($value, $maxLength);
-
-        return $value;
-    }
-
-    private function requiredInlineRichTextValue(
-        mixed $value,
-        string $property,
-        int $maxLength,
-        bool $allowLinks = true,
-    ): string {
-        if (! is_string($value)) {
-            throw new DocumentCompileException("{$property} is invalid.");
-        }
-
-        $this->assertPromotedRichTextLength(
-            $value,
-            $maxLength,
-            required: true,
-            inline: true,
-            allowLinks: $allowLinks,
-        );
-
-        return $value;
-    }
-
-    private function assertPromotedRichTextLength(
-        string $value,
-        int $maxLength,
-        bool $required = false,
-        bool $inline = false,
-        bool $allowLinks = true,
-        ?string $property = null,
-    ): void {
-        $plainText = $this->richText->promotedRichTextPlainText($value, $inline, $allowLinks);
-        if ($required && trim($plainText) === '') {
-            throw new DocumentCompileException($this->requiredFieldMessage($property ?? 'content'));
-        }
-        if (mb_strlen($plainText) > $maxLength) {
-            throw new DocumentCompileException($this->fieldLengthMessage($property ?? 'content', $maxLength));
-        }
-    }
-
-    private function requiredFieldMessage(string $key): string
-    {
-        return '필수 항목 “'.$this->fieldLabel($key).'”를 입력해야 합니다.';
-    }
-
-    private function fieldLengthMessage(string $key, int $maxLength): string
-    {
-        return '“'.$this->fieldLabel($key).'” 입력은 '.$maxLength.'자 이내여야 합니다.';
-    }
-
-    private function fieldLabel(string $key): string
-    {
-        return match ($key) {
-            'alt', 'imageAlt', 'avatarAlt' => '이미지 대체 텍스트',
-            'title', 'heading' => '제목',
-            'content', 'body', 'answer', 'description', 'summary' => '본문',
-            'label', 'buttonLabel', 'submitLabel', 'directionsLabel', 'linkLabel', 'currentLabel' => '표시 문구',
-            'url', 'buttonUrl', 'directionsUrl', 'detailUrl', 'detailBasePath' => '연결 주소',
-            'src' => '이미지',
-            'address' => '주소',
-            'phone' => '전화번호',
-            'email' => '이메일',
-            'date' => '날짜',
-            'name' => '이름',
-            'role' => '역할',
-            'quote' => '인용문',
-            'citation' => '출처',
-            'videoId' => '영상 ID',
-            'productKey' => '상품 식별자',
-            'boardSlug' => '게시판 식별자',
-            default => $key,
-        };
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     */
-    private function requiredBoolean(array $values, string $key): bool
-    {
-        $value = $values[$key] ?? null;
-
-        if (! is_bool($value)) {
-            throw new DocumentCompileException("Property {$key} must be a boolean.");
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     */
-    private function requiredNumber(array $values, string $key, float $minimum, float $maximum): float
-    {
-        $value = $values[$key] ?? null;
-
-        if ((! is_int($value) && ! is_float($value)) || ! is_finite((float) $value)) {
-            throw new DocumentCompileException("Property {$key} must be a finite number.");
-        }
-
-        $number = (float) $value;
-        if ($number < $minimum || $number > $maximum) {
-            throw new DocumentCompileException("Property {$key} is outside the allowed range.");
-        }
-
-        return $number;
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     * @param  list<int>  $choices
-     */
-    private function requiredIntegerChoice(array $values, string $key, array $choices): int
-    {
-        $value = $values[$key] ?? null;
-        if (! is_int($value) || ! in_array($value, $choices, true)) {
-            throw new DocumentCompileException("Property {$key} is invalid.");
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     * @return array<string, mixed>|null
-     */
-    private function optionalMap(array $values, string $key): ?array
-    {
-        $value = $values[$key] ?? null;
-
-        if ($value === null) {
-            return null;
-        }
-
-        if (! is_array($value)) {
-            throw new DocumentCompileException("Property {$key} must be an object.");
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param  array<array-key, mixed>  $values
-     * @param  list<string>  $allowedKeys
-     */
-    private function assertOnlyKeys(array $values, array $allowedKeys, string $property): void
-    {
-        foreach (array_keys($values) as $key) {
-            if (! is_string($key) || ! in_array($key, $allowedKeys, true)) {
-                throw new DocumentCompileException("{$property} contains an unsupported property.");
-            }
-        }
     }
 
     private function isUuid(string $value): bool

@@ -41,6 +41,7 @@ COMPILER_FACADE = "src/Application/Compilation/HtmlDocumentCompiler.php"
 COMPILER_OWNERS = "src/Application/Compilation/HtmlDocument/"
 COMPILER_COVERAGE = "scripts/check-php-coverage.php"
 COMPILER_TEST = "tests/UnitPhp/HtmlDocumentCompilerTest.php"
+STANDALONE_VIEWER = "resources/views/viewer.blade.php"
 
 
 def compiler_family(root):
@@ -48,6 +49,23 @@ def compiler_family(root):
     return (COMPILER_FACADE, *sorted(p.relative_to(root).as_posix()
             for p in (root / COMPILER_OWNERS).rglob("*.php")))
 
+
+
+def standalone_viewer_class_added(root, base):
+    """One reviewed additive class; every other Blade byte remains unchanged."""
+    root = root.resolve()
+    file = root / STANDALONE_VIEWER
+    if any((root / path).is_symlink() for path in (Path(STANDALONE_VIEWER), *Path(STANDALONE_VIEWER).parents)):
+        return False
+    try:
+        before = subprocess.run(["git", "-C", str(root), "show", f"{base}:{STANDALONE_VIEWER}"],
+                                capture_output=True, check=True, timeout=10).stdout
+        after = file.read_bytes()
+    except (OSError, subprocess.SubprocessError):
+        return False
+    prefix = b'<!doctype html>\n<html lang='
+    marked = b'<!doctype html>\n<html class="g7pb-standalone-viewer" lang='
+    return before.startswith(prefix) and after == marked + before[len(prefix):]
 
 
 def browser_consumer_inputs(root):
@@ -223,7 +241,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             [*DESIGN_INPUTS, *design_python_inputs, "tests/Harness/design-architecture.test.mjs", "package-lock.json"],
             "Architecture contract regression", ("node", "php"))
     py_tests = sorted(p.relative_to(root).as_posix() for p in (root / "tests/Harness").glob("test_*.py"))
-    ts_sources, ts_tests, php_sources, php_tests, css, content = [], [], [], [], [], []
+    ts_sources, ts_tests, php_sources, php_tests, css, content, viewer_styles = [], [], [], [], [], [], []
     migrations = []
     mapping = {
         "Makefile": ("planner", "runner", "php_coverage"), "scripts/quality-scoped.sh": ("planner", "runner"),
@@ -343,6 +361,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 python_test("tests/Harness/test_commands.py", path)
         elif path.endswith(".md"):
             continue
+        elif path == STANDALONE_VIEWER and not full and standalone_viewer_class_added(root, base):
+            viewer_styles.append(path)
         elif path.startswith(("database/", "resources/routes/", "resources/layouts/", "resources/views/", "schemas/", "config/", "docker/")) or path in {"module.php", "compose.yaml", "composer.json", "composer.lock"}:
             if not full:
                 plan.unresolved.append(f"Explicit shared runtime/contract scope required: {path}")
@@ -435,7 +455,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("phpstan:g7" if adapter else "phpstan:core", argv, [*inputs, config, "composer.json", "composer.lock"],
                 "Changed PHP types and dependency contracts", ("php", "g7") if adapter else ("php",), adapter)
     if not full:
-        for scenario in scenarios_for([*browser_sources(root, ts_sources, base), *php_sources, *css]):
+        for scenario in scenarios_for([*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles]):
             if not (root / scenario.spec).is_file():
                 plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
                 continue

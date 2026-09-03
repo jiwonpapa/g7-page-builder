@@ -145,8 +145,11 @@ CATALOG_CODE_SCOPES = {
 # sweeps remain available under their existing full/content policies.
 STYLE_CODE_SCOPES = {
     **{"resources/css/" + name: (STRUCTURE_THEME,) for name in (
-        "page-builder-public.css", "page-builder-theme.css", "page-builder-editor-wysiwyg.css",
+        "page-builder-public.css", "page-builder-editor-wysiwyg.css",
     )},
+    "resources/css/page-builder-theme.css": (STRUCTURE_THEME, MANAGER_STORE, MANAGER_INBOX, PUBLIC_SHELL),
+    "resources/css/page-builder-site-shell.css": (SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV),
+    "resources/js/public/mobileNavigation.css": (MOBILE_NAV, PUBLIC_SHELL),
     "resources/css/page-builder-core.css": (STRUCTURE_THEME, MANAGER_STORE, MANAGER_INBOX),
     "resources/css/page-builder-manager.css": (PAGE, MANAGER_STORE, MANAGER_INBOX),
     "resources/css/page-builder-editor-chrome.css": (PAGE, CONTROLS, STRUCTURE_THEME),
@@ -161,6 +164,8 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    # The planner admits this view only for the byte-identical root-class addition.
+    (("resources/views/viewer.blade.php",), (PAGE, STRUCTURE_THEME)),
     # The compiler family owns publishing, nested markup and typed responsive output.
     # These existing synthetic scenarios never enumerate preset/catalog content.
     (("src/Application/Compilation/HtmlDocumentCompiler.php", "src/Application/Compilation/HtmlDocument/*"),

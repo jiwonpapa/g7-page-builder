@@ -154,7 +154,13 @@ async function previewUrl(api: APIRequestContext, id: string): Promise<string> {
 }
 
 async function selectOutlineBlock(page: Page, item: PageBuilderBlock, label: string): Promise<void> {
-  await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+  const outline = page.getByRole('heading', { name: 'Outline', exact: true });
+  // Clicking Puck's active Outline tab closes the sidebar. A collapsed child
+  // row does not mean the sidebar is closed, so check its visible header.
+  if (!await outline.isVisible()) {
+    await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+  }
+  await expect(outline).toBeVisible();
   const row = page.locator(`[data-puck-layer-tree-id="${item.instance_id}"]`);
   await expect(row).toBeVisible();
   const button = row.getByRole('button', { name: label, exact: true }).and(row.locator('button'));

@@ -9,6 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Store\OfficialStoreCatalog;
 use Modules\Jiwonpapa\PageBuilder\Domain\Store\StoreArtifact;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\ZipPageKitArchiveAdapter;
 use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use ZipArchive;
 
@@ -92,6 +93,7 @@ final class OfficialStoreContractTest extends TestCase
         OfficialStoreCatalog::fromArray($duplicate);
     }
 
+    #[Group('content-catalog')]
     public function test_page_kit_archives_round_trip_and_compile_every_bundled_document(): void
     {
         $catalog = OfficialStoreCatalog::fromArray($this->catalogValue());

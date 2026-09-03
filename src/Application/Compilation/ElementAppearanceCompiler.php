@@ -160,7 +160,7 @@ final class ElementAppearanceCompiler
         if ($align !== null && ! in_array($align, ['left', 'center', 'right'], true)) {
             throw new DocumentCompileException('Element appearance alignment is invalid.');
         }
-        if ($tone !== null && ! in_array($tone, ['default', 'muted', 'accent', 'contrast'], true)) {
+        if ($tone !== null && ! in_array($tone, ['default', 'muted', 'accent', 'contrast', 'custom1', 'custom2', 'custom3', 'custom4'], true)) {
             throw new DocumentCompileException('Element appearance tone is invalid.');
         }
 

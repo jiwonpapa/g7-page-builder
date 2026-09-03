@@ -2,7 +2,7 @@
 
 기준: `0a6fcbae69ad0c0ad93aea145c8899c4b001ecfb`, 2026-09-02. [이전 코드 감사 개선](2026-09-02-code-audit-remediation.md)의 후속 작업이다.
 
-현재 상태: **1~3차 제품 구현·관련 검증·재감사 완료**. 1차 제품 검증 SHA는 `38ec067ed6dbb68c3ac09ce4c8572f1ec6524edc`, 문서 통합 기준은 `e9a3afb1d18b87e50c5abffc00fc80294764c96d`다. 2차 제품 검증 SHA는 `d59bbc07482e878c179ab784a0e301c4c7c5a1e3`, 문서 통합·정식 종료 SHA는 `23beb94abdaba28038073c2116020440eb29eb79`다. 3차 제품 통합 SHA는 `cbe955a6c9f10cd131d7b7ce5ef588e1c14bed26`이며 Manager 1,597→96줄·catalog 851→68줄·공개 진입점 1,163→16줄로 책임을 분리했다. 정적 부채 1,066→1,061, canonical의 UI 금지 연결 44→0이며 신규 위반·순환·우회 단언 규칙 위반은 0이다. 각 차수의 문서 통합 후 최종 검증·NO_RELEASE 종료는 [1차](2026-09-02-structure-phase-1.md)·[2차](2026-09-02-structure-phase-2.md)·[3차 마감 기록](2026-09-03-structure-phase-3.md)과 연결된 영수증으로 확인한다. 4~6차는 아직 실행하지 않았다.
+현재 상태: **1~4차 제품 구현·관련 검증·재감사 완료**. 1차 제품 검증 SHA는 `38ec067ed6dbb68c3ac09ce4c8572f1ec6524edc`, 문서 통합 기준은 `e9a3afb1d18b87e50c5abffc00fc80294764c96d`다. 2차 제품 검증 SHA는 `d59bbc07482e878c179ab784a0e301c4c7c5a1e3`, 문서 통합·정식 종료 SHA는 `23beb94abdaba28038073c2116020440eb29eb79`다. 3차 제품 통합 SHA는 `cbe955a6c9f10cd131d7b7ce5ef588e1c14bed26`이며 Manager 1,597→96줄·catalog 851→68줄·공개 진입점 1,163→16줄로 책임을 분리했다. 정적 부채 1,066→1,061, canonical의 UI 금지 연결 44→0이며 신규 위반·순환·우회 단언 규칙 위반은 0이다. 각 차수의 문서 통합 후 최종 검증·NO_RELEASE 종료는 [1차](2026-09-02-structure-phase-1.md)·[2차](2026-09-02-structure-phase-2.md)·[3차 마감 기록](2026-09-03-structure-phase-3.md)과 연결된 영수증으로 확인한다. 4차 제품 통합 SHA는 `ae25c0dec6c8e714fff0ddd5b9c52ed5126ebf37`이며 PHP 본체 2,504→297줄·기본 renderer 45종 분리·전체 정적 부채 1,061→1,060을 확인했다. 문서 통합·정식 종료는 [4차 마감 기록](2026-09-03-structure-phase-4.md)의 최종 영수증과 연결한다. 5~6차는 아직 실행하지 않았다.
 
 ## 범위와 진행 방식
 
@@ -75,6 +75,8 @@
 
 ### 4차 — PHP 컴파일러
 
+4차 제품 구현·관련 검증·동일 기준 재감사를 완료했다. 시작 SHA는 3차 정식 마감 `828a11963e895c980f0d7d411256c28c0a88595f`, 제품 통합 SHA는 `ae25c0dec6c8e714fff0ddd5b9c52ed5126ebf37`다. [4차 마감 기록](2026-09-03-structure-phase-4.md)에 소유 범위·선행 하네스·출력 계약·실패 보완·최종 재감사를 기록했다. 새 소유자는 `src/Application/Compilation/HtmlDocument/`에 두며 본체 자체 87%와 기존 본체/추출 소유자 합산 87% 하한을 함께 유지한다. 최종 실제 Xdebug 결과는 본체 93.49%·전체 family 88.91%다.
+
 1. **4-A: 공통 검증·동작.** 속성 판별/오류 메시지의 `BlockPropertyReader`, 반응형/motion/visibility의 `BlockRuntimeCompiler`, 기존 타입 ID 소유자를 분리한다. 기존 compiler 한 파일의 87% coverage 하한을 본체+추출 객체의 같은 검사 범위로 보존하고 누락/미달 시 실패하게 한다. 파일 분리로 검증 하한을 낮추지 않는다.
 2. **4-B: 기본 요소 렌더러.** Heading/RichText/Image/Buttons/ImageText/IconList 6종을 기존 renderer 계약으로 분리한다. 기대 출력 해시는 변경하지 않는다.
 3. **4-C 이후: 나머지 렌더러.** 관련 책임별 6~10종씩, 각 단위 정확 24파일 이내로 나눈다. renderer가 본체를 역참조하는 wrapper/trait 추출은 사용하지 않는다.
@@ -111,6 +113,8 @@
 | 2차 재감사·마감 | 마감 기록 참조 | 255파일/신규 위반 0/부채 1,066, 순환·문서 역참조 0. 문서 통합·NO_RELEASE 종료 영수증 별도 보존 |
 | 3차 구현·재감사 | 완료 | Manager·카탈로그·공개 runtime 분리와 요청/DOM/효과 수명 결함 보완. 302파일/부채 1,061/신규 위반·순환 0. 제품 통합 SHA `cbe955a6` |
 | 3차 정식 마감 | 마감 기록 참조 | 문서 통합·최종 integration-verify·NO_RELEASE 종료는 3차 증거 폴더의 `phase3-final-close.json`에 최종 SHA와 함께 보존 |
-| 4~6차 | 예정 | 위 순서와 완료 조건에 따라 실행 |
+| 4차 구현·재감사 | 완료 | 본체 297줄·기본 renderer 45종 분리, 356파일/부채 1,060/신규 위반·family 순환 0. 제품 통합 SHA `ae25c0d` |
+| 4차 정식 마감 | 마감 기록 참조 | 문서 통합·최종 integration-verify·NO_RELEASE 종료는 4차 증거 폴더의 `phase4-final-close.json`에 최종 SHA와 함께 보존 |
+| 5~6차 | 예정 | 스타일·테마 개선 후 종합 재감사·종료 |
 
 [1차 구현·실패 보완·검증 기록](2026-09-02-structure-phase-1.md)에 제출/통합 SHA, 실제 검사, 부채 전후 수치를 기록한다. 다음 차수의 계획을 작성했다는 이유로 해당 차수를 완료 처리하지 않는다.

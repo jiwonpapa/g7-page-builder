@@ -435,6 +435,76 @@ function IsolatedSession({initialSession, contextRef, onDirty, onChange, onPubli
                 result = subprocess.run(["node", str(target), "--root", str(ROOT)], cwd=ROOT, text=True, capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def layout_fixture(self, root):
+        result = subprocess.run(["node", str(ROOT / SOURCE_GRAPH), "--root", str(ROOT), "--inputs"],
+                                cwd=ROOT, text=True, capture_output=True, check=True)
+        for name in json.loads(result.stdout):
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, target)
+
+    def check_layout(self, root):
+        selected = json.loads(os.environ.get("G7PB_EDITOR_CONTRACT_CHECKERS", "{}"))
+        checker = selected.get(CHECKERS[1], str(ROOT / CHECKERS[1]))
+        return subprocess.run(["node", checker, "--root", str(root)], cwd=ROOT, text=True, capture_output=True)
+
+    def test_typography_behavior_registration_does_not_pin_important_spelling(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-typography-spelling-") as directory:
+            root = Path(directory)
+            self.layout_fixture(root)
+            # The first red retained the original declarations. A later CSS
+            # owner can remove !important entirely without invalidating this contract.
+            for name, declarations in (
+                ("page-builder-public.css", ("font-weight: 700 !important;", "font-weight: 400 !important;", "line-height: normal !important;")),
+                ("page-builder-editor-wysiwyg.css", ("inherit !important;",)),
+            ):
+                path = root / "resources/css" / name
+                source = path.read_text()
+                for declaration in declarations:
+                    source = source.replace(declaration, declaration.replace(" !important", ""))
+                path.write_text(source)
+            result = self.check_layout(root)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def typography_registration(self, source):
+        selected = json.loads(os.environ.get("G7PB_EDITOR_CONTRACT_CHECKERS", "{}"))
+        checker = selected.get(CHECKERS[1], str(ROOT / CHECKERS[1]))
+        code = ("import {pathToFileURL} from 'node:url';const args=JSON.parse(process.argv[1]);"
+                "const {validateTypographyRegistration}=await import(pathToFileURL(args.checker));"
+                "console.log(JSON.stringify(validateTypographyRegistration(args.source)));")
+        result = subprocess.run(["node", "--input-type=module", "-e", code,
+                                 json.dumps({"checker": checker, "source": source})],
+                                cwd=ROOT, text=True, capture_output=True, check=True)
+        return json.loads(result.stdout)
+
+    def test_typography_requires_one_live_import_bound_case(self):
+        title = "keeps explicit typography and inline colors across editor and compiled preview under host styles"
+        call = f"test('{title}', async () => {{}});"
+        imported = "import {test} from '@playwright/test';"
+        for body in ("// " + call, "const text=" + json.dumps(call), call.replace("test(", "test.skip("),
+                     "function unused(){" + call + "}", "if(false){" + call + "}", call + call,
+                     "test.describe('shadow', () => { const test=()=>{};" + call + "});"):
+            with self.subTest(body=body):
+                self.assertTrue(self.typography_registration(imported + "\n" + body))
+        self.assertTrue(self.typography_registration(imported.replace("{test}", "{type test}") + call))
+        self.assertTrue(self.typography_registration(imported + call.replace(title, "unrelated")))
+        self.assertEqual(self.typography_registration(
+            "import {test as scenario} from '@playwright/test';scenario.describe('styles', () => {"
+            + call.replace("test(", "scenario(") + "});"), [])
+
+    def test_removing_typography_case_fails_the_real_layout_checker(self):
+        with tempfile.TemporaryDirectory(prefix="g7pb-typography-registration-") as directory:
+            root = Path(directory)
+            self.layout_fixture(root)
+            spec = root / "tests/E2E/editorStructureTheme.spec.ts"
+            source = spec.read_text()
+            title = "keeps explicit typography and inline colors across editor and compiled preview under host styles"
+            self.assertIn(title, source)
+            spec.write_text(source.replace(title, "removed typography behavior"))
+            result = self.check_layout(root)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("typography computed-style 행동 case를 정확히 1개 등록", result.stderr)
+
     def test_comments_and_skipped_tests_are_not_registered_behavior(self):
         for body in ("// test('fake', async () => {});", "test.skip('fake', async () => {});", "const text = `test('fake', () => {})`;"):
             result = self.registration("import {test} from '@playwright/test';\n" + body)

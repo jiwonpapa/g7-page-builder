@@ -28,6 +28,8 @@ copy_fixture() {
     "$fixture_root/fixture/resources/js/editor/editorOverlaySafeZone.ts"
   cp "$repo_root/tests/E2E/editorLayoutParity.spec.ts" \
     "$fixture_root/fixture/tests/E2E/editorLayoutParity.spec.ts"
+  cp "$repo_root/tests/E2E/editorStructureTheme.spec.ts" \
+    "$fixture_root/fixture/tests/E2E/editorStructureTheme.spec.ts"
   cp "$repo_root/tests/E2E/blockCatalogQuality.spec.ts" \
     "$fixture_root/fixture/tests/E2E/blockCatalogQuality.spec.ts"
   while IFS= read -r path; do
@@ -251,19 +253,14 @@ perl -0pi -e 's/box-sizing: border-box;/box-sizing: content-box;/' \
 expect_failure 'Puck iframe 제품 캔버스의 scoped border-box reset이 필요합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--regular \{ font-weight:) 400;/${1} 700;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure '편집 가능한 semantic heading의 regular 굵기는 공개 HTML의 400 계산값과 같아야 합니다.'
+perl -0pi -e 's/keeps explicit typography and inline colors across editor and compiled preview under host styles/removed typography behavior/' \
+  "$fixture_root/fixture/tests/E2E/editorStructureTheme.spec.ts"
+expect_failure 'typography computed-style 행동 case를 정확히 1개 등록해야 합니다.'
 
 copy_fixture
-perl -0pi -e 's/(\[data-g7pb-heading-level\]\.g7pb-element-weight--heading-default \{ font-weight:) 700;/${1} 400;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure '명시적 굵기가 없는 semantic heading은 공개 HTML 기본 제목의 700 계산값과 같아야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/(\[data-g7pb-heading-level\] :where\(\*\) \{[^}]*white-space:) inherit !important;/${1} pre-wrap !important;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography, font shaping과 줄바꿈 규칙을 상속해야 합니다.'
+perl -0pi -e "s/test\\('keeps explicit typography/test.skip('keeps explicit typography/" \
+  "$fixture_root/fixture/tests/E2E/editorStructureTheme.spec.ts"
+expect_failure 'typography computed-style 행동 case를 정확히 1개 등록해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-theme-font-modern \{ font-family:) system-ui,/${1} Inter, Pretendard,/' \
@@ -274,32 +271,6 @@ copy_fixture
 perl -0pi -e 's/(:root \{ color-scheme: light; font-family:) system-ui,/${1} Inter, Pretendard,/' \
   "$fixture_root/fixture/resources/css/page-builder-public.css"
 expect_failure '공개 블록 modern 글꼴은 편집 캔버스와 같은 deterministic system stack이어야 합니다.'
-
-cp "$repo_root/resources/css/page-builder-editor-wysiwyg.css" \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-perl -0pi -e 's/font-feature-settings: inherit !important;/font-feature-settings: "liga" 0 !important;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography, font shaping과 줄바꿈 규칙을 상속해야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/(\.g7pb-preview-features > \[data-g7pb-heading-level="2"\] \{[^}]*max-width:) none;/${1} 780px;/' \
-  "$fixture_root/fixture/resources/css/page-builder-editor-wysiwyg.css"
-expect_failure 'Features 기본 제목은 공개 출력과 같은 가용 폭과 normal line-height를 사용해야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/(\.g7pb-block :where\(h1, h2, h3, h4\) \{ font-weight:) 700 !important;/${1} 400 !important;/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
-expect_failure '활성 G7 템플릿의 전역 heading 규칙이 블록 기본 제목 굵기를 바꾸지 못하게 격리해야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/(\.g7pb-element-weight--regular \{ font-weight:) 400 !important;/${1} 700 !important;/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
-expect_failure '명시적 regular element style은 활성 템플릿과 무관하게 공개본에서 400이어야 합니다.'
-
-copy_fixture
-perl -0pi -e 's/(\.g7pb-features__title \{[^}]*line-height:) normal !important;/${1} 1.5;/' \
-  "$fixture_root/fixture/resources/css/page-builder-public.css"
-expect_failure 'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.'
 
 copy_fixture
 perl -0pi -e 's/(\.g7pb-logo-cloud h2 \{[^}]*line-height:) 1\.2;/${1} 1.5;/' \

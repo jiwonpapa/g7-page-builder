@@ -3,6 +3,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
+import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 import { validateEditorTestRegistration, validateFocusedUnitCommand } from './lib/editorContractRegistration.mjs';
 import { readCssGraph, cssPropertyValues } from './lib/editorCssSources.mjs';
@@ -10,6 +11,8 @@ import { readEditorSourceGraph, EDITOR_ENTRY } from './lib/editorSourceGraph.mjs
 
 const REQUIRED_SPEC = 'tests/E2E/editorLayoutParity.spec.ts';
 const CATALOG_VISUAL_SPEC = 'tests/E2E/blockCatalogQuality.spec.ts';
+export const TYPOGRAPHY_SPEC = 'tests/E2E/editorStructureTheme.spec.ts';
+export const TYPOGRAPHY_TITLE = 'keeps explicit typography and inline colors across editor and compiled preview under host styles';
 
 async function source(root, path) {
   try {
@@ -29,10 +32,46 @@ function usesSystemFont(css, selector) {
   return values.length > 0 && values.every(value => /^system-ui\s*,/.test(value));
 }
 
+/** Registration only: the scoped runtime plan executes the computed-style assertions. */
+export function validateTypographyRegistration(source) {
+  const tree = ts.createSourceFile(TYPOGRAPHY_SPEC, source, ts.ScriptTarget.Latest, true);
+  const host = ts.createCompilerHost({ noLib: true });
+  host.getSourceFile = name => name === TYPOGRAPHY_SPEC ? tree : undefined;
+  const checker = ts.createProgram([TYPOGRAPHY_SPEC], { noLib: true }, host).getTypeChecker();
+  const bindings = new Set();
+  for (const statement of tree.statements) {
+    if (!ts.isImportDeclaration(statement) || statement.moduleSpecifier.text !== '@playwright/test'
+      || statement.importClause?.isTypeOnly) continue;
+    const imports = statement.importClause?.namedBindings;
+    if (imports && ts.isNamedImports(imports)) {
+      for (const item of imports.elements) {
+        if (!item.isTypeOnly && (item.propertyName ?? item.name).text === 'test') bindings.add(checker.getSymbolAtLocation(item.name));
+      }
+    }
+  }
+  const bound = node => ts.isIdentifier(node) && bindings.has(checker.getSymbolAtLocation(node));
+  let registrations = 0;
+  const statements = nodes => {
+    for (const statement of nodes) {
+      if (!ts.isExpressionStatement(statement) || !ts.isCallExpression(statement.expression)) continue;
+      const call = statement.expression, [title, callback] = call.arguments;
+      if (!title || !ts.isStringLiteral(title) || !callback
+        || (!ts.isArrowFunction(callback) && !ts.isFunctionExpression(callback)) || !ts.isBlock(callback.body)) continue;
+      if (bound(call.expression) && title.text === TYPOGRAPHY_TITLE) registrations += 1;
+      // Only a live describe callback can register nested tests. Uncalled
+      // helpers, conditionals, skipped suites and test bodies cannot substitute.
+      if (ts.isPropertyAccessExpression(call.expression) && call.expression.name.text === 'describe'
+        && bound(call.expression.expression)) statements(callback.body.statements);
+    }
+  };
+  statements(tree.statements);
+  return registrations === 1 ? [] : [`${TYPOGRAPHY_SPEC}: typography computed-style 행동 case를 정확히 1개 등록해야 합니다. (브라우저 실행 증거와 별도)`];
+}
+
 export async function validateEditorLayoutParity(root) {
   const errors = [];
   const graph = await readEditorSourceGraph(root);
-  const [packageSource, editorGraph, publicGraph, adapter, catalogSource, productionSource, overlaySource, spec, catalogVisualSpec] = await Promise.all([
+  const [packageSource, editorGraph, publicGraph, adapter, catalogSource, productionSource, overlaySource, spec, catalogVisualSpec, typographySpec] = await Promise.all([
     source(root, 'package.json'),
     readCssGraph(root, ['resources/css/page-builder-editor.css']),
     readCssGraph(root, ['resources/css/page-builder-public.css']),
@@ -42,6 +81,7 @@ export async function validateEditorLayoutParity(root) {
     graph.source('resources/js/editor/editorOverlaySafeZone.ts'),
     source(root, REQUIRED_SPEC),
     source(root, CATALOG_VISUAL_SPEC),
+    source(root, TYPOGRAPHY_SPEC),
   ]);
   const editorCss = editorGraph.css;
   const publicCss = publicGraph.css;
@@ -69,7 +109,7 @@ export async function validateEditorLayoutParity(root) {
   if (typeof scripts.check !== 'string' || !scripts.check.includes('npm run check:editor-layout-parity')) {
     errors.push('npm run check가 편집/미리보기 레이아웃 계약 검사를 포함해야 합니다.');
   }
-  errors.push(...validateFocusedUnitCommand(scripts), ...validateEditorTestRegistration(spec, REQUIRED_SPEC));
+  errors.push(...validateTypographyRegistration(typographySpec), ...validateFocusedUnitCommand(scripts), ...validateEditorTestRegistration(spec, REQUIRED_SPEC));
   if (typeof scripts['test:e2e:product'] !== 'string' || !scripts['test:e2e:product'].includes(REQUIRED_SPEC)) {
     errors.push(`test:e2e:product가 ${REQUIRED_SPEC}를 반드시 실행해야 합니다.`);
   }
@@ -87,14 +127,6 @@ export async function validateEditorLayoutParity(root) {
       '편집기 CTA와 Contact 제목은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
     [/\.g7pb-preview-stats article\s*>\s*strong\s*\{[^}]*font-size:\s*clamp\(2\.2rem,\s*5vw,\s*4rem\);/,
       '편집기 Stats 값은 공개 출력과 동일한 WYSIWYG typography를 사용해야 합니다.'],
-    [/\[data-g7pb-heading-level\]\.g7pb-element-weight--regular\s*\{[^}]*font-weight:\s*400;/,
-      '편집 가능한 semantic heading의 regular 굵기는 공개 HTML의 400 계산값과 같아야 합니다.'],
-    [/\[data-g7pb-heading-level\]\.g7pb-element-weight--heading-default\s*\{[^}]*font-weight:\s*700;/,
-      '명시적 굵기가 없는 semantic heading은 공개 HTML 기본 제목의 700 계산값과 같아야 합니다.'],
-    [/\[data-g7pb-heading-level\]\s+:where\(\*\)\s*\{[^}]*margin:\s*0\s*!important;[^}]*font-family:\s*inherit\s*!important;[^}]*font-feature-settings:\s*inherit\s*!important;[^}]*font-kerning:\s*inherit\s*!important;[^}]*font-size:\s*inherit\s*!important;[^}]*font-variant-ligatures:\s*inherit\s*!important;[^}]*font-weight:\s*inherit\s*!important;[^}]*line-height:\s*inherit\s*!important;[^}]*overflow-wrap:\s*inherit\s*!important;[^}]*white-space:\s*inherit\s*!important;[^}]*word-break:\s*inherit\s*!important;/,
-      'Puck의 실제 제목 leaf는 wrapper의 WYSIWYG typography, font shaping과 줄바꿈 규칙을 상속해야 합니다.'],
-    [/\.g7pb-preview-features\s*>\s*\[data-g7pb-heading-level="2"\]\s*\{[^}]*max-width:\s*none;[^}]*line-height:\s*normal;/,
-      'Features 기본 제목은 공개 출력과 같은 가용 폭과 normal line-height를 사용해야 합니다.'],
     [/:is\(\.g7pb-preview-stats,[^}]+\)\s*>\s*:is\(header,\s*figcaption\)\s*\{[^}]*max-width:\s*48rem;/,
       '공통 섹션 제목 컨테이너는 공개 g7pb-section-heading과 같은 48rem 폭이어야 합니다.'],
     [/:is\(\.g7pb-preview-stats,[^}]+\)\s*>\s*header\s*>\s*\[data-g7pb-heading-level="2"\]\s*\{[^}]*max-width:\s*none;/,
@@ -163,12 +195,6 @@ export async function validateEditorLayoutParity(root) {
       '편집 가능한 제목은 공개 heading과 같은 줄바꿈 규칙을 사용해야 합니다.'],
   ];
   for (const [pattern, message] of cssContract) requirePattern(errors, css, pattern, message);
-  requirePattern(errors, publicCss, /\.g7pb-block\s+:where\(h1,\s*h2,\s*h3,\s*h4\)\s*\{[^}]*font-weight:\s*700\s*!important;/,
-    '활성 G7 템플릿의 전역 heading 규칙이 블록 기본 제목 굵기를 바꾸지 못하게 격리해야 합니다.');
-  requirePattern(errors, publicCss, /\.g7pb-element-weight--regular\s*\{[^}]*font-weight:\s*400\s*!important;/,
-    '명시적 regular element style은 활성 템플릿과 무관하게 공개본에서 400이어야 합니다.');
-  requirePattern(errors, publicCss, /\.g7pb-features__title\s*\{[^}]*line-height:\s*normal\s*!important;/,
-    'Features 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
   requirePattern(errors, publicCss, /\.g7pb-logo-cloud\s+h2\s*\{[^}]*font-size:\s*1rem;[^}]*line-height:\s*1\.2;/,
     'Logo Cloud 공개 제목 행간은 활성 템플릿 전역 h2 규칙으로부터 격리해야 합니다.');
   if (!usesSystemFont(editorCss, '.g7pb-theme-font-modern')

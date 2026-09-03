@@ -600,6 +600,52 @@ class PlannerTests(unittest.TestCase):
         self.write(helper, "changed graph implementation")
         self.assertNotEqual(digest_gate(self.root, gate), original)
 
+    def test_typography_definition_selects_registration_and_source_contract_with_complete_inputs(self):
+        spec = "tests/E2E/editorStructureTheme.spec.ts"
+        owner = "resources/css/page-builder-editor-appearance.css"
+        self.write(spec, "import {test} from '@playwright/test';test('fixture', () => {});")
+        self.write(owner, ".fixture {font-weight:400;}")
+        self.write("tests/Harness/test_editor_contracts.py", "pass")
+        with patch("tools.g7pb.planner.checker_controller_root", return_value=self.root), \
+             patch("tools.g7pb.planner.editor_contract_inputs", return_value=[spec, owner]):
+            plan = build_plan(self.root, [spec])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertFalse(any(g.runtime for g in plan.gates))
+        registration = next(g for g in plan.gates if g.name == "browser-registration:" + spec)
+        self.assertIn("--list", registration.argv)
+        contract = next(g for g in plan.gates if g.name == "python:tests/Harness/test_editor_contracts.py")
+        self.assertIn(spec, contract.inputs)
+        self.assertIn(owner, contract.inputs)
+        before = digest_gate(self.root, contract)
+        self.write(spec, "changed registered behavior")
+        self.assertNotEqual(digest_gate(self.root, contract), before)
+        self.write(spec, "import {test} from '@playwright/test';test('fixture', () => {});")
+        self.assertEqual(digest_gate(self.root, contract), before)
+        self.write(owner, ".fixture {font-weight:700;}")
+        self.assertNotEqual(digest_gate(self.root, contract), before)
+
+    def test_new_style_owner_keeps_stylelint_build_and_only_synthetic_runtime(self):
+        from tools.g7pb.browser_requirements import TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE
+        owner = "resources/css/page-builder-editor-appearance.css"
+        self.write(owner, ".fixture {font-weight:400;}")
+        for scenario in (TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE):
+            self.write(scenario.spec, "import {test} from '@playwright/test';test('fixture', () => {});")
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [owner], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(plan.full)
+                lint = next(g for g in plan.gates if g.name == "css")
+                self.assertIn(owner, lint.argv)
+                self.assertIn(owner, lint.inputs)
+                assets = next(g for g in plan.gates if g.name == "browser-assets")
+                self.assertIn(owner, assets.inputs)
+                browser = [g for g in plan.gates if g.name.startswith("browser:")]
+                self.assertEqual({g.name for g in browser}, {"browser:" + s.spec for s in (TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE)})
+                self.assertTrue(all(g.runtime and g.deferred == (phase == "submission") for g in browser))
+                self.assertFalse(any(g.name.startswith("content:") or "editorLayoutParity" in g.name or "publicQuality" in g.name for g in plan.gates))
+
     def test_unresolved_editor_inputs_fail_closed_without_full_or_cache_reuse(self):
         self.write("tests/Harness/test_editor_contracts.py", "pass")
         with patch("tools.g7pb.planner.checker_controller_root", return_value=self.root), \

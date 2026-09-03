@@ -75,6 +75,7 @@ async function resource(api: APIRequestContext, id: string): Promise<{ document:
 async function withOwnedDocument(
   page: Page, context: BrowserContext, project: string, blocks: PageBuilderBlock[],
   run: (api: APIRequestContext, owned: OwnedEditorInteractionDocument) => Promise<void>,
+  tokens: PageBuilderDocument['tokens'] = {},
 ): Promise<void> {
   const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
   const pageErrors: string[] = [];
@@ -87,7 +88,7 @@ async function withOwnedDocument(
     const current = await resource(api, owned.documentId);
     const document: PageBuilderDocument = {
       ...current.document, schema_version: 'g7-page-builder/v2', blocks,
-      tokens: { ...current.document.tokens, 'design.color_mode': 'light', 'design.scale': 'large' },
+      tokens: { ...current.document.tokens, 'design.color_mode': 'light', 'design.scale': 'large', ...tokens },
     };
     const seeded = await api.put(`${API}/${owned.documentId}/draft`, {
       data: { document, expected_lock_version: current.lock_version },
@@ -249,6 +250,107 @@ test.describe('Editor structure and theme contracts', () => {
         await preview.close();
       }
     });
+  });
+
+  test('keeps explicit typography and inline colors across editor and compiled preview under host styles', async ({ page, context }, info) => {
+    const regular = block('content.heading-01', {
+      eyebrow: '', heading: '사용자가 선택한 보통 제목', level: 2, anchor: '',
+      appearance: { surface: 'default', spacing: 'compact', elements: { heading: { weight: 'regular' } } },
+    });
+    const heading = block('content.heading-01', {
+      eyebrow: '', heading: '기본 굵기 제목 <span data-g7pb-tone="custom1" data-g7pb-weight="medium" data-g7pb-font="mono" data-g7pb-font-size-rem="1.25">사용자 부분 설정</span>',
+      level: 2, anchor: '',
+    });
+    const features = block('content.features-grid-01', {
+      title: '기능 제목 행간', layout: 'grid',
+      items: [
+        { icon: 'sparkles', title: '검증 기능', body: '<p>합성 코드 검증 본문입니다.</p>' },
+        { icon: 'shield', title: '두 번째 기능', body: '<p>독립 합성 본문입니다.</p>' },
+      ],
+    });
+    await withOwnedDocument(page, context, info.project.name, [regular, heading, features], async (api, owned) => {
+      const frame = page.frameLocator('iframe');
+      const editorHeading = (id: string) => frame.locator(`[data-block-id="${id}"] [data-g7pb-heading-level]`).first();
+      const regularHeading = editorHeading(regular.instance_id);
+      const defaultHeading = editorHeading(heading.instance_id);
+      const featureHeading = editorHeading(features.instance_id);
+      for (const field of [regularHeading, defaultHeading, featureHeading]) {
+        await expect(field.locator('.ProseMirror')).toHaveAttribute('contenteditable', 'true');
+      }
+      await save(page);
+      const current = await resource(api, owned.documentId);
+      const response = await api.post(`${API}/${owned.documentId}/preview`, {
+        data: { expected_lock_version: current.lock_version },
+      });
+      expect(response.ok()).toBe(true);
+      const payload = await response.json() as { data?: { preview_url?: string } };
+      if (!payload.data?.preview_url) throw new Error('Missing compiled preview URL.');
+      const preview = await context.newPage();
+      try {
+        expect((await preview.goto(payload.data.preview_url))?.ok()).toBe(true);
+        // These are competing host defaults, not desired product styles. The
+        // outside sentinel proves both the conflict and host non-interference.
+        for (const body of [frame.locator('body'), preview.locator('body')]) {
+          await body.evaluate((element) => {
+            const doc = element.ownerDocument;
+            const style = doc.createElement('style');
+            style.textContent = 'h1, h2, h3, h4 { font-weight: 300; line-height: 2; }';
+            doc.head.append(style);
+            const sentinel = doc.createElement('h2');
+            sentinel.dataset.typographyHostSentinel = 'true';
+            sentinel.textContent = 'Host typography sentinel';
+            element.append(sentinel);
+          });
+          const sentinel = body.locator('[data-typography-host-sentinel]');
+          await expect(sentinel).toHaveCSS('font-weight', '300');
+          const ratio = await sentinel.evaluate((element) => {
+            const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+            return parseFloat(style.lineHeight) / parseFloat(style.fontSize);
+          });
+          expect(ratio).toBe(2);
+        }
+        const publicHeading = (id: string) => preview.locator(`[data-block-id="${id}"] h2`);
+        for (const [editor, published, weight] of [
+          [regularHeading, publicHeading(regular.instance_id), '400'],
+          [defaultHeading, publicHeading(heading.instance_id), '700'],
+          [featureHeading, publicHeading(features.instance_id), '700'],
+        ] as const) {
+          await expect(editor).toHaveCSS('font-weight', weight);
+          await expect(editor.locator('.ProseMirror')).toHaveCSS('font-weight', weight);
+          await expect(published).toHaveCSS('font-weight', weight);
+          const leaf = editor.locator('.ProseMirror > p');
+          await expect(leaf).toHaveCount(1);
+          for (const property of ['font-family', 'font-feature-settings', 'font-kerning', 'font-size',
+            'font-variant-ligatures', 'font-weight', 'color', 'line-height', 'overflow-wrap', 'white-space', 'word-break']) {
+            const inherited = await editor.evaluate((element, name) => element.ownerDocument.defaultView!.getComputedStyle(element).getPropertyValue(name), property);
+            await expect(leaf).toHaveCSS(property, inherited);
+          }
+        }
+        await expect(featureHeading).toHaveCSS('line-height', 'normal');
+        await expect(featureHeading).toHaveCSS('max-width', 'none');
+        await expect(publicHeading(features.instance_id)).toHaveCSS('line-height', 'normal');
+        const inline = [defaultHeading.locator('[data-g7pb-tone="custom1"]'), publicHeading(heading.instance_id).locator('[data-g7pb-tone="custom1"]')];
+        for (const span of inline) {
+          await expect(span).toHaveCount(1);
+          await expect(span).toHaveText('사용자 부분 설정');
+          await expect(span).toHaveCSS('color', 'rgb(18, 52, 86)');
+          await expect(span).toHaveCSS('font-weight', '500');
+          await expect(span).toHaveCSS('font-family', /ui-monospace/);
+          const style = await sample(span);
+          expect(parseFloat(style.fontSize)).toBeCloseTo(parseFloat(style.rootFontSize) * 1.25);
+          expect(contrast(style.color, style.background)).toBeGreaterThanOrEqual(4.5);
+        }
+        // Saving through the real editor must preserve the supported inline
+        // settings in canonical data as well as in the compiled browser output.
+        const saved = (await resource(api, owned.documentId)).document.blocks.find(item => item.instance_id === heading.instance_id);
+        expect(saved?.props.heading).toContain('data-g7pb-tone="custom1"');
+        expect(saved?.props.heading).toContain('data-g7pb-weight="medium"');
+        expect(saved?.props.heading).toContain('data-g7pb-font="mono"');
+        expect(saved?.props.heading).toContain('data-g7pb-font-size-rem="1.25"');
+      } finally {
+        await preview.close();
+      }
+    }, { 'design.custom_color_1_light': '#123456', 'design.custom_color_1_dark': '#abcdef' });
   });
 
   test('nested selection edits and inserts within the selected parent', async ({ page, context }, info) => {

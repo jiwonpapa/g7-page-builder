@@ -6,7 +6,10 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 
 final readonly class BlockRuntimeCompiler
 {
-    public function __construct(private BlockPropertyReader $properties) {}
+    public function __construct(
+        private BlockPropertyReader $properties,
+        private HtmlEscaper $escaper = new HtmlEscaper,
+    ) {}
 
     public function compile(
         string $markup,
@@ -20,7 +23,7 @@ final readonly class BlockRuntimeCompiler
         if (! in_array($rootTag, ['section', 'div'], true)) {
             throw new DocumentCompileException('Compiled block root tag is invalid.');
         }
-        $attributes = 'data-block-id="'.$this->escapeAttribute($instanceId).'"';
+        $attributes = 'data-block-id="'.$this->escaper->escapeAttribute($instanceId).'"';
 
         $responsiveClasses = $this->responsiveClasses($responsive, $type);
         if ($responsiveClasses !== '') {
@@ -61,9 +64,9 @@ final readonly class BlockRuntimeCompiler
             }
 
             if ($preset !== 'none') {
-                $attributes .= ' data-g7pb-motion="'.$this->escapeAttribute($preset).'"';
-                $attributes .= ' data-g7pb-motion-intensity="'.$this->escapeAttribute($intensity).'"';
-                $attributes .= ' data-g7pb-motion-trigger="'.$this->escapeAttribute($trigger).'"';
+                $attributes .= ' data-g7pb-motion="'.$this->escaper->escapeAttribute($preset).'"';
+                $attributes .= ' data-g7pb-motion-intensity="'.$this->escaper->escapeAttribute($intensity).'"';
+                $attributes .= ' data-g7pb-motion-trigger="'.$this->escaper->escapeAttribute($trigger).'"';
                 $attributes .= ' data-g7pb-motion-stagger="'.$stagger.'"';
             }
         }
@@ -77,7 +80,7 @@ final readonly class BlockRuntimeCompiler
             if (! in_array($audience, ['all', 'guest', 'member'], true)) {
                 throw new DocumentCompileException('Block visibility audience is invalid.');
             }
-            $attributes .= ' data-g7pb-visibility-audience="'.$this->escapeAttribute($audience).'"';
+            $attributes .= ' data-g7pb-visibility-audience="'.$this->escaper->escapeAttribute($audience).'"';
             if ($audience !== 'all' && preg_match('/^<'.preg_quote($rootTag, '/').'\b[^>]*\shidden(?:\s|>)/', $markup) !== 1) {
                 $attributes .= ' hidden';
             }
@@ -195,10 +198,5 @@ final readonly class BlockRuntimeCompiler
             BuiltInBlockTypes::CTA_TYPE, BuiltInBlockTypes::CONTACT_TYPE, BuiltInBlockTypes::INQUIRY_FORM_TYPE, BuiltInBlockTypes::MAP_DIRECTIONS_TYPE, BuiltInBlockTypes::FAQ_ACCORDION_TYPE, BuiltInBlockTypes::TABS_TYPE, BuiltInBlockTypes::COMPARISON_TABLE_TYPE, BuiltInBlockTypes::VIDEO_EMBED_TYPE, BuiltInBlockTypes::LOGO_CAROUSEL_TYPE, BuiltInBlockTypes::TESTIMONIAL_SLIDER_TYPE, BuiltInBlockTypes::HEADING_TYPE, BuiltInBlockTypes::RICH_TEXT_TYPE, BuiltInBlockTypes::IMAGE_TYPE, BuiltInBlockTypes::BUTTONS_TYPE, BuiltInBlockTypes::IMAGE_TEXT_TYPE, BuiltInBlockTypes::G7_POST_DETAIL_TYPE, BuiltInBlockTypes::G7_PRODUCT_DETAIL_TYPE, BuiltInBlockTypes::DIVIDER_TYPE, BuiltInBlockTypes::BLOCKQUOTE_TYPE, BuiltInBlockTypes::NOTICE_TYPE, BuiltInBlockTypes::BREADCRUMBS_TYPE, BuiltInBlockTypes::ANCHOR_MENU_TYPE => ['none', 'reveal'],
             default => ['none'],
         };
-    }
-
-    private function escapeAttribute(string $value): string
-    {
-        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
     }
 }

@@ -6,10 +6,21 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockCompilerRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\CallbackBlockTypeCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockAppearanceCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockIconCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockMarkupCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockPropertyReader;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockRuntimeCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ButtonsBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\HeadingBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\IconListBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ImageBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ImageTextBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\RichTextBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BuiltInBlockTypes;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\HtmlEscaper;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackAssetUrlPort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\BlockTypeCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
@@ -30,47 +41,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     public const TARGET_ENGINE_VERSION = 'g7-7.0.7';
 
-    /** @var list<string> */
-    private const FEATURE_ICONS = [
-        'bolt',
-        'check',
-        'code',
-        'globe',
-        'heart',
-        'layers',
-        'mobile',
-        'palette',
-        'shield',
-        'sparkles',
-        'star',
-    ];
-
-    /** @var array<string, string> */
-    private const CATALOG_ICON_MARKUP = [
-        'bolt' => '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"></path>',
-        'check' => '<path d="M20 6 9 17l-5-5"></path>',
-        'code' => '<path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path>',
-        'globe' => '<path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"></path><path d="M7 3.34V5a3 3 0 0 0 3 3 2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"></path><path d="M11 21.95V18a2 2 0 0 0-2-2 2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"></path><circle cx="12" cy="12" r="10"></circle>',
-        'heart' => '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"></path>',
-        'layers' => '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path>',
-        'mobile' => '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path>',
-        'palette' => '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>',
-        'shield' => '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path>',
-        'sparkles' => '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle>',
-        'star' => '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>',
-        'trend' => '<path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path>',
-        'users' => '<path d="M18 21a8 8 0 0 0-16 0"></path><circle cx="10" cy="8" r="5"></circle><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path>',
-        'target' => '<circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>',
-        'chart' => '<path d="M5 21v-6"></path><path d="M12 21V9"></path><path d="M19 21V3"></path>',
-        'camera' => '<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"></path><circle cx="12" cy="13" r="3"></circle>',
-        'play' => '<rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"></path>',
-        'briefcase' => '<path d="M12 12h.01"></path><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path><path d="M22 13a18.15 18.15 0 0 1-20 0"></path><rect width="20" height="14" x="2" y="6" rx="2"></rect>',
-        'at-sign' => '<circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"></path>',
-        'message' => '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path>',
-        'rss' => '<path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle>',
-        'external-link' => '<path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>',
-    ];
-
     private BlockCompilerRegistry $blockCompilers;
 
     private readonly RichTextSanitizer $richText;
@@ -78,6 +48,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     private readonly BlockPropertyReader $properties;
 
     private readonly BlockRuntimeCompiler $runtime;
+
+    private readonly BlockAppearanceCompiler $appearance;
+
+    private readonly BlockMarkupCompiler $markup;
+
+    private readonly BlockIconCompiler $icons;
+
+    private readonly HtmlEscaper $escaper;
 
     public function __construct(
         private readonly BlockRegistry $blockRegistry,
@@ -92,7 +70,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->blockCompilers = $blockCompilers ?? new BlockCompilerRegistry;
         $this->richText = $richText ?? new RichTextSanitizer($this->urls);
         $this->properties = new BlockPropertyReader($this->richText);
-        $this->runtime = new BlockRuntimeCompiler($this->properties);
+        $this->escaper = new HtmlEscaper;
+        $this->appearance = new BlockAppearanceCompiler($this->properties);
+        $this->markup = new BlockMarkupCompiler($this->properties, $this->urls, $this->richText, $this->escaper);
+        $this->icons = new BlockIconCompiler($this->escaper);
+        $this->runtime = new BlockRuntimeCompiler($this->properties, $this->escaper);
         $this->registerBuiltInCompilers();
     }
 
@@ -133,11 +115,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         }
 
         $styles = array_map(
-            fn (string $url): string => '<link rel="stylesheet" href="'.$this->escapeAttribute($url).'">',
+            fn (string $url): string => '<link rel="stylesheet" href="'.$this->escaper->escapeAttribute($url).'">',
             array_keys($styleUrls),
         );
         $customPaletteStyle = $this->theme->customPaletteDeclarations($design);
-        $body = '<div class="'.$this->theme->className($design).'"'.($customPaletteStyle === '' ? '' : ' style="'.$this->escapeAttribute($customPaletteStyle).'"').'>'."\n"
+        $body = '<div class="'.$this->theme->className($design).'"'.($customPaletteStyle === '' ? '' : ' style="'.$this->escaper->escapeAttribute($customPaletteStyle).'"').'>'."\n"
             .implode("\n", $sections)."\n"
             .'</div>';
         $artifact = implode("\n", [...$styles, $body]);
@@ -357,7 +339,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
     private function registerBuiltInCompilers(): void
     {
-        /** @var array<string, \Closure(array<string, mixed>): string> $compilers */
+        /** @var array<string, BlockTypeCompilerPort|(\Closure(array<string, mixed>): string)> $compilers */
         $compilers = [
             'builtin.hero-centered-01' => fn (array $props): string => $this->compileHero($props),
             'builtin.features-grid-01' => fn (array $props): string => $this->compileFeatures($props),
@@ -390,12 +372,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.g7-ecommerce-product-showcase-01' => fn (array $props): string => $this->compileG7ProductShowcase($props),
             'builtin.g7-board-post-detail-01' => fn (array $props): string => $this->compileG7PostDetail($props),
             'builtin.g7-ecommerce-product-detail-01' => fn (array $props): string => $this->compileG7ProductDetail($props),
-            'builtin.heading-01' => fn (array $props): string => $this->compileHeading($props),
-            'builtin.rich-text-01' => fn (array $props): string => $this->compileRichText($props),
-            'builtin.image-01' => fn (array $props): string => $this->compileImage($props),
-            'builtin.buttons-01' => fn (array $props): string => $this->compileButtons($props),
-            'builtin.image-text-01' => fn (array $props): string => $this->compileImageText($props),
-            'builtin.icon-list-01' => fn (array $props): string => $this->compileIconList($props),
+            'builtin.heading-01' => new HeadingBlockCompiler($this->properties, $this->appearance, $this->escaper, $this->richText),
+            'builtin.rich-text-01' => new RichTextBlockCompiler($this->properties, $this->appearance, $this->richText),
+            'builtin.image-01' => new ImageBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper),
+            'builtin.buttons-01' => new ButtonsBlockCompiler($this->properties, $this->appearance, $this->urls, $this->escaper),
+            'builtin.image-text-01' => new ImageTextBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
+            'builtin.icon-list-01' => new IconListBlockCompiler($this->properties, $this->appearance, $this->markup, $this->icons, $this->escaper, $this->richText),
             'builtin.divider-01' => fn (array $props): string => $this->compileDivider($props),
             'builtin.blockquote-01' => fn (array $props): string => $this->compileBlockquote($props),
             'builtin.notice-01' => fn (array $props): string => $this->compileNotice($props),
@@ -408,164 +390,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         foreach ($compilers as $key => $compiler) {
             if (! $this->blockCompilers->has($key)) {
-                $this->blockCompilers->register(new CallbackBlockTypeCompiler($key, $compiler));
+                $this->blockCompilers->register($compiler instanceof BlockTypeCompilerPort ? $compiler : new CallbackBlockTypeCompiler($key, $compiler));
             }
         }
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileHeading(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'level', 'anchor', 'appearance'], 'Heading');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $level = $this->properties->requiredIntegerChoice($props, 'level', [2, 3, 4]);
-        $anchor = $this->properties->optionalString($props, 'anchor', 80) ?? '';
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
-        if ($anchor !== '' && preg_match('/^[a-z][a-z0-9-]{0,79}$/D', $anchor) !== 1) {
-            throw new DocumentCompileException('Heading anchor is invalid.');
-        }
-        $eyebrowMarkup = $eyebrow === null || $eyebrow === ''
-            ? ''
-            : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
-        $anchorAttribute = $anchor === '' ? '' : ' id="'.$this->escapeAttribute($anchor).'"';
-
-        return '<section class="g7pb-block g7pb-heading-block '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="heading">'
-            .$eyebrowMarkup.'<h'.$level.' class="g7pb-heading-block__heading"'.$anchorAttribute.'>'.$this->richText->sanitizeInlineRichText($heading).'</h'.$level.'></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileRichText(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['content', 'measure', 'appearance'], 'Rich text');
-        $content = $this->properties->requiredString($props, 'content', 20000);
-        $measure = $this->properties->requiredString($props, 'measure', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($measure, ['narrow', 'standard', 'wide'], true)) {
-            throw new DocumentCompileException('Rich text measure is invalid.');
-        }
-
-        return '<section class="g7pb-block g7pb-rich-text '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="rich-text"><div class="g7pb-rich-text__content g7pb-rich-text__content--'.$measure.'">'.$this->richText->sanitizeRichText($content).'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileImage(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['src', 'alt', 'caption', 'linkUrl', 'aspectRatio', 'appearance'], 'Image');
-        $src = $this->properties->optionalString($props, 'src', 2048) ?? '';
-        $alt = $this->properties->optionalString($props, 'alt', 300) ?? '';
-        $caption = $this->properties->optionalString($props, 'caption', 500) ?? '';
-        $linkUrl = $this->properties->optionalString($props, 'linkUrl', 2048) ?? '';
-        $aspectRatio = $this->properties->requiredString($props, 'aspectRatio', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($aspectRatio, ['auto', '16:9', '4:3', '1:1'], true)) {
-            throw new DocumentCompileException('Image aspect ratio is invalid.');
-        }
-        $media = $this->compileCatalogImage($src, $alt, 'g7pb-image-block__image', '이미지를 선택하세요');
-        if ($linkUrl !== '') {
-            $this->urls->assertAllowedUrl($linkUrl, 'Image link');
-            $media = '<a class="g7pb-image-block__link" href="'.$this->escapeAttribute($linkUrl).'">'.$media.'</a>';
-        }
-        $captionMarkup = $caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>';
-
-        return '<section class="g7pb-block g7pb-image-block '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="image"><figure class="g7pb-image-block__figure g7pb-image-block__figure--'.str_replace(':', '-', $aspectRatio).'">'.$media.$captionMarkup.'</figure></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileButtons(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['items', 'alignment', 'appearance'], 'Buttons');
-        $items = $props['items'] ?? null;
-        $alignment = $this->properties->requiredString($props, 'alignment', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
-        if (! is_array($items) || count($items) < 1 || count($items) > 3) {
-            throw new DocumentCompileException('Buttons must contain between one and three items.');
-        }
-        if (! in_array($alignment, ['left', 'center', 'right'], true)) {
-            throw new DocumentCompileException('Button alignment is invalid.');
-        }
-        $compiled = [];
-        foreach (array_values($items) as $index => $item) {
-            if (! is_array($item)) {
-                throw new DocumentCompileException("Button item {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($item, ['label', 'url', 'variant'], "Button item {$index}");
-            $label = $this->properties->requiredString($item, 'label', 120);
-            $url = $this->properties->requiredString($item, 'url', 2048);
-            $variant = $this->properties->requiredString($item, 'variant', 16);
-            if (! in_array($variant, ['primary', 'secondary', 'text'], true)) {
-                throw new DocumentCompileException("Button item {$index} variant is invalid.");
-            }
-            $this->urls->assertAllowedUrl($url, "Button item {$index}");
-            $compiled[] = '<a class="g7pb-button g7pb-button--'.$variant.'" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
-        }
-
-        return '<section class="g7pb-block g7pb-buttons '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="buttons"><div class="g7pb-buttons__items g7pb-buttons__items--'.$alignment.'" role="group" aria-label="페이지 행동">'.implode('', $compiled).'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileImageText(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'body', 'image', 'mediaPosition', 'primaryLink', 'appearance'], 'Image text');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $body = $this->properties->optionalString($props, 'body', 10000) ?? '';
-        $image = $this->properties->optionalMap($props, 'image');
-        $mediaPosition = $this->properties->requiredString($props, 'mediaPosition', 16);
-        $primaryLink = $this->properties->optionalMap($props, 'primaryLink');
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
-        if ($image === null) {
-            throw new DocumentCompileException('Image text image is required.');
-        }
-        $this->properties->assertOnlyKeys($image, ['src', 'alt'], 'Image text image');
-        if (! in_array($mediaPosition, ['left', 'right'], true)) {
-            throw new DocumentCompileException('Image text media position is invalid.');
-        }
-        $src = $this->properties->optionalString($image, 'src', 2048) ?? '';
-        $alt = $this->properties->optionalString($image, 'alt', 300) ?? '';
-        $media = '<figure class="g7pb-image-text__media">'.$this->compileCatalogImage($src, $alt, 'g7pb-image-text__image', '대표 이미지를 선택하세요').'</figure>';
-        $copy = '<div class="g7pb-image-text__copy">'.($eyebrow === null || $eyebrow === '' ? '' : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>')
-            .'<h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2>'.($body === '' ? '' : '<div class="g7pb-image-text__body">'.$this->richText->sanitizeRichText($body).'</div>')
-            .($primaryLink === null ? '' : $this->compileActionLink($primaryLink, 'Image text primary link', 'g7pb-button g7pb-button--primary')).'</div>';
-        $content = $media.$copy;
-
-        return '<section class="g7pb-block g7pb-image-text g7pb-image-text--'.$mediaPosition.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="image-text">'.$content.'</section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileIconList(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'items', 'layout', 'appearance'], 'Icon list');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $items = $props['items'] ?? null;
-        $layout = $this->properties->requiredString($props, 'layout', 24);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
-        if (! is_array($items) || count($items) < 2 || count($items) > 8) {
-            throw new DocumentCompileException('Icon list must contain between two and eight items.');
-        }
-        if (! in_array($layout, ['single', 'two-column'], true)) {
-            throw new DocumentCompileException('Icon list layout is invalid.');
-        }
-        $compiled = [];
-        foreach (array_values($items) as $index => $item) {
-            if (! is_array($item)) {
-                throw new DocumentCompileException("Icon list item {$index} must be an object.");
-            }
-            $this->properties->assertOnlyKeys($item, ['icon', 'title', 'body'], "Icon list item {$index}");
-            $icon = $this->properties->requiredString($item, 'icon', 32);
-            $title = $this->properties->requiredInlineRichTextString($item, 'title', 160);
-            $body = $this->properties->optionalRichTextString($item, 'body', 2000) ?? '';
-            if (! in_array($icon, self::FEATURE_ICONS, true)) {
-                throw new DocumentCompileException("Icon list item {$index} uses an unsupported icon.");
-            }
-            $bodyMarkup = $this->richText->hasCanonicalRichTextMarkup($body)
-                ? '<div class="g7pb-icon-list__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p>'.$this->formatText($body).'</p>';
-            $compiled[] = '<li class="g7pb-icon-list__item">'.$this->catalogIconSvg($icon, 'g7pb-icon-list__icon g7pb-icon--'.$icon).'<div><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.'</div></li>';
-        }
-
-        return '<section class="g7pb-block g7pb-icon-list g7pb-icon-list--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="icon-list">'.$this->compileSectionHeading($eyebrow, $heading).'<ul class="g7pb-icon-list__items">'.implode('', $compiled).'</ul></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -575,14 +402,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $variant = $this->properties->requiredString($props, 'variant', 16);
         $width = $this->properties->requiredString($props, 'width', 16);
         $label = $this->properties->optionalString($props, 'label', 120) ?? '';
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'compact');
         if (! in_array($variant, ['solid', 'dashed', 'gradient'], true)) {
             throw new DocumentCompileException('Divider variant is invalid.');
         }
         if (! in_array($width, ['narrow', 'standard', 'full'], true)) {
             throw new DocumentCompileException('Divider width is invalid.');
         }
-        $labelMarkup = $label === '' ? '' : '<span class="g7pb-divider__label">'.$this->escape($label).'</span>';
+        $labelMarkup = $label === '' ? '' : '<span class="g7pb-divider__label">'.$this->escaper->escape($label).'</span>';
 
         return '<section class="g7pb-block g7pb-divider g7pb-divider--'.$variant.' g7pb-divider--'.$width.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="divider"><span class="g7pb-divider__line" aria-hidden="true"></span>'.$labelMarkup.'<span class="g7pb-divider__line" aria-hidden="true"></span></section>';
     }
@@ -596,17 +423,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $role = $this->properties->optionalString($props, 'role', 160) ?? '';
         $alignment = $this->properties->requiredString($props, 'alignment', 16);
         $variant = $this->properties->requiredString($props, 'variant', 16);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($alignment, ['left', 'center'], true) || ! in_array($variant, ['line', 'mark'], true)) {
             throw new DocumentCompileException('Blockquote alignment or variant is invalid.');
         }
-        $roleMarkup = $role === '' ? '' : '<span class="g7pb-blockquote__role">'.$this->escape($role).'</span>';
+        $roleMarkup = $role === '' ? '' : '<span class="g7pb-blockquote__role">'.$this->escaper->escape($role).'</span>';
 
         $quoteMarkup = $this->richText->hasRichTextMarkup($quote)
             ? '<div class="g7pb-blockquote__quote">'.$this->richText->sanitizeRichText($quote).'</div>'
-            : '<p class="g7pb-blockquote__quote">'.$this->formatText($quote).'</p>';
+            : '<p class="g7pb-blockquote__quote">'.$this->escaper->formatText($quote).'</p>';
 
-        return '<section class="g7pb-block g7pb-blockquote g7pb-blockquote--'.$alignment.' g7pb-blockquote--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="blockquote"><blockquote>'.$quoteMarkup.'<footer><cite>'.$this->escape($citation).'</cite>'.$roleMarkup.'</footer></blockquote></section>';
+        return '<section class="g7pb-block g7pb-blockquote g7pb-blockquote--'.$alignment.' g7pb-blockquote--'.$variant.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="blockquote"><blockquote>'.$quoteMarkup.'<footer><cite>'.$this->escaper->escape($citation).'</cite>'.$roleMarkup.'</footer></blockquote></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -618,7 +445,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $body = $this->properties->requiredString($props, 'body', 2000);
         $actionLabel = $this->properties->optionalString($props, 'actionLabel', 120) ?? '';
         $actionUrl = $this->properties->optionalString($props, 'actionUrl', 2048) ?? '';
-        $appearance = $this->appearanceClasses($props, 'soft', 'compact');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'compact');
         if (! in_array($tone, ['info', 'success', 'warning', 'critical'], true)) {
             throw new DocumentCompileException('Notice tone is invalid.');
         }
@@ -628,13 +455,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $action = '';
         if ($actionLabel !== '') {
             $this->urls->assertAllowedUrl($actionUrl, 'Notice action');
-            $action = '<a class="g7pb-content-notice__action" href="'.$this->escapeAttribute($actionUrl).'">'.$this->escape($actionLabel).'<span aria-hidden="true"> →</span></a>';
+            $action = '<a class="g7pb-content-notice__action" href="'.$this->escaper->escapeAttribute($actionUrl).'">'.$this->escaper->escape($actionLabel).'<span aria-hidden="true"> →</span></a>';
         }
         $role = $tone === 'critical' ? 'alert' : 'note';
 
         $bodyMarkup = $this->richText->hasRichTextMarkup($body)
             ? '<div class="g7pb-content-notice__body">'.$this->richText->sanitizeRichText($body).'</div>'
-            : '<p class="g7pb-content-notice__body">'.$this->formatText($body).'</p>';
+            : '<p class="g7pb-content-notice__body">'.$this->escaper->formatText($body).'</p>';
 
         return '<section class="g7pb-block g7pb-content-notice g7pb-content-notice--'.$tone.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="notice" role="'.$role.'"><span class="g7pb-content-notice__icon" aria-hidden="true"></span><div><h2 class="g7pb-content-notice__title">'.$this->richText->sanitizePromotedInlineRichText($title).'</h2>'.$bodyMarkup.'</div>'.$action.'</section>';
     }
@@ -649,7 +476,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $columns = $this->properties->requiredIntegerChoice($props, 'columns', [2, 3]);
         $variant = $this->properties->requiredString($props, 'variant', 16);
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! is_array($items) || count($items) < 2 || count($items) > 6) {
             throw new DocumentCompileException('Card grid must contain between two and six items.');
         }
@@ -676,17 +503,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $link = '';
             if ($linkLabel !== '') {
                 $this->urls->assertAllowedUrl($linkUrl, "Card grid item {$index}");
-                $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).'<span aria-hidden="true"> →</span></a>';
+                $link = '<a href="'.$this->escaper->escapeAttribute($linkUrl).'">'.$this->escaper->escape($linkLabel).'<span aria-hidden="true"> →</span></a>';
             }
             $bodyMarkup = $body === '' ? '' : ($this->richText->hasRichTextMarkup($body)
                 ? '<div class="g7pb-card-grid__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p class="g7pb-card-grid__body">'.$this->formatText($body).'</p>');
-            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escape($kicker).'</p>').'<h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</article>';
+                : '<p class="g7pb-card-grid__body">'.$this->escaper->formatText($body).'</p>');
+            $compiled[] = '<article class="g7pb-card-grid__item">'.($kicker === '' ? '' : '<p class="g7pb-card-grid__kicker">'.$this->escaper->escape($kicker).'</p>').'<h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-card-grid--layout-'.$layout;
 
-        return '<section class="g7pb-block g7pb-card-grid g7pb-card-grid--'.$columns.' g7pb-card-grid--'.$variant.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="card-grid">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-card-grid__items">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-card-grid g7pb-card-grid--'.$columns.' g7pb-card-grid--'.$variant.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="card-grid">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-card-grid__items">'.implode('', $compiled).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -695,7 +522,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $this->properties->assertOnlyKeys($props, ['items', 'currentLabel', 'appearance'], 'Breadcrumbs');
         $items = $props['items'] ?? null;
         $currentLabel = $this->properties->requiredString($props, 'currentLabel', 160);
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'compact');
         if (! is_array($items) || count($items) < 1 || count($items) > 6) {
             throw new DocumentCompileException('Breadcrumbs must contain between one and six parent items.');
         }
@@ -708,9 +535,9 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $label = $this->properties->requiredString($item, 'label', 120);
             $url = $this->properties->requiredString($item, 'url', 2048);
             $this->urls->assertPageOrHttpsUrl($url, "Breadcrumb item {$index}");
-            $compiled[] = '<li><a href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a></li>';
+            $compiled[] = '<li><a href="'.$this->escaper->escapeAttribute($url).'">'.$this->escaper->escape($label).'</a></li>';
         }
-        $compiled[] = '<li aria-current="page">'.$this->escape($currentLabel).'</li>';
+        $compiled[] = '<li aria-current="page">'.$this->escaper->escape($currentLabel).'</li>';
 
         return '<section class="g7pb-block g7pb-breadcrumbs '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="breadcrumbs"><nav aria-label="경로"><ol>'.implode('', $compiled).'</ol></nav></section>';
     }
@@ -723,7 +550,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $items = $props['items'] ?? null;
         $sticky = $this->properties->requiredBoolean($props, 'sticky');
         $alignment = $this->properties->requiredString($props, 'alignment', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'compact');
         if (! is_array($items) || count($items) < 2 || count($items) > 8) {
             throw new DocumentCompileException('Anchor menu must contain between two and eight items.');
         }
@@ -741,11 +568,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             if (preg_match('/^[a-z][a-z0-9-]{0,79}$/D', $anchor) !== 1) {
                 throw new DocumentCompileException("Anchor menu item {$index} anchor is invalid.");
             }
-            $compiled[] = '<li><a href="#'.$this->escapeAttribute($anchor).'">'.$this->escape($itemLabel).'</a></li>';
+            $compiled[] = '<li><a href="#'.$this->escaper->escapeAttribute($anchor).'">'.$this->escaper->escape($itemLabel).'</a></li>';
         }
         $stickyClass = $sticky ? ' g7pb-anchor-menu--sticky' : '';
 
-        return '<section class="g7pb-block g7pb-anchor-menu g7pb-anchor-menu--'.$alignment.$stickyClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="anchor-menu"><nav aria-label="'.$this->escapeAttribute($label).'"><strong>'.$this->escape($label).'</strong><ul>'.implode('', $compiled).'</ul></nav></section>';
+        return '<section class="g7pb-block g7pb-anchor-menu g7pb-anchor-menu--'.$alignment.$stickyClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="anchor-menu"><nav aria-label="'.$this->escaper->escapeAttribute($label).'"><strong>'.$this->escaper->escape($label).'</strong><ul>'.implode('', $compiled).'</ul></nav></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -756,7 +583,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $items = $props['items'] ?? null;
         $variant = $this->properties->requiredString($props, 'variant', 16);
         $alignment = $this->properties->requiredString($props, 'alignment', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'compact');
         $networks = ['instagram', 'youtube', 'facebook', 'linkedin', 'x', 'kakao', 'blog', 'website'];
         if (! is_array($items) || count($items) < 1 || count($items) > 8) {
             throw new DocumentCompileException('Social links must contain between one and eight items.');
@@ -777,10 +604,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Social link item {$index} network is invalid.");
             }
             $this->urls->assertPageOrHttpsUrl($url, "Social link item {$index}");
-            $compiled[] = '<li><a class="g7pb-social-links__link g7pb-social-links__link--'.$network.'" href="'.$this->escapeAttribute($url).'" rel="noopener noreferrer"><span class="g7pb-social-links__icon" aria-hidden="true">'.$this->catalogIconSvg($network, 'g7pb-social-links__glyph').'</span><span>'.$this->escape($label).'</span></a></li>';
+            $compiled[] = '<li><a class="g7pb-social-links__link g7pb-social-links__link--'.$network.'" href="'.$this->escaper->escapeAttribute($url).'" rel="noopener noreferrer"><span class="g7pb-social-links__icon" aria-hidden="true">'.$this->icons->catalogIconSvg($network, 'g7pb-social-links__glyph').'</span><span>'.$this->escaper->escape($label).'</span></a></li>';
         }
 
-        return '<section class="g7pb-block g7pb-social-links g7pb-social-links--'.$variant.' g7pb-social-links--'.$alignment.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="social-links"><nav aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'"><h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2><ul>'.implode('', $compiled).'</ul></nav></section>';
+        return '<section class="g7pb-block g7pb-social-links g7pb-social-links--'.$variant.' g7pb-social-links--'.$alignment.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="social-links"><nav aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).'"><h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2><ul>'.implode('', $compiled).'</ul></nav></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -794,7 +621,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $interval = $this->properties->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
         $controls = $this->properties->requiredString($props, 'controls', 16);
         $aspectRatio = $this->properties->requiredString($props, 'aspectRatio', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! is_array($images) || count($images) < 2 || count($images) > 8) {
             throw new DocumentCompileException('Image carousel must contain between two and eight images.');
         }
@@ -810,11 +637,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $src = $this->properties->optionalString($item, 'src', 2048) ?? '';
             $alt = $this->properties->requiredString($item, 'alt', 300);
             $caption = $this->properties->optionalString($item, 'caption', 300) ?? '';
-            $media = $this->compileCatalogImage($src, $alt, 'g7pb-image-carousel__image', ($index + 1).'번 이미지를 선택하세요', $index === 0 ? 'eager' : 'lazy');
-            $slides[] = '<figure class="g7pb-hero-slider__slide g7pb-image-carousel__slide">'.$media.($caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>').'</figure>';
+            $media = $this->markup->compileCatalogImage($src, $alt, 'g7pb-image-carousel__image', ($index + 1).'번 이미지를 선택하세요', $index === 0 ? 'eager' : 'lazy');
+            $slides[] = '<figure class="g7pb-hero-slider__slide g7pb-image-carousel__slide">'.$media.($caption === '' ? '' : '<figcaption>'.$this->escaper->escape($caption).'</figcaption>').'</figure>';
         }
 
-        return '<section class="g7pb-block g7pb-hero-slider g7pb-image-carousel g7pb-image-carousel--'.str_replace(':', '-', $aspectRatio).' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="image-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" data-g7pb-slider-controls="'.$controls.'" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+        return '<section class="g7pb-block g7pb-hero-slider g7pb-image-carousel g7pb-image-carousel--'.str_replace(':', '-', $aspectRatio).' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="image-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" data-g7pb-slider-controls="'.$controls.'" aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
     }
 
     /**
@@ -829,7 +656,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $alignment = $this->properties->optionalString($props, 'alignment', 16) ?? 'center';
         $layout = $this->properties->optionalString($props, 'layout', 16);
         $mediaPosition = $this->properties->optionalString($props, 'mediaPosition', 16) ?? 'right';
-        $appearance = $this->appearanceClasses($props, 'default', 'spacious');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'spacious');
         $splitLayouts = ['balanced', 'screenshot', 'overlap', 'offset'];
 
         if (! in_array($alignment, ['left', 'center'], true)) {
@@ -848,23 +675,23 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         if ($layout !== null && in_array($layout, $splitLayouts, true)) {
             $copy = [];
             if ($eyebrow !== null && $eyebrow !== '') {
-                $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
+                $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escaper->escape($eyebrow).'</p>';
             }
             $copy[] = '<h1>'.$this->richText->sanitizeInlineRichText($title).'</h1>';
             if ($body !== null && $body !== '') {
                 $copy[] = $this->richText->hasCanonicalRichTextMarkup($body)
                     ? '<div class="g7pb-hero-split__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                    : '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
+                    : '<p class="g7pb-hero-split__body">'.$this->escaper->formatText($body).'</p>';
             }
             if ($cta !== null) {
-                $copy[] = $this->compileActionLink($cta, 'Hero CTA', 'g7pb-button g7pb-button--primary');
+                $copy[] = $this->markup->compileActionLink($cta, 'Hero CTA', 'g7pb-button g7pb-button--primary');
             }
             if ($image !== null) {
                 $this->properties->assertOnlyKeys($image, ['src', 'alt'], 'Hero image');
             }
             $src = $image === null ? '' : $this->properties->requiredString($image, 'src', 2048);
             $alt = $image === null ? '대표 이미지' : $this->properties->requiredString($image, 'alt', 300);
-            $media = '<figure class="g7pb-hero-split__media">'.$this->compileCatalogImage(
+            $media = '<figure class="g7pb-hero-split__media">'.$this->markup->compileCatalogImage(
                 $src,
                 $alt,
                 'g7pb-hero-split__image',
@@ -878,7 +705,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $parts = [];
 
         if ($eyebrow !== null && $eyebrow !== '') {
-            $parts[] = '<p class="g7pb-hero__eyebrow">'.$this->escape($eyebrow).'</p>';
+            $parts[] = '<p class="g7pb-hero__eyebrow">'.$this->escaper->escape($eyebrow).'</p>';
         }
 
         $parts[] = '<h1 class="g7pb-hero__title">'.$this->richText->sanitizeInlineRichText($title).'</h1>';
@@ -891,14 +718,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $label = $this->properties->requiredString($cta, 'label', 120);
             $url = $this->properties->requiredString($cta, 'url', 2048);
             $this->urls->assertAllowedUrl($url, 'Hero CTA');
-            $parts[] = '<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
+            $parts[] = '<a class="g7pb-button g7pb-button--primary" href="'.$this->escaper->escapeAttribute($url).'">'.$this->escaper->escape($label).'</a>';
         }
 
         if ($image !== null) {
             $src = $this->properties->requiredString($image, 'src', 2048);
             $alt = $this->properties->optionalString($image, 'alt', 300) ?? '';
             $this->urls->assertAllowedImageUrl($src);
-            $parts[] = '<img class="g7pb-hero__image" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="eager">';
+            $parts[] = '<img class="g7pb-hero__image" src="'.$this->escaper->escapeAttribute($src).'" alt="'.$this->escaper->escapeAttribute($alt).'" loading="eager">';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-hero--layout-'.$layout;
@@ -914,7 +741,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $title = $this->properties->requiredInlineRichTextString($props, 'title', 200);
         $items = $props['items'] ?? null;
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
 
         if (! is_array($items) || count($items) < 2 || count($items) > 6) {
             throw new DocumentCompileException('Features must contain between two and six items.');
@@ -934,14 +761,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $itemTitle = $this->properties->requiredInlineRichTextString($item, 'title', 160);
             $body = $this->properties->requiredRichTextString($item, 'body', 2000);
 
-            if (! in_array($icon, self::FEATURE_ICONS, true)) {
+            if (! in_array($icon, BlockIconCompiler::FEATURE_ICONS, true)) {
                 throw new DocumentCompileException("Feature item {$index} uses an unsupported icon.");
             }
 
             $bodyMarkup = $this->richText->hasCanonicalRichTextMarkup($body)
                 ? '<div class="g7pb-features__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p>'.$this->formatText($body).'</p>';
-            $compiledItems[] = '<article class="g7pb-features__item">'.$this->catalogIconSvg($icon, 'g7pb-features__icon g7pb-icon--'.$icon).'<h3>'.$this->richText->sanitizePromotedInlineRichText($itemTitle).'</h3>'.$bodyMarkup.'</article>';
+                : '<p>'.$this->escaper->formatText($body).'</p>';
+            $compiledItems[] = '<article class="g7pb-features__item">'.$this->icons->catalogIconSvg($icon, 'g7pb-features__icon g7pb-icon--'.$icon).'<h3>'.$this->richText->sanitizePromotedInlineRichText($itemTitle).'</h3>'.$bodyMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-features--layout-'.$layout;
@@ -965,7 +792,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $body = $this->properties->optionalRichTextString($props, 'body', 2000);
         $theme = $this->properties->requiredString($props, 'theme', 16);
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
 
         if (! in_array($theme, ['light', 'dark'], true)) {
             throw new DocumentCompileException('CTA theme must be light or dark.');
@@ -976,23 +803,23 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         $copy = [];
         if ($eyebrow !== null && $eyebrow !== '') {
-            $copy[] = '<p class="g7pb-cta__eyebrow">'.$this->escape($eyebrow).'</p>';
+            $copy[] = '<p class="g7pb-cta__eyebrow">'.$this->escaper->escape($eyebrow).'</p>';
         }
         $copy[] = '<h2 class="g7pb-cta__heading">'.$this->richText->sanitizeInlineRichText($heading).'</h2>';
         if ($body !== null && $body !== '') {
             $copy[] = $this->richText->hasCanonicalRichTextMarkup($body)
                 ? '<div class="g7pb-cta__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p class="g7pb-cta__body">'.$this->formatText($body).'</p>';
+                : '<p class="g7pb-cta__body">'.$this->escaper->formatText($body).'</p>';
         }
 
         $actions = [];
         $primaryLink = $this->properties->optionalMap($props, 'primaryLink');
         if ($primaryLink !== null) {
-            $actions[] = $this->compileActionLink($primaryLink, 'CTA primary link', 'g7pb-button g7pb-button--primary');
+            $actions[] = $this->markup->compileActionLink($primaryLink, 'CTA primary link', 'g7pb-button g7pb-button--primary');
         }
         $secondaryLink = $this->properties->optionalMap($props, 'secondaryLink');
         if ($secondaryLink !== null) {
-            $actions[] = $this->compileActionLink($secondaryLink, 'CTA secondary link', 'g7pb-button g7pb-button--secondary');
+            $actions[] = $this->markup->compileActionLink($secondaryLink, 'CTA secondary link', 'g7pb-button g7pb-button--secondary');
         }
 
         $actionMarkup = $actions === []
@@ -1020,7 +847,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $phone = $this->properties->requiredString($props, 'phone', 40);
         $email = $this->properties->requiredString($props, 'email', 320);
         $phoneHref = $this->urls->phoneHref($phone);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
 
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             throw new DocumentCompileException('Contact email is invalid.');
@@ -1029,18 +856,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $actions = [];
         $cta = $this->properties->optionalMap($props, 'cta');
         if ($cta !== null) {
-            $actions[] = $this->compileActionLink($cta, 'Contact CTA', 'g7pb-button g7pb-button--primary');
+            $actions[] = $this->markup->compileActionLink($cta, 'Contact CTA', 'g7pb-button g7pb-button--primary');
         }
         $mapLink = $this->properties->optionalMap($props, 'mapLink');
         if ($mapLink !== null) {
-            $actions[] = $this->compileActionLink($mapLink, 'Contact map link', 'g7pb-button g7pb-button--secondary');
+            $actions[] = $this->markup->compileActionLink($mapLink, 'Contact map link', 'g7pb-button g7pb-button--secondary');
         }
 
         $actionMarkup = $actions === []
             ? ''
             : '<div class="g7pb-contact__actions">'.implode('', $actions).'</div>';
 
-        return '<section class="g7pb-block g7pb-contact '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="contact"><div class="g7pb-contact__heading"><p class="g7pb-contact__eyebrow">Contact</p><h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2></div><address class="g7pb-contact__details"><p>'.$this->formatText($address).'</p><a href="'.$this->escapeAttribute($phoneHref).'">'.$this->escape($phone).'</a><a href="'.$this->escapeAttribute('mailto:'.$email).'">'.$this->escape($email).'</a></address>'.$actionMarkup.'</section>';
+        return '<section class="g7pb-block g7pb-contact '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="contact"><div class="g7pb-contact__heading"><p class="g7pb-contact__eyebrow">Contact</p><h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2></div><address class="g7pb-contact__details"><p>'.$this->escaper->formatText($address).'</p><a href="'.$this->escaper->escapeAttribute($phoneHref).'">'.$this->escaper->escape($phone).'</a><a href="'.$this->escaper->escapeAttribute('mailto:'.$email).'">'.$this->escaper->escape($email).'</a></address>'.$actionMarkup.'</section>';
     }
 
     /**
@@ -1059,7 +886,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $body = $this->properties->optionalString($props, 'body', 2000);
         $mediaPosition = $this->properties->requiredString($props, 'mediaPosition', 16);
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'spacious');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'spacious');
 
         if (! in_array($mediaPosition, ['left', 'right'], true)) {
             throw new DocumentCompileException('Split Hero media position is invalid.');
@@ -1070,18 +897,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
         $copy = [];
         if ($eyebrow !== null && $eyebrow !== '') {
-            $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
+            $copy[] = '<p class="g7pb-section-eyebrow">'.$this->escaper->escape($eyebrow).'</p>';
         }
         $copy[] = '<h1>'.$this->richText->sanitizeInlineRichText($title).'</h1>';
         if ($body !== null && $body !== '') {
             $copy[] = $this->richText->hasRichTextMarkup($body)
                 ? '<div class="g7pb-hero-split__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p class="g7pb-hero-split__body">'.$this->formatText($body).'</p>';
+                : '<p class="g7pb-hero-split__body">'.$this->escaper->formatText($body).'</p>';
         }
 
         $cta = $this->properties->optionalMap($props, 'primaryCta');
         if ($cta !== null) {
-            $copy[] = $this->compileActionLink($cta, 'Split Hero CTA', 'g7pb-button g7pb-button--primary');
+            $copy[] = $this->markup->compileActionLink($cta, 'Split Hero CTA', 'g7pb-button g7pb-button--primary');
         }
 
         $image = $this->properties->optionalMap($props, 'image');
@@ -1090,7 +917,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         if ($image !== null) {
             $this->properties->assertOnlyKeys($image, ['src', 'alt'], 'Split Hero image');
         }
-        $media = '<figure class="g7pb-hero-split__media">'.$this->compileCatalogImage(
+        $media = '<figure class="g7pb-hero-split__media">'.$this->markup->compileCatalogImage(
             $src,
             $alt,
             'g7pb-hero-split__image',
@@ -1110,7 +937,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     {
         $this->properties->assertOnlyKeys($props, ['slides', 'autoplay', 'interval', 'loop', 'appearance'], 'Slider Hero');
         $slides = $props['slides'] ?? null;
-        $appearance = $this->appearanceClasses($props, 'contrast', 'spacious');
+        $appearance = $this->appearance->appearanceClasses($props, 'contrast', 'spacious');
         $autoplay = $props['autoplay'] ?? true;
         $interval = $props['interval'] ?? 5000;
         $loop = $props['loop'] ?? true;
@@ -1143,15 +970,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
 
             $copy = $eyebrow === null || $eyebrow === ''
                 ? ''
-                : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
+                : '<p class="g7pb-section-eyebrow">'.$this->escaper->escape($eyebrow).'</p>';
             $copy .= '<h2>'.$this->richText->sanitizePromotedInlineRichText($title).'</h2>';
             if ($body !== null && $body !== '') {
                 $copy .= $this->richText->hasRichTextMarkup($body)
                     ? '<div class="g7pb-hero-slider__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                    : '<p>'.$this->formatText($body).'</p>';
+                    : '<p>'.$this->escaper->formatText($body).'</p>';
             }
-            $copy .= '<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a>';
-            $media = $this->compileCatalogImage(
+            $copy .= '<a class="g7pb-button g7pb-button--primary" href="'.$this->escaper->escapeAttribute($buttonUrl).'">'.$this->escaper->escape($buttonLabel).'</a>';
+            $media = $this->markup->compileCatalogImage(
                 $imageSrc,
                 $imageAlt,
                 'g7pb-hero-slider__image',
@@ -1173,7 +1000,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $logos = $props['logos'] ?? null;
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'compact');
 
         if (! is_array($logos) || count($logos) < 2 || count($logos) > 12) {
             throw new DocumentCompileException('Logo Cloud must contain between two and twelve logos.');
@@ -1193,11 +1020,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $imageAlt = $this->properties->optionalString($logo, 'imageAlt', 300) ?? '';
             $url = $this->properties->optionalString($logo, 'url', 2048) ?? '';
             $visual = $imageSrc === ''
-                ? '<span>'.$this->escape($name).'</span>'
-                : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-cloud__image', $name);
+                ? '<span>'.$this->escaper->escape($name).'</span>'
+                : $this->markup->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-cloud__image', $name);
             if ($url !== '') {
                 $this->urls->assertAllowedUrl($url, "Logo item {$index}");
-                $visual = '<a href="'.$this->escapeAttribute($url).'" aria-label="'.$this->escapeAttribute($name).'">'.$visual.'</a>';
+                $visual = '<a href="'.$this->escaper->escapeAttribute($url).'" aria-label="'.$this->escaper->escapeAttribute($name).'">'.$visual.'</a>';
             }
             $items[] = '<li>'.$visual.'</li>';
         }
@@ -1217,7 +1044,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         $icons = ['trend', 'users', 'target', 'chart'];
         if ($layout !== null && ! in_array($layout, ['grid', 'strip', 'split', 'editorial'], true)) {
             throw new DocumentCompileException('Stats layout is invalid.');
@@ -1242,13 +1069,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $detail = $this->properties->optionalRichTextString($item, 'detail', 500) ?? '';
             $detailMarkup = $this->richText->hasCanonicalRichTextMarkup($detail)
                 ? '<div class="g7pb-stats__detail">'.$this->richText->sanitizeRichText($detail).'</div>'
-                : '<p>'.$this->formatText($detail).'</p>';
-            $compiled[] = '<article>'.$this->catalogIconSvg($icon, 'g7pb-stats__icon g7pb-stats__icon--'.$icon).'<strong>'.$this->escape($value).'</strong><h3>'.$this->richText->sanitizePromotedInlineRichText($label).'</h3>'.$detailMarkup.'</article>';
+                : '<p>'.$this->escaper->formatText($detail).'</p>';
+            $compiled[] = '<article>'.$this->icons->catalogIconSvg($icon, 'g7pb-stats__icon g7pb-stats__icon--'.$icon).'<strong>'.$this->escaper->escape($value).'</strong><h3>'.$this->richText->sanitizePromotedInlineRichText($label).'</h3>'.$detailMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-stats--layout-'.$layout;
 
-        return '<section class="g7pb-block g7pb-stats'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="stats">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-stats__grid">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-stats'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="stats">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-stats__grid">'.implode('', $compiled).'</div></section>';
     }
 
     /**
@@ -1261,7 +1088,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $plans = $props['plans'] ?? null;
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'spacious');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'spacious');
         if ($layout !== null && ! in_array($layout, ['cards', 'featured', 'compact', 'editorial'], true)) {
             throw new DocumentCompileException('Pricing layout is invalid.');
         }
@@ -1306,13 +1133,13 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $badge = $featured ? '<span class="g7pb-pricing__badge">추천</span>' : '';
             $descriptionMarkup = $this->richText->hasCanonicalRichTextMarkup($description)
                 ? '<div class="g7pb-pricing__description">'.$this->richText->sanitizeRichText($description).'</div>'
-                : '<p>'.$this->formatText($description).'</p>';
-            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->richText->sanitizePromotedInlineRichText($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escape($price).'</strong><span>'.$this->escape($period).'</span></p>'.$descriptionMarkup.'<ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).'</a></article>';
+                : '<p>'.$this->escaper->formatText($description).'</p>';
+            $compiled[] = '<article class="g7pb-pricing__plan'.$featuredClass.'">'.$badge.'<h3>'.$this->richText->sanitizePromotedInlineRichText($name).'</h3><p class="g7pb-pricing__price"><strong>'.$this->escaper->escape($price).'</strong><span>'.$this->escaper->escape($period).'</span></p>'.$descriptionMarkup.'<ul>'.implode('', $featureItems).'</ul><a class="g7pb-button '.($featured ? 'g7pb-button--primary' : 'g7pb-button--secondary').'" href="'.$this->escaper->escapeAttribute($buttonUrl).'">'.$this->escaper->escape($buttonLabel).'</a></article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-pricing--layout-'.$layout;
 
-        return '<section class="g7pb-block g7pb-pricing'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="pricing">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-pricing__grid">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-pricing'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="pricing">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-pricing__grid">'.implode('', $compiled).'</div></section>';
     }
 
     /**
@@ -1325,7 +1152,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $members = $props['members'] ?? null;
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if ($layout !== null && ! in_array($layout, ['grid', 'portraits', 'editorial', 'featured'], true)) {
             throw new DocumentCompileException('Team layout is invalid.');
         }
@@ -1346,21 +1173,21 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $imageSrc = $this->properties->optionalString($member, 'imageSrc', 2048) ?? '';
             $imageAlt = $this->properties->optionalString($member, 'imageAlt', 300) ?? '';
             $profileUrl = $this->properties->optionalString($member, 'profileUrl', 2048) ?? '';
-            $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name, 'g7pb-team__image', mb_substr($name, 0, 1));
-            $memberName = '<h3>'.$this->escape($name).'</h3>';
+            $media = $this->markup->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name, 'g7pb-team__image', mb_substr($name, 0, 1));
+            $memberName = '<h3>'.$this->escaper->escape($name).'</h3>';
             if ($profileUrl !== '') {
                 $this->urls->assertAllowedUrl($profileUrl, "Team member {$index}");
-                $memberName = '<h3><a href="'.$this->escapeAttribute($profileUrl).'">'.$this->escape($name).'</a></h3>';
+                $memberName = '<h3><a href="'.$this->escaper->escapeAttribute($profileUrl).'">'.$this->escaper->escape($name).'</a></h3>';
             }
             $bioMarkup = $this->richText->hasCanonicalRichTextMarkup($bio)
                 ? '<div class="g7pb-team__bio">'.$this->richText->sanitizeRichText($bio).'</div>'
-                : '<p>'.$this->formatText($bio).'</p>';
-            $compiled[] = '<article><figure>'.$media.'</figure>'.$memberName.'<strong>'.$this->escape($role).'</strong>'.$bioMarkup.'</article>';
+                : '<p>'.$this->escaper->formatText($bio).'</p>';
+            $compiled[] = '<article><figure>'.$media.'</figure>'.$memberName.'<strong>'.$this->escaper->escape($role).'</strong>'.$bioMarkup.'</article>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-team--layout-'.$layout;
 
-        return '<section class="g7pb-block g7pb-team'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="team">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-team__grid">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-team'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="team">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-team__grid">'.implode('', $compiled).'</div></section>';
     }
 
     /**
@@ -1374,7 +1201,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $images = $props['images'] ?? null;
         $columns = $props['columns'] ?? null;
         $layout = $this->properties->optionalString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
 
         if (! is_int($columns) || ! in_array($columns, [2, 3, 4], true)) {
             throw new DocumentCompileException('Gallery columns are invalid.');
@@ -1395,14 +1222,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $src = $this->properties->optionalString($image, 'src', 2048) ?? '';
             $alt = $this->properties->requiredString($image, 'alt', 300);
             $caption = $this->properties->optionalString($image, 'caption', 300) ?? '';
-            $media = $this->compileCatalogImage($src, $alt, 'g7pb-gallery__image', '이미지 '.($index + 1));
-            $figcaption = $caption === '' ? '' : '<figcaption>'.$this->escape($caption).'</figcaption>';
+            $media = $this->markup->compileCatalogImage($src, $alt, 'g7pb-gallery__image', '이미지 '.($index + 1));
+            $figcaption = $caption === '' ? '' : '<figcaption>'.$this->escaper->escape($caption).'</figcaption>';
             $compiled[] = '<figure>'.$media.$figcaption.'</figure>';
         }
 
         $layoutClass = $layout === null ? '' : ' g7pb-gallery--layout-'.$layout;
 
-        return '<section class="g7pb-block g7pb-gallery'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="gallery">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-gallery__grid g7pb-gallery__grid--'.$columns.'">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-gallery'.$layoutClass.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="gallery">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-gallery__grid g7pb-gallery__grid--'.$columns.'">'.implode('', $compiled).'</div></section>';
     }
 
     /**
@@ -1416,7 +1243,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $description = $this->properties->optionalRichTextString($props, 'description', 1000) ?? '';
         $unit = $this->properties->optionalString($props, 'unit', 20) ?? '';
         $items = $props['items'] ?? null;
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         $tones = ['blue', 'indigo', 'emerald', 'amber'];
 
         if (! is_array($items) || count($items) < 2 || count($items) > 8) {
@@ -1436,14 +1263,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 throw new DocumentCompileException("Bar Chart item {$index} tone is invalid.");
             }
             $formattedValue = rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
-            $compiled[] = '<label><span><span>'.$this->escape($label).'</span><strong>'.$this->escape($formattedValue).'<span class="g7pb-bar-chart__unit">'.$this->escape($unit).'</span></strong></span><progress max="100" value="'.$this->escapeAttribute($formattedValue).'" data-tone="'.$tone.'">'.$this->escape($formattedValue).'</progress></label>';
+            $compiled[] = '<label><span><span>'.$this->escaper->escape($label).'</span><strong>'.$this->escaper->escape($formattedValue).'<span class="g7pb-bar-chart__unit">'.$this->escaper->escape($unit).'</span></strong></span><progress max="100" value="'.$this->escaper->escapeAttribute($formattedValue).'" data-tone="'.$tone.'">'.$this->escaper->escape($formattedValue).'</progress></label>';
         }
 
         $descriptionMarkup = $description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description)
             ? '<div class="g7pb-bar-chart__description">'.$this->richText->sanitizeRichText($description).'</div>'
-            : '<p>'.$this->formatText($description).'</p>');
+            : '<p>'.$this->escaper->formatText($description).'</p>');
 
-        return '<section class="g7pb-block g7pb-bar-chart '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="bar-chart"><figure><figcaption>'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.'</figcaption><div class="g7pb-bar-chart__plot">'.implode('', $compiled).'</div></figure></section>';
+        return '<section class="g7pb-block g7pb-bar-chart '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="bar-chart"><figure><figcaption>'.$this->markup->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.'</figcaption><div class="g7pb-bar-chart__plot">'.implode('', $compiled).'</div></figure></section>';
     }
 
     /**
@@ -1460,7 +1287,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [3, 4, 6]) : 3;
         $audience = $this->properties->requiredString($props, 'audience', 16);
         $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
 
         if (! in_array($source, ['recent', 'popular'], true)
             || ! in_array($period, ['today', 'week', 'month', 'year'], true)
@@ -1473,7 +1300,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             : "/api/modules/sirsoft-board/boards/posts/recent?limit={$limit}";
         $hidden = $audience === 'all' ? '' : ' hidden';
 
-        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--posts '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-recent-posts" data-g7pb-data-source="posts" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts" data-g7pb-data-list aria-busy="true"></div>'.$this->compilePagination('게시글').'</section>';
+        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--posts '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-recent-posts" data-g7pb-data-source="posts" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('게시글').'</section>';
     }
 
     /**
@@ -1491,7 +1318,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $audience = $this->properties->requiredString($props, 'audience', 16);
         $detailBasePath = $this->properties->requiredString($props, 'detailBasePath', 200);
         $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
 
         if (! in_array($source, ['latest', 'new', 'popular'], true)
             || ! in_array($audience, ['all', 'guest', 'member'], true)
@@ -1506,7 +1333,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         };
         $hidden = $audience === 'all' ? '' : ' hidden';
 
-        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--products '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-grid" data-g7pb-data-source="products" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-dynamic-products--'.$columns.'" data-g7pb-data-list aria-busy="true"></div>'.$this->compilePagination('상품').'</section>';
+        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--products '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-grid" data-g7pb-data-source="products" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escaper->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-dynamic-products--'.$columns.'" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('상품').'</section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1522,7 +1349,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $privacyLabel = $this->properties->requiredString($props, 'privacyLabel', 300);
         $showPhone = $this->properties->requiredBoolean($props, 'showPhone');
         $showSubject = $this->properties->requiredBoolean($props, 'showSubject');
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($kind, ['inquiry', 'quote', 'reservation', 'application', 'newsletter'], true)) {
             throw new DocumentCompileException('Inquiry form kind is invalid.');
         }
@@ -1531,8 +1358,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $subject = $showSubject ? '<label class="g7pb-inquiry-form__wide"><span>문의 제목</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="subject" data-g7pb-control-maxlength="200"></span></label>' : '';
 
         return '<section class="g7pb-block g7pb-inquiry '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="inquiry-form">'
-            .'<div class="g7pb-inquiry__intro">'.$this->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description) ? '<div class="g7pb-inquiry__description">'.$this->richText->sanitizeRichText($description).'</div>' : '<p>'.$this->formatText($description).'</p>')).'</div>'
-            .'<div class="g7pb-inquiry-form" data-g7pb-inquiry-host data-g7pb-inquiry-form data-g7pb-form-action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escapeAttribute($successMessage).'" data-g7pb-privacy-label="'.$this->escapeAttribute($privacyLabel).'" data-g7pb-submit-label="'.$this->escapeAttribute($submitLabel).'" data-g7pb-show-phone="'.($showPhone ? 'true' : 'false').'" data-g7pb-show-subject="'.($showSubject ? 'true' : 'false').'">'
+            .'<div class="g7pb-inquiry__intro">'.$this->markup->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description) ? '<div class="g7pb-inquiry__description">'.$this->richText->sanitizeRichText($description).'</div>' : '<p>'.$this->escaper->formatText($description).'</p>')).'</div>'
+            .'<div class="g7pb-inquiry-form" data-g7pb-inquiry-host data-g7pb-inquiry-form data-g7pb-form-action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escaper->escapeAttribute($successMessage).'" data-g7pb-privacy-label="'.$this->escaper->escapeAttribute($privacyLabel).'" data-g7pb-submit-label="'.$this->escaper->escapeAttribute($submitLabel).'" data-g7pb-show-phone="'.($showPhone ? 'true' : 'false').'" data-g7pb-show-subject="'.($showSubject ? 'true' : 'false').'">'
             .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="form_kind" data-g7pb-control-value="'.$kind.'"></span>'
             .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="block_instance_id"></span>'
             .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="started_at"></span>'
@@ -1540,8 +1367,8 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             .'<label><span>이름</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="name" data-g7pb-control-maxlength="120" data-g7pb-control-autocomplete="name" data-g7pb-control-required="true"></span></label>'
             .'<label><span>이메일</span><span data-g7pb-form-control="input" data-g7pb-control-type="email" data-g7pb-control-name="email" data-g7pb-control-maxlength="320" data-g7pb-control-autocomplete="email" data-g7pb-control-required="true"></span></label>'.$phone.$subject
             .'<label class="g7pb-inquiry-form__wide"><span>문의 내용</span><span data-g7pb-form-control="textarea" data-g7pb-control-name="message" data-g7pb-control-maxlength="5000" data-g7pb-control-rows="6" data-g7pb-control-required="true"></span></label>'
-            .'<label class="g7pb-inquiry-form__consent"><span data-g7pb-form-control="input" data-g7pb-control-type="checkbox" data-g7pb-control-name="privacy" data-g7pb-control-value="1" data-g7pb-control-required="true"></span><span data-g7pb-privacy-copy>'.$this->escape($privacyLabel).'</span></label>'
-            .'<div class="g7pb-inquiry-form__footer"><span data-g7pb-form-control="button" data-g7pb-control-type="submit" data-g7pb-submit-copy>'.$this->escape($submitLabel).'</span><p role="status" aria-live="polite" data-g7pb-form-status></p></div></div>'
+            .'<label class="g7pb-inquiry-form__consent"><span data-g7pb-form-control="input" data-g7pb-control-type="checkbox" data-g7pb-control-name="privacy" data-g7pb-control-value="1" data-g7pb-control-required="true"></span><span data-g7pb-privacy-copy>'.$this->escaper->escape($privacyLabel).'</span></label>'
+            .'<div class="g7pb-inquiry-form__footer"><span data-g7pb-form-control="button" data-g7pb-control-type="submit" data-g7pb-submit-copy>'.$this->escaper->escape($submitLabel).'</span><p role="status" aria-live="polite" data-g7pb-form-status></p></div></div>'
             .'</section>';
     }
 
@@ -1564,37 +1391,37 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $phone = $this->properties->optionalString($props, 'phone', 40) ?? '';
         $hours = $this->properties->optionalString($props, 'hours', 300) ?? '';
         $parking = $this->properties->optionalString($props, 'parking', 300) ?? '';
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! in_array($provider, ['image', 'openstreetmap', 'google', 'none'], true)) {
             throw new DocumentCompileException('Map provider is invalid.');
         }
         $this->urls->assertAllowedUrl($directionsUrl, 'Directions link');
 
-        $map = '<div class="g7pb-map__placeholder" role="img" aria-label="'.$this->escapeAttribute($address).' 지도 자리"><span>지도 표시 안 함</span></div>';
+        $map = '<div class="g7pb-map__placeholder" role="img" aria-label="'.$this->escaper->escapeAttribute($address).' 지도 자리"><span>지도 표시 안 함</span></div>';
         if ($provider === 'image') {
-            $map = $this->compileCatalogImage($mapImageSrc, $mapImageAlt, 'g7pb-map__image', '지도 이미지를 등록하세요');
+            $map = $this->markup->compileCatalogImage($mapImageSrc, $mapImageAlt, 'g7pb-map__image', '지도 이미지를 등록하세요');
         } elseif ($provider === 'openstreetmap') {
             $delta = match ($zoom) {
                 18 => 0.002, 16 => 0.008, 14 => 0.03, default => 0.12
             };
             $bbox = implode(',', [$longitude - $delta, $latitude - $delta, $longitude + $delta, $latitude + $delta]);
             $src = 'https://www.openstreetmap.org/export/embed.html?bbox='.rawurlencode($bbox).'&marker='.rawurlencode($latitude.','.$longitude);
-            $map = $this->embedPlaceholder('map-openstreetmap', $src, $address.' 지도');
+            $map = $this->markup->embedPlaceholder('map-openstreetmap', $src, $address.' 지도');
         } elseif ($provider === 'google') {
             $src = 'https://www.google.com/maps?q='.rawurlencode($latitude.','.$longitude).'&z='.$zoom.'&output=embed';
-            $map = $this->embedPlaceholder('map-google', $src, $address.' 지도');
+            $map = $this->markup->embedPlaceholder('map-google', $src, $address.' 지도');
         }
-        $details = '<address><strong>'.$this->escape($address).'</strong>'
-            .($phone === '' ? '' : '<span class="g7pb-map__phone">'.$this->escape($phone).'</span>')
-            .($hours === '' ? '' : '<span class="g7pb-map__hours">'.$this->formatText($hours).'</span>')
-            .($parking === '' ? '' : '<span class="g7pb-map__parking">'.$this->formatText($parking).'</span>')
-            .'<a class="g7pb-button g7pb-button--primary" href="'.$this->escapeAttribute($directionsUrl).'">'.$this->escape($directionsLabel).'</a></address>';
+        $details = '<address><strong>'.$this->escaper->escape($address).'</strong>'
+            .($phone === '' ? '' : '<span class="g7pb-map__phone">'.$this->escaper->escape($phone).'</span>')
+            .($hours === '' ? '' : '<span class="g7pb-map__hours">'.$this->escaper->formatText($hours).'</span>')
+            .($parking === '' ? '' : '<span class="g7pb-map__parking">'.$this->escaper->formatText($parking).'</span>')
+            .'<a class="g7pb-button g7pb-button--primary" href="'.$this->escaper->escapeAttribute($directionsUrl).'">'.$this->escaper->escape($directionsLabel).'</a></address>';
 
         $descriptionMarkup = $description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description)
             ? '<div class="g7pb-map__description">'.$this->richText->sanitizeRichText($description).'</div>'
-            : '<p>'.$this->formatText($description).'</p>');
+            : '<p>'.$this->escaper->formatText($description).'</p>');
 
-        return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
+        return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->markup->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1605,7 +1432,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->properties->requiredString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($layout, ['grid', 'spotlight', 'split', 'wall', 'quote-hero'], true)) {
             throw new DocumentCompileException('Testimonials layout is invalid.');
         }
@@ -1626,14 +1453,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $avatarSrc = $this->properties->optionalString($item, 'avatarSrc', 2048) ?? '';
             $avatarAlt = $this->properties->optionalString($item, 'avatarAlt', 300) ?? '';
             $rating = $this->properties->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
-            $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonials__avatar', mb_substr($name, 0, 1));
-            $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
+            $avatar = $this->markup->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonials__avatar', mb_substr($name, 0, 1));
+            $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escaper->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
-                .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
-            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><div class="g7pb-testimonials__quote">'.$this->richText->sanitizeRichText($quote).'</div><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
+                .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escaper->escape($company).'</span>');
+            $compiled[] = '<blockquote><p class="g7pb-testimonials__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p><div class="g7pb-testimonials__quote">'.$this->richText->sanitizeRichText($quote).'</div><footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escaper->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
-        return '<section class="g7pb-block g7pb-testimonials g7pb-testimonials--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonials">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-testimonials__items">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-testimonials g7pb-testimonials--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonials">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-testimonials__items">'.implode('', $compiled).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1645,7 +1472,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $items = $props['items'] ?? null;
         $behavior = $this->properties->requiredString($props, 'behavior', 16);
         $openFirst = $this->properties->requiredBoolean($props, 'openFirst');
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! in_array($behavior, ['single', 'multiple'], true)) {
             throw new DocumentCompileException('FAQ accordion behavior is invalid.');
         }
@@ -1667,7 +1494,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 .'<div class="g7pb-faq__answer" data-g7pb-accordion-panel>'.$this->richText->sanitizeRichText($answer).'</div></div>';
         }
 
-        return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-faq '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="faq-accordion" data-g7pb-accordion data-g7pb-accordion-behavior="'.$behavior.'">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-faq__items">'.implode('', $compiled).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1678,7 +1505,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->properties->requiredString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! in_array($layout, ['vertical', 'horizontal'], true)) {
             throw new DocumentCompileException('Process timeline layout is invalid.');
         }
@@ -1702,15 +1529,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $link = '';
             if ($linkUrl !== '') {
                 $this->urls->assertAllowedUrl($linkUrl, "Process step {$index}");
-                $link = '<a href="'.$this->escapeAttribute($linkUrl).'">'.$this->escape($linkLabel).' <span aria-hidden="true">→</span></a>';
+                $link = '<a href="'.$this->escaper->escapeAttribute($linkUrl).'">'.$this->escaper->escape($linkLabel).' <span aria-hidden="true">→</span></a>';
             }
             $bodyMarkup = $this->richText->hasRichTextMarkup($body)
                 ? '<div class="g7pb-process__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p>'.$this->formatText($body).'</p>';
+                : '<p>'.$this->escaper->formatText($body).'</p>';
             $compiled[] = '<li><span class="g7pb-process__number">'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'</span><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$bodyMarkup.$link.'</li>';
         }
 
-        return '<section class="g7pb-block g7pb-process g7pb-process--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="process-timeline">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
+        return '<section class="g7pb-block g7pb-process g7pb-process--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="process-timeline">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1722,7 +1549,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $items = $props['items'] ?? null;
         $initialTab = $props['initialTab'] ?? null;
         $style = $this->properties->requiredString($props, 'style', 16);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($style, ['underline', 'pills'], true)) {
             throw new DocumentCompileException('Tabs style is invalid.');
         }
@@ -1744,14 +1571,14 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $itemHeading = $this->properties->requiredInlineRichTextString($item, 'heading', 200);
             $body = $this->properties->requiredString($item, 'body', 4000);
             $selected = $initialTab === $index;
-            $buttons[] = '<span data-g7pb-runtime-button role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escape($label).'</span>';
+            $buttons[] = '<span data-g7pb-runtime-button role="tab" data-g7pb-tab="'.$index.'" aria-selected="'.($selected ? 'true' : 'false').'" tabindex="'.($selected ? '0' : '-1').'">'.$this->escaper->escape($label).'</span>';
             $bodyMarkup = $this->richText->hasRichTextMarkup($body)
                 ? '<div class="g7pb-tabs__body">'.$this->richText->sanitizeRichText($body).'</div>'
-                : '<p>'.$this->formatText($body).'</p>';
+                : '<p>'.$this->escaper->formatText($body).'</p>';
             $panels[] = '<article role="tabpanel" data-g7pb-tab-panel="'.$index.'" tabindex="0"'.($selected ? '' : ' hidden').'><h3>'.$this->richText->sanitizePromotedInlineRichText($itemHeading).'</h3>'.$bodyMarkup.'</article>';
         }
 
-        return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
+        return '<section class="g7pb-block g7pb-tabs g7pb-tabs--'.$style.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="tabs" data-g7pb-tabs data-g7pb-tabs-initial="'.$initialTab.'">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-tabs__list" role="tablist" aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.implode('', $buttons).'</div><div class="g7pb-tabs__panels">'.implode('', $panels).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1763,7 +1590,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $columns = $props['columns'] ?? null;
         $rows = $props['rows'] ?? null;
         $highlight = $props['highlightColumn'] ?? null;
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! is_array($columns) || count($columns) < 2 || count($columns) > 4) {
             throw new DocumentCompileException('Comparison table must contain between two and four columns.');
         }
@@ -1801,12 +1628,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 if (! is_string($value) || trim($value) === '' || mb_strlen($value) > 300) {
                     throw new DocumentCompileException("Comparison row {$rowIndex} value {$columnIndex} is invalid.");
                 }
-                $cells[] = '<td'.($highlight === $columnIndex ? ' class="is-highlighted"' : '').'>'.$this->formatText($value).'</td>';
+                $cells[] = '<td'.($highlight === $columnIndex ? ' class="is-highlighted"' : '').'>'.$this->escaper->formatText($value).'</td>';
             }
             $compiledRows[] = '<tr><th scope="row">'.$this->richText->sanitizePromotedInlineRichText($feature).'</th>'.implode('', $cells).'</tr>';
         }
 
-        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll" role="region" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).' 비교표" tabindex="0"><table><caption class="g7pb-visually-hidden">'.$this->escape($this->richText->inlinePlainText($heading)).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
+        return '<section class="g7pb-block g7pb-comparison '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="comparison-table">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-comparison__scroll" role="region" aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).' 비교표" tabindex="0"><table><caption class="g7pb-visually-hidden">'.$this->escaper->escape($this->richText->inlinePlainText($heading)).'</caption><thead><tr><th scope="col">항목</th>'.implode('', $headings).'</tr></thead><tbody>'.implode('', $compiledRows).'</tbody></table></div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1817,7 +1644,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->properties->requiredString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! in_array($layout, ['list', 'grid', 'featured', 'magazine', 'editorial'], true)) {
             throw new DocumentCompileException('Article list layout is invalid.');
         }
@@ -1846,18 +1673,18 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $url = $this->properties->requiredString($item, 'url', 2048);
             $this->urls->assertAllowedUrl($url, "Article item {$index}");
             $plainTitle = $this->richText->promotedInlinePlainText($title, allowLinks: false);
-            $media = $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $plainTitle, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
+            $media = $this->markup->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $plainTitle, 'g7pb-articles__image', str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT));
             $meta = array_filter([
-                $category === '' ? '' : '<span>'.$this->escape($category).'</span>',
-                $date === '' ? '' : '<time datetime="'.$this->escapeAttribute($date).'">'.$this->escape($date).'</time>',
+                $category === '' ? '' : '<span>'.$this->escaper->escape($category).'</span>',
+                $date === '' ? '' : '<time datetime="'.$this->escaper->escapeAttribute($date).'">'.$this->escaper->escape($date).'</time>',
             ]);
             $summaryMarkup = $this->richText->hasRichTextMarkup($summary)
                 ? '<div class="g7pb-articles__summary">'.$this->richText->sanitizeRichText($summary).'</div>'
-                : '<p>'.$this->formatText($summary).'</p>';
-            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escapeAttribute($url).'">'.$this->richText->sanitizePromotedInlineRichText($title, allowLinks: false).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
+                : '<p>'.$this->escaper->formatText($summary).'</p>';
+            $compiled[] = '<article><figure>'.$media.'</figure><div>'.($meta === [] ? '' : '<p class="g7pb-articles__meta">'.implode('<i>·</i>', $meta).'</p>').'<h3><a href="'.$this->escaper->escapeAttribute($url).'">'.$this->richText->sanitizePromotedInlineRichText($title, allowLinks: false).'</a></h3>'.$summaryMarkup.'<a class="g7pb-articles__link" href="'.$this->escaper->escapeAttribute($url).'">읽어보기 <span aria-hidden="true">→</span></a></div></article>';
         }
 
-        return '<section class="g7pb-block g7pb-articles g7pb-articles--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="article-list">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-articles__items">'.implode('', $compiled).'</div></section>';
+        return '<section class="g7pb-block g7pb-articles g7pb-articles--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="article-list">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-articles__items">'.implode('', $compiled).'</div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1870,7 +1697,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $provider = $this->properties->requiredString($props, 'provider', 16);
         $videoId = $this->properties->requiredString($props, 'videoId', 32);
         $ratio = $this->properties->requiredString($props, 'ratio', 8);
-        $appearance = $this->appearanceClasses($props, 'contrast', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'contrast', 'normal');
         if (! in_array($provider, ['youtube', 'vimeo'], true) || preg_match('/^[A-Za-z0-9_-]{6,32}$/D', $videoId) !== 1) {
             throw new DocumentCompileException('Video provider or identifier is invalid.');
         }
@@ -1881,11 +1708,11 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             ? 'https://www.youtube-nocookie.com/embed/'.$videoId.'?rel=0'
             : 'https://player.vimeo.com/video/'.$videoId;
 
-        $captionMarkup = $caption === '' ? '' : '<figcaption>'.($this->richText->hasCanonicalRichTextMarkup($caption) ? $this->richText->sanitizeRichText($caption) : $this->formatText($caption)).'</figcaption>';
+        $captionMarkup = $caption === '' ? '' : '<figcaption>'.($this->richText->hasCanonicalRichTextMarkup($caption) ? $this->richText->sanitizeRichText($caption) : $this->escaper->formatText($caption)).'</figcaption>';
 
-        $embed = $this->embedPlaceholder('video-'.$provider, $src, $this->richText->inlinePlainText($heading));
+        $embed = $this->markup->embedPlaceholder('video-'.$provider, $src, $this->richText->inlinePlainText($heading));
 
-        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escapeAttribute($ratio).'">'.$embed.'</div>'.$captionMarkup.'</figure></section>';
+        return '<section class="g7pb-block g7pb-video '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="video-embed">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<figure><div class="g7pb-video__frame" data-ratio="'.$this->escaper->escapeAttribute($ratio).'">'.$embed.'</div>'.$captionMarkup.'</figure></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1897,7 +1724,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $logos = $props['logos'] ?? null;
         $autoplay = $this->properties->requiredBoolean($props, 'autoplay');
         $interval = $this->properties->requiredIntegerChoice($props, 'interval', [3000, 5000, 7000]);
-        $appearance = $this->appearanceClasses($props, 'default', 'compact');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'compact');
         if (! is_array($logos) || count($logos) < 3 || count($logos) > 12) {
             throw new DocumentCompileException('Logo carousel must contain between three and twelve logos.');
         }
@@ -1913,16 +1740,16 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $imageAlt = $this->properties->optionalString($logo, 'imageAlt', 300) ?? '';
             $url = $this->properties->optionalString($logo, 'url', 2048) ?? '';
             $visual = $imageSrc === ''
-                ? '<span>'.$this->escape($name).'</span>'
-                : $this->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-carousel__image', $name);
+                ? '<span>'.$this->escaper->escape($name).'</span>'
+                : $this->markup->compileCatalogImage($imageSrc, $imageAlt !== '' ? $imageAlt : $name.' 로고', 'g7pb-logo-carousel__image', $name);
             if ($url !== '') {
                 $this->urls->assertAllowedUrl($url, "Logo carousel item {$index}");
-                $visual = '<a href="'.$this->escapeAttribute($url).'" aria-label="'.$this->escapeAttribute($name).'">'.$visual.'</a>';
+                $visual = '<a href="'.$this->escaper->escapeAttribute($url).'" aria-label="'.$this->escaper->escapeAttribute($name).'">'.$visual.'</a>';
             }
             $slides[] = '<div class="g7pb-hero-slider__slide g7pb-logo-carousel__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($logos).'">'.$visual.'</div>';
         }
 
-        return '<section class="g7pb-block g7pb-logo-carousel g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+        return '<section class="g7pb-block g7pb-logo-carousel g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="logo-carousel" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1934,7 +1761,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $items = $props['items'] ?? null;
         $autoplay = $this->properties->requiredBoolean($props, 'autoplay');
         $interval = $this->properties->requiredIntegerChoice($props, 'interval', [5000, 7000, 9000]);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if (! is_array($items) || count($items) < 2 || count($items) > 8) {
             throw new DocumentCompileException('Testimonial slider must contain between two and eight items.');
         }
@@ -1952,17 +1779,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $avatarSrc = $this->properties->optionalString($item, 'avatarSrc', 2048) ?? '';
             $avatarAlt = $this->properties->optionalString($item, 'avatarAlt', 300) ?? '';
             $rating = $this->properties->requiredIntegerChoice($item, 'rating', [1, 2, 3, 4, 5]);
-            $avatar = $this->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonial-slider__avatar', mb_substr($name, 0, 1));
-            $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escape($role).'</span>')
+            $avatar = $this->markup->compileCatalogImage($avatarSrc, $avatarAlt !== '' ? $avatarAlt : $name, 'g7pb-testimonial-slider__avatar', mb_substr($name, 0, 1));
+            $meta = ($role === '' ? '' : '<span class="g7pb-testimonial-role">'.$this->escaper->escape($role).'</span>')
                 .($role !== '' && $company !== '' ? '<i aria-hidden="true"> · </i>' : '')
-                .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escape($company).'</span>');
+                .($company === '' ? '' : '<span class="g7pb-testimonial-company">'.$this->escaper->escape($company).'</span>');
             $quoteMarkup = $this->richText->hasRichTextMarkup($quote)
                 ? '<div class="g7pb-testimonial-slider__quote">'.$this->richText->sanitizeRichText($quote).'</div>'
-                : '<p class="g7pb-testimonial-slider__quote">'.$this->formatText($quote).'</p>';
-            $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p>'.$quoteMarkup.'<footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
+                : '<p class="g7pb-testimonial-slider__quote">'.$this->escaper->formatText($quote).'</p>';
+            $slides[] = '<blockquote class="g7pb-hero-slider__slide g7pb-testimonial-slider__slide" role="group" aria-roledescription="slide" aria-label="'.($index + 1).' / '.count($items).'"><p class="g7pb-testimonial-slider__rating" aria-label="5점 만점에 '.$rating.'점">'.str_repeat('★', $rating).'</p>'.$quoteMarkup.'<footer><figure>'.$avatar.'</figure><cite><strong>'.$this->escaper->escape($name).'</strong>'.$meta.'</cite></footer></blockquote>';
         }
 
-        return '<section class="g7pb-block g7pb-testimonial-slider g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonial-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
+        return '<section class="g7pb-block g7pb-testimonial-slider g7pb-hero-slider '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="testimonial-slider" data-g7pb-slider data-g7pb-slider-autoplay="'.($autoplay ? 'true' : 'false').'" data-g7pb-slider-interval="'.$interval.'" data-g7pb-slider-loop="true" aria-label="'.$this->escaper->escapeAttribute($this->richText->inlinePlainText($heading)).'">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track">'.implode('', $slides).'</div></div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -1973,7 +1800,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
         $layout = $this->properties->requiredString($props, 'layout', 16);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! in_array($layout, ['agenda', 'timeline'], true) || ! is_array($items) || count($items) < 1 || count($items) > 12) {
             throw new DocumentCompileException('Event schedule configuration is invalid.');
         }
@@ -1997,15 +1824,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $action = '';
             if ($buttonUrl !== '') {
                 $this->urls->assertAllowedUrl($buttonUrl, "Event item {$index}");
-                $action = '<a href="'.$this->escapeAttribute($buttonUrl).'">'.$this->escape($buttonLabel).' <span aria-hidden="true">→</span></a>';
+                $action = '<a href="'.$this->escaper->escapeAttribute($buttonUrl).'">'.$this->escaper->escape($buttonLabel).' <span aria-hidden="true">→</span></a>';
             }
             $descriptionMarkup = $this->richText->hasRichTextMarkup($description)
                 ? '<div class="g7pb-events__description">'.$this->richText->sanitizeRichText($description).'</div>'
-                : '<p>'.$this->formatText($description).'</p>';
-            $compiled[] = '<li><time datetime="'.$this->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escape($location).'</p>').'<h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.$action.'</article></li>';
+                : '<p>'.$this->escaper->formatText($description).'</p>';
+            $compiled[] = '<li><time datetime="'.$this->escaper->escapeAttribute($date.($time === '' ? '' : 'T'.$time)).'"><strong>'.$this->escaper->escape($date).'</strong>'.($time === '' ? '' : '<span>'.$this->escaper->escape($time).'</span>').'</time><article>'.($location === '' ? '' : '<p class="g7pb-events__location">'.$this->escaper->escape($location).'</p>').'<h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.$action.'</article></li>';
         }
 
-        return '<section class="g7pb-block g7pb-events g7pb-events--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="event-schedule">'.$this->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
+        return '<section class="g7pb-block g7pb-events g7pb-events--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="event-schedule">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<ol>'.implode('', $compiled).'</ol></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2015,7 +1842,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
         $items = $props['items'] ?? null;
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if (! is_array($items) || count($items) < 1 || count($items) > 12) {
             throw new DocumentCompileException('Download resources must contain between one and twelve items.');
         }
@@ -2033,15 +1860,15 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             $buttonLabel = $this->properties->requiredString($item, 'buttonLabel', 120);
             $url = $this->properties->requiredString($item, 'url', 2048);
             $this->urls->assertAllowedUrl($url, "Download resource {$index}");
-            $fileMeta = '<span class="g7pb-downloads__file-type">'.$this->escape($fileType).'</span>'
-                .($fileSize === '' ? '' : '<i aria-hidden="true"> · </i><span class="g7pb-downloads__file-size">'.$this->escape($fileSize).'</span>');
+            $fileMeta = '<span class="g7pb-downloads__file-type">'.$this->escaper->escape($fileType).'</span>'
+                .($fileSize === '' ? '' : '<i aria-hidden="true"> · </i><span class="g7pb-downloads__file-size">'.$this->escaper->escape($fileSize).'</span>');
             $descriptionMarkup = $description === '' ? '' : ($this->richText->hasRichTextMarkup($description)
                 ? '<div class="g7pb-downloads__description">'.$this->richText->sanitizeRichText($description).'</div>'
-                : '<p>'.$this->formatText($description).'</p>');
-            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.'<small>'.$fileMeta.'</small></div><a href="'.$this->escapeAttribute($url).'" download>'.$this->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
+                : '<p>'.$this->escaper->formatText($description).'</p>');
+            $compiled[] = '<li><span class="g7pb-downloads__type">'.$this->escaper->escape(mb_strtoupper($fileType)).'</span><div><h3>'.$this->richText->sanitizePromotedInlineRichText($title).'</h3>'.$descriptionMarkup.'<small>'.$fileMeta.'</small></div><a href="'.$this->escaper->escapeAttribute($url).'" download>'.$this->escaper->escape($buttonLabel).' <span aria-hidden="true">↓</span></a></li>';
         }
 
-        return '<section class="g7pb-block g7pb-downloads '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="download-resources">'.$this->compileSectionHeading($eyebrow, $heading).'<ul>'.implode('', $compiled).'</ul></section>';
+        return '<section class="g7pb-block g7pb-downloads '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="download-resources">'.$this->markup->compileSectionHeading($eyebrow, $heading).'<ul>'.implode('', $compiled).'</ul></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2058,7 +1885,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $showSearch = $this->properties->requiredBoolean($props, 'showSearch');
         $showBoardFilter = $this->properties->requiredBoolean($props, 'showBoardFilter');
         $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
         if (! in_array($source, ['recent', 'popular'], true) || ! in_array($period, ['today', 'week', 'month', 'year'], true) || ! in_array($audience, ['all', 'guest', 'member'], true)) {
             throw new DocumentCompileException('G7 board archive configuration is invalid.');
         }
@@ -2071,7 +1898,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 .'</div>'
             : '';
 
-        return '<section class="g7pb-block g7pb-dynamic g7pb-board-archive '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-board-archive" data-g7pb-data-source="post-archive" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).$tools.'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts g7pb-board-archive__items" data-g7pb-data-list aria-busy="true"></div>'.$this->compilePagination('게시글').'</section>';
+        return '<section class="g7pb-block g7pb-dynamic g7pb-board-archive '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-board-archive" data-g7pb-data-source="post-archive" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).$tools.'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts g7pb-board-archive__items" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('게시글').'</section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2087,7 +1914,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $detailBasePath = $this->properties->requiredString($props, 'detailBasePath', 200);
         $layout = $this->properties->requiredString($props, 'layout', 16);
         $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
         if (! in_array($source, ['latest', 'new', 'popular'], true) || ! in_array($audience, ['all', 'guest', 'member'], true) || ! in_array($layout, ['featured', 'rail'], true) || preg_match('#^/[A-Za-z0-9/_-]*$#', $detailBasePath) !== 1) {
             throw new DocumentCompileException('G7 product showcase configuration is invalid.');
         }
@@ -2098,7 +1925,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         };
         $hidden = $audience === 'all' ? '' : ' hidden';
 
-        return '<section class="g7pb-block g7pb-dynamic g7pb-product-showcase g7pb-product-showcase--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-showcase" data-g7pb-data-source="product-showcase" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-product-showcase__items" data-g7pb-data-list aria-busy="true"></div>'.$this->compilePagination('상품').'</section>';
+        return '<section class="g7pb-block g7pb-dynamic g7pb-product-showcase g7pb-product-showcase--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-showcase" data-g7pb-data-source="product-showcase" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escaper->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-product-showcase__items" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('상품').'</section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2114,7 +1941,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $audience = $this->properties->requiredString($props, 'audience', 16);
         $showContent = $this->properties->requiredBoolean($props, 'showContent');
         $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearanceClasses($props, 'default', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
 
         if (preg_match('/^[a-z0-9][a-z0-9_-]{0,79}$/D', $boardSlug) !== 1
             || ! is_int($postId) || $postId < 1
@@ -2125,7 +1952,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $endpoint = '/api/modules/sirsoft-board/boards/'.rawurlencode($boardSlug).'/posts/'.$postId;
         $hidden = $audience === 'all' ? '' : ' hidden';
 
-        return '<section class="g7pb-block g7pb-dynamic g7pb-data-detail g7pb-post-detail '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-post-detail" data-g7pb-data-source="post-detail" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-detail-url="'.$this->escapeAttribute($detailUrl).'" data-g7pb-detail-label="'.$this->escapeAttribute($linkLabel).'" data-g7pb-show-content="'.($showContent ? 'true' : 'false').'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">게시글을 불러오는 중입니다.</p><div class="g7pb-data-detail__content" data-g7pb-data-detail aria-busy="true"><a class="g7pb-data-detail__action" data-g7pb-detail-action href="'.$this->escapeAttribute($detailUrl).'" hidden>'.$this->escape($linkLabel).'</a></div></section>';
+        return '<section class="g7pb-block g7pb-dynamic g7pb-data-detail g7pb-post-detail '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-post-detail" data-g7pb-data-source="post-detail" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-detail-url="'.$this->escaper->escapeAttribute($detailUrl).'" data-g7pb-detail-label="'.$this->escaper->escapeAttribute($linkLabel).'" data-g7pb-show-content="'.($showContent ? 'true' : 'false').'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">게시글을 불러오는 중입니다.</p><div class="g7pb-data-detail__content" data-g7pb-data-detail aria-busy="true"><a class="g7pb-data-detail__action" data-g7pb-detail-action href="'.$this->escaper->escapeAttribute($detailUrl).'" hidden>'.$this->escaper->escape($linkLabel).'</a></div></section>';
     }
 
     /** @param array<string, mixed> $props */
@@ -2140,7 +1967,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $audience = $this->properties->requiredString($props, 'audience', 16);
         $showDescription = $this->properties->requiredBoolean($props, 'showDescription');
         $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearanceClasses($props, 'soft', 'normal');
+        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
 
         if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/D', $productKey) !== 1
             || ! in_array($audience, ['all', 'guest', 'member'], true)) {
@@ -2150,139 +1977,12 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
         $endpoint = '/api/modules/sirsoft-ecommerce/products/'.rawurlencode($productKey);
         $hidden = $audience === 'all' ? '' : ' hidden';
 
-        return '<section class="g7pb-block g7pb-dynamic g7pb-data-detail g7pb-product-detail '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-detail" data-g7pb-data-source="product-detail" data-g7pb-endpoint="'.$this->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-detail-url="'.$this->escapeAttribute($detailUrl).'" data-g7pb-detail-label="'.$this->escapeAttribute($buttonLabel).'" data-g7pb-show-description="'.($showDescription ? 'true' : 'false').'" data-g7pb-empty-message="'.$this->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-data-detail__content" data-g7pb-data-detail aria-busy="true"><a class="g7pb-data-detail__action" data-g7pb-detail-action href="'.$this->escapeAttribute($detailUrl).'" hidden>'.$this->escape($buttonLabel).'</a></div></section>';
-    }
-
-    private function compilePagination(string $label): string
-    {
-        return '<nav class="g7pb-dynamic-pagination" data-g7pb-pagination aria-label="'.$this->escapeAttribute($label).' 페이지" hidden><span data-g7pb-runtime-button data-g7pb-page-prev>이전</span><span data-g7pb-page-status aria-live="polite">1 / 1</span><span data-g7pb-runtime-button data-g7pb-page-next>다음</span></nav>';
-    }
-
-    private function compileSectionHeading(?string $eyebrow, string $heading): string
-    {
-        $eyebrowMarkup = $eyebrow === null || $eyebrow === ''
-            ? ''
-            : '<p class="g7pb-section-eyebrow">'.$this->escape($eyebrow).'</p>';
-
-        return '<header class="g7pb-section-heading">'.$eyebrowMarkup.'<h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2></header>';
-    }
-
-    private function compileCatalogImage(
-        string $src,
-        string $alt,
-        string $className,
-        string $placeholderLabel,
-        string $loading = 'lazy',
-    ): string {
-        if ($src === '') {
-            return '<span class="g7pb-media-placeholder '.$className.'" role="img" aria-label="'.$this->escapeAttribute($placeholderLabel).'"><span>'.$this->escape($placeholderLabel).'</span></span>';
-        }
-
-        if ($alt === '') {
-            throw new DocumentCompileException('Image alternative text is required.');
-        }
-
-        $this->urls->assertAllowedImageUrl($src);
-
-        return '<img class="'.$className.'" src="'.$this->escapeAttribute($src).'" alt="'.$this->escapeAttribute($alt).'" loading="'.$loading.'">';
-    }
-
-    /**
-     * @param  array<string, mixed>  $props
-     */
-    private function appearanceClasses(array $props, string $defaultSurface, string $defaultSpacing): string
-    {
-        $appearance = $this->properties->optionalMap($props, 'appearance') ?? [];
-        $this->properties->assertOnlyKeys($appearance, ['surface', 'spacing', 'textScale', 'textAlign', 'containerWidth', 'containerAlign', 'minHeight', 'verticalAlign', 'elements'], 'Block appearance');
-        $surface = $this->properties->optionalString($appearance, 'surface', 16) ?? $defaultSurface;
-        $spacing = $this->properties->optionalString($appearance, 'spacing', 16) ?? $defaultSpacing;
-        $textScale = $this->properties->optionalString($appearance, 'textScale', 16) ?? 'balanced';
-        $textAlign = $this->properties->optionalString($appearance, 'textAlign', 16) ?? 'left';
-        $containerWidth = $this->properties->optionalString($appearance, 'containerWidth', 16) ?? 'inherit';
-        $containerAlign = $this->properties->optionalString($appearance, 'containerAlign', 16) ?? 'center';
-        $minHeight = $this->properties->optionalString($appearance, 'minHeight', 16) ?? 'auto';
-        $verticalAlign = $this->properties->optionalString($appearance, 'verticalAlign', 16) ?? 'start';
-
-        if (! in_array($surface, ['default', 'soft', 'contrast'], true)) {
-            throw new DocumentCompileException('Block appearance surface is invalid.');
-        }
-
-        if (! in_array($spacing, ['compact', 'normal', 'spacious'], true)) {
-            throw new DocumentCompileException('Block appearance spacing is invalid.');
-        }
-
-        if (! in_array($textScale, ['compact', 'balanced', 'large'], true) || ! in_array($textAlign, ['left', 'center', 'right'], true)) {
-            throw new DocumentCompileException('Block typography appearance is invalid.');
-        }
-        if (! in_array($containerWidth, ['inherit', 'narrow', 'standard', 'wide', 'full'], true)
-            || ! in_array($containerAlign, ['left', 'center', 'right', 'stretch'], true)
-            || ! in_array($minHeight, ['auto', 'compact', 'medium', 'large', 'viewport'], true)
-            || ! in_array($verticalAlign, ['start', 'center', 'end'], true)) {
-            throw new DocumentCompileException('Block container appearance is invalid.');
-        }
-
-        $classes = 'g7pb-surface--'.$surface.' g7pb-spacing--'.$spacing;
-        if (array_key_exists('textScale', $appearance) || $textScale !== 'balanced') {
-            $classes .= ' g7pb-text-scale--'.$textScale;
-        }
-        if (array_key_exists('textAlign', $appearance) || $textAlign !== 'left') {
-            $classes .= ' g7pb-text-align--'.$textAlign;
-        }
-        $classes .= ' g7pb-container-width--'.$containerWidth
-            .' g7pb-container-align--'.$containerAlign
-            .' g7pb-container-height--'.$minHeight
-            .' g7pb-container-vertical--'.$verticalAlign;
-
-        return $classes;
-    }
-
-    /**
-     * @param  array<string, mixed>  $link
-     */
-    private function compileActionLink(array $link, string $property, string $className): string
-    {
-        $this->properties->assertOnlyKeys($link, ['label', 'url'], $property);
-        $label = $this->properties->requiredString($link, 'label', 120);
-        $url = $this->properties->requiredString($link, 'url', 2048);
-        $this->urls->assertAllowedUrl($url, $property);
-
-        return '<a class="'.$className.'" href="'.$this->escapeAttribute($url).'">'.$this->escape($label).'</a>';
+        return '<section class="g7pb-block g7pb-dynamic g7pb-data-detail g7pb-product-detail '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-detail" data-g7pb-data-source="product-detail" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-detail-url="'.$this->escaper->escapeAttribute($detailUrl).'" data-g7pb-detail-label="'.$this->escaper->escapeAttribute($buttonLabel).'" data-g7pb-show-description="'.($showDescription ? 'true' : 'false').'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-data-detail__content" data-g7pb-data-detail aria-busy="true"><a class="g7pb-data-detail__action" data-g7pb-detail-action href="'.$this->escaper->escapeAttribute($detailUrl).'" hidden>'.$this->escaper->escape($buttonLabel).'</a></div></section>';
     }
 
     private function isUuid(string $value): bool
     {
         return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $value) === 1;
-    }
-
-    private function formatText(string $value): string
-    {
-        return nl2br($this->escape($value), false);
-    }
-
-    private function catalogIconSvg(string $name, string $className): string
-    {
-        $resolved = match ($name) {
-            'instagram' => 'camera',
-            'youtube' => 'play',
-            'facebook' => 'users',
-            'linkedin' => 'briefcase',
-            'x' => 'at-sign',
-            'kakao' => 'message',
-            'blog' => 'rss',
-            'website' => 'external-link',
-            default => $name,
-        };
-        $markup = self::CATALOG_ICON_MARKUP[$resolved] ?? self::CATALOG_ICON_MARKUP['check'];
-
-        return '<span class="'.$this->escapeAttribute($className).'" data-g7pb-runtime-icon data-g7pb-icon-markup="'.$this->escapeAttribute($markup).'" aria-hidden="true"></span>';
-    }
-
-    private function embedPlaceholder(
-        string $kind,
-        string $src,
-        string $title,
-    ): string {
-        return '<span data-g7pb-embed data-g7pb-embed-kind="'.$this->escapeAttribute($kind).'" data-g7pb-embed-src="'.$this->escapeAttribute($src).'" data-g7pb-embed-title="'.$this->escapeAttribute($title).'"></span>';
     }
 
     private function assertTemplateCompatibleMarkup(string $html, string $context): void
@@ -2294,15 +1994,5 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 'G7PB_TEMPLATE_MARKUP_UNSUPPORTED',
             );
         }
-    }
-
-    private function escape(string $value): string
-    {
-        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
-    }
-
-    private function escapeAttribute(string $value): string
-    {
-        return $this->escape($value);
     }
 }

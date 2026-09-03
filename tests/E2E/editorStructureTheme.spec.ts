@@ -74,7 +74,7 @@ async function resource(api: APIRequestContext, id: string): Promise<{ document:
 
 async function withOwnedDocument(
   page: Page, context: BrowserContext, project: string, blocks: PageBuilderBlock[],
-  run: (api: APIRequestContext, owned: OwnedEditorInteractionDocument) => Promise<void>,
+  run: (api: APIRequestContext, owned: OwnedEditorInteractionDocument, seededDocument: PageBuilderDocument) => Promise<void>,
   tokens: PageBuilderDocument['tokens'] = {},
 ): Promise<void> {
   const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
@@ -94,9 +94,10 @@ async function withOwnedDocument(
       data: { document, expected_lock_version: current.lock_version },
     });
     expect(seeded.ok(), `Fixture draft rejected (${seeded.status()})`).toBe(true);
+    const seededDocument = (await resource(api, owned.documentId)).document;
     expect((await page.goto(`${EDITOR}?document=${owned.documentId}`))?.ok()).toBe(true);
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-    await run(api, owned);
+    await run(api, owned, seededDocument);
     expect(pageErrors, 'Editor or compiled preview raised an uncaught browser exception.').toEqual([]);
   } catch (error) {
     if (!page.isClosed()) {
@@ -308,7 +309,10 @@ test.describe('Editor structure and theme contracts', () => {
         'columns.3.title': { weight: 'bold' },
       } },
     });
-    await withOwnedDocument(page, context, info.project.name, [regular, heading, features, testimonials, stats, cta, tabs, comparison], async (api, owned) => {
+    await withOwnedDocument(page, context, info.project.name, [regular, heading, features, testimonials, stats, cta, tabs, comparison], async (api, owned, seededDocument) => {
+      const seededComparison = seededDocument.blocks.find(item => item.instance_id === comparison.instance_id);
+      if (!seededComparison) throw new Error('Missing seeded comparison block.');
+      expect(seededComparison.props.appearance).toEqual(comparison.props.appearance);
       const frame = page.frameLocator('iframe');
       const strongWeights = ['900', '400', '500', '800'];
       const expectStrongEditorWeights = async (): Promise<void> => {
@@ -441,7 +445,9 @@ test.describe('Editor structure and theme contracts', () => {
         expect(saved?.props.heading).toContain('data-g7pb-font="mono"');
         expect(saved?.props.heading).toContain('data-g7pb-font-size-rem="1.25"');
         const savedComparison = current.document.blocks.find(item => item.instance_id === comparison.instance_id);
-        expect(savedComparison?.props).toEqual(comparison.props);
+        // Compare with the actual server seed: request middleware canonicalizes
+        // empty eyebrow/description strings to null before the editor loads.
+        expect(savedComparison?.props).toEqual(seededComparison.props);
         // Reentry uses the saved document, not the original seeded DOM.
         await page.reload();
         await expect(defaultHeading.locator('.ProseMirror')).toHaveAttribute('contenteditable', 'true');

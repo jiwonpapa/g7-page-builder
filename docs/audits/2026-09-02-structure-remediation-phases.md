@@ -2,7 +2,7 @@
 
 기준: `0a6fcbae69ad0c0ad93aea145c8899c4b001ecfb`, 2026-09-02. [이전 코드 감사 개선](2026-09-02-code-audit-remediation.md)의 후속 작업이다.
 
-현재 상태: **1~4차 제품 구현·관련 검증·재감사 완료**. 1차 제품 검증 SHA는 `38ec067ed6dbb68c3ac09ce4c8572f1ec6524edc`, 문서 통합 기준은 `e9a3afb1d18b87e50c5abffc00fc80294764c96d`다. 2차 제품 검증 SHA는 `d59bbc07482e878c179ab784a0e301c4c7c5a1e3`, 문서 통합·정식 종료 SHA는 `23beb94abdaba28038073c2116020440eb29eb79`다. 3차 제품 통합 SHA는 `cbe955a6c9f10cd131d7b7ce5ef588e1c14bed26`이며 Manager 1,597→96줄·catalog 851→68줄·공개 진입점 1,163→16줄로 책임을 분리했다. 정적 부채 1,066→1,061, canonical의 UI 금지 연결 44→0이며 신규 위반·순환·우회 단언 규칙 위반은 0이다. 각 차수의 문서 통합 후 최종 검증·NO_RELEASE 종료는 [1차](2026-09-02-structure-phase-1.md)·[2차](2026-09-02-structure-phase-2.md)·[3차 마감 기록](2026-09-03-structure-phase-3.md)과 연결된 영수증으로 확인한다. 4차 제품 통합 SHA는 `ae25c0dec6c8e714fff0ddd5b9c52ed5126ebf37`이며 PHP 본체 2,504→297줄·기본 renderer 45종 분리·전체 정적 부채 1,061→1,060을 확인했다. 문서 통합·정식 종료는 [4차 마감 기록](2026-09-03-structure-phase-4.md)의 최종 영수증과 연결한다. 5~6차는 아직 실행하지 않았다.
+현재 상태: **1~5차 제품 구현·관련 검증·재감사 완료**. 1차 제품 검증 SHA는 `38ec067ed6dbb68c3ac09ce4c8572f1ec6524edc`, 문서 통합 기준은 `e9a3afb1d18b87e50c5abffc00fc80294764c96d`다. 2차 제품 검증 SHA는 `d59bbc07482e878c179ab784a0e301c4c7c5a1e3`, 문서 통합·정식 종료 SHA는 `23beb94abdaba28038073c2116020440eb29eb79`다. 3차 제품 통합 SHA는 `cbe955a6c9f10cd131d7b7ce5ef588e1c14bed26`이며 Manager 1,597→96줄·catalog 851→68줄·공개 진입점 1,163→16줄로 책임을 분리했다. 정적 부채 1,066→1,061, canonical의 UI 금지 연결 44→0이며 신규 위반·순환·우회 단언 규칙 위반은 0이다. 각 차수의 문서 통합 후 최종 검증·NO_RELEASE 종료는 [1차](2026-09-02-structure-phase-1.md)·[2차](2026-09-02-structure-phase-2.md)·[3차 마감 기록](2026-09-03-structure-phase-3.md)과 연결된 영수증으로 확인한다. 4차 제품 통합 SHA는 `ae25c0dec6c8e714fff0ddd5b9c52ed5126ebf37`이며 PHP 본체 2,504→297줄·기본 renderer 45종 분리·전체 정적 부채 1,061→1,060을 확인했다. 문서 통합·정식 종료는 [4차 마감 기록](2026-09-03-structure-phase-4.md)의 최종 영수증과 연결한다. 5차 제품·감사 기준은 `3a747c68f5f6e613f9f1e4a117c4af505aa3621a`이며 스타일 부채 1,060→220와 CSS 크기 예외 0을 확인했다. [5차 마감 기록](2026-09-03-structure-phase-5.md)에 정식 종료 영수증을 연결하며 6차는 아직 실행하지 않았다.
 
 ## 범위와 진행 방식
 
@@ -84,6 +84,8 @@
 
 ### 5차 — 스타일·테마
 
+5차 A~F 구현·관련 검증·동일 기준 재감사를 완료했다. 시작 기준은 4차 정식 마감 `4a943279b834ee91877b489ea20d32da504857a3`이며 [5차 실행 기록](2026-09-03-structure-phase-5.md)에 코드 범위·하네스·토큰 소유권·실패 보완·재감사와 정식 종료를 기록한다.
+
 1. **5-A: 검사 계약.** `check-editor-layout-parity.mjs`의 `!important` 문자열 강제를 실제 계산 결과 검사로 전환한다. 기본 제목 700, 사용자 regular 400, 기존 Features 행간 기대값을 유지하고 충돌하는 host CSS를 합성 fixture에 넣는다.
 2. **5-B: 편집 UI 토큰.** 기존 core 의미 토큰을 editor/manager/Site Part 컨트롤에서 재사용한다. 경고·오류·선택·그림자는 전경·배경·테두리를 함께 정의한다.
 3. **5-C: 페이지 표면 토큰.** editor/public의 배경·글자·보조글자·테두리를 기존 theme 계약으로 통일한다. light/dark/system, 카드 중첩, 명시 색, iframe을 함께 검증한다.
@@ -115,6 +117,8 @@
 | 3차 정식 마감 | 마감 기록 참조 | 문서 통합·최종 integration-verify·NO_RELEASE 종료는 3차 증거 폴더의 `phase3-final-close.json`에 최종 SHA와 함께 보존 |
 | 4차 구현·재감사 | 완료 | 본체 297줄·기본 renderer 45종 분리, 356파일/부채 1,060/신규 위반·family 순환 0. 제품 통합 SHA `ae25c0d` |
 | 4차 정식 마감 | 마감 기록 참조 | 문서 통합·최종 integration-verify·NO_RELEASE 종료는 4차 증거 폴더의 `phase4-final-close.json`에 최종 SHA와 함께 보존 |
-| 5~6차 | 예정 | 스타일·테마 개선 후 종합 재감사·종료 |
+| 5차 구현·재감사 | 완료 | 검사 계약·UI 토큰·페이지 표면·Site Shell·글자 우선순위·CSS 책임 분리. 363파일/부채 220/신규·크기 예외·CSS 순환 0, 제품 SHA `3a747c6` |
+| 5차 정식 마감 | 마감 기록 참조 | 문서 통합·최종 integration-verify·NO_RELEASE 종료는 `phase5-final-close.json`에 보존. 잔여 COLOR/IMPORTANT와 기존 JS 용량 초과는 6차에 이관 |
+| 6차 | 예정 | 종합 재감사·종료 |
 
 [1차 구현·실패 보완·검증 기록](2026-09-02-structure-phase-1.md)에 제출/통합 SHA, 실제 검사, 부채 전후 수치를 기록한다. 다음 차수의 계획을 작성했다는 이유로 해당 차수를 완료 처리하지 않는다.

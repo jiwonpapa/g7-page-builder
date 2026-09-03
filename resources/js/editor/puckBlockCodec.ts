@@ -8,7 +8,7 @@ import { CONTACT_BLOCK_TYPE, CTA_BLOCK_TYPE, FEATURES_BLOCK_TYPE, HERO_BLOCK_TYP
 import { blockContainerEditorProps, mergeBlockContainerAppearance } from './blockAppearance';
 import { DEFAULT_BLOCK_MOTION, normalizeBlockMotion } from './blockMotionData';
 import { normalizeElementAppearanceMap } from './elementAppearanceData';
-import { canonicalCatalogBlockToPuck, catalogPuckBlockToCanonical } from './catalogBlocks';
+import { canonicalCatalogBlockToPuck, catalogPuckBlockToCanonical } from './catalogCodec';
 import { canonicalDocumentToPuck, puckDocumentToCanonical, type PuckAdapterContext, type PuckEditorSession } from './puckDocumentAdapter';
 import type { ContactEditorProps, CtaEditorProps, FeaturesEditorProps, HeroEditorProps, PuckEditorData } from './puckEditorTypes';
 import { hasResponsiveOverrides, normalizeResponsiveOverrides } from './responsiveBlockStyle';

@@ -1,3 +1,9 @@
-@import url("./page-builder-editor.css");
+@import url("./page-builder-core.css");
+@import url("./page-builder-editor-wysiwyg.css");
+@import url("./page-builder-site-shell.css");
+@import url("./page-builder-editor-chrome.css");
+@import url("./page-builder-editor-library.css");
+@import url("./page-builder-editor-controls.css");
+@import url("./page-builder-editor-canvas.css");
 @import url("./page-builder-site-part-workspace.css");
 @import url("./page-builder-site-part-responsive.css");

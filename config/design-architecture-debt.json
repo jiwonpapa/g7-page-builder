@@ -143,652 +143,652 @@
         {
           "path": "resources/css/page-builder-editor-chrome.css",
           "fingerprint": "f98a698874c859f9bc26d981af8bfc5ded0156ba6196e836d012faa09bc3d64d",
-          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#e8ebf0)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-chrome.css",
           "fingerprint": "a1776373635c2acfd0be69ae784d5b5ba223b06f58f5e690c8be539c984acce7",
-          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid #d9dee7)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-chrome.css",
           "fingerprint": "d9aeeadc59ace1be9aba2b1096ec0b47ede7e05fae9533e1eb6650667875bf89",
-          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#647086)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-chrome.css",
           "fingerprint": "54751e3ee8bba1495479fe8d6b0d434d170283a620eb8ed707088235e4cc5a3d",
-          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(rgb(255 255 255 / 92%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-chrome.css",
           "fingerprint": "7937f7294781d88a60e114f58222a2f8cb9e700bd1db329623df94be3b0f8b51",
-          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 .4rem 1.5rem rgb(15 23 42 / 10%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-chrome.css",
           "fingerprint": "c1d53c341c2c35bc74a4cf76e5a115036002b84ca0a326d7cb12f7745b85bcbb",
-          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#687386)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "198319a444c033bc10749a6f4f68f1270af3e2ff954b4d4914716bbd0a7adb43",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "18afa27cc5521c0fb9be5e7ef782f0edbc14e7db276c092b279fd28d9f862343",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#eef1f6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "061a47753760a490938481d98157e1a31e08ee0a3c7683a4804d790137ff3895",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border-top 선언(.35rem solid #2456df)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "adb0414f4399b14929b43e42477d64a0b17624ba7e7bd7d9e45b11589c1dae2f",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "01cf32f47c700244a40a66f288665302d638bb89958cbe0bbd29aac4a89793bf",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(inset 0 0 0 1px #dfe4ec)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "3ba00ba447c99dfbb8071654d931052121872043cd5097d0562011c24d909110",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#27334a)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "41ae5a0a4ec09ee8756f9328088a04cba13a91a668b9972202f28ab410387b9c",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#9aa5b7)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "ea19b82abedf66350c6dca71ff4c8b9c552034a3ccef156a878772759f37f284",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#2456df)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "e78585730b0a81da8d5932fdbf43ea0f9e98b9f4bbd42aab1e35ddb16c74170e",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#2456df)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "3c93c5a0577bb94b6111606d79a482d331f2049753230cc41f95f67bd1be4c6e",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(rgb(255 255 255 / 86%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "c157e902fa0627919a97a30ea45d86203847df59a98aeb328688e8fad02dcdc0",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#172033)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "ca767971f03b644892a6309ecde22eef7e82c3a71a8f0f17887cb92c468012ec",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#eef2f8)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "0cb74cb939b0e629169905d641f1b7ad63a1d8199b8584f32f0b0daea805ed3e",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#536079)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "805366e4d1eb2346a787f3d1049499a1be0c086ba9e028044ec85ef8e3d3540f",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#172033)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "fa51f54c66638bf1a5513ce67218e58c8902b8d73a0a20b77a42ab576bf4b5a1",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "64d2b80af447d6289b0f2d06ca19929c862d034ce426fca0c4240696235f3bc8",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border-top 선언(.35rem solid #fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-library.css",
           "fingerprint": "92d733fc0e00dc0361d1765fd1306ba7c51dca206ad971706258997489ea15e1",
-          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(repeating-linear-gradient(#728096 0 2px, transparent 2px 7px))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "6f902ff30a49830f138caf692c355ba23da0b6075bf54a3e9fd18d9ca87804ad",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#fafaf9)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "302e82f28d16078f5ac06eb2636c903c0b704dafca3e26bd63974a71a6c40839",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "ac8519abbd6d8e8acb81b8b3f000a2697dfa16fd85758d88ea5a9d593b526985",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#2563eb)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "66159d88205607c3c96dc9bb3fd5b82caae9c488ba2c90a4056b3863d305725f",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid #d7dce5)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "cdb6313f086dd1c8e045240ef050ef3a6c1abfd6c58f7cf9c3cbea9983951330",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#172033)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "4b5f320529bd5f2f1788520972b34169e336252e3c2b13e60d7df9f965949c00",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "9768eabfbeda47536abd98000d44efa85c0b66cf6c988a50f663f5d8fa71ce7e",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#465166)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "4a90da75a426f698595a1d82a54bf7d593ebe34ff63cb230b2dc81bf0c7e49b5",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid #b9c5d8)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "7519256728295ca9d093a3a5b04be4358ed6fb07a33011a8728c4153c645e564",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#2149ae)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-controls.css",
           "fingerprint": "df967f209296d56102f32863748c28e5df31f11848fe9979174c24d241c9dae7",
-          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#f7f9ff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "b094ae23d88b3386bcc5ba3bec91059424d3d2c585367df44b546af9bded9de6",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "f536878ec9983f690b9f7415b21fb54393c069775b81068a9b29a29afc4ee28f",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 outline 선언(2px solid #2563eb)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "91d682b64592d30ab69488937455d461997860bf43b581aae836a5d98cb0af33",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 0 0 5px rgb(37 99 235 / 10%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "1e70c0767a4055a73aba22ea1497950ec4c393aef6bfc231a85a91006067747c",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(linear-gradient(145deg, #e9edf4, #dce3ee))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "cd5da468c9928ffddfedb7b5c27fd70b57a1bfe33fb53cf154359eca49ada90a",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#657187)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "c22b723eb9aed98bc7f62b78ef1a43db2a69a8b145e9ae2bea2d3dcfc4e8a06d",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#172033)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "29511a3c0a03c6e19adb352f7956eaeb3fcd2ab0fec1c24a96c769d321427491",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "446aa5a9ab0987f62aebe331531a922ecf7c65318d65a4e63532f118f97653cb",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#9aa3b2)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "c109a21c859d0322cff2f87abfd30758e04694c068d707742a9984253ec6ff27",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(radial-gradient(circle at 50% 20%, #fff, #f2f4f7))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "04513cb6036377922e3c1a985249722b7428f080021c936f02d4a135ae4a2c01",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(color-mix(in srgb, var(--g7pb-theme-accent, #2456df) 12%, transparent))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "ebbae196c3808494e22f5f3668f70f34cbeefcd0acd8423dce8cd856e6dcd177",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-theme-accent, #2456df))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "09a73760fa200f5e3ac575542073e655c5702206fdf2d7db6b14ea6307cab6e4",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px dashed color-mix(in srgb, var(--g7pb-theme-accent, #2456df) 32%, transparent))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "04ee01f60575d0bacd0725f8097972aa86e9696b4f938a9caa531074a2521bcc",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-muted, #64748b))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-canvas.css",
           "fingerprint": "5e36ee176a47429d090870989eacc34598c2fec8d9e5df5d63eee76389a755cc",
-          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px dashed color-mix(in srgb, var(--g7pb-theme-accent, #2456df) 28%, transparent))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "da9723c077f83eeceff9381c6f6b3542457480ab6c2a5d7f38865f4791f8cfc1",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(linear-gradient(145deg, #f7f5f0 0%, #f2f5fb 100%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "68f991c6a443fe01658a110ddaf12d0eec72dd49da17a12c0dd9ab5a7dfaaea7",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#e4e8ef)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "00c06ae865a15af2f372f0db70862d0dc995155f7adb30ef36c39fe35acce670",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 24px 70px rgb(23 32 51 / 14%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "6b884048fa4296c33453b2073c540c18ea2fac52ff56dcce32a029a14f9ee01c",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "ddd4ed29636fcbdde226f919dc36b7be95d860cfe1dba421e919f4da426726ae",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-muted, #526071))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "8c9e741bd187ec5d0f81a32bc1b393bd96fe20b20c97d6006d84f3481bfcbc5a",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "ffe17e82779b7f92785ee1d39b59bf4373af76011503a9f1edae952000b72d44",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "fa802c727c2d0fc7841973f7f4854f0043600faa1b486a2f146a06fe1b31e03f",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#e7ebf2)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "e0c40bbfd43c481a336984ebcbfcb0eae0bcfc1b5f44b7ecdff0d741e883dd0d",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid rgb(255 255 255 / 16%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "b0e3e47a882f5adb5986122cb7f7f4e5c5dd07da90f9b46e1ed26667cd9c3a52",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(rgb(255 255 255 / 7%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "09deeb9fc68a296bcef1caf7ad9ce1854a71eeb448ad02e7bd2f896a81808bd8",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#cbd3df)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "2fc62b697f9c0a1f4cce6e39224ca715f6d32512a83911fc3507cd15963637e6",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "91e1b60e1f52d614ddad52f7d3062e89fa0ec58302d78ee4a758d5165133bc8f",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid rgb(255 255 255 / 24%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "4c562023c2af84efa3032c095d9b7b386850ad70c557f2fa2205fea387e584f7",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(rgb(255 255 255 / 8%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "32443aac386686017699c68e9782f52ee133a4a3a28ffccdb0e2a20d45fee680",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#aeb8c7)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "3a5f42e4fffa7c36710d1af2513611bdf4cadce1f3dde62ab5bd87a84da1fa25",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#667085)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "e6b99418782bf037044313fde34409adc754d20c25265fc84fa37c8197c9ff0f",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#465166)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "0ba38a9c2a3188bc3e14b1555e60868b20e6ee793044f031c96f16c49c21c297",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border-top 선언(1px solid #d9dee8)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "13ecec78712eaaafa45f67910df17df7f2c8460cdb6f8ae06c208da52a9224fb",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border-bottom 선언(1px solid #d9dee8)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "5201df17c5edbf76bf80fe058f3ab3101a56fd5a4f615c32f758845ebbb4cb5a",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "194447885bc5220b0c22ab70d1f8babea3ea1d4996b3e9a45bf6ee130751c270",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border-color 선언(#2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "aa967d54520af1a33aa4720eff52461b608a09b2bdea2b339b1523660b6f6b29",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(inset 0 4px #2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "b7e1de86c290744590eeccf6608cf5c7294b3544ca7cd0803a8d3e0a6676f06c",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#667085)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "0744ec4d9716801a81f5032c67678ba0961693ab870db027667d2e9fac9da7b8",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "226e98a8caca58c9be4d8e7e76f372572e4be0bea6f0feea4b1196e86912068d",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#172033)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "7e27494eb6b2a648bbe85a8c2cc9ed388b42f787d6c96da1aa0da2c94f6ed7e3",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "083695a585c61bfe9be6f1f26b0e1701f9c57bfb1c0ab18e6bd8df1839f2b2ee",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "873009475c7863be70febfced9398f669241d9c2f44dfcce0c740d8eab73e527",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-muted, #526071))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "d18113611db30d4bfa73e6ab8f1893d962e8661390c248943d3a774dfa7bc9b3",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-muted, #526071))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "4a79548377673756b8d41d7cb803564c09837eeb0dbbfde93d286d457fef1f01",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#dfe4ed)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "dfbbf732c19b6413a3e2185e98e0db7b10c83a6c01b324d5f8d9e2ffc98325b1",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 accent-color 선언(#2458d6)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "58f0d9d011e2ddcd9eb7b86a2bf2945529cb9d4d238b228c31d4313ceb35ddd4",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 accent-color 선언(#4f46e5)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "fec901a017e4b32483427059caf6e88422de58860eefac6f7bfe9f52af50208a",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 accent-color 선언(#059669)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "bdd64e18ad00421f9847de66265124294365be1a5518157eef85bb4d45d99700",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 accent-color 선언(#d97706)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "2545cfb843e2c3fd3cd5f04ab05215ef9c0f43778c4e752fe125ece0ac5fe308",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#667085)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "fba172a8518b4640149c2e69f8d8065b5d054dae8a2df007a77f885fbc939bf0",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border-top 선언(1px solid #d9dee8)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "7661b8c60fd1a7e550214496a2c12b708a033b7bd9eeee6e4b4006a65b8787d4",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border-bottom 선언(1px solid #d9dee8)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "af4ce7b538ff3153159a53a131744a35f85d43be0999078cb4c9fc5e64eb0136",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#98a2b3)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "a145e2129074cc07e65fc57799b33afc9283adc650f269daaa9d7a5c49041bf6",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#667085)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "1c219ba8d3b134d86fcc8c3fc55d20591e32ef8460753eb65e10840691da0bec",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#8290a4)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "de3fc4fe4903e4f39fd105e9ec06e6969826758c17f74e0ea1a8ad6b86533c88",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#e5e9f0)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "a24f8eacebbbea25cfb08b5f929411f9074fd66a95d2e18f27cd14b9ccdd068b",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#667085)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "99be252a90fbd29f416f1c74a6777e19419cbad89d48f8acd5a154d813e48b9b",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "71757a1c9481d1179ed83b8cdbf50836633c72ccb4a6be09ed7b509ac97aa9d6",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(linear-gradient(90deg, rgb(8 15 28 / 88%), rgb(8 15 28 / 18%)))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "0f941d014b7472287b6d4a3be067c5eb083d17a7391ff20b75582a8c2cf24e53",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "58c38e8548f09a81ae44617127913e95c05aa89c76821e28e26936e3dbee018b",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#e5e7eb)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "5e417e0aecd4847639415eca72a01428abf9a6d6f4d707a95609b8d4f4d3b0f8",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#111827)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "7b2a031f8c9aa0d40448fe2a2dc25eaed322e96f01916547b1d18ed8166b5de3",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 2rem 5rem rgb(15 23 42 / 18%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "067fdfd7f77370acfb6fe20a2c1a8b46efd217ab414c3f206ece8e0d34c0e655",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(color-mix(in srgb, var(--g7pb-theme-accent) 8%, #fff))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "a41df80b1d34e61e0a2e460c17f4e1cf1cd15113c0c5e8c862e5bb71747174d2",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 2rem 5rem rgb(15 23 42 / 12%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "bb01da1eb69d6828d7445edabfedc91014d81d118a5b58f72bbe3636c2cb60bf",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#111827)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "22703b1fc10192fd914400d4d0405bd4b8337cca0479146dfb34384d4679d722",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 2rem 4rem rgb(15 23 42 / 15%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "8abf5358f9da11b0093333b25a3c1edf38582971fcd2e5429f9c604fd66b970a",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(rgb(255 255 255 / 90%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "35bb5d77f739028334b8419f9da22747272313e4127195120f1620e98b28f9fc",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 2rem 5rem rgb(15 23 42 / 12%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-blocks.css",
           "fingerprint": "dad7b3ff471d7aab3f754bf876cee41cae55977d882c01bc3a9299b0addeecf7",
-          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-muted, #526071))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "1e8cbba5e86be94ce8742fded4007f19b7a3db9f805082251670fb19fd5402cb",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 box-shadow 선언(0 1.5rem 4rem rgb(15 23 42 / 8%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "1d00d32f69065aa8ac698a1c079a0bd9deba05795d24a433a4ca451580b76401",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid #cad4e1)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "9683d1fad0add0a4379292e07e62deec25dbea5a6e2909b5cd25bbff5cdbf49d",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(#e9eef2)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "2be9c08127e2f5e6e35490e0e8f6995a10ec734cc8c67c45907caa7374ef8ed8",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background-image 선언(linear-gradient(32deg, transparent 45%, #bcc7d0 46% 49%, transparent 50%), linear-gradient(98deg, transparent 45%, #c7d2db 46% 49%, transparent 50%), repeating-linear-gradient(0deg, transparent 0 36px, #d2dce3 37px 39px))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "eb7e9e9007211056e60aef108029f118f4ad2bb0203fb65ace812bb029940de5",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 filter 선언(drop-shadow(0 5px 8px rgb(15 23 42 / 24%)))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "53fd92a2ebf6850c063fe624eebc1725429b1af0ab27a59c57ef220fc719d606",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(rgb(255 255 255 / 92%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "5c3170fa29514d38e688dbc8fd0f747f59df41b780a50cfc874afea2c7a25f2c",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#f59e0b)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "f5cda21cdafcf9109ea00739fa74296c11bdb08d9c0a599dd6742216191166b5",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-muted, #526071))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "886512d4f86958cd1067b8f9883e820edc071e8bdca513dda854ecdf5918ba05",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid rgb(255 255 255 / 16%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "3c5933ac8c6bd13adab4d09083f4ca1887ce5bd4a04a83cc907ca1d0a1b348ae",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 border 선언(1px solid rgb(255 255 255 / 16%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "ec805a3e0ddeb407417404941f9253edf67392023d7f0178b8b4b4ca64bfb478",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#f59e0b)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "f5b1effb17e6c18f25ae78d46976c8ecf475de0679e1605042698810ac45876d",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 outline 선언(3px solid color-mix(in srgb, var(--g7pb-theme-accent) 55%, white))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "d9dcf4478ef4270c242670fbe4a61a83cb5c06005cd9a4f6f7afb79b72efd626",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 --g7pb-notice-tone 선언(#137a4a)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "39ac60ae33fb185727d3ec1fd70799df86ad815967f6648725f4650b54942ed3",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 --g7pb-notice-tone 선언(#9a5b00)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "d3d8bb8f72170352657f2209141204eaf5b4d5103992b3f4c064c11529392e21",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 --g7pb-notice-tone 선언(#b42318)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "c81c6e7a1c925b5211b6b7183f098798bdb98bb0c6161e7945bf7ca2ee9cd568",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#fff)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "0d4219735714ec5896ed888848d2d0bb62a4d4e8d33cde30f0e2c7b07d1bace0",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(rgb(15 23 42 / 72%))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-catalog.css",
           "fingerprint": "88c30038b8438235fbb32df061c88988662ec966ce3f16702d76081b612bc28b",
-          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-muted, #526071))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "5742e42d7cd37d95aab63ce9e5e25ff64a92a58be0b5d7c28be03919194d3396",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(linear-gradient(145deg, #2b3950, #40516c))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "956ad42c01e0582fb97c1cadef3def038867c50d1da0cbbe37983cd853c0f619",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(#dbe5f3)을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "908afa5aa4dccf25edbb7b719928d5b437a1ae92ad9d9eb5aa4eb61ebd4520d2",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(var(--g7pb-page-bg, #fff))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "1cf3e5b6fe39d2bdf6edafa27a80f2c66c3a10dcb672cc41e623f5da9dafa1c5",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-text, #172033))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "41c689568b510cce1899f1df33e531d1ffcc3852b0458329b9b96c4339c40521",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(var(--g7pb-page-panel, #f3f1ed))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "d3e3b733befb8481300cd374af4eef5a69fcd725055b473689632bb51dcd8977",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-text, #172033))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "41a5095fecb0d56ec296d296845556fd3e9313ae7a2367e7c4ddc35c181b0b47",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(var(--g7pb-page-bg, #fff))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "ebb7ecd83556462113bae801822cfdced75f8d1cecfb405b128105df58832ab0",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-text, #172033))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "3f7b502318ba0e70b4bc0e5f8a9f95d46734faf5177d0f374239353bdfb209c6",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 background 선언(var(--g7pb-page-panel, #f3f1ed))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         },
         {
           "path": "resources/css/page-builder-editor-appearance.css",
           "fingerprint": "51a2122d646012bac6258d2361b32c9ec9ff20171c68b2810cf3ebc2eae99980",
-          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+          "reason": "F 책임 추출: 기존 color 선언(var(--g7pb-page-text, #172033))을 동일 지문으로 이동한 미해소 색상 부채입니다. 이 이동은 의미 토큰화나 테마 품질 승인으로 계산하지 않습니다."
         }
       ]
     },

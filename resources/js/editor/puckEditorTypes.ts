@@ -4,7 +4,7 @@ import type { BlockVisibility, PageBuilderDocument } from '../documents/types';
 import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, ElementAppearanceMap } from '../documents/blockPresentation';
 import type { CtaBlockProps, FeatureItem, FeaturesBlockProps, HeroBlockProps } from '../documents/builtinBlockContracts';
 import type { BlockContainerEditorProps } from './blockAppearance';
-import type { CatalogEditorComponents } from './catalogBlocks';
+import type { CatalogEditorComponents } from './catalogEditorTypes';
 import type { LayoutCatalogEditorComponents } from './layoutCatalogBlocks';
 import type { PageDesignProps } from './pageDesignTokens';
 

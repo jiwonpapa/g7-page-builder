@@ -40,6 +40,13 @@ for (const style of ['drawer-right', 'drawer-left', 'dropdown', 'sheet-bottom'])
       expect(await page.locator('html').evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
       const child = menu.locator('[data-g7pb-submenu-toggle]').first(); await child.click();
       await expect(child).toHaveAttribute('aria-expanded', 'true'); await expect(menu.getByRole('link', { name: '상세 안내 1', exact: true })).toBeVisible();
+      const spacing = await menu.locator('.g7pb-mobile-subnav').first().evaluate((node) => ({
+        margin: Number.parseFloat(getComputedStyle(node).marginLeft),
+        padding: Number.parseFloat(getComputedStyle(node).paddingLeft),
+        rootSize: Number.parseFloat(getComputedStyle(node.ownerDocument.documentElement).fontSize),
+      }));
+      expect(spacing.margin).toBeCloseTo(spacing.rootSize * .8, 1);
+      expect(spacing.padding).toBeCloseTo(spacing.rootSize * .9, 1);
       if (style !== 'dropdown') {
         expect(await page.locator('main').evaluate((node) => (node as HTMLElement).inert)).toBe(true);
         await menu.getByRole('link', { name: '로그아웃', exact: true }).focus(); await page.keyboard.press('Tab');
@@ -51,6 +58,29 @@ for (const style of ['drawer-right', 'drawer-left', 'dropdown', 'sheet-bottom'])
       await page.screenshot({ path: info.outputPath(`${style}-${width}.png`), animations: 'disabled' });
       await page.keyboard.press('Escape'); await expect(menu).toBeHidden(); await expect(toggle).toBeFocused();
       expect(await page.locator('main').evaluate((node) => (node as HTMLElement).inert)).toBe(false);
+    }
+    if (style === 'drawer-right') {
+      // Keep the actual compiled node and responsive attributes; only change its CSS ancestry.
+      await menu.evaluate((node) => node.ownerDocument.body.append(node));
+      await expect(menu).toHaveAttribute('data-g7pb-unified-menu', '');
+      await expect(toggle).toHaveAttribute('data-g7pb-menu-ready', 'true');
+      for (const [mode, foreground, background] of [
+        ['dark', 'rgb(238, 242, 248)', 'rgb(23, 32, 51)'],
+        ['light', 'rgb(23, 32, 51)', 'rgb(255, 255, 255)'],
+      ]) {
+        await page.locator('html').evaluate((node, nextMode) => {
+          node.classList.toggle('dark', nextMode === 'dark');
+          node.setAttribute('data-theme', nextMode);
+        }, mode);
+        await toggle.click(); await expect(menu).toBeVisible();
+        await expect(menu).toHaveCSS('color', foreground);
+        await expect(menu).toHaveCSS('background-color', background);
+        await expect(menu.getByLabel('언어', { exact: true })).toHaveCSS('color', foreground);
+        await expect(menu.getByLabel('언어', { exact: true })).toHaveCSS('background-color', background);
+        await menu.getByLabel('언어', { exact: true }).focus();
+        await page.keyboard.press('Escape'); await expect(menu).toBeHidden(); await expect(toggle).toBeFocused();
+        expect(await page.locator('main').evaluate((node) => (node as HTMLElement).inert)).toBe(false);
+      }
     }
     await toggle.click(); await page.setViewportSize({ width: 900, height: 844 }); await expect(menu).toBeHidden();
     await expect(page.getByRole('button', { name: '계정 메뉴', exact: true })).toBeVisible();
@@ -100,6 +130,18 @@ test('WebKit mobile engine · drawer, select, keyboard, reduced motion and close
     await expect(menu).toBeVisible();
     await menu.locator('[data-g7pb-menu-close]').focus();
     await page.screenshot({ path: info.outputPath('webkit-mobile.png'), animations: 'disabled' });
+    await page.keyboard.press('Escape'); await expect(menu).toBeHidden(); await expect(toggle).toBeFocused();
+    expect(await page.locator('main').evaluate((node) => (node as HTMLElement).inert)).toBe(false);
+    // Always exercise the reduced-motion sheet, including the desktop-selected WebKit gate.
+    await fixture(page, 'sheet-bottom');
+    await toggle.click(); await expect(menu).toBeVisible();
+    await expect(menu).toHaveCSS('animation-name', 'none');
+    for (const height of [500, 700]) {
+      await page.setViewportSize({ width: 390, height });
+      await expect(menu).toBeVisible();
+      await expect.poll(() => menu.evaluate((node) => Math.abs(node.getBoundingClientRect().bottom - innerHeight))).toBeLessThanOrEqual(2);
+      await expect(menu).toHaveCSS('animation-name', 'none');
+    }
     await page.keyboard.press('Escape'); await expect(menu).toBeHidden(); await expect(toggle).toBeFocused();
     expect(await page.locator('main').evaluate((node) => (node as HTMLElement).inert)).toBe(false);
   } finally { await context.close(); await browser.close(); }

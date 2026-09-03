@@ -202,7 +202,7 @@ test('initializes synthetic sliders and motion from the shipped bundle', async (
   });
 });
 
-test('hydrates synthetic shell controls and keeps service requests explicit', async ({ page }) => {
+test('hydrates synthetic shell controls and keeps service requests explicit', async ({ page }, info) => {
   await page.addInitScript(() => localStorage.setItem('auth_token', 'public-contract-token'));
   const options = { search: true, account: true, theme: true, locale: true, currency: false, cart: false, notifications: false };
   const hostStyles = `<style>
@@ -211,7 +211,7 @@ test('hydrates synthetic shell controls and keeps service requests explicit', as
     * { box-sizing: content-box; }
     .host-sentinel { width: 100px; padding: 7px; border: 3px solid; }
   </style>`;
-  const markup = `<aside class="host-sentinel">Host template sentinel</aside><div hidden data-g7pb-runtime-config='{"commerceAvailable":false}'></div><header><div class="g7pb-system-controls" data-g7pb-system-controls data-g7pb-shell-options='${JSON.stringify(options)}'></div></header><main class="g7pb-page g7pb-document-theme g7pb-theme-mode-light"><h1>Shell contract</h1><section class="g7pb-block g7pb-surface--contrast"><section class="g7pb-block g7pb-surface--default"><p>Default child text</p></section><section class="g7pb-block g7pb-surface--soft"><p>Soft child text</p></section><form class="g7pb-inquiry-form"><footer class="g7pb-inquiry-form__footer"><p>Card status text</p></footer></form></section></main>`;
+  const markup = `<aside class="host-sentinel">Host template sentinel</aside><div hidden data-g7pb-runtime-config='{"commerceAvailable":false}'></div><aside class="g7pb-site-announcement g7pb-site-announcement--light"><p>Explicit light announcement</p></aside><header class="g7pb-site-header"><div class="g7pb-site-header__inner"><a class="g7pb-site-brand" href="/">Shell brand</a><nav class="g7pb-site-nav"><ul><li><a href="/shell-parent">Parent</a><ul class="g7pb-site-subnav"><li><a href="/shell-child">Child route</a></li></ul></li></ul></nav><div class="g7pb-system-controls" data-g7pb-system-controls data-g7pb-shell-options='${JSON.stringify(options)}'></div></div></header><main class="g7pb-page g7pb-document-theme g7pb-theme-mode-light"><h1>Shell contract</h1><blockquote class="g7pb-blockquote"><cite>Light source</cite></blockquote><nav class="g7pb-breadcrumbs"><span aria-current="page">Light current route</span></nav><section class="g7pb-block g7pb-surface--contrast"><section class="g7pb-block g7pb-surface--default"><p>Default child text</p></section><section class="g7pb-block g7pb-surface--soft"><p>Soft child text</p></section><form class="g7pb-inquiry-form"><footer class="g7pb-inquiry-form__footer"><p>Card status text</p></footer></form></section></main><section class="g7pb-page g7pb-document-theme g7pb-theme-mode-dark"><blockquote class="g7pb-blockquote"><cite>Dark source</cite></blockquote><nav class="g7pb-breadcrumbs"><span aria-current="page">Dark current route</span></nav></section><footer class="g7pb-site-footer"><a class="g7pb-site-brand" href="/">Footer brand</a><p class="g7pb-site-footer__legal">Footer legal</p></footer>`;
   await withPublicFixture(page, markup, {
     'GET /api/auth/user': () => ({ json: { data: { uuid: 'public-fixture-member', name: 'Synthetic member', is_admin: false } } }),
     'GET /api/public/locales/active': () => ({ json: { data: { locales: ['ko', 'en'], locale_names: { ko: '한국어', en: 'English' } } } }),
@@ -228,7 +228,7 @@ test('hydrates synthetic shell controls and keeps service requests explicit', as
       await expect(sentinel).toHaveCSS('box-sizing', 'content-box');
       await expect(sentinel).toHaveCSS('color', 'rgb(7, 19, 31)');
       expect((await sentinel.boundingBox())?.width).toBe(120);
-      await expect(page.locator('.g7pb-page')).toHaveCSS('box-sizing', 'border-box');
+      for (const body of await page.locator('.g7pb-page').all()) await expect(body).toHaveCSS('box-sizing', 'border-box');
       await expect(page.locator('.g7pb-system-controls')).toHaveCSS('box-sizing', 'border-box');
     };
     await expectHostUnchanged();
@@ -244,18 +244,68 @@ test('hydrates synthetic shell controls and keeps service requests explicit', as
     await expect(card).toHaveCSS('color', 'rgb(23, 32, 51)');
     await expect(card).toHaveCSS('border-top-color', 'rgb(223, 226, 232)');
     await expect(card.getByText('Card status text', { exact: true })).toHaveCSS('color', 'rgb(82, 96, 113)');
+    const header = page.locator('.g7pb-site-header');
+    const footer = page.locator('.g7pb-site-footer');
+    const setHostTheme = async (mode: 'light' | 'class-dark' | 'data-dark'): Promise<void> => {
+      await page.evaluate((hostMode) => {
+        document.documentElement.classList.toggle('dark', hostMode === 'class-dark');
+        if (hostMode === 'data-dark') document.documentElement.dataset.theme = 'dark';
+        else delete document.documentElement.dataset.theme;
+      }, mode);
+    };
+    const expectIndependentPages = async (): Promise<void> => {
+      await expect(page.locator('.g7pb-theme-mode-light')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+      await expect(page.locator('.g7pb-theme-mode-dark')).toHaveCSS('background-color', 'rgb(16, 22, 32)');
+      await expect(page.getByText('Light source', { exact: true })).toHaveCSS('color', 'rgb(23, 32, 51)');
+      await expect(page.getByText('Light current route', { exact: true })).toHaveCSS('color', 'rgb(23, 32, 51)');
+      await expect(page.getByText('Dark source', { exact: true })).toHaveCSS('color', 'rgb(244, 247, 251)');
+      await expect(page.getByText('Dark current route', { exact: true })).toHaveCSS('color', 'rgb(244, 247, 251)');
+      await expect(page.locator('.g7pb-site-announcement--light')).toHaveCSS('color', 'rgb(23, 32, 51)');
+      await expect(page.locator('.g7pb-site-announcement--light')).toHaveCSS('background-color', 'rgb(238, 241, 246)');
+      await expect(footer).toHaveCSS('background-color', 'rgb(17, 24, 39)');
+      await expect(footer).toHaveCSS('color', 'rgb(214, 220, 230)');
+      await expect(footer.locator('.g7pb-site-footer__legal')).toHaveCSS('color', 'rgb(145, 155, 173)');
+      await expectHostUnchanged();
+    };
+    for (const mode of ['light', 'class-dark', 'data-dark'] as const) {
+      await setHostTheme(mode);
+      await expect(header).toHaveCSS('color', mode === 'light' ? 'rgb(23, 32, 51)' : 'rgb(238, 242, 248)');
+      await expectIndependentPages();
+    }
+    await setHostTheme('light');
+    await header.evaluate((element) => element.classList.add('is-transparent'));
+    await expect(header).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(header).toHaveCSS('backdrop-filter', 'none');
+    if ((page.viewportSize()?.width ?? 0) >= 900) {
+      await header.getByRole('link', { name: 'Parent', exact: true }).hover();
+      const subnav = header.locator('.g7pb-site-subnav');
+      await expect(subnav).toBeVisible();
+      await expect(subnav).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+      await expect(subnav).toHaveCSS('color', 'rgb(23, 32, 51)');
+    }
     const controls = page.locator('[data-g7pb-system-controls]');
     await expect(controls).toHaveAttribute('data-g7pb-shell-mounted', 'true');
     await controls.locator('[data-g7pb-shell-toggle="account"]').click();
     const account = controls.locator('[data-g7pb-shell-panel="account"]');
     await expect(account.locator('[data-g7pb-account-name]')).toHaveText('Synthetic member');
     await expect(account.getByRole('link', { name: '마이페이지', exact: true })).toBeVisible();
+    for (const mode of ['light', 'class-dark', 'data-dark'] as const) {
+      await setHostTheme(mode);
+      await expect(account).toHaveCSS('background-color', mode === 'light' ? 'rgb(255, 255, 255)' : 'rgb(23, 32, 51)');
+      await expect(account).toHaveCSS('color', mode === 'light' ? 'rgb(23, 32, 51)' : 'rgb(238, 242, 248)');
+      await expect(account.getByRole('link', { name: '마이페이지', exact: true })).toHaveCSS('color', mode === 'light' ? 'rgb(23, 32, 51)' : 'rgb(238, 242, 248)');
+      await expectIndependentPages();
+    }
+    await info.attach('transparent-header-dark-account', { body: await page.screenshot(), contentType: 'image/png' });
+    await setHostTheme('light');
     await expect(account.locator('[data-g7pb-system-guest]')).toBeHidden();
     await expect(account.locator('[data-g7pb-system-admin]')).toBeHidden();
     await page.keyboard.press('Escape');
     await expect(controls.locator('[data-g7pb-shell-toggle="account"]')).toBeFocused();
     await controls.locator('[data-g7pb-shell-toggle="preferences"]').click();
     await expect(controls.locator('[data-g7pb-system-locale]')).toBeVisible();
+    await expect(controls.locator('[data-g7pb-system-locale]')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(controls.locator('[data-g7pb-system-locale]')).toHaveCSS('color', 'rgb(23, 32, 51)');
     await expect(controls.locator('[data-g7pb-system-locale] option')).toHaveText(['한국어', 'English']);
     await controls.locator('[data-g7pb-system-theme]').click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -263,6 +313,13 @@ test('hydrates synthetic shell controls and keeps service requests explicit', as
     await controls.locator('[data-g7pb-shell-toggle="search"]').click();
     const search = controls.getByRole('searchbox');
     await expect(search).toBeFocused();
+    await expect(search).toHaveCSS('color', 'rgb(23, 32, 51)');
+    await expect(search).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(search).toHaveCSS('outline-style', 'solid');
+    await expect(search).toHaveCSS('outline-width', '2px');
+    const searchAction = controls.locator('.g7pb-system-search button');
+    await expect(searchAction).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(searchAction).toHaveCSS('background-color', 'rgb(36, 86, 223)');
     await search.fill('Synthetic query');
     await expect(search).toHaveValue('Synthetic query');
     await page.keyboard.press('Escape');

@@ -1,5 +1,8 @@
 
 
+.g7pb-preview-richtext.g7pb-preview-rich-text__content { color: var(--g7pb-theme-muted); font-size: 1rem; line-height: 1.8; overflow-wrap: anywhere; }
+.g7pb-preview-button { display: inline-flex; min-height: 3rem; align-items: center; justify-content: center; padding: .75rem 1.25rem; border-radius: var(--g7pb-theme-radius); font-weight: 700; text-decoration: none; }
+
 .g7pb-document-theme .g7pb-preview-hero,
 .g7pb-document-theme .g7pb-preview-features,
 .g7pb-document-theme .g7pb-preview-cta-split,

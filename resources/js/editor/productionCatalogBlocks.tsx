@@ -1,115 +1,51 @@
 import React from 'react';
 import type { Config } from '@puckeditor/core';
 import { CatalogBlockFrame as Frame } from './CatalogBlockFrame';
-
-import { createMotionField, DEFAULT_BLOCK_MOTION, normalizeBlockMotion } from './blockMotion';
 import { createMediaField } from './MediaPickerField';
 import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import { CatalogIcon } from './catalogIcon';
-import { normalizeElementAppearanceMap } from './canvasEditingContract';
+import { createMotionField } from './blockMotion';
+import type { AppearanceEditorProps } from './catalogAppearance';
 import {
-  ANCHOR_MENU_BLOCK_TYPE,
-  BLOCKQUOTE_BLOCK_TYPE,
-  BREADCRUMBS_BLOCK_TYPE,
-  CARD_GRID_BLOCK_TYPE,
-  DIVIDER_BLOCK_TYPE,
-  IMAGE_CAROUSEL_BLOCK_TYPE,
-  NOTICE_BLOCK_TYPE,
-  SOCIAL_LINKS_BLOCK_TYPE,
-  type AnchorMenuItem,
-  type BlockAppearance,
-  type BlockMotion,
-  type BreadcrumbItem,
-  type CardGridItem,
-  type ElementAppearanceMap,
-  type ImageCarouselItem,
-  type PageBuilderBlock,
-  type SocialLinkItem,
-  type SocialNetwork,
-} from '../documents/types';
-
-interface AppearanceEditorProps {
-  surface: BlockAppearance['surface'];
-  spacing: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  elementStyles?: ElementAppearanceMap;
-  motion: BlockMotion;
-}
-
-export interface DividerEditorProps extends AppearanceEditorProps {
-  variant: 'solid' | 'dashed' | 'gradient';
-  width: 'narrow' | 'standard' | 'full';
-  label: string;
-}
-
-export interface BlockquoteEditorProps extends AppearanceEditorProps {
-  quote: string;
-  citation: string;
-  role: string;
-  alignment: 'left' | 'center';
-  variant: 'line' | 'mark';
-}
-
-export interface NoticeEditorProps extends AppearanceEditorProps {
-  tone: 'info' | 'success' | 'warning' | 'critical';
-  title: string;
-  body: string;
-  actionLabel: string;
-  actionUrl: string;
-}
-
-export interface CardGridEditorProps extends AppearanceEditorProps {
-  eyebrow: string;
-  heading: string;
-  items: CardGridItem[];
-  columns: '2' | '3';
-  variant: 'plain' | 'outlined';
-  layout: 'grid' | 'bento' | 'rail' | 'editorial' | 'numbered';
-}
-
-export interface BreadcrumbsEditorProps extends AppearanceEditorProps {
-  items: BreadcrumbItem[];
-  currentLabel: string;
-}
-
-export interface AnchorMenuEditorProps extends AppearanceEditorProps {
-  label: string;
-  items: AnchorMenuItem[];
-  sticky: boolean;
-  alignment: 'left' | 'center';
-}
-
-export interface SocialLinksEditorProps extends AppearanceEditorProps {
-  heading: string;
-  items: SocialLinkItem[];
-  variant: 'icons' | 'labels';
-  alignment: 'left' | 'center' | 'right';
-}
-
-export interface ImageCarouselEditorProps extends AppearanceEditorProps {
-  eyebrow: string;
-  heading: string;
-  images: ImageCarouselItem[];
-  autoplay: boolean;
-  interval: '3000' | '5000' | '7000';
-  controls: 'arrows' | 'dots' | 'both';
-  aspectRatio: '16:9' | '4:3' | '1:1';
-}
-
-export interface ProductionCatalogEditorComponents {
-  Divider: DividerEditorProps;
-  Blockquote: BlockquoteEditorProps;
-  Notice: NoticeEditorProps;
-  CardGrid: CardGridEditorProps;
-  Breadcrumbs: BreadcrumbsEditorProps;
-  AnchorMenu: AnchorMenuEditorProps;
-  SocialLinks: SocialLinksEditorProps;
-  ImageCarousel: ImageCarouselEditorProps;
-}
-
-export type ProductionComponentType = keyof ProductionCatalogEditorComponents;
+  type DividerEditorProps,
+  type BlockquoteEditorProps,
+  type NoticeEditorProps,
+  type CardGridEditorProps,
+  type BreadcrumbsEditorProps,
+  type AnchorMenuEditorProps,
+  type SocialLinksEditorProps,
+  type ImageCarouselEditorProps,
+  type ProductionCatalogEditorComponents,
+  SOCIAL_NETWORKS,
+  DEFAULT_DIVIDER,
+  DEFAULT_BLOCKQUOTE,
+  DEFAULT_NOTICE,
+  DEFAULT_CARD_GRID,
+  DEFAULT_BREADCRUMBS,
+  DEFAULT_ANCHOR_MENU,
+  DEFAULT_SOCIAL_LINKS,
+  DEFAULT_IMAGE_CAROUSEL,
+  asRecord,
+  normalizeCards,
+  normalizeBreadcrumbs,
+  normalizeAnchors,
+  normalizeSocialLinks,
+  normalizeImages,
+} from './productionCatalogData';
+export type {
+  DividerEditorProps,
+  BlockquoteEditorProps,
+  NoticeEditorProps,
+  CardGridEditorProps,
+  BreadcrumbsEditorProps,
+  AnchorMenuEditorProps,
+  SocialLinksEditorProps,
+  ImageCarouselEditorProps,
+  ProductionCatalogEditorComponents,
+  ProductionComponentType,
+} from './productionCatalogData';
+export { canonicalProductionBlockToPuck, productionPuckBlockToCanonical } from './productionCatalogCodec';
 
 const SURFACE_OPTIONS = [
   { label: '기본', value: 'default' },
@@ -123,134 +59,10 @@ const SPACING_OPTIONS = [
   { label: '넓게', value: 'spacious' },
 ];
 
-const SOCIAL_NETWORKS: Array<{ label: string; value: SocialNetwork }> = [
-  { label: 'Instagram', value: 'instagram' }, { label: 'YouTube', value: 'youtube' },
-  { label: 'Facebook', value: 'facebook' }, { label: 'LinkedIn', value: 'linkedin' },
-  { label: 'X', value: 'x' }, { label: 'Kakao', value: 'kakao' },
-  { label: '블로그', value: 'blog' }, { label: '웹사이트', value: 'website' },
-];
-
-const DEFAULT_DIVIDER: DividerEditorProps = {
-  variant: 'solid', width: 'standard', label: '', surface: 'default', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_BLOCKQUOTE: BlockquoteEditorProps = {
-  quote: '고객이 기억할 한 문장의 경험을 인용문으로 보여주세요.', citation: '홍길동', role: '고객', alignment: 'left', variant: 'mark',
-  surface: 'soft', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_NOTICE: NoticeEditorProps = {
-  tone: 'info', title: '방문 전 확인해 주세요', body: '운영 시간, 신청 조건처럼 놓치면 안 되는 내용을 간결하게 안내합니다.',
-  actionLabel: '자세히 보기', actionUrl: '/guide', surface: 'soft', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_CARD_GRID: CardGridEditorProps = {
-  eyebrow: 'SERVICES', heading: '필요한 서비스를 선택하세요',
-  items: [
-    { kicker: '01', title: '상담', body: '목표와 상황을 함께 정리해 적합한 방향을 제안합니다.', linkLabel: '상담 보기', linkUrl: '/consulting' },
-    { kicker: '02', title: '구축', body: '검증된 구조와 일정으로 실제 사용할 결과물을 완성합니다.', linkLabel: '구축 보기', linkUrl: '/build' },
-    { kicker: '03', title: '운영', body: '발행 이후의 개선과 유지관리까지 안정적으로 지원합니다.', linkLabel: '운영 보기', linkUrl: '/operation' },
-  ],
-  columns: '3', variant: 'outlined', layout: 'bento', surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_BREADCRUMBS: BreadcrumbsEditorProps = {
-  items: [{ label: '홈', url: '/' }, { label: '서비스', url: '/services' }], currentLabel: '상세 안내',
-  surface: 'default', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_ANCHOR_MENU: AnchorMenuEditorProps = {
-  label: '이 페이지에서', items: [{ label: '소개', anchor: 'intro' }, { label: '서비스', anchor: 'services' }, { label: '문의', anchor: 'contact' }],
-  sticky: false, alignment: 'left', surface: 'default', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_SOCIAL_LINKS: SocialLinksEditorProps = {
-  heading: '공식 채널', items: [{ network: 'instagram', label: '인스타그램', url: 'https://instagram.com/' }, { network: 'youtube', label: '유튜브', url: 'https://youtube.com/' }],
-  variant: 'icons', alignment: 'left', surface: 'default', spacing: 'compact', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-const DEFAULT_IMAGE_CAROUSEL: ImageCarouselEditorProps = {
-  eyebrow: 'GALLERY', heading: '장면을 넘겨보세요',
-  images: [{ src: '', alt: '첫 번째 장면', caption: '첫 번째 장면' }, { src: '', alt: '두 번째 장면', caption: '두 번째 장면' }, { src: '', alt: '세 번째 장면', caption: '세 번째 장면' }],
-  autoplay: false, interval: '5000', controls: 'both', aspectRatio: '16:9',
-  surface: 'default', spacing: 'normal', motion: { ...DEFAULT_BLOCK_MOTION },
-};
-
-function asString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback;
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-}
-
-function normalizeArray<T>(value: unknown, fallback: T[], max: number, map: (item: Record<string, unknown>) => T): T[] {
-  const source = Array.isArray(value) ? value : fallback;
-  return source.slice(0, max).map((item) => map(asRecord(item)));
-}
-
 function inlineArrayContent(value: unknown, index: number, key: string, fallback: string): React.ReactNode {
   const item = Array.isArray(value) ? asRecord(value[index]) : {};
   const candidate = item[key];
   return React.isValidElement(candidate) || typeof candidate === 'string' ? candidate : fallback;
-}
-
-function normalizeCards(value: unknown): CardGridItem[] {
-  return normalizeArray(value, DEFAULT_CARD_GRID.items, 6, (item) => ({
-    kicker: asString(item.kicker), title: asString(item.title), body: asString(item.body),
-    linkLabel: asString(item.linkLabel), linkUrl: asString(item.linkUrl),
-  }));
-}
-
-function normalizeBreadcrumbs(value: unknown): BreadcrumbItem[] {
-  return normalizeArray(value, DEFAULT_BREADCRUMBS.items, 6, (item) => ({ label: asString(item.label), url: asString(item.url) }));
-}
-
-function normalizeAnchor(value: unknown): string {
-  const normalized = asString(value).trim().toLocaleLowerCase('en-US').replace(/^#+/, '')
-    .replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-');
-  if (!normalized) return 'section';
-  return (/^[a-z]/.test(normalized) ? normalized : `section-${normalized}`).slice(0, 80).replace(/-+$/g, '');
-}
-
-function normalizeAnchors(value: unknown): AnchorMenuItem[] {
-  return normalizeArray(value, DEFAULT_ANCHOR_MENU.items, 8, (item) => ({ label: asString(item.label), anchor: normalizeAnchor(item.anchor) }));
-}
-
-function normalizeSocialLinks(value: unknown): SocialLinkItem[] {
-  return normalizeArray(value, DEFAULT_SOCIAL_LINKS.items, 8, (item) => {
-    const network = asString(item.network) as SocialNetwork;
-    return { network: SOCIAL_NETWORKS.some((option) => option.value === network) ? network : 'website', label: asString(item.label), url: asString(item.url) };
-  });
-}
-
-function normalizeImages(value: unknown): ImageCarouselItem[] {
-  return normalizeArray(value, DEFAULT_IMAGE_CAROUSEL.images, 8, (item) => ({ src: asString(item.src), alt: asString(item.alt), caption: asString(item.caption) }));
-}
-
-function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance & { elementStyles?: ElementAppearanceMap } {
-  const record = asRecord(value);
-  const resolved: BlockAppearance = {
-    surface: record.surface === 'soft' || record.surface === 'contrast' ? record.surface : fallback.surface,
-    spacing: record.spacing === 'compact' || record.spacing === 'spacious' ? record.spacing : fallback.spacing,
-  };
-  if (record.textScale === 'compact' || record.textScale === 'large') resolved.textScale = record.textScale;
-  if (record.textAlign === 'center' || record.textAlign === 'right') resolved.textAlign = record.textAlign;
-  const elements = normalizeElementAppearanceMap(record.elementStyles ?? record.elements);
-  return Object.keys(elements).length > 0 ? { ...resolved, elementStyles: elements } : resolved;
-}
-
-function common(block: PageBuilderBlock, fallback: BlockAppearance): Pick<AppearanceEditorProps, 'surface' | 'spacing' | 'textScale' | 'textAlign' | 'elementStyles' | 'motion'> {
-  return { ...appearance(block.props.appearance, fallback), motion: normalizeBlockMotion(block.motion) };
-}
-
-function attachAppearance(props: Record<string, unknown>, raw: Record<string, unknown>, fallback: BlockAppearance, include: boolean): Record<string, unknown> {
-  const next = { ...props };
-  const editor = appearance({ surface: raw.surface, spacing: raw.spacing, textScale: raw.textScale, textAlign: raw.textAlign, elementStyles: raw.elementStyles }, fallback);
-  const { elementStyles, ...resolved } = editor;
-  const canonical: BlockAppearance = { ...resolved, ...(elementStyles && Object.keys(elementStyles).length > 0 ? { elements: elementStyles } : {}) };
-  if (include || canonical.surface !== fallback.surface || canonical.spacing !== fallback.spacing || canonical.textScale || canonical.textAlign || canonical.elements) next.appearance = canonical;
-  return next;
 }
 
 function safeLink(value: string): string {
@@ -275,7 +87,6 @@ function safeImage(value: string): string | null {
 function surfaceClass(props: AppearanceEditorProps): string {
   return `g7pb-preview-surface--${props.surface} g7pb-preview-spacing--${props.spacing} g7pb-text-scale--${props.textScale ?? 'balanced'} g7pb-text-align--${props.textAlign ?? 'left'}`;
 }
-
 
 function DividerPreview(props: DividerEditorProps & { id: string }): React.ReactElement {
   return <Frame id={props.id} type="divider" motion={props.motion} elementStyles={props.elementStyles}>
@@ -398,28 +209,3 @@ export const productionCatalogComponentConfigs: Config<ProductionCatalogEditorCo
     render: (props) => <ImageCarouselPreview {...props} />,
   },
 };
-
-export function canonicalProductionBlockToPuck(block: PageBuilderBlock): { type: ProductionComponentType; props: ProductionCatalogEditorComponents[ProductionComponentType] } | null {
-  const props = block.props;
-  if (block.type === DIVIDER_BLOCK_TYPE) return { type: 'Divider', props: { variant: props.variant === 'dashed' || props.variant === 'gradient' ? props.variant : 'solid', width: props.width === 'narrow' || props.width === 'full' ? props.width : 'standard', label: asString(props.label), ...common(block, { surface: 'default', spacing: 'compact' }) } };
-  if (block.type === BLOCKQUOTE_BLOCK_TYPE) return { type: 'Blockquote', props: { quote: asString(props.quote), citation: asString(props.citation), role: asString(props.role), alignment: props.alignment === 'center' ? 'center' : 'left', variant: props.variant === 'line' ? 'line' : 'mark', ...common(block, { surface: 'soft', spacing: 'normal' }) } };
-  if (block.type === NOTICE_BLOCK_TYPE) return { type: 'Notice', props: { tone: props.tone === 'success' || props.tone === 'warning' || props.tone === 'critical' ? props.tone : 'info', title: asString(props.title), body: asString(props.body), actionLabel: asString(props.actionLabel), actionUrl: asString(props.actionUrl), ...common(block, { surface: 'soft', spacing: 'compact' }) } };
-  if (block.type === CARD_GRID_BLOCK_TYPE) return { type: 'CardGrid', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), items: normalizeCards(props.items), columns: props.columns === 2 || props.columns === '2' ? '2' : '3', variant: props.variant === 'plain' ? 'plain' : 'outlined', layout: props.layout === 'bento' || props.layout === 'rail' || props.layout === 'editorial' || props.layout === 'numbered' ? props.layout : 'grid', ...common(block, { surface: 'default', spacing: 'normal' }) } };
-  if (block.type === BREADCRUMBS_BLOCK_TYPE) return { type: 'Breadcrumbs', props: { items: normalizeBreadcrumbs(props.items), currentLabel: asString(props.currentLabel), ...common(block, { surface: 'default', spacing: 'compact' }) } };
-  if (block.type === ANCHOR_MENU_BLOCK_TYPE) return { type: 'AnchorMenu', props: { label: asString(props.label), items: normalizeAnchors(props.items), sticky: props.sticky === true, alignment: props.alignment === 'center' ? 'center' : 'left', ...common(block, { surface: 'default', spacing: 'compact' }) } };
-  if (block.type === SOCIAL_LINKS_BLOCK_TYPE) return { type: 'SocialLinks', props: { heading: asString(props.heading), items: normalizeSocialLinks(props.items), variant: props.variant === 'labels' ? 'labels' : 'icons', alignment: props.alignment === 'center' || props.alignment === 'right' ? props.alignment : 'left', ...common(block, { surface: 'default', spacing: 'compact' }) } };
-  if (block.type === IMAGE_CAROUSEL_BLOCK_TYPE) return { type: 'ImageCarousel', props: { eyebrow: asString(props.eyebrow), heading: asString(props.heading), images: normalizeImages(props.images), autoplay: props.autoplay === true, interval: props.interval === 3000 ? '3000' : props.interval === 7000 ? '7000' : '5000', controls: props.controls === 'arrows' || props.controls === 'dots' ? props.controls : 'both', aspectRatio: props.aspectRatio === '4:3' || props.aspectRatio === '1:1' ? props.aspectRatio : '16:9', ...common(block, { surface: 'default', spacing: 'normal' }) } };
-  return null;
-}
-
-export function productionPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean): { type: string; props: Record<string, unknown> } | null {
-  if (type === 'Divider') return { type: DIVIDER_BLOCK_TYPE, props: attachAppearance({ variant: raw.variant === 'dashed' || raw.variant === 'gradient' ? raw.variant : 'solid', width: raw.width === 'narrow' || raw.width === 'full' ? raw.width : 'standard', label: asString(raw.label) }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
-  if (type === 'Blockquote') return { type: BLOCKQUOTE_BLOCK_TYPE, props: attachAppearance({ quote: asString(raw.quote), citation: asString(raw.citation), role: asString(raw.role), alignment: raw.alignment === 'center' ? 'center' : 'left', variant: raw.variant === 'line' ? 'line' : 'mark' }, raw, { surface: 'soft', spacing: 'normal' }, includeAppearance) };
-  if (type === 'Notice') return { type: NOTICE_BLOCK_TYPE, props: attachAppearance({ tone: raw.tone === 'success' || raw.tone === 'warning' || raw.tone === 'critical' ? raw.tone : 'info', title: asString(raw.title), body: asString(raw.body), actionLabel: asString(raw.actionLabel), actionUrl: asString(raw.actionUrl) }, raw, { surface: 'soft', spacing: 'compact' }, includeAppearance) };
-  if (type === 'CardGrid') return { type: CARD_GRID_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), items: normalizeCards(raw.items), columns: raw.columns === '2' ? 2 : 3, variant: raw.variant === 'plain' ? 'plain' : 'outlined', layout: raw.layout === 'grid' || raw.layout === 'rail' || raw.layout === 'editorial' || raw.layout === 'numbered' ? raw.layout : 'bento' }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
-  if (type === 'Breadcrumbs') return { type: BREADCRUMBS_BLOCK_TYPE, props: attachAppearance({ items: normalizeBreadcrumbs(raw.items), currentLabel: asString(raw.currentLabel) }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
-  if (type === 'AnchorMenu') return { type: ANCHOR_MENU_BLOCK_TYPE, props: attachAppearance({ label: asString(raw.label), items: normalizeAnchors(raw.items), sticky: raw.sticky === true, alignment: raw.alignment === 'center' ? 'center' : 'left' }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
-  if (type === 'SocialLinks') return { type: SOCIAL_LINKS_BLOCK_TYPE, props: attachAppearance({ heading: asString(raw.heading), items: normalizeSocialLinks(raw.items), variant: raw.variant === 'labels' ? 'labels' : 'icons', alignment: raw.alignment === 'center' || raw.alignment === 'right' ? raw.alignment : 'left' }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
-  if (type === 'ImageCarousel') return { type: IMAGE_CAROUSEL_BLOCK_TYPE, props: attachAppearance({ eyebrow: asString(raw.eyebrow), heading: asString(raw.heading), images: normalizeImages(raw.images), autoplay: raw.autoplay === true, interval: raw.interval === '3000' ? 3000 : raw.interval === '7000' ? 7000 : 5000, controls: raw.controls === 'arrows' || raw.controls === 'dots' ? raw.controls : 'both', aspectRatio: raw.aspectRatio === '4:3' || raw.aspectRatio === '1:1' ? raw.aspectRatio : '16:9' }, raw, { surface: 'default', spacing: 'normal' }, includeAppearance) };
-  return null;
-}

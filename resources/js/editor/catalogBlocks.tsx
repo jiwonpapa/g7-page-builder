@@ -9,36 +9,32 @@ import { createRouteUrlField } from './RouteUrlField';
 import { createInlineRichTextField, createRichTextField, RichTextCanvasField } from './richTextEditing';
 import { CatalogIcon, type CatalogIconName } from './catalogIcon';
 import { DEFAULT_BLOCK_MOTION, normalizeBlockMotion } from './blockMotionData';
-import { appearance as normalizeCatalogAppearance, attachAppearance } from './catalogAppearance';
+import { appearance as normalizeCatalogAppearance, attachAppearance, type AppearanceEditorProps } from './catalogAppearance';
 import {
-  canonicalPhase2BlockToPuck,
   phase2CatalogComponentConfigs,
-  phase2PuckBlockToCanonical,
   type Phase2CatalogEditorComponents,
 } from './phase2CatalogBlocks';
+import { canonicalPhase2BlockToPuck, phase2PuckBlockToCanonical } from './phase2CatalogCodec';
 import {
-  canonicalPhase3BlockToPuck,
   phase3CatalogComponentConfigs,
-  phase3PuckBlockToCanonical,
   type Phase3CatalogEditorComponents,
 } from './phase3CatalogBlocks';
+import { canonicalPhase3BlockToPuck, phase3PuckBlockToCanonical } from './phase3CatalogCodec';
 import {
-  canonicalPhase4BlockToPuck,
   phase4CatalogComponentConfigs,
-  phase4PuckBlockToCanonical,
   type Phase4CatalogEditorComponents,
 } from './phase4CatalogBlocks';
+import { canonicalPhase4BlockToPuck, phase4PuckBlockToCanonical } from './phase4CatalogCodec';
 import {
   foundationCatalogComponentConfigs,
   type FoundationCatalogEditorComponents,
 } from './foundationCatalogBlocks';
 import { canonicalFoundationBlockToPuck, foundationPuckBlockToCanonical } from './foundationCatalogCodec';
 import {
-  canonicalProductionBlockToPuck,
   productionCatalogComponentConfigs,
-  productionPuckBlockToCanonical,
   type ProductionCatalogEditorComponents,
 } from './productionCatalogBlocks';
+import { canonicalProductionBlockToPuck, productionPuckBlockToCanonical } from './productionCatalogCodec';
 
 import {
   BAR_CHART_BLOCK_TYPE,
@@ -66,14 +62,6 @@ import {
   type StatItem,
   type TeamMemberItem,
 } from '../documents/types';
-
-interface AppearanceEditorProps {
-  surface: BlockAppearance['surface'];
-  spacing: BlockAppearance['spacing'];
-  textScale?: NonNullable<BlockAppearance['textScale']>;
-  textAlign?: NonNullable<BlockAppearance['textAlign']>;
-  elementStyles?: ElementAppearanceMap;
-}
 
 export interface HeroSplitEditorProps extends AppearanceEditorProps {
   eyebrow: string;

@@ -285,6 +285,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             if BROWSER_CONSUMER_TEST in py_tests and (
                     path.endswith((".spec.ts", ".spec.tsx")) or path in consumer_inputs()[0]):
                 python_test(BROWSER_CONSUMER_TEST, path)
+            if path == "tests/E2E/editorStructureTheme.spec.ts" and "tests/Harness/test_editor_contracts.py" in py_tests:
+                python_test("tests/Harness/test_editor_contracts.py", path)
             selected_specs = SITE_PART_SPECS if path in SITE_PART_HELPERS else BROWSER_HELPER_SPECS.get(path, ())
             if path.endswith((".spec.ts", ".spec.tsx")):
                 selected_specs = (path,)

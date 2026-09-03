@@ -7,7 +7,7 @@ import { readCssGraph } from './editorCssSources.mjs';
 export const EDITOR_ENTRY = 'resources/js/editor/PuckEditorAdapter.tsx';
 export const EDITOR_CONTRACT_FILES = [
   'package.json', 'package-lock.json', 'tsconfig.json', 'Makefile', 'scripts/coord-harness.sh', 'playwright.config.ts',
-  'tests/E2E/editorInteractionQuality.spec.ts', 'tests/E2E/support/editorInteractionFixture.ts',
+  'tests/E2E/editorStructureTheme.spec.ts', 'tests/E2E/editorInteractionQuality.spec.ts', 'tests/E2E/support/editorInteractionFixture.ts',
   'tests/E2E/editorLayoutParity.spec.ts', 'tests/E2E/blockCatalogQuality.spec.ts', 'tests/E2E/sitePartLifecycle.spec.ts',
   'schemas/site-part-document.schema.json', 'src/Application/Compilation/SitePartHtmlCompiler.php',
 ];

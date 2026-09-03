@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, scenarios_for
 import re
 import subprocess
 from tools.g7pb.planner import build_plan
@@ -118,7 +118,7 @@ class BrowserRequirementsTests(unittest.TestCase):
                     self.assertFalse(scenario.preset_prefixes)
                     self.assertTrue(all(value is None for _, value in scenario.environment(Path("."))))
                 self.assertTrue({PARITY.spec, STORE.spec}.isdisjoint(item.spec for item in selected))
-        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (PARITY,))
+        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (STRUCTURE_THEME,))
 
     def test_public_owners_keep_responsive_shell_and_exact_synthetic_roles(self):
         self.assertEqual(set(PUBLIC_CODE_SCOPES), {"resources/js/public/" + name for name in EXTRACTED_PUBLIC_SCOPES})
@@ -472,9 +472,41 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(set(scenarios_for(["resources/js/editor/main.tsx"])), {PAGE, DOCUMENT_BOUNDARY})
         for path in ("resources/js/editor/PuckDocumentBoundary.tsx", "resources/js/editor/editorDocumentBoundary.ts", "resources/js/editor/draftPersistence.ts"):
             self.assertEqual(scenarios_for([path]), (DOCUMENT_BOUNDARY,))
-        for path in ("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css", "resources/css/page-builder-core.css"):
+        for path in ("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css"):
             self.assertEqual(scenarios_for([path]), (STRUCTURE_THEME,))
         self.assertEqual(SITE_SHELL.projects, ("desktop",))
+
+    def test_css_owners_select_synthetic_roles_and_keep_full_policy_separate(self):
+        expected = {
+            "page-builder-public.css": {STRUCTURE_THEME},
+            "page-builder-theme.css": {STRUCTURE_THEME},
+            "page-builder-core.css": {STRUCTURE_THEME, MANAGER_CODE},
+            "page-builder-manager.css": {PAGE, MANAGER_CODE},
+            "page-builder-editor-wysiwyg.css": {STRUCTURE_THEME},
+            "page-builder-editor-chrome.css": {PAGE, CONTROLS, STRUCTURE_THEME},
+            "page-builder-editor-library.css": {PAGE, STRUCTURE_THEME},
+            "page-builder-editor-controls.css": {TEXT_AND_CONTROLS, STRUCTURE_THEME},
+            "page-builder-editor-canvas.css": {NESTED, CONTROLS, STRUCTURE_THEME},
+            "page-builder-editor-blocks.css": {TEXT, STRUCTURE_THEME},
+            "page-builder-editor-catalog.css": {catalog_roles(CATALOG_FRAME, CATALOG_FIELDS, CATALOG_RESPONSIVE)},
+            "page-builder-editor-appearance.css": {TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE},
+        }
+        self.assertEqual(set(STYLE_CODE_SCOPES), {"resources/css/" + name for name in expected})
+        with tempfile.TemporaryDirectory() as directory:
+            for name, wanted in expected.items():
+                with self.subTest(name=name):
+                    actual = scenarios_for(["resources/css/" + name])
+                    self.assertEqual(set(actual), wanted)
+                    self.assertTrue({PARITY.spec, PUBLIC.spec, STORE.spec}.isdisjoint(item.spec for item in actual))
+                    for item in actual:
+                        self.assertFalse(item.preset_prefixes)
+                        self.assertTrue(all(value is None for _, value in item.environment(Path(directory))))
+        for name in ("page-builder-site-part.css", "page-builder-site-part-controls.css",
+                     "page-builder-site-part-workspace.css", "page-builder-site-part-responsive.css"):
+            self.assertEqual(scenarios_for(["resources/css/" + name]), (SITE_PART_HEADER,))
+        self.assertEqual(scenarios_for(["resources/js/public/mobileNavigation.css"]), (MOBILE_NAV,))
+        # No global exemption: legacy content/full mappings remain available.
+        self.assertEqual(set(scenarios_for(["resources/css/unclassified-fixture.css"])), {PARITY, PUBLIC})
 
     def test_block_appearance_selects_theme_and_text_without_preset_input(self):
         selected = scenarios_for(["resources/js/editor/blockAppearance.ts"])
@@ -495,7 +527,7 @@ class BrowserRequirementsTests(unittest.TestCase):
 
     def test_responsive_code_scope_keeps_the_separate_php_parity_contract(self):
         self.assertEqual(scenarios_for(["resources/js/editor/responsiveBlockStyle.tsx"]), (CATALOG_BREAKPOINTS,))
-        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (PARITY,))
+        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (STRUCTURE_THEME,))
 
     def test_sources_deduplicate_workflows_and_do_not_select_unrelated_store(self):
         self.assertEqual(scenarios_for(["resources/js/editor/fontSize.ts", "resources/js/editor/richTextEditing.tsx"]), (TEXT,))
@@ -790,7 +822,7 @@ class BrowserRequirementsTests(unittest.TestCase):
     def test_compiler_collaborators_have_separate_behavior_scopes(self):
         self.assertEqual(scenarios_for(["src/Application/Compilation/RichTextSanitizer.php"]), (TEXT,))
         self.assertEqual(scenarios_for(["src/Application/Compilation/CompilationUrlPolicy.php"]), (PAGE,))
-        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (PARITY,))
+        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (STRUCTURE_THEME,))
 
 
 if __name__ == "__main__":

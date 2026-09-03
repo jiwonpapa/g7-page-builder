@@ -64,6 +64,8 @@ PARITY = BrowserScenario("tests/E2E/editorLayoutParity.spec.ts", ("desktop", "ta
     "gallery.project-scenes", "inquiry.general"))
 PUBLIC = BrowserScenario("tests/E2E/publicQuality.spec.ts", ("desktop", "tablet", "mobile"))
 SITE_PART = BrowserScenario("tests/E2E/sitePartLifecycle.spec.ts")
+SITE_PART_HEADER = replace(SITE_PART, titles=(
+    "edits and publishes the Header as an independent responsive Puck Site Part",))
 SITE_SHELL = BrowserScenario("tests/E2E/globalSiteShellRoutes.spec.ts")
 STORE = BrowserScenario("tests/E2E/officialStore.spec.ts")
 MANAGER_STORE = BrowserScenario("tests/E2E/managerCodeContracts.spec.ts", titles=(
@@ -139,6 +141,23 @@ CATALOG_CODE_SCOPES = {
     "resources/js/blocks/runtimeRegistry.ts": (PAGE, CATALOG_CODEC),
 }
 
+# CSS owners select code-created documents and explicit UI roles. Content
+# sweeps remain available under their existing full/content policies.
+STYLE_CODE_SCOPES = {
+    **{"resources/css/" + name: (STRUCTURE_THEME,) for name in (
+        "page-builder-public.css", "page-builder-theme.css", "page-builder-editor-wysiwyg.css",
+    )},
+    "resources/css/page-builder-core.css": (STRUCTURE_THEME, MANAGER_STORE, MANAGER_INBOX),
+    "resources/css/page-builder-manager.css": (PAGE, MANAGER_STORE, MANAGER_INBOX),
+    "resources/css/page-builder-editor-chrome.css": (PAGE, CONTROLS, STRUCTURE_THEME),
+    "resources/css/page-builder-editor-library.css": (PAGE, STRUCTURE_THEME),
+    "resources/css/page-builder-editor-controls.css": (TEXT, CONTROLS, STRUCTURE_THEME),
+    "resources/css/page-builder-editor-canvas.css": (NESTED, CONTROLS, STRUCTURE_THEME),
+    "resources/css/page-builder-editor-blocks.css": (TEXT, STRUCTURE_THEME),
+    "resources/css/page-builder-editor-catalog.css": (CATALOG_FRAME, CATALOG_FIELDS, CATALOG_RESPONSIVE),
+    "resources/css/page-builder-editor-appearance.css": (TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE),
+}
+
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
@@ -190,7 +209,7 @@ RULES = (
     (("resources/js/editor/SectionPatternControls.tsx", "resources/js/editor/EditorPortal.tsx"), (PAGE, STRUCTURE_THEME)),
     (("resources/js/editor/pageDesignTokens.ts", "src/Domain/Documents/PageDesignTokens.php", "src/Application/Compilation/DocumentThemeCompiler.php"), (STRUCTURE_THEME, PARITY)),
     (("resources/js/editor/blockAppearance.ts",), (STRUCTURE_THEME, TEXT)),
-    (("src/Application/Compilation/ElementAppearanceCompiler.php",), (PARITY,)),
+    (("src/Application/Compilation/ElementAppearanceCompiler.php",), (STRUCTURE_THEME,)),
     (("src/Application/Compilation/RichTextSanitizer.php",), (TEXT,)),
     (("src/Application/Compilation/CompilationUrlPolicy.php",), (PAGE,)),
     (("resources/js/editor/*SitePart*", "resources/js/editor/sitePart*", "resources/js/editor/useSitePart*", "src/*/SitePart*", "src/Domain/Site/*", "src/Application/Compilation/SitePartHtmlCompiler.php"), (SITE_PART,)),
@@ -201,7 +220,7 @@ RULES = (
     (("resources/js/store/*", "src/Application/Store/*", "src/Domain/Store/*", "src/Infrastructure/Store/*"), (STORE,)),
     (("resources/js/editor/puckDocumentAdapter.ts",), (PAGE, TEXT, STRUCTURE_THEME)),
     (("resources/css/page-builder-editor*",), (CONTROLS, STRUCTURE_THEME)),
-    (("resources/css/page-builder-site-part*",), (SITE_PART,)),
+    (("resources/css/page-builder-site-part*",), (SITE_PART_HEADER,)),
     (("resources/css/page-builder-core.css",), (STRUCTURE_THEME,)),
     (("resources/js/editor/*", "resources/js/documents/*", "resources/js/api/*", "resources/js/manager/*", "resources/js/blocks/*", "resources/css/page-builder-manager.css"), (PAGE,)),
     (("resources/css/*",), (PARITY, PUBLIC)),
@@ -213,7 +232,7 @@ RULES = (
 def scenarios_for(paths):
     selected = set()
     for path in paths:
-        owned = CATALOG_CODE_SCOPES.get(path) or PUBLIC_CODE_SCOPES.get(path)
+        owned = STYLE_CODE_SCOPES.get(path) or CATALOG_CODE_SCOPES.get(path) or PUBLIC_CODE_SCOPES.get(path)
         if owned:
             selected.update(owned)
             continue

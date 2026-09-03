@@ -4,15 +4,6 @@
   "entries": [
     {
       "path": "resources/css/page-builder-editor.css",
-      "rule": "SOURCE-SIZE",
-      "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Editor chrome, block previews, fields and vendor overrides still share one stylesheet.",
-      "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
-      "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 2377
-      }
-    },
-    {
-      "path": "resources/css/page-builder-editor.css",
       "rule": "CSS-COLOR",
       "reason": "Existing component colors predate the semantic-token contract; this preserves only audited declarations, not a theme-quality approval.",
       "resolveWhen": "Replace each recorded declaration with a shared semantic token and verify light, dark, system and explicit surface variants.",
@@ -147,7 +138,659 @@
         "ebb7ecd83556462113bae801822cfdced75f8d1cecfb405b128105df58832ab0": 1,
         "3f7b502318ba0e70b4bc0e5f8a9f95d46734faf5177d0f374239353bdfb209c6": 1,
         "51a2122d646012bac6258d2361b32c9ec9ff20171c68b2810cf3ebc2eae99980": 1
-      }
+      },
+      "relocations": [
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "f98a698874c859f9bc26d981af8bfc5ded0156ba6196e836d012faa09bc3d64d",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "a1776373635c2acfd0be69ae784d5b5ba223b06f58f5e690c8be539c984acce7",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "d9aeeadc59ace1be9aba2b1096ec0b47ede7e05fae9533e1eb6650667875bf89",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "54751e3ee8bba1495479fe8d6b0d434d170283a620eb8ed707088235e4cc5a3d",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "7937f7294781d88a60e114f58222a2f8cb9e700bd1db329623df94be3b0f8b51",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "c1d53c341c2c35bc74a4cf76e5a115036002b84ca0a326d7cb12f7745b85bcbb",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "198319a444c033bc10749a6f4f68f1270af3e2ff954b4d4914716bbd0a7adb43",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "18afa27cc5521c0fb9be5e7ef782f0edbc14e7db276c092b279fd28d9f862343",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "061a47753760a490938481d98157e1a31e08ee0a3c7683a4804d790137ff3895",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "adb0414f4399b14929b43e42477d64a0b17624ba7e7bd7d9e45b11589c1dae2f",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "01cf32f47c700244a40a66f288665302d638bb89958cbe0bbd29aac4a89793bf",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "3ba00ba447c99dfbb8071654d931052121872043cd5097d0562011c24d909110",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "41ae5a0a4ec09ee8756f9328088a04cba13a91a668b9972202f28ab410387b9c",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "ea19b82abedf66350c6dca71ff4c8b9c552034a3ccef156a878772759f37f284",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "e78585730b0a81da8d5932fdbf43ea0f9e98b9f4bbd42aab1e35ddb16c74170e",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "3c93c5a0577bb94b6111606d79a482d331f2049753230cc41f95f67bd1be4c6e",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "c157e902fa0627919a97a30ea45d86203847df59a98aeb328688e8fad02dcdc0",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "ca767971f03b644892a6309ecde22eef7e82c3a71a8f0f17887cb92c468012ec",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "0cb74cb939b0e629169905d641f1b7ad63a1d8199b8584f32f0b0daea805ed3e",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "805366e4d1eb2346a787f3d1049499a1be0c086ba9e028044ec85ef8e3d3540f",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "fa51f54c66638bf1a5513ce67218e58c8902b8d73a0a20b77a42ab576bf4b5a1",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "64d2b80af447d6289b0f2d06ca19929c862d034ce426fca0c4240696235f3bc8",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "92d733fc0e00dc0361d1765fd1306ba7c51dca206ad971706258997489ea15e1",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "6f902ff30a49830f138caf692c355ba23da0b6075bf54a3e9fd18d9ca87804ad",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "302e82f28d16078f5ac06eb2636c903c0b704dafca3e26bd63974a71a6c40839",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "ac8519abbd6d8e8acb81b8b3f000a2697dfa16fd85758d88ea5a9d593b526985",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "66159d88205607c3c96dc9bb3fd5b82caae9c488ba2c90a4056b3863d305725f",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "cdb6313f086dd1c8e045240ef050ef3a6c1abfd6c58f7cf9c3cbea9983951330",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "4b5f320529bd5f2f1788520972b34169e336252e3c2b13e60d7df9f965949c00",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "9768eabfbeda47536abd98000d44efa85c0b66cf6c988a50f663f5d8fa71ce7e",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "4a90da75a426f698595a1d82a54bf7d593ebe34ff63cb230b2dc81bf0c7e49b5",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "7519256728295ca9d093a3a5b04be4358ed6fb07a33011a8728c4153c645e564",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "df967f209296d56102f32863748c28e5df31f11848fe9979174c24d241c9dae7",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "b094ae23d88b3386bcc5ba3bec91059424d3d2c585367df44b546af9bded9de6",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "f536878ec9983f690b9f7415b21fb54393c069775b81068a9b29a29afc4ee28f",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "91d682b64592d30ab69488937455d461997860bf43b581aae836a5d98cb0af33",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "1e70c0767a4055a73aba22ea1497950ec4c393aef6bfc231a85a91006067747c",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "cd5da468c9928ffddfedb7b5c27fd70b57a1bfe33fb53cf154359eca49ada90a",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "c22b723eb9aed98bc7f62b78ef1a43db2a69a8b145e9ae2bea2d3dcfc4e8a06d",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "29511a3c0a03c6e19adb352f7956eaeb3fcd2ab0fec1c24a96c769d321427491",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "446aa5a9ab0987f62aebe331531a922ecf7c65318d65a4e63532f118f97653cb",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "c109a21c859d0322cff2f87abfd30758e04694c068d707742a9984253ec6ff27",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "04513cb6036377922e3c1a985249722b7428f080021c936f02d4a135ae4a2c01",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "ebbae196c3808494e22f5f3668f70f34cbeefcd0acd8423dce8cd856e6dcd177",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "09a73760fa200f5e3ac575542073e655c5702206fdf2d7db6b14ea6307cab6e4",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "04ee01f60575d0bacd0725f8097972aa86e9696b4f938a9caa531074a2521bcc",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "5e36ee176a47429d090870989eacc34598c2fec8d9e5df5d63eee76389a755cc",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "da9723c077f83eeceff9381c6f6b3542457480ab6c2a5d7f38865f4791f8cfc1",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "68f991c6a443fe01658a110ddaf12d0eec72dd49da17a12c0dd9ab5a7dfaaea7",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "00c06ae865a15af2f372f0db70862d0dc995155f7adb30ef36c39fe35acce670",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "6b884048fa4296c33453b2073c540c18ea2fac52ff56dcce32a029a14f9ee01c",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "ddd4ed29636fcbdde226f919dc36b7be95d860cfe1dba421e919f4da426726ae",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "8c9e741bd187ec5d0f81a32bc1b393bd96fe20b20c97d6006d84f3481bfcbc5a",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "ffe17e82779b7f92785ee1d39b59bf4373af76011503a9f1edae952000b72d44",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "fa802c727c2d0fc7841973f7f4854f0043600faa1b486a2f146a06fe1b31e03f",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "e0c40bbfd43c481a336984ebcbfcb0eae0bcfc1b5f44b7ecdff0d741e883dd0d",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "b0e3e47a882f5adb5986122cb7f7f4e5c5dd07da90f9b46e1ed26667cd9c3a52",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "09deeb9fc68a296bcef1caf7ad9ce1854a71eeb448ad02e7bd2f896a81808bd8",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "2fc62b697f9c0a1f4cce6e39224ca715f6d32512a83911fc3507cd15963637e6",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "91e1b60e1f52d614ddad52f7d3062e89fa0ec58302d78ee4a758d5165133bc8f",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "4c562023c2af84efa3032c095d9b7b386850ad70c557f2fa2205fea387e584f7",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "32443aac386686017699c68e9782f52ee133a4a3a28ffccdb0e2a20d45fee680",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "3a5f42e4fffa7c36710d1af2513611bdf4cadce1f3dde62ab5bd87a84da1fa25",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "e6b99418782bf037044313fde34409adc754d20c25265fc84fa37c8197c9ff0f",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "0ba38a9c2a3188bc3e14b1555e60868b20e6ee793044f031c96f16c49c21c297",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "13ecec78712eaaafa45f67910df17df7f2c8460cdb6f8ae06c208da52a9224fb",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "5201df17c5edbf76bf80fe058f3ab3101a56fd5a4f615c32f758845ebbb4cb5a",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "194447885bc5220b0c22ab70d1f8babea3ea1d4996b3e9a45bf6ee130751c270",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "aa967d54520af1a33aa4720eff52461b608a09b2bdea2b339b1523660b6f6b29",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "b7e1de86c290744590eeccf6608cf5c7294b3544ca7cd0803a8d3e0a6676f06c",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "0744ec4d9716801a81f5032c67678ba0961693ab870db027667d2e9fac9da7b8",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "226e98a8caca58c9be4d8e7e76f372572e4be0bea6f0feea4b1196e86912068d",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "7e27494eb6b2a648bbe85a8c2cc9ed388b42f787d6c96da1aa0da2c94f6ed7e3",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "083695a585c61bfe9be6f1f26b0e1701f9c57bfb1c0ab18e6bd8df1839f2b2ee",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "873009475c7863be70febfced9398f669241d9c2f44dfcce0c740d8eab73e527",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "d18113611db30d4bfa73e6ab8f1893d962e8661390c248943d3a774dfa7bc9b3",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "4a79548377673756b8d41d7cb803564c09837eeb0dbbfde93d286d457fef1f01",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "dfbbf732c19b6413a3e2185e98e0db7b10c83a6c01b324d5f8d9e2ffc98325b1",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "58f0d9d011e2ddcd9eb7b86a2bf2945529cb9d4d238b228c31d4313ceb35ddd4",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "fec901a017e4b32483427059caf6e88422de58860eefac6f7bfe9f52af50208a",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "bdd64e18ad00421f9847de66265124294365be1a5518157eef85bb4d45d99700",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "2545cfb843e2c3fd3cd5f04ab05215ef9c0f43778c4e752fe125ece0ac5fe308",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "fba172a8518b4640149c2e69f8d8065b5d054dae8a2df007a77f885fbc939bf0",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "7661b8c60fd1a7e550214496a2c12b708a033b7bd9eeee6e4b4006a65b8787d4",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "af4ce7b538ff3153159a53a131744a35f85d43be0999078cb4c9fc5e64eb0136",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "a145e2129074cc07e65fc57799b33afc9283adc650f269daaa9d7a5c49041bf6",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "1c219ba8d3b134d86fcc8c3fc55d20591e32ef8460753eb65e10840691da0bec",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "de3fc4fe4903e4f39fd105e9ec06e6969826758c17f74e0ea1a8ad6b86533c88",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "a24f8eacebbbea25cfb08b5f929411f9074fd66a95d2e18f27cd14b9ccdd068b",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "99be252a90fbd29f416f1c74a6777e19419cbad89d48f8acd5a154d813e48b9b",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "71757a1c9481d1179ed83b8cdbf50836633c72ccb4a6be09ed7b509ac97aa9d6",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "0f941d014b7472287b6d4a3be067c5eb083d17a7391ff20b75582a8c2cf24e53",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "58c38e8548f09a81ae44617127913e95c05aa89c76821e28e26936e3dbee018b",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "5e417e0aecd4847639415eca72a01428abf9a6d6f4d707a95609b8d4f4d3b0f8",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "7b2a031f8c9aa0d40448fe2a2dc25eaed322e96f01916547b1d18ed8166b5de3",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "067fdfd7f77370acfb6fe20a2c1a8b46efd217ab414c3f206ece8e0d34c0e655",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "a41df80b1d34e61e0a2e460c17f4e1cf1cd15113c0c5e8c862e5bb71747174d2",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "bb01da1eb69d6828d7445edabfedc91014d81d118a5b58f72bbe3636c2cb60bf",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "22703b1fc10192fd914400d4d0405bd4b8337cca0479146dfb34384d4679d722",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "8abf5358f9da11b0093333b25a3c1edf38582971fcd2e5429f9c604fd66b970a",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "35bb5d77f739028334b8419f9da22747272313e4127195120f1620e98b28f9fc",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "dad7b3ff471d7aab3f754bf876cee41cae55977d882c01bc3a9299b0addeecf7",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "1e8cbba5e86be94ce8742fded4007f19b7a3db9f805082251670fb19fd5402cb",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "1d00d32f69065aa8ac698a1c079a0bd9deba05795d24a433a4ca451580b76401",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "9683d1fad0add0a4379292e07e62deec25dbea5a6e2909b5cd25bbff5cdbf49d",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "2be9c08127e2f5e6e35490e0e8f6995a10ec734cc8c67c45907caa7374ef8ed8",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "eb7e9e9007211056e60aef108029f118f4ad2bb0203fb65ace812bb029940de5",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "53fd92a2ebf6850c063fe624eebc1725429b1af0ab27a59c57ef220fc719d606",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "5c3170fa29514d38e688dbc8fd0f747f59df41b780a50cfc874afea2c7a25f2c",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "f5cda21cdafcf9109ea00739fa74296c11bdb08d9c0a599dd6742216191166b5",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "886512d4f86958cd1067b8f9883e820edc071e8bdca513dda854ecdf5918ba05",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "3c5933ac8c6bd13adab4d09083f4ca1887ce5bd4a04a83cc907ca1d0a1b348ae",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "ec805a3e0ddeb407417404941f9253edf67392023d7f0178b8b4b4ca64bfb478",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "f5b1effb17e6c18f25ae78d46976c8ecf475de0679e1605042698810ac45876d",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "d9dcf4478ef4270c242670fbe4a61a83cb5c06005cd9a4f6f7afb79b72efd626",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "39ac60ae33fb185727d3ec1fd70799df86ad815967f6648725f4650b54942ed3",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "d3d8bb8f72170352657f2209141204eaf5b4d5103992b3f4c064c11529392e21",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "c81c6e7a1c925b5211b6b7183f098798bdb98bb0c6161e7945bf7ca2ee9cd568",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "0d4219735714ec5896ed888848d2d0bb62a4d4e8d33cde30f0e2c7b07d1bace0",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "88c30038b8438235fbb32df061c88988662ec966ce3f16702d76081b612bc28b",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "5742e42d7cd37d95aab63ce9e5e25ff64a92a58be0b5d7c28be03919194d3396",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "956ad42c01e0582fb97c1cadef3def038867c50d1da0cbbe37983cd853c0f619",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "908afa5aa4dccf25edbb7b719928d5b437a1ae92ad9d9eb5aa4eb61ebd4520d2",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "1cf3e5b6fe39d2bdf6edafa27a80f2c66c3a10dcb672cc41e623f5da9dafa1c5",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "41c689568b510cce1899f1df33e531d1ffcc3852b0458329b9b96c4339c40521",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "d3e3b733befb8481300cd374af4eef5a69fcd725055b473689632bb51dcd8977",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "41a5095fecb0d56ec296d296845556fd3e9313ae7a2367e7c4ddc35c181b0b47",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "ebb7ecd83556462113bae801822cfdced75f8d1cecfb405b128105df58832ab0",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "3f7b502318ba0e70b4bc0e5f8a9f95d46734faf5177d0f374239353bdfb209c6",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "51a2122d646012bac6258d2361b32c9ec9ff20171c68b2810cf3ebc2eae99980",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        }
+      ]
     },
     {
       "path": "resources/css/page-builder-editor.css",
@@ -172,7 +815,94 @@
         "846f1446537bea17ce91916b4af1f1ac7685cb6bf3ebd9fcf11746960e08b42f": 1,
         "1ae14e96489a5d7f11ecedd5ea2de00a39597bdf9b42efab88ce0fb03d23e5f8": 1,
         "3818c70103138c82d2ebdc115a34835d6feecc6d5bfe9414451affef58d4355f": 1
-      }
+      },
+      "relocations": [
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "82732e68ada464f0d48d25c6bc3af18a7a01f9449ef2d7c9b7c33de32984eece",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "34ade388f137fb85cc90aa678cc7c14ff4ed7c105a339b15b135cf8abcf0109e",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "846f1446537bea17ce91916b4af1f1ac7685cb6bf3ebd9fcf11746960e08b42f",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-chrome.css",
+          "fingerprint": "1ae14e96489a5d7f11ecedd5ea2de00a39597bdf9b42efab88ce0fb03d23e5f8",
+          "reason": "F 책임 추출: 편집 앱의 reduced-motion 사용자 설정을 유지하는 기존 UI 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "373e1dd14202d153d448a6041094aa2141f838bb7a6434538a334d3d0b6c1296",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-library.css",
+          "fingerprint": "3818c70103138c82d2ebdc115a34835d6feecc6d5bfe9414451affef58d4355f",
+          "reason": "F 책임 추출: 블록 발견 UI의 기존 썸네일/handle 또는 reduced-motion 표현을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-controls.css",
+          "fingerprint": "68bbd6fe42d0a5678e8346aa4fde12e67cdc564cfb63a9c1bdb89461c7ea9003",
+          "reason": "F 책임 추출: 편집 필드의 숨은 native 입력을 기존 custom control과 중복 표시하지 않는 보정입니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "5afe87e9bfc5768e7324823772caa912123f54222f3f577f349c6822f0e1baf9",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-canvas.css",
+          "fingerprint": "4328d85905506a059d76f29b86274a285f0d1583dd1714b8e61c0874d71be247",
+          "reason": "F 책임 추출: 기존 Site Part preview 애니메이션 억제와 좁은 구조 캔버스 열 계약을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "5cae88c54680b06c57dd59d3e7cbc1a1fc983aca6155d2f4f275789fd40b2d01",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "01c46cfef79242d39ba5f18cd61dbefba5321fbec1ced530658546962ceabf33",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "c26ee0bfc0796f7d03a1b05b7dd702f5d096f70d636a5d93f289c3af33c097bf",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-blocks.css",
+          "fingerprint": "f7ff604f3a59dd6c327d52e70a253ad679aad4091b6ef3ae1a9e832fc70b0415",
+          "reason": "F 책임 추출: 기존 문서 블록의 표현 및 HeroSlider 편집 포인터/줄바꿈 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-catalog.css",
+          "fingerprint": "b3eea7931df0c0c22a95298440d0980f8c937a3b20720908c1089b20b57d15c0",
+          "reason": "F 책임 추출: 기존 추가 블록 계열의 표현과 데이터 detail 메타데이터 강조 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "65c13c287baae2adfd9254c6037cf67357dbeae1c1b91ec12d420cbb644ac0b0",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "296fc69d13cfc32adabb485ef0269bc6b42db3ccce4803acac7012f3d7090f2b",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        },
+        {
+          "path": "resources/css/page-builder-editor-appearance.css",
+          "fingerprint": "79519b704aa64fcbf5a6c9fcab4bb9b88320799e9dcbdd60a018486baa9ef54c",
+          "reason": "F 책임 추출: 명시 서식 및 reduced-motion 시 문서 모션 비활성화 보정을 보존합니다. 원본 선언/문맥/지문과 합산 상한은 동일합니다."
+        }
+      ]
     },
     {
       "path": "resources/css/page-builder-public.css",
@@ -185,143 +915,52 @@
         "ae434078767909faa0760b68b8550a5cd86da4e589d4cf4b184b38c2c8e6300a": 1,
         "524ecd42eb7bf1c954dbba40733111cc19661c3d0f4e729e4b87c6118eaaa2f1": 1,
         "23f90fec036e8feb67fe7cc122099e2ddeedbba0425a63ed9595e244c960fc15": 1,
-        "4c640b9783919f1cabde4871c00ebbf53394216af69910a9454a0730cb8f5190": 1,
         "36b6d012728ccf5174b31670d99fe48268067d72b22b4d14f7b1dd676e6e87f3": 1,
-        "7a277add8ad0d2cff43449b53b986bd107af07bbefefee83c822bc8ca0779127": 1,
         "bf5f501cbb7ebb2cdf923c04ad4d2720cb1d031f9d38e09019fec47f4f36f28c": 1,
         "cbb6797bdda6820071dd667ae5078316751262feb51326e92cd0b5ba84d062d9": 1,
-        "bf71ee48b7276ffbd742f800adcab2e3cfa0d05129e8fbac1b15c6f095a00bce": 1,
         "7ae68cb33afce084cbc9378d7aeb032a967d376dbad0cbaff142ee0ceadf84cc": 1,
-        "604bed3fe1224a905769bbd91ccabb22c0dcbe0ad0aec61afdffabd7f250d622": 1,
-        "1ac0e9086aee2f90f8558065a1a1dfa40c67bb371978a84e346df1b8e549ddad": 1,
-        "5b4ef4fd98cc6755cab441d6d1f118156ae280170b74589b0b24dc72c7ba8c74": 1,
         "9f6640831cbe294cb6ce589c698c48713b937c0382908c41ef0b8b2e51e5985e": 1,
         "0ea0e7e30575ca1dd921d3b70e9b17e645b858b8e9c3a84784d8ff39efe892f2": 1,
         "1c0dc1d98efe126dd1d01a66170b0df0666b8a74c196be79d0b2a5087790dd5a": 1,
         "1e15c9b5b44fd807d0cf3621e69621fb20c9a14df9bb9d699053644800756e88": 1,
         "496729303f58e2083e73f9f626153f9425f3e022551128c913eda93d38e52dc7": 1,
         "9a26ad34a651ceb718f5fff260c1c986e88a1f4933c8b61e9c1fe43387cda99f": 1,
-        "d76199f826d39b960d7bcc28ef604c723ed4843b3e0317f8078a1cc7eae80d47": 1,
         "448c1d516ae5fcb298749b9af406cf9fa65f33f729f7603a97366ec7acb42b95": 1,
         "258498d30128d0449416f212f6cccfd7edce70cdd6a06a2748eab6ff3537f45d": 1,
         "c26a5236744674a42c79f6bf537854c94196770de210cf386332f08f9509af05": 1,
         "c8afb726f1002b4230105d60d749bffbf30d90a8193500fae7fde0d615881ccf": 1,
         "8c9aa5965d6b263753eef93b070be52aff21684f142d301c1c3a639be020d8bd": 1,
         "2d103adc772a893969287d204584b3cbbcea29c88a322a1e1f0ad7f2816bd2bc": 1,
-        "683590bf85223ce7778972ee16361cf2da9c9d1d18ab771d421acafcac126e36": 1,
         "3a91e87a7bf47990085af9776982bc1bcbb59cc3257cf1bd5b0abc8e44400bee": 1,
         "f1aa70e0a6ad49174b7aec0a4e206839bc686ddea3737943dc351af697169de2": 1,
         "01afa67b8320b0dc79a96d41141034658b17bb6bcef55719e7325df09e6e262a": 1,
-        "40836eee25d2d0f9135d2ad000ab973e4ee80ba40b105f17e8efd729c9885edb": 1,
-        "db43cead2a84d9a25b759ce1b54124a447ba05ee117c4afe8ff52a4b14c72de2": 1,
-        "4bd9d6fc9c7dc13c01439c66bd1051061ebb131abf256cc1e8d0f7407eed43e8": 1,
-        "5e11b41cf502c7b8b0e60ad5d18396cd611e37b98a284ae441bb0e45019e7f3e": 1,
         "b8647c7ecd21e7ac1fe515e84a75b81b4faa190801ee9cfccae2016312be0fab": 1,
         "9da5fd8833d37e0eb932f03cb93c9b04a3889461a6f92746695107ef4ed9121e": 1,
         "e23ff6babf766de5f19825981169f0e895bcc55775c50f28fb4c21dd32178cb7": 1,
         "6d7902423d777a402605469b6e029a1503d92eea277de22a45e04ca7f4688440": 1,
         "5383aea925eaa51d5ca70a861894213fb80e77060325a421da152ee0f6e2263e": 1,
-        "fe43919a7d13877484b365e14e93692c8a2ddad0762b5cff37614386268f9e84": 1,
-        "5fa514860d2a0fd1228344f7b6c6ddf216e1b31e15a1f51ac22cf5192f705ad0": 1,
         "a30102b42d103d4d22e2f1b84a94400dc43e8bbb45f439f7704141257c4409c4": 1,
-        "a484fa07914556f38092e9cf3bdf0fccd76cd3b4bd9524aadb56e9f0d0c6a122": 1,
-        "38772d346c88cb60a4959e12372666af974af8125562f9cb7869b7e1c3ab260b": 1,
-        "728ad5b7906ed34211672cc5cce2eab1806d798edd3276bea6e82e1c812d43eb": 1,
-        "da2840a65416b7a4014597e6d22653dd25eefb77fff4700c54e77d18d64404da": 1,
-        "33eb0d607223346be7275918896ff0504749203c68692ec205c10f3cde7d499e": 1,
-        "76e67161dcdeff5991abe357659c44fd2ad97bb77cbc3b9169f1524dd75c172a": 1,
-        "7fbc26274a463883bd42aa6891602c339931aa6095e3ad5108438093ec9366f0": 1,
-        "19aacc2aa63b2d2aebae02464d514417c632a670e02e410757b0a8586b0e1477": 1,
-        "e1180e2786f1dd8079d9a180cb8a1b133581f16dd981c56735f08fd062dba3e9": 1,
-        "8ea120e3746e0d2035befa5149def422e44956d26e3e3909fce58073d1321771": 1,
-        "9d535192b5fdeeccd2cc4b024feb3b61e6cac1d46466a429e94c72e517b78b4a": 1,
         "65d3a0a23e01d7820a8c9c6ad5e2a6e6fe063b2ef93b0f686ec4ee56632206bc": 1,
-        "aaf0c7544fe8f0bd511258ae14256bbdac206c615593abc9cbf56a64bd700fe5": 1,
-        "5fb69c9b3c4aca9cff81ee89dd069636d2ce6231f4f09c2524eb402d211184e5": 1,
-        "fe6f1cabccad0a319705806c4313039447f65c666927ab4f6fb4e43aa1b0990b": 1,
-        "d8a5badc7198a1c43cb374295ffed8c2fc99bb81767fbbbf30f878b39c1de59e": 1,
-        "acdfe7f3b28af36057a14a63a26733a8cc2bc9fc9bf0c4e5ecb5c52c11a1e19c": 1,
-        "30ecb69071cfd42772bf170176b1dcc0d28d223a0d97660cba039c029f7bae08": 1,
-        "22f8b7d0e0de591364bf36e75b8900de0889e6437e3092e923c6cbf503c428f9": 1,
         "8e1a590c06d88b8e4fee34e49cb80559fb0625f8c6f4b9983aa267a0dc1364a6": 1,
-        "6134cdfb9489f52025e8493af6dc9ce5846fcba8eb40fd52c4bd77f64ebfaad7": 1,
-        "364ce08a3a26e1bdf111f49c1da0a1a65b8a281d5968f28b7e9f9e99506f85e4": 1,
-        "89d5e77f668e8ea6b898d4f51792036fde3aa84be98ae6ca33c9b7cb26cf84a9": 1,
-        "38aea3c853687b7d8ef739eff7faa5b748fa992d3670768ab31acb8d7184a605": 1,
         "02e88f43b80bd8d50063c6f37c2c19de7d25c8fd5a424afaf9152d309b927d46": 1,
-        "920d21f453d27054ac2ea4acbb0b82f6f0da367162db68d0b0d5cb39362a1cb1": 1,
-        "af702b4f00850d7097760030f8786a7cc8a5c0996d3ef48be02292d6dbdc4010": 1,
-        "9a652355e709163f36c2a35aabfca024630b7d8e46ba5638d7f4c58dbbca5a3c": 1,
-        "e37e370b907fbcd0306f80d96192453f375cdb31acd636ec10d8607e2a3ea6d0": 1,
-        "5d295de9fc72e9a8187b89f99a51f1748d4c00866a4a34fe0e0ff7415623d103": 1,
-        "9f04a119f0bf57e94f6f675b05334fbdcab489e5771689a813542962e2c913e9": 1,
-        "eee46791384d2c0eb1a542090736c31f98b69ef9984ea155531a1446454a01ff": 1,
-        "99236a33ca0248a54677ccaf39385c629e47373ddda476c2450618d307247844": 1,
-        "967e3e7c458821b90865e2f8ae62ae69e7429d264ac7f8dc031c5f9ec18c90c9": 1,
-        "1f7ddb0b8bca4163f644e552c1da947c1968619f751fc9df662c07012ce85776": 1,
         "dc317490ed614c450c2365f616ca76e2b0a634e2787e3410792a35ec663254b6": 1,
-        "765141ca31313eb87a41b35929c0e056d85e948d7334b019969ddc897916aecc": 1,
-        "add31573eb324eb8ddd04150661dae553d2bb4541bff4659a1a8bee91b6c83ae": 1,
-        "aebd2728693d31eeb92ec2c3d2d35451908b85f263643651bb9ee640476bce75": 1,
-        "13cddfdfca130c1c845536e03d481f33e689f4fc5a588594bae78f55874d1428": 1,
-        "0104dc26467abef7fad84e736450b1273c4a17e7ddd1094b7d9478c002973a89": 1,
-        "66c170f39840e537be8772fd520e12e1dec50657338ed7657bc422a17ad4b732": 1,
-        "299d52d2bc372afb166e9c105ffc1cde338485217a9c90c2397c1a19b4ae7346": 1,
-        "e1266f216e60701477a5cc9cac4d6d2ec2c23c30c2b1b7c629f2fba51e4aa666": 1,
-        "b76811f004552c28f8468eeb915fec24659b35eccc161e0ace6149aa72674476": 1,
-        "9aac597bb56dede2c3324d348f88a06006f5f013ab7a597a0f5e048572808d3f": 1,
         "017d69122d258621386a9f42515cff62149ab11ceeb098bbc7447903710085b4": 1,
         "3d16acb41ad605e071042ba4cace96e5d9d51d76cc166e43b806f88eeb72f921": 1,
         "1ccbe84ba31dbd128c659c83d8450331c9c0c90f0b90aeb293aa11b2a618b0dd": 1,
-        "a17659401b0c73a70d0cfd6315dad60735f092fde970b602fb7b2e1de723522f": 1,
-        "f54ac5a652783cb1a9d0a34123a1814c15de18265c8bbc1999e15102d95118f1": 1,
-        "18813c9002bf9ef1bf047002dcc95ab4101c35dc9c3ba0657a3a3866668ba4e0": 1,
-        "a466e1ac7b790c7dd3a3613b041868949877bf9a0e5cc7ec931c73916cf5817e": 1,
-        "9531d3e9f41cc7db3fed1617b26a534056ded8407cabc312cdbade43bb6b9d3e": 1,
-        "4857aef94cec81ec15f0ab31d81ff8d74a31bc4038520a873a3af6fa6ce0a75e": 1,
-        "0a9572192fdb7ca20486df6ca8dad90ff901ca93d200cbdaf2b852eb4e9ccf79": 1,
         "ca8557a7e68a4a0bfd50f69c587769a4bc0c8dbd1e93ba9c4da59259e1bfaa22": 1,
         "54c0c215f9bc75094af2b9377992105772eb802c56cc6100c298fa64c0173127": 1,
         "d47f843d3c6f2aafe783963cad5055fbf0d388fce3f6a95ad1828adc62bedb1c": 1,
         "56d3f3062b95cef4653b7062c10aff5fc49bae31d27f0881920784b5dbe19a18": 1,
-        "0c490c5fd1758fa44e22de1c191024b1eb7667bcaafd7577d8855a69ca4723bb": 1,
         "6403996d5b772fb250c3ba9402f22adf7a590bfc579c32f6ea839b5354ede1f9": 1,
         "28a48193b814332264ebcd69bbb5eca7efab72ea7c04d32c21d64b63e1975dec": 1,
         "1f7ccbf9ae687556b29f5dafeae7ef89d6fc296c068fa7c19eac60443a9bd15b": 1,
-        "4aea8f96d8c5c50d54ee2aab68e1f8e05f7153accc17f3a1665f33c9ca12fbb7": 1,
         "d609cec3fa25b14f6a63e8e5c9c08e6e5f5a7416515c248903df568d1a63d594": 1,
-        "4125ce7e4ce7eaf3712c933c92dc29c115b715c6192ac22251ec9753664aeaf1": 1,
         "b574ceb48033a09c84d99371fcf7ef27b8979a7ab3f764ed1db8b9de2f9a881e": 1,
         "208639b316cd52530fed5481f8a2a7a70994f91a3fffb3511d57238166985b04": 1,
-        "a3c3d737caa6a2d0f24844a6195c7f57bd603d07cda0ca46fc5a23814e571898": 1,
         "b0219d15d1be91cf2b678f2dedb983b4db88cf54624e9a8399567b9fc6afc9da": 1,
-        "4202a5721d8f74278722bbe60d6e59bcdaaddc3f17492a5785fdd8a2796b0360": 1,
-        "a894e1a829958097459a8f0142dd9f97b9c5b5af0c514b7115381c0bbac2013f": 1,
-        "51b643d50179b1778892b6ad64680609270a34b924e42be7ca59f06f1e59f622": 1,
-        "11f489d9a2a21f43412826dfc867157be21425b67c98cbe654af930d9f9bf071": 1,
-        "40ddb9c324cc3fc867063299ec080263adf85b91a706bed371307eda8bd0bc92": 1,
-        "b4388effc234131b4a00ee32509ffe8a8097a71f1dc0b69250ac08eb854f2c90": 1,
-        "c71d6446a6a757e03e745a9eba42380a08cab56fe3e21729ae6197e3e0c9a7ed": 1,
-        "a88d116857ccfe327c26f46248e7cdc6c8ecacce4b77c18fdcc092fb6470c6cf": 1,
-        "583859d8c480daaa325df906d752e93d0aaa368e04d362efd4e1776cd89b55b2": 1,
-        "b0592aa766129a76eb3233b0afb1eb8d9663eea5c6c08fa622ef246dbd6f0733": 1,
-        "fcaa455092f0bad3b7b2a225ebc7d1ce1d26b17f88e11c1677587b087df91410": 1,
-        "e03fcead8d3138d0686180c0fc95761dbd008a783bbb656ced2d14a9707c6155": 1,
-        "b947fe43a6ff05d0632bb620727d490cfc2a3396ff1579ec19f8cba086709af6": 1,
         "6d78004c7c0cbceb44f395f832bec64c22df338e2fe3f2bfc6205922deb2ebe6": 1,
         "9c0bf513d54c87a16186e4c02d0c998d51559c4e5434c3976f567d6898286916": 1,
         "494d125f5c6655ea45172856f600345e6a7ead8777468b6966bc614e4354b366": 1,
-        "993e4898670ead54fe3e4dc60827dfdb0db4ec4dde09a98cfd2ea37676963e4e": 1,
-        "9fc3e38ad42362e093883f8c3b1bc23cee62cd01870ecb2c6e0194fd18fd9cfa": 1,
-        "57deb86f97ca44602ef2de20a364e92ebdecd51d61319d27b8f0afd211de25ea": 1,
-        "b859cc46653bab950f280c86f1ba2b54e8c24b79caaee739cba937cc37e3d0ff": 1,
-        "4acb88262e2c1c8b1507fe46c537ed8fc4728f0cf2a40aa5aba982b60a66e497": 1,
-        "19474b899e95eb09a28c8a176d7081243e7e4bfaaab3cefb69ea7c990f193b9e": 1,
-        "1f2964d2c74024d50d447327fbf2a60645e56e001331ee674d037cafa32e0ab0": 1,
-        "649c4412d7e77ecf40a423267b5032a0142a62527b3178b00d118e34111f4aeb": 1,
-        "2aeee72409d4964476c13b2676c19ae3ac7518170887d6aadcf9251fd79bece7": 1,
-        "c144733291e11ec6d1348b7355d66b14b7f24a9ab6607061984c4bdedc809a10": 1,
-        "a90080ce3f7996b1435a8ac1f9f62cb453160a48a6a953827dce5a01ec1f86d2": 1,
         "cdb949b4a01317bfaa886e19ce87ab8d4b4cf103398b2b1b6dfc7c02f429b69e": 1,
         "bffda8bd92c8bfee042e92124c835a015799801cab78f6839babb6148dc06dcb": 1,
         "09f6ce1ef69ebade4a4ba1a8f5a02e526943fc4db89ebc69e171de8f1f49bb1f": 1

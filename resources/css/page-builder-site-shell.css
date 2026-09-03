@@ -49,8 +49,6 @@
 .g7pb-site-socials a { display: inline-flex; width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; border-radius: 50%; color: inherit; }
 .g7pb-site-socials a:hover { background: color-mix(in srgb, var(--g7pb-shell-on-inverse) 12%, transparent); }
 .g7pb-site-footer [hidden], .g7pb-system-controls [hidden] { display: none !important; }
-.g7pb-site-part-persona { display: inline-flex; align-items: center; gap: .5rem; margin-inline: .75rem; font-size: .85rem; }
-.g7pb-site-part-persona select { min-height: 2.25rem; border: 1px solid var(--g7pb-border); border-radius: .4rem; background: var(--g7pb-surface-strong); }
 @media (max-width: 899px) {
   .g7pb-site-header__inner { gap: .75rem; }
   .g7pb-site-brand { font-size: 1rem; overflow-wrap: anywhere; }

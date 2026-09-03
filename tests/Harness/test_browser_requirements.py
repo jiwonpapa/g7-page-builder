@@ -472,14 +472,16 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(set(scenarios_for(["resources/js/editor/main.tsx"])), {PAGE, DOCUMENT_BOUNDARY})
         for path in ("resources/js/editor/PuckDocumentBoundary.tsx", "resources/js/editor/editorDocumentBoundary.ts", "resources/js/editor/draftPersistence.ts"):
             self.assertEqual(scenarios_for([path]), (DOCUMENT_BOUNDARY,))
-        for path in ("resources/css/page-builder-public.css",):
-            self.assertEqual(scenarios_for([path]), (STRUCTURE_THEME,))
+        self.assertEqual(set(scenarios_for(["resources/css/page-builder-public.css"])),
+                         {STRUCTURE_THEME, SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV})
         self.assertEqual(SITE_SHELL.projects, ("desktop",))
 
     def test_css_owners_select_synthetic_roles_and_keep_full_policy_separate(self):
         expected = {
-            "page-builder-public.css": {STRUCTURE_THEME},
-            "page-builder-theme.css": {STRUCTURE_THEME, MANAGER_CODE, PUBLIC_SHELL},
+            "page-builder-public.css": {STRUCTURE_THEME, SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV},
+            "page-builder-theme.css": {STRUCTURE_THEME, MANAGER_CODE, PUBLIC_SHELL, SITE_PART_HEADER, MOBILE_NAV},
+            "page-builder-editor.css": {CONTROLS, STRUCTURE_THEME, SITE_PART_HEADER},
+            "page-builder-site-part-responsive.css": {SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV},
             "page-builder-site-shell.css": {SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV},
             "page-builder-core.css": {STRUCTURE_THEME, MANAGER_CODE},
             "page-builder-manager.css": {PAGE, MANAGER_CODE},
@@ -503,11 +505,52 @@ class BrowserRequirementsTests(unittest.TestCase):
                         self.assertFalse(item.preset_prefixes)
                         self.assertTrue(all(value is None for _, value in item.environment(Path(directory))))
         for name in ("page-builder-site-part.css", "page-builder-site-part-controls.css",
-                     "page-builder-site-part-workspace.css", "page-builder-site-part-responsive.css"):
+                     "page-builder-site-part-workspace.css"):
             self.assertEqual(scenarios_for(["resources/css/" + name]), (SITE_PART_HEADER,))
         self.assertEqual(set(scenarios_for(["resources/js/public/mobileNavigation.css"])), {MOBILE_NAV, PUBLIC_SHELL})
         # No global exemption: legacy content/full mappings remain available.
         self.assertEqual(set(scenarios_for(["resources/css/unclassified-fixture.css"])), {PARITY, PUBLIC})
+
+    def test_shell_style_owners_select_complete_code_scenarios_in_every_phase(self):
+        expected = {
+            "page-builder-public.css": {STRUCTURE_THEME, SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV},
+            "page-builder-theme.css": {STRUCTURE_THEME, MANAGER_CODE, PUBLIC_SHELL, SITE_PART_HEADER, MOBILE_NAV},
+            "page-builder-editor.css": {CONTROLS, STRUCTURE_THEME, SITE_PART_HEADER},
+            "page-builder-site-part-responsive.css": {SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV},
+        }
+        for name, scenarios in expected.items():
+            with tempfile.TemporaryDirectory(prefix="g7pb-shell-style-map-") as directory:
+                root = Path(directory)
+                source = "resources/css/" + name
+                files = {source: ".fixture {display:block;}",
+                         **{scenario.spec: "import {test} from '@playwright/test';" for scenario in scenarios}}
+                for path, content in files.items():
+                    target = root / path
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(content)
+                for phase in ("submission", "integration", "verification", "ci"):
+                    with self.subTest(source=source, phase=phase):
+                        plan = build_plan(root, [source], phase=phase)
+                        self.assertFalse(plan.full)
+                        self.assertEqual(plan.unresolved, [])
+                        browsers = {g.name: g for g in plan.gates if g.name.startswith("browser:")}
+                        self.assertEqual(set(browsers), {"browser:" + scenario.spec for scenario in scenarios})
+                        self.assertFalse(any(g.name.startswith(("content:", "browser-registration:")) for g in plan.gates))
+                        self.assertTrue({PARITY.spec, PUBLIC.spec, STORE.spec}.isdisjoint(s.spec for s in scenarios))
+                        for scenario in scenarios:
+                            gate = browsers["browser:" + scenario.spec]
+                            self.assertTrue(gate.runtime)
+                            self.assertEqual(gate.deferred, phase == "submission")
+                            self.assertIn(source, gate.inputs)
+                            self.assertIn("tools/g7pb/browser_requirements.py", gate.inputs)
+                            self.assertEqual({arg for arg in gate.argv if arg.startswith("--project=")}, {"--project=desktop"})
+                            self.assertEqual(set(gate.browser_expectations),
+                                             {(project, title) for project in scenario.projects for title in scenario.titles})
+                            self.assertTrue(all(value is None for _, value in gate.env))
+                        header = browsers["browser:" + SITE_PART.spec]
+                        self.assertIn("--grep", header.argv)
+                        self.assertEqual(header.browser_expectations, (("desktop", SITE_PART_HEADER.titles[0]),))
+                        self.assertFalse(SITE_PART_HEADER.preset_prefixes)
 
     def test_standalone_viewer_has_exact_code_mapping_without_neighbor_exemptions(self):
         self.assertEqual(set(scenarios_for(["resources/views/viewer.blade.php"])), {PAGE, STRUCTURE_THEME})

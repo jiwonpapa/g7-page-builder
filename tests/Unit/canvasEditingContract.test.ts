@@ -71,6 +71,22 @@ describe('canvas editing contract', () => {
     expect(elementAppearanceClassName(styles, 'items.0.body')).not.toContain('expression');
   });
 
+  it('preserves explicit regular weight through element-map serialization without inventing absent weights', () => {
+    const source = {
+      heading: { weight: 'regular' },
+      subtitle: { tone: 'accent' },
+      body: {},
+      invalid: { weight: '400' },
+    };
+    const original = structuredClone(source);
+    const normalized = normalizeElementAppearanceMap(source);
+    expect(normalized).toEqual({ heading: { weight: 'regular' }, subtitle: { tone: 'accent' } });
+    const serialized: unknown = JSON.parse(JSON.stringify(normalized));
+    expect(normalizeElementAppearanceMap(serialized)).toEqual(normalized);
+    expect(normalized.heading).not.toBe(source.heading);
+    expect(source).toEqual(original);
+  });
+
   it('keeps per-item appearance attached to collection content through every edit operation', () => {
     const styles = {
       heading: { weight: 'bold' as const },

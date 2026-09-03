@@ -255,7 +255,7 @@ test.describe('Editor structure and theme contracts', () => {
   test('keeps explicit typography and inline colors across editor and compiled preview under host styles', async ({ page, context }, info) => {
     const regular = block('content.heading-01', {
       eyebrow: '', heading: '사용자가 선택한 보통 제목', level: 2, anchor: '',
-      appearance: { surface: 'default', spacing: 'compact', elements: { heading: { weight: 'regular' } } },
+      appearance: { surface: 'default', spacing: 'compact', textAlign: 'right', elements: { heading: { weight: 'regular' } } },
     });
     const heading = block('content.heading-01', {
       eyebrow: '', heading: '기본 굵기 제목 <span data-g7pb-tone="custom1" data-g7pb-weight="medium" data-g7pb-font="mono" data-g7pb-font-size-rem="1.25">사용자 부분 설정</span>',
@@ -268,7 +268,35 @@ test.describe('Editor structure and theme contracts', () => {
         { icon: 'shield', title: '두 번째 기능', body: '<p>독립 합성 본문입니다.</p>' },
       ],
     });
-    await withOwnedDocument(page, context, info.project.name, [regular, heading, features], async (api, owned) => {
+    const testimonials = block('trust.testimonials-01', {
+      eyebrow: '대비 표면의 지정 색상', heading: '후기 서식 검증', layout: 'quote-hero',
+      items: [
+        { quote: '첫 후기의 지정 서체와 크기', name: '합성 A', role: '', company: '', avatarSrc: '', avatarAlt: '', rating: 5 },
+        { quote: '두 번째 합성 후기', name: '합성 B', role: '', company: '', avatarSrc: '', avatarAlt: '', rating: 4 },
+      ],
+      appearance: { surface: 'contrast', elements: { eyebrow: { tone: 'accent' }, 'items.0.quote': { font: 'mono', fontSizeRem: 2 } } },
+    });
+    const stats = block('data.stats-icons-01', {
+      eyebrow: '', heading: '수치 서식 검증', layout: 'editorial',
+      items: [
+        { icon: 'trend', value: '123', label: '합성 수치 A', detail: '' },
+        { icon: 'users', value: '456', label: '합성 수치 B', detail: '' },
+      ],
+      appearance: { elements: { 'items.0.value': { font: 'mono', fontSizeRem: 2 } } },
+    });
+    const cta = block('content.cta-split-01', {
+      eyebrow: '', heading: '어두운 CTA 서식 검증', body: '본문의 지정 색상', theme: 'dark', layout: 'split',
+      appearance: { surface: 'contrast', elements: { body: { tone: 'accent' } } },
+    });
+    const tabs = block('content.tabs-01', {
+      eyebrow: '', heading: '선택 탭 서식 검증', style: 'pills', initialTab: 0,
+      items: [
+        { label: '첫 탭', heading: '합성 패널 A', body: '합성 본문 A' },
+        { label: '다음 탭', heading: '합성 패널 B', body: '합성 본문 B' },
+      ],
+      appearance: { elements: { 'items.0.label': { tone: 'accent' } } },
+    });
+    await withOwnedDocument(page, context, info.project.name, [regular, heading, features, testimonials, stats, cta, tabs], async (api, owned) => {
       const frame = page.frameLocator('iframe');
       const editorHeading = (id: string) => frame.locator(`[data-block-id="${id}"] [data-g7pb-heading-level]`).first();
       const regularHeading = editorHeading(regular.instance_id);
@@ -277,6 +305,10 @@ test.describe('Editor structure and theme contracts', () => {
       for (const field of [regularHeading, defaultHeading, featureHeading]) {
         await expect(field.locator('.ProseMirror')).toHaveAttribute('contenteditable', 'true');
       }
+      // A real content edit makes this save exercise canonical serialization,
+      // while the independently styled headings must retain their settings.
+      const featureBody = frame.locator(`[data-block-id="${features.instance_id}"] [data-g7pb-inline-field="items.0.body"] .ProseMirror`);
+      await replacePuckRichTextField(page, featureBody, '편집 후에도 제목의 부분 서식을 보존합니다.', 'typography companion body');
       await save(page);
       const current = await resource(api, owned.documentId);
       const response = await api.post(`${API}/${owned.documentId}/preview`, {
@@ -320,19 +352,49 @@ test.describe('Editor structure and theme contracts', () => {
           await expect(published).toHaveCSS('font-weight', weight);
           const leaf = editor.locator('.ProseMirror > p');
           await expect(leaf).toHaveCount(1);
+          for (const side of ['top', 'right', 'bottom', 'left']) {
+            await expect(leaf).toHaveCSS(`margin-${side}`, '0px');
+          }
           for (const property of ['font-family', 'font-feature-settings', 'font-kerning', 'font-size',
-            'font-variant-ligatures', 'font-weight', 'color', 'line-height', 'overflow-wrap', 'white-space', 'word-break']) {
+            'font-variant-ligatures', 'font-weight', 'color', 'line-height', 'letter-spacing', 'text-align',
+            'overflow-wrap', 'white-space', 'word-break']) {
             const inherited = await editor.evaluate((element, name) => element.ownerDocument.defaultView!.getComputedStyle(element).getPropertyValue(name), property);
             await expect(leaf).toHaveCSS(property, inherited);
           }
         }
+        await expect(regularHeading).toHaveCSS('text-align', 'right');
+        await expect(publicHeading(regular.instance_id)).toHaveCSS('text-align', 'right');
         await expect(featureHeading).toHaveCSS('line-height', 'normal');
         await expect(featureHeading).toHaveCSS('max-width', 'none');
         await expect(publicHeading(features.instance_id)).toHaveCSS('line-height', 'normal');
+        // Family layout defaults stay below explicit field typography.
+        for (const field of [
+          frame.locator(`[data-block-id="${testimonials.instance_id}"] [data-g7pb-inline-field="items.0.quote"]`),
+          preview.locator(`[data-block-id="${testimonials.instance_id}"] blockquote:first-child .g7pb-testimonials__quote`),
+          frame.locator(`[data-block-id="${stats.instance_id}"] [data-g7pb-inline-field="items.0.value"]`),
+          preview.locator(`[data-block-id="${stats.instance_id}"] article:first-child > strong`),
+        ]) {
+          await expect(field).toHaveCount(1);
+          await expect(field).toHaveCSS('font-family', /ui-monospace/);
+          const style = await sample(field);
+          expect(parseFloat(style.fontSize)).toBeCloseTo(parseFloat(style.rootFontSize) * 2);
+        }
+        for (const field of [
+          frame.locator(`[data-block-id="${testimonials.instance_id}"] [data-g7pb-inline-field="eyebrow"]`),
+          preview.locator(`[data-block-id="${testimonials.instance_id}"] p.g7pb-section-eyebrow`),
+          frame.locator(`[data-block-id="${cta.instance_id}"] [data-g7pb-inline-field="body"]`),
+          preview.locator(`[data-block-id="${cta.instance_id}"] .g7pb-cta__body`),
+          frame.locator(`[data-block-id="${tabs.instance_id}"] [data-g7pb-inline-field="items.0.label"]`),
+          preview.locator(`[data-block-id="${tabs.instance_id}"] button[role="tab"][aria-selected="true"]`),
+        ]) {
+          await expect(field).toHaveCount(1);
+          await expect(field).toHaveCSS('color', 'rgb(37, 99, 235)');
+        }
         const inline = [defaultHeading.locator('[data-g7pb-tone="custom1"]'), publicHeading(heading.instance_id).locator('[data-g7pb-tone="custom1"]')];
         for (const span of inline) {
           await expect(span).toHaveCount(1);
           await expect(span).toHaveText('사용자 부분 설정');
+          await expect(span).toHaveAttribute('data-g7pb-font-size-rem', '1.25');
           await expect(span).toHaveCSS('color', 'rgb(18, 52, 86)');
           await expect(span).toHaveCSS('font-weight', '500');
           await expect(span).toHaveCSS('font-family', /ui-monospace/);
@@ -347,10 +409,20 @@ test.describe('Editor structure and theme contracts', () => {
         expect(saved?.props.heading).toContain('data-g7pb-weight="medium"');
         expect(saved?.props.heading).toContain('data-g7pb-font="mono"');
         expect(saved?.props.heading).toContain('data-g7pb-font-size-rem="1.25"');
+        // Reentry uses the saved document, not the original seeded DOM.
+        await page.reload();
+        await expect(defaultHeading.locator('.ProseMirror')).toHaveAttribute('contenteditable', 'true');
+        await expect(regularHeading).toHaveCSS('font-weight', '400');
+        const reenteredSpan = defaultHeading.locator('[data-g7pb-font-size-rem="1.25"]');
+        await expect(reenteredSpan).toHaveCSS('color', 'rgb(18, 52, 86)');
+        await expect(reenteredSpan).toHaveCSS('font-weight', '500');
+        await expect(reenteredSpan).toHaveCSS('font-family', /ui-monospace/);
+        const reenteredStyle = await sample(reenteredSpan);
+        expect(parseFloat(reenteredStyle.fontSize)).toBeCloseTo(parseFloat(reenteredStyle.rootFontSize) * 1.25);
       } finally {
         await preview.close();
       }
-    }, { 'design.custom_color_1_light': '#123456', 'design.custom_color_1_dark': '#abcdef' });
+    }, { 'design.palette': 'blue', 'design.custom_color_1_light': '#123456', 'design.custom_color_1_dark': '#abcdef' });
   });
 
   test('nested selection edits and inserts within the selected parent', async ({ page, context }, info) => {

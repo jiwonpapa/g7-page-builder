@@ -2,7 +2,23 @@
 .g7pb-preview-page [data-g7pb-heading-level].g7pb-element-weight--regular { font-weight: 400; }
 .g7pb-preview-page [data-g7pb-heading-level].g7pb-element-weight--heading-default { font-weight: 700; }
 .g7pb-preview-page [data-g7pb-heading-level] { overflow-wrap: normal; white-space: normal; word-break: normal; }
-.g7pb-preview-page [data-g7pb-heading-level] :where(*) { margin: 0 !important; color: inherit !important; font-family: inherit !important; font-feature-settings: inherit !important; font-kerning: inherit !important; font-size: inherit !important; font-variant-ligatures: inherit !important; font-weight: inherit !important; letter-spacing: inherit !important; line-height: inherit !important; overflow-wrap: inherit !important; text-align: inherit !important; white-space: inherit !important; word-break: inherit !important; }
+/* Only editor containers inherit the semantic heading; marked spans keep their own styles. */
+.g7pb-preview-page [data-g7pb-heading-level] :is([contenteditable], [contenteditable] > p) {
+  margin: 0;
+  color: inherit;
+  font-family: inherit;
+  font-feature-settings: inherit;
+  font-kerning: inherit;
+  font-size: inherit;
+  font-variant-ligatures: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  overflow-wrap: inherit;
+  text-align: inherit;
+  white-space: inherit;
+  word-break: inherit;
+}
 .g7pb-preview-page .g7pb-preview-features > [data-g7pb-heading-level="2"] { max-width: none; line-height: normal; }
 .g7pb-preview-page :is(.g7pb-preview-stats, .g7pb-preview-pricing, .g7pb-preview-team, .g7pb-preview-gallery, .g7pb-preview-bar-chart, .g7pb-preview-g7-data) > :is(header, figcaption) { max-width: 48rem; }
 .g7pb-preview-page :is(.g7pb-preview-stats, .g7pb-preview-pricing, .g7pb-preview-team, .g7pb-preview-gallery, .g7pb-preview-g7-data) > header > [data-g7pb-heading-level="2"] { max-width: none; }

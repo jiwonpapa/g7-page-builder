@@ -40,7 +40,9 @@ describe('pure catalog appearance adapter', () => {
     expect(appearance({ elements: raw.elements }, fallback)).toEqual({ ...fallback, elementStyles: raw.elements });
     expect(appearance({ ...raw, elementStyles: {} }, fallback)).toEqual(fallback);
     expect(appearance({ ...raw, elementStyles: null }, fallback)).toEqual({ ...fallback, elementStyles: raw.elements });
-    expect(attachAppearance({}, { ...fallback, elementStyles: { heading: { weight: 'regular' } } }, fallback, false)).toEqual({});
+    expect(attachAppearance({}, { ...fallback, elementStyles: { heading: { weight: 'regular' } } }, fallback, false))
+      .toEqual({ appearance: { ...fallback, elements: { heading: { weight: 'regular' } } } });
+    expect(attachAppearance({}, { ...fallback, elementStyles: { heading: {} } }, fallback, false)).toEqual({});
     expect(raw).toEqual(before);
   });
 });

@@ -351,6 +351,23 @@ test.describe('Editor structure and theme contracts', () => {
       // while the independently styled headings must retain their settings.
       const featureBody = frame.locator(`[data-block-id="${features.instance_id}"] [data-g7pb-inline-field="items.0.body"] .ProseMirror`);
       await replacePuckRichTextField(page, featureBody, '편집 후에도 제목의 부분 서식을 보존합니다.', 'typography companion body');
+      await page.keyboard.press('ControlOrMeta+A');
+      const inlineToolbar = frame.getByTestId('page-builder-richtext-inline-toolbar');
+      await expect(inlineToolbar).toBeVisible();
+      const uiAccent = await page.getByTestId('page-builder-editor').evaluate((element) => getComputedStyle(element).getPropertyValue('--g7pb-accent').trim());
+      expect(uiAccent).not.toBe('');
+      await expect(inlineToolbar).toHaveCSS('--g7pb-accent', uiAccent);
+      const more = inlineToolbar.getByTestId('page-builder-richtext-more');
+      if (await more.count()) await more.click();
+      await frame.getByTestId('page-builder-richtext-font').click();
+      const fontMenu = frame.getByRole('listbox', { name: '선택한 글자 글꼴', exact: true });
+      await expect(fontMenu).toHaveAttribute('data-g7pb-floating-ready', 'true');
+      await expect(fontMenu).toHaveCSS('--g7pb-accent', uiAccent);
+      const selectedOption = fontMenu.locator('[aria-selected="true"]');
+      const optionStyle = await sample(selectedOption);
+      expect(contrast(optionStyle.color, optionStyle.background)).toBeGreaterThanOrEqual(4.5);
+      await page.keyboard.press('Escape');
+      await featureBody.click();
       await save(page);
       const current = await resource(api, owned.documentId);
       const response = await api.post(`${API}/${owned.documentId}/preview`, {
@@ -385,8 +402,8 @@ test.describe('Editor structure and theme contracts', () => {
           await expect(sentinel).toHaveCSS('font-weight', '300');
           const ratio = await sentinel.evaluate((element) => {
             const view = element.ownerDocument.defaultView;
-              if (!view) throw new Error('Missing document theme window.');
-              const style = view.getComputedStyle(element);
+            if (!view) throw new Error('Missing document theme window.');
+            const style = view.getComputedStyle(element);
             return parseFloat(style.lineHeight) / parseFloat(style.fontSize);
           });
           expect(ratio).toBe(2);

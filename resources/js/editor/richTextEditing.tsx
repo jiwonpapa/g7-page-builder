@@ -82,8 +82,8 @@ export function RichTextCanvasField({
   const elementStyles = React.useContext(CanvasCurrentElementStylesContext);
   const headingLevel = /^h([1-4])$/.exec(requestedElement)?.[1];
   const explicitWeight = elementStyles?.[fieldPath]?.weight;
-  const semanticClassName = requestedElement === 'strong'
-    ? 'g7pb-element-weight--bold'
+  const semanticClassName = requestedElement === 'strong' && explicitWeight === undefined
+    ? 'g7pb-element-weight--strong-default'
     : headingLevel && explicitWeight === undefined ? 'g7pb-element-weight--heading-default' : '';
   const resolvedClassName = [
     className,

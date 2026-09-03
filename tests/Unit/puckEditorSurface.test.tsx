@@ -418,7 +418,7 @@ describe('Puck editor surface contract', () => {
     expect(wrappers[0]).toHaveProperty('role', 'paragraph');
     expect(wrappers[1].hasAttribute('role')).toBe(false);
     expect(wrappers[2]).toHaveProperty('role', 'strong');
-    expect(wrappers[2].classList.contains('g7pb-element-weight--bold')).toBe(true);
+    expect(wrappers[2].classList.contains('g7pb-element-weight--strong-default')).toBe(true);
     expect(wrappers[3]).toHaveProperty('role', 'heading');
     expect(wrappers[3].getAttribute('aria-level')).toBe('3');
   });

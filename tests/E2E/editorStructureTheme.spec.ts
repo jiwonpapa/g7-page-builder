@@ -74,7 +74,7 @@ async function resource(api: APIRequestContext, id: string): Promise<{ document:
 
 async function withOwnedDocument(
   page: Page, context: BrowserContext, project: string, blocks: PageBuilderBlock[],
-  run: (api: APIRequestContext, owned: OwnedEditorInteractionDocument) => Promise<void>,
+  run: (api: APIRequestContext, owned: OwnedEditorInteractionDocument, seededDocument: PageBuilderDocument) => Promise<void>,
   tokens: PageBuilderDocument['tokens'] = {},
 ): Promise<void> {
   const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
@@ -94,9 +94,10 @@ async function withOwnedDocument(
       data: { document, expected_lock_version: current.lock_version },
     });
     expect(seeded.ok(), `Fixture draft rejected (${seeded.status()})`).toBe(true);
+    const seededDocument = (await resource(api, owned.documentId)).document;
     expect((await page.goto(`${EDITOR}?document=${owned.documentId}`))?.ok()).toBe(true);
     await expect(page.getByTestId('page-builder-editor')).toBeVisible();
-    await run(api, owned);
+    await run(api, owned, seededDocument);
     expect(pageErrors, 'Editor or compiled preview raised an uncaught browser exception.').toEqual([]);
   } catch (error) {
     if (!page.isClosed()) {
@@ -296,8 +297,35 @@ test.describe('Editor structure and theme contracts', () => {
       ],
       appearance: { elements: { 'items.0.label': { tone: 'accent' } } },
     });
-    await withOwnedDocument(page, context, info.project.name, [regular, heading, features, testimonials, stats, cta, tabs], async (api, owned) => {
+    const comparison = block('commerce.comparison-table-01', {
+      eyebrow: '', heading: '비교 열 굵기 검증', highlightColumn: -1,
+      columns: [
+        { title: '기본 굵기 열', description: '' }, { title: '보통 굵기 열', description: '' },
+        { title: '중간 굵기 열', description: '' }, { title: '굵은 열', description: '' },
+      ],
+      rows: [{ feature: '합성 항목', values: ['하나', '둘', '셋', '넷'] }],
+      appearance: { surface: 'default', spacing: 'compact', elements: {
+        'columns.1.title': { weight: 'regular' }, 'columns.2.title': { weight: 'medium' },
+        'columns.3.title': { weight: 'bold' },
+      } },
+    });
+    await withOwnedDocument(page, context, info.project.name, [regular, heading, features, testimonials, stats, cta, tabs, comparison], async (api, owned, seededDocument) => {
+      const seededComparison = seededDocument.blocks.find(item => item.instance_id === comparison.instance_id);
+      if (!seededComparison) throw new Error('Missing seeded comparison block.');
+      expect(seededComparison.props.appearance).toEqual(comparison.props.appearance);
       const frame = page.frameLocator('iframe');
+      const strongWeights = ['900', '400', '500', '800'];
+      const expectStrongEditorWeights = async (): Promise<void> => {
+        for (const [index, weight] of strongWeights.entries()) {
+          const field = frame.locator(`[data-block-id="${comparison.instance_id}"] [data-g7pb-inline-field="columns.${index}.title"]`);
+          await expect(field).toHaveCSS('display', 'block');
+          await expect(field.locator('.ProseMirror')).toHaveAttribute('contenteditable', 'true');
+          await expect(field.locator('.ProseMirror > p')).toHaveCount(1);
+          for (const node of [field, field.locator('.ProseMirror'), field.locator('.ProseMirror > p')]) {
+            await expect(node).toHaveCSS('font-weight', weight);
+          }
+        }
+      };
       const editorHeading = (id: string) => frame.locator(`[data-block-id="${id}"] [data-g7pb-heading-level]`).first();
       const regularHeading = editorHeading(regular.instance_id);
       const defaultHeading = editorHeading(heading.instance_id);
@@ -305,6 +333,7 @@ test.describe('Editor structure and theme contracts', () => {
       for (const field of [regularHeading, defaultHeading, featureHeading]) {
         await expect(field.locator('.ProseMirror')).toHaveAttribute('contenteditable', 'true');
       }
+      await expectStrongEditorWeights();
       // A real content edit makes this save exercise canonical serialization,
       // while the independently styled headings must retain their settings.
       const featureBody = frame.locator(`[data-block-id="${features.instance_id}"] [data-g7pb-inline-field="items.0.body"] .ProseMirror`);
@@ -320,6 +349,12 @@ test.describe('Editor structure and theme contracts', () => {
       const preview = await context.newPage();
       try {
         expect((await preview.goto(payload.data.preview_url))?.ok()).toBe(true);
+        await expectStrongEditorWeights();
+        for (const [index, weight] of strongWeights.entries()) {
+          const published = preview.locator(`[data-block-id="${comparison.instance_id}"] thead tr > th:nth-child(${index + 2}) > strong`);
+          await expect(published).toHaveCount(1);
+          await expect(published).toHaveCSS('font-weight', weight);
+        }
         // These are competing host defaults, not desired product styles. The
         // outside sentinel proves both the conflict and host non-interference.
         for (const body of [frame.locator('body'), preview.locator('body')]) {
@@ -409,6 +444,10 @@ test.describe('Editor structure and theme contracts', () => {
         expect(saved?.props.heading).toContain('data-g7pb-weight="medium"');
         expect(saved?.props.heading).toContain('data-g7pb-font="mono"');
         expect(saved?.props.heading).toContain('data-g7pb-font-size-rem="1.25"');
+        const savedComparison = current.document.blocks.find(item => item.instance_id === comparison.instance_id);
+        // Compare with the actual server seed: request middleware canonicalizes
+        // empty eyebrow/description strings to null before the editor loads.
+        expect(savedComparison?.props).toEqual(seededComparison.props);
         // Reentry uses the saved document, not the original seeded DOM.
         await page.reload();
         await expect(defaultHeading.locator('.ProseMirror')).toHaveAttribute('contenteditable', 'true');
@@ -419,6 +458,7 @@ test.describe('Editor structure and theme contracts', () => {
         await expect(reenteredSpan).toHaveCSS('font-family', /ui-monospace/);
         const reenteredStyle = await sample(reenteredSpan);
         expect(parseFloat(reenteredStyle.fontSize)).toBeCloseTo(parseFloat(reenteredStyle.rootFontSize) * 1.25);
+        await expectStrongEditorWeights();
       } finally {
         await preview.close();
       }

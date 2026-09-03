@@ -75,6 +75,43 @@ function renderInlineMenu(
 }
 
 describe('Puck-native rich-text editing', () => {
+  it('preserves explicit strong weights and restores the semantic default without replacing field content', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    let previousField: Element | null = null;
+    let previousContent: Element | null = null;
+    for (const weight of ['regular', 'medium', 'bold', undefined, 'regular']) {
+      const styles = normalizeElementAppearanceMap({ 'columns.0.title': weight ? { weight } : {} });
+      await act(async () => {
+        root.render(
+          <CanvasCurrentElementStylesContext.Provider value={styles}>
+            <RichTextCanvasField as="strong" fieldPath="columns.0.title">
+              <span contentEditable suppressContentEditableWarning>합성 비교 열 제목</span>
+            </RichTextCanvasField>
+          </CanvasCurrentElementStylesContext.Provider>,
+        );
+      });
+      const field = container.querySelector('[data-g7pb-inline-field="columns.0.title"]');
+      if (!field) throw new Error('Expected the rendered strong field');
+      const content = field.querySelector('[contenteditable]');
+      expect(field.getAttribute('role')).toBe('strong');
+      expect(field.getAttribute('data-g7pb-richtext-display')).toBe('strong');
+      expect(field.classList.contains(`g7pb-element-weight--${weight ?? 'regular'}`)).toBe(true);
+      expect(field.classList.contains('g7pb-element-weight--bold')).toBe(weight === 'bold');
+      expect(field.classList.contains('g7pb-element-weight--strong-default')).toBe(weight === undefined);
+      expect(field.textContent).toBe('합성 비교 열 제목');
+      expect(content).not.toBeNull();
+      if (previousField) {
+        expect(field).toBe(previousField);
+        expect(content).toBe(previousContent);
+      }
+      previousField = field;
+      previousContent = content;
+    }
+  });
+
   it.each([
     { label: 'explicit regular', appearance: { weight: 'regular' }, headingDefault: false },
     { label: 'absent weight', appearance: {}, headingDefault: true },

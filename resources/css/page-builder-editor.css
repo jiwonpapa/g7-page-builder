@@ -2446,7 +2446,7 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-preview-inquiry > div > [data-g7pb-richtext-display="div"], .g7pb-preview-map > div > [data-g7pb-richtext-display="div"] { color: var(--g7pb-page-muted); line-height: 1.7; }
 .g7pb-preview-testimonial-quote.g7pb-preview-richtext { font-size: 1.08rem; line-height: 1.72; }
 .g7pb-preview-testimonials footer > :is(i, img) { width: 2.9rem; height: 2.9rem; }
-.g7pb-preview-comparison thead [data-g7pb-richtext-display="strong"] { display: block; font-weight: 900 !important; }
+.g7pb-preview-comparison thead [data-g7pb-richtext-display="strong"].g7pb-element-weight--strong-default { font-weight: 900; }
 .g7pb-preview-comparison thead [data-g7pb-richtext-display="span"] { display: block; margin-top: .35rem; color: var(--g7pb-page-muted, #526071); font-size: .78rem; font-weight: 500; }
 .g7pb-preview-articles article [data-g7pb-richtext-display="div"] { line-height: 1.65; }
 .g7pb-preview-events [data-g7pb-heading-level="3"] { margin: .3rem 0 .7rem; font-size: 1.4rem; }

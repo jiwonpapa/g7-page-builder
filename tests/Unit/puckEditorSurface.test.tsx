@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -13,6 +11,7 @@ import type { SitePartResource } from '../../resources/js/api/resources';
 import { CANVAS_ELEMENT_MESSAGE } from '../../resources/js/editor/canvasEditingContract';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
 import layoutFixture from '../Contract/document-layout-v2.fixture.json';
+import { readCssGraph } from '../../scripts/lib/editorCssSources.mjs';
 
 const FULL_CATALOG_RENDER_TIMEOUT_MS = 15_000;
 
@@ -528,7 +527,7 @@ describe('Puck editor surface contract', () => {
       expect(richContent?.classList.contains(`g7pb-preview-rich-text__content--${measure}`)).toBe(true);
     });
 
-    const editorCss = readFileSync(resolve(process.cwd(), 'resources/css/page-builder-editor.css'), 'utf8');
+    const { css: editorCss } = await readCssGraph(process.cwd(), ['resources/css/page-builder-editor.css']);
     expect(editorCss).toContain('.g7pb-preview-rich-text__content--narrow { max-width: 48ch; }');
     expect(editorCss).toContain('.g7pb-preview-rich-text__content--standard { max-width: 65ch; }');
     expect(editorCss).toContain('.g7pb-preview-rich-text__content--wide { max-width: 80ch; }');

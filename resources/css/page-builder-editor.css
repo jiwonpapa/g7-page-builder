@@ -1835,7 +1835,7 @@ body:has(.g7pb-selected-block-actionbar) {
 .g7pb-site-announcement a { color: inherit; font-weight: 850; text-underline-offset: .2rem; }
 .g7pb-site-announcement--brand { color: var(--g7pb-shell-on-accent); background: var(--g7pb-shell-accent); }
 .g7pb-site-announcement--dark { color: var(--g7pb-shell-on-inverse); background: var(--g7pb-shell-inverse); }
-.g7pb-site-announcement--light { color: var(--g7pb-shell-text); background: var(--g7pb-shell-hover); }
+.g7pb-site-announcement--light { color: var(--g7pb-shell-announcement-light-text); background: var(--g7pb-shell-announcement-light-bg); }
 .g7pb-site-header.is-transparent { color: var(--g7pb-shell-on-inverse); border-color: color-mix(in srgb, var(--g7pb-shell-on-inverse) 24%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--g7pb-shell-scrim-ink) 78%, transparent), color-mix(in srgb, var(--g7pb-shell-scrim-ink) 42%, transparent)); }
 :where(.g7pb-site-header__inner) { display: grid; width: min(calc(100% - 2.5rem), 72rem); min-height: 4.75rem; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2rem; align-items: center; margin: 0 auto; }
 .g7pb-site-nav { justify-self: center; }

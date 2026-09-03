@@ -57,6 +57,8 @@ html.g7pb-standalone-viewer,
   --g7pb-shell-inverse: var(--g7pb-neutral-900);
   --g7pb-shell-on-inverse: var(--g7pb-neutral-0);
   --g7pb-shell-header-bg: color-mix(in srgb, var(--g7pb-shell-surface) 96%, transparent);
+  --g7pb-shell-announcement-light-text: var(--g7pb-neutral-900);
+  --g7pb-shell-announcement-light-bg: #eef1f6;
   --g7pb-shell-footer-bg: #111827;
   --g7pb-shell-footer-text: #d6dce6;
   --g7pb-shell-footer-muted: #919bad;

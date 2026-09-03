@@ -86,13 +86,16 @@ test('loads synthetic public data and filters the loaded rows without another re
     await expect(archive.locator('article:visible strong')).toHaveText('Third row');
     await archive.getByRole('button', { name: 'Previous', exact: true }).click();
     await expect(archive.locator('[data-g7pb-page-status]')).toHaveText('1 / 2');
-    await archive.getByLabel('Board', { exact: true }).selectOption('Beta');
+    const board = archive.getByRole('combobox', { name: 'Board', exact: true });
+    await expect(board).toHaveCount(1);
+    await board.selectOption('Beta');
     await expect(archive.locator('article:visible strong')).toHaveText('Second row');
     await archive.getByLabel('Search rows', { exact: true }).fill('absent');
     await expect(archive.locator('article:visible')).toHaveCount(0);
     await expect(archive.getByRole('status')).toHaveText('No matching fixture rows');
     await archive.getByLabel('Search rows', { exact: true }).fill('');
-    await archive.getByLabel('Board', { exact: true }).selectOption('');
+    await expect(board).toHaveCount(1);
+    await board.selectOption('');
     await expect(archive.locator('article:visible')).toHaveCount(2);
     expect(requests).toHaveLength(loadedRequests);
   });

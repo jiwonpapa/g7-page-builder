@@ -1198,10 +1198,10 @@
     {
       "path": "resources/js/public/pageEffects.ts",
       "rule": "SOURCE-SIZE",
-      "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Independent slider, effect and dynamic control bootstraps still share one module.",
+      "reason": "Existing file exceeds the structural review threshold; the measured non-empty-line ceiling cannot increase. Data rendering, request ownership and archive controls are separated; slider, effect and shell controls remain scheduled for later phases.",
       "resolveWhen": "Split coherent contracts, rendering, state, or transport responsibilities and reduce this file below its default threshold.",
       "fingerprints": {
-        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 1163
+        "ef52739726aeae582afd65a20f6e30bbfda899be78f4dd341cf244cdb96c745b": 829
       }
     },
     {

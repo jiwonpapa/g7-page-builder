@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { bootBlockVisibility as dataVisibility, bootDynamicData as dataBoot, disposePublicDataRuntime } from '../../resources/js/public/publicDataRuntime';
 
 import {
   bootAccordions,
@@ -14,6 +15,7 @@ import {
 } from '../../resources/js/public/pageEffects';
 
 afterEach(() => {
+  disposePublicDataRuntime(document);
   document.head.innerHTML = '';
   document.body.innerHTML = '';
   delete document.documentElement.dataset.g7pbServiceActionsReady;
@@ -24,6 +26,10 @@ afterEach(() => {
 });
 
 describe('published page effects runtime', () => {
+  it('keeps the published entry boot functions as the data owner bindings', () => {
+    expect(bootBlockVisibility).toBe(dataVisibility);
+    expect(bootDynamicData).toBe(dataBoot);
+  });
   it('keeps single FAQ accordions exclusive and makes tabs keyboard accessible', () => {
     document.body.innerHTML = `
       <section data-block-id="123e4567-e89b-42d3-a456-426614174099" data-g7pb-accordion data-g7pb-accordion-behavior="single">
@@ -465,7 +471,7 @@ describe('published page effects runtime', () => {
     expect(memberFetch).toHaveBeenCalledWith('/api/user/auth/user', expect.any(Object));
   });
 
-  it('applies generic block visibility with one cached audience request', async () => {
+  it('keeps settled generic visibility idempotent within its document runtime', async () => {
     document.body.innerHTML = `
       <section data-g7pb-visibility-audience="member" hidden>회원 안내</section>
       <section data-g7pb-visibility-audience="guest" hidden>비회원 안내</section>

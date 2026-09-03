@@ -182,7 +182,15 @@ F의 최종 실제 브라우저 22개와 자동 강조 글자 보완의 관련 �
 
 공개 effects JS는 `d10c1a838b7c9c5653337be2fe6205f6219c6ae79263742b1bd1a24e16e8e6fd`로 기존 기록과 동일하며 29,539/24,000 byte 초과가 남아 있다. 공개 JS 소유 소스 15개도 차수 시작 대비 동일하다. 전체 frontend budget CLI가 모두 통과했다고 표시하지 않고 6차 잔여로 명시한다. 동일 소스라도 worktree/Local 절대 경로가 달라 검사 캐시를 재사용하지 못하는 경우와 hosted CI의 인증 runtime 미구성도 별도 6차/운영 경계다.
 
-제품 감사 뒤 변경은 이 차수 문서 두 개로 제한한다. 문서 통합 뒤 `make integration-verify TASK=structure-phase5-integration-20260903`와 `make integration-finish TASK=structure-phase5-integration-20260903 NO_RELEASE=1`의 실제 결과는 같은 증거 폴더의 `final-verification-summary.json`, `phase5-final-close.json`에 최종 SHA·종료 시각·남은 task와 함께 기록한다. 이 기록은 배포나 전체 제품 상용 완성 판정이 아니다. 6차는 별도로 남는다.
+제품 감사 뒤 변경은 차수 문서 두 개와 아래 테스트 1개·공용 CSS reader의 타입 선언 1개다. PHP·TS/JS 제품 소스와 CSS·빌드 입력·생성 자산은 제품 감사 SHA 이후 동일하며, 마지막 영수증에서 정확한 파일 목록과 SHA256으로 다시 확인한다. 문서 통합 뒤 `make integration-verify TASK=structure-phase5-integration-20260903`와 `make integration-finish TASK=structure-phase5-integration-20260903 NO_RELEASE=1`의 실제 결과는 같은 증거 폴더의 `final-verification-summary.json`, `phase5-final-close.json`에 최종 SHA·종료 시각·남은 task와 함께 기록한다. 이 기록은 배포나 전체 제품 상용 완성 판정이 아니다. 6차는 별도로 남는다.
+
+## 최종 확인에서 발견한 CSS 테스트 입력 보완
+
+첫 문서 통합 `747c4cfcd8a635e049b8b4ecd311d51361e28e0f` 뒤 차수 최종 검증은 36 gate 성공·14 재사용 후 `puckEditorSurface.test.tsx`에서 중지했다. 해당 Unit은 28개 중 27개가 통과했고, 실패한 한 검사는 CSS 진입점만 직접 읽어서 F에서 연결된 소유 파일로 이동한 리치텍스트 규칙을 찾지 못했다. 최초 실패는 `first-final-verification-summary.json`과 원 로그에 보존했다. 이 실패를 제품 브라우저 실패나 콘텐츠 품질 결함으로 계산하지 않는다.
+
+정확 2파일 task `structure-5-css-unit-owner-20260903`에서 테스트 입력을 기존 공용 `readCssGraph`의 import 전체 읽기로 바꾸고 strict TypeScript용 `editorCssSources.d.mts` 선언을 추가했다. 기존 CSS 기대 8개는 그대로 유지했으며 reader 구현·제품 소스·CSS는 바꾸지 않았다. 제출 `3dad26fb76fcc13fc28a2ec5b72d9aaa08a92d1d`의 관련 Harness 30검사·Surface Unit 28검사·타입 검사가 모두 통과했다. `cabc7b9ad6b0d3b19cfe06ce216a25cc3c3c56d5`에 정식 통합하면서 Surface Unit 28개를 실행했고 Harness·타입 검사는 동일 입력 성공을 재사용했다. `css-unit-integration-summary.json`에 실제 1실행·2재사용·실패/보류 0을 기록했다. 이 테스트 전용 보완에서는 제품 브라우저를 실행하지 않았다.
+
+첫 최종 계획은 범위 검증 89 gate, `full=false`, 미분류 경로 0이었다. 같은 진입점 직접 읽기가 남아 있는 다른 Unit 네 개는 이 계획에 포함되지 않았으므로 이번 후속에 추가하지 않았다. `test_content.py`의 선택은 CSS reader 선언 경로에 연결된 격리 Python 하네스 검사이며, 블록 콘텐츠나 프리셋의 제품 품질 검사 실행을 뜻하지 않는다. 최종 확인은 실패와 관련 downstream을 다시 수행하고 같은 입력의 성공 결과는 재사용한다.
 
 ## 증거 위치
 

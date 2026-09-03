@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{ str_replace('_', '-', $page->locale) }}">
+<html class="g7pb-standalone-viewer" lang="{{ str_replace('_', '-', $page->locale) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

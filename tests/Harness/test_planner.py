@@ -677,7 +677,8 @@ class PlannerTests(unittest.TestCase):
         source = "resources/js/editor/new/preview.tsx"
         for name in (helper, "scripts/lib/editorCssSources.mjs", "scripts/lib/editorContractRegistration.mjs",
                      "scripts/check-editor-acceptance-contract.mjs", "scripts/check-editor-layout-parity.mjs",
-                     "tests/Harness/test_editor_contracts.py", "tests/Harness/editor-acceptance-contract.test.sh",
+                     "tests/Harness/test_editor_contracts.py", "tests/Harness/test_frontend_budgets.py",
+                     "tests/Harness/editor-acceptance-contract.test.sh",
                      "tests/Harness/editor-layout-parity-contract.test.sh", "package-lock.json", source):
             self.write(name, "fixture")
         paths = [helper, "tests/Harness/editor-acceptance-contract.test.sh", "tests/Harness/editor-layout-parity-contract.test.sh"]
@@ -730,6 +731,7 @@ class PlannerTests(unittest.TestCase):
         from tools.g7pb.browser_requirements import TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE
         owner = "resources/css/page-builder-editor-appearance.css"
         self.write(owner, ".fixture {font-weight:400;}")
+        self.write("resources/css/page-builder-editor.css", '@import "./page-builder-editor-appearance.css";')
         for scenario in (TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE):
             self.write(scenario.spec, "import {test} from '@playwright/test';test('fixture', () => {});")
         for phase in ("submission", "integration", "verification", "ci"):
@@ -746,6 +748,62 @@ class PlannerTests(unittest.TestCase):
                 self.assertEqual({g.name for g in browser}, {"browser:" + s.spec for s in (TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE)})
                 self.assertTrue(all(g.runtime and g.deferred == (phase == "submission") for g in browser))
                 self.assertFalse(any(g.name.startswith("content:") or "editorLayoutParity" in g.name or "publicQuality" in g.name for g in plan.gates))
+
+    def test_frontend_budget_checker_change_selects_focused_source_harness_in_all_phases(self):
+        checker = "scripts/check-frontend-budgets.mjs"
+        helper = "scripts/lib/editorCssSources.mjs"
+        test = "tests/Harness/test_frontend_budgets.py"
+        for name in (checker, helper, test, "package-lock.json"):
+            self.write(name, "fixture")
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [checker], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(plan.full)
+                self.assertEqual({g.name for g in plan.gates}, {"python:" + test, "syntax:" + checker})
+                self.assertFalse(any(g.runtime or g.deferred for g in plan.gates))
+                gate = next(g for g in plan.gates if g.name == "python:" + test)
+                self.assertEqual(gate.requires, ("node",))
+                self.assertEqual(dict(gate.env)["G7PB_FRONTEND_BUDGET_CHECKER"], str((self.root / checker).resolve()))
+                self.assertTrue({str((self.root / checker).resolve()), str((self.root / helper).resolve()), "package-lock.json"}.issubset(gate.inputs))
+
+    def test_editor_style_source_gate_uses_complete_import_inputs_without_extra_runtime(self):
+        from tools.g7pb.browser_requirements import TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE
+        entry = "resources/css/page-builder-editor.css"
+        owner = "resources/css/page-builder-editor-appearance.css"
+        shared = "resources/css/page-builder-theme.css"
+        future = "resources/css/page-builder-editor-chrome.css"
+        self.write(entry, '@import "./page-builder-editor-appearance.css";@import "./page-builder-theme.css";')
+        self.write(owner, ".fixture {font-weight:400;}")
+        self.write(shared, ":root {--fixture: red;}")
+        for scenario in (TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE):
+            self.write(scenario.spec, "import {test} from '@playwright/test';test('fixture', () => {});")
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [owner], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(plan.full)
+                gate = next(g for g in plan.gates if g.name == "editor-style-source")
+                self.assertFalse(gate.runtime or gate.deferred)
+                self.assertTrue(gate.reusable)
+                self.assertEqual(gate.requires, ("node",))
+                self.assertIn("--editor-source-only", gate.argv)
+                self.assertTrue({entry, owner, shared, future, "package-lock.json"}.issubset(gate.inputs))
+                self.assertTrue(any(p.endswith("scripts/lib/editorCssSources.mjs") for p in gate.inputs))
+                self.assertEqual({g.name for g in plan.gates if g.name.startswith("browser:")},
+                                 {"browser:" + scenario.spec for scenario in (TEXT, STRUCTURE_THEME, CATALOG_RESPONSIVE)})
+                self.assertFalse(any(g.name.startswith("content:") for g in plan.gates))
+                before = digest_gate(self.root, gate)
+                self.write(shared, ":root {--fixture: blue;}")
+                self.assertNotEqual(digest_gate(self.root, gate), before)
+                self.write(shared, ":root {--fixture: red;}")
+                self.assertEqual(digest_gate(self.root, gate), before)
+        self.write(future, ".fixture {display:block;}")
+        self.assertNotEqual(digest_gate(self.root, gate), before)
+        invalid = build_plan(self.root, [owner])
+        self.assertFalse(invalid.full)
+        self.assertTrue(any("Editor style source inputs required" in error for error in invalid.unresolved))
+        self.assertFalse(any(g.name == "editor-style-source" for g in invalid.gates))
 
     def test_unresolved_editor_inputs_fail_closed_without_full_or_cache_reuse(self):
         self.write("tests/Harness/test_editor_contracts.py", "pass")

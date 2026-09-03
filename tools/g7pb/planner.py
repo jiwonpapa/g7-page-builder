@@ -30,6 +30,8 @@ EDITOR_CHECKERS = {
 }
 BOUNDARY_INPUTS = ("scripts/check-boundaries.sh", "scripts/lib/blockPackRegistryBoundary.mjs")
 EDITOR_SOURCE_GRAPH = "scripts/lib/editorSourceGraph.mjs"
+FRONTEND_BUDGET_CHECKER = "scripts/check-frontend-budgets.mjs"
+EDITOR_CSS_READER = "scripts/lib/editorCssSources.mjs"
 BROWSER_HELPER_SPECS = {
     "tests/E2E/support/richTextInput.ts": (
         "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts",
@@ -151,6 +153,17 @@ def editor_contract_inputs(root, helper):
     return sorted(set(paths))
 
 
+def editor_style_inputs(root, checker):
+    result = subprocess.run(["node", str(checker), "--editor-source-inputs", "--root", str(root.resolve())],
+                            capture_output=True, text=True, check=True, timeout=30)
+    paths = json.loads(result.stdout)
+    if not isinstance(paths, list) or not paths or not all(isinstance(path, str) and path
+            and not Path(path).is_absolute() and (root / path).resolve().is_relative_to(root.resolve()) for path in paths):
+        raise ValueError("Invalid editor style source inputs")
+    # Approved owners that do not exist yet are explicit missing-file inputs.
+    return sorted(set(paths))
+
+
 def content_policy(root, paths):
     from . import content
     # The candidate policy must be testable before the verified controller can
@@ -194,7 +207,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         if not (root / path).is_file():
             plan.unresolved.append(f"Missing infrastructure test: {path}")
             return
-        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py", "test_type_import_changes.py"} else ()
+        requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py", "test_type_import_changes.py", "test_frontend_budgets.py"} else ()
         if Path(path).name == "test_php_coverage.py":
             requires = ("php",)
         environment, controller_inputs, reusable = (), [], True
@@ -210,6 +223,11 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         if Path(path).name == "test_site_part_fixture.py":
             requires = ("node", "php")
             controller_inputs.extend((*SITE_PART_HELPERS, "package-lock.json"))
+        if Path(path).name == "test_frontend_budgets.py":
+            policy_root = root if any(item in plan.paths for item in (FRONTEND_BUDGET_CHECKER, EDITOR_CSS_READER)) else checker_controller_root(root, controller_root)
+            checker = (policy_root / FRONTEND_BUDGET_CHECKER).resolve()
+            environment = (("G7PB_FRONTEND_BUDGET_CHECKER", str(checker)),)
+            controller_inputs.extend((str(checker), str((policy_root / EDITOR_CSS_READER).resolve()), "package-lock.json"))
         if Path(path).name == "test_editor_contracts.py":
             verified = checker_controller_root(root, controller_root)
             selected = {}
@@ -255,7 +273,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/check-editor-acceptance-contract.mjs": ("editor_contracts",),
         "scripts/check-editor-layout-parity.mjs": ("editor_contracts",),
         "scripts/lib/editorContractRegistration.mjs": ("editor_contracts",),
-        "scripts/lib/editorCssSources.mjs": ("editor_contracts",),
+        "scripts/lib/editorCssSources.mjs": ("editor_contracts", "frontend_budgets"),
+        FRONTEND_BUDGET_CHECKER: ("frontend_budgets",),
         "scripts/lib/editorSourceGraph.mjs": ("editor_contracts",),
         "tests/Harness/editor-acceptance-contract.test.sh": ("editor_contracts",),
         "tests/Harness/editor-layout-parity-contract.test.sh": ("editor_contracts",),
@@ -416,6 +435,18 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 [*css, "scripts/check-assets.mjs", "package-lock.json"], "Built CSS/JS artifact integrity",
                 ("node", "php", "g7", "browser"), True, reusable=False)
             artifact_names.add("style-assets")
+    editor_styles = [p for p in css if p == "resources/css/page-builder-editor.css"
+                     or p.startswith("resources/css/page-builder-editor-") and p != "resources/css/page-builder-editor-wysiwyg.css"]
+    if editor_styles:
+        policy_root = root if FRONTEND_BUDGET_CHECKER in plan.paths or EDITOR_CSS_READER in plan.paths else controller_root
+        checker = (policy_root / FRONTEND_BUDGET_CHECKER).resolve()
+        try:
+            inputs = editor_style_inputs(root, checker)
+            add("editor-style-source", ["node", str(checker), "--editor-source-only", "--root", str(root.resolve())],
+                [*editor_styles, *inputs, str(checker), str((policy_root / EDITOR_CSS_READER).resolve()), "package-lock.json"],
+                "Editor-owned CSS aggregate budget and Manager selector boundary", ("node",))
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            plan.unresolved.append(f"Editor style source inputs required: {error}")
     compiler_changed = any(p == COMPILER_FACADE or p.startswith(COMPILER_OWNERS) or p == COMPILER_TEST for p in plan.paths)
     php_graphs = {test: source_inputs(root, test) for test in php_tests}
     family = compiler_family(root) if compiler_changed else ()

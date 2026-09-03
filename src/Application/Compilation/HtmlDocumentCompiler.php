@@ -26,6 +26,12 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\Do
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\EventScheduleBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\FaqAccordionBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\FeaturesBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\G7BoardArchiveBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\G7PostDetailBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\G7ProductDetailBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\G7ProductGridBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\G7ProductShowcaseBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\G7RecentPostsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\GalleryBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\HeadingBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\HeroBlockCompiler;
@@ -35,8 +41,10 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\Ic
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ImageBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ImageCarouselBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ImageTextBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\InquiryFormBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\LogoCarouselBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\LogoCloudBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\MapDirectionsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\NoticeBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\PricingBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ProcessTimelineBlockCompiler;
@@ -384,10 +392,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.team-grid-01' => new TeamBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
             'builtin.gallery-grid-01' => new GalleryBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper),
             'builtin.bar-chart-01' => new BarChartBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
-            'builtin.g7-board-recent-posts-01' => fn (array $props): string => $this->compileG7RecentPosts($props),
-            'builtin.g7-ecommerce-product-grid-01' => fn (array $props): string => $this->compileG7ProductGrid($props),
-            'builtin.inquiry-form-01' => fn (array $props): string => $this->compileInquiryForm($props),
-            'builtin.map-directions-01' => fn (array $props): string => $this->compileMapDirections($props),
+            'builtin.g7-board-recent-posts-01' => new G7RecentPostsBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper),
+            'builtin.g7-ecommerce-product-grid-01' => new G7ProductGridBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper),
+            'builtin.inquiry-form-01' => new InquiryFormBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
+            'builtin.map-directions-01' => new MapDirectionsBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
             'builtin.testimonials-01' => new TestimonialsBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
             'builtin.faq-accordion-01' => new FaqAccordionBlockCompiler($this->properties, $this->appearance, $this->markup, $this->richText),
             'builtin.process-timeline-01' => new ProcessTimelineBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
@@ -399,10 +407,10 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             'builtin.testimonial-slider-01' => new TestimonialSliderBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),
             'builtin.event-schedule-01' => new EventScheduleBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
             'builtin.download-resources-01' => new DownloadResourcesBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
-            'builtin.g7-board-content-archive-01' => fn (array $props): string => $this->compileG7BoardArchive($props),
-            'builtin.g7-ecommerce-product-showcase-01' => fn (array $props): string => $this->compileG7ProductShowcase($props),
-            'builtin.g7-board-post-detail-01' => fn (array $props): string => $this->compileG7PostDetail($props),
-            'builtin.g7-ecommerce-product-detail-01' => fn (array $props): string => $this->compileG7ProductDetail($props),
+            'builtin.g7-board-content-archive-01' => new G7BoardArchiveBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper),
+            'builtin.g7-ecommerce-product-showcase-01' => new G7ProductShowcaseBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper),
+            'builtin.g7-board-post-detail-01' => new G7PostDetailBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper),
+            'builtin.g7-ecommerce-product-detail-01' => new G7ProductDetailBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper),
             'builtin.heading-01' => new HeadingBlockCompiler($this->properties, $this->appearance, $this->escaper, $this->richText),
             'builtin.rich-text-01' => new RichTextBlockCompiler($this->properties, $this->appearance, $this->richText),
             'builtin.image-01' => new ImageBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper),
@@ -424,266 +432,6 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 $this->blockCompilers->register($compiler instanceof BlockTypeCompilerPort ? $compiler : new CallbackBlockTypeCompiler($key, $compiler));
             }
         }
-    }
-
-    /**
-     * @param  array<string, mixed>  $props
-     */
-    private function compileG7RecentPosts(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'emptyMessage', 'appearance'], 'G7 recent posts');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->properties->requiredString($props, 'source', 16);
-        $period = $this->properties->requiredString($props, 'period', 16);
-        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8, 12]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [3, 4, 6]) : 3;
-        $audience = $this->properties->requiredString($props, 'audience', 16);
-        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-
-        if (! in_array($source, ['recent', 'popular'], true)
-            || ! in_array($period, ['today', 'week', 'month', 'year'], true)
-            || ! in_array($audience, ['all', 'guest', 'member'], true)) {
-            throw new DocumentCompileException('G7 recent posts configuration is invalid.');
-        }
-
-        $endpoint = $source === 'popular'
-            ? "/api/modules/sirsoft-board/boards/popular?period={$period}&limit={$limit}"
-            : "/api/modules/sirsoft-board/boards/posts/recent?limit={$limit}";
-        $hidden = $audience === 'all' ? '' : ' hidden';
-
-        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--posts '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-recent-posts" data-g7pb-data-source="posts" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('게시글').'</section>';
-    }
-
-    /**
-     * @param  array<string, mixed>  $props
-     */
-    private function compileG7ProductGrid(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'columns', 'pageSize', 'audience', 'detailBasePath', 'emptyMessage', 'appearance'], 'G7 product grid');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->properties->requiredString($props, 'source', 16);
-        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [2, 3, 4, 6, 8, 12]);
-        $columns = $this->properties->requiredIntegerChoice($props, 'columns', [2, 3, 4]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [2, 3, 4, 6]) : 4;
-        $audience = $this->properties->requiredString($props, 'audience', 16);
-        $detailBasePath = $this->properties->requiredString($props, 'detailBasePath', 200);
-        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
-
-        if (! in_array($source, ['latest', 'new', 'popular'], true)
-            || ! in_array($audience, ['all', 'guest', 'member'], true)
-            || preg_match('#^/[A-Za-z0-9/_-]*$#', $detailBasePath) !== 1) {
-            throw new DocumentCompileException('G7 product grid configuration is invalid.');
-        }
-
-        $endpoint = match ($source) {
-            'new' => "/api/modules/sirsoft-ecommerce/products/new?limit={$limit}",
-            'popular' => "/api/modules/sirsoft-ecommerce/products/popular?limit={$limit}",
-            default => "/api/modules/sirsoft-ecommerce/products?per_page={$limit}&sort=latest",
-        };
-        $hidden = $audience === 'all' ? '' : ' hidden';
-
-        return '<section class="g7pb-block g7pb-dynamic g7pb-dynamic--products '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-grid" data-g7pb-data-source="products" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escaper->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-dynamic-products--'.$columns.'" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('상품').'</section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileInquiryForm(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'formKind', 'submitLabel', 'successMessage', 'privacyLabel', 'showPhone', 'showSubject', 'appearance'], 'Inquiry form');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $description = $this->properties->optionalRichTextString($props, 'description', 1000) ?? '';
-        $kind = $this->properties->requiredString($props, 'formKind', 24);
-        $submitLabel = $this->properties->requiredString($props, 'submitLabel', 80);
-        $successMessage = $this->properties->requiredString($props, 'successMessage', 300);
-        $privacyLabel = $this->properties->requiredString($props, 'privacyLabel', 300);
-        $showPhone = $this->properties->requiredBoolean($props, 'showPhone');
-        $showSubject = $this->properties->requiredBoolean($props, 'showSubject');
-        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
-        if (! in_array($kind, ['inquiry', 'quote', 'reservation', 'application', 'newsletter'], true)) {
-            throw new DocumentCompileException('Inquiry form kind is invalid.');
-        }
-
-        $phone = $showPhone ? '<label><span>전화번호</span><span data-g7pb-form-control="input" data-g7pb-control-type="tel" data-g7pb-control-name="phone" data-g7pb-control-maxlength="40" data-g7pb-control-autocomplete="tel"></span></label>' : '';
-        $subject = $showSubject ? '<label class="g7pb-inquiry-form__wide"><span>문의 제목</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="subject" data-g7pb-control-maxlength="200"></span></label>' : '';
-
-        return '<section class="g7pb-block g7pb-inquiry '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="inquiry-form">'
-            .'<div class="g7pb-inquiry__intro">'.$this->markup->compileSectionHeading($eyebrow, $heading).($description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description) ? '<div class="g7pb-inquiry__description">'.$this->richText->sanitizeRichText($description).'</div>' : '<p>'.$this->escaper->formatText($description).'</p>')).'</div>'
-            .'<div class="g7pb-inquiry-form" data-g7pb-inquiry-host data-g7pb-inquiry-form data-g7pb-form-action="/pages/__G7PB_PAGE_SLUG__/inquiries" data-g7pb-form-kind="'.$kind.'" data-g7pb-success-message="'.$this->escaper->escapeAttribute($successMessage).'" data-g7pb-privacy-label="'.$this->escaper->escapeAttribute($privacyLabel).'" data-g7pb-submit-label="'.$this->escaper->escapeAttribute($submitLabel).'" data-g7pb-show-phone="'.($showPhone ? 'true' : 'false').'" data-g7pb-show-subject="'.($showSubject ? 'true' : 'false').'">'
-            .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="form_kind" data-g7pb-control-value="'.$kind.'"></span>'
-            .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="block_instance_id"></span>'
-            .'<span data-g7pb-form-control="input" data-g7pb-control-type="hidden" data-g7pb-control-name="started_at"></span>'
-            .'<label class="g7pb-inquiry-form__honeypot" aria-hidden="true"><span>웹사이트</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="website" data-g7pb-control-tabindex="-1" data-g7pb-control-autocomplete="off"></span></label>'
-            .'<label><span>이름</span><span data-g7pb-form-control="input" data-g7pb-control-type="text" data-g7pb-control-name="name" data-g7pb-control-maxlength="120" data-g7pb-control-autocomplete="name" data-g7pb-control-required="true"></span></label>'
-            .'<label><span>이메일</span><span data-g7pb-form-control="input" data-g7pb-control-type="email" data-g7pb-control-name="email" data-g7pb-control-maxlength="320" data-g7pb-control-autocomplete="email" data-g7pb-control-required="true"></span></label>'.$phone.$subject
-            .'<label class="g7pb-inquiry-form__wide"><span>문의 내용</span><span data-g7pb-form-control="textarea" data-g7pb-control-name="message" data-g7pb-control-maxlength="5000" data-g7pb-control-rows="6" data-g7pb-control-required="true"></span></label>'
-            .'<label class="g7pb-inquiry-form__consent"><span data-g7pb-form-control="input" data-g7pb-control-type="checkbox" data-g7pb-control-name="privacy" data-g7pb-control-value="1" data-g7pb-control-required="true"></span><span data-g7pb-privacy-copy>'.$this->escaper->escape($privacyLabel).'</span></label>'
-            .'<div class="g7pb-inquiry-form__footer"><span data-g7pb-form-control="button" data-g7pb-control-type="submit" data-g7pb-submit-copy>'.$this->escaper->escape($submitLabel).'</span><p role="status" aria-live="polite" data-g7pb-form-status></p></div></div>'
-            .'</section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileMapDirections(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'description', 'address', 'latitude', 'longitude', 'zoom', 'provider', 'mapImageSrc', 'mapImageAlt', 'directionsLabel', 'directionsUrl', 'phone', 'hours', 'parking', 'appearance'], 'Map directions');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $description = $this->properties->optionalRichTextString($props, 'description', 1000) ?? '';
-        $address = $this->properties->requiredString($props, 'address', 500);
-        $latitude = $this->properties->requiredNumber($props, 'latitude', -90, 90);
-        $longitude = $this->properties->requiredNumber($props, 'longitude', -180, 180);
-        $zoom = $this->properties->requiredIntegerChoice($props, 'zoom', [12, 14, 16, 18]);
-        $provider = $this->properties->requiredString($props, 'provider', 24);
-        $mapImageSrc = $this->properties->optionalString($props, 'mapImageSrc', 2048) ?? '';
-        $mapImageAlt = $this->properties->optionalString($props, 'mapImageAlt', 300) ?? '';
-        $directionsLabel = $this->properties->requiredString($props, 'directionsLabel', 80);
-        $directionsUrl = $this->properties->requiredString($props, 'directionsUrl', 2048);
-        $phone = $this->properties->optionalString($props, 'phone', 40) ?? '';
-        $hours = $this->properties->optionalString($props, 'hours', 300) ?? '';
-        $parking = $this->properties->optionalString($props, 'parking', 300) ?? '';
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($provider, ['image', 'openstreetmap', 'google', 'none'], true)) {
-            throw new DocumentCompileException('Map provider is invalid.');
-        }
-        $this->urls->assertAllowedUrl($directionsUrl, 'Directions link');
-
-        $map = '<div class="g7pb-map__placeholder" role="img" aria-label="'.$this->escaper->escapeAttribute($address).' 지도 자리"><span>지도 표시 안 함</span></div>';
-        if ($provider === 'image') {
-            $map = $this->markup->compileCatalogImage($mapImageSrc, $mapImageAlt, 'g7pb-map__image', '지도 이미지를 등록하세요');
-        } elseif ($provider === 'openstreetmap') {
-            $delta = match ($zoom) {
-                18 => 0.002, 16 => 0.008, 14 => 0.03, default => 0.12
-            };
-            $bbox = implode(',', [$longitude - $delta, $latitude - $delta, $longitude + $delta, $latitude + $delta]);
-            $src = 'https://www.openstreetmap.org/export/embed.html?bbox='.rawurlencode($bbox).'&marker='.rawurlencode($latitude.','.$longitude);
-            $map = $this->markup->embedPlaceholder('map-openstreetmap', $src, $address.' 지도');
-        } elseif ($provider === 'google') {
-            $src = 'https://www.google.com/maps?q='.rawurlencode($latitude.','.$longitude).'&z='.$zoom.'&output=embed';
-            $map = $this->markup->embedPlaceholder('map-google', $src, $address.' 지도');
-        }
-        $details = '<address><strong>'.$this->escaper->escape($address).'</strong>'
-            .($phone === '' ? '' : '<span class="g7pb-map__phone">'.$this->escaper->escape($phone).'</span>')
-            .($hours === '' ? '' : '<span class="g7pb-map__hours">'.$this->escaper->formatText($hours).'</span>')
-            .($parking === '' ? '' : '<span class="g7pb-map__parking">'.$this->escaper->formatText($parking).'</span>')
-            .'<a class="g7pb-button g7pb-button--primary" href="'.$this->escaper->escapeAttribute($directionsUrl).'">'.$this->escaper->escape($directionsLabel).'</a></address>';
-
-        $descriptionMarkup = $description === '' ? '' : ($this->richText->hasCanonicalRichTextMarkup($description)
-            ? '<div class="g7pb-map__description">'.$this->richText->sanitizeRichText($description).'</div>'
-            : '<p>'.$this->escaper->formatText($description).'</p>');
-
-        return '<section class="g7pb-block g7pb-map '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="map-directions"><div class="g7pb-map__intro">'.$this->markup->compileSectionHeading($eyebrow, $heading).$descriptionMarkup.$details.'</div><div class="g7pb-map__frame">'.$map.'</div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileG7BoardArchive(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'period', 'limit', 'pageSize', 'audience', 'showSearch', 'showBoardFilter', 'emptyMessage', 'appearance'], 'G7 board archive');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->properties->requiredString($props, 'source', 16);
-        $period = $this->properties->requiredString($props, 'period', 16);
-        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [6, 8, 12]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [3, 4, 6]) : 6;
-        $audience = $this->properties->requiredString($props, 'audience', 16);
-        $showSearch = $this->properties->requiredBoolean($props, 'showSearch');
-        $showBoardFilter = $this->properties->requiredBoolean($props, 'showBoardFilter');
-        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-        if (! in_array($source, ['recent', 'popular'], true) || ! in_array($period, ['today', 'week', 'month', 'year'], true) || ! in_array($audience, ['all', 'guest', 'member'], true)) {
-            throw new DocumentCompileException('G7 board archive configuration is invalid.');
-        }
-        $endpoint = $source === 'popular' ? "/api/modules/sirsoft-board/boards/popular?period={$period}&limit={$limit}" : "/api/modules/sirsoft-board/boards/posts/recent?limit={$limit}";
-        $hidden = $audience === 'all' ? '' : ' hidden';
-        $tools = ($showSearch || $showBoardFilter)
-            ? '<div class="g7pb-archive__tools">'
-                .($showSearch ? '<label><span class="g7pb-visually-hidden">게시글 제목 검색</span><span data-g7pb-form-control="input" data-g7pb-control-type="search" data-g7pb-control-placeholder="제목 검색" data-g7pb-control-marker="archive-search"></span></label>' : '')
-                .($showBoardFilter ? '<label><span class="g7pb-visually-hidden">게시판 선택</span><span data-g7pb-form-control="select" data-g7pb-control-marker="archive-filter">전체 게시판</span></label>' : '')
-                .'</div>'
-            : '';
-
-        return '<section class="g7pb-block g7pb-dynamic g7pb-board-archive '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-board-archive" data-g7pb-data-source="post-archive" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).$tools.'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">콘텐츠를 불러오는 중입니다.</p><div class="g7pb-dynamic-posts g7pb-board-archive__items" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('게시글').'</section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileG7ProductShowcase(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'source', 'limit', 'pageSize', 'audience', 'detailBasePath', 'layout', 'emptyMessage', 'appearance'], 'G7 product showcase');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $source = $this->properties->requiredString($props, 'source', 16);
-        $limit = $this->properties->requiredIntegerChoice($props, 'limit', [3, 4, 6, 8]);
-        $pageSize = array_key_exists('pageSize', $props) ? $this->properties->requiredIntegerChoice($props, 'pageSize', [3, 4]) : 3;
-        $audience = $this->properties->requiredString($props, 'audience', 16);
-        $detailBasePath = $this->properties->requiredString($props, 'detailBasePath', 200);
-        $layout = $this->properties->requiredString($props, 'layout', 16);
-        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
-        if (! in_array($source, ['latest', 'new', 'popular'], true) || ! in_array($audience, ['all', 'guest', 'member'], true) || ! in_array($layout, ['featured', 'rail'], true) || preg_match('#^/[A-Za-z0-9/_-]*$#', $detailBasePath) !== 1) {
-            throw new DocumentCompileException('G7 product showcase configuration is invalid.');
-        }
-        $endpoint = match ($source) {
-            'new' => "/api/modules/sirsoft-ecommerce/products/new?limit={$limit}",
-            'popular' => "/api/modules/sirsoft-ecommerce/products/popular?limit={$limit}",
-            default => "/api/modules/sirsoft-ecommerce/products?per_page={$limit}&sort=latest",
-        };
-        $hidden = $audience === 'all' ? '' : ' hidden';
-
-        return '<section class="g7pb-block g7pb-dynamic g7pb-product-showcase g7pb-product-showcase--'.$layout.' '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-showcase" data-g7pb-data-source="product-showcase" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-page-size="'.$pageSize.'" data-g7pb-audience="'.$audience.'" data-g7pb-product-base="'.$this->escaper->escapeAttribute(rtrim($detailBasePath, '/')).'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-dynamic-products g7pb-product-showcase__items" data-g7pb-data-list aria-busy="true"></div>'.$this->markup->compilePagination('상품').'</section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileG7PostDetail(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'boardSlug', 'postId', 'detailUrl', 'linkLabel', 'audience', 'showContent', 'emptyMessage', 'appearance'], 'G7 post detail');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $boardSlug = $this->properties->requiredString($props, 'boardSlug', 80);
-        $postId = $props['postId'] ?? null;
-        $detailUrl = $this->properties->requiredString($props, 'detailUrl', 2048);
-        $linkLabel = $this->properties->requiredString($props, 'linkLabel', 120);
-        $audience = $this->properties->requiredString($props, 'audience', 16);
-        $showContent = $this->properties->requiredBoolean($props, 'showContent');
-        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearance->appearanceClasses($props, 'default', 'normal');
-
-        if (preg_match('/^[a-z0-9][a-z0-9_-]{0,79}$/D', $boardSlug) !== 1
-            || ! is_int($postId) || $postId < 1
-            || ! in_array($audience, ['all', 'guest', 'member'], true)) {
-            throw new DocumentCompileException('G7 post detail configuration is invalid.');
-        }
-        $this->urls->assertAllowedUrl($detailUrl, 'G7 post detail');
-        $endpoint = '/api/modules/sirsoft-board/boards/'.rawurlencode($boardSlug).'/posts/'.$postId;
-        $hidden = $audience === 'all' ? '' : ' hidden';
-
-        return '<section class="g7pb-block g7pb-dynamic g7pb-data-detail g7pb-post-detail '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-post-detail" data-g7pb-data-source="post-detail" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-detail-url="'.$this->escaper->escapeAttribute($detailUrl).'" data-g7pb-detail-label="'.$this->escaper->escapeAttribute($linkLabel).'" data-g7pb-show-content="'.($showContent ? 'true' : 'false').'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">게시글을 불러오는 중입니다.</p><div class="g7pb-data-detail__content" data-g7pb-data-detail aria-busy="true"><a class="g7pb-data-detail__action" data-g7pb-detail-action href="'.$this->escaper->escapeAttribute($detailUrl).'" hidden>'.$this->escaper->escape($linkLabel).'</a></div></section>';
-    }
-
-    /** @param array<string, mixed> $props */
-    private function compileG7ProductDetail(array $props): string
-    {
-        $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'productKey', 'detailUrl', 'buttonLabel', 'audience', 'showDescription', 'emptyMessage', 'appearance'], 'G7 product detail');
-        $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
-        $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
-        $productKey = $this->properties->requiredString($props, 'productKey', 100);
-        $detailUrl = $this->properties->requiredString($props, 'detailUrl', 2048);
-        $buttonLabel = $this->properties->requiredString($props, 'buttonLabel', 120);
-        $audience = $this->properties->requiredString($props, 'audience', 16);
-        $showDescription = $this->properties->requiredBoolean($props, 'showDescription');
-        $emptyMessage = $this->properties->requiredString($props, 'emptyMessage', 300);
-        $appearance = $this->appearance->appearanceClasses($props, 'soft', 'normal');
-
-        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/D', $productKey) !== 1
-            || ! in_array($audience, ['all', 'guest', 'member'], true)) {
-            throw new DocumentCompileException('G7 product detail configuration is invalid.');
-        }
-        $this->urls->assertAllowedUrl($detailUrl, 'G7 product detail');
-        $endpoint = '/api/modules/sirsoft-ecommerce/products/'.rawurlencode($productKey);
-        $hidden = $audience === 'all' ? '' : ' hidden';
-
-        return '<section class="g7pb-block g7pb-dynamic g7pb-data-detail g7pb-product-detail '.$appearance.'" data-testid="page-builder-rendered-block" data-block-type="g7-product-detail" data-g7pb-data-source="product-detail" data-g7pb-endpoint="'.$this->escaper->escapeAttribute($endpoint).'" data-g7pb-audience="'.$audience.'" data-g7pb-detail-url="'.$this->escaper->escapeAttribute($detailUrl).'" data-g7pb-detail-label="'.$this->escaper->escapeAttribute($buttonLabel).'" data-g7pb-show-description="'.($showDescription ? 'true' : 'false').'" data-g7pb-empty-message="'.$this->escaper->escapeAttribute($emptyMessage).'"'.$hidden.'>'.$this->markup->compileSectionHeading($eyebrow, $heading).'<p class="g7pb-dynamic__status" data-g7pb-data-status role="status">상품을 불러오는 중입니다.</p><div class="g7pb-data-detail__content" data-g7pb-data-detail aria-busy="true"><a class="g7pb-data-detail__action" data-g7pb-detail-action href="'.$this->escaper->escapeAttribute($detailUrl).'" hidden>'.$this->escaper->escape($buttonLabel).'</a></div></section>';
     }
 
     private function isUuid(string $value): bool

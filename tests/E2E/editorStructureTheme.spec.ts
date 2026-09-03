@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type BrowserContext, type Locator, type Page, type Route } from '@playwright/test';
 import type { PageBuilderBlock, PageBuilderDocument } from '../../resources/js/documents/types';
 import { replacePuckRichTextField } from './support/richTextInput';
 import {
@@ -223,6 +223,19 @@ test.describe('Editor structure and theme contracts', () => {
           if (!payload.data?.preview_url) throw new Error('Missing compiled preview URL.');
           expect((await preview.goto(payload.data.preview_url))?.ok()).toBe(true);
           await expect(preview.locator('.g7pb-document-theme')).toHaveCSS('color-scheme', state.expected);
+          for (const [surface, pageRoot] of [['canvas', canvasTheme], ['preview', preview.locator('.g7pb-document-theme')]] as const) {
+            const tokens = await pageRoot.evaluate((element) => {
+              const view = element.ownerDocument.defaultView;
+              if (!view) throw new Error('Missing document theme window.');
+              const style = view.getComputedStyle(element);
+              return { bodyClass: element.ownerDocument.body.className, ownsEditorUI: element.ownerDocument.querySelector('.g7pb-root') !== null,
+                primitive: style.getPropertyValue('--g7pb-neutral-0').trim(),
+                ui: ['--g7pb-accent', '--g7pb-surface-strong', '--g7pb-focus-ring'].map((name) => style.getPropertyValue(name).trim()) };
+            });
+            expect(tokens.primitive).not.toBe('');
+            expect(tokens.ownsEditorUI, `${surface} document: ${JSON.stringify(tokens)}`).toBe(false);
+            expect(tokens.ui, `${surface}: UI roles must not become document theme defaults: ${JSON.stringify(tokens)}`).toEqual(['', '', '']);
+          }
           const pairs = [
             [frame.getByText(COPY.heroBody, { exact: true }), preview.getByText(COPY.heroBody, { exact: true })],
             [frame.getByText(COPY.contactAddress, { exact: true }), preview.getByText(COPY.contactAddress, { exact: true })],
@@ -338,6 +351,23 @@ test.describe('Editor structure and theme contracts', () => {
       // while the independently styled headings must retain their settings.
       const featureBody = frame.locator(`[data-block-id="${features.instance_id}"] [data-g7pb-inline-field="items.0.body"] .ProseMirror`);
       await replacePuckRichTextField(page, featureBody, '편집 후에도 제목의 부분 서식을 보존합니다.', 'typography companion body');
+      await page.keyboard.press('ControlOrMeta+A');
+      const inlineToolbar = frame.getByTestId('page-builder-richtext-inline-toolbar');
+      await expect(inlineToolbar).toBeVisible();
+      const uiAccent = await page.getByTestId('page-builder-editor').evaluate((element) => getComputedStyle(element).getPropertyValue('--g7pb-accent').trim());
+      expect(uiAccent).not.toBe('');
+      await expect(inlineToolbar).toHaveCSS('--g7pb-accent', uiAccent);
+      const more = inlineToolbar.getByTestId('page-builder-richtext-more');
+      if (await more.count()) await more.click();
+      await frame.getByTestId('page-builder-richtext-font').click();
+      const fontMenu = frame.getByRole('listbox', { name: '선택한 글자 글꼴', exact: true });
+      await expect(fontMenu).toHaveAttribute('data-g7pb-floating-ready', 'true');
+      await expect(fontMenu).toHaveCSS('--g7pb-accent', uiAccent);
+      const selectedOption = fontMenu.locator('[aria-selected="true"]');
+      const optionStyle = await sample(selectedOption);
+      expect(contrast(optionStyle.color, optionStyle.background)).toBeGreaterThanOrEqual(4.5);
+      await page.keyboard.press('Escape');
+      await featureBody.click();
       await save(page);
       const current = await resource(api, owned.documentId);
       const response = await api.post(`${API}/${owned.documentId}/preview`, {
@@ -371,7 +401,9 @@ test.describe('Editor structure and theme contracts', () => {
           const sentinel = body.locator('[data-typography-host-sentinel]');
           await expect(sentinel).toHaveCSS('font-weight', '300');
           const ratio = await sentinel.evaluate((element) => {
-            const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+            const view = element.ownerDocument.defaultView;
+            if (!view) throw new Error('Missing document theme window.');
+            const style = view.getComputedStyle(element);
             return parseFloat(style.lineHeight) / parseFloat(style.fontSize);
           });
           expect(ratio).toBe(2);
@@ -534,7 +566,7 @@ test.describe('Editor structure and theme contracts', () => {
   });
 
   test('pattern dialog owns an opaque portal surface', async ({ page, context }, info) => {
-    await withOwnedDocument(page, context, info.project.name, nestedBlocks(), async () => {
+    await withOwnedDocument(page, context, info.project.name, nestedBlocks(), async (api, owned) => {
       await page.getByTestId('page-builder-section-patterns').click();
       const portal = page.locator('[data-g7pb-portal-surface="true"]');
       const dialog = portal.getByRole('dialog', { name: '내 패턴', exact: true });
@@ -548,10 +580,64 @@ test.describe('Editor structure and theme contracts', () => {
       await expect(close).toHaveCSS('font-family', await page.locator('.g7pb-root').evaluate((element) => getComputedStyle(element).fontFamily));
       const colors = await sample(dialog);
       expect(contrast(colors.color, colors.background)).toBeGreaterThanOrEqual(4.5);
-      await page.screenshot({ path: info.outputPath('editor-pattern-portal.png'), fullPage: false });
+      const applicationAccent = await page.locator('.g7pb-root').evaluate((element) => getComputedStyle(element).getPropertyValue('--g7pb-accent').trim());
+      expect(applicationAccent).not.toBe('');
+      expect(await portal.evaluate((element) => getComputedStyle(element).getPropertyValue('--g7pb-accent').trim())).toBe(applicationAccent);
+      const closeColors = await sample(close);
+      expect(contrast(closeColors.color, closeColors.background)).toBeGreaterThanOrEqual(4.5);
+      await test.info().attach('editor-ui-opaque-portal', { body: await page.screenshot(), contentType: 'image/png' });
       await close.click();
       await expect(dialog).toHaveCount(0);
       await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+
+      const draftPath = `${API}/${owned.documentId}/draft`;
+      const origin = new URL(page.url()).origin;
+      const draftRoute = (url: URL): boolean => url.origin === origin && url.pathname === draftPath;
+      let releaseSave = (): void => {};
+      let notifySave = (): void => {};
+      const pendingSave = new Promise<void>((resolve) => { releaseSave = resolve; });
+      const saveRequested = new Promise<void>((resolve) => { notifySave = resolve; });
+      let rejectedSaves = 0;
+      const rejectDraft = async (route: Route): Promise<void> => {
+        if (route.request().method() !== 'PUT') { await route.continue(); return; }
+        const input = route.request().postDataJSON() as { document: PageBuilderDocument };
+        expect(input.document.document_id).toBe(owned.documentId);
+        expect(input.document.tokens?.['design.color_mode']).toBe('dark');
+        rejectedSaves += 1;
+        if (rejectedSaves === 1) { notifySave(); await pendingSave; }
+        await route.fulfill({ status: 422, json: { success: false, message: 'Synthetic draft save rejected', code: 'G7PB_SYNTHETIC_SAVE_REJECTED' } });
+      };
+      await page.route(draftRoute, rejectDraft);
+      try {
+        // Real editing makes the draft dirty; clean Save can only generate a preview.
+        await page.getByRole('button', { name: '다크 테마', exact: true }).click();
+        await saveRequested;
+        await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saving');
+        await expect(page.getByTestId('page-builder-save')).toBeDisabled();
+        await expect(page.getByTestId('page-builder-publish')).toBeDisabled();
+        releaseSave();
+        const notice = page.getByRole('alert').filter({ hasText: 'Synthetic draft save rejected' });
+        await expect(notice).toBeVisible();
+        await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'error');
+        for (const control of [notice.locator('span'), notice.getByRole('button', { name: '다시 저장', exact: true }), notice.getByRole('button', { name: '알림 닫기', exact: true })]) {
+          const style = await sample(control);
+          expect(contrast(style.color, style.background)).toBeGreaterThanOrEqual(4.5);
+        }
+        await test.info().attach('editor-ui-readable-save-error', { body: await page.screenshot(), contentType: 'image/png' });
+        const retryResponse = page.waitForResponse((response) => draftRoute(new URL(response.url())) && response.request().method() === 'PUT');
+        await notice.getByRole('button', { name: '다시 저장', exact: true }).click();
+        expect((await retryResponse).status()).toBe(422);
+        expect(rejectedSaves).toBe(2);
+        await expect(notice).toBeVisible();
+        await notice.getByTestId('page-builder-message-dismiss').click();
+        await expect(notice).toHaveCount(0);
+        await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'error');
+      } finally {
+        releaseSave();
+        await page.unroute(draftRoute, rejectDraft);
+      }
+      await save(page);
+      expect((await resource(api, owned.documentId)).document.tokens?.['design.color_mode']).toBe('dark');
     });
   });
 });

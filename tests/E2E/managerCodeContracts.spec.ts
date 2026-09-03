@@ -1,4 +1,4 @@
-import { expect, request as playwrightRequest, test as base, type BrowserContext, type Route } from '@playwright/test';
+import { expect, request as playwrightRequest, test as base, type BrowserContext, type Locator, type Route } from '@playwright/test';
 import type { FormSubmissionResource } from '../../resources/js/api/resources';
 import type { BlockPackResource, GitHubBlockPackCheckResource } from '../../resources/js/blocks/types';
 import type { OfficialStoreCatalogResource, OfficialStoreProduct } from '../../resources/js/store/types';
@@ -25,7 +25,7 @@ function product(productId: string, kind: OfficialStoreProduct['product_type'], 
     product_id: productId, product_type: kind, product_version: '1.2.3',
     title: { ko: title }, description: { ko: '합성 요청 계약' }, category: 'code-fixture', tags: ['synthetic'],
     license: 'free', compatibility: { page_builder: '*', php: '*', g7: '*' },
-    preview: { thumbnail_url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/%3E', screenshots: [] },
+    preview: { thumbnail_url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/%3E', screenshots: ['data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/%3E'] },
     artifact: { url: '/code-fixture/unused.zip', sha256: '0'.repeat(64), bytes: 0 },
     requirements: { blocks: [] }, compatible: true, compatibility_error: null, installed: false, installed_state: null,
   };
@@ -48,6 +48,27 @@ function inquiry(id: string, subject: string, failed: boolean): FormSubmissionRe
     mail_error: failed ? 'Synthetic delivery failure' : null, mail_attempts: 1,
     created_at: FIXTURE_TIME, updated_at: FIXTURE_TIME,
   };
+}
+
+async function expectReadable(locator: Locator): Promise<void> {
+  await expect(locator).toBeVisible();
+  const colors = await locator.evaluate((element) => {
+    let background = 'rgba(0, 0, 0, 0)';
+    for (let parent: Element | null = element; parent; parent = parent.parentElement) {
+      background = getComputedStyle(parent).backgroundColor;
+      if (background !== 'rgba(0, 0, 0, 0)' && background !== 'transparent') break;
+    }
+    return { color: getComputedStyle(element).color, background };
+  });
+  const luminance = (value: string): number => {
+    const channels = value.match(/[\d.]+/g)?.map(Number);
+    if (!channels || channels.length !== 3) throw new Error(`Expected opaque RGB: ${value}`);
+    const linear = channels.map((channel) => channel / 255).map((channel) =>
+      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+    return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+  };
+  const a = luminance(colors.color), b = luminance(colors.background);
+  expect((Math.max(a, b) + .05) / (Math.min(a, b) + .05), JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
 }
 
 async function authenticate(context: BrowserContext): Promise<void> {
@@ -176,10 +197,28 @@ test('manages synthetic store and pack requests without crossing dialog owners',
   await expect(store).toBeVisible();
   await expect(productCards.getByRole('heading', { name: 'Synthetic Page A', exact: true })).toBeVisible();
   await expect(productCards.getByRole('heading', { name: 'Synthetic Pack B', exact: true })).toHaveCount(0);
-  await store.getByTestId('page-builder-store-filter-all').click();
+  const allTab = store.getByTestId('page-builder-store-filter-all');
+  const pageKitTab = store.getByTestId('page-builder-store-filter-page_kit');
+  await expect(pageKitTab).toHaveAttribute('aria-selected', 'true');
+  await store.getByTestId('page-builder-store-search').focus();
+  await page.keyboard.press('Tab');
+  await expect(allTab).toBeFocused();
+  await expect(allTab).toHaveCSS('outline-style', 'solid');
+  expect(await allTab.evaluate((element) => parseFloat(getComputedStyle(element).outlineWidth))).toBeGreaterThanOrEqual(2);
+  await page.keyboard.press('Space');
+  await expect(allTab).toHaveAttribute('aria-selected', 'true');
+  await expect(pageKitTab).toHaveAttribute('aria-selected', 'false');
+  await expectReadable(allTab);
+  expect(await allTab.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .not.toBe(await pageKitTab.evaluate((element) => getComputedStyle(element).backgroundColor));
+  expect(await allTab.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   await store.getByTestId('page-builder-store-search').fill('Synthetic Pack B');
   const packCard = productCards.filter({ has: page.getByRole('heading', { name: 'Synthetic Pack B', exact: true }) });
   await expect(packCard).toBeVisible();
+  const screenshotMetadata = packCard.locator('.g7pb-store-card__screenshots');
+  await expect(screenshotMetadata).toHaveText('PC·태블릿·모바일 실제 화면 1장');
+  await expectReadable(screenshotMetadata);
+  await expect(screenshotMetadata).toHaveCSS('color', await packCard.locator('.g7pb-store-card__kind').evaluate((element) => getComputedStyle(element).color));
   await expect(productCards.getByRole('heading', { name: 'Synthetic Page A', exact: true })).toHaveCount(0);
   await packCard.getByTestId('page-builder-store-install-block-pack').click();
   await expect(page.getByRole('alert')).toHaveText('Synthetic store install rejected');
@@ -203,14 +242,17 @@ test('manages synthetic store and pack requests without crossing dialog owners',
   await expect(pageKit).toHaveCount(0);
   await expect(store).toBeVisible();
   await store.getByRole('button', { name: '닫기', exact: true }).click();
+  await expectReadable(page.getByRole('alert'));
 
   await page.getByTestId('page-builder-manager-block-packs').click();
   const packsDialog = page.getByTestId('page-builder-block-packs-dialog');
   const selectedPack = packsDialog.getByTestId('page-builder-block-pack-row').filter({ hasText: 'audit/code-pack-b' });
   const untouchedPack = packsDialog.getByTestId('page-builder-block-pack-row').filter({ hasText: 'audit/untouched-pack' });
   await expect(selectedPack.locator('[data-state]')).toHaveAttribute('data-state', 'disabled');
+  await expectReadable(selectedPack.locator('[data-state]'));
   await selectedPack.getByRole('button', { name: '활성화', exact: true }).click();
   await expect(selectedPack.locator('[data-state]')).toHaveAttribute('data-state', 'enabled');
+  await expectReadable(selectedPack.locator('[data-state]'));
   await expect(untouchedPack.locator('[data-state]')).toHaveAttribute('data-state', 'disabled');
   await expect(selectedPack.getByRole('button', { name: '제거', exact: true })).toBeDisabled();
   await packsDialog.getByLabel('소유자', { exact: true }).fill('audit');
@@ -236,11 +278,15 @@ test('keeps synthetic inquiry actions bound to their pending item', async ({ pag
   const second = inbox.locator('article').filter({ has: page.getByRole('heading', { name: 'Synthetic inquiry B', exact: true }) });
   await expect(first).toHaveAttribute('data-state', 'unread');
   await expect(second).toHaveAttribute('data-state', 'unread');
+  await expectReadable(first.locator('[data-mail]'));
+  await expectReadable(first.locator('.g7pb-inbox-error'));
   await first.getByRole('button', { name: '읽음 처리', exact: true }).click();
   await manager.readRequested;
   await expect(first.getByRole('button', { name: '읽음 처리', exact: true })).toBeDisabled();
   await expect(first.getByRole('button', { name: '메일 재시도', exact: true })).toBeDisabled();
   await expect(second.getByRole('button', { name: '보관', exact: true })).toBeEnabled();
+  await expect(first.getByRole('button', { name: '읽음 처리', exact: true })).toHaveCSS('cursor', 'not-allowed');
+  expect(await first.getByRole('button', { name: '읽음 처리', exact: true }).evaluate((element) => Number(getComputedStyle(element).opacity))).toBeLessThan(1);
   manager.releaseRead();
   await expect(first).toHaveAttribute('data-state', 'read');
   await expect(second).toHaveAttribute('data-state', 'unread');
@@ -251,6 +297,9 @@ test('keeps synthetic inquiry actions bound to their pending item', async ({ pag
   await expect(second).toHaveAttribute('data-state', 'unread');
   await first.getByRole('button', { name: '메일 재시도', exact: true }).click();
   await expect(first.locator('[data-mail]')).toHaveAttribute('data-mail', 'sent');
+  await expectReadable(first.locator('[data-mail]'));
+  await expect(first.getByRole('button', { name: '보관', exact: true })).toBeEnabled();
+  await expect(first.getByRole('button', { name: '보관', exact: true })).toHaveCSS('opacity', '1');
   await expect(first.getByRole('button', { name: '메일 재시도', exact: true })).toHaveCount(0);
   await expect(second).toHaveAttribute('data-state', 'unread');
   await inbox.getByRole('button', { name: '닫기', exact: true }).click();

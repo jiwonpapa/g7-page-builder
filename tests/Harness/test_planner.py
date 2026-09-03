@@ -212,6 +212,57 @@ class PlannerTests(unittest.TestCase):
         self.assertIn("config/design-architecture.json", gate.inputs)
         self.assertIn("design-architecture-tests", [g.name for g in plan.gates])
 
+    def test_registry_boundary_helper_selects_only_its_infrastructure_regression(self):
+        helper = "scripts/lib/blockPackRegistryBoundary.mjs"
+        self.write(helper, "export const check = true")
+        self.write("tests/Harness/test_boundary_command.py", "pass")
+        plan = build_plan(self.root, [helper])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertEqual([gate.name for gate in plan.gates], ["python:tests/Harness/test_boundary_command.py", "syntax:" + helper])
+        gate = plan.gates[0]
+        self.assertFalse(gate.runtime)
+        self.assertEqual(gate.requires, ("node", "php"))
+        self.assertTrue({helper, "scripts/check-boundaries.sh", "package-lock.json"}.issubset(gate.inputs))
+
+    def test_registry_guard_controller_input_changes_invalidate_architecture_receipt(self):
+        helper = "scripts/lib/blockPackRegistryBoundary.mjs"
+        source = "resources/js/fixture.ts"
+        self.write(source, "export const title = 1")
+        self.write("tests/Unit/fixture.test.ts", "import '../../resources/js/fixture'")
+        controller = (self.root / "controller").resolve()
+        (controller / helper).parent.mkdir(parents=True)
+        (controller / helper).write_text("// first validated controller guard")
+        with patch("tools.g7pb.planner.__file__", str(controller / "tools/g7pb/planner.py")):
+            plan = build_plan(self.root, [source])
+        gate = next(g for g in plan.gates if g.name == "architecture")
+        self.assertEqual(gate.argv[:2], ("bash", str(controller / "scripts/check-boundaries.sh")))
+        self.assertEqual(gate.argv[gate.argv.index("--root") + 1], str(self.root.resolve()))
+        self.assertIn(str(controller / helper), gate.inputs)
+        self.assertIn(source, gate.inputs)
+        before = digest_gate(self.root, gate)
+        self.write(helper, "// old subject guard is not executed")
+        self.assertEqual(before, digest_gate(self.root, gate))
+        (controller / helper).write_text("// changed validated controller guard")
+        self.assertNotEqual(before, digest_gate(self.root, gate))
+
+    def test_registry_candidate_guard_uses_subject_script_and_hashes_its_helper(self):
+        helper = "scripts/lib/blockPackRegistryBoundary.mjs"
+        source = "resources/js/fixture.ts"
+        self.write(helper, "// proposed guard")
+        self.write(source, "export const title = 1")
+        self.write("tests/Unit/fixture.test.ts", "import '../../resources/js/fixture'")
+        self.write("tests/Harness/test_boundary_command.py", "pass")
+        plan = build_plan(self.root, [source, helper])
+        self.assertFalse(plan.unresolved)
+        gate = next(g for g in plan.gates if g.name == "architecture")
+        self.assertEqual(gate.argv[:2], ("bash", "scripts/check-boundaries.sh"))
+        self.assertNotIn("--root", gate.argv)
+        self.assertIn(helper, gate.inputs)
+        before = digest_gate(self.root, gate)
+        self.write(helper, "// changed proposed guard")
+        self.assertNotEqual(before, digest_gate(self.root, gate))
+
     def test_php_source_requires_static_analysis_and_boundaries(self):
         self.write("src/Domain/Example.php", "<?php class Example {}")
         self.write("tests/UnitPhp/ExampleTest.php", "<?php class ExampleTest {}")

@@ -608,11 +608,11 @@ class PlannerTests(unittest.TestCase):
         self.assertFalse(hasattr(verified, "MARKER"))
 
     def test_style_artifact_check_defers_after_build_without_reading_content_inventory(self):
-        self.write("resources/css/page-builder-public.css", ".fixture {}")
+        self.write("resources/css/page-builder-editor-wysiwyg.css", ".fixture {}")
         self.write("tests/E2E/editorStructureTheme.spec.ts", "test('code fixture',async()=>{});")
         for phase in ("submission", "integration", "verification", "ci"):
             with self.subTest(phase=phase), patch("tools.g7pb.planner.content_policy", side_effect=AssertionError("CSS must not load catalog")):
-                plan = build_plan(self.root, ["resources/css/page-builder-public.css"], phase=phase)
+                plan = build_plan(self.root, ["resources/css/page-builder-editor-wysiwyg.css"], phase=phase)
             self.assertFalse(plan.unresolved)
             names = [g.name for g in plan.gates]
             artifact = next(g for g in plan.gates if g.name == "style-assets")

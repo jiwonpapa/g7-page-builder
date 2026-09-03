@@ -144,10 +144,13 @@ CATALOG_CODE_SCOPES = {
 # CSS owners select code-created documents and explicit UI roles. Content
 # sweeps remain available under their existing full/content policies.
 STYLE_CODE_SCOPES = {
-    **{"resources/css/" + name: (STRUCTURE_THEME,) for name in (
-        "page-builder-public.css", "page-builder-editor-wysiwyg.css",
-    )},
-    "resources/css/page-builder-theme.css": (STRUCTURE_THEME, MANAGER_STORE, MANAGER_INBOX, PUBLIC_SHELL),
+    "resources/css/page-builder-editor-wysiwyg.css": (STRUCTURE_THEME,),
+    # Shared shell visuals are consumed by the Puck Header and shipped public
+    # menus independently of page-theme roots and desktop UI surfaces.
+    "resources/css/page-builder-public.css": (STRUCTURE_THEME, SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV),
+    "resources/css/page-builder-theme.css": (STRUCTURE_THEME, MANAGER_STORE, MANAGER_INBOX, PUBLIC_SHELL, SITE_PART_HEADER, MOBILE_NAV),
+    "resources/css/page-builder-editor.css": (CONTROLS, STRUCTURE_THEME, SITE_PART_HEADER),
+    "resources/css/page-builder-site-part-responsive.css": (SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV),
     "resources/css/page-builder-site-shell.css": (SITE_PART_HEADER, PUBLIC_SHELL, MOBILE_NAV),
     "resources/js/public/mobileNavigation.css": (MOBILE_NAV, PUBLIC_SHELL),
     "resources/css/page-builder-core.css": (STRUCTURE_THEME, MANAGER_STORE, MANAGER_INBOX),

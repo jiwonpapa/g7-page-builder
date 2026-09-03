@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bootBlockVisibility as dataVisibility, bootDynamicData as dataBoot, disposePublicDataRuntime } from '../../resources/js/public/publicDataRuntime';
+import { hydrateTemplateRuntime } from '../../resources/js/public/publicHydration';
+import { disposeContentControls } from '../../resources/js/public/publicContentControls';
+import { disposeInquiryForms } from '../../resources/js/public/publicInquiryForms';
+import { disposeG7SystemControls } from '../../resources/js/public/siteShellRuntime';
+import { disposeServiceActions } from '../../resources/js/public/siteShellActions';
 
 import {
   bootAccordions,
@@ -16,6 +21,7 @@ import {
 
 afterEach(() => {
   disposePublicDataRuntime(document);
+  disposeContentControls(document); disposeInquiryForms(document); disposeG7SystemControls(document); disposeServiceActions(document);
   document.head.innerHTML = '';
   document.body.innerHTML = '';
   delete document.documentElement.dataset.g7pbServiceActionsReady;
@@ -26,6 +32,20 @@ afterEach(() => {
 });
 
 describe('published page effects runtime', () => {
+  it('rejects unknown embed kinds with leading-space URLs while preserving allowed providers', () => {
+    const root = document.implementation.createHTMLDocument('typed embeds');
+    root.body.innerHTML = `<span data-g7pb-embed data-g7pb-embed-kind="unknown" data-g7pb-embed-src=" https://example.test/frame"></span>
+      <span data-g7pb-embed data-g7pb-embed-kind="map-openstreetmap" data-g7pb-embed-src="https://www.openstreetmap.org/export/embed.html" data-g7pb-embed-title="Map"></span>
+      <span data-g7pb-embed data-g7pb-embed-kind="video-youtube" data-g7pb-embed-src="https://www.youtube-nocookie.com/embed/fixture" data-g7pb-embed-title="Video"></span>
+      <span data-g7pb-embed data-g7pb-embed-kind="video-vimeo" data-g7pb-embed-src="https://player.vimeo.com/video/123" data-g7pb-embed-title="Other video"></span>`;
+    const unsupported = root.querySelector('[data-g7pb-embed-kind="unknown"]');
+    hydrateTemplateRuntime(root);
+    expect(root.querySelectorAll('iframe')).toHaveLength(3);
+    expect(root.querySelector('[data-g7pb-embed-kind="unknown"]')).toBe(unsupported);
+    const frames = Array.from(root.querySelectorAll('iframe'));
+    expect(frames.map(frame => [frame.title, frame.loading, frame.referrerPolicy, frame.allowFullscreen]))
+      .toEqual([['Map', 'lazy', 'no-referrer', false], ['Video', 'lazy', 'no-referrer', true], ['Other video', 'lazy', 'no-referrer', true]]);
+  });
   it('keeps the published entry boot functions as the data owner bindings', () => {
     expect(bootBlockVisibility).toBe(dataVisibility);
     expect(bootDynamicData).toBe(dataBoot);

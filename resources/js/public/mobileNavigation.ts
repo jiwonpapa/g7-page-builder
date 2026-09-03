@@ -7,14 +7,15 @@ export interface MobileNavigationElements {
 }
 interface MenuSnapshot { open: boolean; submenus: number[]; scroll: number; focus: number; url: string }
 const snapshots = new WeakMap<Document, MenuSnapshot>();
-const mounts = new WeakMap<Document, { menu: HTMLElement; dispose: () => void }>();
+const mounts = new WeakMap<Document, { menu: HTMLElement; toggle: HTMLElement; backdrop: HTMLElement | null; dispose: (preserveSnapshot?: boolean) => void }>();
 const focusables = (menu: HTMLElement): HTMLElement[] => Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex="0"]'))
   .filter((node) => !node.closest('[hidden], [inert]') && menu.ownerDocument.defaultView?.getComputedStyle(node).display !== 'none');
 
-export function installMobileNavigation({ toggle, menu, backdrop, preview = false }: MobileNavigationElements): () => void {
+export function installMobileNavigation({ toggle, menu, backdrop, preview = false }: MobileNavigationElements): (preserveSnapshot?: boolean) => void {
   const doc = menu.ownerDocument;
   const view = doc.defaultView!;
   let opened = false;
+  let active = true;
   let inertNodes: Array<{ node: HTMLElement; previous: boolean }> = [];
   const submenuButtons = (): HTMLElement[] => Array.from(menu.querySelectorAll<HTMLElement>('[data-g7pb-submenu-toggle]'));
   const style = (): string => menu.getAttribute(view.innerWidth <= 520 ? 'data-g7pb-mobile-menu-style' : 'data-g7pb-tablet-menu-style') ?? menu.dataset.g7pbMenuStyle ?? 'drawer-right';
@@ -113,7 +114,7 @@ export function installMobileNavigation({ toggle, menu, backdrop, preview = fals
   };
   const onNavigate = (): void => close();
   const presentation = new MutationObserver(() => {
-    if (!opened) return;
+    if (!active || !opened) return;
     menu.setAttribute('role', modal() ? 'dialog' : 'region');
     if (modal()) menu.setAttribute('aria-modal', 'true'); else menu.removeAttribute('aria-modal');
     if (backdrop) backdrop.hidden = !modal();
@@ -126,8 +127,11 @@ export function installMobileNavigation({ toggle, menu, backdrop, preview = fals
   view.addEventListener('resize', onResize); view.addEventListener('popstate', onNavigate); view.addEventListener('pagehide', onNavigate);
   const previous = preview ? undefined : snapshots.get(doc);
   if (previous?.open && previous.url === view.location.href && view.innerWidth < 900) open(previous); else close();
-  return () => {
-    if (menu.isConnected) { remember(); if (preview) close(); }
+  return (preserveSnapshot = true) => {
+    if (!active) return;
+    active = false;
+    if (!preserveSnapshot || preview) close();
+    else if (menu.isConnected) remember();
     unlock();
     presentation.disconnect();
     toggle.removeEventListener('click', onToggle); menu.removeEventListener('click', onClick); menu.removeEventListener('scroll', remember); backdrop?.removeEventListener('click', onBackdrop);
@@ -139,11 +143,29 @@ export function installMobileNavigation({ toggle, menu, backdrop, preview = fals
 export function bootMobileNavigation(root: Document): void {
   const previous = mounts.get(root);
   const menu = root.querySelector<HTMLElement>('[data-g7pb-mobile-menu]');
-  if (previous?.menu === menu) return;
-  previous?.dispose(); mounts.delete(root);
-  root.querySelectorAll<HTMLElement>('[data-g7pb-menu-inert]').forEach((node) => { node.inert = node.dataset.g7pbMenuInert === 'true'; delete node.dataset.g7pbMenuInert; });
   const toggle = root.querySelector<HTMLElement>('[data-g7pb-menu-toggle]');
+  const backdrop = root.querySelector<HTMLElement>('[data-g7pb-menu-backdrop]');
+  if (previous && previous.menu === menu && previous.toggle === toggle && previous.backdrop === backdrop) return;
+  retireMobileNavigation(root, true);
+  root.querySelectorAll<HTMLElement>('[data-g7pb-menu-inert]').forEach((node) => { node.inert = node.dataset.g7pbMenuInert === 'true'; delete node.dataset.g7pbMenuInert; });
   if (!toggle || !menu) { snapshots.delete(root); return; }
-  mounts.set(root, { menu, dispose: installMobileNavigation({ toggle, menu, backdrop: root.querySelector<HTMLElement>('[data-g7pb-menu-backdrop]') }) });
+  mounts.set(root, { menu, toggle, backdrop, dispose: installMobileNavigation({ toggle, menu, backdrop }) });
   toggle.dataset.g7pbMenuReady = 'true';
+}
+
+export function disposeMobileNavigation(root: Document): void {
+  retireMobileNavigation(root, false); snapshots.delete(root);
+}
+
+function retireMobileNavigation(root: Document, preserveSnapshot: boolean): void {
+  const previous = mounts.get(root); if (!previous) return;
+  mounts.delete(root); previous.dispose(preserveSnapshot); delete previous.toggle.dataset.g7pbMenuReady;
+}
+
+export function pruneMobileNavigation(root: Document, records: MutationRecord[]): void {
+  const previous = mounts.get(root); if (!previous) return;
+  if ([previous.menu, previous.toggle, previous.backdrop].some(target => target !== null &&
+    (!root.contains(target) || records.some(record => Array.from(record.removedNodes).some(node => node.contains(target)))))) {
+    retireMobileNavigation(root, true);
+  }
 }

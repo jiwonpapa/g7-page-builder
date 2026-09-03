@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bootBlockVisibility as dataVisibility, bootDynamicData as dataBoot, disposePublicDataRuntime } from '../../resources/js/public/publicDataRuntime';
+import { disposePageEffects, observePageEffects, startPageEffects } from '../../resources/js/public/publicRuntime';
+import type { ShellWindow } from '../../resources/js/public/siteShellControls';
 import { hydrateTemplateRuntime } from '../../resources/js/public/publicHydration';
 import { disposeContentControls } from '../../resources/js/public/publicContentControls';
 import { disposeInquiryForms } from '../../resources/js/public/publicInquiryForms';
@@ -20,6 +22,7 @@ import {
 } from '../../resources/js/public/pageEffects';
 
 afterEach(() => {
+  disposePageEffects(document);
   disposePublicDataRuntime(document);
   disposeContentControls(document); disposeInquiryForms(document); disposeG7SystemControls(document); disposeServiceActions(document);
   document.head.innerHTML = '';
@@ -28,10 +31,115 @@ afterEach(() => {
   delete document.documentElement.dataset.g7pbSystemControlsReady;
   delete (window as unknown as { G7Core?: unknown }).G7Core;
   window.localStorage.clear();
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('published page effects runtime', () => {
+  it('closes an open mobile menu on explicit teardown and can boot its unchanged DOM again', () => {
+    document.body.innerHTML = '<header><button data-g7pb-menu-toggle>Open</button><button data-g7pb-menu-backdrop hidden>Close</button><nav data-g7pb-mobile-menu hidden><a href="/about">About</a></nav></header><main></main>';
+    bootPageEffects(document, window);
+    const toggle = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]')!;
+    const menu = document.querySelector<HTMLElement>('nav')!; const backdrop = document.querySelector<HTMLElement>('[data-g7pb-menu-backdrop]')!;
+    toggle.click(); expect(menu.hidden).toBe(false);
+    disposePageEffects(document);
+    expect(menu.hidden).toBe(true); expect(backdrop.hidden).toBe(true); expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.documentElement.classList.contains('g7pb-menu-open')).toBe(false);
+    toggle.click(); expect(menu.hidden).toBe(true);
+    bootPageEffects(document, window); expect(menu.hidden).toBe(true);
+    toggle.click(); expect(menu.hidden).toBe(false);
+  });
+
+  it('does not bootstrap on counter text frames and prevents a queued observer boot after disposal', async () => {
+    const queued: VoidFunction[] = [];
+    vi.spyOn(globalThis, 'queueMicrotask').mockImplementation(callback => { queued.push(callback); });
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })));
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(performance, 'now').mockReturnValue(0);
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => { frames.push(callback); return frames.length; });
+    document.body.innerHTML = '<main class="g7pb-page"><section class="g7pb-block" data-g7pb-motion="counter"><div class="g7pb-stats__grid"><article><strong>1,200+</strong></article></div></section><button type="button" role="button">Control</button></main>';
+    bootPageEffects(document, window); observePageEffects(document, window);
+    const button = document.querySelector('button')!; button.setAttribute('role', 'button'); button.type = 'button';
+    frames[0](450); await Promise.resolve();
+    expect(queued).toHaveLength(0);
+    const added = document.createElement('section'); added.dataset.g7pbTabs = '';
+    document.body.append(added); await Promise.resolve();
+    expect(queued).toHaveLength(1);
+    disposePageEffects(document); queued[0]();
+    expect(document.documentElement.dataset.g7pbEffectsObserverReady).toBeUndefined();
+    expect(added.dataset.g7pbTabsReady).toBeUndefined();
+    bootPageEffects(document, window); observePageEffects(document, window);
+    expect(document.documentElement.dataset.g7pbEffectsObserverReady).toBe('true');
+  });
+
+  it('cancels pending DOMContentLoaded startup when explicitly disposed', () => {
+    vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    startPageEffects(document, window); disposePageEffects(document);
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    expect(document.documentElement.dataset.g7pbEffectsObserverReady).toBeUndefined();
+    startPageEffects(document, window); document.dispatchEvent(new Event('DOMContentLoaded'));
+    expect(document.documentElement.dataset.g7pbEffectsObserverReady).toBe('true');
+  });
+
+  it('reboots data ownership after an equal endpoint record without leaving the rendered list unowned', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response('{"data":[{"id":"1","board_slug":"fixture","title":"Current post"}]}'));
+    vi.stubGlobal('fetch', fetcher);
+    document.body.innerHTML = '<section data-g7pb-data-source="posts" data-g7pb-endpoint="/api/posts"><div data-g7pb-data-list></div><p data-g7pb-data-status></p></section>';
+    bootPageEffects(document, window); observePageEffects(document, window);
+    const block = document.querySelector<HTMLElement>('section')!;
+    await vi.waitFor(() => expect(block.dataset.g7pbDataReady).toBe('true'));
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    block.dataset.g7pbEndpoint = '/api/posts';
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(block.dataset.g7pbDataReady).toBe('true'));
+    expect(block.querySelector('[data-g7pb-data-list]')?.textContent).toContain('Current post');
+  });
+
+  it.each(['identity', 'storage'] as const)('refreshes only data on %s while keeping a pending inquiry and ordinary boot stable', async reason => {
+    const view: ShellWindow = window;
+    let user = { uuid: 'A' }; let listener: (() => void) | undefined;
+    view.G7Core = { state: { get: () => ({ currentUser: user }), subscribe: callback => { listener = callback; return () => {}; } } };
+    let finish!: (response: Response) => void;
+    const pending = new Promise<Response>(resolve => { finish = resolve; });
+    const fetcher = vi.fn<typeof fetch>((url, options) => options?.method === 'POST' ? pending : Promise.resolve(new Response(String(url).includes('/auth/user') ? '{}' : '{"data":[]}')));
+    vi.stubGlobal('fetch', fetcher);
+    document.body.innerHTML = '<main class="g7pb-page"><section data-g7pb-data-source="posts" data-g7pb-endpoint="/api/posts" data-g7pb-audience="member"><p data-g7pb-data-status></p><div data-g7pb-data-list></div></section><section data-block-id="inquiry-A"><form data-g7pb-inquiry-form action="/inquiries"><input name="message"><button type="submit">Send</button><p data-g7pb-form-status></p></form></section></main>';
+    bootPageEffects(document, view);
+    await vi.waitFor(() => expect(document.querySelector<HTMLElement>('[data-g7pb-data-source]')?.dataset.g7pbDataReady).toBe('true'));
+    const form = document.querySelector<HTMLFormElement>('form')!; const submit = form.querySelector('button')!;
+    form.querySelector<HTMLInputElement>('input')!.value = 'Keep this request';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); expect(submit.disabled).toBe(true);
+    if (reason === 'identity') { user = { uuid: 'B' }; listener?.(); }
+    else view.dispatchEvent(new StorageEvent('storage', { key: 'auth_token', newValue: 'B' }));
+    bootPageEffects(document, view);
+    expect(submit.disabled).toBe(true);
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(fetcher.mock.calls.filter(([, options]) => options?.method === 'POST')).toHaveLength(1);
+    await vi.waitFor(() => expect(fetcher.mock.calls.filter(([url]) => url === '/api/posts')).toHaveLength(2));
+    listener?.(); bootPageEffects(document, view);
+    expect(fetcher.mock.calls.filter(([url]) => url === '/api/posts')).toHaveLength(2);
+    finish(new Response('{}'));
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    expect(form.querySelector('[data-g7pb-form-status]')?.textContent).toBe('문의가 접수되었습니다.');
+    const changed = vi.fn<typeof fetch>().mockResolvedValue(new Response('{"data":[]}'));
+    vi.stubGlobal('fetch', changed); bootPageEffects(document, view);
+    await vi.waitFor(() => expect(changed).toHaveBeenCalled());
+  });
+  it('rebinds replaced mobile toggles and backdrops while keeping the same menu', () => {
+    document.body.innerHTML = '<header><button data-g7pb-menu-toggle>Open</button><button data-g7pb-menu-backdrop hidden>Close</button><nav data-g7pb-mobile-menu hidden><a href="/about">About</a></nav></header>';
+    bootPageEffects(document, window);
+    const menu = document.querySelector<HTMLElement>('nav')!;
+    const oldToggle = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-toggle]')!;
+    const oldBackdrop = document.querySelector<HTMLButtonElement>('[data-g7pb-menu-backdrop]')!;
+    const toggle = document.createElement('button'); toggle.dataset.g7pbMenuToggle = '';
+    const backdrop = document.createElement('button'); backdrop.dataset.g7pbMenuBackdrop = ''; backdrop.hidden = true;
+    oldToggle.replaceWith(toggle); oldBackdrop.replaceWith(backdrop);
+    bootPageEffects(document, window);
+    toggle.click(); expect(menu.hidden).toBe(false);
+    backdrop.click(); expect(menu.hidden).toBe(true);
+    oldToggle.click(); expect(menu.hidden).toBe(true);
+  });
   it('rejects unknown embed kinds with leading-space URLs while preserving allowed providers', () => {
     const root = document.implementation.createHTMLDocument('typed embeds');
     root.body.innerHTML = `<span data-g7pb-embed data-g7pb-embed-kind="unknown" data-g7pb-embed-src=" https://example.test/frame"></span>

@@ -2,6 +2,7 @@ import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
+import type { ExternalBlockEditorRegistration } from '../../resources/js/blocks/externalEditorRegistryData';
 
 class TestResizeObserver {
   observe(): void {}
@@ -11,10 +12,17 @@ class TestResizeObserver {
 
 globalThis.ResizeObserver = TestResizeObserver;
 
-const {
-  externalEditorComponents,
-  hasExternalEditorRegistration,
-} = await import('../../resources/js/blocks/runtimeRegistry');
+const bridgeBeforeDataImport = window.G7PageBuilderBlockPacks;
+const registryData = await import('../../resources/js/blocks/externalEditorRegistryData');
+const bridgeAfterDataImport = window.G7PageBuilderBlockPacks;
+const earlyRegistration: ExternalBlockEditorRegistration = {
+  pack_id: 'vendor/early-registry', pack_version: '1.0.0',
+  blocks: [{ block_id: 'vendor.early-registry', block_version: 1, editor_component: 'VendorEarlyRegistry' }],
+  components: { VendorEarlyRegistry: { defaultProps: { title: 'early' }, render: () => <aside /> } },
+};
+registryData.registerExternalEditor(earlyRegistration);
+const runtimeRegistry = await import('../../resources/js/blocks/runtimeRegistry');
+const { externalEditorComponents, hasExternalEditorRegistration } = runtimeRegistry;
 const {
   canonicalToPuck,
   puckToCanonical,
@@ -26,6 +34,45 @@ afterEach(() => {
 });
 
 describe('Code Block Pack editor runtime', () => {
+  it('keeps early data registrations when the runtime installs its bridge and re-exports the same queries', () => {
+    expect(bridgeAfterDataImport).toBe(bridgeBeforeDataImport);
+    expect(window.G7PageBuilderBlockPacks?.React).toBe(React);
+    expect(window.G7PageBuilderBlockPacks?.register).toBe(registryData.registerExternalEditor);
+    for (const name of ['catalogEditorName', 'externalBlockForComponent', 'externalBlockForDocument',
+      'externalEditorDefaults', 'hasExternalEditorRegistration', 'isEditorComponentRegistered'] as const) {
+      expect(runtimeRegistry[name]).toBe(registryData[name]);
+    }
+    expect(hasExternalEditorRegistration('vendor/early-registry', '1.0.0')).toBe(true);
+    expect(registryData.externalEditorRegistrations().next().value).toBe(earlyRegistration);
+    expect(runtimeRegistry.externalBlockForDocument('vendor.early-registry', 1)).toBe(earlyRegistration.blocks[0]);
+    expect(externalEditorComponents()).toHaveProperty('External_VendorEarlyRegistry');
+    expect(() => window.G7PageBuilderBlockPacks?.register(earlyRegistration)).toThrow('already registered');
+  });
+
+  it('shares bridge registrations and defaults with the data owner without changing pack payloads', () => {
+    const defaults = { title: 'shared', payload: { id: 'pack-owned' }, metadata: { retained: true } };
+    const descriptor = { block_id: 'vendor.shared-registry', block_version: 3, editor_component: 'VendorSharedRegistry' };
+    const registration: ExternalBlockEditorRegistration = {
+      pack_id: 'vendor/shared-registry', pack_version: '2.0.0', blocks: [descriptor],
+      components: { VendorSharedRegistry: { defaultProps: defaults, render: () => <aside /> } },
+    };
+    const originalDefaults = structuredClone(defaults);
+    window.G7PageBuilderBlockPacks?.register(registration);
+
+    expect(registryData.hasExternalEditorRegistration('vendor/shared-registry', '2.0.0')).toBe(true);
+    expect(registryData.externalBlockForComponent('External_VendorSharedRegistry')).toBe(descriptor);
+    expect(registryData.externalBlockForDocument('vendor.shared-registry', 2)).toBeNull();
+    expect(registryData.externalEditorDefaults('VendorSharedRegistry')).toBe(defaults);
+    expect(runtimeRegistry.externalEditorDefaults('VendorSharedRegistry')).toBe(defaults);
+    expect(runtimeRegistry.catalogEditorName(descriptor, {})).toBe('External_VendorSharedRegistry');
+    expect(runtimeRegistry.catalogEditorName({ ...descriptor, block_version: 2 }, {})).toBeNull();
+    expect(externalEditorComponents().External_VendorSharedRegistry?.defaultProps).toEqual({
+      payload: originalDefaults, metadata: { emptySlotNames: [] },
+    });
+    expect(defaults).toEqual(originalDefaults);
+    expect(Array.from(registryData.externalEditorRegistrations())).toContain(registration);
+  });
+
   it('registers a signed runtime component and preserves canonical props and block version', () => {
     window.G7PageBuilderBlockPacks?.register({
       pack_id: 'vendor/runtime-blocks',
@@ -62,6 +109,7 @@ describe('Code Block Pack editor runtime', () => {
       }],
     };
 
+    const originalDocument = structuredClone(document);
     const session = canonicalToPuck(document);
     const roundTrip = puckToCanonical(session.data, session.context);
 
@@ -69,6 +117,7 @@ describe('Code Block Pack editor runtime', () => {
     expect(externalEditorComponents()).toHaveProperty('External_VendorNotice');
     expect(session.data.content[0].type).toBe('External_VendorNotice');
     expect(roundTrip).toEqual(document);
+    expect(document).toEqual(originalDocument);
   });
 
   it('loads active self-hosted Code Pack styles before its editor and verifies registration', async () => {
@@ -173,5 +222,24 @@ describe('Code Block Pack editor runtime', () => {
       blocks: [{ block_id: 'vendor.other-01', block_version: 1, editor_component: 'VendorOther' }],
       components: { VendorOther: component },
     })).toThrow('already registered');
+  });
+
+  it('does not retain a partial registration when a later descriptor fails validation', () => {
+    const registrationsBefore = Array.from(registryData.externalEditorRegistrations());
+    const component = { defaultProps: { title: 'unregistered' }, render: () => <aside /> };
+    expect(() => registryData.registerExternalEditor({
+      pack_id: 'vendor/rejected-registry', pack_version: '1.0.0',
+      blocks: [
+        { block_id: 'vendor.first-valid', block_version: 1, editor_component: 'VendorFirstValid' },
+        { block_id: 'vendor.invalid-version', block_version: 0, editor_component: 'VendorInvalidVersion' },
+      ],
+      components: { VendorFirstValid: component, VendorInvalidVersion: component },
+    })).toThrow('block registration is invalid');
+    expect(Array.from(registryData.externalEditorRegistrations())).toEqual(registrationsBefore);
+    expect(hasExternalEditorRegistration('vendor/rejected-registry', '1.0.0')).toBe(false);
+    expect(runtimeRegistry.isEditorComponentRegistered('VendorFirstValid')).toBe(false);
+    expect(runtimeRegistry.externalBlockForDocument('vendor.first-valid', 1)).toBeNull();
+    expect(runtimeRegistry.externalEditorDefaults('VendorFirstValid')).toEqual({});
+    expect(externalEditorComponents()).not.toHaveProperty('External_VendorFirstValid');
   });
 });

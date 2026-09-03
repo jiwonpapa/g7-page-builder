@@ -37,6 +37,17 @@ BROWSER_HELPER_SPECS = {
     ),
 }
 BROWSER_CONSUMER_TEST = "tests/Harness/test_planner.py"
+COMPILER_FACADE = "src/Application/Compilation/HtmlDocumentCompiler.php"
+COMPILER_OWNERS = "src/Application/Compilation/HtmlDocument/"
+COMPILER_COVERAGE = "scripts/check-php-coverage.php"
+COMPILER_TEST = "tests/UnitPhp/HtmlDocumentCompilerTest.php"
+
+
+def compiler_family(root):
+    # This directory exclusively owns code extracted from the original facade.
+    return (COMPILER_FACADE, *sorted(p.relative_to(root).as_posix()
+            for p in (root / COMPILER_OWNERS).rglob("*.php")))
+
 
 
 def browser_consumer_inputs(root):
@@ -166,7 +177,11 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             plan.unresolved.append(f"Missing infrastructure test: {path}")
             return
         requires = ("node", "php") if Path(path).name == "test_boundary_command.py" else ("node",) if Path(path).name in {"test_editor_contracts.py", "test_browser_registration.py", "test_typecheck_inputs.py", "test_type_import_changes.py"} else ()
+        if Path(path).name == "test_php_coverage.py":
+            requires = ("php",)
         environment, controller_inputs, reusable = (), [], True
+        if Path(path).name == "test_php_coverage.py":
+            controller_inputs.extend((COMPILER_COVERAGE, COMPILER_TEST, "Makefile", ".github/workflows/ci.yml"))
         if path == BROWSER_CONSUMER_TEST:
             files, reusable = consumer_inputs()
             controller_inputs.extend(files)
@@ -211,12 +226,13 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     ts_sources, ts_tests, php_sources, php_tests, css, content = [], [], [], [], [], []
     migrations = []
     mapping = {
-        "Makefile": ("planner", "runner"), "scripts/quality-scoped.sh": ("planner", "runner"),
+        "Makefile": ("planner", "runner", "php_coverage"), "scripts/quality-scoped.sh": ("planner", "runner"),
         "scripts/coord-harness.sh": ("coord",) if (root / "tests/Harness/test_coord.py").exists() else ("planner",),
-        ".github/workflows/ci.yml": ("environment",), "scripts/dev-sync-module.sh": ("environment",),
+        ".github/workflows/ci.yml": ("environment", "php_coverage"), "scripts/dev-sync-module.sh": ("environment",),
         "tests/Harness/verification-policy.test.sh": ("planner", "runner"),
         "scripts/check-block-product-quality.mjs": ("product_quality_command",),
         "scripts/check-boundaries.sh": ("boundary_command",),
+        COMPILER_COVERAGE: ("php_coverage",),
         "scripts/lib/blockPackRegistryBoundary.mjs": ("boundary_command",),
         "scripts/check-editor-acceptance-contract.mjs": ("editor_contracts",),
         "scripts/check-editor-layout-parity.mjs": ("editor_contracts",),
@@ -330,6 +346,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 plan.unresolved.append(f"Explicit shared runtime/contract scope required: {path}")
         else:
             plan.unresolved.append(f"Unclassified input (no full fallback): {path}")
+        if path == COMPILER_COVERAGE:
+            add("syntax:" + path, ["php", "-l", path], [path], "Coverage checker syntax", ("php",))
         if path.endswith(".sh") and file.exists():
             add("syntax:" + path, ["bash", "-n", path], [path], "Changed shell syntax")
         if path.endswith(".mjs") and file.exists():
@@ -376,11 +394,30 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 [*css, "scripts/check-assets.mjs", "package-lock.json"], "Built CSS/JS artifact integrity",
                 ("node", "php", "g7", "browser"), True, reusable=False)
             artifact_names.add("style-assets")
-    for test in php_tests:
+    compiler_changed = any(p == COMPILER_FACADE or p.startswith(COMPILER_OWNERS) or p == COMPILER_TEST for p in plan.paths)
+    php_graphs = {test: source_inputs(root, test) for test in php_tests}
+    family = compiler_family(root) if compiler_changed else ()
+    covered_tests = [test for test, graph in php_graphs.items() if not full and compiler_changed
+                     and (test == COMPILER_TEST or set(family).intersection(graph.files))]
+    for test, graph in php_graphs.items():
+        if test in covered_tests:
+            continue  # One Xdebug execution owns both these assertions and their coverage.
         g7 = test.startswith("tests/Integration/")
-        argv = ["vendor/bin/phpunit"] + (["--bootstrap", "tests/Integration/bootstrap.php"] if g7 else []) + [test]
-        graph = source_inputs(root, test)
+        argv = (["vendor/bin/phpunit"] + (["--bootstrap", "tests/Integration/bootstrap.php"] if g7 else [])
+                + ([] if full else ["--exclude-group", "content-catalog"]) + [test])
         add("php:" + test, argv, [*graph.files, *php_sources, "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
+    if covered_tests:
+        graphs = [php_graphs[test] for test in covered_tests]
+        g7 = any(test.startswith("tests/Integration/") for test in covered_tests)
+        if g7:
+            graphs.append(source_inputs(root, "tests/Integration/bootstrap.php"))
+        add("php-compiler-coverage", ["php", COMPILER_COVERAGE, "--run-compiler",
+            *[part for test in covered_tests for part in ("--test", test)]],
+            [COMPILER_COVERAGE, *family, *php_sources, *[p for graph in graphs for p in graph.files],
+             "composer.json", "composer.lock", "phpunit.xml.dist"],
+            "Compiler code assertions and facade/family 87% Xdebug coverage; scoped content-catalog exclusion",
+            ("php", "g7") if g7 else ("php",), True, reusable=all(graph.reusable for graph in graphs),
+            env=(("XDEBUG_MODE", "coverage"),))
     if php_sources:
         add("php-lint", ["vendor/bin/pint", "--test", *php_sources], [*php_sources, "composer.lock"], "Changed PHP style", ("php",))
         for adapter in (False, True):

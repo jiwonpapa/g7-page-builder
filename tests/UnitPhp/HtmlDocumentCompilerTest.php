@@ -12,6 +12,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlDocumentCompilerTest extends TestCase
@@ -1093,6 +1094,7 @@ final class HtmlDocumentCompilerTest extends TestCase
         $this->builtInCompiler()->compile($document, 1, 'html', 'g7-7.0.7');
     }
 
+    #[Group('content-catalog')]
     public function test_all_builtin_presets_compile_as_typed_documents(): void
     {
         $contents = file_get_contents(dirname(__DIR__, 2).'/resources/block-packs/builtin-core/manifest.json');

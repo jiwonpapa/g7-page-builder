@@ -142,6 +142,10 @@ CATALOG_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    # The compiler family owns publishing, nested markup and typed responsive output.
+    # These existing synthetic scenarios never enumerate preset/catalog content.
+    (("src/Application/Compilation/HtmlDocumentCompiler.php", "src/Application/Compilation/HtmlDocument/*"),
+     (PAGE, NESTED, STRUCTURE_THEME)),
     # Manager UI requests use synthetic API responses. Real catalog content,
     # installation, and store approval remain the separate STORE contract.
     (("resources/js/manager/PageBuilderManager.tsx",), (PAGE, MANAGER_STORE, MANAGER_INBOX)),

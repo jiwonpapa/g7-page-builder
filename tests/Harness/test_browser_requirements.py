@@ -105,6 +105,21 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_compiler_facade_and_extracted_owners_keep_only_synthetic_output_scenarios(self):
+        expected = {replace(PAGE, titles=tuple(sorted(PAGE.titles + NESTED.titles))), STRUCTURE_THEME}
+        for source in ("src/Application/Compilation/HtmlDocumentCompiler.php",
+                       "src/Application/Compilation/HtmlDocument/ContentRenderer.php",
+                       "src/Application/Compilation/HtmlDocument/Nested/FixtureRenderer.php"):
+            with self.subTest(source=source):
+                selected = scenarios_for([source])
+                self.assertEqual(set(selected), expected)
+                for scenario in selected:
+                    self.assertEqual(scenario.projects, ("desktop",))
+                    self.assertFalse(scenario.preset_prefixes)
+                    self.assertTrue(all(value is None for _, value in scenario.environment(Path("."))))
+                self.assertTrue({PARITY.spec, STORE.spec}.isdisjoint(item.spec for item in selected))
+        self.assertEqual(scenarios_for(["src/Application/Compilation/ElementAppearanceCompiler.php"]), (PARITY,))
+
     def test_public_owners_keep_responsive_shell_and_exact_synthetic_roles(self):
         self.assertEqual(set(PUBLIC_CODE_SCOPES), {"resources/js/public/" + name for name in EXTRACTED_PUBLIC_SCOPES})
         for name, expected in EXTRACTED_PUBLIC_SCOPES.items():

@@ -1,4 +1,4 @@
-import { externalBlockForComponent, externalEditorDefaults, externalBlockForDocument } from '../blocks/runtimeRegistry';
+import { externalBlockForComponent, externalEditorDefaults, externalBlockForDocument } from '../blocks/externalEditorRegistryData';
 import { externalEditorName, externalEditorProps, isExternalEditorItem, canonicalExternalProps, canonicalExternalMetadata } from '../blocks/externalEditorData';
 import { layoutPolicy, validateLayoutDocument } from '../documents/layoutPolicy';
 import type { PageBuilderBlock, PageBuilderDocument } from '../documents/types';
@@ -11,7 +11,7 @@ import { normalizeElementAppearanceMap } from './elementAppearanceData';
 import { canonicalCatalogBlockToPuck, catalogPuckBlockToCanonical } from './catalogCodec';
 import { canonicalDocumentToPuck, puckDocumentToCanonical, type PuckAdapterContext, type PuckEditorSession } from './puckDocumentAdapter';
 import type { ContactEditorProps, CtaEditorProps, FeaturesEditorProps, HeroEditorProps, PuckEditorData } from './puckEditorTypes';
-import { hasResponsiveOverrides, normalizeResponsiveOverrides } from './responsiveBlockStyle';
+import { hasResponsiveOverrides, normalizeResponsiveOverrides } from './responsiveBlockData';
 
 import { normalizeSurface, normalizeSpacing } from './catalogAppearance';
 export { normalizeSurface, normalizeSpacing } from './catalogAppearance';

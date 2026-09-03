@@ -220,10 +220,35 @@ export function installShellDisclosures(host: HTMLElement, onOpen?: (key: string
   return () => { doc.removeEventListener('click', click); doc.removeEventListener('keydown', keydown); doc.removeEventListener('focusin', focus); host.removeEventListener('submit', submit); doc.removeEventListener('g7pb:shell-open', otherPanel); doc.defaultView?.removeEventListener('resize', resized); };
 }
 
+interface NotificationRequest { current: () => boolean; dispose: () => void }
+const notificationRequests = new WeakMap<HTMLElement, NotificationRequest>();
+export function disposeShellNotifications(host: HTMLElement): void { notificationRequests.get(host)?.dispose(); }
+
 export async function loadShellNotifications(host: HTMLElement, view: Window, fetcher: typeof fetch = fetch, markAll = false): Promise<void> {
   const list = host.querySelector<HTMLElement>('[data-g7pb-notifications-list]');
   const readAll = host.querySelector<HTMLButtonElement>('[data-g7pb-notifications-read-all]');
-  if (!list || list.dataset.loading === 'true') return;
+  if (!list || !host.isConnected || !host.ownerDocument.contains(host)) return;
+  const previous = notificationRequests.get(host);
+  if (previous?.current()) return;
+  previous?.dispose();
+  let active = true;
+  const observer = new MutationObserver(records => { if (removed(records)) request.dispose(); });
+  const removed = (records: MutationRecord[]): boolean => records.some(record => Array.from(record.removedNodes)
+    .some(node => node.contains(host) || node.contains(list) || (readAll !== null && node.contains(readAll))));
+  const request: NotificationRequest = {
+    current: () => {
+      if (removed(observer.takeRecords())) request.dispose();
+      return active && notificationRequests.get(host) === request && host.isConnected && host.ownerDocument.contains(host)
+        && host.querySelector('[data-g7pb-notifications-list]') === list
+        && host.querySelector('[data-g7pb-notifications-read-all]') === readAll;
+    },
+    dispose: () => {
+      active = false; observer.disconnect();
+      if (notificationRequests.get(host) === request) { notificationRequests.delete(host); delete list.dataset.loading; if (readAll) readAll.disabled = false; }
+    },
+  };
+  notificationRequests.set(host, request);
+  observer.observe(host.ownerDocument, { subtree: true, childList: true });
   list.dataset.loading = 'true';
   if (readAll) readAll.disabled = true;
   const english = host.ownerDocument.documentElement.lang.startsWith('en');
@@ -232,12 +257,16 @@ export async function loadShellNotifications(host: HTMLElement, view: Window, fe
     const headers = shellAuthHeaders(view);
     if (markAll) {
       const marked = await fetcher('/api/user/notifications/read-all', { method: 'POST', credentials: 'same-origin', headers });
+      if (!request.current()) return;
       if (!marked.ok) throw new Error('read failed');
       host.dispatchEvent(new CustomEvent('g7pb:notifications-read', { bubbles: true }));
     }
+    if (!request.current()) return;
     const response = await fetcher('/api/user/notifications?per_page=5', { credentials: 'same-origin', headers });
+    if (!request.current()) return;
     if (!response.ok) throw new Error('load failed');
     const payload = shellRecord(await response.json());
+    if (!request.current()) return;
     const nested = shellRecord(payload.data);
     const items = Array.isArray(payload.data) ? payload.data : Array.isArray(nested.data) ? nested.data : [];
     list.replaceChildren();
@@ -253,6 +282,6 @@ export async function loadShellNotifications(host: HTMLElement, view: Window, fe
     }
     if (!items.length) paint(list, english ? 'No notifications yet.' : '새 알림이 없습니다.');
     if (markAll) host.querySelectorAll<HTMLElement>('[data-g7pb-system-notification-count]').forEach((node) => { node.hidden = true; });
-  } catch { paint(list, english ? 'Unable to load notifications. Please try again.' : '알림을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.'); }
-  finally { delete list.dataset.loading; if (readAll) readAll.disabled = false; }
+  } catch { if (request.current()) paint(list, english ? 'Unable to load notifications. Please try again.' : '알림을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.'); }
+  finally { request.dispose(); }
 }

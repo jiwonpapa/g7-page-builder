@@ -41,6 +41,8 @@ jobs:
               sys.exit(1)
           required = plan['requirements']
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              coverage = any(gate['name'] == 'php-compiler-coverage' for gate in plan['gates'])
+              print(f'compiler_coverage={str(coverage).lower()}', file=output)
               for name in ('node', 'php', 'g7', 'browser'):
                   if not isinstance(required[name], bool):
                       raise ValueError(f'Invalid requirement: {name}')
@@ -57,7 +59,7 @@ jobs:
           php-version: '8.5'
           extensions: zip, mbstring, pdo_sqlite, sqlite3
           tools: composer
-          coverage: none
+          coverage: ${{ steps.plan.outputs.compiler_coverage == 'true' && 'xdebug' || 'none' }}
       - uses: actions/cache@v4
         if: steps.plan.outputs.node == 'true' || steps.plan.outputs.php == 'true'
         with:

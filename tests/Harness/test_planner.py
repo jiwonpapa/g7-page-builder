@@ -263,6 +263,96 @@ class PlannerTests(unittest.TestCase):
         self.write(helper, "// changed proposed guard")
         self.assertNotEqual(before, digest_gate(self.root, gate))
 
+    def compiler_fixture(self):
+        facade = "src/Application/Compilation/HtmlDocumentCompiler.php"
+        owner = "src/Application/Compilation/HtmlDocument/FixtureRenderer.php"
+        test = "tests/UnitPhp/HtmlDocumentCompilerTest.php"
+        namespace = "Modules\\Jiwonpapa\\PageBuilder\\Application\\Compilation"
+        self.write("composer.json", json.dumps({"autoload": {"psr-4": {"Modules\\Jiwonpapa\\PageBuilder\\": "src/"}}}))
+        self.write(facade, "<?php namespace " + namespace + "; final class HtmlDocumentCompiler { function render() { return new HtmlDocument\\FixtureRenderer; } }")
+        self.write(owner, "<?php namespace " + namespace + "\\HtmlDocument; final class FixtureRenderer {}")
+        self.write(test, "<?php use " + namespace + "\\HtmlDocumentCompiler; final class HtmlDocumentCompilerTest {}")
+        for spec in ("pageBuilderLifecycle", "editorStructureTheme"):
+            self.write("tests/E2E/" + spec + ".spec.ts", "test('synthetic', () => {})")
+        self.write("scripts/check-php-coverage.php", "<?php // checker")
+        return facade, owner, test
+
+    def test_compiler_owner_selects_one_coverage_gate_static_and_synthetic_browsers_in_all_phases(self):
+        facade, owner, test = self.compiler_fixture()
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [owner], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(plan.full)
+                gate = next(g for g in plan.gates if g.name == "php-compiler-coverage")
+                self.assertTrue(gate.runtime)
+                self.assertEqual(gate.deferred, phase == "submission")
+                self.assertEqual(gate.requires, ("php",))
+                self.assertEqual(dict(gate.env), {"XDEBUG_MODE": "coverage"})
+                self.assertEqual(gate.argv, ("php", "scripts/check-php-coverage.php", "--run-compiler", "--test", test))
+                self.assertTrue({facade, owner, test, "scripts/check-php-coverage.php", "composer.json", "composer.lock", "phpunit.xml.dist"} <= set(gate.inputs))
+                self.assertNotIn("php:" + test, {g.name for g in plan.gates})
+                self.assertTrue({"php-lint", "phpstan:core", "architecture"} <= {g.name for g in plan.gates})
+                self.assertEqual({g.name for g in plan.gates if g.name.startswith("browser:")}, {
+                    "browser:tests/E2E/pageBuilderLifecycle.spec.ts", "browser:tests/E2E/editorStructureTheme.spec.ts"})
+                self.assertFalse(any(g.name.startswith("content:") or g.name == "full-product" for g in plan.gates))
+
+    def test_compiler_definition_only_is_pure_php_and_does_not_require_browser_or_g7(self):
+        _, _, test = self.compiler_fixture()
+        plan = build_plan(self.root, [test], phase="ci")
+        self.assertFalse(plan.unresolved)
+        self.assertEqual({g.name for g in plan.gates}, {"php-compiler-coverage"})
+        self.assertEqual(plan.requirements, {"node": False, "php": True, "g7": False, "browser": False})
+        self.assertFalse(plan.gates[0].deferred)
+
+    def test_compiler_coverage_hashes_complete_family_and_incomplete_inputs_disable_reuse(self):
+        _, owner, _ = self.compiler_fixture()
+        orphan = "src/Application/Compilation/HtmlDocument/NotReferencedYet.php"
+        self.write(orphan, "<?php final class NotReferencedYet {}")
+        gate = next(g for g in build_plan(self.root, [owner]).gates if g.name == "php-compiler-coverage")
+        key = digest_gate(self.root, gate)
+        self.write("src/unrelated.php", "<?php // unrelated")
+        self.assertEqual(key, digest_gate(self.root, gate))
+        self.write(orphan, "<?php final class NotReferencedYet { const VALUE = 1; }")
+        self.assertNotEqual(key, digest_gate(self.root, gate))
+        key = digest_gate(self.root, gate)
+        self.write("scripts/check-php-coverage.php", "<?php // changed command definition")
+        self.assertNotEqual(key, digest_gate(self.root, gate))
+        self.write(owner, "<?php $value = file_get_contents($path);")
+        gate = next(g for g in build_plan(self.root, [owner]).gates if g.name == "php-compiler-coverage")
+        self.assertFalse(gate.reusable)
+
+    def test_full_and_non_compiler_php_keep_distinct_content_policy(self):
+        _, owner, test = self.compiler_fixture()
+        full = build_plan(self.root, [owner], full=True)
+        self.assertNotIn("php-compiler-coverage", {g.name for g in full.gates})
+        self.assertNotIn("--exclude-group", next(g for g in full.gates if g.name == "php:" + test).argv)
+        self.assertIn("full-product", {g.name for g in full.gates})
+        other = "tests/UnitPhp/OfficialStoreContractTest.php"
+        self.write(other, "<?php class OfficialStoreContractTest {}")
+        scoped = build_plan(self.root, [other])
+        self.assertEqual([g.name for g in scoped.gates], ["php:" + other])
+        self.assertEqual(scoped.gates[0].argv, ("vendor/bin/phpunit", "--exclude-group", "content-catalog", other))
+
+    def test_coverage_checker_has_exact_regression_and_does_not_select_content(self):
+        self.write("scripts/check-php-coverage.php", "<?php // proposed checker")
+        self.write("tests/Harness/test_php_coverage.py", "CHECKER = 'scripts/check-php-coverage.php'")
+        plan = build_plan(self.root, ["scripts/check-php-coverage.php"])
+        self.assertFalse(plan.unresolved)
+        self.assertEqual({g.name for g in plan.gates}, {"syntax:scripts/check-php-coverage.php", "python:tests/Harness/test_php_coverage.py"})
+        regression = next(g for g in plan.gates if g.name.startswith("python:"))
+        self.assertEqual(regression.requires, ("php",))
+        self.assertTrue({"scripts/check-php-coverage.php", "tests/UnitPhp/HtmlDocumentCompilerTest.php",
+                         "Makefile", ".github/workflows/ci.yml"} <= set(regression.inputs))
+        for cause in ("Makefile", ".github/workflows/ci.yml"):
+            key = digest_gate(self.root, regression)
+            self.write(cause, "changed command policy")
+            self.assertNotEqual(key, digest_gate(self.root, regression))
+            for name in ("environment", "planner", "runner"):
+                self.write("tests/Harness/test_" + name + ".py", "pass")
+            changed = build_plan(self.root, [cause])
+            self.assertIn("python:tests/Harness/test_php_coverage.py", {g.name for g in changed.gates})
+
     def test_php_source_requires_static_analysis_and_boundaries(self):
         self.write("src/Domain/Example.php", "<?php class Example {}")
         self.write("tests/UnitPhp/ExampleTest.php", "<?php class ExampleTest {}")

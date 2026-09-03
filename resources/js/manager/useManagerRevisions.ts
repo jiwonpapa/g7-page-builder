@@ -78,7 +78,13 @@ export function useManagerRevisions({ api, documents, onUpdated, onError, onMess
       const restored = await api.restoreRevision(documentId, revision, resource.lock_version);
       if (restored.document.document_id !== documentId) throw new Error('복원 응답의 문서가 요청한 문서와 다릅니다.');
       if (operation.alive()) onUpdated(restored);
-      if (current()) { setTarget(restored); updateRestoreCandidate(null); await loadRevisions(restored); }
+      // Cancelling confirmation does not cancel a committed server mutation.
+      // Refresh its still-open history, while leaving any newer confirmation alone.
+      if (operation.current()) {
+        setTarget(restored);
+        if (current()) updateRestoreCandidate(null);
+        await loadRevisions(restored);
+      }
     } catch (error) { if (current()) onError(error); }
     finally { if (current()) { restoreBusy.current = false; setRestoringRevision(false); } }
   };

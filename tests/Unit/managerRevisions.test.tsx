@@ -96,6 +96,59 @@ describe('manager revision session ownership', () => {
     expect(document.querySelector('[data-testid="page-builder-revision-restore-dialog"]')).toBeNull();
   });
 
+  it('refreshes the same open history after a successful restore whose confirmation was cancelled', async () => {
+    const a = resource('a');
+    vi.spyOn(PageBuilderApiClient.prototype, 'listDocuments').mockResolvedValue(list(a));
+    const histories = vi.spyOn(PageBuilderApiClient.prototype, 'listRevisions')
+      .mockResolvedValueOnce(history('a', 20)).mockResolvedValue(history('a', 21));
+    const restored = deferred<DocumentResource>();
+    const restore = vi.spyOn(PageBuilderApiClient.prototype, 'restoreRevision').mockImplementation(() => restored.promise);
+    await mount(); await openAction('a', 'revisions');
+    const opened = document.querySelector('[data-testid="page-builder-manager-revisions-dialog"]');
+    await click(document.querySelector('[data-revision="19"] [data-testid="page-builder-revision-restore"]'));
+    await click(document.querySelector('[data-testid="page-builder-revision-restore-confirm"]'));
+    expect(restore).toHaveBeenCalledWith('a', 19, 7);
+    const confirm = document.querySelector('[data-testid="page-builder-revision-restore-dialog"]');
+    if (!confirm) throw new Error('Expected restore confirmation');
+    await click(byText(confirm, '취소'));
+    await act(async () => { restored.resolve({ ...a, title: 'Restored A', revision: 21, lock_version: 8 }); });
+    expect(row('a').querySelector('h3')?.textContent).toBe('Restored A');
+    expect(document.querySelector('[data-testid="page-builder-manager-revisions-dialog"]')).toBe(opened);
+    const currentRevision = document.querySelector('[data-revision="21"]');
+    expect(currentRevision).not.toBeNull();
+    expect(currentRevision?.textContent).toContain('현재 초안');
+    expect(document.querySelector('[data-revision="20"]')?.textContent).not.toContain('현재 초안');
+    expect(document.querySelector('[data-testid="page-builder-revision-restore-dialog"]')).toBeNull();
+    expect(histories).toHaveBeenCalledTimes(2);
+  });
+
+  it('refreshes history without closing a newer confirmation when the previous restore completes', async () => {
+    const a = resource('a');
+    vi.spyOn(PageBuilderApiClient.prototype, 'listDocuments').mockResolvedValue(list(a));
+    vi.spyOn(PageBuilderApiClient.prototype, 'listRevisions')
+      .mockResolvedValueOnce(history('a', 20)).mockResolvedValue(history('a', 21));
+    const restored = deferred<DocumentResource>();
+    const restore = vi.spyOn(PageBuilderApiClient.prototype, 'restoreRevision').mockImplementationOnce(() => restored.promise)
+      .mockRejectedValueOnce(new Error('new confirmation request remains independent'));
+    await mount(true); await openAction('a', 'revisions');
+    await click(document.querySelector('[data-revision="19"] [data-testid="page-builder-revision-restore"]'));
+    await click(document.querySelector('[data-testid="page-builder-revision-restore-confirm"]'));
+    const firstConfirm = document.querySelector('[data-testid="page-builder-revision-restore-dialog"]');
+    if (!firstConfirm) throw new Error('Expected first confirmation');
+    await click(byText(firstConfirm, '취소'));
+    await click(document.querySelector('[data-revision="19"] [data-testid="page-builder-revision-restore"]'));
+    const newerConfirm = document.querySelector('[data-testid="page-builder-revision-restore-dialog"]');
+    expect(newerConfirm).not.toBeNull();
+    await act(async () => { restored.resolve({ ...a, title: 'Restored A', revision: 21, lock_version: 8 }); });
+    expect(document.querySelector('[data-revision="21"]')?.textContent).toContain('현재 초안');
+    expect(document.querySelector('[data-testid="page-builder-revision-restore-dialog"]')).toBe(newerConfirm);
+    expect(newerConfirm?.querySelector('h2')?.textContent).toContain('v19');
+    await click(document.querySelector('[data-testid="page-builder-revision-restore-confirm"]'));
+    expect(restore).toHaveBeenLastCalledWith('a', 19, 8);
+    expect(document.querySelector('[data-testid="page-builder-revision-restore-dialog"]')).toBe(newerConfirm);
+    expect(document.querySelector<HTMLButtonElement>('[data-testid="page-builder-revision-restore-confirm"]')?.disabled).toBe(false);
+  });
+
   it('opens previews synchronously and closes only pending windows when their history closes', async () => {
     vi.spyOn(PageBuilderApiClient.prototype, 'listDocuments').mockResolvedValue(list(resource('a'), resource('b')));
     vi.spyOn(PageBuilderApiClient.prototype, 'listRevisions').mockImplementation(id => Promise.resolve(history(id, 20)));

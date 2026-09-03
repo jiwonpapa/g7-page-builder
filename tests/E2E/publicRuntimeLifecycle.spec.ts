@@ -17,6 +17,7 @@ async function withPublicFixture(
   markup: string,
   handlers: ApiHandlers,
   exercise: (requests: Request[]) => Promise<void>,
+  hostStyles = '',
 ): Promise<void> {
   const css = readFileSync('dist/css/page-builder-public.css', 'utf8');
   const js = readFileSync('dist/js/page-effects.iife.js', 'utf8');
@@ -24,7 +25,7 @@ async function withPublicFixture(
   const unexpected: string[] = [];
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  const document = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="synthetic-csrf"><title>Public runtime code contract</title><link rel="stylesheet" href="${FIXTURE_PATH}.css"><script defer src="${FIXTURE_PATH}.js"></script></head><body>${markup}</body></html>`;
+  const document = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="synthetic-csrf"><title>Public runtime code contract</title>${hostStyles}<link rel="stylesheet" href="${FIXTURE_PATH}.css"><script defer src="${FIXTURE_PATH}.js"></script></head><body>${markup}</body></html>`;
   await page.route('**/*', async (route: Route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -204,13 +205,45 @@ test('initializes synthetic sliders and motion from the shipped bundle', async (
 test('hydrates synthetic shell controls and keeps service requests explicit', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('auth_token', 'public-contract-token'));
   const options = { search: true, account: true, theme: true, locale: true, currency: false, cart: false, notifications: false };
-  const markup = `<div hidden data-g7pb-runtime-config='{"commerceAvailable":false}'></div><header><div class="g7pb-system-controls" data-g7pb-system-controls data-g7pb-shell-options='${JSON.stringify(options)}'></div></header><main class="g7pb-page"><h1>Shell contract</h1></main>`;
+  const hostStyles = `<style>
+    :root { color-scheme: dark; font-family: monospace; }
+    body { margin: 13px; color: rgb(7, 19, 31); background: rgb(231, 235, 239); }
+    * { box-sizing: content-box; }
+    .host-sentinel { width: 100px; padding: 7px; border: 3px solid; }
+  </style>`;
+  const markup = `<aside class="host-sentinel">Host template sentinel</aside><div hidden data-g7pb-runtime-config='{"commerceAvailable":false}'></div><header><div class="g7pb-system-controls" data-g7pb-system-controls data-g7pb-shell-options='${JSON.stringify(options)}'></div></header><main class="g7pb-page g7pb-document-theme g7pb-theme-mode-light"><h1>Shell contract</h1><section class="g7pb-block g7pb-surface--contrast"><section class="g7pb-block g7pb-surface--default"><p>Default child text</p></section><section class="g7pb-block g7pb-surface--soft"><p>Soft child text</p></section><form class="g7pb-inquiry-form"><footer class="g7pb-inquiry-form__footer"><p>Card status text</p></footer></form></section></main>`;
   await withPublicFixture(page, markup, {
     'GET /api/auth/user': () => ({ json: { data: { uuid: 'public-fixture-member', name: 'Synthetic member', is_admin: false } } }),
     'GET /api/public/locales/active': () => ({ json: { data: { locales: ['ko', 'en'], locale_names: { ko: '한국어', en: 'English' } } } }),
     'GET /api/user/notifications/unread-count': () => ({ json: { data: { count: 0 } } }),
     'POST /api/auth/logout': () => ({ status: 503, json: { message: 'Synthetic unavailable service' } }),
   }, async (requests) => {
+    const expectHostUnchanged = async (): Promise<void> => {
+      await expect(page.locator('html')).not.toHaveClass(/g7pb-standalone-viewer/);
+      await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+      await expect(page.locator('html')).toHaveCSS('font-family', 'monospace');
+      await expect(page.locator('body')).toHaveCSS('margin', '13px');
+      await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(231, 235, 239)');
+      const sentinel = page.locator('.host-sentinel');
+      await expect(sentinel).toHaveCSS('box-sizing', 'content-box');
+      await expect(sentinel).toHaveCSS('color', 'rgb(7, 19, 31)');
+      expect((await sentinel.boundingBox())?.width).toBe(120);
+      await expect(page.locator('.g7pb-page')).toHaveCSS('box-sizing', 'border-box');
+      await expect(page.locator('.g7pb-system-controls')).toHaveCSS('box-sizing', 'border-box');
+    };
+    await expectHostUnchanged();
+    // CSS composition fixture: it does not claim LayoutSection accepts appearance props.
+    for (const [surface, background] of [['default', 'rgb(255, 255, 255)'], ['soft', 'rgb(243, 241, 237)']]) {
+      const child = page.locator(`.g7pb-surface--${surface}`);
+      await expect(child).toHaveCSS('background-color', background);
+      await expect(child).toHaveCSS('color', 'rgb(23, 32, 51)');
+      await expect(child.locator('p')).toHaveCSS('color', 'rgb(82, 96, 113)');
+    }
+    const card = page.locator('.g7pb-inquiry-form');
+    await expect(card).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(card).toHaveCSS('color', 'rgb(23, 32, 51)');
+    await expect(card).toHaveCSS('border-top-color', 'rgb(223, 226, 232)');
+    await expect(card.getByText('Card status text', { exact: true })).toHaveCSS('color', 'rgb(82, 96, 113)');
     const controls = page.locator('[data-g7pb-system-controls]');
     await expect(controls).toHaveAttribute('data-g7pb-shell-mounted', 'true');
     await controls.locator('[data-g7pb-shell-toggle="account"]').click();
@@ -243,5 +276,6 @@ test('hydrates synthetic shell controls and keeps service requests explicit', as
     expect(logout).toHaveLength(1);
     expect(new URL(logout[0].url()).pathname).toBe('/api/auth/logout');
     expect(logout[0].headers().authorization).toBe('Bearer public-contract-token');
-  });
+    await expectHostUnchanged();
+  }, hostStyles);
 });

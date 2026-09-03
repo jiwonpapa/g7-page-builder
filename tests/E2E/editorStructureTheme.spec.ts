@@ -52,6 +52,10 @@ function themeBlocks(): PageBuilderBlock[] {
       })),
       appearance: { surface: 'default', spacing: 'compact' },
     }),
+    ...[1, 2, 3, 4].map((slot) => block('content.heading-01', {
+      eyebrow: '', heading: `기본 팔레트 ${slot} <span data-g7pb-tone="custom${slot}">부분 색 ${slot}</span>`, level: 2, anchor: '',
+      appearance: { surface: 'default', spacing: 'compact', elements: { heading: { tone: `custom${slot}` } } },
+    })),
   ];
 }
 
@@ -195,7 +199,7 @@ test.describe('Editor structure and theme contracts', () => {
   test.describe.configure({ retries: 0 });
 
   test('page themes retain readable child text in light, dark and system modes', async ({ page, context }, info) => {
-    await withOwnedDocument(page, context, info.project.name, themeBlocks(), async (api, owned) => {
+    await withOwnedDocument(page, context, info.project.name, themeBlocks(), async (api, owned, seeded) => {
       const frame = page.frameLocator('iframe');
       const preview = await context.newPage();
       const states = [
@@ -215,6 +219,7 @@ test.describe('Editor structure and theme contracts', () => {
           await save(page);
           const current = await resource(api, owned.documentId);
           expect(current.document.tokens?.['design.color_mode']).toBe(state.mode);
+          expect(Object.keys(current.document.tokens ?? {}).filter((key) => key.startsWith('design.custom_color_'))).toEqual([]);
           const response = await api.post(`${API}/${owned.documentId}/preview`, {
             data: { expected_lock_version: current.lock_version },
           });
@@ -235,6 +240,46 @@ test.describe('Editor structure and theme contracts', () => {
             expect(tokens.primitive).not.toBe('');
             expect(tokens.ownsEditorUI, `${surface} document: ${JSON.stringify(tokens)}`).toBe(false);
             expect(tokens.ui, `${surface}: UI roles must not become document theme defaults: ${JSON.stringify(tokens)}`).toEqual(['', '', '']);
+          }
+          const publicTheme = preview.locator('.g7pb-document-theme');
+          await expect(preview.locator('html')).toHaveClass('g7pb-standalone-viewer');
+          await expect(preview.locator('body')).toHaveCSS('margin', '0px');
+          await expect(publicTheme).not.toHaveClass(/g7pb-theme-custom-palette/);
+          expect(await publicTheme.getAttribute('style') ?? '').not.toContain('--g7pb-custom-tone-');
+          const palette = state.expected === 'light'
+            ? ['rgb(36, 86, 223)', 'rgb(5, 150, 105)', 'rgb(217, 119, 6)', 'rgb(225, 29, 72)']
+            : ['rgb(139, 167, 255)', 'rgb(110, 231, 183)', 'rgb(251, 191, 36)', 'rgb(253, 164, 175)'];
+          for (const [index, item] of seeded.blocks.slice(-4).entries()) {
+            const slot = index + 1;
+            const editorField = frame.locator(`[data-block-id="${item.instance_id}"] [data-g7pb-inline-field="heading"]`);
+            const publicField = preview.locator(`[data-block-id="${item.instance_id}"] h2`);
+            for (const field of [editorField, publicField]) {
+              await expect(field).toHaveCount(1);
+              await expect(field).toHaveClass(new RegExp(`\\bg7pb-element-tone--custom${slot}\\b`));
+              await expect(field).toHaveCSS('color', palette[index]);
+              await expect(field.locator(`[data-g7pb-tone="custom${slot}"]`)).toHaveCSS('color', palette[index]);
+            }
+          }
+          const expectedPage = state.expected === 'light'
+            ? { background: 'rgb(255, 255, 255)', color: 'rgb(23, 32, 51)', muted: 'rgb(82, 96, 113)', border: 'rgb(223, 226, 232)' }
+            : { background: 'rgb(16, 22, 32)', color: 'rgb(244, 247, 251)', muted: 'rgb(184, 193, 207)', border: 'rgb(52, 65, 85)' };
+          for (const root of [canvasTheme, publicTheme]) {
+            await expect(root).toHaveCSS('background-color', expectedPage.background);
+            await expect(root).toHaveCSS('color', expectedPage.color);
+          }
+          const cardPairs = [
+            [frame.locator('.g7pb-preview-features article').first(), preview.locator('.g7pb-features__item').first()],
+            [frame.locator('.g7pb-preview-pricing article').first(), preview.locator('.g7pb-pricing__plan').first()],
+          ];
+          for (const pair of cardPairs) {
+            for (const card of pair) {
+              await expect(card).toHaveCSS('background-color', expectedPage.background);
+              await expect(card).toHaveCSS('color', expectedPage.color);
+              await expect(card).toHaveCSS('border-top-color', expectedPage.border);
+            }
+          }
+          for (const text of [frame.getByText(COPY.cardBody, { exact: true }), preview.getByText(COPY.cardBody, { exact: true })]) {
+            await expect(text).toHaveCSS('color', expectedPage.muted);
           }
           const pairs = [
             [frame.getByText(COPY.heroBody, { exact: true }), preview.getByText(COPY.heroBody, { exact: true })],
@@ -258,7 +303,9 @@ test.describe('Editor structure and theme contracts', () => {
           expect(editorRoot.rootFontSize).toBe(publicRoot.rootFontSize);
           expect(editorRoot.fontSize).toBe(publicRoot.fontSize);
           expect(parseFloat(editorRoot.fontSize)).toBeCloseTo(parseFloat(editorRoot.rootFontSize) * 1.125);
-          if (state.mode === 'dark') await page.screenshot({ path: info.outputPath('editor-theme-dark.png'), fullPage: false });
+          if (state.mode === 'light' || state.mode === 'dark') await info.attach(`page-surfaces-${state.mode}`, {
+            body: await preview.screenshot(), contentType: 'image/png',
+          });
         }
       } finally {
         await preview.close();
@@ -267,6 +314,7 @@ test.describe('Editor structure and theme contracts', () => {
   });
 
   test('keeps explicit typography and inline colors across editor and compiled preview under host styles', async ({ page, context }, info) => {
+    await page.emulateMedia({ colorScheme: 'light' });
     const regular = block('content.heading-01', {
       eyebrow: '', heading: '사용자가 선택한 보통 제목', level: 2, anchor: '',
       appearance: { surface: 'default', spacing: 'compact', textAlign: 'right', elements: { heading: { weight: 'regular' } } },
@@ -377,6 +425,7 @@ test.describe('Editor structure and theme contracts', () => {
       const payload = await response.json() as { data?: { preview_url?: string } };
       if (!payload.data?.preview_url) throw new Error('Missing compiled preview URL.');
       const preview = await context.newPage();
+      await preview.emulateMedia({ colorScheme: 'light' });
       try {
         expect((await preview.goto(payload.data.preview_url))?.ok()).toBe(true);
         await expectStrongEditorWeights();
@@ -469,6 +518,12 @@ test.describe('Editor structure and theme contracts', () => {
           expect(parseFloat(style.fontSize)).toBeCloseTo(parseFloat(style.rootFontSize) * 1.25);
           expect(contrast(style.color, style.background)).toBeGreaterThanOrEqual(4.5);
         }
+        await page.emulateMedia({ colorScheme: 'dark' });
+        await preview.emulateMedia({ colorScheme: 'dark' });
+        for (const span of inline) await expect(span).toHaveCSS('color', 'rgb(171, 205, 239)');
+        await page.emulateMedia({ colorScheme: 'light' });
+        await preview.emulateMedia({ colorScheme: 'light' });
+        for (const span of inline) await expect(span).toHaveCSS('color', 'rgb(18, 52, 86)');
         // Saving through the real editor must preserve the supported inline
         // settings in canonical data as well as in the compiled browser output.
         const saved = (await resource(api, owned.documentId)).document.blocks.find(item => item.instance_id === heading.instance_id);
@@ -494,7 +549,7 @@ test.describe('Editor structure and theme contracts', () => {
       } finally {
         await preview.close();
       }
-    }, { 'design.palette': 'blue', 'design.custom_color_1_light': '#123456', 'design.custom_color_1_dark': '#abcdef' });
+    }, { 'design.color_mode': 'system', 'design.palette': 'blue', 'design.custom_color_1_light': '#123456', 'design.custom_color_1_dark': '#abcdef' });
   });
 
   test('nested selection edits and inserts within the selected parent', async ({ page, context }, info) => {

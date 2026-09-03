@@ -9,6 +9,7 @@ body.g7pb-manager-shell,
 .g7pb-full-site-part__edit,
 html:has(body.g7pb-editor-shell),
 html:has(body.g7pb-manager-shell),
+html.g7pb-standalone-viewer,
 .g7pb-document-theme {
   --g7pb-neutral-0: #fff;
   --g7pb-neutral-50: #fcfbf9;
@@ -44,6 +45,20 @@ html:has(body.g7pb-manager-shell),
   --g7pb-page-muted: #526071;
   --g7pb-page-panel: var(--g7pb-neutral-200);
   --g7pb-page-border: #dfe2e8;
+  --g7pb-contrast-bg: var(--g7pb-neutral-900);
+  --g7pb-contrast-text: var(--g7pb-neutral-0);
+  --g7pb-contrast-muted: #cbd3df;
+  --g7pb-contrast-border: #758096;
+  --g7pb-contrast-accent: #9ab2ff;
+  --g7pb-page-on-accent: var(--g7pb-neutral-0);
+  --g7pb-custom-tone-1-light: #2456df;
+  --g7pb-custom-tone-1-dark: #8ba7ff;
+  --g7pb-custom-tone-2-light: #059669;
+  --g7pb-custom-tone-2-dark: #6ee7b7;
+  --g7pb-custom-tone-3-light: #d97706;
+  --g7pb-custom-tone-3-dark: #fbbf24;
+  --g7pb-custom-tone-4-light: #e11d48;
+  --g7pb-custom-tone-4-dark: #fda4af;
   --g7pb-theme-fg: var(--g7pb-page-text);
   --g7pb-theme-muted: var(--g7pb-page-muted);
   --g7pb-theme-border: var(--g7pb-page-border);
@@ -51,6 +66,7 @@ html:has(body.g7pb-manager-shell),
   --g7pb-card-bg: var(--g7pb-page-bg);
   --g7pb-card-text: var(--g7pb-page-text);
   --g7pb-card-muted: var(--g7pb-page-muted);
+  --g7pb-card-border: var(--g7pb-page-border);
   background: var(--g7pb-page-bg);
   color: var(--g7pb-page-text);
   font-size: var(--g7pb-theme-body-size);

@@ -1,6 +1,7 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CanvasCurrentElementStylesContext, normalizeElementAppearanceMap } from '../../resources/js/editor/canvasEditingContract';
 
 class TestResizeObserver {
   observe(): void {}
@@ -15,6 +16,7 @@ const {
   createInlineRichTextField,
   createRichTextField,
   G7SingleLineRichText,
+  RichTextCanvasField,
 } = await import('../../resources/js/editor/richTextEditing');
 
 const mounted: Array<() => void> = [];
@@ -73,6 +75,31 @@ function renderInlineMenu(
 }
 
 describe('Puck-native rich-text editing', () => {
+  it.each([
+    { label: 'explicit regular', appearance: { weight: 'regular' }, headingDefault: false },
+    { label: 'absent weight', appearance: {}, headingDefault: true },
+  ])('distinguishes $label from the semantic heading default after normalization', async ({ appearance, headingDefault }) => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    mounted.push(() => act(() => root.unmount()));
+    const styles = normalizeElementAppearanceMap({ heading: appearance });
+    await act(async () => {
+      root.render(
+        <CanvasCurrentElementStylesContext.Provider value={styles}>
+          <RichTextCanvasField as="h2" fieldPath="heading"><span>합성 제목</span></RichTextCanvasField>
+        </CanvasCurrentElementStylesContext.Provider>,
+      );
+    });
+    const heading = container.querySelector('[data-g7pb-inline-field="heading"]');
+    if (!heading) throw new Error('Expected the rendered heading field');
+    expect(heading.getAttribute('role')).toBe('heading');
+    expect(heading.getAttribute('aria-level')).toBe('2');
+    expect(heading.classList.contains('g7pb-element-weight--regular')).toBe(true);
+    expect(heading.classList.contains('g7pb-element-weight--heading-default')).toBe(headingDefault);
+    expect(heading.textContent).toBe('합성 제목');
+  });
+
   function markEditor() {
     const chain = { focus: vi.fn(() => chain), setMark: vi.fn(() => chain), unsetMark: vi.fn(() => chain), run: vi.fn(() => true) };
     return { state: { selection: { empty: false, from: 3, to: 7 } }, chain: vi.fn(() => chain), operations: chain };

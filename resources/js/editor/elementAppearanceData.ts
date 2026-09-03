@@ -10,7 +10,7 @@ export function normalizeElementAppearance(value: unknown): ElementAppearance {
     ...(record.font === 'system' || record.font === 'modern' || record.font === 'serif' || record.font === 'mono' ? { font: record.font } : {}),
     ...(fontSizeRem !== undefined ? { fontSizeRem } : {}),
     ...(fontSizeRem === undefined && (record.size === 'small' || record.size === 'large' || record.size === 'xlarge') ? { size: record.size } : {}),
-    ...(record.weight === 'medium' || record.weight === 'semibold' || record.weight === 'bold' ? { weight: record.weight } : {}),
+    ...(record.weight === 'regular' || record.weight === 'medium' || record.weight === 'semibold' || record.weight === 'bold' ? { weight: record.weight } : {}),
     ...(record.align === 'center' || record.align === 'right' ? { align: record.align } : {}),
     ...(record.tone === 'muted' || record.tone === 'accent' || record.tone === 'contrast'
       || record.tone === 'custom1' || record.tone === 'custom2' || record.tone === 'custom3' || record.tone === 'custom4'

@@ -132,7 +132,7 @@
   .g7pb-preview-logo-carousel, .g7pb-preview-testimonial-slider, .g7pb-preview-events,
   .g7pb-preview-downloads, .g7pb-preview-archive, .g7pb-preview-product-showcase,
   .g7pb-preview-data-detail, .g7pb-preview-card-grid) > header > :is(h2, [data-g7pb-heading-level="2"]) { margin: .65rem 0 0; }
-.g7pb-preview-page header > small { display: block; margin: 0; color: var(--g7pb-theme-accent); font-size: .75rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.g7pb-preview-page header > small { display: block; margin: 0; color: var(--g7pb-theme-accent-text); font-size: .75rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .g7pb-preview-faq > header { margin-bottom: 0; }
 .g7pb-preview-logo-carousel > header, .g7pb-preview-testimonial-slider > header { margin-bottom: 1.5rem; }
 .g7pb-preview-cta-split.g7pb-preview-cta-split--layout-banner { padding-block: clamp(2rem, 4vw, 3.5rem); }

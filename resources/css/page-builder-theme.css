@@ -1,3 +1,36 @@
+/* Shared primitives. UI roles are scoped separately in core; page roles remain below. */
+body.g7pb-editor-shell,
+body.g7pb-manager-shell,
+.g7pb-root,
+.g7pb-portal-surface,
+.g7pb-richtext-floating-layer,
+.g7pb-richtext-inline-toolbar,
+.g7pb-full-site-part__placeholder,
+.g7pb-full-site-part__edit,
+html:has(body.g7pb-editor-shell),
+html:has(body.g7pb-manager-shell),
+.g7pb-document-theme {
+  --g7pb-neutral-0: #fff;
+  --g7pb-neutral-50: #fcfbf9;
+  --g7pb-neutral-100: #f7f7f5;
+  --g7pb-neutral-200: #f3f1ed;
+  --g7pb-neutral-300: #d8d7d3;
+  --g7pb-neutral-400: #b9bec8;
+  --g7pb-neutral-600: #667085;
+  --g7pb-neutral-700: #475467;
+  --g7pb-neutral-900: #172033;
+  --g7pb-blue-50: #e9efff;
+  --g7pb-blue-600: #2458d6;
+  --g7pb-blue-700: #1946b4;
+  --g7pb-green-50: #e9f8ef;
+  --g7pb-green-700: #16794a;
+  --g7pb-amber-50: #fff8e7;
+  --g7pb-amber-800: #a15c08;
+  --g7pb-red-50: #fff4f3;
+  --g7pb-red-100: #fee4e2;
+  --g7pb-red-700: #b42318;
+}
+
 /* Shared page design tokens. Editor canvas and compiled viewer import this source. */
 .g7pb-document-theme {
   --g7pb-theme-accent: #4f46e5;
@@ -6,10 +39,10 @@
   --g7pb-theme-radius: 1rem;
   --g7pb-theme-content-width: 72rem;
   --g7pb-theme-body-size: 1rem;
-  --g7pb-page-bg: #fff;
-  --g7pb-page-text: #172033;
+  --g7pb-page-bg: var(--g7pb-neutral-0);
+  --g7pb-page-text: var(--g7pb-neutral-900);
   --g7pb-page-muted: #526071;
-  --g7pb-page-panel: #f3f1ed;
+  --g7pb-page-panel: var(--g7pb-neutral-200);
   --g7pb-page-border: #dfe2e8;
   --g7pb-theme-fg: var(--g7pb-page-text);
   --g7pb-theme-muted: var(--g7pb-page-muted);
@@ -36,6 +69,6 @@
 .g7pb-theme-width-wide { --g7pb-theme-content-width: 88rem; }
 .g7pb-theme-scale-compact { --g7pb-theme-body-size: .9375rem; }
 .g7pb-theme-scale-large { --g7pb-theme-body-size: 1.125rem; }
-.g7pb-theme-mode-light, .g7pb-theme-mode-system { color-scheme: light; --g7pb-page-bg: #fff; --g7pb-page-text: #172033; --g7pb-page-muted: #526071; --g7pb-page-panel: #f3f1ed; --g7pb-page-border: #dfe2e8; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-light); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-light); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-light); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-light); }
+.g7pb-theme-mode-light, .g7pb-theme-mode-system { color-scheme: light; --g7pb-page-bg: var(--g7pb-neutral-0); --g7pb-page-text: var(--g7pb-neutral-900); --g7pb-page-muted: #526071; --g7pb-page-panel: var(--g7pb-neutral-200); --g7pb-page-border: #dfe2e8; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-light); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-light); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-light); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-light); }
 .g7pb-theme-mode-dark { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); }
 @media (prefers-color-scheme: dark) { .g7pb-theme-mode-system { color-scheme: dark; --g7pb-page-bg: #101620; --g7pb-page-text: #f4f7fb; --g7pb-page-muted: #b8c1cf; --g7pb-page-panel: #192231; --g7pb-page-border: #344155; --g7pb-custom-tone-1: var(--g7pb-custom-tone-1-dark); --g7pb-custom-tone-2: var(--g7pb-custom-tone-2-dark); --g7pb-custom-tone-3: var(--g7pb-custom-tone-3-dark); --g7pb-custom-tone-4: var(--g7pb-custom-tone-4-dark); background: var(--g7pb-page-bg); color: var(--g7pb-page-text); } }

@@ -40,6 +40,13 @@ for (const style of ['drawer-right', 'drawer-left', 'dropdown', 'sheet-bottom'])
       expect(await page.locator('html').evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
       const child = menu.locator('[data-g7pb-submenu-toggle]').first(); await child.click();
       await expect(child).toHaveAttribute('aria-expanded', 'true'); await expect(menu.getByRole('link', { name: '상세 안내 1', exact: true })).toBeVisible();
+      const spacing = await menu.locator('.g7pb-mobile-subnav').first().evaluate((node) => ({
+        margin: Number.parseFloat(getComputedStyle(node).marginLeft),
+        padding: Number.parseFloat(getComputedStyle(node).paddingLeft),
+        rootSize: Number.parseFloat(getComputedStyle(node.ownerDocument.documentElement).fontSize),
+      }));
+      expect(spacing.margin).toBeCloseTo(spacing.rootSize * .8, 1);
+      expect(spacing.padding).toBeCloseTo(spacing.rootSize * .9, 1);
       if (style !== 'dropdown') {
         expect(await page.locator('main').evaluate((node) => (node as HTMLElement).inert)).toBe(true);
         await menu.getByRole('link', { name: '로그아웃', exact: true }).focus(); await page.keyboard.press('Tab');

@@ -1875,7 +1875,7 @@ body:has(.g7pb-selected-block-actionbar) {
 :where(.g7pb-mobile-menu) a { display: flex; min-height: 3.25rem; align-items: center; justify-content: space-between; color: inherit; font-weight: 750; text-decoration: none; }
 .g7pb-mobile-menu__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 .g7pb-mobile-menu__row button { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 0; border-radius: 999px; color: var(--g7pb-shell-text); background: var(--g7pb-shell-hover); }
-.g7pb-mobile-subnav { margin: 0 0 .5rem .8rem !important; padding-left: .9rem !important; border-left: 2px solid var(--g7pb-shell-border); }
+.g7pb-mobile-menu .g7pb-mobile-subnav { margin: 0 0 .5rem .8rem; padding-left: .9rem; border-left: 2px solid var(--g7pb-shell-border); }
 .g7pb-mobile-subnav[hidden] { display: none; }
 .g7pb-mobile-subnav a { min-height: 2.8rem; color: var(--g7pb-shell-muted); font-size: .9rem; }
 .g7pb-mobile-menu--preview { display: none; animation: none !important; }

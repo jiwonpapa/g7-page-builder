@@ -63,7 +63,7 @@ html.g7pb-standalone-viewer body { margin: 0; color: var(--g7pb-neutral-900); ba
 .g7pb-mobile-menu__row button { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 0; border-radius: 999px; color: var(--g7pb-shell-text); background: var(--g7pb-shell-hover); cursor: pointer; }
 .g7pb-mobile-menu__row button span { transition: transform 150ms ease; }
 .g7pb-mobile-menu__row button[aria-expanded='true'] span { transform: rotate(180deg); }
-.g7pb-mobile-subnav { margin: 0 0 .5rem .8rem !important; padding-left: .9rem !important; border-left: 2px solid var(--g7pb-shell-border); }
+.g7pb-mobile-menu .g7pb-mobile-subnav { margin: 0 0 .5rem .8rem; padding-left: .9rem; border-left: 2px solid var(--g7pb-shell-border); }
 .g7pb-mobile-subnav[hidden] { display: none; }
 .g7pb-mobile-subnav a { min-height: 2.8rem; color: var(--g7pb-shell-muted); font-size: .9rem; }
 .g7pb-mobile-menu .g7pb-mobile-menu__cta { justify-content: center; margin-top: .75rem; border-radius: .7rem; color: var(--g7pb-shell-on-accent); background: var(--g7pb-shell-accent); }

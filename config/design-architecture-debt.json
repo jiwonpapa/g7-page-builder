@@ -161,8 +161,6 @@
         "f7ff604f3a59dd6c327d52e70a253ad679aad4091b6ef3ae1a9e832fc70b0415": 1,
         "68bbd6fe42d0a5678e8346aa4fde12e67cdc564cfb63a9c1bdb89461c7ea9003": 1,
         "373e1dd14202d153d448a6041094aa2141f838bb7a6434538a334d3d0b6c1296": 1,
-        "60b71f1c55cd2e297e124a93679097cc6efcd61abf94295ba1751e54d906955e": 1,
-        "8b1ed22e09a6dcad9189fb53d7ce3a43094c6df77b27bc9e9d4ae2bac8278fc1": 1,
         "5afe87e9bfc5768e7324823772caa912123f54222f3f577f349c6822f0e1baf9": 1,
         "b3eea7931df0c0c22a95298440d0980f8c937a3b20720908c1089b20b57d15c0": 1,
         "4328d85905506a059d76f29b86274a285f0d1583dd1714b8e61c0874d71be247": 1,
@@ -335,8 +333,6 @@
       "reason": "Existing host/Puck typography or accessibility overrides are retained by exact declaration; no additional priority escalation is permitted.",
       "resolveWhen": "Remove the override after the component or vendor bridge owns its cascade and computed styles still match the published view.",
       "fingerprints": {
-        "60b71f1c55cd2e297e124a93679097cc6efcd61abf94295ba1751e54d906955e": 1,
-        "8b1ed22e09a6dcad9189fb53d7ce3a43094c6df77b27bc9e9d4ae2bac8278fc1": 1,
         "24bb501a2c75aeda5c4c37d8fc845fb6e847cda3a12c95109eb6a1e6497c0c26": 1,
         "c30475cab1babc4038bf528c18c38ebeb62a711965b1da974212683bfa014caf": 1,
         "6b81c7de0eb1f456d6ad786bd4cb136efd80e624326579f0911f32c4d82ff878": 1,

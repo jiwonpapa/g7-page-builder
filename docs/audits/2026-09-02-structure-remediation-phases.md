@@ -2,7 +2,7 @@
 
 기준: `0a6fcbae69ad0c0ad93aea145c8899c4b001ecfb`, 2026-09-02. [이전 코드 감사 개선](2026-09-02-code-audit-remediation.md)의 후속 작업이다.
 
-현재 상태: **1~5차 제품 구현·관련 검증·재감사 완료**. 1차 제품 검증 SHA는 `38ec067ed6dbb68c3ac09ce4c8572f1ec6524edc`, 문서 통합 기준은 `e9a3afb1d18b87e50c5abffc00fc80294764c96d`다. 2차 제품 검증 SHA는 `d59bbc07482e878c179ab784a0e301c4c7c5a1e3`, 문서 통합·정식 종료 SHA는 `23beb94abdaba28038073c2116020440eb29eb79`다. 3차 제품 통합 SHA는 `cbe955a6c9f10cd131d7b7ce5ef588e1c14bed26`이며 Manager 1,597→96줄·catalog 851→68줄·공개 진입점 1,163→16줄로 책임을 분리했다. 정적 부채 1,066→1,061, canonical의 UI 금지 연결 44→0이며 신규 위반·순환·우회 단언 규칙 위반은 0이다. 각 차수의 문서 통합 후 최종 검증·NO_RELEASE 종료는 [1차](2026-09-02-structure-phase-1.md)·[2차](2026-09-02-structure-phase-2.md)·[3차 마감 기록](2026-09-03-structure-phase-3.md)과 연결된 영수증으로 확인한다. 4차 제품 통합 SHA는 `ae25c0dec6c8e714fff0ddd5b9c52ed5126ebf37`이며 PHP 본체 2,504→297줄·기본 renderer 45종 분리·전체 정적 부채 1,061→1,060을 확인했다. 문서 통합·정식 종료는 [4차 마감 기록](2026-09-03-structure-phase-4.md)의 최종 영수증과 연결한다. 5차 제품·감사 기준은 `3a747c68f5f6e613f9f1e4a117c4af505aa3621a`이며 스타일 부채 1,060→220와 CSS 크기 예외 0을 확인했다. [5차 마감 기록](2026-09-03-structure-phase-5.md)에 정식 종료 영수증을 연결하며 6차는 아직 실행하지 않았다.
+현재 상태: **1~6차 코드 구현·관련 검증·동일 기준 재감사 완료, 0.32.0 릴리스·배포 최종 gate 대기**. 1차 제품 검증 SHA는 `38ec067ed6dbb68c3ac09ce4c8572f1ec6524edc`, 문서 통합 기준은 `e9a3afb1d18b87e50c5abffc00fc80294764c96d`다. 2차 제품 검증 SHA는 `d59bbc07482e878c179ab784a0e301c4c7c5a1e3`, 문서 통합·정식 종료 SHA는 `23beb94abdaba28038073c2116020440eb29eb79`다. 3차 제품 통합 SHA는 `cbe955a6c9f10cd131d7b7ce5ef588e1c14bed26`이며 Manager 1,597→96줄·catalog 851→68줄·공개 진입점 1,163→16줄로 책임을 분리했다. 정적 부채 1,066→1,061, canonical의 UI 금지 연결 44→0이며 신규 위반·순환·우회 단언 규칙 위반은 0이다. 각 차수의 문서 통합 후 최종 검증·NO_RELEASE 종료는 [1차](2026-09-02-structure-phase-1.md)·[2차](2026-09-02-structure-phase-2.md)·[3차 마감 기록](2026-09-03-structure-phase-3.md)과 연결된 영수증으로 확인한다. 4차 제품 통합 SHA는 `ae25c0dec6c8e714fff0ddd5b9c52ed5126ebf37`이며 PHP 본체 2,504→297줄·기본 renderer 45종 분리·전체 정적 부채 1,061→1,060을 확인했다. 문서 통합·정식 종료는 [4차 마감 기록](2026-09-03-structure-phase-4.md)의 최종 영수증과 연결한다. 5차 제품·감사 기준은 `3a747c68f5f6e613f9f1e4a117c4af505aa3621a`이며 스타일 부채 1,060→220와 CSS 크기 예외 0을 확인했다. [5차 마감 기록](2026-09-03-structure-phase-5.md)에 정식 종료 영수증을 연결한다. 6차 제품 통합 SHA는 `69f0ede5645b0b3c0acc028e6484ed40137f1588`이며 366파일·신규 오류 0·잔여 부채 220·unused debt 0과 공개 JS 세 예산 통과를 확인했다. [6차 기록](2026-09-04-structure-phase-6.md)은 코드 재감사와 0.32.0 범위를 확정하며 package·push·deploy·smoke는 문서 커밋 이후 외부 영수증으로 별도 판정한다.
 
 ## 범위와 진행 방식
 
@@ -21,7 +21,7 @@
 | 3. 관리·카탈로그·공개 runtime | `PageBuilderManager.tsx`의 목록/리비전/메타데이터/스토어 화면과 사용 사례 분리, `catalogBlocks.tsx`의 codec/필드/렌더 분리, `pageEffects.ts`의 슬라이더·폼·효과 생명주기 분리 | 문서 변환이 React 렌더러를 경유하지 않음. 공개 runtime의 관리자 의존 없음. listener/timer/재초기화 소유권 명시 | 관련 관리 API/화면 회귀, 합성 블록 왕복, 공개 효과 중복 초기화/해제·반응형 동작 |
 | 4. PHP 컴파일러 | `HtmlDocumentCompiler.php`의 문서 조율과 블록별 렌더러 분리 | escaping·URL·리치텍스트·진단·블록 순서·출력 해시 유지. renderer가 G7/DB/발행 상태를 소유하지 않음. 각 파일 제한 준수 | 합성 입력의 기존/신규 출력 동등성, 악성 입력 거부, compiler 및 발행 트랜잭션 회귀 |
 | 5. 스타일·테마 | primitive/의미/컴포넌트 토큰 정리, 편집·관리·공개 UI 재사용, `!important`/반복 selector 해소, 편집기 CSS 책임 분리 | 배경·전경·테두리 함께 상속. 명시 사용자 설정 우선권 유지. portal/iframe에서 동일 의미. 중복값 이동으로 해소 처리하지 않음 | Stylelint·정적 부채 감소, 합성 화면의 computed style·대비·상속·선택 상태·등장 애니메이션 완료 위치 |
-| 6. 재감사·종료 | 실제 감소량과 잔여 예외, import 방향·순환·타입/스타일 경계 및 하네스 선택 범위 재검토 | 동일 기준으로 전후 비교, 새 위반 0, 해소된 예외 제거, 관련 행동 검사와 소유권 종료 기록. 미해소 항목을 완료로 표시하지 않음 | 정적 결과·소스 지문, 차수별 검사 기록, 최종 integration-verify 및 NO_RELEASE 종료 |
+| 6. 재감사·0.32.0 범위 | 실제 감소량과 잔여 예외, import 방향·순환·타입/스타일 경계, 공개 JS 예산과 하네스 선택 범위 재검토 | 동일 기준으로 전후 비교, 새 위반 0, 해소된 예외 제거, 관련 행동 검사와 릴리스 범위 기록. 미해소 항목과 배포 전 상태를 완료로 표시하지 않음 | 정적 결과·소스 지문, 변경 관련 브라우저, 세 JS 예산, 0.32.0 version gate. package·push·deploy·smoke는 별도 외부 영수증 |
 
 ## 시작 부채
 
@@ -95,6 +95,16 @@
 
 남겨야 하는 기존 vendor·접근성 예외는 근거와 검증을 기록하며, 제거하지 않은 항목을 해소 건수에 포함하지 않는다. `@layer` 추가나 Stylelint 통과만으로 cascade 동등성을 주장하지 않는다.
 
+### 6차 — 코드 재감사·0.32.0 릴리스 범위
+
+6차 코드 통합·관련 검증·동일 기준 재감사를 완료했다. 최종 제품 SHA는 `69f0ede5645b0b3c0acc028e6484ed40137f1588`이며 [6차 기록](2026-09-04-structure-phase-6.md)에 수치와 판정 경계를 기록한다.
+
+- 제품 소스 366파일에서 신규 오류 0, 인정된 잔여 부채 220개(CSS-COLOR 184, CSS-IMPORTANT 36), `unusedDebt=0`을 확인했다. 220개는 미해소 상태다.
+- 공개 runtime을 main 20,923/24,000 byte, optional slider 10,057/12,000 byte, 합계 30,980/34,000 byte의 세 `gzipSync` 예산으로 검사해 모두 통과했다.
+- 변경 관련 브라우저 묶음 12건과 3건이 성공했고 skip·fail·flaky는 0이다. 콘텐츠·프리셋 품질과 제품 전체 상용성 판정으로 확대하지 않는다.
+- 6-B·6-C에서 build/release controller의 미분류를 발견하고 최초 실패를 보존한 뒤, 정확한 build→asset integrity와 release/syntax gate로 분류했다. full product나 콘텐츠 전체검사로 우회하지 않았다.
+- 0.32.0 버전·변경 기록은 이 코드 범위를 release 대상으로 묶는다. 문서 task 뒤 최종 integration gate, package checksum, Git push, 원격 apply와 post-deploy smoke가 별도로 성공해야 릴리스·배포 완료다.
+
 ## 운영·인프라 경계
 
 인증된 G7 runtime이 없는 hosted CI는 실제 브라우저 통과로 인정하지 않는다. 차수별 제품 검증은 소유권을 확보한 Local runtime에서 수행한다. hosted CI용 runtime/인증과 최초 Site Part 발행 결과 이행은 별도 환경 결정·실행 증거가 필요하며, 로컬 코드 정비만으로 해결됐다고 보고하지 않는다.
@@ -119,6 +129,7 @@
 | 4차 정식 마감 | 마감 기록 참조 | 문서 통합·최종 integration-verify·NO_RELEASE 종료는 4차 증거 폴더의 `phase4-final-close.json`에 최종 SHA와 함께 보존 |
 | 5차 구현·재감사 | 완료 | 검사 계약·UI 토큰·페이지 표면·Site Shell·글자 우선순위·CSS 책임 분리. 363파일/부채 220/신규·크기 예외·CSS 순환 0, 제품 SHA `3a747c6` |
 | 5차 정식 마감 | 마감 기록 참조 | 문서 통합·최종 integration-verify·NO_RELEASE 종료는 `phase5-final-close.json`에 보존. 잔여 COLOR/IMPORTANT와 기존 JS 용량 초과는 6차에 이관 |
-| 6차 | 예정 | 종합 재감사·종료 |
+| 6차 코드 재감사 | 완료 | 제품 SHA `69f0ede5`; 366파일/신규 오류 0/잔여 부채 220/unused 0. main 20,923·optional 10,057·합계 30,980 gzip byte, 변경 관련 브라우저 12+3 성공·skip/fail/flaky 0 |
+| 0.32.0 릴리스·배포 | 후속 최종 gate | 버전·CHANGELOG·6차 범위 확정 뒤 package·push·원격 apply·smoke와 editor URL 외부 영수증으로 완료 판정 |
 
-[1차 구현·실패 보완·검증 기록](2026-09-02-structure-phase-1.md)에 제출/통합 SHA, 실제 검사, 부채 전후 수치를 기록한다. 다음 차수의 계획을 작성했다는 이유로 해당 차수를 완료 처리하지 않는다.
+[1차 구현·실패 보완·검증 기록](2026-09-02-structure-phase-1.md)에 제출/통합 SHA, 실제 검사, 부채 전후 수치를 기록한다. 6차 코드 재감사와 0.32.0 범위 확정은 릴리스 패키지·push·운영 배포 성공을 대신하지 않는다.

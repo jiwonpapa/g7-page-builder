@@ -1,12 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, request as playwrightRequest, test, type Locator, type Page } from '@playwright/test';
+
+import { gotoOwnedSiteShell, SitePartSetFixture } from './support/sitePartSetFixture';
 
 const compiled = JSON.parse(execFileSync('php', ['scripts/render-site-shell-quality-fixture.php'], { encoding: 'utf8' })) as { header: string; footer: string };
 const css = readFileSync('dist/css/page-builder-public.css', 'utf8');
 const js = readFileSync('dist/js/page-effects.iife.js', 'utf8');
 const settings = { general: { site_name: '검증 사이트', site_description: '실제 사이트 정보가 표시되는 공통 영역' }, social: { youtube: 'https://youtube.com/@example', github: 'https://github.com/example' } };
+const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 
 
 const portable = (page: Page): boolean => (page.viewportSize()?.width ?? 1440) < 900;
@@ -110,12 +113,17 @@ test('real G7 authentication · admin route · native logout · guest transition
   const payload = await login.json() as { data?: { token?: string } };
   if (!payload.data?.token) throw new Error('G7 returned no authentication token.');
   await context.addInitScript((token) => { if (!sessionStorage.getItem('shell-auth-seeded')) { localStorage.setItem('auth_token', token); sessionStorage.setItem('shell-auth-seeded', 'true'); } }, payload.data.token);
-  await page.goto('/');
-  const header = page.getByTestId('page-builder-site-header');
-  await expect(header).toBeVisible();
-  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
-  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
-  if (testInfo.project.name === 'desktop' && await header.locator('.g7pb-site-nav[aria-hidden="true"]').count()) {
+  const sitePartApi = await playwrightRequest.newContext({ baseURL: BASE_URL, ignoreHTTPSErrors: true,
+    extraHTTPHeaders: { Accept: 'application/json', Authorization: `Bearer ${payload.data.token}` } });
+  const siteParts = new SitePartSetFixture(sitePartApi, 'ko');
+  try {
+    await siteParts.start(page);
+    await gotoOwnedSiteShell(page, '/', 'ko');
+    const header = page.getByTestId('page-builder-site-header');
+    await expect(header).toBeVisible();
+    await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
+    await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
+    if (testInfo.project.name === 'desktop' && await header.locator('.g7pb-site-nav[aria-hidden="true"]').count()) {
     // G7 replaces HtmlContent while auth/site state hydrates. Read both rectangles
     // atomically from one connected header, and still enforce the same 1px tolerance.
     await expect.poll(() => header.evaluate((element) => {
@@ -124,14 +132,14 @@ test('real G7 authentication · admin route · native logout · guest transition
       if (!element.isConnected || !inner?.width || !actions?.width) return Number.POSITIVE_INFINITY;
       return Math.abs(inner.right - actions.right);
     })).toBeLessThanOrEqual(1);
-  }
-  await openAccount(page, header);
-  const admin = header.getByRole('link', { name: '관리자', exact: true });
-  await expect(admin).toBeVisible(); await expect(admin).toHaveAttribute('href', '/admin');
-  await page.screenshot({ path: testInfo.outputPath(`real-admin-${testInfo.project.name}.png`), fullPage: false });
-  await admin.click();
-  await expect(page).toHaveURL(/\/admin(?:\/|$)/u);
-  if (testInfo.project.name === 'desktop') {
+    }
+    await openAccount(page, header);
+    const admin = header.getByRole('link', { name: '관리자', exact: true });
+    await expect(admin).toBeVisible(); await expect(admin).toHaveAttribute('href', '/admin');
+    await page.screenshot({ path: testInfo.outputPath(`real-admin-${testInfo.project.name}.png`), fullPage: false });
+    await admin.click();
+    await expect(page).toHaveURL(/\/admin(?:\/|$)/u);
+    if (testInfo.project.name === 'desktop') {
     await page.goto('/modules/jiwonpapa-page_builder/admin/site-parts/header');
     await page.getByRole('group', { name: '접속 상태 미리보기', exact: true }).getByRole('button', { name: '관리자', exact: true }).click();
     const personaBounds = await page.locator('.g7pb-site-part-persona').boundingBox();
@@ -162,20 +170,25 @@ test('real G7 authentication · admin route · native logout · guest transition
     await mobileMenu.locator('[data-g7pb-preview-menu-close]').click();
     await expect(mobileMenu).toBeHidden();
     await expect(page.locator('.g7pb-status[data-state="dirty"]')).toHaveCount(0);
+    }
+    await gotoOwnedSiteShell(page, '/', 'ko');
+    await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
+    await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
+    await openAccount(page, header);
+    const nativeLogout = page.waitForResponse((response) => /\/api\/(?:admin\/)?auth\/logout$/u.test(new URL(response.url()).pathname) && response.request().method() === 'POST');
+    await header.getByRole('link', { name: '로그아웃', exact: true }).click();
+    expect((await nativeLogout).ok()).toBe(true);
+    await page.waitForURL(/\/login(?:\?|$)/u);
+    expect(await page.evaluate(() => localStorage.getItem('auth_token'))).toBeNull();
+    await gotoOwnedSiteShell(page, '/', 'ko');
+    await openAccount(page, header);
+    await expect(header.getByRole('link', { name: '로그인', exact: true })).toBeVisible();
+    await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toBeHidden();
+  } finally {
+    await page.goto('about:blank');
+    siteParts.restore();
+    await sitePartApi.dispose();
   }
-  await page.goto('/');
-  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toHaveAttribute('href', '/admin');
-  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).not.toHaveAttribute('hidden');
-  await openAccount(page, header);
-  const nativeLogout = page.waitForResponse((response) => /\/api\/(?:admin\/)?auth\/logout$/u.test(new URL(response.url()).pathname) && response.request().method() === 'POST');
-  await header.getByRole('link', { name: '로그아웃', exact: true }).click();
-  expect((await nativeLogout).ok()).toBe(true);
-  await page.waitForURL(/\/login(?:\?|$)/u);
-  expect(await page.evaluate(() => localStorage.getItem('auth_token'))).toBeNull();
-  await page.goto('/');
-  await openAccount(page, header);
-  await expect(header.getByRole('link', { name: '로그인', exact: true })).toBeVisible();
-  await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toBeHidden();
 });
 
 test('real standalone builder viewer · authenticated account · API logout', async ({ page, context, request }, testInfo) => {
@@ -187,17 +200,21 @@ test('real standalone builder viewer · authenticated account · API logout', as
   const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
   const base = '/api/modules/jiwonpapa-page_builder/admin';
   const slug = `g7pb-shell-quality-${testInfo.project.name}-${Date.now()}`;
-  const create = await request.post(`${base}/documents`, { headers, data: { title: 'Site Shell 검증용', slug, locale: 'ko', shell_mode: 'builder' } });
-  expect(create.ok()).toBe(true);
-  const resource = (await create.json()).data;
-  const id = resource.document.document_id as string;
+  const sitePartApi = await playwrightRequest.newContext({ baseURL: BASE_URL, ignoreHTTPSErrors: true, extraHTTPHeaders: headers });
+  const siteParts = new SitePartSetFixture(sitePartApi, 'ko');
+  let id: string | null = null;
   try {
+    await siteParts.start(page);
+    const create = await request.post(`${base}/documents`, { headers, data: { title: 'Site Shell 검증용', slug, locale: 'ko', shell_mode: 'builder' } });
+    expect(create.ok()).toBe(true);
+    const resource = (await create.json()).data;
+    id = resource.document.document_id as string;
     const prepare = await request.post(`${base}/documents/${id}/publications/prepare`, { headers, data: { expected_lock_version: resource.lock_version } });
     expect(prepare.ok()).toBe(true);
     const commit = await request.post(`${base}/publications/${(await prepare.json()).data.publication_token}/commit`, { headers, data: {} });
     expect(commit.ok()).toBe(true);
     await context.addInitScript((value) => { if (!sessionStorage.getItem('shell-auth-seeded')) { localStorage.setItem('auth_token', value); sessionStorage.setItem('shell-auth-seeded', 'true'); } }, token);
-    await page.goto(`/pages/${slug}`);
+    await gotoOwnedSiteShell(page, `/pages/${slug}`, 'ko');
     await expect(page.locator('[data-g7pb-runtime-config]')).toHaveCount(1);
     const header = page.getByTestId('page-builder-site-header');
     await openAccount(page, header);
@@ -213,12 +230,17 @@ test('real standalone builder viewer · authenticated account · API logout', as
     await expect(header.getByRole('link', { name: '로그인', exact: true })).toBeVisible();
   } finally {
     // Only this test-created document is archived; never touch an existing page.
-    const cleanupLogin = await request.post('/api/auth/admin/login', { data: { email, password } });
-    expect(cleanupLogin.ok()).toBe(true);
-    const cleanupHeaders = { Authorization: `Bearer ${(await cleanupLogin.json()).data.token as string}` };
-    const current = await request.get(`${base}/documents/${id}`, { headers: cleanupHeaders });
-    expect(current.ok()).toBe(true);
-    const archive = await request.post(`${base}/documents/${id}/archive`, { headers: cleanupHeaders, data: { expected_lock_version: (await current.json()).data.lock_version } });
-    expect(archive.ok()).toBe(true);
+    if (id) {
+      const cleanupLogin = await request.post('/api/auth/admin/login', { data: { email, password } });
+      expect(cleanupLogin.ok()).toBe(true);
+      const cleanupHeaders = { Authorization: `Bearer ${(await cleanupLogin.json()).data.token as string}` };
+      const current = await request.get(`${base}/documents/${id}`, { headers: cleanupHeaders });
+      expect(current.ok()).toBe(true);
+      const archive = await request.post(`${base}/documents/${id}/archive`, { headers: cleanupHeaders, data: { expected_lock_version: (await current.json()).data.lock_version } });
+      expect(archive.ok()).toBe(true);
+    }
+    await page.goto('about:blank');
+    siteParts.restore();
+    await sitePartApi.dispose();
   }
 });

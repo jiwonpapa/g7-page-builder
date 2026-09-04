@@ -28,10 +28,26 @@ for (const persona of ['guest', 'member', 'admin', 'unavailable'] as const) {
     await page.route('**/api/user/notifications/unread-count', (route) => route.fulfill({ json: { data: { unread_count: 3 } } }));
     await page.route('**/api/user/notifications?*', (route) => route.fulfill({ json: { data: [{ id: '11111111-1111-4111-8111-111111111111', subject: '새로운 소식', url: '/mypage/notifications', created_at: '2026-08-30' }] } }));
     await page.route('**/api/user/notifications/read-all', (route) => route.fulfill({ json: { success: true } }));
-    await page.route('**/__shell-quality', (route) => route.fulfill({ contentType: 'text/html', body: `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Site Shell quality</title><link rel="stylesheet" href="/__shell-quality.css"><script defer src="/__shell-quality.js"></script></head><body><div hidden data-g7pb-runtime-config='${JSON.stringify(config)}'></div>${compiled.header}<main style="min-height:400px;padding:40px"><h1>사이트 공통 영역 품질 검증</h1><p>이 화면은 실제 컴파일러와 배포 번들을 사용합니다.</p></main>${compiled.footer}</body></html>` }));
+    await page.route('**/__shell-quality', (route) => route.fulfill({ contentType: 'text/html', body: `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Site Shell quality</title><link rel="stylesheet" href="/__shell-quality.css"><script defer src="/__shell-quality.js"></script></head><body><div hidden data-g7pb-runtime-config='${JSON.stringify(config)}'></div>${compiled.header}<main class="g7pb-page" style="min-height:400px"><section class="g7pb-block g7pb-container-width--standard" data-testid="page-builder-shell-content"><div><h1>사이트 공통 영역 품질 검증</h1><p>이 화면은 실제 컴파일러와 배포 번들을 사용합니다.</p></div></section></main>${compiled.footer}</body></html>` }));
     await page.goto('/__shell-quality');
     const header = page.getByTestId('page-builder-site-header');
     await expect(header.locator('[data-g7pb-shell-mounted]')).toHaveCount(1);
+    const geometry = await page.evaluate(() => {
+      const rect = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
+      const headerBox = rect('[data-testid="page-builder-site-header"]');
+      const headerInner = rect('.g7pb-site-header__inner');
+      const content = rect('[data-testid="page-builder-shell-content"] > div');
+      const footerBox = rect('[data-testid="page-builder-site-footer"]');
+      const footerInner = rect('.g7pb-site-footer__top');
+      if (!headerBox || !headerInner || !content || !footerBox || !footerInner) throw new Error('Shell geometry fixture is incomplete.');
+      return { viewport: document.documentElement.clientWidth,
+        header: { left: headerBox.left, right: headerBox.right }, footer: { left: footerBox.left, right: footerBox.right },
+        edges: [headerInner.left, headerInner.right, content.left, content.right, footerInner.left, footerInner.right] };
+    });
+    expect(Math.max(...geometry.edges.filter((_, index) => index % 2 === 0)) - Math.min(...geometry.edges.filter((_, index) => index % 2 === 0))).toBeLessThanOrEqual(1);
+    expect(Math.max(...geometry.edges.filter((_, index) => index % 2 === 1)) - Math.min(...geometry.edges.filter((_, index) => index % 2 === 1))).toBeLessThanOrEqual(1);
+    expect(geometry.header).toEqual({ left: 0, right: geometry.viewport });
+    expect(geometry.footer).toEqual({ left: 0, right: geometry.viewport });
     const account = await openAccount(page, header);
     await expect(account).toBeVisible();
     if (member) {

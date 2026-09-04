@@ -14,8 +14,7 @@
   box-sizing: border-box;
 }
 .g7pb-full-site-page { min-height: 18rem; }
-.g7pb-full-site-page--template { width: 100%; max-width: var(--g7pb-page-content-max); margin-inline: auto; padding-inline: 1rem; }
-@container (min-width: 1024px) { .g7pb-full-site-page--template { padding-inline: 2rem; } }
+.g7pb-full-site-page--template { width: min(calc(100% - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max)); margin-inline: auto; }
 .g7pb-full-site-part { position: relative; isolation: isolate; }
 
 .g7pb-preview-block {

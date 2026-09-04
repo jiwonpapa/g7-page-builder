@@ -219,8 +219,38 @@ class ReleaseTests(unittest.TestCase):
         doctor = (ROOT / "scripts/remote-staging-doctor.sh").read_text()
         self.assertNotIn("mysqldump", doctor)
         self.assertNotIn("1048576", doctor)
-        self.assertEqual(len(release.ASSETS), 8)
+        self.assertEqual(len(release.ASSETS), 9)
         self.assertIn("dist/js/page-builder-manager.iife.js", release.ASSETS)
+        self.assertIn("dist/js/page-sliders.iife.js", release.ASSETS)
+
+    def test_remote_smoke_checks_every_asset_including_optional_slider_bundle(self):
+        class Response:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+        requests = []
+
+        class Opener:
+            def open(self, request, timeout):
+                requests.append((request.full_url, request.method, timeout))
+                return Response()
+
+        transport = release.Transport(self.root, "fixture", "/srv/g7/app", "https://fixture.invalid")
+        archive = self.archive()
+        with patch.object(transport, "remote") as remote, patch.object(release, "build_opener", return_value=Opener()):
+            transport.smoke(archive)
+        remote.assert_called_once_with("smoke", archive)
+        self.assertEqual(len(requests), 3 + len(release.ASSETS))
+        self.assertIn((
+            "https://fixture.invalid/api/modules/assets/jiwonpapa-page_builder/dist/js/page-sliders.iife.js",
+            "HEAD",
+            20,
+        ), requests)
 
     def test_remote_artifact_readiness_blocks_apply_and_restores_previous_files(self):
         result, app, target, calls = self.run_remote_readiness(ready=False)

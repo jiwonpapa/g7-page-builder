@@ -87,7 +87,7 @@ PUBLIC_SHELL = replace(PUBLIC_DATA, titles=(
 # bundle, not catalog content or real account/inquiry service acceptance.
 PUBLIC_CODE_SCOPES = {
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL)
-       for name in ("pageEffects.ts", "publicRuntime.ts")},
+       for name in ("pageEffects.ts", "publicRuntime.ts", "publicSliderLoader.ts")},
     "resources/js/public/publicValues.ts": (PUBLIC, PUBLIC_DATA, PUBLIC_SHELL),
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_DATA) for name in (
         "publicDataRendering.ts", "publicArchiveControls.ts", "publicDataRuntime.ts",
@@ -97,7 +97,7 @@ PUBLIC_CODE_SCOPES = {
         "publicContentControls.ts", "publicInquiryForms.ts",
     )},
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_MOTION) for name in (
-        "publicMotion.ts", "publicSliders.ts",
+        "publicMotion.ts", "publicSliders.ts", "publicSliderEntry.ts", "publicSliderControls.ts",
     )},
     **{"resources/js/public/" + name: (SITE_SHELL, PUBLIC_SHELL) for name in (
         "siteShellControls.ts", "siteShellRuntime.ts", "siteShellActions.ts",

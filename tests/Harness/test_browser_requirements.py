@@ -89,6 +89,7 @@ PUBLIC_ALL = public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SH
 EXTRACTED_PUBLIC_SCOPES = {
     "pageEffects.ts": {PUBLIC, PUBLIC_ALL},
     "publicRuntime.ts": {PUBLIC, PUBLIC_ALL},
+    "publicSliderLoader.ts": {PUBLIC, PUBLIC_ALL},
     "publicValues.ts": {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_SHELL)},
     "publicDataRendering.ts": {PUBLIC, PUBLIC_DATA},
     "publicArchiveControls.ts": {PUBLIC, PUBLIC_DATA},
@@ -98,6 +99,8 @@ EXTRACTED_PUBLIC_SCOPES = {
     "publicInquiryForms.ts": {PUBLIC, PUBLIC_CONTROLS},
     "publicMotion.ts": {PUBLIC, PUBLIC_MOTION},
     "publicSliders.ts": {PUBLIC, PUBLIC_MOTION},
+    "publicSliderEntry.ts": {PUBLIC, PUBLIC_MOTION},
+    "publicSliderControls.ts": {PUBLIC, PUBLIC_MOTION},
     "siteShellControls.ts": {SITE_SHELL, PUBLIC_SHELL},
     "siteShellRuntime.ts": {SITE_SHELL, PUBLIC_SHELL},
     "siteShellActions.ts": {SITE_SHELL, PUBLIC_SHELL},

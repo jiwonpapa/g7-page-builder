@@ -20,7 +20,7 @@ from . import artifacts
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = [f"dist/{kind}/{name}.{extension}" for kind, extension, names in [
-    ("js", "iife.js", ["page-builder-editor", "page-builder-manager", "page-builder-site-part", "page-effects"]),
+    ("js", "iife.js", ["page-builder-editor", "page-builder-manager", "page-builder-site-part", "page-effects", "page-sliders"]),
     ("css", "css", ["page-builder-editor", "page-builder-manager", "page-builder-site-part", "page-builder-public"]),
 ] for name in names]
 

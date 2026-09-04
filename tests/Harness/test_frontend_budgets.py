@@ -1,6 +1,7 @@
 """Synthetic CSS source/CLI fixtures; no build, browser, catalog or runtime."""
 import json
 import os
+import hashlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -55,9 +56,13 @@ class FrontendBudgetTests(unittest.TestCase):
         self.write("resources/css/page-builder-manager.css", "@media (max-width: 720px) {.g7pb-store-card {display:block;}}")
         for name in ("page-builder-manager", "page-builder-editor", "page-builder-site-part", "page-builder-public"):
             self.write(f"dist/css/{name}.css", ".fixture {display:block;}")
-        for name in ("page-builder-manager", "page-builder-editor", "page-builder-site-part", "page-effects"):
+        for name in ("page-builder-manager", "page-builder-editor", "page-builder-site-part", "page-effects", "page-sliders"):
             self.write(f"dist/js/{name}.iife.js", "void 0;")
         self.write("resources/views/viewer.blade.php", "<!doctype html><html></html>")
+
+    @staticmethod
+    def payload(label, count):
+        return "".join(hashlib.sha256(f"{label}-{index}".encode()).hexdigest() for index in range(count))
 
     def test_full_command_rejects_split_family_total_over_original_limit(self):
         self.full_fixture()
@@ -148,7 +153,7 @@ class FrontendBudgetTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0, result.stdout)
                     self.assertIn(error, result.stderr)
 
-    def test_source_mode_stays_separate_while_full_mode_keeps_raw_and_gzip_limits(self):
+    def test_full_command_rejects_main_public_bundle_over_unchanged_limit_and_source_mode_skips_dist(self):
         self.full_fixture()
         good = self.run_checker()
         self.assertEqual(good.returncode, 0, good.stderr)
@@ -159,15 +164,33 @@ class FrontendBudgetTests(unittest.TestCase):
         self.write("resources/css/page-builder-core.css", ".fixture {}")
         # A deterministic incompressible-like fixture exercises the existing JS
         # limit; source-only must never run that unrelated artifact gate.
-        import hashlib
-        payload = "".join(hashlib.sha256(str(index).encode()).hexdigest() for index in range(1_000))
-        self.write("dist/js/page-effects.iife.js", payload)
+        self.write("dist/js/page-effects.iife.js", self.payload("main-over", 1_000))
         gzip = self.run_checker()
         self.assertNotEqual(gzip.returncode, 0, gzip.stdout)
         self.assertIn("dist/js/page-effects.iife.js=", gzip.stderr)
         self.assertIn("/24000 gzip bytes", gzip.stderr)
         source = self.run_checker("--editor-source-only")
         self.assertEqual(source.returncode, 0, source.stderr)
+
+    def test_full_command_rejects_optional_slider_bundle_over_its_own_limit(self):
+        self.full_fixture()
+        self.write("dist/js/page-sliders.iife.js", self.payload("slider-over", 500))
+        result = self.run_checker()
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("dist/js/page-sliders.iife.js=", result.stderr)
+        self.assertIn("/12000 gzip bytes", result.stderr)
+
+    def test_full_command_rejects_combined_public_runtime_without_moving_the_debt(self):
+        self.full_fixture()
+        # Each artifact is below its own limit, while a slider page would load
+        # more than the aggregate allowance. Moving bytes out of the main IIFE
+        # must not turn the old exception green by itself.
+        self.write("dist/js/page-effects.iife.js", self.payload("main", 620))
+        self.write("dist/js/page-sliders.iife.js", self.payload("slider", 305))
+        result = self.run_checker()
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("Public runtime combined budget exceeded", result.stderr)
+        self.assertIn("/34000 gzip bytes", result.stderr)
 
 
 if __name__ == "__main__":

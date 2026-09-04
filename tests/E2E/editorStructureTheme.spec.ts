@@ -644,8 +644,7 @@ test.describe('Editor structure and theme contracts', () => {
     await withOwnedDocument(page, context, info.project.name, blocks, async (api, owned) => {
       const frame = page.frameLocator('iframe');
       await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
-      const sectionRow = page.locator('[data-puck-layer-tree-id]')
-        .filter({ has: page.getByRole('button', { name: 'Section · 구조 컨테이너', exact: true }) });
+      const sectionRow = page.locator(`[data-puck-layer-tree-id="${blocks[0].instance_id}"]`);
       await sectionRow.getByRole('button', { name: 'Section · 구조 컨테이너', exact: true }).click();
       const sectionMove = frame.getByTestId('page-builder-block-move-zone').locator('xpath=ancestor::button[1]');
       await sectionMove.click();
@@ -656,8 +655,7 @@ test.describe('Editor structure and theme contracts', () => {
 
       const expandSection = sectionRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
       if (await expandSection.isVisible()) await expandSection.click();
-      const columnsRow = page.locator('[data-puck-layer-tree-id]')
-        .filter({ has: page.getByRole('button', { name: 'Columns · 1/2/3열', exact: true }) });
+      const columnsRow = page.locator(`[data-puck-layer-tree-id="${columnsBlock.instance_id}"]`);
       const expandColumns = columnsRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
       if (await expandColumns.isVisible()) await expandColumns.click();
       const headingRow = page.locator(`[data-puck-layer-tree-id="${headingId}"]`);

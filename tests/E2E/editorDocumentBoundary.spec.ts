@@ -62,6 +62,13 @@ async function save(page: Page, id: string): Promise<void> {
   expect((await response).ok()).toBe(true);
   await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
 }
+async function selectDarkTheme(page: Page): Promise<void> {
+  const darkTheme = page.getByRole('button', { name: '다크 테마', exact: true });
+  if (!(await darkTheme.isVisible())) {
+    await page.locator('summary[aria-label="편집 도구 더 보기"]').click();
+  }
+  await darkTheme.click();
+}
 
 // Only structural limits and editor/save state are exercised; fixture copy is not a content acceptance test.
 test.use({ trace: 'off', video: 'off' });
@@ -81,7 +88,7 @@ test.describe('Editor canonical document boundary', () => {
       });
       await expect(headings).toHaveCount(200);
       // Establish a valid, acknowledged state before the rejected native command.
-      await page.getByRole('button', { name: '다크 테마', exact: true }).click();
+      await selectDarkTheme(page);
       await save(page, owned.documentId);
       await expect(theme).toHaveClass(/g7pb-theme-mode-dark/);
       await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
@@ -137,7 +144,7 @@ test.describe('Editor canonical document boundary', () => {
         await page.getByTestId('page-builder-save').click();
         await pending;
         await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saving');
-        await page.getByRole('button', { name: '다크 테마', exact: true }).click();
+        await selectDarkTheme(page);
         await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'dirty');
         const latestSaved = page.waitForResponse((candidate) => {
           if (candidate.request().method() !== 'PUT' || new URL(candidate.url()).pathname !== `${API}/${owned.documentId}/draft`) return false;

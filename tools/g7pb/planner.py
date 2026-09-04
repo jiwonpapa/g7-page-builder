@@ -280,12 +280,19 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "tests/Harness/editor-layout-parity-contract.test.sh": ("editor_contracts",),
         "scripts/lib/typeImportChanges.mjs": ("type_import_changes",),
         "playwright.config.ts": ("browser_registration",),
+        "scripts/dev-verify.sh": ("release",),
     }
     command_contracts = {"tests/Harness/" + name for name in (
         "block-quality-evidence.test.sh", "block-quality-gate-wiring.test.sh", "block-product-quality-contract.test.sh")}
     product_changed = any(p.startswith(("src/", "resources/", "database/", "schemas/", "config/")) for p in plan.paths)
     release_scripts = {"release-package.sh", "deploy-staging.sh", "remote-deploy-staging.sh", "smoke-staging.sh", "staging-doctor.sh", "remote-staging-doctor.sh"}
     content_scripts = {"build-official-store.php", "render-block-thumbnail-fixtures.php", "generate-block-thumbnails.mjs", "check-official-store-build.sh", "check-block-quality-evidence.mjs", "check-block-product-quality.mjs", "check-site-shell-product-quality.mjs"}
+    asset_build_controllers = {
+        "scripts/check-assets.mjs",
+        "scripts/generate-page-kit-screenshots.mjs",
+        "vite.sliders.config.ts",
+    }
+    changed_asset_build_controllers = []
     for path in plan.paths:
         file = root / path
         if path.endswith(".py"):
@@ -305,6 +312,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         elif path in mapping:
             for name in mapping[path]:
                 python_test(f"tests/Harness/test_{name}.py", path)
+        elif path in asset_build_controllers:
+            changed_asset_build_controllers.append(path)
         elif path in command_contracts:
             python_test("tests/Harness/test_commands.py", path)
         elif path.startswith("scripts/") and Path(path).name in release_scripts:
@@ -426,6 +435,11 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                                       *(controller_file(p) for p in BOUNDARY_INPUTS), controller_file("package-lock.json"), "module.php", "package-lock.json"],
             "Changed implementation or normative architecture policy", ("node", "php"))
     artifact_names = set()
+    if changed_asset_build_controllers:
+        add("module-assets", ["node", "scripts/check-assets.mjs"],
+            [*changed_asset_build_controllers, "scripts/check-assets.mjs", "package-lock.json"],
+            "Changed asset build/check controller", ("node", "php", "g7", "browser"), True, reusable=False)
+        artifact_names.add("module-assets")
     if css:
         add("css", ["npx", "--no-install", "stylelint", *css], [*css, "stylelint.config.mjs", "package-lock.json"], "Changed CSS only", ("node",))
         if not full:

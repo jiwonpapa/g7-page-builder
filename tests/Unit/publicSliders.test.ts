@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EmblaCarouselType } from 'embla-carousel';
-import { bootPageSliders } from '../../resources/js/public/pageEffects';
-import { disposePageSliders } from '../../resources/js/public/publicSliders';
+import { bootPageSliders, disposePageSliders } from '../../resources/js/public/publicSliders';
 
 const observed = vi.hoisted<{ instances: EmblaCarouselType[] }>(() => ({ instances: [] }));
 vi.mock('embla-carousel', async importOriginal => {

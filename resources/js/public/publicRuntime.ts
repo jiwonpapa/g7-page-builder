@@ -6,7 +6,7 @@ import { bootServiceActions, disposeServiceActions } from './siteShellActions';
 import { bootDynamicData, disposePublicDataRuntime, publicDataFetcher } from './publicDataRuntime';
 import { bootMobileNavigation, disposeMobileNavigation, pruneMobileNavigation } from './mobileNavigation';
 import { bootPageMotion, disposePageMotion, type MotionWindow } from './publicMotion';
-import { bootPageSliders, disposePageSliders } from './publicSliders';
+import { bootPageSliders, disposePageSliders } from './publicSliderLoader';
 
 interface PublicRuntime {
   root: Document;
@@ -75,7 +75,8 @@ export function observePageEffects(root: Document = document, view: MotionWindow
     const structural = records.some(record => record.type === 'attributes'
       ? record.attributeName !== null && record.target instanceof elementType
         && (dataAttributes.includes(record.attributeName) || record.target.getAttribute(record.attributeName) !== record.oldValue)
-      : [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1));
+      : [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1
+        && (!(node instanceof elementType) || !node.matches('script[data-g7pb-slider-asset]'))));
     if (!structural) return;
     if (runtime.scheduled) return;
     runtime.scheduled = true;

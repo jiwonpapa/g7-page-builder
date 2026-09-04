@@ -11,6 +11,7 @@ const previews = resolve(root, 'resources/store/dist/previews');
 const output = resolve(root, process.env.G7PB_SCREENSHOT_OUTPUT ?? 'resources/store/source/screenshots');
 const publicCss = resolve(root, 'dist/css/page-builder-public.css');
 const effectsJs = resolve(root, 'dist/js/page-effects.iife.js');
+const slidersJs = resolve(root, 'dist/js/page-sliders.iife.js');
 const evidenceOutput = resolve(
   root,
   process.env.G7PB_PAGE_KIT_REPORT ?? 'output/playwright/page-kit-layout-report.json',
@@ -52,6 +53,7 @@ const server = createServer(async (request, response) => {
     let path;
     if (pathname === '/assets/page-builder-public.css') path = publicCss;
     else if (pathname === '/assets/page-effects.iife.js') path = effectsJs;
+    else if (pathname === '/assets/page-sliders.iife.js') path = slidersJs;
     else if (pathname.startsWith('/modules/jiwonpapa-page_builder/store/previews/')) {
       path = resolve(previews, pathname.split('/').at(-1) ?? '');
     } else if (/^\/store\/demos\/[a-z0-9-]+$/.test(pathname)) {

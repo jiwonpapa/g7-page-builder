@@ -5,7 +5,8 @@ export { bootG7SystemControls, renderG7SystemControls } from './siteShellRuntime
 export { bootServiceActions } from './siteShellActions';
 export { bootBlockVisibility, bootDynamicData } from './publicDataRuntime';
 export { parseCounterText } from './publicMotion';
-export { bootPageSliders, ensureSliderControls } from './publicSliders';
+export { bootPageSliders } from './publicSliderLoader';
+export { ensureSliderControls } from './publicSliderControls';
 export { bootPageEffects, observePageEffects, bootSiteShellMenu, disposePageEffects } from './publicRuntime';
 
 const buildMode = (import.meta as ImportMeta & { env?: { MODE?: string } }).env?.MODE;

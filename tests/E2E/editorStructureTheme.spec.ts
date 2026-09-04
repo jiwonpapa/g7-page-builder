@@ -637,7 +637,11 @@ test.describe('Editor structure and theme contracts', () => {
   });
 
   test('moves, duplicates, deletes and reopens nested blocks with stable selection', async ({ page, context }, info) => {
-    await withOwnedDocument(page, context, info.project.name, nestedBlocks(), async (api, owned) => {
+    const blocks = nestedBlocks();
+    const columnsBlock = blocks[0].slots?.content[0];
+    const headingId = columnsBlock?.slots?.column1[0].instance_id;
+    if (!headingId) throw new Error('Nested heading fixture is unavailable.');
+    await withOwnedDocument(page, context, info.project.name, blocks, async (api, owned) => {
       const frame = page.frameLocator('iframe');
       await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
       const sectionRow = page.locator('[data-puck-layer-tree-id]')
@@ -656,8 +660,7 @@ test.describe('Editor structure and theme contracts', () => {
         .filter({ has: page.getByRole('button', { name: 'Columns · 1/2/3열', exact: true }) });
       const expandColumns = columnsRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
       if (await expandColumns.isVisible()) await expandColumns.click();
-      const headingRow = page.locator('[data-puck-layer-tree-id]')
-        .filter({ has: page.getByRole('button', { name: '제목', exact: true }) }).first();
+      const headingRow = page.locator(`[data-puck-layer-tree-id="${headingId}"]`);
       await headingRow.getByRole('button', { name: '제목', exact: true }).click();
       await frame.getByTestId('page-builder-block-move-zone').locator('xpath=ancestor::button[1]').click();
       const moveDialog = frame.getByRole('dialog', { name: '블록 위치 이동', exact: true });

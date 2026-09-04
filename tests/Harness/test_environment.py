@@ -149,6 +149,20 @@ class EnvironmentTests(unittest.TestCase):
         self.assertEqual(self.runtime.commands.count(["npm", "run", "build"]), 3)
         self.assertEqual(self.runtime.commands.count(env.INSTALL["npm"]), 1)
 
+    def test_build_contract_requires_optional_slider_bundle_and_inventory(self):
+        expected = {
+            "dist/js/page-sliders.iife.js",
+            "dist/meta/public-sliders-modules.json",
+        }
+        self.assertTrue(expected.issubset(env.BUILD_OUTPUTS))
+        self.assertEqual(env.build(self.runtime, True)["build"], "built")
+        for artifact in sorted(expected):
+            with self.subTest(artifact=artifact):
+                (self.root / artifact).unlink()
+                self.assertEqual(env.build(self.runtime)["build"], "required")
+                self.write(artifact, "fixture build")
+                self.assertEqual(env.build(self.runtime)["build"], "reused")
+
     def test_build_zero_outputs_is_not_success(self):
         env.prepare(self.runtime, ["npm"], True)
         self.runtime.missing_outputs = True

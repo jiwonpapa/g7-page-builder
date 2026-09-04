@@ -34,10 +34,12 @@ SENTINELS = {
 BUILD_OUTPUTS = [
     "dist/js/page-builder-editor.iife.js", "dist/js/page-builder-manager.iife.js",
     "dist/js/page-builder-site-part.iife.js", "dist/js/page-effects.iife.js",
+    "dist/js/page-sliders.iife.js",
     "dist/css/page-builder-editor.css", "dist/css/page-builder-manager.css",
     "dist/css/page-builder-site-part.css", "dist/css/page-builder-public.css",
     "dist/meta/editor-modules.json", "dist/meta/manager-modules.json",
     "dist/meta/site-part-modules.json", "dist/meta/public-effects-modules.json",
+    "dist/meta/public-sliders-modules.json",
 ]
 SYNC_MODULE = (
     '$manager = app(\\App\\Extension\\ModuleManager::class); '

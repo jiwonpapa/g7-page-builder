@@ -23,7 +23,14 @@ const budgets = [
   { path: 'dist/js/page-builder-editor.iife.js', gzip: 500_000 },
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
   { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
+  { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },
 ];
+
+const PUBLIC_RUNTIME_BUNDLES = [
+  'dist/js/page-effects.iife.js',
+  'dist/js/page-sliders.iife.js',
+];
+const PUBLIC_RUNTIME_COMBINED_LIMIT = 34_000;
 
 const EDITOR_ENTRY = 'resources/css/page-builder-editor.css';
 const EDITOR_OWNERS = ['chrome', 'library', 'controls', 'canvas', 'blocks', 'catalog', 'appearance']
@@ -97,6 +104,14 @@ async function main(args) {
     const unit = budget.gzip === undefined ? 'raw' : 'gzip';
     report.push(`${budget.path}=${actual}/${limit} ${unit} bytes`);
     if (actual > limit) throw new Error(`Frontend budget exceeded: ${report.at(-1)}`);
+  }
+
+  const publicRuntimeBytes = PUBLIC_RUNTIME_BUNDLES.map(path =>
+    gzipSync(readFileSync(join(root, path))).byteLength);
+  const publicRuntimeCombined = publicRuntimeBytes.reduce((total, bytes) => total + bytes, 0);
+  report.push(`Public runtime combined=${publicRuntimeCombined}/${PUBLIC_RUNTIME_COMBINED_LIMIT} gzip bytes (${PUBLIC_RUNTIME_BUNDLES.join(' + ')})`);
+  if (publicRuntimeCombined > PUBLIC_RUNTIME_COMBINED_LIMIT) {
+    throw new Error(`Public runtime combined budget exceeded: ${publicRuntimeCombined}/${PUBLIC_RUNTIME_COMBINED_LIMIT} gzip bytes`);
   }
 
   const viewer = readFileSync(join(root, 'resources/views/viewer.blade.php'), 'utf8');

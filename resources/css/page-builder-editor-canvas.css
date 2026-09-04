@@ -129,7 +129,7 @@
 .g7pb-site-footer--columns ul { display: grid; gap: .7rem; }
 
 @media (max-width: 899px) {
-  .g7pb-site-header__inner { width: min(calc(100% - 2rem), var(--g7pb-page-content-max)); min-height: 4.25rem; grid-template-columns: 1fr auto; }
+  .g7pb-site-header__inner { width: min(calc(100% - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max)); min-height: 4.25rem; grid-template-columns: 1fr auto; }
   .g7pb-site-nav, .g7pb-site-header__actions > .g7pb-site-header__cta, .g7pb-system-search, .g7pb-system-select { display: none; }
   :where(.g7pb-system-controls) :is(a, button) { min-height: 2.2rem; padding: .4rem .5rem; font-size: .72rem; }
   .g7pb-menu-toggle { display: block; }

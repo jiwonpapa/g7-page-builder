@@ -387,9 +387,13 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<numbe
     requestAnimationFrame(() => requestAnimationFrame(() => resolveAnimation()));
   }));
   if (desktop) {
-    await expect.poll(() => page.locator(CANVAS_IFRAME).evaluate((element) => (
-      (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0
-    ))).toBeGreaterThanOrEqual(900);
+    await expect.poll(async () => {
+      const [frameWidth, canvasWidth] = await Promise.all([
+        page.locator(CANVAS_IFRAME).evaluate((element) => (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0),
+        page.locator('#puck-canvas-root').evaluate((element) => (element as HTMLElement).clientWidth),
+      ]);
+      return { frameWidth, canvasWidth, delta: Math.abs(frameWidth - canvasWidth) };
+    }).toMatchObject({ delta: 0 });
   } else {
     await expect.poll(() => page.locator(CANVAS_IFRAME).evaluate((element) => (
       (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0

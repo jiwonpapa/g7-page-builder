@@ -659,7 +659,7 @@ test.describe('Editor structure and theme contracts', () => {
       const expandColumns = columnsRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
       if (await expandColumns.isVisible()) await expandColumns.click();
       const headingRow = page.locator(`[data-puck-layer-tree-id="${headingId}"]`);
-      await headingRow.getByRole('button', { name: '제목', exact: true }).click();
+      await headingRow.locator('button').filter({ hasText: /^제목$/ }).click();
       await frame.getByTestId('page-builder-block-move-zone').locator('xpath=ancestor::button[1]').click();
       const moveDialog = frame.getByRole('dialog', { name: '블록 위치 이동', exact: true });
       await moveDialog.getByTestId('page-builder-block-move-target').selectOption({ label: 'Columns · 2열' });

@@ -79,11 +79,11 @@ function renderInlineMenu(
 describe('Puck-native rich-text editing', () => {
   it('keeps readonly rich-text headings on the same semantic typography as editable headings', () => {
     const css = readFileSync(resolve('resources/css/page-builder-editor-wysiwyg.css'), 'utf8');
-    const semanticHeadingRule = css.match(/\[data-g7pb-heading-level\] :is\([^}]+\) \{([^}]+)\}/s);
-    expect(semanticHeadingRule?.[0]).toContain(':is([contenteditable], p)');
-    expect(semanticHeadingRule?.[1]).toContain('color: inherit');
-    expect(semanticHeadingRule?.[1]).toContain('font-size: inherit');
-    expect(semanticHeadingRule?.[1]).toContain('line-height: inherit');
+    const semanticHeadingRule = css.match(/\[data-g7pb-heading-level\] :is\([^}]+\),\s*([^\{]+) \{([^}]+)\}/s);
+    expect(semanticHeadingRule?.[1]).toContain(':not(:has([contenteditable])) p');
+    expect(semanticHeadingRule?.[2]).toContain('color: inherit');
+    expect(semanticHeadingRule?.[2]).toContain('font-size: inherit');
+    expect(semanticHeadingRule?.[2]).toContain('line-height: inherit');
   });
 
   it('preserves explicit strong weights and restores the semantic default without replacing field content', async () => {

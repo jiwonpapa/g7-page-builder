@@ -5,7 +5,8 @@
 .g7pb-preview-page [data-g7pb-richtext-display="strong"].g7pb-element-weight--strong-default { font-weight: 800; }
 .g7pb-preview-page [data-g7pb-heading-level] { overflow-wrap: normal; white-space: normal; word-break: normal; }
 /* Only editor containers inherit the semantic heading; marked spans keep their own styles. */
-.g7pb-preview-page [data-g7pb-heading-level] :is([contenteditable], p) {
+.g7pb-preview-page [data-g7pb-heading-level] :is([contenteditable], [contenteditable] > p),
+.g7pb-preview-page .g7pb-preview-block [data-g7pb-heading-level]:not(:has([contenteditable])) p {
   margin: 0;
   color: inherit;
   font-family: inherit;

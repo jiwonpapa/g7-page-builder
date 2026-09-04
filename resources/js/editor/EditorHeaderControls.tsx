@@ -1,10 +1,10 @@
 import type { PuckAction, Viewports } from '@puckeditor/core';
-import { Ban, Monitor, Moon, Paintbrush, Smartphone, Sparkles, Sun, Tablet } from 'lucide-react';
+import { Ban, Monitor, Moon, MoreHorizontal, Paintbrush, Smartphone, Sparkles, Sun, Tablet } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
 import { StableAddBlockControls } from './BlockGalleryControls';
 import { applyRecommendedMotions, clearMotions } from './blockMotionCommands';
 import { setPageColorMode } from './canvasItemCommands';
-import { PC_EDITOR_POLICY_NOTICE } from './editorViewportPolicy';
+import { PC_EDITOR_POLICY_NOTICE, PC_EDITOR_VIEWPORT_WIDTH } from './editorViewportPolicy';
 import type { PageDesignProps } from './pageDesignTokens';
 import { CanvasEditingUiContext, EditorViewportPolicyContext, usePageBuilderPuck } from './puckEditorContexts';
 import { resolveEditorSelection } from './puckEditorSelection';
@@ -89,24 +89,15 @@ export function StableHeaderControls({
         disabled={editingDisabled} onClick={selectPageDesign}>
         <Paintbrush size={16} aria-hidden="true" /><span>페이지 디자인</span>
       </button>
-      <div className="g7pb-theme-switcher" role="group" aria-label="라이트·다크 테마 미리보기">
-        <button type="button" aria-label="라이트 테마" aria-pressed={(data.root.props?.colorMode ?? 'light') === 'light'} disabled={editingDisabled} onClick={() => setColorMode('light')}><Sun size={15} aria-hidden="true" /></button>
-        <button type="button" aria-label="다크 테마" aria-pressed={data.root.props?.colorMode === 'dark'} disabled={editingDisabled} onClick={() => setColorMode('dark')}><Moon size={15} aria-hidden="true" /></button>
-        <button type="button" aria-label="기기 테마" aria-pressed={data.root.props?.colorMode === 'system'} disabled={editingDisabled} onClick={() => setColorMode('system')}><Monitor size={15} aria-hidden="true" /></button>
-      </div>
-      <div className="g7pb-motion-batch" role="group" aria-label="페이지 효과 일괄 설정">
-        <button type="button" disabled={editingDisabled || contentLength === 0}
-          data-testid="page-builder-auto-motion" onClick={() => dispatch(applyRecommendedMotions(data))}><Sparkles size={15} aria-hidden="true" /><span>추천 효과</span></button>
-        <button type="button" disabled={editingDisabled || contentLength === 0}
-          data-testid="page-builder-clear-motion" onClick={() => dispatch(clearMotions(data))}><Ban size={15} aria-hidden="true" /><span>효과 없음</span></button>
-      </div>
       <div className="g7pb-viewport-switcher" role="group" aria-label="캔버스 기기 미리보기">
         {PAGE_BUILDER_VIEWPORTS.map((viewport) => (
           <button
             key={viewport.width}
             type="button"
             data-testid={`page-builder-viewport-${viewport.width}`}
-            aria-pressed={currentViewportWidth === viewport.width}
+            aria-pressed={viewport.width === PC_EDITOR_VIEWPORT_WIDTH
+              ? currentViewportWidth === '100%' || currentViewportWidth === PC_EDITOR_VIEWPORT_WIDTH
+              : currentViewportWidth === viewport.width}
             disabled={viewportDisabled}
             onClick={() => setViewport(viewport.width as number)}
           >
@@ -121,6 +112,24 @@ export function StableHeaderControls({
         selectedZone={selectedZone}
         disabled={editingDisabled}
       />
+      <details className="g7pb-editor-more">
+        <summary aria-label="편집 도구 더 보기"><MoreHorizontal size={17} aria-hidden="true" /></summary>
+        <div>
+          <span>화면 테마</span>
+          <div className="g7pb-theme-switcher" role="group" aria-label="라이트·다크 테마 미리보기">
+            <button type="button" aria-label="라이트 테마" aria-pressed={(data.root.props?.colorMode ?? 'light') === 'light'} disabled={editingDisabled} onClick={() => setColorMode('light')}><Sun size={15} aria-hidden="true" /></button>
+            <button type="button" aria-label="다크 테마" aria-pressed={data.root.props?.colorMode === 'dark'} disabled={editingDisabled} onClick={() => setColorMode('dark')}><Moon size={15} aria-hidden="true" /></button>
+            <button type="button" aria-label="기기 테마" aria-pressed={data.root.props?.colorMode === 'system'} disabled={editingDisabled} onClick={() => setColorMode('system')}><Monitor size={15} aria-hidden="true" /></button>
+          </div>
+          <span>페이지 효과</span>
+          <div className="g7pb-motion-batch" role="group" aria-label="페이지 효과 일괄 설정">
+            <button type="button" disabled={editingDisabled || contentLength === 0}
+              data-testid="page-builder-auto-motion" onClick={() => dispatch(applyRecommendedMotions(data))}><Sparkles size={15} aria-hidden="true" /><span>추천 효과</span></button>
+            <button type="button" disabled={editingDisabled || contentLength === 0}
+              data-testid="page-builder-clear-motion" onClick={() => dispatch(clearMotions(data))}><Ban size={15} aria-hidden="true" /><span>효과 없음</span></button>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
@@ -198,7 +207,7 @@ export function PuckHeaderLayer({ children }: { children: React.ReactNode }): Re
   }, [dispatch, leftSideBarVisible, policy.hostSupported, rightSideBarVisible]);
 
   return <div className="g7pb-puck-header-layer">
-    <div
+    {policy.canEdit ? null : <div
       className="g7pb-editor-mode-notice"
       data-testid="page-builder-editor-mode-notice"
       data-mode={policy.mode}
@@ -206,7 +215,7 @@ export function PuckHeaderLayer({ children }: { children: React.ReactNode }): Re
     >
       <strong>{PC_EDITOR_POLICY_NOTICE}</strong>
       <span>{policy.status}</span>
-    </div>
+    </div>}
     {children}
   </div>;
 }

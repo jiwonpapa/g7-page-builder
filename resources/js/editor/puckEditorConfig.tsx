@@ -13,7 +13,9 @@ import { createInlineRichTextField, createRichTextField } from './richTextEditin
 import { DEFAULT_FEATURES, normalizeTheme } from './puckBlockCodec';
 import type { PageDesignProps } from './pageDesignTokens';
 import { FullSiteRoot } from './FullSiteCanvas';
+import { InspectorChoiceField } from './InspectorChoiceField';
 import { ContactPreview, CtaPreview, FeaturesPreview, HeroPreview } from './puckBuiltinPreviews';
+import { usePageBuilderPuck } from './puckEditorContexts';
 
 const DEFAULT_HERO: HeroEditorProps = {
   eyebrow: '새로운 페이지',
@@ -123,16 +125,36 @@ function StableColorField({
   </label>;
 }
 
-function createPageColorField(label: string, testId: string) {
-  return {
-    type: 'custom' as const,
-    label,
-    render: ({ value, onChange, readOnly }: {
-      value: string;
-      onChange: (value: string) => void;
-      readOnly?: boolean;
-    }) => <StableColorField value={value} onChange={onChange} readOnly={readOnly} testId={testId} label={label} />,
+const CUSTOM_PAGE_COLORS = [
+  ['customColor1Light', '사용자색 1 · 라이트', 'page-builder-design-custom-1-light'],
+  ['customColor1Dark', '사용자색 1 · 다크', 'page-builder-design-custom-1-dark'],
+  ['customColor2Light', '사용자색 2 · 라이트', 'page-builder-design-custom-2-light'],
+  ['customColor2Dark', '사용자색 2 · 다크', 'page-builder-design-custom-2-dark'],
+  ['customColor3Light', '사용자색 3 · 라이트', 'page-builder-design-custom-3-light'],
+  ['customColor3Dark', '사용자색 3 · 다크', 'page-builder-design-custom-3-dark'],
+  ['customColor4Light', '사용자색 4 · 라이트', 'page-builder-design-custom-4-light'],
+  ['customColor4Dark', '사용자색 4 · 다크', 'page-builder-design-custom-4-dark'],
+] as const satisfies readonly [keyof PageDesignProps, string, string][];
+
+function PageCustomColorsField({ readOnly }: { readOnly?: boolean }): React.ReactElement {
+  const dispatch = usePageBuilderPuck((state) => state.dispatch);
+  const design = usePageBuilderPuck((state) => state.appState.data.root.props as PageDesignProps);
+  const update = (key: keyof PageDesignProps, value: string): void => {
+    dispatch({
+      type: 'setData',
+      data: (previous) => ({ root: { ...previous.root, props: { ...previous.root.props, [key]: value } } }),
+      recordHistory: true,
+    });
   };
+  return <details className="g7pb-design-advanced" data-testid="page-builder-design-advanced-colors">
+    <summary>사용자 색상 직접 지정</summary>
+    <p>브랜드 팔레트보다 세밀한 색이 필요할 때만 사용합니다.</p>
+    <div>
+      {CUSTOM_PAGE_COLORS.map(([key, label, testId]) => <StableColorField key={key}
+        value={String(design[key])} onChange={(value) => update(key, value)} readOnly={readOnly}
+        testId={testId} label={label} />)}
+    </div>
+  </details>;
 }
 
 export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = {
@@ -456,7 +478,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       colorMode: {
         type: 'custom', label: '화면 테마',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="화면 테마" help="공개 페이지와 편집 캔버스의 밝기를 정합니다."
+          <InspectorChoiceField value={value} onChange={onChange} readOnly={readOnly} label="화면 테마" help="공개 페이지와 편집 캔버스의 밝기를 정합니다."
             testId="page-builder-design-color-mode" options={[
               { label: '라이트', value: 'light' }, { label: '다크', value: 'dark' }, { label: '기기 설정', value: 'system' },
             ]} />
@@ -465,18 +487,19 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       palette: {
         type: 'custom', label: '브랜드 색상',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="브랜드 색상" help="버튼, 링크, 강조 요소에 공통 적용됩니다."
+          <InspectorChoiceField value={value} onChange={onChange} readOnly={readOnly} label="브랜드 색상" help="버튼, 링크, 강조 요소에 공통 적용됩니다."
+            swatches
             testId="page-builder-design-palette" options={[
-              { label: '인디고', value: 'indigo' }, { label: '블루', value: 'blue' },
-              { label: '에메랄드', value: 'emerald' }, { label: '앰버', value: 'amber' },
-              { label: '로즈', value: 'rose' }, { label: '슬레이트', value: 'slate' },
+              { label: '인디고', value: 'indigo', swatch: '#4f46e5' }, { label: '블루', value: 'blue', swatch: '#2563eb' },
+              { label: '에메랄드', value: 'emerald', swatch: '#059669' }, { label: '앰버', value: 'amber', swatch: '#d97706' },
+              { label: '로즈', value: 'rose', swatch: '#e11d48' }, { label: '슬레이트', value: 'slate', swatch: '#475569' },
             ]} />
         ),
       },
       font: {
         type: 'custom', label: '글꼴 분위기',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="글꼴 분위기" help="페이지 전체 타이포그래피 계열을 선택합니다."
+          <InspectorChoiceField value={value} onChange={onChange} readOnly={readOnly} label="글꼴 분위기" help="페이지 전체 타이포그래피 계열을 선택합니다."
             testId="page-builder-design-font" options={[
               { label: '시스템', value: 'system' }, { label: '모던', value: 'modern' }, { label: '명조', value: 'serif' },
             ]} />
@@ -485,7 +508,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       radius: {
         type: 'custom', label: '모서리',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="모서리" help="카드, 이미지, 버튼의 둥근 정도입니다."
+          <InspectorChoiceField value={value} onChange={onChange} readOnly={readOnly} label="모서리" help="카드, 이미지, 버튼의 둥근 정도입니다."
             testId="page-builder-design-radius" options={[
               { label: '각지게', value: 'sharp' }, { label: '부드럽게', value: 'soft' }, { label: '둥글게', value: 'round' },
             ]} />
@@ -494,7 +517,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       width: {
         type: 'custom', label: '콘텐츠 폭',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="콘텐츠 폭" help="본문이 차지하는 최대 가로 폭입니다."
+          <InspectorChoiceField value={value} onChange={onChange} readOnly={readOnly} label="콘텐츠 폭" help="본문이 차지하는 최대 가로 폭입니다."
             testId="page-builder-design-width" options={[
               { label: '좁게', value: 'narrow' }, { label: '기본', value: 'standard' }, { label: '넓게', value: 'wide' },
             ]} />
@@ -503,20 +526,20 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       scale: {
         type: 'custom', label: '글자 크기',
         render: ({ value, onChange, readOnly }) => (
-          <StableSelectField value={value} onChange={onChange} readOnly={readOnly} label="기본 글자 크기" help="전체 글자 비율을 한 번에 조절합니다."
+          <InspectorChoiceField value={value} onChange={onChange} readOnly={readOnly} label="기본 글자 크기" help="전체 글자 비율을 한 번에 조절합니다."
             testId="page-builder-design-scale" options={[
               { label: '작게', value: 'compact' }, { label: '기본', value: 'balanced' }, { label: '크게', value: 'large' },
             ]} />
         ),
       },
-      customColor1Light: createPageColorField('사용자색 1 · 라이트', 'page-builder-design-custom-1-light'),
-      customColor1Dark: createPageColorField('사용자색 1 · 다크', 'page-builder-design-custom-1-dark'),
-      customColor2Light: createPageColorField('사용자색 2 · 라이트', 'page-builder-design-custom-2-light'),
-      customColor2Dark: createPageColorField('사용자색 2 · 다크', 'page-builder-design-custom-2-dark'),
-      customColor3Light: createPageColorField('사용자색 3 · 라이트', 'page-builder-design-custom-3-light'),
-      customColor3Dark: createPageColorField('사용자색 3 · 다크', 'page-builder-design-custom-3-dark'),
-      customColor4Light: createPageColorField('사용자색 4 · 라이트', 'page-builder-design-custom-4-light'),
-      customColor4Dark: createPageColorField('사용자색 4 · 다크', 'page-builder-design-custom-4-dark'),
+      customColor1Light: { type: 'custom', label: '사용자 색상', render: ({ readOnly }) => <PageCustomColorsField readOnly={readOnly} /> },
+      customColor1Dark: { type: 'custom', label: '', render: () => <span data-g7pb-design-hidden hidden /> },
+      customColor2Light: { type: 'custom', label: '', render: () => <span data-g7pb-design-hidden hidden /> },
+      customColor2Dark: { type: 'custom', label: '', render: () => <span data-g7pb-design-hidden hidden /> },
+      customColor3Light: { type: 'custom', label: '', render: () => <span data-g7pb-design-hidden hidden /> },
+      customColor3Dark: { type: 'custom', label: '', render: () => <span data-g7pb-design-hidden hidden /> },
+      customColor4Light: { type: 'custom', label: '', render: () => <span data-g7pb-design-hidden hidden /> },
+      customColor4Dark: { type: 'custom', label: '', render: () => <span data-g7pb-design-hidden hidden /> },
     },
     render: ({ children, ...design }) => <FullSiteRoot design={design}>{children}</FullSiteRoot>,
   },

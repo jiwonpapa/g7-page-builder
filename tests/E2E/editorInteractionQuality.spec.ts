@@ -1108,8 +1108,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('PC_ONLY_EDITING_GATE', async () => {
       await setCanvasViewport(page);
       await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'edit');
-      await expect(page.getByTestId('page-builder-editor-mode-notice'))
-        .toContainText('편집은 PC에서만 지원합니다. 모바일·태블릿은 반응형 미리보기 전용입니다.');
+      await expect(page.getByTestId('page-builder-editor-mode-notice')).toHaveCount(0);
     });
     await test.step('POINTER_CANVAS_GATE', async () => {
       await exposeCanvasForPointer(page);

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Braces, FileCode2 } from 'lucide-react';
+import { Braces, FileCode2, MoreHorizontal } from 'lucide-react';
 
 import '../../css/page-builder-editor.css';
 import {
@@ -516,9 +516,10 @@ function EditorShell({
       <header className="g7pb-command-bar">
         <div className="g7pb-command-bar__identity">
           <span className="g7pb-product-mark" aria-hidden="true">G7</span>
-          <div>
-            <p>{documentTitle || 'Page Builder'}</p>
-            <strong>{document?.slug ?? '새 페이지'}</strong>
+          <div className="g7pb-command-bar__document">
+            <span>문서 제목</span>
+            <strong>{documentTitle || 'Page Builder'}</strong>
+            <p><span>공개 주소</span><code>{document ? `/pages/${document.slug}` : '새 페이지'}</code></p>
           </div>
         </div>
 
@@ -535,11 +536,6 @@ function EditorShell({
               <button type="button" className="g7pb-button g7pb-button--quiet" data-testid="page-builder-save"
                 disabled={actionBusy} onClick={() => void saveDraft(true)}>
                 저장
-              </button>
-              <button type="button" className="g7pb-button g7pb-button--quiet g7pb-button--icon-label"
-                data-testid="page-builder-source-view" disabled={actionBusy}
-                onClick={() => { setDiagnosticTab('document'); setDiagnosticsOpen(true); }}>
-                <Braces size={16} aria-hidden="true" /><span>원본 보기</span>
               </button>
               {previewUrl ? (
                 <a className="g7pb-button g7pb-button--quiet" data-testid="page-builder-preview-link" href={previewUrl}
@@ -560,12 +556,22 @@ function EditorShell({
                 data-state={publishState} role="status">
                 {publishLabels[publishState]}
               </span>
-              {publicUrl && (
-                <a className="g7pb-public-link" data-testid="page-builder-public-link" href={publicUrl}
-                  target="_blank" rel="noopener noreferrer" title={publishedAt ? `${publishedAt} 발행` : '공개 페이지'}>
-                  공개 페이지 ↗
-                </a>
-              )}
+              <details className="g7pb-command-more">
+                <summary aria-label="문서 도구 더 보기"><MoreHorizontal size={17} aria-hidden="true" /></summary>
+                <div>
+                  <button type="button" className="g7pb-button g7pb-button--quiet g7pb-button--icon-label"
+                    data-testid="page-builder-source-view" disabled={actionBusy}
+                    onClick={() => { setDiagnosticTab('document'); setDiagnosticsOpen(true); }}>
+                    <Braces size={16} aria-hidden="true" /><span>원본·진단 보기</span>
+                  </button>
+                  {publicUrl && (
+                    <a className="g7pb-public-link" data-testid="page-builder-public-link" href={publicUrl}
+                      target="_blank" rel="noopener noreferrer" title={publishedAt ? `${publishedAt} 발행` : '공개 페이지'}>
+                      공개 페이지 ↗
+                    </a>
+                  )}
+                </div>
+              </details>
             </>
           ) : (
             <button type="button" className="g7pb-button g7pb-button--primary"

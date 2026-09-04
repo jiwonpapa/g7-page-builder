@@ -6,6 +6,12 @@ import type { PuckEditorData } from './puckEditorTypes';
 type Item = PuckEditorData['content'][number];
 export interface EditorItemSelector { index: number; zone: string }
 export interface EditorItemLocation { item: Item; selector: EditorItemSelector; depth: number }
+export interface EditorMoveDestination {
+  selector: EditorItemSelector;
+  label: string;
+  valid: boolean;
+  reason: string | null;
+}
 
 const layoutTypes: Readonly<Record<string, string>> = {
   LayoutSection: layoutPolicy.layouts.section,
@@ -63,6 +69,48 @@ export function resolveEditorSelection(
   return explicit && owner !== explicit ? null : canvas;
 }
 
+function destinationLabel(parent: EditorItemLocation | null, slot: string): string {
+  if (!parent) return '페이지 최상위';
+  if (parent.item.type === 'LayoutColumns') {
+    const column = Number(slot.replace('column', ''));
+    return `Columns · ${Number.isInteger(column) ? `${column}열` : slot}`;
+  }
+  if (parent.item.type === 'LayoutSection') return 'Section · 내용';
+  if (parent.item.type === 'LayoutStack') return 'Stack · 내용';
+  return `${parent.item.type} · ${slot}`;
+}
+
+/** Every structural slot stays visible so the UI can explain invalid moves before dispatch. */
+export function editorMoveDestinations(data: PuckEditorData, source: EditorItemLocation): EditorMoveDestination[] {
+  const locations = editorItemLocations(data);
+  const sourceType = canonicalTypeForEditor(source.item.type);
+  const subtree = editorItemLocations({ content: [source.item] });
+  const subtreeIds = new Set(subtree.map(({ item }) => item.props.id));
+  const subtreeDepth = Math.max(...subtree.map(({ depth }) => depth)) - 1;
+  const zones: Array<{ zone: string; label: string; parent: EditorItemLocation | null; length: number }> = [
+    { zone: 'root:default-zone', label: destinationLabel(null, 'blocks'), parent: null, length: data.content.length },
+  ];
+  for (const parent of locations) {
+    for (const [slot, value] of Object.entries(parent.item.props)) {
+      if (!Array.isArray(value) || !value.every(isItem)) continue;
+      zones.push({ zone: `${parent.item.props.id}:${slot}`, label: destinationLabel(parent, slot), parent, length: value.length });
+    }
+  }
+  return zones.map(({ zone, label, parent, length }) => {
+    let reason: string | null = null;
+    const parentType = parent ? canonicalTypeForEditor(parent.item.type) : null;
+    if (zone === source.selector.zone) reason = '현재 구역입니다.';
+    else if (parent && subtreeIds.has(parent.item.props.id)) reason = '자기 하위 구역으로 이동할 수 없습니다.';
+    else if (!sourceType || parentType === undefined || !layoutAllowsChild(parentType, sourceType)) reason = '이 블록을 받을 수 없는 구역입니다.';
+    else if (parent && length >= layoutPolicy.limits.slot_children) reason = `구역 최대 ${layoutPolicy.limits.slot_children}개를 초과합니다.`;
+    else {
+      const destinationDepth = (parent?.depth ?? 0) + 1 + subtreeDepth;
+      if (destinationDepth > layoutPolicy.limits.depth) reason = `중첩 최대 ${layoutPolicy.limits.depth}단계를 초과합니다.`;
+    }
+    return { selector: { zone, index: length }, label, valid: reason === null, reason };
+  });
+}
+
 export function editorInsertionDestination(
   data: PuckEditorData,
   selector: EditorItemSelector | null,
@@ -106,7 +154,8 @@ export function assertEditorInsertion(
     if (!Array.isArray(children) || children.length >= layoutPolicy.limits.slot_children) throw new LayoutPolicyError('slot_limit', zone);
     if (!Number.isInteger(index) || index < 0 || index > children.length) throw new LayoutPolicyError('index', zone);
     if (parent.depth >= layoutPolicy.limits.depth) throw new LayoutPolicyError('depth_limit', zone);
-  } else if (!Number.isInteger(index) || index < 0 || index > data.content.length) {
-    throw new LayoutPolicyError('index', zone);
+  } else {
+    if (!childType || !layoutAllowsChild(null, childType)) throw new LayoutPolicyError('parent', zone);
+    if (!Number.isInteger(index) || index < 0 || index > data.content.length) throw new LayoutPolicyError('index', zone);
   }
 }

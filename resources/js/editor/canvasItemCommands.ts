@@ -5,7 +5,7 @@ import type { BlockGalleryItem } from './blockGalleryModel';
 import { collectionLimit, normalizeElementAppearance, normalizeElementAppearanceMap, remapCollectionElementAppearanceMap, setValueAtPath } from './canvasEditingContract';
 import type { PageDesignProps } from './pageDesignTokens';
 import { canonicalBlockToPuck } from './puckBlockCodec';
-import { editorInsertionDestination, editorItemLocations, type EditorItemLocation, type EditorItemSelector } from './puckEditorSelection';
+import { assertEditorInsertion, editorInsertionDestination, editorItemLocations, type EditorItemLocation, type EditorItemSelector } from './puckEditorSelection';
 import type { PuckEditorData } from './puckEditorTypes';
 
 /** Puck owns insertion history; the preset and selection complete that same entry. */
@@ -50,6 +50,47 @@ export function moveCanvasItem(data: PuckEditorData, location: EditorItemLocatio
     type: 'reorder', sourceIndex: index, destinationIndex, destinationZone: zone, recordHistory: true,
   }, {
     type: 'setUi', ui: { itemSelector: { index: destinationIndex, zone } }, recordHistory: false,
+  }];
+}
+
+export function moveCanvasItemTo(
+  data: PuckEditorData, location: EditorItemLocation, destination: EditorItemSelector,
+): PuckAction[] {
+  if (destination.zone === location.selector.zone) return moveCanvasItem(data, location, destination.index);
+  return [{
+    type: 'move', sourceIndex: location.selector.index, sourceZone: location.selector.zone,
+    destinationIndex: destination.index, destinationZone: destination.zone, recordHistory: true,
+  }, {
+    type: 'setUi', ui: { itemSelector: destination }, recordHistory: false,
+  }];
+}
+
+export function duplicateCanvasItem(data: PuckEditorData, location: EditorItemLocation): PuckAction[] {
+  const subtreeNodes = editorItemLocations({ content: [location.item] }).length;
+  const destination = { zone: location.selector.zone, index: location.selector.index + 1 };
+  try {
+    assertEditorInsertion(data, destination, location.item.type, subtreeNodes);
+  } catch {
+    return [];
+  }
+  return [{
+    type: 'duplicate', sourceIndex: location.selector.index, sourceZone: location.selector.zone, recordHistory: true,
+  }, {
+    type: 'setUi', ui: { itemSelector: destination }, recordHistory: false,
+  }];
+}
+
+export function deleteCanvasItem(data: PuckEditorData, location: EditorItemLocation): PuckAction[] {
+  const siblings = editorItemLocations(data).filter(({ selector }) => selector.zone === location.selector.zone);
+  const fallback = siblings.length > 1
+    ? { zone: location.selector.zone, index: Math.min(location.selector.index, siblings.length - 2) }
+    : location.selector.zone === 'root:default-zone'
+      ? null
+      : editorItemLocations(data).find(({ item }) => item.props.id === location.selector.zone.slice(0, location.selector.zone.lastIndexOf(':')))?.selector ?? null;
+  return [{
+    type: 'remove', index: location.selector.index, zone: location.selector.zone, recordHistory: true,
+  }, {
+    type: 'setUi', ui: { itemSelector: fallback }, recordHistory: false,
   }];
 }
 

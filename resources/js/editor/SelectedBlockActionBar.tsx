@@ -1,11 +1,11 @@
 import { ActionBar } from '@puckeditor/core';
-import { ArrowDown, ArrowUp, Copy, ImageOff, ImagePlus, Link2, Paintbrush, Settings2, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Copy, ImageOff, ImagePlus, Link2, MoveRight, Paintbrush, Settings2, Trash2 } from 'lucide-react';
 import React from 'react';
 import { collectionLimit, resolveMediaFieldPath, resolveRouteFieldPath, valueAtPath } from './canvasEditingContract';
-import { moveCanvasItem, updateCanvasCollection, updateCanvasPath, type CollectionOperation } from './canvasItemCommands';
+import { deleteCanvasItem, duplicateCanvasItem, moveCanvasItem, moveCanvasItemTo, updateCanvasCollection, updateCanvasPath, type CollectionOperation } from './canvasItemCommands';
 import { idToUuid } from './puckBlockCodec';
 import { CanvasEditingUiContext, usePageBuilderPuck } from './puckEditorContexts';
-import { editorItemLocations, resolveEditorSelection } from './puckEditorSelection';
+import { editorItemLocations, editorMoveDestinations, resolveEditorSelection } from './puckEditorSelection';
 import type { PuckEditorData } from './puckEditorTypes';
 import { useSelectedActionBarSafeZone } from './useSelectedActionBarSafeZone';
 
@@ -34,6 +34,17 @@ export function SelectedBlockActionBar({
   const selectedIndex = location?.selector.index ?? null;
   const selectedZone = location?.selector.zone ?? 'root:default-zone';
   const contentLength = editorItemLocations(data).filter(({ selector }) => selector.zone === selectedZone).length;
+  const [moveOpen, setMoveOpen] = React.useState(false);
+  const [moveTarget, setMoveTarget] = React.useState('');
+  const moveDestinations = React.useMemo(() => location ? editorMoveDestinations(data, location) : [], [data, location]);
+  const validMoveDestinations = moveDestinations.filter(({ valid }) => valid);
+  const selectedMove = validMoveDestinations.find(({ selector }) => `${selector.zone}:${selector.index}` === moveTarget) ?? null;
+  const duplicateActions = location ? duplicateCanvasItem(data, location) : [];
+  const layoutBlock = selectedBlock?.type === 'LayoutSection' || selectedBlock?.type === 'LayoutColumns' || selectedBlock?.type === 'LayoutStack';
+  React.useEffect(() => {
+    setMoveOpen(false);
+    setMoveTarget('');
+  }, [selectedBlock?.props.id]);
   if (!canvasUi) throw new Error('Canvas editing UI provider is unavailable.');
   const {
     selection: rawElementSelection,
@@ -68,6 +79,32 @@ export function SelectedBlockActionBar({
     if (location) moveCanvasItem(data, location, destinationIndex).forEach(dispatch);
   };
 
+  const moveToSelectedZone = (): void => {
+    if (!location || !selectedMove) return;
+    const destination = selectedMove.selector;
+    moveCanvasItemTo(data, location, destination).forEach(dispatch);
+    // The accepted canonical document is fed back into controlled Puck data.
+    // Re-apply selection after that render so reparenting does not fall back to
+    // the previously selected ancestor.
+    window.requestAnimationFrame(() => dispatch({
+      type: 'setUi', ui: { itemSelector: destination }, recordHistory: false,
+    }));
+    setElementSelection(null);
+    setMoveOpen(false);
+    setMoveTarget('');
+  };
+
+  const duplicate = (): void => {
+    duplicateActions.forEach(dispatch);
+    setElementSelection(null);
+  };
+
+  const remove = (): void => {
+    if (!location || layoutBlock) return;
+    deleteCanvasItem(data, location).forEach(dispatch);
+    setElementSelection(null);
+  };
+
   const clearDirectMedia = (): void => {
     if (location && mediaFieldPath) dispatch(updateCanvasPath(location, mediaFieldPath, '', true));
   };
@@ -90,7 +127,9 @@ export function SelectedBlockActionBar({
   const styleActionLabel = elementStyleTarget
     ? `${elementSelection?.label ?? '선택 요소'} 요소 전체 스타일`
     : '블록 설정';
-  const puckActions = rangeEditingActive ? React.Children.toArray(children)[0] : children;
+  const puckRichTextActions = React.Children.toArray(children).find((child) => (
+    React.isValidElement(child) && child.type === React.Fragment
+  ));
   return (
     <div
       ref={actionBarRef}
@@ -152,9 +191,40 @@ export function SelectedBlockActionBar({
           >
             <ArrowDown size={16} data-testid="page-builder-block-move-down" aria-hidden="true" />
           </ActionBar.Action>}
-          {puckActions}
+          {!rangeEditingActive && <ActionBar.Action label="블록 위치 이동"
+            disabled={disabled || !location || moveDestinations.length === 0} onClick={() => setMoveOpen((open) => !open)}>
+            <MoveRight size={16} data-testid="page-builder-block-move-zone" aria-hidden="true" />
+          </ActionBar.Action>}
+          {!rangeEditingActive && <ActionBar.Action label="블록 복제" disabled={disabled || duplicateActions.length === 0}
+            onClick={duplicate}>
+            <Copy size={16} data-testid="page-builder-block-duplicate" aria-hidden="true" />
+          </ActionBar.Action>}
+          {!rangeEditingActive && !layoutBlock && <ActionBar.Action label="블록 삭제" disabled={disabled || !location}
+            onClick={remove}>
+            <Trash2 size={16} data-testid="page-builder-block-delete" aria-hidden="true" />
+          </ActionBar.Action>}
+          {puckRichTextActions}
         </ActionBar.Group>
       </ActionBar>
+      {!rangeEditingActive && moveOpen && <section className="g7pb-context-panel" role="dialog" aria-label="블록 위치 이동"
+        data-testid="page-builder-block-move-dialog">
+        <header><div><strong>블록 위치 이동</strong><span>옮길 수 없는 구역도 이유와 함께 표시됩니다.</span></div>
+          <button type="button" aria-label="블록 위치 이동 닫기" onClick={() => setMoveOpen(false)}>×</button></header>
+        <div className="g7pb-context-panel__row"><label htmlFor="g7pb-block-move-target">이동할 구역</label>
+          <select id="g7pb-block-move-target" data-testid="page-builder-block-move-target" value={moveTarget}
+            onChange={(event) => setMoveTarget(event.target.value)}>
+            <option value="">구역을 선택하세요</option>
+            {moveDestinations.map((destination) => {
+              const value = `${destination.selector.zone}:${destination.selector.index}`;
+              return <option key={value} value={value} disabled={!destination.valid}>
+                {destination.label}{destination.reason ? ` · ${destination.reason}` : ''}
+              </option>;
+            })}
+          </select></div>
+        <div className="g7pb-context-panel__row"><span>{selectedMove ? `${selectedMove.label} 끝으로 이동합니다.` : '이동할 구역을 선택하세요.'}</span>
+          <div><button type="button" data-testid="page-builder-block-move-apply" disabled={!selectedMove} onClick={moveToSelectedZone}>이동</button></div>
+        </div>
+      </section>}
     </div>
   );
 }

@@ -460,8 +460,8 @@ export async function validateEditorAcceptanceContract(root) {
   const requiredViewportPolicy = [
     [viewportPolicySource, /PC_EDITOR_MIN_HOST_WIDTH\s*=\s*1024/, 'PC 편집 최소 호스트 폭 계약이 필요합니다.'],
     [viewportPolicySource, /PC_EDITOR_VIEWPORT_WIDTH\s*=\s*1280/, 'PC 편집 canvas 폭 계약이 필요합니다.'],
-    [viewportPolicySource, /PC_EDITOR_POLICY_NOTICE\s*=\s*['"]편집은 PC에서만 지원합니다\. 모바일·태블릿은 반응형 미리보기 전용입니다\./, 'PC 전용 편집 안내 문구를 고정해야 합니다.'],
-    [viewportPolicySource, /const canEdit = !disabled && hostSupported && canvasWidth === PC_EDITOR_VIEWPORT_WIDTH/, '편집 권한은 문서 상태·호스트 폭·PC canvas를 모두 만족할 때만 열려야 합니다.'],
+    [viewportPolicySource, /PC_EDITOR_POLICY_NOTICE\s*=\s*['"]미리보기 전용['"]/, '비편집 viewport에는 짧은 미리보기 상태 문구가 필요합니다.'],
+    [viewportPolicySource, /const canEdit = !disabled && hostSupported && viewport === ['"]desktop['"]/, '편집 권한은 문서 상태·호스트 폭·desktop viewport를 모두 만족할 때만 열려야 합니다.'],
     [viewportPolicySource, /function applyEditorContentPolicy<[\s\S]{0,900}field\.contentEditable === true \? \{ contentEditable: false \}/, '미리보기 모드는 모든 inline-editable 필드를 읽기 전용으로 변환해야 합니다.'],
     [viewportPolicySource, /field\.arrayFields[\s\S]{0,220}field\.objectFields[\s\S]{0,220}field\.filterFields/, '읽기 전용 필드 변환은 array·object·filter 중첩 필드까지 재귀 적용해야 합니다.'],
     [adapterSource, /fields: applyEditorContentPolicy\(component\.fields, false\)/, 'Puck runtime config는 미리보기 모드에 읽기 전용 필드 계약을 적용해야 합니다.'],

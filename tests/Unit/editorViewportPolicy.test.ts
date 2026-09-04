@@ -27,10 +27,11 @@ describe('editor viewport policy', () => {
       canvasWidth: PC_EDITOR_VIEWPORT_WIDTH,
       disabled: false,
       hostWidth: 1440,
+      viewport: 'desktop',
     })).toMatchObject({ canEdit: true, hostSupported: true, mode: 'edit' });
 
-    for (const canvasWidth of [MOBILE_PREVIEW_VIEWPORT_WIDTH, TABLET_PREVIEW_VIEWPORT_WIDTH]) {
-      expect(resolveEditorViewportPolicy({ canvasWidth, disabled: false, hostWidth: 1440 }))
+    for (const [canvasWidth, viewport] of [[MOBILE_PREVIEW_VIEWPORT_WIDTH, 'mobile'], [TABLET_PREVIEW_VIEWPORT_WIDTH, 'tablet']] as const) {
+      expect(resolveEditorViewportPolicy({ canvasWidth, viewport, disabled: false, hostWidth: 1440 }))
         .toMatchObject({ canEdit: false, hostSupported: true, mode: 'preview' });
     }
 
@@ -38,13 +39,22 @@ describe('editor viewport policy', () => {
       canvasWidth: PC_EDITOR_VIEWPORT_WIDTH,
       disabled: false,
       hostWidth: PC_EDITOR_MIN_HOST_WIDTH - 1,
+      viewport: 'desktop',
     })).toMatchObject({ canEdit: false, hostSupported: false, mode: 'preview' });
 
     expect(resolveEditorViewportPolicy({
       canvasWidth: PC_EDITOR_VIEWPORT_WIDTH,
       disabled: true,
       hostWidth: 1440,
+      viewport: 'desktop',
     })).toMatchObject({ canEdit: false, hostSupported: true, mode: 'preview' });
+
+    expect(resolveEditorViewportPolicy({
+      canvasWidth: 1440,
+      disabled: false,
+      hostWidth: 1600,
+      viewport: 'desktop',
+    })).toMatchObject({ canEdit: true, mode: 'edit' });
   });
 
   it('turns every inline-editable root and nested field read-only in preview mode', () => {

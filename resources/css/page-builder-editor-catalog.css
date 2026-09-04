@@ -291,8 +291,8 @@
 .g7pb-preview-testimonials--wall blockquote { grid-column: span 4; border: 1px solid var(--g7pb-theme-border); border-radius: var(--g7pb-theme-radius); }
 .g7pb-preview-testimonials--wall blockquote:nth-child(2) { grid-column: span 5; }
 .g7pb-preview-testimonials--wall blockquote:nth-child(3) { grid-column: span 3; }
-.g7pb-preview-testimonials--quote-hero blockquote:first-child { grid-column: 1 / -1; text-align: center; }
-.g7pb-preview-testimonials--quote-hero :where(blockquote:first-child) .g7pb-preview-testimonial-quote { max-width: 30ch; margin-inline: auto; font-family: Georgia, "Noto Serif KR", serif; font-size: clamp(1.6rem, 4vw, 3.4rem); }
+.g7pb-preview-testimonials--quote-hero blockquote:first-of-type { grid-column: 1 / -1; text-align: center; }
+.g7pb-preview-testimonials--quote-hero .g7pb-preview-testimonial-quote[data-g7pb-inline-field="items.0.quote"] { max-width: 30ch; margin-inline: auto; font-family: Georgia, "Noto Serif KR", serif; font-size: clamp(1.6rem, 4vw, 3.4rem); }
 .g7pb-preview-articles--magazine > div:not([data-g7pb-richtext-field]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1.5rem, 4vw, 3rem); }
 .g7pb-preview-articles--featured article:first-child { grid-template-columns: 1.2fr .8fr; gap: clamp(1.5rem, 4vw, 4rem); }
 .g7pb-preview-articles--featured article:not(:first-child) > :is(i, img) { display: none; }

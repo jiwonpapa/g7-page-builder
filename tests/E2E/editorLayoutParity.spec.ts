@@ -379,17 +379,22 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<numbe
   await expect(button).toBeVisible();
   await button.click();
   await expect(button).toHaveAttribute('aria-pressed', 'true');
+  const desktop = projectName === 'desktop';
   await expect.poll(
     () => page.locator('#puck-canvas-root').evaluate((element) => (element as HTMLElement).style.width),
-  ).toBe(`${width}px`);
+  ).toBe(desktop ? '100%' : `${width}px`);
   await page.evaluate(() => new Promise<void>((resolveAnimation) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolveAnimation()));
   }));
-  await expect.poll(
-    () => page.locator(CANVAS_IFRAME).evaluate((element) => (
+  if (desktop) {
+    await expect.poll(() => page.locator(CANVAS_IFRAME).evaluate((element) => (
       (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0
-    )),
-  ).toBe(width);
+    ))).toBeGreaterThanOrEqual(900);
+  } else {
+    await expect.poll(() => page.locator(CANVAS_IFRAME).evaluate((element) => (
+      (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0
+    ))).toBe(width);
+  }
   return width;
 }
 
@@ -903,9 +908,9 @@ async function assertScenario(
   expect(viewportMutations, `${scenario.label} viewport switch must not persist document data`).toEqual([]);
   const expectedMode = projectName === 'desktop' ? 'edit' : 'preview';
   await expect(editor).toHaveAttribute('data-editing-mode', expectedMode);
-  await expect(editor).toHaveAttribute('data-canvas-viewport', String(width));
-  await expect(page.getByTestId('page-builder-editor-mode-notice'))
-    .toContainText('편집은 PC에서만 지원합니다. 모바일·태블릿은 반응형 미리보기 전용입니다.');
+  await expect(editor).toHaveAttribute('data-canvas-viewport', expectedMode === 'edit' ? '100%' : String(width));
+  if (expectedMode === 'edit') await expect(page.getByTestId('page-builder-editor-mode-notice')).toHaveCount(0);
+  else await expect(page.getByTestId('page-builder-editor-mode-notice')).toContainText('미리보기 전용');
   const addBlock = page.getByTestId('page-builder-add-block');
   if (expectedMode === 'edit') await expect(addBlock).toBeEnabled();
   else await expect(addBlock).toBeDisabled();

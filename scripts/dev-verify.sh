@@ -100,6 +100,8 @@ site_part_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-builder-site-part.iife.js")"
 effects_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js")"
+sliders_js_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
+  "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/js/page-sliders.iife.js")"
 editor_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-editor.css")"
 manager_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
@@ -108,10 +110,10 @@ site_part_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out 
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-site-part.css")"
 public_css_status="$(curl "${curl_common[@]}" --output /dev/null --write-out '%{http_code}' \
   "$base_url/api/modules/assets/jiwonpapa-page_builder/dist/css/page-builder-public.css")"
-if [[ "$editor_js_status" == 200 && "$manager_js_status" == 200 && "$site_part_js_status" == 200 && "$effects_js_status" == 200 && "$editor_css_status" == 200 && "$manager_css_status" == 200 && "$site_part_css_status" == 200 && "$public_css_status" == 200 ]]; then
-  ok 'Split manager, editor, Site Part, and public assets serving'
+if [[ "$editor_js_status" == 200 && "$manager_js_status" == 200 && "$site_part_js_status" == 200 && "$effects_js_status" == 200 && "$sliders_js_status" == 200 && "$editor_css_status" == 200 && "$manager_css_status" == 200 && "$site_part_css_status" == 200 && "$public_css_status" == 200 ]]; then
+  ok 'Split manager, editor, Site Part, public runtime, and optional slider assets serving'
 else
-  fail "Module asset serving editor_js=$editor_js_status manager_js=$manager_js_status site_part_js=$site_part_js_status effects_js=$effects_js_status editor_css=$editor_css_status manager_css=$manager_css_status site_part_css=$site_part_css_status public_css=$public_css_status"
+  fail "Module asset serving editor_js=$editor_js_status manager_js=$manager_js_status site_part_js=$site_part_js_status effects_js=$effects_js_status sliders_js=$sliders_js_status editor_css=$editor_css_status manager_css=$manager_css_status site_part_css=$site_part_css_status public_css=$public_css_status"
 fi
 
 store_catalog_url="$base_url/modules/jiwonpapa-page_builder/store/catalog.json"

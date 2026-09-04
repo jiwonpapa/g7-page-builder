@@ -139,6 +139,55 @@ class PlannerTests(unittest.TestCase):
         self.assertFalse(plan.full)
         self.assertFalse(plan.gates)
 
+    def test_dev_verify_selects_release_contract_and_shell_syntax_without_full(self):
+        script = "scripts/dev-verify.sh"
+        test = "tests/Harness/test_release.py"
+        self.write(script, "#!/usr/bin/env bash\nset -euo pipefail\n")
+        self.write(test, "pass\n")
+        plan = build_plan(self.root, [script])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertEqual({gate.name for gate in plan.gates}, {
+            "python:" + test,
+            "syntax:" + script,
+        })
+        release = next(gate for gate in plan.gates if gate.name == "python:" + test)
+        self.assertIn(script, release.inputs)
+        self.assertFalse(any(gate.runtime or gate.deferred for gate in plan.gates))
+        self.assertFalse(plan.requirements["browser"])
+
+    def test_asset_build_controllers_select_deferred_integrity_without_content_full(self):
+        checker = "scripts/check-assets.mjs"
+        screenshot = "scripts/generate-page-kit-screenshots.mjs"
+        config = "vite.sliders.config.ts"
+        self.write(checker, "console.log('fixture assets');\n")
+        self.write(screenshot, "console.log('fixture screenshots');\n")
+        self.write(config, "export default {};\n")
+        self.write("package-lock.json", "{}\n")
+        for changed in (checker, screenshot, config):
+            for phase in ("submission", "integration"):
+                with self.subTest(changed=changed, phase=phase):
+                    plan = build_plan(self.root, [changed], phase=phase)
+                    self.assertFalse(plan.unresolved)
+                    self.assertFalse(plan.full)
+                    names = [gate.name for gate in plan.gates]
+                    self.assertEqual(names.count("browser-assets"), 1)
+                    self.assertEqual(names.count("module-assets"), 1)
+                    self.assertFalse(any(name.startswith(("content:", "full-product")) for name in names))
+                    assets = next(gate for gate in plan.gates if gate.name == "browser-assets")
+                    integrity = next(gate for gate in plan.gates if gate.name == "module-assets")
+                    self.assertEqual(integrity.argv, ("node", checker))
+                    self.assertTrue({changed, checker, "package-lock.json"}.issubset(integrity.inputs))
+                    self.assertEqual(integrity.depends_on, (assets.name,))
+                    self.assertLess(names.index(assets.name), names.index(integrity.name))
+                    self.assertTrue(assets.runtime and integrity.runtime)
+                    self.assertEqual(assets.deferred, phase == "submission")
+                    self.assertEqual(integrity.deferred, phase == "submission")
+                    if changed == config:
+                        self.assertIn(config, assets.inputs)
+                    if changed.endswith(".mjs"):
+                        self.assertIn("syntax:" + changed, names)
+
     def viewer_fixture(self):
         from tools.g7pb.browser_requirements import PAGE, STRUCTURE_THEME
         path = "resources/views/viewer.blade.php"

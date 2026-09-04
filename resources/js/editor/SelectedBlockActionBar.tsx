@@ -81,7 +81,14 @@ export function SelectedBlockActionBar({
 
   const moveToSelectedZone = (): void => {
     if (!location || !selectedMove) return;
-    moveCanvasItemTo(data, location, selectedMove.selector).forEach(dispatch);
+    const destination = selectedMove.selector;
+    moveCanvasItemTo(data, location, destination).forEach(dispatch);
+    // The accepted canonical document is fed back into controlled Puck data.
+    // Re-apply selection after that render so reparenting does not fall back to
+    // the previously selected ancestor.
+    window.requestAnimationFrame(() => dispatch({
+      type: 'setUi', ui: { itemSelector: destination }, recordHistory: false,
+    }));
     setElementSelection(null);
     setMoveOpen(false);
     setMoveTarget('');

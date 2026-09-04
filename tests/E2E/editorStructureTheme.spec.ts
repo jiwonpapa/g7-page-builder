@@ -669,11 +669,20 @@ test.describe('Editor structure and theme contracts', () => {
       const secondColumn = columns.locator('.g7pb-preview-layout-columns__column').nth(1);
       await expect(firstColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(0);
       await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(1);
-      await frame.getByTestId('page-builder-block-duplicate').locator('xpath=ancestor::button[1]').click();
+      const selectedHeadingActions = frame.locator('[data-g7pb-selected-block-actionbar]').filter({ hasText: '제목' }).last();
+      const duplicate = selectedHeadingActions.getByTestId('page-builder-block-duplicate').locator('xpath=ancestor::button[1]');
+      await expect(duplicate).toBeEnabled();
+      await duplicate.click();
       await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(2);
-      await frame.getByTestId('page-builder-block-delete').locator('xpath=ancestor::button[1]').click();
+      // Puck groups commands issued inside its 250ms history window. Cross the
+      // documented vendor boundary so Undo proves the delete entry itself.
+      await page.waitForTimeout(300);
+      await frame.locator('[data-g7pb-selected-block-actionbar]').filter({ hasText: '제목' }).last()
+        .getByTestId('page-builder-block-delete').locator('xpath=ancestor::button[1]').click();
       await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(1);
-      await expect(frame.getByTestId('page-builder-block-delete').locator('xpath=ancestor::button[1]')).toBeVisible();
+      await expect(frame.locator('[data-g7pb-selected-block-actionbar]').filter({ hasText: '제목' }).last()
+        .getByTestId('page-builder-block-delete').locator('xpath=ancestor::button[1]')).toBeVisible();
+      await page.waitForTimeout(300);
       await page.getByRole('button', { name: 'undo', exact: true }).click();
       await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(2);
       await save(page);

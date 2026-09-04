@@ -181,7 +181,8 @@ test('real G7 authentication · admin route · native logout · guest transition
     expect((await nativeLogout).ok()).toBe(true);
     await page.waitForURL(/\/login(?:\?|$)/u);
     expect(await page.evaluate(() => localStorage.getItem('auth_token'))).toBeNull();
-    await gotoOwnedSiteShell(page, '/', 'ko');
+    await page.goto('/');
+    await expect(header).toBeVisible();
     await openAccount(page, header);
     await expect(header.getByRole('link', { name: '로그인', exact: true })).toBeVisible();
     await expect(header.locator('.g7pb-system-controls [data-g7pb-system-admin]')).toBeHidden();

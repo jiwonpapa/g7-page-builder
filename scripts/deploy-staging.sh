@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-exec python3 "$root/scripts/g7pb.py" release deploy "$@"
+exec python3 -B "$root/scripts/g7pb.py" release deploy "$@"

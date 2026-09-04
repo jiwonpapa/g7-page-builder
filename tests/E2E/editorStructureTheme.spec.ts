@@ -142,6 +142,12 @@ async function save(page: Page): Promise<void> {
   await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
 }
 
+async function selectPageTheme(page: Page, label: string): Promise<void> {
+  const control = page.getByRole('button', { name: label, exact: true });
+  if (!(await control.isVisible())) await page.locator('summary[aria-label="편집 도구 더 보기"]').click();
+  await control.click();
+}
+
 function blockCount(blocks: PageBuilderBlock[], type: string): number {
   return blocks.reduce((count, item) => count + Number(item.type === type)
     + Object.values(item.slots ?? {}).reduce((children, slot) => children + blockCount(slot, type), 0), 0);
@@ -212,7 +218,7 @@ test.describe('Editor structure and theme contracts', () => {
         for (const state of states) {
           await page.emulateMedia({ colorScheme: state.system });
           await preview.emulateMedia({ colorScheme: state.system });
-          await page.getByRole('button', { name: state.label, exact: true }).click();
+          await selectPageTheme(page, state.label);
           const canvasTheme = frame.locator('.g7pb-document-theme');
           await expect(canvasTheme).toHaveClass(new RegExp(`g7pb-theme-mode-${state.mode}`));
           await expect(canvasTheme).toHaveCSS('color-scheme', state.expected);
@@ -630,6 +636,58 @@ test.describe('Editor structure and theme contracts', () => {
     });
   });
 
+  test('moves, duplicates, deletes and reopens nested blocks with stable selection', async ({ page, context }, info) => {
+    await withOwnedDocument(page, context, info.project.name, nestedBlocks(), async (api, owned) => {
+      const frame = page.frameLocator('iframe');
+      await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+      const sectionRow = page.locator('[data-puck-layer-tree-id]')
+        .filter({ has: page.getByRole('button', { name: 'Section · 구조 컨테이너', exact: true }) });
+      await sectionRow.getByRole('button', { name: 'Section · 구조 컨테이너', exact: true }).click();
+      const sectionMove = frame.getByTestId('page-builder-block-move-zone').locator('xpath=ancestor::button[1]');
+      await sectionMove.click();
+      const invalidDialog = frame.getByRole('dialog', { name: '블록 위치 이동', exact: true });
+      const invalidTarget = invalidDialog.locator('option').filter({ hasText: '자기 하위 구역으로 이동할 수 없습니다.' }).first();
+      await expect(invalidTarget).toBeDisabled();
+      await invalidDialog.getByRole('button', { name: '블록 위치 이동 닫기', exact: true }).click();
+
+      const expandSection = sectionRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
+      if (await expandSection.isVisible()) await expandSection.click();
+      const columnsRow = page.locator('[data-puck-layer-tree-id]')
+        .filter({ has: page.getByRole('button', { name: 'Columns · 1/2/3열', exact: true }) });
+      const expandColumns = columnsRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
+      if (await expandColumns.isVisible()) await expandColumns.click();
+      const headingRow = page.locator('[data-puck-layer-tree-id]')
+        .filter({ has: page.getByRole('button', { name: '제목', exact: true }) }).first();
+      await headingRow.getByRole('button', { name: '제목', exact: true }).click();
+      await frame.getByTestId('page-builder-block-move-zone').locator('xpath=ancestor::button[1]').click();
+      const moveDialog = frame.getByRole('dialog', { name: '블록 위치 이동', exact: true });
+      await moveDialog.getByTestId('page-builder-block-move-target').selectOption({ label: 'Columns · 2열' });
+      await moveDialog.getByTestId('page-builder-block-move-apply').click();
+      const columns = frame.getByTestId('page-builder-layout-columns').first();
+      const firstColumn = columns.locator('.g7pb-preview-layout-columns__column').nth(0);
+      const secondColumn = columns.locator('.g7pb-preview-layout-columns__column').nth(1);
+      await expect(firstColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(0);
+      await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(1);
+      await frame.getByTestId('page-builder-block-duplicate').locator('xpath=ancestor::button[1]').click();
+      await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(2);
+      await frame.getByTestId('page-builder-block-delete').locator('xpath=ancestor::button[1]').click();
+      await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(1);
+      await expect(frame.getByTestId('page-builder-block-delete').locator('xpath=ancestor::button[1]')).toBeVisible();
+      await page.getByRole('button', { name: 'undo', exact: true }).click();
+      await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(2);
+      await save(page);
+      const saved = await resource(api, owned.documentId);
+      const savedColumns = saved.document.blocks[0].slots?.content[0];
+      expect(savedColumns?.slots?.column1).toEqual([]);
+      expect(savedColumns?.slots?.column2.map((item) => item.type))
+        .toEqual(['content.rich-text-01', 'content.heading-01', 'content.heading-01']);
+      await page.reload();
+      const reenteredColumns = frame.getByTestId('page-builder-layout-columns').first();
+      await expect(reenteredColumns.locator('.g7pb-preview-layout-columns__column').nth(0).locator('[data-g7pb-inline-field="heading"]')).toHaveCount(0);
+      await expect(reenteredColumns.locator('.g7pb-preview-layout-columns__column').nth(1).locator('[data-g7pb-inline-field="heading"]')).toHaveCount(2);
+    });
+  });
+
   test('pattern dialog owns an opaque portal surface', async ({ page, context }, info) => {
     await withOwnedDocument(page, context, info.project.name, nestedBlocks(), async (api, owned) => {
       await page.getByTestId('page-builder-section-patterns').click();
@@ -675,7 +733,7 @@ test.describe('Editor structure and theme contracts', () => {
       await page.route(draftRoute, rejectDraft);
       try {
         // Real editing makes the draft dirty; clean Save can only generate a preview.
-        await page.getByRole('button', { name: '다크 테마', exact: true }).click();
+        await selectPageTheme(page, '다크 테마');
         await saveRequested;
         await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saving');
         await expect(page.getByTestId('page-builder-save')).toBeDisabled();

@@ -18,8 +18,8 @@ const { canonicalToPuck, puckToCanonical } = await import('../../resources/js/ed
 const { pageBuilderPuckConfig } = await import('../../resources/js/editor/puckEditorConfig');
 const { BlockCatalogContext } = await import('../../resources/js/editor/BlockCatalogContext');
 const { StableAddBlockControls } = await import('../../resources/js/editor/BlockGalleryControls');
-const { moveCanvasItem, updateCanvasCollection, updateCanvasContext, updateCanvasPath } = await import('../../resources/js/editor/canvasItemCommands');
-const { editorItemLocations } = await import('../../resources/js/editor/puckEditorSelection');
+const { deleteCanvasItem, duplicateCanvasItem, moveCanvasItem, moveCanvasItemTo, updateCanvasCollection, updateCanvasContext, updateCanvasPath } = await import('../../resources/js/editor/canvasItemCommands');
+const { editorItemLocations, editorMoveDestinations } = await import('../../resources/js/editor/puckEditorSelection');
 const { collectionLimit } = await import('../../resources/js/editor/canvasEditingContract');
 
 type EditorApi = UsePuckData<Config<EditorComponents, PageDesignProps>>;
@@ -33,15 +33,21 @@ const heading = (text: string): PageBuilderBlock => ({ instance_id: crypto.rando
   block_version: 1, props: { eyebrow: '', heading: text, level: 2, anchor: '' }, slots: {} });
 function fixture() {
   const first = heading('First sentinel'), second = heading('Second sentinel');
+  const columnHeading = heading('Column sentinel');
+  const stackBody = heading('Stack sentinel');
+  const stack: PageBuilderBlock = { instance_id: crypto.randomUUID(), type: 'layout.stack-01', block_version: 1,
+    props: { gap: 'normal' }, slots: { content: [stackBody] } };
+  const columns: PageBuilderBlock = { instance_id: crypto.randomUUID(), type: 'layout.columns-01', block_version: 1,
+    props: { columns: 2, ratio: '1:1', gap: 'normal' }, slots: { column1: [columnHeading], column2: [stack] } };
   const buttons: PageBuilderBlock = { instance_id: crypto.randomUUID(), type: 'action.buttons-01', block_version: 1,
     props: { alignment: 'left', items: [
       { label: 'Item A', url: '/a', variant: 'primary' }, { label: 'Item B', url: '/b', variant: 'secondary' },
     ], appearance: { surface: 'default', spacing: 'compact', elements: { 'items.0.label': { weight: 'bold' }, 'items.1.label': { tone: 'accent' }, title: { align: 'center' } } } }, slots: {} };
   const section: PageBuilderBlock = { instance_id: crypto.randomUUID(), type: 'layout.section-01', block_version: 1,
-    props: { width: 'standard', spacing: 'normal' }, slots: { content: [first, second, buttons] } };
+    props: { width: 'standard', spacing: 'normal' }, slots: { content: [first, second, buttons, columns] } };
   const source: PageBuilderDocument = { schema_version: 'g7-page-builder/v2', document_id: crypto.randomUUID(),
     slug: 'synthetic-tools', mode: 'canvas', locale: 'ko', shell_mode: 'none', tokens: {}, blocks: [section] };
-  return { source, section, first, second, buttons };
+  return { source, section, first, second, buttons, columns, columnHeading, stack, stackBody };
 }
 const cleanup: Array<() => void> = [];
 afterEach(async () => { await act(async () => cleanup.splice(0).forEach((run) => run())); });
@@ -100,7 +106,7 @@ describe('editor tool owners through real Puck', () => {
     expect(input.value).toBe('Synthetic');
     await test.settleHistory();
     await act(async () => document.querySelector<HTMLButtonElement>('[data-testid="synthetic-preset"]')!.click());
-    await vi.waitFor(async () => { await flush(); expect(test.canonical().blocks[0].slots?.content).toHaveLength(4); });
+    await vi.waitFor(async () => { await flush(); expect(test.canonical().blocks[0].slots?.content).toHaveLength(5); });
     const inserted = test.canonical().blocks[0].slots!.content[2];
     expect(inserted.props).toEqual(preset.presetProps);
     expect(inserted.type).toBe(preset.blockId);
@@ -117,12 +123,46 @@ describe('editor tool owners through real Puck', () => {
     await test.settleHistory();
     await test.command(moveCanvasItem(test.current().appState.data, test.location(test.first.instance_id), 1));
     expect(test.canonical().blocks[0].slots?.content?.map((item) => item.instance_id))
-      .toEqual([test.second.instance_id, test.first.instance_id, test.buttons.instance_id]);
+      .toEqual([test.second.instance_id, test.first.instance_id, test.buttons.instance_id, test.columns.instance_id]);
     expect(test.current().selectedItem?.props.id).toBe(test.first.instance_id);
     expect(moveCanvasItem(test.current().appState.data, test.location(test.first.instance_id), -1)).toEqual([]);
-    expect(moveCanvasItem(test.current().appState.data, test.location(test.first.instance_id), 3)).toEqual([]);
+    expect(moveCanvasItem(test.current().appState.data, test.location(test.first.instance_id), 4)).toEqual([]);
     await test.settleHistory(); await test.undo();
     expect(test.canonical()).toEqual(test.source);
+  });
+
+  it('moves across nested slots, exposes invalid targets, and keeps duplicate/delete selection stable through Undo', async () => {
+    const test = await mount();
+    const sourceLocation = test.location(test.columnHeading.instance_id);
+    const destinations = editorMoveDestinations(test.current().appState.data, sourceLocation);
+    const stackDestination = destinations.find(({ selector }) => selector.zone === `${test.stack.instance_id}:content`);
+    expect(stackDestination).toMatchObject({ label: 'Stack · 내용', valid: true, reason: null });
+    const ownDescendant = editorMoveDestinations(test.current().appState.data, test.location(test.columns.instance_id))
+      .find(({ selector }) => selector.zone === `${test.stack.instance_id}:content`);
+    expect(ownDescendant).toMatchObject({ valid: false, reason: '자기 하위 구역으로 이동할 수 없습니다.' });
+    if (!stackDestination) throw new Error('Missing valid Stack destination');
+    await test.settleHistory();
+    await test.command(moveCanvasItemTo(test.current().appState.data, sourceLocation, stackDestination.selector));
+    expect(test.canonical().blocks[0].slots!.content[3].slots?.column1).toEqual([]);
+    expect(test.canonical().blocks[0].slots!.content[3].slots?.column2[0].slots?.content.map((item) => item.instance_id))
+      .toEqual([test.stackBody.instance_id, test.columnHeading.instance_id]);
+    expect(test.current().selectedItem?.props.id).toBe(test.columnHeading.instance_id);
+    await test.settleHistory();
+    const duplicate = duplicateCanvasItem(test.current().appState.data, test.location(test.columnHeading.instance_id));
+    await test.command(duplicate);
+    const duplicateId = test.canonical().blocks[0].slots!.content[3].slots?.column2[0].slots?.content[2].instance_id;
+    const duplicatePuckId = test.current().selectedItem?.props.id;
+    expect(duplicateId).toBeTruthy();
+    expect(duplicateId).not.toBe(test.columnHeading.instance_id);
+    expect(duplicatePuckId).toBeTruthy();
+    expect(duplicatePuckId).toContain(String(duplicateId));
+    await test.settleHistory();
+    await test.command(deleteCanvasItem(test.current().appState.data, test.location(String(duplicatePuckId))));
+    expect(test.current().selectedItem?.props.id).toBe(test.columnHeading.instance_id);
+    expect(test.canonical().blocks[0].slots!.content[3].slots?.column2[0].slots?.content).toHaveLength(2);
+    await test.settleHistory();
+    await test.undo();
+    expect(test.canonical().blocks[0].slots!.content[3].slots?.column2[0].slots?.content).toHaveLength(3);
   });
 
   it('remaps collection styles and enforces existing min/max while native Undo restores source values', async () => {

@@ -11,6 +11,7 @@ const outputs = [
   'dist/js/page-builder-editor.iife.js',
   'dist/js/page-builder-manager.iife.js',
   'dist/js/page-builder-site-part.iife.js',
+  'dist/js/page-sliders.iife.js',
   'dist/css/page-builder-editor.css',
   'dist/css/page-builder-manager.css',
   'dist/css/page-builder-site-part.css',
@@ -18,6 +19,7 @@ const outputs = [
   'dist/meta/manager-modules.json',
   'dist/meta/site-part-modules.json',
   'dist/meta/public-effects-modules.json',
+  'dist/meta/public-sliders-modules.json',
 ];
 
 for (const output of outputs) {
@@ -35,6 +37,8 @@ const readInventory = (name) => JSON.parse(readFileSync(join(root, `dist/meta/${
 const editorModules = readInventory('editor');
 const managerModules = readInventory('manager');
 const sitePartModules = readInventory('site-part');
+const publicEffectsModules = readInventory('public-effects');
+const publicSliderModules = readInventory('public-sliders');
 const forbiddenEditorDependencies = /(?:^|\/)(?:@puckeditor|@tiptap)(?:\/|$)/;
 
 if (!editorModules.some((id) => forbiddenEditorDependencies.test(id))) {
@@ -48,6 +52,14 @@ const managerBoundaryLeaks = managerModules.filter((id) =>
 );
 if (managerBoundaryLeaks.length > 0) {
   throw new Error(`Manager bundle crossed the editor dependency boundary: ${managerBoundaryLeaks.join(', ')}`);
+}
+const sliderDependencies = /(?:^|\/)(?:embla-carousel|embla-carousel-autoplay)(?:\/|$)/;
+if (publicEffectsModules.some((id) => sliderDependencies.test(id) || id.endsWith('/publicSliders.ts'))) {
+  throw new Error('Public effects bundle must lazy-load the optional slider runtime.');
+}
+if (!publicSliderModules.some((id) => id.endsWith('/publicSliders.ts'))
+  || !publicSliderModules.some((id) => sliderDependencies.test(id))) {
+  throw new Error('Public slider bundle is missing its slider owner or Embla dependency.');
 }
 
 const walk = (directory) => readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

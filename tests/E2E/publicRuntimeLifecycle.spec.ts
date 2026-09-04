@@ -5,6 +5,9 @@ const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const FIXTURE_PATH = '/__g7pb-public-runtime-contract';
 const DATA_PATH = '/api/__g7pb-public-runtime/posts';
 const INQUIRY_PATH = '/pages/__g7pb-public-runtime-contract/inquiries';
+const EFFECTS_ASSET = '/api/modules/assets/jiwonpapa-page_builder/dist/js/page-effects.iife.js';
+const SLIDERS_ASSET = '/api/modules/assets/jiwonpapa-page_builder/dist/js/page-sliders.iife.js';
+const ASSET_VERSION = '?v=public-runtime-fixture';
 type ApiResponse = { status?: number; json: unknown };
 type ApiHandlers = Record<string, (request: Request) => ApiResponse | Promise<ApiResponse>>;
 
@@ -16,16 +19,18 @@ async function withPublicFixture(
   page: Page,
   markup: string,
   handlers: ApiHandlers,
-  exercise: (requests: Request[]) => Promise<void>,
+  exercise: (requests: Request[], sliderAssets: Request[]) => Promise<void>,
   hostStyles = '',
 ): Promise<void> {
   const css = readFileSync('dist/css/page-builder-public.css', 'utf8');
   const js = readFileSync('dist/js/page-effects.iife.js', 'utf8');
+  const sliders = readFileSync('dist/js/page-sliders.iife.js', 'utf8');
   const requests: Request[] = [];
+  const sliderAssets: Request[] = [];
   const unexpected: string[] = [];
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  const document = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="synthetic-csrf"><title>Public runtime code contract</title>${hostStyles}<link rel="stylesheet" href="${FIXTURE_PATH}.css"><script defer src="${FIXTURE_PATH}.js"></script></head><body>${markup}</body></html>`;
+  const document = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="csrf-token" content="synthetic-csrf"><title>Public runtime code contract</title>${hostStyles}<link rel="stylesheet" href="${FIXTURE_PATH}.css"><script defer src="${EFFECTS_ASSET}${ASSET_VERSION}"></script></head><body>${markup}</body></html>`;
   await page.route('**/*', async (route: Route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -33,7 +38,11 @@ async function withPublicFixture(
     if (url.origin === new URL(BASE_URL).origin) {
       if (key === `GET ${FIXTURE_PATH}`) return route.fulfill({ contentType: 'text/html', body: document });
       if (key === `GET ${FIXTURE_PATH}.css`) return route.fulfill({ contentType: 'text/css', body: css });
-      if (key === `GET ${FIXTURE_PATH}.js`) return route.fulfill({ contentType: 'application/javascript', body: js });
+      if (key === `GET ${EFFECTS_ASSET}${ASSET_VERSION}`) return route.fulfill({ contentType: 'application/javascript', body: js });
+      if (key === `GET ${SLIDERS_ASSET}${ASSET_VERSION}`) {
+        sliderAssets.push(request);
+        return route.fulfill({ contentType: 'application/javascript', body: sliders });
+      }
       if (key === 'GET /favicon.ico') return route.fulfill({ status: 204, body: '' });
       const handler = handlers[key];
       if (handler) {
@@ -47,12 +56,14 @@ async function withPublicFixture(
   try {
     await page.goto(FIXTURE_PATH);
     await expect(page.locator('html')).toHaveAttribute('data-g7pb-effects-observer-ready', 'true');
-    await exercise(requests);
+    await exercise(requests, sliderAssets);
   } finally {
     // Keep interception installed until Playwright disposes this page, so a
     // late request cannot escape to a real service during fixture teardown.
     expect.soft(unexpected, 'Only explicitly owned fixture routes are allowed').toEqual([]);
     expect.soft(pageErrors, 'The shipped public bundle must not throw').toEqual([]);
+    expect.soft(sliderAssets, 'The optional slider asset is requested exactly for slider DOM')
+      .toHaveLength(markup.includes('data-g7pb-slider') ? 1 : 0);
   }
 }
 
@@ -176,13 +187,14 @@ test('initializes synthetic sliders and motion from the shipped bundle', async (
       <div class="g7pb-hero-slider__viewport"><div class="g7pb-hero-slider__track"><article class="g7pb-hero-slider__slide"><div class="g7pb-hero-slider__copy"><h2>Slide one</h2><a href="/unused-first">First action</a></div></article><article class="g7pb-hero-slider__slide"><div class="g7pb-hero-slider__copy"><h2>Slide two</h2><a href="/unused-second">Second action</a></div></article></div></div>
       <div class="g7pb-hero-slider__controls"><div class="g7pb-hero-slider__dots" data-g7pb-slider-dots></div></div><p data-g7pb-slider-status></p>
     </section></main>`;
-  await withPublicFixture(page, markup, {}, async (requests) => {
+  await withPublicFixture(page, markup, {}, async (requests, sliderAssets) => {
     const counter = page.locator('[data-g7pb-motion="counter"]');
     await expect(counter).toHaveAttribute('data-g7pb-motion-ready', 'true');
     await expect(counter).toHaveClass(/is-inview/u);
     await expect(counter.locator('strong')).toHaveAttribute('aria-label', '1,200+');
     await expect(counter.locator('strong')).toHaveText('1,200+');
     const slider = page.locator('[data-g7pb-slider]');
+    await expect.poll(() => sliderAssets.length).toBe(1);
     const slides = slider.locator('.g7pb-hero-slider__slide');
     await expect(slider).toHaveAttribute('data-g7pb-slider-ready', 'true');
     await expect(slider.locator('[data-g7pb-slider-status]')).toHaveText('1 / 2');

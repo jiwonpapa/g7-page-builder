@@ -77,10 +77,16 @@ if (exclusion) validateMobileExclusion(exclusion, pkg.version);
 // unchanged while an older dist is still present. This reads code, never renders
 // catalog content or selects additional browser scenarios.
 const publicGraph = await readEditorSourceGraph(process.cwd(), ['resources/js/public/pageEffects.ts']);
+const publicSliderEntry = 'resources/js/public/publicSliderEntry.ts';
+// Partial fingerprint fixtures predate the optional entry. The product tree
+// still follows the full slider graph whenever that separately built entry is present.
+const publicSliderGraph = existsSync(publicSliderEntry)
+  ? await readEditorSourceGraph(process.cwd(), [publicSliderEntry])
+  : { files: [] };
 const publicCss = await readCssGraph(process.cwd(), publicGraph.files.filter(file => file.endsWith('.css')));
-const shared = [...publicGraph.files, ...publicCss.files,
+const shared = [...publicGraph.files, ...publicSliderGraph.files, ...publicCss.files,
   'scripts/check-site-shell-product-quality.mjs', 'scripts/lib/editorSourceGraph.mjs', 'scripts/lib/editorCssSources.mjs',
-  'dist/js/page-effects.iife.js',
+  'dist/js/page-effects.iife.js', 'dist/js/page-sliders.iife.js',
   'resources/css/page-builder-public.css', 'dist/css/page-builder-public.css', 'playwright.config.ts',
   'src/Application/Compilation/SitePartHtmlCompiler.php', 'schemas/site-part-document.schema.json',
   'scripts/render-site-shell-quality-fixture.php'];

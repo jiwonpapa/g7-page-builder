@@ -87,7 +87,7 @@ async function setCanvasViewportWidth(
   await expect(button).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(
     () => page.locator('#puck-canvas-root').evaluate((element) => element.style.width),
-  ).toBe(width === PC_EDIT_CANVAS_WIDTH ? '100%' : `${width}px`);
+  ).toBe(`${width}px`);
   await page.evaluate(() => new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));

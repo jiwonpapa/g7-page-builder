@@ -379,26 +379,15 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<numbe
   await expect(button).toBeVisible();
   await button.click();
   await expect(button).toHaveAttribute('aria-pressed', 'true');
-  const desktop = projectName === 'desktop';
   await expect.poll(
     () => page.locator('#puck-canvas-root').evaluate((element) => (element as HTMLElement).style.width),
-  ).toBe(desktop ? '100%' : `${width}px`);
+  ).toBe(`${width}px`);
   await page.evaluate(() => new Promise<void>((resolveAnimation) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolveAnimation()));
   }));
-  if (desktop) {
-    await expect.poll(async () => {
-      const [frameWidth, canvasWidth] = await Promise.all([
-        page.locator(CANVAS_IFRAME).evaluate((element) => (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0),
-        page.locator('#puck-canvas-root').evaluate((element) => (element as HTMLElement).clientWidth),
-      ]);
-      return { frameWidth, canvasWidth, delta: Math.abs(frameWidth - canvasWidth) };
-    }).toMatchObject({ delta: 0 });
-  } else {
-    await expect.poll(() => page.locator(CANVAS_IFRAME).evaluate((element) => (
-      (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0
-    ))).toBe(width);
-  }
+  await expect.poll(() => page.locator(CANVAS_IFRAME).evaluate((element) => (
+    (element as HTMLIFrameElement).contentWindow?.innerWidth ?? 0
+  ))).toBe(width);
   return width;
 }
 
@@ -912,7 +901,7 @@ async function assertScenario(
   expect(viewportMutations, `${scenario.label} viewport switch must not persist document data`).toEqual([]);
   const expectedMode = projectName === 'desktop' ? 'edit' : 'preview';
   await expect(editor).toHaveAttribute('data-editing-mode', expectedMode);
-  await expect(editor).toHaveAttribute('data-canvas-viewport', expectedMode === 'edit' ? '100%' : String(width));
+  await expect(editor).toHaveAttribute('data-canvas-viewport', String(width));
   if (expectedMode === 'edit') await expect(page.getByTestId('page-builder-editor-mode-notice')).toHaveCount(0);
   else await expect(page.getByTestId('page-builder-editor-mode-notice')).toContainText('미리보기 전용');
   const addBlock = page.getByTestId('page-builder-add-block');

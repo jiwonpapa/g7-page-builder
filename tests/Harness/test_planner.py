@@ -20,13 +20,13 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
-    def test_owned_site_part_helpers_select_only_three_registration_specs(self):
+    def test_owned_site_part_helpers_select_only_registered_specs(self):
         php = "tests/E2E/support/sitePartState.php"
         helper = "tests/E2E/support/sitePartSetFixture.ts"
         self.write(php, "<?php class Fixture {}")
         self.write(helper, "export class Fixture {}")
         self.write("tests/Harness/test_site_part_fixture.py", "import unittest")
-        specs = ("globalSiteShellRoutes", "sitePartLifecycle", "pageBuilderLifecycle")
+        specs = ("globalSiteShellRoutes", "sitePartLifecycle", "pageBuilderLifecycle", "siteShellProductQuality")
         for spec in specs:
             self.write(f"tests/E2E/{spec}.spec.ts", "import './support/sitePartSetFixture'")
         plan = build_plan(self.root, [php, helper])

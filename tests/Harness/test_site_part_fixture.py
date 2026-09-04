@@ -67,7 +67,8 @@ class SitePartFixtureTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout), list(SITE_PART_SPECS))
         self.assertEqual(set(SITE_PART_SPECS), {"tests/E2E/globalSiteShellRoutes.spec.ts",
-            "tests/E2E/sitePartLifecycle.spec.ts", "tests/E2E/pageBuilderLifecycle.spec.ts"})
+            "tests/E2E/sitePartLifecycle.spec.ts", "tests/E2E/pageBuilderLifecycle.spec.ts",
+            "tests/E2E/siteShellProductQuality.spec.ts"})
 
     def test_require_is_inert_and_console_bootstrap_uses_selected_application(self):
         with tempfile.TemporaryDirectory() as directory:

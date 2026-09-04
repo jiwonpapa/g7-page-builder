@@ -59,7 +59,7 @@
   .g7pb-shell-popover { position: fixed; top: auto; right: 1rem; left: auto; margin-top: .75rem; width: min(22rem, calc(100vw - 2rem)); max-height: calc(100dvh - 6rem); overflow: auto; }
 }
 @media (max-width: 420px) {
-  .g7pb-site-header__inner { width: calc(100% - 1rem); gap: .25rem; }
+  .g7pb-site-header__inner { gap: .25rem; }
   .g7pb-site-header .g7pb-site-brand { max-width: 6rem; font-size: .9rem; }
   .g7pb-site-header__actions { gap: 0; }
   .g7pb-system-controls .g7pb-shell-icon { width: 44px; min-width: 44px; padding: .5rem; }

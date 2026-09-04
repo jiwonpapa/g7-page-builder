@@ -20,6 +20,13 @@ describe('responsive content container gutters', () => {
     expect(css).toMatch(/padding-left: max\(1\.25rem, calc\(100% - var\(--g7pb-/);
   });
 
+  it('uses one 1280px shell token for the editor page, public header, footer, and standard blocks', () => {
+    expect(editorCss).toContain('.g7pb-full-site-page--template { width: min(calc(100% - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max)); margin-inline: auto; }');
+    expect(publicCss).toContain('.g7pb-site-header__inner { display: grid; width: min(calc(100% - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max));');
+    expect(publicCss).toContain('.g7pb-container-width--standard { --g7pb-block-content-width: var(--g7pb-page-content-max); }');
+    expect(publicCss).not.toMatch(/container-width--standard\s*\{[^}]*72rem/);
+  });
+
   it('responds to the actual G7 or nested column width independently of the viewport', () => {
     expect(publicCss).toContain('container: g7pb-content / inline-size;');
     expect(publicCss).toContain('@container g7pb-content (max-width: 900px)');

@@ -185,7 +185,7 @@ export function SelectedBlockActionBar({
             <ArrowDown size={16} data-testid="page-builder-block-move-down" aria-hidden="true" />
           </ActionBar.Action>}
           {!rangeEditingActive && <ActionBar.Action label="블록 위치 이동"
-            disabled={disabled || validMoveDestinations.length === 0} onClick={() => setMoveOpen((open) => !open)}>
+            disabled={disabled || !location || moveDestinations.length === 0} onClick={() => setMoveOpen((open) => !open)}>
             <MoveRight size={16} data-testid="page-builder-block-move-zone" aria-hidden="true" />
           </ActionBar.Action>}
           {!rangeEditingActive && <ActionBar.Action label="블록 복제" disabled={disabled || duplicateActions.length === 0}

@@ -11,6 +11,7 @@ const js = readFileSync('dist/js/page-effects.iife.js', 'utf8');
 const settings = { general: { site_name: '검증 사이트', site_description: '실제 사이트 정보가 표시되는 공통 영역' }, social: { youtube: 'https://youtube.com/@example', github: 'https://github.com/example' } };
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 
+test.use({ locale: 'ko-KR' });
 
 const portable = (page: Page): boolean => (page.viewportSize()?.width ?? 1440) < 900;
 async function openAccount(page: Page, header: Locator): Promise<Locator> {
@@ -214,7 +215,7 @@ test('real standalone builder viewer · authenticated account · API logout', as
     const commit = await request.post(`${base}/publications/${(await prepare.json()).data.publication_token}/commit`, { headers, data: {} });
     expect(commit.ok()).toBe(true);
     await context.addInitScript((value) => { if (!sessionStorage.getItem('shell-auth-seeded')) { localStorage.setItem('auth_token', value); sessionStorage.setItem('shell-auth-seeded', 'true'); } }, token);
-    await gotoOwnedSiteShell(page, `/pages/${slug}`, 'ko');
+    await page.goto(`/pages/${slug}`);
     await expect(page.locator('[data-g7pb-runtime-config]')).toHaveCount(1);
     const header = page.getByTestId('page-builder-site-header');
     await openAccount(page, header);

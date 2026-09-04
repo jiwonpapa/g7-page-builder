@@ -4,6 +4,7 @@ html.g7pb-standalone-viewer { color-scheme: light; font-family: system-ui, -appl
 :where(.g7pb-standalone-viewer, .g7pb-page, .g7pb-site-header, .g7pb-site-footer, .g7pb-mobile-menu, .g7pb-system-controls, .g7pb-mobile-menu__backdrop),
 :where(.g7pb-standalone-viewer, .g7pb-page, .g7pb-site-header, .g7pb-site-footer, .g7pb-mobile-menu, .g7pb-system-controls) * { box-sizing: border-box; }
 html.g7pb-standalone-viewer body { margin: 0; color: var(--g7pb-neutral-900); background: var(--g7pb-neutral-0); }
+.g7pb-template-body { width: min(calc(100vw - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max)); max-width: none; margin-inline: calc((100% - min(calc(100vw - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max))) / 2); }
 .g7pb-skip-link { position: fixed; z-index: 1000; top: .75rem; left: .75rem; padding: .75rem 1rem; color: #fff; background: #172033; transform: translateY(-180%); }
 .g7pb-skip-link:focus { transform: translateY(0); }
 .g7pb-site-header.is-transparent { position: absolute; border-color: color-mix(in srgb, var(--g7pb-shell-on-inverse) 24%, transparent); color: var(--g7pb-shell-on-inverse); background: linear-gradient(180deg, color-mix(in srgb, var(--g7pb-shell-scrim-ink) 62%, transparent), transparent); backdrop-filter: none; }

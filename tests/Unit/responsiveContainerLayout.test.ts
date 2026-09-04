@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { chromium } from 'playwright';
 
 const publicCss = readFileSync(resolve('resources/css/page-builder-public.css'), 'utf8');
+const themeCss = readFileSync(resolve('resources/css/page-builder-theme.css'), 'utf8');
 const editorCss = [
   'resources/css/page-builder-editor.css',
   'resources/css/page-builder-editor-canvas.css',
@@ -22,10 +23,40 @@ describe('responsive content container gutters', () => {
 
   it('uses one 1280px shell token for the editor page, public header, footer, and standard blocks', () => {
     expect(editorCss).toContain('.g7pb-full-site-page--template { width: min(calc(100% - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max)); margin-inline: auto; }');
+    expect(publicCss).toContain('.g7pb-template-body { width: min(calc(100vw - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max));');
+    expect(themeCss).toMatch(/\.g7pb-template-body,\s*\.g7pb-document-theme\s*\{/);
     expect(publicCss).toContain('.g7pb-site-header__inner { display: grid; width: min(calc(100% - (var(--g7pb-page-gutter) * 2)), var(--g7pb-page-content-max));');
     expect(publicCss).toContain('.g7pb-container-width--standard { --g7pb-block-content-width: var(--g7pb-page-content-max); }');
     expect(publicCss).not.toMatch(/container-width--standard\s*\{[^}]*72rem/);
   });
+
+  it('centers the template document on the shared shell instead of inheriting G7 host gutters', async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const page = await browser.newPage();
+      for (const width of [360, 768, 1280, 1440, 2560]) {
+        await page.setViewportSize({ width, height: 1000 });
+        const hostGutter = width < 640 ? 16 : 32;
+        await page.setContent(`<!doctype html><html lang="ko"><head><style>${themeCss}\n${publicCss}</style></head><body style="margin:0">
+          <main style="width:calc(100% - ${hostGutter * 2}px);margin-inline:auto">
+            <div class="g7pb-template-body"><div class="g7pb-page g7pb-document-theme"><section class="g7pb-block g7pb-container-width--standard"><div>본문</div></section></div></div>
+          </main></body></html>`);
+        const geometry = await page.evaluate(() => {
+          const body = document.querySelector('.g7pb-template-body')!.getBoundingClientRect();
+          const content = document.querySelector('.g7pb-block > div')!.getBoundingClientRect();
+          return { body: { left: body.left, width: body.width }, content: { left: content.left, width: content.width }, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+        });
+        const shellWidth = Math.min(width - 40, 1280);
+        expect(geometry.body.width, `viewport=${width}`).toBeCloseTo(shellWidth, 1);
+        expect(geometry.body.left, `viewport=${width}`).toBeCloseTo((width - shellWidth) / 2, 1);
+        expect(geometry.content.width, `viewport=${width}`).toBeCloseTo(shellWidth - 40, 1);
+        expect(geometry.content.left, `viewport=${width}`).toBeCloseTo((width - shellWidth) / 2 + 20, 1);
+        expect(geometry.overflow, `viewport=${width}`).toBe(0);
+      }
+    } finally {
+      await browser.close();
+    }
+  }, 30000);
 
   it('responds to the actual G7 or nested column width independently of the viewport', () => {
     expect(publicCss).toContain('container: g7pb-content / inline-size;');

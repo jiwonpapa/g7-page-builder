@@ -6,6 +6,7 @@ const G7PB_SITE_PART_FIXTURE_SPECS = [
     'tests/E2E/globalSiteShellRoutes.spec.ts',
     'tests/E2E/sitePartLifecycle.spec.ts',
     'tests/E2E/pageBuilderLifecycle.spec.ts',
+    'tests/E2E/siteShellProductQuality.spec.ts',
 ];
 
 /** Test-owned pointer journal. Readers/writers never access document JSON or revisions. */

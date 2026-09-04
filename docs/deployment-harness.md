@@ -72,7 +72,7 @@ non-blocking cleanup remains a separate deferred operation.
 
 ## Minimum smoke
 
-Required smoke checks /up, admin login, the native manager shell, all eight
+Required smoke checks /up, admin login, the native manager shell, all nine
 JS/CSS asset URLs, deployed artifact identity, active module/registry version,
 required module routes, pending module migrations and Store canonical origin.
 It does not download every Store archive/preview or rerun content/editor E2E.

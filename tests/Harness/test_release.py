@@ -223,6 +223,53 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("dist/js/page-builder-manager.iife.js", release.ASSETS)
         self.assertIn("dist/js/page-sliders.iife.js", release.ASSETS)
 
+    def test_release_wrappers_disable_repo_local_bytecode_and_preserve_process_contract(self):
+        operations = {
+            "release-package": "package",
+            "deploy-staging": "deploy",
+            "smoke-staging": "smoke",
+        }
+        controller = """import json
+import os
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+from g7pb import probe
+Path(os.environ['G7PB_WRAPPER_RECORD']).write_text(json.dumps({
+    'argv': sys.argv[1:],
+    'probe': probe.VALUE,
+    'token': os.environ['G7PB_WRAPPER_TOKEN'],
+}))
+raise SystemExit(int(os.environ['G7PB_WRAPPER_EXIT']))
+"""
+        for script, operation in operations.items():
+            with self.subTest(script=script), tempfile.TemporaryDirectory(prefix="g7pb-release-wrapper-") as directory:
+                root = Path(directory)
+                wrapper = root / "scripts" / f"{script}.sh"
+                wrapper.parent.mkdir(parents=True)
+                source = (ROOT / "scripts" / f"{script}.sh").read_text()
+                wrapper.write_text(source)
+                (root / "scripts/g7pb.py").write_text(controller)
+                package = root / "tools/g7pb"
+                package.mkdir(parents=True)
+                (package / "__init__.py").write_text("")
+                (package / "probe.py").write_text("VALUE = 'loaded'\n")
+                record = root / "record.json"
+                environment = {**os.environ,
+                               "G7PB_WRAPPER_RECORD": str(record),
+                               "G7PB_WRAPPER_TOKEN": "preserved",
+                               "G7PB_WRAPPER_EXIT": "23"}
+                result = subprocess.run(["bash", str(wrapper), "--fixture", "two words"], cwd=root,
+                                        env=environment, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 23, result.stderr)
+                self.assertEqual(json.loads(record.read_text()), {
+                    "argv": ["release", operation, "--fixture", "two words"],
+                    "probe": "loaded",
+                    "token": "preserved",
+                })
+                self.assertFalse((package / "__pycache__").exists())
+                self.assertIn(f'exec python3 -B "$root/scripts/g7pb.py" release {operation} "$@"', source)
+
     def test_remote_smoke_checks_every_asset_including_optional_slider_bundle(self):
         class Response:
             status = 200

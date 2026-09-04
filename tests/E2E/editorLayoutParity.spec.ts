@@ -377,7 +377,7 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<numbe
   const button = page.getByTestId(`page-builder-viewport-${width}`);
   if (!(await button.isVisible())) await page.getByRole('button', { name: 'Toggle menu bar' }).click();
   await expect(button).toBeVisible();
-  await button.click();
+  if (await button.getAttribute('aria-pressed') !== 'true') await button.click();
   await expect(button).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(
     () => page.locator('#puck-canvas-root').evaluate((element) => (element as HTMLElement).style.width),

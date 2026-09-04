@@ -1567,14 +1567,14 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
     await revealEditorHeaderActions(page);
-    await page.getByRole('button', { name: '편집 도구 더 보기' }).click();
+    await page.locator('summary[aria-label="편집 도구 더 보기"]').click();
     await page.getByTestId('page-builder-auto-motion').click();
 
     await expectBlockOrder(editorBlocks(page), PUBLISHED_BLOCK_ORDER);
 
     await saveDraft(page);
     if (testInfo.project.name === 'desktop') {
-      await page.getByRole('button', { name: '문서 도구 더 보기' }).click();
+      await page.locator('summary[aria-label="문서 도구 더 보기"]').click();
       await page.getByTestId('page-builder-source-view').click();
       const sourceDialog = page.getByTestId('page-builder-source-dialog');
       await expect(sourceDialog).toBeVisible();

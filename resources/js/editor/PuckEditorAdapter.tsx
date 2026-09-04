@@ -163,8 +163,8 @@ function PageBuilderEditorSession({ document, disabled = false, iframeEnabled = 
           }}
           permissions={{ edit: !editingDisabled, insert: !editingDisabled, delete: !editingDisabled, duplicate: !editingDisabled, drag: !editingDisabled }}
           overrides={overrides}
-          headerTitle="페이지 블록"
-          headerPath={document.slug}
+          headerTitle="페이지 편집"
+          headerPath="캔버스"
           onAction={boundary.onAction}
           onChange={boundary.onChange}
           onPublish={(nextData) => {

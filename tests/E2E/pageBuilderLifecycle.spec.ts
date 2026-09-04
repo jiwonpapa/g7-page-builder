@@ -839,10 +839,10 @@ async function dragLibraryBlockBefore(
   await expect(blocks).toHaveCount(initialBlockCount + 1);
 }
 
-async function expectCanvasWidth(page: Page, width: number): Promise<void> {
+async function expectCanvasWidth(page: Page, width: number | '100%'): Promise<void> {
   await expect.poll(
     () => page.locator('#puck-canvas-root').evaluate((element) => element.style.width),
-  ).toBe(`${width}px`);
+  ).toBe(width === '100%' ? width : `${width}px`);
 }
 
 async function requiredLink(locator: Locator, label: string): Promise<string> {
@@ -1288,13 +1288,15 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     }
 
     await page.getByTestId('page-builder-page-design').click();
-    await (await revealInspectorField(page, 'page-builder-design-palette')).selectOption('emerald');
-    await (await revealInspectorField(page, 'page-builder-design-font')).selectOption('serif');
-    await (await revealInspectorField(page, 'page-builder-design-radius')).selectOption('round');
-    await (await revealInspectorField(page, 'page-builder-design-width')).selectOption('wide');
-    await (await revealInspectorField(page, 'page-builder-design-scale')).selectOption('large');
-    await (await revealInspectorField(page, 'page-builder-design-custom-1-light')).fill('#13579b');
-    await (await revealInspectorField(page, 'page-builder-design-custom-1-dark')).fill('#b3d4ff');
+    await (await revealInspectorField(page, 'page-builder-design-palette')).getByRole('radio', { name: '에메랄드' }).check();
+    await (await revealInspectorField(page, 'page-builder-design-font')).getByRole('radio', { name: '명조' }).check();
+    await (await revealInspectorField(page, 'page-builder-design-radius')).getByRole('radio', { name: '둥글게' }).check();
+    await (await revealInspectorField(page, 'page-builder-design-width')).getByRole('radio', { name: '넓게' }).check();
+    await (await revealInspectorField(page, 'page-builder-design-scale')).getByRole('radio', { name: '크게' }).check();
+    const advancedColors = await revealInspectorField(page, 'page-builder-design-advanced-colors');
+    await advancedColors.locator('summary').click();
+    await visibleTestId(page, 'page-builder-design-custom-1-light').fill('#13579b');
+    await visibleTestId(page, 'page-builder-design-custom-1-dark').fill('#b3d4ff');
     await expect(page.frameLocator('iframe').locator('.g7pb-document-theme')).toHaveClass(/g7pb-theme-palette-emerald/);
 
     await revealEditorHeaderActions(page);
@@ -1565,12 +1567,14 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await selectAndEditContact(page, contactHeading, contactAddress, contactEmail);
     await selectAndEditFeatures(page, featuresHeading, featureTitle, featureBody);
     await revealEditorHeaderActions(page);
+    await page.getByRole('button', { name: '편집 도구 더 보기' }).click();
     await page.getByTestId('page-builder-auto-motion').click();
 
     await expectBlockOrder(editorBlocks(page), PUBLISHED_BLOCK_ORDER);
 
     await saveDraft(page);
     if (testInfo.project.name === 'desktop') {
+      await page.getByRole('button', { name: '문서 도구 더 보기' }).click();
       await page.getByTestId('page-builder-source-view').click();
       const sourceDialog = page.getByTestId('page-builder-source-dialog');
       await expect(sourceDialog).toBeVisible();
@@ -1594,13 +1598,15 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 
     await revealEditorHeaderActions(page);
     await page.getByTestId('page-builder-page-design').click();
-    await expect(await revealInspectorField(page, 'page-builder-design-palette')).toHaveValue('emerald');
-    await expect(await revealInspectorField(page, 'page-builder-design-font')).toHaveValue('serif');
-    await expect(await revealInspectorField(page, 'page-builder-design-radius')).toHaveValue('round');
-    await expect(await revealInspectorField(page, 'page-builder-design-width')).toHaveValue('wide');
-    await expect(await revealInspectorField(page, 'page-builder-design-scale')).toHaveValue('large');
-    await expect(await revealInspectorField(page, 'page-builder-design-custom-1-light')).toHaveValue('#13579b');
-    await expect(await revealInspectorField(page, 'page-builder-design-custom-1-dark')).toHaveValue('#b3d4ff');
+    await expect((await revealInspectorField(page, 'page-builder-design-palette')).getByRole('radio', { name: '에메랄드' })).toBeChecked();
+    await expect((await revealInspectorField(page, 'page-builder-design-font')).getByRole('radio', { name: '명조' })).toBeChecked();
+    await expect((await revealInspectorField(page, 'page-builder-design-radius')).getByRole('radio', { name: '둥글게' })).toBeChecked();
+    await expect((await revealInspectorField(page, 'page-builder-design-width')).getByRole('radio', { name: '넓게' })).toBeChecked();
+    await expect((await revealInspectorField(page, 'page-builder-design-scale')).getByRole('radio', { name: '크게' })).toBeChecked();
+    const reopenedAdvancedColors = await revealInspectorField(page, 'page-builder-design-advanced-colors');
+    await reopenedAdvancedColors.locator('summary').click();
+    await expect(visibleTestId(page, 'page-builder-design-custom-1-light')).toHaveValue('#13579b');
+    await expect(visibleTestId(page, 'page-builder-design-custom-1-dark')).toHaveValue('#b3d4ff');
 
     await selectEditorBlock(page, 'hero');
     await expect(editorInlineField(page, 'hero', 'title')).toHaveText(heroTitle);

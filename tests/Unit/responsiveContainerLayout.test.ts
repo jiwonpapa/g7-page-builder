@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { chromium } from 'playwright';
 
 const publicCss = readFileSync(resolve('resources/css/page-builder-public.css'), 'utf8');
-const editorCss = readFileSync(resolve('resources/css/page-builder-editor.css'), 'utf8');
+const editorCss = [
+  'resources/css/page-builder-editor.css',
+  'resources/css/page-builder-editor-canvas.css',
+  'resources/css/page-builder-editor-blocks.css',
+  'resources/css/page-builder-editor-catalog.css',
+].map((path) => readFileSync(resolve(path), 'utf8')).join('\n');
 
 describe('responsive content container gutters', () => {
   it.each([['public', publicCss], ['editor', editorCss]])('%s uses the containing box for content gutters', (_, css) => {

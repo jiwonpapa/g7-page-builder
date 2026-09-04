@@ -38,6 +38,8 @@ html.g7pb-standalone-viewer,
   --g7pb-red-50: #fff4f3;
   --g7pb-red-100: #fee4e2;
   --g7pb-red-700: #b42318;
+  --g7pb-page-content-max: 80rem;
+  --g7pb-page-gutter: 1.25rem;
 }
 
 /* Shell surfaces follow the host theme, including panels portalled outside the page. */
@@ -85,7 +87,7 @@ html.g7pb-standalone-viewer,
   --g7pb-theme-accent-soft: #eef2ff;
   --g7pb-theme-accent-strong: #312e81;
   --g7pb-theme-radius: 1rem;
-  --g7pb-theme-content-width: 72rem;
+  --g7pb-theme-content-width: var(--g7pb-page-content-max);
   --g7pb-theme-body-size: 1rem;
   --g7pb-page-bg: var(--g7pb-neutral-0);
   --g7pb-page-text: var(--g7pb-neutral-900);

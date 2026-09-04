@@ -9,7 +9,7 @@
 .g7pb-site-header.is-transparent .g7pb-site-header__cta { color: var(--g7pb-shell-inverse); background: var(--g7pb-shell-on-inverse); }
 .g7pb-site-header__actions, .g7pb-system-controls { display: flex; min-width: 0; align-items: center; gap: .45rem; }
 .g7pb-system-controls { justify-content: flex-end; }
-.g7pb-site-footer { padding: clamp(3rem, 7vw, 5.5rem) max(1.25rem, calc((100% - 72rem) / 2)); color: var(--g7pb-shell-footer-text); background: var(--g7pb-shell-footer-bg); }
+.g7pb-site-footer { padding: clamp(3rem, 7vw, 5.5rem) max(var(--g7pb-page-gutter), calc((100% - var(--g7pb-page-content-max)) / 2)); color: var(--g7pb-shell-footer-text); background: var(--g7pb-shell-footer-bg); }
 .g7pb-site-footer__top { display: flex; gap: 2rem; align-items: start; justify-content: space-between; }
 .g7pb-site-footer .g7pb-site-brand { color: var(--g7pb-shell-on-inverse); }
 .g7pb-site-footer__legal { margin: 3rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--g7pb-shell-footer-border); color: var(--g7pb-shell-footer-muted); font-size: .82rem; }

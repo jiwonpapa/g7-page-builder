@@ -1247,6 +1247,7 @@ describe('Puck editor surface contract', () => {
     const desktopViewport = await eventually<HTMLButtonElement>('[data-testid="page-builder-viewport-1280"]');
     expect(desktopViewport.getAttribute('aria-pressed')).toBe('true');
     expect(mobileViewport.getAttribute('aria-pressed')).toBe('false');
+    expect(container.querySelector('[data-testid="page-builder-editor-mode-notice"]')).toBeNull();
     await act(async () => {
       mobileViewport.click();
     });
@@ -1259,7 +1260,7 @@ describe('Puck editor surface contract', () => {
     expect(addButton.disabled).toBe(true);
     expect(container.querySelector('[data-testid="page-builder-editor"]')?.getAttribute('data-editing-mode')).toBe('preview');
     expect(container.querySelector('[data-testid="page-builder-editor-mode-notice"]')?.textContent)
-      .toContain('편집은 PC에서만 지원합니다. 모바일·태블릿은 반응형 미리보기 전용입니다.');
+      .toContain('미리보기 전용');
     await act(async () => {
       addButton.click();
     });

@@ -1,3 +1,27 @@
+.g7pb-inspector-choice {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.g7pb-inspector-choice legend { padding: 0; color: var(--g7pb-text); font-size: .78rem; font-weight: 800; }
+.g7pb-inspector-choice > p { margin: .3rem 0 .6rem; color: var(--g7pb-muted); font-size: .68rem; line-height: 1.45; }
+.g7pb-inspector-choice > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .3rem; }
+.g7pb-inspector-choice label { position: relative; display: flex; min-width: 0; min-height: 2.25rem; align-items: center; justify-content: center; gap: .35rem; padding: .42rem .35rem; border: 1px solid var(--g7pb-border); border-radius: .48rem; color: var(--g7pb-secondary); background: var(--g7pb-surface-strong); cursor: pointer; font-size: .68rem; font-weight: 750; text-align: center; }
+.g7pb-inspector-choice label[data-selected='true'] { border-color: var(--g7pb-accent); color: var(--g7pb-accent-dark); background: var(--g7pb-accent-soft); box-shadow: inset 0 0 0 1px var(--g7pb-accent); }
+.g7pb-inspector-choice input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.g7pb-inspector-choice label:has(input:focus-visible) { outline: 3px solid var(--g7pb-focus-ring); outline-offset: 2px; }
+.g7pb-inspector-choice label:has(input:disabled) { cursor: default; opacity: .55; }
+.g7pb-inspector-choice--swatches > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g7pb-inspector-choice--swatches label { justify-content: flex-start; padding-inline: .5rem; }
+.g7pb-inspector-choice__swatch { width: .9rem; height: .9rem; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--g7pb-choice-swatch) 65%, var(--g7pb-shadow-ink)); border-radius: 50%; background: var(--g7pb-choice-swatch); box-shadow: 0 0 0 2px var(--g7pb-surface-strong); }
+
+.g7pb-design-advanced { border-top: 1px solid var(--g7pb-border); padding-top: .65rem; }
+.g7pb-design-advanced summary { cursor: pointer; color: var(--g7pb-secondary); font-size: .74rem; font-weight: 800; }
+.g7pb-design-advanced > p { margin: .4rem 0 .65rem; color: var(--g7pb-muted); font-size: .66rem; line-height: 1.45; }
+.g7pb-design-advanced > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+.g7pb-design-advanced .g7pb-design-field { min-width: 0; }
+
 
 
 .g7pb-field-control {

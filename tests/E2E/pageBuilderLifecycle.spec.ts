@@ -1674,6 +1674,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
 
     await page.bringToFront();
     await publish(page);
+    await page.locator('summary[aria-label="문서 도구 더 보기"]').click();
     const publicUrl = await requiredLink(
       page.getByTestId('page-builder-public-link'),
       'Published Page Builder page',

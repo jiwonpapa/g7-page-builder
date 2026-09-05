@@ -185,8 +185,34 @@ class FrontendBudgetTests(unittest.TestCase):
         # Each artifact is below its own limit, while a slider page would load
         # more than the aggregate allowance. Moving bytes out of the main IIFE
         # must not turn the old exception green by itself.
-        self.write("dist/js/page-effects.iife.js", self.payload("main", 620))
-        self.write("dist/js/page-sliders.iife.js", self.payload("slider", 305))
+        # Node builds may use different zlib implementations. Size the synthetic
+        # samples with the executing Node, then assert the test's preconditions.
+        # The product's individual/aggregate limits remain unchanged.
+        script = """
+          const {gzipSync} = require('node:zlib');
+          const {readFileSync} = require('node:fs');
+          const data = readFileSync(0);
+          const target = Number(process.argv[1]);
+          let low = 0, high = data.length;
+          while (low < high) {
+            const mid = Math.ceil((low + high) / 2);
+            if (gzipSync(data.subarray(0, mid)).length <= target) low = mid;
+            else high = mid - 1;
+          }
+          const source = data.subarray(0, low);
+          process.stdout.write(JSON.stringify({source: source.toString(), bytes: gzipSync(source).length}));
+        """
+        measured = []
+        for label, target, limit in (("main", 23_000, 24_000), ("slider", 11_500, 12_000)):
+            result = subprocess.run(["node", "-e", script, str(target)], input=self.payload(label, 1_500),
+                                    capture_output=True, text=True, check=True, timeout=30)
+            sample = json.loads(result.stdout)
+            self.assertGreaterEqual(sample["bytes"], target - 100)
+            self.assertLess(sample["bytes"], limit)
+            measured.append(sample["bytes"])
+            bundle = "page-effects" if label == "main" else "page-sliders"
+            self.write(f"dist/js/{bundle}.iife.js", sample["source"])
+        self.assertGreater(sum(measured), 34_000)
         result = self.run_checker()
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertIn("Public runtime combined budget exceeded", result.stderr)

@@ -962,13 +962,19 @@ async function assertScenario(
     await expect(previewRoot).toBeVisible();
     // Template html belongs to G7; require the document's language only at
     // module-owned content, not on the host template or its navigation.
-    const contentLanguages = await previewBlocks.evaluateAll(blocks =>
-      [...new Set(blocks.map(element => element.closest('[lang]')?.getAttribute('lang')))]);
     if (owned.document.shell_mode === 'template') {
       await expect(preview.locator('.g7pb-template-body')).toHaveAttribute('lang', String(owned.document.locale));
       await expect(preview.locator('html')).toHaveAttribute('lang', await page.locator('html').getAttribute('lang') ?? '');
     }
-    expect(contentLanguages, `${scenario.label} compiled content language`).toEqual([owned.document.locale]);
+    // G7 can replace HtmlContent during hydration. Sample the connected current
+    // blocks together; an earlier detached node has no language ancestor.
+    await expect.poll(() => previewBlocks.evaluateAll(blocks => ({
+      count: blocks.length,
+      connected: blocks.every(element => element.isConnected),
+      languages: [...new Set(blocks.map(element => element.closest('[lang]')?.getAttribute('lang')))],
+    })), { message: `${scenario.label} compiled content language` }).toEqual({
+      count: scenario.expectedBlockCount, connected: true, languages: [owned.document.locale],
+    });
     await previewRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
     await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
     const previewMetrics = await layoutMetrics(previewBlocks, false);

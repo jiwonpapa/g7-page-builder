@@ -83,6 +83,17 @@ final class PageRouteRegistryTest extends TestCase
         $this->db->getDatabaseManager()->disconnect();
     }
 
+    public function test_container_resolves_the_route_registry_without_an_optional_null_fallback(): void
+    {
+        $container = new \Illuminate\Container\Container;
+        $container->instance(PageBuilderService::class, new PageBuilderService(new EloquentPageBuilderRepository, $this->createStub(DocumentCompilerPort::class)));
+        $container->instance(CacheInterface::class, $this->createMock(CacheInterface::class));
+        $container->instance(TemplateService::class, $this->createStub(TemplateService::class));
+        $bridge = $container->make(G7TemplateRouteBridge::class);
+        $property = new \ReflectionProperty($bridge, 'pagePaths');
+        self::assertInstanceOf(G7PageRouteRegistry::class, $property->getValue($bridge));
+    }
+
     public function test_address_activates_only_for_last_successful_publication_and_keeps_its_slug(): void
     {
         $draft = $this->paths->assign($this->id, '/about', 0);

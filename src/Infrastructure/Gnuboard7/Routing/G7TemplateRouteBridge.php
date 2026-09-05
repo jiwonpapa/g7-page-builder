@@ -14,6 +14,7 @@ final class G7TemplateRouteBridge
     public function __construct(
         private readonly PageBuilderService $pages,
         private readonly CacheInterface $cache,
+        private readonly ?G7PageRouteRegistry $pagePaths = null,
     ) {}
 
     public function register(): void
@@ -52,6 +53,12 @@ final class G7TemplateRouteBridge
 
         if ($templateType !== 'user') {
             return $routes;
+        }
+
+        try {
+            $routes = $this->pagePaths?->merge($routes) ?? $routes;
+        } catch (\Throwable $exception) {
+            Log::warning('Page Builder custom routes were skipped.', ['exception' => $exception]);
         }
 
         try {

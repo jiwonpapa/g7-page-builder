@@ -6,6 +6,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminOfficialStoreController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminPageRouteController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminRouteCatalogController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSectionPatternController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
@@ -164,6 +165,14 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
         ->whereNumber('revision')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.update')
         ->name('documents.revisions.restore');
+    Route::get('documents/{document}/path', [AdminPageRouteController::class, 'show'])
+        ->whereUuid('document')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
+        ->name('documents.path.show');
+    Route::put('documents/{document}/path', [AdminPageRouteController::class, 'update'])
+        ->whereUuid('document')
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
+        ->name('documents.path.update');
     Route::patch('documents/{document}', [AdminDocumentController::class, 'update'])
         ->whereUuid('document')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.update')

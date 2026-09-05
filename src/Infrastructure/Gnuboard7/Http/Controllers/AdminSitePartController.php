@@ -13,12 +13,14 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 
 final class AdminSitePartController
 {
     public function __construct(
         private readonly SitePartService $siteParts,
         private readonly SiteShellService $siteShell,
+        private readonly ?G7TemplateRouteBridge $templateRoutes = null,
     ) {}
 
     public function show(Request $request, string $kind): JsonResponse
@@ -115,13 +117,16 @@ final class AdminSitePartController
         }
 
         try {
-            return $this->success('Site Part를 발행했습니다.', $this->data($this->siteParts->publish(
+            $snapshot = $this->siteParts->publish(
                 $kind,
                 (string) $request->input('locale'),
                 (int) $request->input('expected_lock_version'),
                 $this->actorId($request),
                 $this->optionalSetId($request),
-            )));
+            );
+            $this->templateRoutes?->invalidate();
+
+            return $this->success('Site Part를 발행했습니다.', $this->data($snapshot));
         } catch (SitePartNotFoundException $exception) {
             return $this->error($request, 404, 'G7PB_SITE_PART_NOT_FOUND', $exception->getMessage());
         } catch (LockConflictException $exception) {

@@ -2,6 +2,8 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Tests\Integration\Gnuboard7;
 
+use App\Contracts\Extension\CacheInterface;
+use App\Services\TemplateService;
 use Illuminate\Config\Repository as ConfigRepository;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Routing\ResponseFactory as ResponseFactoryContract;
@@ -16,9 +18,11 @@ use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartArtifactUpgrade;
 use Modules\Jiwonpapa\PageBuilder\Application\SitePartService;
 use Modules\Jiwonpapa\PageBuilder\Application\SiteShellService;
+use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\SitePartArtifact;
@@ -28,9 +32,12 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Console\PrepareSitePa
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartSetController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\PublicSiteShellController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartArtifactStore;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7PageRouteRegistry;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 use Modules\Jiwonpapa\PageBuilder\Providers\PageBuilderServiceProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -79,6 +86,33 @@ final class SitePartArtifactsTest extends TestCase
         Model::unsetConnectionResolver();
         $this->database->getDatabaseManager()->disconnect();
         parent::tearDown();
+    }
+
+    public function test_successful_menu_publication_and_activation_invalidate_public_layout_cache(): void
+    {
+        $set = $this->publishedSet('Menu cache');
+        $cache = $this->createMock(CacheInterface::class);
+        $cache->method('get')->willReturn(1);
+        $cache->expects(self::exactly(3))->method('put');
+        $bridge = new G7TemplateRouteBridge(
+            new PageBuilderService(new EloquentPageBuilderRepository, $this->createStub(DocumentCompilerPort::class)),
+            $cache, new G7PageRouteRegistry($this->createStub(TemplateService::class)),
+        );
+        $shell = new SiteShellService(new EloquentSiteShellAdapter);
+        $sets = new AdminSitePartSetController($this->service, $shell, $bridge);
+        self::assertSame(200, $sets->activate(Request::create('/', 'POST', ['locale' => 'ko']), $set->id)->getStatusCode());
+        $header = $this->service->get('header', 'ko', $set->id);
+        $footer = $this->service->get('footer', 'ko', $set->id);
+        self::assertSame(200, $sets->publish(Request::create('/', 'POST', [
+            'locale' => 'ko', 'header_expected_lock_version' => $header->lockVersion,
+            'footer_expected_lock_version' => $footer->lockVersion,
+        ]), $set->id)->getStatusCode());
+        $single = new AdminSitePartController($this->service, $shell, $bridge);
+        $header = $this->service->get('header', 'ko', $set->id);
+        $input = ['locale' => 'ko', 'set_id' => $set->id, 'expected_lock_version' => $header->lockVersion];
+        self::assertSame(200, $single->publish(Request::create('/', 'POST', $input), 'header')->getStatusCode());
+        $input['expected_lock_version'] += 10;
+        self::assertSame(409, $single->publish(Request::create('/', 'POST', $input), 'header')->getStatusCode());
     }
 
     public function test_provider_resolves_the_artifact_store_and_upgrade_service(): void

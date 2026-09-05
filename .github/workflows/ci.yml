@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: Reviewed base commit for continuing an incomplete verification scope
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -20,7 +26,7 @@ jobs:
     env:
       TZ: Asia/Seoul
       PYTHONDONTWRITEBYTECODE: '1'
-      BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+      BASE_REF: ${{ inputs.base_ref || github.event.pull_request.base.sha || github.event.before }}
       CI_RUNTIME_TASK: ci-runtime-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v5
@@ -29,6 +35,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
+      - name: Prepare controller tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ripgrep
+      - uses: actions/cache/restore@v4
+        with:
+          path: .git/g7pb-coordination-v1/python-checks
+          key: ${{ runner.os }}-g7pb-gates-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ runner.os }}-g7pb-gates-v1-
       # Planning itself imports TypeScript/PostCSS; prepare those first.
       - uses: actions/setup-node@v4
         with:
@@ -39,6 +54,8 @@ jobs:
       - name: Resolve the same verification plan as local development
         id: plan
         run: |
+          [[ "$BASE_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'A reviewed full base SHA is required'; exit 2; }
+          git merge-base --is-ancestor "$BASE_REF" HEAD
           mkdir -p .runtime
           python3 scripts/g7pb.py plan --base "$BASE_REF" --phase ci --json --save-plan .runtime/ci-resolved.json > .runtime/ci-plan.json
           python3 - <<'PY'
@@ -117,6 +134,13 @@ jobs:
             args=(--task "$CI_RUNTIME_TASK")
           fi
           python3 scripts/g7pb.py run --base "$BASE_REF" --phase ci --plan .runtime/ci-resolved.json "${args[@]}"
+      # Preserve completed ordinary checks even when a later gate fails.
+      # Gate fingerprints still validate command, inputs and tool environment.
+      - uses: actions/cache/save@v4
+        if: always() && !cancelled()
+        with:
+          path: .git/g7pb-coordination-v1/python-checks
+          key: ${{ runner.os }}-g7pb-gates-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
         if: always() && (steps.plan.outputs.g7 == 'true' || steps.plan.outputs.browser == 'true')
         with:

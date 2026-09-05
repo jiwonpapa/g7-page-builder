@@ -42,3 +42,14 @@ class CIRuntimeTests(unittest.TestCase):
         installer = (ROOT/'scripts/dev-install.sh').read_text()
         self.assertIn('G7PB_INSTALL_ASSETS', installer)
         self.assertNotIn('npm ci --no-audit --no-fund && npm run build', installer)
+
+
+    def test_ci_installs_boundary_tool_and_preserves_success_on_later_failure(self):
+        workflow = (ROOT/'.github/workflows/ci.yml').read_text()
+        self.assertLess(workflow.index('install -y ripgrep'), workflow.index('Execute the resolved gates once'))
+        self.assertIn('actions/cache/restore@v4', workflow)
+        self.assertIn('actions/cache/save@v4', workflow)
+        self.assertIn('if: always() && !cancelled()', workflow)
+        self.assertIn('.git/g7pb-coordination-v1/python-checks', workflow)
+        self.assertIn('inputs.base_ref', workflow)
+        self.assertIn('git merge-base --is-ancestor "$BASE_REF" HEAD', workflow)

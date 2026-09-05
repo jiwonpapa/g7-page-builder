@@ -718,7 +718,17 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
       if (inline) {
         const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
         const lines: DOMRect[] = [];
-        while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
+        // Measure visible words: pre-wrap retains a hanging space at a soft
+        // line break, while compiled inline text collapses that same space.
+        // Word positions still include inter-word spacing and wrapping changes.
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          for (const word of (node.textContent ?? '').matchAll(/\S+/g)) {
+            range.setStart(node, word.index);
+            range.setEnd(node, word.index + word[0].length);
+            lines.push(...range.getClientRects());
+          }
+        }
         if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
       }
       const typographyElement = [element, ...Array.from(element.querySelectorAll<HTMLElement>('*'))]
@@ -789,7 +799,17 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
         if (inline) {
           const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
           const lines: DOMRect[] = [];
-          while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
+          // Measure visible words: pre-wrap retains a hanging space at a soft
+          // line break, while compiled inline text collapses that same space.
+          // Word positions still include inter-word spacing and wrapping changes.
+          while (walker.nextNode()) {
+            const node = walker.currentNode;
+            for (const word of (node.textContent ?? '').matchAll(/\S+/g)) {
+              range.setStart(node, word.index);
+              range.setEnd(node, word.index + word[0].length);
+              lines.push(...range.getClientRects());
+            }
+          }
           if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
         }
         const typographyElement = [element, ...Array.from(element.querySelectorAll<HTMLElement>('*'))]

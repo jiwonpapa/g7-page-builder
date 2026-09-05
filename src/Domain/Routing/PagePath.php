@@ -11,7 +11,9 @@ final class PagePath
             throw new \InvalidArgumentException('주소는 /about처럼 영문 소문자·숫자·하이픈으로 입력해 주세요.');
         }
         $first = explode('/', ltrim($path, '/'))[0];
-        if (in_array($first, ['admin', 'api', 'modules', 'plugins', 'templates', 'assets', 'storage', 'build', 'dist', 'pages', 'page', 'login', 'logout', 'register', 'auth', 'password', 'sitemap', 'robots'], true)) {
+        // G7's public web catch-all excludes these prefixes, including longer names.
+        $unroutablePrefix = str_starts_with($first, 'admin') || str_starts_with($first, 'api') || str_starts_with($first, 'plugins');
+        if ($unroutablePrefix || in_array($first, ['admin', 'api', 'modules', 'plugins', 'templates', 'assets', 'storage', 'build', 'dist', 'pages', 'page', 'login', 'logout', 'register', 'auth', 'password', 'sitemap', 'robots'], true)) {
             throw new \InvalidArgumentException('시스템에서 사용하는 주소입니다. 다른 주소를 입력해 주세요.');
         }
 

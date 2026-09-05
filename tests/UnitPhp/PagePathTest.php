@@ -19,7 +19,7 @@ final class PagePathTest extends TestCase
 
     public function test_unsafe_and_system_paths_are_rejected_before_persistence(): void
     {
-        foreach (['/', '/Admin/test', '/api/anything', '/pages/x', '//evil.test', '/x?y=1', '/x#y', '/%61dmin', '/x//y', '/x/../y', '/회사소개', str_repeat('a', 241)] as $path) {
+        foreach (['/', '/Admin/test', '/api/anything', '/administrator', '/apiculture', '/plugins-custom', '/pages/x', '//evil.test', '/x?y=1', '/x#y', '/%61dmin', '/x//y', '/x/../y', '/회사소개', str_repeat('a', 241)] as $path) {
             try {
                 PagePath::normalize($path);
                 self::fail('Accepted invalid path: '.$path);

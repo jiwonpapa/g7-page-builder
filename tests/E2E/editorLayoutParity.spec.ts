@@ -718,7 +718,17 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
       if (inline) {
         const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
         const lines: DOMRect[] = [];
-        while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
+        // Measure visible words: pre-wrap retains a hanging space at a soft
+        // line break, while compiled inline text collapses that same space.
+        // Word positions still include inter-word spacing and wrapping changes.
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          for (const word of (node.textContent ?? '').matchAll(/\S+/g)) {
+            range.setStart(node, word.index);
+            range.setEnd(node, word.index + word[0].length);
+            lines.push(...range.getClientRects());
+          }
+        }
         if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
       }
       const typographyElement = [element, ...Array.from(element.querySelectorAll<HTMLElement>('*'))]
@@ -789,7 +799,17 @@ async function compareContentElements(editorBlocks: Locator, previewBlocks: Loca
         if (inline) {
           const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
           const lines: DOMRect[] = [];
-          while (walker.nextNode()) { if (walker.currentNode.textContent?.trim()) { range.selectNodeContents(walker.currentNode); lines.push(...range.getClientRects()); } }
+          // Measure visible words: pre-wrap retains a hanging space at a soft
+          // line break, while compiled inline text collapses that same space.
+          // Word positions still include inter-word spacing and wrapping changes.
+          while (walker.nextNode()) {
+            const node = walker.currentNode;
+            for (const word of (node.textContent ?? '').matchAll(/\S+/g)) {
+              range.setStart(node, word.index);
+              range.setEnd(node, word.index + word[0].length);
+              lines.push(...range.getClientRects());
+            }
+          }
           if (lines.length) rect = new DOMRect(Math.min(...lines.map(r=>r.left)), Math.min(...lines.map(r=>r.top)), Math.max(...lines.map(r=>r.right))-Math.min(...lines.map(r=>r.left)), Math.max(...lines.map(r=>r.bottom))-Math.min(...lines.map(r=>r.top)));
         }
         const typographyElement = [element, ...Array.from(element.querySelectorAll<HTMLElement>('*'))]
@@ -962,13 +982,19 @@ async function assertScenario(
     await expect(previewRoot).toBeVisible();
     // Template html belongs to G7; require the document's language only at
     // module-owned content, not on the host template or its navigation.
-    const contentLanguages = await previewBlocks.evaluateAll(blocks =>
-      [...new Set(blocks.map(element => element.closest('[lang]')?.getAttribute('lang')))]);
     if (owned.document.shell_mode === 'template') {
       await expect(preview.locator('.g7pb-template-body')).toHaveAttribute('lang', String(owned.document.locale));
       await expect(preview.locator('html')).toHaveAttribute('lang', await page.locator('html').getAttribute('lang') ?? '');
     }
-    expect(contentLanguages, `${scenario.label} compiled content language`).toEqual([owned.document.locale]);
+    // G7 can replace HtmlContent during hydration. Sample the connected current
+    // blocks together; an earlier detached node has no language ancestor.
+    await expect.poll(() => previewBlocks.evaluateAll(blocks => ({
+      count: blocks.length,
+      connected: blocks.every(element => element.isConnected),
+      languages: [...new Set(blocks.map(element => element.closest('[lang]')?.getAttribute('lang')))],
+    })), { message: `${scenario.label} compiled content language` }).toEqual({
+      count: scenario.expectedBlockCount, connected: true, languages: [owned.document.locale],
+    });
     await previewRoot.evaluate(async (element) => { await element.ownerDocument.fonts.ready; });
     await expectDocumentContained(previewRoot, `${scenario.label} preview product root overflow`);
     const previewMetrics = await layoutMetrics(previewBlocks, false);

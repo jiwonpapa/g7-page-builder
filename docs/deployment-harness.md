@@ -139,3 +139,12 @@ The workflow executes the saved plan once and uploads selected browser evidence 
 success or failure. Missing runtime/setup failures stay failures. Infrastructure
 unit tests use fake processes; they are not evidence of a successful hosted browser
 run. Only an actual workflow with selected browser gates provides that evidence.
+
+
+Hosted CI explicitly installs ripgrep for architecture-boundary checks. Ordinary
+successful gate receipts are restored and saved even when a later gate fails;
+command/input/tool fingerprints still determine reuse. Runtime continuity is not
+transferred between independent hosted containers. When a tooling correction
+follows an incomplete CI run, workflow_dispatch accepts the reviewed ancestor SHA
+so the original unfinished scope can be completed instead of validating only the
+small tooling correction. No broader baseline is selected automatically.

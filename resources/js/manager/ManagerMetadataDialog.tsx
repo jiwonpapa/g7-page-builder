@@ -1,9 +1,11 @@
 import React from 'react';
+import type { PageBuilderApiClient } from '../api/pageBuilderApi';
+import { ManagerPagePathPanel } from './ManagerPagePathPanel';
 import { ImagePlus } from 'lucide-react';
 import type { PageSeoMetadata, PageShellMode } from '../documents/types';
 import type { useManagerMetadata } from './useManagerMetadata';
 
-export function ManagerMetadataDialog({ controller }: { controller: ReturnType<typeof useManagerMetadata> }): React.ReactElement {
+export function ManagerMetadataDialog({ controller, api }: { controller: ReturnType<typeof useManagerMetadata>; api?: PageBuilderApiClient }): React.ReactElement {
   const { metadataDocument, closeMetadata, metadataTitle, setMetadataTitle, metadataSlug, setMetadataSlug,
     metadataShellMode, setMetadataShellMode, metadataSeoTitle, setMetadataSeoTitle, metadataSeoDescription, setMetadataSeoDescription,
     metadataSeoImage, setMetadataSeoImage, metadataSeoRobots, setMetadataSeoRobots, metadataMediaOpen, setMetadataMediaOpen,
@@ -15,6 +17,7 @@ export function ManagerMetadataDialog({ controller }: { controller: ReturnType<t
           <section className="g7pb-dialog g7pb-dialog--metadata" role="dialog" aria-modal="true" aria-labelledby="g7pb-manager-metadata-heading">
             <p className="g7pb-kicker">문서 설정</p>
             <h2 id="g7pb-manager-metadata-heading">페이지 정보와 검색 노출</h2>
+            {api && <ManagerPagePathPanel key={metadataDocument.document.document_id} api={api} documentId={metadataDocument.document.document_id} />}
             <form onSubmit={(event) => void updateMetadata(event)}>
               <fieldset className="g7pb-metadata-section">
                 <legend>기본 정보</legend>

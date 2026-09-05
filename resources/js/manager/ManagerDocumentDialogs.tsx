@@ -25,13 +25,14 @@ export function ManagerDocumentDialogs({ controller, onPageKits }: {
             </div>
             <p className="g7pb-dialog__divider"><span>또는 빈 페이지</span></p>
             <form onSubmit={(event) => void createDocument(event)}>
+              <p>페이지를 만든 뒤 문서 설정의 주소 할당에서 /about 같은 주소를 연결할 수 있습니다.</p>
               <label>
                 페이지 제목
                 <input data-testid="page-builder-manager-title-input" value={createTitle} required autoFocus
                   onChange={(event) => setCreateTitle(event.target.value)} />
               </label>
               <label>
-                주소 슬러그
+                기본 주소 이름
                 <span>영문 소문자, 숫자, 하이픈</span>
                 <input data-testid="page-builder-manager-slug-input" value={createSlug} required
                   pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
@@ -75,7 +76,7 @@ export function ManagerDocumentDialogs({ controller, onPageKits }: {
                   required autoFocus onChange={(event) => setDuplicateTitle(event.target.value)} />
               </label>
               <label>
-                새 주소 슬러그
+                새 기본 주소 이름
                 <span>기존 공개 주소와 연결되지 않는 새 주소입니다.</span>
                 <input data-testid="page-builder-manager-duplicate-slug" value={duplicateSlugValue}
                   required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"

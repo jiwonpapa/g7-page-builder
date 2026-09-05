@@ -1,3 +1,4 @@
+import { parsePagePathResource, type PagePathResource } from './pagePath';
 import { normalizeDocumentTransport } from '../documents/normalizeDocumentTransport';
 import type {
   SitePartDocument,
@@ -291,6 +292,16 @@ export class PageBuilderApiClient {
         body: JSON.stringify({ expected_lock_version: expectedLockVersion }),
       },
     );
+  }
+
+  async getPagePath(documentId: string): Promise<PagePathResource> {
+    return parsePagePathResource(await this.request<unknown>(`/documents/${encodeURIComponent(documentId)}/path`));
+  }
+
+  async setPagePath(documentId: string, path: string | null, expectedLockVersion: number): Promise<PagePathResource> {
+    return parsePagePathResource(await this.request<unknown>(`/documents/${encodeURIComponent(documentId)}/path`, {
+      method: 'PUT', body: JSON.stringify({ path, expected_lock_version: expectedLockVersion }),
+    }));
   }
 
   async saveDraft(

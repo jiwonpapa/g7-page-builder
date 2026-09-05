@@ -90,3 +90,52 @@ reuse, post-apply progress loss, reload/smoke-only retries and forced smoke.
 They do not connect to a server, install dependencies, build the product, render
 content or deploy a release. Production operation remains unexecuted until an
 authorized release uses this path.
+
+## Scoped verification continuity
+
+The planner separates governance configuration from runtime product sources.
+A fixture/registration edit combined with architecture policy or debt metadata
+stays a collection/static check. Each unit/browser gate fingerprints its own
+source dependencies, not the cumulative task's unrelated documentation or sources.
+Python path constants are data dependencies; only actual imports recursively load
+other Python dependency graphs. Graph caches exist only for one planning call.
+
+Final verification creates one resolved plan and hands it to execution. CI prepares
+TypeScript/PostCSS dependencies before resolving that plan. Saved plans include
+scope, checkout, policy/input fingerprints and their execution contracts. Changed
+inputs reject the plan before execution; they never silently broaden its scope.
+
+Browser resume uses a per-integration checkpoint in the Git common directory.
+It requires the same container/image/start time, product/dist and G7 application
+files, and observed database continuity. The database observer performs a read-only
+snapshot and emits hashes only. A completed failed gate may advance the known
+state while preserving earlier successes; an interrupted gate, unavailable probe,
+external state change, missing evidence or incomplete fixture restoration prevents
+reuse. Success is recorded only after the browser verdict and fixture cleanup.
+This is neither a global SHA-only browser cache nor permission to bypass a gate.
+
+Runtime observation failure disables only reuse and reports its reason. It never
+selects more tests. Relevant source/tool/environment changes still require the
+selected behavior to run again. Build and sync operations retain their own state
+checks rather than borrowing a browser success receipt.
+
+Processes have bounded waits and terminate their owned child groups on timeout or
+interrupt. Docker commands also have an in-container timeout, so terminating the
+client does not leave the test running inside the container. Fixture restoration
+has a separate bounded opportunity. SSH uses connection/liveness and remote-command
+timeouts. A timed-out deployment remains uncertain until remote identity is
+observed; it does not trigger an automatic second apply.
+
+## Isolated hosted CI runtime
+
+CI prepares the pinned G7 checkout and cached Docker image only when selected
+checks require G7/browser execution. The existing public installer runs inside
+that isolated fixture with a normal integration/runtime lease, local-only random
+credentials, TLS and fixture restoration. Installation defers module assets to the
+selected browser-assets gate to avoid building twice. The shared developer Docker
+runtime cannot be adopted by this CI preparation command.
+
+The workflow executes the saved plan once and uploads selected browser evidence on
+success or failure. Missing runtime/setup failures stay failures. Infrastructure
+unit tests use fake processes; they are not evidence of a successful hosted browser
+run. Only an actual workflow with selected browser gates provides that evidence.

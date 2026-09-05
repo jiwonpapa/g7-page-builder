@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Iterator
+from .process import run as bounded_run
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE = "/var/www/g7/modules/jiwonpapa-page_builder"
@@ -182,11 +183,11 @@ class Runtime:
                         str(root / ".env.docker.local"), "-f", str(root / "compose.yaml")]
 
     def call(self, argv: list[str], capture: bool = False) -> str:
-        result = subprocess.run(argv, cwd=self.root, check=True, text=True,
+        result = bounded_run(argv, cwd=self.root, check=True, text=True, timeout=930,
                                 stdout=subprocess.PIPE if capture else None)
         return result.stdout.strip() if capture else ""
 
-    def command(self, argv: list[str], g7: bool = False, user: str = "") -> list[str]:
+    def command(self, argv: list[str], g7: bool = False, user: str = "", timeout: int = 900) -> list[str]:
         if self.kind == "local":
             if g7:
                 raise ValueError("G7 sync is Docker-only")
@@ -195,7 +196,8 @@ class Runtime:
                                "-w", "/var/www/g7" if g7 else MODULE,
                                "-e", "NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache",
                                "-e", "COMPOSER_HOME=/tmp/g7pb-composer-home",
-                               "-e", "XDG_CONFIG_HOME=/tmp/g7pb-psysh-config", "dev"] + argv
+                               "-e", "XDG_CONFIG_HOME=/tmp/g7pb-psysh-config", "dev", "timeout", "--signal=TERM",
+                               "--kill-after=5s", str(timeout)] + argv
 
     def guard(self) -> None:
         if self.kind == "docker":

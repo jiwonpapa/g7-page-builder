@@ -11,6 +11,8 @@ import uuid
 from .model import Plan
 from .state import task_id
 from .browser_verdict import browser_verdict
+from .process import run as bounded_run
+from .runtime_proof import RuntimeProof
 
 
 def digest_gate(root, gate):
@@ -21,7 +23,8 @@ def digest_gate(root, gate):
             raise ValueError(f"Gate input must be a file: {name}")
         files[name] = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else "missing"
     body = {"version": 2, "gate": gate.name, "argv": gate.argv, "env": gate.env,
-            "platform": platform.platform(), "python": platform.python_version(), "files": files}
+            "platform": platform.platform(), "python": platform.python_version(), "files": files,
+            "timeout_seconds": gate.timeout_seconds}
     # Preserve receipts for unchanged ordinary checks. Only gates using the new
     # execution/dependency contract get extra fingerprint fields.
     if gate.execution != "runtime":
@@ -66,7 +69,7 @@ def site_part_fixture(root, gate, task, evidence):
     spec = gate.name.removeprefix("browser:")
     if not evidence or spec not in SITE_PART_SPECS:
         return None
-    if not task or os.environ.get("CI") == "true" or gate.execution != "runtime":
+    if not task or gate.execution != "runtime":
         raise ValueError("Owned Site Part fixture requires the leased Local Docker runtime")
     token = uuid.uuid4().hex + uuid.uuid4().hex
     relative = evidence["directory"] + "/site-part-state.json"
@@ -81,10 +84,10 @@ def restore_site_part_fixture(root, task, capability, executor, environment):
     selected = ["env", *(f"{key}={value}" for key, value in capability.items()),
                 "G7PB_SITE_PART_FIXTURE_ACTION=restore-all", "G7PB_SITE_PART_FIXTURE_INPUT={}",
                 "php", helper]
-    return executor(Runtime(root, "docker", task).command(selected, g7=True), cwd=root, env=environment, check=False)
+    return executor(Runtime(root, "docker", task).command(selected, g7=True, timeout=105), cwd=root, env=environment, check=False, timeout=120)
 
 
-def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
+def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, runtime_observer=None):
     if task:
         task_id(task)
     if plan.unresolved:
@@ -97,9 +100,10 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             raise ValueError(f"Gate dependency must appear exactly once before {gate.name}: {gate.depends_on}")
         preceding.add(gate.name)
     root = Path(root)
-    executor = executor or subprocess.run
+    executor = executor or bounded_run
     receipts = Path(receipts) if receipts else receipt_directory(root)
     receipts.mkdir(parents=True, exist_ok=True)
+    proof = RuntimeProof(root, task, receipts, runtime_observer)
     results = []
     for gate in plan.gates:
         if gate.deferred:
@@ -116,7 +120,7 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
         if gate.runtime and os.environ.get("CI") == "true" and "browser" in gate.requires and not os.environ.get("G7PB_BASE_URL"):
             raise ValueError("CI browser runtime is not configured; this is not a passed/skipped test")
         if gate.runtime and task:
-            subprocess.run(["bash", "scripts/coord-harness.sh", "runtime-guard", "--task", task], cwd=root, check=True)
+            subprocess.run(["bash", "scripts/coord-harness.sh", "runtime-guard", "--task", task], cwd=root, check=True, timeout=30)
         key = digest_gate(root, gate)
         receipt = receipts / (key + ".json")
         if gate.reusable and not gate.runtime and receipt.exists():
@@ -128,6 +132,17 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
                 print(f"REUSED gate={gate.name}", flush=True)
                 results.append({"gate": gate.name, "status": "reused", "executions": 0})
                 continue
+        resume_browser = gate.runtime and gate.reusable and gate.name.startswith("browser:")
+        if resume_browser and proof.prepare():
+            previous = proof.receipt(key)
+            if previous:
+                print(f"REUSED gate={gate.name} reason=verified-runtime-continuity", flush=True)
+                results.append({**previous, "status": "reused", "executions": 0})
+                continue
+        if gate.runtime:
+            print(f"CACHE_MISS gate={gate.name} reason={proof.reason if resume_browser else 'runtime-operation-revalidates-own-state'}", flush=True)
+        elif not gate.reusable:
+            print(f"CACHE_MISS gate={gate.name} reason=incomplete-input-contract", flush=True)
         evidence = browser_evidence(root, gate, task, key)
         capability = site_part_fixture(root, gate, task, evidence)
         overrides = dict(gate.env)
@@ -154,18 +169,20 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             environment["TASK"] = task
         started = time.monotonic()
         print(f"RUN gate={gate.name} reason={gate.reason}", flush=True)
-        if gate.runtime and gate.execution == "runtime" and task and os.environ.get("CI") != "true" and argv[0] != "make":
+        if gate.runtime and gate.execution == "runtime" and task and argv[0] != "make":
             from .environment import Runtime
             # Docker exec does not inherit host-side env overrides. Carry only
             # the plan's explicit non-secret selectors into the runtime command.
             remove = [part for key, value in overrides.items() if value is None for part in ("-u", key)]
             assign = [f"{key}={value}" for key, value in overrides.items() if value is not None]
             selected = ["env", *remove, *assign, *argv] if overrides else argv
-            argv = Runtime(root, "docker", task).command(selected)
+            argv = Runtime(root, "docker", task).command(selected, timeout=gate.timeout_seconds)
         verdict = {}
         cleanup_code = 0
+        if resume_browser:
+            proof.started()
         try:
-            result = executor(argv, cwd=root, env=environment, check=False)
+            result = executor(argv, cwd=root, env=environment, check=False, timeout=gate.timeout_seconds + 10)
         except Exception as error:
             result = subprocess.CompletedProcess(argv, 1)
             verdict["execution_error"] = str(error)
@@ -206,6 +223,8 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None):
             (root / evidence["directory"] / "execution.json").write_text(json.dumps({
                 **record, "returncode": returncode, "process_returncode": result.returncode, "task": task, "phase": plan.phase,
             }, indent=2) + "\n")
+        if resume_browser:
+            proof.finished(record, restored=cleanup_code == 0)
         results.append(record)
         if returncode:
             print(f"FAILED gate={gate.name}; no retry or escalation", flush=True)

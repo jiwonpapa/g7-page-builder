@@ -16,10 +16,12 @@ concurrency:
 jobs:
   scoped:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       TZ: Asia/Seoul
       PYTHONDONTWRITEBYTECODE: '1'
       BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+      CI_RUNTIME_TASK: ci-runtime-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -27,11 +29,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
+      # Planning itself imports TypeScript/PostCSS; prepare those first.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - name: Prepare planning dependencies
+        run: python3 scripts/g7pb.py environment deps --only npm --apply
       - name: Resolve the same verification plan as local development
         id: plan
         run: |
           mkdir -p .runtime
-          python3 scripts/g7pb.py plan --base "$BASE_REF" --phase ci --json > .runtime/ci-plan.json
+          python3 scripts/g7pb.py plan --base "$BASE_REF" --phase ci --json --save-plan .runtime/ci-resolved.json > .runtime/ci-plan.json
           python3 - <<'PY'
           import json, os, sys
           from pathlib import Path
@@ -48,11 +57,6 @@ jobs:
                       raise ValueError(f'Invalid requirement: {name}')
                   print(f'{name}={str(required[name]).lower()}', file=output)
           PY
-      - uses: actions/setup-node@v4
-        if: steps.plan.outputs.node == 'true'
-        with:
-          node-version: 24.19.0
-          cache: npm
       - uses: shivammathur/setup-php@v2
         if: steps.plan.outputs.php == 'true' || steps.plan.outputs.g7 == 'true'
         with:
@@ -69,9 +73,6 @@ jobs:
             .runtime/harness/environment.json
           key: g7pb-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.plan.outputs.node }}-${{ steps.plan.outputs.php }}-${{ steps.plan.outputs.g7 }}-${{ hashFiles('package-lock.json', 'composer.lock') }}
           restore-keys: g7pb-deps-${{ runner.os }}-${{ runner.arch }}-${{ steps.plan.outputs.node }}-${{ steps.plan.outputs.php }}-${{ steps.plan.outputs.g7 }}-
-      - name: Prepare only selected Node dependencies
-        if: steps.plan.outputs.node == 'true'
-        run: python3 scripts/g7pb.py environment deps --only npm --apply
       - name: Prepare only selected PHP dependencies
         if: steps.plan.outputs.php == 'true' || steps.plan.outputs.g7 == 'true'
         run: python3 scripts/g7pb.py environment deps --only composer --apply
@@ -91,13 +92,37 @@ jobs:
       - name: Prepare pinned public G7 contract dependencies
         if: steps.plan.outputs.g7 == 'true'
         run: python3 scripts/g7pb.py environment deps --root .runtime/gnuboard7 --only composer --apply
-      - name: Require a prepared isolated browser runtime
-        if: steps.plan.outputs.browser == 'true'
+      - uses: docker/setup-buildx-action@v3
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.g7 == 'true'
+      - uses: docker/build-push-action@v6
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.g7 == 'true'
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: g7pb-dev-dev:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Prepare an isolated installed browser runtime
+        if: steps.plan.outputs.browser == 'true' || steps.plan.outputs.g7 == 'true'
         run: |
-          echo '::error::This hosted runner has no installed/authenticated G7 browser runtime. Run the selected browser gates in the lease-owned integration runtime; this is not a passed or skipped browser test.'
-          exit 1
-      - name: Execute only the selected gates
-        run: python3 scripts/g7pb.py run --base "$BASE_REF" --phase ci
+          sudo apt-get update -qq
+          sudo apt-get install -y mkcert jq
+          echo '127.0.0.1 g7pb.test' | sudo tee -a /etc/hosts
+          python3 scripts/g7pb.py ci_runtime prepare --task "$CI_RUNTIME_TASK"
+      - name: Execute the resolved gates once
+        run: |
+          args=()
+          if [[ '${{ steps.plan.outputs.g7 }}' == true || '${{ steps.plan.outputs.browser }}' == true ]]; then
+            args=(--task "$CI_RUNTIME_TASK")
+          fi
+          python3 scripts/g7pb.py run --base "$BASE_REF" --phase ci --plan .runtime/ci-resolved.json "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always() && (steps.plan.outputs.g7 == 'true' || steps.plan.outputs.browser == 'true')
+        with:
+          name: selected-browser-evidence
+          path: output/playwright/gates/
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         if: always()
         with:

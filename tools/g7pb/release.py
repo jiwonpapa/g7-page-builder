@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shlex
 import subprocess
+from .process import run as bounded_run
 import sys
 import tempfile
 from tarfile import TarError
@@ -101,7 +102,8 @@ class Transport:
         self.target = {"ssh": ssh, "app_root": app_root, "base_url": self.base_url}
 
     def ssh_run(self, remote: str, data=None) -> str:
-        result = subprocess.run(["ssh", "-o", "BatchMode=yes", self.ssh, remote], cwd=self.root,
+        result = bounded_run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15",
+                              "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=3", self.ssh, "timeout --signal=TERM --kill-after=10s 1740 bash -c " + shlex.quote(remote)], cwd=self.root, timeout=1800,
                                 input=data if isinstance(data, bytes) else None,
                                 stdin=data if data is not None and not isinstance(data, bytes) else None,
                                 stdout=subprocess.PIPE, check=True)

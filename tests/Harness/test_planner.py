@@ -618,7 +618,7 @@ class PlannerTests(unittest.TestCase):
                 self.assertEqual(browser.depends_on, (assets.name,))
                 self.assertEqual(assets.execution, "controller")
                 self.assertEqual(assets.deferred, phase == "submission")
-                self.assertEqual(assets.argv[assets.argv.index("--runtime") + 1], "local" if phase == "ci" else "docker")
+                self.assertEqual(assets.argv[assets.argv.index("--runtime") + 1], "docker")
                 self.assertEqual(assets.argv[assets.argv.index("--root") + 1], str(self.root.resolve()))
                 self.assertTrue(Path(assets.argv[2]).is_absolute())
                 self.assertIn("resources/js/editor/richTextEditing.tsx", assets.inputs)
@@ -872,6 +872,36 @@ class PlannerTests(unittest.TestCase):
         with patch("tools.g7pb.planner.git", side_effect=[str(local / ".git"), str(local / "different")]):
             with self.assertRaisesRegex(ValueError, "same-repository Local"):
                 checker_controller_root(self.root, self.root)
+
+    def test_governance_config_does_not_promote_fixture_collection_to_browser(self):
+        from tools.g7pb.planner import SITE_PART_SPECS
+        helper = 'tests/E2E/support/sitePartSetFixture.ts'
+        self.write(helper, 'export const fixture = 1')
+        self.write('tests/Harness/test_site_part_fixture.py', 'import unittest')
+        self.write('config/design-architecture-debt.json', '{}')
+        for spec in SITE_PART_SPECS:
+            self.write(spec, "import './support/sitePartSetFixture'")
+        plan = build_plan(self.root, [helper, 'config/design-architecture-debt.json'])
+        browser = [g for g in plan.gates if g.name.startswith('browser-registration:')]
+        self.assertEqual(len(browser), 4)
+        self.assertFalse(any(g.runtime for g in plan.gates))
+
+    def test_independent_unit_input_does_not_follow_all_changed_sources(self):
+        for name in ('a','b'):
+            self.write(f'resources/js/{name}.ts', f'export const {name} = 1')
+            self.write(f'tests/Unit/{name}.test.ts', f"import '../../resources/js/{name}'")
+        plan = build_plan(self.root, ['resources/js/a.ts','resources/js/b.ts'])
+        gate = next(g for g in plan.gates if g.name == 'unit:tests/Unit/a.test.ts')
+        self.assertIn('resources/js/a.ts', gate.inputs)
+        self.assertNotIn('resources/js/b.ts', gate.inputs)
+
+    def test_literal_python_data_does_not_recurse_as_executable_import(self):
+        self.write('tools/g7pb/example.py', "path = 'tests/Harness/data.py'")
+        self.write('tests/Harness/data.py', "path = 'tests/E2E/unrelated.spec.ts'")
+        self.write('tests/E2E/unrelated.spec.ts', 'test()')
+        files = python_inputs(self.root, 'tools/g7pb/example.py')
+        self.assertIn('tests/Harness/data.py', files)
+        self.assertNotIn('tests/E2E/unrelated.spec.ts', files)
 
 
 if __name__ == "__main__":

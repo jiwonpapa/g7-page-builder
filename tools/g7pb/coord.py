@@ -141,7 +141,7 @@ class Coordinator:
 
     def quality(self, phase: str, base: str, *, task: str = "", head: str = "", areas: str = "",
                 profile: str = "scoped", full: bool = False, scoped_hook: bool = False,
-                submitted: str = "", tree: str = "") -> None:
+                submitted: str = "", tree: str = "", plan=None) -> None:
         if self.testing:
             if phase == "submission":
                 self.fault("FAIL_SUBMISSION_PROFILE")
@@ -166,6 +166,11 @@ class Coordinator:
                 command += [option, value]
         if full:
             command.append("--full")
+        if plan is not None:
+            from .plan_snapshot import save
+            snapshot = self.git.root / ".runtime/harness/plans" / (task + ".json")
+            save(self.git.root, snapshot, plan, base=base, head=self.git.head())
+            command += ["--plan", str(snapshot)]
         result = self.runner(command, self.git.root, stream=True)
         if result.stdout:
             print(result.stdout.decode("utf-8", "replace"), end="", flush=True)
@@ -456,10 +461,11 @@ class Coordinator:
         full = bool(args.full)
         paths = self.git.paths(base, head) if base else []
         policy_full = full
+        plan = None
         if not self.testing and (full or paths):
             from .planner import build_plan
-            policy_full = build_plan(self.git.root, paths, base=base or head,
-                                     phase="verification", full=full).full
+            plan = build_plan(self.git.root, paths, base=base or head, phase="verification", full=full)
+            policy_full = plan.full
         mode = "full" if policy_full else "scoped"
         if previous and not paths and not full:
             mode = "reuse"
@@ -467,7 +473,7 @@ class Coordinator:
         else:
             reason = " trigger=explicit-full" if args.full else " reason=no-trusted-baseline" if previous is None else ""
             note(f"VERIFY_SELECTED task={args.task} mode={mode} base={base or 'none'} head={head} changed={len(paths) if previous else 'unknown'}{reason}")
-            self.quality("verification", base or head, task=args.task, head=head, areas=meta["areas"], full=full)
+            self.quality("verification", base or head, task=args.task, head=head, areas=meta["areas"], full=full, plan=plan)
         require(self.git.head() == head and self.git.clean(), "검증 중 통합 worktree가 변경되었습니다.")
         with self.store.mutex():
             self.store.unchanged(meta)

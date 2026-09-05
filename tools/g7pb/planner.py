@@ -1,5 +1,7 @@
 """Shared change-to-check policy. Unknown inputs never become a full run."""
 import ast
+from contextvars import ContextVar
+from functools import wraps
 from dataclasses import replace
 import importlib.util
 import json
@@ -44,6 +46,39 @@ COMPILER_OWNERS = "src/Application/Compilation/HtmlDocument/"
 COMPILER_COVERAGE = "scripts/check-php-coverage.php"
 COMPILER_TEST = "tests/UnitPhp/HtmlDocumentCompilerTest.php"
 STANDALONE_VIEWER = "resources/views/viewer.blade.php"
+
+
+# Caches live for one selection only; edits between calls never reuse a graph.
+_GRAPH_CACHE = ContextVar("planning_graphs", default=None)
+
+def planning_cache(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        cache = _GRAPH_CACHE.get()
+        key = (function.__name__, args, tuple(sorted(kwargs.items())))
+        if cache is None:
+            return function(*args, **kwargs)
+        if key not in cache:
+            cache[key] = function(*args, **kwargs)
+        return cache[key]
+    return wrapped
+
+source_inputs = planning_cache(source_inputs)
+
+def planning_session(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        token = _GRAPH_CACHE.set({})
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _GRAPH_CACHE.reset(token)
+    return wrapped
+
+
+def product_path(path):
+    return (path.startswith(("src/", "resources/", "database/", "schemas/"))
+            or path.startswith("config/") and path not in DESIGN_INPUTS)
 
 
 def compiler_family(root):
@@ -94,6 +129,7 @@ def changed_paths(root, base, head=None):
     return sorted(set(filter(None, paths)))
 
 
+@planning_cache
 def python_inputs(root, entry):
     """Follow local imports, not the entire repository tree."""
     found = set()
@@ -109,10 +145,9 @@ def python_inputs(root, entry):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 candidate = node.value
                 if candidate.startswith(('tools/', 'scripts/', 'tests/', 'resources/', 'schemas/', 'config/')) and (root / candidate).is_file() and (root / candidate).resolve().is_relative_to(root.resolve()):
-                    if candidate.endswith('.py'):
-                        visit(candidate)
-                    else:
-                        found.add(candidate)
+                    # A path constant names data, not an executed Python import.
+                    # Only real import edges recurse into that module's inputs.
+                    found.add(candidate)
             modules = []
             if isinstance(node, ast.ImportFrom):
                 prefix = "tools.g7pb." if node.level else ""
@@ -143,9 +178,16 @@ def related_tests(root, sources, changed, directory, suffixes):
     return sorted(selected)
 
 
+def graph_command(argv):
+    try:
+        return subprocess.run(argv, capture_output=True, text=True, check=True, timeout=30)
+    except subprocess.CalledProcessError as error:
+        raise ValueError(f"Planning dependency failed: {error}; {error.stderr[-2000:] if error.stderr else 'no stderr'}") from error
+
+
+@planning_cache
 def editor_contract_inputs(root, helper):
-    result = subprocess.run(["node", str(helper), "--root", str(root.resolve()), "--inputs"],
-                            capture_output=True, text=True, check=True, timeout=30)
+    result = graph_command(["node", str(helper), "--root", str(root.resolve()), "--inputs"])
     paths = json.loads(result.stdout)
     if not isinstance(paths, list) or not paths or not all(isinstance(path, str) and path
             and not Path(path).is_absolute() and (root / path).resolve().is_relative_to(root.resolve()) for path in paths):
@@ -153,9 +195,9 @@ def editor_contract_inputs(root, helper):
     return sorted(set(paths))
 
 
+@planning_cache
 def editor_style_inputs(root, checker):
-    result = subprocess.run(["node", str(checker), "--editor-source-inputs", "--root", str(root.resolve())],
-                            capture_output=True, text=True, check=True, timeout=30)
+    result = graph_command(["node", str(checker), "--editor-source-inputs", "--root", str(root.resolve())])
     paths = json.loads(result.stdout)
     if not isinstance(paths, list) or not paths or not all(isinstance(path, str) and path
             and not Path(path).is_absolute() and (root / path).resolve().is_relative_to(root.resolve()) for path in paths):
@@ -187,6 +229,7 @@ def checker_controller_root(subject, controller):
     return local
 
 
+@planning_session
 def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission", full=False):
     root = Path(root)
     controller_root = Path(__file__).resolve().parents[2]
@@ -264,7 +307,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     mapping = {
         "Makefile": ("planner", "runner", "php_coverage"), "scripts/quality-scoped.sh": ("planner", "runner"),
         "scripts/coord-harness.sh": ("coord",) if (root / "tests/Harness/test_coord.py").exists() else ("planner",),
-        ".github/workflows/ci.yml": ("environment", "php_coverage"), "scripts/dev-sync-module.sh": ("environment",),
+        ".github/workflows/ci.yml": ("environment", "php_coverage", "ci_runtime"), "scripts/dev-sync-module.sh": ("environment",),
         "tests/Harness/verification-policy.test.sh": ("planner", "runner"),
         "scripts/check-block-product-quality.mjs": ("product_quality_command",),
         "scripts/check-boundaries.sh": ("boundary_command",),
@@ -281,10 +324,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/lib/typeImportChanges.mjs": ("type_import_changes",),
         "playwright.config.ts": ("browser_registration",),
         "scripts/dev-verify.sh": ("release",),
+        "scripts/runtime-state.php": ("runtime_proof",),
+        "scripts/dev-install.sh": ("ci_runtime", "environment"),
     }
     command_contracts = {"tests/Harness/" + name for name in (
         "block-quality-evidence.test.sh", "block-quality-gate-wiring.test.sh", "block-product-quality-contract.test.sh")}
-    product_changed = any(p.startswith(("src/", "resources/", "database/", "schemas/", "config/")) for p in plan.paths)
+    product_changed = any(product_path(p) for p in plan.paths)
     release_scripts = {"release-package.sh", "deploy-staging.sh", "remote-deploy-staging.sh", "smoke-staging.sh", "staging-doctor.sh", "remote-staging-doctor.sh"}
     content_scripts = {"build-official-store.php", "render-block-thumbnail-fixtures.php", "generate-block-thumbnails.mjs", "check-official-store-build.sh", "check-block-quality-evidence.mjs", "check-block-product-quality.mjs", "check-site-shell-product-quality.mjs"}
     asset_build_controllers = {
@@ -396,7 +441,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 plan.unresolved.append(f"Explicit shared runtime/contract scope required: {path}")
         else:
             plan.unresolved.append(f"Unclassified input (no full fallback): {path}")
-        if path == COMPILER_COVERAGE:
+        if path in (COMPILER_COVERAGE, "scripts/runtime-state.php"):
             add("syntax:" + path, ["php", "-l", path], [path], "Coverage checker syntax", ("php",))
         if path.endswith(".sh") and file.exists():
             add("syntax:" + path, ["bash", "-n", path], [path], "Changed shell syntax")
@@ -409,7 +454,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         plan.unresolved.append(str(error))
     for test in ts_tests:
         graph = source_inputs(root, test)
-        add("unit:" + test, ["npx", "--no-install", "vitest", "run", test], [*graph.files, *ts_sources, "package-lock.json", "vite.config.ts", "tsconfig.json"], "Related unit behavior", ("node",), reusable=graph.reusable)
+        add("unit:" + test, ["npx", "--no-install", "vitest", "run", test], [*graph.files, "package-lock.json", "vite.config.ts", "tsconfig.json"], "Related unit behavior", ("node",), reusable=graph.reusable)
     if ts_sources or ts_tests or any(p.startswith("tests/E2E/") and p.endswith((".ts", ".tsx")) or p == "playwright.config.ts" for p in plan.paths):
         graph = typecheck_inputs(root)
         add("typecheck", ["npm", "run", "typecheck"], graph.files, "TypeScript command and configured type graph", ("node",), reusable=graph.reusable)
@@ -472,7 +517,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         g7 = test.startswith("tests/Integration/")
         argv = (["vendor/bin/phpunit"] + (["--bootstrap", "tests/Integration/bootstrap.php"] if g7 else [])
                 + ([] if full else ["--exclude-group", "content-catalog"]) + [test])
-        add("php:" + test, argv, [*graph.files, *php_sources, "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
+        add("php:" + test, argv, [*graph.files, "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
     if covered_tests:
         graphs = [php_graphs[test] for test in covered_tests]
         g7 = any(test.startswith("tests/Integration/") for test in covered_tests)
@@ -500,7 +545,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("phpstan:g7" if adapter else "phpstan:core", argv, [*inputs, config, "composer.json", "composer.lock"],
                 "Changed PHP types and dependency contracts", ("php", "g7") if adapter else ("php",), adapter)
     if not full:
-        for scenario in scenarios_for([*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles]):
+        browser_changes = [*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles]
+        for scenario in scenarios_for(browser_changes):
+            affected = [path for path in browser_changes if any(item.spec == scenario.spec for item in scenarios_for([path]))]
             if not (root / scenario.spec).is_file():
                 plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
                 continue
@@ -509,7 +556,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             # overwrite that explicit scope with a narrower title/preset filter.
             expectations = tuple((project, title) for project in scenario.projects for title in scenario.titles)
             if name in gates:
-                gates[name] = replace(gates[name], browser_expectations=tuple(sorted(set(gates[name].browser_expectations + expectations))))
+                gates[name] = replace(gates[name], inputs=tuple(sorted(set(gates[name].inputs) | set(affected))), browser_expectations=tuple(sorted(set(gates[name].browser_expectations + expectations))))
                 continue
             try:
                 environment = scenario.environment(root)
@@ -517,7 +564,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 plan.unresolved.append(f"Browser target selection required: {error}")
                 continue
             add(name, scenario.arguments(),
-                [*plan.paths, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
+                [*affected, *source_inputs(root, scenario.spec).files, "playwright.config.ts", "package-lock.json", "tools/g7pb/browser_requirements.py"],
                 "Existing user workflow affected by product source changes", ("node", "php", "g7", "browser"), True, env=environment, browser_expectations=expectations)
     if content:
         try:
@@ -548,7 +595,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         # The controller orchestrates the installed runtime; never execute its
         # Docker-aware environment command inside Docker a second time. build()
         # verifies source/env AND existing artifact hashes before reusing assets.
-        runtime = "local" if phase == "ci" else "docker"
+        runtime = "docker"
         command = ["python3", "-B", str(controller_root / "scripts/g7pb.py"), "environment"]
         controller_inputs = [str(controller_root / p) for p in python_inputs(controller_root, "tools/g7pb/environment.py")]
         inputs = [*build_inputs(root), "package.json", "package-lock.json", ".npmrc", *controller_inputs]

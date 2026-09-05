@@ -75,7 +75,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
         onRevisions={revisions.openRevisions} onExport={store.openPageKitExport} />
       <ManagerInboxDialog api={api} open={inboxOpen} onClose={() => setInboxOpen(false)} onError={reportError} formatDate={formatRevisionDate} />
       <ManagerDocumentDialogs controller={documents} onPageKits={store.openPageKits} />
-      <ManagerMetadataDialog controller={metadata} />
+      <ManagerMetadataDialog controller={metadata} api={api} />
       <ManagerBlockPacksDialog controller={packs} />
       <ManagerStoreDialogs controller={store} />
       <ManagerRevisionsDialogs controller={revisions} />

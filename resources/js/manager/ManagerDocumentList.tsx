@@ -152,7 +152,7 @@ export function ManagerDocumentList({ controller, message, onMetadata, onRevisio
                             )}
                             <button type="button" role="menuitem" data-testid="page-builder-manager-settings"
                               onClick={() => { setActionMenuDocumentId(null); onMetadata(resource); }}>
-                              <Settings size={15} aria-hidden="true" /><span>설정</span>
+                              <Settings size={15} aria-hidden="true" /><span>주소·설정</span>
                             </button>
                             <button type="button" role="menuitem" data-testid="page-builder-manager-revisions"
                               onClick={() => { setActionMenuDocumentId(null); onRevisions(resource); }}>

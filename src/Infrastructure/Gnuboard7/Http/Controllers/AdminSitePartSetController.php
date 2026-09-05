@@ -13,12 +13,14 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\SitePartNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSetSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Site\SitePartSnapshot;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
 
 final class AdminSitePartSetController
 {
     public function __construct(
         private readonly SitePartService $siteParts,
         private readonly SiteShellService $siteShell,
+        private readonly ?G7TemplateRouteBridge $templateRoutes = null,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -72,10 +74,10 @@ final class AdminSitePartSetController
         }
 
         try {
-            return $this->success(
-                '사용할 헤더·푸터 세트를 변경했습니다.',
-                $this->data($this->siteParts->activateSet($set, $locale, $this->actorId($request))),
-            );
+            $snapshot = $this->siteParts->activateSet($set, $locale, $this->actorId($request));
+            $this->templateRoutes?->invalidate();
+
+            return $this->success('사용할 헤더·푸터 세트를 변경했습니다.', $this->data($snapshot));
         } catch (SitePartNotFoundException $exception) {
             return $this->error($request, 404, 'G7PB_SITE_PART_SET_NOT_FOUND', $exception->getMessage());
         } catch (\InvalidArgumentException $exception) {
@@ -146,6 +148,8 @@ final class AdminSitePartSetController
                 (int) $request->input('footer_expected_lock_version'),
                 $this->actorId($request),
             );
+
+            $this->templateRoutes?->invalidate();
 
             return $this->success('헤더·푸터 세트를 발행했습니다.', $this->editorData($snapshot));
         } catch (SitePartNotFoundException $exception) {

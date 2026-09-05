@@ -184,10 +184,14 @@ if ! grep -q 'jiwonpapa-page_builder' <<<"$active_modules"; then
     php artisan module:activate jiwonpapa-page_builder --no-ansi
 fi
 
-echo 'Installing Page Builder Node dependencies and producing the browser bundle inside Docker...'
-"${compose[@]}" exec -T --user "$(id -u):$(id -g)" \
-  -e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
-  dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm ci --no-audit --no-fund && npm run build'
+case "${G7PB_INSTALL_ASSETS:-build}" in
+  build)
+    echo 'Producing the module browser bundle with reusable dependency/build evidence...'
+    python3 "$root/scripts/g7pb.py" environment build --root "$root" --runtime docker --task "${TASK:?runtime task required}" --apply
+    ;;
+  defer) echo 'Module assets deferred to the selected browser-assets gate; not build acceptance.' ;;
+  *) echo 'G7PB_INSTALL_ASSETS must be build or defer.' >&2; exit 2 ;;
+esac
 
 "${compose[@]}" exec -T --user www-data dev php artisan optimize:clear --no-ansi >/dev/null
 echo 'Gnuboard7 and Page Builder local installation completed.'

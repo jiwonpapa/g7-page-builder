@@ -365,6 +365,29 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(statuses, ["built", "reused", "built", "built"])
         self.assertEqual(runtime.commands.count(["npm", "run", "build"]), 3)
 
+    def test_runtime_resume_reuses_success_after_failed_gate_input_is_fixed(self):
+        (self.root / 'b').write_text('broken')
+        gates = [Gate('browser:a', ('probe-a',), ('a',), 'fixture', runtime=True),
+                 Gate('browser:b', ('probe-b',), ('b',), 'fixture', runtime=True)]
+        state = {'environment': 'same-container-and-build', 'state': 'initial-db'}
+        attempts = []
+        def fake(argv, **kwargs):
+            name = next(item for item in argv if item.startswith('probe-'))
+            attempts.append(name)
+            self.write_browser_result(kwargs['env'])
+            state['state'] = 'known-db-' + str(len(attempts))
+            return subprocess.CompletedProcess(argv, int(name == 'probe-b' and (self.root/'b').read_text() == 'broken'))
+        def run():
+            with patch.dict('os.environ', {'CI':''}), patch('tools.g7pb.runner.subprocess.run'):
+                return execute(self.root, Plan(['a','b'], gates), task='fixture-owner', receipts=self.receipts,
+                               executor=fake, runtime_observer=lambda *_: dict(state))
+        self.assertEqual(run()[0], 1)
+        (self.root/'b').write_text('fixed')
+        code, records = run()
+        self.assertEqual(code, 0)
+        self.assertEqual(attempts, ['probe-a','probe-b','probe-b'])
+        self.assertEqual(records[0]['status'], 'reused')
+
 
 if __name__ == "__main__":
     unittest.main()

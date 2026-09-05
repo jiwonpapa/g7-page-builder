@@ -16,6 +16,7 @@ class Gate:
     execution: str = "runtime"
     depends_on: tuple[str, ...] = ()
     browser_expectations: tuple[tuple[str, str], ...] = ()
+    timeout_seconds: int = 3600
 
 
 @dataclass

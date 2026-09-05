@@ -47,6 +47,12 @@ final class UserTemplateSiteShellDecorator
      */
     public function decorate(array $layout): array
     {
+        // G7's public with_source_meta contract marks editor-owned source trees.
+        // Runtime decoration must never become editable/persisted page content.
+        if ($this->containsSourceMetadata($layout)) {
+            return $layout;
+        }
+
         if ($this->hasDataSource($layout, self::DATA_SOURCE_ID)
             || $this->countId($layout, self::BUILDER_HEADER_ID) > 0
             || $this->countId($layout, self::BUILDER_FOOTER_ID) > 0) {
@@ -76,6 +82,23 @@ final class UserTemplateSiteShellDecorator
         $decorated['data_sources'] = $sources;
 
         return $decorated;
+    }
+
+    private function containsSourceMetadata(mixed $value): bool
+    {
+        if (! is_array($value)) {
+            return false;
+        }
+        if (array_key_exists('__source', $value)) {
+            return true;
+        }
+        foreach ($value as $child) {
+            if ($this->containsSourceMetadata($child)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

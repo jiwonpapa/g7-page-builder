@@ -48,6 +48,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Form
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\ViewerController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderHomeOverride;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\PageBuilderPathOverride;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Layout\UserTemplateSiteShellDecorator;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Media\LaravelMediaAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockFavoriteAdapter;
@@ -212,6 +213,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
 
         $router = $this->app->make(Router::class);
         $router->prependMiddlewareToGroup('web', PageBuilderHomeOverride::class);
+        $router->prependMiddlewareToGroup('web', PageBuilderPathOverride::class);
 
         Route::middleware('web')
             ->get('pages/{slug}', [ViewerController::class, 'show'])

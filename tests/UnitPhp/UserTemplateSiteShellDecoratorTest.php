@@ -61,6 +61,23 @@ final class UserTemplateSiteShellDecoratorTest extends TestCase
         self::assertSame($invalid, $decorator->decorate($invalid));
     }
 
+    public function test_editor_source_tree_is_returned_unchanged_but_public_tree_still_gets_shell(): void
+    {
+        $decorator = new UserTemplateSiteShellDecorator;
+        $editor = $this->layout();
+        $editor['components'][0]['children'][4]['__source'] = ['kind' => 'route', 'layout' => 'about'];
+        $editor['components'][0]['children'][4]['text'] = '사용자가 직접 수정한 본문';
+        self::assertSame($editor, $decorator->decorate($editor));
+        self::assertSame($editor, $decorator->decorate($decorator->decorate($editor)));
+        self::assertNotContains('g7pb_global_site_header', $this->ids($decorator->decorate($editor)));
+
+        $public = $editor;
+        unset($public['components'][0]['children'][4]['__source']);
+        $rendered = $decorator->decorate($public);
+        self::assertContains('g7pb_global_site_header', $this->ids($rendered));
+        self::assertSame('사용자가 직접 수정한 본문', $this->find($rendered, 'main_content')['text']);
+    }
+
     /** @return array<string, mixed> */
     private function layout(): array
     {

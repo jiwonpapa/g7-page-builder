@@ -5,6 +5,7 @@ from functools import wraps
 from dataclasses import replace
 import importlib.util
 import json
+import re
 from pathlib import Path
 import subprocess
 from .model import Gate, Plan
@@ -387,6 +388,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             if file.exists():
                 add("harness:" + path, ["bash", path], [path, "scripts/coord-harness.sh", *python_inputs(root, "tools/g7pb/coord.py")], "Changed harness regression")
         elif path.startswith("tests/E2E/"):
+            snapshot = re.fullmatch(r"(tests/E2E/.+\.spec\.(?:ts|tsx))-snapshots/[^/]+\.png", path)
             # A new spec can become a helper consumer without touching the
             # dispatch map. Recheck that map when its actual input graph changes.
             # Minimal isolated planner fixtures need not declare this repository
@@ -397,6 +399,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             if path == "tests/E2E/editorStructureTheme.spec.ts" and "tests/Harness/test_editor_contracts.py" in py_tests:
                 python_test("tests/Harness/test_editor_contracts.py", path)
             selected_specs = SITE_PART_SPECS if path in SITE_PART_HELPERS else BROWSER_HELPER_SPECS.get(path, ())
+            if snapshot and (root / snapshot[1]).is_file():
+                selected_specs = (snapshot[1],)
             if path.endswith((".spec.ts", ".spec.tsx")):
                 selected_specs = (path,)
             if path in SITE_PART_HELPERS:
@@ -407,10 +411,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 plan.unresolved.append(f"Select the owning browser scenario for {path}")
             for spec in selected_specs:
                 inputs = [*source_inputs(root, spec).files, spec, "playwright.config.ts", "package-lock.json"]
+                if snapshot:
+                    inputs.append(path)
                 if spec in SITE_PART_SPECS:
                     inputs.extend(SITE_PART_HELPERS)
                 # Test-registration refactors do not claim that the product ran.
-                if product_changed and not full:
+                if (product_changed or snapshot) and not full:
                     add("browser:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--retries=0"], inputs, "Changed browser scenario and product", ("node", "php", "g7", "browser"), True, env=BROWSER_ENVIRONMENT)
                 elif not full:
                     add("browser-registration:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--list", "--reporter=line"], inputs, "Harness-only test collection; NOT product/browser acceptance", ("node",), reusable=False)

@@ -20,6 +20,24 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def test_snapshot_changes_require_the_owning_browser_and_fingerprint_the_image(self):
+        spec = "tests/E2E/catalog.spec.ts"
+        snapshot = spec + "-snapshots/catalog-desktop-linux.png"
+        self.write(spec, "test('catalog', () => {});")
+        self.write(snapshot, "first image")
+        for phase in ("submission", "integration", "verification", "ci"):
+            plan = build_plan(self.root, [snapshot], phase=phase)
+            self.assertFalse(plan.unresolved)
+            gate = next(g for g in plan.gates if g.name == "browser:" + spec)
+            self.assertIn(snapshot, gate.inputs)
+            self.assertTrue(gate.runtime)
+            self.assertEqual(gate.deferred, phase == "submission")
+        before = digest_gate(self.root, gate)
+        self.write(snapshot, "second image")
+        self.assertNotEqual(before, digest_gate(self.root, gate))
+        missing = build_plan(self.root, ["tests/E2E/missing.spec.ts-snapshots/unknown.png"])
+        self.assertTrue(missing.unresolved)
+
     def test_pint_policy_uses_tracked_php_and_fingerprints_configuration(self):
         self.write("pint.json", '{"preset":"laravel","exclude":["output"]}')
         self.write("src/Owned.php", "<?php return 1;")

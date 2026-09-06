@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 from tools.g7pb.model import Gate, Plan
-from tools.g7pb.runner import digest_gate, execute, SITE_PART_SPECS
+from tools.g7pb.runner import digest_gate, execute, SITE_PART_SPECS, SITE_PART_FULL_GATE
 from tools.g7pb.state import CoordError
 
 
@@ -91,6 +91,20 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(self.calls[-1][-2:], ["php", "/var/www/g7/modules/jiwonpapa-page_builder/tests/E2E/support/sitePartState.php"])
             self.assertNotIn("tinker", self.calls[-1])
         self.assertEqual(list(self.receipts.glob("*.json")), [])
+
+    def test_full_product_make_uses_the_same_owned_fixture_and_finally_restores_it(self):
+        gate = Gate(SITE_PART_FULL_GATE, ("make", "quality-gate"), ("a",), "full contract", runtime=True, requires=("browser",))
+        for options, expected in [({}, 0), ({"browser_code": 3}, 3), ({"cleanup_code": 9}, 9), ({"empty": True}, 1),
+                                  ({"error": RuntimeError("transport failed")}, 1)]:
+            with self.subTest(options=options), patch.dict("os.environ", {"CI": ""}), patch("tools.g7pb.runner.subprocess.run"):
+                code, records = execute(self.root, Plan(["a"], [gate]), task="fixture-owner", receipts=self.receipts,
+                                        executor=self.fixture_executor(**options))
+            self.assertEqual(code, expected)
+            self.assertEqual(self.calls[-2], ["make", "quality-gate", "TASK=fixture-owner"])
+            self.assertIn("G7PB_SITE_PART_FIXTURE_ACTION=restore-all", self.calls[-1])
+            journal = json.loads((self.root / records[0]["fixture_journal"]).read_text())
+            self.assertEqual(journal["spec"], SITE_PART_FULL_GATE)
+            self.assertNotIn("evidence", records[0])  # No fabricated single Playwright report for a Make suite.
 
     def test_cleanup_failure_overrides_browser_success_and_retains_journal(self):
         code, records = self.run_fixture(cleanup_code=9)

@@ -10,6 +10,7 @@ const G7PB_SITE_PART_FIXTURE_SPECS = [
     'tests/E2E/pageBuilderLifecycle.spec.ts',
     'tests/E2E/siteShellProductQuality.spec.ts',
 ];
+const G7PB_SITE_PART_FIXTURE_FULL_GATE = 'full-product';
 
 /** Test-owned pointer journal. Readers/writers never access document JSON or revisions. */
 final class SitePartFixtureState
@@ -163,7 +164,8 @@ function g7pbSitePartFixtureCommand(): void
     try {
         $journal = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
         if (! hash_equals($journal['token_hash'] ?? '', hash('sha256', $token)) || ($journal['closed'] ?? true)
-            || ! in_array($journal['spec'] ?? '', G7PB_SITE_PART_FIXTURE_SPECS, true)) {
+            || (! in_array($journal['spec'] ?? '', G7PB_SITE_PART_FIXTURE_SPECS, true)
+                && ($journal['spec'] ?? '') !== G7PB_SITE_PART_FIXTURE_FULL_GATE)) {
             throw new RuntimeException('Invalid or closed fixture capability.');
         }
         $session = $payload['session'] ?? '';

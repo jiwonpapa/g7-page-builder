@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from tools.g7pb.runner import SITE_PART_SPECS
+from tools.g7pb.runner import SITE_PART_SPECS, SITE_PART_FULL_GATE
 
 ROOT = Path(__file__).resolve().parents[2]
 PHP_HELPER = ROOT / "tests/E2E/support/sitePartState.php"
@@ -69,6 +69,11 @@ class SitePartFixtureTests(unittest.TestCase):
         self.assertEqual(set(SITE_PART_SPECS), {"tests/E2E/globalSiteShellRoutes.spec.ts",
             "tests/E2E/sitePartLifecycle.spec.ts", "tests/E2E/pageBuilderLifecycle.spec.ts",
             "tests/E2E/siteShellProductQuality.spec.ts"})
+        full = subprocess.run(["php", "-r", "require $argv[1]; echo G7PB_SITE_PART_FIXTURE_FULL_GATE;", str(PHP_HELPER)], capture_output=True, text=True)
+        self.assertEqual(full.returncode, 0, full.stderr)
+        self.assertEqual(full.stdout, SITE_PART_FULL_GATE)
+        make = (ROOT / "Makefile").read_text().split("dev-product-e2e:", 1)[1].split("\ndev-e2e:", 1)[0]
+        self.assertIn("-e G7PB_SITE_PART_FIXTURE_SCOPE -e G7PB_SITE_PART_FIXTURE_TOKEN", make)
 
     def test_require_is_inert_and_console_bootstrap_uses_selected_application(self):
         with tempfile.TemporaryDirectory() as directory:

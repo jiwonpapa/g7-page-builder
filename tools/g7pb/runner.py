@@ -63,14 +63,20 @@ def browser_evidence(root, gate, task, key):
 SITE_PART_SPECS = ("tests/E2E/globalSiteShellRoutes.spec.ts", "tests/E2E/sitePartLifecycle.spec.ts",
                    "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/siteShellProductQuality.spec.ts")
 SITE_PART_HELPERS = ("tests/E2E/support/sitePartSetFixture.ts", "tests/E2E/support/sitePartState.php")
+SITE_PART_FULL_GATE = "full-product"
 
 
 def site_part_fixture(root, gate, task, evidence):
     spec = gate.name.removeprefix("browser:")
-    if not evidence or spec not in SITE_PART_SPECS:
+    full_suite = gate.name == SITE_PART_FULL_GATE and gate.argv == ("make", "quality-gate") and "browser" in gate.requires
+    if not full_suite and (not evidence or spec not in SITE_PART_SPECS):
         return None
     if not task or gate.execution != "runtime":
         raise ValueError("Owned Site Part fixture requires the leased Local Docker runtime")
+    if full_suite:
+        directory = Path("output/playwright/gates") / task / digest_gate(root, gate) / uuid.uuid4().hex
+        (root / directory).mkdir(parents=True)
+        evidence = {"directory": directory.as_posix()}
     token = uuid.uuid4().hex + uuid.uuid4().hex
     relative = evidence["directory"] + "/site-part-state.json"
     (root / relative).write_text(json.dumps({"version": 1, "task": task, "spec": spec,
@@ -207,6 +213,7 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, ru
                         cleanup_code = 1
                         verdict["fixture_restore_error"] = str(error)
                 verdict["fixture_restore_returncode"] = cleanup_code
+                verdict["fixture_journal"] = capability["G7PB_SITE_PART_FIXTURE_SCOPE"]
                 if cleanup_code:
                     print(f"FIXTURE_RESTORE_FAILED gate={gate.name}; journal={journal_path}", flush=True)
         returncode = result.returncode or cleanup_code

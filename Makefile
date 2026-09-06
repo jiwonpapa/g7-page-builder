@@ -200,6 +200,7 @@ dev-product-e2e: runtime-guard dev-deps
 	$(COMPOSE) exec -T --user "$$(id -u):$$(id -g)" \
 		-e NPM_CONFIG_CACHE=/tmp/g7pb-npm-cache \
 		-e COMPOSER_HOME=/tmp/g7pb-composer-home \
+		-e G7PB_SITE_PART_FIXTURE_SCOPE -e G7PB_SITE_PART_FIXTURE_TOKEN \
 		dev bash -lc 'cd /var/www/g7/modules/jiwonpapa-page_builder && npm run check:editor-acceptance && npm run test:e2e:product'
 
 dev-e2e: dev-product-e2e

@@ -43,14 +43,14 @@ test('composes a support page with a real selected G7 board and preserves conten
     const canvas = page.frameLocator('#puck-canvas-root iframe');
     const postsBlock = canvas.locator('[data-block-type="g7-recent-posts"]');
     await postsBlock.click({ position: { x: 8, y: 8 } });
-    await page.getByLabel('지정 게시판', { exact: true }).check();
-    const picker = page.getByLabel('연결 게시판', { exact: true });
+    await page.getByRole('radio', { name: '지정 게시판', exact: true }).check();
+    const picker = page.getByRole('combobox', { name: '연결 게시판', exact: true });
     await expect(picker).toBeEnabled(); await picker.selectOption(board.slug);
     await expect(postsBlock).toContainText(board.slug);
     const saved = page.waitForResponse(r => r.request().method() === 'PUT' && new URL(r.url()).pathname === `${API}/documents/${id}/draft`);
     await page.getByTestId('page-builder-save').click(); expect((await saved).ok()).toBe(true);
     await page.reload(); await postsBlock.click({ position: { x: 8, y: 8 } });
-    await expect(picker).toHaveValue(board.slug);
+    await expect(picker).toBeEnabled(); await expect(picker).toHaveValue(board.slug);
     await page.screenshot({ path: info.outputPath('board-source-editor.png'), fullPage: true });
     const previewEvent = page.waitForEvent('popup'); await page.getByTestId('page-builder-preview-link').click();
     const preview = await previewEvent;

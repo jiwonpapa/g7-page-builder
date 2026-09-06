@@ -50,14 +50,14 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
       const canvas = page.frameLocator('#puck-canvas-root iframe');
       const title = canvas.locator('[data-g7pb-inline-field="title"] [contenteditable="true"]').first();
       await expect(title).toBeVisible();
-      await title.fill(`${item.title} · ${stamp}`);
+      await title.fill(`${item.title} · 맞춤 안내`);
       await page.getByTestId('page-builder-save').click();
       await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
-      await page.reload(); await expect(title).toContainText(stamp);
+      await page.reload(); await expect(title).toContainText('맞춤 안내');
       if (item.key === 'about') {
         const popup = page.waitForEvent('popup'); await page.getByTestId('page-builder-preview-link').click();
         const preview = await popup; await preview.waitForLoadState('networkidle');
-        await expect(preview.locator('h1')).toContainText(stamp); await preview.close();
+        await expect(preview.locator('h1')).toContainText('맞춤 안내'); await preview.close();
       }
       await page.getByTestId('page-builder-publish').click();
       await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute('data-state', 'published');
@@ -68,10 +68,10 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
     const headerBounds = await partsCanvas.locator('.g7pb-site-header').boundingBox();
     if (!headerBounds) throw new Error('Installed header selection geometry is missing.');
     await page.mouse.click(headerBounds.x + 4, headerBounds.y + 4);
-    await page.getByLabel('사이트 이름', { exact: true }).last().fill(`3차 스튜디오 ${stamp}`);
+    await page.getByLabel('사이트 이름', { exact: true }).last().fill('3차 맞춤 스튜디오');
     const save = page.waitForResponse(r => r.url().includes(`/site-part-sets/${receipt.set_id}/draft`) && r.request().method() === 'PUT');
     await page.getByTestId('page-builder-site-part-set-save').click(); expect((await save).ok()).toBe(true);
-    await page.reload(); await expect(partsCanvas.getByText(`3차 스튜디오 ${stamp}`, { exact: true }).first()).toBeVisible();
+    await page.reload(); await expect(partsCanvas.getByText('3차 맞춤 스튜디오', { exact: true }).first()).toBeVisible();
     const publish = page.waitForResponse(r => r.url().includes(`/site-part-sets/${receipt.set_id}/publish`));
     await page.getByTestId('page-builder-site-part-set-publish').click(); expect((await publish).ok()).toBe(true);
     const activate = page.waitForResponse(r => r.url().includes(`/site-part-sets/${receipt.set_id}/activate`));
@@ -83,23 +83,28 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
       const visitor = await publicContext.newPage(); const errors: string[] = []; visitor.on('pageerror', error => errors.push(error.message));
       await visitor.goto(new URL(aliases.about, page.url()).href);
       const header = visitor.getByTestId('page-builder-site-header');
-      await expect(header).toContainText(`3차 스튜디오 ${stamp}`);
+      await expect(header).toContainText('3차 맞춤 스튜디오');
       await header.getByRole('link', { name: '서비스 소개', exact: true }).click();
       await expect(visitor).toHaveURL(new RegExp(aliases.services + '$'));
-      await expect(visitor.locator('h1')).toContainText(`서비스 소개 · ${stamp}`);
+      await expect(visitor.locator('h1')).toContainText('서비스 소개 · 맞춤 안내');
       for (const width of [1440, 768, 390]) {
         await visitor.setViewportSize({ width, height: 1000 });
         for (const item of receipt.pages) {
           await visitor.goto(new URL(item.path, page.url()).href); await visitor.waitForLoadState('networkidle');
-          await expect(visitor.locator('h1')).toContainText(stamp);
+          await expect(visitor.locator('h1')).toContainText('맞춤 안내');
           await expect(visitor.getByTestId('page-builder-site-footer')).toBeVisible();
           expect(await visitor.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+          for (const block of await visitor.locator('.g7pb-block[data-g7pb-motion]').all()) {
+            await block.scrollIntoViewIfNeeded(); await expect(block).toHaveClass(/is-inview/);
+          }
+          for (const card of await visitor.locator('.g7pb-features__item').all()) await expect(card).toHaveCSS('opacity', '1');
+          await visitor.locator('h1').scrollIntoViewIfNeeded();
           await visitor.screenshot({ path: info.outputPath(`${item.key}-${width}.png`), fullPage: true });
         }
       }
       expect(errors).toEqual([]);
       const rejected = await api.post(`${API}/publications/not-a-token/commit`, { data: {} }); expect(rejected.ok()).toBe(false);
-      await visitor.reload(); await expect(visitor.locator('h1')).toContainText(stamp);
+      await visitor.reload(); await expect(visitor.locator('h1')).toContainText('맞춤 안내');
     } finally { await publicContext.close(); }
   } finally {
     if (activated) {

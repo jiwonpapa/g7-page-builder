@@ -4,7 +4,8 @@ import { authenticateEditorInteractionAdmin, editorInteractionApi } from './supp
 import { parseSiteKitReceipt } from '../../resources/js/api/siteKit';
 
 const API = '/api/modules/jiwonpapa-page_builder/admin';
-test.use({ locale: 'ko-KR' });
+// This suite authors on PC; the visitor below separately verifies all public widths.
+test.use({ ...devices['Desktop Chrome'], locale: 'ko-KR' });
 test('installs a site kit as drafts, edits and publishes its pages, and connects the installed menu', async ({ page, context, browser }, info) => {
   // Editors are PC-only; public responsive proof is explicit below for every project.
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -52,6 +53,7 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
       await expect(title).toBeVisible(); await title.hover(); await title.click();
       await expect(title).toBeFocused();
       await page.keyboard.press('ControlOrMeta+A');
+      await expect.poll(() => title.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe(await title.innerText());
       await page.keyboard.insertText(`${item.title} · 맞춤 안내`);
       await expect(title).toHaveText(`${item.title} · 맞춤 안내`);
       const saved = page.waitForResponse(response => response.request().method() === 'PUT'

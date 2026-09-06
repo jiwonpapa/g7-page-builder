@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCssGraph } from '../../scripts/lib/editorCssSources.mjs';
 import manifest from '../../resources/block-packs/builtin-core/manifest.json';
 import inventory from '../../docs/productization/inventory.json';
 import ledger from '../../docs/productization/phase-7-ledger.json';
@@ -27,7 +28,7 @@ interface Ledger {
 const qualityLedger = ledger as Ledger;
 const presets = new Map(manifest.presets.map((preset) => [preset.preset_id, preset]));
 const forbiddenCopy = /알려\s*주세요|설명해\s*주세요|첫 번째 핵심 메시지|고객의 다음 행동을 더 분명하게|제품의 핵심 가치를 한 장면에/;
-const editorCss = readFileSync(resolve('resources/css/page-builder-editor.css'), 'utf8');
+const { css: editorCss } = await readCssGraph(process.cwd(), ['resources/css/page-builder-editor.css']);
 const phase3CatalogSource = readFileSync(resolve('resources/js/editor/phase3CatalogBlocks.tsx'), 'utf8');
 
 function values(value: Json, keyPattern: RegExp, key = ''): string[] {

@@ -43,7 +43,9 @@ test('composes a support page with a real selected G7 board and preserves conten
     const canvas = page.frameLocator('#puck-canvas-root iframe');
     const postsBlock = canvas.locator('[data-block-type="g7-recent-posts"]');
     await postsBlock.click({ position: { x: 8, y: 8 } });
-    await page.getByRole('radio', { name: '지정 게시판', exact: true }).check();
+    const selectedBoard = page.getByRole('radio', { name: '지정 게시판', exact: true });
+    await page.locator('label').filter({ has: selectedBoard }).click();
+    await expect(selectedBoard).toBeChecked();
     const picker = page.getByRole('combobox', { name: '연결 게시판', exact: true });
     await expect(picker).toBeEnabled(); await picker.selectOption(board.slug);
     await expect(postsBlock).toContainText(board.slug);

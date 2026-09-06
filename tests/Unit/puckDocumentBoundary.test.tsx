@@ -31,7 +31,10 @@ function fixture(count: number): PageBuilderDocument {
       props: { width: 'standard', spacing: 'normal' }, slots: { content: Array.from({ length: count }, heading) } }] };
 }
 const cleanups: Array<() => void> = [];
-afterEach(async () => { await act(async () => { cleanups.splice(0).forEach((cleanup) => cleanup()); }); vi.useRealTimers(); });
+afterEach(async () => {
+  try { await act(async () => { cleanups.splice(0).forEach((cleanup) => cleanup()); }); }
+  finally { vi.useRealTimers(); }
+});
 
 async function mount(source: PageBuilderDocument, strict = false) {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -43,6 +46,9 @@ async function mount(source: PageBuilderDocument, strict = false) {
   let editable = true;
   let capturedBoundary: ReturnType<typeof usePuckDocumentBoundary>['boundary'] | null = null;
   let mounted = true;
+  const unmount = () => { if (mounted) { mounted = false; root.unmount(); host.remove(); } };
+  // Register before asynchronous rendering so a failed mount cannot leak a React root.
+  cleanups.push(unmount);
   const dirty = vi.fn();
   const changed = vi.fn((value: PageBuilderDocument) => { canonical = value; });
   function Capture() { api = usePuck<Config<EditorComponents, PageDesignProps>>(); return null; }
@@ -60,8 +66,6 @@ async function mount(source: PageBuilderDocument, strict = false) {
   const render = () => root.render(strict ? <React.StrictMode><Editor /></React.StrictMode> : <Editor />);
   await act(async () => { render(); });
   await act(async () => { await vi.advanceTimersByTimeAsync(0); });
-  const unmount = () => { if (mounted) { mounted = false; root.unmount(); host.remove(); } };
-  cleanups.push(unmount);
   const current = (): EditorApi => { if (!api) throw new Error('Missing public Puck API'); return api; };
   const command = async (run: (value: EditorApi) => void) => { await act(async () => { run(current()); }); };
   // Advance only Puck's documented 250ms history debounce; assertions inspect actual public state.
@@ -110,7 +114,8 @@ describe('real Puck public command boundary', () => {
     expect(test.host.querySelector('output')?.dataset.recovering).toBe('false');
     expect(test.current().history.histories).toEqual(histories);
     expect(test.current().selectedItem?.props.id).toBe(source.blocks[0].slots!.content[0].instance_id);
-  }, 15_000);
+  // The real 200-node Puck recovery exceeds 15s under concurrent Docker V8 coverage.
+  }, 45_000);
 
   it.each([false, true])('preserves past and redo after an invalid drag from an undone state (StrictMode=%s)', async (strict) => {
     const source = fixture(1);

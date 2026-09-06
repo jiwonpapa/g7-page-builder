@@ -186,15 +186,16 @@ describe('built-in block product quality gate', () => {
     expect(result.errors.join('\n')).toContain('서로 함께 사용할 수 없습니다');
   });
 
-  it('does not let technical mode drop source freshness or evidence checks from development wiring', () => {
-    for (const key of ['check', 'test:unit', 'pretest:e2e:product']) {
+  it('does not let technical mode replace the fixed product quality or evidence commands', () => {
+    // The Python controller tests own gate ordering; this checker owns the fixed primitives.
+    for (const key of ['check:block-product-quality', 'check:block-quality-evidence']) {
       const changedPackage = clone(packageJson);
-      changedPackage.scripts[key] = changedPackage.scripts[key].replace('npm run check:block-quality-evidence', 'true');
+      changedPackage.scripts[key] = 'true';
       const result = validateBlockProductQuality({
         root, manifest: clone(manifestSource), index: clone(indexSource), quality: clone(qualitySource),
         packageJson: changedPackage, technical: true,
       });
-      expect(result.errors.join('\n')).toContain(`${key}가 기술 품질과 v2 증거 무결성`);
+      expect(result.errors.join('\n')).toContain(`고정된 ${key} 명령이 필요합니다`);
     }
   });
 });

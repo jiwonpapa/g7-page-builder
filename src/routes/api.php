@@ -9,6 +9,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminPageRouteController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminRouteCatalogController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSectionPatternController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteKitController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSitePartSetController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminSiteShellController;
@@ -37,6 +38,15 @@ Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:san
         ->whereUuid('pattern')
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.manage')
         ->name('section-patterns.destroy');
+    Route::get('site-kits', [AdminSiteKitController::class, 'index'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')->name('site-kits.index');
+    Route::post('site-kits/preview', [AdminSiteKitController::class, 'preview'])
+        ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')->name('site-kits.preview');
+    Route::post('site-kits/install', [AdminSiteKitController::class, 'install'])
+        ->middleware(['permission:admin,jiwonpapa-page_builder.documents.read',
+            'permission:admin,jiwonpapa-page_builder.documents.create',
+            'permission:admin,jiwonpapa-page_builder.documents.update'])
+        ->name('site-kits.install');
     Route::get('store/catalog', [AdminOfficialStoreController::class, 'index'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('store.catalog');

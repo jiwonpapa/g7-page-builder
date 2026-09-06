@@ -14,6 +14,17 @@ final class G7PageRouteRegistry
 {
     public function __construct(private readonly TemplateService $templates) {}
 
+    public function assertAvailable(string $input): void
+    {
+        $path = PagePath::normalize($input);
+        if (PagePath::conflicts($path, $this->nativeRoutes())) {
+            throw new \DomainException('이미 G7에서 사용하는 주소입니다. 다른 주소를 입력해 주세요.');
+        }
+        if (PageRouteRecord::query()->where('path', $path)->exists()) {
+            throw new \DomainException('다른 페이지가 사용 중인 주소입니다.');
+        }
+    }
+
     /** @return array{path: ?string, lock_version: int, active: bool, reason: ?string} */
     public function get(string $documentId): array
     {

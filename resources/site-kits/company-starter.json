@@ -1,0 +1,378 @@
+{
+  "schema_version": "g7pb-site-kit/v1",
+  "kit_id": "jiwonpapa/company-starter",
+  "kit_version": "1.0.0",
+  "title": "모로 스튜디오 · 회사 사이트",
+  "description": "회사소개, 서비스 소개, 문의 안내와 공통 헤더·푸터를 함께 구성합니다.",
+  "locale": "ko",
+  "compatibility": {
+    "page_builder": ">=0.33.1 <1.0.0",
+    "php": ">=8.5.0 <9.0.0",
+    "g7": ">=7.0.9 <8.0.0"
+  },
+  "pages": [
+    {
+      "key": "about",
+      "title": "회사소개",
+      "path": "/about",
+      "document": {
+        "schema_version": "g7-page-builder/v1",
+        "document_id": "0a602ad1-142a-4653-bfa9-36e1cc78727e",
+        "slug": "about",
+        "mode": "canvas",
+        "locale": "ko",
+        "shell_mode": "template",
+        "tokens": {
+          "design.palette": "blue",
+          "design.font": "modern",
+          "design.radius": "soft",
+          "design.width": "standard",
+          "design.scale": "balanced"
+        },
+        "blocks": [
+          {
+            "instance_id": "1a58a67d-61c5-4291-9cd1-41938b11da05",
+            "type": "content.hero-split-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "회사소개",
+              "title": "함께 성장하는 팀, 모로 스튜디오",
+              "body": "기획부터 디자인과 개발까지, 필요한 변화를 함께 만듭니다.",
+              "primaryCta": {
+                "label": "서비스 보기",
+                "url": "g7pb-page://services"
+              },
+              "image": {
+                "src": "g7pb-media://image-1",
+                "alt": "회사소개를 준비하는 모로 스튜디오 팀"
+              },
+              "mediaPosition": "right",
+              "appearance": {
+                "surface": "default",
+                "spacing": "spacious"
+              },
+              "layout": "screenshot"
+            },
+            "motion": {
+              "preset": "parallax-soft",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          },
+          {
+            "instance_id": "bd886951-2839-4171-ab37-bdbaf2f8fa7f",
+            "type": "content.features-grid-01",
+            "block_version": 1,
+            "props": {
+              "title": "성장에 필요한 흐름을 한 팀처럼 연결합니다",
+              "items": [
+                {
+                  "icon": "sparkles",
+                  "title": "핵심 목표 정렬",
+                  "body": "성과 기준과 우선순위를 먼저 합의해 프로젝트의 방향을 분명하게 만듭니다."
+                },
+                {
+                  "icon": "layers",
+                  "title": "기획부터 운영까지",
+                  "body": "전략, 디자인, 개발과 운영이 끊기지 않도록 하나의 실행 흐름으로 연결합니다."
+                },
+                {
+                  "icon": "shield",
+                  "title": "지속 가능한 결과",
+                  "body": "완료 이후에도 내부 팀이 이해하고 개선할 수 있는 기준과 자산을 남깁니다."
+                }
+              ],
+              "appearance": {
+                "surface": "soft",
+                "spacing": "normal"
+              },
+              "layout": "bento"
+            },
+            "motion": {
+              "preset": "stagger",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          }
+        ]
+      }
+    },
+    {
+      "key": "services",
+      "title": "서비스 소개",
+      "path": "/services",
+      "document": {
+        "schema_version": "g7-page-builder/v1",
+        "document_id": "8e642afa-3e8a-4f5e-860b-adb78a0829c8",
+        "slug": "services",
+        "mode": "canvas",
+        "locale": "ko",
+        "shell_mode": "template",
+        "tokens": {
+          "design.palette": "blue",
+          "design.font": "modern",
+          "design.radius": "soft",
+          "design.width": "standard",
+          "design.scale": "balanced"
+        },
+        "blocks": [
+          {
+            "instance_id": "97a153d0-c594-4067-86bb-3b754e106be0",
+            "type": "content.hero-split-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "서비스 소개",
+              "title": "아이디어를 운영 가능한 서비스로",
+              "body": "목표를 정리하고, 고객의 경험을 설계하고, 지속할 수 있는 제품을 만듭니다.",
+              "primaryCta": {
+                "label": "상담 안내",
+                "url": "g7pb-page://contact"
+              },
+              "image": {
+                "src": "g7pb-media://image-2",
+                "alt": "서비스 소개를 준비하는 모로 스튜디오 팀"
+              },
+              "mediaPosition": "right",
+              "appearance": {
+                "surface": "default",
+                "spacing": "spacious"
+              },
+              "layout": "screenshot"
+            },
+            "motion": {
+              "preset": "parallax-soft",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          },
+          {
+            "instance_id": "aa6919da-65b8-41bf-83cb-089a75aea69f",
+            "type": "content.features-grid-01",
+            "block_version": 1,
+            "props": {
+              "title": "필요한 단계부터 함께합니다",
+              "items": [
+                {
+                  "icon": "sparkles",
+                  "title": "서비스 기획",
+                  "body": "고객과 목표를 이해하고 실행 순서를 정리합니다."
+                },
+                {
+                  "icon": "layers",
+                  "title": "디자인과 개발",
+                  "body": "사용 흐름을 설계하고 실제로 작동하는 제품으로 만듭니다."
+                },
+                {
+                  "icon": "shield",
+                  "title": "운영과 개선",
+                  "body": "고객의 반응을 확인하며 다음 개선을 이어갑니다."
+                }
+              ],
+              "appearance": {
+                "surface": "soft",
+                "spacing": "normal"
+              },
+              "layout": "bento"
+            },
+            "motion": {
+              "preset": "stagger",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          }
+        ]
+      }
+    },
+    {
+      "key": "contact",
+      "title": "문의 안내",
+      "path": "/contact",
+      "document": {
+        "schema_version": "g7-page-builder/v1",
+        "document_id": "eb98c9dc-884d-4239-8024-507d0d6b50b6",
+        "slug": "contact",
+        "mode": "canvas",
+        "locale": "ko",
+        "shell_mode": "template",
+        "tokens": {
+          "design.palette": "blue",
+          "design.font": "modern",
+          "design.radius": "soft",
+          "design.width": "standard",
+          "design.scale": "balanced"
+        },
+        "blocks": [
+          {
+            "instance_id": "b3c5a32d-5182-42c6-a2d9-bef055d26316",
+            "type": "content.hero-split-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "문의 안내",
+              "title": "다음 프로젝트를 이야기해 주세요",
+              "body": "목표와 일정, 필요한 도움을 알려주시면 함께 시작할 방법을 안내합니다.",
+              "primaryCta": {
+                "label": "팀 소개",
+                "url": "g7pb-page://about"
+              },
+              "image": {
+                "src": "g7pb-media://image-3",
+                "alt": "문의 안내를 준비하는 모로 스튜디오 팀"
+              },
+              "mediaPosition": "right",
+              "appearance": {
+                "surface": "default",
+                "spacing": "spacious"
+              },
+              "layout": "screenshot"
+            },
+            "motion": {
+              "preset": "parallax-soft",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          },
+          {
+            "instance_id": "d9927cd5-8ffa-4a98-b2a5-8cf7096a27a2",
+            "type": "content.features-grid-01",
+            "block_version": 1,
+            "props": {
+              "title": "상담 전에 준비해 주세요",
+              "items": [
+                {
+                  "icon": "sparkles",
+                  "title": "프로젝트 소개",
+                  "body": "어떤 문제를 해결하고 싶은지 간단히 정리해 주세요."
+                },
+                {
+                  "icon": "layers",
+                  "title": "일정과 범위",
+                  "body": "시작 시기와 필요한 기능을 알려주세요."
+                },
+                {
+                  "icon": "shield",
+                  "title": "연락 방법",
+                  "body": "사이트 운영자의 실제 이메일과 연락처로 이 문구를 바꿔 주세요."
+                }
+              ],
+              "appearance": {
+                "surface": "soft",
+                "spacing": "normal"
+              },
+              "layout": "bento"
+            },
+            "motion": {
+              "preset": "stagger",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          }
+        ]
+      }
+    }
+  ],
+  "header": {
+    "schema_version": "g7-page-builder/site-part/v1",
+    "site_part_id": "a5b4ad3d-be7b-4fc5-9be6-a39986c9ec3b",
+    "kind": "header",
+    "locale": "ko",
+    "tokens": {},
+    "blocks": [
+      {
+        "instance_id": "62140773-c1b3-4396-892c-0f875a317a4a",
+        "type": "site.header.navigation-01",
+        "block_version": 1,
+        "props": {
+          "brand_name": "모로 스튜디오",
+          "home_url": "g7pb-page://about",
+          "navigation": [
+            {
+              "label": "회사소개",
+              "url": "g7pb-page://about"
+            },
+            {
+              "label": "서비스 소개",
+              "url": "g7pb-page://services"
+            },
+            {
+              "label": "문의 안내",
+              "url": "g7pb-page://contact"
+            }
+          ],
+          "use_site_settings": false,
+          "variant": "solid",
+          "sticky": true,
+          "cta": {
+            "label": "프로젝트 상담",
+            "url": "g7pb-page://contact"
+          }
+        },
+        "slots": {}
+      }
+    ]
+  },
+  "footer": {
+    "schema_version": "g7-page-builder/site-part/v1",
+    "site_part_id": "3a4ee2a9-2307-42ee-ba90-bc47d526c6e5",
+    "kind": "footer",
+    "locale": "ko",
+    "tokens": {},
+    "blocks": [
+      {
+        "instance_id": "4f18952a-2c55-42f8-ac98-81e9728c0d6e",
+        "type": "site.footer.simple-01",
+        "block_version": 1,
+        "props": {
+          "brand_name": "모로 스튜디오",
+          "home_url": "g7pb-page://about",
+          "navigation": [
+            {
+              "label": "회사소개",
+              "url": "g7pb-page://about"
+            },
+            {
+              "label": "서비스 소개",
+              "url": "g7pb-page://services"
+            },
+            {
+              "label": "문의 안내",
+              "url": "g7pb-page://contact"
+            }
+          ],
+          "use_site_settings": false,
+          "description": "아이디어를 운영 가능한 서비스로 만듭니다.",
+          "footer_text": "© 모로 스튜디오. 사이트에 맞게 수정해 주세요."
+        },
+        "slots": {}
+      }
+    ]
+  },
+  "media": [
+    {
+      "id": "image-1",
+      "path": "resources/store/source/page-kits/company-launch/media/hero-team.webp",
+      "sha256": "58e94bc13354b0ce81a0bff7a3bd9f488b6707737e13c21779a0677a815e857b"
+    },
+    {
+      "id": "image-2",
+      "path": "resources/store/source/page-kits/company-launch/media/team-design.webp",
+      "sha256": "d8ee1741eee2f0960c0e52d4fac77c04262e2ced8c11035c8b052a122e6bed36"
+    },
+    {
+      "id": "image-3",
+      "path": "resources/store/source/page-kits/company-launch/media/team-product.webp",
+      "sha256": "8a10c1a8feb69304add24428dc5345f2850a4bab00ff2ae610d2b37ac36dd30a"
+    }
+  ]
+}

@@ -16,6 +16,7 @@ interface SitePartRepository
         SitePartDocument $header,
         SitePartDocument $footer,
         ?int $actorId,
+        bool $activateIfFirst = true,
     ): SitePartSetSnapshot;
 
     /** @return list<SitePartSetSnapshot> */

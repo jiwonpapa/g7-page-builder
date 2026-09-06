@@ -27,8 +27,9 @@ final class EloquentSitePartRepository implements SitePartRepository
         SitePartDocument $header,
         SitePartDocument $footer,
         ?int $actorId,
+        bool $activateIfFirst = true,
     ): SitePartSetSnapshot {
-        return DB::transaction(function () use ($title, $header, $footer, $actorId): SitePartSetSnapshot {
+        return DB::transaction(function () use ($title, $header, $footer, $actorId, $activateIfFirst): SitePartSetSnapshot {
             if ($header->kind !== 'header' || $footer->kind !== 'footer' || $header->locale !== $footer->locale) {
                 throw new \InvalidArgumentException('Site Part set requires one Header and one Footer in the same locale.');
             }
@@ -40,7 +41,7 @@ final class EloquentSitePartRepository implements SitePartRepository
                 'id' => $this->uuidV4(),
                 'locale' => $header->locale,
                 'title' => $title,
-                'is_active' => ! SitePartSetRecord::query()->where('locale', $header->locale)->where('is_active', true)->exists(),
+                'is_active' => $activateIfFirst && ! SitePartSetRecord::query()->where('locale', $header->locale)->where('is_active', true)->exists(),
                 'created_by' => $actorId,
                 'updated_by' => $actorId,
             ]);

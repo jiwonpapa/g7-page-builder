@@ -15,9 +15,11 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\GitHubBlockPackService;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\Patterns\SectionPatternService;
 use Modules\Jiwonpapa\PageBuilder\Application\Store\OfficialStoreService;
+use Modules\Jiwonpapa\PageBuilder\Application\Store\SiteKitService;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockFavoritePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackArchivePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackAssetUrlPort;
@@ -33,6 +35,8 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageKitArchivePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\RouteCatalogPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SectionPatternRepository;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SiteKitInstallationPort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SiteKitSourcePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
@@ -56,12 +60,14 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentB
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockUsageAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSectionPatternRepository;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteKitInstallation;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartArtifactStore;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteShellAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7RouteCatalogAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7SiteShellLayoutBridge;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Routing\G7TemplateRouteBridge;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\BundledSiteKitSource;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\LaravelOfficialStoreSourceAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Store\ZipPageKitArchiveAdapter;
 
@@ -189,6 +195,14 @@ final class PageBuilderServiceProvider extends ServiceProvider
                 g7Version: $this->g7Version(),
             );
         });
+        $this->app->bind(SiteKitSourcePort::class, BundledSiteKitSource::class);
+        $this->app->bind(SiteKitInstallationPort::class, EloquentSiteKitInstallation::class);
+        $this->app->bind(SiteKitService::class, fn (): SiteKitService => new SiteKitService(
+            $this->app->make(SiteKitSourcePort::class), $this->app->make(SiteKitInstallationPort::class),
+            $this->app->make(PageBuilderService::class), $this->app->make(SitePartRepository::class),
+            $this->app->make(DocumentCompilerPort::class), $this->app->make(SitePartHtmlCompiler::class),
+            $this->app->make(MediaPort::class), $this->moduleVersion(), $this->g7Version(),
+        ));
         $this->app->bind(SitePartRepository::class, EloquentSitePartRepository::class);
         $this->app->bind(SitePartArtifactPort::class, EloquentSitePartArtifactStore::class);
         $this->app->bind(SiteShellPort::class, EloquentSiteShellAdapter::class);

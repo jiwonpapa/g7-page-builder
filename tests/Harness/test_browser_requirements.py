@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, scenarios_for
 import re
 import subprocess
 from tools.g7pb.planner import build_plan
@@ -108,6 +108,12 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_site_kit_sources_select_installation_without_catalog_sweep(self):
+        for source in ("resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/api/siteKit.ts",
+                       "src/Application/Store/SiteKitService.php"):
+            self.assertEqual(set(scenarios_for([source])), {SITE_KIT})
+        self.assertEqual(set(scenarios_for(["resources/js/editor/SitePartWorkspace.tsx"])), {SITE_PART, SITE_KIT})
+
     def test_compiler_facade_and_extracted_owners_keep_only_synthetic_output_scenarios(self):
         expected = {replace(PAGE, titles=tuple(sorted(PAGE.titles + NESTED.titles))), STRUCTURE_THEME}
         for source in ("src/Application/Compilation/HtmlDocumentCompiler.php",
@@ -225,7 +231,7 @@ class BrowserRequirementsTests(unittest.TestCase):
                 self.assertNotIn(STORE.spec, expected.arguments())
                 self.assertTrue(all(value is None for _, value in expected.environment(Path("."))))
         selected = scenarios_for(["resources/js/manager/PageBuilderManager.tsx"])
-        self.assertEqual(set(selected), {PAGE, MANAGER_CODE})
+        self.assertEqual(set(selected), {PAGE, MANAGER_CODE, SITE_KIT})
         self.assertEqual(scenarios_for(["resources/js/manager/" + name for name in EXTRACTED_MANAGER_SCOPES]), (MANAGER_CODE,))
         self.assertEqual(scenarios_for(["resources/js/store/types.ts"]), (STORE,))
 
@@ -244,7 +250,7 @@ class BrowserRequirementsTests(unittest.TestCase):
                 source = "resources/js/manager/" + name
                 facade = "resources/js/manager/PageBuilderManager.tsx"
                 unit = "tests/Unit/managerBehavior.test.tsx"
-                scenarios = {expected, PAGE} if source == facade else {expected}
+                scenarios = {expected, PAGE, SITE_KIT} if source == facade else {expected}
                 files = {
                     facade: "export { fixture } from './" + name + "';",
                     source: "export const fixture = 1;",

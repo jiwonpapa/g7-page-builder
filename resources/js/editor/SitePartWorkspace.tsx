@@ -36,7 +36,7 @@ function summary(resource: SitePartResource): SitePartSetPartSummary {
 export function SitePartWorkspace({ locale }: SitePartWorkspaceProps): React.ReactElement {
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const [sets, setSets] = useState<SitePartSetResource[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('set_id'));
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);

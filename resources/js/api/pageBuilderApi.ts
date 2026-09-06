@@ -1,3 +1,4 @@
+import { parseSiteKitCatalog, parseSiteKitPreview, parseSiteKitReceipt, type SiteKitInstallInput, type SiteKitPreview, type SiteKitReceipt, type SiteKitSummary } from './siteKit';
 import { parsePagePathResource, type PagePathResource } from './pagePath';
 import { normalizeDocumentTransport } from '../documents/normalizeDocumentTransport';
 import type {
@@ -666,6 +667,20 @@ export class PageBuilderApiClient {
         footer_expected_lock_version: footerLockVersion,
       }),
     });
+  }
+
+  async listSiteKits(): Promise<{ items: SiteKitSummary[] }> {
+    return parseSiteKitCatalog(await this.request<unknown>('/site-kits'));
+  }
+
+  async previewSiteKit(kitId: string, paths: Record<string, string>): Promise<SiteKitPreview> {
+    return parseSiteKitPreview(await this.request<unknown>('/site-kits/preview', {
+      method: 'POST', body: JSON.stringify({ kit_id: kitId, paths }),
+    }));
+  }
+
+  async installSiteKit(input: SiteKitInstallInput): Promise<SiteKitReceipt> {
+    return parseSiteKitReceipt(await this.request<unknown>('/site-kits/install', { method: 'POST', body: JSON.stringify(input) }));
   }
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {

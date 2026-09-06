@@ -68,6 +68,7 @@ SITE_PART_HEADER = replace(SITE_PART, titles=(
     "edits and publishes the Header as an independent responsive Puck Site Part",))
 SITE_SHELL = BrowserScenario("tests/E2E/globalSiteShellRoutes.spec.ts")
 STORE = BrowserScenario("tests/E2E/officialStore.spec.ts")
+SITE_KIT = BrowserScenario("tests/E2E/siteKitInstallation.spec.ts")
 MANAGER_STORE = BrowserScenario("tests/E2E/managerCodeContracts.spec.ts", titles=(
     "manages synthetic store and pack requests without crossing dialog owners",))
 MANAGER_INBOX = replace(MANAGER_STORE, titles=(
@@ -167,6 +168,13 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/manager/useSiteKitInstallation.ts",
+      "resources/js/manager/siteKitInstallationStorage.ts", "resources/js/api/siteKit.ts",
+      "src/Application/Store/SiteKitService.php", "src/Domain/Store/SiteKitBundle.php",
+      "src/Contracts/SiteKit*", "src/Infrastructure/Store/BundledSiteKitSource.php",
+      "src/Infrastructure/Gnuboard7/Persistence/EloquentSiteKitInstallation.php",
+      "src/Infrastructure/Gnuboard7/Http/Controllers/AdminSiteKitController.php"), (SITE_KIT,)),
+    (("resources/js/editor/SitePartWorkspace.tsx",), (SITE_PART, SITE_KIT)),
     # The planner admits this view only for the byte-identical root-class addition.
     (("resources/views/viewer.blade.php",), (PAGE, STRUCTURE_THEME)),
     # The compiler family owns publishing, nested markup and typed responsive output.
@@ -175,7 +183,7 @@ RULES = (
      (PAGE, NESTED, STRUCTURE_THEME)),
     # Manager UI requests use synthetic API responses. Real catalog content,
     # installation, and store approval remain the separate STORE contract.
-    (("resources/js/manager/PageBuilderManager.tsx",), (PAGE, MANAGER_STORE, MANAGER_INBOX)),
+    (("resources/js/manager/PageBuilderManager.tsx",), (PAGE, MANAGER_STORE, MANAGER_INBOX, SITE_KIT)),
     (("resources/js/manager/useManagerStore.ts", "resources/js/manager/ManagerStoreDialogs.tsx",
       "resources/js/manager/useManagerBlockPacks.ts", "resources/js/manager/ManagerBlockPacksDialog.tsx"), (MANAGER_STORE,)),
     (("resources/js/manager/ManagerInboxDialog.tsx",), (MANAGER_INBOX,)),

@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Inbox, LayoutTemplate, PanelTop } from 'lucide-react';
 import { PageBuilderApiClient, PageBuilderApiError } from '../api/pageBuilderApi';
 import { useManagerStore } from './useManagerStore';
+import { ManagerSiteKitDialog } from './ManagerSiteKitDialog';
 import { ManagerStoreDialogs } from './ManagerStoreDialogs';
 import { useManagerBlockPacks } from './useManagerBlockPacks';
 import { ManagerBlockPacksDialog } from './ManagerBlockPacksDialog';
@@ -31,6 +32,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
   const api = useMemo(() => new PageBuilderApiClient(), []);
   const [message, setMessage] = useState<string | null>(null);
   const [inboxOpen, setInboxOpen] = useState(false);
+  const [siteKitOpen, setSiteKitOpen] = useState(false);
   const reportError = React.useCallback((error: unknown): void => setMessage(errorMessage(error)), []);
   const openCreatedDocument = React.useCallback((id: string): void => window.location.assign(editorUrl(id)), []);
   const documents = useManagerDocuments({ api, locale, onError: reportError, onMessage: setMessage, onCreated: openCreatedDocument });
@@ -51,7 +53,8 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
         </div>
         <div className="g7pb-manager-header__actions">
           <a className="g7pb-button g7pb-button--quiet" href="/admin">G7 관리자</a>
-          <button className="g7pb-button g7pb-button--primary" type="button"
+          <button className="g7pb-button g7pb-button--primary" type="button" data-testid="manager-site-kits" onClick={() => setSiteKitOpen(true)}>사이트 킷</button>
+          <button className="g7pb-button g7pb-button--quiet" type="button"
             data-testid="page-builder-manager-page-kits" onClick={store.openPageKits}>
             <LayoutTemplate size={17} aria-hidden="true" /> 페이지 킷
           </button>
@@ -78,6 +81,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
       <ManagerMetadataDialog controller={metadata} api={api} />
       <ManagerBlockPacksDialog controller={packs} />
       <ManagerStoreDialogs controller={store} />
+      {siteKitOpen && <ManagerSiteKitDialog api={api} locale={locale} onClose={installed => { setSiteKitOpen(false); if (installed) window.location.reload(); }} />}
       <ManagerRevisionsDialogs controller={revisions} />
     </main>
   );

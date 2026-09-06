@@ -48,10 +48,16 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
       await page.goto(`/modules/jiwonpapa-page_builder/admin/editor?document=${item.document_id}`);
       await expect(page.getByTestId('page-builder-editor')).toBeVisible();
       const canvas = page.frameLocator('#puck-canvas-root iframe');
-      const title = canvas.locator('[data-g7pb-inline-field="title"] [contenteditable="true"]').first();
-      await expect(title).toBeVisible();
-      await title.fill(`${item.title} · 맞춤 안내`);
+      const title = canvas.locator('[data-g7pb-inline-field="title"] .ProseMirror[contenteditable="true"]').first();
+      await expect(title).toBeVisible(); await title.hover(); await title.click();
+      await expect(title).toBeFocused();
+      await page.keyboard.press('ControlOrMeta+A');
+      await page.keyboard.insertText(`${item.title} · 맞춤 안내`);
+      await expect(title).toHaveText(`${item.title} · 맞춤 안내`);
+      const saved = page.waitForResponse(response => response.request().method() === 'PUT'
+        && new URL(response.url()).pathname === `${API}/documents/${item.document_id}/draft`);
       await page.getByTestId('page-builder-save').click();
+      expect((await saved).ok()).toBe(true);
       await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
       await page.reload(); await expect(title).toContainText('맞춤 안내');
       if (item.key === 'about') {

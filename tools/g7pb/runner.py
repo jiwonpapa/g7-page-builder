@@ -169,6 +169,9 @@ def execute(root: Path, plan: Plan, *, task="", executor=None, receipts=None, ru
             environment["TASK"] = task
         started = time.monotonic()
         print(f"RUN gate={gate.name} reason={gate.reason}", flush=True)
+        if gate.runtime and task and argv[0] == "make":
+            # Parent Make command-line assignments override environment TASK.
+            argv.append("TASK=" + task)
         if gate.runtime and gate.execution == "runtime" and task and argv[0] != "make":
             from .environment import Runtime
             # Docker exec does not inherit host-side env overrides. Carry only

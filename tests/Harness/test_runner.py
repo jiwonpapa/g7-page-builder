@@ -67,6 +67,20 @@ class RunnerTests(unittest.TestCase):
             return execute(self.root, Plan(["a"], [self.fixture_gate(spec)]), task="fixture-owner",
                            receipts=self.receipts, executor=self.fixture_executor(**options))
 
+    def test_runtime_make_overrides_the_parent_implementation_task(self):
+        (self.root / "Makefile").write_text('quality-gate:\n\t@test "$(TASK)" = "integration-owner"\n')
+        gate = Gate("full-product", ("make", "quality-gate"), ("a",), "full contract", runtime=True)
+        real_run = subprocess.run
+        def run(argv, **kwargs):
+            self.calls.append(argv)
+            return real_run(argv, **kwargs)
+        with patch.dict("os.environ", {"CI": "", "MAKEFLAGS": " -- TASK=implementation-owner"}), patch("tools.g7pb.runner.subprocess.run"):
+            code, records = execute(self.root, Plan(["a"], [gate]), task="integration-owner",
+                                    receipts=self.receipts, executor=run)
+        self.assertEqual(code, 0)
+        self.assertEqual(self.calls, [["make", "quality-gate", "TASK=integration-owner"]])
+        self.assertEqual(records[0]["status"], "passed")
+
     def test_fixture_restoration_runs_after_browser_success_and_failure(self):
         for browser_code in (0, 3):
             code, records = self.run_fixture(browser_code=browser_code)

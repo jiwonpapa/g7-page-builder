@@ -81,7 +81,7 @@ export function PageBuilderManager({ locale = 'ko' }: PageBuilderManagerOptions)
       <ManagerMetadataDialog controller={metadata} api={api} />
       <ManagerBlockPacksDialog controller={packs} />
       <ManagerStoreDialogs controller={store} />
-      {siteKitOpen && <ManagerSiteKitDialog api={api} locale={locale} onClose={() => setSiteKitOpen(false)} />}
+      {siteKitOpen && <ManagerSiteKitDialog api={api} locale={locale} onClose={installed => { setSiteKitOpen(false); if (installed) window.location.reload(); }} />}
       <ManagerRevisionsDialogs controller={revisions} />
     </main>
   );

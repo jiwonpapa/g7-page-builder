@@ -4,16 +4,16 @@ import { useSiteKitInstallation } from './useSiteKitInstallation';
 import { editorUrl } from './managerDocumentPresentation';
 
 type Api = Pick<PageBuilderApiClient, 'listSiteKits' | 'previewSiteKit' | 'installSiteKit'>;
-export function ManagerSiteKitDialog({ api, locale, onClose }: { api: Api; locale: string; onClose: () => void }): React.ReactElement {
+export function ManagerSiteKitDialog({ api, locale, onClose }: { api: Api; locale: string; onClose: (installed: boolean) => void }): React.ReactElement {
   const state = useSiteKitInstallation(api, locale);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { dialog.current?.showModal(); }, []);
   const locked = state.busy || state.pending !== null;
   return <dialog ref={dialog} className="g7pb-dialog g7pb-dialog--wide" data-testid="site-kit-dialog"
     aria-labelledby="site-kit-heading" aria-busy={state.busy}
-    onCancel={event => { if (state.busy) event.preventDefault(); else onClose(); }}>
+    onCancel={event => { if (state.busy) event.preventDefault(); else onClose(state.receipt !== null); }}>
     <div className="g7pb-dialog__heading-row"><div><p className="g7pb-kicker">사이트 구성</p><h2 id="site-kit-heading">사이트 킷</h2></div>
-      <button type="button" className="g7pb-button g7pb-button--quiet" disabled={state.busy} onClick={onClose}>닫기</button></div>
+      <button type="button" className="g7pb-button g7pb-button--quiet" disabled={state.busy} onClick={() => onClose(state.receipt !== null)}>닫기</button></div>
     {state.message && <p role="alert">{state.message}</p>}
     {state.receipt ? <section data-testid="site-kit-result">
       <h3>{state.receipt.title} 설치 완료</h3><p>페이지와 헤더·푸터를 초안으로 만들었습니다. 내용을 확인하고 각 페이지를 발행한 뒤 헤더·푸터 세트를 발행·적용해 주세요.</p>

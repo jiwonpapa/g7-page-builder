@@ -4,6 +4,7 @@ import { authenticateEditorInteractionAdmin, editorInteractionApi } from './supp
 import { parseSiteKitReceipt } from '../../resources/js/api/siteKit';
 
 const API = '/api/modules/jiwonpapa-page_builder/admin';
+test.use({ locale: 'ko-KR' });
 test('installs a site kit as drafts, edits and publishes its pages, and connects the installed menu', async ({ page, context, browser }, info) => {
   // Editors are PC-only; public responsive proof is explicit below for every project.
   await page.setViewportSize({ width: 1440, height: 1000 });

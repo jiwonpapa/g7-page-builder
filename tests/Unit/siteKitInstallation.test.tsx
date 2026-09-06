@@ -16,9 +16,9 @@ const receipt: SiteKitReceipt = { request_id: id, kit_id: kit.id, kit_version: '
 function api() { return { listSiteKits: vi.fn().mockResolvedValue({ items: [kit] }), previewSiteKit: vi.fn().mockResolvedValue(preview), installSiteKit: vi.fn<(input: SiteKitInstallInput) => Promise<SiteKitReceipt>>().mockResolvedValue(receipt) }; }
 beforeEach(() => { window.sessionStorage.clear(); Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value() { this.setAttribute('open', ''); } }); });
 afterEach(() => { act(() => root?.unmount()); root = undefined; document.body.replaceChildren(); vi.restoreAllMocks(); });
-async function mount(client: ReturnType<typeof api>): Promise<void> {
+async function mount(client: ReturnType<typeof api>, locale = 'ko'): Promise<void> {
   const host = document.createElement('div'); document.body.append(host); root = createRoot(host);
-  await act(async () => { root?.render(<ManagerSiteKitDialog api={client} locale="ko" onClose={() => undefined} />); });
+  await act(async () => { root?.render(<ManagerSiteKitDialog api={client} locale={locale} onClose={() => undefined} />); });
 }
 async function click(label: string): Promise<void> {
   const button = [...document.querySelectorAll('button')].find(item => item.textContent === label);
@@ -31,6 +31,10 @@ async function prepare(client: ReturnType<typeof api>): Promise<void> {
 }
 
 describe('Site Kit installation', () => {
+  it('explains when no kit matches the current document language', async () => {
+    await mount(api(), 'en');
+    expect(document.body.textContent).toContain('현재 페이지 언어(en)에 맞는 사이트 킷이 없습니다.');
+  });
   it('previews before installation and links to the exact installed set', async () => {
     const client = api(); await prepare(client); await click('새 초안으로 설치');
     expect(client.previewSiteKit).toHaveBeenCalledWith(kit.id, { about: '/about' });

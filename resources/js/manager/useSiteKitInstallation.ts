@@ -16,14 +16,16 @@ export function useSiteKitInstallation(api: Api, locale: string) {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reload, setReload] = useState(0);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
   const owner = useRef({ generation: 0, mounted: false, pending: false });
   useEffect(() => {
     const generation = ++owner.current.generation; owner.current.mounted = true;
+    setCatalogLoaded(false);
     void api.listSiteKits().then(result => {
       if (owner.current.mounted && owner.current.generation === generation) setCatalog(result.items.filter(item => item.locale === locale));
     }).catch(error => {
       if (owner.current.mounted && owner.current.generation === generation) setMessage(error instanceof Error ? error.message : '사이트 킷을 불러오지 못했습니다.');
-    });
+    }).finally(() => { if (owner.current.mounted && owner.current.generation === generation) setCatalogLoaded(true); });
     return () => { owner.current.mounted = false; };
   }, [api, locale, reload]);
   const choose = (kit: SiteKitSummary): void => {
@@ -73,6 +75,6 @@ export function useSiteKitInstallation(api: Api, locale: string) {
     if (busy || pending) return;
     storeSiteKitInstallation(null); setReceipt(null); setSelected(null); setPreview(null); setMessage(null);
   };
-  return { catalog, selected, title, setTitle, paths, preview, pending, receipt, busy, message,
+  return { catalog, catalogLoaded, selected, title, setTitle, paths, preview, pending, receipt, busy, message,
     choose, editPath, check, install, reset, reload: () => setReload(value => value + 1) };
 }

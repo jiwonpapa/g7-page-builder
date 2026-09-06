@@ -31,6 +31,7 @@ export function ManagerSiteKitDialog({ api, locale, onClose }: { api: Api; local
         {state.catalog.map(kit => <article key={kit.id}><h3>{kit.title}</h3><p>{kit.description}</p><p>{kit.pages.map(page => page.title).join(' · ')} · 헤더·푸터</p>
           {kit.compatibility_error && <p role="alert">{kit.compatibility_error}</p>}
           <button type="button" className="g7pb-button g7pb-button--primary" disabled={!kit.compatible} onClick={() => state.choose(kit)}>구성 선택</button></article>)}
+        {state.catalog.length === 0 && <p>{state.catalogLoaded ? `현재 페이지 언어(${locale})에 맞는 사이트 킷이 없습니다. 기본 제공 킷은 한국어 화면에서 사용할 수 있습니다.` : '사이트 킷을 불러오는 중입니다.'}</p>}
         {state.catalog.length === 0 && <button type="button" className="g7pb-button" onClick={state.reload}>목록 다시 불러오기</button>}
       </section> : <form onSubmit={event => { event.preventDefault(); void state.check(); }}>
         <h3>{state.selected.title}</h3>

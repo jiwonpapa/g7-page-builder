@@ -989,6 +989,10 @@
             "kind": "structural"
           },
           {
+            "path": "boardSlug",
+            "kind": "structural"
+          },
+          {
             "path": "period",
             "kind": "structural"
           },

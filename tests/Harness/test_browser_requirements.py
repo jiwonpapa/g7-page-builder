@@ -108,6 +108,10 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_selected_board_picker_requires_real_page_composition(self):
+        from tools.g7pb.browser_requirements import SUPPORT_COMPOSITION
+        self.assertEqual(scenarios_for(["resources/js/editor/G7BoardSourceField.tsx"]), (SUPPORT_COMPOSITION,))
+
     def test_site_kit_sources_select_installation_without_catalog_sweep(self):
         for source in ("resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/api/siteKit.ts",
                        "src/Application/Store/SiteKitService.php"):

@@ -232,7 +232,7 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
     ...plain('eyebrow'), ...inlineRich('heading'), ...blockRich('caption'), ...structural('provider', 'videoId', 'ratio'),
   ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'G7RecentPosts', textFields: [
-    ...plain('eyebrow', 'emptyMessage'), ...inlineRich('heading'), ...structural('source', 'period', 'limit', 'pageSize', 'audience'),
+    ...plain('eyebrow', 'emptyMessage'), ...inlineRich('heading'), ...structural('source', 'boardSlug', 'period', 'limit', 'pageSize', 'audience'),
   ], collections: [], directMedia: false, directRoute: false, dynamicData: true }),
   defineCanvasBlockCapability({ componentType: 'G7BoardArchive', textFields: [
     ...plain('eyebrow', 'emptyMessage'), ...inlineRich('heading'),

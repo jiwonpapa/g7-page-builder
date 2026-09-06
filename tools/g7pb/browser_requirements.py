@@ -68,6 +68,7 @@ SITE_PART_HEADER = replace(SITE_PART, titles=(
     "edits and publishes the Header as an independent responsive Puck Site Part",))
 SITE_SHELL = BrowserScenario("tests/E2E/globalSiteShellRoutes.spec.ts")
 STORE = BrowserScenario("tests/E2E/officialStore.spec.ts")
+SUPPORT_COMPOSITION = BrowserScenario("tests/E2E/g7SupportComposition.spec.ts")
 SITE_KIT = BrowserScenario("tests/E2E/siteKitInstallation.spec.ts")
 MANAGER_STORE = BrowserScenario("tests/E2E/managerCodeContracts.spec.ts", titles=(
     "manages synthetic store and pack requests without crossing dialog owners",))
@@ -168,6 +169,7 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/editor/G7BoardSourceField.tsx",), (SUPPORT_COMPOSITION,)),
     (("resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/manager/useSiteKitInstallation.ts",
       "resources/js/manager/siteKitInstallationStorage.ts", "resources/js/api/siteKit.ts",
       "src/Application/Store/SiteKitService.php", "src/Domain/Store/SiteKitBundle.php",

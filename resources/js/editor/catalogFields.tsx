@@ -4,6 +4,7 @@ import { createInlineRichTextField, createRichTextField } from './richTextEditin
 import { createRouteUrlField } from './RouteUrlField';
 import { createMediaField } from './MediaPickerField';
 import { createMotionField } from './blockMotion';
+import { createG7BoardSourceField } from './G7BoardSourceField';
 
 const SURFACE_OPTIONS = [
   { label: '기본', value: 'default' },
@@ -71,7 +72,8 @@ export const barChartFields: Config<CatalogEditorComponents>['components']['BarC
 
 export const g7RecentPostsFields: Config<CatalogEditorComponents>['components']['G7RecentPosts']['fields'] = {
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true }, heading: createInlineRichTextField('제목'),
-      source: { type: 'radio', label: '게시글 기준', options: [{ label: '최신글', value: 'recent' }, { label: '인기글', value: 'popular' }] },
+      source: { type: 'radio', label: '게시글 기준', options: [{ label: '전체 최신글', value: 'recent' }, { label: '전체 인기글', value: 'popular' }, { label: '지정 게시판', value: 'board' }] },
+      boardSlug: createG7BoardSourceField(),
       period: { type: 'select', label: '인기글 기간', options: [{ label: '오늘', value: 'today' }, { label: '이번 주', value: 'week' }, { label: '이번 달', value: 'month' }, { label: '최근 1년', value: 'year' }] },
       limit: { type: 'select', label: '불러올 개수', options: ['3', '4', '6', '8', '12'].map((value) => ({ label: `${value}개`, value })) },
       pageSize: { type: 'select', label: '페이지당 개수', options: ['3', '4', '6'].map((value) => ({ label: `${value}개`, value })) },

@@ -1000,7 +1000,8 @@
       "properties": {
         "eyebrow": { "type": "string", "maxLength": 120 },
         "heading": { "$ref": "#/$defs/inlineRichTextString", "type": "string", "minLength": 1 },
-        "source": { "enum": ["recent", "popular"] },
+        "source": { "enum": ["recent", "popular", "board"] },
+        "boardSlug": { "type": "string", "maxLength": 80, "pattern": "^([a-z0-9][a-z0-9_-]{0,79})?$" },
         "period": { "enum": ["today", "week", "month", "year"] },
         "limit": { "enum": [3, 4, 6, 8, 12] },
         "pageSize": { "enum": [3, 4, 6] },

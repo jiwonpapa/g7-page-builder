@@ -8,7 +8,7 @@ const API = '/api/modules/jiwonpapa-page_builder/admin';
 test.use({ ...devices['Desktop Chrome'], locale: 'ko-KR' });
 for (const kit of [
   { id: 'company-starter', title: '모로 스튜디오 · 회사 사이트', brand: '모로 스튜디오', keys: ['about', 'services', 'contact'], service: '서비스 소개' },
-  { id: 'professional-services', title: '모로 어드바이저리 · 전문서비스 킷', brand: '모로 어드바이저리', keys: ['about', 'services', 'process', 'contact'], service: '서비스' },
+  { id: 'professional-services', title: '모로 어드바이저리 · 전문서비스 킷', brand: '모로', keys: ['about', 'services', 'process', 'contact'], service: '서비스' },
 ]) {
 test(`installs ${kit.id} as drafts, edits and publishes its pages, and connects the installed menu`, async ({ page, context, browser }, info) => {
   // Editors are PC-only; public responsive proof is explicit below for every project.

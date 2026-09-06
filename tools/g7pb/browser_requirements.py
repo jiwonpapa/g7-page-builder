@@ -70,6 +70,7 @@ SITE_SHELL = BrowserScenario("tests/E2E/globalSiteShellRoutes.spec.ts")
 STORE = BrowserScenario("tests/E2E/officialStore.spec.ts")
 SUPPORT_COMPOSITION = BrowserScenario("tests/E2E/g7SupportComposition.spec.ts")
 SITE_KIT = BrowserScenario("tests/E2E/siteKitInstallation.spec.ts")
+SITE_KIT_INQUIRY = BrowserScenario("tests/E2E/siteKitInquiry.spec.ts")
 MANAGER_STORE = BrowserScenario("tests/E2E/managerCodeContracts.spec.ts", titles=(
     "manages synthetic store and pack requests without crossing dialog owners",))
 MANAGER_INBOX = replace(MANAGER_STORE, titles=(
@@ -96,8 +97,9 @@ PUBLIC_CODE_SCOPES = {
     )},
     "resources/js/public/publicHydration.ts": (PUBLIC, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL),
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_CONTROLS) for name in (
-        "publicContentControls.ts", "publicInquiryForms.ts",
+        "publicContentControls.ts",
     )},
+    "resources/js/public/publicInquiryForms.ts": (PUBLIC, PUBLIC_CONTROLS, SITE_KIT_INQUIRY),
     **{"resources/js/public/" + name: (PUBLIC, PUBLIC_MOTION) for name in (
         "publicMotion.ts", "publicSliders.ts", "publicSliderEntry.ts", "publicSliderControls.ts",
     )},

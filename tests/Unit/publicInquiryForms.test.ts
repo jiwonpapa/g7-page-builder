@@ -62,6 +62,48 @@ describe('public inquiry input lifetime', () => {
     expect(new FormData(form).get('started_at')).toMatch(/^\d+$/u);
   });
 
+  it('initializes a missing G7 session and sends the decoded XSRF cookie', async () => {
+    const { root, form, submit } = fixture(); root.head.innerHTML = '';
+    let cookie = ''; vi.spyOn(root, 'cookie', 'get').mockImplementation(() => cookie);
+    const fetcher = vi.fn<typeof fetch>().mockImplementationOnce(async () => {
+      cookie = 'other=value; XSRF-TOKEN=encrypted%2Btoken%3D'; return new Response(null, { status: 204 });
+    }).mockResolvedValue(new Response('{}'));
+    bootInquiryForms(root, fetcher); submitForm(form);
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    expect(fetcher.mock.calls.map(call => call[0])).toEqual(['/sanctum/csrf-cookie', 'https://example.test/inquiries']);
+    expect(fetcher.mock.calls[0][1]?.credentials).toBe('same-origin');
+    expect(fetcher.mock.calls[1][1]?.headers).toEqual({ Accept: 'application/json', 'X-XSRF-TOKEN': 'encrypted+token=' });
+  });
+
+  it('reads rotated cookies at submit time without an unnecessary session request', async () => {
+    const { root, form, submit } = fixture(); root.head.innerHTML = '';
+    let cookie = 'XSRF-TOKEN=old'; vi.spyOn(root, 'cookie', 'get').mockImplementation(() => cookie);
+    const fetcher = vi.fn<typeof fetch>(async () => new Response('{}'));
+    bootInquiryForms(root, fetcher); cookie = 'XSRF-TOKEN=current%3D'; submitForm(form);
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][1]?.headers).toMatchObject({ 'X-XSRF-TOKEN': 'current=' });
+  });
+
+  it.each(['missing', 'malformed', 'failure'])('keeps entered content when session setup has a %s token', async failure => {
+    const { root, form, name, submit, status } = fixture(); root.head.innerHTML = '';
+    vi.spyOn(root, 'cookie', 'get').mockReturnValue(failure === 'malformed' ? 'XSRF-TOKEN=%E0%A4%A' : '');
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(null, { status: failure === 'failure' ? 503 : 204 }));
+    bootInquiryForms(root, fetcher); name.value = 'Keep my request'; submitForm(form);
+    await vi.waitFor(() => expect(submit.disabled).toBe(false));
+    expect(name.value).toBe('Keep my request'); expect(status.textContent).toContain('접수 준비에 실패');
+    expect(fetcher).toHaveBeenCalledTimes(1); expect(fetcher.mock.calls[0][0]).toBe('/sanctum/csrf-cookie');
+  });
+
+  it('does not submit a form disposed while its session request is pending', async () => {
+    const { root, form } = fixture(); root.head.innerHTML = '';
+    let cookie = ''; vi.spyOn(root, 'cookie', 'get').mockImplementation(() => cookie);
+    const pending = deferred<Response>(); const fetcher = vi.fn<typeof fetch>(() => pending.promise);
+    bootInquiryForms(root, fetcher); submitForm(form); disposeInquiryForms(root);
+    cookie = 'XSRF-TOKEN=new'; pending.resolve(new Response(null, { status: 204 }));
+    await pending.promise; await Promise.resolve(); expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it.each([200, 503])('does not let the disposed response %s reset or finish a reinstalled form request', async statusCode => {
     const { root, form, name, status, submit } = fixture();
     const old = deferred<Response>(); const next = deferred<Response>();

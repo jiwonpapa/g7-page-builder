@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, SITE_KIT_INQUIRY, scenarios_for
 import re
 import subprocess
 from tools.g7pb.planner import build_plan
@@ -96,7 +96,7 @@ EXTRACTED_PUBLIC_SCOPES = {
     "publicDataRuntime.ts": {PUBLIC, PUBLIC_DATA},
     "publicHydration.ts": {PUBLIC, public_roles(PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_SHELL)},
     "publicContentControls.ts": {PUBLIC, PUBLIC_CONTROLS},
-    "publicInquiryForms.ts": {PUBLIC, PUBLIC_CONTROLS},
+    "publicInquiryForms.ts": {PUBLIC, PUBLIC_CONTROLS, SITE_KIT_INQUIRY},
     "publicMotion.ts": {PUBLIC, PUBLIC_MOTION},
     "publicSliders.ts": {PUBLIC, PUBLIC_MOTION},
     "publicSliderEntry.ts": {PUBLIC, PUBLIC_MOTION},
@@ -150,7 +150,7 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(scenarios_for(["resources/js/public/mobileNavigation.ts"]), (MOBILE_NAV,))
         self.assertEqual(set(scenarios_for(["resources/js/public/mobileNavigation.css"])), {MOBILE_NAV, PUBLIC_SHELL})
         sources = ["resources/js/public/" + name for name in EXTRACTED_PUBLIC_SCOPES]
-        self.assertEqual(set(scenarios_for(sources)), {PUBLIC, SITE_SHELL, PUBLIC_ALL})
+        self.assertEqual(set(scenarios_for(sources)), {PUBLIC, SITE_SHELL, PUBLIC_ALL, SITE_KIT_INQUIRY})
         self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))
 
     def test_public_owners_keep_transitive_units_and_runtime_only_after_submission(self):

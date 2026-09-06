@@ -20,6 +20,30 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def test_site_kit_fixture_selects_only_its_contract_and_installation_with_media_inputs(self):
+        manifest = "resources/site-kits/company-starter.json"
+        media = "resources/store/source/page-kits/company-launch/media/hero-team.webp"
+        self.write(manifest, json.dumps({"media": [{"path": media}]}))
+        self.write(media, "image bytes")
+        for test in ("tests/UnitPhp/SiteKitBundleTest.php", "tests/Integration/Gnuboard7/SiteKitInstallationTest.php"):
+            self.write(test, "<?php class Fixture {}")
+        plan = build_plan(self.root, [manifest])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertEqual(len(plan.gates), 2)
+        for gate in plan.gates:
+            self.assertIn(manifest, gate.inputs)
+            self.assertIn(media, gate.inputs)
+        self.assertTrue(plan.gates[0].runtime or plan.gates[1].runtime)
+
+    def test_site_kit_missing_consumers_and_unknown_kits_fail_closed(self):
+        manifest = "resources/site-kits/company-starter.json"
+        self.write(manifest, '{"media": []}')
+        self.assertTrue(build_plan(self.root, [manifest]).unresolved)
+        unknown = "resources/site-kits/unreviewed.json"
+        self.write(unknown, '{}')
+        self.assertTrue(build_plan(self.root, [unknown]).unresolved)
+
     def test_owned_site_part_helpers_select_only_registered_specs(self):
         php = "tests/E2E/support/sitePartState.php"
         helper = "tests/E2E/support/sitePartSetFixture.ts"

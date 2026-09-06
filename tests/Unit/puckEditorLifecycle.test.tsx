@@ -62,6 +62,30 @@ async function mount(initial: PageBuilderDocument, initiallyDisabled = false) {
 }
 
 describe('atomic editor session lifetime', () => {
+  it('blocks native edits after the host becomes too narrow and restores editing without losing the document', async () => {
+    const source = fixture(), test = await mount(source);
+    const resize = async (width: number) => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+      await act(async () => { window.dispatchEvent(new Event('resize')); });
+      await flush();
+    };
+    try {
+      await resize(390);
+      expect(test.host.querySelector('[data-testid="page-builder-editor"]')?.getAttribute('data-host-editing-supported')).toBe('false');
+      await test.replaceHeading(source.blocks[0].instance_id, '<p>Forbidden narrow edit</p>');
+      expect(test.host.querySelector('[data-testid="page-builder-document-error"]')?.textContent).toContain('읽기 전용');
+      expect(test.changed).not.toHaveBeenCalled();
+      expect(test.dirty).not.toHaveBeenCalled();
+      expect(test.current().api.getItemById(source.blocks[0].instance_id)).toMatchObject({ type: 'Heading', props: { heading: '<p>Initial</p>' } });
+      await test.record();
+      await resize(1280);
+      expect(test.host.querySelector('[data-testid="page-builder-editor"]')?.getAttribute('data-host-editing-supported')).toBe('true');
+      await test.replaceHeading(source.blocks[0].instance_id, '<p>Permitted desktop edit</p>');
+      expect(test.changed).toHaveBeenCalledOnce();
+      expect(test.changed.mock.lastCall?.[0].blocks[0].props.heading).toBe('<p>Permitted desktop edit</p>');
+    } finally { await resize(1280); }
+  });
+
   it.each(['revision', 'document'] as const)('replaces canonical context, boundary and Puck together on explicit %s change', async (change) => {
     const initial = fixture(), test = await mount(initial, true);
     const old = test.current();

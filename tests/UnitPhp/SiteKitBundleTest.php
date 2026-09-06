@@ -21,6 +21,33 @@ final class SiteKitBundleTest extends TestCase
         self::assertStringNotContainsString('g7pb-page://', json_encode($resolved, JSON_THROW_ON_ERROR));
     }
 
+    public function test_professional_kit_resolves_every_menu_and_uses_current_hero_without_fake_proof(): void
+    {
+        $source = new BundledSiteKitSource;
+        self::assertContains('professional-services', $source->ids());
+        $bundle = $source->load('professional-services');
+        self::assertCount(4, $bundle->pages());
+        $paths = array_column($bundle->pages(), 'path', 'key');
+        $urls = array_fill_keys(array_map(fn ($media) => $media->id, $bundle->media), '/image.webp');
+        $resolved = $bundle->resolve($paths, $urls);
+        foreach ($resolved['pages'] as $page) {
+            self::assertSame('content.hero-centered-01', $page['document']['blocks'][0]['type']);
+            self::assertNotContains('trust.testimonials-01', array_column($page['document']['blocks'], 'type'));
+        }
+        self::assertSame('form.inquiry-01', $resolved['pages'][3]['document']['blocks'][1]['type']);
+        self::assertSame(array_values($paths), array_column($resolved['header']['blocks'][0]['props']['navigation'], 'url'));
+        self::assertStringNotContainsString('g7pb-page://', json_encode($resolved, JSON_THROW_ON_ERROR));
+        self::assertStringNotContainsString('g7pb-media://', json_encode($resolved, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_missing_optional_download_keeps_the_free_catalog_available(): void
+    {
+        $source = new BundledSiteKitSource(__DIR__.'/missing-kit-root');
+        self::assertSame(['company-starter'], $source->ids());
+        $this->expectException(\InvalidArgumentException::class);
+        $source->load('../company-starter');
+    }
+
     public function test_missing_reference_is_rejected_before_any_installation(): void
     {
         $bundle = (new BundledSiteKitSource)->load('company-starter');

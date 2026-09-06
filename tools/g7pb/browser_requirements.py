@@ -170,7 +170,7 @@ STYLE_CODE_SCOPES = {
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
     (("resources/js/editor/G7BoardSourceField.tsx",), (SUPPORT_COMPOSITION,)),
-    (("resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/manager/useSiteKitInstallation.ts",
+    (("resources/site-kits/professional-services.json", "resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/manager/useSiteKitInstallation.ts",
       "resources/js/manager/siteKitInstallationStorage.ts", "resources/js/api/siteKit.ts",
       "src/Application/Store/SiteKitService.php", "src/Domain/Store/SiteKitBundle.php",
       "src/Contracts/SiteKit*", "src/Infrastructure/Store/BundledSiteKitSource.php",

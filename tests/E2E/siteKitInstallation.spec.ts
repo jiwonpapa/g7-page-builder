@@ -6,7 +6,11 @@ import { parseSiteKitReceipt } from '../../resources/js/api/siteKit';
 const API = '/api/modules/jiwonpapa-page_builder/admin';
 // This suite authors on PC; the visitor below separately verifies all public widths.
 test.use({ ...devices['Desktop Chrome'], locale: 'ko-KR' });
-test('installs a site kit as drafts, edits and publishes its pages, and connects the installed menu', async ({ page, context, browser }, info) => {
+for (const kit of [
+  { id: 'company-starter', title: '모로 스튜디오 · 회사 사이트', brand: '모로 스튜디오', keys: ['about', 'services', 'contact'], service: '서비스 소개' },
+  { id: 'professional-services', title: '모로 어드바이저리 · 전문서비스 킷', brand: '모로 어드바이저리', keys: ['about', 'services', 'process', 'contact'], service: '서비스' },
+]) {
+test(`installs ${kit.id} as drafts, edits and publishes its pages, and connects the installed menu`, async ({ page, context, browser }, info) => {
   // Editors are PC-only; public responsive proof is explicit below for every project.
   await page.setViewportSize({ width: 1440, height: 1000 });
   const token = await authenticateEditorInteractionAdmin(context);
@@ -15,14 +19,14 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
   const original = oldSets.data.items.find((item: { is_active: boolean }) => item.is_active);
   if (!original?.id || !original.is_ready) throw new Error('A restorable active pair is required for site kit proof.');
   const stamp = `kit-${Date.now()}`;
-  const aliases = { about: `/company/${stamp}/about`, services: `/company/${stamp}/services`, contact: `/company/${stamp}/contact` };
+  const aliases = Object.fromEntries(kit.keys.map(key => [key, `/company/${stamp}/${key}`]));
   let activated = false;
   try {
     await page.goto('/modules/jiwonpapa-page_builder/admin');
     await page.getByTestId('manager-site-kits').click();
     const dialog = page.getByTestId('site-kit-dialog');
-    await dialog.getByRole('button', { name: '구성 선택', exact: true }).click();
-    await dialog.getByLabel('설치 이름', { exact: true }).fill(`3차 검증 ${stamp}`);
+    await dialog.locator('article').filter({ has: page.getByRole('heading', { name: kit.title, exact: true }) }).getByRole('button', { name: '구성 선택', exact: true }).click();
+    await dialog.getByLabel('설치 이름', { exact: true }).fill(`킷 검증 ${stamp}`);
     await page.getByTestId('site-kit-path-about').fill('/admin/users');
     await dialog.getByRole('button', { name: '구성 확인', exact: true }).click();
     await expect(dialog.getByRole('alert')).toContainText('시스템에서 사용하는 주소');
@@ -72,14 +76,14 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
     }
     await page.goto(`/modules/jiwonpapa-page_builder/admin/site-parts?set_id=${receipt.set_id}`);
     const partsCanvas = page.frameLocator('iframe').first();
-    await expect(partsCanvas.getByText('모로 스튜디오', { exact: true }).first()).toBeVisible();
+    await expect(partsCanvas.getByText(kit.brand, { exact: true }).first()).toBeVisible();
     const headerBounds = await partsCanvas.locator('.g7pb-site-header').boundingBox();
     if (!headerBounds) throw new Error('Installed header selection geometry is missing.');
     await page.mouse.click(headerBounds.x + 4, headerBounds.y + 4);
-    await page.getByLabel('사이트 이름', { exact: true }).last().fill('3차 맞춤 스튜디오');
+    await page.getByLabel('사이트 이름', { exact: true }).last().fill('검증 맞춤 스튜디오');
     const save = page.waitForResponse(r => r.url().includes(`/site-part-sets/${receipt.set_id}/draft`) && r.request().method() === 'PUT');
     await page.getByTestId('page-builder-site-part-set-save').click(); expect((await save).ok()).toBe(true);
-    await page.reload(); await expect(partsCanvas.getByText('3차 맞춤 스튜디오', { exact: true }).first()).toBeVisible();
+    await page.reload(); await expect(partsCanvas.getByText('검증 맞춤 스튜디오', { exact: true }).first()).toBeVisible();
     const publish = page.waitForResponse(r => r.url().includes(`/site-part-sets/${receipt.set_id}/publish`));
     await page.getByTestId('page-builder-site-part-set-publish').click(); expect((await publish).ok()).toBe(true);
     const activate = page.waitForResponse(r => r.url().includes(`/site-part-sets/${receipt.set_id}/activate`));
@@ -91,10 +95,10 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
       const visitor = await publicContext.newPage(); const errors: string[] = []; visitor.on('pageerror', error => errors.push(error.message));
       await visitor.goto(new URL(aliases.about, page.url()).href);
       const header = visitor.getByTestId('page-builder-site-header');
-      await expect(header).toContainText('3차 맞춤 스튜디오');
-      await header.getByRole('link', { name: '서비스 소개', exact: true }).click();
+      await expect(header).toContainText('검증 맞춤 스튜디오');
+      await header.getByRole('link', { name: kit.service, exact: true }).click();
       await expect(visitor).toHaveURL(new RegExp(aliases.services + '$'));
-      await expect(visitor.locator('h1')).toContainText('서비스 소개 · 맞춤 안내');
+      await expect(visitor.locator('h1')).toContainText(`${kit.service} · 맞춤 안내`);
       for (const width of [1440, 768, 390]) {
         await visitor.setViewportSize({ width, height: 1000 });
         for (const item of receipt.pages) {
@@ -122,3 +126,5 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
     await api.dispose();
   }
 });
+
+}

@@ -14,3 +14,7 @@
 - Preview is advisory: conflicts are checked again inside installation and address uniqueness is enforced by the database. Existing native G7 routes continue to win if new conflicts arise later.
 
 The sample is three informational pages, not a live inquiry form. Contact instructions must be replaced with the site's actual contact details before publishing. Full theme/function-screen compatibility remains a subsequent phase.
+
+## 별도 전문서비스 평가 킷
+
+`professional-services`는 검토된 고정 ID의 선택형 파일 추가 킷입니다. 파일이 있을 때 기존 설치기를 사용하며 새 공개 스키마나 결제 계약은 추가하지 않습니다. 무료 모듈 archive에서 원본을 제외하고 `python3 -m tools.g7pb.site_kit_package --output output/releases/<검증 식별자>`로 별도 평가 ZIP을 만듭니다. 설치·지원 범위는 [전문서비스 안내](kits/professional-services.md), 무료 범위는 [베타 안내](free-beta.md)를 따릅니다.

@@ -83,6 +83,24 @@ class PlannerTests(unittest.TestCase):
             self.assertIn(media, gate.inputs)
         self.assertTrue(plan.gates[0].runtime or plan.gates[1].runtime)
 
+    def test_professional_kit_fingerprints_images_and_selects_registered_installation(self):
+        manifest = "resources/site-kits/professional-services.json"
+        media = "resources/store/source/page-kits/service-conversion/media/hero-consultation.webp"
+        self.write(manifest, json.dumps({"media": [{"path": media}]}))
+        self.write(media, "kit image")
+        for test in ("tests/UnitPhp/SiteKitBundleTest.php", "tests/Integration/Gnuboard7/SiteKitInstallationTest.php"):
+            self.write(test, "<?php class Fixture {}")
+        self.write("tests/E2E/siteKitInstallation.spec.ts", "test('kit', () => {});")
+        plan = build_plan(self.root, [manifest], phase="integration")
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertTrue(any(g.name.startswith("browser:") for g in plan.gates))
+        for gate in (g for g in plan.gates if g.name.startswith("php:")):
+            self.assertIn(media, gate.inputs)
+            before = digest_gate(self.root, gate)
+            self.write(media, "changed " + gate.name)
+            self.assertNotEqual(before, digest_gate(self.root, gate))
+
     def test_site_kit_missing_consumers_and_unknown_kits_fail_closed(self):
         manifest = "resources/site-kits/company-starter.json"
         self.write(manifest, '{"media": []}')

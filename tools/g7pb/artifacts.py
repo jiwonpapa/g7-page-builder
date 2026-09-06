@@ -12,6 +12,7 @@ import tarfile
 
 MODULE = "jiwonpapa-page_builder"
 ROOT_FILES = {"CHANGELOG.md", "module.json", "module.php", "composer.json", "composer.lock", "package.json", "package-lock.json"}
+SEPARATE_KIT_FILES = {"resources/site-kits/professional-services.json"}
 DIRECTORIES = {"config", "database", "resources", "schemas", "src"}
 
 
@@ -31,7 +32,7 @@ def safe_name(name: str) -> str:
 def payload(root: Path) -> dict[str, Path]:
     tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root, check=True, capture_output=True).stdout
     paths = {value.decode() for value in tracked.split(b"\0") if value}
-    selected = {name: root / name for name in paths if name in ROOT_FILES or name.split("/", 1)[0] in DIRECTORIES}
+    selected = {name: root / name for name in paths if name not in SEPARATE_KIT_FILES and (name in ROOT_FILES or name.split("/", 1)[0] in DIRECTORIES)}
     selected.update({str(path.relative_to(root)): path for path in (root / "dist").rglob("*") if path.is_file()})
     if not ROOT_FILES.issubset(selected) or not any(name.startswith("dist/") for name in selected):
         raise ValueError("Missing tracked release inputs or built dist")

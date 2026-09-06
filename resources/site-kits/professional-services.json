@@ -1,0 +1,648 @@
+{
+  "schema_version": "g7pb-site-kit/v1",
+  "kit_id": "jiwonpapa/professional-services",
+  "kit_version": "0.1.0",
+  "title": "모로 어드바이저리 · 전문서비스 킷",
+  "description": "소개·서비스·진행 방식·상담 접수 4페이지와 공통 메뉴. 유료 상품 후보의 평가용 구성입니다.",
+  "locale": "ko",
+  "compatibility": {
+    "page_builder": ">=0.33.1 <1.0.0",
+    "php": ">=8.5.0 <9.0.0",
+    "g7": ">=7.0.9 <8.0.0"
+  },
+  "pages": [
+    {
+      "key": "about",
+      "title": "소개",
+      "path": "/moro/about",
+      "document": {
+        "schema_version": "g7-page-builder/v1",
+        "document_id": "b55ec0d5-4183-4fa3-9fb6-330bfbeb2c50",
+        "slug": "moro-about",
+        "mode": "canvas",
+        "locale": "ko",
+        "shell_mode": "template",
+        "tokens": {
+          "design.palette": "slate",
+          "design.font": "modern",
+          "design.radius": "soft",
+          "design.width": "standard",
+          "design.scale": "balanced"
+        },
+        "blocks": [
+          {
+            "instance_id": "d9f6c8a8-2bca-4238-afd3-87911669c75d",
+            "type": "content.hero-centered-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "MORO ADVISORY · 모로 어드바이저리",
+              "title": "일하는 방식을 바꾸는 작은 시작",
+              "body": "<p>사업과 팀의 흐름을 살피고, 실행할 수 있는 개선을 함께 만듭니다.</p>",
+              "primaryCta": {
+                "label": "서비스 살펴보기",
+                "url": "g7pb-page://services"
+              },
+              "alignment": "left",
+              "layout": "backdrop",
+              "image": {
+                "src": "g7pb-media://consultation",
+                "alt": "운영 계획을 검토하는 팀의 상담 장면 · 예시 이미지"
+              }
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          },
+          {
+            "instance_id": "6b9d2f9a-6424-4dcc-ac87-9a4e82d67d62",
+            "type": "media.image-text-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "팀의 관점",
+              "heading": "답을 제안하기 전에, 현장을 살핍니다",
+              "body": "<p>업무가 어디서 멈추는지, 고객이 무엇을 기다리는지부터 확인합니다. 담당자가 직접 활용할 수 있는 문서와 운영 기준을 남기는 것이 모로의 일입니다.</p>",
+              "image": {
+                "src": "g7pb-media://team",
+                "alt": "회의 테이블에서 자료를 검토하는 팀 · 예시 이미지"
+              },
+              "mediaPosition": "right",
+              "primaryLink": {
+                "label": "함께하는 과정",
+                "url": "g7pb-page://process"
+              },
+              "appearance": {
+                "surface": "default",
+                "spacing": "spacious"
+              }
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          },
+          {
+            "instance_id": "a0db9622-989f-4eb6-aa3f-dcf1a2cb7474",
+            "type": "content.icon-list-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "제공 가치",
+              "heading": "팀 안에 남기는 세 가지 결과",
+              "items": [
+                {
+                  "icon": "sparkles",
+                  "title": "우선순위 문서",
+                  "body": "지금 해결할 문제와 이후 검토할 일을 나눕니다."
+                },
+                {
+                  "icon": "layers",
+                  "title": "실행 계획",
+                  "body": "담당자·일정·완료 기준을 함께 정합니다."
+                },
+                {
+                  "icon": "shield",
+                  "title": "운영 안내",
+                  "body": "담당자가 이어갈 수 있도록 업무 기준을 정리합니다."
+                }
+              ],
+              "layout": "two-column",
+              "appearance": {
+                "surface": "soft",
+                "spacing": "normal"
+              }
+            },
+            "motion": {
+              "preset": "stagger",
+              "intensity": "normal",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          },
+          {
+            "instance_id": "5b74bb8b-8df6-46c4-9177-15e0c63bb0e0",
+            "type": "content.cta-split-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "다음 단계",
+              "heading": "다음 변화를 함께 준비해 보세요",
+              "body": "현재의 고민과 필요한 도움을 알려주시면 상담 범위를 함께 정리합니다.",
+              "primaryLink": {
+                "label": "상담 요청",
+                "url": "g7pb-page://contact"
+              },
+              "secondaryLink": {
+                "label": "진행 방식",
+                "url": "g7pb-page://process"
+              },
+              "theme": "dark",
+              "layout": "split"
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "services",
+      "title": "서비스",
+      "path": "/moro/services",
+      "document": {
+        "schema_version": "g7-page-builder/v1",
+        "document_id": "c2ce1017-1b3f-4c6f-b63b-a9a5e44ddf8b",
+        "slug": "moro-services",
+        "mode": "canvas",
+        "locale": "ko",
+        "shell_mode": "template",
+        "tokens": {
+          "design.palette": "slate",
+          "design.font": "modern",
+          "design.radius": "soft",
+          "design.width": "standard",
+          "design.scale": "balanced"
+        },
+        "blocks": [
+          {
+            "instance_id": "1b55d78c-dfa9-411b-a113-d6f0c5b0fda3",
+            "type": "content.hero-centered-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "MORO ADVISORY · 모로 어드바이저리",
+              "title": "필요한 변화부터 함께합니다",
+              "body": "<p>문제 진단부터 실행 정리까지, 내부 팀에 필요한 범위를 선택합니다.</p>",
+              "primaryCta": {
+                "label": "진행 방식 보기",
+                "url": "g7pb-page://process"
+              },
+              "alignment": "left",
+              "layout": "balanced",
+              "image": {
+                "src": "g7pb-media://team",
+                "alt": "운영 계획을 검토하는 팀의 상담 장면 · 예시 이미지"
+              }
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          },
+          {
+            "instance_id": "05d0f3cb-7bc6-47cb-bfd1-f2e5aedec430",
+            "type": "content.icon-list-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "제공 가치",
+              "heading": "결정과 실행에 필요한 것만 남깁니다",
+              "items": [
+                {
+                  "icon": "sparkles",
+                  "title": "문제 정의",
+                  "body": "목표와 제약을 먼저 확인해 해결할 문제를 분명하게 정리합니다."
+                },
+                {
+                  "icon": "layers",
+                  "title": "실행 설계",
+                  "body": "필요한 업무를 단계와 책임 단위로 나눠 바로 움직일 수 있게 만듭니다."
+                },
+                {
+                  "icon": "shield",
+                  "title": "운영 기준",
+                  "body": "결과가 지속되도록 검토 기준과 운영 방법까지 함께 남깁니다."
+                },
+                {
+                  "icon": "heart",
+                  "title": "밀착 소통",
+                  "body": "진행 상황과 다음 결정을 이해하기 쉬운 언어로 공유합니다."
+                }
+              ],
+              "layout": "two-column",
+              "appearance": {
+                "surface": "soft",
+                "spacing": "normal"
+              }
+            },
+            "motion": {
+              "preset": "stagger",
+              "intensity": "normal",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          },
+          {
+            "instance_id": "f6c2f644-e6a7-48bf-80d6-e2939231d295",
+            "type": "media.image-text-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "제공 범위",
+              "heading": "결과물과 역할을 먼저 정합니다",
+              "body": "<p>업무 흐름 진단, 개선 과제 정리, 실행 계획 수립을 중심으로 협업합니다. 개발·광고 집행·법률 자문은 포함하지 않으며 별도 담당자와 범위를 확인합니다.</p>",
+              "image": {
+                "src": "g7pb-media://work",
+                "alt": "서비스 설계 내용을 검토하는 업무 장면 · 예시 이미지"
+              },
+              "mediaPosition": "right",
+              "primaryLink": {
+                "label": "상담 범위 문의",
+                "url": "g7pb-page://contact"
+              },
+              "appearance": {
+                "surface": "default",
+                "spacing": "spacious"
+              }
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          },
+          {
+            "instance_id": "7ca12810-bce0-411f-a413-9159af0a1cc0",
+            "type": "content.cta-split-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "다음 단계",
+              "heading": "다음 변화를 함께 준비해 보세요",
+              "body": "현재의 고민과 필요한 도움을 알려주시면 상담 범위를 함께 정리합니다.",
+              "primaryLink": {
+                "label": "상담 요청",
+                "url": "g7pb-page://contact"
+              },
+              "secondaryLink": {
+                "label": "진행 방식",
+                "url": "g7pb-page://process"
+              },
+              "theme": "dark",
+              "layout": "split"
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "process",
+      "title": "진행 방식",
+      "path": "/moro/process",
+      "document": {
+        "schema_version": "g7-page-builder/v1",
+        "document_id": "c3cfb8c2-dec3-44c8-a7ea-9b7a0ff7527b",
+        "slug": "moro-process",
+        "mode": "canvas",
+        "locale": "ko",
+        "shell_mode": "template",
+        "tokens": {
+          "design.palette": "slate",
+          "design.font": "modern",
+          "design.radius": "soft",
+          "design.width": "standard",
+          "design.scale": "balanced"
+        },
+        "blocks": [
+          {
+            "instance_id": "0539622b-f54b-4b7b-a9b6-2e8941ffca94",
+            "type": "content.hero-centered-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "MORO ADVISORY · 모로 어드바이저리",
+              "title": "서로 이해하고, 한 단계씩 실행합니다",
+              "body": "<p>현재 상황을 확인하고 우선순위를 합의한 뒤, 실행 결과를 함께 살핍니다.</p>",
+              "primaryCta": {
+                "label": "상담 준비하기",
+                "url": "g7pb-page://contact"
+              },
+              "alignment": "left",
+              "layout": "editorial",
+              "image": {
+                "src": "g7pb-media://work",
+                "alt": "운영 계획을 검토하는 팀의 상담 장면 · 예시 이미지"
+              }
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          },
+          {
+            "instance_id": "2044ff9c-9124-4337-b6d6-c896d809621b",
+            "type": "content.process-timeline-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "진행 방식",
+              "heading": "첫 상담부터 실행 점검까지",
+              "items": [
+                {
+                  "title": "현재 확인",
+                  "body": "목표, 일정, 예산과 이미 시도한 방법을 확인합니다.",
+                  "linkLabel": "",
+                  "linkUrl": ""
+                },
+                {
+                  "title": "우선순위",
+                  "body": "효과와 실행 가능성을 기준으로 먼저 할 일을 정합니다.",
+                  "linkLabel": "",
+                  "linkUrl": ""
+                },
+                {
+                  "title": "실행",
+                  "body": "합의한 범위를 짧은 단위로 만들고 결과를 공유합니다.",
+                  "linkLabel": "",
+                  "linkUrl": ""
+                },
+                {
+                  "title": "운영 점검",
+                  "body": "실제 사용 결과를 확인하고 다음 개선 범위를 정리합니다.",
+                  "linkLabel": "상담 신청",
+                  "linkUrl": "g7pb-page://contact"
+                }
+              ],
+              "layout": "horizontal",
+              "appearance": {
+                "surface": "default",
+                "spacing": "spacious"
+              }
+            },
+            "motion": {
+              "preset": "stagger",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          },
+          {
+            "instance_id": "0c07a233-3de8-4282-95de-8df699e5da29",
+            "type": "content.faq-accordion-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "상담 전 확인",
+              "heading": "자주 묻는 질문",
+              "items": [
+                {
+                  "question": "아직 요청 범위가 정확하지 않아도 되나요?",
+                  "answer": "네. 첫 상담에서 현재 상황과 우선순위를 함께 정리합니다."
+                },
+                {
+                  "question": "프로젝트 기간은 어떻게 정하나요?",
+                  "answer": "필수 결과물과 내부 의사결정 일정을 확인한 뒤 단계별 일정을 제안합니다."
+                },
+                {
+                  "question": "기존 담당자와 함께 진행할 수 있나요?",
+                  "answer": "가능합니다. 내부 담당자의 역할과 외부 지원 범위를 먼저 나눕니다."
+                },
+                {
+                  "question": "상담 후 바로 계약해야 하나요?",
+                  "answer": "아닙니다. 상담 내용을 검토한 뒤 필요한 경우에만 다음 단계를 결정합니다."
+                }
+              ],
+              "behavior": "single",
+              "openFirst": true,
+              "appearance": {
+                "surface": "default",
+                "spacing": "normal"
+              }
+            },
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          },
+          {
+            "instance_id": "32ee9218-2ceb-4f61-809e-b387f065f496",
+            "type": "content.cta-split-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "다음 단계",
+              "heading": "다음 변화를 함께 준비해 보세요",
+              "body": "현재의 고민과 필요한 도움을 알려주시면 상담 범위를 함께 정리합니다.",
+              "primaryLink": {
+                "label": "상담 요청",
+                "url": "g7pb-page://contact"
+              },
+              "secondaryLink": {
+                "label": "진행 방식",
+                "url": "g7pb-page://process"
+              },
+              "theme": "dark",
+              "layout": "split"
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "contact",
+      "title": "문의",
+      "path": "/moro/contact",
+      "document": {
+        "schema_version": "g7-page-builder/v1",
+        "document_id": "ce8db153-a34f-424b-92ea-5c2eccb51a3b",
+        "slug": "moro-contact",
+        "mode": "canvas",
+        "locale": "ko",
+        "shell_mode": "template",
+        "tokens": {
+          "design.palette": "slate",
+          "design.font": "modern",
+          "design.radius": "soft",
+          "design.width": "standard",
+          "design.scale": "balanced"
+        },
+        "blocks": [
+          {
+            "instance_id": "9c5257fc-04ae-4d79-bc89-d9f66d7dc6a1",
+            "type": "content.hero-centered-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "MORO ADVISORY · 모로 어드바이저리",
+              "title": "지금의 고민부터 들려주세요",
+              "body": "<p>목표, 일정, 함께할 담당자를 알려주시면 상담에서 확인할 내용을 정리할 수 있습니다.</p>",
+              "primaryCta": {
+                "label": "제공 서비스 확인",
+                "url": "g7pb-page://services"
+              },
+              "alignment": "left",
+              "layout": "balanced",
+              "image": {
+                "src": "g7pb-media://consultation",
+                "alt": "운영 계획을 검토하는 팀의 상담 장면 · 예시 이미지"
+              }
+            },
+            "slots": {},
+            "motion": {
+              "preset": "reveal",
+              "intensity": "subtle",
+              "trigger": "once",
+              "stagger_ms": 100
+            }
+          },
+          {
+            "instance_id": "120cf970-22c0-4fe5-b10a-9edbea7e301e",
+            "type": "form.inquiry-01",
+            "block_version": 1,
+            "props": {
+              "eyebrow": "상담 요청",
+              "heading": "지금 가장 해결하고 싶은 일을 알려주세요",
+              "description": "목표와 현재 상황을 알려주세요. 이 화면은 전문서비스 킷의 예시 상담 창구입니다. 실제 운영 전 상담 담당자와 개인정보 안내를 설정해 주세요.",
+              "formKind": "quote",
+              "submitLabel": "상담 요청 보내기",
+              "successMessage": "상담 요청이 접수되었습니다. 사이트 운영자가 확인합니다.",
+              "privacyLabel": "상담 요청 처리를 위한 개인정보 수집 및 이용에 동의합니다.",
+              "showPhone": true,
+              "showSubject": true,
+              "appearance": {
+                "surface": "soft",
+                "spacing": "spacious"
+              }
+            },
+            "motion": {
+              "preset": "reveal",
+              "intensity": "normal",
+              "trigger": "once",
+              "stagger_ms": 100
+            },
+            "slots": {}
+          }
+        ]
+      }
+    }
+  ],
+  "header": {
+    "schema_version": "g7-page-builder/site-part/v1",
+    "site_part_id": "fa840392-3406-4839-a0db-cee547268cc6",
+    "kind": "header",
+    "locale": "ko",
+    "tokens": {},
+    "blocks": [
+      {
+        "instance_id": "06561814-fe97-47ae-83f8-ed6b1d7afc46",
+        "type": "site.header.navigation-01",
+        "block_version": 1,
+        "props": {
+          "brand_name": "모로 어드바이저리",
+          "home_url": "g7pb-page://about",
+          "navigation": [
+            {
+              "label": "소개",
+              "url": "g7pb-page://about"
+            },
+            {
+              "label": "서비스",
+              "url": "g7pb-page://services"
+            },
+            {
+              "label": "진행 방식",
+              "url": "g7pb-page://process"
+            },
+            {
+              "label": "문의",
+              "url": "g7pb-page://contact"
+            }
+          ],
+          "use_site_settings": false,
+          "variant": "solid",
+          "sticky": true,
+          "cta": {
+            "label": "상담 요청",
+            "url": "g7pb-page://contact"
+          }
+        },
+        "slots": {}
+      }
+    ]
+  },
+  "footer": {
+    "schema_version": "g7-page-builder/site-part/v1",
+    "site_part_id": "82671ed8-3d15-4c2c-bce4-170c41931c5c",
+    "kind": "footer",
+    "locale": "ko",
+    "tokens": {},
+    "blocks": [
+      {
+        "instance_id": "a434a5c6-a41f-4eee-9a2c-0ed8f6a127b1",
+        "type": "site.footer.simple-01",
+        "block_version": 1,
+        "props": {
+          "brand_name": "모로 어드바이저리",
+          "home_url": "g7pb-page://about",
+          "navigation": [
+            {
+              "label": "소개",
+              "url": "g7pb-page://about"
+            },
+            {
+              "label": "서비스",
+              "url": "g7pb-page://services"
+            },
+            {
+              "label": "진행 방식",
+              "url": "g7pb-page://process"
+            },
+            {
+              "label": "문의",
+              "url": "g7pb-page://contact"
+            }
+          ],
+          "use_site_settings": false,
+          "description": "팀이 이어갈 수 있는 변화를 만듭니다.",
+          "footer_text": "모로 어드바이저리는 킷의 예시 브랜드입니다. 운영 주체와 연락처로 바꿔 주세요."
+        },
+        "slots": {}
+      }
+    ]
+  },
+  "media": [
+    {
+      "id": "consultation",
+      "path": "resources/store/source/page-kits/service-conversion/media/hero-consultation.webp",
+      "sha256": "7a337c1ac9d4ca2ee028e9cae7d322d74edcca2a657d03e9399caac9fd2d348c"
+    },
+    {
+      "id": "team",
+      "path": "resources/store/source/page-kits/company-launch/media/hero-team.webp",
+      "sha256": "58e94bc13354b0ce81a0bff7a3bd9f488b6707737e13c21779a0677a815e857b"
+    },
+    {
+      "id": "work",
+      "path": "resources/store/source/page-kits/company-launch/media/team-design.webp",
+      "sha256": "d8ee1741eee2f0960c0e52d4fac77c04262e2ced8c11035c8b052a122e6bed36"
+    }
+  ]
+}

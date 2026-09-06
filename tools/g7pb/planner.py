@@ -167,19 +167,20 @@ def python_inputs(root, entry):
 
 def site_kit_inputs(root):
     """Canonical bundled kit and its declared bytes; no unrelated catalog scan."""
-    manifest = "resources/site-kits/company-starter.json"
-    file = root / manifest
-    if not file.is_file():
-        return ()
-    data = json.loads(file.read_text())
-    inputs = [manifest]
-    for item in data.get("media", []):
-        path = item.get("path")
-        if not isinstance(path, str) or not path.startswith("resources/") or ".." in Path(path).parts:
-            raise ValueError("Invalid Site Kit media path")
-        if not (root / path).is_file() or not (root / path).resolve().is_relative_to(root.resolve()):
-            raise ValueError("Missing or escaping Site Kit media: " + path)
-        inputs.append(path)
+    inputs = []
+    for manifest in ("resources/site-kits/company-starter.json", "resources/site-kits/professional-services.json"):
+        file = root / manifest
+        if not file.is_file():
+            continue
+        data = json.loads(file.read_text())
+        inputs.append(manifest)
+        for item in data.get("media", []):
+            path = item.get("path")
+            if not isinstance(path, str) or not path.startswith("resources/") or ".." in Path(path).parts:
+                raise ValueError("Invalid Site Kit media path")
+            if not (root / path).is_file() or not (root / path).resolve().is_relative_to(root.resolve()):
+                raise ValueError("Missing or escaping Site Kit media: " + path)
+            inputs.append(path)
     return tuple(sorted(set(inputs)))
 
 
@@ -275,6 +276,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         environment, controller_inputs, reusable = (), [], True
         if Path(path).name == "test_php_coverage.py":
             controller_inputs.extend((COMPILER_COVERAGE, COMPILER_TEST, "Makefile", ".github/workflows/ci.yml"))
+        if Path(path).name == "test_site_kit_package.py":
+            controller_inputs.extend((*site_kit_inputs(root), "docs/kits/professional-services.md", "docs/free-beta.md"))
         if path == BROWSER_CONSUMER_TEST:
             files, reusable = consumer_inputs()
             controller_inputs.extend(files)
@@ -443,7 +446,11 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("syntax:" + path, ["php", "-l", path], [path], "Changed migration syntax", ("php",))
         elif path.endswith(".css"):
             css.append(path)
-        elif path == "resources/site-kits/company-starter.json":
+        elif path in {"docs/kits/professional-services.md", "docs/free-beta.md"}:
+            python_test("tests/Harness/test_site_kit_package.py", path)
+        elif path in {"resources/site-kits/company-starter.json", "resources/site-kits/professional-services.json"}:
+            if path.endswith("professional-services.json") and (root / "tests/Harness/test_site_kit_package.py").is_file():
+                python_test("tests/Harness/test_site_kit_package.py", path)
             for test in ("tests/UnitPhp/SiteKitBundleTest.php", "tests/Integration/Gnuboard7/SiteKitInstallationTest.php"):
                 if not (root / test).is_file():
                     plan.unresolved.append("Missing Site Kit contract consumer: " + test)
@@ -586,9 +593,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("phpstan:g7" if adapter else "phpstan:core", argv, [*inputs, config, "composer.json", "composer.lock"],
                 "Changed PHP types and dependency contracts", ("php", "g7") if adapter else ("php",), adapter)
     if not full:
-        browser_changes = [*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles]
+        kit_changes = [path for path in plan.paths if path == "resources/site-kits/professional-services.json"]
+        browser_changes = [*browser_sources(root, ts_sources, base), *php_sources, *css, *viewer_styles, *kit_changes]
         for scenario in scenarios_for(browser_changes):
             affected = [path for path in browser_changes if any(item.spec == scenario.spec for item in scenarios_for([path]))]
+            if scenario.spec == "tests/E2E/siteKitInstallation.spec.ts":
+                affected.extend(site_kit_inputs(root))
             if not (root / scenario.spec).is_file():
                 plan.unresolved.append(f"Missing required browser scenario: {scenario.spec}")
                 continue

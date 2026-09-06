@@ -329,7 +329,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "MORO ADVISORY · 모로 어드바이저리",
-              "title": "함께 실행하는 과정",
+              "title": "협업 과정",
               "body": "<p>현재 상황을 확인하고 우선순위를 합의한 뒤, 실행 결과를 함께 살핍니다.</p>",
               "primaryCta": {
                 "label": "상담 준비하기",
@@ -403,7 +403,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "상담 전 확인",
-              "heading": "자주 묻는 질문",
+              "heading": "궁금한 점",
               "items": [
                 {
                   "question": "아직 요청 범위가 정확하지 않아도 되나요?",

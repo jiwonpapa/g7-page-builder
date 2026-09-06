@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCssGraph } from '../../scripts/lib/editorCssSources.mjs';
 
-const editorCss = readFileSync(resolve('resources/css/page-builder-editor.css'), 'utf8');
+const { css: editorCss } = await readCssGraph(process.cwd(), ['resources/css/page-builder-editor.css']);
 
 describe('Phase 8 heading wrapping parity', () => {
   it('keeps the public word-break policy inside matching editable heading descendants', () => {

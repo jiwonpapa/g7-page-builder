@@ -113,6 +113,26 @@ final class SiteKitInstallationTest extends TestCase
         self::assertSame('/company/services', $header?->document->blocks[0]['props']['navigation'][1]['url']);
     }
 
+    public function test_professional_kit_compiles_installs_and_keeps_canonical_drafts_editable(): void
+    {
+        $paths = ['about' => '/advisory/about', 'services' => '/advisory/services',
+            'process' => '/advisory/process', 'contact' => '/advisory/contact'];
+        self::assertTrue($this->kits->preview('professional-services', $paths)['can_install']);
+        $receipt = $this->kits->install('professional-services', '0.1.0', '전문서비스', $paths, $this->requestId, 1);
+        self::assertCount(4, $receipt['pages']);
+        self::assertSame(0, DB::table('g7pb_publications')->count());
+        self::assertFalse(SitePartSetRecord::query()->findOrFail($receipt['set_id'])->is_active);
+        self::assertSame(3, $this->mediaCreated);
+        self::assertSame($receipt, $this->kits->install('professional-services', '0.1.0', '전문서비스', $paths, $this->requestId, 1));
+        foreach ($receipt['pages'] as $page) {
+            $json = DB::table('g7pb_revisions')->where('document_id', $page['document_id'])->value('document_json');
+            self::assertIsString($json);
+            self::assertStringNotContainsString('g7pb-page://', $json);
+            self::assertStringNotContainsString('g7pb-media://', $json);
+            self::assertStringContainsString('content.hero-centered-01', $json);
+        }
+    }
+
     public function test_late_failure_rolls_back_all_new_rows_and_allows_retry(): void
     {
         $existing = SitePartSetRecord::query()->create(['id' => '22000000-0000-4000-8000-000000000001',

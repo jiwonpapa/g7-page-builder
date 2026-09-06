@@ -113,7 +113,7 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(scenarios_for(["resources/js/editor/G7BoardSourceField.tsx"]), (SUPPORT_COMPOSITION,))
 
     def test_site_kit_sources_select_installation_without_catalog_sweep(self):
-        for source in ("resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/api/siteKit.ts",
+        for source in ("resources/site-kits/professional-services.json", "resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/api/siteKit.ts",
                        "src/Application/Store/SiteKitService.php"):
             self.assertEqual(set(scenarios_for([source])), {SITE_KIT})
         self.assertEqual(set(scenarios_for(["resources/js/editor/SitePartWorkspace.tsx"])), {SITE_PART, SITE_KIT})

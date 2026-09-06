@@ -97,6 +97,9 @@ describe('published page effects runtime', () => {
   });
 
   it.each(['identity', 'storage'] as const)('refreshes only data on %s while keeping a pending inquiry and ordinary boot stable', async reason => {
+    // This test owns a pending POST across identity changes; session bootstrap
+    // is covered separately by the inquiry runtime tests.
+    document.head.innerHTML = '<meta name="csrf-token" content="pending-inquiry-session">';
     const view: ShellWindow = window;
     let user = { uuid: 'A' }; let listener: (() => void) | undefined;
     view.G7Core = { state: { get: () => ({ currentUser: user }), subscribe: callback => { listener = callback; return () => {}; } } };

@@ -21,6 +21,18 @@ async function mount(initial = '', readOnly = false) {
 const available = () => new Response(JSON.stringify({ success: true, data: [{ slug: 'notice', name: '공지사항' }] }));
 
 describe('G7 board source picker', () => {
+  it('keeps labels and status bound to each picker when vendor field IDs repeat', async () => {
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockImplementation(async () => available()));
+    const vendorWrapper = document.createElement('div'); vendorWrapper.id = 'board-source'; document.body.append(vendorWrapper);
+    const first = await mount(); const second = await mount();
+    expect(first.select.id).not.toBe(second.select.id);
+    for (const { host, select } of [first, second]) {
+      expect(host.querySelector('label')?.control).toBe(select);
+      expect(select.labels?.[0]?.textContent).toBe('연결 게시판');
+      expect(document.getElementById(select.getAttribute('aria-describedby') ?? '')).toBe(host.querySelector('[role="status"]'));
+    }
+  });
+
   it('selects a board by its public name and stores only its slug', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(available()); vi.stubGlobal('fetch', fetcher);
     const { host, select } = await mount();

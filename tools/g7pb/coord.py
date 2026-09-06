@@ -221,7 +221,7 @@ class Coordinator:
         require(not revised or self.git.head() == meta["submitted_sha"], "재제출 전 HEAD가 기존 submitted SHA와 일치해야 합니다.")
         before = self.git.head()
         owned_paths(self.git, meta)
-        self.quality("submission", meta["base_sha"], task=args.task, profile=meta["profile"])
+        self.quality("submission", meta["base_sha"], task=args.task, profile=meta["profile"], full=args.full)
         self.store.unchanged(meta)
         require(self.git.head() == before, "제출 검증 중 task branch HEAD가 변경되었습니다.")
         owned_paths(self.git, meta)
@@ -383,7 +383,7 @@ class Coordinator:
             candidate = self.git.text("write-tree")
             # A task's old base must not pull unrelated prior integrations into this gate.
             self.quality("integration", start, task=args.integration_task, areas=areas, profile=label,
-                         scoped_hook=args.command == "integrate-scoped", submitted=tasks[0]["submitted_sha"], tree=candidate)
+                         full=args.full, scoped_hook=args.command == "integrate-scoped", submitted=tasks[0]["submitted_sha"], tree=candidate)
             require(self.git.head() == start and self.git.text("write-tree") == candidate
                     and not self.git.text("diff", "--name-only"), "통합 검증 중 Local candidate가 변경되었습니다.")
             self.store.unchanged(owner)

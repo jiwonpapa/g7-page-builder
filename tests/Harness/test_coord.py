@@ -192,6 +192,28 @@ class CoordinatorTests(unittest.TestCase):
             self.call(self.repo, "finish", "--task", "integration-task", "--without-release")
         self.assertEqual(self.meta("first-task")["status"], "submitted")
 
+    def test_explicit_full_reaches_submission_and_integration_quality(self):
+        path = self.worktree("full-contract")
+        self.call(path, "claim", "--task", "full-contract", "--paths", "a/file.txt", "--profile", "scoped")
+        (path / "a/file.txt").write_text("contract change\n")
+        with patch.object(Coordinator, "quality") as quality:
+            self.call(path, "submit", "--task", "full-contract", "--full")
+            self.assertTrue(quality.call_args.kwargs["full"])
+        self.integration()
+        with patch.object(Coordinator, "quality") as quality:
+            self.call(self.repo, "integrate-scoped", "--task", "full-contract", "--integration-task", "integration-task", "--full")
+            self.assertTrue(quality.call_args.kwargs["full"])
+        self.assertEqual(self.meta("integration-task")["verified_sha"], "")
+
+    def test_make_full_is_explicit_for_submit_and_integration_entries(self):
+        for target in ("task-submit", "task-resubmit", "task-integrate", "task-integrate-scoped", "task-integrate-batch"):
+            for full in (False, True):
+                with self.subTest(target=target, full=full):
+                    command = ["make", "-n", "-f", str(ROOT / "Makefile"), target,
+                               "TASK=fixture", "TASKS=one,two", "INTEGRATION_TASK=integration", "FULL=" + ("1" if full else "0")]
+                    result = subprocess.run(command, cwd=self.repo, capture_output=True, text=True, check=True)
+                    self.assertEqual("--full" in result.stdout, full)
+
     def test_production_quality_delegates_to_only_common_planner_cli(self):
         calls = []
         def runner(args, cwd, **kwargs):

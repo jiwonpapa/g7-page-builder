@@ -77,6 +77,8 @@ make coord-check TASK=editor-inline-toolbar
 
 `coord-check`는 task 기준 SHA부터 현재 working tree까지의 커밋·staged·unstaged·untracked 파일을 모두 검사합니다. claim 밖 파일이 하나라도 있으면 실패합니다.
 
+공개 스키마 등 명시적 전체 계약 검증이 필요한 변경은 사유를 기록한 뒤 제출·재제출·통합 명령에 `FULL=1`을 전달합니다. 이 선택은 프로필 이름으로 추정하지 않으며, 최종 `integration-verify FULL=1`에서도 명시합니다. Worktree 제출의 런타임 검사는 통합까지 보류됩니다.
+
 ## 4. 자동 제출
 
 ```bash

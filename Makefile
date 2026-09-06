@@ -34,11 +34,11 @@ coord-release:
 
 task-submit:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) submit --task "$(TASK)"
+	@$(COORD_HARNESS) submit --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,)
 
 task-resubmit:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) resubmit --task "$(TASK)"
+	@$(COORD_HARNESS) resubmit --task "$(TASK)" $(if $(filter 1,$(FULL)),--full,)
 
 task-restack:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
@@ -71,17 +71,17 @@ task-replace-submitted-expanded:
 task-integrate:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) integrate --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)"
+	@$(COORD_HARNESS) integrate --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,)
 
 task-integrate-scoped:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }
 	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) integrate-scoped --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)"
+	@$(COORD_HARNESS) integrate-scoped --task "$(TASK)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,)
 
 task-integrate-batch:
 	@test -n "$(TASKS)" || { echo 'TASKS is required.' >&2; exit 2; }
 	@test -n "$(INTEGRATION_TASK)" || { echo 'INTEGRATION_TASK is required.' >&2; exit 2; }
-	@$(COORD_HARNESS) integrate-batch --tasks "$(TASKS)" --integration-task "$(INTEGRATION_TASK)"
+	@$(COORD_HARNESS) integrate-batch --tasks "$(TASKS)" --integration-task "$(INTEGRATION_TASK)" $(if $(filter 1,$(FULL)),--full,)
 
 integration-verify:
 	@test -n "$(TASK)" || { echo 'TASK is required.' >&2; exit 2; }

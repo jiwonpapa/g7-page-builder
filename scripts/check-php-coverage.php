@@ -16,7 +16,9 @@ function compilerCoverageSources(string $root): array
     if (is_dir($directory)) {
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST);
         foreach ($iterator as $file) {
-            if ($file->isLink()) throw new RuntimeException('Linked compiler coverage source: '.$file->getPathname());
+            if ($file->isLink()) {
+                throw new RuntimeException('Linked compiler coverage source: '.$file->getPathname());
+            }
             if ($file->isFile() && $file->getExtension() === 'php') {
                 $files[] = substr($file->getPathname(), strlen($root) + 1);
             }
@@ -45,41 +47,79 @@ function declarationOnlyCompilerOwner(string $source): bool
     $index = 0;
     if (($tokens[$index]->id ?? null) === T_DECLARE) {
         $declaration = array_map(fn (PhpToken $token): string => $token->text, array_slice($tokens, 0, 7));
-        if ($declaration !== ['declare', '(', 'strict_types', '=', '1', ')', ';']) return false;
+        if ($declaration !== ['declare', '(', 'strict_types', '=', '1', ')', ';']) {
+            return false;
+        }
         $index += 7;
     }
     if (($tokens[$index]->id ?? null) === T_NAMESPACE) {
         $index++;
-        if (! ($tokens[$index] ?? null)?->is([T_STRING, T_NAME_QUALIFIED])) return false;
+        if (! ($tokens[$index] ?? null)?->is([T_STRING, T_NAME_QUALIFIED])) {
+            return false;
+        }
         $index++;
-        if (($tokens[$index++]->text ?? null) !== ';') return false;
+        if (($tokens[$index++]->text ?? null) !== ';') {
+            return false;
+        }
     }
-    if (($tokens[$index]->id ?? null) === T_FINAL) $index++;
+    if (($tokens[$index]->id ?? null) === T_FINAL) {
+        $index++;
+    }
     if (($tokens[$index++]->id ?? null) !== T_CLASS || ($tokens[$index++]->id ?? null) !== T_STRING
-        || ($tokens[$index++]->text ?? null) !== '{') return false;
+        || ($tokens[$index++]->text ?? null) !== '{') {
+        return false;
+    }
     $constants = 0;
     while (isset($tokens[$index]) && $tokens[$index]->text !== '}') {
-        while (($tokens[$index] ?? null)?->is([T_PUBLIC, T_PROTECTED, T_PRIVATE, T_FINAL])) $index++;
-        if (($tokens[$index++]->id ?? null) !== T_CONST) return false;
+        while (($tokens[$index] ?? null)?->is([T_PUBLIC, T_PROTECTED, T_PRIVATE, T_FINAL])) {
+            $index++;
+        }
+        if (($tokens[$index++]->id ?? null) !== T_CONST) {
+            return false;
+        }
         // Typed constants are allowed; inheritance, traits, properties and methods are not.
         if (in_array($tokens[$index]->text ?? '', ['array', 'string', 'int', 'float', 'bool'], true)
-            && ($tokens[$index + 1]->id ?? null) === T_STRING) $index++;
-        if (($tokens[$index++]->id ?? null) !== T_STRING || ($tokens[$index++]->text ?? null) !== '=') return false;
-        $depth = 0; $literal = false;
+            && ($tokens[$index + 1]->id ?? null) === T_STRING) {
+            $index++;
+        }
+        if (($tokens[$index++]->id ?? null) !== T_STRING || ($tokens[$index++]->text ?? null) !== '=') {
+            return false;
+        }
+        $depth = 0;
+        $literal = false;
         while (isset($tokens[$index]) && $tokens[$index]->text !== ';') {
             $token = $tokens[$index++];
-            if ($token->text === '[') { $depth++; continue; }
-            if ($token->text === ']') { if (--$depth < 0) return false; continue; }
-            if ($token->text === ',' && $depth > 0) continue;
-            if ($token->is([T_DOUBLE_ARROW]) || in_array($token->text, ['+', '-'], true)) continue;
+            if ($token->text === '[') {
+                $depth++;
+
+                continue;
+            }
+            if ($token->text === ']') {
+                if (--$depth < 0) {
+                    return false;
+                }
+
+                continue;
+            }
+            if ($token->text === ',' && $depth > 0) {
+                continue;
+            }
+            if ($token->is([T_DOUBLE_ARROW]) || in_array($token->text, ['+', '-'], true)) {
+                continue;
+            }
             if ($token->is([T_CONSTANT_ENCAPSED_STRING, T_LNUMBER, T_DNUMBER])
                 || ($token->id === T_STRING && in_array(strtolower($token->text), ['true', 'false', 'null'], true))) {
-                $literal = true; continue;
+                $literal = true;
+
+                continue;
             }
+
             return false;
         }
         if ($depth !== 0 || (! $literal && ($tokens[$index - 1]->text ?? '') !== ']')
-            || ($tokens[$index++]->text ?? null) !== ';') return false;
+            || ($tokens[$index++]->text ?? null) !== ';') {
+            return false;
+        }
         $constants++;
     }
 
@@ -229,7 +269,9 @@ try {
         if ($argument === '--root') {
             $root = realpath($argv[++$index] ?? '') ?: throw new RuntimeException('Invalid coverage root');
         } elseif (in_array($argument, ['--compiler', '--run-compiler', '--plan-compiler'], true)) {
-            if ($mode !== 'full') throw new RuntimeException('Duplicate coverage mode');
+            if ($mode !== 'full') {
+                throw new RuntimeException('Duplicate coverage mode');
+            }
             $mode = substr($argument, 2);
         } elseif ($argument === '--test') {
             $tests[] = $argv[++$index] ?? '';
@@ -244,8 +286,12 @@ try {
             'command' => compilerCoverageCommand($root, $tests, '<unique-report>/clover.xml')], JSON_THROW_ON_ERROR)."\n";
         exit(0);
     }
-    if ($mode === 'run-compiler') exit(runCompilerCoverage($root, $tests));
-    if ($tests !== []) throw new RuntimeException('Tests require --run-compiler or --plan-compiler');
+    if ($mode === 'run-compiler') {
+        exit(runCompilerCoverage($root, $tests));
+    }
+    if ($tests !== []) {
+        throw new RuntimeException('Tests require --run-compiler or --plan-compiler');
+    }
     exit(checkCoverage($report ?? $root.'/output/coverage/php-clover.xml', $root, $mode === 'compiler'));
 } catch (Throwable $error) {
     fwrite(STDERR, $error->getMessage()."\n");

@@ -20,6 +20,21 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def test_pint_policy_uses_tracked_php_and_fingerprints_configuration(self):
+        self.write("pint.json", '{"preset":"laravel","exclude":["output"]}')
+        self.write("src/Owned.php", "<?php return 1;")
+        self.write("output/evidence.php", "unformatted preserved evidence")
+        with patch("tools.g7pb.planner.git", return_value="src/Owned.php\0"):
+            plan = build_plan(self.root, ["pint.json"])
+        self.assertFalse(plan.unresolved)
+        gate = next(g for g in plan.gates if g.name == "php-lint-policy")
+        self.assertEqual(gate.argv, ("vendor/bin/pint", "--test", "src/Owned.php"))
+        self.assertIn("pint.json", gate.inputs)
+        before = digest_gate(self.root, gate)
+        self.write("pint.json", '{"preset":"psr12","exclude":["output"]}')
+        self.assertNotEqual(before, digest_gate(self.root, gate))
+        self.assertFalse(any(g.runtime for g in plan.gates))
+
     def test_catalog_editing_inventory_selects_its_import_consumers(self):
         inventory = "docs/productization/inventory.json"
         test = "tests/Unit/inventory.test.ts"

@@ -36,7 +36,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "MORO ADVISORY · 모로 어드바이저리",
-              "title": "일하는 방식을 바꾸는 작은 시작",
+              "title": "일하는 방식의 변화",
               "body": "<p>사업과 팀의 흐름을 살피고, 실행할 수 있는 개선을 함께 만듭니다.</p>",
               "primaryCta": {
                 "label": "서비스 살펴보기",
@@ -63,7 +63,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "팀의 관점",
-              "heading": "답을 제안하기 전에, 현장을 살핍니다",
+              "heading": "현장에서 찾은 답",
               "body": "<p>업무가 어디서 멈추는지, 고객이 무엇을 기다리는지부터 확인합니다. 담당자가 직접 활용할 수 있는 문서와 운영 기준을 남기는 것이 모로의 일입니다.</p>",
               "image": {
                 "src": "g7pb-media://team",
@@ -93,7 +93,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "제공 가치",
-              "heading": "팀 안에 남기는 세 가지 결과",
+              "heading": "팀에 남기는 세 가지",
               "items": [
                 {
                   "icon": "sparkles",
@@ -131,7 +131,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "다음 단계",
-              "heading": "다음 변화를 함께 준비해 보세요",
+              "heading": "변화를 시작하세요",
               "body": "현재의 고민과 필요한 도움을 알려주시면 상담 범위를 함께 정리합니다.",
               "primaryLink": {
                 "label": "상담 요청",
@@ -207,7 +207,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "제공 가치",
-              "heading": "결정과 실행에 필요한 것만 남깁니다",
+              "heading": "결정하고 실행합니다",
               "items": [
                 {
                   "icon": "sparkles",
@@ -250,11 +250,11 @@
             "block_version": 1,
             "props": {
               "eyebrow": "제공 범위",
-              "heading": "결과물과 역할을 먼저 정합니다",
+              "heading": "결과물과 역할",
               "body": "<p>업무 흐름 진단, 개선 과제 정리, 실행 계획 수립을 중심으로 협업합니다. 개발·광고 집행·법률 자문은 포함하지 않으며 별도 담당자와 범위를 확인합니다.</p>",
               "image": {
                 "src": "g7pb-media://work",
-                "alt": "서비스 설계 내용을 검토하는 업무 장면 · 예시 이미지"
+                "alt": "전문서비스 담당자의 예시 인물 사진"
               },
               "mediaPosition": "right",
               "primaryLink": {
@@ -280,7 +280,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "다음 단계",
-              "heading": "다음 변화를 함께 준비해 보세요",
+              "heading": "변화를 시작하세요",
               "body": "현재의 고민과 필요한 도움을 알려주시면 상담 범위를 함께 정리합니다.",
               "primaryLink": {
                 "label": "상담 요청",
@@ -329,7 +329,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "MORO ADVISORY · 모로 어드바이저리",
-              "title": "서로 이해하고, 한 단계씩 실행합니다",
+              "title": "함께 실행하는 과정",
               "body": "<p>현재 상황을 확인하고 우선순위를 합의한 뒤, 실행 결과를 함께 살핍니다.</p>",
               "primaryCta": {
                 "label": "상담 준비하기",
@@ -339,7 +339,7 @@
               "layout": "editorial",
               "image": {
                 "src": "g7pb-media://work",
-                "alt": "운영 계획을 검토하는 팀의 상담 장면 · 예시 이미지"
+                "alt": "전문서비스 담당자의 예시 인물 사진"
               }
             },
             "slots": {},
@@ -356,7 +356,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "진행 방식",
-              "heading": "첫 상담부터 실행 점검까지",
+              "heading": "상담부터 실행까지",
               "items": [
                 {
                   "title": "현재 확인",
@@ -443,7 +443,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "다음 단계",
-              "heading": "다음 변화를 함께 준비해 보세요",
+              "heading": "변화를 시작하세요",
               "body": "현재의 고민과 필요한 도움을 알려주시면 상담 범위를 함께 정리합니다.",
               "primaryLink": {
                 "label": "상담 요청",
@@ -519,7 +519,7 @@
             "block_version": 1,
             "props": {
               "eyebrow": "상담 요청",
-              "heading": "지금 가장 해결하고 싶은 일을 알려주세요",
+              "heading": "상담을 요청하세요",
               "description": "목표와 현재 상황을 알려주세요. 이 화면은 전문서비스 킷의 예시 상담 창구입니다. 실제 운영 전 상담 담당자와 개인정보 안내를 설정해 주세요.",
               "formKind": "quote",
               "submitLabel": "상담 요청 보내기",

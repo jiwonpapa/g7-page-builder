@@ -31,7 +31,7 @@ final readonly class EloquentSiteKitInstallation implements SiteKitInstallationP
 
     public function drafts(callable $write): array
     {
-        return DB::transaction($write);
+        return DB::transaction(static fn (): array => $write());
     }
 
     public function once(string $requestId, string $fingerprint, ?int $actorId, callable $install): array

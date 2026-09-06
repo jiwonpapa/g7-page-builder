@@ -85,7 +85,7 @@ final class PageRouteRegistryTest extends TestCase
 
     public function test_container_resolves_the_route_registry_without_an_optional_null_fallback(): void
     {
-        $container = new \Illuminate\Container\Container;
+        $container = new Container;
         $container->instance(PageBuilderService::class, new PageBuilderService(new EloquentPageBuilderRepository, $this->createStub(DocumentCompilerPort::class)));
         $container->instance(CacheInterface::class, $this->createMock(CacheInterface::class));
         $container->instance(TemplateService::class, $this->createStub(TemplateService::class));

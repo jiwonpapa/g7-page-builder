@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import type { Field } from '@puckeditor/core';
 import { loadRouteTargetOptions, type RouteTargetOption } from './RouteUrlField';
 
-function BoardSourceField({ id, value, onChange, readOnly }: {
-  id: string; value?: string; onChange: (value: string) => void; readOnly?: boolean;
+function BoardSourceField({ value, onChange, readOnly }: {
+  value?: string; onChange: (value: string) => void; readOnly?: boolean;
 }): React.ReactElement {
+  const id = useId();
   const [options, setOptions] = useState<RouteTargetOption[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [attempt, setAttempt] = useState(0);
@@ -21,7 +22,7 @@ function BoardSourceField({ id, value, onChange, readOnly }: {
   const missing = Boolean(value) && !options.some(option => option.value === value);
   return <div className="g7pb-route-field">
     <label htmlFor={id}>연결 게시판</label>
-    <select id={id} value={value ?? ''} onChange={event => onChange(event.target.value)}
+    <select id={id} className="g7pb-field-control" value={value ?? ''} onChange={event => onChange(event.target.value)}
       disabled={readOnly || state !== 'ready' || options.length === 0} aria-describedby={`${id}-status`}>
       <option value="">게시판을 선택해 주세요</option>
       {missing && <option value={value}>저장된 게시판 · {value}</option>}
@@ -32,11 +33,11 @@ function BoardSourceField({ id, value, onChange, readOnly }: {
         : options.length === 0 ? '선택할 수 있는 게시판이 없습니다.'
           : missing ? '저장된 게시판을 찾을 수 없습니다. 연결할 게시판을 다시 선택해 주세요.'
             : '선택한 게시판의 최신 글을 표시합니다. 실제 공개 여부는 G7 게시판 권한을 따릅니다.'}</p>
-    {state !== 'loading' && <button type="button" onClick={() => setAttempt(value => value + 1)}>목록 새로고침</button>}
+    {state !== 'loading' && <button type="button" className="g7pb-button g7pb-button--quiet" onClick={() => setAttempt(value => value + 1)}>목록 새로고침</button>}
   </div>;
 }
 
 export function createG7BoardSourceField(): Field<string | undefined> {
-  return { type: 'custom', label: '연결 게시판', render: ({ id, value, onChange, readOnly }) =>
-    <BoardSourceField id={id} value={value} onChange={onChange} readOnly={readOnly} /> };
+  return { type: 'custom', label: '연결 게시판', render: ({ value, onChange, readOnly }) =>
+    <BoardSourceField value={value} onChange={onChange} readOnly={readOnly} /> };
 }

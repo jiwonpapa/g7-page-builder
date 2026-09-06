@@ -164,6 +164,24 @@ def python_inputs(root, entry):
     return tuple(sorted(found))
 
 
+def site_kit_inputs(root):
+    """Canonical bundled kit and its declared bytes; no unrelated catalog scan."""
+    manifest = "resources/site-kits/company-starter.json"
+    file = root / manifest
+    if not file.is_file():
+        return ()
+    data = json.loads(file.read_text())
+    inputs = [manifest]
+    for item in data.get("media", []):
+        path = item.get("path")
+        if not isinstance(path, str) or not path.startswith("resources/") or ".." in Path(path).parts:
+            raise ValueError("Invalid Site Kit media path")
+        if not (root / path).is_file() or not (root / path).resolve().is_relative_to(root.resolve()):
+            raise ValueError("Missing or escaping Site Kit media: " + path)
+        inputs.append(path)
+    return tuple(sorted(set(inputs)))
+
+
 def related_tests(root, sources, changed, directory, suffixes):
     selected = set(changed)
     candidates = [p for p in (root / directory).rglob("*") if p.is_file() and p.name.endswith(suffixes)]
@@ -410,6 +428,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("syntax:" + path, ["php", "-l", path], [path], "Changed migration syntax", ("php",))
         elif path.endswith(".css"):
             css.append(path)
+        elif path == "resources/site-kits/company-starter.json":
+            for test in ("tests/UnitPhp/SiteKitBundleTest.php", "tests/Integration/Gnuboard7/SiteKitInstallationTest.php"):
+                if not (root / test).is_file():
+                    plan.unresolved.append("Missing Site Kit contract consumer: " + test)
+                else:
+                    php_tests.append(test)
         elif path.startswith(("resources/store/", "resources/block-packs/")):
             content.append(path)
         elif path in {"package.json", "package-lock.json", "module.json"}:
@@ -517,7 +541,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         g7 = test.startswith("tests/Integration/")
         argv = (["vendor/bin/phpunit"] + (["--bootstrap", "tests/Integration/bootstrap.php"] if g7 else [])
                 + ([] if full else ["--exclude-group", "content-catalog"]) + [test])
-        add("php:" + test, argv, [*graph.files, "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
+        kit_inputs = site_kit_inputs(root) if test in (
+            "tests/UnitPhp/SiteKitBundleTest.php", "tests/Integration/Gnuboard7/SiteKitInstallationTest.php") else ()
+        add("php:" + test, argv, [*graph.files, *kit_inputs, "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
     if covered_tests:
         graphs = [php_graphs[test] for test in covered_tests]
         g7 = any(test.startswith("tests/Integration/") for test in covered_tests)

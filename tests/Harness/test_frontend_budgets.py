@@ -81,6 +81,32 @@ class FrontendBudgetTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertIn("Manager-only selectors", result.stderr)
 
+    def test_public_css_accepts_measured_baseline_but_still_rejects_growth_above_18100(self):
+        self.full_fixture()
+        generated = subprocess.run(["node", "--input-type=module", "-e", r'''
+import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
+let source = '', below, above;
+for (let index = 0; index < 2000 && !above; index++) {
+  source += createHash('sha256').update(`public-css-${index}`).digest('hex');
+  const size = gzipSync(source).length;
+  if (size > 18000 && size <= 18100) below = { source, size };
+  if (size > 18100) above = { source, size };
+}
+console.log(JSON.stringify({ below, above }));
+'''], capture_output=True, text=True, check=True)
+        samples = json.loads(generated.stdout)
+        self.assertGreater(samples["below"]["size"], 18000)
+        self.assertLessEqual(samples["below"]["size"], 18100)
+        self.write("dist/css/page-builder-public.css", samples["below"]["source"])
+        passed = self.run_checker()
+        self.assertEqual(passed.returncode, 0, passed.stderr)
+        self.write("dist/css/page-builder-public.css", samples["above"]["source"])
+        rejected = self.run_checker()
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn("Frontend budget exceeded: dist/css/page-builder-public.css=", rejected.stderr)
+        self.assertIn("/18100 gzip bytes", rejected.stderr)
+
 
     def test_source_mode_counts_unique_connected_owners_without_dist(self):
         self.split()

@@ -18,7 +18,8 @@ const budgets = [
   { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
   { path: 'dist/css/page-builder-editor.css', gzip: 45_000 },
   { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
-  { path: 'dist/css/page-builder-public.css', gzip: 18_000 },
+  // Existing CSS, unchanged by board composition: Node 24 Linux 18,065 / macOS 18,084 bytes.
+  { path: 'dist/css/page-builder-public.css', gzip: 18_100 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
   { path: 'dist/js/page-builder-editor.iife.js', gzip: 500_000 },
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },

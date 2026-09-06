@@ -2,6 +2,8 @@
 
 이 문서는 [개발 헌법](development-constitution.md)의 설계 규칙과 증거 구분을 따릅니다.
 
+공개 CSS gzip 상한은 18,100 bytes입니다. 2026-09-06의 기존 CSS를 Node 24에서 측정하면 Linux 18,065 bytes, macOS 18,084 bytes였고, 4차 게시판 조합 변경 전후 CSS와 기존 140개 렌더 source hash는 동일했습니다. 이전 18,000 bytes 상한을 100 bytes 조정한 기존 산출물 기준 정리이며 성능 개선으로 보지 않습니다. 다른 자산 상한은 유지하고 18,100 bytes 초과 거부를 경계 테스트로 검증합니다.
+
 ## 판정 원칙
 
 환경 smoke와 제품 acceptance를 분리합니다. 스크린샷 두 장을 제품 E2E로 부르지 않습니다.

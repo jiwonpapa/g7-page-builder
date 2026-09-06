@@ -75,6 +75,35 @@ class ContentSelectionTest(unittest.TestCase):
         self.assertEqual(result, [{"kind": "block", "ids": ["block:content.hero@1"]},
                                   {"kind": "preset", "ids": ["preset:test/core:hero.one"]}])
 
+    def test_generated_thumbnail_and_manifest_hash_select_only_the_declared_owner(self):
+        asset = "thumbnails/generated/hero.png"
+        self.pack["blocks"][0]["thumbnail"] = asset
+        self.pack["files"] = {asset: "old"}
+        old = json.loads(json.dumps(self.pack))
+        self.pack["files"][asset] = "new"
+        self.write(PACK, self.pack)
+        expected = [{"kind": "block", "ids": ["block:content.hero@1"]}]
+        self.assertEqual(select_changes(self.root, "BASE", [str(Path(PACK).parent / asset)]), expected)
+        with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(old), "")):
+            self.assertEqual(select_changes(self.root, "BASE", [PACK]), expected)
+        with self.assertRaisesRegex(ValueError, "Unowned generated thumbnail"):
+            select_changes(self.root, "BASE", [str(Path(PACK).parent / "thumbnails/generated/unowned.png")])
+
+    def test_thumbnail_index_selects_changed_id_without_promoting_to_the_catalog(self):
+        path = str(Path(PACK).parent / "thumbnails/generated/index.json")
+        old = {"count": 2, "sources": {"block:content.hero@1": "same", "preset:test/core:cta.one": "old"}}
+        current = json.loads(json.dumps(old))
+        current["sources"]["preset:test/core:cta.one"] = "new"
+        self.write(path, current)
+        with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(old), "")):
+            self.assertEqual(select_changes(self.root, "BASE", [path]), [{"kind": "preset", "ids": ["preset:test/core:cta.one"]}])
+            for invalid in ({"count": 3, "sources": old["sources"]},
+                            {"count": 2, "sources": {"block:content.hero@1": "same"}},
+                            {"count": 2, "sources": {**old["sources"], "block:unknown@1": "new"}}):
+                self.write(path, invalid)
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    select_changes(self.root, "BASE", [path])
+
     def test_unmapped_shared_inputs_still_require_explicit_scope(self):
         for path in ["src/Application/Compilation/HtmlDocumentCompiler.php",
                      "resources/css/page-builder-editor-wysiwyg.css"]:

@@ -64,6 +64,19 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
     def add(kind: str, ids: Sequence[str]):
         selected.setdefault(kind, set()).update(ids)
 
+    def thumbnail_owners(relative: str):
+        owners = []
+        for item in pack["blocks"]:
+            if item.get("thumbnail") == relative:
+                owners.append(("block", f"block:{item['block_id']}@{item['block_version']}"))
+        for item in pack["presets"]:
+            if item.get("thumbnail") == relative:
+                owners.append(("preset", f"preset:{pack['pack_id']}:{item['preset_id']}"))
+        if not owners:
+            raise ValueError(f"Unowned generated thumbnail: {relative}")
+        for kind, identity in owners:
+            add(kind, [identity])
+
     def old_json(path: str):
         result = subprocess.run(["git", "show", f"{base}:{path}"], cwd=root, text=True,
                                 capture_output=True, check=False)
@@ -74,6 +87,9 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
     for path in paths:
         if path == PACK:
             old = old_json(path)
+            for asset in set(old.get("files", {})) | set(pack.get("files", {})):
+                if old.get("files", {}).get(asset) != pack.get("files", {}).get(asset):
+                    thumbnail_owners(asset)
             for kind, field, key in [("block", "blocks", "block_id"), ("preset", "presets", "preset_id")]:
                 before = {item[key]: item for item in old[field]}
                 for item in pack[field]:
@@ -89,6 +105,21 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
                 removed = sorted(set(before) - {item[key] for item in pack[field]})
                 if removed:
                     raise ValueError(f"Deleted {kind} IDs require an explicit inventory scope: {', '.join(removed)}; select --ids or --all")
+        elif path == str(Path(PACK).parent / "thumbnails/generated/index.json"):
+            old, current = old_json(path), read_json(root / path)
+            for field in set(old) | set(current):
+                if field not in {"sources", "dynamic_samples"} and old.get(field) != current.get(field):
+                    raise ValueError("Shared thumbnail index metadata changed; select explicit --ids or --all")
+            for field in ("sources", "dynamic_samples"):
+                for identity in set(old.get(field, {})) | set(current.get(field, {})):
+                    if old.get(field, {}).get(identity) == current.get(field, {}).get(identity):
+                        continue
+                    kind = next((kind for kind in ("block", "preset") if identity in inventories[kind]), None)
+                    if kind is None or (field == "sources" and identity not in current.get(field, {})):
+                        raise ValueError(f"Unknown or removed thumbnail identity: {identity}; select explicit --ids or --all")
+                    add(kind, [identity])
+        elif path.startswith(str(Path(PACK).parent / "thumbnails/generated") + "/"):
+            thumbnail_owners(str(Path(path).relative_to(Path(PACK).parent)))
         elif path == KITS:
             old, current = old_json(path), read_json(root / KITS)
             before = {item["slug"]: item for item in old["kits"]}

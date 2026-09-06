@@ -20,6 +20,20 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def test_catalog_editing_inventory_selects_its_import_consumers(self):
+        inventory = "docs/productization/inventory.json"
+        test = "tests/Unit/inventory.test.ts"
+        self.write(inventory, '{"definitions": []}')
+        self.write(test, "import data from '../../docs/productization/inventory.json'; test('inventory', () => data)")
+        for phase in ("submission", "integration", "verification", "ci"):
+            plan = build_plan(self.root, [inventory], phase=phase)
+            self.assertFalse(plan.unresolved)
+            gate = next(g for g in plan.gates if g.name == "unit:" + test)
+            self.assertIn(inventory, gate.inputs)
+            self.assertFalse(any(g.runtime for g in plan.gates))
+        self.write("docs/productization/unknown.json", '{}')
+        self.assertTrue(build_plan(self.root, ["docs/productization/unknown.json"]).unresolved)
+
     def test_site_kit_fixture_selects_only_its_contract_and_installation_with_media_inputs(self):
         manifest = "resources/site-kits/company-starter.json"
         media = "resources/store/source/page-kits/company-launch/media/hero-team.webp"

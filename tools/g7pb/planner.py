@@ -418,6 +418,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             ts_tests.append(path)
         elif path.startswith(("tests/UnitPhp/", "tests/Integration/")) and path.endswith(".php"):
             php_tests.append(path)
+        elif path == "docs/productization/inventory.json":
+            # This is an executable catalog contract consumed by TypeScript tests, not prose.
+            ts_sources.append(path)
         elif path.startswith("resources/js/") and path.endswith((".ts", ".tsx")):
             ts_sources.append(path)
         elif path.startswith("src/") and path.endswith(".php"):

@@ -60,9 +60,19 @@ function sameSubmission(before: FormData, after: FormData): boolean {
   });
 }
 
+function csrfHeaders(root: Document): Record<string, string> | null {
+  const token = root.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+  if (token) return { 'X-CSRF-TOKEN': token };
+  const cookie = root.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('XSRF-TOKEN='));
+  if (!cookie) return null;
+  try {
+    const value = decodeURIComponent(cookie.slice('XSRF-TOKEN='.length));
+    return value ? { 'X-XSRF-TOKEN': value } : null;
+  } catch { return null; }
+}
+
 export function bootInquiryForms(root: Document = document, fetcher: typeof fetch = fetch): void {
   const runtime = runtimeFor(root);
-  const csrf = root.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
   for (const form of root.querySelectorAll<HTMLFormElement>('[data-g7pb-inquiry-form]')) {
     const previous = runtime.mounts.get(form);
     if (previous?.fetcher === fetcher) continue;
@@ -91,8 +101,17 @@ export function bootInquiryForms(root: Document = document, fetcher: typeof fetc
       if (submit) submit.disabled = true;
       void (async () => {
         try {
+          let csrf = csrfHeaders(root);
+          if (!csrf) {
+            // G7 template pages may omit a session token. Use its public Laravel
+            // session endpoint; never exempt the inquiry POST from CSRF checks.
+            const session = await fetcher('/sanctum/csrf-cookie', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            if (!current()) return;
+            csrf = csrfHeaders(root);
+            if (!session.ok || !csrf) throw new Error('상담 접수 준비에 실패했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+          }
           const response = await fetcher(form.action, { method: 'POST', credentials: 'same-origin', body: snapshot,
-            headers: { Accept: 'application/json', ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}) } });
+            headers: { Accept: 'application/json', ...csrf } });
           if (!current()) return;
           const payload: unknown = await response.json().catch(() => null);
           if (!current()) return;

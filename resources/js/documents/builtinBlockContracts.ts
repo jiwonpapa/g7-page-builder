@@ -264,7 +264,8 @@ export interface BarChartBlockProps {
 export interface G7RecentPostsBlockProps {
   eyebrow: string;
   heading: string;
-  source: 'recent' | 'popular';
+  source: 'recent' | 'popular' | 'board';
+  boardSlug?: string;
   period: 'today' | 'week' | 'month' | 'year';
   limit: 3 | 4 | 6 | 8 | 12;
   pageSize?: 3 | 4 | 6;

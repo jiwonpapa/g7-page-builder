@@ -1,6 +1,7 @@
 import { archiveControlNodes, installArchiveFilters, installPagination } from './publicArchiveControls';
 import { payloadItems, payloadRecord, renderPost, renderPostDetail, renderProduct, renderProductDetail } from './publicDataRendering';
 import { asRecord } from './publicValues';
+import { shellAuthHeaders } from './siteShellControls';
 
 type Audience = 'guest' | 'member';
 interface VisibilityState {
@@ -32,7 +33,7 @@ const runtimes = new WeakMap<Document, DataRuntime>();
 const inputAttributes = ['data-g7pb-data-source', 'data-g7pb-endpoint', 'data-g7pb-audience',
   'data-g7pb-visibility-audience', 'data-g7pb-product-base', 'data-g7pb-empty-message',
   'data-g7pb-show-content', 'data-g7pb-show-description', 'data-g7pb-detail-url', 'data-g7pb-detail-label',
-  'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger'];
+  'data-g7pb-data-limit', 'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger'];
 
 function dataInputs(block: HTMLElement): string {
   return JSON.stringify(inputAttributes.map((attribute) => block.getAttribute(attribute)));
@@ -134,7 +135,7 @@ function visitorAudience(runtime: DataRuntime, fetcher: typeof fetch): Promise<A
   const request = Promise.resolve().then(async (): Promise<Audience> => {
     if (!runtime.active || runtimes.get(runtime.root) !== runtime) return 'guest';
     try {
-      const response = await fetcher('/api/user/auth/user', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+      const response = await fetcher('/api/user/auth/user', { credentials: 'same-origin', headers: runtime.root.defaultView ? shellAuthHeaders(runtime.root.defaultView) : { Accept: 'application/json' } });
       return response.ok ? 'member' : 'guest';
     } catch { return 'guest'; }
   }).finally(() => {
@@ -212,9 +213,13 @@ async function loadBlock(runtime: DataRuntime, block: HTMLElement, state: DataSt
   }
   list?.setAttribute('aria-busy', 'true');
   detail?.setAttribute('aria-busy', 'true');
+  let failureMessage = '콘텐츠를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
   try {
-    const response = await state.fetcher(endpoint, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    const response = await state.fetcher(endpoint, { credentials: 'same-origin', headers: runtime.root.defaultView ? shellAuthHeaders(runtime.root.defaultView) : { Accept: 'application/json' } });
     if (!dataCurrent(runtime, block, state)) return;
+    if (block.hasAttribute('data-g7pb-data-limit') && (response.status === 401 || response.status === 403)) failureMessage = '콘텐츠를 볼 수 있는 권한이 없습니다.';
+    if (block.hasAttribute('data-g7pb-data-limit') && response.status === 404) failureMessage = '연결된 콘텐츠를 찾을 수 없습니다.';
+    if (!response.ok) throw new Error('dynamic data request failed');
     const payload = asRecord(await response.json());
     if (!dataCurrent(runtime, block, state)) return;
     if (!response.ok || !payload || payload.success === false) throw new Error('dynamic data request failed');
@@ -229,9 +234,13 @@ async function loadBlock(runtime: DataRuntime, block: HTMLElement, state: DataSt
     } else {
       if (!list) throw new Error('dynamic list target is missing');
       const basePath = block.dataset.g7pbProductBase ?? '/shop/products';
-      const nodes = payloadItems(payload)
+      const limit = Number(block.dataset.g7pbDataLimit);
+      const items = payloadItems(payload);
+      const boundedItems = Number.isInteger(limit) && limit > 0 ? items.slice(0, limit) : items;
+      const nodes = boundedItems
         .map((item) => source === 'posts' || source === 'post-archive' ? renderPost(runtime.root, item) : renderProduct(runtime.root, item, basePath))
         .filter((node): node is HTMLElement => node !== null);
+      if (block.hasAttribute('data-g7pb-data-limit') && nodes.length !== boundedItems.length) throw new Error('Invalid board post response.');
       list.replaceChildren(...nodes);
       if (block.dataset.g7pbMotion === 'stagger') {
         const stagger = Number(block.dataset.g7pbMotionStagger ?? 100);
@@ -252,7 +261,7 @@ async function loadBlock(runtime: DataRuntime, block: HTMLElement, state: DataSt
     detail?.replaceChildren();
     list?.setAttribute('aria-busy', 'false');
     detail?.setAttribute('aria-busy', 'false');
-    if (status) status.textContent = '콘텐츠를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    if (status) status.textContent = failureMessage;
   }
   block.dataset.g7pbDataReady = 'true';
 }

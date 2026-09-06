@@ -109,6 +109,16 @@ describe('catalog conversion without the editor runtime', () => {
       .toEqual(slides.slice(0, 5).map(({ title }) => ({ eyebrow: '', title, body: '', buttonLabel: '', buttonUrl: '', imageSrc: '', imageAlt: '' })));
   });
 
+  it('preserves selected boards through both codec directions without adding fields to legacy blocks', () => {
+    const props = { source: 'board', boardSlug: 'company-notice', period: 'week', limit: 6, pageSize: 3 };
+    const puck = canonicalCatalogBlockToPuck(block(G7_RECENT_POSTS_BLOCK_TYPE, props));
+    expect(puck?.props).toMatchObject({ source: 'board', boardSlug: 'company-notice' });
+    expect(catalogPuckBlockToCanonical('G7RecentPosts', { ...puck?.props }, false)?.props).toMatchObject(props);
+    const legacy = canonicalCatalogBlockToPuck(block(G7_RECENT_POSTS_BLOCK_TYPE, { source: 'recent' }));
+    expect(legacy?.props).not.toHaveProperty('boardSlug');
+    expect(catalogPuckBlockToCanonical('G7RecentPosts', { ...legacy?.props }, false)?.props).not.toHaveProperty('boardSlug');
+  });
+
   it('retains direction-specific numeric and boolean coercion rather than broadening the schema', () => {
     expect(canonicalCatalogBlockToPuck(block(G7_RECENT_POSTS_BLOCK_TYPE, { limit: 9, pageSize: 2 }))?.props)
       .toMatchObject({ limit: '6', pageSize: '3' });

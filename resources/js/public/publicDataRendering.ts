@@ -7,8 +7,14 @@ export interface DynamicPayload {
 
 export function payloadItems(payload: DynamicPayload): Record<string, unknown>[] {
   const nested = asRecord(payload.data);
-  const values = Array.isArray(payload.data) ? payload.data : nested && Array.isArray(nested.data) ? nested.data : [];
-  return values.map(asRecord).filter((item): item is Record<string, unknown> => item !== null);
+  const values = Array.isArray(payload.data) ? payload.data : nested && Array.isArray(nested.data) ? nested.data : null;
+  if (!values) throw new Error('Invalid public list response.');
+  const board = asRecord(nested?.board);
+  return values.map((value) => {
+    const item = asRecord(value);
+    if (!item) throw new Error('Invalid public list item.');
+    return board ? { ...item, board } : item;
+  });
 }
 
 export function payloadRecord(payload: DynamicPayload): Record<string, unknown> | null {

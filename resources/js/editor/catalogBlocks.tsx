@@ -49,7 +49,14 @@ export const catalogComponentConfigs: Config<CatalogEditorComponents>['component
   },
   G7RecentPosts: {
     label: 'G7 최근 게시글', defaultProps: DEFAULT_G7_RECENT_POSTS,
-    fields: g7RecentPostsFields, render: (props) => <G7RecentPostsPreview {...props} />,
+    fields: g7RecentPostsFields,
+    resolveFields: (data, { fields }) => {
+      const selected = { ...fields };
+      if (data.props.source !== 'board') delete selected.boardSlug;
+      if (data.props.source !== 'popular') delete selected.period;
+      return selected;
+    },
+    render: (props) => <G7RecentPostsPreview {...props} />,
   },
   G7ProductGrid: {
     label: 'G7 상품 그리드', defaultProps: DEFAULT_G7_PRODUCT_GRID,

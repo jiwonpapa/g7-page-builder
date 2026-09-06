@@ -23,7 +23,7 @@ const runtimes = new WeakMap<Document, PublicRuntime>();
 const dataAttributes = ['data-g7pb-data-source', 'data-g7pb-endpoint', 'data-g7pb-audience',
   'data-g7pb-visibility-audience', 'data-g7pb-product-base', 'data-g7pb-empty-message',
   'data-g7pb-show-content', 'data-g7pb-show-description', 'data-g7pb-detail-url', 'data-g7pb-detail-label',
-  'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger'];
+  'data-g7pb-data-limit', 'data-g7pb-page-size', 'data-g7pb-motion', 'data-g7pb-motion-stagger'];
 const observedAttributes = [
   'data-g7pb-tabs', 'data-g7pb-accordion', 'data-g7pb-tabs-initial', 'data-g7pb-accordion-behavior', 'data-block-id', 'role',
   'data-g7pb-inquiry-form', 'action', 'type', 'data-g7pb-runtime-config',

@@ -105,8 +105,9 @@ export interface BarChartEditorProps extends AppearanceEditorProps {
 export interface G7RecentPostsEditorProps extends AppearanceEditorProps {
   eyebrow: string;
   heading: string;
-  source: 'recent' | 'popular';
-  period: 'today' | 'week' | 'month' | 'year';
+  source: 'recent' | 'popular' | 'board';
+  boardSlug?: string;
+  period?: 'today' | 'week' | 'month' | 'year';
   limit: '3' | '4' | '6' | '8' | '12';
   pageSize: '3' | '4' | '6';
   audience: 'all' | 'guest' | 'member';

@@ -65,7 +65,9 @@ test('installs a site kit as drafts, edits and publishes its pages, and connects
     await page.goto(`/modules/jiwonpapa-page_builder/admin/site-parts?set_id=${receipt.set_id}`);
     const partsCanvas = page.frameLocator('iframe').first();
     await expect(partsCanvas.getByText('모로 스튜디오', { exact: true }).first()).toBeVisible();
-    await partsCanvas.getByText('모로 스튜디오', { exact: true }).first().click();
+    const headerBounds = await partsCanvas.locator('.g7pb-site-header').boundingBox();
+    if (!headerBounds) throw new Error('Installed header selection geometry is missing.');
+    await page.mouse.click(headerBounds.x + 4, headerBounds.y + 4);
     await page.getByLabel('사이트 이름', { exact: true }).last().fill(`3차 스튜디오 ${stamp}`);
     const save = page.waitForResponse(r => r.url().includes(`/site-part-sets/${receipt.set_id}/draft`) && r.request().method() === 'PUT');
     await page.getByTestId('page-builder-site-part-set-save').click(); expect((await save).ok()).toBe(true);

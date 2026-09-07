@@ -63,7 +63,9 @@ async function mount() {
       selectedIndex={api.appState.ui.itemSelector?.index ?? null}
       selectedZone={api.appState.ui.itemSelector?.zone ?? 'root:default-zone'} disabled={false} />;
   }
-  const catalog = { items: [preset], toggleFavorite: async () => undefined };
+  const blockedHero: BlockGalleryItem = { ...preset, catalogId: 'synthetic-hero', type: 'Hero', productionKind: 'section', testId: 'synthetic-hero',
+    blockId: 'content.hero-centered-01', title: 'Synthetic hero', presetProps: null };
+  const catalog = { items: [preset, blockedHero], toggleFavorite: async () => undefined };
   const render = (stamp: number) => root.render(<BlockCatalogContext.Provider value={catalog}>
     <span data-parent-stamp={stamp} />
     <Puck config={pageBuilderPuckConfig} data={session.data} iframe={{ enabled: false }}
@@ -118,6 +120,31 @@ describe('editor tool owners through real Puck', () => {
     expect(test.canonical()).toEqual(test.source);
   });
 
+  it('filters by destination, explains unavailable items, and inserts into the explicitly chosen other column', async () => {
+    const test = await mount();
+    await act(async () => test.host.querySelector<HTMLButtonElement>('[data-testid="page-builder-add-block"]')!.click());
+    expect(document.querySelector('[data-testid="synthetic-hero"]')).toBeNull();
+    const gallery = document.querySelector('[data-testid="page-builder-block-gallery"]')!;
+    const toggle = Array.from(gallery.querySelectorAll('button')).find((button) => button.textContent === '삽입 불가 항목도 보기')!;
+    await act(async () => toggle.click());
+    expect(document.querySelector<HTMLButtonElement>('[data-testid="synthetic-hero"]')?.disabled).toBe(true);
+    expect(document.querySelector('[data-testid="synthetic-hero-unavailable"]')?.textContent).toContain('이 위치에는');
+    const target = gallery.querySelector<HTMLSelectElement>('#g7pb-insertion-target')!;
+    await act(async () => { target.value = `root:default-zone:1`; target.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(document.querySelector<HTMLButtonElement>('[data-testid="synthetic-hero"]')?.disabled).toBe(false);
+    await act(async () => {
+      target.value = `${test.columns.instance_id}:column2:1`;
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(document.querySelector('[data-testid="page-builder-insertion-location"]')?.textContent).toContain('2열 · 2번째');
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-testid="synthetic-preset"]')!.click());
+    await vi.waitFor(async () => { await flush(); expect(test.canonical().blocks[0].slots!.content[3].slots!.column2).toHaveLength(2); });
+    const inserted = test.canonical().blocks[0].slots!.content[3].slots!.column2[1];
+    expect(inserted.props.heading).toBe('Inserted sentinel');
+    expect(test.current().appState.ui.itemSelector).toEqual({ index: 1, zone: `${test.columns.instance_id}:column2` });
+    expect(test.canonical().blocks[0].slots!.content[0].instance_id).toBe(test.first.instance_id);
+  });
+
   it('reorders only the selected nested zone, keeps its ID selected and restores the original tree with Undo', async () => {
     const test = await mount();
     await test.settleHistory();
@@ -136,7 +163,7 @@ describe('editor tool owners through real Puck', () => {
     const sourceLocation = test.location(test.columnHeading.instance_id);
     const destinations = editorMoveDestinations(test.current().appState.data, sourceLocation);
     const stackDestination = destinations.find(({ selector }) => selector.zone === `${test.stack.instance_id}:content`);
-    expect(stackDestination).toMatchObject({ label: 'Stack · 내용', valid: true, reason: null });
+    expect(stackDestination).toMatchObject({ label: '구역 1 › 열 묶음 1 › 세로 묶음 1 › 내용', valid: true, reason: null });
     const ownDescendant = editorMoveDestinations(test.current().appState.data, test.location(test.columns.instance_id))
       .find(({ selector }) => selector.zone === `${test.stack.instance_id}:content`);
     expect(ownDescendant).toMatchObject({ valid: false, reason: '자기 하위 구역으로 이동할 수 없습니다.' });

@@ -5,7 +5,7 @@ import type { BlockGalleryItem } from './blockGalleryModel';
 import { collectionLimit, normalizeElementAppearance, normalizeElementAppearanceMap, remapCollectionElementAppearanceMap, setValueAtPath } from './canvasEditingContract';
 import type { PageDesignProps } from './pageDesignTokens';
 import { canonicalBlockToPuck } from './puckBlockCodec';
-import { assertEditorInsertion, editorInsertionDestination, editorItemLocations, type EditorItemLocation, type EditorItemSelector } from './puckEditorSelection';
+import { assertEditorInsertion, assertEditorMove, editorInsertionDestination, editorItemLocations, editorSubtreeSize, resolveEditorSelection, type EditorItemLocation, type EditorItemSelector } from './puckEditorSelection';
 import type { PuckEditorData } from './puckEditorTypes';
 
 /** Puck owns insertion history; the preset and selection complete that same entry. */
@@ -14,8 +14,11 @@ export function insertGalleryItem(
   selector: EditorItemSelector | null,
   item: BlockGalleryItem,
   instanceId: string,
+  options: { destination?: EditorItemSelector; nodes?: number; depth?: number; structureEnabled?: boolean } = {},
 ): PuckAction[] {
-  const destination = editorInsertionDestination(data, selector, item.type);
+  const destination = options.destination ?? editorInsertionDestination(data, selector, item.type,
+    options.nodes, options.depth, options.structureEnabled);
+  assertEditorInsertion(data, destination, item.type, options.nodes, options.depth, options.structureEnabled);
   const actions: PuckAction[] = [{
     type: 'insert', componentType: item.type, destinationIndex: destination.index,
     destinationZone: destination.zone, id: instanceId,
@@ -42,10 +45,11 @@ export function setPageColorMode(colorMode: PageDesignProps['colorMode']): PuckA
   };
 }
 
-export function moveCanvasItem(data: PuckEditorData, location: EditorItemLocation, destinationIndex: number): PuckAction[] {
+export function moveCanvasItem(data: PuckEditorData, location: EditorItemLocation, destinationIndex: number, structureEnabled = true): PuckAction[] {
   const { index, zone } = location.selector;
   const length = editorItemLocations(data).filter(({ selector }) => selector.zone === zone).length;
-  if (destinationIndex < 0 || destinationIndex >= length) return [];
+  if (destinationIndex < 0 || destinationIndex >= length || destinationIndex === index) return [];
+  try { assertEditorMove(data, location, { index: destinationIndex, zone }, structureEnabled); } catch { return []; }
   return [{
     type: 'reorder', sourceIndex: index, destinationIndex, destinationZone: zone, recordHistory: true,
   }, {
@@ -54,9 +58,10 @@ export function moveCanvasItem(data: PuckEditorData, location: EditorItemLocatio
 }
 
 export function moveCanvasItemTo(
-  data: PuckEditorData, location: EditorItemLocation, destination: EditorItemSelector,
+  data: PuckEditorData, location: EditorItemLocation, destination: EditorItemSelector, structureEnabled = true,
 ): PuckAction[] {
-  if (destination.zone === location.selector.zone) return moveCanvasItem(data, location, destination.index);
+  try { assertEditorMove(data, location, destination, structureEnabled); } catch { return []; }
+  if (destination.zone === location.selector.zone) return moveCanvasItem(data, location, destination.index, structureEnabled);
   return [{
     type: 'move', sourceIndex: location.selector.index, sourceZone: location.selector.zone,
     destinationIndex: destination.index, destinationZone: destination.zone, recordHistory: true,
@@ -65,11 +70,13 @@ export function moveCanvasItemTo(
   }];
 }
 
-export function duplicateCanvasItem(data: PuckEditorData, location: EditorItemLocation): PuckAction[] {
-  const subtreeNodes = editorItemLocations({ content: [location.item] }).length;
+export function duplicateCanvasItem(data: PuckEditorData, location: EditorItemLocation, structureEnabled = true): PuckAction[] {
+  const current = resolveEditorSelection(data, location.selector);
+  if (!current || current.item.props.id !== location.item.props.id) return [];
+  const subtree = editorSubtreeSize(location.item.type, location.item.props);
   const destination = { zone: location.selector.zone, index: location.selector.index + 1 };
   try {
-    assertEditorInsertion(data, destination, location.item.type, subtreeNodes);
+    assertEditorInsertion(data, destination, location.item.type, subtree.nodes, subtree.depth, structureEnabled);
   } catch {
     return [];
   }

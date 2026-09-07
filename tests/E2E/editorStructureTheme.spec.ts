@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type BrowserContext, type Locator, type Page, type Route } from '@playwright/test';
 import type { PageBuilderBlock, PageBuilderDocument } from '../../resources/js/documents/types';
-import { replacePuckRichTextField } from './support/richTextInput';
+import { activatePointerTarget, replacePuckRichTextField } from './support/richTextInput';
 import {
   authenticateEditorInteractionAdmin,
   cleanupOwnedEditorInteractionDocument,
@@ -662,7 +662,7 @@ test.describe('Editor structure and theme contracts', () => {
       await headingRow.locator('button').filter({ hasText: /^제목$/ }).click();
       await frame.getByTestId('page-builder-block-move-zone').locator('xpath=ancestor::button[1]').click();
       const moveDialog = frame.getByRole('dialog', { name: '블록 위치 이동', exact: true });
-      await moveDialog.getByTestId('page-builder-block-move-target').selectOption({ label: 'Columns · 2열' });
+      await moveDialog.getByTestId('page-builder-block-move-target').selectOption({ label: '구역 1 › 열 묶음 1 › 2열' });
       await moveDialog.getByTestId('page-builder-block-move-apply').click();
       const columns = frame.getByTestId('page-builder-layout-columns').first();
       const firstColumn = columns.locator('.g7pb-preview-layout-columns__column').nth(0);
@@ -695,6 +695,113 @@ test.describe('Editor structure and theme contracts', () => {
       const reenteredColumns = frame.getByTestId('page-builder-layout-columns').first();
       await expect(reenteredColumns.locator('.g7pb-preview-layout-columns__column').nth(0).locator('[data-g7pb-inline-field="heading"]')).toHaveCount(0);
       await expect(reenteredColumns.locator('.g7pb-preview-layout-columns__column').nth(1).locator('[data-g7pb-inline-field="heading"]')).toHaveCount(2);
+    });
+  });
+
+  test('uses contextual candidates, explicit columns, parent selection and native drag with the same saved structure', async ({ page, context }, info) => {
+    const blocks = nestedBlocks(), originalColumns = blocks[0].slots!.content[0];
+    await withOwnedDocument(page, context, info.project.name, blocks, async (api, owned) => {
+      const frame = page.frameLocator('iframe');
+      await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+      await page.locator(`[data-puck-layer-tree-id="${blocks[0].instance_id}"]`)
+        .getByRole('button', { name: 'Section · 구조 컨테이너', exact: true }).click();
+      const add = page.getByTestId('page-builder-add-block');
+      if (!(await add.isVisible())) await page.locator('summary[aria-label="편집 도구 더 보기"]').click();
+      await activatePointerTarget(page, add, 'contextual library');
+      const gallery = page.getByTestId('page-builder-block-gallery');
+      await expect(gallery.getByTestId('page-builder-insertion-location')).toContainText('구역 1 › 내용 · 2번째');
+      await expect(gallery.getByRole('tabpanel')).toHaveAttribute('data-total-items', '14');
+      await expect(gallery.getByTestId('page-builder-block-option-hero')).toHaveCount(0);
+      const showUnavailable = gallery.getByRole('button', { name: '삽입 불가 항목도 보기', exact: true });
+      await showUnavailable.focus();
+      await page.keyboard.press('Enter');
+      await expect(showUnavailable).toHaveAttribute('aria-pressed', 'true');
+      await gallery.getByLabel('블록 예제').selectOption('definition');
+      await gallery.getByLabel('블록 검색').fill('히어로');
+      const hero = gallery.getByTestId('page-builder-block-option-hero');
+      await expect(hero).toBeDisabled();
+      await expect(gallery.getByTestId('page-builder-block-option-hero-unavailable')).toContainText('이 위치에는 이 종류를 넣을 수 없습니다.');
+      await gallery.getByLabel('추가할 위치').selectOption({ label: '페이지 최상위 · 2번째' });
+      await expect(hero).toBeEnabled();
+      await gallery.getByLabel('추가할 위치').selectOption({ label: '구역 1 › 열 묶음 1 › 2열 · 2번째' });
+      await expect(hero).toBeDisabled();
+      await gallery.getByLabel('블록 검색').fill('');
+      await gallery.getByRole('tab', { name: /^기본 요소/ }).click();
+      await expect(gallery.getByTestId('page-builder-insertion-location')).toContainText('2열 · 2번째');
+      await info.attach('contextual-insertion-library', { body: await gallery.screenshot(), contentType: 'image/png' });
+      await activatePointerTarget(page, gallery.getByTestId('page-builder-block-option-heading'), 'heading into chosen second column');
+      await expect(gallery).toBeHidden();
+      const columns = frame.getByTestId('page-builder-layout-columns').first();
+      const firstColumn = columns.locator('.g7pb-preview-layout-columns__column').nth(0);
+      const secondColumn = columns.locator('.g7pb-preview-layout-columns__column').nth(1);
+      await expect(firstColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(1);
+      await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(1);
+      const parent = frame.getByTestId('page-builder-select-parent').locator('xpath=ancestor::button[1]').last();
+      await expect(parent).toHaveAccessibleName('부모 선택: 열 묶음 1');
+      await parent.click();
+      await expect(page.getByRole('heading', { name: 'Columns · 1/2/3열', exact: true })).toBeVisible();
+      await save(page);
+      const inserted = await resource(api, owned.documentId);
+      const insertedHeading = inserted.document.blocks[0].slots!.content[0].slots!.column2[1];
+      expect(insertedHeading.type).toBe('content.heading-01');
+      expect(inserted.document.blocks[0].slots!.content[0].slots!.column1[0].instance_id).toBe(originalColumns.slots!.column1[0].instance_id);
+
+      // Exercise Puck's real pointer drag into a nested slot, with no synthetic dispatch.
+      await page.getByRole('navigation').getByText('Blocks', { exact: true }).click();
+      const source = page.locator('[data-testid="drawer-item:Heading"]:visible').first();
+      const target = firstColumn.locator('[data-g7pb-inline-field="heading"]').first();
+      await source.scrollIntoViewIfNeeded();
+      await target.scrollIntoViewIfNeeded();
+      const sourceBox = await source.boundingBox(), targetBox = await target.boundingBox();
+      if (!sourceBox || !targetBox) throw new Error('Missing nested drag geometry.');
+      await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+      await page.mouse.down();
+      try {
+        await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 12, sourceBox.y + sourceBox.height / 2, { steps: 4 });
+        await expect(frame.locator('[data-puck-entry]')).toHaveAttribute('data-puck-dragging', 'true');
+        await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 24 });
+        // Puck throttles nested pointer collision updates. A root insertion line
+        // can appear first; release only after the intended column owns it.
+        await expect(firstColumn.locator('[data-puck-line-placeholder]')).toHaveCount(1);
+        await info.attach('nested-drag-target', { body: await columns.screenshot(), contentType: 'image/png' });
+      } finally { await page.mouse.up(); }
+      await expect(firstColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(2);
+      await expect(secondColumn.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(1);
+      await expect(parent).toHaveAccessibleName('부모 선택: 열 묶음 1');
+      await save(page);
+      const saved = await resource(api, owned.documentId);
+      expect(saved.document.blocks).toHaveLength(1);
+      expect(saved.document.blocks[0].slots!.content[0].slots!.column1).toHaveLength(2);
+
+      for (const invalidKind of ['inactive-slot', 'incompatible-child']) {
+        const invalid = structuredClone(saved.document), invalidColumns = invalid.blocks[0].slots!.content[0];
+        if (invalidKind === 'inactive-slot') invalidColumns.slots!.column3 = [];
+        else invalidColumns.slots!.column2.push(block('content.hero-centered-01', { title: 'Rejected nested section' }));
+        const rejected = await api.put(`${API}/${owned.documentId}/draft`, { data: { document: invalid, expected_lock_version: saved.lock_version } });
+        expect(rejected.status()).toBe(400);
+        await expect(rejected.json()).resolves.toMatchObject({ success: false,
+          message: expect.stringMatching(invalidKind === 'inactive-slot' ? /^slot: / : /^parent: /),
+          data: { code: 'G7PB_DOCUMENT_INVALID' } });
+        const retained = await resource(api, owned.documentId);
+        expect(retained).toEqual(saved);
+      }
+      await page.reload();
+      await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+      await expect(frame.locator('[data-g7pb-inline-field="heading"]')).toHaveCount(3);
+      const publishButton = page.getByTestId('page-builder-publish');
+      if (!(await publishButton.isVisible())) await page.locator('summary[aria-label="편집 도구 더 보기"]').click();
+      const [published] = await Promise.all([
+        page.waitForResponse((response) => response.request().method() === 'POST' && /\/publications\/[^/]+\/commit$/.test(new URL(response.url()).pathname)),
+        activatePointerTarget(page, publishButton, 'publish contextual composition'),
+      ]);
+      expect(published.ok()).toBe(true);
+      await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute('data-state', 'published');
+      const publicPage = await context.newPage();
+      try {
+        expect((await publicPage.goto(`/pages/${owned.slug}`))?.ok()).toBe(true);
+        await expect(publicPage.locator(`[data-block-id="${insertedHeading.instance_id}"]`)).toBeVisible();
+        await expect(publicPage.locator(`[data-block-id="${originalColumns.slots!.column1[0].instance_id}"]`)).toBeVisible();
+      } finally { await publicPage.close(); }
     });
   });
 

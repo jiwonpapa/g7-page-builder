@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
+import { transformWithEsbuild } from 'vite';
 import { selectThumbnailItems } from './lib/thumbnailSelection.mjs';
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
@@ -37,6 +38,10 @@ if (!Array.isArray(index) || index.length !== expectedCount) {
   throw new Error(`Expected ${expectedCount} thumbnail fixtures, received ${Array.isArray(index) ? index.length : 'invalid index'}.`);
 }
 const selectedItems = index;
+const iconHydration = await transformWithEsbuild(
+  await readFile(resolve(root, 'resources/js/public/publicHydration.ts'), 'utf8'),
+  'publicHydration.ts', { format: 'iife', globalName: 'g7pbThumbnailHydration' },
+);
 
 const browser = await chromium.launch({ headless: true });
 try {
@@ -44,6 +49,8 @@ try {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   for (const item of selectedItems) {
     await page.goto(pathToFileURL(resolve(fixtureRoot, item.fixture)).href, { waitUntil: 'load' });
+    // Use the real safe icon renderer only; embeds/forms/data clients never run in thumbnails.
+    await page.addScriptTag({ content: `${iconHydration.code}\ng7pbThumbnailHydration.hydrateCatalogIcons(document);` });
     await page.evaluate(async () => { await document.fonts.ready; });
     await page.evaluate(() => {
       const stage = document.querySelector('.g7pb-thumbnail-stage');

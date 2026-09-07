@@ -147,7 +147,10 @@ async function save(page: Page, id: string): Promise<void> {
 async function previewUrl(api: APIRequestContext, id: string): Promise<string> {
   const current = await resource(api, id);
   const response = await api.post(`${API}/${id}/preview`, { data: { expected_lock_version: current.lock_version } });
-  expect(response.ok()).toBe(true);
+  if (!response.ok()) {
+    const problem = await response.json() as { message?: string; error?: unknown; data?: unknown };
+    throw new Error(`Owned catalog preview rejected (${response.status()}): ${JSON.stringify(problem).slice(0, 4000)}`);
+  }
   const payload = await response.json() as { data?: { preview_url?: string } };
   if (!payload.data?.preview_url) throw new Error('Missing compiled catalog preview URL.');
   return payload.data.preview_url;
@@ -314,6 +317,7 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await expect(listCanvas.locator('ol li').first()).toHaveText('목록 한글 완성');
     await expect(badgeCanvas.locator('.g7pb-basic-badge')).toHaveText('접수 중');
     expect((await resource(api, owned.documentId)).document).toEqual(saved);
+    await info.attach('basic-elements-saved-document', { body: JSON.stringify(saved, null, 2), contentType: 'application/json' });
     await page.screenshot({ path: info.outputPath('basic-elements-editor.png') });
 
     const preview = await context.newPage();

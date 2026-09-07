@@ -1,3 +1,4 @@
+import type { BasicElementEditorComponents } from './basicElementCatalogData';
 import type { AppearanceEditorProps } from './catalogAppearance';
 import type { BlockAppearance, BlockMotion } from '../documents/blockPresentation';
 import type { HeroSlideItem, LogoItem, StatItem, PricingPlanItem, TeamMemberItem, GalleryImageItem, BarChartItem, InquiryFormKind } from '../documents/builtinBlockContracts';
@@ -168,7 +169,7 @@ export interface MapDirectionsEditorProps extends AppearanceEditorProps {
   motion: BlockMotion;
 }
 
-export interface CatalogEditorComponents extends FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents, Phase4CatalogEditorComponents, ProductionCatalogEditorComponents {
+export interface CatalogEditorComponents extends BasicElementEditorComponents, FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents, Phase4CatalogEditorComponents, ProductionCatalogEditorComponents {
   HeroSplit: HeroSplitEditorProps;
   HeroSlider: HeroSliderEditorProps;
   LogoCloud: LogoCloudEditorProps;

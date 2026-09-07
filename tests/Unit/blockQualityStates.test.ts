@@ -9,6 +9,18 @@ const fixtures = () => parseQualityStateFixtures(JSON.parse(readFileSync('tests/
 const byId = new Map(planning.definitions.map(item => [item.id, item]));
 
 describe('versioned quality state suppliers', () => {
+  it('tests Unicode text limits with a valid boundary and a rejected overflow, including accessibility names', () => {
+    for (const [path, kind, maxLength, props] of [
+      ['label', 'structural', 120, { label: '아이콘 이름' }],
+      ['label', 'plain', 40, { label: '배지' }],
+      ['items.*.text', 'plain', 200, { items: [{ text: '항목' }] }],
+    ] as const) {
+      const cases = createQualityStateCases(props, { fields: [{ path, kind, maxLength }], collections: [], directMedia: false, dynamicData: false }, fixtures().find(item => item.id === 'long-copy')!);
+      expect(cases.map(item => item.expected)).toEqual(['accept', 'reject']);
+      expect(JSON.stringify(cases[0].props)).not.toBe(JSON.stringify(cases[1].props));
+    }
+    for (const maxLength of [0, -1, 1.5, 10_001, '40']) expect(() => requiredQualityStates({ fields: [{ path: 'label', kind: 'plain', maxLength }], collections: [], directMedia: false, dynamicData: false })).toThrow('capability declaration');
+  });
   it('binds exact required state IDs and records why other states do not apply', () => {
     const source = fixtures();
     for (const item of planning.presets) {

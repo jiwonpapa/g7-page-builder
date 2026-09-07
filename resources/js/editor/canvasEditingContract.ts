@@ -89,6 +89,8 @@ export type CanvasTextFieldKind = 'plain' | 'inline-rich' | 'block-rich' | 'stru
 export interface CanvasTextFieldCapability {
   path: string;
   kind: CanvasTextFieldKind;
+  /** Bounded plain/accessibility text; schema and PHP validate the same limit. */
+  maxLength?: number;
   /** Puck-only path when the canonical field is represented by an editor wrapper object. */
   editorPath?: string;
   /** False when the rendered field already participates in an outer route/action. */
@@ -115,6 +117,16 @@ function defineCanvasBlockCapability(definition: CanvasBlockEditingCapabilityDef
 }
 
 export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
+  defineCanvasBlockCapability({ componentType: 'Icon', textFields: [
+    ...structural({ path: 'label', maxLength: 120 }, 'icon', 'size', 'tone', 'decorative'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'List', textFields: [
+    ...plain({ path: 'items.*.text', maxLength: 200 }), ...structural('ordered'),
+  ], collections: ['items'], directMedia: false, directRoute: false, dynamicData: false }),
+  defineCanvasBlockCapability({ componentType: 'Badge', textFields: [
+    ...plain({ path: 'label', maxLength: 40 }), ...structural('icon', 'size', 'tone'),
+  ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
+
   defineCanvasBlockCapability({ componentType: 'Heading', textFields: [
     ...plain('eyebrow'), ...inlineRich('heading'), ...structural('level', 'anchor'),
   ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
@@ -284,6 +296,7 @@ export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
 
 const COLLECTION_LIMITS: Record<string, Record<string, CollectionLimit>> = {
   Buttons: { items: { min: 1, max: 3 } },
+  List: { items: { min: 1, max: 20 } },
   IconList: { items: { min: 2, max: 8 } },
   Features: { items: { min: 1, max: 6 } },
   HeroSlider: { slides: { min: 2, max: 5 } },
@@ -391,6 +404,7 @@ const COMPONENT_TYPE_BY_BLOCK_TYPE: Record<string, string> = {
   image: 'Image',
   buttons: 'Buttons',
   'image-text': 'ImageText',
+  icon: 'Icon', list: 'List', badge: 'Badge',
   'icon-list': 'IconList',
   hero: 'Hero',
   'hero-split': 'HeroSplit',

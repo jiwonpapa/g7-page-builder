@@ -1,3 +1,4 @@
+import { canonicalBasicElementToPuck, basicElementToCanonical } from './basicElementCatalogCodec';
 import type { BlockAppearance, ElementAppearanceMap } from '../documents/blockPresentation';
 import { appearance as normalizeCatalogAppearance, attachAppearance } from './catalogAppearance';
 import { asRecord, asString, heroSplitLayout, normalizeHeroSlides, normalizeLogos, logoLayout, normalizeStats, statsLayout, normalizePricingEditor, pricingLayout, normalizeMembers, teamLayout, normalizeImages, galleryLayout, normalizeBars } from './catalogData';
@@ -17,6 +18,8 @@ function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance 
 }
 
 export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] } | null {
+  const basicElement = canonicalBasicElementToPuck(block);
+  if (basicElement) return basicElement;
   const foundationBlock = canonicalFoundationBlockToPuck(block);
   if (foundationBlock) return foundationBlock as { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] };
   const phase2Block = canonicalPhase2BlockToPuck(block);
@@ -47,6 +50,8 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
 }
 
 export function catalogPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean, includeSliderSettings = false): { type: string; props: Record<string, unknown> } | null {
+  const basicElement = basicElementToCanonical(type, raw, includeAppearance);
+  if (basicElement) return basicElement;
   const foundationBlock = foundationPuckBlockToCanonical(type, raw, includeAppearance);
   if (foundationBlock) return foundationBlock;
   const phase2Block = phase2PuckBlockToCanonical(type, raw, includeAppearance);

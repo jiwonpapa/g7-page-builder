@@ -3530,6 +3530,156 @@
           "status": "pending"
         }
       }
+    },
+    {
+      "catalog_id": "block:content.icon-01@1",
+      "source_digests": {
+        "content": "afbed8a6c21fdf0a656c4abece9705cee1b183496fdee2d93606cec2515e6a60",
+        "rights": "8112806a1540533ab114ff8fe1d9f1da760ab92552d35f006e8e30e8d557ebd1",
+        "render": "d83cd09cc7f3509800ec2580300a4ee02e10d29aa66a86767826cf39beb7abfe",
+        "editing": "aa11d27d9f74ceccfc124b1c2b75e47e087588e8c110ae135ca8eb2647d966a5"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.list-01@1",
+      "source_digests": {
+        "content": "50a3120c6a3956e71000e2ff9c40e6ac103eff7d0ae4a402f4f1761ef5c9d6e4",
+        "rights": "cbe79461b336efc20a696e49ef5752f286edd4845484d5bd309ef7105be5593a",
+        "render": "271a0b6b4597d5f1909ffc40ef4374f2a42aeb921c8a996ed3d2fb28ebaf203d",
+        "editing": "70db3dae224ddb2d393ef9a99b771481ae2de14c792aaadc287bb0baaa51df7e"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "block:content.badge-01@1",
+      "source_digests": {
+        "content": "d7844d8852fcfcc759ae16e58ea2a00a9f96ea5245aa664a4f5bec149def5623",
+        "rights": "ce2458d22af1d6c2a9146e3d98d42d8d8adb5cea7aa53390e0d09d71c26b3dca",
+        "render": "473e5bcb21d139eb5a7265a9d635896679ff97840be9165f91b28648db00d76c",
+        "editing": "f8759a69dcf24bb23aabe96b1071f8b80b62c3d9a8f07cdb1508e8c7319d7fa1"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:icon.simple",
+      "source_digests": {
+        "content": "fdcc34ca6fff64d792e39c6506d4a6ed8b2c0efb0f04891ebf938d924d386ced",
+        "rights": "10e48f254fe5b7b0fe61b8d8fb67b97d72741e14c47d2e3e498d2937f126030a",
+        "render": "cf926d41a5cae8ca7e752a414eb3c872a46e57304f45eb9f10c591822d7f0038",
+        "editing": "4c97119a37c71784c055d7fa9f8d7ad3cf6bec2d11b08f9255033675ada29780"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:list.simple",
+      "source_digests": {
+        "content": "bfb48f0c641cbf43f81237cff3b937ef833c1899e00eb709dd0d72b4efc265a9",
+        "rights": "60fd17b55420bccdfebceeeb0bc91789f3196fe3f65a4acb8d8be5fcd115d7fd",
+        "render": "0a837b2d33089c89c3cdd8a9cd44cb9ce703d8a9a3447b61750ae4c7e549843e",
+        "editing": "44771f361079279be96e17e7d8473d3ff49ddbf21b0e07f3af03f147db2d0657"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:badge.simple",
+      "source_digests": {
+        "content": "310d99c952f0bac7f79754d00676956b1b41718376633fe144a01dd3b406de39",
+        "rights": "6379531375ab1fe57e8a58e1ef767782260405cf8231afa18d1ee4e95cc0e8db",
+        "render": "46856112d094f496f3705b2a5b60fc332493e4301786aaaa8d3ee7970c442420",
+        "editing": "351f80a710b870bf662ee23cdb8adca562f078e2c2098cbca84f84fea8e2871e"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
     }
   ]
 }

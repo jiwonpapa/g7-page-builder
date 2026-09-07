@@ -19,7 +19,7 @@ describe('Block Pack manifest v1 schema', () => {
 
   it('accepts the production catalog and covers every type with a unique preview and preset', () => {
     expect(validate(builtinManifest), JSON.stringify(validate.errors)).toBe(true);
-    expect(builtinManifest.pack_version).toBe('0.15.0');
+    expect(builtinManifest.pack_version).toBe('0.16.0');
     expect(builtinManifest.blocks.length).toBeGreaterThan(0);
     expect(builtinManifest.presets.length).toBeGreaterThanOrEqual(builtinManifest.blocks.length);
     expect(new Set(builtinManifest.blocks.map((block) => `${block.block_id}@${block.block_version}`)).size).toBe(builtinManifest.blocks.length);

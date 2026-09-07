@@ -9,11 +9,42 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\Ba
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\HtmlEscaper;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\RichTextSanitizer;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class BasicElementBlockCompilerTest extends TestCase
 {
+    use CreatesBuiltInCompiler;
+
+    public function test_shared_fixture_compiles_nested_elements_and_typed_text_styles(): void
+    {
+        $payload = json_decode((string) file_get_contents(dirname(__DIR__).'/Contract/document-basic-elements-v2.fixture.json'), true, flags: JSON_THROW_ON_ERROR);
+        $leaves = &$payload['blocks'][0]['slots']['content'][0]['slots']['column1'][0]['slots']['content'];
+        $leaves[1]['props']['appearance'] = ['surface' => 'default', 'spacing' => 'compact', 'elements' => ['items.0.text' => ['weight' => 'bold']]];
+        $leaves[2]['props']['appearance'] = ['surface' => 'default', 'spacing' => 'compact', 'elements' => ['label' => ['tone' => 'accent']]];
+        $before = $payload;
+        $compiler = $this->builtInCompiler();
+        $result = $compiler->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+        $html = (string) $result->artifact;
+        self::assertStringContainsString('data-block-type="layout-stack"', $html);
+        self::assertStringContainsString('role="img" aria-label="안전한 서비스"', $html);
+        self::assertStringContainsString('<li class="g7pb-element-weight--bold">이용할 서비스를 선택합니다.</li>', $html);
+        self::assertStringContainsString('<span class="g7pb-element-tone--accent">새 소식</span>', $html);
+        self::assertSame($before, $payload);
+        $legacy = [...$payload, 'schema_version' => 'g7-page-builder/v1', 'blocks' => $leaves];
+        self::assertStringContainsString('새 소식', (string) $compiler->compile(PageBuilderDocument::fromArray($legacy), 1, 'html', 'g7-7.0.7')->artifact);
+    }
+
+    public function test_unknown_block_version_is_rejected_instead_of_dropping_the_element(): void
+    {
+        $payload = json_decode((string) file_get_contents(dirname(__DIR__).'/Contract/document-basic-elements-v2.fixture.json'), true, flags: JSON_THROW_ON_ERROR);
+        $payload['blocks'][0]['slots']['content'][0]['slots']['column1'][0]['slots']['content'][0]['block_version'] = 2;
+        $this->expectException(\InvalidArgumentException::class);
+        $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+    }
+
     private function compiler(string $kind): BasicElementBlockCompiler
     {
         $properties = new BlockPropertyReader(new RichTextSanitizer);

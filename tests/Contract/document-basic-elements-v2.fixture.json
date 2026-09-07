@@ -1,0 +1,106 @@
+{
+  "schema_version": "g7-page-builder/v2",
+  "document_id": "10000000-0000-4000-8000-000000000001",
+  "slug": "basic-elements",
+  "mode": "canvas",
+  "locale": "ko",
+  "shell_mode": "none",
+  "tokens": {
+    "design.palette": "indigo",
+    "design.width": "standard"
+  },
+  "blocks": [
+    {
+      "instance_id": "10000000-0000-4000-8000-000000000002",
+      "type": "layout.section-01",
+      "block_version": 1,
+      "props": {
+        "width": "standard",
+        "spacing": "normal"
+      },
+      "slots": {
+        "content": [
+          {
+            "instance_id": "10000000-0000-4000-8000-000000000003",
+            "type": "layout.columns-01",
+            "block_version": 1,
+            "props": {
+              "columns": 2,
+              "ratio": "1:2",
+              "gap": "normal"
+            },
+            "slots": {
+              "column1": [
+                {
+                  "instance_id": "10000000-0000-4000-8000-000000000006",
+                  "type": "layout.stack-01",
+                  "block_version": 1,
+                  "props": {
+                    "gap": "normal"
+                  },
+                  "slots": {
+                    "content": [
+                      {
+                        "instance_id": "10000000-0000-4000-8000-000000000007",
+                        "type": "content.icon-01",
+                        "block_version": 1,
+                        "props": {
+                          "icon": "shield",
+                          "size": "large",
+                          "tone": "accent",
+                          "decorative": false,
+                          "label": "안전한 서비스"
+                        }
+                      },
+                      {
+                        "instance_id": "10000000-0000-4000-8000-000000000008",
+                        "type": "content.list-01",
+                        "block_version": 1,
+                        "props": {
+                          "ordered": false,
+                          "items": [
+                            {
+                              "text": "이용할 서비스를 선택합니다."
+                            },
+                            {
+                              "text": "안내 내용을 확인하고 신청합니다."
+                            },
+                            {
+                              "text": "진행 상황을 확인합니다."
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "instance_id": "10000000-0000-4000-8000-000000000009",
+                        "type": "content.badge-01",
+                        "block_version": 1,
+                        "props": {
+                          "label": "새 소식",
+                          "icon": "sparkles",
+                          "size": "medium",
+                          "tone": "accent"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "column2": [
+                {
+                  "instance_id": "10000000-0000-4000-8000-000000000005",
+                  "type": "content.rich-text-01",
+                  "block_version": 1,
+                  "props": {
+                    "content": "<p>오른쪽 본문은 저장·재로드·발행에서도 유지됩니다.</p>",
+                    "measure": "wide"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

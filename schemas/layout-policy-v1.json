@@ -52,14 +52,20 @@
     "navigation.breadcrumbs-01",
     "navigation.anchor-menu-01",
     "navigation.social-links-01",
-    "media.image-carousel-01"
+    "media.image-carousel-01",
+    "content.icon-01",
+    "content.list-01",
+    "content.badge-01"
   ],
   "leaf_types": [
     "content.heading-01",
     "content.rich-text-01",
     "media.image-01",
     "action.buttons-01",
-    "content.divider-01"
+    "content.divider-01",
+    "content.icon-01",
+    "content.list-01",
+    "content.badge-01"
   ],
   "layouts": {
     "section": "layout.section-01",
@@ -67,10 +73,22 @@
     "stack": "layout.stack-01"
   },
   "child_groups": {
-    "root": ["compatibility", "section"],
-    "section": ["columns", "stack", "leaf"],
-    "columns": ["stack", "leaf"],
-    "stack": ["leaf"]
+    "root": [
+      "compatibility",
+      "section"
+    ],
+    "section": [
+      "columns",
+      "stack",
+      "leaf"
+    ],
+    "columns": [
+      "stack",
+      "leaf"
+    ],
+    "stack": [
+      "leaf"
+    ]
   },
   "ratios": {
     "1": [

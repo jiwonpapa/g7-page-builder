@@ -8,7 +8,7 @@ import { createRuntimePuckConfig, pageBuilderPuckConfig } from '../../resources/
 
 describe('editor library production units and declared editing boundaries', () => {
   it('keeps element presets in their production unit without changing preset contents or identity', () => {
-    for (const type of ['Heading', 'RichText', 'Image', 'Buttons', 'Divider']) {
+    for (const type of ['Heading', 'RichText', 'Image', 'Buttons', 'Divider', 'Icon', 'List', 'Badge']) {
       const items = BLOCK_GALLERY_ITEMS.filter((item) => item.type === type);
       expect(items.length).toBeGreaterThan(1);
       expect(items.every((item) => item.productionKind === 'element')).toBe(true);

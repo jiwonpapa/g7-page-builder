@@ -13,7 +13,7 @@
 - Public paths activate under the phase-2 rules only after each page is successfully published. The user edits and publishes each page, then publishes the Header/Footer pair and explicitly activates that set. Changing existing page addresses after installation does not automatically rewrite already-saved menu links.
 - Preview is advisory: conflicts are checked again inside installation and address uniqueness is enforced by the database. Existing native G7 routes continue to win if new conflicts arise later.
 
-The sample is three informational pages, not a live inquiry form. Contact instructions must be replaced with the site's actual contact details before publishing. Full theme/function-screen compatibility remains a subsequent phase.
+The sample is three informational pages, not a live inquiry form. Contact instructions must be replaced with the site's actual contact details before publishing. Full theme and unrestricted function-screen editing are outside this Site Kit contract and are not scheduled as the next implementation phase. Current development follows the [editor advancement plan](productization/editor-plan.md).
 
 ## 별도 전문서비스 평가 킷
 

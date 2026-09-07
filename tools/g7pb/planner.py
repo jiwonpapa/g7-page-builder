@@ -686,8 +686,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                      if name.removeprefix("browser:") in SITE_PART_SPECS else gate
                      for name, gate in gates.items() if name.startswith("browser:")]
     artifacts = [gate for name, gate in gates.items() if name in artifact_names]
-    plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:") and name not in artifact_names]
-    if browser_gates or artifacts:
+    plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:") and name not in artifact_names and name != "full-product"]
+    if full or browser_gates or artifacts:
         # The controller orchestrates the installed runtime; never execute its
         # Docker-aware environment command inside Docker a second time. build()
         # verifies source/env AND existing artifact hashes before reusing assets.
@@ -703,10 +703,17 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 "Apply only changed G7 declarations/views before browser execution", ("node", "php", "g7", "browser"),
                 True, reusable=False, execution="controller")
             before.append(gates["browser-runtime-sync"])
+        plan.gates.extend(before)
+        if full:
+            # quality-gate verifies the installed module version and routes, so
+            # declaration/registry synchronization must precede it too.
+            plan.gates.append(replace(gates["full-product"], depends_on=tuple(g.name for g in before)))
+        if not (browser_gates or artifacts):
+            return plan
         add("browser-assets", [*command, "build", "--root", str(root.resolve()), "--runtime", runtime, "--apply"], inputs,
             "Require candidate source/env/dist fingerprint before browser execution; reuse only matching assets",
             ("node", "g7", "browser"), True, reusable=False, execution="controller", depends_on=[g.name for g in before])
-        plan.gates.extend([*before, gates["browser-assets"]])
+        plan.gates.append(gates["browser-assets"])
         plan.gates.extend(replace(gate, depends_on=("browser-assets",)) for gate in artifacts)
         plan.gates.extend(replace(gate, depends_on=("browser-assets", *sorted(artifact_names))) for gate in browser_gates)
     return plan

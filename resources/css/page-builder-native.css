@@ -11,6 +11,8 @@
   gap: 6px;
 }
 
+.g7pb-native-form input,
+.g7pb-native-form select,
 .g7pb-native-form textarea,
 .g7pb-native-form button {
   box-sizing: border-box;
@@ -36,3 +38,18 @@
   margin: 0;
   font-size: 12px;
 }
+
+.g7pb-native-form form, .g7pb-native-content section, .g7pb-native-media { display: grid; gap: 8px; }
+.g7pb-native-content h3 { margin: 8px 0 0; font-size: 14px; }
+.g7pb-native-field { display: grid; gap: 6px; padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, currentcolor 20%, transparent); }
+.g7pb-native-field-state, .g7pb-native-actions { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.g7pb-native-field-state button { width: auto; margin-left: auto; padding: 4px 8px; }
+.g7pb-native-choice { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; border: 0; }
+.g7pb-native-choice legend { margin-bottom: 6px; }
+.g7pb-native-choice label { display: inline-flex; align-items: center; gap: 4px; padding: 5px; border: 1px solid color-mix(in srgb, currentcolor 30%, transparent); border-radius: 4px; }
+.g7pb-native-choice input { width: auto; margin: 0; }
+.g7pb-native-assets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 240px; overflow-y: auto; }
+.g7pb-native-assets > div { display: grid; gap: 4px; min-width: 0; }
+.g7pb-native-assets img { width: 100%; height: 70px; object-fit: contain; }
+.g7pb-native-assets span, .g7pb-native-assets small { overflow-wrap: anywhere; }
+.g7pb-native-form input[type="file"] { font-size: 12px; }

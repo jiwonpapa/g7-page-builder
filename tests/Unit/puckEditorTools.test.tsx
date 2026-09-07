@@ -245,6 +245,40 @@ describe('editor tool owners through real Puck', () => {
     expect(test.canonical()).toEqual(test.source);
   });
 
+  it('preserves rapid structural and repeater commands as native Undo/Redo groups', async () => {
+    const test = await mount(); await test.settleHistory();
+    const beforeHistory = test.current().history.index;
+    await test.command(duplicateCanvasItem(test.current().appState.data, test.location(test.first.instance_id)));
+    const copyId = test.current().selectedItem!.props.id;
+    await test.command(moveCanvasItemTo(test.current().appState.data, test.location(copyId),
+      { index: 1, zone: `${test.columns.instance_id}:column1` }));
+    await test.command(deleteCanvasItem(test.current().appState.data, test.location(test.second.instance_id)));
+    const changed = test.canonical();
+    expect(test.location(copyId).selector.zone).toBe(`${test.columns.instance_id}:column1`);
+    expect(editorItemLocations(test.current().appState.data).some(({ item }) => item.props.id === test.second.instance_id)).toBe(false);
+    await test.settleHistory();
+    expect(test.current().history.index).toBe(beforeHistory + 1);
+    await test.undo(); expect(test.canonical()).toEqual(test.source);
+    await act(async () => test.current().history.forward()); await flush();
+    expect(test.canonical()).toEqual(changed);
+
+    const collectionBefore = test.canonical();
+    for (const [operation, index] of [['duplicate', 0], ['down', 1], ['delete', 0]] as const) {
+      const plan = updateCanvasCollection(test.location(test.buttons.instance_id), 'items', index, operation);
+      if (!plan) throw new Error('Missing rapid collection command');
+      await test.command([plan.action]);
+    }
+    const collectionAfter = test.canonical();
+    const result = test.location(test.buttons.instance_id);
+    expect(result.item.props).toMatchObject({ items: [
+      { label: 'Item B', url: '/b' }, { label: 'Item A', url: '/a' },
+    ], elementStyles: { 'items.0.label': { tone: 'accent' }, 'items.1.label': { weight: 'bold' } } });
+    await test.settleHistory(); await test.undo();
+    expect(test.canonical()).toEqual(collectionBefore);
+    await act(async () => test.current().history.forward()); await flush();
+    expect(test.canonical()).toEqual(collectionAfter);
+  });
+
   it('preserves external payload and metadata at context and path replacement boundaries', () => {
     const payload = { id: 'payload-id', puck: 'payload-puck', editMode: 'payload-edit', title: 'Original', motion: { own: true } };
     const metadata = { visibility: { audience: 'member' as const }, emptySlotNames: ['body'] };

@@ -145,11 +145,19 @@ test.describe('Editor canonical document boundary', () => {
         await pending;
         await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saving');
         await selectDarkTheme(page);
+        const field = page.frameLocator('iframe').locator('[data-g7pb-inline-field="heading"] .ProseMirror, .ProseMirror[data-g7pb-inline-field="heading"]').first();
+        await field.click();
+        await expect(field).toBeFocused();
+        await page.keyboard.press('ControlOrMeta+A');
+        await expect.poll(() => field.evaluate((element) => element.ownerDocument.getSelection()?.toString())).toBe(await field.textContent());
+        await page.keyboard.insertText('저장 중에도 한글을 편집합니다');
+        await expect(field).toHaveText('저장 중에도 한글을 편집합니다');
         await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'dirty');
         const latestSaved = page.waitForResponse((candidate) => {
           if (candidate.request().method() !== 'PUT' || new URL(candidate.url()).pathname !== `${API}/${owned.documentId}/draft`) return false;
           const body = candidate.request().postDataJSON() as { document?: PageBuilderDocument };
-          return body.document?.tokens?.['design.color_mode'] === 'dark';
+          return body.document?.tokens?.['design.color_mode'] === 'dark'
+            && String(body.document.blocks[0].slots?.content[0].props.heading).includes('저장 중에도 한글을 편집합니다');
         });
         release();
         expect((await latestSaved).ok()).toBe(true);
@@ -157,6 +165,7 @@ test.describe('Editor canonical document boundary', () => {
         expect((await resource(api, owned.documentId)).document.tokens?.['design.color_mode']).toBe('dark');
         await page.reload();
         await expect(page.frameLocator('iframe').locator('.g7pb-document-theme')).toHaveClass(/g7pb-theme-mode-dark/);
+        await expect(field).toHaveText('저장 중에도 한글을 편집합니다');
       } finally {
         release();
         await page.unroute(previewPath);

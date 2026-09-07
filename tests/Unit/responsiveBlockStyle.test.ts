@@ -43,6 +43,20 @@ describe('typed responsive block style policy', () => {
     expect(reset).toEqual({ tablet: responsive.tablet });
   });
 
+  it('preserves layout overrides when resetting styles and updates inherited layout from common', () => {
+    const overrides = { tablet: { appearance: { surface: 'soft' as const }, layout: { columns: 1 as const, gap: 'none' as const } },
+      mobile: { layout: { gap: 'compact' as const } } };
+    const resetStyle = resetResponsivePart(overrides, 'tablet', 'appearance');
+    expect(resolveResponsiveLayout('columns', { columns: 3, gap: 'spacious' }, resetStyle, 'tablet'))
+      .toEqual({ columns: 1, gap: 'none' });
+    const resetLayout = resetResponsivePart(resetStyle, 'tablet', 'layout');
+    expect(resolveResponsiveLayout('columns', { columns: 3, gap: 'spacious' }, resetLayout, 'tablet'))
+      .toEqual({ columns: 2, gap: 'spacious' });
+    expect(resolveResponsiveLayout('columns', { columns: 3, gap: 'spacious' }, resetLayout, 'mobile'))
+      .toEqual({ columns: 1, gap: 'compact' });
+    expect(overrides.tablet.appearance).toEqual({ surface: 'soft' });
+  });
+
   it('does not chain mobile from tablet and applies the documented column defaults', () => {
     const responsive = {
       tablet: { layout: { columns: 1 as const, gap: 'spacious' as const } },

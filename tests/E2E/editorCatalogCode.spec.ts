@@ -301,6 +301,58 @@ test('catalog fields and interactive previews retain edited values', async ({ pa
   });
 });
 
+test('repeater element selection follows rapid commands and Korean composition survives reentry', async ({ page, context }, info) => {
+  const actions = buttons();
+  actions.props.appearance = { surface: 'default', spacing: 'compact', elements: {
+    'items.0.label': { weight: 'bold' }, 'items.1.label': { tone: 'accent' },
+  } };
+  await withFixture(page, context, info.project.name, [actions], async (api, owned) => {
+    const canvas = canvasBlock(page, actions);
+    const first = richField(canvas, 'items.0.label');
+    await replacePuckRichTextField(page, first, '한글 입력 ', 'repeater label');
+    // Chromium's IME protocol exercises real composition updates, not dispatchEvent mocks.
+    const cdp = await context.newCDPSession(page);
+    try {
+      for (const text of ['ㅎ', '하', '한']) {
+        await cdp.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
+      }
+      await cdp.send('Input.insertText', { text: '한' });
+      await page.keyboard.insertText('글 완성');
+      await expect(first).toHaveText('한글 입력 한글 완성');
+    } finally { await cdp.detach(); }
+    await first.press('ArrowLeft');
+    const frame = page.frameLocator('iframe');
+    const itemAction = (name: string) => frame.getByTestId(name).locator('xpath=ancestor::button[1]').last();
+    await expect(itemAction('page-builder-item-duplicate')).toBeVisible();
+    // Establish only the start/end boundary; no delay between structural commands.
+    await page.waitForTimeout(300);
+    await itemAction('page-builder-item-duplicate').click();
+    await itemAction('page-builder-item-move-down').click();
+    await itemAction('page-builder-item-delete').click();
+    await expect(richField(canvas, 'items.0.label')).toHaveText('한글 입력 한글 완성');
+    await expect(canvas.locator('[data-g7pb-inline-field="items.2.label"]')).toHaveCount(0);
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'undo', exact: true }).click();
+    // A real pointer sequence may cross native grouping boundaries. Undo the
+    // bounded sequence until the original two entries return, then replay it.
+    let undoCount = 1;
+    while (await canvas.locator('[data-g7pb-inline-field="items.2.label"]').count() > 0 && undoCount < 3) {
+      await page.getByRole('button', { name: 'undo', exact: true }).click(); undoCount++;
+    }
+    await expect(canvas.locator('[data-g7pb-inline-field="items.2.label"]')).toHaveCount(0);
+    await expect(richField(canvas, 'items.0.label')).toHaveText('한글 입력 한글 완성');
+    for (let index = 0; index < undoCount; index++) await page.getByRole('button', { name: 'redo', exact: true }).click();
+    await save(page, owned.documentId);
+    const saved = (await resource(api, owned.documentId)).document.blocks[0];
+    expect(saved.instance_id).toBe(actions.instance_id);
+    expect(saved.props.appearance).toEqual(actions.props.appearance);
+    expect(saved.props.items).toHaveLength(2);
+    await page.reload();
+    await expect(richField(canvasBlock(page, actions), 'items.0.label')).toHaveText('한글 입력 한글 완성');
+    expect((await resource(api, owned.documentId)).document.blocks[0]).toEqual(saved);
+  });
+});
+
 test('catalog conversion preserves nested documents through save and reentry', async ({ page, context }, info) => {
   const title = heading(), actions = buttons();
   const body = block('content.rich-text-01', { content: `<p>${token('sibling')}</p>`, measure: 'standard' });
@@ -387,8 +439,20 @@ test('catalog responsive overrides preserve inheritance and reset', async ({ pag
         await expect(preview.locator(`[data-block-id="${actions.instance_id}"]`))
           .toHaveCSS('background-color', colors.get(width === 820 ? 1440 : width)!);
       }
+      await preview.screenshot({ path: info.outputPath('responsive-mobile-after-reset.png'), fullPage: true });
+      await mobileReset.click();
+      await expect(mobile).toHaveValue('');
+      await save(page, owned.documentId);
+      const fullyReset = (await resource(api, owned.documentId)).document.blocks[0].slots!.content[0];
+      expect(fullyReset.responsive).toBeUndefined();
+      expect(fullyReset.props.appearance).toEqual(actions.props.appearance);
+      expect((await preview.goto(await previewUrl(api, owned.documentId)))?.ok()).toBe(true);
+      for (const width of [1440, 820, 390]) {
+        await preview.setViewportSize({ width, height: 1000 });
+        await expect(preview.locator(`[data-block-id="${actions.instance_id}"]`)).toHaveCSS('background-color', colors.get(1440)!);
+      }
       await page.reload();
-      expect((await resource(api, owned.documentId)).document.blocks[0].slots!.content[0]).toEqual(reset);
+      expect((await resource(api, owned.documentId)).document.blocks[0].slots!.content[0]).toEqual(fullyReset);
     } finally { await preview.close(); }
   });
 });

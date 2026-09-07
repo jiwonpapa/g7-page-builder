@@ -1,10 +1,107 @@
 import { BLOCK_CATEGORY_LABELS, blockCatalogTestId, BUILTIN_BLOCK_DEFINITIONS, BUILTIN_BLOCK_PRESETS, BUILTIN_CORE_MANIFEST } from '../blocks/builtinCatalog';
 import type { BlockCatalogItem } from '../blocks/types';
+import type { Config } from '@puckeditor/core';
+import { layoutPolicy } from '../documents/layoutPolicy';
+import { BUILTIN_CANVAS_EDITING_CONTRACT, collectionLimit } from './canvasEditingContract';
 import type { EditorComponents } from './puckEditorTypes';
+
+export const LIBRARY_KINDS = [
+  ['element', '기본 요소'], ['layout', '레이아웃'], ['component', '컴포넌트'], ['section', '완성 섹션'],
+] as const;
+export type LibraryKind = typeof LIBRARY_KINDS[number][0];
+const SECTION_COMPONENTS = new Set([
+  'Hero', 'HeroSplit', 'HeroSlider', 'Features', 'Cta', 'LogoCloud', 'Stats', 'Pricing', 'Team',
+  'Testimonials', 'ProcessTimeline', 'ArticleList', 'LogoCarousel', 'TestimonialSlider',
+  'EventSchedule', 'DownloadResources', 'CardGrid',
+]);
+const LAYOUT_COMPONENTS = new Set(['LayoutSection', 'LayoutColumns', 'LayoutStack']);
+
+/** Editor discovery only: never changes the persisted block or Pack contract. */
+export function libraryKind(type: string): LibraryKind {
+  if (LAYOUT_COMPONENTS.has(type)) return 'layout';
+  const definition = BUILTIN_BLOCK_DEFINITIONS.find((entry) => entry.editor_component === type);
+  if (definition && layoutPolicy.leaf_types.includes(definition.block_id)) return 'element';
+  if (definition && SECTION_COMPONENTS.has(type)) return 'section';
+  // Older external packs keep their original editor and are conservatively grouped as components.
+  return 'component';
+}
+
+export function libraryKindLabel(kind: LibraryKind): string {
+  return LIBRARY_KINDS.find(([value]) => value === kind)?.[1] ?? '';
+}
+
+export function libraryCategories(types: readonly string[], layoutEnabled = true, allTypes: readonly string[] = types): NonNullable<Config<EditorComponents>['categories']> {
+  const isRegistered = (type: string): type is keyof EditorComponents => LAYOUT_COMPONENTS.has(type)
+    || BUILTIN_BLOCK_DEFINITIONS.some((entry) => entry.editor_component === type) || type.startsWith('External_');
+  const registered = [...new Set(types.filter(isRegistered))];
+  return {
+    ...Object.fromEntries(LIBRARY_KINDS.map(([kind, title]) => [kind, {
+      title, defaultExpanded: true, visible: kind !== 'layout' || layoutEnabled,
+      components: registered.filter((type) => type !== 'HeroSplit' && type !== 'LayoutColumns'
+        && type !== 'LayoutStack' && libraryKind(type) === kind),
+    }])),
+    internal: { visible: false, components: registered.filter((type) => ['HeroSplit', 'LayoutColumns', 'LayoutStack'].includes(type)) },
+    unavailable: { visible: false, components: allTypes.filter(isRegistered).filter((type) => !registered.includes(type)) },
+  };
+}
+
+export interface LibraryEditingCapability {
+  key: 'fields' | 'style' | 'repeaters' | 'slots' | 'fixed';
+  label: string;
+  description: string;
+  available: boolean;
+}
+
+const STYLE_FIELDS = new Set(['surface', 'spacing', 'layout', 'theme', 'alignment', 'mediaPosition',
+  'textScale', 'textAlign', 'elementStyles', 'containerWidth', 'containerAlign', 'minHeight',
+  'verticalAlign', 'responsiveOverrides', 'width', 'gap', 'ratio', 'columns', 'motion',
+  'variant', 'aspectRatio', 'tabVariant', 'tone', 'measure']);
+
+/** Read capabilities from the existing canvas/field contracts, including explicit unavailable states. */
+export function libraryEditingCapabilities(type: string, fields: Record<string, unknown>): LibraryEditingCapability[] {
+  const contract = BUILTIN_CANVAS_EDITING_CONTRACT.find((entry) => entry.componentType === type);
+  const layout = LAYOUT_COMPONENTS.has(type);
+  const known = Boolean(contract) || layout;
+  const direct = Boolean(contract?.directText || contract?.directMedia || contract?.directRoute);
+  const styles = Object.entries(fields).filter(([name, field]) => STYLE_FIELDS.has(name)
+    && typeof field === 'object' && field !== null && 'type' in field && field.type !== 'array');
+  const styleLabels = styles.flatMap(([name, field]) => typeof field === 'object' && field !== null
+    && 'label' in field && typeof field.label === 'string' ? [name === 'elementStyles' ? '글자 모양' : field.label] : []);
+  const repeaters = contract?.collections.filter((name) => collectionLimit(type, name) !== null) ?? [];
+  const repeaterLimits = repeaters.map((name) => {
+    const limit = collectionLimit(type, name);
+    return limit ? `${limit.min}~${limit.max}개` : '';
+  }).join(' · ');
+  const slots = Object.entries(fields).filter(([, field]) => typeof field === 'object' && field !== null
+    && 'type' in field && field.type === 'slot').map(([name]) => name);
+  const plannedSlots = ['Hero', 'ImageText', 'Tabs', 'FaqAccordion'].includes(type);
+  const fixed = contract?.dynamicData ? '실제 데이터·접근 권한·연결 동작은 연동 모듈이 관리합니다.'
+    : type === 'InquiryForm' ? '필수 입력·동의·검증·전송 동작을 유지합니다.'
+      : ['Tabs', 'FaqAccordion'].includes(type) ? '탭·개폐와 키보드·포커스 동작을 유지합니다.'
+        : layout ? '허용 자식·깊이·개수 제한과 읽기 순서를 유지합니다.'
+          : known ? '접근성 구조·링크 처리와 정해진 표시 동작을 유지합니다.'
+            : '팩이 제공한 구성과 동작을 유지합니다. 내부 구성은 개방하지 않습니다.';
+  return [
+    { key: 'fields', label: '내용 수정', available: direct,
+      description: direct ? [contract?.directText && '화면 문구', contract?.directMedia && '이미지', contract?.directRoute && '링크'].filter(Boolean).join(' · ')
+        : layout ? '구역 안의 각 요소를 선택해 내용을 수정합니다.'
+          : known ? '설정 패널에서 공개된 값을 수정합니다.' : '팩의 설정 패널을 사용합니다. 직접 편집 범위는 확인되지 않았습니다.' },
+    { key: 'style', label: '스타일 변경', available: styles.length > 0,
+      description: styleLabels.length ? styleLabels.join(' · ') : '팩이 제공하는 설정을 확인하세요.' },
+    { key: 'repeaters', label: '항목 추가', available: repeaters.length > 0,
+      description: repeaters.length ? `항목 ${repeaterLimits}. 한도 안에서 추가·순서 변경·복제·삭제가 가능합니다.`
+        : known ? '독립 반복 항목이 없습니다.' : '공통 항목 도구는 제공하지 않습니다. 팩의 설정을 확인하세요.' },
+    { key: 'slots', label: '내부 구성', available: layout && slots.length > 0,
+      description: layout ? '구역·열·세로 묶음의 허용 위치에 기본 요소를 배치합니다.'
+        : plannedSlots ? '현재 내부 요소 삽입은 지원하지 않습니다. 후속 개발 대상입니다.' : '현재 내부 요소 삽입을 지원하지 않습니다.' },
+    { key: 'fixed', label: '고정 동작', available: false, description: fixed },
+  ];
+}
 
 export interface BlockGalleryItem {
   catalogId: string;
   kind: 'definition' | 'preset';
+  productionKind: LibraryKind;
   type: keyof EditorComponents;
   testId: string;
   category: string;
@@ -83,6 +180,7 @@ export function createBuiltinGalleryItems(isRegisteredComponent: (type: string) 
       return {
         catalogId: `block:${definition.block_id}@${definition.block_version}`,
         kind: 'definition',
+        productionKind: libraryKind(type),
         type,
         testId: blockCatalogTestId(type),
         category: BLOCK_CATEGORY_LABELS[definition.category] ?? definition.category,
@@ -113,6 +211,7 @@ export function createBuiltinGalleryItems(isRegisteredComponent: (type: string) 
     return {
       catalogId: `preset:${BUILTIN_CORE_MANIFEST.pack_id}:${preset.preset_id}`,
       kind: 'preset',
+      productionKind: libraryKind(type),
       type,
       testId: `page-builder-preset-${preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`,
       category: BLOCK_CATEGORY_LABELS[preset.category] ?? preset.category,
@@ -144,6 +243,7 @@ export function galleryItemFromApi(item: BlockCatalogItem, locale: string, type:
   return {
     catalogId: item.catalog_id,
     kind: item.kind,
+    productionKind: libraryKind(type),
     type,
     testId: staticItem?.testId ?? `page-builder-block-${item.catalog_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`,
     category: BLOCK_CATEGORY_LABELS[item.category] ?? item.category,
@@ -159,3 +259,12 @@ export function galleryItemFromApi(item: BlockCatalogItem, locale: string, type:
     packLabel: staticItem?.packLabel ?? blockPackLabel(item.pack_id),
   };
 }
+
+export const LAYOUT_GALLERY_ITEM: BlockGalleryItem = {
+  catalogId: 'layout:section', kind: 'definition', productionKind: 'layout', type: 'LayoutSection',
+  testId: blockCatalogTestId('LayoutSection'), category: '구조', title: '구역',
+  description: '열과 세로 묶음으로 제목·본문·이미지·버튼을 배치합니다.',
+  searchText: '레이아웃 구역 Section 구조 열 Columns 세로 묶음 Stack',
+  blockId: layoutPolicy.layouts.section, blockVersion: 1, favorite: false, presetProps: null,
+  thumbnail: '', packId: BUILTIN_CORE_MANIFEST.pack_id, packLabel: '기본 제공',
+};

@@ -682,11 +682,9 @@ async function expandBlockGallery(page: Page): Promise<void> {
 }
 
 async function selectDefinitionGalleryTab(gallery: Locator): Promise<void> {
-  const tab = gallery.locator('[role="tab"]:visible').filter({ hasText: /블록 종류/ });
-  if (await tab.getAttribute('aria-selected') !== 'true') {
-    await activatePointerTarget(gallery.page(), tab, 'block definition gallery tab');
-  }
-  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await gallery.getByRole('tab', { name: /^전체/ }).click();
+  await gallery.getByLabel('블록 예제').selectOption('definition');
+  await expect(gallery.getByLabel('블록 예제')).toHaveValue('definition');
 }
 
 async function activateGalleryOption(gallery: Locator, option: string): Promise<void> {
@@ -1306,7 +1304,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const commandBarLayer = Number(await page.locator('.g7pb-command-bar').evaluate((element) =>
       getComputedStyle(element).zIndex));
     expect(galleryLayer).toBeGreaterThan(commandBarLayer);
-    await expect(blockGallery.getByRole('tab', { name: /블록 종류/ })).toBeVisible();
+    await expect(blockGallery.getByRole('tab', { name: /기본 요소/ })).toBeVisible();
+    await expect(blockGallery.getByRole('tab', { name: /레이아웃/ })).toBeVisible();
+    await expect(blockGallery.getByRole('tab', { name: /컴포넌트/ })).toBeVisible();
     await expect(blockGallery.getByRole('tab', { name: /완성 섹션/ })).toBeVisible();
     await expect(blockGallery.getByLabel('블록 팩')).toContainText('기본 제공');
     await expect(blockGallery.locator('.g7pb-block-thumb__zoom')).toHaveCount(0);
@@ -1317,6 +1317,36 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     if (firstGalleryPreviewBox) {
       expect(firstGalleryPreviewBox.width / firstGalleryPreviewBox.height).toBeCloseTo(1.6, 1);
     }
+    await blockGallery.getByRole('tab', { name: /^기본 요소/ }).click();
+    await expect(blockGallery.locator('[data-production-kind="element"]')).toHaveCount(14);
+    await expect(blockGallery.locator('[data-component="Hero"]')).toHaveCount(0);
+    await expect(blockGallery.getByTestId('page-builder-preset-heading-section-intro')).toBeVisible();
+    await expect(drawerLibrary.locator('[data-library-block="Heading"]:visible').first()).toHaveAttribute('data-production-kind', 'element');
+    await blockGallery.getByRole('tab', { name: /^기본 요소/ }).scrollIntoViewIfNeeded();
+    await test.info().attach('editor-library-production-units', { body: await blockGallery.screenshot(), contentType: 'image/png' });
+    const headingScope = blockGallery.getByTestId('editing-scope-Heading').first();
+    await headingScope.locator('summary').click();
+    await expect(headingScope.locator('[data-capability]')).toHaveCount(5);
+    await expect(headingScope.locator('[data-capability="slots"]')).toContainText('현재 내부 요소 삽입을 지원하지 않습니다.');
+    await test.info().attach('editor-library-basic-elements', { body: await headingScope.screenshot(), contentType: 'image/png' });
+    const sectionTab = blockGallery.getByRole('tab', { name: /^완성 섹션/ });
+    await sectionTab.click();
+    await expect(sectionTab).toHaveAttribute('aria-selected', 'true');
+    await expect(blockGallery.getByRole('tabpanel')).toHaveAttribute('data-total-items', '70');
+    // The API sorts by use case and label: Hero starts after the first 24 results.
+    // Select the normal definition filter before inspecting a specific section.
+    await blockGallery.getByLabel('블록 예제').selectOption('definition');
+    await expect(blockGallery.getByRole('tabpanel')).toHaveAttribute('data-total-items', '16');
+    await expect(blockGallery.getByTestId('page-builder-block-option-heading')).toHaveCount(0);
+    await expect(blockGallery.getByTestId('page-builder-preset-heading-section-intro')).toHaveCount(0);
+    const heroScope = blockGallery.getByTestId('editing-scope-Hero').first();
+    await heroScope.locator('summary').click();
+    await expect(heroScope.locator('[data-capability="slots"]')).toContainText('후속 개발 대상');
+    await expect(drawerLibrary.locator('[data-library-block="Hero"]:visible').first()).toHaveAttribute('data-production-kind', 'section');
+    await blockGallery.getByRole('tab', { name: /^컴포넌트/ }).click();
+    await expect(blockGallery.getByTestId('page-builder-block-option-image-text')).toBeVisible();
+    await expect(drawerLibrary.locator('[data-library-block="ImageText"]:visible').first()).toHaveAttribute('data-production-kind', 'component');
+    await blockGallery.getByRole('tab', { name: /^전체/ }).click();
     const blockSearch = page.getByLabel('블록 검색');
     await blockSearch.fill('막대그래프');
     await expect(page.getByTestId('page-builder-block-option-bar-chart')).toBeVisible();

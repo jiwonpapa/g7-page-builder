@@ -399,12 +399,12 @@
       "id": "EP1-01",
       "phase": "EP1",
       "title": "제작 분류와 편집 능력 표시",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [],
       "acceptance_ids": [
         "CAT-01"
       ],
-      "owner_task": null,
+      "owner_task": "ep1-library-window-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

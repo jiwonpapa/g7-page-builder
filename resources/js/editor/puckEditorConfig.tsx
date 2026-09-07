@@ -1,3 +1,5 @@
+import { libraryCategories } from './blockGalleryModel';
+import { BUILTIN_BLOCK_DEFINITIONS } from '../blocks/builtinCatalog';
 import { externalEditorComponents } from '../blocks/runtimeRegistry';
 import { applyEditorContentPolicy, type EditorFieldContract } from './editorViewportPolicy';
 import React, { useEffect, useState } from 'react';
@@ -158,41 +160,7 @@ function PageCustomColorsField({ readOnly }: { readOnly?: boolean }): React.Reac
 }
 
 export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = {
-  categories: {
-    layout: {
-      title: '구조 레이아웃',
-      components: ['LayoutSection'],
-      defaultExpanded: true,
-    },
-    layoutInternal: {
-      components: ['LayoutColumns', 'LayoutStack'],
-      visible: false,
-    },
-    content: {
-      title: '콘텐츠 블록',
-      components: ['Heading', 'RichText', 'ImageText', 'IconList', 'Hero', 'HeroSlider', 'Features', 'Cta', 'Buttons', 'Contact', 'FaqAccordion', 'ProcessTimeline', 'Tabs', 'ArticleList', 'EventSchedule', 'DownloadResources', 'InquiryForm', 'MapDirections'],
-      defaultExpanded: true,
-    },
-    business: {
-      title: '비즈니스·신뢰',
-      components: ['LogoCloud', 'LogoCarousel', 'Testimonials', 'TestimonialSlider', 'Pricing', 'ComparisonTable', 'Team'],
-      defaultExpanded: true,
-    },
-    dataMedia: {
-      title: '데이터·미디어',
-      components: ['Image', 'Stats', 'BarChart', 'Gallery', 'VideoEmbed'],
-      defaultExpanded: true,
-    },
-    g7Data: {
-      title: 'G7 데이터',
-      components: ['G7RecentPosts', 'G7BoardArchive', 'G7PostDetail', 'G7ProductGrid', 'G7ProductShowcase', 'G7ProductDetail'],
-      defaultExpanded: true,
-    },
-    legacy: {
-      components: ['HeroSplit'],
-      visible: false,
-    },
-  },
+  categories: libraryCategories([...BUILTIN_BLOCK_DEFINITIONS.map((entry) => entry.editor_component), 'LayoutSection', 'LayoutColumns', 'LayoutStack']),
   components: withBlockContainerFields({
     ...layoutCatalogComponentConfigs,
     ...catalogComponentConfigs,
@@ -546,19 +514,17 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
 };
 
 
-export function createRuntimePuckConfig(structureEditingEnabled: boolean, editingDisabled: boolean): Config<EditorComponents, PageDesignProps> {
+export function createRuntimePuckConfig(structureEditingEnabled: boolean, editingDisabled: boolean, catalogTypes?: readonly string[]): Config<EditorComponents, PageDesignProps> {
+    const external = externalEditorComponents();
     const baseConfig = {
       ...pageBuilderPuckConfig,
-      categories: {
-        ...pageBuilderPuckConfig.categories,
-        layout: {
-          ...pageBuilderPuckConfig.categories?.layout,
-          visible: structureEditingEnabled,
-        },
-      },
+      categories: libraryCategories(catalogTypes
+        ? [...catalogTypes, 'LayoutSection', 'LayoutColumns', 'LayoutStack', 'HeroSplit']
+        : [...Object.keys(pageBuilderPuckConfig.components), ...Object.keys(external)], structureEditingEnabled,
+      [...Object.keys(pageBuilderPuckConfig.components), ...Object.keys(external)]),
       components: {
         ...pageBuilderPuckConfig.components,
-        ...externalEditorComponents(),
+        ...external,
       },
     } as Config<EditorComponents, PageDesignProps>;
     if (!editingDisabled) return baseConfig;

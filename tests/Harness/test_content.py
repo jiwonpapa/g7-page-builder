@@ -110,6 +110,63 @@ class ContentSelectionTest(unittest.TestCase):
             with self.subTest(path=path), self.assertRaisesRegex(ValueError, "select explicit --ids or --all"):
                 select_changes(self.root, "BASE", [path])
 
+    def test_additive_thumbnail_index_requires_complete_matching_before_and_after_inventory(self):
+        path = str(Path(PACK).parent / "thumbnails/generated/index.json")
+        before_pack = json.loads(json.dumps(self.pack))
+        ids = [*catalog(self.root)["block"], *catalog(self.root)["preset"]]
+        before = {"count": len(ids), "sources": dict.fromkeys(ids, "same"), "viewport": "960px"}
+        self.pack["blocks"].append({"block_id": "content.icon", "block_version": 1, "editor_component": "Icon"})
+        self.write(PACK, self.pack)
+        current = {**before, "count": 5, "sources": {**before["sources"], "block:content.icon@1": "new"}}
+        originals = {path: before, PACK: before_pack}
+        def read_old(command, **kwargs):
+            return subprocess.CompletedProcess(command, 0, json.dumps(originals[command[-1].removeprefix("BASE:")]), "")
+        with patch("tools.g7pb.content.subprocess.run", side_effect=read_old):
+            self.write(path, current)
+            self.assertEqual(select_changes(self.root, "BASE", [path]), [{"kind": "block", "ids": ["block:content.icon@1"]}])
+            for invalid in ({**current, "count": 6}, {**current, "sources": before["sources"]}, {**current, "viewport": "1200px"}):
+                self.write(path, invalid)
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    select_changes(self.root, "BASE", [path])
+
+    def test_quality_inventory_selects_changed_policy_and_preserves_historical_review(self):
+        path = str(Path(PACK).parent / "product-quality.json")
+        def declaration(pack):
+            return {"contract": {"inventory": {"block_count": len(pack["blocks"]), "active_block_count": len(pack["blocks"]),
+                "preset_count": len(pack["presets"]), "catalog_item_count": len(pack["blocks"]) + len(pack["presets"]),
+                "unique_thumbnail_count": 0, "compatibility_only_block_ids": []},
+                "block_policies": {block["block_id"]: {"status": "product"} for block in pack["blocks"]}, "copy": {"minimum": 2}}, "approval": {"decision": "historical"}}
+        before_pack = json.loads(json.dumps(self.pack))
+        before = declaration(before_pack)
+        self.pack["blocks"].append({"block_id": "content.icon", "block_version": 1, "editor_component": "Icon"})
+        self.write(PACK, self.pack)
+        current = declaration(self.pack)
+        originals = {path: before, PACK: before_pack}
+        with patch("tools.g7pb.content.subprocess.run", side_effect=lambda command, **kwargs: subprocess.CompletedProcess(command, 0, json.dumps(originals[command[-1].removeprefix("BASE:")]), "")):
+            self.write(path, current)
+            self.assertEqual(select_changes(self.root, "BASE", [path]), [{"kind": "block", "ids": ["block:content.icon@1"]}])
+            for field, value in (("approval", {"decision": "approved"}), ("contract", {**current["contract"], "copy": {"minimum": 1}}),
+                                 ("contract", {**current["contract"], "inventory": {**current["contract"]["inventory"], "block_count": 4}})):
+                self.write(path, {**current, field: value})
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    select_changes(self.root, "BASE", [path])
+
+    def test_evidence_changes_keep_exact_ids_and_reject_missing_unknown_or_duplicate_entries(self):
+        path = str(Path(PACK).parent / "quality-evidence.json")
+        item = {"catalog_id": "block:content.hero@1", "reviews": {"content": "pending"}}
+        before = {"schema_version": "v2", "legacy_review": {"source": "preserved"}, "items": [item]}
+        addition = {"catalog_id": "preset:test/core:cta.one", "reviews": {"content": "pending"}}
+        with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(before), "")):
+            self.write(path, {**before, "items": [item, addition]})
+            self.assertEqual(select_changes(self.root, "BASE", [path]), [{"kind": "preset", "ids": ["preset:test/core:cta.one"]}])
+            for items in ([], [item, item], [item, {**addition, "catalog_id": "unknown"}]):
+                self.write(path, {**before, "items": items})
+                with self.subTest(items=items), self.assertRaises(ValueError):
+                    select_changes(self.root, "BASE", [path])
+            self.write(path, {**before, "legacy_review": {"source": "changed"}})
+            with self.assertRaises(ValueError):
+                select_changes(self.root, "BASE", [path])
+
     def test_shared_styles_select_presentation_contract_without_catalog_expansion(self):
         for path, ids in [
             ("resources/css/page-builder-core.css", ["editor-ui"]),

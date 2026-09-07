@@ -1,3 +1,4 @@
+import { BUILTIN_BLOCK_DEFINITIONS } from '../../resources/js/blocks/builtinCatalog';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -57,8 +58,8 @@ function pathPattern(path: string): RegExp {
 }
 
 describe('builtin text field capability matrix', () => {
-  it('classifies all 45 blocks and fixes the approved rich-text target at 53 inline plus 26 block paths', () => {
-    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(45);
+  it('classifies all registered blocks and fixes the approved rich-text target at 53 inline plus 26 block paths', () => {
+    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(BUILTIN_BLOCK_DEFINITIONS.length);
     const fields = BUILTIN_CANVAS_EDITING_CONTRACT.flatMap((component) => component.textFields);
     expect(fields.filter((field) => field.kind === 'inline-rich')).toHaveLength(53);
     expect(fields.filter((field) => field.kind === 'block-rich')).toHaveLength(26);

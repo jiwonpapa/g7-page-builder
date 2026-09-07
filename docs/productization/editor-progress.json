@@ -632,7 +632,7 @@
       "id": "EP2-01",
       "phase": "EP2",
       "title": "아이콘·목록·배지 삽입",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "EP1-03"
       ],
@@ -644,22 +644,23 @@
         "PUB-01",
         "MIG-01"
       ],
-      "owner_task": null,
+      "owner_task": "ep2-elements-integration-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/js/blocks/types.ts",
+        "resources/js/editor/basicElementCatalogData.ts",
+        "resources/js/editor/basicElementCatalogCodec.ts",
+        "resources/js/editor/basicElementCatalogBlocks.tsx",
         "resources/block-packs/builtin-core/manifest.json",
-        "resources/js/editor/foundationCatalogBlocks.tsx",
         "resources/js/editor/canvasEditingContract.ts",
         "schemas/layout-policy-v1.json",
         "schemas/page-builder-document.schema.json",
-        "src/Application/Blocks/BlockSchemaRegistry.php",
+        "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php",
         "src/Application/Compilation/HtmlDocument/BuiltInBlockCompilers.php",
-        "tests/Unit/documentSchema.test.ts",
-        "tests/UnitPhp/HtmlDocumentCompilerTest.php"
+        "tests/Unit/basicElementCatalog.test.tsx",
+        "tests/UnitPhp/BasicElementBlockCompilerTest.php"
       ],
       "completion": "기본 요소8종의 진입점/필드/의미/출력을 제공한다. 목록 재사용 대 독립 타입과 역할 검증을 먼저 결정하고 필요한 타입/버전만 추가한다."
     },

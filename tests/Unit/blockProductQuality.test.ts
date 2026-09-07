@@ -56,7 +56,7 @@ describe('built-in block product quality gate', () => {
       packageJson,
       release: true,
     });
-    expect(result.items).toHaveLength(140);
+    expect(result.items).toHaveLength(quality.contract.inventory.catalog_item_count);
     expect(result.errors).toEqual([]);
   });
 

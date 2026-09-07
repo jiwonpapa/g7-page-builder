@@ -1,0 +1,18 @@
+/* Shared canvas/public leaf markup. Page theme owns colors; no editor chrome tokens. */
+.g7pb-basic-icon { display: inline-flex; vertical-align: middle; }
+.g7pb-basic-icon.g7pb-basic-size--small { width: 1.25rem; height: 1.25rem; }
+.g7pb-basic-icon.g7pb-basic-size--medium { width: 2rem; height: 2rem; }
+.g7pb-basic-icon.g7pb-basic-size--large { width: 3rem; height: 3rem; }
+.g7pb-basic-icon > svg, .g7pb-basic-icon-image, .g7pb-basic-icon-image > svg { display: block; width: 100%; height: 100%; }
+.g7pb-basic-tone--default { color: inherit; }
+.g7pb-basic-tone--muted { color: var(--g7pb-theme-muted); }
+.g7pb-basic-tone--accent { color: var(--g7pb-theme-accent); }
+.g7pb-basic-list { margin: 0; padding-inline-start: 1.5em; line-height: 1.65; overflow-wrap: anywhere; }
+ul.g7pb-basic-list { list-style: disc outside; }
+ol.g7pb-basic-list { list-style: decimal outside; }
+.g7pb-basic-list > li + li { margin-top: .4em; }
+.g7pb-basic-badge { display: inline-flex; max-width: 100%; align-items: center; gap: .4em; padding: .3em .7em; border: 1px solid currentColor; border-radius: 999px; font-weight: 600; line-height: 1.4; text-align: start; vertical-align: middle; overflow-wrap: anywhere; }
+.g7pb-basic-badge.g7pb-basic-size--small { font-size: .75rem; }
+.g7pb-basic-badge.g7pb-basic-size--medium { font-size: .875rem; }
+.g7pb-basic-badge.g7pb-basic-size--large { font-size: 1rem; }
+.g7pb-basic-badge > svg, .g7pb-basic-badge > .g7pb-basic-icon-image { width: 1em; height: 1em; flex: 0 0 1em; }

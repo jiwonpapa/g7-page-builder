@@ -28,15 +28,15 @@ final class BlockPackContractTest extends TestCase
         self::assertSame($manifest->toArray(), BlockPackManifest::fromArray($manifest->toArray())->toArray());
     }
 
-    public function test_builtin_core_manifest_registers_all_forty_five_definitions_and_presets(): void
+    public function test_builtin_core_manifest_registers_all_manifest_definitions_and_presets(): void
     {
         $manifest = (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2));
         $registry = new BlockRegistry;
         $registry->register($manifest, enabled: true);
 
         self::assertSame('jiwonpapa/builtin-core', $manifest->packId);
-        self::assertCount(45, $registry->definitions());
-        self::assertCount(95, $registry->presets());
+        self::assertCount(count($manifest->blocks), $registry->definitions());
+        self::assertCount(count($manifest->presets), $registry->presets());
         self::assertNotNull($registry->definition('content.heading-01', 1));
         self::assertNotNull($registry->definition('content.rich-text-01', 1));
         self::assertNotNull($registry->definition('media.image-01', 1));

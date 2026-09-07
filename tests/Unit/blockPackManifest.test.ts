@@ -1,3 +1,4 @@
+import quality from '../../resources/block-packs/builtin-core/product-quality.json';
 import Ajv2020 from 'ajv/dist/2020';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -51,24 +52,18 @@ describe('Block Pack manifest v1 schema', () => {
     const generatedIndex = JSON.parse(readFileSync(resolve(
       'resources/block-packs/builtin-core/thumbnails/generated/index.json',
     ), 'utf8')) as { count?: number; sources?: Record<string, string> };
-    expect(generatedIndex.count).toBe(140);
-    expect(Object.keys(generatedIndex.sources ?? {})).toHaveLength(140);
+    expect(generatedIndex.count).toBe(quality.contract.inventory.catalog_item_count);
+    expect(Object.keys(generatedIndex.sources ?? {})).toHaveLength(quality.contract.inventory.catalog_item_count);
     expect(Object.values(generatedIndex.sources ?? {}).every((sha256) => /^[a-f0-9]{64}$/.test(sha256))).toBe(true);
     const categories = builtinManifest.blocks.reduce<Record<string, number>>((counts, block) => ({
       ...counts,
       [block.category]: (counts[block.category] ?? 0) + 1,
     }), {});
-    expect(categories).toEqual({
-      basic: 6,
-      'hero-conversion': 6,
-      content: 9,
-      media: 3,
-      navigation: 3,
-      'trust-company': 6,
-      'data-comparison': 4,
-      'form-location': 2,
-      'g7-data': 6,
-    });
+    const expectedCategories = Object.values(quality.contract.block_policies).reduce<Record<string, number>>((counts, policy) => ({
+      ...counts, [policy.category]: (counts[policy.category] ?? 0) + 1,
+    }), {});
+    expect(categories).toEqual(expectedCategories);
+
     expect(builtinManifest.blocks.map((block) => block.block_id)).toEqual(expect.arrayContaining([
       'content.heading-01',
       'content.rich-text-01',

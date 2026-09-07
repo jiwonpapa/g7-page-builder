@@ -81,7 +81,7 @@ class FrontendBudgetTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertIn("Manager-only selectors", result.stderr)
 
-    def test_public_css_accepts_measured_baseline_but_still_rejects_growth_above_18100(self):
+    def test_public_css_accepts_measured_baseline_but_still_rejects_growth_above_18700(self):
         self.full_fixture()
         generated = subprocess.run(["node", "--input-type=module", "-e", r'''
 import { createHash } from 'node:crypto';
@@ -90,14 +90,14 @@ let source = '', below, above;
 for (let index = 0; index < 2000 && !above; index++) {
   source += createHash('sha256').update(`public-css-${index}`).digest('hex');
   const size = gzipSync(source).length;
-  if (size > 18000 && size <= 18100) below = { source, size };
-  if (size > 18100) above = { source, size };
+  if (size > 18600 && size <= 18700) below = { source, size };
+  if (size > 18700) above = { source, size };
 }
 console.log(JSON.stringify({ below, above }));
 '''], capture_output=True, text=True, check=True)
         samples = json.loads(generated.stdout)
-        self.assertGreater(samples["below"]["size"], 18000)
-        self.assertLessEqual(samples["below"]["size"], 18100)
+        self.assertGreater(samples["below"]["size"], 18600)
+        self.assertLessEqual(samples["below"]["size"], 18700)
         self.write("dist/css/page-builder-public.css", samples["below"]["source"])
         passed = self.run_checker()
         self.assertEqual(passed.returncode, 0, passed.stderr)
@@ -105,8 +105,20 @@ console.log(JSON.stringify({ below, above }));
         rejected = self.run_checker()
         self.assertNotEqual(rejected.returncode, 0)
         self.assertIn("Frontend budget exceeded: dist/css/page-builder-public.css=", rejected.stderr)
-        self.assertIn("/18100 gzip bytes", rejected.stderr)
+        self.assertIn("/18700 gzip bytes", rejected.stderr)
 
+
+    def test_basic_element_shared_source_has_its_own_bounded_budget(self):
+        path = "resources/css/page-builder-basic-elements.css"
+        self.write(ENTRY, '@import "./page-builder-basic-elements.css";')
+        self.write(path, "/*" + "x" * 1996 + "*/")
+        passed = self.run_checker("--editor-source-only")
+        self.assertEqual(passed.returncode, 0, passed.stderr)
+        self.assertIn(path, json.loads(passed.stdout)["inputs"])
+        self.write(path, "/*" + "x" * 1997 + "*/")
+        rejected = self.run_checker("--editor-source-only")
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn("2000-byte source budget", rejected.stderr)
 
     def test_source_mode_counts_unique_connected_owners_without_dist(self):
         self.split()
@@ -117,7 +129,7 @@ console.log(JSON.stringify({ below, above }));
         report = json.loads(result.stdout)
         self.assertEqual(set(report["sources"]), {ENTRY, *OWNERS})
         self.assertEqual(report["bytes"], sum((self.root / path).stat().st_size for path in (ENTRY, *OWNERS)))
-        self.assertEqual(report["limit"], 180_000)
+        self.assertEqual(report["limit"], 180_100)
         self.assertFalse((self.root / "dist").exists())
 
     def test_shared_imports_are_inputs_but_not_added_to_editor_raw_budget(self):

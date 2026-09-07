@@ -17,12 +17,12 @@ import {
 import { BUILTIN_BLOCK_DEFINITIONS } from '../../resources/js/blocks/builtinCatalog';
 
 describe('canvas editing contract', () => {
-  it('covers every one of the 45 builtin blocks without duplicate component names', () => {
-    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(45);
-    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(45);
+  it('covers every registered builtin block without duplicate component names', () => {
+    expect(BUILTIN_CANVAS_EDITING_CONTRACT).toHaveLength(BUILTIN_BLOCK_DEFINITIONS.length);
+    expect(new Set(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType)).size).toBe(BUILTIN_BLOCK_DEFINITIONS.length);
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.map((item) => item.componentType).sort())
       .toEqual(BUILTIN_BLOCK_DEFINITIONS.map((item) => item.editor_component).sort());
-    expect(BUILTIN_CANVAS_EDITING_CONTRACT.every((item) => item.directText)).toBe(true);
+    expect(BUILTIN_CANVAS_EDITING_CONTRACT.every((item) => item.directText === item.textFields.some((field) => field.kind !== 'structural'))).toBe(true);
     expect(BUILTIN_CANVAS_EDITING_CONTRACT.filter((item) => item.dynamicData).map((item) => item.componentType))
       .toEqual(['G7RecentPosts', 'G7BoardArchive', 'G7PostDetail', 'G7ProductGrid', 'G7ProductShowcase', 'G7ProductDetail']);
   });

@@ -10,6 +10,24 @@ from tools.g7pb.runner import digest_gate
 
 
 class PlannerTests(unittest.TestCase):
+    def test_native_helper_plans_registration_or_runtime_without_scope_expansion(self):
+        helper = "tests/E2E/support/nativeStructureFixture.ts"
+        spec = "tests/E2E/nativeEditorContract.spec.ts"
+        self.write(helper, "export const nativeStructureFlow = () => {}")
+        self.write(spec, "import {nativeStructureFlow} from './support/nativeStructureFixture'")
+        self.write("resources/css/page-builder-native.css", ".native { display:block }")
+        for phase in ("submission", "integration", "verification", "ci"):
+            for product in (False, True):
+                paths = [helper] + (["resources/css/page-builder-native.css"] if product else [])
+                plan = build_plan(self.root, paths, phase=phase)
+                self.assertFalse(plan.unresolved, plan.unresolved)
+                self.assertFalse(plan.full)
+                browser = [g for g in plan.gates if g.name.startswith(("browser:", "browser-registration:"))]
+                self.assertEqual(len(browser), 1)
+                self.assertEqual(browser[0].name, ("browser:" if product else "browser-registration:") + spec)
+                self.assertEqual(browser[0].runtime, product)
+                self.assertIn(helper, browser[0].inputs)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -28,6 +46,14 @@ class PlannerTests(unittest.TestCase):
         self.assertFalse(plan.full)
         self.assertTrue(any("vite.native.config.ts" in gate.inputs for gate in plan.gates))
         self.assertTrue(any(gate.runtime and gate.deferred for gate in plan.gates))
+
+    def test_native_component_build_is_a_scoped_asset_controller(self):
+        self.write("vite.native-components.config.ts", "export default {};")
+        self.write("scripts/check-assets.mjs", "export const check = true;")
+        plan = build_plan(self.root, ["vite.native-components.config.ts"])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertTrue(any("vite.native-components.config.ts" in gate.inputs for gate in plan.gates))
 
     def test_shared_basic_element_fixture_selects_both_consumers_and_invalidates_them(self):
         from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS

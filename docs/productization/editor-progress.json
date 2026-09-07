@@ -355,16 +355,16 @@
       "id": "NE1",
       "phase": "phase-1",
       "title": "공식 연동 계약과 원본 보존",
-      "status": "blocked",
+      "status": "in_progress",
       "depends_on": [],
       "acceptance_ids": [
         "NAT-01"
       ],
-      "owner_task": "native-ne1-foundation-20260907",
+      "owner_task": "native-ne1-browser-fix-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],
-      "blocked_reason": "PB 원본 보존·평문 변경 후보와 32개 단위 시험은 검증됨. G7 공개 H01~H04 문맥·경로·명령·패널 계약이 현재 미제공이며 AGENTS/NE1의 별도 G7 코어 수정 승인 필요. native-host-contract.md의 구체적 변경안 확보. G7 적용·Undo·저장·재열기 NAT-01 미검증이므로 NE1 미완료.",
+      "blocked_reason": null,
       "scope": [
         "resources/js/native-editor/entry.ts",
         "resources/js/native-editor/domain/node.ts",

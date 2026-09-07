@@ -39,3 +39,12 @@ G7의 공개 편집 확장 계약과 그 전달·검증·회귀만 수정한다.
 6. 패널의 선택·snapshot 내보내기·삽입이 같은 세션/명령 경계를 사용한다. 전역 등록 함수만 만들고 소비 UI가 없는 상태를 지원 완료로 표시하지 않는다.
 
 G7 공개 계약 완료 후 PB adapter/entry와 지원 템플릿 spec을 연결하고 실제 브라우저 NAT-01을 수행해야 NE1 전체가 완료된다. 이 문서 승인만으로 NE2를 시작하지 않는다.
+
+
+## NE1 로컬 공개 계약 구현
+
+G7 별도 worktree의 engine-v1.65.0 후보가 `registerPanel`과 `g7.layout-editor/1` 소비 UI를 구현한다. PB allowlist는 그 다섯 번째 메서드만 추가한다. 적용 소스는 G7 `layout-editor/extensions/{contract,command,path,panelRegistry,useExtensionHost,ExtensionPanels}`와 `hooks/useRevisionedDocument`, 기존 registry/overlay/document 연결이다. 정확한 커밋 및 NAT-01 결과는 NE1 감사에 기록한다.
+
+v1 텍스트 명령은 route 소유의 일반 평문만 대상으로 하며 원본 필드 전체를 교체하지 않는다. 삽입은 기존 nesting이 허용하는 basic 자식에 한정한다. source·iteration·responsive 조합 삽입은 현재 거부하며 NE3의 확장 대상이다. 기존 등록 메서드·onPatchNode는 호환을 유지하되 PB는 guarded execute만 사용한다. 기능 미제공 호스트에서는 새 패널을 로드하지 않고 기존 PB 문서·발행 경로를 유지한다.
+
+이는 stock G7에 이미 포함된 기능이라는 주장이 아니다. upstream 반영 전까지 호스트 후보와 PB 모듈을 함께 검증한 조합만 지원 증거를 갖는다.

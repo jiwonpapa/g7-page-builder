@@ -69,7 +69,7 @@
 
 - 현재 개발 목표는 G7 일반 페이지의 네이티브 편집 고도화 확장이다. 이 규칙 개정은 구현 착수·G7 코어 변경·배포 승인을 대신하지 않는다.
 - 네이티브 모드의 원본·선택·트리·Undo·미리보기·저장은 G7이 소유한다. 기존 PB 모드는 `PageBuilderDocument`·Puck·PB 저장/발행을 유지한다. 같은 문서를 이중 저장·동기화하거나 자동 변환하지 않는다.
-- 네이티브 모드는 실제 제공된 G7 공개 editor API·editor-spec만 adapter 뒤에서 사용한다. 현재 확인된 `G7Core.layoutEditor` 메서드는 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady` 네 개다. API 존재만으로 문맥·권한·삽입·저장 안전성을 보장하지 않는다.
+- 네이티브 모드는 실제 제공된 G7 공개 editor API·editor-spec만 adapter 뒤에서 사용한다. 기존 공개 메서드 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady`와 NE1 호스트 계약에서 검증한 `registerPanel`만 허용한다. `registerPanel`은 호환 호스트에서만 제공되며 지원 소스·시험 증거는 `docs/productization/native-host-contract.md`에 기록한다. API 존재만으로 문맥·권한·삽입·저장 안전성을 보장하지 않는다.
 - 호스트 문맥·경로·명령·패널 API의 미확보 항목은 [편집 정책](docs/productization/editing-policy.md)의 H01~H08과 연결한다. 미제공 API를 상상해 호출하거나 G7 private hook·registry·전역 DOM 조작으로 우회하지 않는다. G7 측 변경이 필요하면 별도 승인·공개 계약·검증이 먼저다.
 - 네이티브 `domain → domain`, `ports → domain/ports`, `application → domain/ports/application`, `ui → domain/ports/application/ui` 의존만 허용한다. 조립 entry와 G7 adapter만 양쪽을 연결하며 Puck·기존 PB 문서 API를 import하지 않는다. 외부 I/O는 포트로 전달한다.
 - 원본의 출처·표현식·번역키·반복·actions·responsive·알 수 없는 필드를 보존하고, 지원된 필드만 변경한다. 상속 잠금을 풀려고 `__source`를 제거하거나 합성 Header/Footer를 본문에 복사하지 않는다.

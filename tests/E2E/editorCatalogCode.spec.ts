@@ -286,7 +286,7 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await expect(first).toHaveText('목록 한글 완성');
     for (let index = 0; index < undos; index++) await page.getByRole('button', { name: 'redo', exact: true }).click();
     await expect(listCanvas.locator('li')).toHaveCount(2);
-    await page.getByText('번호', { exact: true }).click();
+    await page.getByRole('radio', { name: '번호', exact: true }).locator('xpath=ancestor::label[1]').click();
     await expect(page.getByRole('radio', { name: '번호', exact: true })).toBeChecked();
     await expect(listCanvas.locator('ol')).toBeVisible();
 
@@ -299,11 +299,11 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await expect(label).toHaveText('접수 중');
     await selectOutlineBlock(page, icon, '아이콘');
     await activatePointerTarget(page, canvasBlock(page, icon).locator('.g7pb-basic-icon'), 'icon selection');
-    await page.getByText('의미 전달', { exact: true }).click();
+    await page.getByRole('radio', { name: '의미 전달', exact: true }).locator('xpath=ancestor::label[1]').click();
     await expect(page.getByRole('radio', { name: '의미 전달', exact: true })).toBeChecked();
-    await page.getByLabel('접근성 이름 (의미 전달 시 필수)', { exact: true }).fill('서비스 안내');
-    await page.getByLabel('크기', { exact: true }).selectOption('large');
-    await page.getByLabel('색상', { exact: true }).selectOption('accent');
+    await page.getByLabel('접근성 이름 (의미 전달 시 필수)', { exact: true }).filter({ visible: true }).fill('서비스 안내');
+    await page.getByLabel('크기', { exact: true }).filter({ visible: true }).selectOption('large');
+    await page.getByLabel('색상', { exact: true }).filter({ visible: true }).selectOption('accent');
     await save(page, owned.documentId);
     const saved = (await resource(api, owned.documentId)).document;
     const savedItems = saved.blocks[0].slots!.content[0].slots!.column1[0].slots!.content;

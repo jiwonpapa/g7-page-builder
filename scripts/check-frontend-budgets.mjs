@@ -10,7 +10,7 @@ const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const budgets = [
   { path: 'resources/css/page-builder-core.css', raw: 18_000 },
   { path: 'resources/css/page-builder-manager.css', raw: 20_000 },
-  { path: 'resources/css/page-builder-editor.css', raw: 180_000 },
+  { path: 'resources/css/page-builder-editor.css', raw: 180_100 },
   { path: 'resources/css/page-builder-editor-wysiwyg.css', raw: 2_000 },
   { path: 'resources/css/page-builder-site-part.css', raw: 1_000 },
   { path: 'resources/css/page-builder-public.css', raw: 105_000 },
@@ -18,8 +18,8 @@ const budgets = [
   { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
   { path: 'dist/css/page-builder-editor.css', gzip: 45_000 },
   { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
-  // Existing CSS, unchanged by board composition: Node 24 Linux 18,065 / macOS 18,084 bytes.
-  { path: 'dist/css/page-builder-public.css', gzip: 18_100 },
+  // EP2 basic elements add one shared, separately capped stylesheet to the 18,084-byte baseline.
+  { path: 'dist/css/page-builder-public.css', gzip: 18_700 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
   { path: 'dist/js/page-builder-editor.iife.js', gzip: 500_000 },
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
@@ -41,7 +41,7 @@ const EDITOR_FAMILY = [EDITOR_ENTRY, ...EDITOR_OWNERS];
 const EDITOR_SHARED = new Set([
   'resources/css/page-builder-core.css', 'resources/css/page-builder-theme.css',
   'resources/css/page-builder-editor-wysiwyg.css', 'resources/css/page-builder-site-shell.css',
-  'resources/js/public/mobileNavigation.css',
+  'resources/js/public/mobileNavigation.css', 'resources/css/page-builder-basic-elements.css',
 ]);
 const EDITOR_LIMIT = budgets.find(budget => budget.path === EDITOR_ENTRY).raw;
 
@@ -50,6 +50,10 @@ export async function editorStyleSources(root) {
   const family = new Set(EDITOR_FAMILY);
   for (const file of graph.files) {
     if (!family.has(file) && !EDITOR_SHARED.has(file)) throw new Error(`Unclassified editor CSS import: ${file}`);
+  }
+  const basicElements = 'resources/css/page-builder-basic-elements.css';
+  if (graph.files.includes(basicElements) && readFileSync(join(root, basicElements)).byteLength > 2_000) {
+    throw new Error('Shared basic element CSS exceeds its 2000-byte source budget.');
   }
   for (const file of EDITOR_FAMILY) {
     if ((file === EDITOR_ENTRY || existsSync(join(root, file))) && !graph.files.includes(file)) {

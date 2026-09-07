@@ -76,7 +76,6 @@ for (const preset of manifest.presets) {
   const catalogId = `preset:${manifest.pack_id}:${preset.preset_id}`;
   if (paths.has(catalogId)) preset.thumbnail = paths.get(catalogId);
 }
-manifest.pack_version = '0.15.0';
 manifest.files = { ...manifest.files, ...Object.fromEntries(await Promise.all(index.map(async (item) => {
   const path = `thumbnails/generated/${item.filename}`;
   const contents = await readFile(resolve(thumbnailRoot, item.filename));

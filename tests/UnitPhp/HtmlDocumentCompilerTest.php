@@ -6,11 +6,18 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockCompilerRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\CallbackBlockTypeCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockAppearanceCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockIconCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockPropertyReader;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BasicElementBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\HtmlEscaper;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\RichTextSanitizer;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockSchemaValidatorPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Blocks\BlockPackManifest;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
 use Modules\Jiwonpapa\PageBuilder\Tests\Support\CreatesBuiltInCompiler;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +25,34 @@ use PHPUnit\Framework\TestCase;
 final class HtmlDocumentCompilerTest extends TestCase
 {
     use CreatesBuiltInCompiler;
+
+    public function test_basic_leaf_compilers_work_through_the_document_facade(): void
+    {
+        $manifest = (new BuiltInBlockPackLoader)->load(dirname(__DIR__, 2))->toArray();
+        $prototype = $manifest['blocks'][0];
+        $types = ['content.icon-01', 'content.list-01', 'content.badge-01'];
+        $manifest['blocks'] = array_values(array_filter($manifest['blocks'], static fn (array $block): bool => ! in_array($block['block_id'], $types, true)));
+        $properties = new BlockPropertyReader(new RichTextSanitizer);
+        $escaper = new HtmlEscaper;
+        $compilers = new BlockCompilerRegistry;
+        foreach (['icon', 'list', 'badge'] as $kind) {
+            $manifest['blocks'][] = [...$prototype, 'block_id' => 'content.'.$kind.'-01', 'editor_component' => ucfirst($kind), 'compiler' => 'builtin.'.$kind.'-01'];
+            $compilers->register(new BasicElementBlockCompiler($kind, $properties, new BlockAppearanceCompiler($properties), new BlockIconCompiler($escaper), $escaper));
+        }
+        $registry = new BlockRegistry;
+        $registry->register(BlockPackManifest::fromArray($manifest), enabled: true);
+        $payload = $this->document('<p>기존 본문</p>')->toArray();
+        $payload['blocks'] = [
+            ['instance_id' => '10000000-0000-4000-8000-000000000001', 'type' => 'content.icon-01', 'block_version' => 1, 'props' => ['icon' => 'check', 'size' => 'medium', 'tone' => 'accent', 'decorative' => false, 'label' => '확인']],
+            ['instance_id' => '10000000-0000-4000-8000-000000000002', 'type' => 'content.list-01', 'block_version' => 1, 'props' => ['ordered' => true, 'items' => [['text' => '한글 항목']]]],
+            ['instance_id' => '10000000-0000-4000-8000-000000000003', 'type' => 'content.badge-01', 'block_version' => 1, 'props' => ['label' => '새 소식', 'icon' => '', 'size' => 'small', 'tone' => 'default']],
+        ];
+        $result = (new HtmlDocumentCompiler($registry, $compilers))->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7');
+        self::assertStringContainsString('role="img" aria-label="확인"', (string) $result->artifact);
+        self::assertStringContainsString('<ol class="g7pb-basic-list"><li>한글 항목</li></ol>', (string) $result->artifact);
+        self::assertStringContainsString('새 소식', (string) $result->artifact);
+        self::assertSame(hash('sha256', (string) $result->artifact), $result->artifactSha256);
+    }
 
     public function test_responsibility_extraction_preserves_existing_catalog_artifact_bytes(): void
     {

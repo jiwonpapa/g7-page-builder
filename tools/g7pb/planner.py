@@ -15,6 +15,7 @@ from .type_import_changes import browser_sources
 from .browser_requirements import BROWSER_ENVIRONMENT, scenarios_for
 from .environment import build_inputs, sync_plan
 from .runner import SITE_PART_SPECS, SITE_PART_HELPERS
+from .editor_progress import LEDGER as EDITOR_PROGRESS_LEDGER, PLAN as EDITOR_PLAN, DASHBOARD as EDITOR_DASHBOARD, input_files as editor_progress_inputs
 
 
 DESIGN_INPUTS = (
@@ -352,6 +353,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     command_contracts = {"tests/Harness/" + name for name in (
         "block-quality-evidence.test.sh", "block-quality-gate-wiring.test.sh", "block-product-quality-contract.test.sh")}
     product_changed = any(product_path(p) for p in plan.paths)
+    # Bootstrap the checker before the new records exist. Once introduced,
+    # deletion of either the ledger or its new canonical documents fails closed.
+    if (root / EDITOR_PROGRESS_LEDGER).is_file() or any(path in {EDITOR_PROGRESS_LEDGER, EDITOR_PLAN, EDITOR_DASHBOARD} for path in plan.paths):
+        add("editor-progress", ["python3", "-B", "-m", "tools.g7pb.editor_progress", "check"],
+            [*editor_progress_inputs(root), "tools/g7pb/editor_progress.py"],
+            "Editor development record consistency; not product acceptance", reusable=False)
     release_scripts = {"release-package.sh", "deploy-staging.sh", "remote-deploy-staging.sh", "smoke-staging.sh", "staging-doctor.sh", "remote-staging-doctor.sh"}
     content_scripts = {"build-official-store.php", "render-block-thumbnail-fixtures.php", "generate-block-thumbnails.mjs", "check-official-store-build.sh", "check-block-quality-evidence.mjs", "check-block-product-quality.mjs", "check-site-shell-product-quality.mjs"}
     asset_build_controllers = {
@@ -436,6 +443,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         elif path == "docs/productization/inventory.json":
             # This is an executable catalog contract consumed by TypeScript tests, not prose.
             ts_sources.append(path)
+        elif path == EDITOR_PROGRESS_LEDGER:
+            pass  # Validated by the explicit read-only record gate above.
         elif path.startswith("resources/js/") and path.endswith((".ts", ".tsx")):
             ts_sources.append(path)
         elif path.startswith("src/") and path.endswith(".php"):

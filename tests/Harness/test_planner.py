@@ -67,6 +67,46 @@ class PlannerTests(unittest.TestCase):
         self.write("docs/productization/unknown.json", '{}')
         self.assertTrue(build_plan(self.root, ["docs/productization/unknown.json"]).unresolved)
 
+    def test_editor_records_select_read_only_check_in_every_phase_without_runtime(self):
+        from tools.g7pb.editor_progress import LEDGER, DASHBOARD, PLAN, POLICY
+        self.write(LEDGER, json.dumps({"documents": [{"path": POLICY}], "baseline": [], "items": []}))
+        self.write(POLICY, "# policy")
+        for phase in ("submission", "integration", "verification", "ci"):
+            for path in (LEDGER, DASHBOARD, PLAN):
+                with self.subTest(phase=phase, path=path):
+                    plan = build_plan(self.root, [path], phase=phase)
+                    self.assertFalse(plan.unresolved)
+                    self.assertEqual([gate.name for gate in plan.gates], ["editor-progress"])
+                    gate = plan.gates[0]
+                    self.assertEqual(gate.argv, ("python3", "-B", "-m", "tools.g7pb.editor_progress", "check"))
+                    self.assertTrue({LEDGER, DASHBOARD, PLAN, POLICY}.issubset(gate.inputs))
+                    self.assertFalse(gate.runtime or gate.deferred or gate.reusable)
+                    self.assertFalse(any(plan.requirements.values()))
+
+    def test_editor_record_deletion_still_selects_check_and_bootstrap_does_not(self):
+        from tools.g7pb.editor_progress import LEDGER, DASHBOARD, PLAN
+        for path in (LEDGER, DASHBOARD, PLAN):
+            plan = build_plan(self.root, [path])
+            self.assertFalse(plan.unresolved)
+            self.assertEqual([gate.name for gate in plan.gates], ["editor-progress"])
+        bootstrap = build_plan(self.root, ["docs/ordinary-note.md"])
+        self.assertFalse(bootstrap.gates or bootstrap.unresolved)
+        self.write(LEDGER, "{}")
+        existing = build_plan(self.root, ["docs/ordinary-note.md"])
+        self.assertEqual([gate.name for gate in existing.gates], ["editor-progress"])
+        self.assertTrue(build_plan(self.root, ["docs/productization/unregistered.json"]).unresolved)
+
+    def test_editor_record_gate_fingerprints_declared_local_evidence(self):
+        from tools.g7pb.editor_progress import LEDGER
+        evidence = "docs/progress-evidence.md"
+        self.write(evidence, "historical scoped proof")
+        self.write(LEDGER, json.dumps({"documents": [], "baseline": [], "items": [{"evidence": [{"path": evidence}]}]}))
+        gate = build_plan(self.root, [LEDGER]).gates[0]
+        self.assertIn(evidence, gate.inputs)
+        before = digest_gate(self.root, gate)
+        self.write(evidence, "changed record")
+        self.assertNotEqual(before, digest_gate(self.root, gate))
+
     def test_site_kit_fixture_selects_only_its_contract_and_installation_with_media_inputs(self):
         manifest = "resources/site-kits/company-starter.json"
         media = "resources/store/source/page-kits/company-launch/media/hero-team.webp"

@@ -167,11 +167,11 @@ class PhpCoverageTests(unittest.TestCase):
         self.assertIn("if: steps.plan.outputs.browser == 'true'", workflow)
         self.assertNotIn('coverage: pcov', workflow)
 
-    def test_preset_group_marks_only_the_existing_sweep_without_changing_its_body(self):
+    def test_preset_group_keeps_the_complete_declared_inventory_sweep(self):
         source = (ROOT / 'tests/UnitPhp/HtmlDocumentCompilerTest.php').read_text()
         self.assertEqual(source.count("#[Group('content-catalog')]"), 1)
         self.assertIn("#[Group('content-catalog')]\n    public function test_all_builtin_presets_compile_as_typed_documents()", source)
-        self.assertIn("self::assertCount(95, $manifest['presets']);", source)
+        self.assertIn("self::assertCount($quality['rules']['inventory']['preset_count'], $manifest['presets']);", source)
         self.assertIn("foreach (array_values($manifest['presets']) as $index => $preset)", source)
 
 

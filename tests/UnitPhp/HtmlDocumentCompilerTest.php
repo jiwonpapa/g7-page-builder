@@ -1147,7 +1147,8 @@ final class HtmlDocumentCompilerTest extends TestCase
         $contents = file_get_contents(dirname(__DIR__, 2).'/resources/block-packs/builtin-core/manifest.json');
         self::assertIsString($contents);
         $manifest = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
-        self::assertCount(95, $manifest['presets']);
+        $quality = json_decode((string) file_get_contents(dirname(__DIR__, 2).'/resources/block-packs/builtin-core/product-quality.json'), true, flags: JSON_THROW_ON_ERROR);
+        self::assertCount($quality['rules']['inventory']['preset_count'], $manifest['presets']);
 
         foreach (array_values($manifest['presets']) as $index => $preset) {
             $document = new PageBuilderDocument(

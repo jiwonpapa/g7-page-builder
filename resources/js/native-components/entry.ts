@@ -1,0 +1,1 @@
+export { PageBuilderSlider } from './Slider';

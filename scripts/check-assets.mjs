@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(root, 'module.json'), 'utf8'));
 const outputs = [
+  'dist/js/page-builder-native-components.iife.js', 'dist/css/page-builder-native-components.css',
+  'dist/meta/native-components-modules.json', 'dist/native-components/editor-spec.json', 'dist/native-components/components.json',
   'dist/js/page-builder-native.iife.js',
   'dist/css/page-builder-native.css',
   'dist/meta/native-editor-modules.json',
@@ -45,6 +47,13 @@ if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native.iife.js'))).le
 if (!nativeModules.some((id) => id.endsWith('/native-editor/entry.ts'))
   || nativeModules.some((id) => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id))) {
   throw new Error('Native editor must use the host React runtime and exclude Puck/Tiptap.');
+}
+const companionModules = readInventory('native-components');
+if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native-components.iife.js'))).length > 4_000
+  || !companionModules.some(id => id.endsWith('/native-components/entry.ts'))
+  || companionModules.some(id => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id)
+    || id.includes('/native-editor/') || id.includes('/adapters/'))) {
+  throw new Error('Native component companion must remain under 4KB gzip and use shared React without editor dependencies.');
 }
 const editorModules = readInventory('editor');
 const managerModules = readInventory('manager');

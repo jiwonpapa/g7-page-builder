@@ -111,6 +111,11 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_native_companion_requires_its_actual_editor_and_public_flow(self):
+        from tools.g7pb.browser_requirements import NATIVE_COMPONENTS
+        for path in ("resources/js/native-components/Slider.tsx", "resources/js/native-components/spec.ts", "resources/css/page-builder-native-components.css"):
+            self.assertEqual(set(scenarios_for([path])), {NATIVE_COMPONENTS})
+
     def test_native_structure_helper_selects_only_native_host_scenario(self):
         from tools.g7pb.browser_requirements import NATIVE
         self.assertEqual(set(scenarios_for(["tests/E2E/support/nativeStructureFixture.ts"])), {NATIVE})

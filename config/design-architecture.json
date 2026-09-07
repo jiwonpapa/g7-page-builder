@@ -138,6 +138,16 @@
         "react",
         "react-dom"
       ]
+    },
+    {
+      "from": "resources/js/native-components/",
+      "localPrefixes": [
+        "resources/js/native-components/"
+      ],
+      "localFiles": [],
+      "packages": [
+        "react"
+      ]
     }
   ],
   "phpNamespace": "Modules\\Jiwonpapa\\PageBuilder\\",

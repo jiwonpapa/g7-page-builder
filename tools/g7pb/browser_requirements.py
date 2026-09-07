@@ -43,6 +43,8 @@ class BrowserScenario:
         return tuple({**dict(BROWSER_ENVIRONMENT), "G7PB_PRESET_IDS": ",".join(selected)}.items())
 
 
+NATIVE_COMPONENTS = BrowserScenario("tests/E2E/nativeSliderContract.spec.ts")
+
 NATIVE = BrowserScenario("tests/E2E/nativeEditorContract.spec.ts")
 
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(
@@ -181,6 +183,7 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/native-components/*", "resources/css/page-builder-native-components.css"), (NATIVE_COMPONENTS,)),
     (("resources/css/page-builder-basic-elements.css", "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"), (BASIC_ELEMENTS,)),
     (("resources/js/editor/G7BoardSourceField.tsx",), (SUPPORT_COMPOSITION,)),
     (("resources/site-kits/professional-services.json", "resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/manager/useSiteKitInstallation.ts",

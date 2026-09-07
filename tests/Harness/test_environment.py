@@ -163,6 +163,15 @@ class EnvironmentTests(unittest.TestCase):
                 self.write(artifact, "fixture build")
                 self.assertEqual(env.build(self.runtime)["build"], "reused")
 
+    def test_native_companion_outputs_are_part_of_build_integrity(self):
+        env.build(self.runtime, True)
+        for artifact in ("dist/js/page-builder-native-components.iife.js", "dist/css/page-builder-native-components.css",
+                         "dist/meta/native-components-modules.json", "dist/native-components/editor-spec.json", "dist/native-components/components.json"):
+            self.assertIn(artifact, env.BUILD_OUTPUTS)
+            self.write(artifact, "changed companion")
+            self.assertEqual(env.build(self.runtime)["build"], "required")
+            env.build(self.runtime, True)
+
     def test_build_zero_outputs_is_not_success(self):
         env.prepare(self.runtime, ["npm"], True)
         self.runtime.missing_outputs = True

@@ -151,6 +151,16 @@
       "path": "docs/architecture.md",
       "role": "current",
       "required_text": "네이티브"
+    },
+    {
+      "path": "docs/productization/native-host-contract.md",
+      "role": "current",
+      "required_text": "G7 코어 변경 승인 전 검토안"
+    },
+    {
+      "path": "docs/audits/2026-09-07-native-editor-ne1.md",
+      "role": "current",
+      "required_text": "NE1/NAT-01 완료 증거가 아니다"
     }
   ],
   "acceptance": [
@@ -345,22 +355,26 @@
       "id": "NE1",
       "phase": "phase-1",
       "title": "공식 연동 계약과 원본 보존",
-      "status": "planned",
+      "status": "blocked",
       "depends_on": [],
       "acceptance_ids": [
         "NAT-01"
       ],
-      "owner_task": null,
+      "owner_task": "native-ne1-foundation-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],
-      "blocked_reason": null,
+      "blocked_reason": "PB 원본 보존·평문 변경 후보와 32개 단위 시험은 검증됨. G7 공개 H01~H04 문맥·경로·명령·패널 계약이 현재 미제공이며 AGENTS/NE1의 별도 G7 코어 수정 승인 필요. native-host-contract.md의 구체적 변경안 확보. G7 적용·Undo·저장·재열기 NAT-01 미검증이므로 NE1 미완료.",
       "scope": [
         "resources/js/native-editor/entry.ts",
         "resources/js/native-editor/domain/node.ts",
         "resources/js/native-editor/ports/host.ts",
         "resources/js/adapters/gnuboard7/editor.ts",
-        "vite.config.ts"
+        "vite.config.ts",
+        "resources/js/native-editor/domain/textChange.ts",
+        "tests/Unit/nativeNodeChange.test.ts",
+        "docs/productization/native-host-contract.md",
+        "docs/audits/2026-09-07-native-editor-ne1.md"
       ],
       "completion": "지원 템플릿의 실제 일반 페이지에서 한 노드 편집→Undo/Redo→저장→재열기. 수정 외 의미 diff 0, 출처·표현식·번역·반복·actions·responsive·알 수 없는 필드 보존. readonly·라우트 전환·늦은 응답은 무변경."
     },

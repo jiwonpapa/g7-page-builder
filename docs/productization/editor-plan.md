@@ -2,7 +2,7 @@
 
 <!-- editor-plan:native-editor-20260907 -->
 
-상태: **2026-09-07 정책 개정 후 구현 대기**. NE1~NE6 전부 planned다. 이번 규칙 작업은 NE1의 제품 완료로 집계하지 않는다. G7 공개 계약·지원 템플릿 확보가 선행조건이며 기능 구현과 G7 코어 변경·배포는 차수별 사용자 지시를 따른다.
+상태: **2026-09-07 NE1 선행 작업 대기**. PB 원본 보존 기반과 32개 단위 시험은 검증했다. [G7 공개 계약 보완안](native-host-contract.md)의 별도 코어 수정 승인과 실제 계약 제공이 필요하다. NE2~NE6은 planned다. 기반 구현만으로 NE1 제품 완료를 집계하지 않는다. G7 공개 계약·지원 템플릿 확보가 선행조건이며 기능 구현과 G7 코어 변경·배포는 차수별 사용자 지시를 따른다.
 
 [편집 정책](editing-policy.md) · [개발 헌법](../development-constitution.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [코드 근거](../audits/2026-09-07-native-editor-governance.md)
 

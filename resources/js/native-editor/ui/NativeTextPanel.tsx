@@ -1,4 +1,5 @@
 import { NativeContent } from './content';
+import { NativeStructure } from './collection';
 import React, { useEffect, useState } from 'react';
 import { prepareNativeTextChange } from '../domain/textChange';
 import type { NativeHost } from '../ports/host';
@@ -27,6 +28,7 @@ export function NativeTextPanel({ host }: { host: NativeHost | null }): React.Re
     <p role="status">{message}</p>
   </form>}
     <NativeContent host={host} />
+    <NativeStructure host={host} />
     <p className="g7pb-native-note">상단 저장 시 공개 페이지에 반영됩니다.</p>
   </div>;
 }

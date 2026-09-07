@@ -111,6 +111,10 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_native_structure_helper_selects_only_native_host_scenario(self):
+        from tools.g7pb.browser_requirements import NATIVE
+        self.assertEqual(set(scenarios_for(["tests/E2E/support/nativeStructureFixture.ts"])), {NATIVE})
+
     def test_selected_board_picker_requires_real_page_composition(self):
         from tools.g7pb.browser_requirements import SUPPORT_COMPOSITION
         self.assertEqual(scenarios_for(["resources/js/editor/G7BoardSourceField.tsx"]), (SUPPORT_COMPOSITION,))

@@ -108,6 +108,16 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
         elif path == str(Path(PACK).parent / "thumbnails/generated/index.json"):
             old, current = old_json(path), read_json(root / path)
             for field in set(old) | set(current):
+                if field == "count" and old.get(field) != current.get(field):
+                    before = old_json(PACK)
+                    before_ids = {f"block:{item['block_id']}@{item['block_version']}" for item in before.get("blocks", [])}
+                    before_ids.update(f"preset:{before.get('pack_id')}:{item['preset_id']}" for item in before.get("presets", []))
+                    current_ids = set(inventories["block"]) | set(inventories["preset"])
+                    if (not before_ids or not before_ids < current_ids
+                            or set(old.get("sources", {})) != before_ids or old.get("count") != len(before_ids)
+                            or set(current.get("sources", {})) != current_ids or current.get("count") != len(current_ids)):
+                        raise ValueError("Thumbnail count change is not an exact additive catalog inventory")
+                    continue
                 if field not in {"sources", "dynamic_samples"} and old.get(field) != current.get(field):
                     raise ValueError("Shared thumbnail index metadata changed; select explicit --ids or --all")
             for field in ("sources", "dynamic_samples"):
@@ -118,6 +128,47 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
                     if kind is None or (field == "sources" and identity not in current.get(field, {})):
                         raise ValueError(f"Unknown or removed thumbnail identity: {identity}; select explicit --ids or --all")
                     add(kind, [identity])
+        elif path == str(Path(PACK).parent / "product-quality.json"):
+            old, current = old_json(path), read_json(root / path)
+            if {k: v for k, v in old.items() if k != "contract"} != {k: v for k, v in current.items() if k != "contract"}:
+                raise ValueError("Historical product approval changed; select explicit review scope")
+            before, contract = old["contract"], current["contract"]
+            if {k: v for k, v in before.items() if k not in {"inventory", "block_policies"}} != {k: v for k, v in contract.items() if k not in {"inventory", "block_policies"}}:
+                raise ValueError("Shared product quality rules changed; select explicit targets")
+            old_pack = old_json(PACK)
+            for source, declaration in ((old_pack, before), (pack, contract)):
+                expected = {
+                    "block_count": len(source["blocks"]),
+                    "active_block_count": sum("editor.compatibility-only" not in block.get("capabilities", []) for block in source["blocks"]),
+                    "preset_count": len(source["presets"]),
+                    "catalog_item_count": len(source["blocks"]) + len(source["presets"]),
+                    "unique_thumbnail_count": len(set(source.get("files", {}).values())),
+                    "compatibility_only_block_ids": [block["block_id"] for block in source["blocks"] if "editor.compatibility-only" in block.get("capabilities", [])],
+                }
+                if declaration["inventory"] != expected or set(declaration["block_policies"]) != {block["block_id"] for block in source["blocks"]}:
+                    raise ValueError("Product quality inventory does not match its manifest")
+            if not set(before["block_policies"]) <= set(contract["block_policies"]):
+                raise ValueError("Removed product policies require explicit inventory scope")
+            for identity, value in contract["block_policies"].items():
+                if before["block_policies"].get(identity) == value:
+                    continue
+                add("block", [f"block:{block['block_id']}@{block['block_version']}" for block in pack["blocks"] if block["block_id"] == identity])
+                add("preset", [f"preset:{pack['pack_id']}:{item['preset_id']}" for item in pack["presets"] if item["block_id"] == identity])
+        elif path == str(Path(PACK).parent / "quality-evidence.json"):
+            old, current = old_json(path), read_json(root / path)
+            if {k: v for k, v in old.items() if k != "items"} != {k: v for k, v in current.items() if k != "items"}:
+                raise ValueError("Evidence policy or historical approval changed; select explicit scope")
+            before = {item["catalog_id"]: item for item in old["items"]}
+            after = {item["catalog_id"]: item for item in current["items"]}
+            if len(before) != len(old["items"]) or len(after) != len(current["items"]) or not before.keys() <= after.keys():
+                raise ValueError("Duplicate or removed evidence identities")
+            for identity, value in after.items():
+                if before.get(identity) == value:
+                    continue
+                kind = next((kind for kind in ("block", "preset") if identity in inventories[kind]), None)
+                if kind is None:
+                    raise ValueError("Unknown evidence identity")
+                add(kind, [identity])
         elif path.startswith(str(Path(PACK).parent / "thumbnails/generated") + "/"):
             thumbnail_owners(str(Path(path).relative_to(Path(PACK).parent)))
         elif path == KITS:

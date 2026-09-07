@@ -171,7 +171,7 @@ class PhpCoverageTests(unittest.TestCase):
         source = (ROOT / 'tests/UnitPhp/HtmlDocumentCompilerTest.php').read_text()
         self.assertEqual(source.count("#[Group('content-catalog')]"), 1)
         self.assertIn("#[Group('content-catalog')]\n    public function test_all_builtin_presets_compile_as_typed_documents()", source)
-        self.assertIn("self::assertCount($quality['rules']['inventory']['preset_count'], $manifest['presets']);", source)
+        self.assertIn("self::assertCount($quality['contract']['inventory']['preset_count'], $manifest['presets']);", source)
         self.assertIn("foreach (array_values($manifest['presets']) as $index => $preset)", source)
 
 

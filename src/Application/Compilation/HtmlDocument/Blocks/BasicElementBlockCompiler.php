@@ -74,8 +74,8 @@ final readonly class BasicElementBlockCompiler implements BlockTypeCompilerPort
         if (! is_bool($props['decorative'] ?? null)) {
             throw new DocumentCompileException('아이콘 용도를 선택해야 합니다.');
         }
-        $label = $this->properties->optionalString($props, 'label', 120);
-        if ($label === null || (! $props['decorative'] && trim($label) === '')) {
+        $label = $this->properties->optionalString($props, 'label', 120) ?? '';
+        if (! array_key_exists('label', $props) || (! $props['decorative'] && trim($label) === '')) {
             throw new DocumentCompileException('의미를 전달하는 아이콘에는 접근성 이름이 필요합니다.');
         }
         $attributes = $props['decorative'] ? ' aria-hidden="true"' : ' role="img" aria-label="'.$this->escaper->escapeAttribute($label).'"';
@@ -96,7 +96,7 @@ final readonly class BasicElementBlockCompiler implements BlockTypeCompilerPort
     private function icon(array $props, bool $optional): string
     {
         $icon = $props['icon'] ?? null;
-        if ($optional && $icon === '') {
+        if ($optional && array_key_exists('icon', $props) && ($icon === null || $icon === '')) {
             return '';
         }
         if (! is_string($icon) || ! in_array($icon, BlockIconCompiler::FEATURE_ICONS, true)) {

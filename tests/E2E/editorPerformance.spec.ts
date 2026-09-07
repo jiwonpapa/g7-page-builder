@@ -8,11 +8,19 @@ import {
   type TestInfo,
 } from '@playwright/test';
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
 
 const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const BLOCK_COUNT = 100;
+const builtinCatalog = JSON.parse(readFileSync(resolve('resources/block-packs/builtin-core/manifest.json'), 'utf8')) as {
+  blocks: Array<{ capabilities: string[] }>;
+  presets: unknown[];
+};
+const GALLERY_COUNT = builtinCatalog.blocks.filter(block => !block.capabilities.includes('editor.compatibility-only')).length + builtinCatalog.presets.length;
+
 const PERFORMANCE_SLUG_PATTERN = /^g7pb-perf-\d{13}-[a-z0-9]{6}$/;
 
 const budget = (name: string, fallback: number): number => {
@@ -280,7 +288,7 @@ async function measureGallery(page: Page): Promise<number> {
   const gallery = page.getByTestId('page-builder-block-gallery');
   await expect(gallery).toBeVisible();
   const grid = gallery.locator('.g7pb-block-gallery__grid');
-  await expect(grid).toHaveAttribute('data-total-items', '139');
+  await expect(grid).toHaveAttribute('data-total-items', String(GALLERY_COUNT));
   await expect(grid).toHaveAttribute('data-rendered-items', '24');
   await expect(grid.locator('[data-block-preview]')).toHaveCount(24);
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));

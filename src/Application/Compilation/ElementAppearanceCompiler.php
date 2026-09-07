@@ -11,6 +11,7 @@ final class ElementAppearanceCompiler
 {
     /** @var array<string, list<string>> */
     private const ROOT_ELEMENT_FIELDS = [
+        'content.badge-01' => ['label'],
         'content.heading-01' => ['eyebrow', 'heading'],
         'content.rich-text-01' => ['content'],
         'media.image-01' => ['caption'],
@@ -239,6 +240,7 @@ final class ElementAppearanceCompiler
             'caption' => in_array($type, ['media.image-01', 'media.video-embed-01'], true) ? '(.//figcaption)[1]' : null,
             'unit' => $type === 'data.bar-chart-01' ? './/*['.$hasClass('g7pb-bar-chart__unit').']' : null,
             'label' => match ($type) {
+                'content.badge-01' => '(.//*['.$hasClass('g7pb-basic-badge').']/span[not(@data-g7pb-runtime-icon)])[last()]',
                 'content.divider-01' => '(.//*['.$hasClass('g7pb-divider__label').'])[1]',
                 'navigation.anchor-menu-01' => '(.//nav/strong)[1]',
                 default => null,
@@ -261,6 +263,7 @@ final class ElementAppearanceCompiler
         $index = ((int) $zeroIndex) + 1;
 
         return match ($type) {
+            'content.list-01' => $collection === 'items' && $leaf === 'text' ? '(.//*['.$hasClass('g7pb-basic-list').']/li)['.$index.']' : null,
             'action.buttons-01' => $collection === 'items' && $leaf === 'label' ? '(.//*['.$hasClass('g7pb-buttons__items').']/a)['.$index.']' : null,
             'content.icon-list-01' => $collection === 'items' ? match ($leaf) {
                 'title' => '(.//*['.$hasClass('g7pb-icon-list__item').'])['.$index.']//h3',

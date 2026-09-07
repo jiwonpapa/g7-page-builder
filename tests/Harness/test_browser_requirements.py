@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, SITE_KIT_INQUIRY, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, BASIC_ELEMENTS, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, SITE_KIT_INQUIRY, scenarios_for
 import re
 import subprocess
 from tools.g7pb.planner import build_plan
@@ -52,6 +52,9 @@ CATALOG_BREAKPOINTS = catalog_roles(CATALOG_CODEC, CATALOG_RESPONSIVE)
 # Independent reviewed ownership list: a renamed/new source must not silently
 # inherit a prefix-based exception or lose its corresponding code contract.
 EXTRACTED_CATALOG_SCOPES = {
+    **{"resources/js/editor/" + name: {BASIC_ELEMENTS} for name in (
+        "basicElementCatalogData.ts", "basicElementCatalogCodec.ts", "basicElementCatalogBlocks.tsx",
+    )},
     **{"resources/js/editor/" + name: {CATALOG_MIXED} for name in (
         "catalogBlocks.tsx", "foundationCatalogBlocks.tsx", "phase2CatalogBlocks.tsx",
         "phase3CatalogBlocks.tsx", "phase4CatalogBlocks.tsx", "productionCatalogBlocks.tsx",
@@ -704,10 +707,15 @@ class BrowserRequirementsTests(unittest.TestCase):
                         "resources/js/blocks/externalEditorRegistryDataExtra.ts"):
             self.assertEqual(scenarios_for([unknown]), (PAGE,))
 
+    def test_basic_element_public_styles_and_compiler_select_the_owned_browser_flow(self):
+        for path in ("resources/css/page-builder-basic-elements.css",
+                     "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"):
+            self.assertEqual(scenarios_for([path]), (BASIC_ELEMENTS,))
+
     def test_catalog_role_union_deduplicates_without_removing_existing_workflows(self):
         sources = list(EXTRACTED_CATALOG_SCOPES)
         expected = {PAGE, TEXT_AND_CONTROLS, STRUCTURE_THEME,
-                    catalog_roles(CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE)}
+                    catalog_roles(CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, BASIC_ELEMENTS)}
         self.assertEqual(set(scenarios_for(sources)), expected)
         self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))
         selected = scenarios_for(["resources/js/editor/richTextEditing.tsx", "resources/js/editor/canvasEditingContract.ts"])

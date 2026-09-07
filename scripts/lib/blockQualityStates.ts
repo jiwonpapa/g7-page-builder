@@ -31,11 +31,12 @@ export function parseQualityStateFixtures(value: unknown): QualityStateFixture[]
   return structuredClone(value.states);
 }
 
-interface Editing { fields: Array<{ path: string; kind: string }>; collections: Array<{ name: string; min: number; max: number }>; directMedia: boolean; dynamicData: boolean }
+interface Editing { fields: Array<{ path: string; kind: string; maxLength?: number }>; collections: Array<{ name: string; min: number; max: number }>; directMedia: boolean; dynamicData: boolean }
 function editing(value: unknown): Editing {
   if (!value || typeof value !== 'object') throw new Error('Missing editing capability declaration.');
   const item = value as Partial<Editing>;
-  if (!Array.isArray(item.fields) || item.fields.some(field => !field || typeof field.path !== 'string' || !['plain', 'inline-rich', 'block-rich', 'structural'].includes(field.kind))
+  if (!Array.isArray(item.fields) || item.fields.some(field => !field || typeof field.path !== 'string' || !['plain', 'inline-rich', 'block-rich', 'structural'].includes(field.kind)
+    || (field.maxLength !== undefined && (!Number.isInteger(field.maxLength) || field.maxLength < 1 || field.maxLength > 10_000)))
     || !Array.isArray(item.collections) || item.collections.some(entry => !entry || typeof entry.name !== 'string' || !Number.isInteger(entry.min) || !Number.isInteger(entry.max) || entry.min < 1 || entry.max < entry.min || entry.max > 200)
     || typeof item.directMedia !== 'boolean' || typeof item.dynamicData !== 'boolean') throw new Error('Invalid editing capability declaration.');
   return item as Editing;
@@ -127,24 +128,35 @@ export function createQualityStateCases(value: unknown, capability: unknown, fix
     case 'dynamic-response': return [{ ...base(fixture.id), network: structuredClone(fixture.input) }];
     case 'long-copy': {
       const result = base('long-copy'); let changes = 0;
-      const replace = (target: EvidenceJson, segments: string[]): void => {
+      const replace = (target: EvidenceJson, segments: string[], text: EvidenceJson): void => {
         const [head, ...tail] = segments; if (!head || !target || typeof target !== 'object') return;
         if (head === '*') {
           if (Array.isArray(target)) target.forEach((item, index) => {
-            if (tail.length) replace(item, tail);
-            else if (typeof item === 'string') { target[index] = fixture.input.text!; changes += 1; }
+            if (tail.length) replace(item, tail, text);
+            else if (typeof item === 'string') { target[index] = text; changes += 1; }
           });
           return;
         }
         if (Array.isArray(target)) return;
-        if (tail.length) replace(target[head] ?? null, tail);
-        else if (typeof target[head] === 'string') { target[head] = fixture.input.text!; changes += 1; }
+        if (tail.length) replace(target[head] ?? null, tail, text);
+        else if (typeof target[head] === 'string') { target[head] = text; changes += 1; }
       };
       const rich = contract.fields.filter(field => field.kind === 'inline-rich' || field.kind === 'block-rich');
-      const fields = rich.length ? rich : contract.fields.filter(field => field.kind === 'plain' && /(?:^|\.)(?:label|caption|name)$/.test(field.path));
-      for (const field of fields) replace(result.props, field.path.split('.'));
+      const fields = rich.length ? rich : contract.fields.filter(field => field.maxLength !== undefined
+        || field.kind === 'plain' && /(?:^|\.)(?:label|caption|name)$/.test(field.path));
+      const oversized = base('long-copy-over-limit');
+      oversized.expected = 'reject';
+      for (const field of fields) {
+        const text = fixture.input.text!;
+        if (field.maxLength === undefined) replace(result.props, field.path.split('.'), text);
+        else {
+          const characters = Array.from(String(text).repeat(Math.ceil((field.maxLength + 1) / String(text).length)));
+          replace(result.props, field.path.split('.'), characters.slice(0, field.maxLength).join(''));
+          replace(oversized.props, field.path.split('.'), characters.slice(0, field.maxLength + 1).join(''));
+        }
+      }
       if (!changes) throw new Error('Long-copy fixture has no declared canonical text field.');
-      return [result];
+      return fields.some(field => field.maxLength !== undefined) ? [result, oversized] : [result];
     }
     case 'collection-boundaries': {
       if (!contract.collections.length) throw new Error('Collection fixture requires a declared collection.');

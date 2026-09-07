@@ -175,14 +175,14 @@ function StructureInsertField({ readOnly }: { readOnly?: boolean }): React.React
           onClick={() => insert('content', 'LayoutColumns', columns)}>{columns}열</button>)}
         <button type="button" disabled={readOnly} onClick={() => insert('content', 'LayoutStack')}>Stack</button>
       </div>
-      <small>허용: Columns, Stack, 제목, 본문, 이미지, 버튼, 구분선</small>
+      <small>허용: Columns, Stack과 기본 요소</small>
     </> : <>
       <span>열 안에 Stack 추가</span>
       <div role="group" aria-label="열별 Stack 추가">
         {Array.from({ length: Number(item.props.columns) || 2 }, (_, index) => <button type="button" key={index}
           disabled={readOnly} onClick={() => insert(`column${index + 1}`, 'LayoutStack')}>{index + 1}열</button>)}
       </div>
-      <small>각 열에는 Stack 또는 기본 콘텐츠 5종만 배치할 수 있습니다.</small>
+      <small>각 열에는 Stack 또는 라이브러리의 기본 요소를 배치할 수 있습니다.</small>
     </>}
     {message ? <output>{message}</output> : null}
   </div>;

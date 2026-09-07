@@ -7,6 +7,7 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\CompilationUrlPolicy;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\AnchorMenuBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ArticleListBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BarChartBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BasicElementBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BlockquoteBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BreadcrumbsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ButtonsBlockCompiler;
@@ -68,6 +69,10 @@ final readonly class BuiltInBlockCompilers
     {
         /** @var array<string, BlockTypeCompilerPort> $compilers */
         $compilers = [
+            'builtin.icon-01' => new BasicElementBlockCompiler('icon', $this->properties, $this->appearance, $this->icons, $this->escaper),
+            'builtin.list-01' => new BasicElementBlockCompiler('list', $this->properties, $this->appearance, $this->icons, $this->escaper),
+            'builtin.badge-01' => new BasicElementBlockCompiler('badge', $this->properties, $this->appearance, $this->icons, $this->escaper),
+
             'builtin.hero-centered-01' => new HeroBlockCompiler($this->properties, $this->appearance, $this->markup, $this->urls, $this->escaper, $this->richText),
             'builtin.features-grid-01' => new FeaturesBlockCompiler($this->properties, $this->appearance, $this->icons, $this->escaper, $this->richText),
             'builtin.cta-split-01' => new CtaBlockCompiler($this->properties, $this->appearance, $this->markup, $this->escaper, $this->richText),

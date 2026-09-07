@@ -151,6 +151,7 @@
 .g7pb-preview-data-detail__media { display: grid; width: 100%; aspect-ratio: 1 / 1; place-items: center; border-radius: var(--g7pb-theme-radius); color: var(--g7pb-theme-muted); background: color-mix(in srgb, var(--g7pb-theme-accent) 8%, transparent); }
 .g7pb-preview-data-detail > :is(p, [data-g7pb-richtext-display="div"], [data-g7pb-richtext-display="p"]) { margin-top: 1rem; font-size: .78rem; }
 
+.g7pb-preview-basic-element,
 .g7pb-preview-heading,
 .g7pb-preview-rich-text,
 .g7pb-preview-image,

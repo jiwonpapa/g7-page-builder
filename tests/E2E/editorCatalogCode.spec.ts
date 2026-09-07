@@ -147,7 +147,10 @@ async function save(page: Page, id: string): Promise<void> {
 async function previewUrl(api: APIRequestContext, id: string): Promise<string> {
   const current = await resource(api, id);
   const response = await api.post(`${API}/${id}/preview`, { data: { expected_lock_version: current.lock_version } });
-  expect(response.ok()).toBe(true);
+  if (!response.ok()) {
+    const problem = await response.json() as { message?: string; error?: unknown; data?: unknown };
+    throw new Error(`Owned catalog preview rejected (${response.status()}): ${JSON.stringify(problem).slice(0, 4000)}`);
+  }
   const payload = await response.json() as { data?: { preview_url?: string } };
   if (!payload.data?.preview_url) throw new Error('Missing compiled catalog preview URL.');
   return payload.data.preview_url;
@@ -221,6 +224,143 @@ async function selectCanvasField(page: Page, input: Locator, item: PageBuilderBl
 // Synthetic inputs exercise code contracts, not catalog wording or preset quality.
 test.use({ trace: 'off', video: 'off' });
 test.describe.configure({ retries: 0 });
+
+test('basic elements insert into Stack, edit Korean text, reopen and publish at three widths', async ({ page, context }, info) => {
+  const title = heading();
+  const stack = block('layout.stack-01', { gap: 'compact' }, { content: [title] });
+  const columns = block('layout.columns-01', { columns: 2, ratio: '1:1', gap: 'normal' }, {
+    column1: [stack], column2: [block('content.rich-text-01', { content: '<p>기존 본문 유지</p>', measure: 'standard' })],
+  });
+  const section = block('layout.section-01', { width: 'standard', spacing: 'compact' }, { content: [columns] });
+  await withFixture(page, context, info.project.name, [section], async (api, owned) => {
+    const frame = page.frameLocator('iframe');
+    for (const [index, kind] of ['icon', 'list', 'badge'].entries()) {
+      const add = page.getByTestId('page-builder-add-block');
+      if (!await add.isVisible()) await page.locator('summary[aria-label="편집 도구 더 보기"]').click();
+      await activatePointerTarget(page, add, `insert ${kind}`);
+      const gallery = page.getByTestId('page-builder-block-gallery');
+      await gallery.getByRole('tab', { name: /^기본 요소/ }).click();
+      await gallery.getByLabel('블록 예제').selectOption('definition');
+      await gallery.getByLabel('추가할 위치').selectOption({ label: `구역 1 › 열 묶음 1 › 세로 묶음 1 › 내용 · ${index + 2}번째` });
+      await expect(gallery.getByTestId(`page-builder-block-option-${kind}`)).toBeEnabled();
+      await activatePointerTarget(page, gallery.getByTestId(`page-builder-block-option-${kind}`), `nested ${kind}`);
+      await expect(gallery).toBeHidden();
+    }
+    await save(page, owned.documentId);
+    // Definitions must compile unchanged after G7 normalizes empty optional values to null.
+    await previewUrl(api, owned.documentId);
+    const inserted = (await resource(api, owned.documentId)).document;
+    const children = inserted.blocks[0].slots!.content[0].slots!.column1[0].slots!.content;
+    expect(children.map((item) => item.type)).toEqual(['content.heading-01', 'content.icon-01', 'content.list-01', 'content.badge-01']);
+    const [, icon, list, badge] = children;
+    const listCanvas = canvasBlock(page, list), badgeCanvas = canvasBlock(page, badge);
+    // Select the edited block through the native Outline. A selected adjacent
+    // block's floating ActionBar can cover a compact Stack's previous item.
+    await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+    for (const parent of [section, columns, stack]) {
+      const row = page.locator(`[data-puck-layer-tree-id="${parent.instance_id}"]`);
+      const expand = row.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
+      if (await expand.isVisible()) await expand.click();
+    }
+    await selectOutlineBlock(page, list, '목록');
+    const first = listCanvas.locator('[data-g7pb-inline-field="items.0.text"] [contenteditable]').first();
+    await first.hover();
+    await expect(first).toHaveAttribute('contenteditable', 'plaintext-only');
+    await activatePointerTarget(page, first, 'list item Korean composition');
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.insertText('목록 ');
+    const cdp = await context.newCDPSession(page);
+    try {
+      for (const text of ['ㅎ', '하', '한']) await cdp.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
+      await cdp.send('Input.insertText', { text: '한' });
+      await page.keyboard.insertText('글 완성');
+    } finally { await cdp.detach(); }
+    await expect(first).toHaveText('목록 한글 완성');
+    await first.press('ArrowLeft');
+    const itemAction = (name: string) => frame.getByTestId(name).locator('xpath=ancestor::button[1]').last();
+    await page.waitForTimeout(300); // Puck's documented 250ms history grouping boundary.
+    await itemAction('page-builder-item-duplicate').click();
+    await itemAction('page-builder-item-move-down').click();
+    await itemAction('page-builder-item-delete').click();
+    await expect(listCanvas.locator('li')).toHaveCount(2);
+    await page.waitForTimeout(300);
+    let undos = 0;
+    do {
+      await page.getByRole('button', { name: 'undo', exact: true }).click(); undos++;
+    } while (await listCanvas.locator('li').count() !== 2 && undos < 3);
+    await expect(first).toHaveText('목록 한글 완성');
+    for (let index = 0; index < undos; index++) await page.getByRole('button', { name: 'redo', exact: true }).click();
+    await expect(listCanvas.locator('li')).toHaveCount(2);
+    await page.getByRole('radio', { name: '번호', exact: true }).locator('xpath=ancestor::label[1]').click();
+    await expect(page.getByRole('radio', { name: '번호', exact: true })).toBeChecked();
+    await expect(listCanvas.locator('ol')).toBeVisible();
+
+    await selectOutlineBlock(page, badge, '배지');
+    const label = badgeCanvas.locator('[data-g7pb-inline-field="label"] [contenteditable]').first();
+    await label.hover();
+    await activatePointerTarget(page, label, 'badge label');
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.insertText('접수 중');
+    await expect(label).toHaveText('접수 중');
+    await selectOutlineBlock(page, icon, '아이콘');
+    await page.getByRole('radio', { name: '의미 전달', exact: true }).locator('xpath=ancestor::label[1]').click();
+    await expect(page.getByRole('radio', { name: '의미 전달', exact: true })).toBeChecked();
+    await page.getByLabel('접근성 이름 (의미 전달 시 필수)', { exact: true }).filter({ visible: true }).fill('서비스 안내');
+    await page.getByLabel('크기', { exact: true }).filter({ visible: true }).selectOption({ label: '크게' });
+    await page.getByLabel('색상', { exact: true }).filter({ visible: true }).selectOption({ label: '강조색' });
+    await save(page, owned.documentId);
+    const saved = (await resource(api, owned.documentId)).document;
+    const savedItems = saved.blocks[0].slots!.content[0].slots!.column1[0].slots!.content;
+    expect(savedItems.map((item) => item.instance_id)).toEqual(children.map((item) => item.instance_id));
+    expect(savedItems[1].props).toMatchObject({ decorative: false, label: '서비스 안내', size: 'large', tone: 'accent' });
+    expect(savedItems[2].props).toMatchObject({ ordered: true, items: [{ text: '목록 한글 완성' }, { text: '두 번째 항목' }] });
+    expect(savedItems[3].props.label).toBe('접수 중');
+    await page.reload();
+    await expect(listCanvas.locator('ol li').first()).toHaveText('목록 한글 완성');
+    await expect(badgeCanvas.locator('.g7pb-basic-badge')).toHaveText('접수 중');
+    expect((await resource(api, owned.documentId)).document).toEqual(saved);
+    await info.attach('basic-elements-saved-document', { body: JSON.stringify(saved, null, 2), contentType: 'application/json' });
+    await page.screenshot({ path: info.outputPath('basic-elements-editor.png') });
+
+    const preview = await context.newPage();
+    try {
+      expect((await preview.goto(await previewUrl(api, owned.documentId)))?.ok()).toBe(true);
+      await expect(preview.getByRole('img', { name: '서비스 안내', exact: true })).toBeVisible();
+      const publish = page.getByTestId('page-builder-publish');
+      if (!await publish.isVisible()) await page.locator('summary[aria-label="편집 도구 더 보기"]').click();
+      const [published] = await Promise.all([
+        page.waitForResponse((response) => response.request().method() === 'POST' && /\/publications\/[^/]+\/commit$/.test(new URL(response.url()).pathname)),
+        activatePointerTarget(page, publish, 'publish basic elements'),
+      ]);
+      expect(published.ok()).toBe(true);
+      await expect(page.getByTestId('page-builder-publish-status')).toHaveAttribute('data-state', 'published');
+      for (const [name, width] of [['desktop', 1440], ['tablet', 820], ['mobile', 390]] as const) {
+        await preview.setViewportSize({ width, height: 900 });
+        expect((await preview.goto(`/pages/${owned.slug}`))?.ok()).toBe(true);
+        const publishedIcon = preview.getByRole('img', { name: '서비스 안내', exact: true });
+        await expect(publishedIcon.locator('svg')).toBeVisible();
+        await expect(preview.locator('.g7pb-basic-list > li')).toHaveText(['목록 한글 완성', '두 번째 항목']);
+        await expect(preview.locator('ol.g7pb-basic-list')).toBeVisible();
+        await expect(preview.locator('span.g7pb-basic-badge')).toHaveText('접수 중');
+        await expect(preview.locator('.g7pb-basic-badge a, .g7pb-basic-badge button, .g7pb-basic-badge[role="status"]')).toHaveCount(0);
+        expect(await preview.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+        await preview.screenshot({ path: info.outputPath(`basic-elements-${name}.png`), fullPage: true });
+      }
+      // Incomplete content remains a draft; compile/publish must reject it and preserve the public revision.
+      const current = await resource(api, owned.documentId), invalid = structuredClone(current.document);
+      invalid.blocks[0].slots!.content[0].slots!.column1[0].slots!.content[1].props.label = '';
+      expect((await api.put(`${API}/${owned.documentId}/draft`, { data: { document: invalid, expected_lock_version: current.lock_version } })).ok()).toBe(true);
+      const draft = await resource(api, owned.documentId);
+      for (const endpoint of ['preview', 'publications/prepare']) {
+        const rejected = await api.post(`${API}/${owned.documentId}/${endpoint}`, { data: { expected_lock_version: draft.lock_version } });
+        expect(rejected.status()).toBe(422);
+      }
+      expect((await preview.reload())?.ok()).toBe(true);
+      await expect(preview.getByRole('img', { name: '서비스 안내', exact: true })).toBeVisible();
+      await expect(preview.locator('.g7pb-basic-badge')).toHaveText('접수 중');
+    } finally { await preview.close(); }
+  });
+});
 
 test('catalog frames preserve selection appearance and motion across families', async ({ page, context }, info) => {
   const cases = frameCases();

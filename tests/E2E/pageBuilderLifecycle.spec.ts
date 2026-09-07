@@ -8,6 +8,7 @@ import {
   type TestInfo,
 } from '@playwright/test';
 import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SitePartSetFixture, gotoOwnedSiteShell } from './support/sitePartSetFixture';
 import { activatePointerTarget, pointerHitEvidence, replacePuckRichTextField, waitForStableLayout } from './support/richTextInput';
@@ -20,6 +21,15 @@ const DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-
 const E2E_OWNERSHIP_DIRECTORY = join(process.cwd(), 'output', 'playwright', 'ownership');
 const E2E_DOCUMENT_SLUG_PATTERN = /^(?:managed-)?g7pb-e2e-[a-z0-9-]+-\d{13}-[a-z0-9]{6}(?:-copy)?$|^g7pb-template-e2e-\d{13}-[a-z0-9]{6}$/;
 const MOBILE_EDITOR_BREAKPOINT = 900;
+const builtinCatalog = JSON.parse(readFileSync(join(process.cwd(), 'resources/block-packs/builtin-core/manifest.json'), 'utf8')) as {
+  blocks: Array<{ block_id: string; capabilities: string[] }>;
+  presets: Array<{ block_id: string }>;
+};
+const BUILTIN_DEFINITION_COUNT = builtinCatalog.blocks.filter(block => !block.capabilities.includes('editor.compatibility-only')).length;
+const layoutPolicy = JSON.parse(readFileSync(join(process.cwd(), 'schemas/layout-policy-v1.json'), 'utf8')) as { leaf_types: string[] };
+const BASIC_ELEMENT_CANDIDATE_COUNT = [...builtinCatalog.blocks, ...builtinCatalog.presets]
+  .filter(item => layoutPolicy.leaf_types.includes(item.block_id)).length;
+
 
 const test = base.extend<{ adminToken: string; ownedSiteParts: SitePartSetFixture }>({
   adminToken: async ({ context }, use) => {
@@ -1134,7 +1144,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
     await expect(blockPackDialog).toBeVisible();
     await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
-    await expect(blockPackDialog).toContainText('블록 45 / 완성 섹션 95');
+    await expect(blockPackDialog).toContainText('블록 48 / 완성 섹션 98');
     await expect(blockPackDialog).toContainText('편집기 상단 블록 추가');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
     const managerViewport = page.viewportSize()!;
@@ -1226,7 +1236,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       images.map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src)))];
     await expect.poll(collectThumbnailUrls, {
       message: 'all built-in block thumbnail URLs are rendered',
-    }).toHaveLength(44);
+    }).toHaveLength(BUILTIN_DEFINITION_COUNT);
     await expect(page.getByTestId('drawer-item:HeroSplit')).toHaveCount(0);
     const thumbnailUrls = await collectThumbnailUrls();
     const thumbnailResponses = await Promise.all(thumbnailUrls.map((url) => page.request.get(url)));
@@ -1318,7 +1328,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       expect(firstGalleryPreviewBox.width / firstGalleryPreviewBox.height).toBeCloseTo(1.6, 1);
     }
     await blockGallery.getByRole('tab', { name: /^기본 요소/ }).click();
-    await expect(blockGallery.locator('[data-production-kind="element"]')).toHaveCount(14);
+    await expect(blockGallery.locator('[data-production-kind="element"]')).toHaveCount(BASIC_ELEMENT_CANDIDATE_COUNT);
     await expect(blockGallery.locator('[data-component="Hero"]')).toHaveCount(0);
     await expect(blockGallery.getByTestId('page-builder-preset-heading-section-intro')).toBeVisible();
     await expect(drawerLibrary.locator('[data-library-block="Heading"]:visible').first()).toHaveAttribute('data-production-kind', 'element');
@@ -1354,10 +1364,10 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await blockSearch.fill('');
     await selectDefinitionGalleryTab(blockGallery);
     const galleryGrid = blockGallery.locator('.g7pb-block-gallery__grid');
-    await expect(galleryGrid).toHaveAttribute('data-total-items', '44');
+    await expect(galleryGrid).toHaveAttribute('data-total-items', String(BUILTIN_DEFINITION_COUNT));
     await expect(galleryGrid).toHaveAttribute('data-rendered-items', '24');
     await expandBlockGallery(page);
-    await expect(galleryGrid).toHaveAttribute('data-rendered-items', '44');
+    await expect(galleryGrid).toHaveAttribute('data-rendered-items', String(BUILTIN_DEFINITION_COUNT));
     for (const option of [
       'hero',
       'heading',

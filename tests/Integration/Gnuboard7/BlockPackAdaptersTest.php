@@ -368,7 +368,7 @@ final class BlockPackAdaptersTest extends TestCase
         $builtIn = $assets->show(
             'jiwonpapa',
             'builtin-core',
-            '0.15.0',
+            '0.16.0',
             'thumbnails/generated/block-01-hero.png',
         );
         self::assertInstanceOf(BinaryFileResponse::class, $builtIn);

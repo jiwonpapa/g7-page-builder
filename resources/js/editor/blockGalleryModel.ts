@@ -55,7 +55,7 @@ export interface LibraryEditingCapability {
 const STYLE_FIELDS = new Set(['surface', 'spacing', 'layout', 'theme', 'alignment', 'mediaPosition',
   'textScale', 'textAlign', 'elementStyles', 'containerWidth', 'containerAlign', 'minHeight',
   'verticalAlign', 'responsiveOverrides', 'width', 'gap', 'ratio', 'columns', 'motion',
-  'variant', 'aspectRatio', 'tabVariant', 'tone', 'measure']);
+  'size', 'variant', 'aspectRatio', 'tabVariant', 'tone', 'measure']);
 
 /** Read capabilities from the existing canvas/field contracts, including explicit unavailable states. */
 export function libraryEditingCapabilities(type: string, fields: Record<string, unknown>): LibraryEditingCapability[] {
@@ -63,6 +63,7 @@ export function libraryEditingCapabilities(type: string, fields: Record<string, 
   const layout = LAYOUT_COMPONENTS.has(type);
   const known = Boolean(contract) || layout;
   const direct = Boolean(contract?.directText || contract?.directMedia || contract?.directRoute);
+  const panelContent = Boolean(contract?.textFields.some((field) => field.kind === 'structural' && !STYLE_FIELDS.has(field.path)));
   const styles = Object.entries(fields).filter(([name, field]) => STYLE_FIELDS.has(name)
     && typeof field === 'object' && field !== null && 'type' in field && field.type !== 'array');
   const styleLabels = styles.flatMap(([name, field]) => typeof field === 'object' && field !== null
@@ -82,7 +83,7 @@ export function libraryEditingCapabilities(type: string, fields: Record<string, 
           : known ? '접근성 구조·링크 처리와 정해진 표시 동작을 유지합니다.'
             : '팩이 제공한 구성과 동작을 유지합니다. 내부 구성은 개방하지 않습니다.';
   return [
-    { key: 'fields', label: '내용 수정', available: direct,
+    { key: 'fields', label: '내용 수정', available: direct || panelContent,
       description: direct ? [contract?.directText && '화면 문구', contract?.directMedia && '이미지', contract?.directRoute && '링크'].filter(Boolean).join(' · ')
         : layout ? '구역 안의 각 요소를 선택해 내용을 수정합니다.'
           : known ? '설정 패널에서 공개된 값을 수정합니다.' : '팩의 설정 패널을 사용합니다. 직접 편집 범위는 확인되지 않았습니다.' },
@@ -120,6 +121,7 @@ export interface BlockGalleryItem {
 type BlockPreviewDensity = 'compact' | 'regular';
 
 const COMPACT_BLOCK_PREVIEWS = new Set<keyof EditorComponents>([
+  'Icon', 'List', 'Badge',
   'Heading',
   'RichText',
   'Buttons',
@@ -145,6 +147,7 @@ function blockPackAssetUrl(packId: string, packVersion: string, path: string): s
 }
 
 const BLOCK_SEARCH_ALIASES: Readonly<Record<string, string>> = Object.freeze({
+  Icon: '아이콘 장식 기호', List: '목록 리스트 글머리 번호', Badge: '배지 뱃지 라벨 태그',
   Heading: '제목 헤딩 섹션 타이틀', RichText: '본문 글 문단 에디터', Image: '사진 이미지 배너', Buttons: '버튼 링크 행동 전환',
   Divider: '구분선 선 여백 분리', Blockquote: '인용문 후기 명언', Hero: '히어로 첫 화면 랜딩', HeroSplit: '분할 히어로 이미지',
   HeroSlider: '슬라이더 캠페인 배너', Features: '기능 특징 장점', Cta: '행동 유도 전환 문의', Notice: '알림 안내 주의 공지',

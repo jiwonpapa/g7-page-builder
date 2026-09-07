@@ -292,6 +292,72 @@
         },
         {
           "$ref": "#/$defs/richTextEnvelopeOverlay"
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "content.icon-01"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "block_version": {
+                "const": 1
+              },
+              "props": {
+                "$ref": "#/$defs/iconProps"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "content.list-01"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "block_version": {
+                "const": 1
+              },
+              "props": {
+                "$ref": "#/$defs/listProps"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "content.badge-01"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "block_version": {
+                "const": 1
+              },
+              "props": {
+                "$ref": "#/$defs/badgeProps"
+              }
+            }
+          }
         }
       ]
     },
@@ -1285,6 +1351,170 @@
         },
         "appearance": {
           "$ref": "#/$defs/appearance"
+        }
+      }
+    },
+    "iconProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "icon",
+        "size",
+        "tone",
+        "decorative",
+        "label"
+      ],
+      "properties": {
+        "size": {
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ]
+        },
+        "tone": {
+          "enum": [
+            "default",
+            "muted",
+            "accent"
+          ]
+        },
+        "appearance": {
+          "$ref": "#/$defs/appearance"
+        },
+        "icon": {
+          "enum": [
+            "bolt",
+            "check",
+            "code",
+            "globe",
+            "heart",
+            "layers",
+            "mobile",
+            "palette",
+            "shield",
+            "sparkles",
+            "star"
+          ]
+        },
+        "decorative": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": ["string", "null"],
+          "maxLength": 120
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "decorative": {
+                "const": false
+              }
+            },
+            "required": [
+              "decorative"
+            ]
+          },
+          "then": {
+            "properties": {
+              "label": {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "listProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordered",
+        "items"
+      ],
+      "properties": {
+        "ordered": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        },
+        "appearance": {
+          "$ref": "#/$defs/appearance"
+        }
+      }
+    },
+    "badgeProps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "icon",
+        "size",
+        "tone"
+      ],
+      "properties": {
+        "size": {
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ]
+        },
+        "tone": {
+          "enum": [
+            "default",
+            "muted",
+            "accent"
+          ]
+        },
+        "appearance": {
+          "$ref": "#/$defs/appearance"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 40,
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "icon": {
+          "enum": [
+            "",
+            null,
+            "bolt",
+            "check",
+            "code",
+            "globe",
+            "heart",
+            "layers",
+            "mobile",
+            "palette",
+            "shield",
+            "sparkles",
+            "star"
+          ]
         }
       }
     }

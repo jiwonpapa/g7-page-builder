@@ -30,6 +30,7 @@ function approvedQuality(manifest = clone(manifestSource), index = clone(indexSo
   });
   expect(candidate.errors).toEqual([]);
   quality.approval.catalog_digest = candidate.digest;
+  quality.approval.item_count = candidate.items.length;
   quality.approval.decision = 'approved';
   quality.approval.findings = [];
   Object.keys(quality.approval.criteria).forEach((criterion) => {

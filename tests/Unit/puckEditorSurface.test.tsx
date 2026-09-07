@@ -145,10 +145,13 @@ const fixture: PageBuilderDocument = {
 
 const mounted: Array<() => void> = [];
 
-afterEach(() => {
+afterEach(async () => {
   for (const cleanup of mounted.splice(0)) {
     cleanup();
   }
+  // Tiptap React defers destroy by 1ms after unmount. Let that callback finish
+  // while JSDOM and the test's browser mocks still exist.
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 1)); });
   window.localStorage.clear();
   document.body.replaceChildren();
   vi.restoreAllMocks();

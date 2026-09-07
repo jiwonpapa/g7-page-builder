@@ -710,7 +710,7 @@ test.describe('Editor structure and theme contracts', () => {
       await activatePointerTarget(page, add, 'contextual library');
       const gallery = page.getByTestId('page-builder-block-gallery');
       await expect(gallery.getByTestId('page-builder-insertion-location')).toContainText('구역 1 › 내용 · 2번째');
-      await expect(gallery.getByRole('tabpanel')).toHaveAttribute('data-total-items', '14');
+      await expect(gallery.getByRole('tabpanel')).toHaveAttribute('data-total-items', '20');
       await expect(gallery.getByTestId('page-builder-block-option-hero')).toHaveCount(0);
       const showUnavailable = gallery.getByRole('button', { name: '삽입 불가 항목도 보기', exact: true });
       await showUnavailable.focus();

@@ -42,6 +42,53 @@ class PlannerTests(unittest.TestCase):
         self.assertTrue(build_plan(self.root, [fixture], full=True).unresolved)
         self.assertTrue(build_plan(self.root, ['tests/Contract/unknown.json'], full=True).unresolved)
 
+    def test_full_scope_runs_changed_specs_missing_from_the_declared_full_suite(self):
+        covered, extra = "tests/E2E/covered.spec.ts", "tests/E2E/extra.spec.ts"
+        self.write("package.json", json.dumps({"scripts": {"test:e2e:product": "playwright test " + covered + " && npm run test:e2e:site-shell"}}))
+        self.write("schemas/shared.json", '{}')
+        for spec in (covered, extra):
+            self.write(spec, "test('scenario', () => {});")
+        for phase in ('submission', 'integration', 'verification', 'ci'):
+            plan = build_plan(self.root, ["schemas/shared.json", covered, extra], full=True, phase=phase)
+            self.assertFalse(plan.unresolved)
+            self.assertIn('full-product', [gate.name for gate in plan.gates])
+            selected = [gate for gate in plan.gates if gate.name.startswith('browser:')]
+            self.assertEqual([gate.name for gate in selected], ['browser:' + extra])
+            self.assertEqual(selected[0].deferred, phase == 'submission')
+        self.write("package.json", json.dumps({"scripts": {"test:e2e:product": "playwright test " + covered + " --grep partial"}}))
+        plan = build_plan(self.root, ["schemas/shared.json", covered], full=True)
+        self.assertIn('browser:' + covered, [gate.name for gate in plan.gates])
+
+    def test_full_runtime_sync_precedes_module_verification_with_or_without_extra_browser_specs(self):
+        extra = "tests/E2E/extra.spec.ts"
+        self.write("module.json", '{"version":"0.34.0"}')
+        self.write("schemas/shared.json", '{}')
+        self.write(extra, "test('scenario', () => {});")
+        for paths in (["module.json", "schemas/shared.json"], ["module.json", "schemas/shared.json", extra]):
+            for phase in ('submission', 'integration', 'verification', 'ci'):
+                with patch("tools.g7pb.planner.git", return_value='{"version":"0.33.1"}'):
+                    plan = build_plan(self.root, paths, full=True, phase=phase)
+                self.assertFalse(plan.unresolved)
+                names = [g.name for g in plan.gates]
+                sync = next(g for g in plan.gates if g.name == 'browser-runtime-sync')
+                full = next(g for g in plan.gates if g.name == 'full-product')
+                self.assertLess(names.index(sync.name), names.index(full.name))
+                self.assertIn('module.json', sync.argv)
+                self.assertIn('module.json', sync.inputs)
+                self.assertEqual(sync.execution, 'controller')
+                self.assertEqual(sync.deferred, phase == 'submission')
+                self.assertEqual(names.count(sync.name), 1)
+                if extra in paths:
+                    self.assertLess(names.index('browser:' + extra), names.index(full.name))
+                    self.assertIn('browser:' + extra, full.depends_on)
+                    self.assertEqual(names[-1], full.name)
+                else:
+                    self.assertNotIn('browser-assets', names)
+                    self.assertEqual(full.depends_on, (sync.name,))
+        plan = build_plan(self.root, ['schemas/shared.json'], full=True)
+        self.assertNotIn('browser-runtime-sync', [g.name for g in plan.gates])
+        self.assertEqual(next(g for g in plan.gates if g.name == 'full-product').depends_on, ())
+
     def test_snapshot_changes_require_the_owning_browser_and_fingerprint_the_image(self):
         spec = "tests/E2E/catalog.spec.ts"
         snapshot = spec + "-snapshots/catalog-desktop-linux.png"

@@ -1,3 +1,4 @@
+import { basicElementComponentConfigs } from './basicElementCatalogBlocks';
 import type { Config } from '@puckeditor/core';
 import type { CatalogEditorComponents } from './catalogEditorTypes';
 import { foundationCatalogComponentConfigs } from './foundationCatalogBlocks';
@@ -10,6 +11,7 @@ import { heroSplitFields, heroSliderFields, logoCloudFields, statsFields, pricin
 import { HeroSplitPreview, HeroSliderPreview, LogoCloudPreview, StatsPreview, PricingPreview, TeamPreview, GalleryPreview, BarChartPreview, G7RecentPostsPreview, G7ProductGridPreview, InquiryFormPreview, MapDirectionsPreview } from './catalogPreviews';
 
 export const catalogComponentConfigs: Config<CatalogEditorComponents>['components'] = {
+  ...basicElementComponentConfigs,
   ...foundationCatalogComponentConfigs,
   ...phase2CatalogComponentConfigs,
   ...phase3CatalogComponentConfigs,

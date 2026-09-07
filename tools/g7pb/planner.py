@@ -6,6 +6,7 @@ from dataclasses import replace
 import importlib.util
 import json
 import re
+import shlex
 from pathlib import Path
 import subprocess
 from .model import Gate, Plan
@@ -209,6 +210,21 @@ def related_tests(root, sources, changed, directory, suffixes):
             raise ValueError(f"No related test for {source}; add/declare a focused test")
         selected.update(matches)
     return sorted(selected)
+
+
+def full_product_specs(root):
+    """Only literal, unfiltered first-command specs establish full-suite coverage."""
+    try:
+        command = json.loads((root / "package.json").read_text()).get("scripts", {}).get("test:e2e:product", "")
+        arguments = shlex.split(command).copy()
+        if "&&" in arguments:
+            arguments = arguments[:arguments.index("&&")]
+        if arguments[:2] != ["playwright", "test"] or not arguments[2:] or not all(
+                item.startswith("tests/E2E/") and item.endswith((".spec.ts", ".spec.tsx")) for item in arguments[2:]):
+            return set()
+        return set(arguments[2:])
+    except (OSError, ValueError, AttributeError):
+        return set()
 
 
 def graph_command(argv):
@@ -438,7 +454,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 if spec in SITE_PART_SPECS:
                     inputs.extend(SITE_PART_HELPERS)
                 # Test-registration refactors do not claim that the product ran.
-                if (product_changed or snapshot) and not full:
+                if (product_changed or snapshot) and (not full or spec not in full_product_specs(root)):
                     add("browser:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--retries=0"], inputs, "Changed browser scenario and product", ("node", "php", "g7", "browser"), True, env=BROWSER_ENVIRONMENT)
                 elif not full:
                     add("browser-registration:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--list", "--reporter=line"], inputs, "Harness-only test collection; NOT product/browser acceptance", ("node",), reusable=False)
@@ -670,8 +686,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                      if name.removeprefix("browser:") in SITE_PART_SPECS else gate
                      for name, gate in gates.items() if name.startswith("browser:")]
     artifacts = [gate for name, gate in gates.items() if name in artifact_names]
-    plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:") and name not in artifact_names]
-    if browser_gates or artifacts:
+    plan.gates = [gate for name, gate in gates.items() if not name.startswith("browser:") and name not in artifact_names and name != "full-product"]
+    if full or browser_gates or artifacts:
         # The controller orchestrates the installed runtime; never execute its
         # Docker-aware environment command inside Docker a second time. build()
         # verifies source/env AND existing artifact hashes before reusing assets.
@@ -687,10 +703,20 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 "Apply only changed G7 declarations/views before browser execution", ("node", "php", "g7", "browser"),
                 True, reusable=False, execution="controller")
             before.append(gates["browser-runtime-sync"])
+        plan.gates.extend(before)
+        if not (browser_gates or artifacts):
+            if full:
+                plan.gates.append(replace(gates["full-product"], depends_on=tuple(g.name for g in before)))
+            return plan
         add("browser-assets", [*command, "build", "--root", str(root.resolve()), "--runtime", runtime, "--apply"], inputs,
             "Require candidate source/env/dist fingerprint before browser execution; reuse only matching assets",
             ("node", "g7", "browser"), True, reusable=False, execution="controller", depends_on=[g.name for g in before])
-        plan.gates.extend([*before, gates["browser-assets"]])
+        plan.gates.append(gates["browser-assets"])
         plan.gates.extend(replace(gate, depends_on=("browser-assets",)) for gate in artifacts)
         plan.gates.extend(replace(gate, depends_on=("browser-assets", *sorted(artifact_names))) for gate in browser_gates)
+        if full:
+            # Exercise changed workflows omitted by the broad suite first. The
+            # same mandatory full gate follows their success, after runtime sync.
+            prerequisites = ("browser-assets", *sorted(artifact_names), *(g.name for g in browser_gates))
+            plan.gates.append(replace(gates["full-product"], depends_on=prerequisites))
     return plan

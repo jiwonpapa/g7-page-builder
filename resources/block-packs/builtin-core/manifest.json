@@ -1,14 +1,14 @@
 {
   "manifest_version": "g7pb-block-pack/v1",
   "pack_id": "jiwonpapa/builtin-core",
-  "pack_version": "0.15.0",
+  "pack_version": "0.16.0",
   "kind": "code",
   "publisher": {
     "id": "jiwonpapa",
     "name": "지원소프트"
   },
   "compatibility": {
-    "page_builder": ">=0.6.0 <1.0.0",
+    "page_builder": ">=0.34.0 <1.0.0",
     "php": ">=8.5",
     "g7": ">=7.0.7"
   },
@@ -853,6 +853,60 @@
       "capabilities": [
         "public.slider"
       ]
+    },
+    {
+      "block_id": "content.icon-01",
+      "block_version": 1,
+      "category": "basic",
+      "label": {
+        "ko": "아이콘",
+        "en": "Icon"
+      },
+      "description": {
+        "ko": "검증된 모양과 접근성 이름으로 의미를 전하는 작은 요소입니다.",
+        "en": "A bounded, accessible icon element for page content."
+      },
+      "thumbnail": "thumbnails/generated/block-46-icon.png",
+      "schema_ref": "builtin:iconProps",
+      "editor_component": "Icon",
+      "compiler": "builtin.icon-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.list-01",
+      "block_version": 1,
+      "category": "basic",
+      "label": {
+        "ko": "목록",
+        "en": "List"
+      },
+      "description": {
+        "ko": "순서 또는 글머리 기호와 짧은 항목으로 정보를 정리합니다.",
+        "en": "A bounded, accessible list element for page content."
+      },
+      "thumbnail": "thumbnails/generated/block-47-list.png",
+      "schema_ref": "builtin:listProps",
+      "editor_component": "List",
+      "compiler": "builtin.list-01",
+      "capabilities": []
+    },
+    {
+      "block_id": "content.badge-01",
+      "block_version": 1,
+      "category": "basic",
+      "label": {
+        "ko": "배지",
+        "en": "Badge"
+      },
+      "description": {
+        "ko": "짧은 문구와 선택 아이콘으로 새 소식이나 특징을 표시합니다.",
+        "en": "A bounded, accessible badge element for page content."
+      },
+      "thumbnail": "thumbnails/generated/block-48-badge.png",
+      "schema_ref": "builtin:badgeProps",
+      "editor_component": "Badge",
+      "compiler": "builtin.badge-01",
+      "capabilities": []
     }
   ],
   "presets": [
@@ -4256,6 +4310,78 @@
         "variant": "outlined",
         "layout": "numbered"
       }
+    },
+    {
+      "preset_id": "icon.simple",
+      "block_id": "content.icon-01",
+      "block_version": 1,
+      "category": "basic",
+      "label": {
+        "ko": "서비스 인증 아이콘",
+        "en": "Simple icon"
+      },
+      "description": {
+        "ko": "검증된 모양과 접근성 이름으로 의미를 전하는 작은 요소입니다.",
+        "en": "Display a concise icon using bounded page design options."
+      },
+      "thumbnail": "thumbnails/generated/preset-96-icon-simple.png",
+      "props": {
+        "icon": "shield",
+        "size": "large",
+        "tone": "accent",
+        "decorative": false,
+        "label": "안전한 서비스"
+      }
+    },
+    {
+      "preset_id": "list.simple",
+      "block_id": "content.list-01",
+      "block_version": 1,
+      "category": "basic",
+      "label": {
+        "ko": "이용 안내 목록",
+        "en": "Simple list"
+      },
+      "description": {
+        "ko": "순서 또는 글머리 기호와 짧은 항목으로 정보를 정리합니다.",
+        "en": "Display a concise list using bounded page design options."
+      },
+      "thumbnail": "thumbnails/generated/preset-97-list-simple.png",
+      "props": {
+        "ordered": false,
+        "items": [
+          {
+            "text": "이용할 서비스를 선택합니다."
+          },
+          {
+            "text": "안내 내용을 확인하고 신청합니다."
+          },
+          {
+            "text": "진행 상황을 확인합니다."
+          }
+        ]
+      }
+    },
+    {
+      "preset_id": "badge.simple",
+      "block_id": "content.badge-01",
+      "block_version": 1,
+      "category": "basic",
+      "label": {
+        "ko": "새 소식 배지",
+        "en": "Simple badge"
+      },
+      "description": {
+        "ko": "짧은 문구와 선택 아이콘으로 새 소식이나 특징을 표시합니다.",
+        "en": "Display a concise badge using bounded page design options."
+      },
+      "thumbnail": "thumbnails/generated/preset-98-badge-simple.png",
+      "props": {
+        "label": "새 소식",
+        "icon": "sparkles",
+        "size": "medium",
+        "tone": "accent"
+      }
     }
   ],
   "runtime": {
@@ -4274,12 +4400,12 @@
     "thumbnails/generated/block-06-image.png": "20302864c15828c0005bc882c9577308a887814142a96295c207165cf5881e87",
     "thumbnails/generated/block-07-buttons.png": "a92a66556bc9c722c3d2af262712a555c832f3d8833fb45a0168c89a2b3808d7",
     "thumbnails/generated/block-08-image-text.png": "5a9cbcab624f0c9d95ebaa4382d8900ab0f9ca3ded08ba96f1dc0778c5b7dbc8",
-    "thumbnails/generated/block-09-icon-list.png": "fd73d69e6d221d65c4e591cc251a2c095906ec8c0158fec61ca95d28e9009f52",
-    "thumbnails/generated/block-10-features.png": "537981cede3c45b9a23e7556e0f8156ac712bbc3f1d6e323439b41900b504a2c",
+    "thumbnails/generated/block-09-icon-list.png": "d8449cfb7cc2b747c6e282687ceb767dcaf61ba8f6e71046753da7ebd6f2d377",
+    "thumbnails/generated/block-10-features.png": "28b2183e338f1be71ad771c44176526e549f2003150c6d056302942ef62fd606",
     "thumbnails/generated/block-11-cta.png": "05aa76d4d55cfe76a54ae27b2ab6015db6f256cbcaa984ed72f4b0fc78b8107f",
     "thumbnails/generated/block-12-contact.png": "fc2978086a181cccb6707e33d2a7b9f9e8c3975bf9b487ed40473593185a22dc",
     "thumbnails/generated/block-13-logo-cloud.png": "ecec8f4f255255f1815aaf5202e64b0bdc7c0d43f4653392d1029bfee964609a",
-    "thumbnails/generated/block-14-stats.png": "b458b15156aa18608e1305c93e9ac94a4c83d5949c6bf6a35fb52d7e03c0a047",
+    "thumbnails/generated/block-14-stats.png": "195b24040363c9ce58b28783d8b0904665718799b7424fbff4e56077f0d553ed",
     "thumbnails/generated/block-15-pricing.png": "9133f3841e0629fe3a5d7c525f2a64a52cbd77a6a170bddfe4b81b63376919f8",
     "thumbnails/generated/block-16-team.png": "41bf66ac8c7a82f22fa945826f33c973316f580e275230218bb323b83b36f358",
     "thumbnails/generated/block-17-gallery.png": "901b367073353c600b780ed24d0c7d388de306b973c2fbbdaaeb2b2fb138b242",
@@ -4293,7 +4419,7 @@
     "thumbnails/generated/block-25-process-timeline.png": "94b0a06053767805f1c7f74f8f85e52408c0a98d126098a6c7ea1068a2bd02c4",
     "thumbnails/generated/block-26-tabs.png": "242c26dc9aff100bb05b8ba1fd04c39b832f28f350c1bdacacbde108c1923a9c",
     "thumbnails/generated/block-27-comparison-table.png": "263343f8e9111e3cbddc0c332ef1f3b05799cb8c6f6193003c495cb5e3bbf91f",
-    "thumbnails/generated/block-28-article-list.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
+    "thumbnails/generated/block-28-article-list.png": "be350ed33d70caca4724945205abb21f0acdc32458ea0846e3a16baba5d1537f",
     "thumbnails/generated/block-29-video-embed.png": "95aa0045394a6e09db4418c3904c1d30ab33733f7a38307c6edaa2b3a50786ec",
     "thumbnails/generated/block-30-logo-carousel.png": "f1f997ea7807a1b20ed01d51089e217c3fef57ce6940a6dfc3928c060d313439",
     "thumbnails/generated/block-31-testimonial-slider.png": "d0abf2eb75f1490244ff62e5150095b1347d5b48383516d6b53a4c76fce5f51a",
@@ -4309,7 +4435,7 @@
     "thumbnails/generated/block-41-card-grid.png": "a7f9a8158951a5620164ae6a8f848b910ac3df509b717aa5b8710955179be908",
     "thumbnails/generated/block-42-breadcrumbs.png": "0706730d5d69e88bb4ada898c003950de558b2ca2876137b2f49a09a4413b43f",
     "thumbnails/generated/block-43-anchor-menu.png": "161182d4740de26dd186b106455a600cec80de943eb620646c81dd84915cc696",
-    "thumbnails/generated/block-44-social-links.png": "cc6206e23c04d9148879cd6490bdfa438207e4148b8bfd7f42f4fce14757f2f6",
+    "thumbnails/generated/block-44-social-links.png": "fb2a1b4ee4e39fe45c6120fb541d28515589039e6344487a5d251abba8d74d53",
     "thumbnails/generated/block-45-image-carousel.png": "2d014c2ee01dec10ef8dc3d61516624f734eb270f61dadc4ffba03c56ed230c6",
     "thumbnails/generated/preset-01-heading-section-intro.png": "a26e9e91a98f50b6f84a228a0121814d8c63fbbf875bece32ab18b68444ad2cd",
     "thumbnails/generated/preset-02-heading-compact-title.png": "bbd29d5e86257008d051d115768dfee82d8cbfa587719fa7b6d09589d78e3a60",
@@ -4321,10 +4447,10 @@
     "thumbnails/generated/preset-08-buttons-centered-actions.png": "3abb85cec0ce30efb37826b370049c9b92637c03da29e8aee0c27adb02898e6e",
     "thumbnails/generated/preset-09-image-text-product-story.png": "5a9cbcab624f0c9d95ebaa4382d8900ab0f9ca3ded08ba96f1dc0778c5b7dbc8",
     "thumbnails/generated/preset-10-image-text-company-story.png": "2aec7b95ab90597671dfdb89612ec5f0b46aaea924e39469db58319db53e8057",
-    "thumbnails/generated/preset-11-icon-list-benefits.png": "fd73d69e6d221d65c4e591cc251a2c095906ec8c0158fec61ca95d28e9009f52",
-    "thumbnails/generated/preset-12-icon-list-checklist.png": "33fff2231c06e9e08408ff34dc1031a18e0c7bbdb02445b8ec285ea15fac23f4",
+    "thumbnails/generated/preset-11-icon-list-benefits.png": "d8449cfb7cc2b747c6e282687ceb767dcaf61ba8f6e71046753da7ebd6f2d377",
+    "thumbnails/generated/preset-12-icon-list-checklist.png": "936b840100dc9897f7f8a608c5c78ae8c02e41107420236bdbe194d759d89d06",
     "thumbnails/generated/preset-13-hero-service-intro.png": "832658f4f9eeb6872bee7893eb0c1063361d9ca0d2829a8816cad37c7485bdf9",
-    "thumbnails/generated/preset-14-features-core-benefits.png": "537981cede3c45b9a23e7556e0f8156ac712bbc3f1d6e323439b41900b504a2c",
+    "thumbnails/generated/preset-14-features-core-benefits.png": "28b2183e338f1be71ad771c44176526e549f2003150c6d056302942ef62fd606",
     "thumbnails/generated/preset-15-cta-contact.png": "05aa76d4d55cfe76a54ae27b2ab6015db6f256cbcaa984ed72f4b0fc78b8107f",
     "thumbnails/generated/preset-16-contact-office.png": "fc2978086a181cccb6707e33d2a7b9f9e8c3975bf9b487ed40473593185a22dc",
     "thumbnails/generated/preset-17-faq-basic.png": "655e7fc343fcd52ddbed391d068ffc2a7f8803b55116d8fab785b128e4b711b0",
@@ -4332,7 +4458,7 @@
     "thumbnails/generated/preset-19-hero-split-product-focus.png": "6449413e84cf338b526a967108d055390fc48f9e05a718eee066c86411322652",
     "thumbnails/generated/preset-20-hero-slider-campaign.png": "c3d7c9b3ea754d21aca71be4ba93c53f0a24be59a57de06fb1dc25ee8dd4962d",
     "thumbnails/generated/preset-21-logo-cloud-partners.png": "ecec8f4f255255f1815aaf5202e64b0bdc7c0d43f4653392d1029bfee964609a",
-    "thumbnails/generated/preset-22-stats-business-proof.png": "b458b15156aa18608e1305c93e9ac94a4c83d5949c6bf6a35fb52d7e03c0a047",
+    "thumbnails/generated/preset-22-stats-business-proof.png": "195b24040363c9ce58b28783d8b0904665718799b7424fbff4e56077f0d553ed",
     "thumbnails/generated/preset-23-pricing-three-tier.png": "9133f3841e0629fe3a5d7c525f2a64a52cbd77a6a170bddfe4b81b63376919f8",
     "thumbnails/generated/preset-24-team-leadership.png": "41bf66ac8c7a82f22fa945826f33c973316f580e275230218bb323b83b36f358",
     "thumbnails/generated/preset-25-gallery-project-scenes.png": "901b367073353c600b780ed24d0c7d388de306b973c2fbbdaaeb2b2fb138b242",
@@ -4344,7 +4470,7 @@
     "thumbnails/generated/preset-31-testimonials-customer-proof.png": "3929b0a17892f609f7a3c78845f57edd7152550647c81ee5ffbf34e7f0287125",
     "thumbnails/generated/preset-32-tabs-service-guide.png": "242c26dc9aff100bb05b8ba1fd04c39b832f28f350c1bdacacbde108c1923a9c",
     "thumbnails/generated/preset-33-comparison-plans.png": "263343f8e9111e3cbddc0c332ef1f3b05799cb8c6f6193003c495cb5e3bbf91f",
-    "thumbnails/generated/preset-34-articles-insights.png": "3dc52a4150af593c9ac8ea8fff945548439cd1b570a2dfbd2835f2e8e8ab3792",
+    "thumbnails/generated/preset-34-articles-insights.png": "be350ed33d70caca4724945205abb21f0acdc32458ea0846e3a16baba5d1537f",
     "thumbnails/generated/preset-35-video-product-tour.png": "95aa0045394a6e09db4418c3904c1d30ab33733f7a38307c6edaa2b3a50786ec",
     "thumbnails/generated/preset-36-logo-carousel-customers.png": "f1f997ea7807a1b20ed01d51089e217c3fef57ce6940a6dfc3928c060d313439",
     "thumbnails/generated/preset-37-testimonial-slider-spotlight.png": "d0abf2eb75f1490244ff62e5150095b1347d5b48383516d6b53a4c76fce5f51a",
@@ -4360,7 +4486,7 @@
     "thumbnails/generated/preset-47-card-grid-services.png": "a7f9a8158951a5620164ae6a8f848b910ac3df509b717aa5b8710955179be908",
     "thumbnails/generated/preset-48-breadcrumbs-detail-page.png": "0706730d5d69e88bb4ada898c003950de558b2ca2876137b2f49a09a4413b43f",
     "thumbnails/generated/preset-49-anchor-menu-long-page.png": "161182d4740de26dd186b106455a600cec80de943eb620646c81dd84915cc696",
-    "thumbnails/generated/preset-50-social-links-official.png": "cc6206e23c04d9148879cd6490bdfa438207e4148b8bfd7f42f4fce14757f2f6",
+    "thumbnails/generated/preset-50-social-links-official.png": "fb2a1b4ee4e39fe45c6120fb541d28515589039e6344487a5d251abba8d74d53",
     "thumbnails/generated/preset-51-image-carousel-space-tour.png": "2d014c2ee01dec10ef8dc3d61516624f734eb270f61dadc4ffba03c56ed230c6",
     "thumbnails/generated/preset-52-inquiry-quote.png": "c33f235787c8aab32f536837ffc31fb168bebd4ca5e550ad3201d8d1bcc3634f",
     "thumbnails/generated/preset-53-inquiry-reservation.png": "e68e6f04da20cdc0881ed9c195d71da5b2242feb44bbd0d5aa90fda6a3095e5a",
@@ -4373,18 +4499,18 @@
     "thumbnails/generated/preset-60-hero-split-balanced.png": "9ff82ea4574984032ad9a519c199886b6ed7b205ee507003c7442f2917ef187e",
     "thumbnails/generated/preset-61-hero-split-overlap.png": "14fa23a6b43a01bf17364eb993680dc6f5910d207cd165bdefc53901b5e8cfb2",
     "thumbnails/generated/preset-62-hero-split-offset.png": "bf87714a575a05ec53288108a8095755a287368056bcfc0dfae895f3598ca6ac",
-    "thumbnails/generated/preset-63-features-grid.png": "85448debc0f4e9e354e7e5c8b591a64f11ef98ea6cf4a47f3963672b7be80391",
-    "thumbnails/generated/preset-64-features-editorial.png": "cc8acfee8dddfdc34972308407facc8c36044308f95a84c34a34162ee8d04a36",
-    "thumbnails/generated/preset-65-features-panel.png": "488442dce60b19ecf2c90653a02bcb8b6899f3f4b441d993633ba59926def40a",
-    "thumbnails/generated/preset-66-features-list.png": "346eac97fd16532f1b4611b6c7375649642f21eef06f591b5fdb6013b9eeb2ca",
+    "thumbnails/generated/preset-63-features-grid.png": "0b5fb63379d75e652e967279392d7290e4fdb8b9b9f4dafddf689db65ba3942b",
+    "thumbnails/generated/preset-64-features-editorial.png": "6423b534a39ce15d107920ad082bf12b6b8094407f9ed1d14f8a82eef82fbcf5",
+    "thumbnails/generated/preset-65-features-panel.png": "f245cc4c56eaec49649214cabcaa6f6109a7ed7a785ba2eecbffa916d0e3af99",
+    "thumbnails/generated/preset-66-features-list.png": "a5b106c54199e61ba6c603f87b38bbd572e1ab84504363d9c94fc9c1e0f1e91e",
     "thumbnails/generated/preset-67-cta-centered.png": "571ac4993e6345bd4589cdc04ef3494132c29f12fe037242bec0b01e9a55ac80",
     "thumbnails/generated/preset-68-cta-banner.png": "bc6cf8ed9272c174bc409486fbeac8b83d79f9b623182acabe4a93a4bbacaf6e",
     "thumbnails/generated/preset-69-cta-panel.png": "a08366d0767e6ad0531fcd8b803d30c6f24abb5b33dad5c1c7baeca4714ddb40",
     "thumbnails/generated/preset-70-logo-cloud-grid.png": "813fb6d5772212eb45a61e2537fc9c76a4d1a5d3c6feeb3b358f352bf6af715f",
     "thumbnails/generated/preset-71-logo-cloud-panel.png": "e1a9c911b6f2b71d3a7feb68d8f3954d9a92820aa634b2bb2e6380bd32e981b4",
-    "thumbnails/generated/preset-72-stats-grid.png": "08b7fe2e6033d2567d37549914f15f2212c0b3432bdb4228ea6c88226473e872",
-    "thumbnails/generated/preset-73-stats-strip.png": "a037699f81c14921b8a44a6d4a83614c61a5e10c5435088b9ec1c5993f2d8da8",
-    "thumbnails/generated/preset-74-stats-split.png": "6d9fbdc7e20c91b2a1b4d774f424ea34ebdb374728a085d31efa4c44fd0a59be",
+    "thumbnails/generated/preset-72-stats-grid.png": "a6fe894c789a6e79d8183bd34e9995715f3b6fcb2ceaf20a1c81e373f405be76",
+    "thumbnails/generated/preset-73-stats-strip.png": "cd8b2cb1663f66209bcd8e1cedff635131fd5a8cc861682f23dd04355b63168c",
+    "thumbnails/generated/preset-74-stats-split.png": "d23e461a6f02165bbf7630e91c5dd383720e2be547a9a8d1132da585e489864b",
     "thumbnails/generated/preset-75-pricing-cards.png": "e68ae3d083faa63db0877706fb1d32d349084c40305b87f42958e2a44d318e7b",
     "thumbnails/generated/preset-76-pricing-compact.png": "3b0cbe30fa0ef15a169a6f470c04692878969af9b9cda5b5d623ed56bf33d23a",
     "thumbnails/generated/preset-77-pricing-editorial.png": "866bf7a2b0e97306c75073f1f1d9e7746575eeb29abd637cc8ce104cc78bdd81",
@@ -4405,6 +4531,12 @@
     "thumbnails/generated/preset-92-card-grid-grid.png": "0efca47539390ae9faaa46f42de924d19d622a0ed66a53535e4a8a54c12fac12",
     "thumbnails/generated/preset-93-card-grid-rail.png": "8037a3d688d9b59837bb9f76e98e430a4f4e6b4be12d7067a41b8267d8ae1628",
     "thumbnails/generated/preset-94-card-grid-editorial.png": "174c69803609518e13e0f8455328b7b7f446d516aa943ce63183cb6fe9fe9f2b",
-    "thumbnails/generated/preset-95-card-grid-numbered.png": "5a09ecc985e90b5708a88f063b5d0493bc900a05425f2f8eeab6f03e6365a7b6"
+    "thumbnails/generated/preset-95-card-grid-numbered.png": "5a09ecc985e90b5708a88f063b5d0493bc900a05425f2f8eeab6f03e6365a7b6",
+    "thumbnails/generated/block-46-icon.png": "d2bf7b886876f9ab49070e1d80f3b6795bbaf7af70283199eabe68c10758b26c",
+    "thumbnails/generated/block-47-list.png": "bd0ce30a631911265bf12ef70d80109694cf4af8f2605bd1445def94856bae96",
+    "thumbnails/generated/block-48-badge.png": "bc6283e04396379281de8f6516be57410d4c5a551275cecbc4880aea051188cf",
+    "thumbnails/generated/preset-96-icon-simple.png": "d2bf7b886876f9ab49070e1d80f3b6795bbaf7af70283199eabe68c10758b26c",
+    "thumbnails/generated/preset-97-list-simple.png": "bd0ce30a631911265bf12ef70d80109694cf4af8f2605bd1445def94856bae96",
+    "thumbnails/generated/preset-98-badge-simple.png": "bc6283e04396379281de8f6516be57410d4c5a551275cecbc4880aea051188cf"
   }
 }

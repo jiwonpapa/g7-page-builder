@@ -1,6 +1,6 @@
 {
   "record_version": "g7pb-productization-inventory/1",
-  "purpose": "Planning snapshot, not runtime registry or product approval",
+  "purpose": "Planning snapshot with explicit additive updates, not runtime registry or product approval",
   "base_sha": "8b75d3a654638bfeb932985f67f8106ef05c8c42",
   "captured_on": "2026-08-31",
   "source_hashes": {
@@ -11,9 +11,9 @@
     "schemas/page-builder-document.schema.json": "2e4c54872311a401d4aea5c14830cc3654d0d568357454b5a6b39b58c0e50b1d"
   },
   "counts": {
-    "definitions": 45,
-    "catalog_definitions": 44,
-    "presets": 95,
+    "definitions": 48,
+    "catalog_definitions": 47,
+    "presets": 98,
     "page_kits": 5
   },
   "legacy_approval": {
@@ -2483,6 +2483,119 @@
         "directRoute": false,
         "dynamicData": false
       }
+    },
+    {
+      "id": "content.icon-01",
+      "block_version": 1,
+      "component": "Icon",
+      "schema_ref": "builtin:iconProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "EP2-01",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "label",
+            "kind": "structural",
+            "maxLength": 120
+          },
+          {
+            "path": "icon",
+            "kind": "structural"
+          },
+          {
+            "path": "size",
+            "kind": "structural"
+          },
+          {
+            "path": "tone",
+            "kind": "structural"
+          },
+          {
+            "path": "decorative",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.list-01",
+      "block_version": 1,
+      "component": "List",
+      "schema_ref": "builtin:listProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "EP2-01",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "items.*.text",
+            "kind": "plain",
+            "maxLength": 200
+          },
+          {
+            "path": "ordered",
+            "kind": "structural"
+          }
+        ],
+        "collections": [
+          {
+            "name": "items",
+            "min": 1,
+            "max": 20
+          }
+        ],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
+    },
+    {
+      "id": "content.badge-01",
+      "block_version": 1,
+      "component": "Badge",
+      "schema_ref": "builtin:badgeProps",
+      "category": "basic",
+      "supply_kind": "basic-element",
+      "capabilities": [],
+      "batch": "EP2-01",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "label",
+            "kind": "plain",
+            "maxLength": 40
+          },
+          {
+            "path": "icon",
+            "kind": "structural"
+          },
+          {
+            "path": "size",
+            "kind": "structural"
+          },
+          {
+            "path": "tone",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
     }
   ],
   "presets": [
@@ -3929,6 +4042,49 @@
         "save-reload",
         "collection-min-max"
       ]
+    },
+    {
+      "id": "icon.simple",
+      "block_id": "content.icon-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "EP2-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
+    },
+    {
+      "id": "list.simple",
+      "block_id": "content.list-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "EP2-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload",
+        "collection-min-max"
+      ]
+    },
+    {
+      "id": "badge.simple",
+      "block_id": "content.badge-01",
+      "block_version": 1,
+      "supply_kind": "element-preset",
+      "batch": "EP2-01",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "long-copy",
+        "responsive",
+        "save-reload"
+      ]
     }
   ],
   "page_kits": [
@@ -4011,6 +4167,25 @@
         "content.cta-split-01"
       ],
       "contains_legacy_hero_split": true
+    }
+  ],
+  "additive_updates": [
+    {
+      "task": "EP2-01",
+      "base_sha": "7c02e56c9c2f8bd22b0748d5c552fcdf407769f8",
+      "captured_on": "2026-09-07",
+      "definitions": [
+        "content.icon-01",
+        "content.list-01",
+        "content.badge-01"
+      ],
+      "note": "Original baseline rows and source hashes are historical. Only these three definitions and presets are added; counts include additions.",
+      "source_hashes": {
+        "resources/block-packs/builtin-core/manifest.json": "d53920c7d54111f2a8b30dcceeb19722293d4b39a009fd6cc40bd9d630f8fe93",
+        "resources/block-packs/builtin-core/product-quality.json": "2db8e7b789004cd4ff4560c988465d0191c263b5c3afb9cb90f33e97668f5adc",
+        "schemas/page-builder-document.schema.json": "4bd9316cf90273f55510afe97516f0454d495b60a2948ca45b8a7838e992ff80",
+        "resources/js/editor/canvasEditingContract.ts": "62f90b4d714ea652e7a6d8bc40770811d62d8f306f6d5744c75c649e095a99af"
+      }
     }
   ]
 }

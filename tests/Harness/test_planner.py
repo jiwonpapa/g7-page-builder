@@ -20,6 +20,15 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def test_native_build_config_selects_assets_without_full_fallback(self):
+        self.write("vite.native.config.ts", "export default {};")
+        self.write("scripts/check-assets.mjs", "export const check = true;")
+        plan = build_plan(self.root, ["vite.native.config.ts"])
+        self.assertFalse(plan.unresolved)
+        self.assertFalse(plan.full)
+        self.assertTrue(any("vite.native.config.ts" in gate.inputs for gate in plan.gates))
+        self.assertTrue(any(gate.runtime and gate.deferred for gate in plan.gates))
+
     def test_shared_basic_element_fixture_selects_both_consumers_and_invalidates_them(self):
         from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS
         fixture, consumers = next(iter(CONTRACT_FIXTURE_CONSUMERS.items()))

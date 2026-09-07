@@ -6,6 +6,13 @@ BASE_REF ?= HEAD
 DEPS ?= all
 SYNC_BASE ?=
 
+.PHONY: editor-status editor-plan-check
+editor-status:
+	@python3 -B -m tools.g7pb.editor_progress status
+
+editor-plan-check:
+	@python3 -B -m tools.g7pb.editor_progress check
+
 .PHONY: infra-plan infra-check
 infra-plan:
 	python3 -B scripts/g7pb.py plan --base "$(BASE_REF)" --json

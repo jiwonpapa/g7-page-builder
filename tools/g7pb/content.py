@@ -250,6 +250,9 @@ def plan(root: Path, kind: str, ids: list[str], all_items: bool = False) -> dict
                if kind == "site-shell" else ["node", "scripts/check-block-quality-evidence.mjs", "--technical", "--ids", ",".join(ids), "--json"])
     return {"kind": kind, "ids": ids, "mode": "technical", "product_written": False,
             "ledger_written": False, "browser_executed": False,
+            # Thumbnail source hashes include compiled public CSS. Validate the
+            # candidate build before comparing them with the committed index.
+            "requires_build": kind in {"block", "preset"},
             "command": (["php", "scripts/build-official-store.php", "--output-dir", "<owned-temp>"]
                         + ([] if all_items else ["--kits", ",".join(ids)])) if kind == "kit" else command,
             "browser_followup": {"spec": "tests/E2E/editorLayoutParity.spec.ts", "env": {"G7PB_PAGE_KIT_IDS": ",".join(ids)}} if kind == "kit" else None}

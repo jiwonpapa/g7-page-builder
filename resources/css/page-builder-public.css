@@ -104,7 +104,8 @@ html.g7pb-standalone-viewer body { margin: 0; color: var(--g7pb-neutral-900); ba
 .g7pb-layout-columns--gap-normal { gap: 1rem; }
 .g7pb-layout-columns--gap-spacious { gap: 1.5rem; }
 .g7pb-layout-columns__column { container: g7pb-content / inline-size; min-width: 0; }
-.g7pb-layout-columns__column > .g7pb-block { padding: 1rem; }
+.g7pb-layout-columns__column > .g7pb-block,
+.g7pb-layout-columns__column > .g7pb-layout-stack > .g7pb-block { padding: 1rem; }
 .g7pb-layout-stack { display: grid; }
 .g7pb-layout-stack--gap-none { gap: 0; }
 .g7pb-layout-stack--gap-compact { gap: .5rem; }

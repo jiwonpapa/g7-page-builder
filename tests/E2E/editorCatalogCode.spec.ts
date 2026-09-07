@@ -321,6 +321,11 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     expect((await resource(api, owned.documentId)).document).toEqual(saved);
     await info.attach('basic-elements-saved-document', { body: JSON.stringify(saved, null, 2), contentType: 'application/json' });
     await page.screenshot({ path: info.outputPath('basic-elements-editor.png') });
+    const editorPadding = await Promise.all(children.map((item) => canvasBlock(page, item).locator(':scope > div').first().evaluate((element) => {
+      const style = getComputedStyle(element);
+      return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
+    })));
+    expect(editorPadding).toEqual(children.map(() => ['16px', '16px', '16px', '16px']));
 
     const preview = await context.newPage();
     try {
@@ -343,6 +348,11 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
         await expect(preview.locator('ol.g7pb-basic-list')).toBeVisible();
         await expect(preview.locator('span.g7pb-basic-badge')).toHaveText('접수 중');
         await expect(preview.locator('.g7pb-basic-badge a, .g7pb-basic-badge button, .g7pb-basic-badge[role="status"]')).toHaveCount(0);
+        const publishedPadding = await Promise.all(children.map((item) => preview.locator(`[data-block-id="${item.instance_id}"]`).evaluate((element) => {
+          const style = getComputedStyle(element);
+          return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft];
+        })));
+        expect(publishedPadding, `${name}: nested Stack content must retain the editor's compact padding`).toEqual(editorPadding);
         expect(await preview.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
         await preview.screenshot({ path: info.outputPath(`basic-elements-${name}.png`), fullPage: true });
       }

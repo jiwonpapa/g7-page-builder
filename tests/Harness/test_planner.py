@@ -917,6 +917,25 @@ class PlannerTests(unittest.TestCase):
         self.assertFalse(plan.gates[0].runtime)
         self.assertNotIn("browser-assets", [g.name for g in plan.gates])
 
+    def test_thumbnail_source_checks_follow_candidate_assets_in_every_phase(self):
+        from types import SimpleNamespace
+        from tools.g7pb.content import plan as content_plan
+        policy = SimpleNamespace(select_changes=lambda root, base, paths: [
+            {"kind": "block", "ids": ["block:fixture@1"]},
+            {"kind": "preset", "ids": ["preset:fixture/core:one"]},
+        ], plan=content_plan)
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase), patch("tools.g7pb.planner.content_policy", return_value=policy):
+                plan = build_plan(self.root, ["resources/block-packs/builtin-core/thumbnails/generated/index.json"], phase=phase)
+            self.assertFalse(plan.unresolved)
+            names = [g.name for g in plan.gates]
+            for gate in (g for g in plan.gates if g.name.startswith("content:")):
+                self.assertTrue(gate.runtime)
+                self.assertEqual(gate.deferred, phase == "submission")
+                self.assertEqual(gate.depends_on, ("browser-assets",))
+                self.assertLess(names.index("browser-assets"), names.index(gate.name))
+            self.assertNotIn("full-product", names)
+
     def test_editor_checkers_use_explicit_candidate_and_verified_controller_inputs(self):
         self.write("tests/Harness/test_editor_contracts.py", "pass")
         parity = "scripts/check-editor-layout-parity.mjs"

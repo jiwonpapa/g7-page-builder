@@ -4181,7 +4181,7 @@
       ],
       "note": "Original baseline rows and source hashes are historical. Only these three definitions and presets are added; counts include additions.",
       "source_hashes": {
-        "resources/block-packs/builtin-core/manifest.json": "d53920c7d54111f2a8b30dcceeb19722293d4b39a009fd6cc40bd9d630f8fe93",
+        "resources/block-packs/builtin-core/manifest.json": "840702d8955b67ec0de00141ccd290f0b8dd711deb6d8481ed224e35fc329296",
         "resources/block-packs/builtin-core/product-quality.json": "2db8e7b789004cd4ff4560c988465d0191c263b5c3afb9cb90f33e97668f5adc",
         "schemas/page-builder-document.schema.json": "4bd9316cf90273f55510afe97516f0454d495b60a2948ca45b8a7838e992ff80",
         "resources/js/editor/canvasEditingContract.ts": "62f90b4d714ea652e7a6d8bc40770811d62d8f306f6d5744c75c649e095a99af"

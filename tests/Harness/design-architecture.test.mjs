@@ -410,3 +410,10 @@ test('a rule or protected source area cannot be disabled by empty configuration'
     assert.throws(() => readPolicy(root));
   }
 });
+
+test('native public components cannot depend on editor storage or adapters', () => {
+  for (const source of ["import { host } from '../adapters/gnuboard7/editor';", "import { NativeHost } from '../native-editor/ports/host';", "import { Puck } from '@puckeditor/core';"]) {
+    assert.ok(inspectTypeScript(repository, 'resources/js/native-components/Slider.tsx', source, policy).some(item => item.rule === 'TS-BOUNDARY'));
+  }
+  assert.deepEqual(inspectTypeScript(repository, 'resources/js/native-components/Slider.tsx', "import React from 'react';", policy), []);
+});

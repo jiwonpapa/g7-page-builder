@@ -247,6 +247,8 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
       await expect(gallery).toBeHidden();
     }
     await save(page, owned.documentId);
+    // Definitions must compile unchanged after G7 normalizes empty optional values to null.
+    await previewUrl(api, owned.documentId);
     const inserted = (await resource(api, owned.documentId)).document;
     const children = inserted.blocks[0].slots!.content[0].slots!.column1[0].slots!.content;
     expect(children.map((item) => item.type)).toEqual(['content.heading-01', 'content.icon-01', 'content.list-01', 'content.badge-01']);

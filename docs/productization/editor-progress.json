@@ -458,14 +458,14 @@
       "id": "NE3",
       "phase": "phase-3",
       "title": "내부 트리·반복·동적 요소 편집",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "NE2"
       ],
       "acceptance_ids": [
         "NAT-03"
       ],
-      "owner_task": null,
+      "owner_task": "native-ne3-structure-r3-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

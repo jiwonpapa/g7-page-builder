@@ -2,6 +2,7 @@ import React from 'react';
 import { acceptsNativeValue } from '../../native-editor/domain/fields';
 import { readNativeFields } from './fields';
 import { readNativeMedia } from './media';
+import { acceptsStructureChange, readNativeCollections } from './structure';
 import { readNativeNode } from '../../native-editor/domain/node';
 import { prepareNativeTextChange } from '../../native-editor/domain/textChange';
 import type { NativeContext, NativeHost, NativePath } from '../../native-editor/ports/host';
@@ -32,7 +33,16 @@ function readContext(input: unknown): NativeContext | null {
     else return null;
   }
   Object.freeze(parsed);
-  return Object.freeze({ templateIdentifier, layoutName, editMode, sessionId, revision, lockVersion, readonly, nodeId, path: parsed });
+  let iterationRoot: NativePath | undefined;
+  if (input.iterationRoot !== undefined) {
+    if (editMode !== 'iteration_item' || !Array.isArray(input.iterationRoot) || !input.iterationRoot.length
+      || input.iterationRoot.some((segment, i) => JSON.stringify(segment) !== JSON.stringify(parsed[i]))) return null;
+    iterationRoot = parsed.slice(0, input.iterationRoot.length);
+    Object.freeze(iterationRoot);
+  }
+  if (editMode === 'iteration_item' && !iterationRoot) return null;
+  return Object.freeze({ templateIdentifier, layoutName, editMode, sessionId, revision, lockVersion, readonly, nodeId, path: parsed,
+    ...(iterationRoot ? { iterationRoot } : {}) });
 }
 /** Only the verified public protocol can become an application port. */
 export function readNativeHost(input: unknown): NativeHost | null {
@@ -42,6 +52,7 @@ export function readNativeHost(input: unknown): NativeHost | null {
   if (!context || parsed.status !== 'valid' || context.nodeId !== parsed.node.id) return null;
   const execute = input.execute;
   const fields = readNativeFields(input.snapshot.fields);
+  const collections = readNativeCollections(input.snapshot.collections);
   function invoke(command: object): ReturnType<NativeHost['applyText']> {
     try {
       const result: unknown = execute(command);
@@ -50,7 +61,11 @@ export function readNativeHost(input: unknown): NativeHost | null {
     } catch { return { kind: 'refused', reason: 'host-error' }; }
     return { kind: 'refused', reason: 'invalid-result' };
   }
-  return { context, node: parsed.node, fields, media: readNativeMedia(input.media, context),
+  return { context, node: parsed.node, fields, collections, media: readNativeMedia(input.media, context),
+    changeStructure(change) {
+      if (context.readonly || !['route', 'iteration_item'].includes(context.editMode) || !acceptsStructureChange(collections, change)) return { kind: 'refused', reason: 'unsupported-structure' };
+      return invoke({ kind: 'structure', expected: context, change });
+    },
     applyField(id, value, reset = false) {
       const field = fields.find(item => item.id === id);
       if (context.readonly || context.editMode !== 'route' || !field || !acceptsNativeValue(field, value, reset)) return { kind: 'refused', reason: 'unsupported-field' };

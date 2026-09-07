@@ -1,5 +1,6 @@
 import type { NativeField, NativeValue } from '../domain/fields';
 import type { NativeNode } from '../domain/node';
+import type { NativeCollection, NativeStructureChange } from '../domain/tree';
 
 export type NativePath = Array<number | { responsive: string }>;
 export interface NativeContext {
@@ -12,6 +13,7 @@ export interface NativeContext {
   readonly: boolean;
   nodeId: string;
   path: NativePath;
+  iterationRoot?: NativePath;
 }
 export type NativeApplyResult = { kind: 'applied' | 'noop' } | { kind: 'refused'; reason: string };
 export interface NativeHost {
@@ -21,6 +23,8 @@ export interface NativeHost {
   applyField: (id: string, value: NativeValue, reset?: boolean) => NativeApplyResult;
   media: NativeMedia | null;
   applyText: (text: string) => NativeApplyResult;
+  collections?: NativeCollection[];
+  changeStructure?: (change: NativeStructureChange) => NativeApplyResult;
 }
 
 export interface NativeAsset {

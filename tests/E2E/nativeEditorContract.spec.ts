@@ -1,5 +1,10 @@
 import { expect, test, request as playwrightRequest, type APIRequestContext, type Page } from '@playwright/test';
 import { authenticateEditorInteractionAdmin, editorInteractionApi } from './support/editorInteractionFixture';
+import { nativeStructureFlow } from './support/nativeStructureFixture';
+
+test('native structure commands preserve nested source through one Undo save and reopen', async ({ page, context }, info) => {
+  await nativeStructureFlow(page, context, info);
+});
 
 const endpoint = '/api/admin/templates/sirsoft-basic/layouts/e2e_sandbox';
 const before = 'NE1 원본 보존 확인 문구';

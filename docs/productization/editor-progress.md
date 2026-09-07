@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|
 | 1차 · 공식 연동 계약과 원본 보존 | NE1 · 공식 연동 계약과 원본 보존 | 완료 | 없음 | native-ne1-browser-fix-20260907 | 구현 `b39de138d563d384dd3c92fe701f76f88ff16e87`<br>통합 `e075b8149ce9b73d7397a9eaa89ea0c867979bb4`<br>필수 증거 3/3<br>[NAT-01/host-contract](<../audits/2026-09-07-native-editor-ne1.md>) · [NAT-01/unit](<../audits/2026-09-07-native-editor-ne1.md>) · [NAT-01/browser](<../audits/2026-09-07-native-editor-ne1.md>) |
 | 2차 · 내용·스타일·미디어 편집 | NE2 · 내용·스타일·미디어 편집 | 완료 | NE1 | native-ne2-content-r4-20260907 | 구현 `1e29e89a04c1e4a75472c9938126d571ea57f915`<br>통합 `45ae4152d8321726e14eeea6daa0f8ad35c7f9a9`<br>필수 증거 2/2<br>[NAT-02/unit](<../audits/2026-09-07-native-editor-ne2.md>) · [NAT-02/browser](<../audits/2026-09-07-native-editor-ne2.md>) |
-| 3차 · 내부 트리·반복·동적 요소 편집 | NE3 · 내부 트리·반복·동적 요소 편집 | 계획 | NE2 | 미배정 | 미완료 |
+| 3차 · 내부 트리·반복·동적 요소 편집 | NE3 · 내부 트리·반복·동적 요소 편집 | 진행 | NE2 | native-ne3-structure-r3-20260907 | 미완료 |
 | 4차 · 사용자 조합 저장과 재삽입 | NE4 · 사용자 조합 저장과 재삽입 | 계획 | NE3 | 미배정 | 미완료 |
 | 5차 · 삽입·설정·미리보기·저장 흐름 연결 | NE5 · 삽입·설정·미리보기·저장 흐름 연결 | 계획 | NE4 | 미배정 | 미완료 |
 | 6차 · 호환·회귀·릴리스 | NE6 · 호환·회귀·릴리스 | 계획 | NE5 | 미배정 | 미완료 |

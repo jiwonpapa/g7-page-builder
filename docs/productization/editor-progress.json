@@ -2,7 +2,7 @@
   "schema_version": "g7pb-editor-progress/v2",
   "plan_id": "native-editor-20260907",
   "baseline_sha": "280567cc650253a5d6538696fbc3383c587eaf4e",
-  "updated_at": "2026-09-07",
+  "updated_at": "2026-09-08",
   "policy_file": "docs/productization/editing-policy.md",
   "plan_file": "docs/productization/editor-plan.md",
   "dashboard_file": "docs/productization/editor-progress.md",
@@ -166,6 +166,11 @@
       "path": "docs/audits/2026-09-07-native-editor-ne2.md",
       "role": "current",
       "required_text": "NAT-02"
+    },
+    {
+      "path": "docs/audits/2026-09-08-native-editor-ne3.md",
+      "role": "current",
+      "required_text": "NAT-03"
     }
   ],
   "acceptance": [
@@ -458,23 +463,49 @@
       "id": "NE3",
       "phase": "phase-3",
       "title": "내부 트리·반복·동적 요소 편집",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "NE2"
       ],
       "acceptance_ids": [
         "NAT-03"
       ],
-      "owner_task": "native-ne3-structure-r3-20260907",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "owner_task": "native-ne3-components-r2-20260908",
+      "implementation_commit": "85fb7f8c4a1421f857b4b316109d7d11d4179bb9",
+      "integrated_commit": "9530e96a07acb9cfc749e5aac4c7c7c5824eb7be",
+      "evidence": [
+        {
+          "acceptance_id": "NAT-03",
+          "kind": "unit",
+          "commit": "85fb7f8c4a1421f857b4b316109d7d11d4179bb9",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-native-editor-ne3.md"
+        },
+        {
+          "acceptance_id": "NAT-03",
+          "kind": "browser",
+          "commit": "9530e96a07acb9cfc749e5aac4c7c7c5824eb7be",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-native-editor-ne3.md"
+        },
+        {
+          "acceptance_id": "NAT-03",
+          "kind": "runtime",
+          "commit": "9530e96a07acb9cfc749e5aac4c7c7c5824eb7be",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-native-editor-ne3.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/native-editor/domain/tree.ts",
-        "resources/js/native-editor/application/structure.ts",
         "resources/js/native-editor/ui/collection.tsx",
-        "resources/js/adapters/gnuboard7/structure.ts"
+        "resources/js/adapters/gnuboard7/structure.ts",
+        "resources/js/adapters/gnuboard7/media.ts",
+        "resources/js/native-components/Slider.tsx",
+        "resources/js/native-components/spec.ts",
+        "tests/E2E/nativeEditorContract.spec.ts",
+        "tests/E2E/nativeSliderContract.spec.ts"
       ],
       "completion": "children·prop 내부 트리·배열·반복 템플릿의 삽입/이동/복제/삭제 및 거부 경로를 확인. ID·참조·출처 보존, 한 명령 Undo/Redo, Slider 항목 편집과 공개 동작 검증."
     },

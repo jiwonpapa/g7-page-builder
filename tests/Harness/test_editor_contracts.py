@@ -164,6 +164,23 @@ class EditorContractTests(unittest.TestCase):
         self.assertNotIn("error", result)
         self.assertEqual(result["errors"], [])
 
+    def test_current_selection_guard_rejects_mutation_before_normalization(self):
+        original = self.source_graph(ROOT)
+        with tempfile.TemporaryDirectory(prefix="g7pb-selection-guard-") as directory:
+            root = Path(directory)
+            for name in original["files"]:
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            owner = root / self.source_graph(root, owner="useCanvasEditingUi")["owner"]
+            source = owner.read_text()
+            target = "const selection = normalizeCanvasElementSelection(value);"
+            self.assertEqual(source.count(target), 1)
+            owner.write_text(source.replace(target, "setCanvasTextToolsOpen(true); " + target))
+            result = self.source_graph(root, selection=True)
+            self.assertNotIn("error", result)
+            self.assertTrue(result["errors"])
+
     def test_moved_canvas_selection_accepts_aliases_but_rejects_disconnected_guards(self):
         with tempfile.TemporaryDirectory(prefix="g7pb-editor-canvas-permission-") as directory:
             root = Path(directory)
@@ -218,6 +235,20 @@ export function useCanvasEditingUi(data, editAllowed) {
                 self.assertNotIn("error", result)
                 self.assertTrue(result["errors"])
             (root / "entry.tsx").write_text(caller)
+            for condition, accepted in (("!editAllowed || !data", True),
+                                        ("!data || !editAllowed", True),
+                                        ("!editAllowed && !data", False)):
+                (root / "canvas.tsx").write_text(canvas.replace("if (!editAllowed)", "if (" + condition + ")"))
+                result = check()
+                self.assertNotIn("error", result)
+                self.assertEqual(not result["errors"], accepted)
+            for spread, accepted in (("...(active ? {target: 1} : {})", True),
+                                     ("...(active ? {type: 'clear'} : {})", False),
+                                     ("...data", False)):
+                (root / "canvas.tsx").write_text(canvas.replace("{type: 'range.change', active}", "{type: 'range.change', active, " + spread + "}"))
+                result = check()
+                self.assertNotIn("error", result)
+                self.assertEqual(not result["errors"], accepted)
             for name in ("accept", "acceptRangeState"):
                 with self.subTest(unguarded=name):
                     before = "const " + name + " = (" + ("selection" if name == "accept" else "active") + ") => {\n      if (!editAllowed) return;"

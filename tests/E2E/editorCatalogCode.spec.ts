@@ -301,8 +301,8 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await page.getByRole('radio', { name: '의미 전달', exact: true }).locator('xpath=ancestor::label[1]').click();
     await expect(page.getByRole('radio', { name: '의미 전달', exact: true })).toBeChecked();
     await page.getByLabel('접근성 이름 (의미 전달 시 필수)', { exact: true }).filter({ visible: true }).fill('서비스 안내');
-    await page.getByLabel('크기', { exact: true }).filter({ visible: true }).selectOption('large');
-    await page.getByLabel('색상', { exact: true }).filter({ visible: true }).selectOption('accent');
+    await page.getByLabel('크기', { exact: true }).filter({ visible: true }).selectOption({ label: '크게' });
+    await page.getByLabel('색상', { exact: true }).filter({ visible: true }).selectOption({ label: '강조색' });
     await save(page, owned.documentId);
     const saved = (await resource(api, owned.documentId)).document;
     const savedItems = saved.blocks[0].slots!.content[0].slots!.column1[0].slots!.content;

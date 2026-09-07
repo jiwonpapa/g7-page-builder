@@ -56,3 +56,11 @@ it('does not select an uploaded image automatically and closes without applying 
     expect(applyField).not.toHaveBeenCalled(); expect(element.textContent).not.toContain('photo.png');
   } finally { await act(() => root.unmount()); element.remove(); }
 });
+
+it('uses portable paths for same-origin attachments without laundering other origins or credentials', async () => {
+  const values = [location.origin + '/storage/space%20name.png?v=2#image', 'https://cdn.example.test/image.png',
+    location.origin + '//outside.test/image.png', 'https://user:pass@cdn.example.test/image.png'];
+  const media = readNativeMedia({ list: async () => ({ ok: true, data: values.map((url, id) => ({ ...asset, id, url })) }), upload: vi.fn() }, context)!;
+  const result = await media.list('page', new AbortController().signal);
+  expect(result.ok && result.data.map(item => item.url)).toEqual(['/storage/space%20name.png?v=2#image', ...values.slice(1)]);
+});

@@ -1,5 +1,14 @@
 import type { NativeAsset, NativeContext, NativeMedia, NativeMediaResult } from '../../native-editor/ports/host';
 function record(v: unknown): v is Record<string, unknown> { return !!v && typeof v === 'object' && !Array.isArray(v); }
+function localAssetUrl(value: string): string | null {
+  if (value.startsWith('/')) return value;
+  try {
+    const url = new URL(value);
+    // G7's layout validator accepts local paths. Never strip a foreign origin, credentials, or a network-path prefix.
+    return typeof location !== 'undefined' && url.origin === location.origin && !url.username && !url.password && !url.pathname.startsWith('//')
+      ? url.pathname + url.search + url.hash : value;
+  } catch { return null; }
+}
 function readAsset(input: unknown): NativeAsset | null {
   if (!record(input) || typeof input.id !== 'string' && typeof input.id !== 'number'
     || typeof input.original_name !== 'string' || typeof input.url !== 'string'
@@ -7,7 +16,9 @@ function readAsset(input: unknown): NativeAsset | null {
     || typeof input.mime_type !== 'string' || !input.mime_type.startsWith('image/')
     || !/^https?:\/\//i.test(input.url) && (!input.url.startsWith('/') || input.url.startsWith('//'))
     || /[\u0000-\u0020\u007f\\]/.test(input.url)) return null;
-  return Object.freeze({ id: input.id, name: input.original_name, layoutName: input.layout_name, url: input.url });
+  const url = localAssetUrl(input.url);
+  if (url === null) return null;
+  return Object.freeze({ id: input.id, name: input.original_name, layoutName: input.layout_name, url });
 }
 export function readNativeMedia(input: unknown, expected: NativeContext): NativeMedia | null {
   if (!record(input) || typeof input.list !== 'function' || typeof input.upload !== 'function' || expected.readonly) return null;

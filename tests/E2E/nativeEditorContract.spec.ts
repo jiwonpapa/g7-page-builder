@@ -157,6 +157,9 @@ test('native content style and image commands preserve source through Undo save 
     await page.getByLabel('이미지 업로드', { exact: true }).setInputFiles({ name: 'ne2-after.png', mimeType: 'image/png', buffer: imageBytes });
     const uploadedResponse = await uploaded; expect(uploadedResponse.ok()).toBe(true);
     const asset = (await uploadedResponse.json() as { data: { id: number; url: string } }).data; createdAssets.push(asset.id);
+    const imageUrl = new URL(asset.url, page.url());
+    expect(imageUrl.origin).toBe(new URL(page.url()).origin);
+    asset.url = imageUrl.pathname + imageUrl.search + imageUrl.hash;
     await expect(page.getByRole('button', { name: 'ne2-after.png 선택', exact: true })).toBeVisible();
     // Upload success must not silently replace the selected node.
     await expect(page.locator('[data-editor-id="ne2-image"]')).toHaveAttribute('src', seed.url);

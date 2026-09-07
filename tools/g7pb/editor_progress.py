@@ -226,6 +226,14 @@ def validate(root, *, check_dashboard=True):
         visited.add(item_id)
     for item_id in items:
         visit(item_id)
+    plan_text = (root / PLAN).read_text()
+    for label, pattern, expected in (
+        ("item", r"\bEP\d+-\d+\b", set(items)),
+        ("acceptance", r"\b(?:CAT|INS|EDT|CMP|POL|UND|SAV|RES|PUB|G7|COM|MIG)-\d+\b", set(acceptance)),
+    ):
+        declared = set(re.findall(pattern, plan_text))
+        require(declared == expected,
+                f"Plan {label} IDs differ from ledger: only plan={sorted(declared - expected)}, only ledger={sorted(expected - declared)}")
     if check_dashboard:
         require((root / DASHBOARD).read_text() == markdown(data), "Dashboard differs from status --markdown; update explicitly")
     return data

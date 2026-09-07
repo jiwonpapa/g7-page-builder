@@ -1,14 +1,14 @@
 # Canvas Editing Contract
 
-## 제품화 1차 결정과 적용 시점
+## 현행 계약과 목표 정책의 관계
 
-현행 직접 편집 계약은 아래와 같습니다. 새 구조·상속·선택/저장 정책은 [제한형 편집 정책](productization/editing-policy.md)에서 정하며 3~4차 구현 전까지 현재 runtime 지원으로 간주하지 않습니다. 기존 `BUILTIN_CANVAS_EDITING_CONTRACT`·컬렉션 한도·필드 해석을 확장하고 두 번째 블록별 속성 원장을 만들지 않습니다.
+아래는 현재 직접 편집의 역할과 회귀 기준입니다. 제공 목록·분류·허용 슬롯의 목표는 [편집 정책](productization/editing-policy.md), 구현 순서와 현재 증거는 [개발 계획](productization/editor-plan.md)과 [진척 표시판](productization/editor-progress.md)에서 구분합니다. Section·Columns·Stack과 기본 요소 5종의 제한 중첩은 이미 연결되어 있으며, 기존 복합 블록의 내부 슬롯 개방은 별도 목표입니다. 기존 `BUILTIN_CANVAS_EDITING_CONTRACT`·컬렉션 한도·필드 해석을 확장하고 두 번째 블록별 속성 원장을 만들지 않습니다.
 
-G7 참고 설계 G7R-01~08은 공통 컨트롤·중첩 허용표·override 초기화·샘플 격리·원본/출력 일치의 합격 조건입니다. Puck DnD·히스토리·리치텍스트 엔진을 별도로 재구현하지 않습니다. [요구사항-시험 대응표](productization/requirements.md)로 실제 완료를 추적합니다.
+G7 참고 설계 G7R-01~08의 기존 요구와 실행 배치는 [과거 요구사항-시험 대응표](productization/requirements.md)에 보존합니다. Puck DnD·히스토리·리치텍스트 엔진을 별도로 재구현하지 않습니다. 새 목표의 실제 완료는 현행 진척 원장으로 추적합니다.
 
 ## 목적
 
-가운데 캔버스는 결과를 보는 미리보기가 아니라 선택 요소 중심의 구조화된 WYSIWYG입니다. 45개 내장 블록은 같은 선택·편집 규칙을 사용하며, 우측 Inspector는 고급 구조와 데이터 설정만 보완합니다. `richtext` 내용과 서식은 우측에 중복 편집기를 만들지 않고 캔버스에서만 편집합니다.
+가운데 캔버스는 선택 요소를 직접 편집하는 화면입니다. 45개 내장 블록은 공통 선택·필드 편집 계약을 사용합니다. 문맥 도구와 우측 Inspector는 같은 필드·picker·문서 명령을 연결하며, 허용된 스타일·배치·데이터 설정을 보완합니다. 현재 `richtext` 내용과 서식은 우측 중복 필드를 숨기고 캔버스에서 편집합니다. 접근성에 필요한 대체 입력 진입점은 정책상의 후속 검토 대상이며 이미 제공된 기능이나 두 번째 편집 엔진으로 취급하지 않습니다.
 
 ## 편집 우선순위
 
@@ -30,7 +30,7 @@ G7 참고 설계 G7R-01~08은 공통 컨트롤·중첩 허용표·override 초�
 
 ## 45개 블록 계약
 
-`resources/js/editor/canvasEditingContract.ts`의 `BUILTIN_CANVAS_EDITING_CONTRACT`가 단일 목록입니다. 모든 블록은 직접 텍스트 편집을 지원하고, 다음 선택 기능은 블록 특성에 따라 활성화됩니다.
+`resources/js/editor/canvasEditingContract.ts`의 `BUILTIN_CANVAS_EDITING_CONTRACT`가 필드 편집의 단일 목록입니다. 모든 내장 블록은 선언된 텍스트의 직접 편집을 지원하며 실제 G7 데이터 본문을 임의 문구로 수정하는 것은 아닙니다. 이미지·경로·반복 항목은 각 타입의 선언에 따라 활성화됩니다. 다음은 대표 예시이며 전수 목록이나 자식 슬롯 허용표가 아닙니다.
 
 - 이미지: Image, Image Text, Hero, Hero Split, Hero Slider, Logo Cloud, Logo Carousel, Team, Gallery, Testimonials, Testimonial Slider, Article List
 - 경로: Image, Buttons, Image Text, Hero 계열, CTA, Contact, Logo 계열, Pricing, Team, Process, Article List, Event Schedule, Download Resources, Map Directions
@@ -46,7 +46,7 @@ G7 참고 설계 G7R-01~08은 공통 컨트롤·중첩 허용표·override 초�
 - Puck `visible: false` 계약으로 우측 Inspector의 richtext 입력기와 서식 메뉴를 숨기되 `contentEditable`, 공식 inline menu, typed document 변환은 그대로 유지합니다.
 - 현재 선택값은 `aria-pressed` 또는 현재 select 값으로 노출하고, 벌룬 변경은 선택한 `fieldPath`에만 적용합니다.
 - 저장되지 않은 변경이 있으면 문서함 이동과 브라우저 이탈을 차단하고 `계속 편집`, `저장 안 함`, `저장하고 나가기`를 제공합니다.
-- 블록 라이브러리는 실제 16:10 썸네일, 읽을 수 있는 제목·설명, 블록 종류·완성 섹션·출처 필터를 사용하며 hover 확대 복제 화면은 만들지 않습니다. 기존 Split Hero는 45종 렌더 호환에만 남기고 신규 기본 블록 탭에서는 숨기며, 분할 프리셋은 Hero의 layout으로 삽입합니다.
+- 현재 블록 라이브러리는 16:10 썸네일, 제목·설명, 블록 종류·완성 섹션·출처 필터를 사용합니다. 목표 분류는 편집 정책의 기본 요소/레이아웃/컴포넌트/완성 섹션이며 프리셋 전체를 완성 섹션으로 부르지 않습니다. hover 확대 복제 화면은 만들지 않습니다. 기존 Split Hero는 렌더 호환으로 보존하고 신규 기본 후보에서 숨깁니다. 분할 프리셋은 Hero의 layout으로 삽입합니다.
 - 지도 이미지와 일반 이미지는 캔버스 슬롯을 눌러 업로드·교체·비우기를 수행하고 Inspector에서도 같은 값을 편집합니다. Article List 날짜는 캔버스 자유 텍스트가 아니라 Inspector의 native 날짜 선택기를 사용합니다.
 - 매개변수 없는 기본 route는 한 번 선택해 즉시 적용하고, 게시판·페이지·상품처럼 대상이 필요한 route만 상세 입력 후 적용합니다.
 - 반복 항목 삭제가 최소 개수에 걸리면 버튼을 비활성화하고 이유를 접근 가능한 label로 제공합니다.

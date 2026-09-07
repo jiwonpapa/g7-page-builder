@@ -68,9 +68,16 @@
 - Puck의 `AppState`와 원시 `Data`는 영속 원본이 아니다. 저장 전후 항상 `PageBuilderDocument`로 변환한다.
 - 드래그앤드롭·속성 패널·히스토리·반응형 캔버스를 새로 복제하지 않는다.
 - Tiptap은 Puck의 리치텍스트 필드 구현으로만 사용한다. Tiptap을 페이지 레이아웃 엔진으로 사용하지 않는다.
-- Hero 계열의 화면상 텍스트는 Puck `contentEditable`로 직접 편집하고 URL·이미지·구조·preset은 속성 패널에서 편집한다.
+- Hero 계열의 화면상 텍스트는 Puck `contentEditable`로 직접 편집한다. URL·이미지는 캔버스 문맥 도구와 속성 패널에서 같은 picker·문서 명령을 사용한다. 구조 편집은 같은 캔버스의 명시적 내부 구성 상태에서 선언된 슬롯만 대상으로 하며, 패널은 허용된 필드·스타일·변형을 보완한다. 이 역할 규칙이 미구현 슬롯의 사용을 허용하거나 구현 완료를 뜻하지 않는다.
 - 임의 class·Tailwind·inline style·raw HTML·JavaScript field를 문서 계약이나 편집기에 추가하지 않는다.
 - Layout Editor는 `PageBuilderDocument`와 생성된 발행본을 열거나 저장하지 않는다.
+
+## Editor policy and progress
+
+- 현행 편집 범위는 [편집 정책](docs/productization/editing-policy.md), 실행 순서와 합격 조건은 [편집 기능 개발 계획](docs/productization/editor-plan.md)을 따른다. 과거 8차 제품화 계획과 사이트 1~5차 기록을 현재 실행 지시로 재사용하지 않는다. 현재 목표는 페이지빌더 편집 기능 고도화이며 킷·풀 테마 상품 제작의 진척으로 대신하지 않는다.
+- 편집 기능 작업 착수 전 `make editor-status`로 [진척 원장](docs/productization/editor-progress.json)과 [표시판](docs/productization/editor-progress.md)의 현재 항목·의존성·증거를 확인한다. 파일 소유권과 실제 변경 범위는 별도로 `make coord-status`와 `base_sha` 대비 diff로 확인하며, 계획 상태가 lease를 대신하지 않는다.
+- 작업을 시작할 때 해당 계획 항목과 필요한 상태·증거 갱신 범위를 함께 정한다. 원장·표시판을 직접 갱신하려면 해당 파일을 claim하며, 병렬 구현에서 다른 task가 소유하면 제출·통합·검증 결과를 그 소유자에게 인계한다. claim 밖의 계획 파일을 수정하거나 상태 갱신을 누락한 채 완료 처리하지 않는다.
+- 종료 보고 전 `make editor-plan-check`로 계획·원장·표시판과 증거의 정합성을 확인한다. 정책 확정, 소스 구현, 통합, 실제 동작 검증, 배포를 구별하며 표시판만 고쳐 완료 상태를 만들지 않는다. 이 검사는 제품 동작 시험이나 배포 검증을 대신하지 않는다.
 
 ## Development constitution and enforcement
 

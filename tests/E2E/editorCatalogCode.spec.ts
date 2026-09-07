@@ -298,7 +298,6 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await page.keyboard.insertText('접수 중');
     await expect(label).toHaveText('접수 중');
     await selectOutlineBlock(page, icon, '아이콘');
-    await activatePointerTarget(page, canvasBlock(page, icon).locator('.g7pb-basic-icon'), 'icon selection');
     await page.getByRole('radio', { name: '의미 전달', exact: true }).locator('xpath=ancestor::label[1]').click();
     await expect(page.getByRole('radio', { name: '의미 전달', exact: true })).toBeChecked();
     await page.getByLabel('접근성 이름 (의미 전달 시 필수)', { exact: true }).filter({ visible: true }).fill('서비스 안내');

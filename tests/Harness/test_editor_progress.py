@@ -1,4 +1,5 @@
 import copy
+from hashlib import sha256
 import json
 from pathlib import Path
 import subprocess
@@ -273,6 +274,90 @@ class EditorProgressTests(unittest.TestCase):
                                 cwd=self.root, capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
         self.assertIn("Missing file", result.stderr)
+
+    def migrate(self):
+        old_ledger = "docs/productization/old-progress.json"
+        old_plan = "docs/productization/old-plan.md"
+        self.finish(self.data["items"][0])
+        self.write(old_ledger, json.dumps(self.data, ensure_ascii=False))
+        self.write(old_plan, "<!-- editor-plan:editor-maturity-20260907 -->\nEP1-01 CAT-01\n")
+        self.data.update(schema_version="g7pb-editor-progress/v2", plan_id="native-editor-20260907", history=[{
+            "plan_id": "editor-maturity-20260907", "ledger_file": old_ledger,
+            "ledger_sha256": sha256((self.root / old_ledger).read_bytes()).hexdigest(), "plan_file": old_plan,
+            "plan_sha256": sha256((self.root / old_plan).read_bytes()).hexdigest(), "completed": 1, "total": 1,
+        }])
+        self.data["items"][0].update(id="NE1", status="planned", implementation_commit=None, integrated_commit=None, evidence=[])
+        self.write(PLAN, "# 계획\n<!-- editor-plan:native-editor-20260907 -->\n<!-- editor-item:NE1 -->\n<!-- editor-acceptance:CAT-01 -->\n")
+        self.write(POLICY, "# 정책\n<!-- editor-policy:native-editor-20260907 -->\n")
+        self.save()
+
+    def test_v2_preserves_prior_completion_without_counting_it_as_new_work(self):
+        self.migrate()
+        state = summary(validate(self.root))
+        self.assertEqual(state["counts"]["done"], 0)
+        self.assertEqual(state["next"], ["NE1"])
+        self.assertEqual(state["history"][0]["completed"], 1)
+        self.assertIn("보존한 이전 계획", (self.root / DASHBOARD).read_text())
+        for field in ("ledger_file", "plan_file"):
+            self.assertIn(self.data["history"][0][field], input_files(self.root))
+
+    def test_planner_classifies_only_registered_archives_without_full_fallback(self):
+        from tools.g7pb.planner import build_plan
+        self.migrate()
+        archived = self.data["history"][0]["ledger_file"]
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [archived], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertEqual([gate.name for gate in plan.gates], ["editor-progress"])
+                self.assertIn(archived, plan.gates[0].inputs)
+                self.assertFalse(plan.full)
+                unknown = build_plan(self.root, ["docs/productization/unregistered.json"], phase=phase)
+                self.assertTrue(unknown.unresolved)
+                self.assertFalse(unknown.full)
+
+    def test_v2_rejects_modified_archive_bytes_and_invented_historical_counts(self):
+        self.migrate()
+        for field in ("ledger_file", "plan_file"):
+            path = self.root / self.data["history"][0][field]
+            original = path.read_bytes()
+            path.write_bytes(original + b"\n")
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "digest mismatch"):
+                validate(self.root)
+            path.write_bytes(original)
+        self.data["history"][0]["completed"] = 0
+        self.save()
+        with self.assertRaisesRegex(ValueError, "counts differ"):
+            validate(self.root)
+
+    def test_v2_requires_matching_policy_plan_and_unique_item_markers(self):
+        self.migrate()
+        for path in (POLICY, PLAN):
+            original = (self.root / path).read_text()
+            self.write(path, original.replace("native-editor-20260907", "different-plan"))
+            with self.subTest(path=path), self.assertRaisesRegex(ValueError, "marker differs"):
+                validate(self.root)
+            self.write(path, original)
+        original = (self.root / PLAN).read_text()
+        for addition in ("<!-- editor-item:NE1 -->", "<!-- editor-item:NE2 -->", "<!-- editor-acceptance:CAT-01 -->"):
+            self.write(PLAN, original + addition)
+            with self.subTest(addition=addition), self.assertRaisesRegex(ValueError, "Duplicate plan|IDs differ"):
+                validate(self.root)
+        self.write(PLAN, original.replace("<!-- editor-acceptance:CAT-01 -->", "CAT-01"))
+        with self.assertRaisesRegex(ValueError, "IDs differ"):
+            validate(self.root)
+
+    def test_v2_cannot_reuse_old_ids_or_redirect_archive_to_live_records(self):
+        self.migrate()
+        self.data["items"][0]["id"] = "EP1-01"
+        self.save()
+        with self.assertRaisesRegex(ValueError, "Historical item IDs"):
+            validate(self.root)
+        self.data["items"][0]["id"] = "NE1"
+        self.data["history"][0]["ledger_file"] = LEDGER
+        self.save()
+        with self.assertRaisesRegex(ValueError, "separate unique archive"):
+            validate(self.root)
 
 
 if __name__ == "__main__":

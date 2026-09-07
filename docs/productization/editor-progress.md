@@ -1,12 +1,18 @@
 # 편집기 개발 진척
 
-원장 갱신: 2026-09-07 · 기준 SHA: `58ed8a33829fdcb1327d730c6ab6da953f656949`
+원장 갱신: 2026-09-07 · 기준 SHA: `280567cc650253a5d6538696fbc3383c587eaf4e`
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **4/11** · 기존 기반 8개는 분모에서 제외합니다.
+계획 작업 완료 **0/6** · 기존 기반 8개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
+
+## 보존한 이전 계획
+
+아래 완료 이력은 당시 기록이며 현재 계획의 완료 수에 합산하지 않습니다.
+
+- `editor-maturity-20260907`: **4/11** · [보존 원장](<editor-progress-puck-20260907.json>) · [보존 계획](<editor-plan-puck-20260907.md>)
 
 ## 기존 구현 기반
 
@@ -27,19 +33,14 @@
 
 | 단계 | 작업 | 상태 | 선행 작업 | 담당 task | 완료 근거 |
 |---|---|---|---|---|---|
-| 삽입·선택·설정 | EP1-01 · 제작 분류와 편집 능력 표시 | 완료 | 없음 | ep1-library-window-20260907 | 구현 `86014a1335b5bcc2787473fd1047febc620366d5`<br>통합 `b35bcf5ce6615dad5ad1479f1c2f47e689b3c1f1`<br>필수 증거 2/2<br>[CAT-01/unit](<../audits/2026-09-07-editor-ep1-01.md>) · [CAT-01/browser](<../audits/2026-09-07-editor-ep1-01.md>) |
-| 삽입·선택·설정 | EP1-02 · 위치별 삽입과 선택 경로 | 완료 | EP1-01 | ep1-placement-contract-20260907 | 구현 `bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355`<br>통합 `6dc6f26bff171a1aacd1d414a97ec0956d636e82`<br>필수 증거 7/7<br>[CAT-02/unit](<../audits/2026-09-07-editor-ep1-02.md>) · [CAT-02/browser](<../audits/2026-09-07-editor-ep1-02.md>) · [INS-01/unit](<../audits/2026-09-07-editor-ep1-02.md>) · [INS-01/browser](<../audits/2026-09-07-editor-ep1-02.md>) · [POL-01/unit](<../audits/2026-09-07-editor-ep1-02.md>) · [POL-01/php](<../audits/2026-09-07-editor-ep1-02.md>) · [POL-01/browser](<../audits/2026-09-07-editor-ep1-02.md>) |
-| 삽입·선택·설정 | EP1-03 · 직접 편집·문맥 도구·설정 패널 연결 | 완료 | EP1-02 | ep1-native-input-20260907 | 구현 `12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0`<br>통합 `8bb90f516c429c71a49af9b72bfcea556b02403e`<br>필수 증거 11/11<br>[EDT-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [EDT-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [EDT-02/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [EDT-02/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [UND-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [UND-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [SAV-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [SAV-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [RES-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [RES-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [RES-01/render](<../audits/2026-09-07-editor-ep1-03.md>) |
-| 기본 요소·대표 내부 구성 | EP2-01 · 아이콘·목록·배지 삽입 | 완료 | EP1-03 | ep2-elements-integration-20260907 | 구현 `b12b7150f9c1d0d321fd2e845e2ea106440914a2`<br>통합 `66ecdb2fbe3747997a12f23e8729765106b11d23`<br>필수 증거 16/16<br>[CAT-01/unit](<../audits/2026-09-07-editor-ep2-01.md>) · [CAT-01/browser](<../audits/2026-09-07-editor-ep2-01.md>) · [EDT-01/unit](<../audits/2026-09-07-editor-ep2-01.md>) · [EDT-01/browser](<../audits/2026-09-07-editor-ep2-01.md>) · [POL-01/unit](<../audits/2026-09-07-editor-ep2-01.md>) · [POL-01/php](<../audits/2026-09-07-editor-ep2-01.md>) · [POL-01/browser](<../audits/2026-09-07-editor-ep2-01.md>) · [RES-01/unit](<../audits/2026-09-07-editor-ep2-01.md>) · [RES-01/browser](<../audits/2026-09-07-editor-ep2-01.md>) · [RES-01/render](<../audits/2026-09-07-editor-ep2-01.md>) · [PUB-01/php](<../audits/2026-09-07-editor-ep2-01.md>) · [PUB-01/browser](<../audits/2026-09-07-editor-ep2-01.md>) · [PUB-01/render](<../audits/2026-09-07-editor-ep2-01.md>) · [MIG-01/unit](<../audits/2026-09-07-editor-ep2-01.md>) · [MIG-01/php](<../audits/2026-09-07-editor-ep2-01.md>) · [MIG-01/browser](<../audits/2026-09-07-editor-ep2-01.md>) |
-| 기본 요소·대표 내부 구성 | EP2-02 · 단일 카드의 제한된 내부 구성 | 계획 | EP2-01 | 미배정 | 미완료 |
-| 기본 요소·대표 내부 구성 | EP2-03 · 대표 Hero·ImageText 슬롯과 호환 이행 | 계획 | EP2-02 | 미배정 | 미완료 |
-| 검증된 컴포넌트 조합 | EP3-01 · 탭·FAQ 본문 구성 | 계획 | EP2-03 | 미배정 | 미완료 |
-| 검증된 컴포넌트 조합 | EP3-02 · 일반 열의 G7 목록·문의 폼 | 계획 | EP2-03 | 미배정 | 미완료 |
-| 공통영역·재사용·통합 검증 | EP4-01 · 공통영역 편집 문맥 마감 | 계획 | EP3-01, EP3-02 | 미배정 | 미완료 |
-| 공통영역·재사용·통합 검증 | EP4-02 · 새 구성을 내 패턴으로 재사용 | 계획 | EP3-01, EP3-02 | 미배정 | 미완료 |
-| 공통영역·재사용·통합 검증 | EP4-03 · 통합 사용자 흐름 검증 | 계획 | EP4-01, EP4-02 | 미배정 | 미완료 |
+| 1차 · 공식 연동 계약과 원본 보존 | NE1 · 공식 연동 계약과 원본 보존 | 계획 | 없음 | 미배정 | 미완료 |
+| 2차 · 내용·스타일·미디어 편집 | NE2 · 내용·스타일·미디어 편집 | 계획 | NE1 | 미배정 | 미완료 |
+| 3차 · 내부 트리·반복·동적 요소 편집 | NE3 · 내부 트리·반복·동적 요소 편집 | 계획 | NE2 | 미배정 | 미완료 |
+| 4차 · 사용자 조합 저장과 재삽입 | NE4 · 사용자 조합 저장과 재삽입 | 계획 | NE3 | 미배정 | 미완료 |
+| 5차 · 삽입·설정·미리보기·저장 흐름 연결 | NE5 · 삽입·설정·미리보기·저장 흐름 연결 | 계획 | NE4 | 미배정 | 미완료 |
+| 6차 · 호환·회귀·릴리스 | NE6 · 호환·회귀·릴리스 | 계획 | NE5 | 미배정 | 미완료 |
 
-다음 진행 가능: EP2-02
+다음 진행 가능: NE1
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

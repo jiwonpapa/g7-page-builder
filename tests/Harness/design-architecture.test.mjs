@@ -49,6 +49,80 @@ test('domain permits its own contract, but not UI packages or private G7 access'
   assert.ok(inspectTypeScript(repository, 'resources/js/editor/new.ts', "const a = window.G7Core?.['__runtime'];", policy).some((item) => item.rule === 'G7-INTERNAL'));
 });
 
+test('native layers reject legacy storage, Puck and outward dependencies even with generic rules first', () => {
+  const reordered = { ...policy, typescriptLayers: [...policy.typescriptLayers].sort((a, b) => a.from.length - b.from.length) };
+  for (const [path, source] of [
+    ['domain/node.ts', "import React from 'react';"],
+    ['domain/node.ts', "import { host } from '../../adapters/gnuboard7/host';"],
+    ['ports/media.ts', "import { editor } from '../ui/editor';"],
+    ['application/edit.ts', "import { client } from '../../api/pageBuilderApi';"],
+    ['ui/editor.tsx', "import { Puck } from '@puckeditor/core';"],
+    ['ui/editor.tsx', "export { PageBuilderDocument } from '../../documents/types';"],
+    ['entry.ts', 'const engine = import(engineName);'],
+  ]) assert.ok(inspectTypeScript(repository, `resources/js/native-editor/${path}`, source, reordered)
+    .some((item) => item.rule === 'TS-BOUNDARY'), source);
+  assert.deepEqual(inspectTypeScript(repository, 'resources/js/native-editor/application/edit.ts',
+    "import type { Node } from '../domain/node'; import type { HostPort } from '../ports/host';", policy), []);
+  assert.deepEqual(inspectTypeScript(repository, 'resources/js/native-editor/ui/editor.tsx',
+    "import React from 'react'; import type { HostPort } from '../ports/host';", policy), []);
+});
+
+test('native host exposes only observed public methods through its adapter', () => {
+  const adapter = 'resources/js/adapters/gnuboard7/editor.ts';
+  for (const name of policy.nativeEditor.methods) {
+    const source = `window.G7Core?.layoutEditor?.${name}(handler);`;
+    assert.deepEqual(inspectTypeScript(repository, adapter, source, policy), []);
+    for (const path of ['resources/js/native-editor/ui/editor.tsx', 'resources/js/editor/new.ts']) {
+      assert.ok(inspectTypeScript(repository, path, source, policy).some((item) => item.rule === 'NATIVE-BOUNDARY'));
+    }
+  }
+  for (const source of [
+    'G7Core.layoutEditor.registerPanel(panel);',
+    "globalThis['G7Core']['layoutEditor']['registerComponent'](component);",
+    'const editor = G7Core.layoutEditor;', 'const host = window.G7Core;',
+    'const { layoutEditor } = G7Core;', 'const win = window; win.G7Core.layoutEditor.registerPanel(panel);',
+    "window['G7' + 'Core'].layoutEditor.onReady(callback);", 'G7Core.layoutEditor[method](handler);',
+    'const host = (window.G7Core as Host);', 'const host = (G7Core satisfies Host);',
+    'G7Core.__runtime.useLayoutEditor();',
+  ]) assert.ok(inspectTypeScript(repository, adapter, source, policy)
+    .some((item) => item.rule === 'NATIVE-BOUNDARY'), source);
+  assert.deepEqual(inspectTypeScript(repository, adapter,
+    "globalThis['G7Core']['layoutEditor']['onReady'](callback);", policy), []);
+  assert.deepEqual(inspectTypeScript(repository, 'resources/js/public/siteShellRuntime.ts',
+    'const state = window.G7Core.state; window.G7Core.dispatch(action);', policy), []);
+});
+
+test('native UI uses injected I/O ports and property names do not become global accesses', () => {
+  for (const source of ['fetch(url);', 'window.fetch(url);', 'const request = fetch;',
+    'localStorage.setItem(key, value);', "globalThis['sessionStorage'].getItem(key);", 'new XMLHttpRequest();']) {
+    assert.ok(inspectTypeScript(repository, 'resources/js/native-editor/ui/media.ts', source, policy)
+      .some((item) => item.rule === 'NATIVE-BOUNDARY'), source);
+    assert.deepEqual(inspectTypeScript(repository, 'resources/js/adapters/gnuboard7/media.ts', source, policy), []);
+  }
+  assert.deepEqual(inspectTypeScript(repository, 'resources/js/native-editor/ports/media.ts',
+    'interface MediaPort { fetch(): Promise<unknown>; } const data = { fetch: true };', policy), []);
+  assert.deepEqual(inspectTypeScript(repository, 'resources/js/native-editor/ui/media.ts',
+    'media.fetch(); // G7Core.layoutEditor.registerPanel\nconst label = "fetch";', policy), []);
+});
+
+test('native rule configuration cannot silently remove the fence or widen supported APIs', (t) => {
+  const { root, write } = fixture(t);
+  for (const modify of [
+    (next) => { delete next.nativeEditor; },
+    (next) => next.nativeEditor.methods.push('registerPanel'),
+    (next) => { next.nativeEditor.adapter = 'resources/js/'; },
+    (next) => { next.typescriptLayers = next.typescriptLayers.filter((entry) => entry.from !== `${next.nativeEditor.root}domain/`); },
+    (next) => next.typescriptLayers.find((entry) => entry.from === `${next.nativeEditor.root}ui/`).packages.push('@puckeditor/core'),
+  ]) {
+    const next = structuredClone(policy);
+    modify(next);
+    write('config/design-architecture.json', JSON.stringify(next));
+    assert.throws(() => readPolicy(root), /Native editor/);
+  }
+  write('config/design-architecture.json', JSON.stringify(policy));
+  assert.deepEqual(readPolicy(root), policy);
+});
+
 test('public runtime cannot import admin API; names in strings and comments are not imports', () => {
   assert.ok(inspectTypeScript(repository, 'resources/js/public/new.ts', "import { api } from '../api/pageBuilderApi';", policy).length);
   assert.deepEqual(inspectTypeScript(repository, 'resources/js/documents/new.ts', "// import React from 'react';\nconst text = 'as unknown as any';\nconst data: unknown = null;", policy), []);

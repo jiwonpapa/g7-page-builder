@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { isAbsolute, join, posix } from 'node:path';
 
 export const RULE_FILE = 'config/design-architecture.json';
-const REQUIRED_RULES = ['TS-BOUNDARY', 'TS-UNSAFE', 'G7-INTERNAL', 'PHP-BOUNDARY', 'SOURCE-SIZE', 'CSS-COLOR', 'CSS-IMPORTANT', 'CSS-SPECIFICITY'];
+const REQUIRED_RULES = ['TS-BOUNDARY', 'TS-UNSAFE', 'G7-INTERNAL', 'NATIVE-BOUNDARY', 'PHP-BOUNDARY', 'SOURCE-SIZE', 'CSS-COLOR', 'CSS-IMPORTANT', 'CSS-SPECIFICITY'];
 const REQUIRED_NORMATIVE_FILES = [
   'AGENTS.md', 'docs/architecture.md', 'docs/development-constitution.md',
   'docs/productization/editing-policy.md', 'docs/productization/requirements.md',
@@ -54,6 +54,27 @@ export function readPolicy(root) {
   if (policy.constitution !== 'docs/development-constitution.md') throw new Error('The development constitution cannot be redirected');
   if (['resources/js', 'resources/css', 'src'].some((path) => !policy.sourceRoots.includes(path))) throw new Error('Product source roots cannot be silently excluded');
   if (['resources/js/documents/', 'resources/js/api/', 'resources/js/public/'].some((path) => !policy.typescriptLayers.some((layer) => layer.from === path))) throw new Error('A protected TypeScript layer is missing');
+  const native = policy.nativeEditor;
+  if (native?.root !== 'resources/js/native-editor/' || native.adapter !== 'resources/js/adapters/gnuboard7/'
+    || !Array.isArray(native.methods) || native.methods.length !== 4
+    || ['registerWidget', 'registerNodeEditor', 'registerCanvasOverlay', 'onReady'].some((method) => !native.methods.includes(method))) {
+    throw new Error('Native editor boundary requires the audited public host methods');
+  }
+  for (const [path, allowed, packages] of [
+    [`${native.root}domain/`, ['domain'], []],
+    [`${native.root}ports/`, ['domain', 'ports'], []],
+    [`${native.root}application/`, ['domain', 'ports', 'application'], []],
+    [`${native.root}ui/`, ['domain', 'ports', 'application', 'ui'], ['react', 'react-dom']],
+    [native.root, null, ['react', 'react-dom']], [native.adapter, null, ['react', 'react-dom']],
+  ]) {
+    const layers = policy.typescriptLayers.filter((layer) => layer.from === path);
+    const prefixes = allowed ? allowed.map((name) => `${native.root}${name}/`) : [native.root, native.adapter];
+    if (layers.length !== 1 || layers[0].localFiles.length || layers[0].localPrefixes.length !== prefixes.length
+      || prefixes.some((prefix) => !layers[0].localPrefixes.includes(prefix))
+      || layers[0].packages.length !== packages.length || packages.some((pkg) => !layers[0].packages.includes(pkg))) {
+      throw new Error(`Native editor dependency boundary cannot be widened silently: ${path}`);
+    }
+  }
   for (const path of [policy.constitution, policy.debtFile, ...policy.normativeFiles, ...policy.sourceRoots, ...policy.cssTokenSources]) safePath(path);
   if (['ts', 'tsx', 'js', 'php', 'css'].some((kind) => !Object.hasOwn(policy.sourceSize, kind))) throw new Error('A source size rule is missing');
   if (!Number.isInteger(policy.maxTypeScriptNodes) || policy.maxTypeScriptNodes < 1 || policy.maxTypeScriptNodes > 15000) throw new Error('Invalid TypeScript structural node limit');

@@ -1,6 +1,8 @@
 # Canvas Editing Contract
 
-## 현행 계약과 목표 정책의 관계
+적용 범위: 아래 Puck·PageBuilderDocument 계약은 기존 독립 PB 모드의 유지·회귀 기준입니다. 새 네이티브 캔버스의 원본·선택·Undo·저장은 G7 소유이며 [개발 헌법](development-constitution.md)과 [현행 편집 정책](productization/editing-policy.md)을 따릅니다. 아래 과거 구현 수치와 목표를 새 네이티브 완료 증거로 전용하지 않습니다.
+
+## 기존 계약과 목표 정책의 관계
 
 아래는 현재 직접 편집의 역할과 회귀 기준입니다. 제공 목록·분류·허용 슬롯의 목표는 [편집 정책](productization/editing-policy.md), 구현 순서와 현재 증거는 [개발 계획](productization/editor-plan.md)과 [진척 표시판](productization/editor-progress.md)에서 구분합니다. Section·Columns·Stack과 기본 요소 5종의 제한 중첩은 이미 연결되어 있으며, 기존 복합 블록의 내부 슬롯 개방은 별도 목표입니다. 기존 `BUILTIN_CANVAS_EDITING_CONTRACT`·컬렉션 한도·필드 해석을 확장하고 두 번째 블록별 속성 원장을 만들지 않습니다.
 

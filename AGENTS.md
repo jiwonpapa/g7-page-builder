@@ -41,10 +41,14 @@
 
 - 제품 저장소는 G7 코어 저장소와 분리한다.
 - `src/Domain`, `src/Application`, `src/Contracts`에서는 G7 클래스와 Laravel 구현을 import하지 않는다.
-- 모든 G7 연동은 `src/Infrastructure/Gnuboard7` Adapter에서만 수행한다.
+- PHP의 G7 연동은 `src/Infrastructure/Gnuboard7`, 신규 네이티브 편집기의 브라우저 연동은 `resources/js/adapters/gnuboard7` Adapter에서만 수행한다. 기존 공개 Site Shell adapter의 소유권은 유지한다.
 - 루트 `module.php`는 G7 공개 `AbstractModule`을 연결하는 Composition Root 예외다. 여기에는 비즈니스 로직·DB 접근을 두지 않는다.
 - `src/Providers/*ServiceProvider.php`는 Adapter binding, View·공개 route·middleware 등록만 수행하는 Laravel Composition Root 예외다.
-- 기본 제품의 G7 의존성은 모듈 lifecycle·Provider 발견, API·Web route, migration, admin auth·permission, 모듈 소유 admin menu와 admin route/layout 2개, 활성 User Template route 조회·모듈 소유 user route 2개/layout 3개, route merge filter, 공식 `core.layout_extension.after_apply` 후처리 filter, 정적 asset serving으로 제한한다.
+### 기존 독립 PB 모드의 호환 경계
+
+아래 경계는 기존 PB 문서·Site Part·생성 발행본에 적용한다. 신규 네이티브 원본 편집은 다음 Editor boundary의 별도 계약을 따른다. 내부 import·직접 DB 참조 금지는 두 모드 공통이다.
+
+- 기존 독립 PB 모드의 G7 의존성은 모듈 lifecycle·Provider 발견, API·Web route, migration, admin auth·permission, 모듈 소유 admin menu와 admin route/layout 2개, 활성 User Template route 조회·모듈 소유 user route 2개/layout 3개, route merge filter, 공식 `core.layout_extension.after_apply` 후처리 filter, 정적 asset serving으로 제한한다.
 - custom role은 등록하지 않는다. `페이지 빌더` 전용 admin menu 하나만 별도 등록한다.
 - G7 기본 `페이지 관리` 메뉴·slug·URL·데이터를 재사용·수정·숨김·대체하지 않는다.
 - 기본 출력은 활성 User Template의 `_user_base`를 사용하되 기존 템플릿 파일·layout JSON·DB row는 수정하지 않는다. Page Builder 모듈이 선언한 2개 user route와 3개 user layout, 사용자가 명시적으로 할당한 정상 발행 페이지의 추가 주소만 merge하고, 호환 프로필이 일치할 때만 공식 post-apply filter로 발행 Site Part를 런타임 결과에 연결한다.
@@ -63,6 +67,18 @@
 
 ## Editor boundary
 
+- 현재 개발 목표는 G7 일반 페이지의 네이티브 편집 고도화 확장이다. 이 규칙 개정은 구현 착수·G7 코어 변경·배포 승인을 대신하지 않는다.
+- 네이티브 모드의 원본·선택·트리·Undo·미리보기·저장은 G7이 소유한다. 기존 PB 모드는 `PageBuilderDocument`·Puck·PB 저장/발행을 유지한다. 같은 문서를 이중 저장·동기화하거나 자동 변환하지 않는다.
+- 네이티브 모드는 실제 제공된 G7 공개 editor API·editor-spec만 adapter 뒤에서 사용한다. 현재 확인된 `G7Core.layoutEditor` 메서드는 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady` 네 개다. API 존재만으로 문맥·권한·삽입·저장 안전성을 보장하지 않는다.
+- 호스트 문맥·경로·명령·패널 API의 미확보 항목은 [편집 정책](docs/productization/editing-policy.md)의 H01~H08과 연결한다. 미제공 API를 상상해 호출하거나 G7 private hook·registry·전역 DOM 조작으로 우회하지 않는다. G7 측 변경이 필요하면 별도 승인·공개 계약·검증이 먼저다.
+- 네이티브 `domain → domain`, `ports → domain/ports`, `application → domain/ports/application`, `ui → domain/ports/application/ui` 의존만 허용한다. 조립 entry와 G7 adapter만 양쪽을 연결하며 Puck·기존 PB 문서 API를 import하지 않는다. 외부 I/O는 포트로 전달한다.
+- 원본의 출처·표현식·번역키·반복·actions·responsive·알 수 없는 필드를 보존하고, 지원된 필드만 변경한다. 상속 잠금을 풀려고 `__source`를 제거하거나 합성 Header/Footer를 본문에 복사하지 않는다.
+- 비동기 작업에는 문서/템플릿·노드 경로·세션·revision·readonly 문맥이 필요하다. 늦은 응답의 다른 노드 적용, 부분 변경, 독립 Undo 추가를 금지한다. 공식 문맥 부재는 해당 기능의 선행조건 미충족이다.
+- 네이티브 확장 entry는 G7의 React/ReactDOM/jsx-runtime을 공유한다. 기존 Puck 번들을 G7 편집기 안에 중첩하지 않는다. 지원 G7/테마/spec/renderer 조합과 장애 시 무변경 동작을 검증한 범위만 공개한다.
+- G7 첨부·페이지 설정·저장 기능을 재사용하며 저장의 공개 영향을 유지한다. 네이티브 초안·예약 발행, 임의 테마 페이지/주소/메뉴 생성 UX는 별도 계약과 후속 계획 없이 추가하지 않는다. G7의 일반 페이지 생성 기능 자체를 미지원이라고 설명하지 않는다.
+
+### 기존 독립 PB 편집기의 유지 계약
+
 - Page Builder는 G7 Layout Editor와 분리된 독립 편집 화면을 제공한다.
 - 편집기 커널은 MIT `@puckeditor/core`를 정확한 버전으로 고정해 사용하고 `EditorAdapter` 뒤에 격리한다.
 - Puck의 `AppState`와 원시 `Data`는 영속 원본이 아니다. 저장 전후 항상 `PageBuilderDocument`로 변환한다.
@@ -74,7 +90,7 @@
 
 ## Editor policy and progress
 
-- 현행 편집 범위는 [편집 정책](docs/productization/editing-policy.md), 실행 순서와 합격 조건은 [편집 기능 개발 계획](docs/productization/editor-plan.md)을 따른다. 과거 8차 제품화 계획과 사이트 1~5차 기록을 현재 실행 지시로 재사용하지 않는다. 현재 목표는 페이지빌더 편집 기능 고도화이며 킷·풀 테마 상품 제작의 진척으로 대신하지 않는다.
+- 현행 편집 범위는 [편집 정책](docs/productization/editing-policy.md), 실행 순서와 합격 조건은 [편집 기능 개발 계획](docs/productization/editor-plan.md)을 따른다. 과거 8차 제품화 계획과 사이트 1~5차 기록을 현재 실행 지시로 재사용하지 않는다. 현행 실행 계획은 네이티브 확장 NE1~NE6이며 기존 EP 계획·완료 증거는 별도 archive로 보존한다. 과거 완료를 새 계획에 합산하지 않는다. 현재 목표는 페이지빌더 편집 기능 고도화이며 킷·풀 테마 상품 제작의 진척으로 대신하지 않는다.
 - 편집 기능 작업 착수 전 `make editor-status`로 [진척 원장](docs/productization/editor-progress.json)과 [표시판](docs/productization/editor-progress.md)의 현재 항목·의존성·증거를 확인한다. 파일 소유권과 실제 변경 범위는 별도로 `make coord-status`와 `base_sha` 대비 diff로 확인하며, 계획 상태가 lease를 대신하지 않는다.
 - 작업을 시작할 때 해당 계획 항목과 필요한 상태·증거 갱신 범위를 함께 정한다. 원장·표시판을 직접 갱신하려면 해당 파일을 claim하며, 병렬 구현에서 다른 task가 소유하면 제출·통합·검증 결과를 그 소유자에게 인계한다. claim 밖의 계획 파일을 수정하거나 상태 갱신을 누락한 채 완료 처리하지 않는다.
 - 종료 보고 전 `make editor-plan-check`로 계획·원장·표시판과 증거의 정합성을 확인한다. 정책 확정, 소스 구현, 통합, 실제 동작 검증, 배포를 구별하며 표시판만 고쳐 완료 상태를 만들지 않는다. 이 검사는 제품 동작 시험이나 배포 검증을 대신하지 않는다.
@@ -82,13 +98,14 @@
 ## Development constitution and enforcement
 
 - PHP·TypeScript·JavaScript·CSS의 설계 기준은 `docs/development-constitution.md`를 따른다. 언어가 섞여 있다는 이유로 중복 계약·우회 단언·거대 조정 파일을 허용하지 않는다.
-- G7 Layout Editor는 기술 스택·편집 방법·설정·JSON 활용·편집창과 상태 구조를 연구하는 참조 대상이다. 편집기 구현·내부 런타임·문서 원본·저장 엔진을 가져와 제품의 필수 의존성으로 만들지 않는다.
+- G7 Layout Editor의 구현은 기술·편집 방법·설정·JSON·상태 구조의 조사 근거다. 네이티브 모드는 공식 호스트 확장 계약을 사용하되 내부 구현을 복사/import하지 않는다. 기존 독립 PB 모드에는 G7 편집기 의존성을 추가하지 않는다.
 - 제품 요구와 현재 구현 한계를 구분한다. 기존 블록의 내부 구조 편집과 중첩 삽입·이동·삭제는 목표 요구이며, 미구현을 영구 제외 정책으로 바꿔 완료 처리하지 않는다.
 - 문서 규칙·변경 명령·화면 상태·외부 어댑터의 책임을 분리한다. 조정 컴포넌트는 이들을 연결하며 자체 검증·변환·통신 규칙을 복제하지 않는다.
 - 타입 단언은 실행 시 검증을 대체하지 않는다. 신규 explicit `any`·`as unknown as`·`as never`·금지 계층 import는 구조 gate에서 실패한다.
 - 스타일은 의미 토큰과 공통 컨트롤을 재사용한다. 테마 토큰의 소유 파일, portal/iframe 전달, 사용자 스타일과 vendor 보정의 우선순위를 명시한다.
 - `node scripts/check-design-architecture.mjs`가 규칙과 기존 부채를 검사한다. 변경 범위는 `--files`로 전달하며 규범 문서·규칙 변경은 전체 제품 소스의 정적 구조만 재검사한다.
 - 기존 부채는 `config/design-architecture-debt.json`의 정확 파일·규칙·지문·상한·이유·해소조건으로 제한한다. 신규 위반, 다른 위치로 복제, 기존 상한 증가는 허용하지 않는다. 부채 이동·정리도 검토 가능한 변경으로 기록하고 자동 baseline 갱신은 만들지 않는다.
+- `NATIVE-BOUNDARY`는 네이티브 코드의 직접 I/O, adapter 밖 호스트 접근, 미확인 editor API와 호스트 객체 유출을 정적으로 차단한다. 실행 문맥·원본 무손실·Undo·저장·재열기는 차수별 동작 증거가 필요하다.
 - 구조 gate 통과는 실제 편집 기능·접근성·배포 성공을 뜻하지 않는다. 변경 목적과 관련된 동작·브라우저 증거를 별도로 확인한다.
 
 ## Compatibility
@@ -97,7 +114,7 @@
 - 제품 버전은 `module.json`, `package.json`, `package-lock.json`에서 항상 일치시킨다.
 - 사용자에게 의미 있는 변경은 Keep a Changelog 형식의 `CHANGELOG.md` `Unreleased`에 기록한다.
 - 배포한 버전의 내용은 바꾸지 않고 변경이 필요하면 새 SemVer를 발행한다.
-- 모든 문서는 `schema_version`, 모든 컴파일 결과는 `compiler_version`을 기록한다.
+- PB가 소유한 문서·조합 포맷은 `schema_version`, 컴파일 결과는 `compiler_version`을 기록한다. G7 소유 JSON에는 PB 버전 필드를 임의로 삽입하지 않으며 호스트 스키마를 보존한다.
 - G7 업데이트 후 과거 Fixture 재컴파일·렌더링 시험을 통과해야 한다.
 - 모듈이 활성인 상태의 schema/compiler 비호환에서는 편집·발행을 중지하되 마지막 정상 발행본을 유지한다.
 - G7 코어 업데이트가 모듈을 비활성화하면 자체 route도 사라지므로 배포 전 호환 시험 실패 시 G7 업데이트 자체를 중지한다.
@@ -109,7 +126,7 @@
 - TypeScript·React는 로컬 또는 CI에서 빌드하고 검증된 `dist`를 릴리스에 포함한다.
 - 고객 서버에서 Node·npm·Vite 빌드를 실행하지 않는다.
 - Page Builder는 Node 서버, Rust daemon, FFI, PHP native extension, Redis, Reverb를 필수 의존성으로 만들지 않는다.
-- 공개 요청에서는 문서를 재컴파일하지 않고 마지막 정상 발행 결과만 렌더링한다.
+- 기존 독립 PB 공개 요청은 문서를 재컴파일하지 않고 마지막 정상 발행 결과만 렌더링한다. 네이티브 페이지는 G7의 저장·렌더 경로를 유지하며 PB 컴파일 엔진을 삽입하지 않는다.
 - MVP에는 원격 라이선스 서버, 런타임 만료 또는 코드 인코딩을 넣지 않으며 구매한 릴리스와 기존 발행본을 기간 만료로 중단하지 않는다.
 - Rust는 PHP 기준 구현의 실제 병목이 측정된 뒤 `docs/runtime-hosting.md`의 게이트를 통과한 무상태 선택형 CLI로만 검토한다.
 - 초기에는 공유호스팅을 공식 지원하지 않지만 VPS 전용 의존성을 제품 코어에 추가하여 향후 호환 경로를 막지 않는다.

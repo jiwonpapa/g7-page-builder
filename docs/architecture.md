@@ -1,8 +1,25 @@
 # Architecture
 
-이 문서는 [개발 헌법](development-constitution.md)의 책임·의존 방향과 검증 원칙을 따릅니다. G7 Layout Editor는 기술·편집 방식의 참고 대상이며, 그 편집기·저장 엔진을 제품 의존성으로 사용하지 않습니다.
+이 문서는 [개발 헌법](development-constitution.md)의 책임·의존 방향과 검증 원칙을 따릅니다. 현재 목표는 G7 일반 페이지의 네이티브 편집 확장입니다. 공개 호스트 계약과 기존 독립 PB의 호환 경계를 분리합니다. 정책 개정이며 네이티브 구현 완료를 뜻하지 않습니다.
 
-## 결론
+## 네이티브 확장의 소유권과 의존 방향
+
+| 영역 | 소유자·연결 방법 |
+|---|---|
+| 일반 페이지 원본 JSON·선택·트리·Undo·저장·미리보기 | G7, 공개 editor 계약으로 연결 |
+| 허용된 노드 필드·반복 항목·디자인 컨트롤 | PB native UI → 사용 사례 → 포트 |
+| 호스트 문맥·등록·G7 첨부 API | TS `resources/js/adapters/gnuboard7`; PHP `src/Infrastructure/Gnuboard7` |
+| 새 native 문서 검증·변경 규칙 | `resources/js/native-editor/domain`와 `ports`; React/G7/HTTP import 금지 |
+| 호스트와 UI 조립 | native entry; G7의 React/ReactDOM/jsx-runtime 공유, Puck 번들 중첩 금지 |
+| renderer/spec/CSS·기존 템플릿 파일 | 지원 템플릿 소유, 명시적인 연결 계약 없이 덮어쓰지 않음 |
+
+기존 G7 JSON의 알려지지 않은 필드·바인딩·반복·출처를 보존합니다. 네이티브 저장은 G7 공개 저장의 의미를 유지하며 PB 초안/발행본 API에 복사하지 않습니다. 호스트 문맥·삽입 경로·명령·패널 API의 선행조건은 [편집 정책](productization/editing-policy.md), 실행 순서는 [NE1~NE6 계획](productization/editor-plan.md)에 기록합니다. G7 코어 수정은 별도 승인 작업이며 이 저장소에서 내부 import로 대체할 수 없습니다.
+
+## 기존 독립 PB 모드의 유지 구조
+
+아래 소유권·계층·실행 흐름은 기존 `PageBuilderDocument`·Puck 제품의 호환 계약입니다. 새 네이티브 페이지에 적용하거나 이미 구현된 확장 구조로 인용하지 않습니다.
+
+### 기존 모드 결론
 
 G7 Page Builder는 코어 수정 없이 동작하는 독립 모듈입니다. 목록·생성은 G7 공개 admin route/layout으로 기존 관리자 외형을 사용하고, 편집 화면은 G7 Layout Editor와 분리해 Puck을 편집기 커널로 사용합니다. 기본 공개 출력은 활성 User Template의 `_user_base`를 재사용합니다. 선택한 Header·Footer 두 Site Part가 모두 정상 발행되면 공식 post-apply filter가 활성 User Template의 사용자 라우트 전체에 연결하며, 템플릿 파일·layout JSON·DB row는 수정하지 않습니다.
 

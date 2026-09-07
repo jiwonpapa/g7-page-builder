@@ -4,7 +4,7 @@
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **2/11** · 기존 기반 8개는 분모에서 제외합니다.
+계획 작업 완료 **3/11** · 기존 기반 8개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
 
@@ -29,7 +29,7 @@
 |---|---|---|---|---|---|
 | 삽입·선택·설정 | EP1-01 · 제작 분류와 편집 능력 표시 | 완료 | 없음 | ep1-library-window-20260907 | 구현 `86014a1335b5bcc2787473fd1047febc620366d5`<br>통합 `b35bcf5ce6615dad5ad1479f1c2f47e689b3c1f1`<br>필수 증거 2/2<br>[CAT-01/unit](<../audits/2026-09-07-editor-ep1-01.md>) · [CAT-01/browser](<../audits/2026-09-07-editor-ep1-01.md>) |
 | 삽입·선택·설정 | EP1-02 · 위치별 삽입과 선택 경로 | 완료 | EP1-01 | ep1-placement-contract-20260907 | 구현 `bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355`<br>통합 `6dc6f26bff171a1aacd1d414a97ec0956d636e82`<br>필수 증거 7/7<br>[CAT-02/unit](<../audits/2026-09-07-editor-ep1-02.md>) · [CAT-02/browser](<../audits/2026-09-07-editor-ep1-02.md>) · [INS-01/unit](<../audits/2026-09-07-editor-ep1-02.md>) · [INS-01/browser](<../audits/2026-09-07-editor-ep1-02.md>) · [POL-01/unit](<../audits/2026-09-07-editor-ep1-02.md>) · [POL-01/php](<../audits/2026-09-07-editor-ep1-02.md>) · [POL-01/browser](<../audits/2026-09-07-editor-ep1-02.md>) |
-| 삽입·선택·설정 | EP1-03 · 직접 편집·문맥 도구·설정 패널 연결 | 진행 | EP1-02 | ep1-context-20260907 | 미완료 |
+| 삽입·선택·설정 | EP1-03 · 직접 편집·문맥 도구·설정 패널 연결 | 완료 | EP1-02 | ep1-native-input-20260907 | 구현 `12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0`<br>통합 `8bb90f516c429c71a49af9b72bfcea556b02403e`<br>필수 증거 11/11<br>[EDT-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [EDT-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [EDT-02/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [EDT-02/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [UND-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [UND-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [SAV-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [SAV-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [RES-01/unit](<../audits/2026-09-07-editor-ep1-03.md>) · [RES-01/browser](<../audits/2026-09-07-editor-ep1-03.md>) · [RES-01/render](<../audits/2026-09-07-editor-ep1-03.md>) |
 | 기본 요소·대표 내부 구성 | EP2-01 · 아이콘·목록·배지 삽입 | 계획 | EP1-03 | 미배정 | 미완료 |
 | 기본 요소·대표 내부 구성 | EP2-02 · 단일 카드의 제한된 내부 구성 | 계획 | EP2-01 | 미배정 | 미완료 |
 | 기본 요소·대표 내부 구성 | EP2-03 · 대표 Hero·ImageText 슬롯과 호환 이행 | 계획 | EP2-02 | 미배정 | 미완료 |
@@ -39,7 +39,7 @@
 | 공통영역·재사용·통합 검증 | EP4-02 · 새 구성을 내 패턴으로 재사용 | 계획 | EP3-01, EP3-02 | 미배정 | 미완료 |
 | 공통영역·재사용·통합 검증 | EP4-03 · 통합 사용자 흐름 검증 | 계획 | EP4-01, EP4-02 | 미배정 | 미완료 |
 
-다음 진행 가능: EP1-03
+다음 진행 가능: EP2-01
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

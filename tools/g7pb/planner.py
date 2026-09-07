@@ -39,6 +39,7 @@ EDITOR_SOURCE_GRAPH = "scripts/lib/editorSourceGraph.mjs"
 FRONTEND_BUDGET_CHECKER = "scripts/check-frontend-budgets.mjs"
 EDITOR_CSS_READER = "scripts/lib/editorCssSources.mjs"
 BROWSER_HELPER_SPECS = {
+    "tests/E2E/support/nativeStructureFixture.ts": ("tests/E2E/nativeEditorContract.spec.ts",),
     "tests/E2E/support/richTextInput.ts": (
         "tests/E2E/pageBuilderLifecycle.spec.ts", "tests/E2E/editorStructureTheme.spec.ts",
         "tests/E2E/editorCatalogCode.spec.ts",
@@ -394,6 +395,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/generate-page-kit-screenshots.mjs",
         "vite.sliders.config.ts",
         "vite.native.config.ts",
+        "vite.native-components.config.ts",
     }
     changed_asset_build_controllers = []
     for path in plan.paths:

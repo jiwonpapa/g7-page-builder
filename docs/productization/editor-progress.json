@@ -404,14 +404,14 @@
       "id": "NE2",
       "phase": "phase-2",
       "title": "내용·스타일·미디어 편집",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "NE1"
       ],
       "acceptance_ids": [
         "NAT-02"
       ],
-      "owner_task": null,
+      "owner_task": "native-ne2-content-r4-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

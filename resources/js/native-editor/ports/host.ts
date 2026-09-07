@@ -1,3 +1,4 @@
+import type { NativeField, NativeValue } from '../domain/fields';
 import type { NativeNode } from '../domain/node';
 
 export type NativePath = Array<number | { responsive: string }>;
@@ -16,5 +17,20 @@ export type NativeApplyResult = { kind: 'applied' | 'noop' } | { kind: 'refused'
 export interface NativeHost {
   context: NativeContext;
   node: NativeNode;
+  fields: NativeField[];
+  applyField: (id: string, value: NativeValue, reset?: boolean) => NativeApplyResult;
+  media: NativeMedia | null;
   applyText: (text: string) => NativeApplyResult;
+}
+
+export interface NativeAsset {
+  id: string | number;
+  layoutName: string | null;
+  name: string;
+  url: string;
+}
+export type NativeMediaResult<T> = { ok: true; data: T } | { ok: false; reason: string };
+export interface NativeMedia {
+  list: (scope: 'page' | 'template', signal: AbortSignal) => Promise<NativeMediaResult<NativeAsset[]>>;
+  upload: (file: File, signal: AbortSignal) => Promise<NativeMediaResult<NativeAsset>>;
 }

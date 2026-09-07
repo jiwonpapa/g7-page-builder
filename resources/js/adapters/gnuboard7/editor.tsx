@@ -1,4 +1,7 @@
 import React from 'react';
+import { acceptsNativeValue } from '../../native-editor/domain/fields';
+import { readNativeFields } from './fields';
+import { readNativeMedia } from './media';
 import { readNativeNode } from '../../native-editor/domain/node';
 import { prepareNativeTextChange } from '../../native-editor/domain/textChange';
 import type { NativeContext, NativeHost, NativePath } from '../../native-editor/ports/host';
@@ -38,17 +41,26 @@ export function readNativeHost(input: unknown): NativeHost | null {
   const parsed = readNativeNode(input.snapshot.node);
   if (!context || parsed.status !== 'valid' || context.nodeId !== parsed.node.id) return null;
   const execute = input.execute;
-  return { context, node: parsed.node, applyText(text) {
-    if (context.readonly || context.editMode !== 'route') return { kind: 'refused', reason: 'readonly' };
-    const change = prepareNativeTextChange(parsed.node, parsed.node.text, text);
-    if (change.status === 'unchanged') return { kind: 'noop' };
-    if (change.status !== 'changed') return { kind: 'refused', reason: change.reason };
+  const fields = readNativeFields(input.snapshot.fields);
+  function invoke(command: object): ReturnType<NativeHost['applyText']> {
     try {
-      const result: unknown = execute({ kind: 'setText', expected: context, text });
+      const result: unknown = execute(command);
       if (record(result) && (result.kind === 'applied' || result.kind === 'noop')) return { kind: result.kind };
       if (record(result) && result.kind === 'refused' && typeof result.reason === 'string') return { kind: 'refused', reason: result.reason };
     } catch { return { kind: 'refused', reason: 'host-error' }; }
     return { kind: 'refused', reason: 'invalid-result' };
+  }
+  return { context, node: parsed.node, fields, media: readNativeMedia(input.media, context),
+    applyField(id, value, reset = false) {
+      const field = fields.find(item => item.id === id);
+      if (context.readonly || context.editMode !== 'route' || !field || !acceptsNativeValue(field, value, reset)) return { kind: 'refused', reason: 'unsupported-field' };
+      return invoke({ kind: 'setControl', expected: context, control: id, value, reset });
+    }, applyText(text) {
+    if (context.readonly || context.editMode !== 'route') return { kind: 'refused', reason: 'readonly' };
+    const change = prepareNativeTextChange(parsed.node, parsed.node.text, text);
+    if (change.status === 'unchanged') return { kind: 'noop' };
+    if (change.status !== 'changed') return { kind: 'refused', reason: change.reason };
+    return invoke({ kind: 'setText', expected: context, text });
   } };
 }
 function NativePanel({ host }: { host: unknown }): React.ReactElement {

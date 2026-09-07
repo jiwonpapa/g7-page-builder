@@ -22,10 +22,13 @@ const E2E_OWNERSHIP_DIRECTORY = join(process.cwd(), 'output', 'playwright', 'own
 const E2E_DOCUMENT_SLUG_PATTERN = /^(?:managed-)?g7pb-e2e-[a-z0-9-]+-\d{13}-[a-z0-9]{6}(?:-copy)?$|^g7pb-template-e2e-\d{13}-[a-z0-9]{6}$/;
 const MOBILE_EDITOR_BREAKPOINT = 900;
 const builtinCatalog = JSON.parse(readFileSync(join(process.cwd(), 'resources/block-packs/builtin-core/manifest.json'), 'utf8')) as {
-  blocks: Array<{ capabilities: string[] }>;
-  presets: unknown[];
+  blocks: Array<{ block_id: string; capabilities: string[] }>;
+  presets: Array<{ block_id: string }>;
 };
 const BUILTIN_DEFINITION_COUNT = builtinCatalog.blocks.filter(block => !block.capabilities.includes('editor.compatibility-only')).length;
+const layoutPolicy = JSON.parse(readFileSync(join(process.cwd(), 'schemas/layout-policy-v1.json'), 'utf8')) as { leaf_types: string[] };
+const BASIC_ELEMENT_CANDIDATE_COUNT = [...builtinCatalog.blocks, ...builtinCatalog.presets]
+  .filter(item => layoutPolicy.leaf_types.includes(item.block_id)).length;
 
 
 const test = base.extend<{ adminToken: string; ownedSiteParts: SitePartSetFixture }>({
@@ -1325,7 +1328,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       expect(firstGalleryPreviewBox.width / firstGalleryPreviewBox.height).toBeCloseTo(1.6, 1);
     }
     await blockGallery.getByRole('tab', { name: /^기본 요소/ }).click();
-    await expect(blockGallery.locator('[data-production-kind="element"]')).toHaveCount(14);
+    await expect(blockGallery.locator('[data-production-kind="element"]')).toHaveCount(BASIC_ELEMENT_CANDIDATE_COUNT);
     await expect(blockGallery.locator('[data-component="Hero"]')).toHaveCount(0);
     await expect(blockGallery.getByTestId('page-builder-preset-heading-section-intro')).toBeVisible();
     await expect(drawerLibrary.locator('[data-library-block="Heading"]:visible').first()).toHaveAttribute('data-production-kind', 'element');

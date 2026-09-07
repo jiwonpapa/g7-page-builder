@@ -393,6 +393,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "scripts/check-assets.mjs",
         "scripts/generate-page-kit-screenshots.mjs",
         "vite.sliders.config.ts",
+        "vite.native.config.ts",
     }
     changed_asset_build_controllers = []
     for path in plan.paths:

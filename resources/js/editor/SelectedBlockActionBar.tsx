@@ -5,7 +5,8 @@ import { collectionLimit, resolveMediaFieldPath, resolveRouteFieldPath, valueAtP
 import { deleteCanvasItem, duplicateCanvasItem, moveCanvasItem, moveCanvasItemTo, updateCanvasCollection, updateCanvasPath, type CollectionOperation } from './canvasItemCommands';
 import { idToUuid } from './puckBlockCodec';
 import { CanvasEditingUiContext, usePageBuilderPuck } from './puckEditorContexts';
-import { editorItemLocations, editorMoveDestinations, resolveEditorSelection } from './puckEditorSelection';
+import { BlockCatalogContext } from './BlockCatalogContext';
+import { editorItemLocations, editorLocationLabel, editorMoveDestinations, editorSelectionAncestors, resolveEditorSelection } from './puckEditorSelection';
 import type { PuckEditorData } from './puckEditorTypes';
 import { useSelectedActionBarSafeZone } from './useSelectedActionBarSafeZone';
 
@@ -29,17 +30,20 @@ export function SelectedBlockActionBar({
   const narrowCanvas = typeof currentViewportWidth === 'number' && currentViewportWidth <= NARROW_CANVAS_MAX_WIDTH;
   const actionBarRef = useSelectedActionBarSafeZone(true);
   const canvasUi = React.useContext(CanvasEditingUiContext);
+  const { layoutEnabled = false } = React.useContext(BlockCatalogContext);
   const location = resolveEditorSelection(data, rawSelector ? { ...rawSelector, zone: rawSelector.zone ?? 'root:default-zone' } : null);
   const selectedBlock = location?.item;
+  const ancestors = location ? editorSelectionAncestors(data, location) : [];
+  const parent = ancestors.at(-1);
   const selectedIndex = location?.selector.index ?? null;
   const selectedZone = location?.selector.zone ?? 'root:default-zone';
   const contentLength = editorItemLocations(data).filter(({ selector }) => selector.zone === selectedZone).length;
   const [moveOpen, setMoveOpen] = React.useState(false);
   const [moveTarget, setMoveTarget] = React.useState('');
-  const moveDestinations = React.useMemo(() => location ? editorMoveDestinations(data, location) : [], [data, location]);
+  const moveDestinations = React.useMemo(() => location ? editorMoveDestinations(data, location, layoutEnabled) : [], [data, location, layoutEnabled]);
   const validMoveDestinations = moveDestinations.filter(({ valid }) => valid);
   const selectedMove = validMoveDestinations.find(({ selector }) => `${selector.zone}:${selector.index}` === moveTarget) ?? null;
-  const duplicateActions = location ? duplicateCanvasItem(data, location) : [];
+  const duplicateActions = location ? duplicateCanvasItem(data, location, layoutEnabled) : [];
   const layoutBlock = selectedBlock?.type === 'LayoutSection' || selectedBlock?.type === 'LayoutColumns' || selectedBlock?.type === 'LayoutStack';
   React.useEffect(() => {
     setMoveOpen(false);
@@ -76,13 +80,15 @@ export function SelectedBlockActionBar({
   const limits = selectedBlock && collection ? collectionLimit(selectedBlock.type, collection) : null;
 
   const move = (destinationIndex: number): void => {
-    if (location) moveCanvasItem(data, location, destinationIndex).forEach(dispatch);
+    if (location) moveCanvasItem(data, location, destinationIndex, layoutEnabled).forEach(dispatch);
   };
 
   const moveToSelectedZone = (): void => {
     if (!location || !selectedMove) return;
     const destination = selectedMove.selector;
-    moveCanvasItemTo(data, location, destination).forEach(dispatch);
+    const actions = moveCanvasItemTo(data, location, destination, layoutEnabled);
+    if (!actions.length) return;
+    actions.forEach(dispatch);
     // The accepted canonical document is fed back into controlled Puck data.
     // Re-apply selection after that render so reparenting does not fall back to
     // the previously selected ancestor.
@@ -141,8 +147,13 @@ export function SelectedBlockActionBar({
     >
       <ActionBar>
         {!rangeEditingActive && <ActionBar.Group>
-          {parentAction}
-          {label && <ActionBar.Label label={label} />}
+          {location ? <ActionBar.Action label={parent ? `부모 선택: ${editorLocationLabel(data, parent)}` : '페이지 선택'}
+            onClick={() => {
+              setElementSelection(null);
+              setTextToolsOpen(false);
+              dispatch({ type: 'setUi', ui: { itemSelector: parent?.selector ?? null }, recordHistory: false });
+            }}><ArrowUp size={16} data-testid="page-builder-select-parent" aria-hidden="true" /></ActionBar.Action> : parentAction}
+          {label && <ActionBar.Label label={[...ancestors.map((entry) => editorLocationLabel(data, entry)), label].join(' › ')} />}
           {selectedBlock && <ActionBar.Label label={`${elementSelection?.label ?? '블록 전체'} · ${roleLabel}`} />}
         </ActionBar.Group>}
         <ActionBar.Group>

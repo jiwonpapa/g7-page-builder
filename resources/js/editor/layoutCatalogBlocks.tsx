@@ -163,6 +163,7 @@ function StructureInsertField({ readOnly }: { readOnly?: boolean }): React.React
         recordHistory: false,
       });
     }
+    dispatch({ type: 'setUi', ui: { itemSelector: { index: destinationIndex, zone: destinationZone } }, recordHistory: false });
     setMessage(componentType === 'LayoutStack' ? '세로 Stack을 추가했습니다.' : `${columns}열 Columns를 추가했습니다.`);
   };
 
@@ -279,10 +280,10 @@ export const layoutCatalogComponentConfigs: Config<LayoutCatalogEditorComponents
     },
     resolveFields: (data, { fields }) => {
       const columns = data.props?.columns === '1' || data.props?.columns === '3' ? data.props.columns : '2';
-      return {
-        ...fields,
-        ratio: { type: 'radio', label: '열 비율', options: [...COLUMN_RATIO_OPTIONS[columns]] },
-      };
+      const activeFields = { ...fields };
+      if (columns === '1') delete activeFields.column2;
+      if (columns !== '3') delete activeFields.column3;
+      return { ...activeFields, ratio: { type: 'radio', label: '열 비율', options: [...COLUMN_RATIO_OPTIONS[columns]] } };
     },
     render: ({ column1: Column1, column2: Column2, column3: Column3, columns, ratio, gap, responsiveOverrides }) => (
       <div className={`g7pb-preview-layout-columns g7pb-preview-layout-columns--count-${columns} g7pb-preview-layout-columns--${ratio.replaceAll(':', '-')} g7pb-preview-layout-columns--gap-${gap} ${responsiveClassName(responsiveOverrides)}`.trim()} data-testid="page-builder-layout-columns">

@@ -46,6 +46,24 @@ final class PageDocumentWritePolicyTest extends TestCase
         yield 'responsive layout on leaf' => [['responsive' => ['mobile' => ['layout' => ['columns' => 1]]]]];
     }
 
+    #[DataProvider('unsupportedInsertionSlots')]
+    public function test_writes_reject_slots_that_the_editor_does_not_offer(string $slot): void
+    {
+        $data = json_decode(file_get_contents(__DIR__.'/../Contract/document-layout-v2.fixture.json'), true, flags: JSON_THROW_ON_ERROR);
+        $data['blocks'][0]['slots']['content'][0]['slots'][$slot] = [];
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('slot:');
+        PageBuilderDocument::fromArray($data);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unsupportedInsertionSlots(): iterable
+    {
+        yield 'inactive third column' => ['column3'];
+        yield 'invented empty slot' => ['invented'];
+        yield 'container content on columns' => ['content'];
+    }
+
     public function test_root_maps_are_rejected_without_silent_reindexing(): void
     {
         $data = self::document();

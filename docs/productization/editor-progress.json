@@ -439,7 +439,7 @@
       "id": "EP1-02",
       "phase": "EP1",
       "title": "위치별 삽입과 선택 경로",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "EP1-01"
       ],
@@ -448,7 +448,7 @@
         "INS-01",
         "POL-01"
       ],
-      "owner_task": null,
+      "owner_task": "ep1-placement-contract-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

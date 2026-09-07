@@ -10,6 +10,7 @@ import { pageBuilderPuckConfig } from './puckEditorConfig';
 import { CatalogGalleryThumbnail } from './CatalogGalleryThumbnail';
 import type { CatalogEditorComponents } from './catalogEditorTypes';
 import { insertGalleryItem } from './canvasItemCommands';
+import { assertEditorInsertion, editorDefaultInsertionTarget, editorInsertionTargets, editorPlacementReason, editorSubtreeSize } from './puckEditorSelection';
 import { idToUuid } from './puckBlockCodec';
 import type { PuckEditorData } from './puckEditorTypes';
 
@@ -25,10 +26,13 @@ function BlockGalleryThumbnail({ item }: { item: BlockGalleryItem }): React.Reac
   return <CatalogGalleryThumbnail type={item.type as keyof CatalogEditorComponents} />;
 }
 
-function editingCapabilities(item: BlockGalleryItem) {
-  const component = pageBuilderPuckConfig.components[item.type]
+function itemComponent(item: BlockGalleryItem) {
+  return pageBuilderPuckConfig.components[item.type]
     ?? Object.entries(externalEditorComponents()).find(([type]) => type === item.type)?.[1];
-  return libraryEditingCapabilities(item.type, component?.fields ?? {});
+}
+
+function editingCapabilities(item: BlockGalleryItem) {
+  return libraryEditingCapabilities(item.type, itemComponent(item)?.fields ?? {});
 }
 
 function EditingScope({ item }: { item: BlockGalleryItem }): React.ReactElement {
@@ -62,6 +66,28 @@ export function StableAddBlockControls({
   const items = useMemo(() => layoutEnabled ? [...catalogItems, LAYOUT_GALLERY_ITEM] : catalogItems, [catalogItems, layoutEnabled]);
   const [open, setOpen] = useState(false);
   const [insertionError, setInsertionError] = useState<string | null>(null);
+  const [targetChoice, setTargetChoice] = useState('');
+  const [showUnavailable, setShowUnavailable] = useState(false);
+  const insertionTargets = useMemo(() => {
+    if (!open) return [];
+    const targets = editorInsertionTargets(data);
+    try {
+      const preferred = editorDefaultInsertionTarget(data, selectedIndex === null ? null : { index: selectedIndex, zone: selectedZone });
+      return [preferred, ...targets.filter((entry) => entry.selector.zone !== preferred.selector.zone || entry.selector.index !== preferred.selector.index)];
+    } catch { return []; }
+  }, [data, open, selectedIndex, selectedZone]);
+  const targetKey = (target: typeof insertionTargets[number]) => `${target.selector.zone}:${target.selector.index}`;
+  const insertionTarget = targetChoice ? insertionTargets.find((target) => targetKey(target) === targetChoice) : insertionTargets[0];
+  const insertionOptions = useMemo(() => new Map(items.map((item) => {
+    const size = editorSubtreeSize(item.type, { ...itemComponent(item)?.defaultProps });
+    let reason: string | null = insertionTarget ? null : '선택한 위치가 바뀌었습니다. 다시 선택해 주세요.';
+    if (insertionTarget) {
+      try { assertEditorInsertion(data, insertionTarget.selector, item.type, size.nodes, size.depth, layoutEnabled); }
+      catch (error) { reason = editorPlacementReason(error); }
+    }
+    return [item.catalogId, { ...size, reason }];
+  })), [data, insertionTarget, items, layoutEnabled]);
+  useEffect(() => { if (!open) { setTargetChoice(''); setShowUnavailable(false); setInsertionError(null); } }, [open]);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [packId, setPackId] = useState('');
@@ -79,9 +105,10 @@ export function StableAddBlockControls({
   }), [items]);
   const packs = useMemo(() => Array.from(new Map(items.map((item) => [item.packId, item.packLabel])).entries()), [items]);
   const quickItems = useMemo(() => QUICK_ADD_COMPONENTS.map((component) => items.find((item) => item.kind === 'definition' && item.type === component)).filter((item): item is BlockGalleryItem => Boolean(item)), [items]);
+  const offeredItems = useMemo(() => showUnavailable ? items : items.filter((item) => !insertionOptions.get(item.catalogId)?.reason), [items, insertionOptions, showUnavailable]);
   const visibleItems = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('ko');
-    return items.filter((item) => {
+    return offeredItems.filter((item) => {
       if (favoritesOnly && !item.favorite) return false;
       if (category && item.category !== category) return false;
       if (packId && item.packId !== packId) return false;
@@ -90,12 +117,12 @@ export function StableAddBlockControls({
       if (!normalizedQuery) return true;
       return item.searchText.toLocaleLowerCase('ko').includes(normalizedQuery);
     });
-  }, [category, favoritesOnly, items, kind, packId, productionKind, query]);
+  }, [category, favoritesOnly, offeredItems, kind, packId, productionKind, query]);
   const renderedItems = visibleItems.slice(0, renderLimit);
 
   useEffect(() => {
     setRenderLimit(BLOCK_GALLERY_WINDOW_SIZE);
-  }, [category, favoritesOnly, kind, open, packId, productionKind, query]);
+  }, [category, favoritesOnly, kind, open, packId, productionKind, query, targetChoice, showUnavailable]);
 
   useEffect(() => {
     const target = loadMoreRef.current;
@@ -144,13 +171,15 @@ export function StableAddBlockControls({
   }, [open]);
 
   const insert = (item: BlockGalleryItem): void => {
-    if (disabled) return;
+    const availability = insertionOptions.get(item.catalogId);
+    if (disabled || !insertionTarget || availability?.reason) return;
     let actions: PuckAction[];
     try {
       actions = insertGalleryItem(data, selectedIndex === null ? null : { index: selectedIndex, zone: selectedZone }, item,
-        idToUuid(`${item.catalogId}:${Date.now()}:${Math.random()}`));
-    } catch {
-      setInsertionError('선택한 위치에는 이 블럭을 추가할 수 없습니다. 다른 구역을 선택해 주세요.');
+        idToUuid(`${item.catalogId}:${Date.now()}:${Math.random()}`),
+        { destination: insertionTarget.selector, nodes: availability?.nodes, depth: availability?.depth, structureEnabled: layoutEnabled });
+    } catch (error) {
+      setInsertionError(editorPlacementReason(error));
       return;
     }
     setInsertionError(null);
@@ -182,7 +211,16 @@ export function StableAddBlockControls({
               <div>
                 <p>블록 라이브러리</p>
                 <h2 id="g7pb-block-gallery-title">화면을 보고 블록을 선택하세요</h2>
-                <span>선택하면 현재 블록 바로 뒤에 추가됩니다.</span>
+                <span data-testid="page-builder-insertion-location">{insertionTarget ? `${insertionTarget.label} · ${insertionTarget.selector.index + 1}번째에 추가합니다.` : '삽입 위치를 다시 선택하세요.'}</span>
+                <div className="g7pb-context-panel__row">
+                  <label htmlFor="g7pb-insertion-target">추가할 위치</label>
+                  <select id="g7pb-insertion-target" className="g7pb-field-control" value={insertionTarget ? targetKey(insertionTarget) : ''}
+                    onChange={(event) => setTargetChoice(event.currentTarget.value)}>
+                    {!insertionTarget && <option value="">위치를 다시 선택하세요</option>}
+                    {insertionTargets.map((target) => <option key={targetKey(target)} value={targetKey(target)}>{target.label} · {target.selector.index + 1}번째</option>)}
+                  </select>
+                </div>
+                <div className="g7pb-context-panel__row"><button type="button" aria-pressed={showUnavailable} onClick={() => setShowUnavailable((value) => !value)}>삽입 불가 항목도 보기</button></div>
               </div>
               <button type="button" className="g7pb-block-gallery__close" aria-label="블록 갤러리 닫기"
                 onClick={() => setOpen(false)}><X size={20} aria-hidden="true" /></button>
@@ -199,7 +237,7 @@ export function StableAddBlockControls({
                     event.preventDefault(); setProductionKind(tabs[next][0]);
                     event.currentTarget.parentElement?.querySelectorAll('button')[next]?.focus();
                   }}
-                  onClick={() => setProductionKind(value)}>{label}<span>{value === 'all' ? items.length : items.filter((item) => item.productionKind === value).length}</span></button>
+                  onClick={() => setProductionKind(value)}>{label}<span>{value === 'all' ? offeredItems.length : offeredItems.filter((item) => item.productionKind === value).length}</span></button>
               ))}
             </div>
             <div className="g7pb-block-gallery__tools" aria-label="블록 찾기">
@@ -230,7 +268,7 @@ export function StableAddBlockControls({
             </div>
             {!query.trim() && !category && !packId && kind === 'all' && productionKind === 'all' && !favoritesOnly ? <section className="g7pb-block-gallery__quick" aria-labelledby="g7pb-quick-add-title">
               <div><small>QUICK ADD</small><h3 id="g7pb-quick-add-title">자주 쓰는 항목</h3></div>
-              <div>{quickItems.map((item) => <button key={item.catalogId} type="button" data-testid={`page-builder-quick-add-${String(item.type).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`} onClick={() => insert(item)}><Plus size={15} aria-hidden="true" />{item.title}</button>)}</div>
+              <div>{quickItems.filter((item) => !insertionOptions.get(item.catalogId)?.reason).map((item) => <button key={item.catalogId} type="button" data-testid={`page-builder-quick-add-${String(item.type).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`} onClick={() => insert(item)}><Plus size={15} aria-hidden="true" />{item.title}</button>)}</div>
             </section> : null}
             {productionKind === 'layout' && <p className="g7pb-block-gallery__empty">{layoutEnabled
               ? '구역을 추가한 뒤 구역 설정에서 열과 세로 묶음을 구성합니다.'
@@ -244,16 +282,18 @@ export function StableAddBlockControls({
                   data-preview-density={blockPreviewDensity(item.type)}>
                   <button type="button" className="g7pb-block-gallery__add"
                     ref={index === 0 ? firstItemRef : undefined}
-                    data-testid={item.testId} onClick={() => insert(item)}>
+                    data-testid={item.testId} disabled={disabled || Boolean(insertionOptions.get(item.catalogId)?.reason)}
+                    aria-describedby={insertionOptions.get(item.catalogId)?.reason ? `${item.testId}-unavailable` : undefined} onClick={() => insert(item)}>
                     <BlockGalleryThumbnail item={item} />
                     <span className="g7pb-block-gallery__copy">
                       <small>{libraryKindLabel(item.productionKind)} · {item.category} · {item.packLabel} · {item.kind === 'preset' ? '변형·예제' : '기본형'}</small>
                       <strong>{item.title}</strong>
                       <span>{item.description}</span>
                       <EditingSummary item={item} />
-                      <em>이 블록 추가 →</em>
+                      <em>{insertionOptions.get(item.catalogId)?.reason ? '이 위치에 추가할 수 없음' : '이 블록 추가 →'}</em>
                     </span>
                   </button>
+                  {insertionOptions.get(item.catalogId)?.reason && <p className="g7pb-library-scope" id={`${item.testId}-unavailable`} data-testid={`${item.testId}-unavailable`}>{insertionOptions.get(item.catalogId)?.reason}</p>}
                   <EditingScope item={item} />
                   {item.productionKind !== 'layout' && <button
                     type="button"
@@ -266,7 +306,7 @@ export function StableAddBlockControls({
                   </button>}
                 </article>
               ))}
-              {visibleItems.length === 0 && <p className="g7pb-block-gallery__empty">조건에 맞는 블록이 없습니다.</p>}
+              {visibleItems.length === 0 && <p className="g7pb-block-gallery__empty">이 위치와 조건에 맞는 항목이 없습니다. 위치를 바꾸거나 삽입 불가 항목도 확인하세요.</p>}
               {renderedItems.length < visibleItems.length && (
                 <button
                   ref={loadMoreRef}

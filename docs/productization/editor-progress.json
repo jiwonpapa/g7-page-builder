@@ -155,12 +155,12 @@
     {
       "path": "docs/productization/native-host-contract.md",
       "role": "current",
-      "required_text": "G7 코어 변경 승인 전 검토안"
+      "required_text": "g7.layout-editor/1"
     },
     {
       "path": "docs/audits/2026-09-07-native-editor-ne1.md",
       "role": "current",
-      "required_text": "NE1/NAT-01 완료 증거가 아니다"
+      "required_text": "NAT-01"
     }
   ],
   "acceptance": [
@@ -355,15 +355,37 @@
       "id": "NE1",
       "phase": "phase-1",
       "title": "공식 연동 계약과 원본 보존",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [],
       "acceptance_ids": [
         "NAT-01"
       ],
       "owner_task": "native-ne1-browser-fix-20260907",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "b39de138d563d384dd3c92fe701f76f88ff16e87",
+      "integrated_commit": "e075b8149ce9b73d7397a9eaa89ea0c867979bb4",
+      "evidence": [
+        {
+          "acceptance_id": "NAT-01",
+          "kind": "host-contract",
+          "commit": "9260d521ab3d69761a428b3d1c54df1297ecf6eb",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-native-editor-ne1.md"
+        },
+        {
+          "acceptance_id": "NAT-01",
+          "kind": "unit",
+          "commit": "b39de138d563d384dd3c92fe701f76f88ff16e87",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-native-editor-ne1.md"
+        },
+        {
+          "acceptance_id": "NAT-01",
+          "kind": "browser",
+          "commit": "e075b8149ce9b73d7397a9eaa89ea0c867979bb4",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-native-editor-ne1.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/native-editor/entry.ts",

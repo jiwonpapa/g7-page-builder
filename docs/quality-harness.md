@@ -20,7 +20,7 @@ Worktree에서는 선택된 정적·단위 검사를 수행하고, 실제 G7 연
 
 두 명령은 파일·원장·coordination 상태를 쓰거나 제품 시험·배포를 실행하지 않습니다. `python3 -B -m tools.g7pb.editor_progress status --json`은 구조화 결과, `status --markdown`은 기존 기반별 상태·소스·역사 근거와 새 작업의 완료 SHA·필수 증거 충족 수를 포함한 상태판 전문을 stdout으로 출력합니다. 상태판 초기 생성·갱신은 해당 파일을 소유한 task에서 출력 내용을 명시적으로 저장합니다. `status`는 원장을 검증하고 표시하며 상태판 일치는 `check`가 담당합니다. `in_progress`에는 담당 `owner_task` 기록이 필요합니다.
 
-원장 도입 전 검사기만 준비하는 bootstrap 제출에는 실제 원장 gate를 요구하지 않습니다. 원장이 존재하거나 원장·새 계획·상태판 경로가 변경되면 같은 Python planner가 `editor-progress`를 선택합니다. 원장을 삭제해도 변경 경로가 남으므로 검사가 실패합니다. 일반 Markdown skip이나 미분류 JSON의 전체검증 fallback으로 처리하지 않습니다. 이 검사는 작고 읽기 전용이며 매번 실제 참조 상태를 확인합니다.
+원장 도입 전 검사기만 준비하는 bootstrap 제출에는 실제 원장 gate를 요구하지 않습니다. 원장이 존재하거나 원장·새 계획·상태판·`docs/productization/editor-library-inventory.csv` 경로가 변경되면 같은 Python planner가 `editor-progress`를 선택합니다. 원장을 삭제해도 변경 경로가 남으므로 검사가 실패합니다. 이 CSV는 원장에 등록된 문서로 검사하며 런타임 계약으로 취급하지 않습니다. 다른 CSV 경로를 포괄 허용하거나 일반 Markdown skip·미분류 JSON의 전체검증 fallback으로 처리하지 않습니다. 이 검사는 작고 읽기 전용이며 매번 실제 참조 상태를 확인합니다.
 
 `EDITOR_PLAN_OK`는 문서와 진척 기록의 기계적 정합성입니다. 필수 증거 파일과 SHA 기록이 있다는 사실로 시험 결과의 진실성·현재 HEAD의 제품 기능 완성·전체 자연어 문서의 모순 부재를 보증하지 않습니다. `current` 문서의 로컬 링크를 검사하되 `historical`/`reference` 문서는 파일과 필수 표시문만 검사합니다. 과거 실행 당시의 로그 링크를 현재 완료 증거로 취급하거나 존재 여부 때문에 역사 문서를 고쳐 쓰지 않습니다. 별도로 선언한 완료 증거는 `docs/audits/` 또는 `docs/productization/` 아래 전용 실행 요약 `.md`/`.json` 파일이어야 하며 원장·상태판·계획·정책 자체는 제외합니다. 테스트 정의나 제품 소스만으로 완료 증거를 대신할 수 없습니다. 외부 URL 접속과 Markdown anchor 판정은 수행하지 않습니다. 실제 편집 기능의 완료는 해당 수용 시나리오와 제품 검증 기록으로 별도 입증합니다.
 

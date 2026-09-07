@@ -18,6 +18,7 @@ from .runner import SITE_PART_SPECS, SITE_PART_HELPERS
 from .editor_progress import LEDGER as EDITOR_PROGRESS_LEDGER, PLAN as EDITOR_PLAN, DASHBOARD as EDITOR_DASHBOARD, input_files as editor_progress_inputs
 
 
+EDITOR_LIBRARY_INVENTORY = "docs/productization/editor-library-inventory.csv"
 DESIGN_INPUTS = (
     "scripts/check-design-architecture.mjs", "config/design-architecture.json", "config/design-architecture-debt.json",
     "scripts/lib/designArchitecturePolicy.mjs", "scripts/lib/designArchitectureTypeScript.mjs",
@@ -355,7 +356,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     product_changed = any(product_path(p) for p in plan.paths)
     # Bootstrap the checker before the new records exist. Once introduced,
     # deletion of either the ledger or its new canonical documents fails closed.
-    if (root / EDITOR_PROGRESS_LEDGER).is_file() or any(path in {EDITOR_PROGRESS_LEDGER, EDITOR_PLAN, EDITOR_DASHBOARD} for path in plan.paths):
+    if (root / EDITOR_PROGRESS_LEDGER).is_file() or any(path in {EDITOR_PROGRESS_LEDGER, EDITOR_PLAN, EDITOR_DASHBOARD, EDITOR_LIBRARY_INVENTORY} for path in plan.paths):
         add("editor-progress", ["python3", "-B", "-m", "tools.g7pb.editor_progress", "check"],
             [*editor_progress_inputs(root), "tools/g7pb/editor_progress.py"],
             "Editor development record consistency; not product acceptance", reusable=False)
@@ -443,7 +444,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         elif path == "docs/productization/inventory.json":
             # This is an executable catalog contract consumed by TypeScript tests, not prose.
             ts_sources.append(path)
-        elif path == EDITOR_PROGRESS_LEDGER:
+        elif path in {EDITOR_PROGRESS_LEDGER, EDITOR_LIBRARY_INVENTORY}:
             pass  # Validated by the explicit read-only record gate above.
         elif path.startswith("resources/js/") and path.endswith((".ts", ".tsx")):
             ts_sources.append(path)

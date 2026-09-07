@@ -107,6 +107,25 @@ class PlannerTests(unittest.TestCase):
         self.write(evidence, "changed record")
         self.assertNotEqual(before, digest_gate(self.root, gate))
 
+    def test_editor_library_csv_selects_only_record_check_and_unknown_csv_is_unclassified(self):
+        from tools.g7pb.editor_progress import LEDGER
+        inventory = "docs/productization/editor-library-inventory.csv"
+        # A deleted inventory must still select the record check without a ledger.
+        missing = build_plan(self.root, [inventory])
+        self.assertFalse(missing.unresolved)
+        self.assertEqual([gate.name for gate in missing.gates], ["editor-progress"])
+        self.write(inventory, "id,title\nhero,Hero\n")
+        self.write(LEDGER, json.dumps({"documents": [{"path": inventory}], "baseline": [], "items": []}))
+        for phase in ("submission", "integration", "verification", "ci"):
+            with self.subTest(phase=phase):
+                plan = build_plan(self.root, [inventory], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertEqual([gate.name for gate in plan.gates], ["editor-progress"])
+                self.assertIn(inventory, plan.gates[0].inputs)
+                self.assertFalse(plan.gates[0].runtime or plan.gates[0].deferred)
+                self.assertFalse(any(plan.requirements.values()))
+        self.assertTrue(build_plan(self.root, ["docs/productization/unknown.csv"]).unresolved)
+
     def test_site_kit_fixture_selects_only_its_contract_and_installation_with_media_inputs(self):
         manifest = "resources/site-kits/company-starter.json"
         media = "resources/store/source/page-kits/company-launch/media/hero-team.webp"

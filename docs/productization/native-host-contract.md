@@ -48,3 +48,15 @@ G7 별도 worktree의 engine-v1.65.0 후보가 `registerPanel`과 `g7.layout-edi
 v1 텍스트 명령은 route 소유의 일반 평문만 대상으로 하며 원본 필드 전체를 교체하지 않는다. 삽입은 기존 nesting이 허용하는 basic 자식에 한정한다. source·iteration·responsive 조합 삽입은 현재 거부하며 NE3의 확장 대상이다. 기존 등록 메서드·onPatchNode는 호환을 유지하되 PB는 guarded execute만 사용한다. 기능 미제공 호스트에서는 새 패널을 로드하지 않고 기존 PB 문서·발행 경로를 유지한다.
 
 이는 stock G7에 이미 포함된 기능이라는 주장이 아니다. upstream 반영 전까지 호스트 후보와 PB 모듈을 함께 검증한 조합만 지원 증거를 갖는다.
+
+
+## NE2 내용·스타일·미디어 공개 계약
+
+NE2는 G7 `c9e59a55223dadb039d9e20fb0726623d25619b1` (engine-v1.66.0), PB 제품 통합 `45ae4152d8321726e14eeea6daa0f8ad35c7f9a9` 조합을 [NAT-02 감사](../audits/2026-09-07-native-editor-ne2.md)로 검증했다. protocol `g7.layout-editor/1`을 유지하며 기존 전역 등록 메서드를 추가하지 않는다.
+
+- `snapshot.fields`: 현재 spec에서 허용된 스칼라 내용과 유한 스타일 선택지의 id/라벨/종류/값/초기화 상태/출처. 바인딩과 불투명 컨테이너는 보존한다. 공통 스타일만 노출하며 기존 다크/반응형 값을 수정하지 않는다.
+- `execute({kind:'setControl',expected,control,value,reset?})`: 최신 문맥·spec 재검증 후 기존 recipe, patchLayout, history로 한 작업을 적용한다. 빈 alt와 override 초기화를 구분한다. 임의 필드 경로·클래스·CSS·HTML을 받지 않는다.
+- `host.media.list({expected,scope:'page'|'template',signal?})`, `upload({expected,file,signal?})`: 기존 인증 첨부 API를 사용하고 완료 후 문맥을 다시 확인한다. 업로드는 현재 layout에 귀속되지만 노드는 수정하지 않는다. 별도 사용자 선택으로만 src를 변경한다. 파일 삭제 API를 확장에 노출하지 않는다.
+- 표준 basic Img의 `core:image-ratio`/`core:image-fit`은 호스트가 소유한 유한 CSS 프리셋이다. template capability가 이미지 source 편집을 제공할 때만 노출하며 설치된 템플릿 파일을 수정하지 않는다.
+
+fields/media가 없는 이전 호스트는 NE1 문구 편집을 유지한다. 서버가 이미 수신한 업로드는 취소 이후 정상 첨부 목록에 남을 수 있지만, 취소된 응답/오래된 문맥으로 노드 또는 새 선택 상태를 수정해서는 안 된다. 위 추가 계약은 별도 로컬 후보이며 G7 main/upstream·운영 배포는 NE6 릴리스 범위에서 구분 확인한다.

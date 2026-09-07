@@ -161,6 +161,11 @@
       "path": "docs/audits/2026-09-07-native-editor-ne1.md",
       "role": "current",
       "required_text": "NAT-01"
+    },
+    {
+      "path": "docs/audits/2026-09-07-native-editor-ne2.md",
+      "role": "current",
+      "required_text": "NAT-02"
     }
   ],
   "acceptance": [
@@ -404,7 +409,7 @@
       "id": "NE2",
       "phase": "phase-2",
       "title": "내용·스타일·미디어 편집",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "NE1"
       ],
@@ -412,15 +417,40 @@
         "NAT-02"
       ],
       "owner_task": "native-ne2-content-r4-20260907",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "1e29e89a04c1e4a75472c9938126d571ea57f915",
+      "integrated_commit": "45ae4152d8321726e14eeea6daa0f8ad35c7f9a9",
+      "evidence": [
+        {
+          "acceptance_id": "NAT-02",
+          "kind": "unit",
+          "commit": "1e29e89a04c1e4a75472c9938126d571ea57f915",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-native-editor-ne2.md"
+        },
+        {
+          "acceptance_id": "NAT-02",
+          "kind": "browser",
+          "commit": "45ae4152d8321726e14eeea6daa0f8ad35c7f9a9",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-native-editor-ne2.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
+        "resources/js/native-editor/domain/fields.ts",
+        "resources/js/native-editor/ports/host.ts",
+        "resources/js/native-editor/application/mediaRequest.ts",
+        "resources/js/native-editor/ui/NativeTextPanel.tsx",
         "resources/js/native-editor/ui/content.tsx",
         "resources/js/native-editor/ui/media.tsx",
-        "resources/js/native-editor/application/edit.ts",
-        "resources/js/adapters/gnuboard7/media.ts"
+        "resources/js/native-editor/ui/Choice.tsx",
+        "resources/js/adapters/gnuboard7/editor.tsx",
+        "resources/js/adapters/gnuboard7/fields.ts",
+        "resources/js/adapters/gnuboard7/media.ts",
+        "resources/css/page-builder-native.css",
+        "tests/Unit/nativeFields.test.tsx",
+        "tests/Unit/nativeMedia.test.tsx",
+        "tests/E2E/nativeEditorContract.spec.ts"
       ],
       "completion": "지원된 문구·링크·이미지·alt·비율·스타일을 같은 노드 명령으로 편집하고 Undo·저장·재열기 결과를 비교. 바인딩 보존, 업로드 취소·실패·늦은 응답·문서 전환에서 오적용 0."
     },

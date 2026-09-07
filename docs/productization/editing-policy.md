@@ -36,7 +36,7 @@
 
 ## 공개 호스트 계약의 선행조건
 
-현재 확인된 `G7Core.layoutEditor` 메서드는 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady`다. 등록 이름 중복은 덮어쓰기이므로 모듈 namespace와 수명 관리가 필요하다. 아래 부족분은 API가 이미 제공된다는 뜻이 아니다.
+최초 조사 기준의 `G7Core.layoutEditor` 메서드는 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady`였다. NE1 별도 G7 후보에서 `registerPanel`과 불변 host/명령을 검증했고 NE2 후보에서 `snapshot.fields`, `setControl`, 선택형 media를 추가 검증했다. [공개 계약](native-host-contract.md)과 차수별 감사에 명시한 후보/템플릿 조합만 검증된 상태이며 stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. 등록 이름 중복은 덮어쓰기이므로 모듈 namespace와 수명 관리가 필요하다. 아래 표는 최초 조사 경계와 수용 조건이며 H01~H04의 NE1 증거와 H05~H08 후속 작업을 구분한다.
 
 | ID | 코드에서 확인한 경계 | 구현 전에 확보할 조건 |
 |---|---|---|
@@ -50,6 +50,8 @@
 | H08 동시 저장 | 확인 경로의 버전 비교와 PK save 사이 원자적 보장 미확인 | 실제 병렬 요청 시험; 재현 시 G7 저장 경계에서 처리. 409 분기 시험만으로 보장하지 않음 |
 
 호스트 API 이름을 추측해 추가하지 않는다. 문맥이 없으면 필요한 기능을 비활성화하며 내부 hook·DOM 상태 수집·전체 원본 우회 저장으로 해결하지 않는다. G7 측 수정은 별도 승인과 해당 저장소의 공개 계약·검증이 필요하다. H01~H04가 미해결이면 NE1 완료를 선언할 수 없다. 현행 G7 최소 버전 문자열을 새 모드 호환 증거로 전용하지 않는다.
+
+NE2의 내용/스타일 필드는 현재 병합 spec과 기존 recipe가 소유한다. 표준 basic Img의 비율·맞춤은 호스트 소유의 유한 프리셋이며 원본 class/style를 자유 코드 필드로 노출하지 않는다. 공통 스타일을 수정해도 기존 다크/반응형 override를 보존한다. 취소는 서버가 이미 받은 첨부 파일의 삭제를 보장하지 않으며, 늦은 응답을 노드에 적용하거나 오래된 선택 결과로 끼워 넣지 않는 것이 수용 기준이다.
 
 미디어의 `layout_name`은 nullable이므로 템플릿 전체 목록 조회는 가능하다. 문맥 없이 조회한 목록을 현재 페이지 소유 자산으로 표시하지 않는다. 네이티브 번들은 G7의 React/ReactDOM/jsx-runtime을 공유하고 독립 Puck 번들을 중첩하지 않는다.
 

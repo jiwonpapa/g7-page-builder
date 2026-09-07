@@ -20,6 +20,28 @@ class PlannerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
 
+    def test_shared_basic_element_fixture_selects_both_consumers_and_invalidates_them(self):
+        from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS
+        fixture, consumers = next(iter(CONTRACT_FIXTURE_CONSUMERS.items()))
+        self.write(fixture, '{}')
+        for consumer in consumers:
+            self.write(consumer, '<?php return 1;' if consumer.endswith('.php') else 'export const fixture = 1;')
+        for phase in ('submission', 'integration', 'verification', 'ci'):
+            plan = build_plan(self.root, [fixture], phase=phase)
+            self.assertFalse(plan.unresolved)
+            selected = [gate for gate in plan.gates if gate.name.startswith(('unit:', 'php:'))]
+            self.assertEqual(len(selected), 2)
+            self.assertFalse(any(gate.runtime for gate in selected))
+            for gate in selected:
+                self.assertIn(fixture, gate.inputs)
+                before = digest_gate(self.root, gate)
+                self.write(fixture, '{"changed": true}')
+                self.assertNotEqual(before, digest_gate(self.root, gate))
+                self.write(fixture, '{}')
+        (self.root / consumers[1]).unlink()
+        self.assertTrue(build_plan(self.root, [fixture], full=True).unresolved)
+        self.assertTrue(build_plan(self.root, ['tests/Contract/unknown.json'], full=True).unresolved)
+
     def test_snapshot_changes_require_the_owning_browser_and_fingerprint_the_image(self):
         spec = "tests/E2E/catalog.spec.ts"
         snapshot = spec + "-snapshots/catalog-desktop-linux.png"

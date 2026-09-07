@@ -290,7 +290,7 @@
   "baseline": [
     {
       "id": "BASE-01",
-      "title": "캔버스 직접 필드·미디어·링크·반복 편집",
+      "title": "계획 수립 당시 캔버스 직접 필드·미디어·링크·반복 편집",
       "state": "implemented",
       "source_paths": [
         "resources/js/editor/canvasEditingContract.ts",
@@ -303,7 +303,7 @@
     },
     {
       "id": "BASE-02",
-      "title": "Section/Columns/Stack과 leaf5 제한 중첩",
+      "title": "계획 수립 당시 Section/Columns/Stack과 leaf5 제한 중첩",
       "state": "implemented",
       "source_paths": [
         "schemas/layout-policy-v1.json",
@@ -317,7 +317,7 @@
     },
     {
       "id": "BASE-03",
-      "title": "제작 단위 분류·위치별 갤러리 후보",
+      "title": "계획 수립 당시 제작 단위 분류·위치별 갤러리 후보",
       "state": "partial",
       "source_paths": [
         "resources/js/editor/blockGalleryModel.ts",
@@ -330,7 +330,7 @@
     },
     {
       "id": "BASE-04",
-      "title": "복합 컴포넌트 내부 자식 슬롯",
+      "title": "계획 수립 당시 복합 컴포넌트 내부 자식 슬롯",
       "state": "missing",
       "source_paths": [
         "schemas/layout-policy-v1.json",
@@ -341,7 +341,7 @@
     },
     {
       "id": "BASE-05",
-      "title": "layout/appearance 반응형·PC 편집/기기별 미리보기",
+      "title": "계획 수립 당시 layout/appearance 반응형·PC 편집/기기별 미리보기",
       "state": "implemented",
       "source_paths": [
         "resources/js/documents/blockPresentation.ts",
@@ -354,7 +354,7 @@
     },
     {
       "id": "BASE-06",
-      "title": "Undo/저장/선택 기반과 빠른 연속 명령의 전체 보장",
+      "title": "계획 수립 당시 Undo/저장/선택 기반과 빠른 연속 명령의 전체 보장",
       "state": "partial",
       "source_paths": [
         "resources/js/editor/PuckEditorAdapter.tsx",
@@ -367,7 +367,7 @@
     },
     {
       "id": "BASE-07",
-      "title": "개인 Section·공통영역 편집과 새 슬롯 연결",
+      "title": "계획 수립 당시 개인 Section·공통영역 편집과 새 슬롯 연결",
       "state": "partial",
       "source_paths": [
         "resources/js/editor/SectionPatternControls.tsx",
@@ -380,7 +380,7 @@
     },
     {
       "id": "BASE-08",
-      "title": "일반 페이지 주소·G7 목록·실제 문의 기반",
+      "title": "계획 수립 당시 일반 페이지 주소·G7 목록·실제 문의 기반",
       "state": "implemented",
       "source_paths": [
         "src/Providers/PageBuilderServiceProvider.php",
@@ -632,7 +632,7 @@
       "id": "EP2-01",
       "phase": "EP2",
       "title": "아이콘·목록·배지 삽입",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "EP1-03"
       ],
@@ -645,9 +645,122 @@
         "MIG-01"
       ],
       "owner_task": "ep2-elements-integration-20260907",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+      "integrated_commit": "66ecdb2fbe3747997a12f23e8729765106b11d23",
+      "evidence": [
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "php",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "render",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "PUB-01",
+          "kind": "php",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "PUB-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "PUB-01",
+          "kind": "render",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "MIG-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "MIG-01",
+          "kind": "php",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "MIG-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/editor/basicElementCatalogData.ts",
@@ -660,7 +773,14 @@
         "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php",
         "src/Application/Compilation/HtmlDocument/BuiltInBlockCompilers.php",
         "tests/Unit/basicElementCatalog.test.tsx",
-        "tests/UnitPhp/BasicElementBlockCompilerTest.php"
+        "tests/UnitPhp/BasicElementBlockCompilerTest.php",
+        "resources/css/page-builder-basic-elements.css",
+        "resources/css/page-builder-editor-catalog.css",
+        "resources/css/page-builder-public.css",
+        "tests/Unit/basicElementContracts.test.ts",
+        "tests/UnitPhp/BasicElementNullableInputTest.php",
+        "tests/Contract/document-basic-elements-v2.fixture.json",
+        "tests/E2E/editorCatalogCode.spec.ts"
       ],
       "completion": "기본 요소8종의 진입점/필드/의미/출력을 제공한다. 목록 재사용 대 독립 타입과 역할 검증을 먼저 결정하고 필요한 타입/버전만 추가한다."
     },

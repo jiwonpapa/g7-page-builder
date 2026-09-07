@@ -15,7 +15,7 @@ class EditorProgressTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.write(POLICY, "# 정책\n[계획](editor-plan.md)\n")
-        self.write(PLAN, "# 계획\n[정책](editing-policy.md)\n")
+        self.write(PLAN, "# 계획\n[정책](editing-policy.md)\nEP1-01 CAT-01\n")
         self.write("src/Existing.php", "<?php // existing baseline\n")
         self.write("docs/audits/editor-evidence.md", "# 실제 실행 요약 fixture\n")
         self.data = {
@@ -28,7 +28,7 @@ class EditorProgressTests(unittest.TestCase):
             "phases": [{"id": "phase-1", "title": "삽입 UX"}],
             "baseline": [{"id": "BASE-01", "title": "기존 구현", "state": "partial",
                           "source_paths": ["src/Existing.php"], "historical_evidence": ["docs/audits/editor-evidence.md"]}],
-            "items": [{"id": "ED-01", "phase": "phase-1", "title": "분류 통일", "status": "planned",
+            "items": [{"id": "EP1-01", "phase": "phase-1", "title": "분류 통일", "status": "planned",
                        "depends_on": [], "acceptance_ids": ["CAT-01"], "owner_task": None,
                        "implementation_commit": None, "integrated_commit": None, "evidence": [],
                        "blocked_reason": None, "scope": ["resources/js/editor/new-file.ts"],
@@ -55,7 +55,7 @@ class EditorProgressTests(unittest.TestCase):
         data = validate(self.root)
         result = summary(data)
         self.assertEqual((result["counts"]["done"], result["total"], result["baseline_count"]), (0, 1, 1))
-        self.assertEqual(result["next"], ["ED-01"])
+        self.assertEqual(result["next"], ["EP1-01"])
         self.assertFalse(result["product_verified"])
         self.assertFalse(result["deployment_executed"])
         board = markdown(data)
@@ -146,7 +146,7 @@ class EditorProgressTests(unittest.TestCase):
 
     def test_missing_self_or_cyclic_dependencies_fail(self):
         original = copy.deepcopy(self.data)
-        for dependency in ("NOPE", "ED-01"):
+        for dependency in ("NOPE", "EP1-01"):
             self.data = copy.deepcopy(original)
             self.data["items"][0]["depends_on"] = [dependency]
             self.save()
@@ -154,8 +154,8 @@ class EditorProgressTests(unittest.TestCase):
                 validate(self.root)
         self.data = copy.deepcopy(original)
         second = copy.deepcopy(self.data["items"][0])
-        second.update(id="ED-02", depends_on=["ED-01"])
-        self.data["items"][0]["depends_on"] = ["ED-02"]
+        second.update(id="EP1-02", depends_on=["EP1-01"])
+        self.data["items"][0]["depends_on"] = ["EP1-02"]
         self.data["items"].append(second)
         self.save()
         with self.assertRaisesRegex(ValueError, "Dependency cycle"):
@@ -163,9 +163,10 @@ class EditorProgressTests(unittest.TestCase):
 
     def test_done_cannot_skip_dependencies_and_blocked_requires_reason(self):
         second = copy.deepcopy(self.data["items"][0])
-        second.update(id="ED-02", depends_on=["ED-01"])
+        second.update(id="EP1-02", depends_on=["EP1-01"])
         self.finish(second)
         self.data["items"].append(second)
+        self.write(PLAN, "# 계획\nEP1-01 EP1-02 CAT-01\n")
         self.save()
         with self.assertRaisesRegex(ValueError, "completed dependencies"):
             validate(self.root)
@@ -175,7 +176,30 @@ class EditorProgressTests(unittest.TestCase):
             validate(self.root)
         second["blocked_reason"] = "선행 구현 대기"
         self.save()
-        self.assertEqual(summary(validate(self.root))["next"], ["ED-01"])
+        self.assertEqual(summary(validate(self.root))["next"], ["EP1-01"])
+
+    def test_ledger_item_or_acceptance_removal_fails_even_with_regenerated_dashboard(self):
+        second = copy.deepcopy(self.data["items"][0])
+        second["id"] = "EP1-02"
+        self.data["items"].append(second)
+        self.data["acceptance"].append({"id": "CAT-02", "description": "위치에 맞는 삽입", "required_evidence": ["unit"]})
+        self.write(PLAN, "# 계획\nEP1-01 EP1-02 CAT-01 CAT-02\n")
+        self.save()
+        validate(self.root)
+        original = copy.deepcopy(self.data)
+        for field, label in (("items", "item"), ("acceptance", "acceptance")):
+            self.data = copy.deepcopy(original)
+            self.data[field].pop()
+            self.save()
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, f"Plan {label} IDs differ"):
+                validate(self.root)
+
+    def test_missing_plan_item_or_acceptance_id_fails(self):
+        original = (self.root / PLAN).read_text()
+        for token, label in (("EP1-01", "item"), ("CAT-01", "acceptance")):
+            self.write(PLAN, original.replace(token, "누락"))
+            with self.subTest(token=token), self.assertRaisesRegex(ValueError, f"Plan {label} IDs differ"):
+                validate(self.root)
 
     def test_document_markers_current_links_and_dashboard_are_checked(self):
         self.write(PLAN, "# 다른 계획\n")
@@ -184,7 +208,7 @@ class EditorProgressTests(unittest.TestCase):
         self.write(PLAN, "# 계획\n[없는 문서](missing.md)\n")
         with self.assertRaisesRegex(ValueError, "Missing or escaping document link"):
             validate(self.root)
-        self.write(PLAN, "# 계획\n[공식](https://example.org/docs)\n")
+        self.write(PLAN, "# 계획\n[공식](https://example.org/docs)\nEP1-01 CAT-01\n")
         self.write(DASHBOARD, markdown(self.data).replace("계획 작업 완료", "잘못된 상태판"))
         with self.assertRaisesRegex(ValueError, "Dashboard differs"):
             validate(self.root)
@@ -216,7 +240,7 @@ class EditorProgressTests(unittest.TestCase):
 
     def test_markdown_can_be_requested_before_dashboard_creation_but_check_fails(self):
         (self.root / DASHBOARD).unlink()
-        self.write(PLAN, "# 계획\n[상태판](editor-progress.md)\n")
+        self.write(PLAN, "# 계획\n[상태판](editor-progress.md)\nEP1-01 CAT-01\n")
         result = validate(self.root, check_dashboard=False)
         self.assertIn("# 편집기 개발 진척", markdown(result))
         with self.assertRaisesRegex(ValueError, "Missing file"):

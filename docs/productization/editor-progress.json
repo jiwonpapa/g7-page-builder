@@ -399,15 +399,30 @@
       "id": "EP1-01",
       "phase": "EP1",
       "title": "제작 분류와 편집 능력 표시",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [],
       "acceptance_ids": [
         "CAT-01"
       ],
       "owner_task": "ep1-library-window-20260907",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "86014a1335b5bcc2787473fd1047febc620366d5",
+      "integrated_commit": "b35bcf5ce6615dad5ad1479f1c2f47e689b3c1f1",
+      "evidence": [
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "unit",
+          "commit": "86014a1335b5bcc2787473fd1047febc620366d5",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-01.md"
+        },
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "browser",
+          "commit": "86014a1335b5bcc2787473fd1047febc620366d5",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-01.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/blocks/types.ts",

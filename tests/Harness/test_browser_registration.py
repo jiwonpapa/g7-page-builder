@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEXT, CONTROLS, PARITY, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_REPEATER, BASIC_ELEMENTS
 from tools.g7pb.model import Gate, Plan
 from tools.g7pb.runner import execute
 
@@ -64,18 +64,20 @@ class BrowserRegistrationTests(unittest.TestCase):
         self.assertEqual({title for _, title, _ in actual}, titles)
         self.assertEqual({project for _, _, project in actual}, {"desktop"})
 
-    def test_real_catalog_spec_registers_four_code_roles_only_on_desktop(self):
-        roles = (CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE)
+    def test_real_catalog_spec_registers_six_code_roles_only_on_desktop(self):
+        roles = (CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, CATALOG_REPEATER, BASIC_ELEMENTS)
         expected_titles = {
             "catalog frames preserve selection appearance and motion across families",
             "catalog fields and interactive previews retain edited values",
             "catalog conversion preserves nested documents through save and reentry",
             "catalog responsive overrides preserve inheritance and reset",
+            "repeater element selection follows rapid commands and Korean composition survives reentry",
+            "basic elements insert into Stack, edit Korean text, reopen and publish at three widths",
         }
         self.assertEqual({title for role in roles for title in role.titles}, expected_titles)
         actual = collect(ROOT, [CATALOG_FRAME.spec], dict(CATALOG_FRAME.environment(ROOT)))
         self.assertEqual(set(actual), {(Path(CATALOG_FRAME.spec).name, title, "desktop") for title in expected_titles})
-        self.assertEqual(len(actual), 4)
+        self.assertEqual(len(actual), 6)
         selected = CATALOG_FIELDS.arguments()[4:]
         focused = collect(ROOT, selected, dict(CATALOG_FIELDS.environment(ROOT)))
         self.assertEqual(focused, [(Path(CATALOG_FIELDS.spec).name, CATALOG_FIELDS.titles[0], "desktop")])

@@ -42,6 +42,23 @@ class PlannerTests(unittest.TestCase):
         self.assertTrue(build_plan(self.root, [fixture], full=True).unresolved)
         self.assertTrue(build_plan(self.root, ['tests/Contract/unknown.json'], full=True).unresolved)
 
+    def test_full_scope_runs_changed_specs_missing_from_the_declared_full_suite(self):
+        covered, extra = "tests/E2E/covered.spec.ts", "tests/E2E/extra.spec.ts"
+        self.write("package.json", json.dumps({"scripts": {"test:e2e:product": "playwright test " + covered + " && npm run test:e2e:site-shell"}}))
+        self.write("schemas/shared.json", '{}')
+        for spec in (covered, extra):
+            self.write(spec, "test('scenario', () => {});")
+        for phase in ('submission', 'integration', 'verification', 'ci'):
+            plan = build_plan(self.root, ["schemas/shared.json", covered, extra], full=True, phase=phase)
+            self.assertFalse(plan.unresolved)
+            self.assertIn('full-product', [gate.name for gate in plan.gates])
+            selected = [gate for gate in plan.gates if gate.name.startswith('browser:')]
+            self.assertEqual([gate.name for gate in selected], ['browser:' + extra])
+            self.assertEqual(selected[0].deferred, phase == 'submission')
+        self.write("package.json", json.dumps({"scripts": {"test:e2e:product": "playwright test " + covered + " --grep partial"}}))
+        plan = build_plan(self.root, ["schemas/shared.json", covered], full=True)
+        self.assertIn('browser:' + covered, [gate.name for gate in plan.gates])
+
     def test_snapshot_changes_require_the_owning_browser_and_fingerprint_the_image(self):
         spec = "tests/E2E/catalog.spec.ts"
         snapshot = spec + "-snapshots/catalog-desktop-linux.png"

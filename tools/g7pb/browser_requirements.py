@@ -116,9 +116,17 @@ CATALOG_CODEC = replace(CATALOG_FRAME, titles=(
 CATALOG_RESPONSIVE = replace(CATALOG_FRAME, titles=(
     "catalog responsive overrides preserve inheritance and reset",))
 
+CATALOG_REPEATER = replace(CATALOG_FRAME, titles=(
+    "repeater element selection follows rapid commands and Korean composition survives reentry",))
+BASIC_ELEMENTS = replace(CATALOG_FRAME, titles=(
+    "basic elements insert into Stack, edit Korean text, reopen and publish at three widths",))
+
 # Exact reviewed owners for K1-K5. Existing mixed modules retain all three roles
 # until their data/codec is extracted. No filename prefix invents a new exemption.
 CATALOG_CODE_SCOPES = {
+    **{"resources/js/editor/" + name: (BASIC_ELEMENTS,) for name in (
+        "basicElementCatalogData.ts", "basicElementCatalogCodec.ts", "basicElementCatalogBlocks.tsx",
+    )},
     **{"resources/js/editor/" + name: (CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC) for name in (
         "catalogBlocks.tsx", "foundationCatalogBlocks.tsx", "phase2CatalogBlocks.tsx",
         "phase3CatalogBlocks.tsx", "phase4CatalogBlocks.tsx", "productionCatalogBlocks.tsx",
@@ -171,6 +179,7 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/css/page-builder-basic-elements.css", "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"), (BASIC_ELEMENTS,)),
     (("resources/js/editor/G7BoardSourceField.tsx",), (SUPPORT_COMPOSITION,)),
     (("resources/site-kits/professional-services.json", "resources/js/manager/ManagerSiteKitDialog.tsx", "resources/js/manager/useSiteKitInstallation.ts",
       "resources/js/manager/siteKitInstallationStorage.ts", "resources/js/api/siteKit.ts",

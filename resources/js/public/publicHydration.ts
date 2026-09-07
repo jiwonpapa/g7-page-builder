@@ -10,7 +10,7 @@ const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 const ICON_MARKUP_PATTERN = /^(?:<(path|circle|rect)(?: (?:d|fill|cx|cy|r|x|y|width|height|rx|ry)="[-.,0-9A-Za-z ]+")+><\/\1>)+$/;
 
-function hydrateCatalogIcons(root: Document): void {
+export function hydrateCatalogIcons(root: Document): void {
   root.querySelectorAll<HTMLElement>('[data-g7pb-runtime-icon]').forEach((marker) => {
     const markup = marker.dataset.g7pbIconMarkup ?? '';
     if (!ICON_MARKUP_PATTERN.test(markup)) return;

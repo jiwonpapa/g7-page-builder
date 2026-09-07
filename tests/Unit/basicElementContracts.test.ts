@@ -65,6 +65,19 @@ describe('EP2-01 canonical basic element contract', () => {
     expect(valid(value)).toBe(false);
   });
 
+  it('accepts server-normalized absent optional values but requires meaningful icon names', () => {
+    const value = document(structuredClone(fixture));
+    const [icon, , badge] = leaves(value);
+    icon.props.decorative = true;
+    icon.props.label = null;
+    badge.props.icon = null;
+    expect(valid(value), JSON.stringify(valid.errors)).toBe(true);
+    icon.props.decorative = false;
+    expect(valid(value)).toBe(false);
+    icon.props.label = '서비스 안내';
+    expect(valid(value), JSON.stringify(valid.errors)).toBe(true);
+  });
+
   it('preserves invalid editor values for validation and accepts the exact Unicode limits', () => {
     const value = document(structuredClone(fixture));
     const [icon, list, badge] = leaves(value);

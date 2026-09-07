@@ -1401,7 +1401,7 @@
           "type": "boolean"
         },
         "label": {
-          "type": "string",
+          "type": ["string", "null"],
           "maxLength": 120
         }
       },
@@ -1502,6 +1502,7 @@
         "icon": {
           "enum": [
             "",
+            null,
             "bolt",
             "check",
             "code",

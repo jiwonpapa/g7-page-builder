@@ -9,7 +9,7 @@ import type { AppearanceEditorProps } from './catalogAppearance';
 import { DEFAULT_BADGE, DEFAULT_ICON, DEFAULT_LIST, isBasicIcon, type BasicElementEditorComponents, type BadgeEditorProps, type IconEditorProps, type ListEditorProps } from './basicElementCatalogData';
 
 function appearanceClass(props: AppearanceEditorProps): string {
-  return `g7pb-preview-surface--${props.surface} g7pb-preview-spacing--${props.spacing} g7pb-text-scale--${props.textScale ?? 'balanced'} g7pb-text-align--${props.textAlign ?? 'left'}`;
+  return `g7pb-preview-basic-element g7pb-preview-surface--${props.surface} g7pb-preview-spacing--${props.spacing} g7pb-text-scale--${props.textScale ?? 'balanced'} g7pb-text-align--${props.textAlign ?? 'left'}`;
 }
 
 export function IconPreview(props: IconEditorProps & { id: string }): React.ReactElement {

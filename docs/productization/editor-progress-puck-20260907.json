@@ -1,0 +1,1023 @@
+{
+  "schema_version": "g7pb-editor-progress/v1",
+  "plan_id": "editor-maturity-20260907",
+  "baseline_sha": "58ed8a33829fdcb1327d730c6ab6da953f656949",
+  "updated_at": "2026-09-07",
+  "policy_file": "docs/productization/editing-policy.md",
+  "plan_file": "docs/productization/editor-plan.md",
+  "dashboard_file": "docs/productization/editor-progress.md",
+  "documents": [
+    {
+      "path": "AGENTS.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/development-constitution.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/productization/README.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/canvas-editing-contract.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/productization/content-policy.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/editor-engine-decision.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/site-kit-contract.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/kits/professional-services.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/free-beta.md",
+      "role": "current",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/productization/roadmap.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/productization/requirements.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/block-catalog-benchmark.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/block-library-v2-benchmark.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/audits/2026-09-05-site-phase-1.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/audits/2026-09-06-site-phase-2.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/audits/2026-09-06-site-phase-3.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/audits/2026-09-06-site-phase-4.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/audits/2026-09-07-site-phase-5.md",
+      "role": "historical",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/productization/editing-policy.md",
+      "role": "current",
+      "required_text": "editor-policy:editor-maturity-20260907"
+    },
+    {
+      "path": "docs/productization/editor-plan.md",
+      "role": "current",
+      "required_text": "editor-plan:editor-maturity-20260907"
+    },
+    {
+      "path": "docs/productization/editor-policy-sources.md",
+      "role": "reference",
+      "required_text": "editor-reference:editor-maturity-20260907"
+    },
+    {
+      "path": "docs/productization/editor-library-inventory.csv",
+      "role": "reference",
+      "required_text": "block_id"
+    },
+    {
+      "path": "docs/audits/2026-09-07-editor-document-alignment.md",
+      "role": "reference",
+      "required_text": "editor-plan.md"
+    },
+    {
+      "path": "docs/productization/editor-progress.md",
+      "role": "current",
+      "required_text": "# 편집기 개발 진척"
+    },
+    {
+      "path": "docs/quality-harness.md",
+      "role": "current",
+      "required_text": "make editor-plan-check"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "CAT-01",
+      "description": "제작 분류와 실제 삽입 결과, 5개 편집 능력 선언(필드/스타일/반복/슬롯/고정 동작)과 현재 지원 표시 일치",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "CAT-02",
+      "description": "선택 위치의 허용 후보와 거부 이유",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "INS-01",
+      "description": "드래그·클릭·이동 명령의 부모/순서/선택 일치",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "EDT-01",
+      "description": "한글 직접 입력과 미디어/링크 문맥 도구",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "EDT-02",
+      "description": "반복 항목과 내부 요소 선택/명령 구분",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "CMP-01",
+      "description": "카드 슬롯·한도·링크·접근성",
+      "required_evidence": [
+        "unit",
+        "php",
+        "browser"
+      ]
+    },
+    {
+      "id": "CMP-02",
+      "description": "Hero 변형/슬롯 이행과 내용 보존",
+      "required_evidence": [
+        "unit",
+        "php",
+        "browser"
+      ]
+    },
+    {
+      "id": "CMP-03",
+      "description": "탭/FAQ의 본문 편집과 실제 동작",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "POL-01",
+      "description": "모든 삽입/저장 경로에서 같은 구조 규칙",
+      "required_evidence": [
+        "unit",
+        "php",
+        "browser"
+      ]
+    },
+    {
+      "id": "UND-01",
+      "description": "빠른 연속 구조 명령 Undo/Redo",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "SAV-01",
+      "description": "저장 중 편집과 재열기의 원본 보존",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "RES-01",
+      "description": "지원되는 반응형 상속/초기화와 출력",
+      "required_evidence": [
+        "unit",
+        "browser",
+        "render"
+      ]
+    },
+    {
+      "id": "PUB-01",
+      "description": "편집·미리보기·발행의 의미/구조/스타일 일치",
+      "required_evidence": [
+        "php",
+        "browser",
+        "render"
+      ]
+    },
+    {
+      "id": "G7-01",
+      "description": "일반 열의 게시판/문의 실제 연동·실패·권한",
+      "required_evidence": [
+        "php",
+        "browser"
+      ]
+    },
+    {
+      "id": "COM-01",
+      "description": "공통영역 공유 영향과 미저장 본문 복귀",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
+    },
+    {
+      "id": "MIG-01",
+      "description": "구형/미지원 문서와 마지막 정상 발행본 보존",
+      "required_evidence": [
+        "unit",
+        "php",
+        "browser"
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "id": "EP1",
+      "title": "삽입·선택·설정"
+    },
+    {
+      "id": "EP2",
+      "title": "기본 요소·대표 내부 구성"
+    },
+    {
+      "id": "EP3",
+      "title": "검증된 컴포넌트 조합"
+    },
+    {
+      "id": "EP4",
+      "title": "공통영역·재사용·통합 검증"
+    }
+  ],
+  "baseline": [
+    {
+      "id": "BASE-01",
+      "title": "계획 수립 당시 캔버스 직접 필드·미디어·링크·반복 편집",
+      "state": "implemented",
+      "source_paths": [
+        "resources/js/editor/canvasEditingContract.ts",
+        "resources/js/editor/CanvasContextControls.tsx",
+        "resources/js/editor/richTextEditing.tsx"
+      ],
+      "historical_evidence": [
+        "docs/audits/2026-09-03-structure-phase-3.md"
+      ]
+    },
+    {
+      "id": "BASE-02",
+      "title": "계획 수립 당시 Section/Columns/Stack과 leaf5 제한 중첩",
+      "state": "implemented",
+      "source_paths": [
+        "schemas/layout-policy-v1.json",
+        "resources/js/documents/layoutPolicy.ts",
+        "resources/js/editor/layoutCatalogBlocks.tsx"
+      ],
+      "historical_evidence": [
+        "docs/productization/phase-4-structure.md",
+        "docs/audits/2026-09-02-structure-phase-2.md"
+      ]
+    },
+    {
+      "id": "BASE-03",
+      "title": "계획 수립 당시 제작 단위 분류·위치별 갤러리 후보",
+      "state": "partial",
+      "source_paths": [
+        "resources/js/editor/blockGalleryModel.ts",
+        "resources/js/editor/BlockGalleryControls.tsx",
+        "resources/js/editor/puckEditorConfig.tsx"
+      ],
+      "historical_evidence": [
+        "docs/block-library-v2-benchmark.md"
+      ]
+    },
+    {
+      "id": "BASE-04",
+      "title": "계획 수립 당시 복합 컴포넌트 내부 자식 슬롯",
+      "state": "missing",
+      "source_paths": [
+        "schemas/layout-policy-v1.json",
+        "resources/js/documents/layoutPolicy.ts",
+        "resources/js/editor/canvasEditingContract.ts"
+      ],
+      "historical_evidence": []
+    },
+    {
+      "id": "BASE-05",
+      "title": "계획 수립 당시 layout/appearance 반응형·PC 편집/기기별 미리보기",
+      "state": "implemented",
+      "source_paths": [
+        "resources/js/documents/blockPresentation.ts",
+        "resources/js/editor/editorViewportPolicy.ts",
+        "resources/js/editor/responsiveBlockStyle.tsx"
+      ],
+      "historical_evidence": [
+        "docs/productization/phase-4-responsive.md"
+      ]
+    },
+    {
+      "id": "BASE-06",
+      "title": "계획 수립 당시 Undo/저장/선택 기반과 빠른 연속 명령의 전체 보장",
+      "state": "partial",
+      "source_paths": [
+        "resources/js/editor/PuckEditorAdapter.tsx",
+        "tests/E2E/editorStructureTheme.spec.ts"
+      ],
+      "historical_evidence": [
+        "docs/productization/phase-4-editing-save.md",
+        "docs/audits/2026-09-02-structure-phase-2.md"
+      ]
+    },
+    {
+      "id": "BASE-07",
+      "title": "계획 수립 당시 개인 Section·공통영역 편집과 새 슬롯 연결",
+      "state": "partial",
+      "source_paths": [
+        "resources/js/editor/SectionPatternControls.tsx",
+        "resources/js/editor/FullSiteCanvas.tsx",
+        "src/Domain/Site/SitePartDocument.php"
+      ],
+      "historical_evidence": [
+        "docs/productization/phase-5-patterns.md"
+      ]
+    },
+    {
+      "id": "BASE-08",
+      "title": "계획 수립 당시 일반 페이지 주소·G7 목록·실제 문의 기반",
+      "state": "implemented",
+      "source_paths": [
+        "src/Providers/PageBuilderServiceProvider.php",
+        "resources/js/public/publicInquiryForms.ts",
+        "tests/E2E/siteKitInquiry.spec.ts"
+      ],
+      "historical_evidence": [
+        "docs/audits/2026-09-06-site-phase-2.md",
+        "docs/audits/2026-09-06-site-phase-4.md",
+        "docs/audits/2026-09-07-site-phase-5.md"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "EP1-01",
+      "phase": "EP1",
+      "title": "제작 분류와 편집 능력 표시",
+      "status": "done",
+      "depends_on": [],
+      "acceptance_ids": [
+        "CAT-01"
+      ],
+      "owner_task": "ep1-library-window-20260907",
+      "implementation_commit": "86014a1335b5bcc2787473fd1047febc620366d5",
+      "integrated_commit": "b35bcf5ce6615dad5ad1479f1c2f47e689b3c1f1",
+      "evidence": [
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "unit",
+          "commit": "86014a1335b5bcc2787473fd1047febc620366d5",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-01.md"
+        },
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "browser",
+          "commit": "86014a1335b5bcc2787473fd1047febc620366d5",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-01.md"
+        }
+      ],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/blocks/types.ts",
+        "resources/js/blocks/builtinCatalog.ts",
+        "resources/js/editor/blockGalleryModel.ts",
+        "resources/js/editor/BlockGalleryControls.tsx",
+        "resources/js/editor/puckEditorConfig.tsx",
+        "tests/Unit/puckEditorConfig.test.tsx",
+        "tests/E2E/blockCatalogQuality.spec.ts"
+      ],
+      "completion": "같은 제작 분류를 양쪽 삽입 UI에서 사용하고 preset/용도/팩을 분리한다. 기존 ID·외부 팩·HeroSplit 호환을 보존한다. 모든 노출 항목의 5개 편집 능력 선언과 현재 지원/목표 표기를 검증한다."
+    },
+    {
+      "id": "EP1-02",
+      "phase": "EP1",
+      "title": "위치별 삽입과 선택 경로",
+      "status": "done",
+      "depends_on": [
+        "EP1-01"
+      ],
+      "acceptance_ids": [
+        "CAT-02",
+        "INS-01",
+        "POL-01"
+      ],
+      "owner_task": "ep1-placement-contract-20260907",
+      "implementation_commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+      "integrated_commit": "6dc6f26bff171a1aacd1d414a97ec0956d636e82",
+      "evidence": [
+        {
+          "acceptance_id": "CAT-02",
+          "kind": "unit",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "CAT-02",
+          "kind": "browser",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "INS-01",
+          "kind": "unit",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "INS-01",
+          "kind": "browser",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "unit",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "php",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "browser",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        }
+      ],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/puckEditorSelection.ts",
+        "resources/js/editor/BlockGalleryControls.tsx",
+        "resources/js/editor/canvasItemCommands.ts",
+        "resources/js/documents/layoutPolicy.ts",
+        "tests/Unit/puckEditorSelection.test.ts",
+        "tests/E2E/editorStructureTheme.spec.ts"
+      ],
+      "completion": "허용 후보·거부 이유·선택 경로·부모 복귀를 같은 문서 명령에 연결하고 드래그 없는 삽입/이동 대안을 제공한다."
+    },
+    {
+      "id": "EP1-03",
+      "phase": "EP1",
+      "title": "직접 편집·문맥 도구·설정 패널 연결",
+      "status": "done",
+      "depends_on": [
+        "EP1-02"
+      ],
+      "acceptance_ids": [
+        "EDT-01",
+        "EDT-02",
+        "UND-01",
+        "SAV-01",
+        "RES-01"
+      ],
+      "owner_task": "ep1-native-input-20260907",
+      "implementation_commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+      "integrated_commit": "8bb90f516c429c71a49af9b72bfcea556b02403e",
+      "evidence": [
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "EDT-02",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "EDT-02",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "UND-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "UND-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "SAV-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "SAV-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "render",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        }
+      ],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/canvasContextState.ts",
+        "resources/js/editor/useCanvasEditingUi.ts",
+        "resources/js/editor/richTextSelection.tsx",
+        "resources/js/editor/CanvasContextControls.tsx",
+        "resources/js/editor/CanvasPickerSession.tsx",
+        "tests/Unit/canvasContextState.test.ts",
+        "tests/Unit/canvasEditingUi.test.tsx",
+        "tests/Unit/canvasPickerSession.test.tsx",
+        "tests/Unit/puckEditorTools.test.tsx",
+        "tests/Unit/responsiveBlockStyle.test.ts",
+        "tests/E2E/editorInteractionQuality.spec.ts",
+        "tests/E2E/editorCatalogCode.spec.ts",
+        "tests/E2E/editorDocumentBoundary.spec.ts"
+      ],
+      "completion": "대상/포커스/입력/스타일/반복 항목을 한 편집 상태로 연결하고 원본·Undo·반응형 지원 범위를 보존한다."
+    },
+    {
+      "id": "EP2-01",
+      "phase": "EP2",
+      "title": "아이콘·목록·배지 삽입",
+      "status": "done",
+      "depends_on": [
+        "EP1-03"
+      ],
+      "acceptance_ids": [
+        "CAT-01",
+        "EDT-01",
+        "POL-01",
+        "RES-01",
+        "PUB-01",
+        "MIG-01"
+      ],
+      "owner_task": "ep2-elements-integration-20260907",
+      "implementation_commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+      "integrated_commit": "66ecdb2fbe3747997a12f23e8729765106b11d23",
+      "evidence": [
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "CAT-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "php",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "render",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "PUB-01",
+          "kind": "php",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "PUB-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "PUB-01",
+          "kind": "render",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "MIG-01",
+          "kind": "unit",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "MIG-01",
+          "kind": "php",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        },
+        {
+          "acceptance_id": "MIG-01",
+          "kind": "browser",
+          "commit": "b12b7150f9c1d0d321fd2e845e2ea106440914a2",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep2-01.md"
+        }
+      ],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/basicElementCatalogData.ts",
+        "resources/js/editor/basicElementCatalogCodec.ts",
+        "resources/js/editor/basicElementCatalogBlocks.tsx",
+        "resources/block-packs/builtin-core/manifest.json",
+        "resources/js/editor/canvasEditingContract.ts",
+        "schemas/layout-policy-v1.json",
+        "schemas/page-builder-document.schema.json",
+        "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php",
+        "src/Application/Compilation/HtmlDocument/BuiltInBlockCompilers.php",
+        "tests/Unit/basicElementCatalog.test.tsx",
+        "tests/UnitPhp/BasicElementBlockCompilerTest.php",
+        "resources/css/page-builder-basic-elements.css",
+        "resources/css/page-builder-editor-catalog.css",
+        "resources/css/page-builder-public.css",
+        "tests/Unit/basicElementContracts.test.ts",
+        "tests/UnitPhp/BasicElementNullableInputTest.php",
+        "tests/Contract/document-basic-elements-v2.fixture.json",
+        "tests/E2E/editorCatalogCode.spec.ts"
+      ],
+      "completion": "기본 요소8종의 진입점/필드/의미/출력을 제공한다. 목록 재사용 대 독립 타입과 역할 검증을 먼저 결정하고 필요한 타입/버전만 추가한다."
+    },
+    {
+      "id": "EP2-02",
+      "phase": "EP2",
+      "title": "단일 카드의 제한된 내부 구성",
+      "status": "planned",
+      "depends_on": [
+        "EP2-01"
+      ],
+      "acceptance_ids": [
+        "CMP-01",
+        "EDT-02",
+        "INS-01",
+        "POL-01",
+        "UND-01",
+        "SAV-01",
+        "RES-01",
+        "PUB-01",
+        "MIG-01"
+      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "schemas/layout-policy-v1.json",
+        "schemas/page-builder-document.schema.json",
+        "resources/js/documents/layoutPolicy.ts",
+        "resources/js/editor/canvasItemCommands.ts",
+        "resources/js/editor/puckEditorConfig.tsx",
+        "src/Application/Compilation/HtmlDocument/BuiltInBlockCompilers.php",
+        "tests/Unit/documentSchema.test.ts",
+        "tests/UnitPhp/HtmlDocumentCompilerTest.php",
+        "tests/E2E/editorStructureTheme.spec.ts"
+      ],
+      "completion": "media/body/actions의 한도·재정렬·잘못된 링크 금지·빈 상태를 UI부터 공개 출력까지 검증하며 subtree 전체 깊이4를 지킨다."
+    },
+    {
+      "id": "EP2-03",
+      "phase": "EP2",
+      "title": "대표 Hero·ImageText 슬롯과 호환 이행",
+      "status": "planned",
+      "depends_on": [
+        "EP2-02"
+      ],
+      "acceptance_ids": [
+        "CMP-02",
+        "EDT-02",
+        "POL-01",
+        "UND-01",
+        "SAV-01",
+        "RES-01",
+        "PUB-01",
+        "MIG-01"
+      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "resources/block-packs/builtin-core/manifest.json",
+        "resources/js/editor/canvasEditingContract.ts",
+        "resources/js/editor/puckEditorConfig.tsx",
+        "schemas/page-builder-document.schema.json",
+        "src/Application/Compilation/HtmlDocument/BuiltInBlockCompilers.php",
+        "tests/UnitPhp/HtmlDocumentCompilerTest.php",
+        "tests/E2E/pageBuilderLifecycle.spec.ts"
+      ],
+      "completion": "핵심 필드와 extra/actions를 구별하고 구형 props/새 slots의 단일 원본·명시적 이행·취소·복원·변형 변경을 연결한다. 대상은 content.hero-centered-01의 현행 layout9개와 media.image-text-01의 기존 허용 변형이다. HeroSplit/HeroSlider 신규 슬롯은 포함하지 않는다."
+    },
+    {
+      "id": "EP3-01",
+      "phase": "EP3",
+      "title": "탭·FAQ 본문 구성",
+      "status": "planned",
+      "depends_on": [
+        "EP2-03"
+      ],
+      "acceptance_ids": [
+        "CMP-03",
+        "EDT-02",
+        "POL-01",
+        "UND-01",
+        "SAV-01",
+        "RES-01",
+        "PUB-01",
+        "MIG-01"
+      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/canvasEditingContract.ts",
+        "resources/js/editor/puckEditorConfig.tsx",
+        "schemas/layout-policy-v1.json",
+        "schemas/page-builder-document.schema.json",
+        "src/Application/Compilation/HtmlDocument/BuiltInBlockCompilers.php",
+        "tests/E2E/editorStructureTheme.spec.ts"
+      ],
+      "completion": "기본 요소·검증된 카드/ImageText만 탭/FAQ 본문에 넣는다. ARIA·ID·키보드·포커스·개폐 엔진과 편집 선택을 구별한다."
+    },
+    {
+      "id": "EP3-02",
+      "phase": "EP3",
+      "title": "일반 열의 G7 목록·문의 폼",
+      "status": "planned",
+      "depends_on": [
+        "EP2-03"
+      ],
+      "acceptance_ids": [
+        "G7-01",
+        "POL-01",
+        "SAV-01",
+        "RES-01",
+        "PUB-01"
+      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "schemas/layout-policy-v1.json",
+        "resources/js/documents/layoutPolicy.ts",
+        "resources/js/editor/puckEditorConfig.tsx",
+        "resources/js/public/publicInquiryForms.ts",
+        "tests/E2E/siteKitInquiry.spec.ts",
+        "tests/E2E/publicRuntimeLifecycle.spec.ts",
+        "tests/UnitPhp/HtmlDocumentCompilerTest.php"
+      ],
+      "completion": "안내 옆 게시판/문의 폼을 실제 UI에서 만들고 공개 API/접수/실패/권한/부재를 검증한다. 탭/FAQ/슬라이더 내부의 G7·폼은 열지 않는다."
+    },
+    {
+      "id": "EP4-01",
+      "phase": "EP4",
+      "title": "공통영역 편집 문맥 마감",
+      "status": "planned",
+      "depends_on": [
+        "EP3-01",
+        "EP3-02"
+      ],
+      "acceptance_ids": [
+        "COM-01",
+        "SAV-01",
+        "RES-01",
+        "PUB-01"
+      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/FullSiteCanvas.tsx",
+        "resources/js/editor/SitePartWorkspace.tsx",
+        "resources/js/editor/SitePartEditor.tsx",
+        "resources/js/editor/SitePartSetEditor.tsx",
+        "tests/E2E/sitePartLifecycle.spec.ts"
+      ],
+      "completion": "기존 Header/Footer 공유 수정과 현재 본문 수정의 영향·발행 상태를 구별하고 미저장 본문을 보존한 채 복귀한다."
+    },
+    {
+      "id": "EP4-02",
+      "phase": "EP4",
+      "title": "새 구성을 내 패턴으로 재사용",
+      "status": "planned",
+      "depends_on": [
+        "EP3-01",
+        "EP3-02"
+      ],
+      "acceptance_ids": [
+        "CAT-02",
+        "POL-01",
+        "UND-01",
+        "SAV-01",
+        "PUB-01",
+        "MIG-01"
+      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/SectionPatternControls.tsx",
+        "src/Application/Patterns/SectionPatternService.php",
+        "tests/UnitPhp/SectionPatternServiceTest.php",
+        "tests/E2E/editorStructureTheme.spec.ts"
+      ],
+      "completion": "새 슬롯을 포함한 Section을 저장하고 독립 삽입한다. 모든 instance UUID를 새로 생성하고 자산/버전/선택 위치는 보존한다. 공유 master 엔진은 추가하지 않는다."
+    },
+    {
+      "id": "EP4-03",
+      "phase": "EP4",
+      "title": "통합 사용자 흐름 검증",
+      "status": "planned",
+      "depends_on": [
+        "EP4-01",
+        "EP4-02"
+      ],
+      "acceptance_ids": [
+        "CAT-01",
+        "CAT-02",
+        "INS-01",
+        "EDT-01",
+        "EDT-02",
+        "CMP-01",
+        "CMP-02",
+        "CMP-03",
+        "POL-01",
+        "UND-01",
+        "SAV-01",
+        "RES-01",
+        "PUB-01",
+        "G7-01",
+        "COM-01",
+        "MIG-01"
+      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "tests/E2E/pageBuilderLifecycle.spec.ts",
+        "tests/E2E/editorStructureTheme.spec.ts",
+        "tests/E2E/sitePartLifecycle.spec.ts",
+        "tests/E2E/siteKitInquiry.spec.ts",
+        "tests/UnitPhp/HtmlDocumentCompilerTest.php"
+      ],
+      "completion": "새 편집 범위 전체의16개 수용 기준과 관련 회귀를 UI/저장/미리보기/공개 결과로 확인한다. 모든 제품 전수검사·외부배포 성공으로 확대하지 않는다. 유효한 동일 입력 성공은 재사용하고 변경 입력과 누락된 조합만 새로 실행한다."
+    }
+  ]
+}

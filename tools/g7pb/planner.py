@@ -16,7 +16,7 @@ from .type_import_changes import browser_sources
 from .browser_requirements import BROWSER_ENVIRONMENT, scenarios_for
 from .environment import build_inputs, sync_plan
 from .runner import SITE_PART_SPECS, SITE_PART_HELPERS
-from .editor_progress import LEDGER as EDITOR_PROGRESS_LEDGER, PLAN as EDITOR_PLAN, DASHBOARD as EDITOR_DASHBOARD, input_files as editor_progress_inputs
+from .editor_progress import LEDGER as EDITOR_PROGRESS_LEDGER, PLAN as EDITOR_PLAN, DASHBOARD as EDITOR_DASHBOARD, input_files as editor_progress_inputs, archive_files as editor_archive_files
 
 
 EDITOR_LIBRARY_INVENTORY = "docs/productization/editor-library-inventory.csv"
@@ -523,6 +523,10 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("version", ["node", "scripts/check-version-policy.mjs"], ["module.json", "package.json", "package-lock.json", "CHANGELOG.md", "scripts/check-version-policy.mjs"], "Release metadata consistency", ("node",))
             if scripts_changed:
                 python_test("tests/Harness/test_commands.py", path)
+        elif path in editor_archive_files(root):
+            # Only archives declared by the progress ledger; its gate verifies
+            # hashes/identity/counts. Arbitrary documentation JSON stays unknown.
+            continue
         elif path.endswith(".md"):
             continue
         elif path == STANDALONE_VIEWER and not full and standalone_viewer_class_added(root, base):

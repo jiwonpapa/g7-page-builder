@@ -1,6 +1,7 @@
 """Read-only editor development records, not product acceptance or deployment."""
 import argparse
 from datetime import date
+from hashlib import sha256
 import json
 from pathlib import Path, PurePosixPath
 import posixpath
@@ -106,6 +107,20 @@ def indexed(entries, name):
     return result
 
 
+def archive_files(root):
+    """Archive classification only; the normal progress gate validates contents."""
+    try:
+        root = Path(root)
+        data = json.loads((root / LEDGER).read_text())
+        names = [entry[key] for entry in data.get("history", []) for key in ("ledger_file", "plan_file")]
+        for name in names:
+            target = repo_file(root, name, exists=False)
+            require(name.startswith("docs/productization/") and target.suffix in {".json", ".md"}, "Invalid archive path")
+        return tuple(sorted(set(names)))
+    except (ValueError, OSError, TypeError, KeyError, AttributeError):
+        return ()
+
+
 def input_files(root):
     """Declared local inputs only; malformed records remain the checker's failure."""
     found = set(MANAGED_FILES)
@@ -117,6 +132,7 @@ def input_files(root):
         candidates = [entry["path"] for entry in data["documents"]]
         candidates += [name for entry in data["baseline"] for key in ("source_paths", "historical_evidence") for name in entry[key]]
         candidates += [entry["path"] for item in data["items"] for entry in item["evidence"]]
+        candidates += list(archive_files(root))
         for name in candidates:
             repo_file(Path(root), name, exists=False)
             found.add(name)
@@ -125,12 +141,50 @@ def input_files(root):
     return tuple(sorted(found))
 
 
+def validate_history(root, data, items):
+    """Preserve prior records without crediting them to the active plan."""
+    seen_ids, seen_paths = {data["plan_id"]}, set(MANAGED_FILES)
+    for entry in records(data["history"], "history"):
+        keys(entry, "plan_id ledger_file ledger_sha256 plan_file plan_sha256 completed total", "history")
+        plan_id = identifier(entry["plan_id"], "historical plan_id")
+        require(plan_id not in seen_ids, "Duplicate or active historical plan_id")
+        seen_ids.add(plan_id)
+        for kind, suffix in (("ledger", ".json"), ("plan", ".md")):
+            name = entry[f"{kind}_file"]
+            source = repo_file(root, name)
+            require(name.startswith("docs/productization/") and source.suffix == suffix
+                    and name not in seen_paths, "Historical records require separate unique archive files")
+            seen_paths.add(name)
+            digest = entry[f"{kind}_sha256"]
+            require(isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest)
+                    and sha256(source.read_bytes()).hexdigest() == digest, f"Historical {kind} digest mismatch")
+        archived = json.loads((root / entry["ledger_file"]).read_text())
+        require(archived.get("plan_id") == plan_id, "Historical plan_id differs from archive")
+        old_items = indexed(archived.get("items"), "historical items")
+        require(not set(old_items).intersection(items), "Historical item IDs cannot become current work")
+        require(type(entry["total"]) is int and type(entry["completed"]) is int
+                and entry["total"] == len(old_items)
+                and entry["completed"] == sum(item.get("status") == "done" for item in old_items.values()),
+                "Historical counts differ from archive")
+        marker = f"editor-plan:{plan_id}"
+        require(marker in (root / entry["plan_file"]).read_text(), "Historical plan marker missing")
+
+
 def validate(root, *, check_dashboard=True):
     root = Path(root).resolve()
     data = json.loads(repo_file(root, LEDGER).read_text())
-    keys(data, "schema_version plan_id baseline_sha updated_at policy_file plan_file dashboard_file documents acceptance phases baseline items", "ledger")
-    require(data["schema_version"] == "g7pb-editor-progress/v1", "Unsupported schema_version")
-    require(data["plan_id"] == "editor-maturity-20260907", "Unexpected plan_id")
+    require(isinstance(data, dict), "ledger: object required")
+    version = data.get("schema_version")
+    require(version in {"g7pb-editor-progress/v1", "g7pb-editor-progress/v2"}, "Unsupported schema_version")
+    keys(data, "schema_version plan_id baseline_sha updated_at policy_file plan_file dashboard_file documents acceptance phases baseline items"
+         + (" history" if version.endswith("/v2") else ""), "ledger")
+    identifier(data["plan_id"], "plan_id")
+    if version.endswith("/v1"):
+        require(data["plan_id"] == "editor-maturity-20260907", "Unexpected plan_id")
+    else:
+        for name, marker in ((POLICY, "editor-policy"), (PLAN, "editor-plan")):
+            require(f"<!-- {marker}:{data['plan_id']} -->" in repo_file(root, name).read_text(),
+                    f"Active {marker} marker differs from ledger")
     sha(data["baseline_sha"], "baseline_sha")
     require(isinstance(data["updated_at"], str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", data["updated_at"]), "updated_at: ISO date required")
     date.fromisoformat(data["updated_at"])
@@ -175,6 +229,8 @@ def validate(root, *, check_dashboard=True):
             repo_file(root, name)
 
     items = indexed(data["items"], "items")
+    if version.endswith("/v2"):
+        validate_history(root, data, items)
     for item in items.values():
         keys(item, "id phase title status depends_on acceptance_ids owner_task implementation_commit integrated_commit evidence blocked_reason scope completion", "item")
         text(item["title"], "item title")
@@ -227,11 +283,18 @@ def validate(root, *, check_dashboard=True):
     for item_id in items:
         visit(item_id)
     plan_text = (root / PLAN).read_text()
-    for label, pattern, expected in (
+    patterns = (
         ("item", r"\bEP\d+-\d+\b", set(items)),
         ("acceptance", r"\b(?:CAT|INS|EDT|CMP|POL|UND|SAV|RES|PUB|G7|COM|MIG)-\d+\b", set(acceptance)),
-    ):
-        declared = set(re.findall(pattern, plan_text))
+    ) if version.endswith("/v1") else (
+        ("item", r"<!-- editor-item:([A-Za-z0-9._-]+) -->", set(items)),
+        ("acceptance", r"<!-- editor-acceptance:([A-Za-z0-9._-]+) -->", set(acceptance)),
+    )
+    for label, pattern, expected in patterns:
+        matches = re.findall(pattern, plan_text)
+        declared = set(matches)
+        if version.endswith("/v2"):
+            require(len(matches) == len(declared), f"Duplicate plan {label} marker")
         require(declared == expected,
                 f"Plan {label} IDs differ from ledger: only plan={sorted(declared - expected)}, only ledger={sorted(expected - declared)}")
     if check_dashboard:
@@ -248,6 +311,7 @@ def summary(data):
         "total": len(items), "baseline_count": len(data["baseline"]), "baseline": data["baseline"],
         "next": [item["id"] for item in items if item["status"] in {"planned", "in_progress"} and set(item["depends_on"]).issubset(done)],
         "items": items, "notice": NOTICE, "limits": LIMIT,
+        "history": data.get("history", []),
         "product_verified": False, "deployment_executed": False,
     }
 
@@ -263,6 +327,13 @@ def markdown(data):
     def link(name, label=None):
         destination = posixpath.relpath(name, PurePosixPath(DASHBOARD).parent.as_posix())
         return f"[{escape(label or name)}](<{destination}>)"
+    if state["history"]:
+        insertion = lines.index("## 기존 구현 기반")
+        archived = ["## 보존한 이전 계획", "", "아래 완료 이력은 당시 기록이며 현재 계획의 완료 수에 합산하지 않습니다.", ""]
+        for entry in state["history"]:
+            archived.append(f"- `{entry['plan_id']}`: **{entry['completed']}/{entry['total']}** · "
+                            + link(entry["ledger_file"], "보존 원장") + " · " + link(entry["plan_file"], "보존 계획"))
+        lines[insertion:insertion] = archived + [""]
     for entry in data["baseline"]:
         cells = (escape(entry["id"] + " · " + entry["title"]), BASELINE_LABELS[entry["state"]],
                  " · ".join(link(name) for name in entry["source_paths"]) or "없음",

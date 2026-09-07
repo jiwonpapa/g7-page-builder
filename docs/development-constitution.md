@@ -1,13 +1,13 @@
 # 개발 헌법
 
-상태: 2026-09-02 설계·검증 기준. 이 문서는 구현 완료 보고서가 아니다. 사용자 지시가 최우선이며, 현재 동작과 목표 요구를 혼동하지 않는다.
+상태: 2026-09-07 네이티브 확장 경계를 반영한 설계·검증 기준. 이 문서는 구현 완료 보고서가 아니다. 사용자 지시가 최우선이며, 현재 동작과 목표 요구를 혼동하지 않는다.
 
 2026-09-07 현행 기능 범위는 [편집 정책](productization/editing-policy.md), 작업 순서와 합격 조건은 [편집 기능 개발 계획](productization/editor-plan.md), 실제 상태는 [진척 원장](productization/editor-progress.json)과 [표시판](productization/editor-progress.md)으로 연결한다. 과거 차수의 완료 기록이나 카탈로그 수량을 새 편집 기능의 완료로 옮기지 않는다.
 
 ## 1. 제품과 기술의 소유권
 
-- 원본은 자체 `PageBuilderDocument`다. Puck 상태, 생성 HTML, G7 JSON 출력은 원본을 대체하지 않는다.
-- G7 Layout Editor의 기술 스택·중첩 편집·설정·JSON 활용·편집창·상태 관리 방법을 참조한다. G7 편집기 코드·내부 runtime·문서/저장 엔진에 의존하지 않는다. 기존 G7 호스트 연결은 공개 API를 사용하는 명시적 어댑터 경계에 둔다.
+- 원본의 소유권을 편집 모드로 구분한다. 기존 독립 PB는 `PageBuilderDocument`, 신규 네이티브 확장은 G7이 소유한 원본 JSON이다. Puck 상태·생성 HTML·PB 생성 JSON은 원본을 대체하지 않는다. 같은 페이지의 이중 원본·자동 양방향 변환을 만들지 않는다.
+- G7 Layout Editor의 공개 호스트 계약을 네이티브 모드의 어댑터에서 사용한다. 소스 조사는 근거이며 내부 hook/runtime/registry import 허가가 아니다. 선택·이력·저장의 소유자는 G7이며 이를 Puck·PB 저장 엔진으로 복제하지 않는다. 기존 독립 PB의 호환 경계는 유지한다.
 - 기존 완성 블록의 내부 구조 편집과 중첩 삽입·이동·삭제는 목표 요구다. 편집 정책이 선언한 필드·반복 항목·허용 슬롯을 개방하고 접근성·데이터·인증 등의 고정 동작은 보존한다. 현 구현의 제한을 영구 제품 정책으로 바꾸거나, 모든 DOM/CSS의 자유 편집으로 확대하거나, 문서/테스트 작성만으로 완료 처리하지 않는다.
 - 기능 요구, 문서 계약, 화면 흐름, 구현, 검증 결과를 연결한다. 요구 변경에는 이유·데이터 호환 영향·미완료 항목을 적는다.
 
@@ -26,6 +26,12 @@
 `PHP-BOUNDARY`: Domain→Domain, Contracts→Contracts/Domain, Application→Application/Contracts/Domain 방향만 허용한다. 이 계층에서 Laravel/G7/Sirsoft와 Infrastructure/Providers를 참조하지 않는다. `use`뿐 아니라 완전수식 이름·group use도 PHP lexer로 검사하며 주석/문자열을 import로 오인하지 않는다.
 
 `G7-INTERNAL`: G7 private runtime과 LayoutEditorChrome 직접 참조는 금지한다. 기술 조사에 사용한 샘플은 제품 실행 경로로 가져오지 않는다.
+
+`NATIVE-BOUNDARY`: 신규 `resources/js/native-editor/`의 도메인·포트·사용 사례·UI는 선언된 의존 방향을 지킨다. 조립 entry와 `resources/js/adapters/gnuboard7/`만 연결 책임을 가진다. `TS-BOUNDARY`의 가장 구체적인 경로 규칙으로 Puck·기존 PB 문서/저장 API·미선언 패키지 import를 거부한다. `nativeEditor` 설정이나 보호 계층을 삭제·확대해서 검사를 통과시키지 않는다.
+
+- G7 호스트 접근은 adapter에서 확인된 네 개 공개 editor 메서드를 직접 참조한다. host 전체 객체의 alias·유출, 계산된 전역 멤버, adapter 밖 직접 HTTP/스토리지 접근을 AST로 차단한다. 새 공개 메서드는 실제 G7 소스·버전·계약 근거와 규칙/회귀 검사를 함께 변경해야 한다.
+- 정적 검사는 선언된 소스와 직접 표현식 경계다. 동적으로 외부에서 전달된 객체의 실제 권한·소유권까지 증명하지 않는다. 호스트 입력은 `unknown`으로 받고 문서·템플릿·노드·revision·readonly 문맥을 실행 시 검증한다. 공식 문맥이 없으면 해당 기능을 막으며 내부 hook으로 대체하지 않는다.
+- 알 수 없는 G7 필드, 표현식·번역·반복·출처·actions·responsive를 보존한다. UI에 보이는 값으로 원본 바인딩을 평문화하지 않는다. 복제는 ID뿐 아니라 참조 관계를 함께 처리하고 한 명령의 문서·선택·Undo 결과를 검증한다.
 
 자동 검사 범위 밖의 책임 집중도까지 통과했다고 주장하지 않는다. API를 파일 하나로 옮겼어도 UI가 내부 구조를 알아야 한다면 분리가 끝난 것이 아니다.
 
@@ -55,6 +61,7 @@
 - `CSS-COLOR`: 새 component CSS의 색 관련 속성에 hex/rgb/hsl 등 색 리터럴과 named color를 복제하지 않는다. 정확히 지정된 token source의 custom property 정의는 허용한다. 기존 리터럴은 selector·at-rule·속성·값의 지문으로 제한한다. 이 정적 규칙만으로 모든 CSS 색 표현·접근성을 검증한 것은 아니다.
 - `CSS-IMPORTANT`: 새 `!important`는 자동 허용하지 않는다. 외부 DOM 호환처럼 필요한 경우 정확 선언과 이유·해소조건을 검토 가능한 예외로 둔다. selector 반복으로 우선순위를 높이는 `CSS-SPECIFICITY`도 같은 방식으로 관리한다.
 - 스타일 계층은 기본값, 컴포넌트, 명시적 사용자 설정, 제한된 vendor 보정으로 구분한다. 보정 규칙을 파일 끝에 계속 추가해 우선순위 경쟁을 키우지 않는다.
+- 네이티브 페이지는 지원 템플릿의 스타일·토큰·폭·renderer/spec를 유지한다. PB 토큰으로 일괄 치환하거나 모든 테마에 고정 폭을 강제하지 않는다. 편집 확장의 CSS는 모듈 scope·공통 컨트롤을 사용하며 호스트 전역 selector를 덮지 않는다. 짧은 소수 옵션은 라디오/분할 버튼, 긴·다수 옵션은 Select를 사용한다.
 - 재사용성은 동일 문자열의 개수로 판정하지 않는다. 다른 화면에서 같은 컴포넌트를 쓰고 테마 변경이 함께 반영되는지 확인한다.
 
 ## 6. 크기·부채·예외

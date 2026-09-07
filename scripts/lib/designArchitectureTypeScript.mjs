@@ -27,12 +27,55 @@ function unwrapType(node) {
   return ts.isParenthesizedTypeNode(node) ? unwrapType(node.type) : node;
 }
 
+function accessPath(node) {
+  if (ts.isIdentifier(node)) return [node.text];
+  if (ts.isPropertyAccessExpression(node)) return [...accessPath(node.expression), node.name.text];
+  if (ts.isElementAccessExpression(node)) return [...accessPath(node.expression),
+    ts.isStringLiteralLike(node.argumentExpression) ? node.argumentExpression.text : '*'];
+  if (ts.isParenthesizedExpression(node) || ts.isNonNullExpression(node)
+    || ts.isAsExpression(node) || ts.isTypeAssertionExpression(node) || ts.isSatisfiesExpression(node)) return accessPath(node.expression);
+  return [];
+}
+
+function inspectNativeAccess(node, path, policy, report) {
+  const native = policy.nativeEditor;
+  const inAdapter = path.startsWith(native.adapter);
+  const inNative = path.startsWith(native.root) || inAdapter;
+  if (!ts.isIdentifier(node) && !ts.isPropertyAccessExpression(node) && !ts.isElementAccessExpression(node)
+    && !ts.isParenthesizedExpression(node) && !ts.isNonNullExpression(node) && !ts.isAsExpression(node)
+    && !ts.isTypeAssertionExpression(node) && !ts.isSatisfiesExpression(node)) return;
+  // Inspect the full chain once. Do not mistake a property name for a global reference.
+  const parent = node.parent;
+  if ((ts.isPropertyAccessExpression(parent) || ts.isElementAccessExpression(parent))
+      && parent.expression === node
+    || (ts.isParenthesizedExpression(parent) || ts.isNonNullExpression(parent)
+      || ts.isAsExpression(parent) || ts.isTypeAssertionExpression(parent) || ts.isSatisfiesExpression(parent)) && parent.expression === node
+    || parent.name === node && !ts.isShorthandPropertyAssignment(parent)) return;
+  const parts = accessPath(node);
+  const globalRoot = ['window', 'globalThis'].includes(parts[0]);
+  if (globalRoot) parts.shift();
+  if (inNative && globalRoot && (!parts.length || parts.includes('*'))) {
+    report('NATIVE-BOUNDARY', node, 'Native editor globals require explicit members; global object aliases are forbidden');
+  }
+  if (parts[0] === 'G7Core' && (inNative || parts[1] === 'layoutEditor')) {
+    if (!inAdapter) report('NATIVE-BOUNDARY', node, 'G7 editor host access belongs in the native G7 adapter');
+    else if (parts.length !== 3 || parts[1] !== 'layoutEditor' || !native.methods.includes(parts[2])) {
+      report('NATIVE-BOUNDARY', node, 'Use a declared public editor method directly; do not alias or expose the host object');
+    }
+  }
+  if (inNative && !inAdapter
+    && ['fetch', 'XMLHttpRequest', 'WebSocket', 'localStorage', 'sessionStorage', 'indexedDB'].includes(parts[0])) {
+    report('NATIVE-BOUNDARY', node, 'Native editor I/O must use an injected port implemented by the adapter');
+  }
+}
+
 export function inspectTypeScript(root, path, source, policy) {
   const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true,
     path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const results = [];
   let structuralNodes = 0;
-  const layer = policy.typescriptLayers.find((candidate) => path.startsWith(candidate.from));
+  const layer = policy.typescriptLayers.filter((candidate) => path.startsWith(candidate.from))
+    .sort((a, b) => b.from.length - a.from.length)[0];
   const report = (rule, node, detail, identity = detail) => results.push(finding(rule, path,
     file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1, detail, identity));
   if (file.parseDiagnostics.length) {
@@ -42,6 +85,7 @@ export function inspectTypeScript(root, path, source, policy) {
   }
   const visit = (node) => {
     structuralNodes++;
+    inspectNativeAccess(node, path, policy, report);
     const imported = importedName(node);
     if (imported) {
       if (!ts.isStringLiteralLike(imported)) {

@@ -212,3 +212,16 @@ Playwright 프로젝트는 desktop 1440, tablet 768, mobile 390을 사용하고 
 - Header Site Part 반응형 검증은 Puck 태블릿·모바일 viewport에서 간격·정렬·메뉴 방식 재정의와 초기화를 실제 조작하고, 하단 시트를 열어 편집 iframe·발행 화면의 바닥 정렬·전체 폭·backdrop·Escape focus 복귀까지 확인합니다. 모바일 폭에서 메뉴를 정적으로 펼쳐 보이는 것만으로 통과시키지 않습니다.
 - `quality-g7`은 G7 7.0.8 고정 checkout의 autoload로 Adapter PHPStan, SQLite 통합 test, PHP coverage 하한선을 실행합니다.
 - TLS·관리자 인증·실제 module route를 사용하는 브라우저 동작은 선택된 범위에서 Local 통합 필수 gate입니다. 명시적 전체 RC에는 `dev-product-e2e` 전체 범위가 포함됩니다. scoped 브라우저의 결과·HTML 보고서·실패 재시도 기록은 gate별 고유 `output/playwright/gates/` 경로에 보존합니다.
+
+## 네이티브 편집 확장 규칙과 검증 범위
+
+2026-09-07부터 [개발 헌법](development-constitution.md)과 [네이티브 계획](productization/editor-plan.md)을 함께 적용한다. 기존 PB 제품 시험을 새 G7 원본 편집의 성공 증거로 전용하지 않는다.
+
+- 현재 강제하는 정적 검사: `TS-BOUNDARY`의 native domain/ports/application/ui/조립 entry/adapter 의존 방향, `NATIVE-BOUNDARY`의 직접 I/O·호스트 객체 유출·adapter 밖 host 접근·확인되지 않은 editor 메서드 사용. 타입 단언·private import·PHP 계층·CSS token·기존 부채 제한도 유지한다.
+- `nativeEditor.methods`는 실제 확인한 네 개 공개 메서드만 허용한다. 호스트 API를 추가하려면 해당 G7 소스·버전·서명 근거와 정책·회귀 검사를 함께 고친다. 설정을 지우거나 일반 native 경로가 구체 계층을 덮게 하여 경계를 해제하지 않는다.
+- 이 정적 검사는 직접 표현식과 선언된 import를 검사한다. 외부에서 주입된 객체의 권한·문맥·실제 등록 성공을 보증하지 않는다. NE 차수에서 별도로 `unknown` 입력 검증, 출처·알 수 없는 필드 보존, Undo/Redo·저장·재열기, 늦은 응답·readonly·문서 전환을 시험한다.
+- 단순 규칙/문서 작업은 관련 하네스 회귀와 전체 제품 정적 구조 검사로 마감한다. 제품 코드가 바뀌지 않으면 전체 build/coverage/E2E/배포로 자동 확대하지 않는다. 실제 제품 변경 차수는 해당 browser spec을 runtime lease 아래 실행한다.
+- 진척 v2는 활성 plan/policy marker와 명시적 item/acceptance marker를 검사한다. 이전 v1 계획·원장은 별도 archive 파일로 보존하고 SHA-256·계획 ID·완료 수·현행 ID 중복을 검사한다. archive는 성공 시험 재실행이 아니며 새 진척에 합산하지 않는다.
+- 검사 입력에 archive도 포함한다. 실패한 검사와 바뀐 입력의 downstream만 재실행한다. 해시·표시판 수정으로 미구현을 완료 처리하거나 별도 완료율 원장을 만들지 않는다.
+
+관련 회귀: `tests/Harness/design-architecture.test.mjs`, `tests/Harness/test_editor_progress.py`. 조회는 `make editor-status`, 정합성은 `make editor-plan-check`다. 규칙 통과와 편집기 동작·상용 수준·배포 성공은 별도 판정이다.

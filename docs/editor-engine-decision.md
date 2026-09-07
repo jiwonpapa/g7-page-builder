@@ -1,10 +1,18 @@
 # Editor engine decision
 
-상태: **Puck 채택 결정 유지**. 최초 결정일: 2026-08-19. 아래 후보 비교의 버전과 평가는 도입 당시 기록이며 현재 경쟁 제품의 전수 비교가 아닙니다.
+상태: **기존 독립 PB의 Puck 유지, 신규 네이티브 모드의 G7 공개 호스트 확장 채택**. 최초 결정일: 2026-08-19. 아래 후보 비교의 버전과 평가는 도입 당시 기록이며 현재 경쟁 제품의 전수 비교가 아닙니다.
 
 2026-09-07 역할 정리: 현행 제공 범위는 [편집 정책](productization/editing-policy.md), 진행 순서·증거는 [개발 계획](productization/editor-plan.md)과 [진척 표시판](productization/editor-progress.md)을 따릅니다. 엔진 API의 존재, 제품에 연결된 기능, 실제 브라우저 검증을 서로 구분합니다.
 
-## 결정
+## 신규 네이티브 모드
+
+G7 일반 페이지는 G7 원본 JSON과 기존 편집 엔진에서 고도화합니다. 확장은 공개 `G7Core.layoutEditor` 등록 API·editor-spec와 지원 템플릿 renderer를 어댑터로 연결하며 G7의 선택·중첩·Undo·미리보기·저장을 재구현하지 않습니다. 실제 공개 계약의 부족분은 [편집 정책](productization/editing-policy.md)의 H01~H08 선행조건으로 관리합니다. API를 만들어 가정하거나 private 등록 지점을 호출하지 않습니다.
+
+신규 확장 entry는 호스트 React/ReactDOM/jsx-runtime을 공유합니다. 독립 Puck 번들은 이 호스트에 삽입하지 않습니다. 기존 PB 문서·발행본은 유지하며 native 원본과 자동 변환하지 않습니다. 이 결정은 구현·전체 테마 호환·배포 완료 선언이 아닙니다.
+
+이 문서는 [개발 헌법](development-constitution.md)을 따릅니다. 아래 결정·후보 비교·상세 캔버스 계약은 **기존 PB 모드**에만 적용합니다.
+
+## 기존 독립 PB 결정
 
 독립 Page Builder 편집기는 MIT 라이선스의 `@puckeditor/core`를 사용합니다. 최초 도입 버전은 `0.23.0`으로 정확히 고정합니다. G7 Layout Editor와 Tiptap 단독 구현은 사용하지 않습니다.
 

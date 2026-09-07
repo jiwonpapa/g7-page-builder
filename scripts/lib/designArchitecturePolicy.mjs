@@ -56,8 +56,8 @@ export function readPolicy(root) {
   if (['resources/js/documents/', 'resources/js/api/', 'resources/js/public/'].some((path) => !policy.typescriptLayers.some((layer) => layer.from === path))) throw new Error('A protected TypeScript layer is missing');
   const native = policy.nativeEditor;
   if (native?.root !== 'resources/js/native-editor/' || native.adapter !== 'resources/js/adapters/gnuboard7/'
-    || !Array.isArray(native.methods) || native.methods.length !== 4
-    || ['registerWidget', 'registerNodeEditor', 'registerCanvasOverlay', 'onReady'].some((method) => !native.methods.includes(method))) {
+    || !Array.isArray(native.methods) || native.methods.length !== 5
+    || ['registerWidget', 'registerNodeEditor', 'registerCanvasOverlay', 'onReady', 'registerPanel'].some((method) => !native.methods.includes(method))) {
     throw new Error('Native editor boundary requires the audited public host methods');
   }
   for (const [path, allowed, packages] of [

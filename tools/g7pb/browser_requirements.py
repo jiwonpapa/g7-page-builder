@@ -43,6 +43,8 @@ class BrowserScenario:
         return tuple({**dict(BROWSER_ENVIRONMENT), "G7PB_PRESET_IDS": ",".join(selected)}.items())
 
 
+NATIVE = BrowserScenario("tests/E2E/nativeEditorContract.spec.ts")
+
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(
     "manages, publishes, restores, republishes, and unpublishes a page-builder document",))
 NESTED = replace(PAGE, titles=(
@@ -244,6 +246,7 @@ RULES = (
     (("resources/js/editor/*SitePart*", "resources/js/editor/sitePart*", "resources/js/editor/useSitePart*", "src/*/SitePart*", "src/Domain/Site/*", "src/Application/Compilation/SitePartHtmlCompiler.php"), (SITE_PART,)),
     (("resources/js/public/siteShell*", "src/Application/SiteShell*", "src/Infrastructure/Gnuboard7/*SiteShell*"), (SITE_SHELL,)),
     (("resources/js/public/mobileNavigation*",), (MOBILE_NAV,)),
+    (("resources/js/native-editor/*", "resources/js/adapters/gnuboard7/*", "resources/css/page-builder-native.css"), (NATIVE,)),
     (("resources/js/public/*", "resources/css/page-effects*"), (PUBLIC,)),
     (("resources/css/page-builder-public.css", "resources/css/page-builder-theme.css"), (STRUCTURE_THEME,)),
     (("resources/js/store/*", "src/Application/Store/*", "src/Domain/Store/*", "src/Infrastructure/Store/*"), (STORE,)),

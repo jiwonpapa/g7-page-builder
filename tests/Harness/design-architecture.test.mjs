@@ -77,7 +77,7 @@ test('native host exposes only observed public methods through its adapter', () 
     }
   }
   for (const source of [
-    'G7Core.layoutEditor.registerPanel(panel);',
+    'G7Core.layoutEditor.registerUnsafePanel(panel);',
     "globalThis['G7Core']['layoutEditor']['registerComponent'](component);",
     'const editor = G7Core.layoutEditor;', 'const host = window.G7Core;',
     'const { layoutEditor } = G7Core;', 'const win = window; win.G7Core.layoutEditor.registerPanel(panel);',
@@ -109,7 +109,7 @@ test('native rule configuration cannot silently remove the fence or widen suppor
   const { root, write } = fixture(t);
   for (const modify of [
     (next) => { delete next.nativeEditor; },
-    (next) => next.nativeEditor.methods.push('registerPanel'),
+    (next) => next.nativeEditor.methods.push('registerUnsafePanel'),
     (next) => { next.nativeEditor.adapter = 'resources/js/'; },
     (next) => { next.typescriptLayers = next.typescriptLayers.filter((entry) => entry.from !== `${next.nativeEditor.root}domain/`); },
     (next) => next.typescriptLayers.find((entry) => entry.from === `${next.nativeEditor.root}ui/`).packages.push('@puckeditor/core'),

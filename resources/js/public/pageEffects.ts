@@ -1,3 +1,4 @@
+import { prepareNativeEditor } from '../adapters/gnuboard7/bootstrap';
 import { startPageEffects } from './publicRuntime';
 export { bootAccordions, bootTabs } from './publicContentControls';
 export { bootInquiryForms } from './publicInquiryForms';
@@ -12,7 +13,10 @@ export { bootPageEffects, observePageEffects, bootSiteShellMenu, disposePageEffe
 const buildMode = (import.meta as ImportMeta & { env?: { MODE?: string } }).env?.MODE;
 const isTestRuntime = buildMode === 'test'
   || (typeof process !== 'undefined' && process.env.NODE_ENV === 'test');
-if (typeof window !== 'undefined' && typeof document !== 'undefined' && !isTestRuntime) startPageEffects();
+if (typeof window !== 'undefined' && typeof document !== 'undefined' && !isTestRuntime) {
+  startPageEffects();
+  prepareNativeEditor();
+}
 import '../../css/page-builder-public.css';
 import '../../css/page-builder-site-part-responsive.css';
 import '../../css/page-builder-site-shell.css';

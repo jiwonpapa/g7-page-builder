@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, normalize, resolve } from 'node:path';
@@ -6,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(root, 'module.json'), 'utf8'));
 const outputs = [
+  'dist/js/page-builder-native.iife.js',
+  'dist/css/page-builder-native.css',
+  'dist/meta/native-editor-modules.json',
   manifest.assets?.js?.output,
   manifest.assets?.css?.output,
   'dist/js/page-builder-editor.iife.js',
@@ -34,6 +38,14 @@ for (const output of outputs) {
 }
 
 const readInventory = (name) => JSON.parse(readFileSync(join(root, `dist/meta/${name}-modules.json`), 'utf8')).modules;
+const nativeModules = readInventory('native-editor');
+if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native.iife.js'))).length > 8_000) {
+  throw new Error('Native editor gzip budget exceeded: 8KB');
+}
+if (!nativeModules.some((id) => id.endsWith('/native-editor/entry.ts'))
+  || nativeModules.some((id) => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id))) {
+  throw new Error('Native editor must use the host React runtime and exclude Puck/Tiptap.');
+}
 const editorModules = readInventory('editor');
 const managerModules = readInventory('manager');
 const sitePartModules = readInventory('site-part');

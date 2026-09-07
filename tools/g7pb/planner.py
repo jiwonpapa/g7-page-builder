@@ -44,6 +44,17 @@ BROWSER_HELPER_SPECS = {
     ),
 }
 BROWSER_CONSUMER_TEST = "tests/Harness/test_planner.py"
+CONTRACT_FIXTURE_CONSUMERS = {
+    "tests/Contract/document-basic-elements-v2.fixture.json": (
+        "tests/Unit/basicElementContracts.test.ts", "tests/UnitPhp/BasicElementBlockCompilerTest.php",
+    ),
+}
+
+
+def contract_fixture_inputs(test):
+    return tuple(path for path, consumers in CONTRACT_FIXTURE_CONSUMERS.items() if test in consumers)
+
+
 COMPILER_FACADE = "src/Application/Compilation/HtmlDocumentCompiler.php"
 COMPILER_OWNERS = "src/Application/Compilation/HtmlDocument/"
 COMPILER_COVERAGE = "scripts/check-php-coverage.php"
@@ -431,6 +442,14 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                     add("browser:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--retries=0"], inputs, "Changed browser scenario and product", ("node", "php", "g7", "browser"), True, env=BROWSER_ENVIRONMENT)
                 elif not full:
                     add("browser-registration:" + spec, ["npx", "--no-install", "playwright", "test", spec, "--list", "--reporter=line"], inputs, "Harness-only test collection; NOT product/browser acceptance", ("node",), reusable=False)
+        elif path in CONTRACT_FIXTURE_CONSUMERS:
+            for consumer in CONTRACT_FIXTURE_CONSUMERS[path]:
+                if not (root / consumer).is_file():
+                    plan.unresolved.append("Missing contract fixture consumer: " + consumer)
+                elif consumer.endswith(".php"):
+                    php_tests.append(consumer)
+                else:
+                    ts_tests.append(consumer)
         elif path.startswith("tests/Unit/") and path.endswith((".test.ts", ".test.tsx")):
             ts_tests.append(path)
         elif path.startswith(("tests/UnitPhp/", "tests/Integration/")) and path.endswith(".php"):
@@ -510,7 +529,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         plan.unresolved.append(str(error))
     for test in ts_tests:
         graph = source_inputs(root, test)
-        add("unit:" + test, ["npx", "--no-install", "vitest", "run", test], [*graph.files, "package-lock.json", "vite.config.ts", "tsconfig.json"], "Related unit behavior", ("node",), reusable=graph.reusable)
+        add("unit:" + test, ["npx", "--no-install", "vitest", "run", test], [*graph.files, *contract_fixture_inputs(test), "package-lock.json", "vite.config.ts", "tsconfig.json"], "Related unit behavior", ("node",), reusable=graph.reusable)
     if ts_sources or ts_tests or any(p.startswith("tests/E2E/") and p.endswith((".ts", ".tsx")) or p == "playwright.config.ts" for p in plan.paths):
         graph = typecheck_inputs(root)
         add("typecheck", ["npm", "run", "typecheck"], graph.files, "TypeScript command and configured type graph", ("node",), reusable=graph.reusable)
@@ -575,7 +594,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 + ([] if full else ["--exclude-group", "content-catalog"]) + [test])
         kit_inputs = site_kit_inputs(root) if test in (
             "tests/UnitPhp/SiteKitBundleTest.php", "tests/Integration/Gnuboard7/SiteKitInstallationTest.php") else ()
-        add("php:" + test, argv, [*graph.files, *kit_inputs, "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
+        add("php:" + test, argv, [*graph.files, *kit_inputs, *contract_fixture_inputs(test), "composer.lock", "phpunit.xml.dist"], "Related PHP behavior", ("php", "g7") if g7 else ("php",), g7, graph.reusable)
     if covered_tests:
         graphs = [php_graphs[test] for test in covered_tests]
         g7 = any(test.startswith("tests/Integration/") for test in covered_tests)

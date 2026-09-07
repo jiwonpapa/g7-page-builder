@@ -24,7 +24,7 @@ const { collectionLimit } = await import('../../resources/js/editor/canvasEditin
 
 type EditorApi = UsePuckData<Config<EditorComponents, PageDesignProps>>;
 const preset: BlockGalleryItem = {
-  catalogId: 'synthetic-preset', kind: 'preset', type: 'Heading', testId: 'synthetic-preset', category: '기본',
+  catalogId: 'synthetic-preset', kind: 'preset', productionKind: 'element', type: 'Heading', testId: 'synthetic-preset', category: '기본',
   title: 'Synthetic preset', description: 'Fixture', searchText: 'Synthetic preset', blockId: 'content.heading-01',
   blockVersion: 1, favorite: false, presetProps: { eyebrow: '', heading: 'Inserted sentinel', level: 2, anchor: '' },
   thumbnail: '', packId: 'synthetic/fixture', packLabel: 'Fixture',

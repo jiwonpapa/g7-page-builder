@@ -39,9 +39,11 @@ function PageBuilderEditorSession({ document, disabled = false, iframeEnabled = 
     structureDialogOpen, setStructureDialogOpen, structureActivationError, setStructureActivationError,
     enableStructureEditing, resolvePatternSection, heroFamilyCount, heroWarningDismissed, dismissHeroWarning,
   } = usePageBuilderSession({ document, canEdit: viewportPolicy.canEdit, onDirty, onChange });
-  const runtimePuckConfig = useMemo(() => createRuntimePuckConfig(structureEditingEnabled, editingDisabled), [structureEditingEnabled, editingDisabled]);
   const { blockCatalogContext, siteParts, sitePartMode, editSitePart, closeSitePartEditor, refreshSitePart,
   } = usePageBuilderResources(document.locale, document.shell_mode, viewportPolicy.canEdit);
+  const runtimePuckConfig = useMemo(() => createRuntimePuckConfig(structureEditingEnabled, editingDisabled,
+    blockCatalogContext.items.filter((item) => item.kind === 'definition').map((item) => item.type)),
+  [structureEditingEnabled, editingDisabled, blockCatalogContext.items]);
   const { canvasEditingUi, canvasElementStyles, canvasBlockAppearances } = useCanvasEditingUi(data, viewportPolicy.canEdit);
 
   const overrides = useMemo(() => ({
@@ -135,7 +137,7 @@ function PageBuilderEditorSession({ document, disabled = false, iframeEnabled = 
           </section>
         </div>
       </EditorPortal>}
-      <BlockCatalogContext.Provider value={blockCatalogContext}>
+      <BlockCatalogContext.Provider value={{ ...blockCatalogContext, layoutEnabled: structureEditingEnabled }}>
         <EditorViewportPolicyContext.Provider value={viewportPolicy}>
         <FullSiteCanvasContext.Provider value={fullSiteCanvas}>
         <CanvasEditingUiContext.Provider value={canvasEditingUi}>

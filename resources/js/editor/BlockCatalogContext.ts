@@ -13,6 +13,7 @@ export const BLOCK_GALLERY_ITEMS = createBuiltinGalleryItems(isRegisteredCompone
 
 export interface BlockCatalogContextValue {
   items: ReadonlyArray<BlockGalleryItem>;
+  layoutEnabled?: boolean;
   toggleFavorite: (catalogId: string, favorite: boolean) => Promise<void>;
 }
 

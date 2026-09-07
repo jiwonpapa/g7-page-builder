@@ -327,6 +327,14 @@ describe('Puck editor surface contract', () => {
       blocks: fixture.blocks,
     });
     expect(document.querySelector('[data-testid="page-builder-enable-structure"]')).toBeNull();
+    await act(async () => { (await eventually<HTMLButtonElement>('[data-testid="page-builder-add-block"]')).click(); });
+    const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
+    await act(async () => { gallery.querySelector<HTMLButtonElement>('#g7pb-library-tab-layout')?.click(); });
+    expect(gallery.querySelectorAll('[data-production-kind="layout"]')).toHaveLength(1);
+    expect(gallery.querySelector('[aria-label="구역 즐겨찾기 추가"]')).toBeNull();
+    await act(async () => { gallery.querySelector<HTMLButtonElement>('[data-testid="page-builder-block-option-layout-section"]')?.click(); });
+    await vi.waitFor(() => expect(onChange.mock.lastCall?.[0].blocks.some((block: PageBuilderDocument['blocks'][number]) => block.type === 'layout.section-01')).toBe(true));
+    expect(onChange.mock.lastCall?.[0].schema_version).toBe('g7-page-builder/v2');
   });
 
   it('inserts an actor-owned Section pattern as one independent canonical copy', async () => {
@@ -1202,7 +1210,7 @@ describe('Puck editor surface contract', () => {
     const library = await eventually<HTMLElement>('[data-testid="page-builder-block-library"]');
     expect(library.textContent).toContain('실제 화면을 확인하고 블록을 선택하세요.');
     expect(library.textContent).not.toContain('끌어');
-    expect(library.textContent).toContain('완성 섹션과 모든 출처 보기');
+    expect(library.textContent).toContain('모든 제작 단위와 변형 보기');
     const compactComponents = new Set([
       'Heading', 'RichText', 'Buttons', 'Divider', 'Blockquote', 'Notice',
       'Breadcrumbs', 'AnchorMenu', 'SocialLinks',
@@ -1280,7 +1288,7 @@ describe('Puck editor surface contract', () => {
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
     expect(Array.from(gallery.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent)).toEqual([
-      '전체139', '블록 종류44', '완성 섹션95',
+      '전체139', '기본 요소14', '레이아웃0', '컴포넌트55', '완성 섹션70',
     ]);
     expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
       .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공']);
@@ -1344,11 +1352,11 @@ describe('Puck editor surface contract', () => {
       ?.closest<HTMLElement>('.g7pb-block-gallery__item')?.dataset.previewDensity).toBe('compact');
     expect(gallery.querySelector('[data-testid="page-builder-block-option-image-text"]')
       ?.closest<HTMLElement>('.g7pb-block-gallery__item')?.dataset.previewDensity).toBe('regular');
-    expect(gallery.textContent).toContain('자주 쓰는 기본 블록');
+    expect(gallery.textContent).toContain('자주 쓰는 항목');
     expect(gallery.querySelectorAll('[data-testid^="page-builder-quick-add-"]')).toHaveLength(6);
     const categorySelect = gallery.querySelector<HTMLSelectElement>('[aria-label="블록 분류"]');
     expect(Array.from(categorySelect?.options ?? []).map((option) => option.textContent)).toEqual([
-      '전체 분류', '기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터',
+      '모든 용도', '기본', '첫 화면·전환', '콘텐츠', '미디어', '탐색', '신뢰·회사', '데이터·비교', '문의·방문', 'G7 데이터',
     ]);
     builtinManifest.presets.forEach((preset) => {
       const slug = preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
@@ -1500,14 +1508,15 @@ describe('Puck editor surface contract', () => {
     expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
       .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공', 'marketing']);
 
-    const presetTab = Array.from(gallery.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
-      .find((tab) => tab.textContent?.includes('완성 섹션'));
-    await act(async () => { presetTab?.click(); });
+    const exampleFilter = gallery.querySelector<HTMLSelectElement>('[aria-label="블록 예제"]');
+    await act(async () => {
+      if (exampleFilter) { exampleFilter.value = 'preset'; exampleFilter.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
     expect(gallery.textContent).not.toContain('Server Hero');
     expect(gallery.textContent).toContain('Promotion hero');
-    const allTab = Array.from(gallery.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
-      .find((tab) => tab.textContent?.includes('전체'));
-    await act(async () => { allTab?.click(); });
+    await act(async () => {
+      if (exampleFilter) { exampleFilter.value = 'all'; exampleFilter.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
 
     const search = gallery.querySelector<HTMLInputElement>('[aria-label="블록 검색"]');
     await act(async () => {

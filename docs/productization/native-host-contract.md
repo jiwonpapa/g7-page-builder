@@ -1,25 +1,25 @@
-# NE1 — G7 공개 호스트 계약 보완안
+# NE1 — G7 공개 호스트 계약 v1
 
-상태: **G7 코어 변경 승인 전 검토안**. 새 함수·props는 아래에 제안할 뿐 현재 G7 SDK나 PB 실행 코드에서 제공·사용한다고 주장하지 않는다. [현행 계획](editor-plan.md)의 H01~H04를 마감하기 위한 외부 선행 작업이다. [개발 헌법](../development-constitution.md)의 공개 adapter 경계를 유지한다.
+상태: **NE1 로컬 구현·통합·NAT-01 검증 완료**. G7 공개 API 후보 `9260d521ab3d69761a428b3d1c54df1297ecf6eb`와 PB 통합 `e075b8149ce9b73d7397a9eaa89ea0c867979bb4`를 함께 검증했다. stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. [마감 증거](../audits/2026-09-07-native-editor-ne1.md), [현행 계획](editor-plan.md), [개발 헌법](../development-constitution.md)을 따른다.
 
-G7 기준 SHA: `fde750cede7fda68329cea42fb706a00d4546bd3`. 현재 공개 메서드는 registerWidget/registerNodeEditor/registerCanvasOverlay/onReady 네 개다. 2026-09-07 재확인에서 기준 SHA와 아래 계약 부족은 유지됐다. 내부 hook import·PB 우회 저장·호스트 DOM 읽기로 대체하지 않는다.
+조사 기준 G7 `fde750cede7fda68329cea42fb706a00d4546bd3`에는 기존 네 메서드만 있었으며 H01~H04가 부족했다. 이번 후보에 공개 `registerPanel`과 `g7.layout-editor/1`을 추가했다. 내부 hook import·PB 우회 저장·호스트 DOM 읽기를 PB 연동으로 사용하지 않는다.
 
-## 승인 요청 범위
+## 구현 범위
 
-G7의 공개 편집 확장 계약과 그 전달·검증·회귀만 수정한다. 페이지/게시판 데이터·운영 템플릿·DB 스키마·인증 정책·운영 배포는 이 승인에 포함하지 않는다. G7은 별도 깨끗한 worktree에서 구현하고 해당 저장소 규칙과 검사를 적용한다. 아래는 파일 후보이며 G7에서 실제 착수 시 소유 범위를 확정한다.
+G7의 공개 편집 확장 계약과 그 전달·검증·회귀만 수정한다. 페이지/게시판 데이터·운영 템플릿·DB 스키마·인증 정책·운영 배포는 이 승인에 포함하지 않는다. G7은 별도 깨끗한 worktree에서 구현하고 해당 저장소 규칙과 검사를 적용한다. 아래 위치의 공개 계약과 소비 경로만 보완했다.
 
 | 항목 | 현재 소스 위치 (G7 저장소 기준) | 구체적 변경 |
 |---|---|---|
 | H01 문맥 | `resources/js/core/template-engine/layout-editor/spec/nodeEditorRegistry.ts`; `widgetRegistry.ts`; `canvasOverlayRegistry.ts` | 공개 props에 불변 문서·선택 문맥을 전달하는 선택형 계약 추가. 기존 확장 호환 유지 |
-| H01 수명 | `resources/js/core/template-engine/layout-editor/LayoutEditorContext.tsx`; `hooks/useLayoutDocument.ts` | 문서/편집 모드/재로드의 session 식별자, 모든 편집·Undo/Redo에서 바뀌는 revision, 현재 권한과 서버 lockVersion 연결 |
+| H01 수명 | `resources/js/core/template-engine/layout-editor/hooks/useRevisionedDocument.ts`; `hooks/useLayoutDocument.ts` | 문서/편집 모드/재로드의 session 식별자, 모든 편집·Undo/Redo에서 바뀌는 revision, 현재 권한과 서버 lockVersion 연결 |
 | H02 경로 | `resources/js/core/template-engine/layout-editor/spec/canvasOverlayRegistry.ts`; `components/EditorCanvasOverlay.tsx` | 공개 onInsertChild의 string 경로와 실제 ComponentPath 배열 handler 불일치 수정. 기존 문자열 호출이 있으면 명시적 호환 변환과 회귀 제공 |
-| H03 명령 | `resources/js/core/template-engine/layout-editor/components/EditorCanvasOverlay.tsx`; 신규 `spec/extensionCommand.ts` 후보 | 문서/세션/revision/노드 ID·경로/출처/허용 자식 검사를 통과한 변경만 기존 patchLayout/history에 원자적으로 반영 |
+| H03 명령 | `resources/js/core/template-engine/layout-editor/components/EditorCanvasOverlay.tsx`; `extensions/command.ts`; `extensions/useExtensionHost.ts` | 문서/세션/revision/노드 ID·경로/출처/허용 자식 검사를 통과한 변경만 기존 patchLayout/history에 원자적으로 반영 |
 | H01 전달 | `resources/js/core/template-engine/layout-editor/components/PropertyEditorModal.tsx`; `components/property-controls/ControlRenderer.tsx` | 확장 nodeEditor/widget에 같은 현재 문맥과 guarded command 전달. stale modal closure가 변경 권한을 유지하지 않음 |
-| H04 확장 | `resources/js/core/template-engine/layout-editor/spec/exposeLayoutEditorGlobals.ts`; `resources/js/core/template-engine/G7CoreGlobals.ts`; `layout-editor/LayoutEditorChrome.tsx`; 신규 `spec/panelRegistry.ts` 후보 | 이름 공간을 가진 선택형 패널 등록, 선택 snapshot 읽기/내보내기, 기존 삽입 명령 연결의 공개 계약과 소비 지점 제공. private registry 조회로 등록을 우회하지 않음 |
+| H04 확장 | `resources/js/core/template-engine/layout-editor/spec/exposeLayoutEditorGlobals.ts`; `resources/js/core/template-engine/G7CoreGlobals.ts`; `extensions/panelRegistry.ts`; `extensions/ExtensionPanels.tsx`; `components/EditorCanvasOverlay.tsx` | 이름 공간을 가진 선택형 패널 등록, 선택 snapshot 읽기/내보내기, 기존 삽입 명령 연결의 공개 계약과 소비 지점 제공. private registry 조회로 등록을 우회하지 않음 |
 
-## 제안하는 데이터·명령 계약
+## 데이터·명령 계약
 
-다음 명칭은 **설계 제안**이며 G7 구현·검증 전 PB allowlist에 추가하지 않는다.
+검증한 공개 진입점만 PB allowlist에 추가했다. 새 호스트 메서드는 같은 구현·검증 절차 없이 허용하지 않는다.
 
 - 불변 문맥: `templateIdentifier`, `layoutName`, `editMode`, `sessionId`, `revision`, `lockVersion`, `readonly`, 현재 노드 ID와 `ComponentPath`.
 - `sessionId`는 동일 라우트라도 문서 재로드·편집 모드 전환 시 바뀐다. `revision`은 로컬 변경·Undo/Redo마다 증가하며 서버 `lockVersion`과 구분한다. 이 값들이 없을 때 0/빈 문자열을 채워 문맥이 있다고 처리하지 않는다.
@@ -38,7 +38,7 @@ G7의 공개 편집 확장 계약과 그 전달·검증·회귀만 수정한다.
 5. 부모 경로에 responsive 세그먼트가 있는 실제 삽입과 문자열 호환 경로를 검증한다. 타입 검사 통과만으로 runtime 동작을 대신하지 않는다.
 6. 패널의 선택·snapshot 내보내기·삽입이 같은 세션/명령 경계를 사용한다. 전역 등록 함수만 만들고 소비 UI가 없는 상태를 지원 완료로 표시하지 않는다.
 
-G7 공개 계약 완료 후 PB adapter/entry와 지원 템플릿 spec을 연결하고 실제 브라우저 NAT-01을 수행해야 NE1 전체가 완료된다. 이 문서 승인만으로 NE2를 시작하지 않는다.
+이 합격 조건의 증거 종류와 실제 결과는 NE1 마감 감사에 구분 기록했다. sirsoft-basic 일반 페이지의 기존 renderer/spec을 사용해 NAT-01을 통과했으며 템플릿 원본은 수정하지 않았다.
 
 
 ## NE1 로컬 공개 계약 구현

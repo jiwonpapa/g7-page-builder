@@ -1,4 +1,5 @@
 import { AlignCenter, AlignLeft, AlignRight, Link2, X } from 'lucide-react';
+import { useGetPuck } from '@puckeditor/core';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { editorContextProps } from '../blocks/externalEditorData';
@@ -6,8 +7,7 @@ import type { ElementAppearance } from '../documents/types';
 import { normalizeElementAppearance, normalizeElementAppearanceMap, resolveMediaFieldPath, resolveRouteFieldPath, valueAtPath } from './canvasEditingContract';
 import { updateCanvasContext, updateCanvasElement, updateCanvasPath } from './canvasItemCommands';
 import { FONT_SIZE_REM_OPTIONS } from './fontSize';
-import { CanvasMediaPicker } from './MediaPickerField';
-import { CanvasRoutePicker } from './RouteUrlField';
+import { CanvasPickerSession } from './CanvasPickerSession';
 import { CanvasEditingUiContext, usePageBuilderPuck } from './puckEditorContexts';
 import { resolveEditorSelection } from './puckEditorSelection';
 import type { PuckEditorData } from './puckEditorTypes';
@@ -124,42 +124,41 @@ export function ConnectedContextPanel({ disabled }: { disabled: boolean }): Reac
 }
 
 export function ConnectedCanvasDialogs({ disabled }: { disabled: boolean }): React.ReactElement | null {
-  const dispatch = usePageBuilderPuck((state) => state.dispatch);
+  const getPuck = useGetPuck();
   const data = usePageBuilderPuck((state) => state.appState.data as PuckEditorData);
   const selectedIndex = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedZone = usePageBuilderPuck((state) => state.appState.ui.itemSelector?.zone ?? 'root:default-zone');
   const canvasUi = React.useContext(CanvasEditingUiContext);
   if (!canvasUi || disabled || canvasUi.rangeEditingActive) return null;
 
-  const location = resolveEditorSelection(data, selectedIndex === null ? null : { index: selectedIndex, zone: selectedZone }, canvasUi?.selection?.blockId);
+  const location = selectedIndex === null ? null : resolveEditorSelection(data, { index: selectedIndex, zone: selectedZone }, canvasUi.selection?.blockId);
   const selectedBlock = location?.item;
-  const blockIndex = location?.selector.index ?? null;
-  if (!selectedBlock || !location || blockIndex === null) return null;
 
-  const defaultRouteFieldPath = selectedBlock.type === 'Hero' || selectedBlock.type === 'HeroSplit' || selectedBlock.type === 'Cta'
-    ? 'primaryUrl' : selectedBlock.type === 'Contact' ? 'ctaUrl' : null;
-  const routeFieldPath = canvasUi.selection?.fieldPath
+  const defaultRouteFieldPath = selectedBlock?.type === 'Hero' || selectedBlock?.type === 'HeroSplit' || selectedBlock?.type === 'Cta'
+    ? 'primaryUrl' : selectedBlock?.type === 'Contact' ? 'ctaUrl' : null;
+  const routeFieldPath = selectedBlock && canvasUi.selection?.fieldPath
     ? resolveRouteFieldPath(selectedBlock.type, canvasUi.selection.fieldPath)
     : defaultRouteFieldPath;
-  const mediaFieldPath = canvasUi.selection
+  const mediaFieldPath = selectedBlock && canvasUi.selection
     ? resolveMediaFieldPath(selectedBlock.type, canvasUi.selection)
-    : selectedBlock.type === 'Hero' || selectedBlock.type === 'HeroSplit' ? 'imageSrc' : null;
-  const updateSelectedPath = (path: string, value: unknown): void => {
-    dispatch(updateCanvasPath(location, path, value));
+    : selectedBlock?.type === 'Hero' || selectedBlock?.type === 'HeroSplit' ? 'imageSrc' : null;
+  const updateSelectedPath = (path: string | null, value: string): void => {
+    if (!location || !path) return;
+    const current = getPuck(), selector = current.appState.ui.itemSelector;
+    if (!selector) return;
+    const latest = resolveEditorSelection(current.appState.data as PuckEditorData,
+      { index: selector.index, zone: selector.zone ?? 'root:default-zone' }, canvasUi.selection?.blockId);
+    if (latest?.item.props.id === location.item.props.id) current.dispatch(updateCanvasPath(latest, path, value, true));
   };
 
   return <>
-    {canvasUi.mediaDialogOpen && mediaFieldPath ? createPortal(
-      <CanvasMediaPicker value={String(valueAtPath(selectedBlock.props, mediaFieldPath) ?? '')}
-        onChange={(value) => { updateSelectedPath(mediaFieldPath, value); canvasUi.setMediaDialogOpen(false); }}
-        onDismiss={() => canvasUi.setMediaDialogOpen(false)} />,
-      globalThis.document.body,
-    ) : null}
-    {canvasUi.routeDialogOpen && routeFieldPath ? createPortal(
-      <CanvasRoutePicker value={String(valueAtPath(selectedBlock.props, routeFieldPath) ?? '')}
-        onChange={(value) => { updateSelectedPath(routeFieldPath, value); canvasUi.setRouteDialogOpen(false); }}
-        onDismiss={() => canvasUi.setRouteDialogOpen(false)} />,
-      globalThis.document.body,
-    ) : null}
+    {canvasUi.mediaDialogOpen && <CanvasPickerSession kind="media"
+      targetKey={selectedBlock && mediaFieldPath ? `${selectedBlock.props.id}:${mediaFieldPath}` : null}
+      value={selectedBlock && mediaFieldPath ? String(valueAtPath(selectedBlock.props, mediaFieldPath) ?? '') : ''}
+      onChange={(value) => updateSelectedPath(mediaFieldPath, value)} onDismiss={() => canvasUi.setMediaDialogOpen(false)} />}
+    {canvasUi.routeDialogOpen && <CanvasPickerSession kind="route"
+      targetKey={selectedBlock && routeFieldPath ? `${selectedBlock.props.id}:${routeFieldPath}` : null}
+      value={selectedBlock && routeFieldPath ? String(valueAtPath(selectedBlock.props, routeFieldPath) ?? '') : ''}
+      onChange={(value) => updateSelectedPath(routeFieldPath, value)} onDismiss={() => canvasUi.setRouteDialogOpen(false)} />}
   </>;
 }

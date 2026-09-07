@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { editorContextProps } from '../blocks/externalEditorData';
 import type { ElementAppearanceMap } from '../documents/types';
 import { blockContainerClassName, mergeBlockContainerAppearance } from './blockAppearance';
-import { canvasContextRangeActive, canvasContextRangeAnchor, canvasContextSelection, INITIAL_CANVAS_CONTEXT_STATE, normalizeCanvasRangeAnchor, reduceCanvasContextState, type CanvasContextAction } from './canvasContextState';
+import { canvasContextRangeActive, canvasContextRangeAnchor, canvasContextSelection, INITIAL_CANVAS_CONTEXT_STATE, normalizeCanvasElementSelection, normalizeCanvasRangeAnchor, normalizeCanvasTextTarget, reduceCanvasContextState, sameCanvasTextTarget, type CanvasContextAction } from './canvasContextState';
 import { CANVAS_ELEMENT_MESSAGE, normalizeElementAppearanceMap, shouldAutoOpenCanvasTextTools, type CanvasElementSelection } from './canvasEditingContract';
 import { asString, idToUuid } from './puckBlockCodec';
 import type { CanvasEditingUiValue } from './puckEditorContexts';
@@ -41,8 +41,23 @@ export function useCanvasEditingUi(data: PuckEditorData, canEdit: boolean) {
   const setCanvasElementSelection = useCallback<React.Dispatch<React.SetStateAction<CanvasElementSelection | null>>>((value) => {
     const current = canvasContextSelection(canvasContextStateRef.current);
     const selection = typeof value === 'function' ? value(current) : value;
+    if (!sameCanvasTextTarget(current, selection) || current?.role !== selection?.role) {
+      cancelPending();
+      setCanvasMediaDialogOpen(false);
+      setCanvasRouteDialogOpen(false);
+      setCanvasTextToolsOpen(false);
+    }
     transitionCanvasContext({ type: 'selection.replace', selection });
-  }, [transitionCanvasContext]);
+  }, [cancelPending, transitionCanvasContext]);
+  useEffect(() => {
+    const selection = canvasContextSelection(canvasContextStateRef.current);
+    if (!selection) return;
+    const item = editorItemLocations(data).find(({ item }) => idToUuid(item.props.id) === selection.blockId)?.item;
+    const collection = item && selection.collection ? Reflect.get(item.props, selection.collection) : null;
+    if (!item || (selection.itemIndex !== null && (!Array.isArray(collection) || selection.itemIndex >= collection.length))) {
+      setCanvasElementSelection(null);
+    }
+  }, [data, setCanvasElementSelection]);
   useEffect(() => {
     if (canEdit) return;
     cancelPending();
@@ -65,8 +80,9 @@ export function useCanvasEditingUi(data: PuckEditorData, canEdit: boolean) {
   }, [cancelPending]);
 
   useEffect(() => {
-    const accept = (selection: CanvasElementSelection): void => {
-      if (!canEdit) return;
+    const accept = (value: unknown): void => {
+      const selection = normalizeCanvasElementSelection(value);
+      if (!canEdit || !selection) return;
       cancelPending();
       transitionCanvasContext({ type: 'selection.accept', selection });
       setCanvasMediaDialogOpen(false);
@@ -77,14 +93,18 @@ export function useCanvasEditingUi(data: PuckEditorData, canEdit: boolean) {
         setCanvasTextToolsOpen(false);
       }
     };
-    const acceptRangeState = (active: boolean, anchorValue: unknown = null): void => {
-      if (!canEdit) return;
+    const acceptRangeState = (value: unknown): void => {
+      if (!canEdit || !value || typeof value !== 'object' || !('active' in value) || typeof value.active !== 'boolean') return;
+      const { active } = value;
+      const target = 'target' in value ? normalizeCanvasTextTarget(value.target) : undefined;
+      if (target === null || (target && !sameCanvasTextTarget(canvasContextSelection(canvasContextStateRef.current), target))) return;
       cancelPending();
       const wasActive = canvasContextRangeActive(canvasContextStateRef.current);
       const next = transitionCanvasContext({
         type: 'range.change',
         active,
-        anchor: active ? normalizeCanvasRangeAnchor(anchorValue) : null,
+        anchor: active && 'anchor' in value ? normalizeCanvasRangeAnchor(value.anchor) : null,
+        ...(target ? { target } : {}),
       });
       if (active) {
         setCanvasMediaDialogOpen(false);
@@ -100,18 +120,19 @@ export function useCanvasEditingUi(data: PuckEditorData, canEdit: boolean) {
     };
     const fromMessage = (event: MessageEvent): void => {
       if (event.origin !== window.location.origin) return;
-      if (event.data?.type === RICH_TEXT_RANGE_STATE_MESSAGE) {
-        acceptRangeState(event.data.active === true, event.data.anchor);
+      const message: unknown = event.data;
+      if (!message || typeof message !== 'object' || !('type' in message)) return;
+      if (message.type === RICH_TEXT_RANGE_STATE_MESSAGE) {
+        acceptRangeState(message);
         return;
       }
-      if (event.data?.type !== CANVAS_ELEMENT_MESSAGE) return;
-      accept(event.data.selection as CanvasElementSelection);
+      if (message.type === CANVAS_ELEMENT_MESSAGE && 'selection' in message) accept(message.selection);
     };
     const fromCustomEvent = (event: Event): void => {
-      if (event instanceof CustomEvent) accept(event.detail as CanvasElementSelection);
+      if (event instanceof CustomEvent) accept(event.detail);
     };
     const fromRangeEvent = (event: Event): void => {
-      if (event instanceof CustomEvent) acceptRangeState(event.detail?.active === true, event.detail?.anchor);
+      if (event instanceof CustomEvent) acceptRangeState(event.detail);
     };
     window.addEventListener('message', fromMessage);
     window.addEventListener(CANVAS_ELEMENT_MESSAGE, fromCustomEvent);

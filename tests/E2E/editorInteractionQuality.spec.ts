@@ -1161,7 +1161,7 @@ test('keeps root, nested, block, and no-link rich text pointer editing persisten
     await test.step('REPEATED_SELECTION_GATE', async () => {
       rootField = await dragSelectText(page, rootSelection, EDITOR_INTERACTION_COPY.rootTarget);
       await expect(await officialPuckMenuRoot(page)).toBeVisible();
-      await collapseSelectionWithPointer(page, rootSelection);
+      // Keep the old range active while selecting a different block/field.
     });
 
     await test.step('NESTED_INLINE_RICH_GATE', async () => {

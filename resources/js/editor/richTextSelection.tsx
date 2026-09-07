@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Editor } from '@tiptap/core';
-import type { CanvasRangeAnchor } from './canvasContextState';
+import type { CanvasRangeAnchor, CanvasTextTarget } from './canvasContextState';
 
 export const RICH_TEXT_RANGE_STATE_MESSAGE = 'g7pb:richtext-range-state';
 
@@ -28,12 +28,12 @@ export function richTextRangeAnchorFromSelection(
 }
 
 function richTextRangeAnchor(editor: Editor | null): CanvasRangeAnchor | null {
-  if (!editor?.state?.selection || editor.state.selection.empty || !editor.view?.dom) return null;
+  if (!editor || editor.isDestroyed || !editor.state?.selection || editor.state.selection.empty || !editor.view?.dom) return null;
   return richTextRangeAnchorFromSelection(editor.view.dom.ownerDocument, editor.view.dom);
 }
 
-function dispatchRichTextRangeState(active: boolean, anchor: CanvasRangeAnchor | null): void {
-  const detail = { active, anchor };
+function dispatchRichTextRangeState(active: boolean, anchor: CanvasRangeAnchor | null, target: CanvasTextTarget | null): void {
+  const detail = { active, anchor, ...(target ? { target } : {}) };
   if (window.parent !== window) {
     window.parent.postMessage({ type: RICH_TEXT_RANGE_STATE_MESSAGE, ...detail }, window.location.origin);
   }
@@ -42,15 +42,18 @@ function dispatchRichTextRangeState(active: boolean, anchor: CanvasRangeAnchor |
 
 export function RichTextRangeStateSignal({ active, editor }: { active: boolean; editor: Editor | null }): null {
   const anchor = active ? richTextRangeAnchor(editor) : null;
+  const root = editor && !editor.isDestroyed ? editor.view?.dom : null;
+  const blockId = root?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+  const fieldPath = root?.closest<HTMLElement>('[data-g7pb-inline-field]')?.dataset.g7pbInlineField;
+  const target = blockId && fieldPath ? { blockId, fieldPath } : null;
   const anchorKey = anchor
     ? `${anchor.left}:${anchor.top}:${anchor.right}:${anchor.bottom}`
     : 'none';
   useEffect(() => {
-    dispatchRichTextRangeState(active, anchor);
-  }, [active, anchorKey]);
+    dispatchRichTextRangeState(active, anchor, target);
+  }, [active, anchorKey, blockId, fieldPath]);
 
-  useEffect(() => () => dispatchRichTextRangeState(false, null), []);
+  useEffect(() => () => { if (target) dispatchRichTextRangeState(false, null, target); }, [blockId, fieldPath]);
 
   return null;
 }
-

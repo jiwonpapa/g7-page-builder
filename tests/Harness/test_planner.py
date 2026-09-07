@@ -72,7 +72,6 @@ class PlannerTests(unittest.TestCase):
                 names = [g.name for g in plan.gates]
                 sync = next(g for g in plan.gates if g.name == 'browser-runtime-sync')
                 full = next(g for g in plan.gates if g.name == 'full-product')
-                self.assertEqual(full.depends_on, (sync.name,))
                 self.assertLess(names.index(sync.name), names.index(full.name))
                 self.assertIn('module.json', sync.argv)
                 self.assertIn('module.json', sync.inputs)
@@ -80,9 +79,12 @@ class PlannerTests(unittest.TestCase):
                 self.assertEqual(sync.deferred, phase == 'submission')
                 self.assertEqual(names.count(sync.name), 1)
                 if extra in paths:
-                    self.assertLess(names.index(full.name), names.index('browser:' + extra))
+                    self.assertLess(names.index('browser:' + extra), names.index(full.name))
+                    self.assertIn('browser:' + extra, full.depends_on)
+                    self.assertEqual(names[-1], full.name)
                 else:
                     self.assertNotIn('browser-assets', names)
+                    self.assertEqual(full.depends_on, (sync.name,))
         plan = build_plan(self.root, ['schemas/shared.json'], full=True)
         self.assertNotIn('browser-runtime-sync', [g.name for g in plan.gates])
         self.assertEqual(next(g for g in plan.gates if g.name == 'full-product').depends_on, ())

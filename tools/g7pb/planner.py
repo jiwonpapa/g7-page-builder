@@ -704,11 +704,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 True, reusable=False, execution="controller")
             before.append(gates["browser-runtime-sync"])
         plan.gates.extend(before)
-        if full:
-            # quality-gate verifies the installed module version and routes, so
-            # declaration/registry synchronization must precede it too.
-            plan.gates.append(replace(gates["full-product"], depends_on=tuple(g.name for g in before)))
         if not (browser_gates or artifacts):
+            if full:
+                plan.gates.append(replace(gates["full-product"], depends_on=tuple(g.name for g in before)))
             return plan
         add("browser-assets", [*command, "build", "--root", str(root.resolve()), "--runtime", runtime, "--apply"], inputs,
             "Require candidate source/env/dist fingerprint before browser execution; reuse only matching assets",
@@ -716,4 +714,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         plan.gates.append(gates["browser-assets"])
         plan.gates.extend(replace(gate, depends_on=("browser-assets",)) for gate in artifacts)
         plan.gates.extend(replace(gate, depends_on=("browser-assets", *sorted(artifact_names))) for gate in browser_gates)
+        if full:
+            # Exercise changed workflows omitted by the broad suite first. The
+            # same mandatory full gate follows their success, after runtime sync.
+            prerequisites = ("browser-assets", *sorted(artifact_names), *(g.name for g in browser_gates))
+            plan.gates.append(replace(gates["full-product"], depends_on=prerequisites))
     return plan

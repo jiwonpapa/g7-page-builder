@@ -2,7 +2,7 @@
 
 <!-- editor-plan:native-editor-20260907 -->
 
-상태: **NE1 완료, NE2 진행 중**. 1차는 별도 G7 공개 호스트 후보와 sirsoft-basic 일반 페이지의 편집·Undo/Redo·저장·재열기로 검증했다. 현재 코드·통합·증거 상태는 [진척 원장](editor-progress.json)을 따른다. G7 후보는 운영 배포나 upstream 반영 완료를 뜻하지 않는다. NE3~NE6은 planned다.
+상태: **NE1·NE2 완료, 다음 NE3**. 1차는 별도 G7 공개 호스트 후보와 sirsoft-basic 일반 페이지의 편집·Undo/Redo·저장·재열기로 검증했다. 2차 내용·스타일·미디어 편집도 같은 공개 원본 경로의 NAT-02 검증을 통과했다. 현재 코드·통합·증거 상태는 [진척 원장](editor-progress.json)을 따른다. G7 후보는 운영 배포나 upstream 반영 완료를 뜻하지 않는다. NE3~NE6은 planned다.
 
 [편집 정책](editing-policy.md) · [개발 헌법](../development-constitution.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [코드 근거](../audits/2026-09-07-native-editor-governance.md)
 

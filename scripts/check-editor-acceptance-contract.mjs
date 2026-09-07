@@ -49,6 +49,46 @@ function viewportPermissionInput(graph, input) {
     ? binding : undefined;
 }
 
+function deniedViewportInput(graph, condition) {
+  const value = graph.value(condition);
+  if (value && ts.isPrefixUnaryExpression(value) && value.operator === ts.SyntaxKind.ExclamationToken) {
+    return viewportPermissionInput(graph, value.operand);
+  }
+  // A denied permission independently returns for OR, but not for AND.
+  if (value && ts.isBinaryExpression(value) && value.operatorToken.kind === ts.SyntaxKind.BarBarToken) {
+    return deniedViewportInput(graph, value.left) ?? deniedViewportInput(graph, value.right);
+  }
+  return undefined;
+}
+
+function excludesActionType(graph, expression, depth = 0) {
+  if (depth > 8) return false;
+  const value = graph.value(expression);
+  if (value && ts.isConditionalExpression(value)) {
+    return excludesActionType(graph, value.whenTrue, depth + 1) && excludesActionType(graph, value.whenFalse, depth + 1);
+  }
+  return value && ts.isObjectLiteralExpression(value) && value.properties.every(property => {
+    if (ts.isSpreadAssignment(property)) return excludesActionType(graph, property.expression, depth + 1);
+    return (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property))
+      && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text !== 'type';
+  });
+}
+
+function canvasActionType(graph, argument) {
+  const bound = graph.value(graph.memberExpression(argument, 'type'));
+  if (bound) return bound;
+  const object = graph.value(argument);
+  if (!object || !ts.isObjectLiteralExpression(object)) return undefined;
+  const types = object.properties.filter(property => ts.isPropertyAssignment(property)
+    && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text === 'type');
+  // A conditional target-only spread cannot overwrite the discriminant.
+  if (types.length !== 1 || !object.properties.every(property => property === types[0]
+    || (ts.isSpreadAssignment(property) ? excludesActionType(graph, property.expression)
+      : (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property))
+        && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text !== 'type'))) return undefined;
+  return graph.value(types[0].initializer);
+}
+
 /** Both live selection transitions must reject the boundary's readonly input. */
 export function validateCanvasSelectionPermissions(graph) {
   const message = '미리보기 모드에서는 요소·범위 선택 메시지를 수용하면 안 됩니다.';
@@ -61,16 +101,22 @@ export function validateCanvasSelectionPermissions(graph) {
   for (const action of ['selection.accept', 'range.change']) {
     const calls = graph.find(node => {
       if (!ts.isCallExpression(node) || !graph.sameValue(node.expression, transitions[0].initializer)) return false;
-      const type = graph.value(graph.memberExpression(node.arguments[0], 'type'));
+      const type = canvasActionType(graph, node.arguments[0]);
       return type && ts.isStringLiteral(type) && type.text === action;
     });
     if (calls.length !== 1) return [message];
     let owner = calls[0].parent;
     while (owner && !ts.isFunctionLike(owner)) owner = owner.parent;
-    const guard = owner?.body && ts.isBlock(owner.body) ? owner.body.statements[0] : undefined;
-    const condition = guard && ts.isIfStatement(guard) ? graph.value(guard.expression) : undefined;
-    const input = condition && ts.isPrefixUnaryExpression(condition) && condition.operator === ts.SyntaxKind.ExclamationToken
-      ? viewportPermissionInput(graph, condition.operand) : undefined;
+    const statements = owner?.body && ts.isBlock(owner.body) ? [...owner.body.statements] : [];
+    // The current receiver normalizes an unknown selection before the guard.
+    // Admit only this known pure normalizer; preceding mutation calls still fail.
+    const first = statements[0], normalizers = graph.nodes('normalizeCanvasElementSelection');
+    const declaration = first && ts.isVariableStatement(first) && first.declarationList.declarations.length === 1
+      ? first.declarationList.declarations[0].initializer : undefined;
+    const normalized = declaration && ts.isCallExpression(declaration) && normalizers.length === 1
+      && graph.value(declaration.expression) === normalizers[0];
+    const guard = statements[normalized ? 1 : 0];
+    const input = guard && ts.isIfStatement(guard) ? deniedViewportInput(graph, guard.expression) : undefined;
     if (!guard || !ts.isIfStatement(guard) || guard.elseStatement || !ts.isReturnStatement(guard.thenStatement)
       || guard.thenStatement.expression || !input || input.node !== permission.node
       || input.members.join('.') !== permission.members.join('.')) return [message];
@@ -410,8 +456,8 @@ export async function validateEditorAcceptanceContract(root) {
     [richTextSource, /g7HasSelection:\s*isRichTextRangeActive\(context\.editor\)/, 'Puck selector가 선택 범위 상태를 파생해야 합니다.'],
     [richTextSource, /export function richTextRangeAnchorFromSelection\([\s\S]*getClientRects\(\)[\s\S]*width: right - left, height: bottom - top/, '선택 글자 벌룬은 실제 DOM Range의 렌더링 좌표를 사용해야 합니다.'],
     [richTextSource, /RICH_TEXT_RANGE_STATE_MESSAGE\s*=\s*['"]g7pb:richtext-range-state['"]/, '선택 범위 active/inactive 단일 메시지 계약이 필요합니다.'],
-    [adapterSource, /event\.data\?\.type === RICH_TEXT_RANGE_STATE_MESSAGE/, '호스트가 선택 범위 상태 메시지를 수신해야 합니다.'],
-    [adapterSource, /acceptRangeState\(event\.data\.active === true, event\.data\.anchor\)/, '호스트 UI는 active와 inactive 및 Range 좌표를 같은 상태 처리기로 동기화해야 합니다.'],
+    [adapterSource, /const message: unknown = event\.data;[\s\S]*message\.type === RICH_TEXT_RANGE_STATE_MESSAGE[\s\S]*acceptRangeState\(message\)/, '호스트가 검증된 선택 범위 상태 메시지를 수신해야 합니다.'],
+    [adapterSource, /const acceptRangeState = \(value: unknown\)[\s\S]*const \{ active \} = value;[\s\S]*type: 'range\.change',[\s\S]*active,[\s\S]*normalizeCanvasRangeAnchor\(value\.anchor\)/, '호스트 UI는 active와 inactive 및 Range 좌표를 같은 상태 처리기로 동기화해야 합니다.'],
     [adapterSource, /rangeEditingActive\s*\?\s*richTextRangeAnchorFromSelection\(ownerDocument\) \?\? rangeAnchor \?\? selectedOverlay\.getBoundingClientRect\(\)[\s\S]*selectedOverlay\.getBoundingClientRect\(\)/, '범위 선택 중 ActionBar는 블록이 아니라 현재 DOM Range를 기준으로 배치해야 합니다.'],
     [adapterSource, /if \(!canvasUi\?\.textToolsOpen \|\| canvasUi\.rangeEditingActive/, '글자 범위 선택 중 요소 전체 스타일 벌룬을 렌더하면 안 됩니다.'],
     [adapterSource, /const elementStyleTarget =[\s\S]*?const styleActionLabel =[\s\S]*?aria-label=\{styleActionLabel\}[\s\S]*?page-builder-element-style-open[\s\S]*?page-builder-block-style-open/, 'ActionBar는 T 버튼 대신 요소 전체 스타일과 블록 설정을 구분해야 합니다.'],

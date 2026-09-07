@@ -308,8 +308,15 @@ test('repeater element selection follows rapid commands and Korean composition s
   } };
   await withFixture(page, context, info.project.name, [actions], async (api, owned) => {
     const canvas = canvasBlock(page, actions);
-    const first = richField(canvas, 'items.0.label');
-    await replacePuckRichTextField(page, first, '한글 입력 ', 'repeater label');
+    const first = canvas.locator('[data-g7pb-action-field="items.0.label"] [contenteditable]').first();
+    await first.hover();
+    await expect(first).toHaveAttribute('contenteditable', 'plaintext-only');
+    await activatePointerTarget(page, first, 'repeater label');
+    await expect(first).toBeFocused();
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.insertText('한글 입력 ');
+    await expect(first).toHaveText('한글 입력');
+    await expect(first).toBeFocused();
     // Chromium's IME protocol exercises real composition updates, not dispatchEvent mocks.
     const cdp = await context.newCDPSession(page);
     try {
@@ -329,18 +336,18 @@ test('repeater element selection follows rapid commands and Korean composition s
     await itemAction('page-builder-item-duplicate').click();
     await itemAction('page-builder-item-move-down').click();
     await itemAction('page-builder-item-delete').click();
-    await expect(richField(canvas, 'items.0.label')).toHaveText('한글 입력 한글 완성');
-    await expect(canvas.locator('[data-g7pb-inline-field="items.2.label"]')).toHaveCount(0);
+    await expect(canvas.locator('[data-g7pb-action-field="items.0.label"]')).toHaveText('한글 입력 한글 완성');
+    await expect(canvas.locator('[data-g7pb-action-field="items.2.label"]')).toHaveCount(0);
     await page.waitForTimeout(300);
     await page.getByRole('button', { name: 'undo', exact: true }).click();
     // A real pointer sequence may cross native grouping boundaries. Undo the
     // bounded sequence until the original two entries return, then replay it.
     let undoCount = 1;
-    while (await canvas.locator('[data-g7pb-inline-field="items.2.label"]').count() > 0 && undoCount < 3) {
+    while (await canvas.locator('[data-g7pb-action-field="items.2.label"]').count() > 0 && undoCount < 3) {
       await page.getByRole('button', { name: 'undo', exact: true }).click(); undoCount++;
     }
-    await expect(canvas.locator('[data-g7pb-inline-field="items.2.label"]')).toHaveCount(0);
-    await expect(richField(canvas, 'items.0.label')).toHaveText('한글 입력 한글 완성');
+    await expect(canvas.locator('[data-g7pb-action-field="items.2.label"]')).toHaveCount(0);
+    await expect(canvas.locator('[data-g7pb-action-field="items.0.label"]')).toHaveText('한글 입력 한글 완성');
     for (let index = 0; index < undoCount; index++) await page.getByRole('button', { name: 'redo', exact: true }).click();
     await save(page, owned.documentId);
     const saved = (await resource(api, owned.documentId)).document.blocks[0];
@@ -348,7 +355,7 @@ test('repeater element selection follows rapid commands and Korean composition s
     expect(saved.props.appearance).toEqual(actions.props.appearance);
     expect(saved.props.items).toHaveLength(2);
     await page.reload();
-    await expect(richField(canvasBlock(page, actions), 'items.0.label')).toHaveText('한글 입력 한글 완성');
+    await expect(canvasBlock(page, actions).locator('[data-g7pb-action-field="items.0.label"]')).toHaveText('한글 입력 한글 완성');
     expect((await resource(api, owned.documentId)).document.blocks[0]).toEqual(saved);
   });
 });

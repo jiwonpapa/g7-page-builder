@@ -249,6 +249,15 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     expect(children.map((item) => item.type)).toEqual(['content.heading-01', 'content.icon-01', 'content.list-01', 'content.badge-01']);
     const [, icon, list, badge] = children;
     const listCanvas = canvasBlock(page, list), badgeCanvas = canvasBlock(page, badge);
+    // Select the edited block through the native Outline. A selected adjacent
+    // block's floating ActionBar can cover a compact Stack's previous item.
+    await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+    for (const parent of [section, columns, stack]) {
+      const row = page.locator(`[data-puck-layer-tree-id="${parent.instance_id}"]`);
+      const expand = row.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
+      if (await expand.isVisible()) await expand.click();
+    }
+    await selectOutlineBlock(page, list, '목록');
     const first = listCanvas.locator('[data-g7pb-inline-field="items.0.text"] [contenteditable]').first();
     await first.hover();
     await expect(first).toHaveAttribute('contenteditable', 'plaintext-only');
@@ -280,12 +289,14 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await page.getByRole('radio', { name: '번호', exact: true }).check();
     await expect(listCanvas.locator('ol')).toBeVisible();
 
+    await selectOutlineBlock(page, badge, '배지');
     const label = badgeCanvas.locator('[data-g7pb-inline-field="label"] [contenteditable]').first();
     await label.hover();
     await activatePointerTarget(page, label, 'badge label');
     await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.insertText('접수 중');
     await expect(label).toHaveText('접수 중');
+    await selectOutlineBlock(page, icon, '아이콘');
     await activatePointerTarget(page, canvasBlock(page, icon).locator('.g7pb-basic-icon'), 'icon selection');
     await page.getByRole('radio', { name: '의미 전달', exact: true }).check();
     await page.getByLabel('접근성 이름 (의미 전달 시 필수)', { exact: true }).fill('서비스 안내');

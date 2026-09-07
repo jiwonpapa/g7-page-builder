@@ -439,7 +439,7 @@
       "id": "EP1-02",
       "phase": "EP1",
       "title": "위치별 삽입과 선택 경로",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "EP1-01"
       ],
@@ -449,9 +449,59 @@
         "POL-01"
       ],
       "owner_task": "ep1-placement-contract-20260907",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+      "integrated_commit": "6dc6f26bff171a1aacd1d414a97ec0956d636e82",
+      "evidence": [
+        {
+          "acceptance_id": "CAT-02",
+          "kind": "unit",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "CAT-02",
+          "kind": "browser",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "INS-01",
+          "kind": "unit",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "INS-01",
+          "kind": "browser",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "unit",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "php",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        },
+        {
+          "acceptance_id": "POL-01",
+          "kind": "browser",
+          "commit": "bb1e6bf591fdd39d5f7bb8067a2ed03349eb2355",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-02.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/editor/puckEditorSelection.ts",

@@ -1,3 +1,5 @@
+import manifest from '../../resources/block-packs/builtin-core/manifest.json';
+import policy from '../../schemas/layout-policy-v1.json';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 vi.hoisted(() => {
@@ -118,6 +120,8 @@ describe('Puck layout structure controls', () => {
   });
 
   it('declares the same restricted children for slots and disables native container deletion', () => {
+    const leaves = policy.leaf_types.map((id) => manifest.blocks.find((block) => block.block_id === id)?.editor_component);
+    expect(leaves.every((type) => typeof type === 'string')).toBe(true);
     const section = layoutCatalogComponentConfigs.LayoutSection;
     const columns = layoutCatalogComponentConfigs.LayoutColumns;
     const stack = layoutCatalogComponentConfigs.LayoutStack;
@@ -125,13 +129,13 @@ describe('Puck layout structure controls', () => {
     expect(columns.permissions?.delete).toBe(false);
     expect(stack.permissions?.delete).toBe(false);
     expect(section.fields?.content).toMatchObject({
-      type: 'slot', allow: ['LayoutColumns', 'LayoutStack', 'Heading', 'RichText', 'Image', 'Buttons', 'Divider'],
+      type: 'slot', allow: ['LayoutColumns', 'LayoutStack', ...leaves],
     });
     expect(columns.fields?.column1).toMatchObject({
-      type: 'slot', allow: ['LayoutStack', 'Heading', 'RichText', 'Image', 'Buttons', 'Divider'],
+      type: 'slot', allow: ['LayoutStack', ...leaves],
     });
     expect(stack.fields?.content).toMatchObject({
-      type: 'slot', allow: ['Heading', 'RichText', 'Image', 'Buttons', 'Divider'],
+      type: 'slot', allow: leaves,
     });
   });
 });

@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CANVAS_ELEMENT_MESSAGE, type CanvasElementSelection } from '../../resources/js/editor/canvasEditingContract';
+import { RICH_TEXT_RANGE_STATE_MESSAGE } from '../../resources/js/editor/richTextSelection';
 import { DEFAULT_PAGE_DESIGN } from '../../resources/js/editor/pageDesignTokens';
 import type { PuckEditorData } from '../../resources/js/editor/puckEditorTypes';
 import { useCanvasEditingUi } from '../../resources/js/editor/useCanvasEditingUi';
@@ -20,11 +21,11 @@ async function mount() {
   const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frame) => { frames.delete(frame); });
   const host = document.createElement('div'); document.body.append(host); const root = createRoot(host);
   let result: ReturnType<typeof useCanvasEditingUi> | null = null, renders = 0, mounted = true;
-  function Probe({ editable }: { editable: boolean }) {
-    result = useCanvasEditingUi(data, editable); renders++;
+  function Probe({ editable, documentData }: { editable: boolean; documentData: PuckEditorData }) {
+    result = useCanvasEditingUi(documentData, editable); renders++;
     return <output>{result.canvasEditingUi.textToolsOpen ? 'open' : 'closed'}</output>;
   }
-  const render = (editable: boolean) => act(async () => root.render(<Probe editable={editable} />));
+  const render = (editable: boolean, documentData = data) => act(async () => root.render(<Probe editable={editable} documentData={documentData} />));
   const unmount = () => { if (mounted) { mounted = false; root.unmount(); host.remove(); } };
   cleanup.push(unmount); await render(true);
   const current = () => { if (!result) throw new Error('Missing canvas hook'); return result; };
@@ -45,6 +46,39 @@ describe('canvas selection event lifetime', () => {
     await test.render(true); await test.select();
     const live = [...test.frames.values()][0]; await act(async () => live(1));
     expect(test.current().canvasEditingUi.textToolsOpen).toBe(true);
+  });
+
+  it('ignores malformed input and old field cleanup, and closes tools when the target is removed', async () => {
+    const test = await mount(); await test.select();
+    const range = (detail: unknown) => act(async () => {
+      window.dispatchEvent(new CustomEvent(RICH_TEXT_RANGE_STATE_MESSAGE, { detail }));
+    });
+    await range({ active: true, target: selection });
+    expect(test.current().canvasEditingUi.rangeEditingActive).toBe(true);
+    await range({ active: false, target: { ...selection, blockId: 'retired' } });
+    expect(test.current().canvasEditingUi.rangeEditingActive).toBe(true);
+    await act(async () => {
+      window.dispatchEvent(new MessageEvent('message', { origin: window.location.origin,
+        data: { type: CANVAS_ELEMENT_MESSAGE, selection: { role: 'text' } } }));
+    });
+    expect(test.current().canvasEditingUi.selection).toEqual(selection);
+    await act(async () => test.current().canvasEditingUi.setMediaDialogOpen(true));
+    await test.render(true, { ...data, content: [] });
+    expect(test.current().canvasEditingUi.selection).toBeNull();
+    expect(test.current().canvasEditingUi.mediaDialogOpen).toBe(false);
+    expect(test.current().canvasEditingUi.rangeEditingActive).toBe(false);
+  });
+
+  it('cancels queued tools and open pickers on explicit parent selection', async () => {
+    const test = await mount(); await test.select();
+    const stale = [...test.frames.values()][0];
+    await act(async () => {
+      test.current().canvasEditingUi.setRouteDialogOpen(true);
+      test.current().canvasEditingUi.setSelection(null);
+    });
+    await act(async () => stale(0));
+    expect(test.current().canvasEditingUi.routeDialogOpen).toBe(false);
+    expect(test.current().canvasEditingUi.textToolsOpen).toBe(false);
   });
 
   it('retires stale selection callbacks and removes listeners and frames on unmount', async () => {

@@ -6,6 +6,7 @@ import {
   canvasContextRangeActive,
   canvasContextSelection,
   normalizeCanvasRangeAnchor,
+  normalizeCanvasElementSelection,
   reduceCanvasContextState,
   type CanvasContextState,
 } from '../../resources/js/editor/canvasContextState';
@@ -80,11 +81,34 @@ describe('canvas context state', () => {
       }),
       { type: 'range.change', active: true },
     );
-    const replacement = { ...selection('text', 'items.1.title'), itemIndex: 1 };
+    const replacement = { ...selection('text', 'items.0.title'), label: 'Updated title' };
     const next = reduceCanvasContextState(textRange, { type: 'selection.replace', selection: replacement });
 
     expect(next.target.kind).toBe('text-range');
     expect(canvasContextSelection(next)).toEqual(replacement);
+  });
+
+  it.each(['selection.accept', 'selection.replace'] as const)('clears stale ranges on field or block change through %s', (type) => {
+    const current = reduceCanvasContextState(
+      reduceCanvasContextState(INITIAL_CANVAS_CONTEXT_STATE, { type: 'selection.accept', selection: selection('text', 'heading') }),
+      { type: 'range.change', active: true },
+    );
+    for (const next of [selection('text', 'description'), { ...selection('text', 'heading'), blockId: 'other' }]) {
+      expect(reduceCanvasContextState(current, { type, selection: next }).target.kind).toBe('text-element');
+    }
+    expect(reduceCanvasContextState(current, { type: 'range.change', active: false,
+      target: { blockId: 'other', fieldPath: 'heading' } })).toBe(current);
+  });
+
+  it('validates cross-frame selection payloads before using their fields', () => {
+    const valid = selection('text', 'heading');
+    expect(normalizeCanvasElementSelection(valid)).toEqual(valid);
+    expect(normalizeCanvasElementSelection({ ...valid, collection: 'items', itemIndex: 0 })).not.toBeNull();
+    for (const value of [null, [], {}, { ...valid, blockId: 5 }, { ...valid, role: 'script' },
+      { ...valid, fieldPath: null }, { ...valid, itemIndex: 0 }, { ...valid, collection: 'items', itemIndex: -1 },
+      { ...valid, collection: 'items', itemIndex: 0.5 }]) {
+      expect(normalizeCanvasElementSelection(value)).toBeNull();
+    }
   });
 
   it('ends an active range when the target changes to a non-text element', () => {

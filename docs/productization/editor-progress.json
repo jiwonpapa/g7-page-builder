@@ -517,7 +517,7 @@
       "id": "EP1-03",
       "phase": "EP1",
       "title": "직접 편집·문맥 도구·설정 패널 연결",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "EP1-02"
       ],
@@ -528,7 +528,7 @@
         "SAV-01",
         "RES-01"
       ],
-      "owner_task": null,
+      "owner_task": "ep1-context-20260907",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

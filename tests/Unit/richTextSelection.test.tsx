@@ -65,6 +65,9 @@ describe('rich-text selection ownership', () => {
     const text = TiptapNode.create({ name: 'text', group: 'inline' });
     const host = field();
     host.replaceChildren();
+    host.dataset.blockId = 'block-1';
+    host.dataset.g7pbInlineField = 'heading';
+    const target = { blockId: 'block-1', fieldPath: 'heading' };
     const editor = new Editor({ element: host, extensions: [G7SingleLineDocument, paragraph, text], content: '<p>sample</p>' });
     cleanups.push(() => editor.destroy());
     editor.commands.setTextSelection({ from: 1, to: 7 });
@@ -80,14 +83,14 @@ describe('rich-text selection ownership', () => {
     cleanups.push(() => { if (mounted) act(() => root.unmount()); });
     const render = async (active: boolean) => { await act(async () => { root.render(<RichTextRangeStateSignal active={active} editor={editor} />); }); };
     await render(true);
-    expect(details.at(-1)).toEqual({ active: true, anchor: { left: 10, top: 20, right: 40, bottom: 30, width: 30, height: 10 } });
+    expect(details.at(-1)).toEqual({ target, active: true, anchor: { left: 10, top: 20, right: 40, bottom: 30, width: 30, height: 10 } });
     select(document, editor.view.dom, [new DOMRect(25, 40, 30, 10)]);
     await render(true);
-    expect(details.at(-1)).toEqual({ active: true, anchor: { left: 25, top: 40, right: 55, bottom: 50, width: 30, height: 10 } });
+    expect(details.at(-1)).toEqual({ target, active: true, anchor: { left: 25, top: 40, right: 55, bottom: 50, width: 30, height: 10 } });
     await render(false);
-    expect(details.at(-1)).toEqual({ active: false, anchor: null });
+    expect(details.at(-1)).toEqual({ target, active: false, anchor: null });
     await render(true);
     await act(async () => { root.unmount(); mounted = false; });
-    expect(details.at(-1)).toEqual({ active: false, anchor: null });
+    expect(details.at(-1)).toEqual({ target, active: false, anchor: null });
   });
 });

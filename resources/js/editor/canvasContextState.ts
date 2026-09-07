@@ -23,10 +23,43 @@ export interface CanvasContextState {
   target: CanvasContextTarget;
 }
 
+export type CanvasTextTarget = Pick<CanvasElementSelection, 'blockId' | 'fieldPath'>;
+
+export function normalizeCanvasTextTarget(value: unknown): CanvasTextTarget | null {
+  if (!value || typeof value !== 'object' || !('blockId' in value) || typeof value.blockId !== 'string'
+    || !value.blockId || !('fieldPath' in value) || typeof value.fieldPath !== 'string' || !value.fieldPath) return null;
+  return { blockId: value.blockId, fieldPath: value.fieldPath };
+}
+
+export function sameCanvasTextTarget(left: CanvasTextTarget | null, right: CanvasTextTarget | null): boolean {
+  return left !== null && right !== null && left.blockId === right.blockId && left.fieldPath === right.fieldPath;
+}
+
+/** Cross-frame events are UI input, not a trusted document or a type assertion. */
+export function normalizeCanvasElementSelection(value: unknown): CanvasElementSelection | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (!('blockId' in value) || typeof value.blockId !== 'string' || !value.blockId
+    || !('blockType' in value) || typeof value.blockType !== 'string' || !value.blockType
+    || !('role' in value) || !['block', 'text', 'media', 'action'].some((role) => role === value.role)
+    || !('fieldPath' in value) || (value.fieldPath !== null && typeof value.fieldPath !== 'string')
+    || !('label' in value) || typeof value.label !== 'string'
+    ) return null;
+  const collection = 'collection' in value ? value.collection : null;
+  const itemIndex = 'itemIndex' in value ? value.itemIndex : null;
+  if ((collection !== null && (typeof collection !== 'string' || !collection))
+    || (itemIndex !== null && (typeof itemIndex !== 'number' || !Number.isInteger(itemIndex) || itemIndex < 0))
+    || (collection === null) !== (itemIndex === null)) return null;
+  if (value.role !== 'block' && !value.fieldPath) return null;
+  return { blockId: value.blockId, blockType: value.blockType, role: value.role as CanvasElementRole,
+    fieldPath: value.fieldPath, label: value.label, collection, itemIndex,
+    ...('intent' in value ? { intent: 'identify' as const } : {}),
+    ...('anchor' in value ? { anchor: normalizeCanvasRangeAnchor(value.anchor) } : {}) };
+}
+
 export type CanvasContextAction =
   | { type: 'selection.accept'; selection: CanvasElementSelection }
   | { type: 'selection.replace'; selection: CanvasElementSelection | null }
-  | { type: 'range.change'; active: boolean; anchor?: CanvasRangeAnchor | null }
+  | { type: 'range.change'; active: boolean; anchor?: CanvasRangeAnchor | null; target?: CanvasTextTarget }
   | { type: 'clear' };
 
 export const INITIAL_CANVAS_CONTEXT_STATE: CanvasContextState = {
@@ -63,12 +96,14 @@ export function reduceCanvasContextState(
     return {
       target: targetForSelection(
         action.selection,
-        state.target.kind === 'text-range' ? state.target.anchor : undefined,
+        state.target.kind === 'text-range' && sameCanvasTextTarget(state.target.selection, action.selection)
+          ? state.target.anchor : undefined,
       ),
     };
   }
 
   if (action.type === 'range.change') {
+    if (action.target && !sameCanvasTextTarget(state.target.selection, action.target)) return state;
     if (action.active) {
       if (state.target.kind !== 'text-element' && state.target.kind !== 'text-range') return state;
       return {

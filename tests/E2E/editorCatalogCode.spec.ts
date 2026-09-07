@@ -286,7 +286,8 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await expect(first).toHaveText('목록 한글 완성');
     for (let index = 0; index < undos; index++) await page.getByRole('button', { name: 'redo', exact: true }).click();
     await expect(listCanvas.locator('li')).toHaveCount(2);
-    await page.getByRole('radio', { name: '번호', exact: true }).check();
+    await page.getByText('번호', { exact: true }).click();
+    await expect(page.getByRole('radio', { name: '번호', exact: true })).toBeChecked();
     await expect(listCanvas.locator('ol')).toBeVisible();
 
     await selectOutlineBlock(page, badge, '배지');
@@ -298,7 +299,8 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
     await expect(label).toHaveText('접수 중');
     await selectOutlineBlock(page, icon, '아이콘');
     await activatePointerTarget(page, canvasBlock(page, icon).locator('.g7pb-basic-icon'), 'icon selection');
-    await page.getByRole('radio', { name: '의미 전달', exact: true }).check();
+    await page.getByText('의미 전달', { exact: true }).click();
+    await expect(page.getByRole('radio', { name: '의미 전달', exact: true })).toBeChecked();
     await page.getByLabel('접근성 이름 (의미 전달 시 필수)', { exact: true }).fill('서비스 안내');
     await page.getByLabel('크기', { exact: true }).selectOption('large');
     await page.getByLabel('색상', { exact: true }).selectOption('accent');
@@ -346,7 +348,7 @@ test('basic elements insert into Stack, edit Korean text, reopen and publish at 
       const draft = await resource(api, owned.documentId);
       for (const endpoint of ['preview', 'publications/prepare']) {
         const rejected = await api.post(`${API}/${owned.documentId}/${endpoint}`, { data: { expected_lock_version: draft.lock_version } });
-        expect(rejected.status()).toBe(400);
+        expect(rejected.status()).toBe(422);
       }
       expect((await preview.reload())?.ok()).toBe(true);
       await expect(preview.getByRole('img', { name: '서비스 안내', exact: true })).toBeVisible();

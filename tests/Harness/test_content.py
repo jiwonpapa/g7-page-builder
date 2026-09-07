@@ -271,6 +271,15 @@ class ContentSelectionTest(unittest.TestCase):
         self.assertFalse(result["product_written"])
         self.assertFalse(result["browser_executed"])
 
+    def test_thumbnail_checks_require_candidate_build_without_claiming_browser_acceptance(self):
+        for kind in ("block", "preset"):
+            with self.subTest(kind=kind):
+                result = plan(self.root, kind, ["owned-fixture"])
+                self.assertTrue(result["requires_build"])
+                self.assertFalse(result["browser_executed"])
+                self.assertFalse(result["product_written"])
+        self.assertFalse(plan(self.root, "kit", ["alpha"])["requires_build"])
+
     def test_store_check_uses_temporary_output_and_leaves_dist_unchanged(self):
         self.write("resources/store/dist/catalog.json", "catalog")
         self.write("resources/store/dist/artifacts/alpha.zip", "archive")

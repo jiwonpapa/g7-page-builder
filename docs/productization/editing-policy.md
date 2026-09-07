@@ -36,7 +36,7 @@
 
 ## 공개 호스트 계약의 선행조건
 
-최초 조사 기준의 `G7Core.layoutEditor` 메서드는 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady`였다. NE1 별도 G7 후보에서 `registerPanel`과 불변 host/명령을 검증했고 NE2 후보에서 `snapshot.fields`, `setControl`, 선택형 media를 추가 검증했다. [공개 계약](native-host-contract.md)과 차수별 감사에 명시한 후보/템플릿 조합만 검증된 상태이며 stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. 등록 이름 중복은 덮어쓰기이므로 모듈 namespace와 수명 관리가 필요하다. 아래 표는 최초 조사 경계와 수용 조건이며 H01~H04의 NE1 증거와 H05~H08 후속 작업을 구분한다.
+최초 조사 기준의 `G7Core.layoutEditor` 메서드는 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady`였다. NE1 별도 G7 후보에서 `registerPanel`과 불변 host/명령을 검증했고 NE2 후보에서 `snapshot.fields`, `setControl`, 선택형 media를 추가 검증했다. [공개 계약](native-host-contract.md)과 차수별 감사에 명시한 후보/템플릿 조합만 검증된 상태이며 stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. 등록 이름 중복은 덮어쓰기이므로 모듈 namespace와 수명 관리가 필요하다. 아래 표는 최초 조사 경계와 수용 조건이며 H01~H04의 NE1 증거와 H05~H08의 후속 수용 조건을 구분한다. NE3 후보에서는 collections/구조 명령과 명시적 템플릿 companion 연결로 H05~H07을 검증했다. [NAT-03 감사](../audits/2026-09-08-native-editor-ne3.md)의 지원 조합·거부 경계를 따르며 H08 동시 저장은 NE6에 남아 있다.
 
 | ID | 코드에서 확인한 경계 | 구현 전에 확보할 조건 |
 |---|---|---|

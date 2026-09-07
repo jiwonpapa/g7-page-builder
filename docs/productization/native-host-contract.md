@@ -1,6 +1,6 @@
-# NE1 — G7 공개 호스트 계약 v1
+# G7 네이티브 편집 공개 호스트 계약 v1
 
-상태: **NE1 로컬 구현·통합·NAT-01 검증 완료**. G7 공개 API 후보 `9260d521ab3d69761a428b3d1c54df1297ecf6eb`와 PB 통합 `e075b8149ce9b73d7397a9eaa89ea0c867979bb4`를 함께 검증했다. stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. [마감 증거](../audits/2026-09-07-native-editor-ne1.md), [현행 계획](editor-plan.md), [개발 헌법](../development-constitution.md)을 따른다.
+상태: **NE1~NE3 로컬 구현·통합·수용 검증 완료**. 최신 검증은 G7 공개 API 후보 `da064086eacf9071afb81fa703121b9c69a4c89c`와 PB 제품 통합 `9530e96a07acb9cfc749e5aac4c7c7c5824eb7be` 조합이다. stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. [NE3 마감 증거](../audits/2026-09-08-native-editor-ne3.md), [현행 계획](editor-plan.md), [개발 헌법](../development-constitution.md)을 따른다. 아래 차수별 SHA와 제한은 당시 증거를 보존한다.
 
 조사 기준 G7 `fde750cede7fda68329cea42fb706a00d4546bd3`에는 기존 네 메서드만 있었으며 H01~H04가 부족했다. 이번 후보에 공개 `registerPanel`과 `g7.layout-editor/1`을 추가했다. 내부 hook import·PB 우회 저장·호스트 DOM 읽기를 PB 연동으로 사용하지 않는다.
 
@@ -60,3 +60,19 @@ NE2는 G7 `c9e59a55223dadb039d9e20fb0726623d25619b1` (engine-v1.66.0), PB 제품
 - 표준 basic Img의 `core:image-ratio`/`core:image-fit`은 호스트가 소유한 유한 CSS 프리셋이다. template capability가 이미지 source 편집을 제공할 때만 노출하며 설치된 템플릿 파일을 수정하지 않는다.
 
 fields/media가 없는 이전 호스트는 NE1 문구 편집을 유지한다. 서버가 이미 수신한 업로드는 취소 이후 정상 첨부 목록에 남을 수 있지만, 취소된 응답/오래된 문맥으로 노드 또는 새 선택 상태를 수정해서는 안 된다. 위 추가 계약은 별도 로컬 후보이며 G7 main/upstream·운영 배포는 NE6 릴리스 범위에서 구분 확인한다.
+
+## NE3 내부 구조와 템플릿 renderer 계약
+
+NE3 호스트 후보는 G7 `da064086eacf9071afb81fa703121b9c69a4c89c` (engine-v1.67.0)다. protocol `g7.layout-editor/1`과 기존 등록 메서드를 유지한다. NE1의 제한된 `insertChild`를 범용 트리 명령으로 오인하지 않으며 아래 선택형 계약을 사용한다. 실제 조합·검사 결과는 [NAT-03 감사](../audits/2026-09-08-native-editor-ne3.md)에 기록한다.
+
+- `snapshot.collections`는 현재 병합 spec, nesting, palette와 출처에서 계산한 불변 목록이다. `children`, `array`, `cell`을 구분하며 허용 선택지·항목·지원 필드·수정 가능 여부만 전달한다. collection ID는 해당 revision에서만 유효한 불투명 값이며 PB에서 경로로 해석하지 않는다.
+- `execute({kind:'structure',expected,change})`는 `insert`, `move`, `duplicate`, `delete`, `field`를 받는다. 호스트가 최신 문맥·원본·선언을 다시 검사하고 한 번의 patch/history로 적용한다. PB는 mutable G7 문서나 별도 Undo 저장소를 갖지 않는다.
+- 일반 children, 선언된 children prop, 기존 responsive 분기, 정적 배열/배열 그룹, 배열 항목의 셀 트리를 지원한다. 기본 배열은 첫 편집 때 명시적으로 구체화한다. 노드 슬롯 간 이동은 허용 nesting과 순환 검사를 통과해야 한다. 서로 다른 배열 계약 간 이동은 거부한다.
+- 복제·삽입 시 표준 `id`를 새로 만들고 선언된 내부 DOM 참조를 재연결한다. 기존 출처와 미지 필드는 보존한다. 외부 참조가 남는 삭제, 해석하지 못한 ID 참조·비표준 `idField`, 보호된 출처/삽입 영역은 거부한다. 이 거부를 해당 구조의 영구 미지원 정책으로 확대하지 않는다.
+- 반복 인스턴스에서 원본 경로를 추측하지 않는다. 기존 반복 템플릿 편집 모드의 `iterationRoot` 아래 자식만 변경하며 반복 source·item/index 변수와 외부 원본을 보존한다. 바인딩 필드 자체는 잠긴다. static data source와 `state`/`_local` 두 형태의 실제 편집·공개 출력을 시험한다.
+- 반복 편집 미리보기는 실제 layout의 `initLocal`/`state` 기본값을 반영하되 이미 있는 로컬 키를 덮지 않는다. 일반 노드 변경만으로 로컬 상태를 다시 초기화하지 않는다. 기존 한 항목 편집 제한을 결합 문맥에 적용한다.
+- 배열 이미지 필드는 G7 첨부 API와 NE2 미디어 패널을 공유한다. 같은 origin의 첨부 URL은 경로로 적용하여 G7의 정상 component JSON 저장 검사를 통과한다. 외부 URL 제한을 해제하지 않으며 서버가 검사하는 원본을 우회하지 않는다.
+
+H05 renderer는 템플릿의 실제 manifest/IIFE export 경로, H06은 기존 capability를 대체하지 않는 새 이름의 spec 병합, H07은 위 collection 필드/명령과 이미지 선택으로 연결한다. `registerWidget`이 JSX renderer를 등록한다고 가정하지 않는다. 선택형 `PageBuilderSlider` companion은 템플릿 제작자가 명시적으로 패키징하며 설치된 템플릿을 자동 수정하지 않는다. 편집 중 전체 항목 표시/자동재생 중지와 공개 재생·키보드·reduced-motion 동작을 분리한다.
+
+G7의 기존 저장은 history를 초기화한다. NE3 Undo/Redo 증거는 저장 전 개별 명령에 관한 것이며 저장을 넘는 Undo 지원을 주장하지 않는다. 현재 호스트에 collections가 없으면 기존 NE1/NE2 기능을 유지한다. G7 main/upstream 반영과 운영 배포는 별도 NE6 완료 증거가 필요하다.

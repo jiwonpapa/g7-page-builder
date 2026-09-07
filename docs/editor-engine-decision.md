@@ -76,11 +76,13 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 
 아래 항목은 도입 이후 누적된 지원·검증 범위의 기록입니다. 현재 HEAD의 전체 시험을 새로 실행한 결과가 아니며 새 슬롯 편집의 완료 증거로 사용하지 않습니다. 현재 실행 근거는 현행 진척 원장과 각 배치의 종료 기록에서 확인합니다.
 
-1. 45종 제품 카탈로그와 95개 내장 프리셋의 좌측 축소 미리보기, 원하는 위치 DnD, typed 편집과 선택 block 정렬을 지원합니다.
+1. EP2-01 이전 기준인 45종 제품 카탈로그와 95개 내장 프리셋의 좌측 축소 미리보기, 원하는 위치 DnD, typed 편집과 선택 block 정렬을 지원합니다.
 2. Puck ↔ `PageBuilderDocument` 왕복 Fixture가 통과합니다.
 3. 저장 후 reload와 Puck undo/redo 표면이 동작합니다.
 4. 편집기 모바일·태블릿·PC iframe 전환과 preview/public 제품 E2E가 통과합니다.
-5. Puck을 import하지 않는 PHP compiler가 같은 45종 block을 결정적으로 컴파일합니다.
+5. Puck을 import하지 않는 PHP compiler가 해당 기준의 45종 block을 결정적으로 컴파일합니다.
 6. Hero-family 경고 닫기, Hero 직접 입력, Slider 장면 선택·인라인 필드, 요소별 style token과 route 적용 후 저장·재로드를 실제 브라우저 E2E로 검사합니다. 글자 범위 편집은 합성 Selection을 금지하고 실제 포인터 드래그, 범위 툴바·요소 벌룬 상호배타, 선택 해제·반복 선택, preview/public DOM 영속성을 세 viewport에서 통과해야 합니다.
 
 최초 채택 당시에는 100개 block 성능 측정과 nested slot을 미완료 검증으로 남겼습니다. 이후 Section·Columns·Stack과 기본 요소 5종은 canonical/Puck/서버 검증/출력으로 연결됐으므로 nested slot 전체가 미지원이라는 당시 판단은 현행 상태가 아닙니다. 기존 복합 블록 내부의 명명된 슬롯과 새 구성요소는 아직 별도 구현·검증 대상입니다. 과거 100개 block 측정 과제와 새 대표 시나리오의 성능 결과도 구분하며, 원인을 확인하지 않고 다른 엔진으로 자동 전환하지 않습니다.
+
+EP2-01 마감 시점의 내장 정의는 48종·프리셋98종이며 기본 요소는 8종입니다. 위 45/95 및 초기 5종은 과거 기준입니다. 현재 구현·검증은 [EP2-01 실행 기록](audits/2026-09-07-editor-ep2-01.md), 제품 방향의 추가 확인과 재사용 한계는 [감사 인계](audits/2026-09-07-editor-direction-handoff.md)를 따릅니다. 이 인계만으로 G7 네이티브 문서와 Puck의 양방향 변환이나 편집기 교체를 승인하지 않습니다.

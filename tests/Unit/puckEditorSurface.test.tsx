@@ -10,6 +10,7 @@ import type { PageBuilderDocument } from '../../resources/js/documents/types';
 import type { SitePartResource } from '../../resources/js/api/resources';
 import { CANVAS_ELEMENT_MESSAGE } from '../../resources/js/editor/canvasEditingContract';
 import builtinManifest from '../../resources/block-packs/builtin-core/manifest.json';
+import layoutPolicy from '../../schemas/layout-policy-v1.json';
 import layoutFixture from '../Contract/document-layout-v2.fixture.json';
 import { readCssGraph } from '../../scripts/lib/editorCssSources.mjs';
 
@@ -1287,21 +1288,24 @@ describe('Puck editor surface contract', () => {
 
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
+    const total = builtinManifest.blocks.filter((block) => block.editor_component !== 'HeroSplit').length + builtinManifest.presets.length;
+    const leafIds = new Set(layoutPolicy.leaf_types);
+    const basics = [...builtinManifest.blocks, ...builtinManifest.presets].filter((item) => leafIds.has(item.block_id)).length;
     expect(Array.from(gallery.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent)).toEqual([
-      '전체139', '기본 요소14', '레이아웃0', '컴포넌트55', '완성 섹션70',
+      `전체${total}`, `기본 요소${basics}`, '레이아웃0', '컴포넌트55', '완성 섹션70',
     ]);
     expect(Array.from(gallery.querySelector<HTMLSelectElement>('[aria-label="블록 팩"]')?.options ?? [])
       .map((option) => option.textContent)).toEqual(['모든 출처', '기본 제공']);
     expect(gallery.querySelector('.g7pb-block-thumb__zoom')).toBeNull();
-    expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-total-items')).toBe('139');
+    expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-total-items')).toBe(String(total));
     expect(gallery.querySelector('.g7pb-block-gallery__grid')?.getAttribute('data-rendered-items')).toBe('24');
     expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(24);
-    for (let batch = 0; batch < 5; batch += 1) {
+    for (let batch = 0; batch < Math.ceil(total / 24) - 1; batch += 1) {
       await act(async () => {
         gallery.querySelector<HTMLButtonElement>('[data-testid="page-builder-gallery-load-more"]')?.click();
       });
     }
-    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(139);
+    expect(gallery.querySelectorAll('[data-block-preview]')).toHaveLength(total);
     expect(gallery.textContent).not.toContain('기존 분할 히어로');
     expect(gallery.textContent).toContain('히어로');
     expect(gallery.textContent).toContain('제목');

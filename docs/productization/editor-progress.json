@@ -517,7 +517,7 @@
       "id": "EP1-03",
       "phase": "EP1",
       "title": "직접 편집·문맥 도구·설정 패널 연결",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "EP1-02"
       ],
@@ -528,19 +528,103 @@
         "SAV-01",
         "RES-01"
       ],
-      "owner_task": "ep1-context-20260907",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "owner_task": "ep1-native-input-20260907",
+      "implementation_commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+      "integrated_commit": "8bb90f516c429c71a49af9b72bfcea556b02403e",
+      "evidence": [
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "EDT-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "EDT-02",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "EDT-02",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "UND-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "UND-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "SAV-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "SAV-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "unit",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "browser",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        },
+        {
+          "acceptance_id": "RES-01",
+          "kind": "render",
+          "commit": "12445eb8b4bbed0bddfec2f75a5187f9fce6ccf0",
+          "result": "pass",
+          "path": "docs/audits/2026-09-07-editor-ep1-03.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
+        "resources/js/editor/canvasContextState.ts",
+        "resources/js/editor/useCanvasEditingUi.ts",
+        "resources/js/editor/richTextSelection.tsx",
         "resources/js/editor/CanvasContextControls.tsx",
-        "resources/js/editor/canvasEditingContract.ts",
-        "resources/js/editor/richTextEditing.tsx",
-        "resources/js/editor/puckEditorConfig.tsx",
-        "resources/js/editor/responsiveBlockStyle.tsx",
-        "tests/Unit/canvasEditingContract.test.ts",
-        "tests/E2E/pageBuilderLifecycle.spec.ts"
+        "resources/js/editor/CanvasPickerSession.tsx",
+        "tests/Unit/canvasContextState.test.ts",
+        "tests/Unit/canvasEditingUi.test.tsx",
+        "tests/Unit/canvasPickerSession.test.tsx",
+        "tests/Unit/puckEditorTools.test.tsx",
+        "tests/Unit/responsiveBlockStyle.test.ts",
+        "tests/E2E/editorInteractionQuality.spec.ts",
+        "tests/E2E/editorCatalogCode.spec.ts",
+        "tests/E2E/editorDocumentBoundary.spec.ts"
       ],
       "completion": "대상/포커스/입력/스타일/반복 항목을 한 편집 상태로 연결하고 원본·Undo·반응형 지원 범위를 보존한다."
     },

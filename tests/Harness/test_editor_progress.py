@@ -17,7 +17,7 @@ class EditorProgressTests(unittest.TestCase):
         self.write(POLICY, "# 정책\n[계획](editor-plan.md)\n")
         self.write(PLAN, "# 계획\n[정책](editing-policy.md)\n")
         self.write("src/Existing.php", "<?php // existing baseline\n")
-        self.write("docs/evidence.md", "# 실제 실행 요약 fixture\n")
+        self.write("docs/audits/editor-evidence.md", "# 실제 실행 요약 fixture\n")
         self.data = {
             "schema_version": "g7pb-editor-progress/v1", "plan_id": "editor-maturity-20260907",
             "baseline_sha": "a" * 40, "updated_at": "2026-09-07", "policy_file": POLICY,
@@ -27,7 +27,7 @@ class EditorProgressTests(unittest.TestCase):
             "acceptance": [{"id": "CAT-01", "description": "올바른 요소 찾기", "required_evidence": ["unit", "browser"]}],
             "phases": [{"id": "phase-1", "title": "삽입 UX"}],
             "baseline": [{"id": "BASE-01", "title": "기존 구현", "state": "partial",
-                          "source_paths": ["src/Existing.php"], "historical_evidence": ["docs/evidence.md"]}],
+                          "source_paths": ["src/Existing.php"], "historical_evidence": ["docs/audits/editor-evidence.md"]}],
             "items": [{"id": "ED-01", "phase": "phase-1", "title": "분류 통일", "status": "planned",
                        "depends_on": [], "acceptance_ids": ["CAT-01"], "owner_task": None,
                        "implementation_commit": None, "integrated_commit": None, "evidence": [],
@@ -49,7 +49,7 @@ class EditorProgressTests(unittest.TestCase):
     def finish(self, item):
         item.update(status="done", implementation_commit="b" * 40, integrated_commit="c" * 40)
         item["evidence"] = [{"acceptance_id": "CAT-01", "kind": kind, "commit": "b" * 40,
-                             "result": "pass", "path": "docs/evidence.md"} for kind in ("unit", "browser")]
+                             "result": "pass", "path": "docs/audits/editor-evidence.md"} for kind in ("unit", "browser")]
 
     def test_planned_scope_can_name_future_files_and_baseline_is_not_progress(self):
         data = validate(self.root)
@@ -58,6 +58,12 @@ class EditorProgressTests(unittest.TestCase):
         self.assertEqual(result["next"], ["ED-01"])
         self.assertFalse(result["product_verified"])
         self.assertFalse(result["deployment_executed"])
+        board = markdown(data)
+        self.assertIn("BASE-01 · 기존 구현", board)
+        self.assertIn("일부 구현", board)
+        self.assertIn("[src/Existing.php](<../../src/Existing.php>)", board)
+        self.assertIn("[docs/audits/editor-evidence.md](<../audits/editor-evidence.md>)", board)
+        self.assertEqual(result["baseline"], self.data["baseline"])
 
     def test_rejects_bad_schema_dates_ids_and_duplicate_items(self):
         original = copy.deepcopy(self.data)
@@ -102,6 +108,31 @@ class EditorProgressTests(unittest.TestCase):
         self.finish(item)
         self.save()
         self.assertEqual(summary(validate(self.root))["counts"]["done"], 1)
+        board = markdown(self.data)
+        self.assertIn("구현 `" + "b" * 40 + "`", board)
+        self.assertIn("통합 `" + "c" * 40 + "`", board)
+        self.assertIn("필수 증거 2/2", board)
+        self.assertIn("[CAT-01/browser](<../audits/editor-evidence.md>)", board)
+
+    def test_source_tests_and_plan_files_cannot_replace_execution_summaries(self):
+        self.write("tests/example.test.ts", "test('defined but not executed')")
+        self.write("docs/audits/not-a-summary.txt", "unstructured output")
+        self.finish(self.data["items"][0])
+        for name in ("src/Existing.php", "tests/example.test.ts", LEDGER, DASHBOARD, PLAN, POLICY,
+                     "docs/audits/not-a-summary.txt"):
+            self.data["items"][0]["evidence"][0]["path"] = name
+            self.save()
+            with self.subTest(path=name), self.assertRaisesRegex(ValueError, "dedicated execution summary"):
+                validate(self.root)
+
+    def test_in_progress_requires_assigned_task(self):
+        self.data["items"][0]["status"] = "in_progress"
+        self.save()
+        with self.assertRaisesRegex(ValueError, "in_progress requires owner_task"):
+            validate(self.root)
+        self.data["items"][0]["owner_task"] = "editor-owned-20260907"
+        self.save()
+        self.assertEqual(summary(validate(self.root))["counts"]["in_progress"], 1)
 
     def test_completion_evidence_missing_wrong_result_or_wrong_acceptance_fails(self):
         self.finish(self.data["items"][0])
@@ -194,7 +225,7 @@ class EditorProgressTests(unittest.TestCase):
     def test_declared_input_files_include_documents_baseline_and_completion_evidence(self):
         self.finish(self.data["items"][0])
         self.save()
-        self.assertTrue({LEDGER, DASHBOARD, PLAN, POLICY, "src/Existing.php", "docs/evidence.md"}.issubset(input_files(self.root)))
+        self.assertTrue({LEDGER, DASHBOARD, PLAN, POLICY, "src/Existing.php", "docs/audits/editor-evidence.md"}.issubset(input_files(self.root)))
         self.assertNotIn("resources/js/editor/new-file.ts", input_files(self.root))
 
     def test_status_and_check_cli_do_not_change_files_or_create_bytecode(self):

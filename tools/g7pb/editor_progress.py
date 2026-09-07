@@ -3,6 +3,7 @@ import argparse
 from datetime import date
 import json
 from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import sys
 from urllib.parse import unquote, urlsplit
@@ -15,6 +16,7 @@ POLICY = "docs/productization/editing-policy.md"
 MANAGED_FILES = (LEDGER, DASHBOARD, PLAN, POLICY)
 STATES = ("planned", "in_progress", "blocked", "done")
 LABELS = dict(zip(STATES, ("계획", "진행", "차단", "완료")))
+BASELINE_LABELS = {"implemented": "구현됨", "partial": "일부 구현", "missing": "미구현"}
 NOTICE = "이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다."
 LIMIT = "완료 증거의 경로·형식·충족 관계를 검사하며 실제 시험 결과의 진실성이나 현재 HEAD의 제품 동작을 자동 보증하지 않습니다. Git SHA는 형식과 필수 기록만 검사합니다."
 
@@ -85,6 +87,14 @@ def local_links(root, source, *, allow_missing=()):
         require(not Path(name).is_absolute() and "\\" not in name, f"Non-portable document link: {target}")
         linked = (source.parent / name).resolve()
         require(linked.is_relative_to(root.resolve()) and (linked.exists() or linked in allow_missing), f"Missing or escaping document link in {source.name}: {target}")
+
+
+def completion_evidence_file(root, name):
+    target = repo_file(root, name)
+    require(name not in MANAGED_FILES and name.startswith(("docs/audits/", "docs/productization/"))
+            and target.suffix in {".md", ".json"} and target.resolve().relative_to(root).as_posix() == name,
+            "Completion evidence must be a dedicated execution summary in docs/audits/ or docs/productization/: " + name)
+    return target
 
 
 def indexed(entries, name):
@@ -177,6 +187,7 @@ def validate(root, *, check_dashboard=True):
         require(set(criteria).issubset(acceptance), f"Unknown acceptance: {item['id']}")
         if item["owner_task"] is not None:
             identifier(item["owner_task"], "owner_task")
+        require(item["status"] != "in_progress" or item["owner_task"] is not None, "in_progress requires owner_task")
         for field in ("implementation_commit", "integrated_commit"):
             if item[field] is not None:
                 sha(item[field], field)
@@ -193,7 +204,7 @@ def validate(root, *, check_dashboard=True):
             identifier(evidence["kind"], "evidence kind")
             require(evidence["result"] == "pass", "Evidence result must be pass")
             sha(evidence["commit"], "evidence commit")
-            repo_file(root, evidence["path"])
+            completion_evidence_file(root, evidence["path"])
             pair = (evidence["acceptance_id"], evidence["kind"])
             require(pair not in covered, "Duplicate evidence kind for acceptance")
             covered.add(pair)
@@ -226,7 +237,7 @@ def summary(data):
     return {
         "plan_id": data["plan_id"], "updated_at": data["updated_at"], "baseline_sha": data["baseline_sha"],
         "counts": {state: sum(item["status"] == state for item in items) for state in STATES},
-        "total": len(items), "baseline_count": len(data["baseline"]),
+        "total": len(items), "baseline_count": len(data["baseline"]), "baseline": data["baseline"],
         "next": [item["id"] for item in items if item["status"] in {"planned", "in_progress"} and set(item["depends_on"]).issubset(done)],
         "items": items, "notice": NOTICE, "limits": LIMIT,
         "product_verified": False, "deployment_executed": False,
@@ -239,10 +250,29 @@ def markdown(data):
     lines = ["# 편집기 개발 진척", "", f"원장 갱신: {data['updated_at']} · 기준 SHA: `{data['baseline_sha']}`", "",
              NOTICE, "", f"계획 작업 완료 **{state['counts']['done']}/{state['total']}** · 기존 기반 {state['baseline_count']}개는 분모에서 제외합니다.", "",
              "[개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)", "",
-             "| 단계 | 작업 | 상태 | 선행 작업 | 담당 task |", "|---|---|---|---|---|"]
+             "## 기존 구현 기반", "", "새 목표의 완료 수와 별개로 이미 있는 기능과 근거를 유지합니다.", "",
+             "| 기반 | 현재 상태 | 구현 소스 | 과거 검증 근거 |", "|---|---|---|---|"]
+    def link(name, label=None):
+        destination = posixpath.relpath(name, PurePosixPath(DASHBOARD).parent.as_posix())
+        return f"[{escape(label or name)}](<{destination}>)"
+    for entry in data["baseline"]:
+        cells = (escape(entry["id"] + " · " + entry["title"]), BASELINE_LABELS[entry["state"]],
+                 " · ".join(link(name) for name in entry["source_paths"]) or "없음",
+                 " · ".join(link(name) for name in entry["historical_evidence"]) or "별도 기록 없음")
+        lines.append("| " + " | ".join(cells) + " |")
+    lines += ["", "## 이번 계획 작업", "",
+              "| 단계 | 작업 | 상태 | 선행 작업 | 담당 task | 완료 근거 |", "|---|---|---|---|---|---|"]
     phases = {phase["id"]: phase["title"] for phase in data["phases"]}
+    acceptance = {entry["id"]: entry["required_evidence"] for entry in data["acceptance"]}
     for item in data["items"]:
-        lines.append("| " + " | ".join(map(escape, (phases[item["phase"]], item["id"] + " · " + item["title"], LABELS[item["status"]], ", ".join(item["depends_on"]) or "없음", item["owner_task"] or "미배정"))) + " |")
+        proof = "미완료"
+        if item["status"] == "done":
+            required = {(criterion, kind) for criterion in item["acceptance_ids"] for kind in acceptance[criterion]}
+            covered = {(entry["acceptance_id"], entry["kind"]) for entry in item["evidence"]}
+            proof = f"구현 `{item['implementation_commit']}`<br>통합 `{item['integrated_commit']}`<br>필수 증거 {len(required & covered)}/{len(required)}"
+            proof += "<br>" + " · ".join(link(entry["path"], entry["acceptance_id"] + "/" + entry["kind"]) for entry in item["evidence"])
+        cells = [*map(escape, (phases[item["phase"]], item["id"] + " · " + item["title"], LABELS[item["status"]], ", ".join(item["depends_on"]) or "없음", item["owner_task"] or "미배정")), proof]
+        lines.append("| " + " | ".join(cells) + " |")
     lines += ["", "다음 진행 가능: " + (", ".join(state["next"]) or "없음"), ""]
     blocked = [item for item in data["items"] if item["status"] == "blocked"]
     lines += [f"- 차단 {item['id']}: {escape(item['blocked_reason'])}" for item in blocked]
@@ -275,6 +305,9 @@ def main(argv=None):
             state = summary(data)
             print(f"편집기 개발: {state['counts']['done']}/{state['total']} 완료 · 진행 {state['counts']['in_progress']} · 차단 {state['counts']['blocked']}")
             print("다음 진행 가능: " + (", ".join(state["next"]) or "없음"))
+            print(f"기존 기반 {state['baseline_count']}개 (새 목표 분모 제외):")
+            for baseline in data["baseline"]:
+                print(f"{baseline['id']} [{BASELINE_LABELS[baseline['state']]}] {baseline['title']}")
             for item in data["items"]:
                 print(f"{item['id']} [{LABELS[item['status']]}] {item['title']}")
             print(NOTICE)

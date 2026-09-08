@@ -121,6 +121,40 @@ def standalone_viewer_class_added(root, base):
     return before.startswith(prefix) and after == marked + before[len(prefix):]
 
 
+EDITOR_ASSET_VIEW = "resources/views/editor.blade.php"
+EDITOR_ASSET_SPEC = "tests/E2E/editorAssetIdentity.editorInteractionQuality.spec.ts"
+EDITOR_ASSET_DIGESTS = """    @php
+        $editorDist = base_path('modules/jiwonpapa-page_builder/dist');
+        $editorCssDigest = hash_file('sha256', $editorDist.'/css/page-builder-editor.css');
+        $editorJsDigest = hash_file('sha256', $editorDist.'/js/page-builder-editor.iife.js');
+    @endphp
+"""
+
+
+def editor_asset_identity_added(root, base):
+    """Only two content fingerprints; auth, markup and every other byte are preserved."""
+    root = root.resolve()
+    path = Path(EDITOR_ASSET_VIEW)
+    if any((root / part).is_symlink() for part in (path, *path.parents)):
+        return False
+    try:
+        before = subprocess.run(["git", "-C", str(root), "show", f"{base}:{path}"],
+                                capture_output=True, check=True, timeout=10).stdout
+        after = (root / path).read_bytes()
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if before.count(b"<head>\n") != 1 or b"$editorDist" in before:
+        return False
+    expected = before.replace(b"<head>\n", b"<head>\n" + EDITOR_ASSET_DIGESTS.encode(), 1)
+    for asset, variable in (("css/page-builder-editor.css", "editorCssDigest"),
+                            ("js/page-builder-editor.iife.js", "editorJsDigest")):
+        literal = ("{{ url('/api/modules/assets/jiwonpapa-page_builder/dist/" + asset + "') }}").encode()
+        if before.count(literal) != 1:
+            return False
+        expected = expected.replace(literal, literal + ("?v={{ $" + variable + " }}").encode(), 1)
+    return after == expected
+
+
 def browser_consumer_inputs(root):
     """Inputs read by the helper registration audit, including unregistered specs."""
     inputs, reusable = set(), True
@@ -532,6 +566,15 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             continue
         elif path.endswith(".md"):
             continue
+        elif path == EDITOR_ASSET_VIEW and not full and editor_asset_identity_added(root, base):
+            if not (root / EDITOR_ASSET_SPEC).is_file():
+                plan.unresolved.append("Missing editor asset identity browser proof: " + EDITOR_ASSET_SPEC)
+            else:
+                add("browser:" + EDITOR_ASSET_SPEC,
+                    ["npx", "--no-install", "playwright", "test", EDITOR_ASSET_SPEC, "--project=desktop", "--retries=0"],
+                    [path, *source_inputs(root, EDITOR_ASSET_SPEC).files, "playwright.config.ts", "package-lock.json"],
+                    "Exact editor asset fingerprints; browser cache/reentry contract", ("node", "php", "g7", "browser"),
+                    True, env=BROWSER_ENVIRONMENT)
         elif path == STANDALONE_VIEWER and not full and standalone_viewer_class_added(root, base):
             viewer_styles.append(path)
         elif path.startswith(("database/", "resources/routes/", "resources/layouts/", "resources/views/", "schemas/", "config/", "docker/")) or path in {"module.php", "compose.yaml", "composer.json", "composer.lock"}:

@@ -1511,21 +1511,21 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       const containerHeight = await revealInspectorField(page, 'page-builder-block-min-height');
       const verticalAlign = await revealInspectorField(page, 'page-builder-block-vertical-align');
       await containerWidth.selectOption('full');
-      await containerAlign.selectOption('right');
+      await containerAlign.getByRole('radio', { name: '오른쪽', exact: true }).check();
       await containerHeight.selectOption('viewport');
-      await verticalAlign.selectOption('center');
+      await verticalAlign.getByRole('radio', { name: '가운데', exact: true }).check();
       await expect(containerWidth).toHaveValue('full');
-      await expect(containerAlign).toHaveValue('right');
+      await expect(containerAlign.getByRole('radio', { name: '오른쪽', exact: true })).toBeChecked();
       await expect(containerHeight).toHaveValue('viewport');
-      await expect(verticalAlign).toHaveValue('center');
+      await expect(verticalAlign.getByRole('radio', { name: '가운데', exact: true })).toBeChecked();
       await expect(heroBlock).toHaveClass(/g7pb-container-width--full/);
       await expect(heroBlock).toHaveClass(/g7pb-container-align--right/);
       await expect(heroBlock).toHaveClass(/g7pb-container-height--viewport/);
       await expect(heroBlock).toHaveClass(/g7pb-container-vertical--center/);
       await containerWidth.selectOption('inherit');
-      await containerAlign.selectOption('center');
+      await containerAlign.getByRole('radio', { name: '가운데', exact: true }).check();
       await containerHeight.selectOption('auto');
-      await verticalAlign.selectOption('start');
+      await verticalAlign.getByRole('radio', { name: '위', exact: true }).check();
 
       await page.getByTestId('page-builder-manager-link').click();
       const unsavedDialog = page.getByTestId('page-builder-unsaved-dialog');

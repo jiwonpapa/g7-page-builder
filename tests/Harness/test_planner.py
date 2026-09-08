@@ -10,6 +10,18 @@ from tools.g7pb.runner import digest_gate
 
 
 class PlannerTests(unittest.TestCase):
+    def test_card_contracts_require_both_language_consumers(self):
+        from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS
+        for source in ("schemas/page-builder-document.schema.json",):
+            self.write(source, '{}')
+            self.assertTrue(build_plan(self.root, [source]).unresolved)
+            for consumer in CONTRACT_FIXTURE_CONSUMERS[source]:
+                self.write(consumer, '<?php' if consumer.endswith('.php') else 'export {};')
+            plan = build_plan(self.root, [source])
+            self.assertFalse(plan.unresolved, plan.unresolved)
+            self.assertTrue(any(g.name == 'unit:tests/Unit/cardComposition.test.ts' for g in plan.gates))
+            self.assertTrue(any(g.name == 'php:tests/UnitPhp/CardCompositionTest.php' for g in plan.gates))
+
     def test_native_helper_plans_registration_or_runtime_without_scope_expansion(self):
         helper = "tests/E2E/support/nativeStructureFixture.ts"
         spec = "tests/E2E/nativeEditorContract.spec.ts"
@@ -78,7 +90,8 @@ class PlannerTests(unittest.TestCase):
 
     def test_shared_basic_element_fixture_selects_both_consumers_and_invalidates_them(self):
         from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS
-        fixture, consumers = next(iter(CONTRACT_FIXTURE_CONSUMERS.items()))
+        fixture = "tests/Contract/document-basic-elements-v2.fixture.json"
+        consumers = CONTRACT_FIXTURE_CONSUMERS[fixture]
         self.write(fixture, '{}')
         for consumer in consumers:
             self.write(consumer, '<?php return 1;' if consumer.endswith('.php') else 'export const fixture = 1;')

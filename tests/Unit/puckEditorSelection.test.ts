@@ -158,3 +158,7 @@ describe('contextual placement policy', () => {
     expect(() => assertEditorInsertion(data, target, 'Heading', 501, 1, true)).toThrow('node_limit:');
   });
 });
+
+it('rejects creating Card before explicit structure activation', () => {
+  expect(() => assertEditorInsertion({ ...sample(), content: [] }, { zone: 'root:default-zone', index: 0 }, 'Card', 1, 1, false)).toThrow('slot:');
+});

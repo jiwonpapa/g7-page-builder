@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, BASIC_ELEMENTS, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, SITE_KIT_INQUIRY, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, BASIC_ELEMENTS, CARD_COMPOSITION, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, SITE_KIT_INQUIRY, scenarios_for
 import re
 import subprocess
 from tools.g7pb.planner import build_plan
@@ -52,6 +52,7 @@ CATALOG_BREAKPOINTS = catalog_roles(CATALOG_CODEC, CATALOG_RESPONSIVE)
 # Independent reviewed ownership list: a renamed/new source must not silently
 # inherit a prefix-based exception or lose its corresponding code contract.
 EXTRACTED_CATALOG_SCOPES = {
+    'resources/js/editor/cardCatalogBlocks.tsx': {CARD_COMPOSITION},
     **{"resources/js/editor/" + name: {BASIC_ELEMENTS} for name in (
         "basicElementCatalogData.ts", "basicElementCatalogCodec.ts", "basicElementCatalogBlocks.tsx",
     )},
@@ -111,6 +112,11 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_single_card_selects_its_actual_editing_flow(self):
+        for name in ('cardCatalogBlocks.tsx',):
+            selected = scenarios_for(['resources/js/editor/' + name])
+            self.assertEqual([x.spec for x in selected], ['tests/E2E/cardComposition.editorInteractionQuality.spec.ts'])
+
     def test_native_companion_requires_its_actual_editor_and_public_flow(self):
         from tools.g7pb.browser_requirements import NATIVE_COMPONENTS
         for path in ("resources/js/native-components/Slider.tsx", "resources/js/native-components/spec.ts", "resources/css/page-builder-native-components.css"):
@@ -723,7 +729,7 @@ class BrowserRequirementsTests(unittest.TestCase):
 
     def test_catalog_role_union_deduplicates_without_removing_existing_workflows(self):
         sources = list(EXTRACTED_CATALOG_SCOPES)
-        expected = {PAGE, TEXT_AND_CONTROLS, STRUCTURE_THEME,
+        expected = {PAGE, TEXT_AND_CONTROLS, STRUCTURE_THEME, CARD_COMPOSITION,
                     catalog_roles(CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, BASIC_ELEMENTS)}
         self.assertEqual(set(scenarios_for(sources)), expected)
         self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))

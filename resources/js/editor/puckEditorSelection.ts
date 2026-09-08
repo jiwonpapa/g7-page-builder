@@ -175,7 +175,7 @@ function assertPlacement(data: PuckEditorData, destination: EditorItemSelector, 
   const children: unknown = parent ? Reflect.get(parent.item.props, slot) : data.content;
   if (!Array.isArray(children) || !children.every(isItem)) throw new LayoutPolicyError('slot', zone);
   if (parent && source && editorItemLocations({ content: [source.item] }).some(({ item }) => item.props.id === parent.item.props.id)) throw new LayoutPolicyError('descendant', zone);
-  if (parent?.item.type === 'Hero' && !structureEnabled) throw new LayoutPolicyError('slot', zone);
+  if (!structureEnabled && (componentType === 'Card' || ['Hero', 'ImageText', 'Card'].includes(parent?.item.type ?? ''))) throw new LayoutPolicyError('slot', zone);
   const parentType = parent ? canonicalTypeForEditor(parent.item.type) : null;
   const legacyExternalRoot = !enforceLayout && parent === null && Boolean(externalBlockForComponent(componentType));
   if (!legacyExternalRoot && (!childType || parentType === undefined || !layoutAllowsChild(parentType, childType, slot))) throw new LayoutPolicyError('parent', zone);

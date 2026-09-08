@@ -93,7 +93,9 @@ test('Hero extra inserts edits reorders deletes undoes and survives reopen previ
     extra.push({ ...structuredClone(extra[0]), instance_id: crypto.randomUUID() });
     const rejected = await api.put(`${API}/${owned.documentId}/draft`, { data: {
       expected_lock_version: publishedState.lock_version, document: invalid } });
-    expect(rejected.status()).toBe(422);
+    expect(rejected.status()).toBe(400);
+    expect(await rejected.json()).toMatchObject({ success: false, message: expect.stringContaining('component_slot_limit:'),
+      data: { code: 'G7PB_DOCUMENT_INVALID' } });
     expect((await resource(api, owned.documentId)).document).toEqual(publishedState.document);
     await page.getByRole('group', { name: '캔버스 기기 미리보기' }).getByRole('button', { name: '태블릿', exact: true }).click();
     await expect(page.getByTestId('hero-composition').filter({ visible: true }).getByRole('button', { name: '배지 삭제', exact: true })).toBeDisabled();

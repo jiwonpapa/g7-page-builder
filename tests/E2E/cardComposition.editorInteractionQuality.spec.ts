@@ -43,8 +43,8 @@ for (const nested of [false, true]) test(`Card UI insertion ${nested ? 'in Colum
       await page.getByRole('button', { name: 'Expand', exact: true }).click();
       await page.locator(`[data-puck-layer-tree-id="${columnId}"]`).getByRole('button', { name: 'Columns · 1/2/3열', exact: true }).click();
     }
-    await page.getByTestId('page-builder-add-block').click();
-    if (!nested) await page.getByRole('button', { name: '모든 제작 단위와 변형 보기', exact: true }).click();
+    if (nested) await page.getByTestId('page-builder-add-block').click();
+    else await page.getByRole('button', { name: '모든 제작 단위와 변형 보기', exact: true }).click();
     await page.getByRole('searchbox', { name: '블록 검색', exact: true }).fill('content.card-01');
     await page.getByTestId('page-builder-block-gallery').getByTestId('page-builder-block-option-card').click();
     let panel = await selectCard(page);
@@ -56,7 +56,7 @@ for (const nested of [false, true]) test(`Card UI insertion ${nested ? 'in Colum
     await expect(panel.locator('summary')).toContainText('8/8');
     await panel.getByRole('button', { name: '이미지 편집', exact: true }).click();
     await page.getByRole('textbox', { name: '이미지 URL', exact: true }).filter({ visible: true }).fill('/modules/jiwonpapa-page_builder/block-packs/jiwonpapa/builtin-core/0.16.0/thumbnails/generated/block-46-icon.png');
-    await page.getByLabel('대체 텍스트', { exact: true }).filter({ visible: true }).fill('카드 이미지 저장 검증');
+    await page.getByLabel('대체 텍스트 (필수)', { exact: true }).filter({ visible: true }).fill('카드 이미지 저장 검증');
     panel = await selectCard(page);
     await panel.getByRole('button', { name: '배지 편집', exact: true }).click();
     await page.getByLabel('문구 (40자 이내)', { exact: true }).filter({ visible: true }).fill('카드 내부 저장 검증');

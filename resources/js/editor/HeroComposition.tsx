@@ -36,7 +36,7 @@ export function HeroComposition({ readOnly, structureEnabled = false }: { readOn
     <section className="g7pb-layout-inspector-control">
       <div role="group" aria-label="Hero 내부 요소 추가">
         {additions.map(({ type, label, reason }) => <button type="button" key={type} disabled={disabled || Boolean(reason)}
-          aria-label={`${label} 추가`} title={reason || `${label} 추가`} onClick={() => add(type)}>＋ {label}</button>)}
+          aria-label={`${label} 추가`} title={reason || `${label} 추가`} onClick={() => add(type)}>+ {label}</button>)}
       </div>
       {children.map((entry, index) => {
         const label = entry.item.type === 'Badge' ? '배지' : '목록';

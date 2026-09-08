@@ -36,7 +36,9 @@ test('Hero extra inserts edits reorders deletes undoes and survives reopen previ
     expect(seed.ok()).toBe(true);
     await page.goto(`/modules/jiwonpapa-page_builder/admin/editor?document=${owned.documentId}`);
     let composition = await selectHero(page);
-    await composition.getByRole('button', { name: '배지 추가', exact: true }).click();
+    const addBadge = composition.getByRole('button', { name: '배지 추가', exact: true });
+    expect((await addBadge.boundingBox())?.height).toBeLessThan(44);
+    await addBadge.click();
     composition = await selectHero(page);
     await expect(composition.getByRole('button', { name: '배지 추가', exact: true })).toBeDisabled();
     await composition.getByRole('button', { name: '목록 추가', exact: true }).click();

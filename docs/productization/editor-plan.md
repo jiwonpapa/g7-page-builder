@@ -2,7 +2,7 @@
 
 <!-- editor-plan:native-editor-20260907 -->
 
-상태: **NE1~NE5 완료, 마지막 NE6 릴리스 진행 중**. NE6 호스트 저장·JSON·키보드 수정과 관련 동작 검증을 끝냈으며 커밋·통합·배포 및 운영 재열기 증거를 마감한다. 현재 상태와 한계는 [진척 원장](editor-progress.json)을 따른다.
+상태: **NE1~NE6 완료(6/6)**. PB 0.35.0과 검증한 G7 공개 호스트를 g7devops.com에 배포하고 실제 운영 일반 페이지의 네이티브 편집·Undo·재열기 및 공개 출력을 확인했다. 상세 증거와 지원 한계는 [NE6 기록](../audits/2026-09-08-native-editor-ne6.md) 및 [진척 원장](editor-progress.json)을 따른다. 계획 차수 완료는 모든 테마/구조 지원이나 전체 제품 상용 완성 판정이 아니다.
 
 [편집 정책](editing-policy.md) · [개발 헌법](../development-constitution.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [코드 근거](../audits/2026-09-07-native-editor-governance.md)
 

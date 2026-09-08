@@ -1,8 +1,8 @@
 # NE6 — 호환·회귀·릴리스
 
-## 범위와 현재 상태
+## 범위와 완료 결과
 
-마지막 차수 NAT-06. 일반 페이지 JSON 종류 보존, 실제 동시 저장, 이력 복원 버전, 확장 버튼 키보드, 번들/저장 장애 및 기존 PB 공존을 검증했다. 릴리스 후보는 PB 0.35.0이다. 이 기록 작성 시 배포와 운영 재열기는 진행 중이며 완료로 표시하지 않는다.
+마지막 차수 NAT-06. 일반 페이지 JSON 종류 보존, 실제 동시 저장, 이력 복원 버전, 확장 버튼 키보드, 번들/저장 장애 및 기존 PB 공존을 검증했다. PB 0.35.0과 검증한 G7 호스트를 g7devops.com에 배포하고 운영 일반 페이지 재열기·임시 편집/Undo·공개 출력을 확인했다. NE1~NE6 전체 6차수를 마감한다.
 
 블록 콘텐츠·페이지킷·테마 상품 추가, G7의 새 주소/메뉴/초안 엔진, 전체 소스 재감사는 포함하지 않는다.
 
@@ -45,4 +45,14 @@
 
 ## 배포·운영 확인
 
-진행 중. 호스트/모듈 SHA와 버전, 백업 경로, 원격 checksum·공개 응답·로그인된 운영 편집 재열기를 확인한 후 실제 결과로 갱신한다. 운영 원본 콘텐츠를 검증을 위해 발행/덮어쓰지 않는다.
+- PB 배포 SHA: `881194563a68e7df10e0439ee8d9493da509f5cc`; 버전 **0.35.0**; 원격 `BUILD-INFO` 일치. 릴리스 제출 `339c7faa73656c3fbad4e2df0a82f8f9e0884df7`을 정식 scoped 통합했다.
+- 아티팩트: `g7-page-builder-v0.35.0-881194563a68.tar.gz`, SHA256 `7e8ce43ae803d0c38d595c79e5beb19feedb557769d28e169976173da4027b52`. 검사된 build 입력/산출물이 같아 기존 production build를 재사용했다.
+- G7 호스트: `6dc41eead1a9d14fa7d4c817827dfaccb03cb1db`의 12개 런타임 파일 적용, 적용 후 checksum 불일치 **0**. 사이트 일시 점검 모드 → 교체 → cache/view 정리 → 정상 모드 → PHP-FPM reload. `2026-09-08T03:04:06Z` 적용 기록.
+- 모듈은 `make deploy-staging TASK=native-ne6-integration-20260908`로 **실제 www.g7devops.com**에 배포했고 필수 smoke 통과. main과 G7 후보 branch 푸시 완료. production에 Git pull/reset이나 전체 코어 덮어쓰기를 하지 않았다.
+- 공개 `/`, `/projects/g7-installer` HTTP 200. 네이티브 기본/조합/companion JS 3개와 CSS HTTP 200 및 로컬 릴리스 SHA256 일치.
+- 로그인된 Edge에서 `/admin/layout-editor/jiwonpapa-devops?route=%2Fprojects%2Fg7-installer` 재열기. 테마 **0.1.4**, `H1` 선택 시 상세 문구·정렬/굵기 등 라디오 확인. 임시 문구를 Tab→Enter로 적용하여 제목 변경/Undo 활성화를 확인한 뒤 Undo했다. 새로고침 후 제목 `G7 Installer` 복원과 패널 유지, 공개 페이지의 기존 본문·이미지·푸터 렌더를 확인했다. 운영 저장 버튼은 누르지 않았다.
+- 운영 테마 지문: editor-spec `2a14d1326152f55a06f68dc272df6e3252cab1a52edad6169c679462a0c8d3df`; components manifest `cdce7a8962e828e5c5e891b3d286a7f0f29e97cd17bb812ace4cfabc4c94b2e6`; renderer `04309ee2ab183df541777ef36b479e9389e018718fa6c794676e546d7f9ed7e5`; CSS `c58693b0c9ec8714ad8fe5c02eb62eb787d4f8260e1e6e39e6a2cbc803d05bbc`.
+- 복구본: G7 `/home/g7devops/backups/native-host-6dc41eead1a9d14fa7d4c817827dfaccb03cb1db`; PB `/home/g7devops/public_html/modules/.jiwonpapa-page_builder.rollback-g7-page-builder-v0.35.0-881194563a68-7e8ce43ae803`. 호스트 manifest의 이전 해시와 적용 파일 목록을 함께 보존했다. 실패 시 파일 복원 경로가 있으며 DB 롤백 시험이나 실제 운영 복구 실행을 주장하지 않는다.
+- 증거: 위 로컬 디렉터리의 `g7-host-apply.log`, `production-identity.log`, `production-http.json`, `production-backups.log`, `ne6-deploy.log` 및 현재 작업의 CUA 운영 화면 관찰. 마감 기록 커밋은 배포 후 문서만 변경하며 같은 제품을 재배포하지 않는다.
+
+**다음 차수는 없다. NE6가 이 계획의 마지막 차수다.** 후속 테마 연결/콘텐츠/추가 UX 요구는 별도 범위 확정 후 착수한다.

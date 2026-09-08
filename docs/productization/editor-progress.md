@@ -4,7 +4,7 @@
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **3/6** · 기존 기반 8개는 분모에서 제외합니다.
+계획 작업 완료 **4/6** · 기존 기반 8개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
 
@@ -36,11 +36,11 @@
 | 1차 · 공식 연동 계약과 원본 보존 | NE1 · 공식 연동 계약과 원본 보존 | 완료 | 없음 | native-ne1-browser-fix-20260907 | 구현 `b39de138d563d384dd3c92fe701f76f88ff16e87`<br>통합 `e075b8149ce9b73d7397a9eaa89ea0c867979bb4`<br>필수 증거 3/3<br>[NAT-01/host-contract](<../audits/2026-09-07-native-editor-ne1.md>) · [NAT-01/unit](<../audits/2026-09-07-native-editor-ne1.md>) · [NAT-01/browser](<../audits/2026-09-07-native-editor-ne1.md>) |
 | 2차 · 내용·스타일·미디어 편집 | NE2 · 내용·스타일·미디어 편집 | 완료 | NE1 | native-ne2-content-r4-20260907 | 구현 `1e29e89a04c1e4a75472c9938126d571ea57f915`<br>통합 `45ae4152d8321726e14eeea6daa0f8ad35c7f9a9`<br>필수 증거 2/2<br>[NAT-02/unit](<../audits/2026-09-07-native-editor-ne2.md>) · [NAT-02/browser](<../audits/2026-09-07-native-editor-ne2.md>) |
 | 3차 · 내부 트리·반복·동적 요소 편집 | NE3 · 내부 트리·반복·동적 요소 편집 | 완료 | NE2 | native-ne3-components-r2-20260908 | 구현 `85fb7f8c4a1421f857b4b316109d7d11d4179bb9`<br>통합 `9530e96a07acb9cfc749e5aac4c7c7c5824eb7be`<br>필수 증거 3/3<br>[NAT-03/unit](<../audits/2026-09-08-native-editor-ne3.md>) · [NAT-03/browser](<../audits/2026-09-08-native-editor-ne3.md>) · [NAT-03/runtime](<../audits/2026-09-08-native-editor-ne3.md>) |
-| 4차 · 사용자 조합 저장과 재삽입 | NE4 · 사용자 조합 저장과 재삽입 | 계획 | NE3 | 미배정 | 미완료 |
+| 4차 · 사용자 조합 저장과 재삽입 | NE4 · 사용자 조합 저장과 재삽입 | 완료 | NE3 | native-ne4-editor-20260908 | 구현 `9ae68d58306203949bd658fef6d81920b69921c8`<br>통합 `54450ecf86179da01b357fcc3d572ef210aa51fa`<br>필수 증거 2/2<br>[NAT-04/unit](<../audits/2026-09-08-native-editor-ne4.md>) · [NAT-04/browser](<../audits/2026-09-08-native-editor-ne4.md>) |
 | 5차 · 삽입·설정·미리보기·저장 흐름 연결 | NE5 · 삽입·설정·미리보기·저장 흐름 연결 | 계획 | NE4 | 미배정 | 미완료 |
 | 6차 · 호환·회귀·릴리스 | NE6 · 호환·회귀·릴리스 | 계획 | NE5 | 미배정 | 미완료 |
 
-다음 진행 가능: NE4
+다음 진행 가능: NE5
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

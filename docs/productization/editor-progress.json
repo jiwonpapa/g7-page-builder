@@ -171,6 +171,11 @@
       "path": "docs/audits/2026-09-08-native-editor-ne3.md",
       "role": "current",
       "required_text": "NAT-03"
+    },
+    {
+      "path": "docs/audits/2026-09-08-native-editor-ne4.md",
+      "role": "current",
+      "required_text": "NAT-04"
     }
   ],
   "acceptance": [
@@ -513,23 +518,44 @@
       "id": "NE4",
       "phase": "phase-4",
       "title": "사용자 조합 저장과 재삽입",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "NE3"
       ],
       "acceptance_ids": [
         "NAT-04"
       ],
-      "owner_task": null,
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "owner_task": "native-ne4-editor-20260908",
+      "implementation_commit": "9ae68d58306203949bd658fef6d81920b69921c8",
+      "integrated_commit": "54450ecf86179da01b357fcc3d572ef210aa51fa",
+      "evidence": [
+        {
+          "acceptance_id": "NAT-04",
+          "kind": "unit",
+          "commit": "9ae68d58306203949bd658fef6d81920b69921c8",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-native-editor-ne4.md"
+        },
+        {
+          "acceptance_id": "NAT-04",
+          "kind": "browser",
+          "commit": "54450ecf86179da01b357fcc3d572ef210aa51fa",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-native-editor-ne4.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/native-editor/domain/composition.ts",
         "resources/js/native-editor/ports/compositions.ts",
         "resources/js/native-editor/ui/compositions.tsx",
-        "resources/js/adapters/gnuboard7/compositions.ts"
+        "resources/js/adapters/gnuboard7/compositions.ts",
+        "resources/js/native-editor/application/compositions.ts",
+        "resources/js/adapters/gnuboard7/compositionLibrary.ts",
+        "src/Domain/Compositions/NativeComposition.php",
+        "src/Application/Compositions/NativeCompositionService.php",
+        "tests/Integration/Gnuboard7/NativeCompositionPersistenceTest.php",
+        "tests/E2E/nativeEditorContract.spec.ts"
       ],
       "completion": "선택 조합 저장→목록→다른 허용 위치 삽입→Undo→저장→재열기. 포맷·버전·자산·컴포넌트 호환 거부와 새 ID/내부 참조 재연결을 검증."
     },

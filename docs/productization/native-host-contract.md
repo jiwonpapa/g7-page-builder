@@ -1,6 +1,6 @@
 # G7 네이티브 편집 공개 호스트 계약 v1
 
-상태: **NE1~NE3 로컬 구현·통합·수용 검증 완료**. 최신 검증은 G7 공개 API 후보 `da064086eacf9071afb81fa703121b9c69a4c89c`와 PB 제품 통합 `9530e96a07acb9cfc749e5aac4c7c7c5824eb7be` 조합이다. stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. [NE3 마감 증거](../audits/2026-09-08-native-editor-ne3.md), [현행 계획](editor-plan.md), [개발 헌법](../development-constitution.md)을 따른다. 아래 차수별 SHA와 제한은 당시 증거를 보존한다.
+상태: **NE1~NE4 로컬 구현·통합·수용 검증 완료**. 최신 기능 검증은 G7 공개 API 후보 `d264405fd09b70ac85aebe4f4a857cadbe22981e`(engine 1.68.1)와 PB 최종 제품 통합 `54450ecf86179da01b357fcc3d572ef210aa51fa` 조합이다. stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. [NE4 마감 증거](../audits/2026-09-08-native-editor-ne4.md), [현행 계획](editor-plan.md), [개발 헌법](../development-constitution.md)을 따른다. 아래 차수별 SHA와 제한은 당시 증거를 보존한다.
 
 조사 기준 G7 `fde750cede7fda68329cea42fb706a00d4546bd3`에는 기존 네 메서드만 있었으며 H01~H04가 부족했다. 이번 후보에 공개 `registerPanel`과 `g7.layout-editor/1`을 추가했다. 내부 hook import·PB 우회 저장·호스트 DOM 읽기를 PB 연동으로 사용하지 않는다.
 
@@ -76,3 +76,17 @@ NE3 호스트 후보는 G7 `da064086eacf9071afb81fa703121b9c69a4c89c` (engine-v1
 H05 renderer는 템플릿의 실제 manifest/IIFE export 경로, H06은 기존 capability를 대체하지 않는 새 이름의 spec 병합, H07은 위 collection 필드/명령과 이미지 선택으로 연결한다. `registerWidget`이 JSX renderer를 등록한다고 가정하지 않는다. 선택형 `PageBuilderSlider` companion은 템플릿 제작자가 명시적으로 패키징하며 설치된 템플릿을 자동 수정하지 않는다. 편집 중 전체 항목 표시/자동재생 중지와 공개 재생·키보드·reduced-motion 동작을 분리한다.
 
 G7의 기존 저장은 history를 초기화한다. NE3 Undo/Redo 증거는 저장 전 개별 명령에 관한 것이며 저장을 넘는 Undo 지원을 주장하지 않는다. 현재 호스트에 collections가 없으면 기존 NE1/NE2 기능을 유지한다. G7 main/upstream 반영과 운영 배포는 별도 NE6 완료 증거가 필요하다.
+
+
+## NE4 — 사용자 조합 공개 명령
+
+G7 후보의 `host.compositions.export({expected, signal})`는 `ExtensionMediaResult<string>`을 반환한다. `insert({expected, snapshot, collection, index, signal})`는 기존 `EditorExtensionResult`를 반환한다. optional 계약이며 `g7.layout-editor/1` 기본 등록·텍스트·필드 명령과 기존 확장 호환을 유지한다.
+
+- G7 소스: `extensions/compositions.ts`, `extensions/compositionDocument.ts`, `extensions/useExtensionHost.ts`. 공개 API 밖의 selection/history/registry 객체를 PB로 노출하지 않는다.
+- PreviewCanvas가 실제 렌더에 쓰는 격리된 컴포넌트 목록의 manifest·존재 확인을 호스트에 전달한다. 관리자 셸 singleton을 템플릿 renderer로 간주하지 않는다.
+- G7 `LayoutService`가 상속 슬롯의 부모 wrapper와 자식 route 출처를 별도로 기록한다. 자식 본문이 부모 layout 이름으로 표기되어 내보내기가 거부되던 오류를 수정했다.
+- 포맷은 `g7.editor-composition/v1`; 현재 템플릿/spec/nesting/manifest 지문, 허용 구조, 출처, G7 첨부 목록, 비동기 문맥을 확인한다. 새 ID·내부 참조와 기존 history 한 건으로 적용한다.
+- PB 저장소는 사용자별 스냅샷을 불변 문자열로 보관한다. G7 문서를 복제 저장·동기화하지 않으며 저장소 삭제는 페이지·첨부 삭제가 아니다. 인증/권한/소유권은 [개인 조합 API](../api-native-compositions.md), 사용 범위는 [내 조합 계약](native-compositions.md)을 따른다.
+- 실제 기술 fixture는 G7 admin content API에 먼저 저장한 원본을 기준으로 PB 변경 전후를 비교했다. 기존 G7 content 요청·리소스의 associative JSON 변환은 빈 객체를 배열로 바꾸므로, G7 전체 JSON 종류 무손실을 이 시험의 성공으로 주장하지 않는다. PB 스냅샷 문자열의 `{}`/`[]` 보존은 별도 실제 저장소 시험으로 확인한다. G7 저장 자체의 종류 보존 검증·해결은 NE6 수용 감사에 남긴다.
+
+확정 SHA와 명령·시험·runtime 파일 지문은 [NAT-04 마감 기록](../audits/2026-09-08-native-editor-ne4.md)에 기록한다. 후보가 없는 stock G7·임의 테마·운영 환경의 제공 완료를 뜻하지 않는다.

@@ -2,7 +2,7 @@
 
 <!-- editor-plan:native-editor-20260907 -->
 
-상태: **NE1·NE2·NE3 완료, 다음 NE4**. 별도 G7 공개 호스트 후보와 실제 일반 페이지에서 원본 편집·Undo/Redo·저장·재열기를 검증했다. NE3는 내부 트리·배열/셀·반복 템플릿과 선택형 Slider의 공개 runtime까지 NAT-03을 통과했다. 현재 코드·통합·증거 상태는 [진척 원장](editor-progress.json)을 따른다. G7 후보는 운영 배포나 upstream 반영 완료를 뜻하지 않는다. NE4~NE6은 planned다.
+상태: **NE1·NE2·NE3·NE4 완료, 다음 NE5**. 별도 G7 공개 호스트 후보와 실제 일반 페이지에서 원본 편집·Undo/Redo·저장·재열기를 검증했다. NE4는 개인 조합 저장·목록·안전한 재삽입·삭제까지 NAT-04를 통과했다. 현재 코드·통합·증거 상태는 [진척 원장](editor-progress.json)을 따른다. G7 후보는 운영 배포나 upstream 반영 완료를 뜻하지 않는다. NE5~NE6은 planned다.
 
 [편집 정책](editing-policy.md) · [개발 헌법](../development-constitution.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [코드 근거](../audits/2026-09-07-native-editor-governance.md)
 
@@ -97,6 +97,7 @@
 선행: NE5. 수용 기준 `NAT-06`.
 
 - 지원 G7/테마/spec/renderer/CSS 조합과 editor 비활성·번들 실패 때 무손상 동작을 검증한다. 동적 renderer의 공개 출력과 fallback도 지원 범위에 넣는다.
+- G7 content API의 빈 객체/배열 종류 보존을 별도로 검증하고 확인된 정규화 문제를 해결한다. PB 조합의 원문 보관 시험으로 G7 저장의 무손실을 대신하지 않는다.
 - H08 실제 병렬 저장을 시험하고 재현 문제는 G7 공개 저장 경계에서 해결한다. 원본 손실·다른 노드 오적용·권한 우회·필수 계약 부재가 남으면 마감하지 않는다.
 - 변경 관련 PC/태블릿/모바일·키보드/포커스·미디어/저장 실패 회귀와 승인된 커밋·푸시·배포·복구 증거를 구분한다. 제품 검증을 이 차수까지 전부 미루지 않는다.
 

@@ -361,3 +361,9 @@ Puck 0.23.0의 설치된 선언에서 `contentEditable`, `SlotField.allow/disall
 현재 승인된 내부 구성 구현은 Hero `extra`의 배지·목록 각 1개다. UI3 완료는 앞서 정의한 Hero actions·ImageText·Card 전체 내부 슬롯 완료를 뜻하지 않는다. 기존 v1 문서는 구조 편집 사용을 명시적으로 선택한 뒤 v2 슬롯을 사용할 수 있다. 기존 title/body/media/primaryCta는 원 소유 필드를 유지한다.
 
 `layout-policy-v1.json`의 선택적 `component_slots`는 동일 v2 트리에 대한 추가 허용 계약이다. 이전 릴리스는 새 슬롯을 지원하지 않으므로 슬롯을 저장한 문서는 해당 기능을 포함한 릴리스에서 편집/재컴파일한다. 기존 원본 및 마지막 정상 발행본은 자동 변환하거나 삭제하지 않는다. 배포 때에는 이 기능을 포함한 새 minor 릴리스를 사용한다.
+
+### 독립 PB UI4 범위 (2026-09-08)
+
+ImageText `extra`에는 배지·목록·구분선 각각 0~1개를 허용한다. 기존 primaryLink는 고정 필드로 유지하고 actions를 동시에 열지 않는다. UI3의 문서 버전·호환·발행 보존 경계는 동일하다.
+
+Puck 0.23.0의 편집 이력은 별도 저장소 없이 동일 kernel에서 기록한다. 이 버전의 trailing debounce로 인한 빠른 Undo/Redo 유실은 source fingerprint를 고정한 빌드 보정으로 처리한다. 각 기록 대상 Puck 명령은 즉시 한 단계를 만들며, 입력 위젯이 자체적으로 묶어 전달하는 텍스트 변경 단위는 유지한다. 독립 PB editor 번들에만 적용하고 네이티브 G7 history에는 적용하지 않는다. upstream 변경 시 보정을 자동 추측하지 않고 실패 후 검토한다.

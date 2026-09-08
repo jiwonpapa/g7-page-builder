@@ -79,6 +79,9 @@
       "extra": {
         "content.badge-01": 1,
         "content.list-01": 1
+      },
+      "actions": {
+        "action.buttons-01": 1
       }
     },
     "media.image-text-01": {
@@ -86,6 +89,9 @@
         "content.badge-01": 1,
         "content.list-01": 1,
         "content.divider-01": 1
+      },
+      "actions": {
+        "action.buttons-01": 1
       }
     },
     "content.card-01": {
@@ -141,5 +147,9 @@
     "compact": 8,
     "normal": 16,
     "spacious": 24
+  },
+  "action_props": {
+    "content.hero-centered-01": "primaryCta",
+    "media.image-text-01": "primaryLink"
   }
 }

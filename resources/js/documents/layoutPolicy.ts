@@ -89,6 +89,8 @@ export function validateLayoutDocument(value: unknown): LayoutDocument {
     const names = layoutSlotNames({ type: node.type, props: node.props });
     const slots = Object.hasOwn(node, 'slots') ? node.slots : {};
     if (!record(slots)) return reject('shape', `${path}.slots`);
+    const actionProp = (policy.action_props as Readonly<Record<string, string>>)[node.type];
+    if (actionProp && Object.hasOwn(slots, 'actions') && Object.hasOwn(node.props, actionProp)) return reject('action_owner', `${path}.props.${actionProp}`);
     for (const [name, children] of Object.entries(slots).reverse()) {
       if (!names.includes(name)) return reject('slot', `${path}.slots.${name}`);
       if (!Array.isArray(children)) return reject('shape', `${path}.slots.${name}`);

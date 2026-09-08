@@ -244,7 +244,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
         },
         motion: createMotionField(['none', 'reveal', 'parallax-soft']),
       },
-      render: ({ extra: Extra, ...props }) => <HeroPreview {...props} extra={typeof Extra === 'function' ? Extra({ minEmptyHeight: 0 }) : undefined} />,
+      render: ({ extra: Extra, actions: Actions, ...props }) => <HeroPreview {...props} extra={typeof Extra === 'function' ? Extra({ minEmptyHeight: 0 }) : undefined} actions={props.actionsEnabled && typeof Actions === 'function' ? Actions({ minEmptyHeight: 0 }) : undefined} />,
     },
     Features: {
       label: 'Features',
@@ -530,13 +530,25 @@ export function createRuntimePuckConfig(structureEditingEnabled: boolean, editin
         ...pageBuilderPuckConfig.components,
         ...external,
         Card: cardComponentConfig(structureEditingEnabled),
-        ImageText: { ...pageBuilderPuckConfig.components.ImageText, fields: {
+        ImageText: { ...pageBuilderPuckConfig.components.ImageText, resolveFields: (data, { fields }) => {
+          const selected: Partial<typeof fields> = { ...fields };
+          if (data.props.actionsEnabled) { delete selected.primaryLabel; delete selected.primaryUrl; }
+          else delete selected.actions;
+          return selected;
+        }, fields: {
+          actions: { type: 'slot', label: '버튼 구역', allow: structureEditingEnabled ? ['Buttons'] : [] },
           ...pageBuilderPuckConfig.components.ImageText.fields,
           extra: { type: 'slot', label: '내부 구성', allow: structureEditingEnabled ? ['Badge', 'List', 'Divider'] : [] },
           composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) =>
             <ComponentComposition readOnly={readOnly} structureEnabled={structureEditingEnabled} /> },
         } },
-        Hero: { ...pageBuilderPuckConfig.components.Hero, fields: {
+        Hero: { ...pageBuilderPuckConfig.components.Hero, resolveFields: (data, { fields }) => {
+          const selected: Partial<typeof fields> = { ...fields };
+          if (data.props.actionsEnabled) { delete selected.primaryLabel; delete selected.primaryUrl; }
+          else delete selected.actions;
+          return selected;
+        }, fields: {
+          actions: { type: 'slot', label: '버튼 구역', allow: structureEditingEnabled ? ['Buttons'] : [] },
           ...pageBuilderPuckConfig.components.Hero.fields,
           extra: { type: 'slot', label: '내부 구성', allow: structureEditingEnabled ? ['Badge', 'List'] : [] },
           composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) =>

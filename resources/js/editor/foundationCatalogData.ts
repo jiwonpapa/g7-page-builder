@@ -30,6 +30,8 @@ export interface ButtonsEditorProps extends AppearanceEditorProps {
 
 export interface ImageTextEditorProps extends AppearanceEditorProps {
   extra?: Slot;
+  actions?: Slot;
+  actionsEnabled?: boolean;
   composition?: string;
   eyebrow: string;
   heading: string;

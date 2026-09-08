@@ -129,6 +129,7 @@ BASIC_ELEMENTS = replace(CATALOG_FRAME, titles=(
 
 # Exact reviewed owners for K1-K5. Existing mixed modules retain all three roles
 # until their data/codec is extracted. No filename prefix invents a new exemption.
+HERO_COMPOSITION = BrowserScenario("tests/E2E/heroComposition.editorInteractionQuality.spec.ts")
 CARD_COMPOSITION = BrowserScenario("tests/E2E/cardComposition.editorInteractionQuality.spec.ts")
 CATALOG_CODE_SCOPES = {
     "resources/js/editor/cardCatalogBlocks.tsx": (CARD_COMPOSITION,),
@@ -230,6 +231,7 @@ RULES = (
     (("resources/js/editor/CanvasContextControls.tsx", "resources/js/editor/SelectedBlockActionBar.tsx",
       "resources/js/editor/useCanvasEditingUi.ts"), (PAGE, TEXT, CONTROLS)),
     (("resources/js/editor/useSelectedActionBarSafeZone.ts", "resources/js/editor/useEditorViewport.ts"), (TEXT, CONTROLS)),
+    (("resources/js/editor/ComponentComposition.tsx", "resources/js/editor/compositionActions.ts"), (HERO_COMPOSITION, CARD_COMPOSITION)),
     (("resources/js/editor/canvasItemCommands.ts",), (PAGE, TEXT)),
     (("resources/js/editor/usePageBuilderSession.ts",), (PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY)),
     # Rich-text models/selection/commands retain the richText* rule below;

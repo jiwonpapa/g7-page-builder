@@ -8,7 +8,7 @@ use JsonException;
 /** Pure structural policy; envelope/props validation belongs to the document schema. */
 final readonly class LayoutPolicy
 {
-    /** @param array{policy_version: string, document_schema: string, limits: array{nodes: int, slot_children: int, depth: int, utf8_bytes: int}, root_types: list<string>, leaf_types: list<string>, layouts: array{section: string, columns: string, stack: string}, child_groups: array<string, list<string>>, component_slots: array<string, array<string, array<string, int>>>, ratios: array<int, list<string>>, gap_px: array<string, int>} $policy */
+    /** @param array{policy_version: string, document_schema: string, limits: array{nodes: int, slot_children: int, depth: int, utf8_bytes: int}, root_types: list<string>, leaf_types: list<string>, layouts: array{section: string, columns: string, stack: string}, child_groups: array<string, list<string>>, component_slots: array<string, array<string, array<string, int>>>, action_props: array<string, string>, ratios: array<int, list<string>>, gap_px: array<string, int>} $policy */
     public function __construct(private array $policy) {}
 
     public function validate(mixed $document): void
@@ -54,6 +54,10 @@ final readonly class LayoutPolicy
             $slots = array_key_exists('slots', $node) ? $node['slots'] : [];
             if (! is_array($slots) || ($slots !== [] && array_is_list($slots))) {
                 $this->reject('shape', $path.'.slots');
+            }
+            $actionProp = $this->policy['action_props'][$type] ?? null;
+            if ($actionProp !== null && array_key_exists('actions', $slots) && array_key_exists($actionProp, $node['props'])) {
+                $this->reject('action_owner', $path.'.props.'.$actionProp);
             }
             foreach (array_reverse($slots, true) as $name => $children) {
                 if (! in_array($name, $names, true)) {

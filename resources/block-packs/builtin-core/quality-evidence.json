@@ -3680,6 +3680,56 @@
           "status": "pending"
         }
       }
+    },
+    {
+      "catalog_id": "block:content.card-01@1",
+      "source_digests": {
+        "content": "a7dd146b2f7ebaaaa87495a2055e512a5e741b93d54e69c5e7d9de6aff07e050",
+        "rights": "4e60ba6557d21dd02b88e7df5f6a493621b96a0507df35495df9e61b7f316320",
+        "render": "f60a29a7ebdd74d1bdae231a6ef63adc5c1840efd1666bfd248d36368a3d17c8",
+        "editing": "e06a14af9faeb43014c9a4497695d141f9c694a84b7fd4b302dd62e422cba247"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "catalog_id": "preset:jiwonpapa/builtin-core:card.empty",
+      "source_digests": {
+        "content": "82377470c9d5f8814dfff3e07e6d4ce2cd8bc7614fdae1f1c83ba1b16606fd10",
+        "rights": "a0e783b3f2584902d7c3bfcb14835faba3e2b8d68241ff16815ae04a79110cb2",
+        "render": "6b8d56a47555595fc1a167d9d37f4724863232c7da3e61ed9f9cb358e6cd60e1",
+        "editing": "9c40acd6369c49e34328ba44033e72c6dea3ad9bb1af30c35c36fb7c29afc2b9"
+      },
+      "reviews": {
+        "content": {
+          "status": "pending"
+        },
+        "rights": {
+          "status": "pending"
+        }
+      },
+      "verifications": {
+        "render": {
+          "status": "pending"
+        },
+        "editing": {
+          "status": "pending"
+        }
+      }
     }
   ]
 }

@@ -238,6 +238,14 @@
         "unit",
         "browser"
       ]
+    },
+    {
+      "id": "UI-02",
+      "description": "Hero 기기별 정렬·글자 비율의 캔버스/미리보기/발행 일치, 슬라이더 요약의 서식 제거와 원본 보존.",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
     }
   ],
   "phases": [
@@ -268,6 +276,10 @@
     {
       "id": "inspector-ux1",
       "title": "독립 PB 개선 1차 · 우측 설정창"
+    },
+    {
+      "id": "editor-ux2",
+      "title": "독립 PB 개선 2차 · 편집 출력 일치"
     }
   ],
   "baseline": [
@@ -709,6 +721,29 @@
         "resources/views/editor.blade.php"
       ],
       "completion": "짧은 옵션 직접 선택·표시 일관성·키보드·저장/재열기 및 캐시된 세션 재진입 확인. 배포는 별도."
+    },
+    {
+      "id": "UI2",
+      "phase": "editor-ux2",
+      "title": "Hero 반응형 출력 및 슬라이더 요약",
+      "status": "in_progress",
+      "depends_on": [
+        "UI1"
+      ],
+      "acceptance_ids": [
+        "UI-02"
+      ],
+      "owner_task": "editor-ux2-20260908",
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "resources/css/page-builder-editor-appearance.css",
+        "resources/js/editor/catalogFields.tsx",
+        "resources/js/editor/previewContent.ts"
+      ],
+      "completion": "기기별 정렬·글자 비율 변경/저장/재열기와 캔버스·컴파일 출력 비교, 슬라이더 제목의 표시·원본 보존 확인. 배포 별도."
     }
   ],
   "history": [

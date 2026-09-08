@@ -143,12 +143,12 @@
   .g7pb-tablet-appearance-spacing--compact > :first-child { padding-block: clamp(2.5rem, 6vw, 4.25rem); }
   .g7pb-tablet-appearance-spacing--normal > :first-child { padding-block: clamp(3.5rem, 8vw, 8rem); }
   .g7pb-tablet-appearance-spacing--spacious > :first-child { padding-block: clamp(5rem, 11vw, 9.5rem); }
-  .g7pb-tablet-appearance-text-scale--compact { font-size: .9375em; }
-  .g7pb-tablet-appearance-text-scale--balanced { font-size: 1em; }
-  .g7pb-tablet-appearance-text-scale--large { font-size: 1.125em; }
-  .g7pb-tablet-appearance-text-align--left { text-align: left; }
-  .g7pb-tablet-appearance-text-align--center { text-align: center; }
-  .g7pb-tablet-appearance-text-align--right { text-align: right; }
+  .g7pb-tablet-appearance-text-scale--compact > :first-child { font-size: .9375em; }
+  .g7pb-tablet-appearance-text-scale--balanced > :first-child { font-size: 1em; }
+  .g7pb-tablet-appearance-text-scale--large > :first-child { font-size: 1.125em; }
+  .g7pb-tablet-appearance-text-align--left > :first-child { text-align: left; }
+  .g7pb-tablet-appearance-text-align--center > :first-child { text-align: center; }
+  .g7pb-tablet-appearance-text-align--right > :first-child { text-align: right; }
   .g7pb-tablet-appearance-container-width--inherit { --g7pb-preview-content-width: var(--g7pb-theme-content-width); }
   .g7pb-tablet-appearance-container-width--narrow { --g7pb-preview-content-width: 48rem; }
   .g7pb-tablet-appearance-container-width--standard { --g7pb-preview-content-width: 72rem; }
@@ -172,12 +172,12 @@
   .g7pb-mobile-appearance-spacing--compact > :first-child { padding-block: clamp(2.5rem, 6vw, 4.25rem); }
   .g7pb-mobile-appearance-spacing--normal > :first-child { padding-block: clamp(3.5rem, 8vw, 8rem); }
   .g7pb-mobile-appearance-spacing--spacious > :first-child { padding-block: clamp(5rem, 11vw, 9.5rem); }
-  .g7pb-mobile-appearance-text-scale--compact { font-size: .9375em; }
-  .g7pb-mobile-appearance-text-scale--balanced { font-size: 1em; }
-  .g7pb-mobile-appearance-text-scale--large { font-size: 1.125em; }
-  .g7pb-mobile-appearance-text-align--left { text-align: left; }
-  .g7pb-mobile-appearance-text-align--center { text-align: center; }
-  .g7pb-mobile-appearance-text-align--right { text-align: right; }
+  .g7pb-mobile-appearance-text-scale--compact > :first-child { font-size: .9375em; }
+  .g7pb-mobile-appearance-text-scale--balanced > :first-child { font-size: 1em; }
+  .g7pb-mobile-appearance-text-scale--large > :first-child { font-size: 1.125em; }
+  .g7pb-mobile-appearance-text-align--left > :first-child { text-align: left; }
+  .g7pb-mobile-appearance-text-align--center > :first-child { text-align: center; }
+  .g7pb-mobile-appearance-text-align--right > :first-child { text-align: right; }
   .g7pb-mobile-appearance-container-width--inherit { --g7pb-preview-content-width: var(--g7pb-theme-content-width); }
   .g7pb-mobile-appearance-container-width--narrow { --g7pb-preview-content-width: 48rem; }
   .g7pb-mobile-appearance-container-width--standard { --g7pb-preview-content-width: 72rem; }

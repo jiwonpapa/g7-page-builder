@@ -1,6 +1,14 @@
 import React from 'react';
 import { normalizeFontSizeRem } from './fontSize';
 
+/** Inspector-only text projection; never write the summary back into rich content. */
+export function richTextSummary(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const template = document.createElement('template');
+  template.innerHTML = value;
+  return (template.content.textContent ?? '').replace(/\s+/gu, ' ').trim();
+}
+
 export function inlineArrayContent(value: unknown, index: number, key: string, fallback: string): React.ReactNode {
   const item = Array.isArray(value) && typeof value[index] === 'object' && value[index] !== null
     ? value[index] as Record<string, unknown>
@@ -105,4 +113,3 @@ export function sanitizeRichTextForPreview(value: string): string {
 
   return root.innerHTML;
 }
-

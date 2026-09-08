@@ -58,7 +58,8 @@ test('Hero responsive typography matches canvas, compiled preview and published 
     const preview = await api.post(`${API}/${owned.documentId}/preview`, { data: { expected_lock_version: current.lock_version } });
     expect(preview.ok()).toBe(true);
     const previewBody = await preview.json() as { data: { preview_url: string } };
-    const published = await api.post(`${API}/${owned.documentId}/publish`, { data: { expected_lock_version: current.lock_version } });
+    const beforePublish = await resource(api, owned.documentId);
+    const published = await api.post(`${API}/${owned.documentId}/publish`, { data: { expected_lock_version: beforePublish.lock_version } });
     expect(published.ok()).toBe(true);
     for (const url of [previewBody.data.preview_url, `/pages/${owned.slug}`]) {
       await viewer.goto(url);

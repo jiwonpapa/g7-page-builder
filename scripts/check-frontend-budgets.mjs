@@ -16,7 +16,8 @@ const budgets = [
   { path: 'resources/css/page-builder-public.css', raw: 105_000 },
   { path: 'resources/css/page-builder-site-shell.css', raw: 9_000 },
   { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
-  { path: 'dist/css/page-builder-editor.css', gzip: 45_000 },
+  // UI5 adds the shared single Card shell; source caps remain unchanged.
+  { path: 'dist/css/page-builder-editor.css', gzip: 45_200 },
   { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
   // EP2 basic elements add one shared, separately capped stylesheet to the 18,084-byte baseline.
   { path: 'dist/css/page-builder-public.css', gzip: 18_700 },

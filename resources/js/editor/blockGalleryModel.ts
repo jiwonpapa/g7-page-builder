@@ -34,7 +34,7 @@ export function libraryKindLabel(kind: LibraryKind): string {
 export function libraryCategories(types: readonly string[], layoutEnabled = true, allTypes: readonly string[] = types): NonNullable<Config<EditorComponents>['categories']> {
   const isRegistered = (type: string): type is keyof EditorComponents => LAYOUT_COMPONENTS.has(type)
     || BUILTIN_BLOCK_DEFINITIONS.some((entry) => entry.editor_component === type) || type.startsWith('External_');
-  const registered = [...new Set(types.filter(isRegistered))];
+  const registered = [...new Set(types.filter(isRegistered))].filter((type) => layoutEnabled || type !== 'Card');
   return {
     ...Object.fromEntries(LIBRARY_KINDS.map(([kind, title]) => [kind, {
       title, defaultExpanded: true, visible: kind !== 'layout' || layoutEnabled,

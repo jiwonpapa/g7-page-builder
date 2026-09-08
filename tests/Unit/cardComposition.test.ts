@@ -8,7 +8,7 @@ import { assertEditorInsertion, editorItemLocations } from '../../resources/js/e
 import { cloneLayoutSubtree } from '../../resources/js/documents/layoutTree';
 import { cardComponentConfig } from '../../resources/js/editor/cardCatalogBlocks';
 import { CARD_SLOT_COMPONENTS } from '../../resources/js/editor/ComponentComposition';
-import { libraryKind, libraryEditingCapabilities } from '../../resources/js/editor/blockGalleryModel';
+import { libraryKind, libraryCategories, libraryEditingCapabilities } from '../../resources/js/editor/blockGalleryModel';
 
 const fresh = (): PageBuilderDocument => {
   const doc: PageBuilderDocument = { ...structuredClone(fixtures.imageText), schema_version: 'g7-page-builder/v2', mode: 'canvas' };
@@ -71,6 +71,9 @@ describe('single Card composition', () => {
       expect(cardComponentConfig(false).fields?.[name as keyof typeof CARD_SLOT_COMPONENTS]).toMatchObject({ allow: [] });
     }
     expect(libraryKind('Card')).toBe('component');
+    expect(libraryCategories(['Card', 'Heading'], false).component.components).not.toContain('Card');
+    expect(libraryCategories(['Card', 'Heading'], false).unavailable).toMatchObject({ visible: false, components: ['Card'] });
+    expect(libraryCategories(['Card', 'Heading'], true).component.components).toContain('Card');
     expect(libraryEditingCapabilities('Card', cardComponentConfig(true).fields ?? {}).find((entry) => entry.key === 'slots')?.available).toBe(true);
   });
 });

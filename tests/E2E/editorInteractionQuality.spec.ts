@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import type { PageBuilderDocument } from '../../resources/js/documents/types';
 
 import {
   authenticateEditorInteractionAdmin,
@@ -16,6 +17,79 @@ const CANVAS_IFRAME = '#puck-canvas-root iframe';
 const PC_EDIT_CANVAS_WIDTH = 1280;
 const MIN_POINTER_EDGE_INSET_PX = 0.25;
 const POINTER_DRAG_STEPS = 8;
+
+test('keeps canvas link activation in the editor while preview and published links navigate', async ({ context, page }, info) => {
+  const token = await authenticateEditorInteractionAdmin(context);
+  const api = await editorInteractionApi(token);
+  const owned = await createOwnedEditorInteractionDocument(api, info.project.name);
+  try {
+    const current = await api.get(`${API}/documents/${owned.documentId}`);
+    const { data } = await current.json() as { data: { document: PageBuilderDocument; lock_version: number } };
+    const destination = new URL(`/navigation-proof-${owned.slug}`, page.url().startsWith('http') ? page.url() : process.env.G7PB_BASE_URL ?? 'https://g7pb.test').href;
+    const external = `https://example.com/${owned.slug}`;
+    const document: PageBuilderDocument = { ...data.document, blocks: [{
+      instance_id: crypto.randomUUID(), type: 'action.buttons-01', block_version: 1, slots: {},
+      props: { items: [
+        { label: '내부 주소', url: destination, variant: 'primary' },
+        { label: '외부 주소', url: external, variant: 'secondary' },
+      ], alignment: 'left', surface: 'default', spacing: 'compact' },
+    }, ...data.document.blocks] };
+    const saved = await api.put(`${API}/documents/${owned.documentId}/draft`, {
+      data: { document, expected_lock_version: data.lock_version },
+    });
+    expect(saved.ok(), await saved.text()).toBe(true);
+    await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
+    await expect(page.getByTestId('page-builder-editor')).toBeVisible();
+    const frame = page.frameLocator(CANVAS_IFRAME);
+    const root = frame.getByTestId('page-builder-canvas-page');
+    await expect(root).toBeVisible();
+    const requests: string[] = [];
+    for (const url of [destination, external]) await context.route(url, async (route) => {
+      requests.push(route.request().url());
+      await route.fulfill({ contentType: 'text/html', body: '<h1>Navigation proof</h1>' });
+    });
+    const initialPages = context.pages().length;
+    const internal = frame.locator(`a[href="${destination}"]`);
+    // Hit anchor padding: Puck's native block listener stops React's bubble handler here.
+    await internal.click({ position: { x: 4, y: 4 } });
+    await expect(root).toBeVisible();
+    await expect(page.getByText('버튼 묶음', { exact: true }).first()).toBeVisible();
+    for (const url of [destination, external]) {
+      const link = frame.locator(`a[href="${url}"]`);
+      await link.click({ position: { x: 4, y: 4 }, modifiers: ['ControlOrMeta'] });
+      await link.click({ position: { x: 4, y: 4 }, button: 'middle' });
+      await link.focus();
+      await link.press('Enter');
+      await expect(root).toBeVisible();
+    }
+    expect(requests).toEqual([]);
+    expect(context.pages()).toHaveLength(initialPages);
+    const label = internal.locator('[contenteditable]');
+    await label.click();
+    await label.fill('편집된 버튼');
+    await expect(internal).toHaveText('편집된 버튼');
+    await saveDraft(page);
+    await page.reload();
+    await expect(frame.locator(`a[href="${destination}"]`)).toHaveText('편집된 버튼');
+    await page.screenshot({ path: info.outputPath('canvas-links-stay-editable.png') });
+    const previewUrl = await preparePreview(page, owned.documentId);
+    const preview = await context.newPage();
+    await preview.goto(previewUrl);
+    await preview.locator(`a[href="${destination}"]`).click();
+    await expect(preview).toHaveURL(destination);
+    await preview.close();
+    await publish(page);
+    const published = await context.newPage();
+    await published.goto(`/pages/${owned.slug}`);
+    await published.locator(`a[href="${destination}"]`).click();
+    await expect(published).toHaveURL(destination);
+    await published.close();
+    expect(requests).toEqual([destination, destination]);
+  } finally {
+    await cleanupOwnedEditorInteractionDocument(api, owned);
+    await api.dispose();
+  }
+});
 
 type RichTextBlockType = 'heading' | 'features' | 'rich-text' | 'article-list';
 

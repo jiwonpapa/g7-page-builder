@@ -41,9 +41,9 @@ test('native general page preserves its source through edit Undo Redo save and r
     meta: { title: 'NE1 contract fixture', seo: { enabled: false } },
     slots: { content: [{ id: 'native_ne1_root', type: 'basic', name: 'Div', props: { className: 'p-4' }, children: [
       { id: 'native_ne1_text', type: 'basic', name: 'H2', text: before, props: { className: 'text-2xl' },
-        future_meta: { retained: ['unknown', 7] }, responsive: { mobile: { props: { className: 'text-xl' } } } },
+        future_meta: { retained: ['unknown', 7], object: {}, list: [], numeric: { '0': 'kept' } }, responsive: { mobile: { props: { className: 'text-xl' } } } },
       { id: 'native_ne1_sibling', type: 'basic', name: 'P', text: 'NE1 보존할 형제 문구',
-        props: { title: '$t:common.save', onClick: [{ action: 'navigate', url: '/' }] } },
+        props: { title: '$t:common.save', onClick: [{ action: 'navigate', url: '/' }], style: {} } },
     ] }] } };
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -435,6 +435,126 @@ test('native NE5 finds inserts details previews and saves through existing G7 co
   } finally {
     await page.goto('about:blank'); await put(api, JSON.parse(original.content) as Json, (await read(api)).lock_version);
     for (const id of created) expect((await api.delete(compositionEndpoint + '/' + id)).ok()).toBe(true);
+    await api.dispose();
+  }
+});
+
+// NE6: DB를 사용하는 실제 HTTP 병렬 요청이며 요청 mock/순차 stale 요청이 아니다.
+test('NE6 simultaneous layout saves accept one writer and preserve the winning source', async ({ context }, info) => {
+  const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
+  const original = await read(api);
+  try {
+    const candidates = Array.from({ length: 8 }, (_, index) => ({
+      version: '1.0.0', layout_name: 'e2e_sandbox',
+      meta: { title: 'NE6 writer ' + index },
+      components: [{ id: 'ne6-concurrent', type: 'basic', name: 'P', text: 'writer ' + index, props: {} }],
+    }));
+    const started = Date.now();
+    const results = await Promise.all(candidates.map(async content => {
+      const response = await api.put(endpoint, { data: { content: JSON.stringify(content), expected_lock_version: original.lock_version } });
+      return { status: response.status(), body: await response.json() as Json };
+    }));
+    await info.attach('NAT-06-concurrency', { contentType: 'application/json', body: Buffer.from(JSON.stringify({
+      requests: results.length, elapsedMs: Date.now() - started, baseVersion: original.lock_version,
+      statuses: results.map(result => result.status),
+    })) });
+    expect(results.filter(result => result.status === 200), JSON.stringify(results)).toHaveLength(1);
+    expect(results.filter(result => result.status === 409), JSON.stringify(results)).toHaveLength(7);
+    const saved = await read(api);
+    expect(saved.lock_version).toBe(original.lock_version + 1);
+    expect(JSON.parse(saved.content)).toEqual(candidates[results.findIndex(result => result.status === 200)]);
+  } finally {
+    const latest = await read(api);
+    await put(api, JSON.parse(original.content) as Json, latest.lock_version);
+    await api.dispose();
+  }
+});
+
+test('NE6 JSON container kinds survive API save history restore and rejected input', async ({ context }, info) => {
+  const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
+  const original = await read(api);
+  const owned: Json = { version: '1.0.0', layout_name: 'e2e_sandbox',
+    meta: { title: 'NE6 JSON source', future: { object: {}, list: [] } },
+    components: [{ id: 'ne6-json', name: 'P', type: 'basic', text: 'JSON source', props: {},
+      future: { object: {}, list: [], numeric: { '0': 'zero' }, nested: [{ empty: {} }] } }],
+  };
+  try {
+    await put(api, owned, original.lock_version);
+    const saved = await read(api);
+    expect(JSON.parse(saved.content)).toEqual(owned);
+    const historyResponse = await api.get(endpoint + '/versions');
+    expect(historyResponse.ok(), await historyResponse.text()).toBe(true);
+    const versions = (await historyResponse.json() as { data: Array<{ id: number; version: number }> }).data;
+    const target = versions[0]; expect(target).toBeTruthy();
+    const versionResponse = await api.get(endpoint + '/versions/' + target.version);
+    expect(versionResponse.ok(), await versionResponse.text()).toBe(true);
+    expect((await versionResponse.json() as { data: { full_content: Json } }).data.full_content).toEqual(owned);
+    const edited = changeNode(owned, 'ne6-json', node => ({ ...node, text: 'Changed once' }));
+    await put(api, edited, saved.lock_version);
+    const beforeRestore = await read(api);
+    const restored = await api.post(endpoint + '/versions/' + target.id + '/restore');
+    expect(restored.ok(), await restored.text()).toBe(true);
+    expect(JSON.parse((await read(api)).content)).toEqual(owned);
+    const beforeInvalid = await read(api);
+    expect(beforeInvalid.lock_version).toBe(beforeRestore.lock_version + 1);
+    const staleSave = await api.put(endpoint, { data: { content: JSON.stringify(edited), expected_lock_version: beforeRestore.lock_version } });
+    expect(staleSave.status()).toBe(409);
+    const invalid = changeNode(owned, 'ne6-json', node => ({ ...node, props: { href: 'javascript:alert(1)' } }));
+    const rejected = await api.put(endpoint, { data: { content: JSON.stringify(invalid), expected_lock_version: beforeInvalid.lock_version } });
+    expect(rejected.status()).toBe(422);
+    expect(await read(api)).toEqual(beforeInvalid);
+    await info.attach('NAT-06-json', { contentType: 'application/json', body: Buffer.from(JSON.stringify({
+      objectListNumericKinds: 'preserved', historyRestore: 'preserved', invalidInput: rejected.status(), sourceDifference: 0,
+    })) });
+  } finally {
+    const latest = await read(api);
+    await put(api, JSON.parse(original.content) as Json, latest.lock_version);
+    await api.dispose();
+  }
+});
+
+test('NE6 unavailable extension and failed save leave the stored page unchanged', async ({ page, context }, info) => {
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
+  const original = await read(api);
+  const owned: Json = { version: '1.0.0', layout_name: 'e2e_sandbox', extends: '_user_base', meta: { title: 'NE6 failure fixture' },
+    slots: { content: [{ id: 'native_ne1_text', type: 'basic', name: 'H2', text: before, props: {} }] } };
+  let blocked = 0;
+  const extensionAsset = '**/page-builder-native.iife.js*';
+  try {
+    await put(api, owned, original.lock_version);
+    const baseline = await read(api);
+    await page.route(extensionAsset, route => { blocked += 1; return route.abort(); });
+    await page.goto('/admin/layout-editor/sirsoft-basic?route=%2Fe2e-sandbox');
+    await expect(page.getByTestId('g7le-toolbar')).toBeVisible();
+    await expect.poll(() => blocked).toBeGreaterThan(0);
+    await selectText(page);
+    await expect(page.getByRole('textbox', { name: '페이지 빌더 문구' })).toHaveCount(0);
+    expect(await read(api)).toEqual(baseline);
+    await page.screenshot({ path: info.outputPath('native-ne6-extension-unavailable.png'), fullPage: true });
+    await page.unroute(extensionAsset);
+    await page.reload(); await selectText(page);
+    const field = page.getByRole('textbox', { name: '페이지 빌더 문구' });
+    await field.fill(after);
+    const apply = page.getByRole('button', { name: '문구 적용', exact: true });
+    await apply.focus(); await page.keyboard.press('Enter');
+    await expect(page.locator('[data-editor-id="native_ne1_text"]')).toHaveText(after);
+    await page.route('**' + endpoint, route => route.request().method() === 'PUT'
+      ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: 'NE6 injected save failure' }) }) : route.continue());
+    const failed = page.waitForResponse(response => response.url().includes(endpoint) && response.request().method() === 'PUT');
+    await page.getByTestId('g7le-toolbar-save').click();
+    expect((await failed).status()).toBe(503);
+    expect(await read(api)).toEqual(baseline);
+    await expect(field).toHaveValue(after);
+    await page.screenshot({ path: info.outputPath('native-ne6-save-failed.png'), fullPage: true });
+    await info.attach('NAT-06-failure', { contentType: 'application/json', body: Buffer.from(JSON.stringify({
+      blockedExtensionRequests: blocked, hostEditor: 'available', keyboardApply: 'passed', failedSave: 503, storedSourceChanged: false,
+    })) });
+  } finally {
+    await page.goto('about:blank');
+    await page.unrouteAll({ behavior: 'wait' });
+    const latest = await read(api);
+    await put(api, JSON.parse(original.content) as Json, latest.lock_version);
     await api.dispose();
   }
 });

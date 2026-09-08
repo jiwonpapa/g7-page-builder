@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { installShellDisclosures, mountMobileShell, paintShellProduct, shellControlsMarkup, shellIcon, shellRecord, shellSafeUrl, type ShellOptions } from '../public/siteShellControls';
 import { installMobileNavigation } from '../public/mobileNavigation';
+import { canvasNavigationGuard } from './canvasNavigationGuard';
 import '../../css/page-builder-site-shell.css';
 import '../../css/page-builder-site-part-controls.css';
 import { useSitePartActionBarPosition } from './SitePartActionBarPosition';
@@ -554,7 +555,7 @@ export function sitePartConfigFor(kind: SitePartKind, data?: SitePartPuckData, c
   all.FooterColumns.fields = { ...all.FooterColumns.fields!, useSiteSettings: settingsField };
   return withSitePartPermissions({
     components: Object.fromEntries(Object.entries(all).filter(([name]) => allowed.includes(name))) as Config<SitePartComponents>['components'],
-    root: { fields: {}, render: ({ puck }) => <div className={`g7pb-site-part-preview g7pb-site-part-preview--${kind}`}>{kind === 'footer' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}{puck.renderDropZone({ zone: 'default-zone', allow: allowed.filter((name) => name !== 'HeaderSystemControls') })}{kind === 'header' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}</div> },
+    root: { fields: {}, render: ({ puck }) => <div {...canvasNavigationGuard} className={`g7pb-site-part-preview g7pb-site-part-preview--${kind}`}>{kind === 'footer' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}{puck.renderDropZone({ zone: 'default-zone', allow: allowed.filter((name) => name !== 'HeaderSystemControls') })}{kind === 'header' ? <div className="g7pb-site-part-sample"><span>페이지 본문 미리보기</span></div> : null}</div> },
   }, data, canInsert);
 }
 
@@ -584,7 +585,7 @@ export function sitePartSetConfig(data?: SitePartPuckData, canInsert = true): Co
     components: { ...header.components, ...footer.components },
     root: {
       fields: {},
-      render: ({ puck }) => <div className="g7pb-site-part-preview g7pb-site-part-preview--set">
+      render: ({ puck }) => <div {...canvasNavigationGuard} className="g7pb-site-part-preview g7pb-site-part-preview--set">
         {puck.renderDropZone({ zone: 'default-zone', allow: ['Announcement', 'HeaderNavigation', 'FooterSimple', 'FooterColumns'] })}
       </div>,
     },

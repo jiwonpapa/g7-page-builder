@@ -55,6 +55,8 @@ TEMPLATE = replace(PAGE, titles=(
     "renders a Page Builder page and temporary home inside the active G7 User Template",))
 TEXT = BrowserScenario("tests/E2E/editorInteractionQuality.spec.ts", titles=(
     "keeps root, nested, block, and no-link rich text pointer editing persistent and publishable",))
+NAVIGATION = replace(TEXT, titles=(
+    "keeps canvas link activation in the editor while preview and published links navigate",))
 CONTROLS = replace(TEXT, titles=(
     "keeps ActionBar and rich-text controls pointer-reachable in the PC editor",))
 STRUCTURE_THEME = BrowserScenario("tests/E2E/editorStructureTheme.spec.ts")
@@ -183,6 +185,7 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/editor/canvasNavigationGuard.ts",), (NAVIGATION,)),
     (("resources/js/native-components/*", "resources/css/page-builder-native-components.css"), (NATIVE_COMPONENTS,)),
     (("resources/css/page-builder-basic-elements.css", "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"), (BASIC_ELEMENTS,)),
     (("resources/js/editor/G7BoardSourceField.tsx",), (SUPPORT_COMPOSITION,)),

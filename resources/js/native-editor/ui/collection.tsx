@@ -4,6 +4,7 @@ import type { NativeField, NativeValue } from '../domain/fields';
 import type { NativeHost } from '../ports/host';
 import { Choice } from './Choice';
 import { NativeMediaPanel } from './media';
+import { InsertionPosition } from './InsertionPosition';
 
 function ItemField({ host, field, collection, index }: {
   host: NativeHost; field: NativeField; collection: NativeCollection; index: number;
@@ -33,6 +34,7 @@ function Collection({ host, collection }: { host: NativeHost; collection: Native
   const [destination, setDestination] = useState(collection.id);
   const [message, setMessage] = useState('');
   const disabled = host.context.readonly || !collection.editable;
+  const [index, setIndex] = useState(collection.items.length);
   function apply(change: NativeStructureChange): void {
     const result = host.changeStructure?.(change);
     setMessage(result?.kind === 'applied' ? '구성을 변경했습니다.' : result?.kind === 'noop' ? '변경 사항이 없습니다.'
@@ -62,15 +64,16 @@ function Collection({ host, collection }: { host: NativeHost; collection: Native
         <ItemField key={field.id} host={host} field={field} collection={collection} index={index} />)}</details>}
     </li>)}</ol>
     {collection.choices.length > 0 && <div className="g7pb-native-field">
+      <InsertionPosition collection={collection} index={index} onChange={setIndex} disabled={disabled} />
       {collection.choices.length > 1 && <Choice label="추가할 요소" value={choice} disabled={disabled}
         options={collection.choices.map(item => ({ value: item.id, label: item.label }))} onChange={value => { if (typeof value === 'string') setChoice(value); }} />}
-      <button type="button" disabled={disabled || !choice} onClick={() => apply({ operation: 'insert', collection: collection.id, choice, index: collection.items.length })}>항목 추가</button>
+      <button type="button" disabled={disabled || !choice} onClick={() => apply({ operation: 'insert', collection: collection.id, choice, index })}>항목 추가</button>
     </div>}
     {message && <p role="status">{message}</p>}
   </details>;
 }
 export function NativeStructure({ host }: { host: NativeHost }): React.ReactElement | null {
-  if (!host.collections?.length || !host.changeStructure) return null;
+  if (!host.collections?.length || !host.changeStructure) return <p role="status">이 항목은 삽입할 내부 위치를 제공하지 않습니다. G7 캔버스나 트리에서 상위 구역을 선택해 주세요.</p>;
   return <section aria-label="내부 구성" className="g7pb-native-structure">
     <h3>{host.context.editMode === 'iteration_item' ? '반복 템플릿 구성' : '내부 구성'}</h3>
     {host.collections.map(collection => <Collection key={collection.id + JSON.stringify(host.context)} host={host} collection={collection} />)}

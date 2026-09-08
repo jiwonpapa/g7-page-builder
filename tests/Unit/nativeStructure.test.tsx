@@ -47,6 +47,7 @@ it('renders controls and routes insert/duplicate/delete through the host; readon
   const input = fixture();
   try {
     await act(() => root.render(<NativeTextPanel host={readNativeHost(input)} />));
+    await act(() => element.querySelector<HTMLInputElement>('input[type=radio]')!.closest('fieldset')!.querySelectorAll<HTMLInputElement>('input')[1]!.click());
     const buttons = () => [...element.querySelectorAll<HTMLButtonElement>('button')];
     for (const label of ['항목 추가', '복제', '삭제']) await act(() => buttons().find(button => button.textContent === label)!.click());
     expect(input.execute.mock.calls.map(call => call[0])).toEqual([

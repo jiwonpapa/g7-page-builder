@@ -29,6 +29,7 @@ export async function nativeStructureFlow(page: Page, context: BrowserContext, i
     const path = await page.locator('[data-editor-id="ne3_root"]').getAttribute('data-editor-path');
     // Parent selection uses its visible padding; child handles cover the content centre.
     await page.getByTestId('g7le-dnd-handle-' + path).click({ position: { x: 6, y: 6 } });
+    await page.getByRole('radio', { name: '삽입·구성', exact: true }).check();
     await expect(rows()).toHaveCount(2);
     await collection.getByRole('button', { name: '항목 추가', exact: true }).click();
     await expect(rows()).toHaveCount(3);
@@ -53,6 +54,7 @@ export async function nativeStructureFlow(page: Page, context: BrowserContext, i
     await page.reload();
     await expect(page.locator('[data-editor-id="ne3_box"] [data-editor-id="ne3_leaf"]')).toHaveText('구성 편집 원문');
     await page.getByTestId('g7le-dnd-handle-' + path).click({ position: { x: 6, y: 6 } });
+    await page.getByRole('radio', { name: '삽입·구성', exact: true }).check();
     await expect(rows()).toHaveCount(2);
     expect(errors).toEqual([]);
     await page.screenshot({ path: info.outputPath('native-ne3-structure-reopened.png'), fullPage: true });

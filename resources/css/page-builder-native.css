@@ -80,3 +80,18 @@
   flex: 0 0 auto;
   white-space: nowrap;
 }
+
+/* Extension controls inherit the host theme; canvas and template widths stay host-owned. */
+.g7pb-native-form p {
+  margin-block: 0 8px;
+}
+
+.g7pb-native-guide {
+  font-size: 12px;
+  border-top: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+  padding-top: 8px;
+}
+
+.g7pb-native-form summary {
+  cursor: pointer;
+}

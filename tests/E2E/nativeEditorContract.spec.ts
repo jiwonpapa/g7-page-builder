@@ -256,7 +256,7 @@ test('native private compositions preserve source IDs references assets Undo and
   };
   const openLibrary = async (): Promise<void> => {
     if (!await library.isVisible()) {
-      await page.getByRole('button', { name: '내 조합 열기', exact: true }).click();
+      await page.getByRole('radio', { name: '내 조합', exact: true }).check();
     }
     await expect(library).toBeVisible();
     await library.getByRole('button', { name: '조합 목록 새로고침', exact: true }).click();
@@ -283,6 +283,7 @@ test('native private compositions preserve source IDs references assets Undo and
     await page.goto('/admin/layout-editor/sirsoft-basic?route=%2Fe2e-sandbox');
     await page.getByRole('button', { name: '한국어', exact: true }).click();
     await selectBox('ne4_source'); await openLibrary();
+    await library.getByText('선택 항목 저장', { exact: true }).click();
     await library.getByRole('textbox', { name: '조합 이름', exact: true }).fill(title);
     const storing = page.waitForResponse(response => response.url().endsWith(compositionEndpoint) && response.request().method() === 'POST');
     await library.getByRole('button', { name: '선택 항목을 내 조합에 저장', exact: true }).click();
@@ -346,6 +347,94 @@ test('native private compositions preserve source IDs references assets Undo and
       const response = await api.delete(compositionEndpoint + '/' + id); expect([200, 404]).toContain(response.status());
     }
     for (const id of assets) expect((await api.delete('/api/admin/templates/layout-attachments/' + id)).ok()).toBe(true);
+    await api.dispose();
+  }
+});
+
+test('native NE5 finds inserts details previews and saves through existing G7 controls', async ({ page, context }, info) => {
+  await page.setViewportSize({ width: 1600, height: 1100 });
+  const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
+  const original = await read(api); const created: string[] = [];
+  const title = 'NAT05 조합 ' + Date.now(); const text = 'NE5 상세 편집 완료';
+  const owned: Json = { version: '1.0.0', layout_name: 'e2e_sandbox', extends: '_user_base',
+    meta: { title: 'NE5 일반 페이지 제목', description: 'NE5 흐름 확인' }, slots: { content: [
+      { id: 'ne5_root', type: 'basic', name: 'Div', props: { className: 'p-4' }, children: [
+        { id: 'ne5_source', type: 'basic', name: 'P', text: 'NE5 원문' },
+        { id: 'ne5_destination', type: 'basic', name: 'Div', props: { className: 'p-4' }, children: [
+          { id: 'ne5_kept', type: 'basic', name: 'P', text: 'NE5 기존 항목' },
+        ] },
+      ] },
+    ] } };
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const panel = page.getByTestId('g7le-extension-panels');
+  const library = panel.getByRole('region', { name: '내 조합', exact: true });
+  const select = async (id: string) => {
+    const path = await page.locator(`[data-editor-id="${id}"]`).getAttribute('data-editor-path');
+    expect(path).toBeTruthy();
+    const container = id === 'ne5_destination';
+    await page.getByTestId('g7le-dnd-handle-' + path).click(container ? { position: { x: 6, y: 6 } } : {});
+  };
+  try {
+    await put(api, owned, original.lock_version);
+    await page.goto('/admin/layout-editor/sirsoft-basic?route=%2Fe2e-sandbox');
+    await page.getByRole('button', { name: '한국어', exact: true }).click();
+    await select('ne5_source');
+    await panel.getByRole('radio', { name: '내 조합', exact: true }).check();
+    await library.getByText('선택 항목 저장', { exact: true }).click();
+    await library.getByRole('textbox', { name: '조합 이름', exact: true }).fill(title);
+    const storing = page.waitForResponse(response => response.url().endsWith(compositionEndpoint) && response.request().method() === 'POST');
+    await library.getByRole('button', { name: '선택 항목을 내 조합에 저장', exact: true }).click();
+    const stored = await storing; expect(stored.ok()).toBe(true); created.push((await stored.json() as { data: { id: string } }).data.id);
+    await expect(library.getByRole('button', { name: '조합 목록 새로고침', exact: true })).toBeEnabled();
+    await library.getByRole('searchbox', { name: '현재 목록에서 찾기', exact: true }).fill(title);
+    await select('ne5_destination');
+    const location = library.getByLabel('조합 삽입 위치', { exact: true });
+    const slot = await location.locator('option').filter({ hasText: 'Div · 자식' }).first().getAttribute('value');
+    expect(slot).toBeTruthy(); await location.selectOption(slot!);
+    await library.getByRole('group', { name: '삽입 순서', exact: true }).getByRole('radio').first().check();
+    await page.screenshot({ path: info.outputPath('native-ne5-position.png'), fullPage: true });
+    await library.getByRole('listitem').filter({ hasText: title }).getByRole('button', { name: '조합 삽입', exact: true }).click();
+    const copy = page.locator('[data-editor-id="ne5_destination"] [data-editor-id]').filter({ hasText: 'NE5 원문' });
+    await expect(copy).toHaveCount(1); const copiedId = await copy.getAttribute('data-editor-id'); expect(copiedId).toBeTruthy();
+    await select(copiedId!); await panel.getByRole('radio', { name: '상세 편집', exact: true }).check();
+    const field = panel.getByRole('textbox', { name: '페이지 빌더 문구', exact: true });
+    await field.fill('취소할 입력'); await panel.getByRole('button', { name: '문구 입력 취소', exact: true }).click();
+    await expect(field).toHaveValue('NE5 원문'); await expect(copy).toHaveText('NE5 원문');
+    await field.fill(text); await panel.getByRole('button', { name: '문구 적용', exact: true }).click();
+    await expect(page.locator(`[data-editor-id="${copiedId}"]`)).toHaveText(text);
+    expect(JSON.parse((await read(api)).content)).toEqual(owned);
+    await page.getByTestId('g7le-toolbar-page-settings').click();
+    const settings = page.getByRole('dialog'); await expect(settings).toHaveAttribute('aria-label', /e2e-sandbox/);
+    await expect(page.getByTestId('g7le-meta-title-preview')).toHaveValue('NE5 일반 페이지 제목');
+    await page.screenshot({ path: info.outputPath('native-ne5-page-settings.png'), fullPage: true });
+    await page.getByTestId('g7le-page-settings-close').click();
+    const previewResponse = page.waitForResponse(response => response.url().includes(endpoint + '/preview') && response.request().method() === 'POST');
+    const popupPromise = page.waitForEvent('popup');
+    await page.getByTestId('g7le-toolbar-preview').click();
+    expect((await previewResponse).ok()).toBe(true); const preview = await popupPromise;
+    await expect(preview.getByText(text, { exact: true })).toBeVisible();
+    await preview.screenshot({ path: info.outputPath('native-ne5-preview.png'), fullPage: true }); await preview.close();
+    expect(JSON.parse((await read(api)).content)).toEqual(owned);
+    const saving = page.waitForResponse(response => response.url().includes(endpoint) && response.request().method() === 'PUT');
+    await page.getByTestId('g7le-toolbar-save').click(); expect((await saving).ok()).toBe(true);
+    const expected = changeNode(owned, 'ne5_destination', node => ({ ...node, children: [
+      { id: copiedId!, type: 'basic', name: 'P', text }, ...(node.children as Json[]),
+    ] }));
+    expect(JSON.parse((await read(api)).content)).toEqual(expected);
+    await page.reload(); await select(copiedId!); await expect(field).toHaveValue(text);
+    await panel.getByText('상단 저장 시 공개 페이지에 반영됩니다', { exact: true }).click();
+    await expect(panel.getByText('미리보기로 확인한 뒤 상단 저장을 누르면 공개 페이지에 반영됩니다. 적용한 변경은 상단 실행 취소로 되돌릴 수 있습니다.', { exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath('native-ne5-reopened.png'), fullPage: true });
+    expect(errors).toEqual([]);
+    await info.attach('NAT-05-workflow', { contentType: 'application/json', body: Buffer.from(JSON.stringify({
+      operations: ['find-composition', 'select-parent', 'insert-before', 'cancel-text-input', 'detail-edit', 'host-page-settings', 'preview-before-save', 'host-save', 'reopen'],
+      title: 'NE5 일반 페이지 제목', route: '/e2e-sandbox', previewDidNotPublish: true, differenceOutsideInsertion: 0, pageErrors: errors,
+    }, null, 2)) });
+  } catch (error) {
+    await page.screenshot({ path: info.outputPath('native-ne5-failure.png'), fullPage: true }); throw error;
+  } finally {
+    await page.goto('about:blank'); await put(api, JSON.parse(original.content) as Json, (await read(api)).lock_version);
+    for (const id of created) expect((await api.delete(compositionEndpoint + '/' + id)).ok()).toBe(true);
     await api.dispose();
   }
 });

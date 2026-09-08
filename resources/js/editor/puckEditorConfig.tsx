@@ -3,6 +3,7 @@ import { libraryCategories } from './blockGalleryModel';
 import { BUILTIN_BLOCK_DEFINITIONS } from '../blocks/builtinCatalog';
 import { externalEditorComponents } from '../blocks/runtimeRegistry';
 import { applyEditorContentPolicy, type EditorFieldContract } from './editorViewportPolicy';
+import { cardComponentConfig } from './cardCatalogBlocks';
 import React, { useEffect, useState } from 'react';
 import type { Config } from '@puckeditor/core';
 import type { ContactEditorProps, CtaEditorProps, EditorComponents, HeroEditorProps } from './puckEditorTypes';
@@ -528,6 +529,7 @@ export function createRuntimePuckConfig(structureEditingEnabled: boolean, editin
       components: {
         ...pageBuilderPuckConfig.components,
         ...external,
+        Card: cardComponentConfig(structureEditingEnabled),
         ImageText: { ...pageBuilderPuckConfig.components.ImageText, fields: {
           ...pageBuilderPuckConfig.components.ImageText.fields,
           extra: { type: 'slot', label: '내부 구성', allow: structureEditingEnabled ? ['Badge', 'List', 'Divider'] : [] },

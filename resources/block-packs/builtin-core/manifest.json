@@ -907,6 +907,24 @@
       "editor_component": "Badge",
       "compiler": "builtin.badge-01",
       "capabilities": []
+    },
+    {
+      "block_id": "content.card-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "카드",
+        "en": "Card"
+      },
+      "description": {
+        "ko": "이미지·본문·버튼을 각각 구성하는 단일 카드입니다.",
+        "en": "Compose media, body and actions in a single card."
+      },
+      "thumbnail": "thumbnails/generated/card.svg",
+      "schema_ref": "builtin:cardProps",
+      "editor_component": "Card",
+      "compiler": "builtin.card-01",
+      "capabilities": []
     }
   ],
   "presets": [
@@ -4382,6 +4400,24 @@
         "size": "medium",
         "tone": "accent"
       }
+    },
+    {
+      "preset_id": "card.empty",
+      "block_id": "content.card-01",
+      "block_version": 1,
+      "category": "content",
+      "label": {
+        "ko": "직접 구성하는 카드",
+        "en": "Composable card"
+      },
+      "description": {
+        "ko": "이미지와 본문, 버튼을 필요한 만큼 직접 배치하는 빈 카드입니다.",
+        "en": "Start with a card shell and add supported media, body and actions."
+      },
+      "thumbnail": "thumbnails/generated/card.svg",
+      "props": {
+        "variant": "outlined"
+      }
     }
   ],
   "runtime": {
@@ -4537,6 +4573,7 @@
     "thumbnails/generated/block-48-badge.png": "bc6283e04396379281de8f6516be57410d4c5a551275cecbc4880aea051188cf",
     "thumbnails/generated/preset-96-icon-simple.png": "d2bf7b886876f9ab49070e1d80f3b6795bbaf7af70283199eabe68c10758b26c",
     "thumbnails/generated/preset-97-list-simple.png": "bd0ce30a631911265bf12ef70d80109694cf4af8f2605bd1445def94856bae96",
-    "thumbnails/generated/preset-98-badge-simple.png": "bc6283e04396379281de8f6516be57410d4c5a551275cecbc4880aea051188cf"
+    "thumbnails/generated/preset-98-badge-simple.png": "bc6283e04396379281de8f6516be57410d4c5a551275cecbc4880aea051188cf",
+    "thumbnails/generated/card.svg": "c44fbe7dc1fd40763b9728e83a5cc0ab619082e609f79d54e4a941dc6755e8f7"
   }
 }

@@ -1,3 +1,4 @@
+import type { Slot } from '@puckeditor/core';
 import type { BasicElementEditorComponents } from './basicElementCatalogData';
 import type { AppearanceEditorProps } from './catalogAppearance';
 import type { BlockAppearance, BlockMotion } from '../documents/blockPresentation';
@@ -169,7 +170,16 @@ export interface MapDirectionsEditorProps extends AppearanceEditorProps {
   motion: BlockMotion;
 }
 
-export interface CatalogEditorComponents extends BasicElementEditorComponents, FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents, Phase4CatalogEditorComponents, ProductionCatalogEditorComponents {
+export interface CardEditorProps extends AppearanceEditorProps {
+  variant: 'plain' | 'outlined';
+  media: Slot;
+  body: Slot;
+  actions: Slot;
+  composition?: string;
+}
+export interface CardEditorComponents { Card: CardEditorProps }
+
+export interface CatalogEditorComponents extends CardEditorComponents, BasicElementEditorComponents, FoundationCatalogEditorComponents, Phase2CatalogEditorComponents, Phase3CatalogEditorComponents, Phase4CatalogEditorComponents, ProductionCatalogEditorComponents {
   HeroSplit: HeroSplitEditorProps;
   HeroSlider: HeroSliderEditorProps;
   LogoCloud: LogoCloudEditorProps;

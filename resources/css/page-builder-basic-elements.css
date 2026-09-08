@@ -16,3 +16,11 @@ ol.g7pb-basic-list { list-style: decimal outside; }
 .g7pb-basic-badge.g7pb-basic-size--medium { font-size: .875rem; }
 .g7pb-basic-badge.g7pb-basic-size--large { font-size: 1rem; }
 .g7pb-basic-badge > svg, .g7pb-basic-badge > .g7pb-basic-icon-image { width: 1em; height: 1em; flex: 0 0 1em; }
+
+/* Shared Card spacing and border; page surface classes own colors. */
+.g7pb-single-card { border-radius: var(--g7pb-theme-radius); }
+.g7pb-single-card--outlined { border: 1px solid var(--g7pb-card-border); }
+.g7pb-single-card.g7pb-spacing--compact { padding: .75rem; }
+.g7pb-single-card.g7pb-spacing--normal { padding: 1.25rem; }
+.g7pb-single-card.g7pb-spacing--spacious { padding: 2rem; }
+.g7pb-single-card :is(.g7pb-block, [class*="g7pb-preview-surface--"]) { padding-block: .5rem; }

@@ -18,6 +18,7 @@ function appearance(value: unknown, fallback: BlockAppearance): BlockAppearance 
 }
 
 export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: CatalogComponentType; props: CatalogEditorComponents[CatalogComponentType] } | null {
+  if (block.type === 'content.card-01') return { type: 'Card', props: { variant: block.props.variant === 'plain' ? 'plain' : 'outlined', media: [], body: [], actions: [], ...appearance(block.props.appearance, { surface: 'default', spacing: 'compact' }), motion: normalizeBlockMotion(block.motion) } };
   const basicElement = canonicalBasicElementToPuck(block);
   if (basicElement) return basicElement;
   const foundationBlock = canonicalFoundationBlockToPuck(block);
@@ -50,6 +51,7 @@ export function canonicalCatalogBlockToPuck(block: PageBuilderBlock): { type: Ca
 }
 
 export function catalogPuckBlockToCanonical(type: string, raw: Record<string, unknown>, includeAppearance: boolean, includeSliderSettings = false): { type: string; props: Record<string, unknown> } | null {
+  if (type === 'Card') return { type: 'content.card-01', props: attachAppearance({ variant: raw.variant }, raw, { surface: 'default', spacing: 'compact' }, includeAppearance) };
   const basicElement = basicElementToCanonical(type, raw, includeAppearance);
   if (basicElement) return basicElement;
   const foundationBlock = foundationPuckBlockToCanonical(type, raw, includeAppearance);

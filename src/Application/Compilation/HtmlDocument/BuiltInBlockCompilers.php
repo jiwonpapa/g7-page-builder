@@ -11,6 +11,7 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\Ba
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BlockquoteBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\BreadcrumbsBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ButtonsBlockCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\CardBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\CardGridBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ComparisonTableBlockCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\Blocks\ContactBlockCompiler;
@@ -69,6 +70,7 @@ final readonly class BuiltInBlockCompilers
     {
         /** @var array<string, BlockTypeCompilerPort> $compilers */
         $compilers = [
+            'builtin.card-01' => new CardBlockCompiler($this->properties, $this->appearance),
             'builtin.icon-01' => new BasicElementBlockCompiler('icon', $this->properties, $this->appearance, $this->icons, $this->escaper),
             'builtin.list-01' => new BasicElementBlockCompiler('list', $this->properties, $this->appearance, $this->icons, $this->escaper),
             'builtin.badge-01' => new BasicElementBlockCompiler('badge', $this->properties, $this->appearance, $this->icons, $this->escaper),

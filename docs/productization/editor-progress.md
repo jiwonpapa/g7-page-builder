@@ -1,10 +1,10 @@
 # 편집기 개발 진척
 
-원장 갱신: 2026-09-08 · 기준 SHA: `280567cc650253a5d6538696fbc3383c587eaf4e`
+원장 갱신: 2026-09-09 · 기준 SHA: `280567cc650253a5d6538696fbc3383c587eaf4e`
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **11/11** · 기존 기반 8개는 분모에서 제외합니다.
+계획 작업 완료 **11/12** · 기존 기반 8개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
 
@@ -44,8 +44,9 @@
 | 독립 PB 개선 3차 · Hero 내부 구성 | UI3 · Hero 배지·목록 내부 구성 | 완료 | UI2 | editor-ux3-r2-20260908 | 구현 `20e25a85951c316a4ffdb43d7318235b0d108502`<br>통합 `18ab87595f78183b2da180d1df8ebdc7a90f95d9`<br>필수 증거 2/2<br>[UI-03/unit](<../audits/2026-09-08-editor-ux3.md>) · [UI-03/browser](<../audits/2026-09-08-editor-ux3.md>) |
 | 독립 PB 개선 4차 · ImageText 내부 구성과 빠른 Undo | UI4 · ImageText 내부 구성 및 빠른 Undo/Redo | 완료 | UI3 | editor-ux4-20260908 | 구현 `6f222f53d1714bfa9227da658bfab57f62a937f5`<br>통합 `69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3`<br>필수 증거 2/2<br>[UI-04/unit](<../audits/2026-09-08-editor-ux4.md>) · [UI-04/browser](<../audits/2026-09-08-editor-ux4.md>) |
 | 독립 PB 개선 5차 | UI5 · 단일 Card 내부 구성 | 완료 | UI4 | ux5-delivery-20260908 | 구현 `6bc13339025844b2361d4b858ab71214884a8f0d`<br>통합 `a29c167e8ac49a68cfd316a0397184784c124908`<br>필수 증거 2/2<br>[UI-05/unit](<../audits/2026-09-08-editor-ux5.md>) · [UI-05/browser](<../audits/2026-09-08-editor-ux5.md>) |
+| 독립 PB 개선 6차 | UI6 · Hero·ImageText 버튼 구역 편집 | 진행 | UI5 | editor-ux6-actions-20260909 | 미완료 |
 
-다음 진행 가능: 없음
+다음 진행 가능: UI6
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

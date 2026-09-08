@@ -43,8 +43,10 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     await page.screenshot({ path: info.outputPath('block-inspector.png') });
     const undo = page.getByRole('button', { name: /되돌리기|Undo/i }).first();
     await undo.click();
+    await heading.click();
     await expect(mobile.locator('summary')).toContainText('공통 설정 사용');
     await page.getByRole('button', { name: /다시 실행|Redo/i }).first().click();
+    await heading.click();
     await expect(mobile.locator('summary')).toContainText('1개 별도 지정');
     const saved = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname.endsWith('/draft'));
     await page.getByTestId('page-builder-save').click();

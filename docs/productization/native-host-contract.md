@@ -90,3 +90,14 @@ G7 후보의 `host.compositions.export({expected, signal})`는 `ExtensionMediaRe
 - 실제 기술 fixture는 G7 admin content API에 먼저 저장한 원본을 기준으로 PB 변경 전후를 비교했다. 기존 G7 content 요청·리소스의 associative JSON 변환은 빈 객체를 배열로 바꾸므로, G7 전체 JSON 종류 무손실을 이 시험의 성공으로 주장하지 않는다. PB 스냅샷 문자열의 `{}`/`[]` 보존은 별도 실제 저장소 시험으로 확인한다. G7 저장 자체의 종류 보존 검증·해결은 NE6 수용 감사에 남긴다.
 
 확정 SHA와 명령·시험·runtime 파일 지문은 [NAT-04 마감 기록](../audits/2026-09-08-native-editor-ne4.md)에 기록한다. 후보가 없는 stock G7·임의 테마·운영 환경의 제공 완료를 뜻하지 않는다.
+
+
+## NE6 — 저장 경계와 릴리스 조합
+
+호스트 후보는 G7 `6dc41eead1a9d14fa7d4c817827dfaccb03cb1db` (engine-v1.68.2)다. PB 네이티브 공개 protocol과 선택형 기능 탐지는 유지한다. G7 상위 main 반영을 뜻하지 않으며 운영 적용과 복구 파일은 NAT-06 마감 기록에서 구별한다.
+
+- G7 content FormRequest가 출처 마스킹과 전체 원본 검증 후 JSON 객체·목록 종류를 복원한다. 리소스·편집 응답·이력 조회·복원도 원본 종류를 보존한다. PHP 내부의 기존 배열 기반 렌더를 바꾸지 않는다.
+- 같은 페이지의 버전 확인·본문·이력 저장은 Repository 행 잠금과 Service 트랜잭션으로 직렬화한다. 실제 HTTP 8개 동시 저장은 성공 1개/409 충돌 7개였다. 이력 복원도 lock_version을 올려 복원 전 편집본을 거부한다.
+- G7 전역 단축키는 확장 버튼·링크·접이식/선택 컨트롤의 기본 키 동작을 보존한다. 확장 번들 로딩 실패 시 기존 편집기는 열리고 저장 원본은 무변경이다. 저장 503 때 서버 원본과 화면의 미저장 입력을 각각 보존한다.
+- sirsoft-basic 일반 페이지 및 명시적 manifest/spec/renderer/CSS를 묶은 jiwonpapa-native_lab 기술 fixture로 원본·Undo/Redo·미디어·트리·내 조합·반복·슬라이더를 검증했다. PC/태블릿/모바일 공개 출력, 키보드, reduced-motion을 포함한다. fixture를 고객 테마나 상용 콘텐츠로 배포하지 않는다.
+- 임의 테마·stock G7·companion 미연결 테마의 동적 블록 지원으로 확대하지 않는다. 운영 테마에서 확인한 항목은 별도 배포 증거에만 추가한다.

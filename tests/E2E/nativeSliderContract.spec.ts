@@ -107,6 +107,7 @@ async function save(page: Page): Promise<void> {
 async function select(page: Page, id: string): Promise<void> {
   const path = await page.locator(`[data-editor-id="${id}"]`).first().getAttribute('data-editor-path');
   expect(path).toBeTruthy(); await page.getByTestId('g7le-dnd-handle-' + path).click({ position: { x: 5, y: 5 } });
+  await page.getByRole('radio', { name: '삽입·구성', exact: true }).check();
 }
 function collection(page: Page, label: string): Locator {
   return page.locator('.g7pb-native-collection').filter({ has: page.locator(':scope > summary', { hasText: label }) }).first();
@@ -245,6 +246,10 @@ test('native companion edits array images cell trees and iteration templates the
     await expect(page.getByText('Repeated insertion', { exact: true })).toHaveCount(2);
     await expect(page.getByText('Cell inserted', { exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath('native-ne3-public-desktop.png'), fullPage: true });
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await expect(slider).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: info.outputPath('native-ne6-public-tablet.png'), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: 'reduce' }); await page.reload();
     await expect(slider.getByRole('button', { name: '자동 재생 시작' })).toBeDisabled();
     await expect(slider.locator('figure:not([hidden])')).toContainText('Edited slide'); await page.waitForTimeout(1200);

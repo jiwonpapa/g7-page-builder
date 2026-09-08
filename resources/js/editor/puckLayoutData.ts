@@ -9,8 +9,8 @@ export function puckLayoutSlot(item: PuckEditorItem, name: string): PuckEditorDa
   let slot: PuckEditorData['content'] | undefined;
   if ((item.type === 'LayoutSection' || item.type === 'LayoutStack') && name === 'content') {
     slot = item.props.content;
-  } else if ((item.type === 'Hero' || item.type === 'ImageText') && name === 'extra') {
-    slot = item.props.extra;
+  } else if ((item.type === 'Hero' || item.type === 'ImageText') && (name === 'extra' || name === 'actions')) {
+    slot = item.props[name];
   } else if (item.type === 'Card' && (name === 'media' || name === 'body' || name === 'actions')) {
     slot = item.props[name];
   } else if (item.type === 'LayoutColumns') {

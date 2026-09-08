@@ -115,7 +115,7 @@ function ButtonsPreview(props: ButtonsEditorProps & { id: string }): React.React
   </Frame>;
 }
 
-function ImageTextPreview(props: Omit<ImageTextEditorProps, 'body' | 'extra'> & { id: string; body: React.ReactNode; extra?: React.ReactNode }): React.ReactElement {
+function ImageTextPreview(props: Omit<ImageTextEditorProps, 'body' | 'extra' | 'actions'> & { id: string; body: React.ReactNode; extra?: React.ReactNode; actions?: React.ReactNode }): React.ReactElement {
   return <Frame id={props.id} type="image-text" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-image-text g7pb-preview-image-text--${props.mediaPosition} ${surfaceClass(props)}`}>
       <figure data-g7pb-media-field="imageSrc"><Media src={props.imageSrc} alt={props.imageAlt} label="대표 이미지를 선택하세요" /></figure>
@@ -124,7 +124,8 @@ function ImageTextPreview(props: Omit<ImageTextEditorProps, 'body' | 'extra'> & 
         <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField>
         <RichTextCanvasField fieldPath="body">{props.body}</RichTextCanvasField>
         {props.extra}
-        {props.primaryLabel ? <a className="g7pb-preview-button g7pb-preview-button--primary" href={safeLink(props.primaryUrl)}
+        {props.actionsEnabled && props.actions}
+        {!props.actionsEnabled && props.primaryLabel ? <a className="g7pb-preview-button g7pb-preview-button--primary" href={safeLink(props.primaryUrl)}
           data-g7pb-action-field="primaryLabel" onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a> : null}
       </div>
     </div>
@@ -211,7 +212,7 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
       primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결'),
       ...appearanceFields, motion: createMotionField(['none', 'reveal']),
     },
-    render: ({ extra: Extra, ...props }) => <ImageTextPreview {...props} extra={typeof Extra === 'function' ? Extra({ minEmptyHeight: 0 }) : undefined} />,
+    render: ({ extra: Extra, actions: Actions, ...props }) => <ImageTextPreview {...props} extra={typeof Extra === 'function' ? Extra({ minEmptyHeight: 0 }) : undefined} actions={props.actionsEnabled && typeof Actions === 'function' ? Actions({ minEmptyHeight: 0 }) : undefined} />,
   },
   IconList: {
     label: '아이콘 목록', defaultProps: DEFAULT_ICON_LIST,

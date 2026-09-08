@@ -37,10 +37,14 @@ final readonly class HeroBlockCompiler implements SlotBlockCompilerPort
 
     public function compileSlots(array $props, array $slots): string
     {
-        if (array_diff(array_keys($slots), ['extra']) !== []) {
+        if (array_diff(array_keys($slots), ['extra', 'actions']) !== []) {
             throw new \InvalidArgumentException('Hero slot is not supported.');
         }
         $extra = $slots['extra'] ?? '';
+        if (array_key_exists('actions', $slots) && array_key_exists('primaryCta', $props)) {
+            throw new \InvalidArgumentException('action_owner: primaryCta');
+        }
+        $actions = $slots['actions'] ?? '';
         $this->properties->assertOnlyKeys($props, ['eyebrow', 'title', 'body', 'primaryCta', 'image', 'alignment', 'mediaPosition', 'layout', 'appearance'], 'Hero');
         $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
         $title = $this->properties->requiredInlineRichTextString($props, 'title', 200);
@@ -78,6 +82,7 @@ final readonly class HeroBlockCompiler implements SlotBlockCompilerPort
             if ($extra !== '') {
                 $copy[] = $extra;
             }
+            $copy[] = $actions;
             if ($cta !== null) {
                 $copy[] = $this->markup->compileActionLink($cta, 'Hero CTA', 'g7pb-button g7pb-button--primary');
             }
@@ -112,6 +117,7 @@ final readonly class HeroBlockCompiler implements SlotBlockCompilerPort
         if ($extra !== '') {
             $parts[] = $extra;
         }
+        $parts[] = $actions;
         if ($cta !== null) {
             $label = $this->properties->requiredString($cta, 'label', 120);
             $url = $this->properties->requiredString($cta, 'url', 2048);

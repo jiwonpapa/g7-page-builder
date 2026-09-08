@@ -4,22 +4,31 @@ import { EditorViewportPolicyContext, usePageBuilderPuck } from './puckEditorCon
 import { assertEditorInsertion, editorItemLocations, editorPlacementReason } from './puckEditorSelection';
 export const CARD_SLOT_COMPONENTS = { media: ['Image'], body: ['Heading', 'RichText', 'Icon', 'List', 'Badge', 'Divider'], actions: ['Buttons'] } as const;
 import { deleteCanvasItem, moveCanvasItem } from './canvasItemCommands';
+import { enableCompositionActions } from './compositionActions';
 
 const LABELS = { Image: '이미지', Heading: '제목', RichText: '본문', Icon: '아이콘', Badge: '배지', List: '목록', Divider: '구분선', Buttons: '버튼' };
 type ChildType = keyof typeof LABELS;
 
 /** The same Puck tree/commands own canvas, outline and these explicit composition tools. */
 export function ComponentComposition({ readOnly, structureEnabled = false }: { readOnly?: boolean; structureEnabled?: boolean }): React.ReactElement {
-  const { selectedItem, appState } = usePageBuilderPuck((state) => state);
+  const { selectedItem, appState, dispatch } = usePageBuilderPuck((state) => state);
+  const [message, setMessage] = React.useState('');
   const { canEdit } = React.useContext(EditorViewportPolicyContext);
   const id = selectedItem && (selectedItem.type === 'Hero' || selectedItem.type === 'ImageText' || selectedItem.type === 'Card') ? selectedItem.props.id : null;
-  if (!id || !selectedItem) return <></>;
+  if (!id || !selectedItem || (selectedItem.type !== 'Hero' && selectedItem.type !== 'ImageText' && selectedItem.type !== 'Card')) return <></>;
+  const actionsEnabled = selectedItem.type === 'Card' || selectedItem.props.actionsEnabled === true;
   const disabled = readOnly || !canEdit || !structureEnabled;
   const slots = selectedItem.type === 'Card' ? CARD_SLOT_COMPONENTS
-    : { extra: selectedItem.type === 'ImageText' ? ['Badge', 'List', 'Divider'] as const : ['Badge', 'List'] as const };
+    : { extra: selectedItem.type === 'ImageText' ? ['Badge', 'List', 'Divider'] as const : ['Badge', 'List'] as const, ...(actionsEnabled ? { actions: ['Buttons'] as const } : {}) };
   return <details className="g7pb-design-advanced" data-testid={selectedItem.type === 'Card' ? 'card-composition' : selectedItem.type === 'Hero' ? 'hero-composition' : 'image-text-composition'}>
     <summary>내부 구성 · {editorItemLocations(appState.data).filter((entry) => Object.keys(slots).some((slot) => entry.selector.zone === `${id}:${slot}`)).length}/{Object.values(slots).reduce((sum, types) => sum + types.length, 0)}</summary>
-    <p>{structureEnabled ? (selectedItem.type === 'Card' ? '구역별 요소를 각각 하나씩 배치합니다. 링크는 내부 버튼에서 설정합니다.' : '제목·본문·기존 버튼은 그대로 유지됩니다.') : '상단의 구조 편집 사용을 먼저 선택해 주세요.'}</p>
+    <p>{structureEnabled ? (selectedItem.type === 'Card' ? '구역별 요소를 각각 하나씩 배치합니다. 링크는 내부 버튼에서 설정합니다.' : (actionsEnabled ? '제목·본문은 유지하고 버튼 구역에서 연결을 편집합니다.' : '버튼 구역으로 전환하면 기존 문구와 연결을 옮겨 편집합니다.')) : '상단의 구조 편집 사용을 먼저 선택해 주세요.'}</p>
+    {!actionsEnabled && <button type="button" disabled={Boolean(disabled)} onClick={() => {
+      if (disabled) return;
+      try { dispatch(enableCompositionActions(appState.data, id, structureEnabled, crypto.randomUUID())); setMessage(''); }
+      catch (error) { setMessage(error instanceof Error ? error.message : '버튼 구역으로 전환할 수 없습니다.'); }
+    }}>버튼 구역으로 편집</button>}
+    {message && <output aria-live="polite">{message}</output>}
     {Object.entries(slots).map(([slot, types]) => <CompositionSlot key={`${id}:${slot}`} id={id} slot={slot} types={types} disabled={Boolean(disabled)} />)}
   </details>;
 }

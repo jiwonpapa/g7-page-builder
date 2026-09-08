@@ -120,3 +120,103 @@ for (const kind of ['hero', 'imageText'] as const) test(`${kind} extra inserts e
     await api.dispose();
   }
 });
+
+for (const kind of ['hero', 'imageText'] as const) test(`${kind} explicitly transfers buttons with atomic undo and persists edited and empty actions`, async ({ page, context }, info) => {
+  const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
+  const owned = await createOwnedEditorInteractionDocument(api, 'desktop');
+  const viewer = await context.newPage();
+  try {
+    const initial = await resource(api, owned.documentId);
+    const parent = structuredClone(fixtures[kind].blocks[0]);
+    const seed = await api.put(`${API}/${owned.documentId}/draft`, { data: { expected_lock_version: initial.lock_version,
+      document: { ...initial.document, schema_version: 'g7-page-builder/v2', shell_mode: 'none', blocks: [parent] } } });
+    expect(seed.ok()).toBe(true);
+    await page.goto(`/modules/jiwonpapa-page_builder/admin/editor?document=${owned.documentId}`);
+    let composition = await selectComposition(page, kind);
+    await composition.getByRole('button', { name: '버튼 구역으로 편집', exact: true }).click();
+    await expect(composition.getByRole('button', { name: '버튼 편집', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'undo', exact: true }).click();
+    await save(page);
+    expect((await resource(api, owned.documentId)).document.blocks[0]).toEqual(parent);
+    composition = await selectComposition(page, kind);
+    await composition.getByRole('button', { name: '버튼 구역으로 편집', exact: true }).click();
+    await save(page);
+    const transferred = (await resource(api, owned.documentId)).document.blocks[0];
+    const prop = kind === 'hero' ? 'primaryCta' : 'primaryLink';
+    expect(transferred.props).not.toHaveProperty(prop);
+    expect(transferred.slots?.extra).toEqual(parent.slots.extra);
+    expect(transferred.slots?.actions[0].props.items).toEqual([{ label: '문의', url: '/contact', variant: 'primary' }]);
+    await expect(page.getByRole('textbox', { name: '버튼 연결', exact: true })).toHaveCount(0);
+    await expect(composition.getByRole('button', { name: '버튼 추가', exact: true })).toBeDisabled();
+    await composition.getByRole('button', { name: '버튼 편집', exact: true }).click();
+    await page.locator('[class*="ArrayFieldItem-summary"]').filter({ hasText: '문의' }).click();
+    await page.getByRole('textbox', { name: '버튼 문구', exact: true }).fill('편집한 버튼');
+    await page.getByRole('textbox', { name: '버튼 연결', exact: true }).fill('/edited-actions');
+    const addItem = page.locator('button[class*="ArrayField-addButton"]');
+    await addItem.click();
+    await addItem.click();
+    await expect(addItem).toHaveCount(0);
+    await save(page);
+    const edited = (await resource(api, owned.documentId)).document.blocks[0];
+    expect(edited.slots?.actions[0].props.items).toEqual([
+      { label: '편집한 버튼', url: '/edited-actions', variant: 'primary' },
+      { label: '버튼 2', url: '/', variant: 'secondary' },
+      { label: '버튼 3', url: '/', variant: 'secondary' },
+    ]);
+    composition = await selectComposition(page, kind);
+    await composition.getByRole('button', { name: '버튼 삭제', exact: true }).click();
+    await page.getByRole('button', { name: 'undo', exact: true }).click();
+    await save(page);
+    expect((await resource(api, owned.documentId)).document.blocks[0]).toEqual(edited);
+    await page.reload();
+    composition = await selectComposition(page, kind);
+    const frame = page.frameLocator('#puck-canvas-root iframe');
+    const link = frame.getByRole('link', { name: '편집한 버튼', exact: true });
+    await expect(link).toBeVisible();
+    const editorUrl = page.url();
+    await link.click();
+    expect(page.url()).toBe(editorUrl);
+    await expect(link).toBeVisible();
+    await page.screenshot({ path: info.outputPath(`${kind}-actions.png`), fullPage: true });
+    const current = await resource(api, owned.documentId);
+    const preview = await api.post(`${API}/${owned.documentId}/preview`, { data: { expected_lock_version: current.lock_version } });
+    expect(preview.ok()).toBe(true);
+    const previewUrl = (await preview.json() as { data: { preview_url: string } }).data.preview_url;
+    const publication = page.waitForResponse((response) => response.request().method() === 'POST'
+      && /\/publications\/[^/]+\/commit$/.test(new URL(response.url()).pathname));
+    await page.getByTestId('page-builder-publish').click();
+    expect((await publication).ok()).toBe(true);
+    for (const url of [previewUrl, `/pages/${owned.slug}`]) {
+      await viewer.goto(url);
+      await expect(viewer.getByRole('link', { name: '편집한 버튼', exact: true })).toHaveAttribute('href', '/edited-actions');
+      await expect(viewer.getByRole('link', { name: '문의', exact: true })).toHaveCount(0);
+      await expect(viewer.getByRole('link', { name: /^버튼 [23]$/ })).toHaveCount(2);
+    }
+    composition = await selectComposition(page, kind);
+    await composition.getByRole('button', { name: '버튼 삭제', exact: true }).click();
+    await save(page);
+    await page.reload();
+    composition = await selectComposition(page, kind);
+    await expect(composition.getByRole('button', { name: '버튼 구역으로 편집', exact: true })).toHaveCount(0);
+    const empty = await resource(api, owned.documentId);
+    expect(empty.document.blocks[0].slots?.actions).toEqual([]);
+    expect(empty.document.blocks[0].props).not.toHaveProperty(prop);
+    await expect(frame.getByRole('link', { name: '문의', exact: true })).toHaveCount(0);
+    const invalid = structuredClone(empty.document);
+    invalid.blocks[0].props[prop] = { label: '중복', url: '/duplicate' };
+    const rejected = await api.put(`${API}/${owned.documentId}/draft`, { data: { expected_lock_version: empty.lock_version, document: invalid } });
+    expect(rejected.status()).toBe(400);
+    expect((await resource(api, owned.documentId)).document).toEqual(empty.document);
+    await composition.getByRole('button', { name: '버튼 추가', exact: true }).click();
+    composition = await selectComposition(page, kind);
+    await expect(composition.getByRole('button', { name: '버튼 편집', exact: true })).toBeVisible();
+    await page.getByRole('group', { name: '캔버스 기기 미리보기' }).getByRole('button', { name: '태블릿', exact: true }).click();
+    const readonly = page.getByTestId(kind === 'hero' ? 'hero-composition' : 'image-text-composition').filter({ visible: true });
+    if (!await readonly.evaluate((node) => node.hasAttribute('open'))) await readonly.locator('summary').click();
+    await expect(readonly.getByRole('button', { name: '버튼 삭제', exact: true })).toBeDisabled();
+  } finally {
+    await viewer.close();
+    await cleanupOwnedEditorInteractionDocument(api, owned);
+    await api.dispose();
+  }
+});

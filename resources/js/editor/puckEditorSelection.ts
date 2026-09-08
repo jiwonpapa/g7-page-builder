@@ -78,7 +78,8 @@ export function activeEditorSlots(type: string, props: Record<string, unknown>):
   if (!canonicalType) return [];
   try {
     return layoutSlotNames({ type: canonicalType, props: type === 'LayoutColumns'
-      ? { ...props, columns: Number(props.columns) } : props });
+      ? { ...props, columns: Number(props.columns) } : props })
+      .filter((slot) => slot !== 'actions' || (type !== 'Hero' && type !== 'ImageText') || props.actionsEnabled === true);
   } catch { return []; }
 }
 

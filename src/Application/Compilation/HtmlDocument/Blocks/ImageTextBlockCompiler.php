@@ -33,8 +33,11 @@ final readonly class ImageTextBlockCompiler implements SlotBlockCompilerPort
 
     public function compileSlots(array $props, array $slots): string
     {
-        if (array_diff(array_keys($slots), ['extra']) !== []) {
+        if (array_diff(array_keys($slots), ['extra', 'actions']) !== []) {
             throw new \InvalidArgumentException('Image text slot is not supported.');
+        }
+        if (array_key_exists('actions', $slots) && array_key_exists('primaryLink', $props)) {
+            throw new \InvalidArgumentException('action_owner: primaryLink');
         }
         $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'body', 'image', 'mediaPosition', 'primaryLink', 'appearance'], 'Image text');
         $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
@@ -56,7 +59,7 @@ final readonly class ImageTextBlockCompiler implements SlotBlockCompilerPort
         $media = '<figure class="g7pb-image-text__media">'.$this->markup->compileCatalogImage($src, $alt, 'g7pb-image-text__image', '대표 이미지를 선택하세요').'</figure>';
         $copy = '<div class="g7pb-image-text__copy">'.($eyebrow === null || $eyebrow === '' ? '' : '<p class="g7pb-section-eyebrow">'.$this->escaper->escape($eyebrow).'</p>')
             .'<h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2>'.($body === '' ? '' : '<div class="g7pb-image-text__body">'.$this->richText->sanitizeRichText($body).'</div>')
-            .($slots['extra'] ?? '')
+            .($slots['extra'] ?? '').($slots['actions'] ?? '')
             .($primaryLink === null ? '' : $this->markup->compileActionLink($primaryLink, 'Image text primary link', 'g7pb-button g7pb-button--primary')).'</div>';
         $content = $media.$copy;
 

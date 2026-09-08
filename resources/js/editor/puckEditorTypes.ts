@@ -10,6 +10,8 @@ import type { PageDesignProps } from './pageDesignTokens';
 
 export interface HeroEditorProps {
   extra?: Slot;
+  actions?: Slot;
+  actionsEnabled?: boolean;
   composition?: string;
   eyebrow: string;
   title: string;

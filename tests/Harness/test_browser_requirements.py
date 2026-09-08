@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import replace
 import tempfile
 import unittest
-from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, BASIC_ELEMENTS, CARD_COMPOSITION, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, SITE_KIT_INQUIRY, scenarios_for
+from tools.g7pb.browser_requirements import PAGE, NESTED, TEMPLATE, TEXT, CONTROLS, PARITY, STRUCTURE_THEME, DOCUMENT_BOUNDARY, SITE_SHELL, SITE_PART, STORE, MANAGER_STORE, MANAGER_INBOX, CATALOG_FRAME, CATALOG_FIELDS, CATALOG_CODEC, CATALOG_RESPONSIVE, BASIC_ELEMENTS, HERO_COMPOSITION, CARD_COMPOSITION, CATALOG_CODE_SCOPES, PUBLIC, MOBILE_NAV, PUBLIC_DATA, PUBLIC_CONTROLS, PUBLIC_MOTION, PUBLIC_SHELL, PUBLIC_CODE_SCOPES, STYLE_CODE_SCOPES, SITE_PART_HEADER, SITE_KIT, SITE_KIT_INQUIRY, scenarios_for
 import re
 import subprocess
 from tools.g7pb.planner import build_plan
@@ -112,6 +112,10 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_action_transfer_selects_real_composition_flows(self):
+        for name in ("ComponentComposition.tsx", "compositionActions.ts"):
+            self.assertEqual(set(scenarios_for(["resources/js/editor/" + name])), {HERO_COMPOSITION, CARD_COMPOSITION})
+
     def test_single_card_selects_its_actual_editing_flow(self):
         for name in ('cardCatalogBlocks.tsx',):
             selected = scenarios_for(['resources/js/editor/' + name])

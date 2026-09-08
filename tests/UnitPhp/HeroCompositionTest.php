@@ -43,7 +43,7 @@ final class HeroCompositionTest extends TestCase
                     'type' => 'content.heading-01', 'block_version' => 1, 'props' => ['heading' => '제목'],
                 ];
             } else {
-                $payload['blocks'][0]['slots'] = ['actions' => []];
+                $payload['blocks'][0]['slots'] = ['unknown' => []];
             }
             try {
                 PageBuilderDocument::fromArray($payload);
@@ -77,4 +77,36 @@ final class HeroCompositionTest extends TestCase
         $this->expectExceptionMessage('component_slot_limit:');
         PageBuilderDocument::fromArray($payload);
     }
+    public function test_actions_have_one_owner_preserve_empty_state_and_compile_once(): void
+    {
+        $fixtures = json_decode(file_get_contents(__DIR__.'/../Fixtures/layout-policy-cases.json'), true, flags: JSON_THROW_ON_ERROR);
+        foreach (['hero' => 'primaryCta', 'imageText' => 'primaryLink'] as $kind => $prop) {
+            $payload = $fixtures[$kind];
+            $link = $payload['blocks'][0]['props'][$prop];
+            unset($payload['blocks'][0]['props'][$prop]);
+            $payload['blocks'][0]['slots']['actions'] = [[
+                'instance_id' => '00000000-0000-4000-8000-000000000109',
+                'type' => 'action.buttons-01', 'block_version' => 1,
+                'props' => ['items' => [[...$link, 'variant' => 'primary']], 'alignment' => 'center'],
+            ]];
+            $html = $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7')->artifact;
+            self::assertIsString($html);
+            self::assertSame(1, substr_count($html, 'href="/contact"'));
+            self::assertStringContainsString('00000000-0000-4000-8000-000000000109', $html);
+            $payload['blocks'][0]['slots']['actions'] = [];
+            $empty = PageBuilderDocument::fromArray($payload);
+            self::assertSame([], $empty->toArray()['blocks'][0]['slots']['actions']);
+            $html = $this->builtInCompiler()->compile($empty, 1, 'html', 'g7-7.0.7')->artifact;
+            self::assertIsString($html);
+            self::assertStringNotContainsString('href="/contact"', $html);
+            $payload['blocks'][0]['props'][$prop] = $link;
+            try {
+                PageBuilderDocument::fromArray($payload);
+                self::fail('Dual action ownership accepted');
+            } catch (\InvalidArgumentException $error) {
+                self::assertStringContainsString('action_owner:', $error->getMessage());
+            }
+        }
+    }
+
 }

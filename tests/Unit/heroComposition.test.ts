@@ -1,3 +1,4 @@
+import { enableCompositionActions } from '../../resources/js/editor/compositionActions';
 import { describe, expect, it } from 'vitest';
 import fixtures from '../Fixtures/layout-policy-cases.json';
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
@@ -17,7 +18,7 @@ describe.each(['hero', 'imageText'] as const)('%s declared extra composition', (
     const output = puckToCanonical(session.data, session.context);
     expect(output).toEqual(original);
     expect(editorItemLocations(session.data)).toHaveLength(kind === 'hero' ? 3 : 4);
-    expect(layoutSlotNames(original.blocks[0])).toEqual(['extra']);
+    expect(layoutSlotNames(original.blocks[0])).toEqual(['extra', 'actions']);
   });
   it('does not add slots or convert v1 merely by opening an old Hero', () => {
     const original = fresh();
@@ -48,7 +49,7 @@ describe.each(['hero', 'imageText'] as const)('%s declared extra composition', (
     extra.pop();
     extra[0].type = 'content.heading-01';
     expect(() => validateLayoutDocument(doc)).toThrow('parent');
-    doc.blocks[0].slots = { actions: [] };
+    doc.blocks[0].slots = { unknown: [] };
     expect(() => validateLayoutDocument(doc)).toThrow('slot');
   });
   it('reorders/deletes children and clones the full subtree with fresh unique identities', () => {
@@ -62,5 +63,55 @@ describe.each(['hero', 'imageText'] as const)('%s declared extra composition', (
     const copy = cloneLayoutSubtree(hero, () => crypto.randomUUID());
     expect(copy.instance_id).not.toBe(hero.instance_id);
     expect(copy.slots!.extra.map((child) => child.instance_id)).not.toEqual(hero.slots!.extra.map((child) => child.instance_id));
+  });
+});
+
+describe.each(['hero', 'imageText'] as const)('%s explicit button ownership transfer', (kind) => {
+  const fresh = (): PageBuilderDocument => ({ ...structuredClone(fixtures[kind]), schema_version: 'g7-page-builder/v2', mode: 'canvas' });
+  it('preserves values, styles and siblings, then persists empty actions without resurrecting the legacy CTA', () => {
+    const doc = fresh();
+    const parent = doc.blocks[0];
+    parent.props.appearance = { surface: kind === 'hero' ? 'default' : 'soft', spacing: kind === 'hero' ? 'spacious' : 'normal', elements: { primaryLabel: { tone: 'accent' } } };
+    const session = canonicalToPuck(doc);
+    const id = session.data.content[0].props.id;
+    expect(() => enableCompositionActions(session.data, id, false, crypto.randomUUID())).toThrow();
+    expect(() => assertEditorInsertion(session.data, { zone: `${id}:actions`, index: 0 }, 'Buttons')).toThrow();
+    const action = enableCompositionActions(session.data, id, true, crypto.randomUUID());
+    if (action.type !== 'replace') throw new Error('Expected atomic replace');
+    expect(action.recordHistory).toBe(true);
+    // The command's payload is runtime data, checked through canonical round-trip.
+    Object.assign(session.data.content[0], action.data);
+    const transferred = puckToCanonical(session.data, session.context);
+    const output = transferred.blocks[0];
+    const prop = kind === 'hero' ? 'primaryCta' : 'primaryLink';
+    expect(output.props).not.toHaveProperty(prop);
+    expect(output.slots?.extra).toEqual(parent.slots?.extra);
+    expect(output.slots?.actions[0].props.items).toEqual([{ ...parent.props[prop] as object, variant: 'primary' }]);
+    expect(output.slots?.actions[0].props.appearance).toMatchObject({ elements: { 'items.0.label': { tone: 'accent' } } });
+    expect(() => validateLayoutDocument(transferred)).not.toThrow();
+    const reopened = canonicalToPuck(transferred);
+    expect(puckToCanonical(reopened.data, reopened.context)).toEqual(transferred);
+    const selected = reopened.data.content[0];
+    if (selected.type !== 'Hero' && selected.type !== 'ImageText') throw new Error('Expected composition');
+    selected.props.actions = [];
+    const empty = puckToCanonical(reopened.data, reopened.context);
+    expect(empty.blocks[0].slots?.actions).toEqual([]);
+    expect(empty.blocks[0].props).not.toHaveProperty(prop);
+    expect(puckToCanonical(canonicalToPuck(empty).data, canonicalToPuck(empty).context)).toEqual(empty);
+    const invalid = structuredClone(empty);
+    invalid.blocks[0].props[prop] = parent.props[prop];
+    expect(() => canonicalToPuck(invalid)).toThrow('action_owner');
+    const legacy = canonicalToPuck(doc);
+    expect(puckToCanonical(legacy.data, legacy.context)).toEqual(doc);
+  });
+  it('rejects a second Buttons child and v1 actions writes', () => {
+    const session = canonicalToPuck(fresh());
+    const id = session.data.content[0].props.id;
+    const action = enableCompositionActions(session.data, id, true, crypto.randomUUID());
+    if (action.type !== 'replace') throw new Error('Expected replace');
+    Object.assign(session.data.content[0], action.data);
+    expect(() => assertEditorInsertion(session.data, { zone: `${id}:actions`, index: 1 }, 'Buttons')).toThrow('component_slot_limit');
+    session.context.document.schemaVersion = 'g7-page-builder/v1';
+    expect(() => puckToCanonical(session.data, session.context)).toThrow('requires structure editing');
   });
 });

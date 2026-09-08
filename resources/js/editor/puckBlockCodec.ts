@@ -279,13 +279,15 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
   }
 
   if (block.type === HERO_BLOCK_TYPE) {
-    if (hasNonEmptySlots(block)) validateLayoutDocument({ blocks: [block] });
+    if (block.slots) validateLayoutDocument({ blocks: [block] });
     return {
       type: 'Hero',
       props: {
         id: block.instance_id,
         ...heroToEditorProps(block.props),
         extra: (block.slots?.extra ?? []).map(canonicalBlockToPuck),
+        actions: (block.slots?.actions ?? []).map(canonicalBlockToPuck),
+        actionsEnabled: Object.hasOwn(block.slots ?? {}, 'actions'),
         motion: normalizeBlockMotion(block.motion),
       },
     };
@@ -326,14 +328,14 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
 
   const catalogBlock = canonicalCatalogBlockToPuck(block);
   if (catalogBlock) {
-    if ((block.type === 'media.image-text-01' || block.type === 'content.card-01') && hasNonEmptySlots(block)) validateLayoutDocument({ blocks: [block] });
+    if ((block.type === 'media.image-text-01' || block.type === 'content.card-01') && block.slots) validateLayoutDocument({ blocks: [block] });
     return {
       type: catalogBlock.type,
       props: {
         id: block.instance_id,
         ...catalogBlock.props,
         ...(catalogBlock.type === 'Card' ? Object.fromEntries(['media', 'body', 'actions'].map((name) => [name, (block.slots?.[name] ?? []).map(canonicalBlockToPuck)])) : {}),
-        ...(catalogBlock.type === 'ImageText' ? { extra: (block.slots?.extra ?? []).map(canonicalBlockToPuck) } : {}),
+        ...(catalogBlock.type === 'ImageText' ? { extra: (block.slots?.extra ?? []).map(canonicalBlockToPuck), actions: (block.slots?.actions ?? []).map(canonicalBlockToPuck), actionsEnabled: Object.hasOwn(block.slots ?? {}, 'actions') } : {}),
         motion: normalizeBlockMotion(block.motion),
       },
     } as PuckEditorData['content'][number];
@@ -584,9 +586,16 @@ export function puckBlockToCanonical(
       .filter((name) => block.props[name].length || metadata.slotNames?.includes(name))
       .map((name) => [name, block.props[name].map((child) => puckBlockToCanonical(child, context))]));
     if (!metadata.hadSlots && !Object.keys(canonical.slots).length) delete canonical.slots;
-  } else if ((block.type === 'Hero' || block.type === 'ImageText') && (block.props.extra?.length || metadata.hadExtra)) {
-    if (context.document.schemaVersion !== 'g7-page-builder/v2') throw new Error('Internal composition requires structure editing.');
-    canonical.slots = { extra: (block.props.extra ?? []).map((child) => puckBlockToCanonical(child, context)) };
+  } else if (block.type === 'Hero' || block.type === 'ImageText') {
+    const actionsEnabled = block.props.actionsEnabled === true;
+    if (actionsEnabled || block.props.extra?.length || metadata.hadExtra) {
+      if (context.document.schemaVersion !== 'g7-page-builder/v2') throw new Error('Internal composition requires structure editing.');
+      canonical.slots = {
+        ...(block.props.extra?.length || metadata.hadExtra ? { extra: (block.props.extra ?? []).map((child) => puckBlockToCanonical(child, context)) } : {}),
+        ...(actionsEnabled ? { actions: (block.props.actions ?? []).map((child) => puckBlockToCanonical(child, context)) } : {}),
+      };
+    } else if (metadata.hadSlots) canonical.slots = {};
+    if (actionsEnabled) delete canonical.props[block.type === 'Hero' ? 'primaryCta' : 'primaryLink'];
   } else if (metadata.hadSlots) {
     canonical.slots = {};
   }

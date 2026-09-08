@@ -52,3 +52,24 @@ it('shows metadata and requires explicit deletion confirmation', async () => {
   await click('목록에서 삭제'); await click('삭제 확인'); expect(store.delete).toHaveBeenCalledWith(id, expect.any(AbortSignal));
   await act(async () => root.unmount()); expect(typeof NativeCompositionPanel).toBe('function');
 });
+
+it('rejects an invalid insertion order before reading or mutating the host', async () => {
+  const raw = input(); const host = readNativeHost(raw)!; const store = library(); const signal = new AbortController().signal;
+  for (const index of [-1, 1, 0.5, NaN]) expect((await insertSavedComposition(host, store, id, 'children', signal, index)).ok).toBe(false);
+  expect(store.read).not.toHaveBeenCalled(); expect(raw.compositions.insert).not.toHaveBeenCalled();
+});
+
+it('cancels a pending list without accepting its late result and allows a retry', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  const element = document.createElement('div'); document.body.append(element); const root = createRoot(element); const store = library();
+  let finish!: (value: Awaited<ReturnType<NativeCompositionLibrary['page']>>) => void; let signal: AbortSignal | undefined;
+  vi.mocked(store.page).mockImplementationOnce((_page, current) => { signal = current; return new Promise(resolve => { finish = resolve; }); });
+  const click = async (label: string) => { await act(() => Array.from(element.querySelectorAll('button')).find(button => button.textContent === label)!.click()); };
+  try {
+    await act(() => root.render(<NativeCompositions host={readNativeHost(input())!} library={store} />));
+    await click('요청 취소'); expect(signal?.aborted).toBe(true);
+    await act(() => finish({ ok: true, data: { items: [row], hasMore: false } }));
+    expect(element.textContent).toContain('요청을 취소했습니다'); expect(element.querySelector('li')).toBeNull();
+    await click('조합 목록 새로고침'); expect(element.querySelector('li')?.textContent).toContain('소개');
+  } finally { await act(() => root.unmount()); element.remove(); }
+});

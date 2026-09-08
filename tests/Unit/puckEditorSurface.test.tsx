@@ -1370,6 +1370,10 @@ describe('Puck editor surface contract', () => {
     builtinManifest.presets.forEach((preset) => {
       const slug = preset.preset_id.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
       const button = gallery.querySelector<HTMLButtonElement>(`[data-testid="page-builder-preset-${slug}"]`);
+      if (preset.block_id === 'content.card-01') {
+        expect(button, 'Card requires the structural v2 editor').toBeNull();
+        return;
+      }
       expect(button, preset.preset_id).not.toBeNull();
       expect(button?.textContent).toContain(preset.label.ko);
       expect(button?.querySelector('[data-block-preview]')).not.toBeNull();

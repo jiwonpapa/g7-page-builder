@@ -42,10 +42,14 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     }
     await page.screenshot({ path: info.outputPath('block-inspector.png') });
     const undo = page.getByRole('button', { name: /되돌리기|Undo/i }).first();
+    const mobileOverride = frame.locator('.g7pb-mobile-appearance-spacing--compact');
+    await expect(mobileOverride).toHaveCount(1);
     await undo.click();
-    await heading.click();
-    await expect(mobile.locator('summary')).toContainText('공통 설정 사용');
+    // Observe the restored canvas without starting another contenteditable session
+    // between history commands; that session can legitimately replace redo history.
+    await expect(mobileOverride).toHaveCount(0);
     await page.getByRole('button', { name: /다시 실행|Redo/i }).first().click();
+    await expect(mobileOverride).toHaveCount(1);
     await heading.click();
     await expect(mobile.locator('summary')).toContainText('1개 별도 지정');
     const saved = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname.endsWith('/draft'));
@@ -63,4 +67,3 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     await api.dispose();
   }
 });
-

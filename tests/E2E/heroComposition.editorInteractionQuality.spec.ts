@@ -150,10 +150,10 @@ for (const kind of ['hero', 'imageText'] as const) test(`${kind} explicitly tran
     await expect(page.getByRole('textbox', { name: '버튼 연결', exact: true })).toHaveCount(0);
     await expect(composition.getByRole('button', { name: '버튼 추가', exact: true })).toBeDisabled();
     await composition.getByRole('button', { name: '버튼 편집', exact: true }).click();
-    await page.locator('[class*="ArrayFieldItem-summary"]').filter({ hasText: '문의' }).click();
-    await page.getByRole('textbox', { name: '버튼 문구', exact: true }).fill('편집한 버튼');
-    await page.getByRole('textbox', { name: '버튼 연결', exact: true }).fill('/edited-actions');
-    const addItem = page.locator('button[class*="ArrayField-addButton"]');
+    await page.locator('[class*="ArrayFieldItem-summary"]').filter({ hasText: '문의', visible: true }).click();
+    await page.getByRole('textbox', { name: '버튼 문구', exact: true }).filter({ visible: true }).fill('편집한 버튼');
+    await page.getByRole('textbox', { name: '버튼 연결', exact: true }).filter({ visible: true }).fill('/edited-actions');
+    const addItem = page.locator('button[class*="ArrayField-addButton"]').filter({ visible: true });
     await addItem.click();
     await addItem.click();
     await expect(addItem).toHaveCount(0);

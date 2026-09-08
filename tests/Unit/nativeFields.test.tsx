@@ -54,10 +54,10 @@ it('renders content and style fields for the selected node; readonly has no muta
   try {
     await act(() => root.render(<NativeTextPanel host={readNativeHost(input)} />));
     expect(element.textContent).toContain('공통 스타일'); expect(element.textContent).toContain('공개 페이지');
-    expect(element.querySelector('input')?.value).toBe('Before');
+    expect(element.querySelector<HTMLInputElement>('.g7pb-native-content input')?.value).toBe('Before');
     input.snapshot.context.readonly = true;
     await act(() => root.render(<NativeTextPanel host={readNativeHost(input)} />));
-    expect(element.querySelector('input')?.disabled).toBe(true);
-    expect([...element.querySelectorAll('button')].every(button => button.disabled)).toBe(true);
+    expect(element.querySelector<HTMLInputElement>('.g7pb-native-content input')?.disabled).toBe(true);
+    expect([...element.querySelectorAll<HTMLButtonElement>('.g7pb-native-content button')].every(button => button.disabled)).toBe(true);
   } finally { await act(() => root.unmount()); element.remove(); }
 });

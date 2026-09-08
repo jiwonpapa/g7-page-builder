@@ -100,7 +100,11 @@ test('Hero extra inserts edits reorders deletes undoes and survives reopen previ
       data: { code: 'G7PB_DOCUMENT_INVALID' } });
     expect((await resource(api, owned.documentId)).document).toEqual(publishedState.document);
     await page.getByRole('group', { name: '캔버스 기기 미리보기' }).getByRole('button', { name: '태블릿', exact: true }).click();
-    await expect(page.getByTestId('hero-composition').filter({ visible: true }).getByRole('button', { name: '배지 삭제', exact: true })).toBeDisabled();
+    await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'preview');
+    await expect(frame.getByText('검증한 내부 배지', { exact: true })).toBeVisible();
+    const readonly = page.getByTestId('hero-composition').filter({ visible: true });
+    if (!await readonly.evaluate((node) => node.hasAttribute('open'))) await readonly.locator('summary').click();
+    await expect(readonly.getByRole('button', { name: '배지 삭제', exact: true })).toBeDisabled();
   } finally {
     await viewer.close();
     await cleanupOwnedEditorInteractionDocument(api, owned);

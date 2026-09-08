@@ -262,6 +262,14 @@
         "unit",
         "browser"
       ]
+    },
+    {
+      "id": "UI-05",
+      "description": "단일 Card 내부 media/body/actions 편집·원본 보존·출력",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
     }
   ],
   "phases": [
@@ -304,6 +312,10 @@
     {
       "id": "editor-ux4",
       "title": "독립 PB 개선 4차 · ImageText 내부 구성과 빠른 Undo"
+    },
+    {
+      "id": "editor-ux5",
+      "title": "독립 PB 개선 5차"
     }
   ],
   "baseline": [
@@ -864,6 +876,47 @@
         "vite.puck-history.ts"
       ],
       "completion": "내부 편집·저장/재열기·미리보기/발행과 대기 없는 빠른 Undo/Redo 검증, 차수 커밋·로컬 통합. 운영 배포 별도."
+    },
+    {
+      "id": "UI5",
+      "phase": "editor-ux5",
+      "title": "단일 Card 내부 구성",
+      "status": "done",
+      "depends_on": [
+        "UI4"
+      ],
+      "acceptance_ids": [
+        "UI-05"
+      ],
+      "owner_task": "ux5-delivery-20260908",
+      "implementation_commit": "6bc13339025844b2361d4b858ab71214884a8f0d",
+      "integrated_commit": "a29c167e8ac49a68cfd316a0397184784c124908",
+      "evidence": [
+        {
+          "acceptance_id": "UI-05",
+          "kind": "unit",
+          "commit": "a29c167e8ac49a68cfd316a0397184784c124908",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux5.md"
+        },
+        {
+          "acceptance_id": "UI-05",
+          "kind": "browser",
+          "commit": "a29c167e8ac49a68cfd316a0397184784c124908",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux5.md"
+        }
+      ],
+      "blocked_reason": null,
+      "scope": [
+        "schemas/layout-policy-v1.json",
+        "resources/js/editor/ComponentComposition.tsx",
+        "resources/js/editor/cardCatalogBlocks.tsx",
+        "resources/js/editor/puckBlockCodec.ts",
+        "src/Application/Compilation/HtmlDocument/Blocks/CardBlockCompiler.php",
+        "tests/E2E/cardComposition.editorInteractionQuality.spec.ts"
+      ],
+      "completion": "슬롯별 삽입·편집·순서·삭제·Undo·저장/재열기·출력 검증, 차수 커밋과 로컬 통합. 운영 배포 별도."
     }
   ],
   "history": [

@@ -171,3 +171,18 @@
 - 마감은 관련 검증·차수 커밋·로컬 통합이다. actions/Card·새 블록·킷·G7 코어·운영 배포는 제외한다.
 
 완료 증거(로컬 통합·실제 동작, 운영 미배포): [4차 기록](../audits/2026-09-08-editor-ux4.md).
+
+## 독립 PB 개선 5차 — 단일 Card 내부 구성 (UI5)
+
+<!-- editor-item:UI5 -->
+<!-- editor-acceptance:UI-05 -->
+
+선행 UI4. `content.card-01` 단일 Card의 media/body/actions 구역을 구현한다.
+
+- media에는 Image, body에는 Heading/RichText/Icon/List/Badge/Divider, actions에는 Buttons를 종류별 0~1개 허용한다. Buttons 자체 1~3개 제한을 유지한다.
+- root 및 Section/Columns/Stack의 허용 위치에서 사용하고 전체 자식 포함 깊이 4를 유지한다. CardGrid를 단일 Card로 대체하거나 자동 변환하지 않는다.
+- 기존 Puck 명령·이미지/링크 picker·Undo·문서 저장을 재사용한다. 전체 Card 링크는 지원하지 않아 중첩 링크를 만들지 않는다.
+- 실제 삽입·편집·이동·삭제·Undo·저장/재열기 및 공개 출력을 확인한다. 구역별 허용 타입/개수와 원본 보존은 TS/PHP에서 함께 검증한다.
+- 기본 구조를 노출하는 Card 한 종류만 추가한다. 디자인 킷·테마·G7 코어·다른 컴포넌트 actions 확장·운영 배포는 제외한다.
+
+완료 증거(로컬 통합·실제 동작, 운영 미배포): [5차 기록](../audits/2026-09-08-editor-ux5.md).

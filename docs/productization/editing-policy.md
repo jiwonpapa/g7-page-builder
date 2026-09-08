@@ -367,3 +367,10 @@ Puck 0.23.0의 설치된 선언에서 `contentEditable`, `SlotField.allow/disall
 ImageText `extra`에는 배지·목록·구분선 각각 0~1개를 허용한다. 기존 primaryLink는 고정 필드로 유지하고 actions를 동시에 열지 않는다. UI3의 문서 버전·호환·발행 보존 경계는 동일하다.
 
 Puck 0.23.0의 편집 이력은 별도 저장소 없이 동일 kernel에서 기록한다. 이 버전의 trailing debounce로 인한 빠른 Undo/Redo 유실은 source fingerprint를 고정한 빌드 보정으로 처리한다. 각 기록 대상 Puck 명령은 즉시 한 단계를 만들며, 입력 위젯이 자체적으로 묶어 전달하는 텍스트 변경 단위는 유지한다. 독립 PB editor 번들에만 적용하고 네이티브 G7 history에는 적용하지 않는다. upstream 변경 시 보정을 자동 추측하지 않고 실패 후 검토한다.
+
+
+### 독립 PB UI5 범위 (2026-09-08)
+
+단일 `content.card-01`은 CardGrid와 별도의 구조형 컴포넌트다. `media` Image 0~1개, `body` Heading/RichText/Icon/List/Badge/Divider 각각 0~1개, `actions` Buttons 0~1개를 같은 v2 트리에서 편집한다. 자식 포함 깊이 4와 기존 Buttons의 1~3개 한도를 유지하며 Card 안 Card/레이아웃은 금지한다. 전체 카드 링크는 없고 자식이 링크를 소유한다.
+
+구조 편집을 켜지 않은 v1 문서에는 신규 Card 후보를 노출하지 않는다. 빈 카드의 생략/명시적 빈 슬롯은 읽기 왕복에서 보존하되 v1에 내부 요소를 저장하지 않는다. 기존 문서는 자동 변환하지 않는다. 이 구조형 시작점의 카탈로그 등록과 편집 검증은 과거 콘텐츠 품질 승인 또는 전체 디자인 팩 승인으로 간주하지 않는다. 신규 Card를 저장한 원본은 UI5를 포함한 릴리스가 필요하며 배포 시 새 minor 릴리스를 사용한다.

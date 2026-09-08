@@ -2,11 +2,11 @@
   "contract": {
     "contract_version": "g7pb-block-product-quality/v1",
     "inventory": {
-      "block_count": 48,
-      "active_block_count": 47,
-      "preset_count": 98,
-      "catalog_item_count": 146,
-      "unique_thumbnail_count": 99,
+      "block_count": 49,
+      "active_block_count": 48,
+      "preset_count": 99,
+      "catalog_item_count": 148,
+      "unique_thumbnail_count": 100,
       "compatibility_only_block_ids": [
         "content.hero-split-01"
       ]
@@ -360,6 +360,12 @@
         "status": "product",
         "category": "basic",
         "profile": "text",
+        "expected_presets": 1
+      },
+      "content.card-01": {
+        "status": "product",
+        "category": "content",
+        "profile": "collection",
         "expected_presets": 1
       }
     }

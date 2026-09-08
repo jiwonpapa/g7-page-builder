@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PC_ONLY_EDITOR_TESTS = /(?:nativeSliderContract|nativeEditorContract|editorInteractionQuality|editorPerformance|editorStructureTheme|editorDocumentBoundary|editorCatalogCode|pageBuilderLifecycle|sitePartLifecycle|globalSiteShellRoutes|pageAddressFlow)\.spec\.ts/;
+const PC_ONLY_EDITOR_TESTS = /(?:editorInspectorUx|nativeSliderContract|nativeEditorContract|editorInteractionQuality|editorPerformance|editorStructureTheme|editorDocumentBoundary|editorCatalogCode|pageBuilderLifecycle|sitePartLifecycle|globalSiteShellRoutes|pageAddressFlow)\.spec\.ts/;
 
 export default defineConfig({
   testDir: './tests/E2E',

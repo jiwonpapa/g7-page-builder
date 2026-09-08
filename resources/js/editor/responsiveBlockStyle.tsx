@@ -70,8 +70,10 @@ export function ResponsiveAppearanceField({ value, onChange, readOnly }: {
   const common = commonAppearanceFromSelection();
   const responsive = normalizeResponsiveOverrides(value);
   return <div className="g7pb-layout-inspector-control" data-testid="page-builder-responsive-appearance">
-    {(['tablet', 'mobile'] as const).map((viewport) => <fieldset key={viewport}>
-      <legend>{viewport === 'tablet' ? '태블릿 640–1023px' : '모바일 0–639px'}</legend>
+    {(['tablet', 'mobile'] as const).map((viewport) => <details className="g7pb-design-advanced" key={viewport} data-testid={`page-builder-responsive-${viewport}-section`}>
+      <summary>{viewport === 'tablet' ? '태블릿' : '모바일'} · <small>{Object.keys(responsive[viewport]?.appearance ?? {}).length
+        ? `${Object.keys(responsive[viewport]?.appearance ?? {}).length}개 별도 지정` : '공통 설정 사용'}</small></summary>
+      <div className="g7pb-layout-inspector-control">
       {([
         ['surface', '배경', common.surface], ['spacing', '세로 여백', common.spacing],
         ['textScale', '글자 비율', common.textScale ?? 'balanced'], ['textAlign', '글자 정렬', common.textAlign ?? 'left'],
@@ -84,7 +86,8 @@ export function ResponsiveAppearanceField({ value, onChange, readOnly }: {
       <button type="button" disabled={readOnly || !responsive[viewport]?.appearance}
         data-testid={`page-builder-responsive-${viewport}-reset`}
         onClick={() => onChange(resetResponsivePart(responsive, viewport, 'appearance'))}>{viewport === 'tablet' ? '태블릿' : '모바일'} 스타일 초기화</button>
-    </fieldset>)}
+      </div>
+    </details>)}
   </div>;
 }
 

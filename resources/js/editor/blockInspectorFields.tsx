@@ -4,6 +4,7 @@ import { BLOCK_CONTAINER_FIELDS } from './blockAppearance';
 import type { CommonEditorProps, EditorComponents } from './puckEditorTypes';
 import type { PageDesignProps } from './pageDesignTokens';
 import { createResponsiveAppearanceField } from './responsiveBlockStyle';
+import { InspectorChoiceField } from './InspectorChoiceField';
 
 export function StableSelectField<TValue extends string>({
   value, onChange, readOnly, testId, options, label, help,
@@ -34,11 +35,23 @@ export function StableSelectField<TValue extends string>({
 }
 
 const REQUIRED_FIELD_NAMES = new Set(['alt', 'imageAlt', 'avatarAlt']);
+const COMPACT_PRESET_NAMES = new Set(['surface', 'spacing', 'level']);
 type FieldMap<Props> = { [Name in keyof Props]: Field<Props[Name]> };
+
+function compactPreset<Value>(name: string, field: Field<Value>): Field<Value> {
+  if (!COMPACT_PRESET_NAMES.has(name) || field.type !== 'select' || field.options.length > 4) return field;
+  const options = field.options;
+  return { type: 'custom', label: field.label,
+    render: ({ value, onChange, readOnly }) => <InspectorChoiceField<unknown> value={value} onChange={(candidate) => {
+      const selected = options.find((option) => Object.is(option.value, candidate));
+      // Puck's FieldOptions erases Value; only a declared option crosses this adapter boundary.
+      if (selected) onChange(selected.value as Value);
+    }} readOnly={readOnly} label={field.label ?? name} options={options} testId={`page-builder-preset-${name}`} /> };
+}
 
 function markRequiredField<Value>(name: string, field: Field<Value>): Field<Value> {
   if (!field) return field;
-  const next = { ...field };
+  const next = { ...compactPreset(name, field) };
   if (REQUIRED_FIELD_NAMES.has(name) && typeof next.label === 'string' && !next.label.includes('(필수)')) {
     next.label = `${next.label} (필수)`;
   }
@@ -57,8 +70,13 @@ function containerField<Value extends string>(
 ): CustomField<Value | undefined> {
   return {
     type: 'custom', label: field.label,
-    render: ({ value, onChange, readOnly }) => <StableSelectField
+    render: ({ value, onChange, readOnly }) => field.options.length <= 4 ? <InspectorChoiceField
+      value={value ?? field.options[0].value} onChange={onChange} readOnly={readOnly} label={field.label}
+      alignment={name === 'containerAlign' ? 'horizontal' : name === 'verticalAlign' ? 'vertical' : undefined}
+      testId={`page-builder-block-${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`}
+      options={field.options} /> : <StableSelectField
       value={value ?? field.options[0].value} onChange={onChange} readOnly={readOnly}
+      label={field.label}
       testId={`page-builder-block-${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`}
       options={field.options} />,
   };

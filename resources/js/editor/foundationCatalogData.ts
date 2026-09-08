@@ -1,3 +1,4 @@
+import type { Slot } from '@puckeditor/core';
 import type { ButtonItem, IconListItem } from '../documents/types';
 import type { AppearanceEditorProps } from './catalogAppearance';
 import { DEFAULT_BLOCK_MOTION } from './blockMotionData';
@@ -28,6 +29,8 @@ export interface ButtonsEditorProps extends AppearanceEditorProps {
 }
 
 export interface ImageTextEditorProps extends AppearanceEditorProps {
+  extra?: Slot;
+  composition?: string;
   eyebrow: string;
   heading: string;
   body: string;

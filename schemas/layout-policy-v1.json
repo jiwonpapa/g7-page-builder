@@ -75,6 +75,9 @@
   "component_slots": {
     "content.hero-centered-01": {
       "extra": { "content.badge-01": 1, "content.list-01": 1 }
+    },
+    "media.image-text-01": {
+      "extra": { "content.badge-01": 1, "content.list-01": 1, "content.divider-01": 1 }
     }
   },
   "child_groups": {

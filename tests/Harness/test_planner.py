@@ -28,6 +28,27 @@ class PlannerTests(unittest.TestCase):
                 self.assertEqual(browser[0].runtime, product)
                 self.assertIn(helper, browser[0].inputs)
 
+    def test_puck_history_build_correction_requires_unit_and_real_browser_consumers(self):
+        paths = ["vite.config.ts", "vite.puck-history.ts"]
+        unit = "tests/Unit/puckHistoryPatch.test.ts"
+        spec = "tests/E2E/editorInspectorUx.spec.ts"
+        self.write(unit, "import '../../vite.puck-history';")
+        self.write(spec, "export const test = true;")
+        for path in paths:
+            self.write(path, "export default {};")
+        for phase in ("submission", "integration", "verification", "ci"):
+            plan = build_plan(self.root, paths, phase=phase)
+            self.assertFalse(plan.unresolved, plan.unresolved)
+            self.assertFalse(plan.full)
+            gates = {gate.name: gate for gate in plan.gates}
+            self.assertIn("unit:" + unit, gates)
+            browser = gates["browser:" + spec]
+            self.assertTrue(browser.runtime)
+            self.assertTrue(set(paths).issubset(browser.inputs))
+            self.assertNotIn("full-product", gates)
+        (self.root / unit).unlink()
+        self.assertTrue(build_plan(self.root, paths).unresolved)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

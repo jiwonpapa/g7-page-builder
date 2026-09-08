@@ -44,9 +44,6 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     const undo = page.getByRole('button', { name: /되돌리기|Undo/i }).first();
     const mobileOverride = frame.locator('.g7pb-mobile-appearance-spacing--compact');
     await expect(mobileOverride).toHaveCount(1);
-    // Puck 0.23.0 history.record debounces for 250ms. Test a committed history
-    // entry; immediate Undo during that vendor window is a separate known limitation.
-    await page.waitForTimeout(300);
     await undo.click();
     // Observe the restored canvas without another edit between history commands.
     await expect(mobileOverride).toHaveCount(0);
@@ -64,6 +61,68 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     await expect(level.getByRole('radio', { name: 'H3', exact: true })).toBeChecked();
     await expect(page.getByTestId('page-builder-block-vertical-align').filter({ visible: true }).getByRole('radio', { name: '아래', exact: true })).toBeChecked();
     await expect(mobile.locator('summary')).toContainText('1개 별도 지정');
+  } finally {
+    await cleanupOwnedEditorInteractionDocument(api, owned);
+    await api.dispose();
+  }
+});
+
+
+test('rapid page edits preserve toolbar and keyboard undo redo without a recording delay', async ({ context, page }) => {
+  const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
+  const owned = await createOwnedEditorInteractionDocument(api, 'desktop');
+  try {
+    await page.goto(`${EDITOR}?document=${owned.documentId}`);
+    const colors = page.getByTestId('page-builder-design-color-mode');
+    const radius = page.getByTestId('page-builder-design-radius');
+    const beforeRadius = await radius.getByRole('radio', { checked: true }).getAttribute('value');
+    const dark = colors.getByRole('radio', { name: '다크', exact: true });
+    const light = colors.getByRole('radio', { name: '라이트', exact: true });
+    const round = radius.getByRole('radio', { name: '둥글게', exact: true });
+    const undo = page.getByRole('button', { name: 'undo', exact: true });
+    const redo = page.getByRole('button', { name: 'redo', exact: true });
+    await page.evaluate(() => {
+      let changed = 0;
+      document.addEventListener('change', () => { changed = performance.now(); }, true);
+      document.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('button') : null;
+        if (changed && button?.getAttribute('aria-label') === 'undo') {
+          document.body.dataset.rapidUndoMs = String(performance.now() - changed);
+          changed = 0;
+        }
+      }, true);
+    });
+    await dark.check();
+    await round.check();
+    await undo.click();
+    const elapsed = await page.locator('body').getAttribute('data-rapid-undo-ms');
+    expect(elapsed).not.toBeNull();
+    expect(Number(elapsed)).toBeLessThan(250);
+    await undo.click();
+    await expect(light).toBeChecked();
+    expect(await radius.getByRole('radio', { checked: true }).getAttribute('value')).toBe(beforeRadius);
+    await redo.click();
+    await redo.click();
+    await expect(dark).toBeChecked();
+    await expect(round).toBeChecked();
+    // Global shortcut from toolbar focus, so a text input's own Undo cannot mask the kernel.
+    await undo.focus();
+    await page.keyboard.press('Control+z');
+    await page.keyboard.press('Control+z');
+    await expect(light).toBeChecked();
+    await page.keyboard.press('Control+Shift+z');
+    await page.keyboard.press('Control+Shift+z');
+    await expect(round).toBeChecked();
+    await expect(dark).toBeChecked();
+    // A new branch must invalidate redo; selecting a panel must not.
+    await undo.click();
+    await light.check();
+    await expect(redo).toBeDisabled();
+    await page.getByTestId('page-builder-save').click();
+    await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
+    await page.reload();
+    await expect(light).toBeChecked();
+    expect(await radius.getByRole('radio', { checked: true }).getAttribute('value')).toBe(beforeRadius);
   } finally {
     await cleanupOwnedEditorInteractionDocument(api, owned);
     await api.dispose();

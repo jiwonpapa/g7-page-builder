@@ -10,11 +10,11 @@ async function resource(api: APIRequestContext, id: string) {
   expect(response.ok()).toBe(true);
   return (await response.json() as { data: { document: PageBuilderDocument; lock_version: number } }).data;
 }
-async function selectHero(page: Page) {
-  const row = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: /^Hero$/ }).filter({ visible: true });
+async function selectComposition(page: Page, kind: 'hero' | 'imageText') {
+  const row = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: kind === 'hero' ? /^Hero$/ : /^이미지 \+ 텍스트$/ }).filter({ visible: true });
   if (!await row.isVisible()) await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
   await row.click();
-  const composition = page.getByTestId('hero-composition').filter({ visible: true });
+  const composition = page.getByTestId(kind === 'hero' ? 'hero-composition' : 'image-text-composition').filter({ visible: true });
   if (!await composition.evaluate((node) => node.hasAttribute('open'))) await composition.locator('summary').click();
   return composition;
 }
@@ -23,26 +23,26 @@ async function save(page: Page) {
   await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
 }
 
-test('Hero extra inserts edits reorders deletes undoes and survives reopen preview and publication', async ({ page, context }, info) => {
+for (const kind of ['hero', 'imageText'] as const) test(`${kind} extra inserts edits reorders deletes undoes and survives reopen preview and publication`, async ({ page, context }, info) => {
   const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
   const owned = await createOwnedEditorInteractionDocument(api, 'desktop');
   const viewer = await context.newPage();
   try {
     const initial = await resource(api, owned.documentId);
-    const hero = structuredClone(fixtures.hero.blocks[0]);
+    const hero = structuredClone(fixtures[kind].blocks[0]);
     hero.slots.extra = [];
     const seed = await api.put(`${API}/${owned.documentId}/draft`, { data: { expected_lock_version: initial.lock_version,
       document: { ...initial.document, schema_version: 'g7-page-builder/v2', shell_mode: 'none', blocks: [hero] } } });
     expect(seed.ok()).toBe(true);
     await page.goto(`/modules/jiwonpapa-page_builder/admin/editor?document=${owned.documentId}`);
-    let composition = await selectHero(page);
+    let composition = await selectComposition(page, kind);
     const addBadge = composition.getByRole('button', { name: '배지 추가', exact: true });
     expect((await addBadge.boundingBox())?.height).toBeLessThan(44);
     await addBadge.click();
-    composition = await selectHero(page);
+    composition = await selectComposition(page, kind);
     await expect(composition.getByRole('button', { name: '배지 추가', exact: true })).toBeDisabled();
     await composition.getByRole('button', { name: '목록 추가', exact: true }).click();
-    composition = await selectHero(page);
+    composition = await selectComposition(page, kind);
     await expect(composition.getByRole('button', { name: '목록 추가', exact: true })).toBeDisabled();
     await save(page);
     const before = await resource(api, owned.documentId);
@@ -52,28 +52,37 @@ test('Hero extra inserts edits reorders deletes undoes and survives reopen previ
     await composition.getByRole('button', { name: '배지 편집', exact: true }).click();
     const label = page.getByLabel('문구 (40자 이내)', { exact: true }).filter({ visible: true });
     await label.fill('검증한 내부 배지');
-    composition = await selectHero(page);
+    composition = await selectComposition(page, kind);
     await composition.getByRole('button', { name: '목록 위로', exact: true }).click();
-    composition = await selectHero(page);
+    composition = await selectComposition(page, kind);
     await save(page);
     const reordered = await resource(api, owned.documentId);
     expect(reordered.document.blocks[0].slots?.extra.map((child) => child.type)).toEqual(['content.list-01', 'content.badge-01']);
     expect(reordered.document.blocks[0].slots!.extra[1].instance_id).toBe(badgeId);
-    // Existing vendor history is debounced; inspect a committed record, not the known fast-Undo gap.
-    await page.waitForTimeout(300);
     await composition.getByRole('button', { name: '배지 삭제', exact: true }).click();
     await expect(frame.getByText('검증한 내부 배지', { exact: true })).toHaveCount(0);
-    await page.waitForTimeout(300);
     await page.getByRole('button', { name: 'undo', exact: true }).click();
     await save(page);
     const restored = await resource(api, owned.documentId);
     expect(restored.document.blocks[0].slots).toEqual(reordered.document.blocks[0].slots);
-    expect(restored.document.blocks[0].props.primaryCta).toEqual(hero.props.primaryCta);
+    expect(restored.document.blocks[0].props).toEqual(before.document.blocks[0].props);
     await page.reload();
-    composition = await selectHero(page);
-    await expect(composition.locator('summary')).toContainText('2/2');
+    composition = await selectComposition(page, kind);
+    await expect(composition.locator('summary')).toContainText(kind === 'hero' ? '2/2' : '2/3');
     await expect(frame.getByText('검증한 내부 배지', { exact: true })).toBeVisible();
-    await page.screenshot({ path: info.outputPath('hero-composition.png'), fullPage: true });
+    if (kind === 'imageText') {
+      await composition.getByRole('button', { name: '구분선 추가', exact: true }).click();
+      composition = await selectComposition(page, kind);
+      await expect(composition.getByRole('button', { name: '구분선 추가', exact: true })).toBeDisabled();
+      await composition.getByRole('button', { name: '구분선 위로', exact: true }).click();
+      await save(page);
+      await page.reload();
+      composition = await selectComposition(page, kind);
+      await expect(composition.locator('summary')).toContainText('3/3');
+      expect((await resource(api, owned.documentId)).document.blocks[0].slots!.extra.map((child) => child.type))
+        .toEqual(['content.list-01', 'content.divider-01', 'content.badge-01']);
+    }
+    await page.screenshot({ path: info.outputPath(`${kind}-composition.png`), fullPage: true });
     const current = await resource(api, owned.documentId);
     const preview = await api.post(`${API}/${owned.documentId}/preview`, { data: { expected_lock_version: current.lock_version } });
     expect(preview.ok()).toBe(true);
@@ -86,7 +95,7 @@ test('Hero extra inserts edits reorders deletes undoes and survives reopen previ
       await viewer.goto(url);
       await expect(viewer.getByText('검증한 내부 배지', { exact: true })).toBeVisible();
       await expect(viewer.getByRole('link', { name: '문의', exact: true })).toHaveAttribute('href', '/contact');
-      const renderedOrder = await viewer.locator('[data-block-type="hero"] [data-block-id]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-block-id')));
+      const renderedOrder = await viewer.locator(`[data-block-type="${kind === 'hero' ? 'hero' : 'image-text'}"] [data-block-id]`).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-block-id')));
       expect(renderedOrder).toEqual(current.document.blocks[0].slots!.extra.map((child) => child.instance_id));
     }
     const publishedState = await resource(api, owned.documentId);
@@ -102,7 +111,7 @@ test('Hero extra inserts edits reorders deletes undoes and survives reopen previ
     await page.getByRole('group', { name: '캔버스 기기 미리보기' }).getByRole('button', { name: '태블릿', exact: true }).click();
     await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'preview');
     await expect(frame.getByText('검증한 내부 배지', { exact: true })).toBeVisible();
-    const readonly = page.getByTestId('hero-composition').filter({ visible: true });
+    const readonly = page.getByTestId(kind === 'hero' ? 'hero-composition' : 'image-text-composition').filter({ visible: true });
     if (!await readonly.evaluate((node) => node.hasAttribute('open'))) await readonly.locator('summary').click();
     await expect(readonly.getByRole('button', { name: '배지 삭제', exact: true })).toBeDisabled();
   } finally {

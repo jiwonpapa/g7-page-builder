@@ -436,7 +436,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             "Editor development record consistency; not product acceptance", reusable=False)
     release_scripts = {"release-package.sh", "deploy-staging.sh", "remote-deploy-staging.sh", "smoke-staging.sh", "staging-doctor.sh", "remote-staging-doctor.sh"}
     content_scripts = {"build-official-store.php", "render-block-thumbnail-fixtures.php", "generate-block-thumbnails.mjs", "check-official-store-build.sh", "check-block-quality-evidence.mjs", "check-block-product-quality.mjs", "check-site-shell-product-quality.mjs"}
+    history_build_controllers = {"vite.config.ts", "vite.puck-history.ts"}
     asset_build_controllers = {
+        *history_build_controllers,
         "scripts/check-assets.mjs",
         "scripts/generate-page-kit-screenshots.mjs",
         "vite.sliders.config.ts",
@@ -465,6 +467,20 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                 python_test(f"tests/Harness/test_{name}.py", path)
         elif path in asset_build_controllers:
             changed_asset_build_controllers.append(path)
+            if path in history_build_controllers:
+                test = "tests/Unit/puckHistoryPatch.test.ts"
+                spec = "tests/E2E/editorInspectorUx.spec.ts"
+                for consumer in (test, spec):
+                    if not (root / consumer).is_file():
+                        plan.unresolved.append("Missing Puck history correction consumer: " + consumer)
+                if (root / test).is_file():
+                    ts_tests.append(test)
+                if (root / spec).is_file():
+                    add("browser:" + spec,
+                        ["npx", "--no-install", "playwright", "test", spec, "--project=desktop", "--retries=0"],
+                        [*history_build_controllers, *source_inputs(root, spec).files, spec, "package-lock.json", "playwright.config.ts"],
+                        "Editor kernel correction requires real rapid Undo/Redo proof", ("node", "php", "g7", "browser"),
+                        True, env=BROWSER_ENVIRONMENT)
         elif path in command_contracts:
             python_test("tests/Harness/test_commands.py", path)
         elif path.startswith("scripts/") and Path(path).name in release_scripts:

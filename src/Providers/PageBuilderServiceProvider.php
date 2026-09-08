@@ -30,6 +30,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\BlockPackSignatureVerifierPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockUsagePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\MediaPort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\NativeCompositionRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\OfficialStoreSourcePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageKitArchivePort;
@@ -58,6 +59,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Media\LaravelMediaAda
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockFavoriteAdapter;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockPackRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentBlockUsageAdapter;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentNativeCompositionRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSectionPatternRepository;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentSiteKitInstallation;
@@ -81,6 +83,7 @@ final class PageBuilderServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/site-shell.php', 'g7-page-builder.site-shell');
         $this->app->bind(PageBuilderRepository::class, EloquentPageBuilderRepository::class);
         $this->app->bind(SectionPatternRepository::class, EloquentSectionPatternRepository::class);
+        $this->app->bind(NativeCompositionRepository::class, EloquentNativeCompositionRepository::class);
         $this->app->bind(SectionPatternService::class);
         $this->app->bind(RouteCatalogPort::class, G7RouteCatalogAdapter::class);
         $this->app->singleton(G7TemplateRouteBridge::class);

@@ -1,0 +1,113 @@
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import fixtures from '../Fixtures/layout-policy-cases.json' with { type: 'json' };
+import type { PageBuilderDocument } from '../../resources/js/documents/types';
+import { authenticateEditorInteractionAdmin, cleanupOwnedEditorInteractionDocument,
+  createOwnedEditorInteractionDocument, editorInteractionApi } from './support/editorInteractionFixture';
+
+const API = '/api/modules/jiwonpapa-page_builder/admin/documents';
+async function resource(api: APIRequestContext, id: string) {
+  const response = await api.get(`${API}/${id}`);
+  expect(response.ok()).toBe(true);
+  return (await response.json() as { data: { document: PageBuilderDocument; lock_version: number } }).data;
+}
+async function selectHero(page: Page) {
+  const row = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: /^Hero$/ }).filter({ visible: true });
+  if (!await row.isVisible()) await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+  await row.click();
+  const composition = page.getByTestId('hero-composition').filter({ visible: true });
+  if (!await composition.evaluate((node) => node.hasAttribute('open'))) await composition.locator('summary').click();
+  return composition;
+}
+async function save(page: Page) {
+  await page.getByTestId('page-builder-save').click();
+  await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');
+}
+
+test('Hero extra inserts edits reorders deletes undoes and survives reopen preview and publication', async ({ page, context }, info) => {
+  const api = await editorInteractionApi(await authenticateEditorInteractionAdmin(context));
+  const owned = await createOwnedEditorInteractionDocument(api, 'desktop');
+  const viewer = await context.newPage();
+  try {
+    const initial = await resource(api, owned.documentId);
+    const hero = structuredClone(fixtures.hero.blocks[0]);
+    hero.slots.extra = [];
+    const seed = await api.put(`${API}/${owned.documentId}/draft`, { data: { expected_lock_version: initial.lock_version,
+      document: { ...initial.document, schema_version: 'g7-page-builder/v2', shell_mode: 'none', blocks: [hero] } } });
+    expect(seed.ok()).toBe(true);
+    await page.goto(`/modules/jiwonpapa-page_builder/admin/editor?document=${owned.documentId}`);
+    let composition = await selectHero(page);
+    const addBadge = composition.getByRole('button', { name: '배지 추가', exact: true });
+    expect((await addBadge.boundingBox())?.height).toBeLessThan(44);
+    await addBadge.click();
+    composition = await selectHero(page);
+    await expect(composition.getByRole('button', { name: '배지 추가', exact: true })).toBeDisabled();
+    await composition.getByRole('button', { name: '목록 추가', exact: true }).click();
+    composition = await selectHero(page);
+    await expect(composition.getByRole('button', { name: '목록 추가', exact: true })).toBeDisabled();
+    await save(page);
+    const before = await resource(api, owned.documentId);
+    expect(before.document.blocks[0].slots?.extra.map((child) => child.type)).toEqual(['content.badge-01', 'content.list-01']);
+    const frame = page.frameLocator('#puck-canvas-root iframe');
+    const badgeId = before.document.blocks[0].slots!.extra[0].instance_id;
+    await composition.getByRole('button', { name: '배지 편집', exact: true }).click();
+    const label = page.getByLabel('문구 (40자 이내)', { exact: true }).filter({ visible: true });
+    await label.fill('검증한 내부 배지');
+    composition = await selectHero(page);
+    await composition.getByRole('button', { name: '목록 위로', exact: true }).click();
+    composition = await selectHero(page);
+    await save(page);
+    const reordered = await resource(api, owned.documentId);
+    expect(reordered.document.blocks[0].slots?.extra.map((child) => child.type)).toEqual(['content.list-01', 'content.badge-01']);
+    expect(reordered.document.blocks[0].slots!.extra[1].instance_id).toBe(badgeId);
+    // Existing vendor history is debounced; inspect a committed record, not the known fast-Undo gap.
+    await page.waitForTimeout(300);
+    await composition.getByRole('button', { name: '배지 삭제', exact: true }).click();
+    await expect(frame.getByText('검증한 내부 배지', { exact: true })).toHaveCount(0);
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'undo', exact: true }).click();
+    await save(page);
+    const restored = await resource(api, owned.documentId);
+    expect(restored.document.blocks[0].slots).toEqual(reordered.document.blocks[0].slots);
+    expect(restored.document.blocks[0].props.primaryCta).toEqual(hero.props.primaryCta);
+    await page.reload();
+    composition = await selectHero(page);
+    await expect(composition.locator('summary')).toContainText('2/2');
+    await expect(frame.getByText('검증한 내부 배지', { exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath('hero-composition.png'), fullPage: true });
+    const current = await resource(api, owned.documentId);
+    const preview = await api.post(`${API}/${owned.documentId}/preview`, { data: { expected_lock_version: current.lock_version } });
+    expect(preview.ok()).toBe(true);
+    const previewUrl = (await preview.json() as { data: { preview_url: string } }).data.preview_url;
+    const publication = page.waitForResponse((response) => response.request().method() === 'POST'
+      && /\/publications\/[^/]+\/commit$/.test(new URL(response.url()).pathname));
+    await page.getByTestId('page-builder-publish').click();
+    expect((await publication).ok()).toBe(true);
+    for (const url of [previewUrl, `/pages/${owned.slug}`]) {
+      await viewer.goto(url);
+      await expect(viewer.getByText('검증한 내부 배지', { exact: true })).toBeVisible();
+      await expect(viewer.getByRole('link', { name: '문의', exact: true })).toHaveAttribute('href', '/contact');
+      const renderedOrder = await viewer.locator('[data-block-type="hero"] [data-block-id]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-block-id')));
+      expect(renderedOrder).toEqual(current.document.blocks[0].slots!.extra.map((child) => child.instance_id));
+    }
+    const publishedState = await resource(api, owned.documentId);
+    const invalid = structuredClone(publishedState.document);
+    const extra = invalid.blocks[0].slots!.extra;
+    extra.push({ ...structuredClone(extra[0]), instance_id: crypto.randomUUID() });
+    const rejected = await api.put(`${API}/${owned.documentId}/draft`, { data: {
+      expected_lock_version: publishedState.lock_version, document: invalid } });
+    expect(rejected.status()).toBe(400);
+    expect(await rejected.json()).toMatchObject({ success: false, message: expect.stringContaining('component_slot_limit:'),
+      data: { code: 'G7PB_DOCUMENT_INVALID' } });
+    expect((await resource(api, owned.documentId)).document).toEqual(publishedState.document);
+    await page.getByRole('group', { name: '캔버스 기기 미리보기' }).getByRole('button', { name: '태블릿', exact: true }).click();
+    await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'preview');
+    await expect(frame.getByText('검증한 내부 배지', { exact: true })).toBeVisible();
+    const readonly = page.getByTestId('hero-composition').filter({ visible: true });
+    if (!await readonly.evaluate((node) => node.hasAttribute('open'))) await readonly.locator('summary').click();
+    await expect(readonly.getByRole('button', { name: '배지 삭제', exact: true })).toBeDisabled();
+  } finally {
+    await viewer.close();
+    await cleanupOwnedEditorInteractionDocument(api, owned);
+    await api.dispose();
+  }
+});

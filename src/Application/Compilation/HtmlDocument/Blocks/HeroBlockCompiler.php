@@ -8,10 +8,10 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockMark
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockPropertyReader;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\HtmlEscaper;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\RichTextSanitizer;
-use Modules\Jiwonpapa\PageBuilder\Contracts\BlockTypeCompilerPort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SlotBlockCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 
-final readonly class HeroBlockCompiler implements BlockTypeCompilerPort
+final readonly class HeroBlockCompiler implements SlotBlockCompilerPort
 {
     public function __construct(
         private BlockPropertyReader $properties,
@@ -32,6 +32,15 @@ final readonly class HeroBlockCompiler implements BlockTypeCompilerPort
      */
     public function compile(array $props): string
     {
+        return $this->compileSlots($props, []);
+    }
+
+    public function compileSlots(array $props, array $slots): string
+    {
+        if (array_diff(array_keys($slots), ['extra']) !== []) {
+            throw new \InvalidArgumentException('Hero slot is not supported.');
+        }
+        $extra = $slots['extra'] ?? '';
         $this->properties->assertOnlyKeys($props, ['eyebrow', 'title', 'body', 'primaryCta', 'image', 'alignment', 'mediaPosition', 'layout', 'appearance'], 'Hero');
         $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
         $title = $this->properties->requiredInlineRichTextString($props, 'title', 200);
@@ -66,6 +75,9 @@ final readonly class HeroBlockCompiler implements BlockTypeCompilerPort
                     ? '<div class="g7pb-hero-split__body">'.$this->richText->sanitizeRichText($body).'</div>'
                     : '<p class="g7pb-hero-split__body">'.$this->escaper->formatText($body).'</p>';
             }
+            if ($extra !== '') {
+                $copy[] = $extra;
+            }
             if ($cta !== null) {
                 $copy[] = $this->markup->compileActionLink($cta, 'Hero CTA', 'g7pb-button g7pb-button--primary');
             }
@@ -97,6 +109,9 @@ final readonly class HeroBlockCompiler implements BlockTypeCompilerPort
             $parts[] = '<div class="g7pb-hero__body">'.$this->richText->sanitizeRichText($body).'</div>';
         }
 
+        if ($extra !== '') {
+            $parts[] = $extra;
+        }
         if ($cta !== null) {
             $label = $this->properties->requiredString($cta, 'label', 120);
             $url = $this->properties->requiredString($cta, 'url', 2048);

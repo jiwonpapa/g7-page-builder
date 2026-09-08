@@ -8,7 +8,7 @@ use JsonException;
 /** Pure structural policy; envelope/props validation belongs to the document schema. */
 final readonly class LayoutPolicy
 {
-    /** @param array{policy_version: string, document_schema: string, limits: array{nodes: int, slot_children: int, depth: int, utf8_bytes: int}, root_types: list<string>, leaf_types: list<string>, layouts: array{section: string, columns: string, stack: string}, child_groups: array<string, list<string>>, ratios: array<int, list<string>>, gap_px: array<string, int>} $policy */
+    /** @param array{policy_version: string, document_schema: string, limits: array{nodes: int, slot_children: int, depth: int, utf8_bytes: int}, root_types: list<string>, leaf_types: list<string>, layouts: array{section: string, columns: string, stack: string}, child_groups: array<string, list<string>>, component_slots: array<string, array<string, array<string, int>>>, ratios: array<int, list<string>>, gap_px: array<string, int>} $policy */
     public function __construct(private array $policy) {}
 
     public function validate(mixed $document): void
@@ -18,13 +18,13 @@ final readonly class LayoutPolicy
         }
         $pending = [];
         foreach (array_reverse($document['blocks'], true) as $index => $node) {
-            $pending[] = [$node, null, 1, 'blocks.'.$index];
+            $pending[] = [$node, null, 1, 'blocks.'.$index, null];
         }
         $ids = [];
         $layouts = array_values($this->policy['layouts']);
         $known = [...$this->policy['root_types'], ...$layouts];
         while ($pending !== []) {
-            [$node, $parent, $depth, $path] = array_pop($pending);
+            [$node, $parent, $depth, $path, $slot] = array_pop($pending);
             if ($depth > $this->policy['limits']['depth']) {
                 $this->reject('depth_limit', $path);
             }
@@ -47,7 +47,7 @@ final readonly class LayoutPolicy
             if (! is_string($type) || ! in_array($type, $known, true) || (in_array($type, $layouts, true) && $node['block_version'] != 1)) {
                 $this->reject('type', $path);
             }
-            if (! $this->allowsChild($parent, $type)) {
+            if (! $this->allowsChild($parent, $type, $slot)) {
                 $this->reject('parent', $path);
             }
             $names = $this->slotNames($type, $node['props']);
@@ -65,8 +65,20 @@ final readonly class LayoutPolicy
                 if (count($children) > $this->policy['limits']['slot_children']) {
                     $this->reject('slot_limit', $path.'.slots.'.$name);
                 }
+                $counts = [];
+                foreach ($children as $child) {
+                    $childType = is_array($child) ? ($child['type'] ?? null) : null;
+                    if (! is_string($childType)) {
+                        continue;
+                    }
+                    $counts[$childType] = ($counts[$childType] ?? 0) + 1;
+                    $limit = $this->policy['component_slots'][$type][$name][$childType] ?? null;
+                    if ($limit !== null && $counts[$childType] > $limit) {
+                        $this->reject('component_slot_limit', $path.'.slots.'.$name);
+                    }
+                }
                 foreach (array_reverse($children, true) as $index => $child) {
-                    $pending[] = [$child, $type, $depth + 1, $path.'.slots.'.$name.'.'.$index];
+                    $pending[] = [$child, $type, $depth + 1, $path.'.slots.'.$name.'.'.$index, $name];
                 }
             }
         }
@@ -75,9 +87,19 @@ final readonly class LayoutPolicy
         }
     }
 
-    public function allowsChild(?string $parent, string $child): bool
+    public function allowsChild(?string $parent, string $child, ?string $slot = null): bool
     {
         $layout = $this->policy['layouts'];
+        if ($parent !== null && isset($this->policy['component_slots'][$parent])) {
+            $slots = $this->policy['component_slots'][$parent];
+            foreach ($slot === null ? $slots : [$slots[$slot] ?? []] as $limits) {
+                if (isset($limits[$child])) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         $key = $parent === null ? 'root' : array_search($parent, $layout, true);
         if ($key === false) {
             return false;
@@ -106,7 +128,7 @@ final readonly class LayoutPolicy
             return ['content'];
         }
         if ($type !== $layout['columns']) {
-            return [];
+            return array_keys($this->policy['component_slots'][$type] ?? []);
         }
         $columns = $props['columns'] ?? null;
         if (! $this->positiveInteger($columns) || ! in_array($columns, [1, 2, 3])) {

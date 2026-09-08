@@ -1351,7 +1351,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(blockGallery.getByTestId('page-builder-preset-heading-section-intro')).toHaveCount(0);
     const heroScope = blockGallery.getByTestId('editing-scope-Hero').first();
     await heroScope.locator('summary').click();
-    await expect(heroScope.locator('[data-capability="slots"]')).toContainText('후속 개발 대상');
+    await expect(heroScope.locator('[data-capability="slots"]')).toContainText('배지·목록을 각각 하나씩');
     await expect(drawerLibrary.locator('[data-library-block="Hero"]:visible').first()).toHaveAttribute('data-production-kind', 'section');
     await blockGallery.getByRole('tab', { name: /^컴포넌트/ }).click();
     await expect(blockGallery.getByTestId('page-builder-block-option-image-text')).toBeVisible();

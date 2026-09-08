@@ -47,25 +47,35 @@ export function compactJsonBytes(value: unknown): number {
 
 export function layoutSlotNames(node: Pick<PageBuilderBlock, 'type' | 'props'>): string[] {
   if (node.type === policy.layouts.section || node.type === policy.layouts.stack) return ['content'];
-  if (node.type !== policy.layouts.columns) return [];
+  if (node.type !== policy.layouts.columns) return Object.keys(componentSlots[node.type] ?? {});
   const { columns, ratio } = node.props;
   if (columns !== 1 && columns !== 2 && columns !== 3) return reject('columns', 'props.columns');
   if (typeof ratio !== 'string' || !(policy.ratios[columns] as string[]).includes(ratio)) return reject('columns', 'props.ratio');
   return Array.from({ length: columns }, (_, index) => `column${index + 1}`);
 }
 
-export function layoutAllowsChild(parentType: string | null, childType: string): boolean {
+const componentSlots: Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> = policy.component_slots;
+
+export function slotChildLimit(parentType: string, slot: string, childType: string): number | undefined {
+  return componentSlots[parentType]?.[slot]?.[childType];
+}
+
+export function layoutAllowsChild(parentType: string | null, childType: string, slot?: string): boolean {
+  if (parentType && componentSlots[parentType]) {
+    return slot ? slotChildLimit(parentType, slot, childType) !== undefined
+      : Object.values(componentSlots[parentType]).some((limits) => Object.hasOwn(limits, childType));
+  }
   return childrenByParent.get(parentType)?.has(childType) ?? false;
 }
 
 /** Structural validation only. Block props, envelope and responsive schemas remain separate. */
 export function validateLayoutDocument(value: unknown): LayoutDocument {
   if (!record(value) || !Array.isArray(value.blocks)) return reject('shape', 'blocks');
-  const pending = value.blocks.map((node, index) => ({ node: node as unknown, parent: null as string | null, depth: 1, path: `blocks.${index}` })).reverse();
+  const pending = value.blocks.map((node, index) => ({ node: node as unknown, parent: null as string | null, slot: undefined as string | undefined, depth: 1, path: `blocks.${index}` })).reverse();
   const ids = new Set<string>();
   while (pending.length) {
     const entry = pending.pop()!;
-    const { node, parent, depth, path } = entry;
+    const { node, parent, slot, depth, path } = entry;
     if (depth > policy.limits.depth) return reject('depth_limit', path);
     if (!record(node) || !record(node.props) || !Number.isInteger(node.block_version) || Number(node.block_version) < 1) return reject('shape', path);
     if (typeof node.instance_id !== 'string' || !uuid.test(node.instance_id)) return reject('id', path);
@@ -75,7 +85,7 @@ export function validateLayoutDocument(value: unknown): LayoutDocument {
     ids.add(identity);
     if (ids.size > policy.limits.nodes) return reject('node_limit', path);
     if (typeof node.type !== 'string' || !known.has(node.type) || (layouts.has(node.type) && node.block_version !== 1)) return reject('type', path);
-    if (!layoutAllowsChild(parent, node.type)) return reject('parent', path);
+    if (!layoutAllowsChild(parent, node.type, slot)) return reject('parent', path);
     const names = layoutSlotNames({ type: node.type, props: node.props });
     const slots = Object.hasOwn(node, 'slots') ? node.slots : {};
     if (!record(slots)) return reject('shape', `${path}.slots`);
@@ -83,7 +93,15 @@ export function validateLayoutDocument(value: unknown): LayoutDocument {
       if (!names.includes(name)) return reject('slot', `${path}.slots.${name}`);
       if (!Array.isArray(children)) return reject('shape', `${path}.slots.${name}`);
       if (children.length > policy.limits.slot_children) return reject('slot_limit', `${path}.slots.${name}`);
-      for (let index = children.length - 1; index >= 0; index--) pending.push({ node: children[index], parent: node.type, depth: depth + 1, path: `${path}.slots.${name}.${index}` });
+      const counts = new Map<string, number>();
+      for (const child of children) {
+        if (!record(child) || typeof child.type !== 'string') continue;
+        const count = (counts.get(child.type) ?? 0) + 1;
+        counts.set(child.type, count);
+        const limit = slotChildLimit(node.type, name, child.type);
+        if (limit !== undefined && count > limit) return reject('component_slot_limit', `${path}.slots.${name}`);
+      }
+      for (let index = children.length - 1; index >= 0; index--) pending.push({ node: children[index], parent: node.type, slot: name, depth: depth + 1, path: `${path}.slots.${name}.${index}` });
     }
   }
   if (compactJsonBytes(value) > policy.limits.utf8_bytes) return reject('byte_limit', '$');

@@ -3,6 +3,7 @@
 namespace Modules\Jiwonpapa\PageBuilder\Application\Blocks;
 
 use Modules\Jiwonpapa\PageBuilder\Contracts\BlockTypeCompilerPort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SlotBlockCompilerPort;
 
 final class BlockCompilerRegistry
 {
@@ -22,12 +23,23 @@ final class BlockCompilerRegistry
         $this->compilers[$key] = $compiler;
     }
 
-    /** @param array<string, mixed> $props */
-    public function compile(string $key, array $props): string
+    /**
+     * @param  array<string, mixed>  $props
+     * @param  array<string, string>  $slots
+     */
+    public function compile(string $key, array $props, array $slots = []): string
     {
         $compiler = $this->compilers[$key] ?? null;
         if ($compiler === null) {
             throw new \DomainException("Block compiler {$key} is not registered.");
+        }
+
+        if ($slots !== []) {
+            if (! $compiler instanceof SlotBlockCompilerPort) {
+                throw new \DomainException("Block compiler {$key} does not support slots.");
+            }
+
+            return $compiler->compileSlots($props, $slots);
         }
 
         return $compiler->compile($props);

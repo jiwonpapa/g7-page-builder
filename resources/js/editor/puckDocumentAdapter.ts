@@ -11,6 +11,7 @@ import { pageDesignToTokens, tokensToPageDesign } from './pageDesignTokens';
 interface BlockRoundTripMetadata {
   blockVersion: number;
   hadSlots: boolean;
+  hadExtra?: boolean;
   hadAppearance: boolean;
   hadMotion: boolean;
   hadVisibility: boolean;
@@ -54,6 +55,7 @@ export function canonicalDocumentToPuck(document: PageBuilderDocument, convertBl
     metadata[block.instance_id.toLowerCase()] = {
       blockVersion: block.block_version,
       hadSlots: Object.prototype.hasOwnProperty.call(block, 'slots'),
+      hadExtra: Object.prototype.hasOwnProperty.call(block.slots ?? {}, 'extra'),
       hadAppearance: Object.prototype.hasOwnProperty.call(block.props, 'appearance'),
       hadMotion: Object.prototype.hasOwnProperty.call(block, 'motion'),
       hadVisibility: Object.prototype.hasOwnProperty.call(block, 'visibility'),

@@ -1,6 +1,6 @@
 import { BUILTIN_BLOCK_DEFINITIONS } from '../blocks/builtinCatalog';
 import { externalBlockForComponent } from '../blocks/externalEditorRegistryData';
-import { layoutAllowsChild, layoutPolicy, layoutSlotNames, LayoutPolicyError } from '../documents/layoutPolicy';
+import { layoutAllowsChild, slotChildLimit, layoutPolicy, layoutSlotNames, LayoutPolicyError } from '../documents/layoutPolicy';
 import { idToUuid } from './puckBlockCodec';
 import type { PuckEditorData } from './puckEditorTypes';
 
@@ -124,7 +124,7 @@ export function editorInsertionTargets(data: PuckEditorData): EditorInsertionTar
       const children: unknown = Reflect.get(parent.item.props, slot);
       if (!Array.isArray(children) || !children.every(isItem)) return [];
       const path = [...editorSelectionAncestors(data, parent), parent].map((entry) => editorLocationLabel(data, entry));
-      const slotLabel = parent.item.type === 'LayoutColumns' ? `${slot.slice(6)}열` : '내용';
+      const slotLabel = slot === 'extra' ? '내부 구성' : parent.item.type === 'LayoutColumns' ? `${slot.slice(6)}열` : '내용';
       return [{ selector: { zone: `${parent.item.props.id}:${slot}`, index: children.length }, label: [...path, slotLabel].join(' › ') }];
     }))];
 }
@@ -134,7 +134,9 @@ export function editorDefaultInsertionTarget(data: PuckEditorData, selector: Edi
   if (selector && !selected) throw new LayoutPolicyError('not_found', selector.zone);
   const targets = editorInsertionTargets(data);
   if (!selected) return targets[0];
-  if (activeEditorSlots(selected.item.type, selected.item.props).length) {
+  // Selecting a designed block keeps ordinary library insertion beside it.
+  // Its internal slot is an explicit target or composition-panel action.
+  if (selected.item.type in layoutTypes && activeEditorSlots(selected.item.type, selected.item.props).length) {
     const child = targets.find((target) => target.selector.zone.startsWith(`${selected.item.props.id}:`));
     if (!child) throw new LayoutPolicyError('slot', selected.item.props.id);
     return child;
@@ -147,6 +149,7 @@ export function editorDefaultInsertionTarget(data: PuckEditorData, selector: Edi
 export function editorPlacementReason(error: unknown): string {
   if (!(error instanceof LayoutPolicyError)) return '선택한 위치를 다시 확인해 주세요.';
   return ({ parent: '이 위치에는 이 종류를 넣을 수 없습니다.', slot: '현재 사용할 수 없는 내부 위치입니다.',
+    component_slot_limit: 'Hero 내부에는 배지·목록을 각각 하나씩 넣을 수 있습니다.',
     slot_limit: `한 구역에 최대 ${layoutPolicy.limits.slot_children}개까지 배치할 수 있습니다.`,
     node_limit: `문서 전체 최대 ${layoutPolicy.limits.nodes}개를 초과합니다.`,
     depth_limit: `중첩 최대 ${layoutPolicy.limits.depth}단계를 초과합니다.`,
@@ -172,10 +175,14 @@ function assertPlacement(data: PuckEditorData, destination: EditorItemSelector, 
   const children: unknown = parent ? Reflect.get(parent.item.props, slot) : data.content;
   if (!Array.isArray(children) || !children.every(isItem)) throw new LayoutPolicyError('slot', zone);
   if (parent && source && editorItemLocations({ content: [source.item] }).some(({ item }) => item.props.id === parent.item.props.id)) throw new LayoutPolicyError('descendant', zone);
+  if (parent?.item.type === 'Hero' && !structureEnabled) throw new LayoutPolicyError('slot', zone);
   const parentType = parent ? canonicalTypeForEditor(parent.item.type) : null;
   const legacyExternalRoot = !enforceLayout && parent === null && Boolean(externalBlockForComponent(componentType));
-  if (!legacyExternalRoot && (!childType || parentType === undefined || !layoutAllowsChild(parentType, childType))) throw new LayoutPolicyError('parent', zone);
+  if (!legacyExternalRoot && (!childType || parentType === undefined || !layoutAllowsChild(parentType, childType, slot))) throw new LayoutPolicyError('parent', zone);
   const sameZone = source?.selector.zone === zone;
+  const limit = parentType && childType ? slotChildLimit(parentType, slot, childType) : undefined;
+  const count = children.filter((child) => child.type === componentType && child.props.id !== source?.item.props.id).length;
+  if (limit !== undefined && count >= limit) throw new LayoutPolicyError('component_slot_limit', zone);
   if (!Number.isInteger(index) || index < 0 || index > children.length - (sameZone ? 1 : 0)) throw new LayoutPolicyError('index', zone);
   if (parent && children.length - (sameZone ? 1 : 0) >= layoutPolicy.limits.slot_children) throw new LayoutPolicyError('slot_limit', zone);
   if (enforceLayout && (parent?.depth ?? 0) + subtreeDepth > layoutPolicy.limits.depth) throw new LayoutPolicyError('depth_limit', zone);

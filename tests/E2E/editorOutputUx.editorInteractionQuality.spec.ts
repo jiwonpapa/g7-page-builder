@@ -58,8 +58,11 @@ test('Hero responsive typography matches canvas, compiled preview and published 
     const preview = await api.post(`${API}/${owned.documentId}/preview`, { data: { expected_lock_version: current.lock_version } });
     expect(preview.ok()).toBe(true);
     const previewBody = await preview.json() as { data: { preview_url: string } };
-    const beforePublish = await resource(api, owned.documentId);
-    const published = await api.post(`${API}/${owned.documentId}/publish`, { data: { expected_lock_version: beforePublish.lock_version } });
+    await page.getByRole('group', { name: '캔버스 기기 미리보기' }).getByRole('button', { name: 'PC', exact: true }).click();
+    const publication = page.waitForResponse((response) => response.request().method() === 'POST'
+      && /\/publications\/[^/]+\/commit$/.test(new URL(response.url()).pathname));
+    await page.getByTestId('page-builder-publish').click();
+    const published = await publication;
     expect(published.ok()).toBe(true);
     for (const url of [previewBody.data.preview_url, `/pages/${owned.slug}`]) {
       await viewer.goto(url);
@@ -89,13 +92,15 @@ test('slider inspector summaries show text while retaining the original rich tit
     expect((await api.put(`${API}/${owned.documentId}/draft`, { data: { expected_lock_version: initial.lock_version,
       document: { ...initial.document, schema_version: 'g7-page-builder/v2', shell_mode: 'none', blocks: [slider] },
     } })).ok()).toBe(true);
+    const acceptedSlides = (await resource(api, owned.documentId)).document.blocks[0].props.slides;
+    expect(acceptedSlides).toMatchObject([{ title: richTitle }, { title: '<em>두 번째</em>' }]);
     await page.goto(`${EDITOR}?document=${owned.documentId}`);
     await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
     await page.locator(`[data-puck-layer-tree-id="${slider.instance_id}"]`).locator('button').filter({ hasText: /^슬라이더 히어로$/ }).click();
     const summary = page.locator('[class*="ArrayFieldItem-summary"]').filter({ visible: true });
     await expect(summary.first()).toContainText('혜택 & 안내');
     await expect(summary.first()).not.toContainText('<strong>');
-    expect((await resource(api, owned.documentId)).document.blocks[0].props.slides).toEqual(slider.props.slides);
+    expect((await resource(api, owned.documentId)).document.blocks[0].props.slides).toEqual(acceptedSlides);
   } finally {
     await cleanupOwnedEditorInteractionDocument(api, owned);
     await api.dispose();

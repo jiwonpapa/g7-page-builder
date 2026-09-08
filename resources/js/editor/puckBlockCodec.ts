@@ -274,16 +274,18 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
     } as PuckEditorData['content'][number];
   }
 
-  if (hasNonEmptySlots(block)) {
+  if (block.type !== HERO_BLOCK_TYPE && hasNonEmptySlots(block)) {
     throw new Error(`MVP block cannot contain nested slots: ${block.instance_id}`);
   }
 
   if (block.type === HERO_BLOCK_TYPE) {
+    if (hasNonEmptySlots(block)) validateLayoutDocument({ blocks: [block] });
     return {
       type: 'Hero',
       props: {
         id: block.instance_id,
         ...heroToEditorProps(block.props),
+        extra: (block.slots?.extra ?? []).map(canonicalBlockToPuck),
         motion: normalizeBlockMotion(block.motion),
       },
     };
@@ -362,6 +364,7 @@ export function canonicalBlockToPuck(block: PageBuilderBlock): PuckEditorData['c
 
 export function canonicalToPuck(document: PageBuilderDocument): PuckEditorSession {
   if (document.schema_version === 'g7-page-builder/v2') validateLayoutDocument(document);
+  else if (document.blocks.some(hasNonEmptySlots)) throw new Error('Legacy document cannot contain nested slots');
   return canonicalDocumentToPuck(document, canonicalBlockToPuck);
 }
 
@@ -572,6 +575,9 @@ export function puckBlockToCanonical(
   } else if (block.type === 'LayoutStack') {
     const children = Array.isArray(block.props.content) ? block.props.content : [];
     canonical.slots = { content: children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)) };
+  } else if (block.type === 'Hero' && (block.props.extra?.length || metadata.hadExtra)) {
+    if (context.document.schemaVersion !== 'g7-page-builder/v2') throw new Error('Internal composition requires structure editing.');
+    canonical.slots = { extra: (block.props.extra ?? []).map((child) => puckBlockToCanonical(child, context)) };
   } else if (metadata.hadSlots) {
     canonical.slots = {};
   }

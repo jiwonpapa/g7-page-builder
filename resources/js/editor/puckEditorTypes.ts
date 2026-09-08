@@ -1,4 +1,4 @@
-import type { Data } from '@puckeditor/core';
+import type { Data, Slot } from '@puckeditor/core';
 import type { ExternalEditorComponents } from '../blocks/externalEditorData';
 import type { BlockVisibility, PageBuilderDocument } from '../documents/types';
 import type { BlockAppearance, BlockMotion, BlockResponsiveOverrides, ElementAppearanceMap } from '../documents/blockPresentation';
@@ -9,6 +9,8 @@ import type { LayoutCatalogEditorComponents } from './layoutCatalogBlocks';
 import type { PageDesignProps } from './pageDesignTokens';
 
 export interface HeroEditorProps {
+  extra?: Slot;
+  composition?: string;
   eyebrow: string;
   title: string;
   body: string;

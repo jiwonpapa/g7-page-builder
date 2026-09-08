@@ -37,6 +37,58 @@
       }] }
     }]
   },
+  "hero": {
+    "schema_version": "g7-page-builder/v2",
+    "document_id": "00000000-0000-4000-8000-000000000101",
+    "slug": "hero-composition",
+    "locale": "ko",
+    "mode": "canvas",
+    "blocks": [
+      {
+        "instance_id": "00000000-0000-4000-8000-000000000102",
+        "type": "content.hero-centered-01",
+        "block_version": 1,
+        "props": {
+          "title": "내부 구성 제목",
+          "eyebrow": "",
+          "alignment": "center",
+          "body": "<p>원래 본문</p>",
+          "primaryCta": {
+            "label": "문의",
+            "url": "/contact"
+          }
+        },
+        "slots": {
+          "extra": [
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000103",
+              "type": "content.badge-01",
+              "block_version": 1,
+              "props": {
+                "label": "추가 배지",
+                "icon": "",
+                "size": "small",
+                "tone": "default"
+              }
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000104",
+              "type": "content.list-01",
+              "block_version": 1,
+              "props": {
+                "ordered": false,
+                "items": [
+                  {
+                    "text": "추가 목록"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
   "cases": [
     { "name": "root is a list", "path": ["blocks"], "value": {}, "error": "shape" },
     { "name": "block is an object", "path": ["blocks", 0], "value": null, "error": "shape" },

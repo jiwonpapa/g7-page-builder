@@ -9,6 +9,8 @@ export function puckLayoutSlot(item: PuckEditorItem, name: string): PuckEditorDa
   let slot: PuckEditorData['content'] | undefined;
   if ((item.type === 'LayoutSection' || item.type === 'LayoutStack') && name === 'content') {
     slot = item.props.content;
+  } else if (item.type === 'Hero' && name === 'extra') {
+    slot = item.props.extra;
   } else if (item.type === 'LayoutColumns') {
     if (name === 'column1') slot = item.props.column1;
     if (name === 'column2') slot = item.props.column2;
@@ -18,5 +20,5 @@ export function puckLayoutSlot(item: PuckEditorItem, name: string): PuckEditorDa
 }
 
 export function puckLayoutChildren(item: PuckEditorItem): PuckEditorData['content'] {
-  return ['content', 'column1', 'column2', 'column3'].flatMap((name) => puckLayoutSlot(item, name) ?? []);
+  return ['content', 'column1', 'column2', 'column3', 'extra'].flatMap((name) => puckLayoutSlot(item, name) ?? []);
 }

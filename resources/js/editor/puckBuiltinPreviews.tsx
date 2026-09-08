@@ -48,6 +48,7 @@ function BlockFrame({
 }
 
 export function HeroPreview({
+  extra,
   id,
   eyebrow,
   title,
@@ -65,7 +66,7 @@ export function HeroPreview({
   textAlign = 'left',
   elementStyles,
   motion,
-}: Omit<HeroEditorProps, 'body' | 'title'> & { id: string; body: React.ReactNode; title: React.ReactNode }): React.ReactElement {
+}: Omit<HeroEditorProps, 'body' | 'title' | 'extra'> & { extra?: React.ReactNode; id: string; body: React.ReactNode; title: React.ReactNode }): React.ReactElement {
   const image = safeImage(imageSrc);
 
   if (isSplitHeroLayout(layout)) {
@@ -76,6 +77,7 @@ export function HeroPreview({
             {canvasTextValue(eyebrow, 'plain') && <small data-g7pb-inline-field="eyebrow">{eyebrow}</small>}
             <RichTextCanvasField as="h1" className="g7pb-preview-richtext" fieldPath="title">{title}</RichTextCanvasField>
             <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
+            {extra}
             {canvasTextValue(primaryLabel, 'plain') && <a data-g7pb-inline-field="primaryLabel" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>{primaryLabel}</a>}
           </div>
           <figure data-g7pb-media-field="imageSrc">
@@ -94,6 +96,7 @@ export function HeroPreview({
         {canvasTextValue(eyebrow, 'plain') && <p className="g7pb-preview-eyebrow" data-g7pb-inline-field="eyebrow">{eyebrow}</p>}
         <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
         <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
+        {extra}
         {canvasTextValue(primaryLabel, 'plain') && (
           <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
             <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>

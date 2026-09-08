@@ -179,7 +179,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             );
         }
 
-        if ($slots !== []) {
+        if ($slots !== [] && ($type !== BuiltInBlockTypes::HERO_TYPE || $document->schemaVersion !== 'g7-page-builder/v2')) {
             throw new DocumentCompileException("{$path} uses slots that are not supported by this block.");
         }
 
@@ -209,10 +209,17 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
                 }
                 $this->blockSchemas->validate($definition->schemaRef, $props);
             }
+            $compiledSlots = [];
+            foreach ($slots as $name => $children) {
+                $compiledSlots[$name] = '';
+                foreach ($children as $index => $child) {
+                    $compiledSlots[$name] .= $this->compileBlock($child, $path.'.slots.'.$name.'.'.$index, $document, $heroCount, $headingAnchors, $styleUrls);
+                }
+            }
             $compiled = str_replace(
                 '__G7PB_PAGE_SLUG__',
                 rawurlencode($document->slug),
-                $this->blockCompilers->compile($definition->compiler, $props),
+                $this->blockCompilers->compile($definition->compiler, $props, $compiledSlots),
             );
             $compiled = $this->elementAppearances->apply($compiled, $props, $type);
             $this->templateMarkup->assertTemplateCompatibleMarkup($compiled, $path);

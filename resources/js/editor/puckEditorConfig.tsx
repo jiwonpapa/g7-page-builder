@@ -1,3 +1,4 @@
+import { HeroComposition } from './HeroComposition';
 import { libraryCategories } from './blockGalleryModel';
 import { BUILTIN_BLOCK_DEFINITIONS } from '../blocks/builtinCatalog';
 import { externalEditorComponents } from '../blocks/runtimeRegistry';
@@ -166,8 +167,10 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
     ...catalogComponentConfigs,
     Hero: {
       label: 'Hero',
-      defaultProps: DEFAULT_HERO,
+      defaultProps: { ...DEFAULT_HERO, extra: [] },
       fields: {
+        extra: { type: 'slot', label: '내부 구성', allow: ['Badge', 'List'] },
+        composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) => <HeroComposition readOnly={readOnly} /> },
         eyebrow: {
           type: 'custom',
           label: '보조 문구',
@@ -240,7 +243,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
         },
         motion: createMotionField(['none', 'reveal', 'parallax-soft']),
       },
-      render: (props) => <HeroPreview {...props} />,
+      render: ({ extra: Extra, ...props }) => <HeroPreview {...props} extra={typeof Extra === 'function' ? Extra({ minEmptyHeight: 0 }) : undefined} />,
     },
     Features: {
       label: 'Features',
@@ -525,6 +528,12 @@ export function createRuntimePuckConfig(structureEditingEnabled: boolean, editin
       components: {
         ...pageBuilderPuckConfig.components,
         ...external,
+        Hero: { ...pageBuilderPuckConfig.components.Hero, fields: {
+          ...pageBuilderPuckConfig.components.Hero.fields,
+          extra: { type: 'slot', label: '내부 구성', allow: structureEditingEnabled ? ['Badge', 'List'] : [] },
+          composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) =>
+            <HeroComposition readOnly={readOnly} structureEnabled={structureEditingEnabled} /> },
+        } },
       },
     } as Config<EditorComponents, PageDesignProps>;
     if (!editingDisabled) return baseConfig;

@@ -1,3 +1,4 @@
+import type { NativeCompositionCommands } from './compositions';
 import type { NativeField, NativeValue } from '../domain/fields';
 import type { NativeNode } from '../domain/node';
 import type { NativeCollection, NativeStructureChange } from '../domain/tree';
@@ -23,6 +24,7 @@ export interface NativeHost {
   applyField: (id: string, value: NativeValue, reset?: boolean) => NativeApplyResult;
   media: NativeMedia | null;
   applyText: (text: string) => NativeApplyResult;
+  compositions?: NativeCompositionCommands;
   collections?: NativeCollection[];
   changeStructure?: (change: NativeStructureChange) => NativeApplyResult;
 }

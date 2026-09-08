@@ -1,10 +1,16 @@
 import { NativeContent } from './content';
 import { NativeStructure } from './collection';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { prepareNativeTextChange } from '../domain/textChange';
 import type { NativeHost } from '../ports/host';
+import type { NativeCompositionPanelProps } from '../ports/compositions';
 
-export function NativeTextPanel({ host }: { host: NativeHost | null }): React.ReactElement {
+export function NativeTextPanel({ host, loadCompositions }: { host: NativeHost | null;
+  loadCompositions?: () => Promise<React.ComponentType<NativeCompositionPanelProps>> }): React.ReactElement {
+  const [Library, setLibrary] = useState<React.ComponentType<NativeCompositionPanelProps> | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false); const [libraryError, setLibraryError] = useState('');
+  const [loadingLibrary, setLoadingLibrary] = useState(false); const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const text = typeof host?.node.text === 'string' ? host.node.text : '';
   const [value, setValue] = useState(text);
   const [message, setMessage] = useState('');
@@ -29,6 +35,16 @@ export function NativeTextPanel({ host }: { host: NativeHost | null }): React.Re
   </form>}
     <NativeContent host={host} />
     <NativeStructure host={host} />
+    {loadCompositions && <button type="button" disabled={loadingLibrary} aria-expanded={libraryOpen} onClick={() => {
+      if (Library) { setLibraryOpen(value => !value); return; }
+      setLoadingLibrary(true); setLibraryError('');
+      void loadCompositions().then(component => {
+        if (alive.current) { setLibrary(() => component); setLibraryOpen(true); }
+      }).catch(() => { if (alive.current) setLibraryError('내 조합을 불러오지 못했습니다. 다시 눌러 주세요.'); })
+        .finally(() => { if (alive.current) setLoadingLibrary(false); });
+    }}>{loadingLibrary ? '내 조합 불러오는 중' : '내 조합 열기'}</button>}
+    {libraryError && <p role="status">{libraryError}</p>}
+    {Library && libraryOpen && <Library host={host} />}
     <p className="g7pb-native-note">상단 저장 시 공개 페이지에 반영됩니다.</p>
   </div>;
 }

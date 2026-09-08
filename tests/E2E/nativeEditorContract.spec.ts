@@ -233,3 +233,119 @@ test('native content style and image commands preserve source through Undo save 
     await api.dispose();
   }
 });
+
+const compositionEndpoint = '/api/modules/jiwonpapa-page_builder/admin/native-compositions';
+type CompositionNode = { id: string; name: string; children?: CompositionNode[]; props?: Record<string, Json>; [key: string]: unknown };
+type CompositionLayout = { slots: { content: CompositionNode[] }; [key: string]: unknown };
+
+test('native private compositions preserve source IDs references assets Undo and reopened copies', async ({ page, context }, info) => {
+  await page.setViewportSize({ width: 1600, height: 1100 });
+  const token = await authenticateEditorInteractionAdmin(context);
+  const api = await playwrightRequest.newContext({ baseURL: info.project.use.baseURL, ignoreHTTPSErrors: true,
+    extraHTTPHeaders: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
+  const original = await read(api);
+  const created: string[] = []; const assets: number[] = [];
+  const title = 'NAT04 내 조합 ' + Date.now();
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const library = page.getByRole('region', { name: '내 조합', exact: true });
+  const ownRow = () => library.getByRole('listitem').filter({ hasText: title });
+  const selectBox = async (id: string): Promise<void> => {
+    const path = await page.locator(`[data-editor-id="${id}"]`).getAttribute('data-editor-path');
+    expect(path).toBeTruthy();
+    await page.getByTestId('g7le-dnd-handle-' + path).click({ position: { x: 6, y: 6 } });
+  };
+  const openLibrary = async (): Promise<void> => {
+    if (!await library.isVisible()) {
+      await page.getByRole('button', { name: '내 조합 열기', exact: true }).click();
+    }
+    await expect(library).toBeVisible();
+    await library.getByRole('button', { name: '조합 목록 새로고침', exact: true }).click();
+  };
+  try {
+    const uploaded = await api.post(mediaEndpoint, { multipart: { layout_name: 'e2e_sandbox',
+      file: { name: 'ne4-owned.png', mimeType: 'image/png', buffer: imageBytes } } });
+    expect(uploaded.ok(), await uploaded.text()).toBe(true);
+    const asset = (await uploaded.json() as { data: { id: number; url: string } }).data; assets.push(asset.id);
+    const imagePath = new URL(asset.url, info.project.use.baseURL).pathname;
+    let source: CompositionNode = { id: 'ne4_source', type: 'basic', name: 'Div', props: { className: 'p-4' }, future: {}, children: [
+      { id: 'ne4_text', type: 'basic', name: 'P', text: '조합 원문', future: { preserved: [7, {}] } },
+      { id: 'ne4_link', type: 'basic', name: 'A', text: '내부 이동', props: { href: '#ne4_text' } },
+      { id: 'ne4_image', type: 'basic', name: 'Img', props: { src: imagePath, alt: '조합 이미지', style: { width: '48px', height: '48px' } } },
+    ] };
+    const destination: CompositionNode = { id: 'ne4_destination', type: 'basic', name: 'Div', props: { className: 'p-4' }, children: [
+      { id: 'ne4_kept', type: 'basic', name: 'P', text: '삽입 대상' },
+    ] };
+    let owned: CompositionLayout = { version: '1.0.0', layout_name: 'e2e_sandbox', extends: '_user_base',
+      meta: { title: 'NE4 composition fixture' }, slots: { content: [source, destination] } };
+    await put(api, JSON.parse(JSON.stringify(owned)) as Json, original.lock_version);
+    // Begin acceptance from the actual G7 stored source: its existing API normalizes empty objects before PB runs.
+    owned = JSON.parse((await read(api)).content) as CompositionLayout; source = owned.slots.content[0]!;
+    await page.goto('/admin/layout-editor/sirsoft-basic?route=%2Fe2e-sandbox');
+    await page.getByRole('button', { name: '한국어', exact: true }).click();
+    await selectBox('ne4_source'); await openLibrary();
+    await library.getByRole('textbox', { name: '조합 이름', exact: true }).fill(title);
+    const storing = page.waitForResponse(response => response.url().endsWith(compositionEndpoint) && response.request().method() === 'POST');
+    await library.getByRole('button', { name: '선택 항목을 내 조합에 저장', exact: true }).click();
+    const storedResponse = await storing; expect(storedResponse.ok(), await storedResponse.text()).toBe(true);
+    const stored = (await storedResponse.json() as { data: { id: string } }).data; created.push(stored.id);
+    await expect(ownRow()).toHaveCount(1);
+    const payload = await api.get(compositionEndpoint + '/' + stored.id);
+    expect(payload.ok()).toBe(true);
+    const snapshot = (await payload.json() as { data: { snapshot: string } }).data.snapshot;
+    const exported = JSON.parse(snapshot) as { node: CompositionNode; scope: string };
+    expect(exported.node.future).toEqual(source.future); expect(exported.node.children?.[0]?.future).toEqual(source.children?.[0]?.future);
+    expect(exported.node.__source).toEqual({ kind: 'route', layout: 'e2e_sandbox' });
+    expect(exported.scope).toBe('template');
+    expect(JSON.parse((await read(api)).content)).toEqual(owned);
+    await page.reload(); await selectBox('ne4_destination'); await openLibrary();
+    await expect(ownRow()).toHaveCount(1);
+    const location = library.getByLabel('조합 삽입 위치', { exact: true });
+    const collection = await location.locator('option').filter({ hasText: 'Div · 자식' }).first().getAttribute('value');
+    expect(collection).toBeTruthy(); await location.selectOption(collection!);
+    await ownRow().getByRole('button', { name: '조합 삽입', exact: true }).click();
+    const copiedText = page.locator('[data-editor-id="ne4_destination"]').getByText('조합 원문', { exact: true });
+    await expect(copiedText).toHaveCount(1);
+    await page.getByTestId('g7le-toolbar-undo').click(); await expect(copiedText).toHaveCount(0);
+    await page.getByTestId('g7le-toolbar-redo').click(); await expect(copiedText).toHaveCount(1);
+    const saving = page.waitForResponse(response => response.url().includes(endpoint) && response.request().method() === 'PUT');
+    await page.getByTestId('g7le-toolbar-save').click(); expect((await saving).ok()).toBe(true);
+    const saved = JSON.parse((await read(api)).content) as CompositionLayout;
+    const copy = saved.slots.content[1]!.children![1]!;
+    expect(copy.id).toMatch(/^node_/); expect(copy.id).not.toBe(source.id);
+    expect(copy.children).toHaveLength(3);
+    const newIds = [copy.id, ...copy.children!.map(child => child.id)];
+    expect(new Set(newIds).size).toBe(4);
+    expect(newIds.some(id => ['ne4_source', 'ne4_text', 'ne4_link', 'ne4_image'].includes(id))).toBe(false);
+    expect(copy.children![1]!.props?.href).toBe('#' + copy.children![0]!.id);
+    expect(copy.children![2]!.props?.src).toBe(imagePath);
+    expect(copy.future).toEqual(source.future); expect(copy.children![0]!.future).toEqual(source.children![0]!.future);
+    expect(saved).toEqual({ ...owned, slots: { content: [source, { ...destination, children: [...destination.children!, copy] }] } });
+    await page.reload(); await expect(copiedText).toHaveCount(1);
+    await expect(page.locator(`[data-editor-id="${copy.children![2]!.id}"]`)).toHaveAttribute('src', imagePath);
+    await selectBox('ne4_destination'); await openLibrary(); await expect(ownRow()).toHaveCount(1);
+    await ownRow().getByRole('button', { name: '목록에서 삭제', exact: true }).click();
+    await expect(ownRow().getByText('이 조합을 목록에서 삭제하시겠습니까? 이미 삽입한 사본과 이미지는 유지됩니다.', { exact: true })).toBeVisible();
+    await ownRow().getByRole('button', { name: '삭제 확인', exact: true }).click();
+    await expect(ownRow()).toHaveCount(0);
+    expect((await api.get(compositionEndpoint + '/' + stored.id)).status()).toBe(404);
+    expect((await api.get(imagePath)).ok()).toBe(true);
+    expect(JSON.parse((await read(api)).content)).toEqual(saved);
+    expect(errors).toEqual([]);
+    await page.screenshot({ path: info.outputPath('native-ne4-reopened.png'), fullPage: true });
+    await info.attach('NAT-04-native-compositions', { contentType: 'application/json', body: Buffer.from(JSON.stringify({
+      operations: ['private-save', 'reload-list', 'insert', 'fresh-ids', 'internal-reference-remap', 'undo', 'redo', 'g7-save', 'reopen', 'delete-library-only'],
+      schema: 'g7.editor-composition/v1', differenceOutsideInsertion: 0, copiedAssetRemains: true, pageErrors: errors, newIds,
+    }, null, 2)) });
+  } catch (error) {
+    await info.attach('NAT-04-failure', { contentType: 'text/plain', body: String(error) });
+    await page.screenshot({ path: info.outputPath('native-ne4-failure.png'), fullPage: true }); throw error;
+  } finally {
+    await page.goto('about:blank');
+    await put(api, JSON.parse(original.content) as Json, (await read(api)).lock_version);
+    for (const id of created) {
+      const response = await api.delete(compositionEndpoint + '/' + id); expect([200, 404]).toContain(response.status());
+    }
+    for (const id of assets) expect((await api.delete('/api/admin/templates/layout-attachments/' + id)).ok()).toBe(true);
+    await api.dispose();
+  }
+});

@@ -35,6 +35,7 @@ SENTINELS = {
 BUILD_OUTPUTS = [
     "dist/js/page-builder-native-components.iife.js", "dist/css/page-builder-native-components.css",
     "dist/meta/native-components-modules.json", "dist/native-components/editor-spec.json", "dist/native-components/components.json",
+    "dist/js/page-builder-native-compositions.iife.js", "dist/meta/native-compositions-modules.json",
     "dist/js/page-builder-native.iife.js", "dist/css/page-builder-native.css", "dist/meta/native-editor-modules.json",
     "dist/js/page-builder-editor.iife.js", "dist/js/page-builder-manager.iife.js",
     "dist/js/page-builder-site-part.iife.js", "dist/js/page-effects.iife.js",

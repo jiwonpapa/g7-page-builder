@@ -45,7 +45,7 @@
 | editorStructureTheme | 6 통과 | 테마, 중첩 선택·삽입·이동·복제·삭제, 모달 불투명성 |
 | editorAssetIdentity.editorInteractionQuality | 1 통과 | 실제 view의 내용 해시 주소와 이전 immutable 캐시 분리 |
 
-총 19개 브라우저 시나리오 통과. UI 화면은 위 첨부 PNG로 직접 확인했다. 최종 검사에서 Undo 뒤 contenteditable 재진입을 사이에 넣은 시험의 Redo가 비활성화되는 경우를 발견했다. 해당 시험은 두 이력 명령 사이에 추가 편집 클릭을 넣지 않고 캔버스의 실제 반응형 클래스 소멸·복원을 검사한다. Redo 뒤 패널 값과 저장·재열기 확인도 유지한다. 이 차수에서 Puck 선택 이력을 변경하지 않았다.
+총 19개 브라우저 시나리오 통과. UI 화면은 위 첨부 PNG로 직접 확인했다. 최종 검사에서 빠른 Undo 뒤 Redo 비활성화를 재현했다. contenteditable 재선택을 제거해도 재현되어 초기 시험 원인 추정을 정정했다. 고정 Puck 0.23.0의 history.record는 250ms debounce를 사용하고 back()은 대기 기록을 비우지 않는다(node_modules/@puckeditor/core/dist/index.js의 createHistorySlice). 이번 시험은 300ms 뒤 확정된 이력의 Undo/Redo와 캔버스 반응형 클래스 소멸·복원, 패널 값·저장·재열기를 확인한다. 빠른 연속 Undo 경계의 이력 유실은 이 차수에서 수정하지 않은 기존 엔진 한계이며, 일반 Undo 전체가 해결됐다고 보고하지 않는다.
 
 캐시 시험은 실제 G7 편집기가 렌더한 URL을 읽어 dist 파일 해시와 비교한다. 로컬 G7의 응답은 `no-cache, private`이므로, 별도 루프백 HTTP fixture에서 운영의 `public,max-age=31536000,immutable` 조건을 재현했다. 이전 무버전 JS/CSS를 먼저 로딩한 동일 브라우저에서 새 해시 URL로 진입·일반 새로고침할 때 새 파일이 사용됨을 검증했다. 운영 브라우저 재검증이나 배포 성공을 뜻하지 않는다.
 

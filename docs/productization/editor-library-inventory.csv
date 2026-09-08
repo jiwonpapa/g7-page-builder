@@ -50,3 +50,4 @@
 7c02e56c9c2f8bd22b0748d5c552fcdf407769f8,EP2-01 신규 block 정의,content.icon-01,1,아이콘,Icon,basic,기본,1,기본 후보 노출,Section/Columns/Stack 허용,없음,기본 요소,유한 필드·반복 계약; 내부 슬롯 없음; 과거 행은 조사 기준 보존,resources/block-packs/builtin-core/manifest.json
 7c02e56c9c2f8bd22b0748d5c552fcdf407769f8,EP2-01 신규 block 정의,content.list-01,1,목록,List,basic,기본,1,기본 후보 노출,Section/Columns/Stack 허용,없음,기본 요소,유한 필드·반복 계약; 내부 슬롯 없음; 과거 행은 조사 기준 보존,resources/block-packs/builtin-core/manifest.json
 7c02e56c9c2f8bd22b0748d5c552fcdf407769f8,EP2-01 신규 block 정의,content.badge-01,1,배지,Badge,basic,기본,1,기본 후보 노출,Section/Columns/Stack 허용,없음,기본 요소,유한 필드·반복 계약; 내부 슬롯 없음; 과거 행은 조사 기준 보존,resources/block-packs/builtin-core/manifest.json
+f27428654360c8d5d8521a2fe365de7d47f50979,내장 block 정의,content.card-01,1,카드,Card,content,콘텐츠,1,v2 구조 편집에서 노출,Section/Columns/Stack 허용; 전체 깊이 4,media/body/actions,구조형 컴포넌트,CardGrid와 별개; 자식별 0~1; 전체 카드 링크 없음; 동작 증거는 UI5 감사 기록 참조,resources/block-packs/builtin-core/manifest.json

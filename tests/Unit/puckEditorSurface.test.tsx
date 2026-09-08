@@ -1291,9 +1291,11 @@ describe('Puck editor surface contract', () => {
 
     const gallery = await eventually<HTMLElement>('[data-testid="page-builder-block-gallery"]');
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
-    const total = builtinManifest.blocks.filter((block) => block.editor_component !== 'HeroSplit').length + builtinManifest.presets.length;
+    const legacyItems = [...builtinManifest.blocks.filter((block) => block.editor_component !== 'HeroSplit'), ...builtinManifest.presets].filter((item) => item.block_id !== 'content.card-01');
+    const total = legacyItems.length;
+    expect(gallery.querySelector('[data-testid="page-builder-block-option-card"]')).toBeNull();
     const leafIds = new Set(layoutPolicy.leaf_types);
-    const basics = [...builtinManifest.blocks, ...builtinManifest.presets].filter((item) => leafIds.has(item.block_id)).length;
+    const basics = legacyItems.filter((item) => leafIds.has(item.block_id)).length;
     expect(Array.from(gallery.querySelectorAll('[role="tab"]')).map((tab) => tab.textContent)).toEqual([
       `전체${total}`, `기본 요소${basics}`, '레이아웃0', '컴포넌트55', '완성 섹션70',
     ]);

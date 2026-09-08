@@ -75,3 +75,8 @@
 .g7pb-native-compositions { border-block-start: 1px solid var(--g7pb-native-border, currentcolor); padding-block-start: 0.75rem; }
 .g7pb-native-compositions li { margin-block: 0.75rem; overflow-wrap: anywhere; }
 .g7pb-native-compositions input, .g7pb-native-compositions select { max-width: 100%; min-width: 0; }
+
+.g7pb-native-compositions .g7pb-native-actions > span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

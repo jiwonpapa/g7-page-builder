@@ -19,7 +19,7 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     await page.getByTestId('page-builder-design-radius').getByRole('radio', { name: '둥글게', exact: true }).check();
     const frame = page.frameLocator('#puck-canvas-root iframe');
     const heading = frame.locator('[data-g7pb-inline-field="heading"] [contenteditable="true"]').first();
-    await expect(heading).toHaveCSS('font-family', /Pretendard/);
+    await expect(heading).toHaveCSS('font-family', /system-ui/);
     await page.screenshot({ path: info.outputPath('page-inspector.png') });
     await heading.click();
     const level = page.getByTestId('page-builder-preset-level').filter({ visible: true });
@@ -32,7 +32,7 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     await expect(mobile).not.toHaveAttribute('open');
     await expect(mobile.locator('summary')).toContainText('공통 설정 사용');
     await mobile.locator('summary').click();
-    await page.getByTestId('page-builder-responsive-mobile-spacing').selectOption('compact');
+    await mobile.getByTestId('page-builder-responsive-mobile-spacing').selectOption('compact');
     await expect(mobile.locator('summary')).toContainText('1개 별도 지정');
     await mobile.locator('summary').click();
     await expect(mobile.locator('summary')).toContainText('1개 별도 지정');

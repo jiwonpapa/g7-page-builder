@@ -129,7 +129,9 @@ BASIC_ELEMENTS = replace(CATALOG_FRAME, titles=(
 
 # Exact reviewed owners for K1-K5. Existing mixed modules retain all three roles
 # until their data/codec is extracted. No filename prefix invents a new exemption.
+CARD_COMPOSITION = BrowserScenario("tests/E2E/cardComposition.editorInteractionQuality.spec.ts")
 CATALOG_CODE_SCOPES = {
+    "resources/js/editor/cardCatalogBlocks.tsx": (CARD_COMPOSITION,),
     **{"resources/js/editor/" + name: (BASIC_ELEMENTS,) for name in (
         "basicElementCatalogData.ts", "basicElementCatalogCodec.ts", "basicElementCatalogBlocks.tsx",
     )},

@@ -23,11 +23,11 @@ export function ComponentComposition({ readOnly, structureEnabled = false }: { r
   return <details className="g7pb-design-advanced" data-testid={selectedItem.type === 'Card' ? 'card-composition' : selectedItem.type === 'Hero' ? 'hero-composition' : 'image-text-composition'}>
     <summary>내부 구성 · {editorItemLocations(appState.data).filter((entry) => Object.keys(slots).some((slot) => entry.selector.zone === `${id}:${slot}`)).length}/{Object.values(slots).reduce((sum, types) => sum + types.length, 0)}</summary>
     <p>{structureEnabled ? (selectedItem.type === 'Card' ? '구역별 요소를 각각 하나씩 배치합니다. 링크는 내부 버튼에서 설정합니다.' : (actionsEnabled ? '제목·본문은 유지하고 버튼 구역에서 연결을 편집합니다.' : '버튼 구역으로 전환하면 기존 문구와 연결을 옮겨 편집합니다.')) : '상단의 구조 편집 사용을 먼저 선택해 주세요.'}</p>
-    {!actionsEnabled && <button type="button" disabled={Boolean(disabled)} onClick={() => {
+    {!actionsEnabled && <section className="g7pb-layout-inspector-control"><button type="button" disabled={Boolean(disabled)} onClick={() => {
       if (disabled) return;
       try { dispatch(enableCompositionActions(appState.data, id, structureEnabled, crypto.randomUUID())); setMessage(''); }
       catch (error) { setMessage(error instanceof Error ? error.message : '버튼 구역으로 전환할 수 없습니다.'); }
-    }}>버튼 구역으로 편집</button>}
+    }}>버튼 구역으로 편집</button></section>}
     {message && <output aria-live="polite">{message}</output>}
     {Object.entries(slots).map(([slot, types]) => <CompositionSlot key={`${id}:${slot}`} id={id} slot={slot} types={types} disabled={Boolean(disabled)} />)}
   </details>;

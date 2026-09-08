@@ -100,7 +100,7 @@ export function HeroPreview({
         <RichTextCanvasField as="h1" className="g7pb-preview-richtext g7pb-preview-hero__title" fieldPath="title">{title}</RichTextCanvasField>
         <RichTextCanvasField fieldPath="body">{body}</RichTextCanvasField>
         {extra}
-            {actionsEnabled && actions}
+        {actionsEnabled && actions}
         {!actionsEnabled && canvasTextValue(primaryLabel, 'plain') && (
           <a className="g7pb-preview-cta" href={safeLink(primaryUrl)} onClick={(event) => event.preventDefault()}>
             <span data-g7pb-inline-field="primaryLabel">{primaryLabel}</span>

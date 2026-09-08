@@ -131,20 +131,21 @@ for (const kind of ['hero', 'imageText'] as const) test(`${kind} explicitly tran
     const seed = await api.put(`${API}/${owned.documentId}/draft`, { data: { expected_lock_version: initial.lock_version,
       document: { ...initial.document, schema_version: 'g7-page-builder/v2', shell_mode: 'none', blocks: [parent] } } });
     expect(seed.ok()).toBe(true);
+    const baseline = (await resource(api, owned.documentId)).document.blocks[0];
     await page.goto(`/modules/jiwonpapa-page_builder/admin/editor?document=${owned.documentId}`);
     let composition = await selectComposition(page, kind);
     await composition.getByRole('button', { name: '버튼 구역으로 편집', exact: true }).click();
     await expect(composition.getByRole('button', { name: '버튼 편집', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'undo', exact: true }).click();
     await save(page);
-    expect((await resource(api, owned.documentId)).document.blocks[0]).toEqual(parent);
+    expect((await resource(api, owned.documentId)).document.blocks[0]).toEqual(baseline);
     composition = await selectComposition(page, kind);
     await composition.getByRole('button', { name: '버튼 구역으로 편집', exact: true }).click();
     await save(page);
     const transferred = (await resource(api, owned.documentId)).document.blocks[0];
     const prop = kind === 'hero' ? 'primaryCta' : 'primaryLink';
     expect(transferred.props).not.toHaveProperty(prop);
-    expect(transferred.slots?.extra).toEqual(parent.slots.extra);
+    expect(transferred.slots?.extra).toEqual(baseline.slots?.extra);
     expect(transferred.slots?.actions[0].props.items).toEqual([{ label: '문의', url: '/contact', variant: 'primary' }]);
     await expect(page.getByRole('textbox', { name: '버튼 연결', exact: true })).toHaveCount(0);
     await expect(composition.getByRole('button', { name: '버튼 추가', exact: true })).toBeDisabled();

@@ -44,7 +44,7 @@ for (const nested of [false, true]) test(`Card UI insertion ${nested ? 'in Colum
       await page.locator(`[data-puck-layer-tree-id="${columnId}"]`).getByRole('button', { name: 'Columns · 1/2/3열', exact: true }).click();
     }
     await page.getByTestId('page-builder-add-block').click();
-    await page.getByRole('button', { name: '모든 제작 단위와 변형 보기', exact: true }).click();
+    if (!nested) await page.getByRole('button', { name: '모든 제작 단위와 변형 보기', exact: true }).click();
     await page.getByRole('searchbox', { name: '블록 검색', exact: true }).fill('content.card-01');
     await page.getByTestId('page-builder-block-gallery').getByTestId('page-builder-block-option-card').click();
     let panel = await selectCard(page);

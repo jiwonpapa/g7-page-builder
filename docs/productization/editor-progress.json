@@ -726,7 +726,7 @@
       "id": "UI2",
       "phase": "editor-ux2",
       "title": "Hero 반응형 출력 및 슬라이더 요약",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "UI1"
       ],
@@ -734,14 +734,30 @@
         "UI-02"
       ],
       "owner_task": "editor-ux2-20260908",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "e4be1995d8e1c5fcd233bbce1826fd5379e4a8d6",
+      "integrated_commit": "acf20b2d4dd3753c0b36c2b12ee533b14453b283",
+      "evidence": [
+        {
+          "acceptance_id": "UI-02",
+          "kind": "unit",
+          "commit": "acf20b2d4dd3753c0b36c2b12ee533b14453b283",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux2.md"
+        },
+        {
+          "acceptance_id": "UI-02",
+          "kind": "browser",
+          "commit": "acf20b2d4dd3753c0b36c2b12ee533b14453b283",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux2.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/css/page-builder-editor-appearance.css",
         "resources/js/editor/catalogFields.tsx",
-        "resources/js/editor/previewContent.ts"
+        "resources/js/editor/previewContent.ts",
+        "resources/css/page-builder-public.css"
       ],
       "completion": "기기별 정렬·글자 비율 변경/저장/재열기와 캔버스·컴파일 출력 비교, 슬라이더 제목의 표시·원본 보존 확인. 배포 별도."
     }

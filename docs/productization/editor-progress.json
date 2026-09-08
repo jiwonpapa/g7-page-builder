@@ -934,7 +934,7 @@
       "id": "UI6",
       "phase": "editor-ux6",
       "title": "Hero·ImageText 버튼 구역 편집",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "UI5"
       ],
@@ -942,9 +942,24 @@
         "UI-06"
       ],
       "owner_task": "editor-ux6-actions-20260909",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "0babba86e015be593b0e35259e26d3c3b8c9b7af",
+      "integrated_commit": "2d24d9fc14ec0f13426a0f385d69ed2d5cd5f993",
+      "evidence": [
+        {
+          "acceptance_id": "UI-06",
+          "kind": "unit",
+          "commit": "2d24d9fc14ec0f13426a0f385d69ed2d5cd5f993",
+          "result": "pass",
+          "path": "docs/audits/2026-09-09-editor-ux6.md"
+        },
+        {
+          "acceptance_id": "UI-06",
+          "kind": "browser",
+          "commit": "2d24d9fc14ec0f13426a0f385d69ed2d5cd5f993",
+          "result": "pass",
+          "path": "docs/audits/2026-09-09-editor-ux6.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/editor/compositionActions.ts",

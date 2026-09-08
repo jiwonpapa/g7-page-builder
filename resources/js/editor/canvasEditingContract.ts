@@ -117,6 +117,7 @@ function defineCanvasBlockCapability(definition: CanvasBlockEditingCapabilityDef
 }
 
 export const BUILTIN_CANVAS_EDITING_CONTRACT: CanvasBlockEditingCapability[] = [
+  defineCanvasBlockCapability({ componentType: 'Card', textFields: structural('variant'), collections: [], directMedia: false, directRoute: false, dynamicData: false }),
   defineCanvasBlockCapability({ componentType: 'Icon', textFields: [
     ...structural({ path: 'label', maxLength: 120 }, 'icon', 'size', 'tone', 'decorative'),
   ], collections: [], directMedia: false, directRoute: false, dynamicData: false }),
@@ -404,7 +405,7 @@ const COMPONENT_TYPE_BY_BLOCK_TYPE: Record<string, string> = {
   image: 'Image',
   buttons: 'Buttons',
   'image-text': 'ImageText',
-  icon: 'Icon', list: 'List', badge: 'Badge',
+  card: 'Card', icon: 'Icon', list: 'List', badge: 'Badge',
   'icon-list': 'IconList',
   hero: 'Hero',
   'hero-split': 'HeroSplit',

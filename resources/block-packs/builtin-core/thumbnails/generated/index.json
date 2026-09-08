@@ -1,7 +1,7 @@
 {
   "viewport": "960px",
   "output": "320x200 PNG from a fixed 960x600 public-renderer crop",
-  "count": 146,
+  "count": 148,
   "sources": {
     "block:content.hero-centered-01@1": "18bc6781d2755c09085365a8f80529895efd998073ca29c664eaa2d465ba81ae",
     "block:content.hero-split-01@1": "39c6ce04f5bcf6b0ca218d920b4dff345a4e882880cb9ce96eda698090b95483",
@@ -148,7 +148,9 @@
     "preset:jiwonpapa/builtin-core:card-grid.numbered": "9667d5edd49ad79c9a3533e356abd4b20b288e5e6891f3c81af9d1ff01700191",
     "preset:jiwonpapa/builtin-core:icon.simple": "838b42c8100178b8ea3ecb2d98ef14978085eca955ad19ee6fee02ac9cb554a7",
     "preset:jiwonpapa/builtin-core:list.simple": "dab87c83dca75c1eef4f1eecdf92de99dc83195712501cd135322d8dee295a66",
-    "preset:jiwonpapa/builtin-core:badge.simple": "ecd92732ebe7eac7606997660468f1f506f9143b6dd626b5f488b0b3f38d16b2"
+    "preset:jiwonpapa/builtin-core:badge.simple": "ecd92732ebe7eac7606997660468f1f506f9143b6dd626b5f488b0b3f38d16b2",
+    "block:content.card-01@1": "764f7c13efd7d586aa188e8655408e401a4eb403d176df80315ea204459977c6",
+    "preset:jiwonpapa/builtin-core:card.empty": "2269aa768cbe8ef1ac042409a4d2f12e915e22fde3ea15841c528759be857b6a"
   },
   "dynamic_samples": {
     "block:g7.board-recent-posts-01@1": 3,

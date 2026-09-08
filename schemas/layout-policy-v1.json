@@ -55,7 +55,8 @@
     "media.image-carousel-01",
     "content.icon-01",
     "content.list-01",
-    "content.badge-01"
+    "content.badge-01",
+    "content.card-01"
   ],
   "leaf_types": [
     "content.heading-01",
@@ -65,7 +66,8 @@
     "content.divider-01",
     "content.icon-01",
     "content.list-01",
-    "content.badge-01"
+    "content.badge-01",
+    "content.card-01"
   ],
   "layouts": {
     "section": "layout.section-01",
@@ -74,10 +76,33 @@
   },
   "component_slots": {
     "content.hero-centered-01": {
-      "extra": { "content.badge-01": 1, "content.list-01": 1 }
+      "extra": {
+        "content.badge-01": 1,
+        "content.list-01": 1
+      }
     },
     "media.image-text-01": {
-      "extra": { "content.badge-01": 1, "content.list-01": 1, "content.divider-01": 1 }
+      "extra": {
+        "content.badge-01": 1,
+        "content.list-01": 1,
+        "content.divider-01": 1
+      }
+    },
+    "content.card-01": {
+      "media": {
+        "media.image-01": 1
+      },
+      "body": {
+        "content.heading-01": 1,
+        "content.rich-text-01": 1,
+        "content.icon-01": 1,
+        "content.list-01": 1,
+        "content.badge-01": 1,
+        "content.divider-01": 1
+      },
+      "actions": {
+        "action.buttons-01": 1
+      }
     }
   },
   "child_groups": {

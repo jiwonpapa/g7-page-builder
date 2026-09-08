@@ -179,7 +179,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             );
         }
 
-        if ($slots !== [] && (! in_array($type, [BuiltInBlockTypes::HERO_TYPE, 'media.image-text-01'], true) || $document->schemaVersion !== 'g7-page-builder/v2')) {
+        if ($slots !== [] && (! in_array($type, [BuiltInBlockTypes::HERO_TYPE, 'media.image-text-01', 'content.card-01'], true) || $document->schemaVersion !== 'g7-page-builder/v2')) {
             throw new DocumentCompileException("{$path} uses slots that are not supported by this block.");
         }
 

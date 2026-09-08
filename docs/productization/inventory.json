@@ -11,9 +11,9 @@
     "schemas/page-builder-document.schema.json": "2e4c54872311a401d4aea5c14830cc3654d0d568357454b5a6b39b58c0e50b1d"
   },
   "counts": {
-    "definitions": 48,
-    "catalog_definitions": 47,
-    "presets": 98,
+    "definitions": 49,
+    "catalog_definitions": 48,
+    "presets": 99,
     "page_kits": 5
   },
   "legacy_approval": {
@@ -2596,6 +2596,30 @@
         "directRoute": false,
         "dynamicData": false
       }
+    },
+    {
+      "id": "content.card-01",
+      "block_version": 1,
+      "component": "Card",
+      "schema_ref": "builtin:cardProps",
+      "category": "content",
+      "supply_kind": "composite-component",
+      "capabilities": [],
+      "batch": "UI5",
+      "current_exposure": "catalog",
+      "review_status": "not-reviewed-under-v2",
+      "current_editing": {
+        "fields": [
+          {
+            "path": "variant",
+            "kind": "structural"
+          }
+        ],
+        "collections": [],
+        "directMedia": false,
+        "directRoute": false,
+        "dynamicData": false
+      }
     }
   ],
   "presets": [
@@ -4085,6 +4109,19 @@
         "responsive",
         "save-reload"
       ]
+    },
+    {
+      "id": "card.empty",
+      "block_id": "content.card-01",
+      "block_version": 1,
+      "supply_kind": "component-preset",
+      "batch": "UI5",
+      "review_status": "not-reviewed-under-v2",
+      "required_states": [
+        "default",
+        "responsive",
+        "save-reload"
+      ]
     }
   ],
   "page_kits": [
@@ -4186,6 +4223,15 @@
         "schemas/page-builder-document.schema.json": "4bd9316cf90273f55510afe97516f0454d495b60a2948ca45b8a7838e992ff80",
         "resources/js/editor/canvasEditingContract.ts": "62f90b4d714ea652e7a6d8bc40770811d62d8f306f6d5744c75c649e095a99af"
       }
+    },
+    {
+      "task": "UI5",
+      "base_sha": "a3938b97d4b51753fbe46ca379b19215ce53c705",
+      "captured_on": "2026-09-08",
+      "definitions": [
+        "content.card-01"
+      ],
+      "note": "Single Card shell registration only. Historical approvals are not upgraded."
     }
   ]
 }

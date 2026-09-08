@@ -20,6 +20,7 @@ const LAYOUT_COMPONENTS = new Set(['LayoutSection', 'LayoutColumns', 'LayoutStac
 export function libraryKind(type: string): LibraryKind {
   if (LAYOUT_COMPONENTS.has(type)) return 'layout';
   const definition = BUILTIN_BLOCK_DEFINITIONS.find((entry) => entry.editor_component === type);
+  if (type === 'Card') return 'component';
   if (definition && layoutPolicy.leaf_types.includes(definition.block_id)) return 'element';
   if (definition && SECTION_COMPONENTS.has(type)) return 'section';
   // Older external packs keep their original editor and are conservatively grouped as components.
@@ -33,7 +34,7 @@ export function libraryKindLabel(kind: LibraryKind): string {
 export function libraryCategories(types: readonly string[], layoutEnabled = true, allTypes: readonly string[] = types): NonNullable<Config<EditorComponents>['categories']> {
   const isRegistered = (type: string): type is keyof EditorComponents => LAYOUT_COMPONENTS.has(type)
     || BUILTIN_BLOCK_DEFINITIONS.some((entry) => entry.editor_component === type) || type.startsWith('External_');
-  const registered = [...new Set(types.filter(isRegistered))];
+  const registered = [...new Set(types.filter(isRegistered))].filter((type) => layoutEnabled || type !== 'Card');
   return {
     ...Object.fromEntries(LIBRARY_KINDS.map(([kind, title]) => [kind, {
       title, defaultExpanded: true, visible: kind !== 'layout' || layoutEnabled,
@@ -92,8 +93,9 @@ export function libraryEditingCapabilities(type: string, fields: Record<string, 
     { key: 'repeaters', label: '항목 추가', available: repeaters.length > 0,
       description: repeaters.length ? `항목 ${repeaterLimits}. 한도 안에서 추가·순서 변경·복제·삭제가 가능합니다.`
         : known ? '독립 반복 항목이 없습니다.' : '공통 항목 도구는 제공하지 않습니다. 팩의 설정을 확인하세요.' },
-    { key: 'slots', label: '내부 구성', available: (layout || type === 'Hero' || type === 'ImageText') && slots.length > 0,
-      description: type === 'Hero' && slots.length > 0 ? '내부 구성에 배지·목록을 각각 하나씩 배치합니다. 제목·본문·이미지·기존 버튼은 유지합니다.'
+    { key: 'slots', label: '내부 구성', available: (layout || type === 'Hero' || type === 'ImageText' || type === 'Card') && slots.length > 0,
+      description: type === 'Card' ? '이미지·본문·버튼 구역에 허용된 요소를 하나씩 배치하고 편집합니다.'
+        : type === 'Hero' && slots.length > 0 ? '내부 구성에 배지·목록을 각각 하나씩 배치합니다. 제목·본문·이미지·기존 버튼은 유지합니다.'
         : type === 'ImageText' && slots.length > 0 ? '내부 구성에 배지·목록·구분선을 각각 하나씩 배치합니다. 제목·본문·이미지·기존 버튼은 유지합니다.'
         : layout ? '구역·열·세로 묶음의 허용 위치에 기본 요소를 배치합니다.'
         : plannedSlots ? '현재 내부 요소 삽입은 지원하지 않습니다. 후속 개발 대상입니다.' : '현재 내부 요소 삽입을 지원하지 않습니다.' },

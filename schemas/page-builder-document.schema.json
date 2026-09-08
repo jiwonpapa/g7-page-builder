@@ -93,6 +93,7 @@
     }
   }],
   "$defs": {
+    "cardProps": {"type": "object", "additionalProperties": false, "properties": {"variant": {"enum": ["plain", "outlined"]}, "appearance": {"$ref": "#/$defs/appearance"}}},
     "inlineRichTextString": {
       "type": "string",
       "maxLength": 10000
@@ -337,6 +338,7 @@
             }
           }
         },
+        {"if":{"properties":{"type":{"const":"content.card-01"}},"required":["type"]},"then":{"properties":{"block_version":{"const":1},"props":{"$ref":"#/$defs/cardProps"}}}},
         {
           "if": {
             "properties": {

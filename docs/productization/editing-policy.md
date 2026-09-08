@@ -34,6 +34,12 @@
 
 네이티브 전역 UI는 현재 공개 계약으로 가능한 범위를 먼저 입증한다. 짧은 옵션의 정확한 목록/라벨/기본값/상속/초기화는 해당 필드 소유 spec과 연결한다. 새 상태나 metadata 원장을 화면마다 복제하지 않는다. 기존 G7 임의 class/style/표현식은 보존하되 새 자유 코드 편집 필드로 노출하지 않는다.
 
+## NE4 사용자 조합의 구현 경계
+
+네이티브 조합은 [별도 포맷·저장소·사용 계약](native-compositions.md)을 따른다. PB Section 패턴과 혼용하지 않는다. G7이 내보낸 지원 노드 하위 구성만 저장하고, 원본 페이지의 두 번째 저장본을 만들지 않는다. 다른 허용 위치에는 새 ID와 재연결한 내부 참조를 가진 독립 사본으로 삽입한다. 원래 페이지에 종속된 바인딩/외부 참조는 페이지 범위를 넓히지 않는다. 판매 킷·파일 교환·공유 컴포넌트로 의미를 확대하지 않는다.
+
+PB 스냅샷의 JSON 문자열 보존과 G7 content API 전체의 타입 보존은 별도 계약이다. 확인된 G7 빈 객체→배열 정규화는 NE6에서 명시적으로 검증·처리하며, PB 검증 성공을 G7의 전체 JSON 무손실 증거로 사용하지 않는다.
+
 ## 공개 호스트 계약의 선행조건
 
 최초 조사 기준의 `G7Core.layoutEditor` 메서드는 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady`였다. NE1 별도 G7 후보에서 `registerPanel`과 불변 host/명령을 검증했고 NE2 후보에서 `snapshot.fields`, `setControl`, 선택형 media를 추가 검증했다. [공개 계약](native-host-contract.md)과 차수별 감사에 명시한 후보/템플릿 조합만 검증된 상태이며 stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. 등록 이름 중복은 덮어쓰기이므로 모듈 namespace와 수명 관리가 필요하다. 아래 표는 최초 조사 경계와 수용 조건이며 H01~H04의 NE1 증거와 H05~H08의 후속 수용 조건을 구분한다. NE3 후보에서는 collections/구조 명령과 명시적 템플릿 companion 연결로 H05~H07을 검증했다. [NAT-03 감사](../audits/2026-09-08-native-editor-ne3.md)의 지원 조합·거부 경계를 따르며 H08 동시 저장은 NE6에 남아 있다.

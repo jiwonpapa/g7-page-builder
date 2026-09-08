@@ -77,6 +77,32 @@ class PlannerTests(unittest.TestCase):
         self.assertTrue(build_plan(self.root, [fixture], full=True).unresolved)
         self.assertTrue(build_plan(self.root, ['tests/Contract/unknown.json'], full=True).unresolved)
 
+    def test_layout_grammar_inputs_require_both_languages_without_full_fallback(self):
+        from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS
+        for source in ("schemas/layout-policy-v1.json", "tests/Fixtures/layout-policy-cases.json"):
+            consumers = CONTRACT_FIXTURE_CONSUMERS[source]
+            self.write(source, '{}')
+            for consumer in consumers:
+                self.write(consumer, '<?php return 1;' if consumer.endswith('.php') else 'export const fixture = 1;')
+            for phase in ('submission', 'integration', 'verification', 'ci'):
+                plan = build_plan(self.root, [source], phase=phase)
+                self.assertFalse(plan.unresolved)
+                self.assertFalse(any(gate.name == 'full-product' for gate in plan.gates))
+                selected = [gate for gate in plan.gates if gate.name.startswith(('unit:', 'php:'))]
+                self.assertEqual(len(selected), len(consumers))
+                for gate in selected:
+                    self.assertIn(source, gate.inputs)
+                    before = digest_gate(self.root, gate)
+                    self.write(source, '{"changed": true}')
+                    self.assertNotEqual(before, digest_gate(self.root, gate))
+                    self.write(source, '{}')
+            (self.root / consumers[1]).unlink()
+            self.assertTrue(build_plan(self.root, [source]).unresolved)
+        self.write('schemas/unknown.json', '{}')
+        self.assertTrue(build_plan(self.root, ['schemas/unknown.json']).unresolved)
+        self.write('tests/Fixtures/unknown.json', '{}')
+        self.assertTrue(build_plan(self.root, ['tests/Fixtures/unknown.json']).unresolved)
+
     def test_full_scope_runs_changed_specs_missing_from_the_declared_full_suite(self):
         covered, extra = "tests/E2E/covered.spec.ts", "tests/E2E/extra.spec.ts"
         self.write("package.json", json.dumps({"scripts": {"test:e2e:product": "playwright test " + covered + " && npm run test:e2e:site-shell"}}))

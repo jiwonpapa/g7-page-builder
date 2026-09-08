@@ -11,7 +11,7 @@ async function resource(api: APIRequestContext, id: string) {
   return (await response.json() as { data: { document: PageBuilderDocument; lock_version: number } }).data;
 }
 async function selectHero(page: Page) {
-  const row = page.locator('button').filter({ hasText: /^Hero$/ }).filter({ visible: true });
+  const row = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: /^Hero$/ }).filter({ visible: true });
   if (!await row.isVisible()) await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
   await row.click();
   const composition = page.getByTestId('hero-composition').filter({ visible: true });

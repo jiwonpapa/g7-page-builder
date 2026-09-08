@@ -145,6 +145,19 @@ class ContentSelectionTest(unittest.TestCase):
         with patch("tools.g7pb.content.subprocess.run", side_effect=lambda command, **kwargs: subprocess.CompletedProcess(command, 0, json.dumps(originals[command[-1].removeprefix("BASE:")]), "")):
             self.write(path, current)
             self.assertEqual(select_changes(self.root, "BASE", [path]), [{"kind": "block", "ids": ["block:content.icon@1"]}])
+            # Sequential metadata repair uses the declaration's actual historical
+            # manifest, while the new declaration must match today's catalog.
+            def history(command, **kwargs):
+                if command[1] == "log":
+                    return subprocess.CompletedProcess(command, 0, "a" * 40 + "\n", "")
+                value = before_pack if command[-1].startswith("a" * 40 + ":") else (before if command[-1].endswith(path) else self.pack)
+                return subprocess.CompletedProcess(command, 0, json.dumps(value), "")
+            with patch("tools.g7pb.content.subprocess.run", side_effect=history):
+                self.assertEqual(select_changes(self.root, "BASE", [path]), [{"kind": "block", "ids": ["block:content.icon@1"]}])
+                self.write(path, {**current, "contract": {**current["contract"], "inventory": {**current["contract"]["inventory"], "block_count": 99}}})
+                with self.assertRaisesRegex(ValueError, "inventory does not match"):
+                    select_changes(self.root, "BASE", [path])
+                self.write(path, current)
             for field, value in (("approval", {"decision": "approved"}), ("contract", {**current["contract"], "copy": {"minimum": 1}}),
                                  ("contract", {**current["contract"], "inventory": {**current["contract"]["inventory"], "block_count": 4}})):
                 self.write(path, {**current, field: value})

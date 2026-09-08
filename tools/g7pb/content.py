@@ -136,6 +136,19 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
             if {k: v for k, v in before.items() if k not in {"inventory", "block_policies"}} != {k: v for k, v in contract.items() if k not in {"inventory", "block_policies"}}:
                 raise ValueError("Shared product quality rules changed; select explicit targets")
             old_pack = old_json(PACK)
+            # A catalog task may precede its declaration task. Validate the old
+            # declaration against its own recorded revision, never guessed counts.
+            if set(before["block_policies"]) != {block["block_id"] for block in old_pack["blocks"]}:
+                revision = subprocess.run(["git", "log", "-1", "--format=%H", base, "--", path],
+                                          cwd=root, text=True, capture_output=True, check=False)
+                sha = revision.stdout.strip()
+                if revision.returncode or not re.fullmatch(r"[0-9a-f]{40}", sha):
+                    raise ValueError("Cannot inspect product quality declaration revision")
+                historical = subprocess.run(["git", "show", f"{sha}:{PACK}"], cwd=root,
+                                            text=True, capture_output=True, check=False)
+                if historical.returncode:
+                    raise ValueError("Cannot inspect product quality declaration manifest")
+                old_pack = json.loads(historical.stdout)
             for source, declaration in ((old_pack, before), (pack, contract)):
                 expected = {
                     "block_count": len(source["blocks"]),

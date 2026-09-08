@@ -563,22 +563,42 @@
       "id": "NE5",
       "phase": "phase-5",
       "title": "삽입·설정·미리보기·저장 흐름 연결",
-      "status": "planned",
+      "status": "done",
       "depends_on": [
         "NE4"
       ],
       "acceptance_ids": [
         "NAT-05"
       ],
-      "owner_task": null,
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "owner_task": "native-ne5-editor-r3-20260908",
+      "implementation_commit": "ed79b0ca3dea8795da5b9216fda0812a53e181fe",
+      "integrated_commit": "13d231288269b4f0d4471873a2d4ca04b1c9a651",
+      "evidence": [
+        {
+          "acceptance_id": "NAT-05",
+          "kind": "unit",
+          "commit": "ed79b0ca3dea8795da5b9216fda0812a53e181fe",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-native-editor-ne5.md"
+        },
+        {
+          "acceptance_id": "NAT-05",
+          "kind": "browser",
+          "commit": "13d231288269b4f0d4471873a2d4ca04b1c9a651",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-native-editor-ne5.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
-        "resources/js/native-editor/ui/insertion.tsx",
-        "resources/js/native-editor/ui/editorFlow.tsx",
-        "resources/js/adapters/gnuboard7/panel.ts"
+        "resources/js/native-editor/ui/NativeTextPanel.tsx",
+        "resources/js/native-editor/ui/InsertionPosition.tsx",
+        "resources/js/native-editor/ui/collection.tsx",
+        "resources/js/native-editor/ui/compositions.tsx",
+        "resources/js/native-editor/application/compositions.ts",
+        "resources/css/page-builder-native.css",
+        "tests/Unit/nativeWorkflow.test.tsx",
+        "tests/E2E/nativeEditorContract.spec.ts"
       ],
       "completion": "찾기→위치 선택→삽입→상세 편집→기존 페이지 설정→미리보기→저장→재열기 흐름을 실제 일반 페이지에서 확인. 공개 영향·문서 제목·라우트·오류·취소가 구분됨."
     },

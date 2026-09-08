@@ -46,11 +46,17 @@ describe('versioned quality state suppliers', () => {
     }
   });
 
+  it('does not invent text for a structural shell while retaining viewport and roundtrip checks', () => {
+    const shell = { fields: [{ path: 'variant', kind: 'structural' }], collections: [], directMedia: false, directRoute: false, dynamicData: false };
+    expect(requiredQualityStates(shell)).toEqual(['default', 'responsive', 'save-reload']);
+    expect(() => createQualityStateCases({ variant: 'outlined' }, shell, fixtures().find(item => item.id === 'long-copy')!)).toThrow('no declared canonical text field');
+  });
+
   it('materializes deterministic independent default, long-copy and viewport cases for every preset', () => {
     const states = fixtures();
     for (const preset of manifest.presets) {
       const definition = byId.get(preset.block_id)!;
-      for (const id of ['default', 'long-copy', 'responsive', 'save-reload']) {
+      for (const id of requiredQualityStates(definition.current_editing).filter(state => ['default', 'long-copy', 'responsive', 'save-reload'].includes(state))) {
         const before = JSON.stringify(preset.props);
         const cases = createQualityStateCases(preset.props, definition.current_editing, states.find(item => item.id === id)!);
         expect(cases.length).toBeGreaterThan(0);

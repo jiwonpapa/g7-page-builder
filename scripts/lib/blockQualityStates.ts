@@ -44,7 +44,7 @@ function editing(value: unknown): Editing {
 
 export function requiredQualityStates(capability: unknown): QualityState[] {
   const item = editing(capability);
-  return ['default', 'long-copy', 'responsive', 'save-reload',
+  return ['default', ...(item.fields.some(field => field.kind !== 'structural' || field.maxLength !== undefined) ? ['long-copy' as const] : []), 'responsive', 'save-reload',
     ...(item.directMedia ? ['media-missing' as const] : []),
     ...(item.collections.length ? ['collection-min-max' as const] : []),
     ...(item.dynamicData ? ['data-empty', 'data-error', 'capability-missing'] as const : [])];

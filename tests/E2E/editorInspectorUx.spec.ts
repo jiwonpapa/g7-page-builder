@@ -44,9 +44,11 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     const undo = page.getByRole('button', { name: /되돌리기|Undo/i }).first();
     const mobileOverride = frame.locator('.g7pb-mobile-appearance-spacing--compact');
     await expect(mobileOverride).toHaveCount(1);
+    // Puck 0.23.0 history.record debounces for 250ms. Test a committed history
+    // entry; immediate Undo during that vendor window is a separate known limitation.
+    await page.waitForTimeout(300);
     await undo.click();
-    // Observe the restored canvas without starting another contenteditable session
-    // between history commands; that session can legitimately replace redo history.
+    // Observe the restored canvas without another edit between history commands.
     await expect(mobileOverride).toHaveCount(0);
     await page.getByRole('button', { name: /다시 실행|Redo/i }).first().click();
     await expect(mobileOverride).toHaveCount(1);

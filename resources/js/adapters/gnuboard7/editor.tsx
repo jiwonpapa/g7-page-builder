@@ -1,4 +1,6 @@
 import React from 'react';
+import { readCompositionCommands } from './compositions';
+import { loadNativeCompositions } from './loadCompositions';
 import { acceptsNativeValue } from '../../native-editor/domain/fields';
 import { readNativeFields } from './fields';
 import { readNativeMedia } from './media';
@@ -61,7 +63,7 @@ export function readNativeHost(input: unknown): NativeHost | null {
     } catch { return { kind: 'refused', reason: 'host-error' }; }
     return { kind: 'refused', reason: 'invalid-result' };
   }
-  return { context, node: parsed.node, fields, collections, media: readNativeMedia(input.media, context),
+  return { context, node: parsed.node, fields, collections, compositions: readCompositionCommands(input.compositions, context), media: readNativeMedia(input.media, context),
     changeStructure(change) {
       if (context.readonly || !['route', 'iteration_item'].includes(context.editMode) || !acceptsStructureChange(collections, change)) return { kind: 'refused', reason: 'unsupported-structure' };
       return invoke({ kind: 'structure', expected: context, change });
@@ -79,7 +81,7 @@ export function readNativeHost(input: unknown): NativeHost | null {
   } };
 }
 function NativePanel({ host }: { host: unknown }): React.ReactElement {
-  return <NativeTextPanel host={readNativeHost(host)} />;
+  return <NativeTextPanel host={readNativeHost(host)} loadCompositions={loadNativeCompositions} />;
 }
 export function registerNativeEditor(): boolean {
   if (typeof window.G7Core?.layoutEditor?.registerPanel !== 'function') return false;

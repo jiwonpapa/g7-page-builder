@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(root, 'module.json'), 'utf8'));
 const outputs = [
+  'dist/js/page-builder-native-compositions.iife.js', 'dist/meta/native-compositions-modules.json',
   'dist/js/page-builder-native-components.iife.js', 'dist/css/page-builder-native-components.css',
   'dist/meta/native-components-modules.json', 'dist/native-components/editor-spec.json', 'dist/native-components/components.json',
   'dist/js/page-builder-native.iife.js',
@@ -47,6 +48,13 @@ if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native.iife.js'))).le
 if (!nativeModules.some((id) => id.endsWith('/native-editor/entry.ts'))
   || nativeModules.some((id) => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id))) {
   throw new Error('Native editor must use the host React runtime and exclude Puck/Tiptap.');
+}
+const compositionModules = readInventory('native-compositions');
+if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native-compositions.iife.js'))).length > 6_000
+  || !compositionModules.some(id => id.endsWith('/native-editor/compositionEntry.tsx'))
+  || compositionModules.some(id => /(?:^|\/)(?:react|react-dom|@puckeditor|@tiptap)(?:\/|$)/.test(id))
+  || nativeModules.some(id => id.endsWith('/native-editor/ui/compositions.tsx') || id.endsWith('/gnuboard7/compositionLibrary.ts'))) {
+  throw new Error('Native composition library must load separately under 6KB gzip and share host React.');
 }
 const companionModules = readInventory('native-components');
 if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native-components.iife.js'))).length > 4_000

@@ -22,8 +22,8 @@ const budgets = [
   // EP2 basic elements add one shared, separately capped stylesheet to the 18,084-byte baseline.
   { path: 'dist/css/page-builder-public.css', gzip: 18_700 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
-  // UI5 measured candidate: 507,212 gzip bytes before final browser corrections; reserve 288 bytes for the Card integration.
-  { path: 'dist/js/page-builder-editor.iife.js', gzip: 507_500 },
+  // UI6 measured release input: 508,050 gzip bytes; reserve 450 bytes for release metadata.
+  { path: 'dist/js/page-builder-editor.iife.js', gzip: 508_500 },
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
   { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
   { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },

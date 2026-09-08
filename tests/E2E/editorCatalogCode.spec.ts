@@ -555,8 +555,8 @@ test('catalog responsive overrides preserve inheritance and reset', async ({ pag
     const expand = sectionRow.locator(':scope > div').first().getByRole('button', { name: 'Expand', exact: true });
     if (await expand.isVisible()) await expand.click();
     await selectOutlineBlock(page, actions, '버튼 묶음');
-    const tabletGroup = page.getByTestId('page-builder-responsive-tablet-section');
-    const mobileGroup = page.getByTestId('page-builder-responsive-mobile-section');
+    const tabletGroup = page.getByTestId('page-builder-responsive-tablet-section').filter({ visible: true });
+    const mobileGroup = page.getByTestId('page-builder-responsive-mobile-section').filter({ visible: true });
     await expect(tabletGroup).toHaveCount(1);
     await expect(mobileGroup).toHaveCount(1);
     await tabletGroup.locator('summary').click();

@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import fixtures from '../Fixtures/layout-policy-cases.json';
+import fixtures from '../Fixtures/layout-policy-cases.json' with { type: 'json' };
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
 import { authenticateEditorInteractionAdmin, cleanupOwnedEditorInteractionDocument,
   createOwnedEditorInteractionDocument, editorInteractionApi } from './support/editorInteractionFixture';

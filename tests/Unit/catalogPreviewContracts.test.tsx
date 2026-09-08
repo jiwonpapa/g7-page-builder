@@ -38,6 +38,10 @@ describe('catalog UI owners', () => {
     if (slides?.type !== 'array') throw new Error('Expected native array field');
     const item = { eyebrow: '', title: 'Dynamic sentinel', body: '', buttonLabel: '', buttonUrl: '', imageSrc: '', imageAlt: '' };
     expect(slides.getItemSummary?.(item, 2)).toBe('Dynamic sentinel');
+    const rich = { ...item, title: '<strong>혜택</strong> &amp; <em>안내</em>' };
+    expect(slides.getItemSummary?.(rich, 0)).toBe('혜택 & 안내');
+    expect(rich.title).toBe('<strong>혜택</strong> &amp; <em>안내</em>');
+    expect(slides.getItemSummary?.({ ...item, title: '<strong>&nbsp;</strong>' }, 2)).toBe('슬라이드 3');
     expect(slides.arrayFields.title).toMatchObject({ type: 'richtext', contentEditable: true, visible: false });
     expect(slides.arrayFields.imageAlt).toMatchObject({ type: 'text' });
   });

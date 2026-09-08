@@ -53,10 +53,10 @@ describe('editor library production units and declared editing boundaries', () =
       const capabilities = libraryEditingCapabilities(type, component.fields ?? {});
       expect(capabilities.map((entry) => entry.key)).toEqual(['fields', 'style', 'repeaters', 'slots', 'fixed']);
       expect(capabilities.every((entry) => entry.description.length > 0)).toBe(true);
-      expect(capabilities.find((entry) => entry.key === 'slots')?.available).toBe(type.startsWith('Layout'));
+      expect(capabilities.find((entry) => entry.key === 'slots')?.available).toBe(Object.values(component.fields ?? {}).some((field) => field.type === 'slot'));
     }
     const hero = libraryEditingCapabilities('Hero', pageBuilderPuckConfig.components.Hero.fields ?? {});
-    expect(hero.find((entry) => entry.key === 'slots')?.description).toContain('후속 개발 대상');
+    expect(hero.find((entry) => entry.key === 'slots')?.description).toContain('내부');
     expect(hero.find((entry) => entry.key === 'repeaters')?.available).toBe(false);
     const buttons = libraryEditingCapabilities('Buttons', pageBuilderPuckConfig.components.Buttons.fields ?? {});
     expect(buttons.find((entry) => entry.key === 'repeaters')?.available).toBe(true);

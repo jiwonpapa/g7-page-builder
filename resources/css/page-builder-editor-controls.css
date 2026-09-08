@@ -9,7 +9,7 @@
 .g7pb-inspector-choice__swatch { width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--g7pb-choice-swatch); }
 .g7pb-inspector-choice--swatches label { min-width: 0; padding: .25rem; }
 .g7pb-inspector-choice--swatches label[data-selected='true'] { outline: 1px solid var(--g7pb-accent); }
-.g7pb-editor [class*='_PuckFields-field_']:has(.g7pb-inspector-choice) { padding: .65rem 1rem; margin-top: 0; border-top: 0; }
+.g7pb-editor[data-editing-mode] [class*='_PuckFields-field_']:has(.g7pb-inspector-choice, [data-testid^='page-builder-block-']) { padding: .65rem 1rem; margin-top: 0; border-top: 0; }
 .g7pb-editor [class*='_PuckFields-field_']:has([data-g7pb-design-hidden]) { display: none; }
 .g7pb-design-advanced > .g7pb-layout-inspector-control { grid-template-columns: 1fr; padding-top: .75rem; }
 

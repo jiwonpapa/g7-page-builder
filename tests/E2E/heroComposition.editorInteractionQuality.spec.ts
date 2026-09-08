@@ -11,8 +11,9 @@ async function resource(api: APIRequestContext, id: string) {
   return (await response.json() as { data: { document: PageBuilderDocument; lock_version: number } }).data;
 }
 async function selectHero(page: Page) {
-  await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
-  await page.locator('button').filter({ hasText: /^Hero$/ }).click();
+  const row = page.locator('button').filter({ hasText: /^Hero$/ }).filter({ visible: true });
+  if (!await row.isVisible()) await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+  await row.click();
   const composition = page.getByTestId('hero-composition').filter({ visible: true });
   if (!await composition.evaluate((node) => node.hasAttribute('open'))) await composition.locator('summary').click();
   return composition;

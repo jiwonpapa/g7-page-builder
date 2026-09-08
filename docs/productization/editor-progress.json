@@ -676,15 +676,30 @@
       "id": "UI1",
       "phase": "inspector-ux1",
       "title": "독립 PB 우측 공통 설정 및 자산 갱신",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [],
       "acceptance_ids": [
         "UI-01"
       ],
       "owner_task": "inspector-ux1-20260908",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "8aa75064aeab072149becf217051d8667a3e51e1",
+      "integrated_commit": "095ea5d2eca2d10fc60b217348d0115997358c52",
+      "evidence": [
+        {
+          "acceptance_id": "UI-01",
+          "kind": "unit",
+          "commit": "11bff407a1f657dfe90c90f53d5dba49cfc8756e",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-inspector-ux1.md"
+        },
+        {
+          "acceptance_id": "UI-01",
+          "kind": "browser",
+          "commit": "095ea5d2eca2d10fc60b217348d0115997358c52",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-inspector-ux1.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/editor/InspectorChoiceField.tsx",

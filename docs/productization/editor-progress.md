@@ -4,7 +4,7 @@
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **8/8** · 기존 기반 8개는 분모에서 제외합니다.
+계획 작업 완료 **9/9** · 기존 기반 8개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
 
@@ -41,6 +41,7 @@
 | 6차 · 호환·회귀·릴리스 | NE6 · 호환·회귀·릴리스 | 완료 | NE5 | native-ne6-release-20260908 | 구현 `339c7faa73656c3fbad4e2df0a82f8f9e0884df7`<br>통합 `881194563a68e7df10e0439ee8d9493da509f5cc`<br>필수 증거 4/4<br>[NAT-06/compatibility](<../audits/2026-09-08-native-editor-ne6.md>) · [NAT-06/browser](<../audits/2026-09-08-native-editor-ne6.md>) · [NAT-06/concurrency](<../audits/2026-09-08-native-editor-ne6.md>) · [NAT-06/deployment](<../audits/2026-09-08-native-editor-ne6.md>) |
 | 독립 PB 개선 1차 · 우측 설정창 | UI1 · 독립 PB 우측 공통 설정 및 자산 갱신 | 완료 | 없음 | inspector-ux1-20260908 | 구현 `8aa75064aeab072149becf217051d8667a3e51e1`<br>통합 `095ea5d2eca2d10fc60b217348d0115997358c52`<br>필수 증거 2/2<br>[UI-01/unit](<../audits/2026-09-08-inspector-ux1.md>) · [UI-01/browser](<../audits/2026-09-08-inspector-ux1.md>) |
 | 독립 PB 개선 2차 · 편집 출력 일치 | UI2 · Hero 반응형 출력 및 슬라이더 요약 | 완료 | UI1 | editor-ux2-20260908 | 구현 `e4be1995d8e1c5fcd233bbce1826fd5379e4a8d6`<br>통합 `acf20b2d4dd3753c0b36c2b12ee533b14453b283`<br>필수 증거 2/2<br>[UI-02/unit](<../audits/2026-09-08-editor-ux2.md>) · [UI-02/browser](<../audits/2026-09-08-editor-ux2.md>) |
+| 독립 PB 개선 3차 · Hero 내부 구성 | UI3 · Hero 배지·목록 내부 구성 | 완료 | UI2 | editor-ux3-r2-20260908 | 구현 `20e25a85951c316a4ffdb43d7318235b0d108502`<br>통합 `18ab87595f78183b2da180d1df8ebdc7a90f95d9`<br>필수 증거 2/2<br>[UI-03/unit](<../audits/2026-09-08-editor-ux3.md>) · [UI-03/browser](<../audits/2026-09-08-editor-ux3.md>) |
 
 다음 진행 가능: 없음
 

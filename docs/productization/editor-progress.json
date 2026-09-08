@@ -230,6 +230,14 @@
         "concurrency",
         "deployment"
       ]
+    },
+    {
+      "id": "UI-01",
+      "description": "짧은 공통 옵션 직접 선택, PAGE 선택 UI 밀도, 공통 배치 라벨, 기기별 접기/변경 요약 및 자산 내용 해시 URL. 대표 편집·Undo·저장·재열기 검증.",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
     }
   ],
   "phases": [
@@ -256,6 +264,10 @@
     {
       "id": "phase-6",
       "title": "6차 · 호환·회귀·릴리스"
+    },
+    {
+      "id": "inspector-ux1",
+      "title": "독립 PB 개선 1차 · 우측 설정창"
     }
   ],
   "baseline": [
@@ -659,6 +671,29 @@
         "package-lock.json"
       ],
       "completion": "검증한 G7/지원 템플릿 조합과 기존 PB 문서·발행본·주소가 공존. 실제 동시 저장·권한·장애 복구·반응형 공개 출력 통과 후 승인 범위의 릴리스와 운영 재열기/공개 결과 증거 기록."
+    },
+    {
+      "id": "UI1",
+      "phase": "inspector-ux1",
+      "title": "독립 PB 우측 공통 설정 및 자산 갱신",
+      "status": "in_progress",
+      "depends_on": [],
+      "acceptance_ids": [
+        "UI-01"
+      ],
+      "owner_task": "inspector-ux1-20260908",
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/InspectorChoiceField.tsx",
+        "resources/js/editor/blockInspectorFields.tsx",
+        "resources/js/editor/responsiveBlockStyle.tsx",
+        "resources/css/page-builder-editor-controls.css",
+        "resources/views/editor.blade.php"
+      ],
+      "completion": "짧은 옵션 직접 선택·표시 일관성·키보드·저장/재열기 및 캐시된 세션 재진입 확인. 배포는 별도."
     }
   ],
   "history": [

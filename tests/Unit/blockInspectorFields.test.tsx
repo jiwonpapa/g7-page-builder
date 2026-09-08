@@ -96,6 +96,16 @@ describe('typed inspector field decoration', () => {
     expect(select.value).toBe('wide');
   });
 
+  it('exposes short preset choices and preserves declared heading levels', () => {
+    const field = withBlockContainerFields(pageBuilderPuckConfig.components).Heading.fields?.level;
+    if (!field || field.type !== 'custom') throw new Error('Missing compact heading field');
+    const change = vi.fn();
+    const view = render(field.render({ field, name: 'level', id: 'heading-level', value: '2', onChange: change }));
+    expect(view.querySelector('select')).toBeNull();
+    act(() => view.querySelector<HTMLInputElement>('input[value="3"]')!.click());
+    expect(change).toHaveBeenCalledExactlyOnceWith('3');
+  });
+
   it('does not turn an unknown DOM option into a typed application value', () => {
     const change = vi.fn();
     const view = render(<StableSelectField value="small" onChange={change} testId="synthetic-choice"

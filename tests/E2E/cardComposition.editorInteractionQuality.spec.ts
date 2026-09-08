@@ -10,6 +10,9 @@ async function resource(api: APIRequestContext, id: string) {
 async function selectCard(page: Page) {
   const row = page.locator('[data-puck-layer-tree-id] button').filter({ hasText: /^카드$/ }).filter({ visible: true });
   if (!await row.isVisible()) await page.getByRole('navigation').getByText('Outline', { exact: true }).click();
+  for (let depth = 0; depth < 3 && !await row.isVisible(); depth += 1) {
+    await page.getByRole('button', { name: 'Expand', exact: true }).filter({ visible: true }).first().click();
+  }
   await row.click();
   const panel = page.getByTestId('card-composition').filter({ visible: true });
   if (!await panel.evaluate((node) => node.hasAttribute('open'))) await panel.locator('summary').click();
@@ -96,8 +99,11 @@ for (const nested of [false, true]) test(`Card UI insertion ${nested ? 'in Colum
     const rejected = await api.put(`${API}/${owned.documentId}/draft`, { data: { expected_lock_version: latest.lock_version, document: forged } });
     expect(rejected.status()).toBe(400);
     expect((await rejected.json()).message).toContain('component_slot_limit:');
-    await page.getByTestId('page-builder-viewport-tablet').click();
     panel = await selectCard(page);
+    await page.getByRole('group', { name: '캔버스 기기 미리보기' }).getByRole('button', { name: '태블릿', exact: true }).click();
+    await expect(page.getByTestId('page-builder-editor')).toHaveAttribute('data-editing-mode', 'preview');
+    panel = page.getByTestId('card-composition').filter({ visible: true });
+    if (!await panel.evaluate((node) => node.hasAttribute('open'))) await panel.locator('summary').click();
     await expect(panel.getByRole('button', { name: '배지 삭제', exact: true })).toBeDisabled();
   } finally { await viewer.close(); await cleanupOwnedEditorInteractionDocument(api, owned); await api.dispose(); }
 });

@@ -1,6 +1,6 @@
 # 네이티브 편집 호환 범위
 
-현재 릴리스 후보는 PB **0.35.0**과 G7 호스트 `6dc41eead1a9d14fa7d4c817827dfaccb03cb1db` (engine-v1.68.2)다. G7 공식 배포판 전체나 모든 테마를 지원한다는 뜻이 아니다. 기존 독립 PB의 G7 최소 버전과 네이티브 공개 호스트 지원 조건은 별도다.
+현재 배포 릴리스는 PB **0.35.0**과 G7 호스트 `6dc41eead1a9d14fa7d4c817827dfaccb03cb1db` (engine-v1.68.2)다. G7 공식 배포판 전체나 모든 테마를 지원한다는 뜻이 아니다. 기존 독립 PB의 G7 최소 버전과 네이티브 공개 호스트 지원 조건은 별도다.
 
 | 조합 | 확인 범위 | 제공 경계 |
 | --- | --- | --- |
@@ -12,4 +12,4 @@
 
 PC는 편집 동작을, PC·태블릿·모바일은 공개 출력과 넘침을 확인했다. Slider는 키보드 및 reduced-motion 동작을 포함한다. 기존 PB 문서·발행본·사용자 지정 주소는 별도 공존 시험으로 확인했다.
 
-운영 테마 `jiwonpapa-devops`는 사전 파일 지문을 확보했으며 배포 후 확인 범위는 [NE6 기록](audits/2026-09-08-native-editor-ne6.md)에 기재한다. 고객 테마에 Slider나 새 manifest/spec을 자동 삽입하지 않는다. core main/upstream 반영 여부와 운영 파일 적용을 혼동하지 않는다.
+운영 테마 `jiwonpapa-devops` 0.1.4는 실제 G7 Installer 일반 페이지에서 상세 필드·라디오·Enter 적용·Undo·재열기와 기존 공개 출력을 확인했다. 저장/발행 없이 임시 편집을 되돌렸다. 해당 테마의 전체 구성/Slider 지원을 주장하지 않는다. 파일 지문과 확인 범위는 [NE6 기록](audits/2026-09-08-native-editor-ne6.md)에 기재한다. 고객 테마에 Slider나 새 manifest/spec을 자동 삽입하지 않는다. core main/upstream 반영 여부와 운영 파일 적용을 혼동하지 않는다.

@@ -50,6 +50,16 @@ CONTRACT_FIXTURE_CONSUMERS = {
     "tests/Contract/document-basic-elements-v2.fixture.json": (
         "tests/Unit/basicElementContracts.test.ts", "tests/UnitPhp/BasicElementBlockCompilerTest.php",
     ),
+    # Exact structural grammar inputs: both language consumers are mandatory.
+    # Other schemas retain the explicit full-scope requirement below.
+    "schemas/layout-policy-v1.json": (
+        "tests/Unit/layoutTree.test.ts", "tests/UnitPhp/LayoutPolicyTest.php",
+        "tests/Unit/puckDocumentAdapter.test.ts", "tests/UnitPhp/HtmlDocumentCompilerTest.php",
+    ),
+    "tests/Fixtures/layout-policy-cases.json": (
+        "tests/Unit/layoutTree.test.ts", "tests/UnitPhp/LayoutPolicyTest.php",
+    ),
+
 }
 
 

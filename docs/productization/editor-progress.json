@@ -2,7 +2,7 @@
   "schema_version": "g7pb-editor-progress/v2",
   "plan_id": "native-editor-20260907",
   "baseline_sha": "280567cc650253a5d6538696fbc3383c587eaf4e",
-  "updated_at": "2026-09-08",
+  "updated_at": "2026-09-09",
   "policy_file": "docs/productization/editing-policy.md",
   "plan_file": "docs/productization/editor-plan.md",
   "dashboard_file": "docs/productization/editor-progress.md",
@@ -270,6 +270,14 @@
         "unit",
         "browser"
       ]
+    },
+    {
+      "id": "UI-06",
+      "description": "Hero·ImageText 버튼 소유권 명시 전환과 내부 편집·Undo·저장/재열기·출력",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
     }
   ],
   "phases": [
@@ -316,6 +324,10 @@
     {
       "id": "editor-ux5",
       "title": "독립 PB 개선 5차"
+    },
+    {
+      "id": "editor-ux6",
+      "title": "독립 PB 개선 6차"
     }
   ],
   "baseline": [
@@ -917,6 +929,30 @@
         "tests/E2E/cardComposition.editorInteractionQuality.spec.ts"
       ],
       "completion": "슬롯별 삽입·편집·순서·삭제·Undo·저장/재열기·출력 검증, 차수 커밋과 로컬 통합. 운영 배포 별도."
+    },
+    {
+      "id": "UI6",
+      "phase": "editor-ux6",
+      "title": "Hero·ImageText 버튼 구역 편집",
+      "status": "in_progress",
+      "depends_on": [
+        "UI5"
+      ],
+      "acceptance_ids": [
+        "UI-06"
+      ],
+      "owner_task": "editor-ux6-actions-20260909",
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
+      "blocked_reason": null,
+      "scope": [
+        "resources/js/editor/compositionActions.ts",
+        "resources/js/editor/ComponentComposition.tsx",
+        "resources/js/editor/puckBlockCodec.ts",
+        "tests/E2E/heroComposition.editorInteractionQuality.spec.ts"
+      ],
+      "completion": "명시 전환·편집·삭제·Undo·원본 보존·출력 검증, 차수 커밋과 로컬 통합. 운영 배포 별도."
     }
   ],
   "history": [

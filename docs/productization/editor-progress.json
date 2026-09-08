@@ -606,21 +606,23 @@
       "id": "NE6",
       "phase": "phase-6",
       "title": "호환·회귀·릴리스",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "NE5"
       ],
       "acceptance_ids": [
         "NAT-06"
       ],
-      "owner_task": null,
-      "implementation_commit": null,
-      "integrated_commit": null,
+      "owner_task": "native-ne6-release-20260908",
+      "implementation_commit": "a90252c0c3b9b83d3dd460231247ca20fbfb45b9",
+      "integrated_commit": "eff2b9a71a1201539fed7388c3c18f139cba871e",
       "evidence": [],
       "blocked_reason": null,
       "scope": [
         "docs/compatibility.md",
-        "tests/E2E/nativeEditorCompatibility.spec.ts",
+        "tests/E2E/nativeEditorContract.spec.ts",
+        "tests/E2E/nativeSliderContract.spec.ts",
+        "tests/E2E/pageAddressFlow.spec.ts",
         "docs/productization/editor-progress.json",
         "CHANGELOG.md",
         "module.json",

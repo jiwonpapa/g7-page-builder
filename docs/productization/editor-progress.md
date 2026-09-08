@@ -38,7 +38,7 @@
 | 3차 · 내부 트리·반복·동적 요소 편집 | NE3 · 내부 트리·반복·동적 요소 편집 | 완료 | NE2 | native-ne3-components-r2-20260908 | 구현 `85fb7f8c4a1421f857b4b316109d7d11d4179bb9`<br>통합 `9530e96a07acb9cfc749e5aac4c7c7c5824eb7be`<br>필수 증거 3/3<br>[NAT-03/unit](<../audits/2026-09-08-native-editor-ne3.md>) · [NAT-03/browser](<../audits/2026-09-08-native-editor-ne3.md>) · [NAT-03/runtime](<../audits/2026-09-08-native-editor-ne3.md>) |
 | 4차 · 사용자 조합 저장과 재삽입 | NE4 · 사용자 조합 저장과 재삽입 | 완료 | NE3 | native-ne4-editor-20260908 | 구현 `9ae68d58306203949bd658fef6d81920b69921c8`<br>통합 `54450ecf86179da01b357fcc3d572ef210aa51fa`<br>필수 증거 2/2<br>[NAT-04/unit](<../audits/2026-09-08-native-editor-ne4.md>) · [NAT-04/browser](<../audits/2026-09-08-native-editor-ne4.md>) |
 | 5차 · 삽입·설정·미리보기·저장 흐름 연결 | NE5 · 삽입·설정·미리보기·저장 흐름 연결 | 완료 | NE4 | native-ne5-editor-r3-20260908 | 구현 `ed79b0ca3dea8795da5b9216fda0812a53e181fe`<br>통합 `13d231288269b4f0d4471873a2d4ca04b1c9a651`<br>필수 증거 2/2<br>[NAT-05/unit](<../audits/2026-09-08-native-editor-ne5.md>) · [NAT-05/browser](<../audits/2026-09-08-native-editor-ne5.md>) |
-| 6차 · 호환·회귀·릴리스 | NE6 · 호환·회귀·릴리스 | 계획 | NE5 | 미배정 | 미완료 |
+| 6차 · 호환·회귀·릴리스 | NE6 · 호환·회귀·릴리스 | 진행 | NE5 | native-ne6-release-20260908 | 미완료 |
 
 다음 진행 가능: NE6
 

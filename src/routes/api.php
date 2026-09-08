@@ -5,6 +5,7 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Admi
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminBlockPackController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminMediaController;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminNativeCompositionController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminOfficialStoreController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminPageRouteController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminRouteCatalogController;
@@ -19,6 +20,12 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\Publ
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Middleware\CanonicalApiAccessResponse;
 
 Route::prefix('admin')->middleware([CanonicalApiAccessResponse::class, 'auth:sanctum', 'throttle:300,1'])->name('admin.')->group(function (): void {
+    Route::prefix('native-compositions')->middleware('permission:admin,core.templates.layouts.edit')->group(function (): void {
+        Route::get('/', [AdminNativeCompositionController::class, 'index'])->name('native-compositions.index');
+        Route::post('/', [AdminNativeCompositionController::class, 'store'])->name('native-compositions.store');
+        Route::get('/{composition}', [AdminNativeCompositionController::class, 'show'])->whereUuid('composition')->name('native-compositions.show');
+        Route::delete('/{composition}', [AdminNativeCompositionController::class, 'destroy'])->whereUuid('composition')->name('native-compositions.destroy');
+    });
     Route::get('routes/catalog', [AdminRouteCatalogController::class, 'index'])
         ->middleware('permission:admin,jiwonpapa-page_builder.documents.read')
         ->name('routes.catalog');

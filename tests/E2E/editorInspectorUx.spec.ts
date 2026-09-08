@@ -21,13 +21,13 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     const frame = page.frameLocator('#puck-canvas-root iframe');
     const heading = frame.locator('[data-g7pb-inline-field="heading"] [contenteditable="true"]').first();
     await heading.click();
-    const level = page.getByTestId('page-builder-preset-level');
+    const level = page.getByTestId('page-builder-preset-level').filter({ visible: true });
     await level.getByRole('radio', { name: 'H3', exact: true }).check();
     await page.getByTestId('page-builder-preset-spacing').getByRole('radio', { name: '넓게', exact: true }).check();
-    await page.getByTestId('page-builder-block-vertical-align').getByRole('radio', { name: '아래', exact: true }).check();
-    await expect(page.getByLabel('블록 콘텐츠 폭', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('블록 높이', { exact: true })).toBeVisible();
-    const mobile = page.getByTestId('page-builder-responsive-mobile-section');
+    await page.getByTestId('page-builder-block-vertical-align').filter({ visible: true }).getByRole('radio', { name: '아래', exact: true }).check();
+    await expect(page.getByLabel('블록 콘텐츠 폭', { exact: true }).filter({ visible: true })).toBeVisible();
+    await expect(page.getByLabel('블록 높이', { exact: true }).filter({ visible: true })).toBeVisible();
+    const mobile = page.getByTestId('page-builder-responsive-mobile-section').filter({ visible: true });
     await expect(mobile).not.toHaveAttribute('open');
     await expect(mobile.locator('summary')).toContainText('공통 설정 사용');
     await mobile.locator('summary').click();
@@ -36,7 +36,7 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     await mobile.locator('summary').click();
     await expect(mobile.locator('summary')).toContainText('1개 별도 지정');
     // Select controls must remain usable at the real narrow inspector width.
-    for (const field of [level, page.getByTestId('page-builder-block-vertical-align')]) {
+    for (const field of [level, page.getByTestId('page-builder-block-vertical-align').filter({ visible: true })]) {
       expect(await field.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
     }
     await page.screenshot({ path: info.outputPath('block-inspector.png') });
@@ -53,7 +53,7 @@ test('inspector choices stay compact, keyboard editable and persistent after und
     await expect(page.getByTestId('page-builder-design-radius').getByRole('radio', { name: '둥글게', exact: true })).toBeChecked();
     await heading.click();
     await expect(level.getByRole('radio', { name: 'H3', exact: true })).toBeChecked();
-    await expect(page.getByTestId('page-builder-block-vertical-align').getByRole('radio', { name: '아래', exact: true })).toBeChecked();
+    await expect(page.getByTestId('page-builder-block-vertical-align').filter({ visible: true }).getByRole('radio', { name: '아래', exact: true })).toBeChecked();
     await expect(mobile.locator('summary')).toContainText('1개 별도 지정');
   } finally {
     await cleanupOwnedEditorInteractionDocument(api, owned);

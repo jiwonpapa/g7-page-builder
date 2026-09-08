@@ -45,7 +45,7 @@ for (const nested of [false, true]) test(`Card UI insertion ${nested ? 'in Colum
     }
     await page.getByTestId('page-builder-add-block').click();
     await page.getByRole('button', { name: '모든 제작 단위와 변형 보기', exact: true }).click();
-    await page.getByRole('textbox', { name: '블록 검색', exact: true }).fill('content.card-01');
+    await page.getByRole('searchbox', { name: '블록 검색', exact: true }).fill('content.card-01');
     await page.getByTestId('page-builder-block-gallery').getByTestId('page-builder-block-option-card').click();
     let panel = await selectCard(page);
     for (const label of ['이미지', '제목', '본문', '아이콘', '목록', '배지', '구분선', '버튼']) {

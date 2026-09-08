@@ -81,6 +81,8 @@ class PlannerTests(unittest.TestCase):
         from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS
         for source in ("schemas/layout-policy-v1.json", "tests/Fixtures/layout-policy-cases.json"):
             consumers = CONTRACT_FIXTURE_CONSUMERS[source]
+            self.assertIn("tests/Unit/heroComposition.test.ts", consumers)
+            self.assertIn("tests/UnitPhp/HeroCompositionTest.php", consumers)
             self.write(source, '{}')
             for consumer in consumers:
                 self.write(consumer, '<?php return 1;' if consumer.endswith('.php') else 'export const fixture = 1;')

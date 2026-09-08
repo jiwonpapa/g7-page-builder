@@ -54,10 +54,12 @@ CONTRACT_FIXTURE_CONSUMERS = {
     # Other schemas retain the explicit full-scope requirement below.
     "schemas/layout-policy-v1.json": (
         "tests/Unit/layoutTree.test.ts", "tests/UnitPhp/LayoutPolicyTest.php",
+        "tests/Unit/heroComposition.test.ts", "tests/UnitPhp/HeroCompositionTest.php",
         "tests/Unit/puckDocumentAdapter.test.ts", "tests/UnitPhp/HtmlDocumentCompilerTest.php",
     ),
     "tests/Fixtures/layout-policy-cases.json": (
         "tests/Unit/layoutTree.test.ts", "tests/UnitPhp/LayoutPolicyTest.php",
+        "tests/Unit/heroComposition.test.ts", "tests/UnitPhp/HeroCompositionTest.php",
     ),
 
 }

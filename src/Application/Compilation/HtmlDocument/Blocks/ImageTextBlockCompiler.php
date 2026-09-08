@@ -7,10 +7,10 @@ use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockMark
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\BlockPropertyReader;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocument\HtmlEscaper;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\RichTextSanitizer;
-use Modules\Jiwonpapa\PageBuilder\Contracts\BlockTypeCompilerPort;
+use Modules\Jiwonpapa\PageBuilder\Contracts\SlotBlockCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 
-final readonly class ImageTextBlockCompiler implements BlockTypeCompilerPort
+final readonly class ImageTextBlockCompiler implements SlotBlockCompilerPort
 {
     public function __construct(
         private BlockPropertyReader $properties,
@@ -28,6 +28,14 @@ final readonly class ImageTextBlockCompiler implements BlockTypeCompilerPort
     /** @param array<string, mixed> $props */
     public function compile(array $props): string
     {
+        return $this->compileSlots($props, []);
+    }
+
+    public function compileSlots(array $props, array $slots): string
+    {
+        if (array_diff(array_keys($slots), ['extra']) !== []) {
+            throw new \InvalidArgumentException('Image text slot is not supported.');
+        }
         $this->properties->assertOnlyKeys($props, ['eyebrow', 'heading', 'body', 'image', 'mediaPosition', 'primaryLink', 'appearance'], 'Image text');
         $eyebrow = $this->properties->optionalString($props, 'eyebrow', 120);
         $heading = $this->properties->requiredInlineRichTextString($props, 'heading', 200);
@@ -48,6 +56,7 @@ final readonly class ImageTextBlockCompiler implements BlockTypeCompilerPort
         $media = '<figure class="g7pb-image-text__media">'.$this->markup->compileCatalogImage($src, $alt, 'g7pb-image-text__image', '대표 이미지를 선택하세요').'</figure>';
         $copy = '<div class="g7pb-image-text__copy">'.($eyebrow === null || $eyebrow === '' ? '' : '<p class="g7pb-section-eyebrow">'.$this->escaper->escape($eyebrow).'</p>')
             .'<h2>'.$this->richText->sanitizeInlineRichText($heading).'</h2>'.($body === '' ? '' : '<div class="g7pb-image-text__body">'.$this->richText->sanitizeRichText($body).'</div>')
+            .($slots['extra'] ?? '')
             .($primaryLink === null ? '' : $this->markup->compileActionLink($primaryLink, 'Image text primary link', 'g7pb-button g7pb-button--primary')).'</div>';
         $content = $media.$copy;
 

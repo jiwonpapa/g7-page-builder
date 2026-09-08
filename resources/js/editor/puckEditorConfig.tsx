@@ -1,4 +1,4 @@
-import { HeroComposition } from './HeroComposition';
+import { ComponentComposition } from './ComponentComposition';
 import { libraryCategories } from './blockGalleryModel';
 import { BUILTIN_BLOCK_DEFINITIONS } from '../blocks/builtinCatalog';
 import { externalEditorComponents } from '../blocks/runtimeRegistry';
@@ -170,7 +170,7 @@ export const pageBuilderPuckConfig: Config<EditorComponents, PageDesignProps> = 
       defaultProps: { ...DEFAULT_HERO, extra: [] },
       fields: {
         extra: { type: 'slot', label: '내부 구성', allow: ['Badge', 'List'] },
-        composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) => <HeroComposition readOnly={readOnly} /> },
+        composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) => <ComponentComposition readOnly={readOnly} /> },
         eyebrow: {
           type: 'custom',
           label: '보조 문구',
@@ -528,11 +528,17 @@ export function createRuntimePuckConfig(structureEditingEnabled: boolean, editin
       components: {
         ...pageBuilderPuckConfig.components,
         ...external,
+        ImageText: { ...pageBuilderPuckConfig.components.ImageText, fields: {
+          ...pageBuilderPuckConfig.components.ImageText.fields,
+          extra: { type: 'slot', label: '내부 구성', allow: structureEditingEnabled ? ['Badge', 'List', 'Divider'] : [] },
+          composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) =>
+            <ComponentComposition readOnly={readOnly} structureEnabled={structureEditingEnabled} /> },
+        } },
         Hero: { ...pageBuilderPuckConfig.components.Hero, fields: {
           ...pageBuilderPuckConfig.components.Hero.fields,
           extra: { type: 'slot', label: '내부 구성', allow: structureEditingEnabled ? ['Badge', 'List'] : [] },
           composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) =>
-            <HeroComposition readOnly={readOnly} structureEnabled={structureEditingEnabled} /> },
+            <ComponentComposition readOnly={readOnly} structureEnabled={structureEditingEnabled} /> },
         } },
       },
     } as Config<EditorComponents, PageDesignProps>;

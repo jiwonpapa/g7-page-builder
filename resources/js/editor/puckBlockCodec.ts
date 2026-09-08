@@ -274,7 +274,7 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
     } as PuckEditorData['content'][number];
   }
 
-  if (block.type !== HERO_BLOCK_TYPE && hasNonEmptySlots(block)) {
+  if (block.type !== HERO_BLOCK_TYPE && block.type !== 'media.image-text-01' && hasNonEmptySlots(block)) {
     throw new Error(`MVP block cannot contain nested slots: ${block.instance_id}`);
   }
 
@@ -326,11 +326,13 @@ function canonicalBlockToPuckRaw(block: PageBuilderBlock): PuckEditorData['conte
 
   const catalogBlock = canonicalCatalogBlockToPuck(block);
   if (catalogBlock) {
+    if (block.type === 'media.image-text-01' && hasNonEmptySlots(block)) validateLayoutDocument({ blocks: [block] });
     return {
       type: catalogBlock.type,
       props: {
         id: block.instance_id,
         ...catalogBlock.props,
+        ...(catalogBlock.type === 'ImageText' ? { extra: (block.slots?.extra ?? []).map(canonicalBlockToPuck) } : {}),
         motion: normalizeBlockMotion(block.motion),
       },
     } as PuckEditorData['content'][number];
@@ -575,7 +577,7 @@ export function puckBlockToCanonical(
   } else if (block.type === 'LayoutStack') {
     const children = Array.isArray(block.props.content) ? block.props.content : [];
     canonical.slots = { content: children.map((child) => puckBlockToCanonical(child as PuckEditorData['content'][number], context)) };
-  } else if (block.type === 'Hero' && (block.props.extra?.length || metadata.hadExtra)) {
+  } else if ((block.type === 'Hero' || block.type === 'ImageText') && (block.props.extra?.length || metadata.hadExtra)) {
     if (context.document.schemaVersion !== 'g7-page-builder/v2') throw new Error('Internal composition requires structure editing.');
     canonical.slots = { extra: (block.props.extra ?? []).map((child) => puckBlockToCanonical(child, context)) };
   } else if (metadata.hadSlots) {

@@ -6,8 +6,8 @@ import { canonicalToPuck, puckToCanonical } from '../../resources/js/editor/puck
 import { assertEditorInsertion, assertEditorMove, editorDefaultInsertionTarget, editorItemLocations } from '../../resources/js/editor/puckEditorSelection';
 import { cloneLayoutSubtree, deleteLayoutNode, moveLayoutNode } from '../../resources/js/documents/layoutTree';
 
-const fresh = (): PageBuilderDocument => ({ ...structuredClone(fixtures.hero), schema_version: 'g7-page-builder/v2', mode: 'canvas' });
-describe('Hero declared extra composition', () => {
+describe.each(['hero', 'imageText'] as const)('%s declared extra composition', (kind) => {
+  const fresh = (): PageBuilderDocument => ({ ...structuredClone(fixtures[kind]), schema_version: 'g7-page-builder/v2', mode: 'canvas' });
   it('round trips nested identity, content and metadata without transferring CTA ownership', () => {
     const original = fresh();
     const child = original.blocks[0].slots!.extra[0];
@@ -16,7 +16,7 @@ describe('Hero declared extra composition', () => {
     const session = canonicalToPuck(original);
     const output = puckToCanonical(session.data, session.context);
     expect(output).toEqual(original);
-    expect(editorItemLocations(session.data)).toHaveLength(3);
+    expect(editorItemLocations(session.data)).toHaveLength(kind === 'hero' ? 3 : 4);
     expect(layoutSlotNames(original.blocks[0])).toEqual(['extra']);
   });
   it('does not add slots or convert v1 merely by opening an old Hero', () => {
@@ -26,9 +26,9 @@ describe('Hero declared extra composition', () => {
     const session = canonicalToPuck(original);
     expect(puckToCanonical(session.data, session.context)).toEqual(original);
     const hero = session.data.content[0];
-    if (hero.type !== 'Hero') throw new Error('Expected Hero');
+    if (hero.type !== 'Hero' && hero.type !== 'ImageText') throw new Error('Expected Hero');
     const nested = canonicalToPuck(fresh()).data.content[0];
-    if (nested.type !== 'Hero') throw new Error('Expected Hero');
+    if (nested.type !== 'Hero' && nested.type !== 'ImageText') throw new Error('Expected Hero');
     hero.props.extra = nested.props.extra;
     expect(() => puckToCanonical(session.data, session.context)).toThrow('requires structure editing');
   });
@@ -58,7 +58,7 @@ describe('Hero declared extra composition', () => {
     const moved = moveLayoutNode(doc, list.instance_id, { parentId: hero.instance_id, slot: 'extra', index: 0 });
     expect(moved.blocks[0].slots!.extra[0].type).toBe('content.list-01');
     const removed = deleteLayoutNode(moved, list.instance_id);
-    expect(removed.document.blocks[0].slots!.extra).toHaveLength(1);
+    expect(removed.document.blocks[0].slots!.extra).toHaveLength(kind === 'hero' ? 1 : 2);
     const copy = cloneLayoutSubtree(hero, () => crypto.randomUUID());
     expect(copy.instance_id).not.toBe(hero.instance_id);
     expect(copy.slots!.extra.map((child) => child.instance_id)).not.toEqual(hero.slots!.extra.map((child) => child.instance_id));

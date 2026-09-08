@@ -1,4 +1,5 @@
 import React from 'react';
+import { ComponentComposition } from './ComponentComposition';
 import type { Config } from '@puckeditor/core';
 import { CatalogBlockFrame as Frame } from './CatalogBlockFrame';
 import { type HeadingEditorProps, type RichTextEditorProps, type ImageEditorProps, type ButtonsEditorProps, type ImageTextEditorProps, type IconListEditorProps, type FoundationCatalogEditorComponents, ICON_OPTIONS, DEFAULT_HEADING, DEFAULT_RICH_TEXT, DEFAULT_IMAGE, DEFAULT_BUTTONS, DEFAULT_IMAGE_TEXT, DEFAULT_ICON_LIST, asRecord, normalizeButtons, normalizeIconItems } from './foundationCatalogData';
@@ -114,7 +115,7 @@ function ButtonsPreview(props: ButtonsEditorProps & { id: string }): React.React
   </Frame>;
 }
 
-function ImageTextPreview(props: Omit<ImageTextEditorProps, 'body'> & { id: string; body: React.ReactNode }): React.ReactElement {
+function ImageTextPreview(props: Omit<ImageTextEditorProps, 'body' | 'extra'> & { id: string; body: React.ReactNode; extra?: React.ReactNode }): React.ReactElement {
   return <Frame id={props.id} type="image-text" motion={props.motion} elementStyles={props.elementStyles}>
     <div className={`g7pb-preview-image-text g7pb-preview-image-text--${props.mediaPosition} ${surfaceClass(props)}`}>
       <figure data-g7pb-media-field="imageSrc"><Media src={props.imageSrc} alt={props.imageAlt} label="대표 이미지를 선택하세요" /></figure>
@@ -122,6 +123,7 @@ function ImageTextPreview(props: Omit<ImageTextEditorProps, 'body'> & { id: stri
         {props.eyebrow ? <small data-g7pb-inline-field="eyebrow">{props.eyebrow}</small> : null}
         <RichTextCanvasField as="h2" className="g7pb-preview-richtext" fieldPath="heading">{props.heading}</RichTextCanvasField>
         <RichTextCanvasField fieldPath="body">{props.body}</RichTextCanvasField>
+        {props.extra}
         {props.primaryLabel ? <a className="g7pb-preview-button g7pb-preview-button--primary" href={safeLink(props.primaryUrl)}
           data-g7pb-action-field="primaryLabel" onClick={(event) => event.preventDefault()}>{props.primaryLabel}</a> : null}
       </div>
@@ -197,8 +199,10 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
     render: (props) => <ButtonsPreview {...props} />,
   },
   ImageText: {
-    label: '이미지 + 텍스트', defaultProps: DEFAULT_IMAGE_TEXT,
+    label: '이미지 + 텍스트', defaultProps: { ...DEFAULT_IMAGE_TEXT, extra: [] },
     fields: {
+      extra: { type: 'slot', label: '내부 구성', allow: ['Badge', 'List', 'Divider'] },
+      composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) => <ComponentComposition readOnly={readOnly} /> },
       eyebrow: { type: 'text', label: '보조 문구', contentEditable: true },
       heading: createInlineRichTextField('제목'),
       body: createRichTextField('본문', 170, true),
@@ -207,7 +211,7 @@ export const foundationCatalogComponentConfigs: Config<FoundationCatalogEditorCo
       primaryLabel: { type: 'text', label: '버튼 문구', contentEditable: true }, primaryUrl: createRouteUrlField('버튼 연결'),
       ...appearanceFields, motion: createMotionField(['none', 'reveal']),
     },
-    render: (props) => <ImageTextPreview {...props} />,
+    render: ({ extra: Extra, ...props }) => <ImageTextPreview {...props} extra={typeof Extra === 'function' ? Extra({ minEmptyHeight: 0 }) : undefined} />,
   },
   IconList: {
     label: '아이콘 목록', defaultProps: DEFAULT_ICON_LIST,

@@ -92,8 +92,9 @@ export function libraryEditingCapabilities(type: string, fields: Record<string, 
     { key: 'repeaters', label: '항목 추가', available: repeaters.length > 0,
       description: repeaters.length ? `항목 ${repeaterLimits}. 한도 안에서 추가·순서 변경·복제·삭제가 가능합니다.`
         : known ? '독립 반복 항목이 없습니다.' : '공통 항목 도구는 제공하지 않습니다. 팩의 설정을 확인하세요.' },
-    { key: 'slots', label: '내부 구성', available: (layout || type === 'Hero') && slots.length > 0,
+    { key: 'slots', label: '내부 구성', available: (layout || type === 'Hero' || type === 'ImageText') && slots.length > 0,
       description: type === 'Hero' && slots.length > 0 ? '내부 구성에 배지·목록을 각각 하나씩 배치합니다. 제목·본문·이미지·기존 버튼은 유지합니다.'
+        : type === 'ImageText' && slots.length > 0 ? '내부 구성에 배지·목록·구분선을 각각 하나씩 배치합니다. 제목·본문·이미지·기존 버튼은 유지합니다.'
         : layout ? '구역·열·세로 묶음의 허용 위치에 기본 요소를 배치합니다.'
         : plannedSlots ? '현재 내부 요소 삽입은 지원하지 않습니다. 후속 개발 대상입니다.' : '현재 내부 요소 삽입을 지원하지 않습니다.' },
     { key: 'fixed', label: '고정 동작', available: false, description: fixed },

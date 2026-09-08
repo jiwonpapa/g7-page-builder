@@ -9,7 +9,7 @@ export function puckLayoutSlot(item: PuckEditorItem, name: string): PuckEditorDa
   let slot: PuckEditorData['content'] | undefined;
   if ((item.type === 'LayoutSection' || item.type === 'LayoutStack') && name === 'content') {
     slot = item.props.content;
-  } else if (item.type === 'Hero' && name === 'extra') {
+  } else if ((item.type === 'Hero' || item.type === 'ImageText') && name === 'extra') {
     slot = item.props.extra;
   } else if (item.type === 'LayoutColumns') {
     if (name === 'column1') slot = item.props.column1;

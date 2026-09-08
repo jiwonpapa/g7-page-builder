@@ -55,4 +55,26 @@ final class HeroCompositionTest extends TestCase
             }
         }
     }
+
+    public function test_image_text_composition_preserves_copy_media_link_order_and_rejects_bad_slots(): void
+    {
+        $payload = json_decode(file_get_contents(__DIR__.'/../Fixtures/layout-policy-cases.json'), true, flags: JSON_THROW_ON_ERROR)['imageText'];
+        foreach (['left', 'right'] as $position) {
+            $payload['blocks'][0]['props']['mediaPosition'] = $position;
+            $html = $this->builtInCompiler()->compile(PageBuilderDocument::fromArray($payload), 1, 'html', 'g7-7.0.7')->artifact;
+            self::assertIsString($html);
+            self::assertStringContainsString('g7pb-image-text--'.$position, $html);
+            self::assertLessThan(strpos($html, '추가 목록'), strpos($html, '추가 배지'));
+            self::assertLessThan(strpos($html, 'data-block-type="divider"'), strpos($html, '추가 목록'));
+            self::assertLessThan(strpos($html, 'href="/contact"'), strpos($html, 'data-block-type="divider"'));
+            self::assertSame(1, substr_count($html, 'href="/contact"'));
+        }
+        $payload['blocks'][0]['slots']['extra'][] = [
+            ...$payload['blocks'][0]['slots']['extra'][2],
+            'instance_id' => '00000000-0000-4000-8000-000000000107',
+        ];
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('component_slot_limit:');
+        PageBuilderDocument::fromArray($payload);
+    }
 }

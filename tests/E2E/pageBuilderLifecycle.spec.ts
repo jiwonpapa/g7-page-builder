@@ -25,10 +25,11 @@ const builtinCatalog = JSON.parse(readFileSync(join(process.cwd(), 'resources/bl
   blocks: Array<{ block_id: string; capabilities: string[] }>;
   presets: Array<{ block_id: string }>;
 };
-const BUILTIN_DEFINITION_COUNT = builtinCatalog.blocks.filter(block => !block.capabilities.includes('editor.compatibility-only')).length;
+// This lifecycle creates a v1 document; Card requires explicit structural editing.
+const LEGACY_DEFINITION_COUNT = builtinCatalog.blocks.filter(block => !block.capabilities.includes('editor.compatibility-only') && block.block_id !== 'content.card-01').length;
 const layoutPolicy = JSON.parse(readFileSync(join(process.cwd(), 'schemas/layout-policy-v1.json'), 'utf8')) as { leaf_types: string[] };
 const BASIC_ELEMENT_CANDIDATE_COUNT = [...builtinCatalog.blocks, ...builtinCatalog.presets]
-  .filter(item => layoutPolicy.leaf_types.includes(item.block_id)).length;
+  .filter(item => item.block_id !== 'content.card-01' && layoutPolicy.leaf_types.includes(item.block_id)).length;
 
 
 const test = base.extend<{ adminToken: string; ownedSiteParts: SitePartSetFixture }>({
@@ -1144,7 +1145,7 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     const blockPackDialog = page.getByTestId('page-builder-block-packs-dialog');
     await expect(blockPackDialog).toBeVisible();
     await expect(blockPackDialog).toContainText('jiwonpapa/builtin-core');
-    await expect(blockPackDialog).toContainText('블록 48 / 완성 섹션 98');
+    await expect(blockPackDialog).toContainText(`블록 ${builtinCatalog.blocks.length} / 완성 섹션 ${builtinCatalog.presets.length}`);
     await expect(blockPackDialog).toContainText('편집기 상단 블록 추가');
     await expect(blockPackDialog.getByTestId('page-builder-block-pack-upload')).toBeAttached();
     const managerViewport = page.viewportSize()!;
@@ -1236,8 +1237,9 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
       images.map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src)))];
     await expect.poll(collectThumbnailUrls, {
       message: 'all built-in block thumbnail URLs are rendered',
-    }).toHaveLength(BUILTIN_DEFINITION_COUNT);
+    }).toHaveLength(LEGACY_DEFINITION_COUNT);
     await expect(page.getByTestId('drawer-item:HeroSplit')).toHaveCount(0);
+    await expect(page.getByTestId('drawer-item:Card')).toHaveCount(0);
     const thumbnailUrls = await collectThumbnailUrls();
     const thumbnailResponses = await Promise.all(thumbnailUrls.map((url) => page.request.get(url)));
     try {
@@ -1363,11 +1365,12 @@ test('manages, publishes, restores, republishes, and unpublishes a page-builder 
     await expect(page.getByTestId('page-builder-block-option-hero')).toHaveCount(0);
     await blockSearch.fill('');
     await selectDefinitionGalleryTab(blockGallery);
+    await expect(blockGallery.getByTestId('page-builder-block-option-card')).toHaveCount(0);
     const galleryGrid = blockGallery.locator('.g7pb-block-gallery__grid');
-    await expect(galleryGrid).toHaveAttribute('data-total-items', String(BUILTIN_DEFINITION_COUNT));
+    await expect(galleryGrid).toHaveAttribute('data-total-items', String(LEGACY_DEFINITION_COUNT));
     await expect(galleryGrid).toHaveAttribute('data-rendered-items', '24');
     await expandBlockGallery(page);
-    await expect(galleryGrid).toHaveAttribute('data-rendered-items', String(BUILTIN_DEFINITION_COUNT));
+    await expect(galleryGrid).toHaveAttribute('data-rendered-items', String(LEGACY_DEFINITION_COUNT));
     for (const option of [
       'hero',
       'heading',

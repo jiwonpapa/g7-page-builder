@@ -2,7 +2,7 @@
 
 <!-- editor-plan:native-editor-20260907 -->
 
-상태: **NE1·NE2·NE3·NE4 완료, 다음 NE5**. 별도 G7 공개 호스트 후보와 실제 일반 페이지에서 원본 편집·Undo/Redo·저장·재열기를 검증했다. NE4는 개인 조합 저장·목록·안전한 재삽입·삭제까지 NAT-04를 통과했다. 현재 코드·통합·증거 상태는 [진척 원장](editor-progress.json)을 따른다. G7 후보는 운영 배포나 upstream 반영 완료를 뜻하지 않는다. NE5~NE6은 planned다.
+상태: **NE1~NE5 완료, 마지막 NE6 릴리스 진행 중**. NE6 호스트 저장·JSON·키보드 수정과 관련 동작 검증을 끝냈으며 커밋·통합·배포 및 운영 재열기 증거를 마감한다. 현재 상태와 한계는 [진척 원장](editor-progress.json)을 따른다.
 
 [편집 정책](editing-policy.md) · [개발 헌법](../development-constitution.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [코드 근거](../audits/2026-09-07-native-editor-governance.md)
 

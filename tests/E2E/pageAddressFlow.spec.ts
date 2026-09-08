@@ -22,7 +22,7 @@ test('creates a page in the UI and connects a custom path to its last published 
   await writeFile(info.outputPath('owned-page.json'), JSON.stringify({ id, slug, alias, title }, null, 2));
   await page.getByTestId('page-builder-add-block').click();
   const gallery = page.getByTestId('page-builder-block-gallery');
-  await gallery.getByRole('tab', { name: /블록 종류/ }).click();
+  await expect(gallery).toBeVisible();
   await page.getByTestId('page-builder-block-option-heading').click();
   await page.getByTestId('page-builder-save').click();
   await expect(page.getByTestId('page-builder-save-status')).toHaveAttribute('data-state', 'saved');

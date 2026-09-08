@@ -185,10 +185,27 @@ def git(root, *args):
 
 
 def changed_paths(root, base, head=None):
-    paths = git(root, "diff", "--name-only", "-z", base, *([head] if head else []), "--").split("\0")
+    # Match Git.paths: retain both sides of a rename for ownership and saved-plan execution.
+    paths = git(root, "diff", "--name-only", "--no-renames", "-z", base, *([head] if head else []), "--").split("\0")
     if head is None:
         paths += git(root, "ls-files", "--others", "--exclude-standard", "-z").split("\0")
     return sorted(set(filter(None, paths)))
+
+
+@planning_cache
+def rename_destinations(root, base):
+    """Keep old names in scope, but inspect the renamed file's current consumers."""
+    if not (root / ".git").exists():
+        return {}  # Isolated planning fixtures have no repository rename history.
+    fields = iter(filter(None, git(root, "diff", "--name-status", "--find-renames", "-z", base, "--").split("\0")))
+    destinations = {}
+    for status in fields:
+        path = next(fields)
+        if status.startswith(("R", "C")):
+            destination = next(fields)
+            if status.startswith("R"):
+                destinations[path] = destination
+    return destinations
 
 
 @planning_cache
@@ -547,9 +564,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         elif path in {EDITOR_PROGRESS_LEDGER, EDITOR_LIBRARY_INVENTORY}:
             pass  # Validated by the explicit read-only record gate above.
         elif path.startswith("resources/js/") and path.endswith((".ts", ".tsx")):
-            ts_sources.append(path)
+            ts_sources.append(path if file.exists() else rename_destinations(root, base).get(path, path))
         elif path.startswith("src/") and path.endswith(".php"):
-            php_sources.append(path)
+            php_sources.append(path if file.exists() else rename_destinations(root, base).get(path, path))
         elif path.startswith("database/migrations/") and path.endswith(".php"):
             if not full:
                 migrations.append(path)

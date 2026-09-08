@@ -4,7 +4,7 @@
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **9/9** · 기존 기반 8개는 분모에서 제외합니다.
+계획 작업 완료 **10/10** · 기존 기반 8개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
 
@@ -42,6 +42,7 @@
 | 독립 PB 개선 1차 · 우측 설정창 | UI1 · 독립 PB 우측 공통 설정 및 자산 갱신 | 완료 | 없음 | inspector-ux1-20260908 | 구현 `8aa75064aeab072149becf217051d8667a3e51e1`<br>통합 `095ea5d2eca2d10fc60b217348d0115997358c52`<br>필수 증거 2/2<br>[UI-01/unit](<../audits/2026-09-08-inspector-ux1.md>) · [UI-01/browser](<../audits/2026-09-08-inspector-ux1.md>) |
 | 독립 PB 개선 2차 · 편집 출력 일치 | UI2 · Hero 반응형 출력 및 슬라이더 요약 | 완료 | UI1 | editor-ux2-20260908 | 구현 `e4be1995d8e1c5fcd233bbce1826fd5379e4a8d6`<br>통합 `acf20b2d4dd3753c0b36c2b12ee533b14453b283`<br>필수 증거 2/2<br>[UI-02/unit](<../audits/2026-09-08-editor-ux2.md>) · [UI-02/browser](<../audits/2026-09-08-editor-ux2.md>) |
 | 독립 PB 개선 3차 · Hero 내부 구성 | UI3 · Hero 배지·목록 내부 구성 | 완료 | UI2 | editor-ux3-r2-20260908 | 구현 `20e25a85951c316a4ffdb43d7318235b0d108502`<br>통합 `18ab87595f78183b2da180d1df8ebdc7a90f95d9`<br>필수 증거 2/2<br>[UI-03/unit](<../audits/2026-09-08-editor-ux3.md>) · [UI-03/browser](<../audits/2026-09-08-editor-ux3.md>) |
+| 독립 PB 개선 4차 · ImageText 내부 구성과 빠른 Undo | UI4 · ImageText 내부 구성 및 빠른 Undo/Redo | 완료 | UI3 | editor-ux4-20260908 | 구현 `6f222f53d1714bfa9227da658bfab57f62a937f5`<br>통합 `69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3`<br>필수 증거 2/2<br>[UI-04/unit](<../audits/2026-09-08-editor-ux4.md>) · [UI-04/browser](<../audits/2026-09-08-editor-ux4.md>) |
 
 다음 진행 가능: 없음
 

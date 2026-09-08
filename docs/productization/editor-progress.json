@@ -254,6 +254,14 @@
         "unit",
         "browser"
       ]
+    },
+    {
+      "id": "UI-04",
+      "description": "ImageText extra 배지·목록·구분선 각 1개 내부 편집 및 빠른 연속 Undo/Redo 원본/출력 보존.",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
     }
   ],
   "phases": [
@@ -292,6 +300,10 @@
     {
       "id": "editor-ux3",
       "title": "독립 PB 개선 3차 · Hero 내부 구성"
+    },
+    {
+      "id": "editor-ux4",
+      "title": "독립 PB 개선 4차 · ImageText 내부 구성과 빠른 Undo"
     }
   ],
   "baseline": [
@@ -811,6 +823,47 @@
         "src/Application/Compilation/HtmlDocumentCompiler.php"
       ],
       "completion": "허용된 extra 요소의 삽입·편집·순서·삭제와 원본/출력 보존을 실제 브라우저에서 확인하고 차수 커밋·로컬 통합. 운영 배포 별도."
+    },
+    {
+      "id": "UI4",
+      "phase": "editor-ux4",
+      "title": "ImageText 내부 구성 및 빠른 Undo/Redo",
+      "status": "done",
+      "depends_on": [
+        "UI3"
+      ],
+      "acceptance_ids": [
+        "UI-04"
+      ],
+      "owner_task": "editor-ux4-20260908",
+      "implementation_commit": "6f222f53d1714bfa9227da658bfab57f62a937f5",
+      "integrated_commit": "69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3",
+      "evidence": [
+        {
+          "acceptance_id": "UI-04",
+          "kind": "unit",
+          "commit": "69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux4.md"
+        },
+        {
+          "acceptance_id": "UI-04",
+          "kind": "browser",
+          "commit": "69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux4.md"
+        }
+      ],
+      "blocked_reason": null,
+      "scope": [
+        "schemas/layout-policy-v1.json",
+        "resources/js/editor/ComponentComposition.tsx",
+        "resources/js/editor/foundationCatalogBlocks.tsx",
+        "resources/js/editor/puckBlockCodec.ts",
+        "src/Application/Compilation/HtmlDocument/Blocks/ImageTextBlockCompiler.php",
+        "vite.puck-history.ts"
+      ],
+      "completion": "내부 편집·저장/재열기·미리보기/발행과 대기 없는 빠른 Undo/Redo 검증, 차수 커밋·로컬 통합. 운영 배포 별도."
     }
   ],
   "history": [

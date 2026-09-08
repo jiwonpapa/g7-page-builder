@@ -65,7 +65,7 @@ for (const kind of ['hero', 'imageText'] as const) test(`${kind} extra inserts e
     await save(page);
     const restored = await resource(api, owned.documentId);
     expect(restored.document.blocks[0].slots).toEqual(reordered.document.blocks[0].slots);
-    expect(restored.document.blocks[0].props).toEqual(hero.props);
+    expect(restored.document.blocks[0].props).toEqual(before.document.blocks[0].props);
     await page.reload();
     composition = await selectComposition(page, kind);
     await expect(composition.locator('summary')).toContainText(kind === 'hero' ? '2/2' : '2/3');

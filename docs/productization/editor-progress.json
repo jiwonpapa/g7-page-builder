@@ -246,6 +246,14 @@
         "unit",
         "browser"
       ]
+    },
+    {
+      "id": "UI-03",
+      "description": "Hero extra 배지·목록 각 1개의 내부 삽입·편집·순서·삭제·저장/재열기·컴파일/발행 보존. 다른 내부 슬롯은 제외.",
+      "required_evidence": [
+        "unit",
+        "browser"
+      ]
     }
   ],
   "phases": [
@@ -280,6 +288,10 @@
     {
       "id": "editor-ux2",
       "title": "독립 PB 개선 2차 · 편집 출력 일치"
+    },
+    {
+      "id": "editor-ux3",
+      "title": "독립 PB 개선 3차 · Hero 내부 구성"
     }
   ],
   "baseline": [
@@ -760,6 +772,45 @@
         "resources/css/page-builder-public.css"
       ],
       "completion": "기기별 정렬·글자 비율 변경/저장/재열기와 캔버스·컴파일 출력 비교, 슬라이더 제목의 표시·원본 보존 확인. 배포 별도."
+    },
+    {
+      "id": "UI3",
+      "phase": "editor-ux3",
+      "title": "Hero 배지·목록 내부 구성",
+      "status": "done",
+      "depends_on": [
+        "UI2"
+      ],
+      "acceptance_ids": [
+        "UI-03"
+      ],
+      "owner_task": "editor-ux3-r2-20260908",
+      "implementation_commit": "20e25a85951c316a4ffdb43d7318235b0d108502",
+      "integrated_commit": "18ab87595f78183b2da180d1df8ebdc7a90f95d9",
+      "evidence": [
+        {
+          "acceptance_id": "UI-03",
+          "kind": "unit",
+          "commit": "18ab87595f78183b2da180d1df8ebdc7a90f95d9",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux3.md"
+        },
+        {
+          "acceptance_id": "UI-03",
+          "kind": "browser",
+          "commit": "18ab87595f78183b2da180d1df8ebdc7a90f95d9",
+          "result": "pass",
+          "path": "docs/audits/2026-09-08-editor-ux3.md"
+        }
+      ],
+      "blocked_reason": null,
+      "scope": [
+        "schemas/layout-policy-v1.json",
+        "resources/js/editor/HeroComposition.tsx",
+        "resources/js/editor/puckBlockCodec.ts",
+        "src/Application/Compilation/HtmlDocumentCompiler.php"
+      ],
+      "completion": "허용된 extra 요소의 삽입·편집·순서·삭제와 원본/출력 보존을 실제 브라우저에서 확인하고 차수 커밋·로컬 통합. 운영 배포 별도."
     }
   ],
   "history": [

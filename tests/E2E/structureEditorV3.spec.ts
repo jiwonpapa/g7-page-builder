@@ -295,6 +295,18 @@ for (const key of repeatedCompositionKeys) test('v3 repeated composition interna
   await editable.click(); await editable.press('ControlOrMeta+A');
   await page.keyboard.insertText('내부 항목 수정 <안전한 문자>');
   await expect.poll(async () => JSON.stringify(flatten((await read(page)).blocks).find(node => node.instance_id === inner.instance_id)?.props)).toContain('내부 항목 수정 <안전한 문자>');
+  // Cross Puck's 200ms input/debounce window, then continue without refocusing.
+  // A remounted slot used to revert text and silently discard the next input.
+  await page.waitForTimeout(300);
+  await expect(editable).toBeFocused();
+  await page.keyboard.insertText(' 계속 입력');
+  await expect.poll(async () => JSON.stringify(flatten((await read(page)).blocks).find(node => node.instance_id === inner.instance_id)?.props)).toContain('내부 항목 수정 <안전한 문자> 계속 입력');
+  await page.waitForTimeout(300);
+  await expect(editable).toBeFocused();
+  const edited = await read(page);
+  await click(page, '실행 취소');
+  await expect.poll(async () => JSON.stringify(flatten((await read(page)).blocks).find(node => node.instance_id === inner.instance_id)?.props)).not.toContain('계속 입력');
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(edited);
   await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
   const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
   expect(saved).toEqual(await read(page));

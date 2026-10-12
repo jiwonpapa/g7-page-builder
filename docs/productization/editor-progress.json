@@ -720,6 +720,13 @@
         "commit": "7dfc397bf1bd687126aeb6c291f37f23b6a4e78e",
         "result": "pass",
         "path": "docs/audits/2026-10-13-ip7-product-entry.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-generic-public-compiler-binding",
+          "commit": "79c08f50741894228eccceaf1ae9636644a0a165",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-v3-public-compiler.md"
         }
       ],
       "blocked_reason": null,

@@ -2,7 +2,7 @@
 
 작업: `ip7-v3-public-compiler-20261013`. 기준 SHA: `386b77fa44ae58982c17c75b3642e82dc934f5e8`.
 
-현재 상태는 구현 중이며 IP7 완료 증거가 아니다. 원장·표시판은 제품 진입 작업이 소유하므로 이 작업의 제출·통합 결과를 인계한다.
+현재 상태는 공통 컴파일러·서버 binding의 Local 통합 완료이며 IP7 전체 완료 증거가 아니다. 실제 제품 발행 UI 검증은 별도 진행 중이다. 아래 초기 검증의 한계는 해당 시점 기록이며 최종 통합 증거와 구분한다.
 
 - 편집/초안에서 이미 사용하는 Presentation·BehaviorPresentation·기본 요소 마크업을 재사용한다.
 - 구성 이름이나 카탈로그를 조회하지 않는다. 빈 문서와 처음 보는 요소 조합도 같은 컴파일 경로를 사용한다.
@@ -23,3 +23,14 @@ Chromium 비교는 공통 스타일 fixture, 네 가지 동작 구성, 숨김, �
 서버 composition root binding, 실제 발행 API·UI, 활성 User Template sanitizer를 거친 최종 동작과 배포는 아직 증명하지 않았다. 이 기록으로 IP7/IP9/IP10을 완료 처리하지 않는다.
 
 최초 제출 `0c5f22bba21c8c9605c4e211b11932a99e830caf`는 보존한다. 서버 binding 조사 중 legacy compiler를 생성할 때 optional block registry도 초기화됨을 확인했다. 이를 v3의 선행조건으로 만들지 않도록 공식 replacement `ip7-v3-public-compiler-lazy-20261013`에서 legacy port의 지연 주입을 허용한다. v3 지원 확인·컴파일은 legacy resolver를 호출하지 않으며, 해당 resolver가 예외를 던지는 회귀 시험으로 확인한다.
+
+## 정식 통합 증거
+
+- compiler 제출: `72fe64e836ad1640f3556a01a1a8105c767ffa50`.
+- binding 제출: `0da2e56607909025ddcd32d2405db2f177b3e141`.
+- Local batch 통합: `79c08f50741894228eccceaf1ae9636644a0a165`, integration task `integration-ip7-20261012`. 13개 변경 파일·scoped 24개 gate이며 FULL로 확대하지 않았다.
+- 실제 Chromium CSS 시험 2개에서 18개 문서 × 7개 폭의 126쌍을 비교하고 75개 computed property·1 CSS px 치수 기준을 유지했다. PHP compiler 7개/1,303 assertions, behavior 5개/482 assertions, draft 4개/29 assertions 및 타입·구조·CSS·PHP 정적 검사 통과.
+- 독립 편집 브라우저 87개 통과, skipped/flaky/unexpected 모두 0. 증거: `output/playwright/gates/integration-ip7-20261012/97dc0067f028b49c3d903fefd8c488b1d40b085dedbb4198a756bbeb077f8210/3c0e4a7c1cc24905aae847c4acb8780c/results.json`.
+- 기존 layout parity·structure theme·mobile navigation·page lifecycle·public quality/runtime·Site Part lifecycle도 통과했다. v3 인증 화면에서 발행하는 새 UI의 통과 증거로 대체하지 않는다.
+- 임시 sirsoft-basic 1.1.4 검증 후 jwsoft-business01 0.3.1 활성 상태로 복구했다. 대상 테마 1,667개 파일 digest는 전후 동일한 `0245183e355cb1e96851ee005d6718e825bb8969bd2686dad42bda4c2b3c6981`이다.
+- 원장에는 부분 완료 증거만 추가한다. IP7 공통영역·보호 capability·명시 이행/복원, IP8~IP10과 실제 제품 발행/최종 UX 수용은 남아 있다. G7 코어 변경·운영 배포는 하지 않았다.

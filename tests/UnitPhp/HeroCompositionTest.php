@@ -77,6 +77,7 @@ final class HeroCompositionTest extends TestCase
         $this->expectExceptionMessage('component_slot_limit:');
         PageBuilderDocument::fromArray($payload);
     }
+
     public function test_actions_have_one_owner_preserve_empty_state_and_compile_once(): void
     {
         $fixtures = json_decode(file_get_contents(__DIR__.'/../Fixtures/layout-policy-cases.json'), true, flags: JSON_THROW_ON_ERROR);
@@ -108,5 +109,4 @@ final class HeroCompositionTest extends TestCase
             }
         }
     }
-
 }

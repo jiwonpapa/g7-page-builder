@@ -67,6 +67,31 @@ final class DocumentV3Test extends TestCase
         }
     }
 
+    public function test_contact_links_use_the_same_contract_in_rich_text(): void
+    {
+        $validator = $this->validator();
+        $cases = json_decode(file_get_contents(__DIR__.'/../Fixtures/document-v3-cases.json'), flags: JSON_THROW_ON_ERROR);
+        foreach ($cases->cases as $case) {
+            if (! str_starts_with($case->name, 'contact_link_') || $case->path[0] === 'assets') {
+                continue;
+            }
+            $value = $this->fixture();
+            $value->blocks[0]->slots->content[0]->props->runs[0]->link = $case->value;
+            $source = $this->encode($value);
+            if ($case->valid) {
+                self::assertSame($source, $this->encode($validator->validateJson($source)), $case->name);
+            } else {
+                try {
+                    $validator->validateJson($source);
+                    self::fail($case->name.' was accepted in rich text');
+                } catch (InvalidArgumentException $error) {
+                    self::assertStringStartsWith('value:', $error->getMessage(), $case->name);
+                }
+            }
+            self::assertSame($source, $this->encode($value));
+        }
+    }
+
     public function test_independent_responsive_inheritance_and_reset(): void
     {
         $node = $this->fixture()->blocks[0]->slots->content[0];

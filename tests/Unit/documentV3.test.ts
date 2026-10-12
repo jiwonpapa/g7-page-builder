@@ -36,6 +36,23 @@ describe('IP2 v3 document contract', () => {
     else expect(() => validateDocumentV3(document)).toThrow(new RegExp('^' + entry.error + ':'));
     expect(JSON.stringify(document)).toBe(before);
   });
+  it('uses the same bounded contact link contract for actions, rich text and Ajv', () => {
+    const check = new Ajv2020({ strict: true, multipleOfPrecision: 8 }).compile(schema);
+    for (const entry of cases.cases.filter(item => item.name.startsWith('contact_link_'))) {
+      const paths = entry.path[0] === 'assets' ? [entry.path] : [
+        entry.path, ['blocks', 0, 'slots', 'content', 0, 'props', 'runs', 0, 'link'],
+      ];
+      for (const path of paths) {
+        const document: unknown = structuredClone(fixture);
+        patch(document, path, entry.value);
+        const before = JSON.stringify(document);
+        expect(check(document), entry.name + ': ' + JSON.stringify(check.errors)).toBe(entry.valid);
+        if (entry.valid) expect(validateDocumentV3(document)).toEqual(document);
+        else expect(() => validateDocumentV3(document), entry.name).toThrow('value:');
+        expect(JSON.stringify(document)).toBe(before);
+      }
+    }
+  });
   it('keeps missing, zero, false and reset distinct without chained inheritance', () => {
     const node = valid().blocks[0].slots.content![0];
     expect(effectiveStyle(node, 'mobile').opacity).toBe(0);

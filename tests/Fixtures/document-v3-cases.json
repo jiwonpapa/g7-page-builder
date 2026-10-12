@@ -644,6 +644,616 @@
   ],
   "cases": [
     {
+      "name": "contact_link_tel_national",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:0200000000",
+        "new_tab": false
+      },
+      "valid": true
+    },
+    {
+      "name": "contact_link_tel_international",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:+821012345678",
+        "new_tab": false
+      },
+      "valid": true
+    },
+    {
+      "name": "contact_link_tel_short_code",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:112",
+        "new_tab": false
+      },
+      "valid": true
+    },
+    {
+      "name": "contact_link_mailto_plain",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@example.com",
+        "new_tab": false
+      },
+      "valid": true
+    },
+    {
+      "name": "contact_link_mailto_plus_address",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello.team+sales@example.co.kr",
+        "new_tab": false
+      },
+      "valid": true
+    },
+    {
+      "name": "contact_link_mailto_case_preserved",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:Hello.Team@Example.COM",
+        "new_tab": false
+      },
+      "valid": true
+    },
+    {
+      "name": "contact_link_tel_display_format",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:02-0000-0000",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_short",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:12",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_multiple_plus",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:++821012345678",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_extension",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:0200000000;ext=123",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_query",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:0200000000?x=1",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_crlf",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:0200000000\r\n",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_encoded_control",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:0200000000%0a",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_overlength",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:11111111111111111111111111111111111111111",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_tel_unicode_digits",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "tel:０２００００００００",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_header_query",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@example.com?subject=Hello",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_recipient_list",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@example.com,other@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_encoded_control",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@example.com%0d%0aBcc:evil@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_crlf",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@example.com\n",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_percent_address",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello%40example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_leading_dot",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:.hello@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_consecutive_dots",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello..team@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_trailing_dot",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello.@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_no_domain_dot",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@localhost",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_bad_domain",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@-example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_local_overlength",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_domain_overlength",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_label_overlength",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_markup",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello@example.com\"><script>",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_space",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello @example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_mailto_unicode_space",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "mailto:hello @example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_uppercase_contact_scheme",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "MAILTO:hello@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_data_contact_scheme",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        3,
+        "props",
+        "link"
+      ],
+      "value": {
+        "url": "data:text/plain,hello@example.com",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_not_asset_tel",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "tel:0200000000",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "contact_link_not_asset_mailto",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "mailto:hello@example.com",
+      "valid": false,
+      "error": "value"
+    },
+    {
       "name": "empty_host_query",
       "path": [
         "assets",

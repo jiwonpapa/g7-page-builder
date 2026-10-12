@@ -47,6 +47,14 @@ NATIVE_COMPONENTS = BrowserScenario("tests/E2E/nativeSliderContract.spec.ts")
 
 NATIVE = BrowserScenario("tests/E2E/nativeEditorContract.spec.ts")
 
+# New v3 modules use the independent editor and injected draft-port contract.
+# The v1/v2 installed-entry scenarios retain their existing mappings below.
+V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
+    "v3 independent layers preserve recursive commands in one Puck Undo and canonical save/reopen",
+    "v3 canvas selection and native Puck drag use stable IDs and one reversible command",
+    "v3 hidden locked clipboard and readonly states preserve source and assets",
+))
+
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(
     "manages, publishes, restores, republishes, and unpublishes a page-builder document",))
 NESTED = replace(PAGE, titles=(
@@ -188,6 +196,7 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/documents/v3/*", "resources/js/editor/v3/*", "resources/js/editor-application/v3/*"), (V3_STRUCTURE,)),
     (("resources/js/editor/canvasNavigationGuard.ts",), (NAVIGATION,)),
     (("resources/js/native-components/*", "resources/css/page-builder-native-components.css"), (NATIVE_COMPONENTS,)),
     (("resources/css/page-builder-basic-elements.css", "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"), (BASIC_ELEMENTS,)),

@@ -5,6 +5,30 @@ from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS, build_plan, contract_
 
 
 class DocumentV3ScopeTests(unittest.TestCase):
+    def test_element_site_part_fixture_has_both_consumers_without_relaxing_schema_scope(self):
+        fixture = "tests/Contract/site-part-v2.fixture.json"
+        consumers = ("tests/Unit/sitePartV2.test.ts", "tests/UnitPhp/ElementSitePartDocumentTest.php")
+        self.assertEqual(CONTRACT_FIXTURE_CONSUMERS[fixture], consumers)
+        for consumer in consumers:
+            self.assertIn(fixture, contract_fixture_inputs(consumer))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for path in (fixture, *consumers):
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("{}" if path.endswith(".json") else "<?php" if path.endswith(".php") else "export {};")
+            for phase in ("submission", "integration", "verification", "ci"):
+                with self.subTest(phase=phase):
+                    plan = build_plan(root, [fixture], phase=phase)
+                    self.assertFalse(plan.unresolved, plan.unresolved)
+                    for consumer in consumers:
+                        gate = next(gate for gate in plan.gates if consumer in gate.argv)
+                        self.assertIn(fixture, gate.inputs)
+                    schema = "schemas/site-part-v2.schema.json"
+                    unresolved = build_plan(root, [schema], phase=phase)
+                    self.assertIn("Explicit shared runtime/contract scope required: " + schema, unresolved.unresolved)
+                    self.assertTrue(build_plan(root, [schema], phase=phase, full=True).full)
+
     def test_declarative_compositions_select_consumers_and_browser_in_all_phases(self):
         data = "resources/compositions/builtin-v3.json"
         unit = "tests/Unit/v3BuiltinCompositions.test.ts"

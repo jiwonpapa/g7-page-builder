@@ -8,9 +8,9 @@ import { executeDocumentCommand } from '../../documents/v3/designCommands';
 import { propsFromHtml, textToHtml } from './richTextCodec';
 
 export interface NodeProps { node: Omit<Node, 'slots' | 'instance_id'>; content: Slot; slotPresent: boolean; body: RichText }
-export type V3Components = Record<'Node' | 'Heading' | 'Text' | 'Link', NodeProps>;
+export type V3Components = Record<'Node' | 'Heading' | 'Text' | 'Link' | 'Button', NodeProps>;
 const componentType = (type: Node['type']): keyof V3Components => type === 'content.heading' ? 'Heading'
-  : type === 'content.text' ? 'Text' : type === 'action.link' ? 'Link' : 'Node';
+  : type === 'content.text' ? 'Text' : type === 'action.link' ? 'Link' : type === 'action.button' ? 'Button' : 'Node';
 export type V3Root = { metadata: Omit<DocumentV3, 'blocks'>; title?: string };
 export type V3Data = Data<V3Components, V3Root>;
 
@@ -51,7 +51,7 @@ export function documentFromPuck(value: unknown): DocumentV3 {
     return value.map(item => {
       const entry = object(item);
       keys(entry, ['type', 'props', 'readOnly']);
-      if (!['Node', 'Heading', 'Text', 'Link'].includes(String(entry.type))) reject('puck_type', '$');
+      if (!['Node', 'Heading', 'Text', 'Link', 'Button'].includes(String(entry.type))) reject('puck_type', '$');
       const properties = object(entry.props);
       keys(properties, ['id', 'node', 'content', 'slotPresent', 'body']);
       if (typeof properties.id !== 'string' || typeof properties.body !== 'string') reject('puck_body', '$');

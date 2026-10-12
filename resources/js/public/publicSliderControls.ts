@@ -1,5 +1,7 @@
 export function ensureSliderControls(root: Document, slider: HTMLElement, wantsAutoplay: boolean): void {
-  const controls = slider.querySelector<HTMLElement>('.g7pb-hero-slider__controls');
+  if (slider.dataset.g7pbControlIds === 'stable') return;
+  const controls = Array.from(slider.querySelectorAll<HTMLElement>('.g7pb-hero-slider__controls'))
+    .find(node => node.closest('[data-g7pb-slider]') === slider);
   const dots = controls?.querySelector<HTMLElement>('[data-g7pb-slider-dots]');
   if (!controls || !dots) return;
 

@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../Contract/document-v3.fixture.json';
+import behaviorCases from '../Fixtures/document-v3-cases.json';
 import builtinCompositions from '../../resources/compositions/builtin-v3.json';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument, indexTree } from '../../resources/js/documents/v3/tree';
@@ -39,6 +40,47 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('records common behavior and button edits in Puck history while preview interactions stay transient', async () => {
+    const doc = validateDocumentV3({ ...structuredClone(fixture), blocks: structuredClone(behaviorCases.behavior_fixtures.tabs) });
+    const host = hostElement(), root = createRoot(host), changed = vi.fn(), save = vi.fn(async request => ({ documentId: request.documentId, revision: 2 }));
+    cleanup.push(() => root.unmount());
+    await act(async () => root.render(<StructureEditor document={doc} compositions={[]} sessionId="common-behavior" serverRevision={1}
+      drafts={{ save }} nextId={() => id(900)} iframeEnabled={false} onChange={changed} />)); await flush();
+    await act(async () => host.querySelector<HTMLButtonElement>('[data-testid="layer-' + id(100) + '"]')!.click());
+    await act(async () => {
+      const input = host.querySelector<HTMLSelectElement>('[aria-label="탭 방향"]')!;
+      input.value = 'vertical'; input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await click(host, '동작 적용');
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(changed.mock.calls.at(-1)![0].blocks[0].behavior.orientation).toBe('vertical');
+    // Vitest imports upstream Puck, without the build-only atomic history patch.
+    // Drain its documented 250ms trailing record; the built-bundle E2E below
+    // exercises immediate Undo without this upstream-only settling step.
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 250)); });
+    expect([...host.querySelectorAll('button')].find(button => button.textContent === '실행 취소')?.disabled).toBe(false);
+    await click(host, '실행 취소'); expect(changed.mock.calls.at(-1)![0]).toEqual(doc);
+    await click(host, '다시 실행');
+    const authored = structuredClone(changed.mock.calls.at(-1)![0]), count = changed.mock.calls.length;
+    await click(host, '구조 미리보기');
+    const preview = host.querySelector<HTMLElement>('[data-testid="v3-preview"]')!;
+    await act(async () => preview.querySelector<HTMLButtonElement>('[data-v3-node="' + id(103) + '"]')!.click());
+    expect(preview.querySelector<HTMLElement>('[data-v3-node="' + id(106) + '"]')!.hidden).toBe(false);
+    expect(changed).toHaveBeenCalledTimes(count);
+    await click(host, '구조 미리보기');
+    await act(async () => host.querySelector<HTMLButtonElement>('[data-testid="layer-' + id(102) + '"]')!.click());
+    await act(async () => {
+      const input = host.querySelector<HTMLInputElement>('[aria-label="버튼 문구"]')!;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '직접 바꾼 문구');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await click(host, '버튼 문구 적용');
+    expect(indexTree(changed.mock.calls.at(-1)![0]).get(id(102))!.node.props).toEqual({ label: '직접 바꾼 문구' });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 250)); });
+    await click(host, '실행 취소'); expect(changed.mock.calls.at(-1)![0]).toEqual(authored);
+    await click(host, '저장'); expect(save).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(save.mock.calls[0][0].json)).toEqual(authored);
+  });
   it('preserves nested canvas nodes when a canonical edit replaces the slot render function', async () => {
     const doc = source(), leaf = doc.blocks[0].slots.content![0];
     const frame = createPrimitive('layout.container', id(70), doc);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../Contract/document-v3.fixture.json';
+import behaviorCases from '../Fixtures/document-v3-cases.json';
 import { cloneDocument, indexTree } from '../../resources/js/documents/v3/tree';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { executeTreeCommand } from '../../resources/js/documents/v3/commands';
@@ -9,6 +10,18 @@ const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')
 function source() { return cloneDocument(validateDocumentV3(fixture)); }
 
 describe('v3 Puck codec isolates the vendor representation', () => {
+  it('keeps native button text and behavior references in the shared codec and inline command path', () => {
+    const doc = validateDocumentV3({ ...structuredClone(fixture), blocks: structuredClone(behaviorCases.behavior_fixtures.tabs) });
+    const data = documentToPuck(doc), button = data.content[0].props.content[0].props.content[0];
+    expect(button.type).toBe('Button');
+    expect(documentFromPuck(data)).toEqual(doc);
+    button.props.body = '<b>새 버튼 문구</b>';
+    const action = { type: 'replace', destinationIndex: 0, destinationZone: id(101) + ':content', data: button } as const;
+    const result = assessPuckEdit(doc, data, action);
+    expect(indexTree(result).get(id(102))?.node.props).toEqual({ label: '<b>새 버튼 문구</b>' });
+    expect(result.blocks[0].behavior).toEqual(doc.blocks[0].behavior);
+    expect(doc.blocks[0].slots.content![0].slots.content![0].props).not.toEqual({ label: '<b>새 버튼 문구</b>' });
+  });
   it('allows escaped adapter overhead without raising the canonical document byte limit', () => {
     const doc = source(), text = doc.blocks[0].slots.content![2];
     if (text.type !== 'content.text') throw new Error('fixture');

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { puckHistoryCorrection } from '../../vite.puck-history.js';
 import { interFontAssets, INTER_DIST, localInterFonts } from '../../vite.inter-fonts.js';
-import type { DocumentV3, Node, LayoutTag } from '../../resources/js/documents/v3/types';
+import type { Behavior, DocumentV3, Node, LayoutTag } from '../../resources/js/documents/v3/types';
 import type { TiptapEditorHTMLElement } from '@tiptap/core';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
 import AxeBuilder from '@axe-core/playwright';
@@ -99,6 +99,195 @@ async function open(page: Page, source?: DocumentV3, readonly = false, compositi
 const read = (page: Page) => page.evaluate(() => window.v3Proof.current);
 const click = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).click();
 const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
+const allNodes = (nodes: Node[]): Node[] => nodes.flatMap(node => [node, ...allNodes(node.slots.content ?? [])]);
+async function connectBehavior(page: Page, behavior: Behavior) {
+  const choose = (label: string, value: string) => page.getByLabel(label, { exact: true }).selectOption(value);
+  await choose('동작 유형', behavior.kind);
+  if ('label' in behavior) await page.getByLabel('동작 이름', { exact: true }).fill(behavior.label);
+  if (behavior.kind === 'tabs') {
+    await choose('탭 방향', behavior.orientation); await choose('탭 버튼 영역', behavior.tablist_id);
+  }
+  if (behavior.kind === 'disclosure') await choose('접기 방식', behavior.mode);
+  if ('pairs' in behavior) {
+    for (const [index, pair] of behavior.pairs.entries()) {
+      await click(page, '연결 추가');
+      if ('item_id' in pair && typeof pair.item_id === 'string') await choose((index + 1) + ' 항목 영역', pair.item_id);
+      await choose((index + 1) + ' 동작 버튼', pair.trigger_id);
+      await choose((index + 1) + ' 내용 영역', pair.panel_id);
+      if ('expanded' in pair && typeof pair.expanded === 'boolean') await page.getByLabel((index + 1) + ' 처음에 펼침', { exact: true }).setChecked(pair.expanded);
+    }
+    if (behavior.kind === 'tabs') await choose('처음 표시할 내용', behavior.active_panel_id);
+  } else {
+    for (const [label, value] of [['슬라이드 표시 영역', behavior.viewport_id], ['슬라이드 트랙', behavior.track_id],
+      ['처음 표시할 슬라이드', behavior.active_slide_id], ['이전 버튼', behavior.previous_id], ['다음 버튼', behavior.next_id],
+      ['자동 재생 버튼', behavior.rotation_id ?? '']]) await choose(label, value);
+    await page.getByLabel('처음부터 자동 재생', { exact: true }).setChecked(behavior.autoplay);
+    await page.getByLabel('슬라이드 반복', { exact: true }).setChecked(behavior.loop);
+    await page.getByLabel('전환 간격', { exact: true }).fill(String(behavior.interval_ms));
+  }
+}
+test.describe(() => {
+  test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
+  test('v3 empty catalog builds an interactive composition from primitive insertions', async ({ page }, info) => {
+    await open(page, undefined, false, []);
+    const add = async (label: string, parent = 'root') => {
+      await page.getByLabel('삽입 위치', { exact: true }).selectOption(parent);
+      const before = new Set(allNodes((await read(page)).blocks).map(node => node.instance_id));
+      await insert(page, label);
+      return allNodes((await read(page)).blocks).find(node => !before.has(node.instance_id))!.instance_id;
+    };
+    const host = await add('섹션'), tablist = await add('컨테이너', host);
+    const first = await add('동작 버튼', tablist), second = await add('동작 버튼', tablist);
+    const firstPanel = await add('컨테이너', host); await add('본문', firstPanel);
+    const secondPanel = await add('컨테이너', host); await add('제목', secondPanel);
+    const before = await read(page);
+    await layer(page, host).click();
+    const behavior: Behavior = { kind: 'tabs', label: '직접 만든 구성', orientation: 'horizontal', tablist_id: tablist,
+      active_panel_id: firstPanel, pairs: [{ trigger_id: first, panel_id: firstPanel }, { trigger_id: second, panel_id: secondPanel }] };
+    await connectBehavior(page, behavior); await click(page, '동작 적용');
+    await expect.poll(async () => (await read(page)).blocks[0].behavior).toEqual(behavior);
+    const connected = await read(page);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(connected);
+    await layer(page, first).click();
+    await page.getByLabel('버튼 문구', { exact: true }).fill('첫 내용 <문자>'); await click(page, '버튼 문구 적용');
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(connected);
+    await click(page, '다시 실행');
+    const authored = await read(page);
+    await click(page, '구조 미리보기');
+    const preview = page.getByTestId('v3-preview');
+    await expect(preview.locator('[data-v3-node="' + first + '"]')).toHaveText('첫 내용 <문자>');
+    await preview.getByRole('tab').first().focus(); await page.keyboard.press('ArrowRight');
+    await expect(preview.locator('[data-v3-node="' + second + '"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(preview.locator('[data-v3-node="' + secondPanel + '"]')).toBeVisible();
+    expect(await read(page)).toEqual(authored);
+    await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+    const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
+    expect(saved).toEqual(authored);
+    await open(page, saved, false, []); await click(page, '구조 미리보기');
+    await expect(page.getByTestId('v3-preview').locator('[data-v3-node="' + first + '"]')).toHaveAttribute('aria-selected', 'true');
+    await page.screenshot({ path: info.outputPath('primitive-authored-tabs.png'), fullPage: true });
+  });
+  for (const kind of ['tabs', 'disclosure', 'carousel', 'nested'] as const) {
+    test('v3 common behavior connections edit save reopen and match PHP output ' + kind, async ({ page, context }, info) => {
+      const cases = JSON.parse(readFileSync(new URL('../Fixtures/document-v3-cases.json', import.meta.url), 'utf8')) as { behavior_fixtures: Record<typeof kind, Node[]> };
+      // Ordinary data created after the product build. No composition registry or factory.
+      const source: DocumentV3 = { ...structuredClone(fixture), blocks: structuredClone(cases.behavior_fixtures[kind]) };
+      source.blocks[0].name = '새 동작 구성 ' + Date.now();
+      const connections = allNodes(source.blocks).filter(node => node.behavior).map(node => ({ id: node.instance_id, behavior: structuredClone(node.behavior!) }));
+      for (const node of allNodes(source.blocks)) delete node.behavior;
+      const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+      const selector = (id: string) => '[data-v3-node="' + id + '"]';
+      const measure = (element: Element) => {
+        const origin = element.getBoundingClientRect();
+        return [...element.querySelectorAll<HTMLElement>('[data-v3-node]')].map(node => {
+          const box = node.getBoundingClientRect(), css = getComputedStyle(node);
+          const shown = node.checkVisibility();
+          return { id: node.dataset.v3Node, tag: node.tagName, text: node.textContent, shown,
+            x: shown ? box.x - origin.x : 0, y: shown ? box.y - origin.y : 0, width: box.width, height: box.height,
+            font: css.fontFamily, fontSize: css.fontSize, lineHeight: css.lineHeight, display: css.display,
+            role: node.getAttribute('role'), controls: node.getAttribute('aria-controls'), selected: node.getAttribute('aria-selected'),
+            expanded: node.getAttribute('aria-expanded'), hidden: node.getAttribute('aria-hidden'), pressed: node.getAttribute('aria-pressed') };
+        });
+      };
+      for (const width of [360, 768, 1280]) {
+        await open(page, source, false, []); await canvasWidth(page, width);
+        for (const { id, behavior } of connections) {
+          const before = await read(page);
+          await layer(page, id).click(); await connectBehavior(page, behavior); await click(page, '동작 적용');
+          await expect.poll(async () => allNodes((await read(page)).blocks).find(node => node.instance_id === id)?.behavior).toEqual(behavior);
+          const connected = await read(page);
+          await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+          await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(connected);
+        }
+        const button = allNodes((await read(page)).blocks).find(node => node.type === 'action.button')!;
+        await layer(page, button.instance_id).click(); await click(page, '본문 입력');
+        const editable = page.frameLocator('iframe').locator(selector(button.instance_id) + ' [contenteditable="true"]');
+        await expect(editable).toBeVisible(); await editable.fill('직접 입력 <문자> ' + width);
+        await expect.poll(async () => allNodes((await read(page)).blocks).find(node => node.instance_id === button.instance_id)?.props).toEqual({ label: '직접 입력 <문자> ' + width });
+        await click(page, '구조 선택');
+        const authored = await read(page);
+        await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+        const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
+        expect(saved).toEqual(authored);
+        await open(page, saved, false, []); await canvasWidth(page, width);
+        await expect(page.frameLocator('iframe').locator(selector(button.instance_id))).toHaveText('직접 입력 <문자> ' + width);
+        await page.emulateMedia({ reducedMotion: 'reduce' }); await click(page, '구조 미리보기');
+        const preview = page.getByTestId('v3-preview');
+        const output = await context.newPage(); output.on('pageerror', error => errors.push(error.message));
+        await output.setViewportSize({ width, height: 1000 }); await output.emulateMedia({ reducedMotion: 'reduce' });
+        const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+          + '<link rel="stylesheet" href="/public.css"><script defer src="/page-effects.iife.js"></script></head><body style="margin:0"><main class="g7pb-page">'
+          + phpDraft(saved, expectedViewport(width)) + '</main></body></html>';
+        await output.route('**/*', route => {
+          const url = new URL(route.request().url());
+          if (url.origin !== 'https://v3-output.test') return route.abort('blockedbyclient');
+          if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body: html });
+          const assets: Record<string, string> = { '/public.css': 'dist/css/page-builder-public.css',
+            '/page-effects.iife.js': 'dist/js/page-effects.iife.js', '/page-sliders.iife.js': 'dist/js/page-sliders.iife.js' };
+          if (assets[url.pathname]) return route.fulfill({ contentType: url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript', body: readFileSync(assets[url.pathname]) });
+          return route.abort('blockedbyclient');
+        });
+        await output.goto('https://v3-output.test/');
+        const php = output.locator('[data-v3-surface]');
+        for (const { id, behavior } of connections) {
+          const attribute = behavior.kind === 'tabs' ? 'data-g7pb-tabs-ready' : behavior.kind === 'disclosure' ? 'data-g7pb-accordion-ready' : 'data-g7pb-slider-ready';
+          await expect(preview.locator(selector(id))).toHaveAttribute(attribute, 'true');
+          await expect(php.locator(selector(id))).toHaveAttribute(attribute, 'true');
+        }
+        const parity = async (phase: string) => {
+          const actual = await preview.evaluate(measure), expected = await php.evaluate(measure);
+          await info.attach(kind + '-' + width + '-' + phase, { contentType: 'application/json', body: JSON.stringify({ actual, expected }) });
+          expect(actual.map(node => node.id)).toEqual(expected.map(node => node.id));
+          for (let i = 0; i < actual.length; i++) {
+            const { x, y, width: w, height, ...attributes } = actual[i];
+            const { x: px, y: py, width: pw, height: ph, ...phpAttributes } = expected[i];
+            expect(attributes, kind + ':' + actual[i].id).toEqual(phpAttributes);
+            for (const delta of [x - px, y - py, w - pw, height - ph]) expect(Math.abs(delta)).toBeLessThanOrEqual(1);
+          }
+        };
+        await parity('initial');
+        // Nested connections are exercised before their outer tab hides them.
+        for (const { behavior } of [...connections].reverse()) {
+          for (const target of [preview, php]) {
+            if (behavior.kind === 'tabs') {
+              await target.locator(selector(behavior.pairs[0].trigger_id)).focus();
+              await target.locator(selector(behavior.pairs[0].trigger_id)).press(behavior.orientation === 'vertical' ? 'ArrowDown' : 'ArrowRight');
+              await expect(target.locator(selector(behavior.pairs[1].trigger_id))).toHaveAttribute('aria-selected', 'true');
+            } else if (behavior.kind === 'disclosure') {
+              await target.locator(selector(behavior.pairs[1].trigger_id)).press('Enter');
+              await expect(target.locator(selector(behavior.pairs[1].trigger_id))).toHaveAttribute('aria-expanded', 'true');
+            } else {
+              await target.locator(selector(behavior.next_id)).click();
+              const slides = allNodes(saved.blocks).find(node => node.instance_id === behavior.track_id)!.slots.content!;
+              await expect(target.locator(selector(slides[1].instance_id))).toHaveAttribute('aria-hidden', 'false');
+              await expect(target.locator(selector(slides[0].instance_id))).toHaveAttribute('aria-hidden', 'true');
+            }
+          }
+          // Embla finishes its actual animation before geometry is compared.
+          await expect.poll(async () => {
+            const actual = await preview.evaluate(measure), expected = await php.evaluate(measure);
+            return Math.max(...actual.flatMap((node, index) => ['x', 'y', 'width', 'height'].map(key => {
+              const field = key as 'x' | 'y' | 'width' | 'height';
+              return Math.abs(node[field] - expected[index][field]);
+            })));
+          }).toBeLessThanOrEqual(1);
+          await parity('activated-' + behavior.kind);
+        }
+        expect(await read(page)).toEqual(saved);
+        await page.screenshot({ path: info.outputPath(kind + '-preview-' + width + '.png'), fullPage: true });
+        await output.screenshot({ path: info.outputPath(kind + '-php-' + width + '.png'), fullPage: true });
+        await output.close(); await click(page, '구조 미리보기');
+        await expect(page.frameLocator('iframe').locator(selector(button.instance_id))).toHaveText('직접 입력 <문자> ' + width);
+        expect(await read(page)).toEqual(saved);
+      }
+      expect(errors).toEqual([]);
+      await open(page, source, true, []); await layer(page, source.blocks[0].instance_id).click();
+      await expect(page.getByLabel('동작 유형', { exact: true })).toBeDisabled();
+      expect(await read(page)).toEqual(source);
+    });
+  }
+});
 test.describe(() => {
 // SPEC-09 is desktop authoring at all canvas widths. Do not mix a Linux
 // keyboard/platform with an iOS touch UA: Tiptap maps Ctrl+A to line start

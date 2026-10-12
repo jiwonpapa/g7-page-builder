@@ -122,7 +122,10 @@ class BrowserRequirementsTests(unittest.TestCase):
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 82)
+        self.assertEqual(len(V3_STRUCTURE.titles), 87)
+        self.assertIn("v3 empty catalog builds an interactive composition from primitive insertions", V3_STRUCTURE.titles)
+        for kind in ("tabs", "disclosure", "carousel", "nested"):
+            self.assertIn("v3 common behavior connections edit save reopen and match PHP output " + kind, V3_STRUCTURE.titles)
         self.assertIn("v3 unknown composition data edits in the same built bundle without registration", V3_STRUCTURE.titles)
         self.assertIn("v3 semantic lists tables and figures preserve editing grammar and PHP parity", V3_STRUCTURE.titles)
         for path in ("resources/js/blocks/v3/staticCompositions.ts", "resources/js/blocks/v3/staticTemplates.ts",

@@ -4,19 +4,23 @@ import { ensureSliderControls } from './publicSliderControls';
 
 export { ensureSliderControls } from './publicSliderControls';
 
+type SliderRoot = Document | HTMLElement;
 interface SliderMount { nodes: Element[]; inputs: string; reduced: boolean; dispose: () => void }
-interface SliderRuntime {
-  root: Document;
-  active: boolean;
-  mounts: Map<HTMLElement, SliderMount>;
-  observer: MutationObserver;
+interface SliderRuntime { root: SliderRoot; active: boolean; mounts: Map<HTMLElement, SliderMount>; observer: MutationObserver }
+const runtimes = new WeakMap<SliderRoot, SliderRuntime>();
+const owners = new WeakMap<HTMLElement, { runtime: SliderRuntime; mount: SliderMount }>();
+const attributes = ['data-g7pb-slider', 'data-g7pb-slider-loop', 'data-g7pb-slider-autoplay', 'data-g7pb-slider-interval',
+  'data-g7pb-slider-initial', 'data-g7pb-control-ids', 'id', 'aria-controls'];
+const selector = '.g7pb-hero-slider__viewport,.g7pb-hero-slider__track,.g7pb-hero-slider__slide,.g7pb-hero-slider__controls,' +
+  '[data-g7pb-slider-viewport],[data-g7pb-slider-track],[data-g7pb-slider-slide],[data-g7pb-slider-prev],[data-g7pb-slider-next],' +
+  '[data-g7pb-slider-toggle],[data-g7pb-slider-dots],[data-g7pb-slider-dot],[data-g7pb-slider-status]';
+function owned<T extends HTMLElement>(slider: HTMLElement, query: string): T[] {
+  return Array.from(slider.querySelectorAll<T>(query)).filter(node => node.closest('[data-g7pb-slider]') === slider);
 }
-const runtimes = new WeakMap<Document, SliderRuntime>();
-const attributes = ['data-g7pb-slider', 'data-g7pb-slider-loop', 'data-g7pb-slider-autoplay', 'data-g7pb-slider-interval'];
-const signature = (slider: HTMLElement, reduced: boolean): string => JSON.stringify([reduced, ...attributes.map(key => slider.getAttribute(key))]);
-function nodes(slider: HTMLElement): Element[] {
-  return Array.from(slider.querySelectorAll('.g7pb-hero-slider__viewport,.g7pb-hero-slider__track,.g7pb-hero-slider__slide,.g7pb-hero-slider__controls,[data-g7pb-slider-prev],[data-g7pb-slider-next],[data-g7pb-slider-toggle],[data-g7pb-slider-dots],[data-g7pb-slider-dot],[data-g7pb-slider-status]'));
-}
+function nodes(slider: HTMLElement): Element[] { return owned(slider, selector); }
+const signature = (slider: HTMLElement, reduced: boolean): string => JSON.stringify([reduced,
+  ...attributes.map(key => slider.getAttribute(key)), slider.dataset.g7pbControlIds === 'stable'
+    ? nodes(slider).map(node => [node.id, node.getAttribute('aria-controls')]) : []]);
 function prune(runtime: SliderRuntime, records: MutationRecord[]): void {
   if (!runtime.active) return;
   for (const [slider, mount] of runtime.mounts) {
@@ -29,13 +33,17 @@ function prune(runtime: SliderRuntime, records: MutationRecord[]): void {
     }
   }
 }
-export function disposePageSliders(root: Document = document): void {
+export function disposePageSliders(root: SliderRoot = document): void {
   const runtime = runtimes.get(root); if (!runtime) return;
   runtime.active = false; runtime.observer.disconnect();
   for (const mount of runtime.mounts.values()) mount.dispose();
   runtime.mounts.clear(); runtimes.delete(root);
 }
-export function bootPageSliders(root: Document = document, reducedMotion = false): void {
+function restoreAttributes(node: HTMLElement, names: string[]): () => void {
+  const values = names.map(name => [name, node.getAttribute(name)] as const);
+  return () => values.forEach(([name, value]) => value === null ? node.removeAttribute(name) : node.setAttribute(name, value));
+}
+export function bootPageSliders(root: SliderRoot = document, reducedMotion = false): void {
   let runtime = runtimes.get(root);
   if (!runtime) {
     const observer = new MutationObserver(records => { if (runtime) prune(runtime, records); });
@@ -43,70 +51,114 @@ export function bootPageSliders(root: Document = document, reducedMotion = false
     observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: attributes });
   }
   prune(runtime, runtime.observer.takeRecords());
-  const owner = runtime;
-  for (const slider of root.querySelectorAll<HTMLElement>('[data-g7pb-slider]')) {
-    const inputs = signature(slider, reducedMotion);
+  const owner = runtime, dom = 'createElement' in root ? root : root.ownerDocument;
+  const hosts = [...('matches' in root && root.matches('[data-g7pb-slider]') ? [root] : []), ...root.querySelectorAll<HTMLElement>('[data-g7pb-slider]')];
+  for (const slider of hosts) {
+    const other = owners.get(slider);
+    if (other && other.runtime !== owner) {
+      prune(other.runtime, other.runtime.observer.takeRecords());
+      if (owners.has(slider)) continue;
+    }
+    const inputs = signature(slider, reducedMotion), stable = slider.dataset.g7pbControlIds === 'stable';
     const existing = owner.mounts.get(slider);
     if (existing?.inputs === inputs) continue;
     if (existing) { owner.mounts.delete(slider); existing.dispose(); }
-    const viewport = slider.querySelector<HTMLElement>('.g7pb-hero-slider__viewport');
-    const slides = Array.from(slider.querySelectorAll<HTMLElement>('.g7pb-hero-slider__slide'));
-    if (!viewport || slides.length < 2) continue;
+    const viewport = owned(slider, stable ? '[data-g7pb-slider-viewport]' : '.g7pb-hero-slider__viewport')[0];
+    const track = owned(slider, stable ? '[data-g7pb-slider-track]' : '.g7pb-hero-slider__track')[0];
+    const slides = owned(slider, stable ? '[data-g7pb-slider-slide]' : '.g7pb-hero-slider__slide');
+    if (!viewport || !track || slides.length < (stable ? 1 : 2)) continue;
     const wantsAutoplay = slider.dataset.g7pbSliderAutoplay === 'true' && !reducedMotion;
-    ensureSliderControls(root, slider, wantsAutoplay);
-    const autoplay = wantsAutoplay ? Autoplay({ delay: Number(slider.dataset.g7pbSliderInterval ?? 5000), stopOnInteraction: true, stopOnMouseEnter: true }) : undefined;
-    const embla = EmblaCarousel(viewport, { loop: slider.dataset.g7pbSliderLoop !== 'false' }, autoplay ? [autoplay] : []);
-    const previous = slider.querySelector<HTMLButtonElement>('[data-g7pb-slider-prev]');
-    const next = slider.querySelector<HTMLButtonElement>('[data-g7pb-slider-next]');
-    const toggle = slider.querySelector<HTMLButtonElement>('[data-g7pb-slider-toggle]');
-    const dotsRoot = slider.querySelector<HTMLElement>('[data-g7pb-slider-dots]');
-    const status = slider.querySelector<HTMLElement>('[data-g7pb-slider-status]');
+    if (!stable) ensureSliderControls(dom, slider, wantsAutoplay);
+    const previous = owned<HTMLButtonElement>(slider, '[data-g7pb-slider-prev]')[0];
+    const next = owned<HTMLButtonElement>(slider, '[data-g7pb-slider-next]')[0];
+    const toggle = owned<HTMLButtonElement>(slider, '[data-g7pb-slider-toggle]')[0];
+    if (stable) {
+      const parts = [viewport, track, ...slides, previous, next, ...(toggle ? [toggle] : [])];
+      if (!previous || !next || parts.some(node => !node?.id) || new Set(parts.map(node => node.id)).size !== parts.length
+        || viewport.children.length !== 1 || track.parentElement !== viewport || track.children.length !== slides.length
+        || slides.some(slide => slide.parentElement !== track)
+        || [previous, next, ...(toggle ? [toggle] : [])].some(button => button.tagName !== 'BUTTON' || button.getAttribute('aria-controls') !== viewport.id || viewport.contains(button))
+        || slider.dataset.g7pbSliderAutoplay === 'true' && !toggle) continue;
+    }
+    const initial = Number(slider.dataset.g7pbSliderInitial ?? 0);
+    if (stable && (!Number.isInteger(initial) || initial < 0 || initial >= slides.length)) continue;
+    const autoplay = !reducedMotion && (stable ? Boolean(toggle) && slides.length > 1 : wantsAutoplay)
+      ? Autoplay({ delay: Number(slider.dataset.g7pbSliderInterval ?? 5000), playOnInit: wantsAutoplay,
+        stopOnInteraction: true, stopOnMouseEnter: true, stopOnFocusIn: true }) : undefined;
+    const embla = EmblaCarousel(viewport, { loop: slider.dataset.g7pbSliderLoop !== 'false',
+      ...(stable ? { container: track, slides, startIndex: initial } : {}) }, autoplay ? [autoplay] : []);
+    const dotsRoot = owned(slider, '[data-g7pb-slider-dots]')[0], status = owned(slider, '[data-g7pb-slider-status]')[0];
     const cleanups: (() => void)[] = [];
     const original = slides.map(slide => ({ hidden: slide.getAttribute('aria-hidden'), inert: slide.inert }));
+    if (stable) {
+      for (const button of [previous, next, ...(toggle ? [toggle] : [])]) cleanups.push(restoreAttributes(button, ['disabled', 'aria-pressed', 'aria-label']));
+      cleanups.push(restoreAttributes(track, ['aria-live']));
+    }
     let active = true;
     const current = (): boolean => {
       prune(owner, owner.observer.takeRecords());
       return active && owner.active && runtimes.get(root) === owner && owner.mounts.get(slider) === mount;
     };
-    const on = (node: HTMLElement | null, handler: () => void): void => {
+    const on = (node: HTMLElement | undefined, handler: () => void): void => {
       const click = (): void => { if (current()) handler(); };
       node?.addEventListener('click', click); cleanups.push(() => node?.removeEventListener('click', click));
     };
-    const dots = slides.map((_, index) => {
-      const dot = root.createElement('button'); dot.type = 'button'; dot.dataset.g7pbSliderDot = String(index);
-      dot.setAttribute('aria-label', `${index + 1}번 슬라이드`); on(dot, () => embla.scrollTo(index)); return dot;
+    // Authored stable markup is never replaced with generated controls or dots.
+    const dots = stable ? [] : slides.map((_, index) => {
+      const dot = dom.createElement('button'); dot.type = 'button'; dot.dataset.g7pbSliderDot = String(index);
+      dot.setAttribute('aria-label', (index + 1) + '번 슬라이드'); on(dot, () => embla.scrollTo(index)); return dot;
     });
-    dotsRoot?.replaceChildren(...dots);
+    if (!stable) dotsRoot?.replaceChildren(...dots);
     const update = (): void => {
       if (!current()) return;
-      const selected = embla.selectedScrollSnap();
+      const selected = embla.selectedScrollSnap(), visible = stable ? embla.slidesInView() : [];
       dots.forEach((dot, index) => { dot.classList.toggle('is-active', index === selected); dot.setAttribute('aria-current', index === selected ? 'true' : 'false'); });
-      slides.forEach((slide, index) => { slide.setAttribute('aria-hidden', index === selected ? 'false' : 'true'); slide.inert = index !== selected; });
-      const label = `${selected + 1} / ${slides.length}`;
+      slides.forEach((slide, index) => {
+        const shown = visible.length ? visible.includes(index) : index === selected;
+        slide.setAttribute('aria-hidden', shown ? 'false' : 'true'); slide.inert = !shown;
+      });
+      const label = (selected + 1) + ' / ' + slides.length;
       if (status && status.textContent !== label) status.textContent = label;
       if (previous) previous.disabled = !embla.canScrollPrev();
       if (next) next.disabled = !embla.canScrollNext();
     };
-    on(previous, () => embla.scrollPrev()); on(next, () => embla.scrollNext());
-    const paintAutoplay = (): void => {
-      if (!toggle || !autoplay) return;
-      toggle.textContent = autoplay.isPlaying() ? '일시 정지' : '재생';
-      toggle.setAttribute('aria-label', autoplay.isPlaying() ? '자동 재생 일시 정지' : '자동 재생 시작');
+    on(previous, () => { if (stable) autoplay?.stop(); embla.scrollPrev(); });
+    on(next, () => { if (stable) autoplay?.stop(); embla.scrollNext(); });
+    const paintAutoplay = (playing = autoplay?.isPlaying() === true): void => {
+      if (!current()) return;
+      if (stable) {
+        track.setAttribute('aria-live', playing ? 'off' : 'polite');
+        if (toggle) { toggle.setAttribute('aria-pressed', String(playing)); toggle.disabled = !autoplay; }
+      } else if (toggle && autoplay) {
+        toggle.textContent = playing ? '일시 정지' : '재생';
+        toggle.setAttribute('aria-label', playing ? '자동 재생 일시 정지' : '자동 재생 시작');
+      }
     };
+    // Embla emits these events before updating isPlaying(), so the event owns this paint.
+    const autoplayStarted = () => paintAutoplay(true), autoplayStopped = () => paintAutoplay(false);
+    if (stable && autoplay) {
+      const pause = () => { if (current()) autoplay.stop(); };
+      slider.addEventListener('focusin', pause); slider.addEventListener('mouseenter', pause);
+      cleanups.push(() => { slider.removeEventListener('focusin', pause); slider.removeEventListener('mouseenter', pause); });
+    }
     on(toggle, () => { if (!autoplay) return; if (autoplay.isPlaying()) autoplay.stop(); else autoplay.play(); paintAutoplay(); });
-    paintAutoplay();
     const mount: SliderMount = { inputs, reduced: reducedMotion, nodes: nodes(slider), dispose: () => {
       if (!active) return; active = false;
-      cleanups.forEach(dispose => dispose()); embla.off('select', update); embla.off('reInit', update); embla.destroy();
-      dots.forEach(dot => dot.remove());
+      cleanups.forEach(dispose => dispose()); embla.off('select', update); embla.off('reInit', update);
+      if (stable) embla.off('slidesInView', update);
+      if (autoplay) { embla.off('autoplay:play', autoplayStarted); embla.off('autoplay:stop', autoplayStopped); }
+      embla.destroy(); dots.forEach(dot => dot.remove());
       slides.forEach((slide, index) => {
         const value = original[index]; if (value.hidden === null) slide.removeAttribute('aria-hidden'); else slide.setAttribute('aria-hidden', value.hidden);
         slide.inert = value.inert;
       });
+      if (owners.get(slider)?.mount === mount) owners.delete(slider);
       delete slider.dataset.g7pbSliderReady;
     } };
-    // Setup can move existing controls; these records belong to the setup, before this mount owns them.
-    prune(owner, owner.observer.takeRecords()); owner.mounts.set(slider, mount);
-    embla.on('select', update); embla.on('reInit', update); slider.dataset.g7pbSliderReady = 'true'; update();
+    prune(owner, owner.observer.takeRecords()); owner.mounts.set(slider, mount); owners.set(slider, { runtime: owner, mount });
+    embla.on('select', update); embla.on('reInit', update);
+    if (stable) embla.on('slidesInView', update);
+    if (autoplay) { embla.on('autoplay:play', autoplayStarted); embla.on('autoplay:stop', autoplayStopped); }
+    slider.dataset.g7pbSliderReady = 'true'; update(); paintAutoplay();
   }
 }

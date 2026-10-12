@@ -11,8 +11,10 @@ import type { DraftPort } from '../../editor-application/v3/session';
 import { documentToPuck, type NodeProps } from './codec';
 import { BridgeObserver, createPuckBridge, FrameHistoryBoundary, useV3Puck, type PuckBridge, type V3Config } from './PuckBridge';
 import { LayerTree } from './LayerTree';
-import { NodeRenderer, StructurePreview } from './NodeRenderer';
-import { documentPresentation, DOCUMENT_SURFACE } from '../../documents/v3/presentation';
+import { NodeRenderer } from './NodeRenderer';
+import { BehaviorPreview } from './BehaviorPreview';
+import { BehaviorInspector } from './BehaviorInspector';
+import { DOCUMENT_SURFACE } from '../../documents/v3/presentation';
 import { nodeAnchor } from '../../documents/v3/tree';
 import { reactStyle } from './presentationReact';
 import { Inspector } from './Inspector';
@@ -23,6 +25,7 @@ import { WorkspaceControls, WorkspaceFrame, WorkspaceMode, type InputMode } from
 import { ReadingOrderNotice, ResponsiveControls } from './ResponsiveControls';
 import { CompositionPanel } from './CompositionPanel';
 import { compositionClipboard } from '../../editor-application/v3/compositions';
+import { behaviorPresentation } from '../../documents/v3/behaviorPresentation';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -68,7 +71,7 @@ function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.Re
       style: { width: 'auto', height: 'auto', ...reactStyle(context.styles.get(id) ?? {}) } })}</SlotContext.Provider>;
   }
   return <NodeRenderer node={node} document={context.document} styles={context.styles} dragRef={dragRef}
-    body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link') ? body : undefined} editing />;
+    body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link' || node.type === 'action.button') ? body : undefined} editing />;
 }
 const control: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' };
 function CommandButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
@@ -121,7 +124,13 @@ function EditorSession(props: StructureEditorProps) {
   }), []);
   const initial = useMemo(() => documentToPuck(props.document), []);
   const tree = useMemo(() => indexTree(document), [document]);
-  const styles = useMemo(() => documentPresentation(document, viewport), [document, viewport]);
+  const styles = useMemo(() => {
+    const projection = behaviorPresentation(document, viewport);
+    for (const [id, attributes] of projection.attributes) {
+      if ('data-g7pb-slider-viewport' in attributes) projection.styles.get(id)!.overflow = 'visible';
+    }
+    return projection.styles;
+  }, [document, viewport]);
   const focus = selected.length === 1 ? tree.get(selected[0]) : undefined;
   const config = useMemo<V3Config>(() => {
     // Canvas transforms consume static component fields, not selected-panel resolveFields.
@@ -140,6 +149,7 @@ function EditorSession(props: StructureEditorProps) {
       Node: component({ type: 'custom', render: () => <></> }),
       Heading: component(richTextField(props.document, true)), Text: component(richTextField(props.document, false)),
       Link: component({ type: 'text', contentEditable: true, visible: false }),
+      Button: component({ type: 'text', contentEditable: true, visible: false }),
     },
     root: { fields: { metadata: { type: 'custom', render: () => <></> } }, render: ({ children }) => <div data-v3-surface style={reactStyle(DOCUMENT_SURFACE)}>
       <style>{'[data-v3-rich] p{margin:0;min-height:1em}'}</style>{children}</div> },
@@ -219,7 +229,7 @@ function EditorSession(props: StructureEditorProps) {
             </nav>
             <div style={{ width: canvasWidth * zoom, height: canvasHeight * zoom, position: 'relative' }}>
             <div data-v3-workspace data-v3-viewport={viewport} style={{ position: 'absolute', background: 'var(--g7pb-surface-strong)', width: canvasWidth, minHeight: 800, transform: 'scale(' + zoom + ')', transformOrigin: 'top left' }}>
-              {preview ? <StructurePreview document={document} viewport={viewport} /> : <Puck.Preview />}
+              {preview ? <BehaviorPreview document={document} viewport={viewport} /> : <Puck.Preview />}
             </div>
             </div>
           </section>
@@ -256,6 +266,8 @@ function EditorSession(props: StructureEditorProps) {
             </div>
             {focus && <Inspector key={viewport + ':' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document} viewport={viewport}
               disabled={Boolean(props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
+            {focus && <BehaviorInspector key={'behavior:' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
+              disabled={Boolean(preview || props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
             {selected.length > 1 && <MultiInspector key={viewport + ':' + selected.join(':')} document={document} ids={selected} viewport={viewport}
               disabled={Boolean(props.readonly)} apply={value => { bridge.execute(value); }} />}
           </aside>

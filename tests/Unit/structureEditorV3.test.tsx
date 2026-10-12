@@ -48,6 +48,8 @@ describe('v3 structural UI and explicit mount', () => {
     expect(apply).toHaveBeenCalledOnce();
     expect(deselect).not.toHaveBeenCalled();
     expect(target.querySelector('button')).not.toBeNull();
+    await act(async () => root.render(<ContextActionBar target={target}>{[false, null, undefined]}</ContextActionBar>));
+    expect(target.childElementCount).toBe(0);
   });
   it('keeps click and auxiliary link activation in the editing canvas but preserves preview navigation', async () => {
     const doc = source(), host = hostElement(), root = createRoot(host); cleanup.push(() => root.unmount());

@@ -116,11 +116,15 @@ class BrowserRequirementsTests(unittest.TestCase):
     def test_independent_v3_owners_require_their_actual_port_and_puck_scenarios(self):
         for path in ("resources/js/documents/v3/commands.ts", "resources/js/editor/v3/PuckBridge.tsx",
                      "resources/js/editor-application/v3/session.ts",
+                     "resources/js/adapters/interaction/GeometryAdapter.tsx", "resources/js/adapters/interaction/measure.ts",
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 6)
+        self.assertEqual(len(V3_STRUCTURE.titles), 13)
         self.assertIn("v3 editor preview and PHP draft output agree within one CSS pixel", V3_STRUCTURE.titles)
+        for zoom in (50, 100, 200):
+            self.assertIn(f"v3 precise handles at {zoom}% preserve CSS pixels cancel and one Undo", V3_STRUCTURE.titles)
+        self.assertIn("v3 focus loss and layout constraints cancel pending gestures without history", V3_STRUCTURE.titles)
         self.assertEqual(set(scenarios_for(["src/Application/Compilation/HtmlDocumentCompiler.php"])),
                          {replace(PAGE, titles=tuple(sorted(PAGE.titles + NESTED.titles))), STRUCTURE_THEME})
         self.assertEqual(scenarios_for(["resources/js/documents/types.ts"]), (PAGE,))

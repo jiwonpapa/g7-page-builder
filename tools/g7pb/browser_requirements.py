@@ -154,7 +154,8 @@ MOBILE_NAV = BrowserScenario("tests/E2E/mobileNavigationQuality.spec.ts")
 PUBLIC_DATA = BrowserScenario("tests/E2E/publicRuntimeLifecycle.spec.ts", titles=(
     "loads synthetic public data and filters the loaded rows without another request",))
 PUBLIC_CONTROLS = replace(PUBLIC_DATA, titles=(
-    "hydrates typed public controls and submits only the active inquiry form",))
+    "hydrates typed public controls and submits only the active inquiry form",
+    "keeps stable nested content controls independent with native keys and authored layouts",))
 PUBLIC_MOTION = replace(PUBLIC_DATA, titles=(
     "initializes synthetic sliders and motion from the shipped bundle",))
 PUBLIC_SHELL = replace(PUBLIC_DATA, titles=(

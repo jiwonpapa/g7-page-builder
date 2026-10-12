@@ -281,6 +281,15 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertEqual(set(scenarios_for(sources)), {PUBLIC, SITE_SHELL, PUBLIC_ALL, SITE_KIT_INQUIRY})
         self.assertEqual(scenarios_for([*sources, *reversed(sources)]), scenarios_for(sources))
 
+    def test_content_runtime_keeps_legacy_and_stable_nested_control_proof(self):
+        self.assertEqual(PUBLIC_CONTROLS.titles, (
+            "hydrates typed public controls and submits only the active inquiry form",
+            "keeps stable nested content controls independent with native keys and authored layouts",
+        ))
+        selected = scenarios_for(["resources/js/public/publicContentControls.ts"])
+        self.assertIn(PUBLIC_CONTROLS, selected)
+        self.assertIn(PUBLIC, selected)
+
     def test_public_owners_keep_transitive_units_and_runtime_only_after_submission(self):
         for name, expected in EXTRACTED_PUBLIC_SCOPES.items():
             with tempfile.TemporaryDirectory() as directory:

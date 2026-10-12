@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { V3DocumentResource } from '../../api/v3DocumentResource';
 import type { DraftPort } from '../../editor-application/v3/session';
+import type { PublicationPort } from '../../editor-application/v3/publication';
 import { StructureEditor } from './StructureEditor';
 
 export interface StructureHostPorts {
   load: (documentId: string) => Promise<V3DocumentResource | { legacyUrl: string }>;
   create: (input: { title: string; slug: string; locale: string; shell_mode: 'template' | 'builder' | 'none' }) => Promise<V3DocumentResource>;
   drafts: DraftPort;
+  publication?: PublicationPort;
   navigate: (url: string) => void;
   created: (documentId: string) => void;
   confirmLeave: () => boolean;
@@ -84,6 +86,8 @@ export function StructureDocumentHost({ documentId, locale = 'ko', ports, compos
     {resource ? <div className="g7pb-structure-host__workspace">
       <StructureEditor document={resource.document} sessionId={`${resource.document.document_id}:${resource.lock_version}`}
         serverRevision={resource.lock_version} drafts={ports.drafts} compositions={compositions} nextId={ports.nextId}
+        publication={ports.publication} onPublished={page => setResource(current => current ? { ...current,
+          active_artifact_sha256: page.hash, public_url: page.url, published_at: page.publishedAt } : current)}
         readonly={resource.status === 'archived'} onChange={() => markDirty(true)}
         onSaved={(_revision, status) => markDirty(status !== 'saved')} />
     </div> : !documentId && <form className="g7pb-structure-host__create" onSubmit={event => void create(event)}>

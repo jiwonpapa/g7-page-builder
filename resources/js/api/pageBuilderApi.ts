@@ -188,6 +188,36 @@ export class PageDocumentApiClient {
     return this.request<DocumentResource>(`/documents/${encodeURIComponent(documentId)}`);
   }
 
+  async createPreview(documentId: string, expectedLockVersion: number): Promise<PreviewResource> {
+    return this.request<PreviewResource>(`/documents/${encodeURIComponent(documentId)}/preview`, {
+      method: 'POST',
+      body: JSON.stringify({ expected_lock_version: expectedLockVersion }),
+    });
+  }
+
+  async preparePublication(
+    documentId: string,
+    expectedLockVersion: number,
+  ): Promise<PublicationPreparation> {
+    return this.request<PublicationPreparation>(
+      `/documents/${encodeURIComponent(documentId)}/publications/prepare`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ expected_lock_version: expectedLockVersion }),
+      },
+    );
+  }
+
+  async commitPublication(publicationToken: string): Promise<PublicationCommit> {
+    return this.request<PublicationCommit>(
+      `/publications/${encodeURIComponent(publicationToken)}/commit`,
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      },
+    );
+  }
+
   /** Version-specific adapters validate the source; auth/error transport stays shared. */
   async documentSource(documentId: string, write?: { document: unknown; expectedLockVersion: number }): Promise<unknown> {
     return this.request<unknown>(`/documents/${encodeURIComponent(documentId)}${write ? '/draft' : ''}`, write ? {
@@ -383,36 +413,6 @@ export class PageBuilderApiClient extends PageDocumentApiClient {
         expected_lock_version: expectedLockVersion,
       }),
     });
-  }
-
-  async createPreview(documentId: string, expectedLockVersion: number): Promise<PreviewResource> {
-    return this.request<PreviewResource>(`/documents/${encodeURIComponent(documentId)}/preview`, {
-      method: 'POST',
-      body: JSON.stringify({ expected_lock_version: expectedLockVersion }),
-    });
-  }
-
-  async preparePublication(
-    documentId: string,
-    expectedLockVersion: number,
-  ): Promise<PublicationPreparation> {
-    return this.request<PublicationPreparation>(
-      `/documents/${encodeURIComponent(documentId)}/publications/prepare`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ expected_lock_version: expectedLockVersion }),
-      },
-    );
-  }
-
-  async commitPublication(publicationToken: string): Promise<PublicationCommit> {
-    return this.request<PublicationCommit>(
-      `/publications/${encodeURIComponent(publicationToken)}/commit`,
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-      },
-    );
   }
 
   async unpublishDocument(

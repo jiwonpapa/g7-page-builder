@@ -26,6 +26,8 @@ import { ReadingOrderNotice, ResponsiveControls } from './ResponsiveControls';
 import { CompositionPanel } from './CompositionPanel';
 import { compositionClipboard } from '../../editor-application/v3/compositions';
 import { behaviorPresentation } from '../../documents/v3/behaviorPresentation';
+import { PublicationControls } from './PublicationControls';
+import type { PublicationPort, PublishedPage } from '../../editor-application/v3/publication';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -35,6 +37,8 @@ export interface StructureEditorProps {
   iframeEnabled?: boolean;
   serverRevision: number;
   drafts: DraftPort;
+  publication?: PublicationPort;
+  onPublished?: (page: PublishedPage) => void;
   nextId: () => string;
   onChange?: (document: DocumentV3) => void;
   onSaved?: (revision: number, status: 'saved' | 'edited') => void;
@@ -105,6 +109,7 @@ function EditorSession(props: StructureEditorProps) {
   const [target, setTarget] = useState('root');
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [mode, setMode] = useState<InputMode>('structure');
   const textEditing = mode === 'text';
   const [zoom, setZoom] = useState(1);
@@ -173,11 +178,12 @@ function EditorSession(props: StructureEditorProps) {
     setSaving(true);
     try {
       const result = await bridge.save(live.current.drafts, serverRevision.current);
-      if (result.status === 'stale') return;
+      if (result.status === 'stale') return result;
       serverRevision.current = result.revision;
       live.current.onSaved?.(result.revision, result.status);
       setMessage(result.status === 'saved' ? '저장됨' : '이전 입력 저장됨 · 추가 변경 있음');
-    } catch (error) { setMessage(error instanceof Error ? error.message : '저장 실패'); }
+      return result;
+    } catch (error) { setMessage(error instanceof Error ? error.message : '저장 실패'); throw error; }
     finally { setSaving(false); }
   };
   const step = (direction: -1 | 1) => {
@@ -208,8 +214,10 @@ function EditorSession(props: StructureEditorProps) {
           <strong>페이지 구조</strong><Toolbar bridge={bridge} disabled={Boolean(props.readonly)} run={run} />
           <WorkspaceControls mode={mode} change={setMode} zoom={zoom} setZoom={setZoom} disabled={Boolean(props.readonly || preview)}
             fit={() => { setZoom(Math.max(.1, Math.min(2, ((scrollHost.current?.clientWidth ?? canvasWidth) - 40) / canvasWidth))); scrollHost.current?.scrollTo(0, 0); }} />
-          <CommandButton disabled={props.readonly || saving} onClick={() => void save()}>{saving ? '저장 중' : '저장'}</CommandButton>
+          <CommandButton disabled={props.readonly || saving || publishing} onClick={() => void save().catch(() => {})}>{saving ? '저장 중' : '저장'}</CommandButton>
           <CommandButton aria-pressed={preview} onClick={() => setPreview(!preview)}>구조 미리보기</CommandButton>
+          {props.publication && <PublicationControls port={props.publication} context={bridge.context} save={save}
+            disabled={Boolean(props.readonly || saving)} editRevision={bridge.context().revision} busy={setPublishing} published={props.onPublished} />}
           <ResponsiveControls width={canvasWidth} change={value => { setCanvasWidth(value); scrollHost.current?.scrollTo(0, 0); }} />
           <span role="status" aria-label="편집 상태" style={{ marginLeft: 'auto', color: 'var(--g7pb-muted)' }}>{props.readonly ? '읽기 전용' : message}</span>
         </header>

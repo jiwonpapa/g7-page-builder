@@ -514,28 +514,28 @@
       "acceptance_ids": [
         "IND-04"
       ],
-      "owner_task": "ip4-format-selection-20261012",
-      "implementation_commit": "4dba4a16a213edadb0d087a30f3d967497b71af2",
-      "integrated_commit": "7f153756d2b57a31301ee3f1099d51fe549ec269",
+      "owner_task": "ip4-richtext-race-20261012",
+      "implementation_commit": "2a2596997a886c19ffa8f752d08f7f43f95c2d94",
+      "integrated_commit": "9118103d91f2c5674f555e81667b260ec9aa4cb6",
       "evidence": [
         {
           "acceptance_id": "IND-04",
           "kind": "unit",
-          "commit": "4dba4a16a213edadb0d087a30f3d967497b71af2",
+          "commit": "2a2596997a886c19ffa8f752d08f7f43f95c2d94",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip4-precision-inspector.md"
         },
         {
           "acceptance_id": "IND-04",
           "kind": "browser",
-          "commit": "7f153756d2b57a31301ee3f1099d51fe549ec269",
+          "commit": "9118103d91f2c5674f555e81667b260ec9aa4cb6",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip4-precision-inspector.md"
         },
         {
           "acceptance_id": "IND-04",
           "kind": "parity",
-          "commit": "7f153756d2b57a31301ee3f1099d51fe549ec269",
+          "commit": "9118103d91f2c5674f555e81667b260ec9aa4cb6",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip4-precision-inspector.md"
         }

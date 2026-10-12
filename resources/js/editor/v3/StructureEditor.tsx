@@ -22,12 +22,11 @@ import { MultiInspector } from './MultiInspector';
 import { WorkspaceControls, WorkspaceFrame, WorkspaceMode, type InputMode } from './Workspace';
 import { ReadingOrderNotice, ResponsiveControls } from './ResponsiveControls';
 import { CompositionPanel } from './CompositionPanel';
-import { createBasicComposition } from '../../blocks/v3/basicCompositions';
-import { createRepeatedComposition } from '../../blocks/v3/repeatedTemplates';
-import { createStaticComposition } from '../../blocks/v3/staticTemplates';
+import { compositionClipboard } from '../../editor-application/v3/compositions';
 
 export interface StructureEditorProps {
   document: DocumentV3;
+  compositions?: readonly unknown[];
   sessionId: string;
   readonly?: boolean;
   iframeEnabled?: boolean;
@@ -236,12 +235,9 @@ function EditorSession(props: StructureEditorProps) {
             <div style={{ ...control, marginTop: 10 }}>{(Object.keys(primitiveLabels) as Node['type'][]).map(type =>
               <CommandButton key={type} disabled={props.readonly} onClick={() => run(() => bridge.execute({ kind: 'insert', destination: destination(),
                 nodes: [createPrimitive(type, props.nextId(), bridge.read())] }))}>{primitiveLabels[type]} 삽입</CommandButton>)}</div>
-            <CompositionPanel disabled={Boolean(props.readonly || preview)} insert={key => run(() => bridge.execute({ kind: 'insert', destination: destination(),
-              nodes: [createBasicComposition(key, bridge.read(), props.nextId)] }))}
-              insertRepeated={key => run(() => bridge.execute({ kind: 'paste', destination: destination(),
-                clipboard: createRepeatedComposition(key, bridge.read(), props.nextId) }))}
-              insertStatic={key => run(() => bridge.execute({ kind: 'paste', destination: destination(),
-                clipboard: createStaticComposition(key, bridge.read(), props.nextId) }))} />
+            <CompositionPanel sources={props.compositions} disabled={Boolean(props.readonly || preview)}
+              insert={choice => run(() => bridge.execute({ kind: 'paste', destination: destination(),
+                clipboard: compositionClipboard(choice) }))} />
             <h2 style={{ fontSize: 15, marginTop: 24 }}>선택 {selected.length}개</h2>
             {focus && <RenameControl key={`${focus.node.instance_id}:${focus.node.name}`} node={focus.node} disabled={props.readonly}
               rename={name => command({ kind: 'rename', id: focus.node.instance_id, name })} />}

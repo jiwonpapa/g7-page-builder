@@ -24,6 +24,7 @@ let stylesheetPath = '';
 const builtAssets = new Map<string, Buffer>();
 const bundledPreviewAssets = new Map<string, { contentType: string; body: Buffer }>();
 const fixture = JSON.parse(readFileSync(new URL('../Contract/document-v3.fixture.json', import.meta.url), 'utf8')) as DocumentV3;
+const builtinCompositions = JSON.parse(readFileSync(new URL('../../resources/compositions/builtin-v3.json', import.meta.url), 'utf8')) as DocumentV3[];
 let sizes = { javascript: 0, stylesheet: 0 };
 test.beforeAll(async () => {
   // Build the actual editor module, not a second implementation. This isolated
@@ -46,6 +47,8 @@ test.beforeAll(async () => {
   }
   if ('close' in result) throw new Error('Unexpected build watcher');
   const output: Rollup.OutputBundle[keyof Rollup.OutputBundle][] = (Array.isArray(result) ? result.flatMap(item => item.output) : result.output);
+  const runtimeModules = output.flatMap(item => item.type === 'chunk' ? Object.keys(item.modules) : []);
+  expect(runtimeModules.filter(path => /resources\/(js\/blocks|block-packs)\//.test(path))).toEqual([]);
   javascript = output.filter(item => item.type === 'chunk').map(item => item.code).join('\n');
   for (const item of output) if (item.type === 'asset') builtAssets.set('/' + item.fileName, Buffer.from(item.source));
   stylesheetPath = [...builtAssets.keys()].find(path => path.endsWith('.css') && !path.startsWith('/fonts/')) ?? '';
@@ -60,7 +63,7 @@ test.beforeAll(async () => {
   expect(sizes.javascript).toBeLessThanOrEqual(508_500);
   expect(sizes.stylesheet).toBeLessThanOrEqual(45_200);
 });
-async function open(page: Page, source?: DocumentV3, readonly = false) {
+async function open(page: Page, source?: DocumentV3, readonly = false, compositions?: DocumentV3[]) {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
@@ -77,10 +80,10 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
   await page.addStyleTag({ url: 'https://v3-editor.test' + stylesheetPath });
   await page.addScriptTag({ content: javascript });
   const initial = source ?? { ...fixture, blocks: [], assets: [{ ...fixture.assets[0], url: '/image.svg' }] } as DocumentV3;
-  await page.evaluate(({ initial, readonly }) => {
+  await page.evaluate(({ initial, readonly, compositions }) => {
     window.v3Proof = { current: initial, saved: null, revision: 1, dispose: () => {} };
     window.v3Proof.dispose = window.G7PBV3.mountStructureEditor(document.getElementById('editor')!, {
-      document: initial, sessionId: crypto.randomUUID(), readonly, serverRevision: 1, nextId: () => crypto.randomUUID(),
+      document: initial, compositions, sessionId: crypto.randomUUID(), readonly, serverRevision: 1, nextId: () => crypto.randomUUID(),
       onChange: document => { window.v3Proof.current = document; },
       drafts: { save: async request => {
         if (request.expectedRevision !== window.v3Proof.revision) throw new Error('conflict 409');
@@ -88,7 +91,7 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
         return { documentId: request.documentId, revision: ++window.v3Proof.revision };
       } },
     });
-  }, { initial, readonly });
+  }, { initial, readonly, compositions });
   await expect(page.getByRole('main', { name: '독립 구조 편집기' })).toBeVisible();
   await expect(page.locator('iframe')).toBeVisible();
   await Promise.all(page.frames().map(frame => frame.evaluate(async () => { await document.fonts.ready; })));
@@ -96,11 +99,77 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
 const read = (page: Page) => page.evaluate(() => window.v3Proof.current);
 const click = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).click();
 const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
+test('v3 unknown composition data edits in the same built bundle without registration', async ({ page }, info) => {
+  // Created only after beforeAll builds the product. The product cannot know
+  // this name, identity or nested layout, and is never rebuilt for this input.
+  const source = structuredClone(fixture);
+  source.document_id = '30000000-0000-4000-8000-000000000001';
+  source.blocks[0].name = '새 구성 ' + Date.now();
+  source.assets[0].url = '/image.svg';
+  const root = source.blocks[0];
+  root.style = { display: 'grid', columns: [{ fr: 2 }, { fr: 3 }], column_gap: { value: 17, unit: 'px' } };
+  root.responsive = { mobile: { columns: [{ fr: 1 }], row_gap: { value: 23, unit: 'px' } } };
+  for (const node of root.slots.content!) { node.style = {}; node.responsive = {}; }
+  const frame: Node = { ...structuredClone(root), type: 'layout.container', instance_id: '30000000-0000-4000-8000-000000000002',
+    name: '새 중첩 프레임', props: { tag: 'div' }, style: { display: 'flex', direction: 'column', row_gap: { value: 13, unit: 'px' } },
+    responsive: {}, slots: { content: root.slots.content!.splice(2) } };
+  root.slots.content!.push(frame);
+  const flatten = (nodes: Node[]): Node[] => nodes.flatMap(node => [node, ...flatten(node.slots.content ?? [])]);
+  const original = JSON.stringify(source), sourceIds = flatten(source.blocks).map(node => node.instance_id);
+  for (const width of [360, 768, 1280]) {
+    await open(page, undefined, false, [source]); await canvasWidth(page, width);
+    await page.getByLabel('구성 검색', { exact: true }).fill(source.blocks[0].name);
+    await expect(page.getByLabel('구성 선택', { exact: true }).locator('option')).toHaveCount(1);
+    const empty = await read(page);
+    await click(page, '구성 삽입');
+    await expect.poll(async () => (await read(page)).blocks.length).toBe(1);
+    const inserted = await read(page);
+    expect(inserted.document_id).toBe(empty.document_id); expect(inserted.slug).toBe(empty.slug);
+    expect(flatten(inserted.blocks).every(node => !sourceIds.includes(node.instance_id))).toBe(true);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(empty);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(inserted);
+    const text = flatten(inserted.blocks).find(node => node.type === 'content.text')!;
+    await layer(page, text.instance_id).click();
+    await length(page, '글자 크기', 21); await click(page, '디자인 적용');
+    await click(page, '본문 입력');
+    const target = page.frameLocator('iframe').locator('[data-v3-node="' + text.instance_id + '"]');
+    await target.locator('[contenteditable]').click();
+    const editable = target.locator('.tiptap[contenteditable="true"]');
+    await expect(editable).toBeVisible(); await editable.click();
+    await editable.press('ControlOrMeta+A'); await page.keyboard.insertText('새 구성의 정확한 문구 ' + width);
+    await expect.poll(async () => {
+      const current = flatten((await read(page)).blocks).find(node => node.instance_id === text.instance_id);
+      return current?.type === 'content.text' ? current.props.paragraphs.map(runs => runs.map(run => run.text).join('')).join('\n') : null;
+    }).toBe('새 구성의 정확한 문구 ' + width);
+    await click(page, '구조 편집'); await layer(page, text.instance_id).click();
+    const edited = await read(page);
+    await click(page, '복제');
+    await expect.poll(async () => flatten((await read(page)).blocks).length).toBe(flatten(edited.blocks).length + 1);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(edited);
+    await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+    const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
+    expect(saved).toEqual(edited);
+    await open(page, saved, false, [source]); await canvasWidth(page, width);
+    await expect(page.frameLocator('iframe').locator('[data-v3-node="' + text.instance_id + '"]')).toHaveText('새 구성의 정확한 문구 ' + width);
+    await page.screenshot({ path: info.outputPath('unknown-composition-' + width + '.png'), fullPage: true });
+    await info.attach('unknown-composition-' + width, { contentType: 'application/json', body: JSON.stringify(saved) });
+  }
+  expect(JSON.stringify(source)).toBe(original);
+  await open(page, undefined, false, []);
+  await expect(page.getByRole('button', { name: '구성 삽입', exact: true })).toBeDisabled();
+  await insert(page, '제목');
+  await expect.poll(async () => (await read(page)).blocks[0].type).toBe('content.heading');
+});
 const basicCompositionKeys = ['hero.poster', 'hero.product', 'hero.backdrop', 'hero.editorial', 'hero.device',
   'hero.balanced', 'hero.screenshot', 'hero.overlap', 'hero.offset', 'card.plain', 'card.outlined', 'image-text.left', 'image-text.right'];
 const repeatedCompositionKeys = ["buttons.primary-secondary","buttons.centered-actions","process.four-step","logo-cloud.partners","pricing.three-tier","team.leadership","gallery.project-scenes","testimonials.customer-proof","comparison.plans","articles.insights","events.upcoming","downloads.resource-center","card-grid.services","breadcrumbs.detail-page","logo-cloud.grid","logo-cloud.panel","pricing.cards","pricing.compact","pricing.editorial","team.grid","team.editorial","team.featured","gallery.grid","gallery.masonry","gallery.filmstrip","testimonials.grid","testimonials.spotlight","testimonials.split","testimonials.quote-hero","articles.list","articles.grid","articles.featured","articles.editorial","card-grid.grid","card-grid.rail","card-grid.editorial","card-grid.numbered","list.simple"];
 const staticCompositionKeys = ['heading.section-intro', 'heading.compact-title', 'image.landscape', 'image.square', 'cta.contact',
   'bar-chart.quarterly', 'divider.section-break', 'blockquote.customer-voice', 'notice.service-info', 'cta.centered', 'cta.banner', 'cta.panel'];
+function compositionId(key: string): string {
+  const entry = builtinCompositions.find(source => source.slug === key.replaceAll('.', '-'));
+  if (!entry) throw new Error('Missing canonical starter data: ' + key);
+  return entry.document_id;
+}
 const bundledManifest = JSON.parse(readFileSync(new URL('../../resources/block-packs/builtin-core/manifest.json', import.meta.url), 'utf8')) as {
   presets: { preset_id: string; props: unknown }[] };
 const previewPrefix = '/modules/jiwonpapa-page_builder/store/previews/';
@@ -118,6 +187,7 @@ for (const key of [...repeatedCompositionKeys, ...staticCompositionKeys]) {
   if (!preset) throw new Error('Missing bundled repeated preset: ' + key);
   collectPreviewAssets(preset.props);
 }
+collectPreviewAssets(builtinCompositions);
 test('v3 semantic lists tables and figures preserve editing grammar and PHP parity', async ({ page, context }, info) => {
   interface TagTree { tag: LayoutTag | 'text'; children?: TagTree[] }
   const cases = JSON.parse(readFileSync(new URL('../Fixtures/document-v3-cases.json', import.meta.url), 'utf8')) as {
@@ -197,9 +267,9 @@ test('v3 semantic lists tables and figures preserve editing grammar and PHP pari
 for (const key of basicCompositionKeys) test('v3 composition internal edit save reopen and PHP parity ' + key, async ({ page, context }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await open(page);
-  expect(await page.getByLabel('기본 구성', { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(basicCompositionKeys);
+  expect(await page.getByLabel('구성 선택', { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(builtinCompositions.map(source => source.document_id));
   const empty = await read(page);
-  await page.getByLabel('기본 구성', { exact: true }).selectOption(key); await click(page, '구성 삽입');
+  await page.getByLabel('구성 선택', { exact: true }).selectOption(compositionId(key)); await click(page, '구성 삽입');
   await expect.poll(async () => (await read(page)).blocks.length).toBe(1);
   const inserted = await read(page);
   const flatten = (nodes: DocumentV3['blocks']): DocumentV3['blocks'] => nodes.flatMap(node => [node, ...flatten(node.slots.content ?? [])]);
@@ -238,8 +308,12 @@ for (const key of basicCompositionKeys) test('v3 composition internal edit save 
     await page.getByTestId('v3-preview').locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const preview = await page.getByTestId('v3-preview').evaluate(measure);
     const output = await context.newPage(); await output.setViewportSize({ width, height: 1000 });
-    await output.route('**/*', route => route.request().url().endsWith('/image.svg')
-      ? route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><rect width="160" height="80" fill="#dbeafe"/></svg>' }) : route.abort());
+    await output.route('**/*', route => {
+      const asset = bundledPreviewAssets.get(new URL(route.request().url()).pathname);
+      if (asset) return route.fulfill(asset);
+      return route.request().url().endsWith('/image.svg')
+        ? route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><rect width="160" height="80" fill="#dbeafe"/></svg>' }) : route.abort();
+    });
     await output.setContent('<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://v3-editor.test/"></head><body style="margin:0">' + phpDraft(saved, expectedViewport(width)) + '</body></html>');
     await output.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const php = await output.locator('[data-v3-surface]').evaluate(measure);
@@ -269,9 +343,9 @@ for (const family of [
 ]) for (const key of family.keys) test('v3 ' + family.name + ' composition internal edit assets save reopen and PHP parity ' + key, async ({ page, context }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await open(page);
-  expect(await page.getByLabel(family.label, { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(family.keys);
+  expect(await page.getByLabel('구성 선택', { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(builtinCompositions.map(source => source.document_id));
   const empty = await read(page);
-  await page.getByLabel(family.label, { exact: true }).selectOption(key); await click(page, family.label + ' 삽입');
+  await page.getByLabel('구성 선택', { exact: true }).selectOption(compositionId(key)); await click(page, '구성 삽입');
   await expect.poll(async () => (await read(page)).blocks.length).toBe(1);
   const inserted = await read(page);
   const flatten = (nodes: Node[]): Node[] => nodes.flatMap(node => [node, ...flatten(node.slots.content ?? [])]);
@@ -359,7 +433,7 @@ for (const family of [
     await output.close();
   }
   await open(page, saved, true);
-  await expect(page.getByRole('button', { name: family.label + ' 삽입', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '구성 삽입', exact: true })).toBeDisabled();
   expect(await read(page)).toEqual(saved); expect(errors).toEqual([]);
 });
 async function enable(page: Page, label: string) {

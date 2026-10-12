@@ -420,7 +420,7 @@
       "id": "IP2",
       "phase": "foundation",
       "title": "정밀 문서와 스타일 계약",
-      "status": "in_progress",
+      "status": "blocked",
       "depends_on": [
         "IP1"
       ],
@@ -428,10 +428,10 @@
         "IND-02"
       ],
       "owner_task": "ip2-document-contract-20261012",
-      "implementation_commit": null,
+      "implementation_commit": "e85bdf2f8af9a78c66289e0b3dc1ec9c022240d1",
       "integrated_commit": null,
       "evidence": [],
-      "blocked_reason": null,
+      "blocked_reason": "기존 tests/UnitPhp/HeroCompositionTest.php의 Pint class_attributes_separation 실패로 FULL 통합 차단. 기준 SHA에서도 재현했으며 범위 밖 서식 수정 승인 필요. 구현/관련 검증은 제출 완료, 전체 통합은 미완료.",
       "scope": [
         "schemas",
         "resources/js/documents",

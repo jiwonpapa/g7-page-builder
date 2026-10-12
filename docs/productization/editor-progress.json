@@ -600,7 +600,7 @@
       "id": "IP6",
       "phase": "editing",
       "title": "반응형 상세 편집",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "IP5"
       ],
@@ -608,9 +608,31 @@
         "IND-06"
       ],
       "owner_task": "ip6-responsive-editor-20261012",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "b23d204f8183c971b5b093e5736bb30b5da36630",
+      "integrated_commit": "29f80fdab86058ce2683343e5ff6e056efca1c27",
+      "evidence": [
+        {
+          "acceptance_id": "IND-06",
+          "kind": "contract",
+          "commit": "29f80fdab86058ce2683343e5ff6e056efca1c27",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip6-responsive-editing.md"
+        },
+        {
+          "acceptance_id": "IND-06",
+          "kind": "browser",
+          "commit": "29f80fdab86058ce2683343e5ff6e056efca1c27",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip6-responsive-editing.md"
+        },
+        {
+          "acceptance_id": "IND-06",
+          "kind": "parity",
+          "commit": "29f80fdab86058ce2683343e5ff6e056efca1c27",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip6-responsive-editing.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/documents",

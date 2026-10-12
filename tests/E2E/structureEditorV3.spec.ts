@@ -284,8 +284,13 @@ for (const key of repeatedCompositionKeys) test('v3 repeated composition interna
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(inserted);
   await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(styled);
   await click(page, '본문 입력');
-  const editable = page.frameLocator('iframe').locator('[data-v3-node="' + inner.instance_id + '"] [contenteditable]');
-  await expect(editable).toBeVisible(); await editable.hover();
+  const content = page.frameLocator('iframe').locator('[data-v3-node="' + inner.instance_id + '"]');
+  const activation = content.locator('[contenteditable]');
+  await expect(activation).toBeVisible(); await activation.hover(); await activation.click();
+  // Puck lazily mounts Tiptap on activation; its preceding rich-text placeholder
+  // is also contenteditable but is not the canonical editing input.
+  const editable = content.locator(inner.type === 'action.link' ? '[contenteditable]' : '.tiptap[contenteditable="true"]');
+  await expect(editable).toBeVisible();
   await expect(editable).toHaveAttribute('contenteditable', /^(true|plaintext-only)$/);
   await editable.click(); await editable.press('ControlOrMeta+A');
   await page.keyboard.insertText('내부 항목 수정 <안전한 문자>');

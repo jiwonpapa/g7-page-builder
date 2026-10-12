@@ -1,4 +1,4 @@
-import { expect, request as playwrightRequest, test, type APIRequestContext, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { expect, request as playwrightRequest, test, type APIRequestContext, type BrowserContext, type Locator, type Page, type Request } from '@playwright/test';
 import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -878,6 +878,40 @@ async function settleContentMedia(blocks: Locator): Promise<void> {
   });
 }
 
+async function openParityEditor(page: Page, documentId: string): Promise<void> {
+  const started = Date.now();
+  const pending = new Map<Request, { url: string; type: string; startedMs: number }>();
+  const finished: Array<{ url: string; type: string; startedMs: number; elapsedMs: number; failed: boolean }> = [];
+  const onRequest = (request: Request): void => {
+    const url = new URL(request.url());
+    pending.set(request, { url: `${url.origin}${url.pathname}`, type: request.resourceType(), startedMs: Date.now() - started });
+  };
+  const complete = (request: Request, failed: boolean): void => {
+    const entry = pending.get(request);
+    if (entry) finished.push({ ...entry, elapsedMs: Date.now() - started - entry.startedMs, failed });
+    pending.delete(request);
+  };
+  const onFinished = (request: Request): void => complete(request, false);
+  const onFailed = (request: Request): void => complete(request, true);
+  page.on('request', onRequest);
+  page.on('requestfinished', onFinished);
+  page.on('requestfailed', onFailed);
+  let navigated = false;
+  try {
+    await page.goto(`${EDITOR_PATH}?document=${documentId}`, { waitUntil: 'domcontentloaded' });
+    navigated = true;
+  } finally {
+    page.off('request', onRequest);
+    page.off('requestfinished', onFinished);
+    page.off('requestfailed', onFailed);
+    // Query strings, credentials, headers and bodies are intentionally excluded.
+    await test.info().attach('entry-navigation-network', {
+      body: JSON.stringify({ navigated, elapsedMs: Date.now() - started, pending: [...pending.values()], finished }, null, 2),
+      contentType: 'application/json',
+    });
+  }
+}
+
 async function assertScenario(
   context: BrowserContext,
   page: Page,
@@ -910,7 +944,7 @@ async function assertScenario(
   }
   // Readiness is asserted below on the real editor, styles, fonts, media and
   // stable block geometry. Unrelated subresource load must not gate that work.
-  await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`, { waitUntil: 'domcontentloaded' });
+  await openParityEditor(page, owned.documentId);
   const editor = page.getByTestId('page-builder-editor');
   await expect(editor).toBeVisible();
   const viewportMutations: string[] = [];

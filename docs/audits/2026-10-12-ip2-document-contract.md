@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 번들 최적화는 통합·검증 완료했다. IP2 FULL 검증은 단위·커버리지·build·G7 통합 검사를 통과했으나 제품 브라우저 27개 통과/22개 실패로 차단됐다. Card/목록 시험 전제와 활성 테마의 호환 전제를 별도 보완해야 한다. IP2 완료나 IP3 착수를 선언하지 않는다.
+상태: 승인된 E2E 3파일 보완은 통합했고 지원 테마의 FULL 제품 브라우저는 48개 통과/1개 실패다. 남은 모바일 Hero의 빈 슬롯 간격 24px는 IP2 없는 기준에서도 재현한 제품 차이이며 별도 수정 승인이 필요하다. 원래 테마와 Site Part 상태를 복구했다. IP2 완료나 IP3 착수를 선언하지 않는다.
 
 ## 소유 범위
 
@@ -166,7 +166,7 @@ IP2 submitted 원본은 worktree에 보존한다. 미통합 제출이 남아 있
 - 브라우저 증거: Local `output/playwright/gates/integration-ip2-resume-20261012/defd9246db079eb3dbb877a769e188a249dcbafc751aa8cd8b9521a397cf660f/0ec869e6a82c452fb8729eba27ba7654/`.
 - 위 통합 SHA를 기준으로 IP2 공유 계약의 `FULL=1` 통합을 재개한다. 성공 전까지 상태는 진행 중이며 운영 배포는 하지 않는다.
 
-## 현재 차단: 기존 E2E 계약과 로컬 활성 테마
+## 이전 차단: 기존 E2E 계약과 로컬 활성 테마
 
 제출 `f1eb26eed7b137db21ca31f156162eed048b1789`를 `0ad15fdfe1ddd4b40ac9822d83fb58180f348894`에 임시 통합했다. 첫 전체 실행 로그는 Local `output/playwright/ip2-full-after-bundle-20261012.log`다. 하네스 463개·PHP 단위 336개/3234 assertions·coverage 409개/3866 assertions·프런트엔드 122파일/1,016개·전체 coverage 하한·production 8번들·전체 148개 썸네일·frontend budget은 통과했으나 로컬 모듈 registry 0.35.1 / manifest 0.36.0 불일치로 환경 검사에서 멈췄다.
 
@@ -193,4 +193,31 @@ IP2 submitted 원본은 worktree에 보존한다. 미통합 제출이 남아 있
 
 전체 실행의 Site Part journal은 `output/playwright/gates/integration-ip2-resume-20261012/8985aa263e113cdc34f5d5a64c892b5ed61e066aac6a75ed0d7141f7d72b4599/6ecea6534fce4b9a87ff29df9a0f8bb2/site-part-state.json`이다. 12개 세션 모두 restored=true, 전체 closed=true다. 이전 registry 차단 journal의 sessions=[]·closed=true도 확인했다. 현재 활성 테마는 유지했으며 미통합 IP2 제출과 integration lease를 보존한다.
 
-후속 승인 후보는 E2E 3개 파일(`blockCatalogQuality.spec.ts`, `editorLayoutParity.spec.ts`, `editorPerformance.spec.ts`)의 현행 Card 계약·대상 측정 보완, 그리고 로컬 검증 동안 지원 테마로 임시 전환한 뒤 원래 테마로 복구하는 환경 사용이다. 제품 기능·성능/시각 하한·검사 범위를 낮추지 않는다. 추가 제품/테마/하네스 소스가 필요하면 별도 정확 범위를 다시 승인받는다.
+위 E2E 3파일 보완과 지원 테마 임시 사용·원복은 이후 사용자 승인을 받아 아래와 같이 수행했다. 제품 기능·성능/시각 하한·검사 범위는 유지했다.
+
+## 승인된 E2E 보완과 테마 검증
+
+- task `ip2-browser-contracts-20261012`, 기준 `9b379d59cd22841e693c3e1b19ca674dc46e6f08`, 정확 3개 E2E 파일만 소유했다. 제출 `5442fb734e01411fc85e3f4a892ce2be03e62c52`, 통합 `af8a2e06dfffd99bfc77b365376d31b7c0b21367`.
+- `blockCatalogQuality.spec.ts`: 첫 Card fixture가 정확히 `card.empty`·outlined인지 확인하고 동일 instance의 article·media/body/actions 빈 슬롯 3개를 별도로 검증한다. 이 fixture만 일반 비어 있음 판정과 구분하며 전체 49종·크기·overflow·이미지·글꼴·접근성·기존 시각 snapshot 검사는 유지했다.
+- `editorLayoutParity.spec.ts`: Card 양쪽의 실제 padding 소유자인 내부 article을 비교한다. 다른 블록의 측정 대상, 1.25px 치수·0.75px 글꼴 허용치는 유지했다.
+- `editorPerformance.spec.ts`: 구조 편집이 꺼진 v1 fixture에서 제외되는 Card 정의/프리셋을 manifest 기반 기대 목록에 반영한다. 전체 목록 145개·초기 렌더 24개와 기존 모든 시간/Long Task 예산을 유지했다.
+- 타입·관련 하네스 81개·31개 브라우저 정의 수집 검사를 통과했다. 수집 성공은 실제 브라우저 성공과 구분한다.
+- Local runtime lease 아래 공개 `php artisan template:activate`로 `jwsoft-business01 0.3.1`에서 `sirsoft-basic 1.1.4`로 전환했다. 정상/오류 종료 공통 EXIT trap에서 원래 테마로 복구하고 공개 TemplateService로 identifier/version을 재확인했다. 두 테마의 설치·bundled·pending 파일 총 1,667개 전후 SHA256은 모두 `926656b06c0724ccde5eaeac5b8f493432153613e364533ae0f2ebeb710e33a3`다. 테마 파일·G7 코어·운영 서버는 수정하지 않았다.
+
+IP2 제출 `3f187551709e048559e354ec73c3a3582527a628`을 위 통합 기준에서 `make task-integrate-scoped TASK=ip2-document-contract-20261012 INTEGRATION_TASK=integration-ip2-resume-20261012 FULL=1`로 검증했다. 원본 로그는 Local `output/playwright/ip2-full-after-browser-contracts-20261012.log`다.
+
+- 하네스 463개, PHP 단위 336개/3,234 assertions, PHP coverage 409개/3,866 assertions와 기존 하한선 통과. PHPUnit notice 1건 유지.
+- 프런트엔드 122파일/1,016개, coverage 84.58/79.00/81.06/87.86%, 타입·구조·production 8번들·카탈로그 148개 source·편집기 gzip 508,253/508,500 bytes 통과.
+- G7 통합 73개/632 assertions 통과. 제품 브라우저는 재시도 없이 **48개 통과/1개 실패**(9.5분). PC·태블릿 전체 프리셋, 3기기 카탈로그 시각 회귀와 5개 Page Kit, 지원 테마의 페이지/임시 홈·Header/Footer·대표 경로 연결이 통과했다.
+- 100블록 성능: 준비 1,685.8ms, 타이핑 p95/max 82.6ms, 드래그 965.5ms, 목록 열기 111.2ms, Long Task 7개/max 135ms/총 570ms로 기존 예산 통과.
+- 실패 때문에 뒤에 연결된 `test:e2e:site-shell`은 실행되지 않았다. Site Part journal `output/playwright/gates/integration-ip2-resume-20261012/c7fc8ec71511fc2231c63a89b9c48caf55436fef9f77b3b0d92d069cdd4b9898/b068046e52624e0c805e4dfaf8a8f118/site-part-state.json`은 10세션 모두 restored=true·closed=true다.
+
+## 현재 차단 모바일 Hero 빈 슬롯 간격
+
+모바일 `ALL_PRESET_LAYOUT_GATE`의 `hero.backdrop` 이미지 높이는 편집 462.59375px, 미리보기 438.59375px로 정확히 24px 다르다. 저장된 geometry에서 두 영역의 padding은 80px 20px로 같고 모든 텍스트/버튼 높이도 같다. 편집기에만 높이 0인 빈 Puck DropZone이 Grid 자식으로 남아 gap 1.5rem(24px)을 하나 추가한다. `puckEditorConfig.tsx`의 Hero render는 빈 extra도 호출하고 공개 Hero compiler는 내용이 없는 extra를 출력하지 않는다. 이는 Card 측정 오판과 다른 제품 렌더링 차이다.
+
+통합 실패 후 Git은 자동으로 `af8a2e06dfffd99bfc77b365376d31b7c0b21367`로 원복됐다. IP2 없는 기준·원래 테마·동일 build에서 `G7PB_PRESET_IDS=hero.backdrop`, mobile, `--retries=0`로 해당 시나리오만 실행하여 같은 차이를 재현했다. 로그/JSON/DOM 치수/두 화면은 `output/playwright/ip2-baseline-hero-backdrop-20261012.log` 및 `output/playwright/ip2-baseline-hero-backdrop-20261012/`에 보존했다. 원본 전체 실행의 두 화면도 직접 확인했다.
+
+모바일 전체 검사에서는 Hero 실패가 후속 블록 치수 assertion을 막으므로 `G7PB_PRESET_IDS=card.empty`의 모바일 비교만 별도로 실행해 통과했다(4.2초). 증거는 `output/playwright/ip2-card-mobile-20261012.log`와 해당 이름의 디렉터리다. 제품/시각 기준이나 snapshot을 바꾸지 않았다.
+
+후속 수정 후보는 `resources/js/editor/puckEditorConfig.tsx`의 Hero 빈 슬롯 렌더 조건과 `tests/Unit/puckEditorConfig.test.tsx`의 빈/채운 슬롯·편집/미리보기 회귀다. 기존 E2E의 전체 프리셋 및 내부 구성/이력 시나리오를 재사용한다. 제품 소스는 별도 승인 전 수정하지 않는다. IP2 제출과 integration lease를 보존하며 IP3·운영 배포로 진행하지 않는다.

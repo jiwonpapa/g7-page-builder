@@ -45,7 +45,7 @@
 
 다음 진행 가능: 없음
 
-- 차단 IP2: 승인된 번들 최적화 통합·Linux 508253/508500 bytes·Inspector 브라우저 2개 통과. FULL 하네스 463개·프런트엔드 1016개·PHP/프런트 커버리지·G7 통합 73개는 통과했으나 제품 브라우저 27개 통과/22개 실패. Card/목록 시험 전제 7건과 활성 jwsoft-business01 테마 관련 15건. IP2 없는 기준에서도 핵심 3개 실패 재현. E2E 3파일 보완과 지원 테마 임시 검증·원복 승인 필요. 운영 배포·IP2 통합 미완료.
+- 차단 IP2: 승인된 E2E 3파일 통합 후 sirsoft-basic 1.1.4에서 FULL 제품 브라우저 48개 통과/1개 실패. 모바일 hero.backdrop의 빈 내부 슬롯이 Grid 간격 24px를 추가하는 제품 차이를 확인했고 IP2 없는 기준에서도 재현했다. Card 모바일 단독 비교는 통과. jwsoft-business01 0.3.1 원복·테마 1667파일 해시 동일·Site Part 10세션 복구 완료. Hero 렌더링과 관련 회귀 보완은 별도 승인 필요. IP2 미통합·IP3 미착수·운영 미배포.
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

@@ -647,14 +647,14 @@
       "id": "IP7",
       "phase": "product",
       "title": "내장 구성 템플릿과 공통영역",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "IP6"
       ],
       "acceptance_ids": [
         "IND-07"
       ],
-      "owner_task": null,
+      "owner_task": "integration-ip7-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

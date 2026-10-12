@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 기존 썸네일 146개 재생성·시각 확인·현재 렌더 source 검사를 7개 분할 task로 통합했다. IP2의 필수 FULL 통합 검증을 재개하며, 아직 IP2 완료나 IP3 착수를 선언하지 않는다.
+상태: 승인된 기존 썸네일 146개를 7개 분할 task로 통합했고 전체 148개 현재 렌더 source 검사를 통과했다. IP2 FULL 재검증은 후속 편집기 번들 용량 초과에서 차단됐다. IP2 제외 기준에서도 동일하게 재현했으며 별도 번들 최적화 승인이 필요하다. IP2 완료나 IP3 착수를 선언하지 않는다.
 
 ## 소유 범위
 
@@ -137,6 +137,21 @@ npx --no-install vitest run tests/Unit/layoutTree.test.ts tests/Unit/heroComposi
 - 4차 갤러리 기본 블록/첫 프리셋의 최초 PNG bytes가 달라 canonical 검사와 고유 이미지 수 검사가 실패했다. 두 ID만 기존 생성기로 재생성한 뒤 동일 기준을 통과하고 최종 이미지를 다시 확인했다. 생성기나 허용 기준을 변경하지 않았다.
 - Playwright 스킬의 실제 렌더 확인과 write-page의 증거 경계에 따라 생성 이미지·기술 검사·제품 동작·배포를 구분했다. 제품 코드·생성기·스타일·버전·품질 승인 원장에는 변경이 없다.
 
-IP2 재통합 기준은 85c353a01a5d424f31716d8a156dc0a5e05dfbef다. 공유 문서 계약에 필요한 FULL=1은 유지하며 전체 검증 결과는 후속으로 기록한다.
+IP2 재통합 기준은 85c353a01a5d424f31716d8a156dc0a5e05dfbef다. 공유 문서 계약에 필요한 FULL=1은 유지했으며 아래 결과를 확인했다.
+
+## 현재 차단: 기존 편집기 번들 용량
+
+IP2 재제출 184c4231c800d196e58662aab27c797d26b1d493을 위 기준에 임시 통합했다. 원본 로그는 Local output/playwright/ip2-full-after-thumbnails-20261012.log에 보존한다.
+
+- 전체 하네스 463개 통과. PHP Pint 304파일·PHPStan 161파일·단위 336개/3234 assertions 통과. coverage 409개/3866 assertions와 기존 PHPUnit notice 1건이며 project 75.70%·compiler-family 89.63%·서비스 96.37%·repository 94.81%로 기준을 통과했다.
+- 프런트엔드 121파일/1,011개 통과. coverage statements 84.58%·branches 79.00%·functions 81.06%·lines 87.86%, layoutPolicy 함수/줄 100%로 기준을 통과했다. v3 도메인 함수/줄도 100%다.
+- 타입·CSS·G7 의존 예산·442파일 구조·production 8번들·카탈로그 candidate 기술 검사 통과. 블록 49개·프리셋 99개, 전체 148개의 현재 렌더 source 검사 통과로 stale-thumbnail 차단을 해소했다.
+- 보존 품질 원장은 stored-integrity-valid이며 592개 pending 결정과 release_authorized=false를 유지했다. command 하네스 11개 및 asset manifest/공식 Store 6개 검사도 통과했다.
+- 이후 npm run check:frontend-budgets가 dist/js/page-builder-editor.iife.js=510030/508500 gzip bytes로 실패했다. 초과는 1530 bytes(약 0.30%)이며 기준을 변경하거나 성공으로 취급하지 않았다.
+- 통합은 자동 원복되어 Local HEAD 85c353a01a5d424f31716d8a156dc0a5e05dfbef가 유지됐다. IP2가 없는 이 기준에서 make dev-build-assets TASK=integration-ip2-resume-20261012가 일치하는 입력 fingerprint f7d1fc7508846d71a6f155dff124d43fa0731418d676129cf2ceede351083432의 build를 재사용한 뒤, 같은 Docker Node 24.19.0에서 npm run check:frontend-budgets만 실행해 동일 510030/508500 실패를 재현했다.
+- dist/meta/editor-modules.json에는 신규 documents/v3 파일이 없으며 이번 IP2는 편집기 entry에 연결되지 않았다. 원인 분석 중 현재 썸네일 files hash 148개는 편집기 번들에서 발견되지 않아 해시 테이블 포함이 원인이라고 단정하지 않았다. 과거 508050 측정값과 현재 차이의 세부 원인은 미확정이다.
+- fixture journal: output/playwright/gates/integration-ip2-resume-20261012/80a552312572c430effab3f5a6f6ab26c25bf06fbb9b7581c1021109d2703003/f1b3568f6fba41e3953f889b5d77d602/site-part-state.json. sessions=[]·closed=true다. G7 후속 검증과 제품 브라우저 시나리오에는 도달하지 않았다.
+
+새 번들 최적화는 자산 재생성 승인과 별도 범위이므로 착수하지 않았다. 용량 기준·제품 기능·의존성 버전을 유지한 별도 작업 승인을 요청했다. 정확 수정 경로와 관련 회귀검사를 착수 시 확정하고, 성공한 검사 입력의 불필요한 반복이나 FULL 게이트 우회는 하지 않는다.
 
 IP2 submitted 원본은 worktree에 보존한다. 미통합 제출이 남아 있으므로 integration lease를 강제 해제하거나 완료로 바꾸지 않는다. 전체 필수 검증과 통합 후에만 IP2를 done으로 바꾸고 IP3로 진행한다. 정밀 편집 UI·저장/발행·브라우저 시각 회귀·배포 성공을 주장하지 않는다.

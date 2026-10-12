@@ -161,6 +161,13 @@ for (const zoom of [.5, 1, 2]) {
     await page.keyboard.press('Escape'); await page.mouse.up();
     expect(await read(page)).toEqual(changed);
     await expect.poll(() => target.evaluate(element => parseFloat(getComputedStyle(element).width))).toBe(200);
+    const undoBox = await handle.boundingBox(); if (!undoBox) throw Error('missing pending Undo handle');
+    await page.mouse.move(undoBox.x + undoBox.width / 2, undoBox.y + undoBox.height / 2); await page.mouse.down();
+    await page.mouse.move(undoBox.x + undoBox.width / 2 + 30 * zoom, undoBox.y + undoBox.height / 2, { steps: 5 });
+    await page.keyboard.press('ControlOrMeta+z'); await page.mouse.up();
+    await expect.poll(() => read(page)).toEqual(before);
+    await expect.poll(() => target.evaluate(element => parseFloat(getComputedStyle(element).width))).toBe(160);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(changed);
     await page.getByLabel('비율 잠금', { exact: true }).check();
     await target.click(); const ratioBox = await handle.boundingBox(); if (!ratioBox) throw Error('ratio handle');
     await page.mouse.move(ratioBox.x + 4, ratioBox.y + 4); await page.mouse.down();

@@ -20,14 +20,20 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
   const [ratio, setRatio] = useState(false), [snap, setSnap] = useState(true);
   const moveable = useRef<Moveable>(null), selecto = useRef<Selecto>(null);
   const groupClick = useRef<string | null>(null);
-  const before = useRef<{ boxes: GeometryBox[]; styles: Map<HTMLElement, string> } | null>(null);
+  const before = useRef<{ boxes: GeometryBox[]; elements: HTMLElement[] } | null>(null);
   const transaction = useMemo(() => createGeometryGesture({
     read: () => ({ document: bridge.read(), context: bridge.context() }), execute: bridge.execute,
   }), [bridge]);
   const live = useRef({ source, selected, targets, mode, readonly, zoom, pan, report });
   live.current = { source, selected, targets, mode, readonly, zoom, pan, report };
   const restore = () => {
-    before.current?.styles.forEach((style, element) => element.setAttribute('style', style));
+    // Undo/session updates may already have replaced the canonical source.
+    // Never repaint the stale gesture-start style over that newer document.
+    const styles = documentPresentation(bridge.read());
+    before.current?.elements.forEach(element => {
+      const declarations = styles.get(element.dataset.v3Node ?? '');
+      if (declarations) element.setAttribute('style', Object.entries(declarations).map(([key, value]) => key + ':' + value).join(';'));
+    });
     before.current = null;
     moveable.current?.updateRect();
   };
@@ -40,7 +46,7 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
   const begin = () => {
     const boxes = measureTargets(live.current.targets);
     transaction.begin(live.current.selected, boxes);
-    before.current = { boxes, styles: new Map(live.current.targets.map(element => [element, element.getAttribute('style') ?? ''])) };
+    before.current = { boxes, elements: [...live.current.targets] };
   };
   const preview = (operation: GeometryOperation) => run(() => {
     if (!before.current || !transaction.active()) return;
@@ -104,6 +110,11 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
     const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { cancel(); return; }
       const state = live.current;
+      if ((state.mode === 'geometry' || state.mode === 'pan') && !state.readonly && !event.isComposing
+        && !ownsTextInput(event.target) && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault(); event.stopImmediatePropagation(); cancel();
+        bridge.history(event.shiftKey ? 'forward' : 'back'); return;
+      }
       if (state.mode !== 'geometry' || state.readonly || event.isComposing || ownsTextInput(event.target)) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
         event.preventDefault(); event.stopImmediatePropagation();
@@ -222,7 +233,7 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
         } else bridge.selectMany(event.selected.flatMap(element => element.getAttribute('data-v3-node') ?? []));
       }} />}
     {allowed && <Moveable ref={moveable} container={owner.body} rootContainer={owner.body} target={targets.length === 1 ? targets[0] : targets}
-      origin={false} resizable renderDirections={['e', 's', 'se']} keepRatio={ratio} checkInput useResizeObserver useMutationObserver passDragArea
+      origin={false} zoom={1 / zoom} resizable renderDirections={['e', 's', 'se']} keepRatio={ratio} checkInput useResizeObserver useMutationObserver passDragArea
       draggable={absolute} rotatable={absolute && targets.length === 1} throttleResize={.001} throttleRotate={1}
       snappable={snap} elementGuidelines={guides} snapDirections={{ left: true, right: true, top: true, bottom: true, center: true, middle: true }}
       elementSnapDirections={{ left: true, right: true, top: true, bottom: true, center: true, middle: true }}

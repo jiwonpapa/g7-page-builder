@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef } from 'react';
 import type { DocumentV3 } from '../../documents/v3/types';
 import type { Viewport } from '../../documents/v3/validate';
 import { bootAccordions, bootTabs, disposeContentControls } from '../../public/publicContentControls';
-import { bootPageSliders, disposePageSliders } from '../../public/publicSliders';
+import { bootAuthoredSliders, disposePageSliders } from '../../public/publicSliders';
 import { StructurePreview } from './NodeRenderer';
 
 function MountedPreview({ document, viewport }: { document: DocumentV3; viewport: Viewport }) {
@@ -11,7 +11,7 @@ function MountedPreview({ document, viewport }: { document: DocumentV3; viewport
     const root = host.current;
     if (!root) return;
     const media = root.ownerDocument.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)');
-    const boot = () => { bootAccordions(root); bootTabs(root); bootPageSliders(root, media?.matches ?? false); };
+    const boot = () => { bootAccordions(root); bootTabs(root); bootAuthoredSliders(root, media?.matches ?? false); };
     boot(); media?.addEventListener('change', boot);
     return () => { media?.removeEventListener('change', boot); disposeContentControls(root); disposePageSliders(root); };
   }, []);

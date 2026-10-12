@@ -16,6 +16,15 @@ afterEach(async () => { await act(async () => cleanup.splice(0).forEach(run => r
 const source = (kind: keyof typeof cases.behavior_fixtures) => validateDocumentV3({ ...structuredClone(fixture), blocks: structuredClone(cases.behavior_fixtures[kind]) });
 const id = (n: number) => '00000000-0000-4000-8000-' + String(n).padStart(12, '0');
 describe('common behavior output from the canonical document', () => {
+  it('inherits button typography without overriding authored and responsive values', () => {
+    const document = source('tabs'), button = indexTree(document).get(id(102))!.node;
+    for (const key of ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'color']) {
+      expect(behaviorPresentation(document).styles.get(id(102))?.[key]).toBe('inherit');
+    }
+    button.style.font_size = { value: 22, unit: 'px' }; button.responsive.mobile = { font_size: { value: 18, unit: 'px' } };
+    expect(behaviorPresentation(document).styles.get(id(102))?.['font-size']).toBe('22px');
+    expect(behaviorPresentation(document, 'mobile').styles.get(id(102))?.['font-size']).toBe('18px');
+  });
   it.each(['tabs', 'disclosure', 'carousel', 'nested'] as const)('renders %s with stable native controls and no source mutation', kind => {
     const document = source(kind), before = JSON.stringify(document), host = globalThis.document.createElement('div');
     host.innerHTML = renderToStaticMarkup(<StructurePreview document={document} />);

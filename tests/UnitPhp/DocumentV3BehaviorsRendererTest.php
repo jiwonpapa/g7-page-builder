@@ -79,6 +79,21 @@ final class DocumentV3BehaviorsRendererTest extends TestCase
         self::assertSame('none', $project('mobile')[$track->instance_id]['display']);
     }
 
+    public function test_button_typography_inherits_unless_explicitly_authored(): void
+    {
+        $document = $this->document('tabs');
+        $button = $document->blocks[0]->slots->content[0]->slots->content[0];
+        $validator = $this->validator();
+        $project = fn (string $screen): array => BehaviorPresentation::apply($document, Presentation::document($document, $screen, $validator->semanticDisplays()), $screen)['styles'][$button->instance_id];
+        foreach (['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'color'] as $property) {
+            self::assertSame('inherit', $project('base')[$property]);
+        }
+        $button->style->font_size = (object) ['value' => 22, 'unit' => 'px'];
+        $button->responsive->mobile = (object) ['font_size' => (object) ['value' => 18, 'unit' => 'px']];
+        self::assertSame('22px', $project('base')['font-size']);
+        self::assertSame('18px', $project('mobile')['font-size']);
+    }
+
     public function test_button_and_group_labels_are_escaped_without_executable_markup(): void
     {
         $document = $this->document('tabs');

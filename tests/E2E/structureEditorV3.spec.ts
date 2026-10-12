@@ -1,5 +1,5 @@
 import { devices, expect, test, type Page } from '@playwright/test';
-import { build, type Rollup } from 'vite';
+import { build, loadConfigFromFile, type Rollup } from 'vite';
 import react from '@vitejs/plugin-react';
 import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
@@ -34,8 +34,16 @@ test.beforeAll(async () => {
   const previousEnvironment = process.env.NODE_ENV;
   process.env.NODE_ENV = 'production';
   let result: Awaited<ReturnType<typeof build>>;
-  try { result = await build({ configFile: false, root: fileURLToPath(new URL('../..', import.meta.url)),
-    plugins: [react(), puckHistoryCorrection(), localInterFonts()],
+  try {
+    // Load the product build plugin through Vite's config loader (which owns
+    // TS/ESM resolution). Filesystem-dependent browser proofs are non-reusable;
+    // the candidate build fingerprint also includes vite.config.ts.
+    const configured = await loadConfigFromFile({ command: 'build', mode: 'production' }, fileURLToPath(new URL('../../vite.config.ts', import.meta.url)));
+    const catalog = configured?.config.plugins?.find(plugin => plugin && typeof plugin === 'object'
+      && 'name' in plugin && plugin.name === 'g7pb-builtin-catalog-literals');
+    if (!catalog) throw new Error('Missing product catalog build plugin');
+    result = await build({ configFile: false, root: fileURLToPath(new URL('../..', import.meta.url)),
+    plugins: [react(), puckHistoryCorrection(), catalog, localInterFonts()],
     define: { 'process.env.NODE_ENV': '"production"' },
     build: { write: false, minify: true, lib: {
       entry: fileURLToPath(new URL('../../resources/js/editor/v3/mount.tsx', import.meta.url)),

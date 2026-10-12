@@ -15,6 +15,13 @@ export function behaviorPresentation(document: DocumentV3, viewport: Viewport = 
     for (const [key, property, value] of values) if (authored[key] === undefined) generated[property] = value;
   };
   for (const { node } of tree.values()) {
+    // Native buttons otherwise pick browser/host form fonts instead of the
+    // authored parent typography. Explicit canonical values still win.
+    if (node.type === 'action.button') {
+      const generated = styles.get(node.instance_id)!;
+      for (const key of ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'color']) generated[key] ??= 'inherit';
+      generated['white-space'] = 'pre-wrap';
+    }
     const behavior = node.behavior;
     if (!behavior) continue;
     const host = node.instance_id;

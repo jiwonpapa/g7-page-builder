@@ -1,6 +1,6 @@
 import EmblaCarousel from 'embla-carousel';
 import Autoplay from 'embla-carousel-autoplay';
-import { ensureSliderControls } from './publicSliderControls';
+import { legacySliderControls } from './publicSliderControls';
 
 export { ensureSliderControls } from './publicSliderControls';
 
@@ -44,6 +44,13 @@ function restoreAttributes(node: HTMLElement, names: string[]): () => void {
   return () => values.forEach(([name, value]) => value === null ? node.removeAttribute(name) : node.setAttribute(name, value));
 }
 export function bootPageSliders(root: SliderRoot = document, reducedMotion = false): void {
+  bootSliders(root, reducedMotion, legacySliderControls);
+}
+/** Independent previews never import the legacy generated-control UI. */
+export function bootAuthoredSliders(root: SliderRoot, reducedMotion = false): void {
+  bootSliders(root, reducedMotion);
+}
+function bootSliders(root: SliderRoot, reducedMotion: boolean, legacy?: typeof legacySliderControls): void {
   let runtime = runtimes.get(root);
   if (!runtime) {
     const observer = new MutationObserver(records => { if (runtime) prune(runtime, records); });
@@ -60,6 +67,7 @@ export function bootPageSliders(root: SliderRoot = document, reducedMotion = fal
       if (owners.has(slider)) continue;
     }
     const inputs = signature(slider, reducedMotion), stable = slider.dataset.g7pbControlIds === 'stable';
+    if (!stable && !legacy) continue;
     const existing = owner.mounts.get(slider);
     if (existing?.inputs === inputs) continue;
     if (existing) { owner.mounts.delete(slider); existing.dispose(); }
@@ -68,7 +76,7 @@ export function bootPageSliders(root: SliderRoot = document, reducedMotion = fal
     const slides = owned(slider, stable ? '[data-g7pb-slider-slide]' : '.g7pb-hero-slider__slide');
     if (!viewport || !track || slides.length < (stable ? 1 : 2)) continue;
     const wantsAutoplay = slider.dataset.g7pbSliderAutoplay === 'true' && !reducedMotion;
-    if (!stable) ensureSliderControls(dom, slider, wantsAutoplay);
+    if (!stable) legacy?.prepare(dom, slider, wantsAutoplay);
     const previous = owned<HTMLButtonElement>(slider, '[data-g7pb-slider-prev]')[0];
     const next = owned<HTMLButtonElement>(slider, '[data-g7pb-slider-next]')[0];
     const toggle = owned<HTMLButtonElement>(slider, '[data-g7pb-slider-toggle]')[0];
@@ -87,7 +95,6 @@ export function bootPageSliders(root: SliderRoot = document, reducedMotion = fal
         stopOnInteraction: true, stopOnMouseEnter: true, stopOnFocusIn: true }) : undefined;
     const embla = EmblaCarousel(viewport, { loop: slider.dataset.g7pbSliderLoop !== 'false',
       ...(stable ? { container: track, slides, startIndex: initial } : {}) }, autoplay ? [autoplay] : []);
-    const dotsRoot = owned(slider, '[data-g7pb-slider-dots]')[0], status = owned(slider, '[data-g7pb-slider-status]')[0];
     const cleanups: (() => void)[] = [];
     const original = slides.map(slide => ({ hidden: slide.getAttribute('aria-hidden'), inert: slide.inert }));
     if (stable) {
@@ -103,22 +110,15 @@ export function bootPageSliders(root: SliderRoot = document, reducedMotion = fal
       const click = (): void => { if (current()) handler(); };
       node?.addEventListener('click', click); cleanups.push(() => node?.removeEventListener('click', click));
     };
-    // Authored stable markup is never replaced with generated controls or dots.
-    const dots = stable ? [] : slides.map((_, index) => {
-      const dot = dom.createElement('button'); dot.type = 'button'; dot.dataset.g7pbSliderDot = String(index);
-      dot.setAttribute('aria-label', (index + 1) + '번 슬라이드'); on(dot, () => embla.scrollTo(index)); return dot;
-    });
-    if (!stable) dotsRoot?.replaceChildren(...dots);
+    const controls = stable ? undefined : legacy?.mount(dom, slider, slides, embla, on);
     const update = (): void => {
       if (!current()) return;
       const selected = embla.selectedScrollSnap(), visible = stable ? embla.slidesInView() : [];
-      dots.forEach((dot, index) => { dot.classList.toggle('is-active', index === selected); dot.setAttribute('aria-current', index === selected ? 'true' : 'false'); });
+      controls?.update(selected);
       slides.forEach((slide, index) => {
         const shown = visible.length ? visible.includes(index) : index === selected;
         slide.setAttribute('aria-hidden', shown ? 'false' : 'true'); slide.inert = !shown;
       });
-      const label = (selected + 1) + ' / ' + slides.length;
-      if (status && status.textContent !== label) status.textContent = label;
       if (previous) previous.disabled = !embla.canScrollPrev();
       if (next) next.disabled = !embla.canScrollNext();
     };
@@ -129,10 +129,7 @@ export function bootPageSliders(root: SliderRoot = document, reducedMotion = fal
       if (stable) {
         track.setAttribute('aria-live', playing ? 'off' : 'polite');
         if (toggle) { toggle.setAttribute('aria-pressed', String(playing)); toggle.disabled = !autoplay; }
-      } else if (toggle && autoplay) {
-        toggle.textContent = playing ? '일시 정지' : '재생';
-        toggle.setAttribute('aria-label', playing ? '자동 재생 일시 정지' : '자동 재생 시작');
-      }
+      } else if (autoplay) controls?.autoplay(playing);
     };
     // Embla emits these events before updating isPlaying(), so the event owns this paint.
     const autoplayStarted = () => paintAutoplay(true), autoplayStopped = () => paintAutoplay(false);
@@ -147,7 +144,7 @@ export function bootPageSliders(root: SliderRoot = document, reducedMotion = fal
       cleanups.forEach(dispose => dispose()); embla.off('select', update); embla.off('reInit', update);
       if (stable) embla.off('slidesInView', update);
       if (autoplay) { embla.off('autoplay:play', autoplayStarted); embla.off('autoplay:stop', autoplayStopped); }
-      embla.destroy(); dots.forEach(dot => dot.remove());
+      embla.destroy(); controls?.dispose();
       slides.forEach((slide, index) => {
         const value = original[index]; if (value.hidden === null) slide.removeAttribute('aria-hidden'); else slide.setAttribute('aria-hidden', value.hidden);
         slide.inert = value.inert;

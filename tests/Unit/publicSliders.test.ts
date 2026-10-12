@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EmblaCarouselType } from 'embla-carousel';
-import { bootPageSliders, disposePageSliders } from '../../resources/js/public/publicSliders';
+import { bootAuthoredSliders, bootPageSliders, disposePageSliders } from '../../resources/js/public/publicSliders';
 import { ensureSliderControls } from '../../resources/js/public/publicSliderControls';
 
 const observed = vi.hoisted<{ instances: EmblaCarouselType[] }>(() => ({ instances: [] }));
@@ -60,6 +60,16 @@ afterEach(() => {
   document.body.innerHTML = ''; vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks();
 });
 describe('public slider ownership with installed Embla', () => {
+  it('uses the same engine for authored previews without creating legacy controls', () => {
+    const legacy = fixture(), before = legacy.innerHTML;
+    bootAuthoredSliders(legacy); scopedRoots.add(legacy);
+    expect(observed.instances).toHaveLength(0); expect(legacy.innerHTML).toBe(before);
+    const authored = stableFixture(); bootAuthoredSliders(authored);
+    expect(observed.instances).toHaveLength(1);
+    authored.querySelector<HTMLButtonElement>('[data-g7pb-slider-next]')!.click();
+    expect(observed.instances[0].selectedScrollSnap()).toBe(1);
+    expect(authored.querySelector('[data-g7pb-slider-dot]')).toBeNull();
+  });
   it('mounts a stable element root once across overlapping roots and preserves authored controls', () => {
     const slider = stableFixture(), before = slider.innerHTML;
     ensureSliderControls(document, slider, true); expect(slider.innerHTML).toBe(before);

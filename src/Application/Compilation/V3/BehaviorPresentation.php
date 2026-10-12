@@ -32,6 +32,12 @@ final class BehaviorPresentation
             }
         };
         foreach ($tree as $node) {
+            if ($node->type === 'action.button') {
+                foreach (['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'color'] as $property) {
+                    $styles[$node->instance_id][$property] ??= 'inherit';
+                }
+                $styles[$node->instance_id]['white-space'] = 'pre-wrap';
+            }
             $behavior = $node->behavior ?? null;
             if ($behavior === null) {
                 continue;

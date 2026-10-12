@@ -45,7 +45,7 @@
 
 다음 진행 가능: 없음
 
-- 차단 IP2: 기존 tests/UnitPhp/HeroCompositionTest.php의 Pint class_attributes_separation 실패로 FULL 통합 차단. 기준 SHA에서도 재현했으며 범위 밖 서식 수정 승인 필요. 구현/관련 검증은 제출 완료, 전체 통합은 미완료.
+- 차단 IP2: 승인된 PHP 서식 수정은 별도 통합 완료. FULL 검증 중 기존 blockQualityInventory 18건과 blockPackManifest 1건 실패로 차단. IP2 없는 기준에서도 동일 19건을 재현했으며 품질 fixture·Card 썸네일 불일치 수정은 별도 승인 필요. IP2 구현은 제출 보존, 전체 통합은 미완료.
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

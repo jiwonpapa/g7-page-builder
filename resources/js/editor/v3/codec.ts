@@ -32,7 +32,9 @@ function keys(value: Record<string, unknown>, allowed: string[]): void {
 /** Vendor Data is an untrusted adapter representation, never a save payload. */
 export function documentFromPuck(value: unknown): DocumentV3 {
   // Bound traversal before decoding (cycles, accessors and vendor objects are forbidden).
-  if (jsonBytes(value, designPolicyV3.limits.json_depth) > 2 * designPolicyV3.limits.utf8_bytes) reject('puck_bytes', '$');
+  // The transient representation duplicates source text in escaped HTML and link/style attributes.
+  // Reserve bounded encoding overhead; BOTH canonical validations below retain the 1 MiB limit.
+  if (jsonBytes(value, designPolicyV3.limits.json_depth) > 16 * designPolicyV3.limits.utf8_bytes) reject('puck_bytes', '$');
   const data = object(value);
   keys(data, ['root', 'content', 'zones']);
   if (data.zones !== undefined && Object.keys(object(data.zones)).length) reject('puck_legacy_zones', '$');

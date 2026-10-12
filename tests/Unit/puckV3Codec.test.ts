@@ -9,6 +9,19 @@ const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')
 function source() { return cloneDocument(validateDocumentV3(fixture)); }
 
 describe('v3 Puck codec isolates the vendor representation', () => {
+  it('allows escaped adapter overhead without raising the canonical document byte limit', () => {
+    const doc = source(), text = doc.blocks[0].slots.content![2];
+    if (text.type !== 'content.text') throw new Error('fixture');
+    text.props.paragraphs = Array.from({ length: 50 }, () => [{ text: '&'.repeat(10000) }]);
+    const data = documentToPuck(doc);
+    expect(new TextEncoder().encode(JSON.stringify(doc)).length).toBeLessThan(1048576);
+    expect(new TextEncoder().encode(JSON.stringify(data)).length).toBeGreaterThan(2 * 1048576);
+    expect(documentFromPuck(data)).toEqual(doc);
+    const vendorText = data.content[0].props.content[2].props.node;
+    if (vendorText.type !== 'content.text' || !('paragraphs' in vendorText.props)) throw new Error('fixture');
+    vendorText.props.paragraphs = Array.from({ length: 110 }, () => [{ text: '&'.repeat(10000) }]);
+    expect(() => documentFromPuck(data)).toThrow('byte_limit');
+  });
   it('round trips the full typed schema and does not alias the original or vendor state', () => {
     const doc = source(), data = documentToPuck(doc);
     const restored = documentFromPuck(data);

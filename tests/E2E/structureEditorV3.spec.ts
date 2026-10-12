@@ -340,8 +340,9 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await node.dblclick();
   const input = node.locator('.tiptap[contenteditable="true"]');
   await expect(input).toBeVisible();
-  await input.click(); await input.press('ControlOrMeta+a'); await page.keyboard.insertText('한글 정밀 편집');
-  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('한글 정밀 편집');
+  await input.fill('한글 정밀 편집');
+  await expect(input).toHaveText('한글 정밀 편집');
+  await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[{ text: '한글 정밀 편집' }]] });
   const typed = await read(page);
   await input.press('Home'); await input.press('Shift+ArrowRight'); await input.press('Shift+ArrowRight');
   const format = page.getByRole('toolbar', { name: '부분 서식' });
@@ -350,7 +351,9 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   const bold = await read(page);
   expect(bold.blocks[0].props).toEqual({ paragraphs: [[{ text: '한글', bold: true }, { text: ' 정밀 편집' }]] });
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(typed);
+  await expect(input.locator('[data-v3-bold="true"]')).toHaveCount(0);
   await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(bold);
+  await expect(input.locator('[data-v3-bold="true"]')).toHaveText('한글');
   await input.click(); await input.press('Home'); await input.press('Shift+ArrowRight'); await input.press('Shift+ArrowRight');
   await format.getByLabel('부분 색상', { exact: true }).fill('#2255ff');
   await format.getByRole('button', { name: '색상 적용', exact: true }).click();

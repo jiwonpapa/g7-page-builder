@@ -32,7 +32,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes ge
     await page.goto(`${editor}?editor=structure`);
     await page.getByLabel('페이지 제목', { exact: true }).fill('공통 요소의 공개 출력 ' + shell);
     await page.getByLabel('기본 주소 이름', { exact: true }).fill(slug);
-    await page.getByLabel('페이지 출력 방식', { exact: true }).selectOption(shell);
+    await page.getByRole('combobox', { name: '페이지 출력 방식', exact: true }).selectOption(shell);
     const creating = page.waitForResponse(response => response.url().endsWith(documents) && response.request().method() === 'POST');
     await click('빈 페이지 만들기');
     const response = await creating; expect(response.ok(), await response.text()).toBe(true);

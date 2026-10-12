@@ -79,7 +79,7 @@ export function PublicationControls(props: PublicationControlsProps) {
     {candidate && <dialog ref={dialog} className="g7pb-dialog" aria-labelledby={heading} onCancel={event => { event.preventDefault(); cancel(); }}
       style={{ border: 0, color: 'var(--g7pb-text)', background: 'var(--g7pb-surface-strong)' }}>
       <h2 id={heading}>이 버전을 공개할까요?</h2>
-      <p>저장 버전 {candidate.revision}의 내용으로 현재 공개 페이지를 교체합니다.</p>
+      <p>방금 저장한 내용으로 현재 공개 페이지를 교체합니다.</p>
       <p>구조 미리보기와 달리 페이지에 설정한 사이트 공통영역을 포함하여 공개됩니다.</p>
       {candidate.warnings.length > 0 && <ul>{candidate.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>}
       <div style={{ display: 'flex', gap: 8 }}>

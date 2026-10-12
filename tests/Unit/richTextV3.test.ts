@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { Editor, Node as TiptapNode } from '@tiptap/core';
 import fixture from '../Contract/document-v3.fixture.json';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument } from '../../resources/js/documents/v3/tree';
 import { textToHtml, propsFromHtml, runFromAttributes } from '../../resources/js/editor/v3/richTextCodec';
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
-const { richTextField } = await import('../../resources/js/editor/v3/richTextField');
+const { richTextField, richTextChain } = await import('../../resources/js/editor/v3/richTextField');
 
 const source = () => cloneDocument(validateDocumentV3(fixture));
 describe('typed rich-text adapter', () => {
@@ -41,5 +42,45 @@ describe('typed rich-text adapter', () => {
     expect(field.tiptap?.extensions?.map(extension => extension.name)).toEqual(['v3Run', 'doc']);
     expect(field.options?.bold).toBe(false);
     expect(richTextField(doc, false).tiptap?.extensions?.map(extension => extension.name)).toEqual(['v3Run']);
+  });
+  it('reproduces a pending DOM selection and applies the visible range as one document update', () => {
+    const paragraph = TiptapNode.create({ name: 'paragraph', group: 'block', content: 'inline*', parseHTML: () => [{ tag: 'p' }], renderHTML: () => ['p', 0] });
+    const text = TiptapNode.create({ name: 'text', group: 'inline' });
+    for (const synchronize of [false, true]) {
+      const host = document.createElement('div'); document.body.append(host);
+      const editor = new Editor({ element: host, extensions: [paragraph, text, ...richTextField(source(), true).tiptap!.extensions!], content: '<p>한글 정밀 편집</p>' });
+      try {
+        editor.commands.setTextSelection(9);
+        const range = document.createRange(), textNode = editor.view.dom.querySelector('p')!.firstChild!;
+        range.setStart(textNode, 0); range.setEnd(textNode, 2);
+        document.getSelection()!.removeAllRanges(); document.getSelection()!.addRange(range);
+        expect(editor.state.selection.empty).toBe(true); // Native selectionchange has not reached Tiptap yet.
+        let updates = 0; editor.on('update', () => updates++);
+        (synchronize ? richTextChain(editor) : editor.chain()).setMark('v3Run', { color: { kind: 'hex', value: '#2255ff' } }).run();
+        expect(updates).toBe(synchronize ? 1 : 0);
+        expect(editor.getHTML().includes('data-v3-color')).toBe(synchronize);
+        if (synchronize) expect(editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to)).toBe('한글');
+      } finally { editor.destroy(); host.remove(); document.getSelection()?.removeAllRanges(); }
+    }
+  });
+  it('reads only its iframe selection and ignores selections in another field', () => {
+    const iframe = document.createElement('iframe'); document.body.append(iframe);
+    const owner = iframe.contentDocument!, host = owner.createElement('div'); owner.body.append(host);
+    const paragraph = TiptapNode.create({ name: 'paragraph', group: 'block', content: 'inline*', parseHTML: () => [{ tag: 'p' }], renderHTML: () => ['p', 0] });
+    const text = TiptapNode.create({ name: 'text', group: 'inline' });
+    const editor = new Editor({ element: host, extensions: [paragraph, text, ...richTextField(source(), true).tiptap!.extensions!], content: '<p>한글 정밀 편집</p>' });
+    try {
+      editor.commands.setTextSelection(9);
+      const selected = owner.createRange(), textNode = editor.view.dom.querySelector('p')!.firstChild!;
+      selected.setStart(textNode, 0); selected.setEnd(textNode, 2); owner.getSelection()!.addRange(selected);
+      richTextChain(editor).setMark('v3Run', { bold: true }).run();
+      expect(editor.state.selection.from).toBe(1); expect(editor.state.selection.to).toBe(3);
+      const other = owner.createElement('p'); other.textContent = 'other'; owner.body.append(other);
+      const outside = owner.createRange(); outside.selectNodeContents(other);
+      owner.getSelection()!.removeAllRanges(); owner.getSelection()!.addRange(outside);
+      richTextChain(editor).setMark('v3Run', { italic: true }).run();
+      expect(editor.state.selection.from).toBe(1); expect(editor.state.selection.to).toBe(3);
+      expect(editor.getHTML()).toContain('data-v3-italic="true"');
+    } finally { editor.destroy(); iframe.remove(); }
   });
 });

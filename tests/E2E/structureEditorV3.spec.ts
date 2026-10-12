@@ -344,7 +344,16 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect(input).toHaveText('한글 정밀 편집');
   await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[{ text: '한글 정밀 편집' }]] });
   const typed = await read(page);
-  await input.press('Home'); await input.press('Shift+ArrowRight'); await input.press('Shift+ArrowRight');
+  const selectionSteps = [];
+  for (const key of ['Home', 'Shift+ArrowRight', 'Shift+ArrowRight']) {
+    await input.press(key);
+    selectionSteps.push(await input.evaluate(element => {
+      const selection = element.ownerDocument.getSelection();
+      return { html: element.innerHTML, active: element.ownerDocument.activeElement?.outerHTML,
+        text: selection?.toString(), anchor: selection?.anchorOffset, focus: selection?.focusOffset };
+    }));
+  }
+  await info.attach('keyboard-selection', { contentType: 'application/json', body: JSON.stringify(selectionSteps) });
   await expect.poll(() => input.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe('한글');
   const format = page.getByRole('toolbar', { name: '부분 서식' });
   await format.getByRole('button', { name: '굵게', exact: true }).click();

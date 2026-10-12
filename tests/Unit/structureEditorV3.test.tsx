@@ -38,6 +38,24 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('inserts a complete editable composition through one canonical command', async () => {
+    const doc = source(); doc.blocks = [];
+    const host = hostElement(), root = createRoot(host), changed = vi.fn(); let sequence = 100;
+    cleanup.push(() => root.unmount());
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="compositions" serverRevision={1}
+      drafts={{ save: async request => ({ documentId: request.documentId, revision: 2 }) }}
+      nextId={() => id(sequence++)} iframeEnabled={false} onChange={changed} />));
+    await flush();
+    await click(host, '구성 삽입');
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(indexTree(changed.mock.calls[0][0]).size).toBe(8);
+    expect(host.textContent).toContain('히어로 · 포스터');
+    await vi.waitFor(() => expect([...host.querySelectorAll('button')].find(button => button.textContent === '실행 취소')?.disabled).toBe(false));
+    await click(host, '실행 취소');
+    await vi.waitFor(() => expect(changed.mock.calls.at(-1)![0]).toEqual(doc));
+    await click(host, '다시 실행');
+    expect(indexTree(changed.mock.calls.at(-1)![0]).size).toBe(8);
+  });
   it('switches session-only widths without history and scopes visibility to the selected layer', async () => {
     const doc = source(), node = doc.blocks[0].slots.content![0];
     node.responsive.mobile = { hidden: true };

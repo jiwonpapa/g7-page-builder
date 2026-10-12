@@ -93,6 +93,76 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
 const read = (page: Page) => page.evaluate(() => window.v3Proof.current);
 const click = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).click();
 const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
+const basicCompositionKeys = ['hero.poster', 'hero.product', 'hero.backdrop', 'hero.editorial', 'hero.device',
+  'hero.balanced', 'hero.screenshot', 'hero.overlap', 'hero.offset', 'card.plain', 'card.outlined', 'image-text.left', 'image-text.right'];
+for (const key of basicCompositionKeys) test('v3 composition internal edit save reopen and PHP parity ' + key, async ({ page, context }, info) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await open(page);
+  expect(await page.getByLabel('기본 구성', { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(basicCompositionKeys);
+  const empty = await read(page);
+  await page.getByLabel('기본 구성', { exact: true }).selectOption(key); await click(page, '구성 삽입');
+  await expect.poll(async () => (await read(page)).blocks.length).toBe(1);
+  const inserted = await read(page);
+  const flatten = (nodes: DocumentV3['blocks']): DocumentV3['blocks'] => nodes.flatMap(node => [node, ...flatten(node.slots.content ?? [])]);
+  const nodes = flatten(inserted.blocks);
+  expect(nodes).toHaveLength(8);
+  expect(new Set(nodes.map(node => node.instance_id)).size).toBe(8);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(empty);
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(inserted);
+  const heading = nodes.find(node => node.type === 'content.heading')!;
+  await layer(page, heading.instance_id).click();
+  await length(page, '글자 크기', 31); await click(page, '디자인 적용');
+  await expect.poll(async () => flatten((await read(page)).blocks).find(node => node.instance_id === heading.instance_id)?.style.font_size).toEqual({ value: 31, unit: 'px' });
+  const edited = await read(page);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(inserted);
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(edited);
+  await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+  const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
+  expect(saved).toEqual(edited);
+  const evidence: unknown[] = [];
+  const measure = (element: Element) => {
+    const origin = element.getBoundingClientRect();
+    return [...element.querySelectorAll('[data-v3-node]')].map(node => {
+      const box = node.getBoundingClientRect(), css = getComputedStyle(node);
+      return { id: node.getAttribute('data-v3-node'), tag: node.tagName, text: node.textContent,
+        x: box.x - origin.x, y: box.y - origin.y, width: box.width, height: box.height,
+        css: Object.fromEntries(['display', 'position', 'font-size', 'font-family', 'line-height', 'color', 'opacity',
+          'row-gap', 'column-gap', 'grid-template-columns', 'border-top-width', 'object-fit'].map(name => [name, css.getPropertyValue(name)])) };
+    });
+  };
+  for (const width of [360, 768, 1280]) {
+    await open(page, saved); await canvasWidth(page, width);
+    const frame = page.frameLocator('iframe');
+    await frame.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
+    const canvas = await frame.locator('[data-v3-surface]').evaluate(measure);
+    await click(page, '구조 미리보기');
+    await page.getByTestId('v3-preview').locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
+    const preview = await page.getByTestId('v3-preview').evaluate(measure);
+    const output = await context.newPage(); await output.setViewportSize({ width, height: 1000 });
+    await output.route('**/*', route => route.request().url().endsWith('/image.svg')
+      ? route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><rect width="160" height="80" fill="#dbeafe"/></svg>' }) : route.abort());
+    await output.setContent('<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://v3-editor.test/"></head><body style="margin:0">' + phpDraft(saved, expectedViewport(width)) + '</body></html>');
+    await output.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
+    const php = await output.locator('[data-v3-surface]').evaluate(measure);
+    for (const other of [preview, php]) {
+      expect(other.map(node => node.id)).toEqual(canvas.map(node => node.id));
+      for (let index = 0; index < canvas.length; index++) {
+        for (const dimension of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(other[index][dimension] - canvas[index][dimension]), key + ':' + width + ':' + dimension).toBeLessThanOrEqual(1);
+        expect(other[index].css).toEqual(canvas[index].css);
+        expect(other[index].tag).toBe(canvas[index].tag);
+        expect(other[index].text).toBe(canvas[index].text);
+      }
+    }
+    evidence.push({ key, width, canvas, preview, php });
+    await page.screenshot({ path: info.outputPath('ip7-' + key + '-' + width + '.png'), fullPage: true });
+    await output.close();
+  }
+  await open(page, saved, true);
+  await expect(page.getByRole('button', { name: '구성 삽입', exact: true })).toBeDisabled();
+  expect(await read(page)).toEqual(saved);
+  expect(errors).toEqual([]);
+  await info.attach('ip7-composition-proof', { contentType: 'application/json', body: JSON.stringify(evidence) });
+});
 async function enable(page: Page, label: string) {
   const field = page.getByLabel(label + ' 지정', { exact: true });
   const details = field.locator('xpath=ancestor::details');

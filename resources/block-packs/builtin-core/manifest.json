@@ -920,7 +920,7 @@
         "ko": "이미지·본문·버튼을 각각 구성하는 단일 카드입니다.",
         "en": "Compose media, body and actions in a single card."
       },
-      "thumbnail": "thumbnails/generated/card.svg",
+      "thumbnail": "thumbnails/generated/block-49-card.png",
       "schema_ref": "builtin:cardProps",
       "editor_component": "Card",
       "compiler": "builtin.card-01",
@@ -4414,7 +4414,7 @@
         "ko": "이미지와 본문, 버튼을 필요한 만큼 직접 배치하는 빈 카드입니다.",
         "en": "Start with a card shell and add supported media, body and actions."
       },
-      "thumbnail": "thumbnails/generated/card.svg",
+      "thumbnail": "thumbnails/generated/preset-99-card-empty.png",
       "props": {
         "variant": "outlined"
       }
@@ -4574,6 +4574,7 @@
     "thumbnails/generated/preset-96-icon-simple.png": "d2bf7b886876f9ab49070e1d80f3b6795bbaf7af70283199eabe68c10758b26c",
     "thumbnails/generated/preset-97-list-simple.png": "bd0ce30a631911265bf12ef70d80109694cf4af8f2605bd1445def94856bae96",
     "thumbnails/generated/preset-98-badge-simple.png": "bc6283e04396379281de8f6516be57410d4c5a551275cecbc4880aea051188cf",
-    "thumbnails/generated/card.svg": "c44fbe7dc1fd40763b9728e83a5cc0ab619082e609f79d54e4a941dc6755e8f7"
+    "thumbnails/generated/block-49-card.png": "30c4da20abe727faf829629e2b3fa315b5ba47d3da35bb8f41b53cbf15772289",
+    "thumbnails/generated/preset-99-card-empty.png": "30c4da20abe727faf829629e2b3fa315b5ba47d3da35bb8f41b53cbf15772289"
   }
 }

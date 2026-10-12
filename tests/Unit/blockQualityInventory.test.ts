@@ -33,7 +33,7 @@ function fixture(): string {
   for (const path of QUALITY_STATE_SOURCE_FILES) write(root, path, 'state input');
   write(root, QUALITY_STATE_SOURCE_FILES[0], JSON.stringify(stateFixtures));
   write(root, 'resources/block-packs/builtin-core/manifest.json', JSON.stringify({ pack_id: 'jiwonpapa/builtin-core', blocks: [block], presets: [preset] }));
-  write(root, 'docs/productization/inventory.json', JSON.stringify({ definitions: [{ id: block.block_id, block_version: 1, supply_kind: 'composite-section', current_editing: { fields: [], collections: [], directMedia: false, dynamicData: false } }], presets: [{ id: preset.preset_id, block_id: block.block_id, block_version: 1, supply_kind: 'section-candidate', required_states: ['default', 'long-copy', 'responsive', 'save-reload'] }] }));
+  write(root, 'docs/productization/inventory.json', JSON.stringify({ definitions: [{ id: block.block_id, block_version: 1, supply_kind: 'composite-section', current_editing: { fields: [{ path: 'heading', kind: 'plain' }], collections: [], directMedia: false, dynamicData: false } }], presets: [{ id: preset.preset_id, block_id: block.block_id, block_version: 1, supply_kind: 'section-candidate', required_states: ['default', 'long-copy', 'responsive', 'save-reload'] }] }));
   write(root, 'resources/block-packs/builtin-core/thumbnails/demo.png', 'block image');
   write(root, 'resources/block-packs/builtin-core/thumbnails/preset.png', 'preset image');
   write(root, 'resources/store/dist/previews/demo.webp', 'asset bytes');

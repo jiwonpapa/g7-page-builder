@@ -39,6 +39,7 @@ function CanvasNode({ id, body, Content }: { id: string; body: React.ReactNode; 
   const context = useContext(CanvasContext);
   const node = context?.tree.get(id)?.node;
   if (!context || !node) return null;
+  if (context.styles.get(id)?.display === 'none') return null;
   if (node.type === 'layout.section' || node.type === 'layout.container') {
     return <SlotContext.Provider value={node}><Content as={SlotElement} minEmptyHeight={0}
       style={reactStyle(context.styles.get(id) ?? {})} /></SlotContext.Provider>;

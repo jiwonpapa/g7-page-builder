@@ -54,7 +54,7 @@ export function richTextField(document: DocumentV3, singleLine: boolean): Richte
       return [run.link ? 'a' : 'span', markHtmlAttributes(run, document), 0];
     },
     // Puck's public rich-text wrapper routes Mod-i through this Tiptap command.
-    addCommands() { return { toggleItalic: () => ({ editor }) => toggle(editor, 'italic') }; },
+    addCommands() { return { toggleItalic: () => ({ commands, editor }) => commands.setMark(name, { italic: editor.getAttributes(name).italic !== true }) }; },
     addKeyboardShortcuts() { return { 'Mod-b': () => toggle(this.editor, 'bold'), 'Mod-i': () => toggle(this.editor, 'italic'), 'Mod-u': () => toggle(this.editor, 'underline') }; },
   });
   return { type: 'richtext', label: '본문', contentEditable: true, visible: false,

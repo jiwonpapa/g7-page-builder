@@ -1,6 +1,6 @@
 # IP3 레이어와 재귀 구조 편집 검증
 
-상태: UI 제출·Local 통합 진행 중. 순수 명령과 세션/codec은 통합됐고 독립 UI의 실제 입력 검사를 수행했다. 아직 IP3 완료 수는 올리지 않는다.
+상태: IP3 구현·Local 통합 및 IND-03 단위/브라우저 증거 확보. 계획 3/10이며 독립 mount/테스트 저장 포트 범위다. 기존 G7 화면·서버 저장/발행 전환이나 제품 전체 완료가 아니다.
 
 ## 소유 범위
 
@@ -62,3 +62,25 @@ macOS arm64, Node 24.19.0에서 `npx --no-install vitest run tests/Unit/document
 `ip3-layer-ui-production-20261012`는 별도 clean worktree와 `030593e0761cf8c494a041be8a8c676d6e4be0b0` 기준으로 `task-replace-submitted`를 실행했다. 원 제출·worktree는 superseded history로 보존하고 정확한 12개 파일·scoped profile을 상속했다. 시험 bundle을 만드는 동안만 NODE_ENV를 production으로 맞추고 finally에서 복원한다. 개발 컨테이너 설정·제품 의존성·용량 기준은 변경하지 않았다. macOS에서 `NODE_ENV=development`를 명시한 동일 3개 시나리오는 5.8초에 통과했다.
 
 원 제출 검사에서 확장자 없는 `vite.puck-history`를 의존성 스캐너가 찾지 못했고 `.ts` import는 현재 TS 설정에서 거부됐다. TS/Playwright/Vite가 지원하는 `.js`→`.ts` 해석을 명시해 해결했으며 검사기·tsconfig를 완화하지 않았다. 코드 점검에서 편집 링크의 보조 클릭 이동도 차단하고 미리보기 링크 동작을 보존하는 UI 단위 시험을 추가했다.
+
+## Local 최종 인수 증거
+
+교체 UI 제출은 `93f861ebe2920e91025dcf5bd7b20984bbcc5b09`다. 다음 명령으로 등록 task와 함께 통합했고 결과 SHA는 `7dc48d130247571ed221717c751ee895b0326bef`다.
+
+```sh
+make task-integrate-batch TASKS=ip3-layer-ui-production-20261012,ip3-browser-registration-20261012 INTEGRATION_TASK=integration-ip3-20261012
+```
+
+Linux `g7pb-dev`의 Node 24/Chromium에서 `structureEditorV3.spec.ts --retries=0`의 9개 실행이 19.8초에 통과했다. skipped/flaky/unexpected는 모두 0이다. 3개 시나리오×3개 프로젝트지만 테스트가 모두 1440×1000 작업면을 명시하므로 **3폭 반응형 편집 증거가 아니다**. 실제 입력·거부·단일 이력·canonical 저장/재열기·구조 DOM 순서의 증거다.
+
+원본 실행 JSON, 판정, HTML 보고서와 스크린샷은 Local 저장소의 다음 디렉터리에 보존한다.
+
+```text
+output/playwright/gates/integration-ip3-20261012/280d4ed50ef888a3deb7bc37acc18f64bbf96f7820a73dd70c517179b30f4774/6b6de498790749a0b6bb53b13b9ff275/
+```
+
+`execution.json`은 passed=9/required=3/skipped=0이며 `results.json`의 첨부 데이터에 저장 원본과 canvas/preview ID 순서가 있다. Linux의 재열기 스크린샷도 육안 확인했다. 독립 모듈 proof bundle gzip은 JS 366,338 / CSS 18,216바이트로 기존 상한 안이다. 기존 installed editor 번들도 508,316바이트이며 의존성·용량 기준·entry를 바꾸지 않았다.
+
+최종 관련 unit은 명령 21+세션 19+codec 7+UI 6=53개 통과다. 제출·통합에서 제품 TypeScript, 변경 소스 정적 구조, browser 등록 50개와 planner 81개를 포함한 관련 하네스 gate가 통과했다. 전체 제품 coverage나 전체 카탈로그/운영 서버 수용을 주장하지 않는다. 계획 원장·표시판은 이 결과를 가리키며 기존 실패 증거·superseded 원본은 지우지 않는다.
+
+후속 IP4는 typed 정밀 크기·단위·간격·Flex/Grid·색/테두리·글꼴·부분 서식을 같은 문서 명령과 renderer에 연결하는 작업이다. 이번 차수에는 착수하지 않았다. 개발 종료는 최종 기록 통합 뒤 `integration-verify`와 `integration-finish NO_RELEASE=1`로 수행하며 배포 성공으로 승격하지 않는다.

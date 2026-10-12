@@ -420,7 +420,7 @@
       "id": "IP2",
       "phase": "foundation",
       "title": "정밀 문서와 스타일 계약",
-      "status": "in_progress",
+      "status": "blocked",
       "depends_on": [
         "IP1"
       ],
@@ -431,7 +431,7 @@
       "implementation_commit": "e85bdf2f8af9a78c66289e0b3dc1ec9c022240d1",
       "integrated_commit": null,
       "evidence": [],
-      "blocked_reason": null,
+      "blocked_reason": "승인된 번들 최적화 통합·Linux 508253/508500 bytes·Inspector 브라우저 2개 통과. FULL 하네스 463개·프런트엔드 1016개·PHP/프런트 커버리지·G7 통합 73개는 통과했으나 제품 브라우저 27개 통과/22개 실패. Card/목록 시험 전제 7건과 활성 jwsoft-business01 테마 관련 15건. IP2 없는 기준에서도 핵심 3개 실패 재현. E2E 3파일 보완과 지원 테마 임시 검증·원복 승인 필요. 운영 배포·IP2 통합 미완료.",
       "scope": [
         "schemas",
         "resources/js/documents",

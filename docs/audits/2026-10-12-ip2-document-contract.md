@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 썸네일 보완과 별도 번들 최적화를 통합했다. Linux 편집기 gzip 508,253/508,500 bytes와 기존 편집 브라우저 2개를 통과했으며 IP2 FULL 통합 검증을 재개한다. IP2 완료나 IP3 착수를 선언하지 않는다.
+상태: 승인된 번들 최적화는 통합·검증 완료했다. IP2 FULL 검증은 단위·커버리지·build·G7 통합 검사를 통과했으나 제품 브라우저 27개 통과/22개 실패로 차단됐다. Card/목록 시험 전제와 활성 테마의 호환 전제를 별도 보완해야 한다. IP2 완료나 IP3 착수를 선언하지 않는다.
 
 ## 소유 범위
 
@@ -165,3 +165,32 @@ IP2 submitted 원본은 worktree에 보존한다. 미통합 제출이 남아 있
 - 실제 desktop `editorInspectorUx.spec.ts` 2개 통과(16.7초). Inspector 변경·키보드·빠른 Undo/Redo·저장·재열기를 확인했다. page/block Inspector 스크린샷을 직접 확인했으며 신규 정밀 편집 UI의 완료 증거로 사용하지 않는다.
 - 브라우저 증거: Local `output/playwright/gates/integration-ip2-resume-20261012/defd9246db079eb3dbb877a769e188a249dcbafc751aa8cd8b9521a397cf660f/0ec869e6a82c452fb8729eba27ba7654/`.
 - 위 통합 SHA를 기준으로 IP2 공유 계약의 `FULL=1` 통합을 재개한다. 성공 전까지 상태는 진행 중이며 운영 배포는 하지 않는다.
+
+## 현재 차단: 기존 E2E 계약과 로컬 활성 테마
+
+제출 `f1eb26eed7b137db21ca31f156162eed048b1789`를 `0ad15fdfe1ddd4b40ac9822d83fb58180f348894`에 임시 통합했다. 첫 전체 실행 로그는 Local `output/playwright/ip2-full-after-bundle-20261012.log`다. 하네스 463개·PHP 단위 336개/3234 assertions·coverage 409개/3866 assertions·프런트엔드 122파일/1,016개·전체 coverage 하한·production 8번들·전체 148개 썸네일·frontend budget은 통과했으나 로컬 모듈 registry 0.35.1 / manifest 0.36.0 불일치로 환경 검사에서 멈췄다.
+
+기존 `python3 -B scripts/g7pb.py environment sync --runtime docker --task integration-ip2-resume-20261012 --paths module.json --apply`로 로컬 등록 메타데이터와 캐시를 동기화했다. `make dev-verify TASK=integration-ip2-resume-20261012`가 registry 0.36.0을 포함하여 통과했다. 제품 버전 파일·G7 코어·테마 파일·운영 서버는 수정하지 않았다.
+
+동기화 후 같은 제출로 정식 통합 게이트를 다시 실행했다. 원본 로그는 Local `output/playwright/ip2-full-after-runtime-sync-20261012.log`다.
+
+- 하네스 463개, PHP 서식 304파일·PHPStan 161파일·단위 336개/3234 assertions, coverage 409개/3866 assertions 통과. 기존 PHPUnit notice 1건은 유지됐다.
+- 프런트엔드 122파일/1,016개와 coverage statements 84.58%·branches 79.00%·functions 81.06%·lines 87.86% 통과. 기존 파일별 하한과 v3·layoutPolicy 함수/줄 100% 유지.
+- 442파일 구조 검사·기존 부채 220건 상한·production 8번들·카탈로그 148개 현재 source·asset/Store·Linux frontend budget 통과. 편집기 gzip은 508,253/508,500 bytes다.
+- G7 환경·composer manifest·migration 상태·PHPStan 연동 검사 및 통합 시험 73개/632 assertions 통과. PHPUnit notice 1건은 같은 기존 notice다.
+- 제품 Playwright 49개는 **27개 통과·22개 실패**(11.0분). 생성/편집/발행/복원/재발행/발행 해제, 중첩 3열, 독립 Header/Footer 프리셋·workspace, 직접 리치텍스트·링크 보호, 공개 접근성·Store 등의 통과를 확인했으나 전체 수용으로 보고하지 않는다. 뒤에 연결된 `test:e2e:site-shell`은 앞 명령 실패로 실행되지 않았다.
+
+실패는 아래 두 범주다. 검사 수·하한을 줄이거나 기존 결과를 승인으로 바꾸지 않았다.
+
+| 범주 | 실패 수 | 확인한 근거 |
+|---|---:|---|
+| Card/목록 시험 전제 | 7 | 3기기 catalog 시험이 의도된 `card.empty`를 일반 비어 있음 위반으로 판정. 3기기 layout 시험은 편집기의 내부 article(좌우 padding 12px)과 공개 외부 section(0px)을 비교. 성능 시험은 구조 편집이 꺼져 Card 블록/프리셋을 숨기는 현재 목록 145개에 대해 전체 147개를 기대하여 시간 예산 판정 전에 실패 |
+| 활성 테마 전제 | 15 | G7 공통영역 관련 desktop 3개는 public/site-shell 요청을 기다리다 실패. tablet/mobile의 언어 분리 및 Page Kit 12개는 `jw-business-mobile__surface` 등 현재 테마 모바일 메뉴의 9px 루트 overflow를 검출 |
+
+공개 TemplateService를 읽어 현재 활성 User Template이 `jwsoft-business01 0.3.1`임을 확인했다. 기존 UserTemplateSiteShellDecorator의 지원 조건은 `sirsoft-basic 1.1+`다. 설치된 `sirsoft-basic 1.1.4`도 확인했으나 테마를 전환하거나 지원 조건을 넓히지 않았다. 현재 테마의 소스 수정·호환 지원 확대는 이번 승인 밖이다.
+
+전체 실패 후 하네스는 Git을 자동 원복했다. 번들 감사 기록 제출 `2e9192e27eafb53cd71235999f3fe7a78d4633e4`만 추가 통합하여 Local 기준은 `9b379d59cd22841e693c3e1b19ca674dc46e6f08`이다. IP2가 없고 승인된 번들 최적화는 포함된 이 기준에서 일치하는 build fingerprint `ca6ecbdb3bf42ea81db59d6af26871f41005dcb6c26e1ca0bb6625daeee5e858`를 재사용했다. `blockCatalogQuality`, `editorLayoutParity`의 `card.empty`만 선택한 parity, `editorPerformance`의 desktop 3개 실패만 재실행하여 같은 빈 Card·12px 비교·147/145 불일치를 재현했다. 원본은 `output/playwright/ip2-baseline-browser-20261012.log`와 `output/playwright/ip2-baseline-browser-20261012/results.json`에 보존한다. 이를 최적화 전 기준 재현으로 과장하지 않는다.
+
+전체 실행의 Site Part journal은 `output/playwright/gates/integration-ip2-resume-20261012/8985aa263e113cdc34f5d5a64c892b5ed61e066aac6a75ed0d7141f7d72b4599/6ecea6534fce4b9a87ff29df9a0f8bb2/site-part-state.json`이다. 12개 세션 모두 restored=true, 전체 closed=true다. 이전 registry 차단 journal의 sessions=[]·closed=true도 확인했다. 현재 활성 테마는 유지했으며 미통합 IP2 제출과 integration lease를 보존한다.
+
+후속 승인 후보는 E2E 3개 파일(`blockCatalogQuality.spec.ts`, `editorLayoutParity.spec.ts`, `editorPerformance.spec.ts`)의 현행 Card 계약·대상 측정 보완, 그리고 로컬 검증 동안 지원 테마로 임시 전환한 뒤 원래 테마로 복구하는 환경 사용이다. 제품 기능·성능/시각 하한·검사 범위를 낮추지 않는다. 추가 제품/테마/하네스 소스가 필요하면 별도 정확 범위를 다시 승인받는다.

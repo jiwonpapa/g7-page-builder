@@ -151,6 +151,16 @@ def standalone_viewer_class_added(root, base):
 
 EDITOR_ASSET_VIEW = "resources/views/editor.blade.php"
 EDITOR_ASSET_SPEC = "tests/E2E/editorAssetIdentity.editorInteractionQuality.spec.ts"
+INTER_FONT_ROOT = "resources/css/vendor/inter-4.1/"
+INTER_FONT_INPUTS = (
+    "vite.inter-fonts.ts", "scripts/vendor-inter-fonts.mjs",
+    *(INTER_FONT_ROOT + name for name in ("LICENSE.txt", "upstream.css.txt", "manifest.json")),
+    *(INTER_FONT_ROOT + "Inter-" + name + ".woff2" for name in (
+        "Thin", "ThinItalic", "ExtraLight", "ExtraLightItalic", "Light", "LightItalic",
+        "Regular", "Italic", "Medium", "MediumItalic", "SemiBold", "SemiBoldItalic",
+        "Bold", "BoldItalic", "ExtraBold", "ExtraBoldItalic", "Black", "BlackItalic")),
+)
+INTER_FONT_TEST = "tests/Unit/interFonts.test.ts"
 EDITOR_ASSET_DIGESTS = """    @php
         $editorDist = base_path('modules/jiwonpapa-page_builder/dist');
         $editorCssDigest = hash_file('sha256', $editorDist.'/css/page-builder-editor.css');
@@ -477,8 +487,12 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "vite.sliders.config.ts",
         "vite.native.config.ts",
         "vite.native-components.config.ts",
+        "vite.site-part.config.ts",
     }
     changed_asset_build_controllers = []
+    font_changed = bool(set(plan.paths) & set(INTER_FONT_INPUTS)) or (
+        (root / (INTER_FONT_ROOT + "manifest.json")).is_file()
+        and bool(set(plan.paths) & {"vite.config.ts", "vite.site-part.config.ts", "scripts/check-assets.mjs"}))
     for path in plan.paths:
         file = root / path
         if path in INDEPENDENT_PROBE_FILES:
@@ -500,6 +514,8 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         elif path in mapping:
             for name in mapping[path]:
                 python_test(f"tests/Harness/test_{name}.py", path)
+        elif path in INTER_FONT_INPUTS:
+            changed_asset_build_controllers.append(path)
         elif path in asset_build_controllers:
             changed_asset_build_controllers.append(path)
             if path in history_build_controllers:
@@ -651,6 +667,18 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
             add("syntax:" + path, ["bash", "-n", path], [path], "Changed shell syntax")
         if path.endswith(".mjs") and file.exists():
             add("syntax:" + path, ["node", "--check", path], [path], "Changed JavaScript syntax", ("node",))
+    if font_changed:
+        for consumer in (INTER_FONT_TEST, EDITOR_ASSET_SPEC):
+            if not (root / consumer).is_file():
+                plan.unresolved.append("Missing local Inter font consumer: " + consumer)
+        if (root / INTER_FONT_TEST).is_file():
+            ts_tests.append(INTER_FONT_TEST)
+        if (root / EDITOR_ASSET_SPEC).is_file():
+            add("browser:" + EDITOR_ASSET_SPEC,
+                ["npx", "--no-install", "playwright", "test", EDITOR_ASSET_SPEC, "--project=desktop", "--retries=0"],
+                [*INTER_FONT_INPUTS, *source_inputs(root, EDITOR_ASSET_SPEC).files, EDITOR_ASSET_SPEC, "playwright.config.ts", "package-lock.json"],
+                "Local font bytes, same-origin loading and editor asset identity", ("node", "php", "g7", "browser"),
+                True, env=BROWSER_ENVIRONMENT)
     try:
         ts_tests = related_tests(root, ts_sources, ts_tests, "tests/Unit", (".test.ts", ".test.tsx"))
         php_tests = related_tests(root, [*php_sources, *migrations], php_tests, "tests", ("Test.php",))
@@ -658,7 +686,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         plan.unresolved.append(str(error))
     for test in ts_tests:
         graph = source_inputs(root, test)
-        add("unit:" + test, ["npx", "--no-install", "vitest", "run", test], [*graph.files, *contract_fixture_inputs(test), "package-lock.json", "vite.config.ts", "tsconfig.json"], "Related unit behavior", ("node",), reusable=graph.reusable)
+        add("unit:" + test, ["npx", "--no-install", "vitest", "run", test], [*graph.files, *contract_fixture_inputs(test), *(INTER_FONT_INPUTS if test == INTER_FONT_TEST else ()), "package-lock.json", "vite.config.ts", "tsconfig.json"], "Related unit behavior", ("node",), reusable=graph.reusable)
     if ts_sources or ts_tests or any(p.startswith("tests/E2E/") and p.endswith((".ts", ".tsx")) or p == "playwright.config.ts" for p in plan.paths):
         graph = typecheck_inputs(root)
         add("typecheck", ["npm", "run", "typecheck"], graph.files, "TypeScript command and configured type graph", ("node",), reusable=graph.reusable)

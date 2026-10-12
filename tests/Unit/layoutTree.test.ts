@@ -42,6 +42,20 @@ describe('shared layout policy (structure only, not a v2 API enablement)', () =>
       expect(layoutAllowsChild('content.heading-01', type)).toBe(false);
     }
   });
+  it('finds allowed component children across slots without relaxing an explicit slot', () => {
+    for (const [parent, child, slot, otherSlot] of [
+      ['content.hero-centered-01', 'action.buttons-01', 'actions', 'extra'],
+      ['media.image-text-01', 'content.divider-01', 'extra', 'actions'],
+      ['content.card-01', 'media.image-01', 'media', 'body'],
+    ] as const) {
+      expect(layoutAllowsChild(parent, child)).toBe(true);
+      expect(layoutAllowsChild(parent, child, slot)).toBe(true);
+      expect(layoutAllowsChild(parent, child, otherSlot)).toBe(false);
+      expect(layoutAllowsChild(parent, child, 'unknown')).toBe(false);
+      expect(layoutAllowsChild(parent, layoutPolicy.layouts.section)).toBe(false);
+      expect(layoutAllowsChild(parent, 'toString')).toBe(false);
+    }
+  });
   it('allows empty containers, missing legal slots and existing flat compatibility instances', () => {
     for (const type of layoutPolicy.root_types) expect(validateLayoutDocument({ blocks: [{ ...leaf(1), type, slots: {} }] }).blocks).toHaveLength(1);
     expect(validateLayoutDocument({ blocks: [{ ...leaf(1), type: layoutPolicy.layouts.section }] }).blocks).toHaveLength(1);

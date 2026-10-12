@@ -1,6 +1,6 @@
 import React, { createContext, forwardRef, useContext, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Puck, type Overrides, type ComponentConfig, type Field } from '@puckeditor/core';
+import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { validateDocumentV3 } from '../../documents/v3/validate';
 import { indexTree, type Location } from '../../documents/v3/tree';
@@ -51,6 +51,10 @@ function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.Re
 const control: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' };
 function CommandButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button type="button" className="g7pb-button g7pb-button--quiet" {...props}>{children}</button>;
+}
+/** Preserve Puck's public click boundary when the action bar is portaled into the Inspector. */
+export function ContextActionBar({ target, children }: { target: HTMLElement | null; children: React.ReactNode }) {
+  return target ? createPortal(<ActionBar>{children}</ActionBar>, target) : null;
 }
 function RenameControl({ node, disabled, rename }: { node: Node; disabled?: boolean; rename: (name: string) => void }) {
   const [name, setName] = useState(node.name);
@@ -113,7 +117,7 @@ function EditorSession(props: StructureEditorProps) {
   }, [bridge, textEditing]);
   const overrides = useMemo<Partial<Overrides<V3Config>>>(() => ({
     // Public action-bar override: keep the rich-text focus contract without covering authored content.
-    actionBar: ({ children }) => <>{actionTarget && createPortal(children, actionTarget)}</>,
+    actionBar: ({ children }) => <ContextActionBar target={actionTarget}>{children}</ContextActionBar>,
     iframe: ({ children, document: frameDocument }) => <>{children}{frameDocument && <FrameHistoryBoundary frameDocument={frameDocument} bridge={bridge} />}</>,
   }), [bridge, actionTarget]);
   const run = (action: () => void): void => {

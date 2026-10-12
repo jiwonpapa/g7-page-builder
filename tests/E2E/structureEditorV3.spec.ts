@@ -12,7 +12,7 @@ import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
 declare global {
   interface Window {
     G7PBV3: { mountStructureEditor: typeof mountStructureEditor };
-    v3Proof: { current: DocumentV3; saved: string | null; revision: number; dispose: () => void; focusEvents?: unknown[] };
+    v3Proof: { current: DocumentV3; saved: string | null; revision: number; dispose: () => void };
   }
 }
 let javascript = '', stylesheet = '';
@@ -360,23 +360,11 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect(input.locator('[data-v3-bold="true"]')).toHaveCount(0);
   await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(bold);
   await expect(input.locator('[data-v3-bold="true"]')).toHaveText('한글');
-  await page.evaluate(() => {
-    const events: unknown[] = []; window.v3Proof.focusEvents = events;
-    const describe = (value: EventTarget | null) => value && 'getAttribute' in value && typeof value.getAttribute === 'function'
-      ? { tag: Reflect.get(value, 'tagName'), label: value.getAttribute('aria-label'), menu: Reflect.get(value, 'closest').call(value, '[data-puck-rte-menu]') !== null } : String(value);
-    for (const owner of [document, document.querySelector('iframe')!.contentDocument!]) {
-      for (const type of ['focusin', 'focusout']) owner.addEventListener(type, event => {
-        const focus = event as FocusEvent;
-        events.push({ type, target: describe(focus.target), related: describe(focus.relatedTarget) });
-      }, true);
-    }
-  });
   await input.click(); await input.press('Home'); await input.press('Shift+ArrowRight'); await input.press('Shift+ArrowRight');
   await format.getByLabel('부분 색상', { exact: true }).fill('#2255ff');
   await format.getByRole('button', { name: '색상 적용', exact: true }).click();
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('#2255ff');
   await format.getByLabel('부분 크기', { exact: true }).fill('20');
-  console.log('V3_FOCUS', JSON.stringify(await page.evaluate(() => window.v3Proof.focusEvents)));
   await format.getByRole('button', { name: '크기 적용', exact: true }).click();
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"font_size":{"value":20,"unit":"px"}');
   await format.getByLabel('부분 링크', { exact: true }).fill('/about');

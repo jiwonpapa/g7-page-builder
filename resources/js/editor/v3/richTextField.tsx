@@ -40,6 +40,10 @@ function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }
 export function richTextField(document: DocumentV3, singleLine: boolean): RichtextField {
   const mark = Mark.create({
     name,
+    // Puck portals EditorContent from the host document into its canvas iframe.
+    // Refresh ProseMirror's public root cache so DOM selection belongs to that canvas.
+    onCreate() { this.editor.view.updateRoot(); },
+    onFocus() { this.editor.view.updateRoot(); },
     addAttributes() {
       return Object.fromEntries(markKeys.map(key => [key, { default: null,
         parseHTML: (element: HTMLElement) => {

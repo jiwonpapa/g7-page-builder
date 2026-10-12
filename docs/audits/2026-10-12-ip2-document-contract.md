@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 Hero 빈 슬롯 2파일 보완을 통합하고 실제 브라우저 11개를 통과했다. 모바일 높이 차이는 24px에서 0px가 됐고 기존 내부 구성·Undo·저장·발행을 유지했다. IP2 공유 계약의 FULL 통합을 재개한다. 이전 실패 이력은 보존하며 IP3·운영 배포로 진행하지 않는다.
+상태: IP2 정밀 문서·스타일 계약의 구현과 Local FULL 통합을 완료했다. 통합 SHA는 `257dc97c936fecf236482665633c69bea2b604d6`이며 제품 브라우저 94개가 통과했다. 승인된 Hero 빈 슬롯 보완은 모바일 높이 차이를 24px에서 0px로 줄이고 기존 내부 구성·Undo를 보존했다. v3 정밀 편집 UI·실제 문서 이행·운영 배포 완료를 뜻하지 않으며 다음 단계는 IP3다.
 
 ## 소유 범위
 
@@ -231,3 +231,16 @@ IP2 제출 `3f187551709e048559e354ec73c3a3582527a628`을 위 통합 기준에서
 - 원래 테마로 복구한 뒤 mobile `hero.backdrop` 비교를 재시도 없이 통과했다(4.4초). 편집/미리보기 높이 모두 438.59375px, delta=0이며 빈 DropZone이 없는 DOM을 확인했다. 증거는 `output/playwright/ip2-hero-empty-slot-proof-20261012/parity/`와 `parity-results.json`이다.
 - desktop Hero 내부 구성 2개를 재시도 없이 통과했다(26.4초). 빈 구역의 배지/목록 삽입·편집·이동·삭제·Undo·재열기·미리보기·발행과 CTA의 원자적 이전/Undo·빈 actions 저장을 확인했다. 증거는 같은 디렉터리의 `composition-results.json`, 화면과 `output/playwright/ip2-hero-composition-proof-20261012.log`다. 최초 선택 명령의 `^hero` 정규식은 전체 test 이름과 맞지 않아 0개를 선택했으며, 선택자를 바로잡은 후 위 2개를 실행했다.
 - Linux frontend budget 전체 통과. 편집기 gzip 508,316/508,500 bytes, 편집기 CSS 계열 180,077/180,100 bytes로 기준은 유지했다. IP2 공유 계약의 FULL 통합은 별도 필수 검증이다.
+
+## IP2 통합 완료와 수용 근거
+
+제출 `3addd0679df8d513c60c88974dd807ac3c813562`를 Hero 수정 통합 기준 `03ff36d2004c2c870d1c7c22a0a89693f47d9d4b`에 정식 통합했다. 명령은 `make task-integrate-scoped TASK=ip2-document-contract-20261012 INTEGRATION_TASK=integration-ip2-resume-20261012 FULL=1`, 통합 SHA는 `257dc97c936fecf236482665633c69bea2b604d6`다. 전체 로그는 Local `output/playwright/ip2-full-after-hero-slot-20261012.log`에 보존한다.
+
+- 하네스 463개, PHP 단위 336개/3,234 assertions, 통합 포함 coverage 409개/3,866 assertions와 기존 하한선 통과. 기존 PHPUnit notice 1건은 유지됐다.
+- 프런트엔드 122파일/1,018개 통과. coverage statements 84.58%·branches 79.03%·functions 81.07%·lines 87.87%, 파일별 하한선, 타입·CSS·442파일 구조·기존 부채 220건 상한 통과.
+- production 8번들, 전체 148개 썸네일 source, asset/Store, Linux frontend budget 통과. 편집기 gzip 508,316/508,500 bytes. 품질 승인 원장의 592개 pending·release_authorized=false는 변경하지 않았다.
+- G7 환경·PHPStan·연동 73개/632 assertions 통과. 제품 브라우저 49개(10.2분)와 후속 Site Shell·모바일 메뉴 45개(1.9분) 모두 재시도 없이 통과했다. PC·태블릿·모바일 전체 프리셋/블록 시각 회귀, Page Kit 5종, 생성·저장·재열기·발행·복원·인증/로그아웃·키보드·WebKit을 검증했다. 실기기 수동 수용이나 운영 배포를 대신하지 않는다.
+- 100블록 성능: 준비 1,565.2ms, 타이핑 p95/max 68.1ms, 드래그 1,000.8ms, 목록 열기 136.9ms, Long Task 7개/max 132ms/총 602ms로 기존 예산 통과.
+- Site Part journal `output/playwright/gates/integration-ip2-resume-20261012/2eced0fe337721d75ee5d7857850e2f2eea39f469dc4b393e1fcf77ad8db1479/d0ebb1333712442bbab3ee1e30d0e7de/site-part-state.json`: 16세션 모두 restored=true·closed=true. 원래 `jwsoft-business01 0.3.1`로 복구했고 테마 1,667파일 해시는 `926656b06c0724ccde5eaeac5b8f493432153613e364533ae0f2ebeb710e33a3`로 전후 동일하다.
+
+IND-02의 contract는 공통 v3 schema·정책·fixture·명시 이행 snapshot, unit은 TS 58개와 PHP 6개/130 assertions 및 전체 회귀, compatibility는 기존 v1/v2·Site Part 보존 시험과 위 실제 제품 흐름으로 충족한다. IP2 완료는 계약 범위에 한정한다. IP3 레이어·재귀 구조 편집은 아직 착수하지 않았다. 최종 integration-verify와 개발 종료 기록은 통합 하네스의 정식 기록으로 남기며 배포하지 않는다.

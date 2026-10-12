@@ -420,7 +420,7 @@
       "id": "IP2",
       "phase": "foundation",
       "title": "정밀 문서와 스타일 계약",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "IP1"
       ],
@@ -429,8 +429,30 @@
       ],
       "owner_task": "ip2-document-contract-20261012",
       "implementation_commit": "e85bdf2f8af9a78c66289e0b3dc1ec9c022240d1",
-      "integrated_commit": null,
-      "evidence": [],
+      "integrated_commit": "257dc97c936fecf236482665633c69bea2b604d6",
+      "evidence": [
+        {
+          "acceptance_id": "IND-02",
+          "kind": "contract",
+          "commit": "e85bdf2f8af9a78c66289e0b3dc1ec9c022240d1",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip2-document-contract.md"
+        },
+        {
+          "acceptance_id": "IND-02",
+          "kind": "unit",
+          "commit": "257dc97c936fecf236482665633c69bea2b604d6",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip2-document-contract.md"
+        },
+        {
+          "acceptance_id": "IND-02",
+          "kind": "compatibility",
+          "commit": "257dc97c936fecf236482665633c69bea2b604d6",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip2-document-contract.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "schemas",

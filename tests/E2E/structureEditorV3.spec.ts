@@ -287,7 +287,8 @@ for (const key of repeatedCompositionKeys) test('v3 repeated composition interna
   const editable = page.frameLocator('iframe').locator('[data-v3-node="' + inner.instance_id + '"] [contenteditable]');
   await expect(editable).toBeVisible(); await editable.hover();
   await expect(editable).toHaveAttribute('contenteditable', /^(true|plaintext-only)$/);
-  await editable.fill('내부 항목 수정 <안전한 문자>');
+  await editable.click(); await editable.press('ControlOrMeta+A');
+  await page.keyboard.insertText('내부 항목 수정 <안전한 문자>');
   await expect.poll(async () => JSON.stringify(flatten((await read(page)).blocks).find(node => node.instance_id === inner.instance_id)?.props)).toContain('내부 항목 수정 <안전한 문자>');
   await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
   const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);

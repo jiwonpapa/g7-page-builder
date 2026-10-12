@@ -113,6 +113,16 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_generic_publication_requires_real_ui_confirmation_and_all_three_shells(self):
+        for path in ("resources/js/editor/v3/PublicationControls.tsx", "resources/js/editor/v3/apiPublicationPort.ts",
+                     "resources/js/editor-application/v3/publication.ts"):
+            self.assertEqual(scenarios_for([path]), (V3_PRODUCT,))
+        self.assertEqual(len(V3_PRODUCT.titles), 4)
+        self.assertIn("creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload", V3_PRODUCT.titles)
+        for shell in ("none", "template", "builder"):
+            self.assertIn("publishes generic elements through the installed UI with explicit confirmation and preserves the live version " + shell,
+                          V3_PRODUCT.titles)
+
     def test_installed_structure_entry_requires_real_authenticated_product_flow(self):
         for path in ("resources/js/editor/v3/entry.tsx", "resources/js/editor/v3/StructureDocumentHost.tsx",
                      "resources/css/page-builder-structure.css", "vite.structure.config.ts"):

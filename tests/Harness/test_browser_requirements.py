@@ -121,11 +121,52 @@ class BrowserRequirementsTests(unittest.TestCase):
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 30)
+        self.assertEqual(len(V3_STRUCTURE.titles), 69)
+        self.assertIn("v3 semantic lists tables and figures preserve editing grammar and PHP parity", V3_STRUCTURE.titles)
         for key in ("hero.poster", "hero.product", "hero.backdrop", "hero.editorial", "hero.device",
                     "hero.balanced", "hero.screenshot", "hero.overlap", "hero.offset",
                     "card.plain", "card.outlined", "image-text.left", "image-text.right"):
             self.assertIn("v3 composition internal edit save reopen and PHP parity " + key, V3_STRUCTURE.titles)
+        for key in (
+        "buttons.primary-secondary",
+        "buttons.centered-actions",
+        "process.four-step",
+        "logo-cloud.partners",
+        "pricing.three-tier",
+        "team.leadership",
+        "gallery.project-scenes",
+        "testimonials.customer-proof",
+        "comparison.plans",
+        "articles.insights",
+        "events.upcoming",
+        "downloads.resource-center",
+        "card-grid.services",
+        "breadcrumbs.detail-page",
+        "logo-cloud.grid",
+        "logo-cloud.panel",
+        "pricing.cards",
+        "pricing.compact",
+        "pricing.editorial",
+        "team.grid",
+        "team.editorial",
+        "team.featured",
+        "gallery.grid",
+        "gallery.masonry",
+        "gallery.filmstrip",
+        "testimonials.grid",
+        "testimonials.spotlight",
+        "testimonials.split",
+        "testimonials.quote-hero",
+        "articles.list",
+        "articles.grid",
+        "articles.featured",
+        "articles.editorial",
+        "card-grid.grid",
+        "card-grid.rail",
+        "card-grid.editorial",
+        "card-grid.numbered",
+        "list.simple"):
+            self.assertIn("v3 repeated composition internal edit assets save reopen and PHP parity " + key, V3_STRUCTURE.titles)
         self.assertIn("v3 editor preview and PHP draft output agree within one CSS pixel", V3_STRUCTURE.titles)
         for zoom in (50, 100, 200):
             self.assertIn(f"v3 precise handles at {zoom}% preserve CSS pixels cancel and one Undo", V3_STRUCTURE.titles)

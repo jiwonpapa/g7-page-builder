@@ -1,4 +1,647 @@
 {
+"semantics": [
+    {
+      "name": "unordered list",
+      "tree": [
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                {
+                  "tag": "text"
+                }
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                {
+                  "tag": "text"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "nested ordered list",
+      "tree": [
+        {
+          "tag": "ol",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                {
+                  "tag": "ul",
+                  "children": [
+                    {
+                      "tag": "li",
+                      "children": [
+                        {
+                          "tag": "text"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "description list",
+      "tree": [
+        {
+          "tag": "dl",
+          "children": [
+            {
+              "tag": "dt",
+              "children": [
+                {
+                  "tag": "text"
+                }
+              ]
+            },
+            {
+              "tag": "dd",
+              "children": [
+                {
+                  "tag": "text"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "quotation",
+      "tree": [
+        {
+          "tag": "blockquote",
+          "children": [
+            {
+              "tag": "text"
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "figure caption first",
+      "tree": [
+        {
+          "tag": "figure",
+          "children": [
+            {
+              "tag": "figcaption",
+              "children": [
+                {
+                  "tag": "text"
+                }
+              ]
+            },
+            {
+              "tag": "div"
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "figure caption last",
+      "tree": [
+        {
+          "tag": "figure",
+          "children": [
+            {
+              "tag": "div"
+            },
+            {
+              "tag": "figcaption",
+              "children": [
+                {
+                  "tag": "text"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "full comparison table",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "caption",
+              "children": [
+                {
+                  "tag": "text"
+                }
+              ]
+            },
+            {
+              "tag": "thead",
+              "children": [
+                {
+                  "tag": "tr",
+                  "children": [
+                    {
+                      "tag": "th",
+                      "children": [
+                        {
+                          "tag": "text"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "tbody",
+              "children": [
+                {
+                  "tag": "tr",
+                  "children": [
+                    {
+                      "tag": "th",
+                      "children": [
+                        {
+                          "tag": "text"
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "td",
+                      "children": [
+                        {
+                          "tag": "text"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "tbody"
+            },
+            {
+              "tag": "tfoot",
+              "children": [
+                {
+                  "tag": "tr",
+                  "children": [
+                    {
+                      "tag": "td",
+                      "children": [
+                        {
+                          "tag": "text"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "empty ul",
+      "tree": [
+        {
+          "tag": "ul"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "empty ol",
+      "tree": [
+        {
+          "tag": "ol"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "empty dl",
+      "tree": [
+        {
+          "tag": "dl"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "empty table",
+      "tree": [
+        {
+          "tag": "table"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "orphan li",
+      "tree": [
+        {
+          "tag": "li"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan dt",
+      "tree": [
+        {
+          "tag": "dt"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan dd",
+      "tree": [
+        {
+          "tag": "dd"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan figcaption",
+      "tree": [
+        {
+          "tag": "figcaption"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan caption",
+      "tree": [
+        {
+          "tag": "caption"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan thead",
+      "tree": [
+        {
+          "tag": "thead"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan tbody",
+      "tree": [
+        {
+          "tag": "tbody"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan tfoot",
+      "tree": [
+        {
+          "tag": "tfoot"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan tr",
+      "tree": [
+        {
+          "tag": "tr"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan th",
+      "tree": [
+        {
+          "tag": "th"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "orphan td",
+      "tree": [
+        {
+          "tag": "td"
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "invalid child ul",
+      "tree": [
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "div"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_child"
+    },
+    {
+      "name": "invalid child ol",
+      "tree": [
+        {
+          "tag": "ol",
+          "children": [
+            {
+              "tag": "div"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_child"
+    },
+    {
+      "name": "invalid child dl",
+      "tree": [
+        {
+          "tag": "dl",
+          "children": [
+            {
+              "tag": "div"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_child"
+    },
+    {
+      "name": "invalid child table",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "div"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_child"
+    },
+    {
+      "name": "row needs group",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "tr"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "cell needs row",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "tbody",
+              "children": [
+                {
+                  "tag": "td"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_parent"
+    },
+    {
+      "name": "text needs cell",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "tbody",
+              "children": [
+                {
+                  "tag": "tr",
+                  "children": [
+                    {
+                      "tag": "text"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_child"
+    },
+    {
+      "name": "caption order",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "tbody"
+            },
+            {
+              "tag": "caption"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    },
+    {
+      "name": "header order",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "tbody"
+            },
+            {
+              "tag": "thead"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    },
+    {
+      "name": "footer order",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "tfoot"
+            },
+            {
+              "tag": "tbody"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    },
+    {
+      "name": "duplicate caption",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "caption"
+            },
+            {
+              "tag": "caption"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    },
+    {
+      "name": "duplicate thead",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "thead"
+            },
+            {
+              "tag": "thead"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    },
+    {
+      "name": "duplicate tfoot",
+      "tree": [
+        {
+          "tag": "table",
+          "children": [
+            {
+              "tag": "tfoot"
+            },
+            {
+              "tag": "tfoot"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    },
+    {
+      "name": "figure caption interior",
+      "tree": [
+        {
+          "tag": "figure",
+          "children": [
+            {
+              "tag": "div"
+            },
+            {
+              "tag": "figcaption"
+            },
+            {
+              "tag": "div"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    },
+    {
+      "name": "figure captions repeated",
+      "tree": [
+        {
+          "tag": "figure",
+          "children": [
+            {
+              "tag": "figcaption"
+            },
+            {
+              "tag": "div"
+            },
+            {
+              "tag": "figcaption"
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "semantic_order"
+    }
+  ],
   "cases": [
     {
       "name": "empty_host_query",

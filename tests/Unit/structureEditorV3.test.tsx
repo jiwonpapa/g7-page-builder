@@ -38,6 +38,29 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('preserves nested canvas nodes when a canonical edit replaces the slot render function', async () => {
+    const doc = source(), leaf = doc.blocks[0].slots.content![0];
+    const frame = createPrimitive('layout.container', id(70), doc);
+    frame.slots.content = [leaf]; doc.blocks[0].slots.content![0] = frame;
+    const host = hostElement(), root = createRoot(host), changed = vi.fn();
+    cleanup.push(() => root.unmount());
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="stable-slot" serverRevision={1}
+      drafts={{ save: async request => ({ documentId: request.documentId, revision: 2 }) }}
+      nextId={() => id(100)} iframeEnabled={false} onChange={changed} />));
+    await flush();
+    const selector = '[data-v3-node="' + leaf.instance_id + '"]';
+    const original = host.querySelector(selector);
+    expect(original).not.toBeNull();
+    await act(async () => host.querySelector<HTMLButtonElement>('[data-testid="layer-' + leaf.instance_id + '"]')!.click());
+    const input = host.querySelector<HTMLInputElement>('[aria-label="레이어 이름"]')!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '내부 본문 이름');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await click(host, '이름 적용');
+    expect(indexTree(changed.mock.calls.at(-1)![0]).get(leaf.instance_id)?.node.name).toBe('내부 본문 이름');
+    expect(host.querySelector(selector)).toBe(original);
+  });
   it('neutralizes vendor slot dimensions without overwriting authored width and height', async () => {
     const doc = source();
     doc.blocks[0].style = { width: { value: 420, unit: 'px' }, height: { value: 320, unit: 'px' } };
@@ -69,6 +92,40 @@ describe('v3 structural UI and explicit mount', () => {
     await vi.waitFor(() => expect(changed.mock.calls.at(-1)![0]).toEqual(doc));
     await click(host, '다시 실행');
     expect(indexTree(changed.mock.calls.at(-1)![0]).size).toBe(8);
+  });
+  it('inserts repeated items and their image assets as one reversible independent composition', async () => {
+    const doc = source(); doc.blocks = [];
+    const host = hostElement(), root = createRoot(host), changed = vi.fn(); let sequence = 100;
+    cleanup.push(() => root.unmount());
+    const props = { document: doc, sessionId: 'repeated-compositions', serverRevision: 1,
+      drafts: { save: async () => ({ documentId: doc.document_id, revision: 2 }) },
+      nextId: () => id(sequence++), iframeEnabled: false, onChange: changed };
+    await act(async () => root.render(<StructureEditor {...props} />)); await flush();
+    const select = host.querySelector<HTMLSelectElement>('[aria-label="반복 구성"]')!;
+    expect(select.options).toHaveLength(38);
+    await act(async () => { select.value = 'gallery.project-scenes'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    await click(host, '반복 구성 삽입');
+    expect(changed).toHaveBeenCalledTimes(1);
+    const inserted = validateDocumentV3(changed.mock.calls[0][0]);
+    expect(inserted.blocks).toHaveLength(1);
+    expect([...indexTree(inserted).values()].filter(({ node }) => node.type === 'media.image')).toHaveLength(5);
+    expect(inserted.assets).toHaveLength(doc.assets.length + 5);
+    await vi.waitFor(() => expect([...host.querySelectorAll('button')].find(button => button.textContent === '실행 취소')?.disabled).toBe(false));
+    await click(host, '실행 취소'); expect(changed.mock.calls.at(-1)![0]).toEqual(doc);
+    await click(host, '다시 실행'); expect(changed.mock.calls.at(-1)![0]).toEqual(inserted);
+    await click(host, '반복 구성 삽입');
+    const twice = validateDocumentV3(changed.mock.calls.at(-1)![0]);
+    expect(twice.blocks).toHaveLength(2);
+    expect(indexTree(twice).size).toBe(indexTree(inserted).size * 2);
+    expect(twice.assets).toEqual(inserted.assets);
+    await click(host, '구조 미리보기');
+    expect([...host.querySelectorAll('button')].find(button => button.textContent === '반복 구성 삽입')?.disabled).toBe(true);
+    await click(host, '구조 미리보기');
+    await act(async () => root.render(<StructureEditor {...props} readonly />)); await flush();
+    expect(select.disabled).toBe(true);
+    expect([...host.querySelectorAll('button')].find(button => button.textContent === '반복 구성 삽입')?.disabled).toBe(true);
+    const calls = changed.mock.calls.length;
+    await click(host, '반복 구성 삽입'); expect(changed).toHaveBeenCalledTimes(calls);
   });
   it('switches session-only widths without history and scopes visibility to the selected layer', async () => {
     const doc = source(), node = doc.blocks[0].slots.content![0];

@@ -15,7 +15,7 @@ final readonly class DraftRenderer
         $document = $this->validator->validateJson($json);
         // Validate the viewport even for empty documents.
         $this->validator::effectiveStyle((object) ['style' => new stdClass, 'responsive' => new stdClass], $viewport);
-        $styles = Presentation::document($document, $viewport);
+        $styles = Presentation::document($document, $viewport, $this->validator->semanticDisplays());
 
         return '<div data-v3-surface="true" style="'.self::css(Presentation::SURFACE).'">'.$this->nodes($document->blocks, $document, $styles).'</div>';
     }

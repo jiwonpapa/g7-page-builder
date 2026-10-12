@@ -1,5 +1,6 @@
 import type { Background, Color, DocumentV3, GridTrack, Length, Node, Run, Size, Style, Track } from './types';
 import { effectiveStyle, validateDocumentV3, type Viewport } from './validate';
+import { semanticDisplay } from './semantics';
 
 export type Declarations = Record<string, string>;
 export const FONT_FAMILIES = { sans: 'Arial, sans-serif', serif: 'Georgia, serif', mono: 'monospace' } as const;
@@ -37,7 +38,7 @@ function size(result: Declarations, key: 'width' | 'height' | 'basis', value: Si
 }
 function nodeDeclarations(node: Node, document: DocumentV3, style: Style, parent?: Style): Declarations {
   const out: Declarations = { 'box-sizing': 'border-box', margin: '0', padding: '0', 'border-width': '0',
-    display: style.hidden ? 'none' : style.display ?? 'block', position: style.position === 'flow' ? 'static' : style.position ?? 'static' };
+    display: style.hidden ? 'none' : style.display ?? semanticDisplay(node), position: style.position === 'flow' ? 'static' : style.position ?? 'static' };
   if (node.type === 'content.heading' || node.type === 'content.text' || node.type === 'action.link') out['white-space'] = 'pre-wrap';
   if (node.type === 'content.heading') { out['font-size'] = `${[2, 1.5, 1.17, 1, 0.83, 0.67][node.props.level - 1]}em`; out['font-weight'] = '700'; }
   for (const key of ['width', 'height', 'basis'] as const) if (style[key] !== undefined) size(out, key, style[key], parent, style);

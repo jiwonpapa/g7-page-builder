@@ -43,7 +43,9 @@ class DocumentV3ScopeTests(unittest.TestCase):
     def test_shared_fixtures_have_both_language_consumers(self):
         for path in ("tests/Contract/document-v3.fixture.json", "tests/Fixtures/document-v3-cases.json"):
             self.assertEqual(CONTRACT_FIXTURE_CONSUMERS[path], (
-                "tests/Unit/documentV3.test.ts", "tests/UnitPhp/DocumentV3Test.php"))
+                "tests/Unit/documentV3.test.ts", "tests/UnitPhp/DocumentV3Test.php") + ((
+                "tests/Unit/documentV3Semantics.test.ts", "tests/UnitPhp/DocumentV3SemanticsTest.php")
+                if path.endswith("document-v3-cases.json") else ()))
             for consumer in CONTRACT_FIXTURE_CONSUMERS[path]:
                 self.assertIn(path, contract_fixture_inputs(consumer))
 

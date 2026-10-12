@@ -1,6 +1,6 @@
 import React, { createContext, forwardRef, useContext, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field } from '@puckeditor/core';
+import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field, type SlotComponent } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { effectiveStyle, validateDocumentV3, viewportAt } from '../../documents/v3/validate';
 import { indexTree, type Location } from '../../documents/v3/tree';
@@ -23,6 +23,7 @@ import { WorkspaceControls, WorkspaceFrame, WorkspaceMode, type InputMode } from
 import { ReadingOrderNotice, ResponsiveControls } from './ResponsiveControls';
 import { CompositionPanel } from './CompositionPanel';
 import { createBasicComposition } from '../../blocks/v3/basicCompositions';
+import { createRepeatedComposition } from '../../blocks/v3/repeatedTemplates';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -51,17 +52,20 @@ const SlotElement = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(f
   if (!node || !('tag' in node.props)) return null;
   return React.createElement(node.props.tag, { ...props, ref, id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id });
 });
-function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.ReactNode; Content: React.ElementType; dragRef: ((element: Element | null) => void) | null }) {
+function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.ReactNode; Content: SlotComponent; dragRef: ((element: Element | null) => void) | null }) {
   const context = useContext(CanvasContext);
   const node = context?.tree.get(id)?.node;
   if (!context || !node) return null;
   if (context.styles.get(id)?.display === 'none') return null;
   if (node.type === 'layout.section' || node.type === 'layout.container') {
-    return <SlotContext.Provider value={node}><Content as={SlotElement} ref={dragRef} minEmptyHeight={0}
+    // SlotComponent is Puck's public render function. Its closure changes when
+    // descendants change; using that closure as a React type remounts the tree
+    // and destroys active Tiptap input, focus and composition state.
+    return <SlotContext.Provider value={node}>{Content({ as: SlotElement, ref: dragRef, minEmptyHeight: 0,
       // Puck's slot stylesheet supplies width/height:100%. An unspecified
       // authored dimension is CSS auto, including centered flex/grid children.
       // Explicit canonical dimensions still take precedence over this reset.
-      style={{ width: 'auto', height: 'auto', ...reactStyle(context.styles.get(id) ?? {}) }} /></SlotContext.Provider>;
+      style: { width: 'auto', height: 'auto', ...reactStyle(context.styles.get(id) ?? {}) } })}</SlotContext.Provider>;
   }
   return <NodeRenderer node={node} document={context.document} styles={context.styles} dragRef={dragRef}
     body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link') ? body : undefined} editing />;
@@ -231,8 +235,10 @@ function EditorSession(props: StructureEditorProps) {
             <div style={{ ...control, marginTop: 10 }}>{(Object.keys(primitiveLabels) as Node['type'][]).map(type =>
               <CommandButton key={type} disabled={props.readonly} onClick={() => run(() => bridge.execute({ kind: 'insert', destination: destination(),
                 nodes: [createPrimitive(type, props.nextId(), bridge.read())] }))}>{primitiveLabels[type]} 삽입</CommandButton>)}</div>
-            <CompositionPanel disabled={Boolean(props.readonly)} insert={key => run(() => bridge.execute({ kind: 'insert', destination: destination(),
-              nodes: [createBasicComposition(key, bridge.read(), props.nextId)] }))} />
+            <CompositionPanel disabled={Boolean(props.readonly || preview)} insert={key => run(() => bridge.execute({ kind: 'insert', destination: destination(),
+              nodes: [createBasicComposition(key, bridge.read(), props.nextId)] }))}
+              insertRepeated={key => run(() => bridge.execute({ kind: 'paste', destination: destination(),
+                clipboard: createRepeatedComposition(key, bridge.read(), props.nextId) }))} />
             <h2 style={{ fontSize: 15, marginTop: 24 }}>선택 {selected.length}개</h2>
             {focus && <RenameControl key={`${focus.node.instance_id}:${focus.node.name}`} node={focus.node} disabled={props.readonly}
               rename={name => command({ kind: 'rename', id: focus.node.instance_id, name })} />}

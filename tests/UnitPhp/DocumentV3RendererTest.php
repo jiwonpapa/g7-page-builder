@@ -80,4 +80,29 @@ final class DocumentV3RendererTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         (new DraftRenderer($this->validator()))->render($this->encode($doc));
     }
+
+    public function test_semantic_table_groups_retain_their_html_and_default_display(): void
+    {
+        $document = $this->fixture();
+        $sequence = 100;
+        $node = function (string $tag, array $children = []) use (&$sequence): stdClass {
+            return (object) ['instance_id' => sprintf('00000000-0000-4000-8000-%012d', ++$sequence),
+                'type' => 'layout.container', 'block_version' => 1, 'name' => $tag, 'locked' => false,
+                'props' => (object) ['tag' => $tag], 'slots' => (object) ['content' => $children],
+                'style' => new stdClass, 'responsive' => new stdClass];
+        };
+        $document->blocks = [$node('table', [$node('caption'), $node('thead', [$node('tr', [$node('th')])]),
+            $node('tbody', [$node('tr', [$node('td')])]), $node('tfoot', [$node('tr', [$node('td')])])]),
+            $node('ul', [$node('li')]), $node('figure', [$node('blockquote'), $node('figcaption')])];
+        $source = $this->encode($document);
+        $html = (new DraftRenderer($this->validator()))->render($source);
+        foreach (['table' => 'table', 'caption' => 'table-caption', 'thead' => 'table-header-group', 'tbody' => 'table-row-group',
+            'tfoot' => 'table-footer-group', 'tr' => 'table-row', 'th' => 'table-cell', 'td' => 'table-cell', 'li' => 'list-item'] as $tag => $display) {
+            self::assertMatchesRegularExpression('/<'.$tag.' [^>]*display:'.$display.';/', $html);
+        }
+        self::assertSame($source, $this->encode($document));
+        $document->blocks[0]->slots->content = [$node('tr')];
+        $this->expectExceptionMessage('semantic_parent:');
+        (new DraftRenderer($this->validator()))->render($this->encode($document));
+    }
 }

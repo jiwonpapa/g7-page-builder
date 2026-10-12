@@ -14,6 +14,26 @@ const POSITION_HASHES = new Set([
 ]);
 const POSITION_WRITE = 'el.style.position = "relative";';
 const preservePosition = (source: string) => source.replace(POSITION_WRITE, 'if (!el.style.position) ' + POSITION_WRITE);
+const RICH_TEXT_HASHES = new Set(['74a099639161068d3efd24f957c9e4df286a3bb2aa591f37012e428283614c6d',
+  '34b012f3b413a88b30aff0066b9616ef7c59482f85268dea40a7c52b0a024d20']);
+function reconcileRichText(source: string): string {
+  const cjs = source.includes('const editTimer = (0, import_react40.useRef)(null);');
+  const state = cjs ? '(0, import_react40.useState)' : 'useState';
+  const effect = cjs ? '(0, import_react40.useEffect)' : 'useEffect';
+  return source.replace('import { useEffect, useRef } from "react";', 'import { useEffect, useRef, useState } from "react";')
+    .replace('  const isPending = !!editTimer.current;', `  const [editEpoch, setEditEpoch] = ${state}(0);
+  ${effect}(() => () => { if (editTimer.current) clearTimeout(editTimer.current); }, []);
+  const isPending = !!editTimer.current;`)
+    .replace('        editTimer.current = null;', '        editTimer.current = null;\n        setEditEpoch((value) => value + 1);')
+    .replace('[content, editor, appStoreApi]);', '[content, editor, appStoreApi, editEpoch]);');
+}
+/** Retry deferred external content after the local typing window; do not add history or emit an edit. */
+export function patchPuckRichTextSync(source: string): string {
+  if (!RICH_TEXT_HASHES.has(createHash('sha256').update(source).digest('hex'))) {
+    throw new Error('Unreviewed Puck rich-text source; review the pinned 0.23.0 correction.');
+  }
+  return reconcileRichText(source);
+}
 /** Puck inline dragRef must preserve the authored containing block; wrappers keep their default. */
 export function patchPuckPosition(source: string): string {
   if (!POSITION_HASHES.has(createHash('sha256').update(source).digest('hex')) || source.split(POSITION_WRITE).length !== 2) {
@@ -43,7 +63,7 @@ export function patchPuckHistory(source: string): string {
 
 export function puckHistoryCorrection(): Plugin {
   let corrected = false;
-  let independentV3 = false, positionCorrected = false;
+  let independentV3 = false, positionCorrected = false, richTextCorrected = false;
   return {
     name: 'g7pb-puck-023-history-correction', enforce: 'pre', apply: 'build',
     configResolved(config) {
@@ -58,11 +78,16 @@ export function puckHistoryCorrection(): Plugin {
         patchPuckPosition(source); // Verify ORIGINAL bytes before composing with the history correction (CJS).
         code = preservePosition(code); positionCorrected = true;
       }
+      if (independentV3 && source.includes('function useSyncedEditor({')) {
+        patchPuckRichTextSync(source);
+        code = reconcileRichText(code); richTextCorrected = true;
+      }
       if (code !== source) return { code, map: null };
     },
     buildEnd(error) {
       if (!error && !corrected) throw new Error('Puck history correction was not applied to the editor bundle.');
       if (!error && independentV3 && !positionCorrected) throw new Error('Puck position correction was not applied to the independent v3 bundle.');
+      if (!error && independentV3 && !richTextCorrected) throw new Error('Puck rich-text correction was not applied to the independent v3 bundle.');
     },
   };
 }

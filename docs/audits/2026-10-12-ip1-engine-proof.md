@@ -1,6 +1,6 @@
 # IP1 독립 엔진 결합 검증
 
-상태: worktree 구현·실동작 시험 통과, Local 통합 검증 대기. IND-01, SPEC-01·06·07의 기술 선행 검증만 대상이다. 제품 기능 구현·저장·발행·배포 완료가 아니다.
+상태: IP1 구현·Local 통합·실동작 시험 완료. IND-01, SPEC-01·06·07의 기술 선행 검증만 대상이다. 제품 기능 구현·저장·발행·배포 완료가 아니다.
 
 ## 범위
 
@@ -74,6 +74,19 @@ make editor-plan-check
 
 브라우저 원본은 worktree의 `output/playwright/ip1/2026-10-12T01-22-37.366Z/`에 있다. 3개 줌 스크린샷, JSON 결과, 성능 첨부 및 bundle.json을 포함한다. 시험 package-lock SHA256은 `ddcb479fd9f12236b041a438a269677274676c205bca93f6df2e56091571f0be`다. 성능은 이 로컬 단일 실행 관측값이며 p95 보증이 아니다.
 
+## 제출·Local 통합 증거
+
+- 구현 제출: `e827bf10a1ec65279412b2d86967a749f4469ade`
+- Local 통합: `a4b4fe8b55a22d8be96888b5f3b556d148d94108`
+- 제출/통합: `make task-submit TASK=ip1-engine-proof-20261012`, `make task-integrate-scoped TASK=ip1-engine-proof-20261012 INTEGRATION_TASK=integration-ip1-engine-proof-20261012`
+- 두 명령 모두 Node 24 PATH 환경에서 실행했다. 정확 21개 변경 경로, scoped 16개 gate이며 FULL 확대는 없다.
+- 제출에서 Python 하네스 215개, 구조 검사 하네스 29개, fixture 단위 17개가 통과했다. 입력이 같은 성공 검사는 통합에서 재사용했다.
+- 실제 브라우저는 제출에서 보류하고 Local runtime lease 아래 독립 loopback preview로 필수 실행했다. G7 컨테이너·제품 asset·DB를 준비하거나 변경하지 않았다.
+- Local 브라우저 9/9 통과, skip/retry/flaky 0. 100노드 준비/선택 264/96 ms, 500노드 628/304 ms. 번들 gzip 459,775 bytes. 환경은 위 worktree 시험과 같다.
+- Local 원본: `output/playwright/ip1/2026-10-12T01-24-46.069Z/`. `results.json` SHA256은 `69b37f7ccc3eeb2cb2fb8e5b51802c3137749d901721f7ace9508dc358619037`, `bundle.json`은 `ed66a9de6d06e90195f39005346a013d8c60a22b1bf185976a708f0f266b3fdc`다.
+
+IND-01의 unit 근거는 거래·취소·문맥·동일 data 이력 병합 테스트, browser 근거는 실제 iframe 입력 9개, architecture 근거는 격리 패키지/AST 경계·정확 파일 planner·제품 정적 구조 검사와 위 결합 결정이다. 원장 완료 기록은 위 통합 SHA를 기준으로 별도 문서 task `ip1-engine-proof-record-20261012`에서 처리한다. 이 문서 기록은 제품 기능 변경을 추가하지 않는다. 최종 integration-verify 및 NO_RELEASE 종료 결과는 coordination 이력에 남긴다.
+
 ## 재현한 실패와 수정
 
 1. 기본 headless binary가 설치되지 않아 첫 실행이 실패했다. 설치된 Chrome을 명시하고 실제 버전을 기록한다. 외부 Inter 폰트 요청도 차단 실패로 검출해 시험 빌드를 오프라인화했다.
@@ -88,4 +101,4 @@ make editor-plan-check
 
 이번 성공은 단순 기술 Box에 한정된다. v3 원본/컴파일러, 내장 전체 블록, Flex/Grid, 반응형 세부 편집, 다중 정렬·회전, 저장·발행·재열기, OS IME 및 G7 호환은 후속 IP2~IP10 범위다. 루트 제품 의존성·DB·마이그레이션·운영 배포는 실행하지 않았다.
 
-다음 단계는 IP2 정밀 문서와 스타일 계약이다. 안정 노드/typed 단위·스타일/검증 fixture/명시 이행을 정하며 v1/v2를 자동 변환하지 않는다. Local 통합 후 제출·통합 SHA와 원장을 별도 기록 커밋으로 확정한다.
+다음 단계는 IP2 정밀 문서와 스타일 계약이다. 안정 노드/typed 단위·스타일/검증 fixture/명시 이행을 정하며 v1/v2를 자동 변환하지 않는다. IP2 구현은 이번 IP1 커밋에 포함하지 않는다.

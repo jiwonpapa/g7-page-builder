@@ -467,14 +467,14 @@
       "id": "IP3",
       "phase": "editing",
       "title": "레이어와 재귀 구조 편집",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "IP2"
       ],
       "acceptance_ids": [
         "IND-03"
       ],
-      "owner_task": null,
+      "owner_task": "ip3-tree-commands-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

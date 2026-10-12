@@ -1,5 +1,17 @@
 # IP7 실제 공통 요소 편집 화면 연결
 
+## 최종 제품 진입 통합 증거
+
+Local 통합 SHA는 `7dfc397bf1bd687126aeb6c291f37f23b6a4e78e`다. API·제품 entry·빌드 검사 등록·기존 카탈로그 압축의 네 제출을 공식 batch로 통합했다. 공유 Blade 진입점을 변경했으므로 요청한 FULL 검사가 성공했다. 이는 IP7 전체 또는 운영 배포 완료가 아니다.
+
+- 새 인증 제품 시나리오 3개, 실패/skip/flaky 0: `output/playwright/gates/integration-ip7-20261012/eebc6815634cbcbe6b774d22a8bc2e70a56320a424d3de08dd81c22c805811e7/86e4f224e0e94cf89d7dbf24c47765bb/`. 실제 빈 v3 생성·중첩 요소 편집·Undo/Redo·한국어 직접 입력·API 저장·재열기·세 폭과 63개 데이터 자산 응답을 확인했다. 실제 발행은 이 시험에 포함되지 않는다.
+- Inspector UX 2개 및 asset identity 2개도 통과했다. FULL 제품 브라우저 49개와 공통영역 브라우저 45개가 통과했다. PHP 단위 395개, 통합 포함 coverage 471개 및 별도 G7 통합 76개가 통과했다. 기존 PHPUnit notice 1개는 별도 경고로 남으며 실패로 숨기거나 제품 수용 증거로 사용하지 않는다.
+- Linux gzip: 새 JS 489,746 bytes, 분리 JSON 22,535 bytes, 기존 JS 508,432 bytes. 기존 JS 한도 508,500 bytes는 그대로다. 분리 자산까지 포함한 총 전송량 감소를 주장하지 않는다.
+- FULL Site Part journal은 `output/playwright/gates/integration-ip7-20261012/53de021a76eeca28ed3b22ceeb3c8a6be79ccdaa4a3fac62ecb539ce16be882e/c99008c7a61244a9be18af53cb0809bf/site-part-state.json`이며 closed=true, 16개 세션 모두 restored=true다.
+- 종료 시 jwsoft-business01 0.3.1 활성화·sirsoft-basic 1.1.4 비활성화를 확인했다. 관련 테마 1,667개 파일의 SHA256은 전후 동일한 `0245183e355cb1e96851ee005d6718e825bb8969bd2686dad42bda4c2b3c6981`이다.
+
+이후 실제 v3 발행 compiler·서버 binding을 별도 작업으로 진행한다. 기본 문서함 생성 경로, 미디어·재사용, 공통영역 전체, 명시 이행·복원 및 최종 E2E/UX 수용은 남아 있다. 원장의 IP7은 in_progress를 유지한다.
+
 상태: 구현 중, 미통합. IP7 전체 완료 증거가 아니다.
 
 API/버전 분기 작업 `ip7-editor-entry-api-20261013`은 `386b77fa44ae58982c17c75b3642e82dc934f5e8` 기준에서 제출 `c2e517bf24b5d8bf7f340b16c1cc60dbccbad070`까지 진행했다. 공식 제출의 관련 단위·타입·구조 검사를 통과했으며 브라우저 검증은 통합 단계로 유보됐다.

@@ -709,10 +709,17 @@
         },
         {
           "acceptance_id": "IND-07",
-          "kind": "partial-version-entry-api-submission",
+        "kind": "partial-version-entry-api-submission",
           "commit": "4a9918bbc35ed90bc5b28fcbe836ecbdde6ab876",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-product-entry.md"
+      },
+      {
+        "acceptance_id": "IND-07",
+        "kind": "partial-installed-generic-editor",
+        "commit": "7dfc397bf1bd687126aeb6c291f37f23b6a4e78e",
+        "result": "pass",
+        "path": "docs/audits/2026-10-13-ip7-product-entry.md"
         }
       ],
       "blocked_reason": null,

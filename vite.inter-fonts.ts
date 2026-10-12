@@ -77,5 +77,6 @@ export function checkInterFontDist(root: string): void {
     if (!readFileSync(join(root, 'dist', INTER_DIST, name)).equals(bytes)) throw Error('Built Inter asset mismatch: ' + name);
   }
   const css = readFileSync(join(root, 'dist/css/page-builder-editor.css'), 'utf8');
-  if (css.includes('rsms.me') || !css.includes(`@import"../${INTER_DIST}/inter.css";`)) throw Error('Editor must import the local pinned Inter stylesheet');
+  const expectedImport = '@import' + JSON.stringify('../' + INTER_DIST + '/inter.css') + ';';
+  if (css.includes('rsms.me') || !css.includes(expectedImport)) throw Error('Editor must import the local pinned Inter stylesheet');
 }

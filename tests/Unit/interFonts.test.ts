@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { INTER_DIST, interFontAssets, rewriteInterImport } from '../../vite.inter-fonts';
+import { INTER_DIST, interFontAssets, rewriteInterImport } from '../../vite.inter-fonts.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 describe('pinned local Inter font assets', () => {

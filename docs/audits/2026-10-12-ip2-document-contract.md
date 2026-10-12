@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 E2E 3파일 보완은 통합했고 지원 테마의 FULL 제품 브라우저는 48개 통과/1개 실패다. 남은 모바일 Hero의 빈 슬롯 간격 24px는 IP2 없는 기준에서도 재현한 제품 차이이며 별도 수정 승인이 필요하다. 원래 테마와 Site Part 상태를 복구했다. IP2 완료나 IP3 착수를 선언하지 않는다.
+상태: 사용자가 Hero 빈 슬롯 제품 문제의 2파일 보완을 승인했다. 별도 task에서 수정·단위 회귀를 제출하고 실제 브라우저 검증을 진행한다. 이전 FULL 제품 브라우저는 48개 통과/1개 실패였으며 아래 이력으로 보존한다. IP2 전체 통합은 아직 완료하지 않았고 IP3·운영 배포로 진행하지 않는다.
 
 ## 소유 범위
 
@@ -212,7 +212,7 @@ IP2 제출 `3f187551709e048559e354ec73c3a3582527a628`을 위 통합 기준에서
 - 100블록 성능: 준비 1,685.8ms, 타이핑 p95/max 82.6ms, 드래그 965.5ms, 목록 열기 111.2ms, Long Task 7개/max 135ms/총 570ms로 기존 예산 통과.
 - 실패 때문에 뒤에 연결된 `test:e2e:site-shell`은 실행되지 않았다. Site Part journal `output/playwright/gates/integration-ip2-resume-20261012/c7fc8ec71511fc2231c63a89b9c48caf55436fef9f77b3b0d92d069cdd4b9898/b068046e52624e0c805e4dfaf8a8f118/site-part-state.json`은 10세션 모두 restored=true·closed=true다.
 
-## 현재 차단 모바일 Hero 빈 슬롯 간격
+## 이전 차단 모바일 Hero 빈 슬롯 간격
 
 모바일 `ALL_PRESET_LAYOUT_GATE`의 `hero.backdrop` 이미지 높이는 편집 462.59375px, 미리보기 438.59375px로 정확히 24px 다르다. 저장된 geometry에서 두 영역의 padding은 80px 20px로 같고 모든 텍스트/버튼 높이도 같다. 편집기에만 높이 0인 빈 Puck DropZone이 Grid 자식으로 남아 gap 1.5rem(24px)을 하나 추가한다. `puckEditorConfig.tsx`의 Hero render는 빈 extra도 호출하고 공개 Hero compiler는 내용이 없는 extra를 출력하지 않는다. 이는 Card 측정 오판과 다른 제품 렌더링 차이다.
 
@@ -220,4 +220,11 @@ IP2 제출 `3f187551709e048559e354ec73c3a3582527a628`을 위 통합 기준에서
 
 모바일 전체 검사에서는 Hero 실패가 후속 블록 치수 assertion을 막으므로 `G7PB_PRESET_IDS=card.empty`의 모바일 비교만 별도로 실행해 통과했다(4.2초). 증거는 `output/playwright/ip2-card-mobile-20261012.log`와 해당 이름의 디렉터리다. 제품/시각 기준이나 snapshot을 바꾸지 않았다.
 
-후속 수정 후보는 `resources/js/editor/puckEditorConfig.tsx`의 Hero 빈 슬롯 렌더 조건과 `tests/Unit/puckEditorConfig.test.tsx`의 빈/채운 슬롯·편집/미리보기 회귀다. 기존 E2E의 전체 프리셋 및 내부 구성/이력 시나리오를 재사용한다. 제품 소스는 별도 승인 전 수정하지 않는다. IP2 제출과 integration lease를 보존하며 IP3·운영 배포로 진행하지 않는다.
+이후 사용자가 `resources/js/editor/puckEditorConfig.tsx`와 `tests/Unit/puckEditorConfig.test.tsx`의 별도 보완을 승인했다. 기존 E2E의 전체 프리셋 및 내부 구성/이력 시나리오를 재사용하며 시각·성능 기준은 유지한다.
+
+## 승인된 Hero 빈 슬롯 보완
+
+- task `ip2-hero-empty-slot-20261012`, 기준 `af8a2e06dfffd99bfc77b365376d31b7c0b21367`, 승인된 정확 2파일만 소유했다. 제출 `9c30ecbc9213db359c2fe8198d4f4829365d81d2`.
+- Puck의 공개 `getItemById` selector로 현재 Hero의 extra 내용 유무를 읽는다. 일반 편집과 읽기 전용 미리보기에서는 빈 슬롯을 렌더하지 않으며, 채운 슬롯과 v2 구조 편집의 빈 삽입 대상·기존 CTA 소유권을 유지한다. 문서·명령·Undo·CSS·공개 compiler는 변경하지 않는다.
+- 추가한 빈 슬롯 회귀는 수정 전 0개 기대/1개 실제로 실패했고 수정 후 통과했다. v1/v2 편집↔읽기 전용 전환, 채운 배지/목록·CTA 표시와 문서 무변경을 확인했다. 관련 3파일 18개 시험·타입 검사 및 제출 scoped gate가 통과했다.
+- Local runtime lease에서 지원 테마 임시 전환·원복을 포함해 scoped 브라우저 통합을 진행한다. 실제 브라우저 통과와 IP2 전체 통합은 별도로 기록한다.

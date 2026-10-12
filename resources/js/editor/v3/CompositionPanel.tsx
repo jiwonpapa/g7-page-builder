@@ -1,32 +1,31 @@
-import React, { useState } from 'react';
-import { basicCompositionOptions, isBasicCompositionKey, type BasicCompositionKey } from '../../blocks/v3/basicCompositions';
-import { repeatedCompositionOptions } from '../../blocks/v3/repeatedTemplates';
-import { staticCompositionOptions } from '../../blocks/v3/staticTemplates';
+import React, { useMemo, useState } from 'react';
+import { compositionChoices, type CompositionChoice } from '../../editor-application/v3/compositions';
 
-export function CompositionPanel({ disabled, insert, insertRepeated, insertStatic }: {
-  disabled: boolean; insert: (key: BasicCompositionKey) => void; insertRepeated: (key: string) => void;
-  insertStatic: (key: string) => void;
+const empty: readonly unknown[] = [];
+export function CompositionPanel({ disabled, sources = empty, insert }: {
+  disabled: boolean; sources?: readonly unknown[]; insert: (choice: CompositionChoice) => void;
 }) {
-  const [key, setKey] = useState<BasicCompositionKey>('hero.poster');
-  const [repeatedKey, setRepeatedKey] = useState(repeatedCompositionOptions[0].key);
-  const [staticKey, setStaticKey] = useState(staticCompositionOptions[0].key);
+  const catalog = useMemo(() => {
+    try { return { choices: compositionChoices(sources), error: '' }; }
+    catch { return { choices: [], error: '구성 데이터를 읽을 수 없습니다. 현재 문서는 변경되지 않았습니다.' }; }
+  }, [sources]);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState('');
+  const choices = catalog.choices.filter(choice => choice.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const choice = choices.find(item => item.id === selected) ?? choices[0];
   return <section aria-label="구성 템플릿" style={{ marginTop: 16 }}>
     <h2 style={{ fontSize: 15 }}>구성 템플릿</h2>
-    <label>기본 구성<select aria-label="기본 구성" value={key} disabled={disabled} style={{ width: '100%' }}
-      onChange={event => { if (isBasicCompositionKey(event.target.value)) setKey(event.target.value); }}>
-      {basicCompositionOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-    </select></label>
-    <button type="button" className="g7pb-button g7pb-button--quiet" disabled={disabled} onClick={() => insert(key)}>구성 삽입</button>
-    <label style={{ display: 'block', marginTop: 12 }}>반복 구성<select aria-label="반복 구성" value={repeatedKey} disabled={disabled} style={{ width: '100%' }}
-      onChange={event => { if (repeatedCompositionOptions.some(option => option.key === event.target.value)) setRepeatedKey(event.target.value); }}>
-      {repeatedCompositionOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}
-    </select></label>
-    <button type="button" className="g7pb-button g7pb-button--quiet" disabled={disabled} onClick={() => insertRepeated(repeatedKey)}>반복 구성 삽입</button>
-    <label style={{ display: 'block', marginTop: 12 }}>내용 구성<select aria-label="내용 구성" value={staticKey} disabled={disabled} style={{ width: '100%' }}
-      onChange={event => { if (staticCompositionOptions.some(option => option.key === event.target.value)) setStaticKey(event.target.value); }}>
-      {staticCompositionOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}
-    </select></label>
-    <button type="button" className="g7pb-button g7pb-button--quiet" disabled={disabled} onClick={() => insertStatic(staticKey)}>내용 구성 삽입</button>
+    {catalog.error ? <p role="alert">{catalog.error}</p> : <>
+      <label>구성 검색<input aria-label="구성 검색" type="search" value={query}
+        onChange={event => setQuery(event.target.value)} style={{ width: '100%' }} /></label>
+      <label>구성 선택<select aria-label="구성 선택" value={choice?.id ?? ''} disabled={disabled || !choices.length}
+        onChange={event => setSelected(event.target.value)} style={{ width: '100%' }}>
+        {choices.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select></label>
+      <button type="button" className="g7pb-button g7pb-button--quiet" disabled={disabled || !choice}
+        onClick={() => { if (!disabled && choice) insert(choice); }}>구성 삽입</button>
+      {!choices.length && <p role="status">{query ? '검색 결과가 없습니다.' : '등록된 구성이 없습니다. 기본 요소로 직접 구성할 수 있습니다.'}</p>}
+    </>}
     <p style={{ color: 'var(--g7pb-muted)' }}>독립 사본으로 삽입합니다. 레이어에서 내부 요소를 선택하여 편집하세요.</p>
   </section>;
 }

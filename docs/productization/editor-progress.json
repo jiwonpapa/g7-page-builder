@@ -554,14 +554,14 @@
       "id": "IP5",
       "phase": "editing",
       "title": "핸들과 다중 선택 작업면",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "IP4"
       ],
       "acceptance_ids": [
         "IND-05"
       ],
-      "owner_task": null,
+      "owner_task": "ip5-gesture-commands-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

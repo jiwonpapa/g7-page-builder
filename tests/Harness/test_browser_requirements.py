@@ -120,11 +120,18 @@ class BrowserRequirementsTests(unittest.TestCase):
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 13)
+        self.assertEqual(len(V3_STRUCTURE.titles), 17)
         self.assertIn("v3 editor preview and PHP draft output agree within one CSS pixel", V3_STRUCTURE.titles)
         for zoom in (50, 100, 200):
             self.assertIn(f"v3 precise handles at {zoom}% preserve CSS pixels cancel and one Undo", V3_STRUCTURE.titles)
         self.assertIn("v3 focus loss cancels and layout constraints preserve canonical history", V3_STRUCTURE.titles)
+        for title in (
+            "v3 responsive Inspector inherits resets and reopens independent viewport values",
+            "v3 responsive handles and mixed edits keep viewport ownership and one Undo",
+            "v3 responsive canvases keep structure and direct text editing at all three widths",
+            "v3 responsive boundary canvas preview and PHP output preserve layout and DOM semantics",
+        ):
+            self.assertIn(title, V3_STRUCTURE.titles)
         self.assertEqual(set(scenarios_for(["src/Application/Compilation/HtmlDocumentCompiler.php"])),
                          {replace(PAGE, titles=tuple(sorted(PAGE.titles + NESTED.titles))), STRUCTURE_THEME})
         self.assertEqual(scenarios_for(["resources/js/documents/types.ts"]), (PAGE,))

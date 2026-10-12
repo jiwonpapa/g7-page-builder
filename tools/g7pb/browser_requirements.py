@@ -61,6 +61,10 @@ V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
     "v3 marquee group resize snap and pan preserve canonical history",
     "v3 pointer movement rotation and mixed property changes each use one Undo",
     "v3 focus loss cancels and layout constraints preserve canonical history",
+    "v3 responsive Inspector inherits resets and reopens independent viewport values",
+    "v3 responsive handles and mixed edits keep viewport ownership and one Undo",
+    "v3 responsive canvases keep structure and direct text editing at all three widths",
+    "v3 responsive boundary canvas preview and PHP output preserve layout and DOM semantics",
 ))
 
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(

@@ -144,10 +144,11 @@ for (const key of basicCompositionKeys) test('v3 composition internal edit save 
     await output.setContent('<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://v3-editor.test/"></head><body style="margin:0">' + phpDraft(saved, expectedViewport(width)) + '</body></html>');
     await output.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const php = await output.locator('[data-v3-surface]').evaluate(measure);
+    await info.attach('ip7-composition-' + width, { contentType: 'application/json', body: JSON.stringify({ key, width, canvas, preview, php }) });
     for (const other of [preview, php]) {
       expect(other.map(node => node.id)).toEqual(canvas.map(node => node.id));
       for (let index = 0; index < canvas.length; index++) {
-        for (const dimension of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(other[index][dimension] - canvas[index][dimension]), key + ':' + width + ':' + dimension).toBeLessThanOrEqual(1);
+        for (const dimension of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(other[index][dimension] - canvas[index][dimension]), key + ':' + width + ':' + (other === preview ? 'preview' : 'php') + ':' + canvas[index].tag + ':' + index + ':' + dimension).toBeLessThanOrEqual(1);
         expect(other[index].css).toEqual(canvas[index].css);
         expect(other[index].tag).toBe(canvas[index].tag);
         expect(other[index].text).toBe(canvas[index].text);

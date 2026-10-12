@@ -89,32 +89,42 @@ class FrontendBudgetTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout)
         self.assertIn("Manager-only selectors", result.stderr)
 
-    def test_public_css_accepts_measured_baseline_but_still_rejects_growth_above_18700(self):
+    def test_public_css_reports_growth_without_a_source_or_gzip_ceiling(self):
         self.full_fixture()
-        generated = subprocess.run(["node", "--input-type=module", "-e", r'''
-import { createHash } from 'node:crypto';
-import { gzipSync } from 'node:zlib';
-let source = '', below, above;
-for (let index = 0; index < 2000 && !above; index++) {
-  source += createHash('sha256').update(`public-css-${index}`).digest('hex');
-  const size = gzipSync(source).length;
-  if (size > 18600 && size <= 18700) below = { source, size };
-  if (size > 18700) above = { source, size };
-}
-console.log(JSON.stringify({ below, above }));
-'''], capture_output=True, text=True, check=True)
-        samples = json.loads(generated.stdout)
-        self.assertGreater(samples["below"]["size"], 18600)
-        self.assertLessEqual(samples["below"]["size"], 18700)
-        self.write("dist/css/page-builder-public.css", samples["below"]["source"])
-        passed = self.run_checker()
-        self.assertEqual(passed.returncode, 0, passed.stderr)
-        self.write("dist/css/page-builder-public.css", samples["above"]["source"])
-        rejected = self.run_checker()
-        self.assertNotEqual(rejected.returncode, 0)
-        self.assertIn("Frontend budget exceeded: dist/css/page-builder-public.css=", rejected.stderr)
-        self.assertIn("/18700 gzip bytes", rejected.stderr)
+        # Exceed both historical limits and the unapproved 21,000-byte proposal.
+        # Valid CSS with deterministic content, not an infinite/very high ceiling.
+        source = ".fixture {--measurement: '" + self.payload("public-css", 2000) + "';}"
+        measured = subprocess.run(["node", "--input-type=module", "-e",
+                                  "import {gzipSync} from 'node:zlib'; import {readFileSync} from 'node:fs'; "
+                                  "console.log(gzipSync(readFileSync(0)).length);"],
+                                 input=source, capture_output=True, text=True, check=True)
+        raw, gzip = len(source.encode()), int(measured.stdout)
+        self.assertGreater(raw, 105_000)
+        self.assertGreater(gzip, 21_000)
+        for path in ("resources/css/page-builder-public.css", "dist/css/page-builder-public.css"):
+            self.write(path, source)
+        result = self.run_checker()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"resources/css/page-builder-public.css={raw} raw bytes (reported; no size ceiling)", result.stdout)
+        self.assertIn(f"dist/css/page-builder-public.css={gzip} gzip bytes (reported; no size ceiling)", result.stdout)
 
+    def test_public_css_files_remain_required_without_a_size_ceiling(self):
+        for path in ("resources/css/page-builder-public.css", "dist/css/page-builder-public.css"):
+            with self.subTest(path=path):
+                self.full_fixture()
+                (self.root / path).unlink()
+                result = self.run_checker()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("ENOENT", result.stderr)
+                self.assertIn(path, result.stderr)
+
+    def test_other_css_bundle_limits_are_not_removed_with_public_css(self):
+        self.full_fixture()
+        self.write("dist/css/page-builder-manager.css", self.payload("manager-css", 1000))
+        result = self.run_checker()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("dist/css/page-builder-manager.css=", result.stderr)
+        self.assertIn("/8000 gzip bytes", result.stderr)
 
     def test_basic_element_shared_source_has_its_own_bounded_budget(self):
         path = "resources/css/page-builder-basic-elements.css"

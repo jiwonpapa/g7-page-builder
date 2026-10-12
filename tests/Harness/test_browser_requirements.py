@@ -8,6 +8,7 @@ import subprocess
 from tools.g7pb.planner import build_plan
 from tools.g7pb.model import Plan
 from tools.g7pb.runner import digest_gate, execute
+from tools.g7pb.browser_requirements import V3_STRUCTURE
 
 
 TEXT_AND_CONTROLS = replace(TEXT, titles=tuple(sorted(TEXT.titles + CONTROLS.titles)))
@@ -112,6 +113,41 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_independent_v3_owners_require_their_actual_port_and_puck_scenarios(self):
+        for path in ("resources/js/documents/v3/commands.ts", "resources/js/editor/v3/PuckBridge.tsx",
+                     "resources/js/editor-application/v3/session.ts"):
+            self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
+        self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
+        self.assertEqual(len(V3_STRUCTURE.titles), 3)
+        self.assertEqual(scenarios_for(["resources/js/documents/types.ts"]), (PAGE,))
+        self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])),
+                         {PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY})
+
+    def test_v3_missing_browser_proof_is_not_replaced_by_legacy_or_full_acceptance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = "resources/js/editor/v3/PuckBridge.tsx"
+            unit = "tests/Unit/structureEditorV3.test.tsx"
+            for path, content in ((source, "export const bridge = 1;"), (unit, "import '../../" + source + "';")):
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content)
+            for phase in ("submission", "integration", "verification", "ci"):
+                plan = build_plan(root, [source], phase=phase)
+                self.assertIn("Missing required browser scenario: " + V3_STRUCTURE.spec, plan.unresolved)
+                self.assertFalse(plan.full)
+            spec = root / V3_STRUCTURE.spec
+            spec.parent.mkdir(parents=True, exist_ok=True)
+            spec.write_text("import {test} from '@playwright/test';")
+            for phase in ("submission", "integration", "verification", "ci"):
+                plan = build_plan(root, [source], phase=phase)
+                self.assertEqual(plan.unresolved, [])
+                gate = next(gate for gate in plan.gates if gate.name == "browser:" + V3_STRUCTURE.spec)
+                self.assertTrue(gate.runtime)
+                self.assertEqual(gate.deferred, phase == "submission")
+                self.assertEqual(gate.depends_on, ("browser-assets",))
+                self.assertEqual(set(gate.browser_expectations), {("desktop", title) for title in V3_STRUCTURE.titles})
+
     def test_action_transfer_selects_real_composition_flows(self):
         for name in ("ComponentComposition.tsx", "compositionActions.ts"):
             self.assertEqual(set(scenarios_for(["resources/js/editor/" + name])), {HERO_COMPOSITION, CARD_COMPOSITION})

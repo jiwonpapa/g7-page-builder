@@ -179,6 +179,64 @@ test('hydrates typed public controls and submits only the active inquiry form', 
   });
 });
 
+test('keeps stable nested content controls independent with native keys and authored layouts', async ({ page }, info) => {
+  const prefix = `unregistered-${Date.now()}`;
+  const markup = `<main class="g7pb-page"><section data-g7pb-tabs data-g7pb-control-ids="stable">
+    <div role="tablist" aria-label="바깥 선택" aria-orientation="vertical">
+      <button type="button" id="${prefix}-first" role="tab" aria-controls="${prefix}-one">첫 화면</button>
+      <button type="button" id="${prefix}-second" role="tab" aria-controls="${prefix}-two">다음 화면</button>
+    </div>
+    <article id="${prefix}-two" role="tabpanel" aria-labelledby="${prefix}-second" style="display:grid;gap:12px"><p>두 번째 화면</p></article>
+    <article id="${prefix}-one" role="tabpanel" aria-labelledby="${prefix}-first" style="display:flex;flex-direction:column;gap:16px">
+      <section data-g7pb-tabs data-g7pb-control-ids="stable"><div role="tablist" aria-label="안쪽 선택">
+        <button type="button" id="${prefix}-inner-a" role="tab" aria-controls="${prefix}-inner-one">안쪽 하나</button>
+        <button type="button" id="${prefix}-inner-b" role="tab" aria-controls="${prefix}-inner-two">안쪽 둘</button></div>
+        <div id="${prefix}-inner-one" role="tabpanel" aria-labelledby="${prefix}-inner-a" style="display:grid"><p>안쪽 첫 내용</p></div>
+        <div id="${prefix}-inner-two" role="tabpanel" aria-labelledby="${prefix}-inner-b" style="display:flex"><p>안쪽 다음 내용</p></div>
+      </section>
+      <section data-g7pb-accordion data-g7pb-control-ids="stable" data-g7pb-accordion-behavior="single">
+        <div data-g7pb-accordion-item><button type="button" id="${prefix}-toggle" data-g7pb-accordion-trigger aria-controls="${prefix}-answer">내용 열기</button>
+          <div id="${prefix}-answer" data-g7pb-accordion-panel style="display:grid;gap:8px"><p>열린 내용</p><a href="#${prefix}-toggle">내용으로 이동</a></div>
+        </div>
+      </section>
+    </article>
+  </section></main>`;
+  await withPublicFixture(page, markup, {}, async requests => {
+    const first = page.locator(`#${prefix}-first`), second = page.locator(`#${prefix}-second`);
+    const one = page.locator(`#${prefix}-one`), two = page.locator(`#${prefix}-two`);
+    const innerA = page.locator(`#${prefix}-inner-a`), innerB = page.locator(`#${prefix}-inner-b`);
+    const toggle = page.locator(`#${prefix}-toggle`), answer = page.locator(`#${prefix}-answer`);
+    await expect(page.locator('[data-g7pb-tabs-ready]')).toHaveCount(2);
+    await expect(page.locator('[data-g7pb-accordion-ready]')).toHaveCount(1);
+    for (const width of [1280, 768, 360]) {
+      await page.setViewportSize({ width, height: 900 });
+      await first.click(); await expect(one).toBeVisible(); await expect(one).toHaveCSS('display', 'flex');
+      await expect(two).toBeHidden();
+      await first.focus(); await page.keyboard.press('ArrowRight'); await expect(first).toBeFocused();
+      await page.keyboard.press('ArrowDown'); await expect(second).toBeFocused(); await expect(second).toHaveAttribute('aria-selected', 'true');
+      await expect(one).toBeHidden(); await expect(two).toBeVisible(); await expect(two).toHaveCSS('display', 'grid');
+      await page.keyboard.press('Home'); await expect(first).toBeFocused(); await expect(one).toBeVisible();
+      await innerA.click(); await innerA.focus(); await page.keyboard.press('ArrowRight');
+      await expect(innerB).toBeFocused(); await expect(innerB).toHaveAttribute('aria-selected', 'true');
+      await expect(page.locator(`#${prefix}-inner-one`)).toBeHidden();
+      await expect(page.locator(`#${prefix}-inner-two`)).toHaveCSS('display', 'flex');
+      await expect(first).toHaveAttribute('aria-selected', 'true');
+      await toggle.focus(); await page.keyboard.press('Enter');
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true'); await expect(answer).toBeVisible(); await expect(answer).toHaveCSS('display', 'grid');
+      await page.keyboard.press('Tab'); await expect(answer.getByRole('link')).toBeFocused();
+      await toggle.focus(); await page.keyboard.press('Space');
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false'); await expect(answer).toBeHidden();
+      await second.click(); await first.click();
+      await expect(innerB).toHaveAttribute('aria-selected', 'true');
+      await expect(first).toHaveAttribute('aria-controls', `${prefix}-one`);
+      await expect(one).toHaveAttribute('aria-labelledby', `${prefix}-first`);
+      await expect(innerB).toHaveAttribute('aria-controls', `${prefix}-inner-two`);
+      await info.attach(`stable-controls-${width}`, { body: await page.screenshot(), contentType: 'image/png' });
+    }
+    expect(requests).toEqual([]);
+  });
+});
+
 test('initializes synthetic sliders and motion from the shipped bundle', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   const markup = `<main class="g7pb-page">

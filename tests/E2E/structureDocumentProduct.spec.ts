@@ -7,18 +7,36 @@ const documents = '/api/modules/jiwonpapa-page_builder/admin/documents';
 const editor = '/modules/jiwonpapa-page_builder/admin/editor';
 
 async function publicNodes(surface: Locator) {
-  await surface.evaluate(async element => {
-    await element.ownerDocument.fonts.ready;
-    await Promise.all([...element.querySelectorAll('img')].map(image => image.decode().catch(() => {})));
+  // Template hydration may replace the SSR surface after the locator resolves.
+  // Reacquire only while detached/unready; never retry a parity disagreement.
+  const sample = () => surface.evaluate(async element => {
+    const doc = element.ownerDocument;
+    await doc.fonts.ready;
+    const images = [...element.querySelectorAll('img')];
+    await Promise.all(images.map(image => image.decode().catch(() => {})));
+    const capture = () => {
+      if (!element.isConnected || doc.fonts.status !== 'loaded' || images.some(image => !image.complete || image.naturalWidth === 0)) return null;
+      const origin = element.getBoundingClientRect();
+      const nodes = [...element.querySelectorAll<HTMLElement>('[data-v3-node]')];
+      const values = nodes.map(node => {
+        const rect = node.getBoundingClientRect(), css = getComputedStyle(node);
+        return { id: node.dataset.v3Node, text: node.innerText, font: css.fontSize, display: css.display,
+          box: [rect.x - origin.x, rect.y - origin.y, rect.width, rect.height] };
+      });
+      return nodes.every(node => node.isConnected) && values.every(value => value.font && value.display) ? values : null;
+    };
+    const first = capture();
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const second = capture();
+    return first && second && JSON.stringify(first) === JSON.stringify(second) ? second : null;
   });
-  return surface.evaluate(element => {
-    const origin = element.getBoundingClientRect();
-    return [...element.querySelectorAll<HTMLElement>('[data-v3-node]')].map(node => {
-      const rect = node.getBoundingClientRect(), css = getComputedStyle(node);
-      return { id: node.dataset.v3Node, text: node.innerText, font: css.fontSize, display: css.display,
-        box: [rect.x - origin.x, rect.y - origin.y, rect.width, rect.height] };
-    });
-  });
+  const measured: { value: Awaited<ReturnType<typeof sample>> } = { value: null };
+  await expect.poll(async () => {
+    measured.value = await sample();
+    return measured.value !== null;
+  }, { message: 'Measure attached, font/image-ready output stable across two frames' }).toBe(true);
+  if (!measured.value) throw new Error('Public output was not ready for measurement');
+  return measured.value;
 }
 
 for (const shell of ['none', 'template', 'builder'] as const) test(`publishes generic elements through the installed UI with explicit confirmation and preserves the live version ${shell}`, async ({ page, context }, info) => {

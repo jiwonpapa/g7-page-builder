@@ -17,3 +17,7 @@
 최초 제출 `08153bacf873948138a6baa66f934649657af84e`는 관련 55개 계획 gate 중 제출 대상 검사를 통과했다. 새 사용 사례 17개·API 24개·UI 8개 및 호스트 14개가 통과했으며, 브라우저 실행은 통합으로 이관했다. 검사 등록 제출 `57d1aaa388f5002de746b0d04f7221f627c4f52c`와 함께 실행한 Local 통합에서 빌드·타입·구조는 통과했으나 새 E2E가 생성 폼의 출력 방식 `getByLabel(... exact: true)`를 찾지 못했다. 실제 combobox는 존재하며 옵션 텍스트를 포함하는 label 조회와 접근성 이름 조회의 차이다. 기존 3개 제품 생성·저장 시험은 통과했고 새 9개는 생성 요청 전에 실패했다. 통합은 원복되고 로컬 원래 테마도 복구됐다.
 
 원 제출·증거를 보존하는 `ip7-v3-publication-ui-selector-20261013` replacement에서 기존 성공 시험과 같은 combobox role/name 선택자로 수정한다. 시나리오·기준을 줄이지 않는다. 확인 문구도 내부 CAS 숫자를 사용자가 보는 문서 revision처럼 표시하지 않도록 바꾼다. 실패 증거: `output/playwright/gates/integration-ip7-20261012/4d2db1ce1c8bf925ff58eeacb393b02473f2e7a6a22f3deac43f0f30d0ddcc30/94e6cd58fedf4f4f895a6e67672b7db3/`.
+
+선택자 보완 제출 `0420dd5cc5bc7a85cd83802e14b8da1978edcc56`의 다음 통합은 12개 중 11개 브라우저 시나리오를 통과했다. mobile 프로젝트의 template 출력 비교 1건에서 직전 27px CSS 확인은 성공했지만 이어진 샘플의 font/display가 빈 문자열로 읽혔다. Chromium에서 SSR 표면을 같은 clone으로 교체하고 이전 element를 측정하는 진단으로 연결 전 `{27px, block}`, 분리 후 `{'',''}`, 현재 노드 `{27px}`를 재현했다. 최초 측정은 연결 상태를 검사하지 않아 교체 중인 표면도 비교에 사용했다.
+
+`ip7-v3-publication-ui-ready-20261013` replacement는 글꼴·이미지 준비, DOM 연결, 두 animation frame의 동일 치수를 확인한 표면만 측정한다. 준비되지 않은 측정만 다시 수집하며 서로 다른 출력의 비교 실패를 재시도하지 않는다. 텍스트·computed style 동일성과 1px 치수 기준, 12개 시나리오는 유지한다. 두 번째 실패 증거는 `output/playwright/gates/integration-ip7-20261012/50f5a52ffee94fefcf2ce370b66f0594a9c2447baffee4fa1f134eb735189198/65d8307221304fa0848b43767bcb6efc/`에 보존했다. 통합은 원복됐고 jwsoft-business01 0.3.1 활성 상태로 복구했다.

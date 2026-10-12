@@ -15,7 +15,7 @@ export interface CompositionContract {
 }
 interface Definition {
   content?: string; design?: string; behavior?: string; binding?: string;
-  collections?: string; slots?: string; runtime?: string; scope?: TemplateScope;
+  collections?: string; slots?: string; runtime?: string; scope?: TemplateScope; appearance?: boolean;
 }
 const words = (value = ''): string[] => value.split(' ').filter(Boolean);
 function entry(blockId: string, definition: Definition): CompositionContract {
@@ -27,7 +27,7 @@ function entry(blockId: string, definition: Definition): CompositionContract {
     }
   }
   // All page built-ins accept the existing appearance envelope. Site Parts do not.
-  if (!definition.scope || definition.scope === 'page') fields.appearance = 'design';
+  if (definition.appearance !== false && (!definition.scope || definition.scope === 'page')) fields.appearance = 'design';
   const collections = words(definition.collections);
   if (collections.some(field => fields[field] !== 'content')) throw new Error(`Invalid collection: ${blockId}`);
   return Object.freeze({ blockId, version: 1, scope: definition.scope ?? 'page', fields: Object.freeze(fields),
@@ -38,7 +38,7 @@ export const compositionContracts: readonly CompositionContract[] = Object.freez
   entry('content.hero-centered-01', { content: 'eyebrow title body primaryCta image', design: 'alignment layout mediaPosition', slots: 'extra actions' }),
   entry('content.hero-split-01', { content: 'eyebrow title body primaryCta image', design: 'mediaPosition layout' }),
   entry('content.hero-slider-01', { content: 'slides', collections: 'slides', behavior: 'autoplay interval loop', runtime: 'public.slider' }),
-  entry('content.heading-01', { content: 'eyebrow heading', design: 'level', binding: 'anchor' }),
+  entry('content.heading-01', { content: 'eyebrow heading level', binding: 'anchor' }),
   entry('content.rich-text-01', { content: 'content', design: 'measure' }),
   entry('media.image-01', { content: 'src alt caption linkUrl', design: 'aspectRatio' }),
   entry('action.buttons-01', { content: 'items', collections: 'items', design: 'alignment' }),
@@ -88,9 +88,9 @@ export const compositionContracts: readonly CompositionContract[] = Object.freez
 
 /** Layouts and Site Parts are separate source catalogs, not page-block count padding. */
 export const structuralContracts: readonly CompositionContract[] = Object.freeze([
-  entry('layout.section-01', { design: 'width spacing', slots: 'content' }),
-  entry('layout.columns-01', { design: 'columns ratio gap', slots: 'column1 column2 column3' }),
-  entry('layout.stack-01', { design: 'gap', slots: 'content' }),
+  entry('layout.section-01', { design: 'width spacing', slots: 'content', appearance: false }),
+  entry('layout.columns-01', { design: 'columns ratio gap', slots: 'column1 column2 column3', appearance: false }),
+  entry('layout.stack-01', { design: 'gap', slots: 'content', appearance: false }),
 ]);
 export const sitePartContracts: readonly CompositionContract[] = Object.freeze([
   entry('site.header.navigation-01', { scope: 'header', content: 'brand_name logo_url home_url navigation cta', collections: 'navigation',

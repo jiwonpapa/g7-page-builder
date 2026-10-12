@@ -116,11 +116,16 @@ class BrowserRequirementsTests(unittest.TestCase):
     def test_independent_v3_owners_require_their_actual_port_and_puck_scenarios(self):
         for path in ("resources/js/documents/v3/commands.ts", "resources/js/editor/v3/PuckBridge.tsx",
                      "resources/js/editor-application/v3/session.ts",
+                     "resources/js/blocks/v3/basicCompositions.ts", "resources/js/blocks/v3/catalog.ts",
                      "resources/js/adapters/interaction/GeometryAdapter.tsx", "resources/js/adapters/interaction/measure.ts",
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 17)
+        self.assertEqual(len(V3_STRUCTURE.titles), 30)
+        for key in ("hero.poster", "hero.product", "hero.backdrop", "hero.editorial", "hero.device",
+                    "hero.balanced", "hero.screenshot", "hero.overlap", "hero.offset",
+                    "card.plain", "card.outlined", "image-text.left", "image-text.right"):
+            self.assertIn("v3 composition internal edit save reopen and PHP parity " + key, V3_STRUCTURE.titles)
         self.assertIn("v3 editor preview and PHP draft output agree within one CSS pixel", V3_STRUCTURE.titles)
         for zoom in (50, 100, 200):
             self.assertIn(f"v3 precise handles at {zoom}% preserve CSS pixels cancel and one Undo", V3_STRUCTURE.titles)

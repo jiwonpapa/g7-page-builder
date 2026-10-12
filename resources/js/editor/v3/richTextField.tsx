@@ -6,8 +6,8 @@ import { markHtmlAttributes, markKeys, runFromAttributes } from './richTextCodec
 import { InputButton } from './TypedInput';
 
 const name = 'v3Run';
-/** Flush the owning canvas's visible selection before toolbar focus can hide a queued selectionchange. */
-export function richTextChain(editor: Editor) {
+/** Capture the visible range at the canvas-to-toolbar focus boundary, without storing a second selection. */
+function syncVisibleSelection(editor: Editor) {
   const dom = editor.view.dom, selection = dom.ownerDocument.getSelection();
   if (selection?.anchorNode && selection.focusNode && dom.contains(selection.anchorNode) && dom.contains(selection.focusNode)) {
     const anchor = editor.view.posAtDOM(selection.anchorNode, selection.anchorOffset);
@@ -15,6 +15,10 @@ export function richTextChain(editor: Editor) {
     const from = Math.min(anchor, head), to = Math.max(anchor, head);
     if (editor.state.selection.from !== from || editor.state.selection.to !== to) editor.commands.setTextSelection({ from, to });
   }
+}
+export function richTextChain(editor: Editor) {
+  // Once blurred, Tiptap owns the captured range: later markup changes can collapse the DOM range.
+  if (editor.isFocused) syncVisibleSelection(editor);
   return editor.chain();
 }
 function toggle(editor: Editor, key: 'bold' | 'italic' | 'underline' | 'strike') {
@@ -66,6 +70,7 @@ export function richTextField(document: DocumentV3, singleLine: boolean): Richte
       const run = runFromAttributes(mark.attrs);
       return [run.link ? 'a' : 'span', markHtmlAttributes(run, document), 0];
     },
+    onBlur() { syncVisibleSelection(this.editor); },
     // Puck's public rich-text wrapper routes Mod-i through this Tiptap command.
     addCommands() { return { toggleItalic: () => ({ commands, editor }) => commands.setMark(name, { italic: editor.getAttributes(name).italic !== true }) }; },
     addKeyboardShortcuts() { return { 'Mod-b': () => toggle(this.editor, 'bold'), 'Mod-i': () => toggle(this.editor, 'italic'), 'Mod-u': () => toggle(this.editor, 'underline') }; },

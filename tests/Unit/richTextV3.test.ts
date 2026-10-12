@@ -56,10 +56,19 @@ describe('typed rich-text adapter', () => {
         document.getSelection()!.removeAllRanges(); document.getSelection()!.addRange(range);
         expect(editor.state.selection.empty).toBe(true); // Native selectionchange has not reached Tiptap yet.
         let updates = 0; editor.on('update', () => updates++);
+        if (synchronize) editor.emit('blur', { editor, event: new FocusEvent('blur'), transaction: editor.state.tr });
         (synchronize ? richTextChain(editor) : editor.chain()).setMark('v3Run', { color: { kind: 'hex', value: '#2255ff' } }).run();
         expect(updates).toBe(synchronize ? 1 : 0);
         expect(editor.getHTML().includes('data-v3-color')).toBe(synchronize);
-        if (synchronize) expect(editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to)).toBe('한글');
+        if (synchronize) {
+          expect(editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to)).toBe('한글');
+          // The iframe DOM range can collapse during a formatted-node replacement while toolbar focus stays outside.
+          const collapsed = document.createRange(); collapsed.selectNodeContents(editor.view.dom); collapsed.collapse(true);
+          document.getSelection()!.removeAllRanges(); document.getSelection()!.addRange(collapsed);
+          richTextChain(editor).setMark('v3Run', { font_size: { value: 20, unit: 'px' } }).run();
+          expect(editor.state.doc.textBetween(editor.state.selection.from, editor.state.selection.to)).toBe('한글');
+          expect(editor.getHTML()).toContain('data-v3-font_size'); expect(updates).toBe(2);
+        }
       } finally { editor.destroy(); host.remove(); document.getSelection()?.removeAllRanges(); }
     }
   });
@@ -73,11 +82,13 @@ describe('typed rich-text adapter', () => {
       editor.commands.setTextSelection(9);
       const selected = owner.createRange(), textNode = editor.view.dom.querySelector('p')!.firstChild!;
       selected.setStart(textNode, 0); selected.setEnd(textNode, 2); owner.getSelection()!.addRange(selected);
+      editor.emit('blur', { editor, event: new FocusEvent('blur'), transaction: editor.state.tr });
       richTextChain(editor).setMark('v3Run', { bold: true }).run();
       expect(editor.state.selection.from).toBe(1); expect(editor.state.selection.to).toBe(3);
       const other = owner.createElement('p'); other.textContent = 'other'; owner.body.append(other);
       const outside = owner.createRange(); outside.selectNodeContents(other);
       owner.getSelection()!.removeAllRanges(); owner.getSelection()!.addRange(outside);
+      editor.emit('blur', { editor, event: new FocusEvent('blur'), transaction: editor.state.tr });
       richTextChain(editor).setMark('v3Run', { italic: true }).run();
       expect(editor.state.selection.from).toBe(1); expect(editor.state.selection.to).toBe(3);
       expect(editor.getHTML()).toContain('data-v3-italic="true"');

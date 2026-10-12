@@ -10,6 +10,8 @@ export const groups: { title: string; keys: (keyof Style)[] }[] = [
   { title: '테두리와 반경', keys: ['border_top', 'border_right', 'border_bottom', 'border_left', 'radius_top_left', 'radius_top_right', 'radius_bottom_right', 'radius_bottom_left'] },
   { title: '외형', keys: ['background', 'color', 'opacity', 'shadows'] },
   { title: '글자', keys: ['font_family', 'font_size', 'font_weight', 'line_height', 'letter_spacing', 'text_align', 'text_decoration'] },
+  { title: '위치와 표시', keys: ['position', 'inset_top', 'inset_right', 'inset_bottom', 'inset_left', 'rotation', 'z_index', 'hidden'] },
+  { title: '이미지 맞춤', keys: ['object_fit', 'object_x', 'object_y'] },
 ];
 const names: Record<string, string> = { display: '배치', direction: '방향', wrap: '줄바꿈', justify: '주축 정렬', align: '교차축 정렬',
   row_gap: '행 간격', column_gap: '열 간격', columns: '열 트랙', rows: '행 트랙', column_start: '시작 열', column_span: '열 span',
@@ -17,6 +19,8 @@ const names: Record<string, string> = { display: '배치', direction: '방향', 
   width: '너비', height: '높이', min_width: '최소 너비', max_width: '최대 너비', min_height: '최소 높이', max_height: '최대 높이',
   aspect_ratio: '가로세로 비율', background: '배경', color: '색상', opacity: '불투명도', shadows: '그림자',
   font_family: '글꼴', font_size: '글자 크기', font_weight: '굵기', line_height: '행간', letter_spacing: '자간', text_align: '글자 정렬', text_decoration: '글자 장식',
+  position: '위치 방식', inset_top: '위 좌표', inset_right: '오른쪽 좌표', inset_bottom: '아래 좌표', inset_left: '왼쪽 좌표',
+  rotation: '회전 각도', z_index: '겹침 순서', hidden: '숨김 여부', object_fit: '이미지 맞춤', object_x: '이미지 가로 초점', object_y: '이미지 세로 초점',
   value: '값', unit: '단위', kind: '종류', min: '최소', max: '최대', fr: '비율', angle: '각도', stops: '중지점', offset: '위치',
   asset_id: '이미지', fit: '맞춤', x: 'X', y: 'Y', blur: '흐림', spread: '확장', inset: '안쪽', style: '선 종류' };
 for (const [prefix, label] of [['padding', '안쪽'], ['margin', '바깥'], ['border', '테두리'], ['radius', '반경']]) {

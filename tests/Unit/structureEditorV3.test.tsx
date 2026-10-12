@@ -11,6 +11,7 @@ import type { DraftPort } from '../../resources/js/editor-application/v3/session
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+Object.defineProperty(HTMLElement.prototype, 'scrollTo', { configurable: true, value: vi.fn() });
 Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
 Object.defineProperty(window, 'matchMedia', { configurable: true, value: () => ({ matches: false,
   addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }) });
@@ -37,6 +38,31 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('switches session-only widths without history and scopes visibility to the selected layer', async () => {
+    const doc = source(), node = doc.blocks[0].slots.content![0];
+    node.responsive.mobile = { hidden: true };
+    const host = hostElement(), root = createRoot(host), changed = vi.fn();
+    cleanup.push(() => root.unmount());
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="responsive" serverRevision={1}
+      drafts={{ save: async request => ({ documentId: request.documentId, revision: 2 }) }}
+      nextId={() => id(100)} iframeEnabled={false} onChange={changed} />));
+    await flush();
+    await act(async () => host.querySelector<HTMLButtonElement>('[data-testid="layer-' + node.instance_id + '"]')!.click());
+    await act(async () => host.querySelector<HTMLInputElement>('[aria-label="너비 지정"]')!.click());
+    await click(host, '모바일');
+    expect(host.querySelector<HTMLElement>('[data-v3-workspace]')?.style.width).toBe('360px');
+    expect(host.querySelector<HTMLInputElement>('[aria-label="너비 지정"]')?.checked).toBe(false);
+    expect(host.querySelector('[data-testid="layer-' + node.instance_id + '"]')?.textContent).toContain('숨김');
+    expect(changed).not.toHaveBeenCalled();
+    await click(host, '표시');
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(changed.mock.calls[0][0].blocks[0].slots.content[0].responsive.mobile.hidden).toBe(false);
+    expect(changed.mock.calls[0][0].blocks[0].slots.content[0].style).toEqual(node.style);
+    await click(host, '태블릿');
+    expect(host.querySelector<HTMLElement>('[data-v3-workspace]')?.style.width).toBe('768px');
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(host.querySelector<HTMLElement>('[data-v3-workspace]')?.style.width).toBe('768px');
+  });
   it('keeps portaled format actions from bubbling into the canvas deselection handler', async () => {
     const host = hostElement(), target = hostElement(), root = createRoot(host);
     cleanup.push(() => root.unmount());

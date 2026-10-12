@@ -3,6 +3,7 @@ import type { DocumentV3, Node, Run } from '../../documents/v3/types';
 import { nodeAnchor } from '../../documents/v3/tree';
 import { documentPresentation, runPresentation, DOCUMENT_SURFACE, PARAGRAPH_STYLE } from '../../documents/v3/presentation';
 import { reactStyle } from './presentationReact';
+import type { Viewport } from '../../documents/v3/validate';
 
 function Runs({ runs, document, editing }: { runs: Run[]; document: DocumentV3; editing: boolean }) {
   return <>{runs.map((run, index) => {
@@ -35,8 +36,8 @@ export function NodeRenderer({ node, document, styles, children, body, editing =
       rel={node.props.link.new_tab ? 'noopener noreferrer' : undefined}>{body ?? node.props.label}</a>;
   }
 }
-export function StructurePreview({ document }: { document: DocumentV3 }) {
-  const styles = documentPresentation(document);
+export function StructurePreview({ document, viewport = 'base' }: { document: DocumentV3; viewport?: Viewport }) {
+  const styles = documentPresentation(document, viewport);
   function nodes(items: Node[]): React.ReactNode {
     return items.map(node => <NodeRenderer key={node.instance_id} node={node} document={document} styles={styles}>{nodes(node.slots.content ?? [])}</NodeRenderer>);
   }

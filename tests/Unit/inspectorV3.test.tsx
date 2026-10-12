@@ -6,6 +6,7 @@ import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument } from '../../resources/js/documents/v3/tree';
 import { executeDocumentCommand } from '../../resources/js/documents/v3/designCommands';
 import { Inspector } from '../../resources/js/editor/v3/Inspector';
+import { MultiInspector } from '../../resources/js/editor/v3/MultiInspector';
 import { TypedInput } from '../../resources/js/editor/v3/TypedInput';
 import { groups, styleRules, choices, seed, matches, choiceLabel } from '../../resources/js/editor/v3/inspectorFields';
 
@@ -22,6 +23,39 @@ async function click(host: HTMLElement, label: string) {
   if (!button) throw new Error(label); await act(async () => button.click());
 }
 describe('precision Inspector', () => {
+  it('keeps the chosen multiple property after source changes and resets that property only', async () => {
+    const doc = cloneDocument(validateDocumentV3(fixture)), ids = doc.blocks[0].slots.content!.slice(0, 2).map(node => node.instance_id);
+    const host = document.createElement('div'), root = createRoot(host), apply = vi.fn();
+    document.body.append(host); cleanup.push(() => { root.unmount(); host.remove(); });
+    const render = (value: typeof doc) => root.render(<MultiInspector document={value} ids={ids} viewport="mobile" disabled={false} apply={apply} />);
+    await act(async () => render(doc));
+    await act(async () => {
+      const select = host.querySelector<HTMLSelectElement>('[aria-label="일괄 속성"]')!;
+      select.value = 'opacity'; select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    const changed = executeDocumentCommand(doc, { kind: 'styles', viewport: 'mobile', updates: ids.map(id => ({ id, set: { opacity: .5 } })) }, () => '').document;
+    await act(async () => render(changed));
+    expect(host.querySelector<HTMLSelectElement>('[aria-label="일괄 속성"]')!.value).toBe('opacity');
+    expect(host.querySelector<HTMLInputElement>('[aria-label="일괄 값"]')!.value).toBe('0.5');
+    await click(host, '선택 속성 초기화');
+    expect(apply).toHaveBeenCalledExactlyOnceWith({ kind: 'styles', viewport: 'mobile', updates: ids.map(id => ({ id, set: {}, reset: ['opacity'] })) });
+  });
+  it('shows inherited values, seeds overrides from effective values and resets only the active layer', async () => {
+    const doc = cloneDocument(validateDocumentV3(fixture)), node = doc.blocks[0].slots.content![0];
+    node.style = { width: { value: 70, unit: '%' }, opacity: .5 };
+    node.responsive = { tablet: { opacity: .7 }, mobile: { opacity: 0 } };
+    const apply = vi.fn(), host = await mount(<Inspector node={node} document={doc} viewport="mobile" disabled={false} apply={apply} />);
+    expect(host.querySelector('[aria-label="너비 상속"]')?.textContent).toContain('70');
+    await act(async () => host.querySelector<HTMLInputElement>('[aria-label="너비 지정"]')!.click());
+    await click(host, '디자인 적용');
+    expect(apply.mock.calls[0][0]).toMatchObject({ viewport: 'mobile', set: { width: { value: 70, unit: '%' }, opacity: 0 } });
+    await click(host, '현재 화면 스타일 초기화');
+    await click(host, '디자인 적용');
+    expect(apply.mock.calls[1][0]).toEqual({ kind: 'style', viewport: 'mobile', id: node.instance_id, set: {}, reset: ['opacity'] });
+    const result = executeDocumentCommand(doc, apply.mock.calls[1][0], () => '').document;
+    expect(result.blocks[0].slots.content![0].style).toEqual(node.style);
+    expect(result.blocks[0].slots.content![0].responsive).toEqual({ tablet: { opacity: .7 } });
+  });
   it('covers typed layout, all size and four-sided appearance groups without JSON/CSS inputs', () => {
     const keys = groups.flatMap(group => group.keys);
     for (const key of ['display', 'columns', 'rows', 'basis', 'width', 'height', 'aspect_ratio', 'min_width', 'max_height',

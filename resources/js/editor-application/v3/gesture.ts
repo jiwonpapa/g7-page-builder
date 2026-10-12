@@ -4,6 +4,7 @@ import { geometryTargets, type GeometryBox } from '../../documents/v3/geometry';
 import type { TreeResult } from '../../documents/v3/commands';
 import { reject } from '../../documents/v3/schema';
 import type { EditContext, Snapshot } from './session';
+import type { Viewport } from '../../documents/v3/validate';
 
 export interface GesturePort {
   read(): Snapshot;
@@ -11,7 +12,7 @@ export interface GesturePort {
 }
 /** Only holds a provisional command. Canonical document and Undo remain in EditorPort. */
 export function createGeometryGesture(port: GesturePort) {
-  let pending: { context: EditContext; ids: string[]; command: DocumentCommand | null } | null = null;
+  let pending: { context: EditContext; ids: string[]; viewport: Viewport; command: DocumentCommand | null } | null = null;
   const current = () => {
     const snapshot = port.read(), expected = pending?.context;
     if (!expected || snapshot.context.readonly || expected.readonly
@@ -22,16 +23,17 @@ export function createGeometryGesture(port: GesturePort) {
     return snapshot;
   };
   return {
-    begin(ids: readonly string[], boxes: readonly GeometryBox[]) {
+    begin(ids: readonly string[], boxes: readonly GeometryBox[], viewport: Viewport = 'base') {
       pending = null;
       const snapshot = port.read();
       if (snapshot.context.readonly) reject('readonly', '$');
-      const roots = geometryTargets(snapshot.document, ids, boxes);
-      pending = { context: { ...snapshot.context }, ids: roots.map(({ box }) => box.id), command: null };
+      const roots = geometryTargets(snapshot.document, ids, boxes, viewport);
+      pending = { context: { ...snapshot.context }, ids: roots.map(({ box }) => box.id), viewport, command: null };
     },
     preview(command: DocumentCommand): TreeResult {
       const snapshot = current();
-      if (command.kind !== 'styles' || JSON.stringify(command.updates.map(update => update.id)) !== JSON.stringify(pending!.ids)) {
+      if (command.kind !== 'styles' || (command.viewport ?? 'base') !== pending!.viewport
+        || JSON.stringify(command.updates.map(update => update.id)) !== JSON.stringify(pending!.ids)) {
         pending = null; reject('gesture_targets', '$');
       }
       try {

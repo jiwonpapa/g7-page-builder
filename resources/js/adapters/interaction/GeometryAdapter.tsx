@@ -11,10 +11,13 @@ import type { PuckBridge } from '../../editor/v3/PuckBridge';
 import type { InputMode } from '../../editor/v3/Workspace';
 import { InputButton } from '../../editor/v3/TypedInput';
 import { canvasTargets, measureTargets, ownsTextInput } from './measure';
+import { effectiveStyle, type Viewport } from '../../documents/v3/validate';
+import { viewportLabel } from '../../editor/v3/ResponsiveControls';
 
-export function GeometryAdapter({ owner, source, bridge, selected, mode, readonly, zoom, controls, pan, report }: {
+export function GeometryAdapter({ owner, source, bridge, selected, mode, readonly, zoom, controls, pan, report, viewport = 'base', canvasWidth = 1280 }: {
   owner: Document; source: DocumentV3; bridge: PuckBridge; selected: string[]; mode: InputMode; readonly: boolean;
   zoom: number; controls: HTMLElement | null; pan: (x: number, y: number) => void; report: (message: string) => void;
+  viewport?: Viewport; canvasWidth?: number;
 }) {
   const [targets, setTargets] = useState<HTMLElement[]>([]);
   const [ratio, setRatio] = useState(false), [snap, setSnap] = useState(true);
@@ -24,12 +27,12 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
   const transaction = useMemo(() => createGeometryGesture({
     read: () => ({ document: bridge.read(), context: bridge.context() }), execute: bridge.execute,
   }), [bridge]);
-  const live = useRef({ source, selected, targets, mode, readonly, zoom, pan, report });
-  live.current = { source, selected, targets, mode, readonly, zoom, pan, report };
+  const live = useRef({ source, selected, targets, mode, readonly, zoom, pan, report, viewport });
+  live.current = { source, selected, targets, mode, readonly, zoom, pan, report, viewport };
   const restore = () => {
     // Undo/session updates may already have replaced the canonical source.
     // Never repaint the stale gesture-start style over that newer document.
-    const styles = documentPresentation(bridge.read());
+    const styles = documentPresentation(bridge.read(), live.current.viewport);
     before.current?.elements.forEach(element => {
       const declarations = styles.get(element.dataset.v3Node ?? '');
       if (declarations) element.setAttribute('style', Object.entries(declarations).map(([key, value]) => key + ':' + value).join(';'));
@@ -45,13 +48,13 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
   };
   const begin = () => {
     const boxes = measureTargets(live.current.targets);
-    transaction.begin(live.current.selected, boxes);
+    transaction.begin(live.current.selected, boxes, live.current.viewport);
     before.current = { boxes, elements: [...live.current.targets] };
   };
   const preview = (operation: GeometryOperation) => run(() => {
     if (!before.current || !transaction.active()) return;
-    const result = transaction.preview(geometryCommand(bridge.read(), live.current.selected, before.current.boxes, operation));
-    const styles = documentPresentation(result.document);
+    const result = transaction.preview(geometryCommand(bridge.read(), live.current.selected, before.current.boxes, operation, live.current.viewport));
+    const styles = documentPresentation(result.document, live.current.viewport);
     for (const element of live.current.targets) {
       const declarations = styles.get(element.dataset.v3Node ?? '');
       if (declarations) element.setAttribute('style', Object.entries(declarations).map(([key, value]) => key + ':' + value).join(';'));
@@ -59,7 +62,7 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
     if (operation.kind === 'resize') {
       const tree = indexTree(result.document);
       for (const box of measureTargets(live.current.targets)) {
-        const style = tree.get(box.id)!.node.style;
+        const style = effectiveStyle(tree.get(box.id)!.node, live.current.viewport);
         for (const key of ['width', 'height'] as const) {
           const value = style[key];
           if (typeof value === 'object' && value.unit === 'px' && Math.abs(box[key] - value.value) > 1) {
@@ -75,7 +78,7 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
   });
   const execute = (operation: GeometryOperation) => run(() => {
     cancel();
-    bridge.execute(geometryCommand(bridge.read(), bridge.selection(), measureTargets(canvasTargets(owner, bridge.read(), bridge.selection())), operation));
+    bridge.execute(geometryCommand(bridge.read(), bridge.selection(), measureTargets(canvasTargets(owner, bridge.read(), bridge.selection())), operation, live.current.viewport));
   });
   useEffect(() => {
     const frame = owner.defaultView?.frameElement;
@@ -91,7 +94,7 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
     const elements = canvasTargets(owner, source, selected);
     setTargets(elements);
     selecto.current?.setSelectedTargets(elements);
-  }, [source, selected, mode, readonly, owner, zoom]);
+  }, [source, selected, mode, readonly, owner, zoom, viewport, canvasWidth]);
   useEffect(() => { moveable.current?.updateRect(); }, [targets]);
   useEffect(() => {
     const refresh = () => {
@@ -127,7 +130,7 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
         run(() => {
           if (event.key === 'Delete' || event.key === 'Backspace') { bridge.execute({ kind: 'delete', ids: state.selected }); return; }
           const roots = selectionRoots(indexTree(bridge.read()), state.selected);
-          if (roots.every(item => item.node.style.position === 'absolute')) {
+          if (roots.every(item => effectiveStyle(item.node, state.viewport).position === 'absolute')) {
             const step = event.shiftKey ? 10 : 1;
             execute({ kind: 'translate', x: event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0,
               y: event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0 });
@@ -187,14 +190,14 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
   }, [owner, mode]);
   let allowed = false, absolute = false;
   try {
-    const items = geometryTargets(source, selected, measureTargets(targets));
+    const items = geometryTargets(source, selected, measureTargets(targets), viewport);
     allowed = !readonly && mode === 'geometry' && items.length === targets.length;
-    absolute = items.every(({ item }) => item.node.style.position === 'absolute' && item.parent === items[0].item.parent);
+    absolute = items.every(({ item }) => effectiveStyle(item.node, viewport).position === 'absolute' && item.parent === items[0].item.parent);
   } catch { /* Hidden/locked/empty selection remains selectable, but never receives writable handles. */ }
   const guides = Array.from(owner.querySelectorAll<HTMLElement>('[data-v3-node]')).filter(element =>
     !targets.some(target => target === element || target.contains(element) || element.contains(target)));
   const tools = controls && mode === 'geometry' ? createPortal(<section aria-label="정밀 조작 도구">
-    <p>공통값 · 직접 조작은 CSS px로 확정합니다. Esc로 취소합니다.</p>
+    <p>{viewportLabel(viewport)} · 직접 조작은 CSS px로 확정합니다. Esc로 취소합니다.</p>
     <label><input type="checkbox" checked={ratio} onChange={event => { cancel(); setRatio(event.target.checked); }} />비율 잠금</label>
     <label><input type="checkbox" checked={snap} onChange={event => { cancel(); setSnap(event.target.checked); }} />스냅 가이드</label>
     <p>화살표: 흐름 순서 또는 좌표 1px · Shift: 10px</p>
@@ -261,7 +264,8 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
         if (!event.isDrag && groupClick.current) bridge.selectMany([groupClick.current]);
         groupClick.current = null;
       }}
-      onRotateStart={event => { event.set(indexTree(source).get(targets[0].dataset.v3Node ?? '')?.node.style.rotation ?? 0); run(begin); }}
+      onRotateStart={event => { const node = indexTree(source).get(targets[0].dataset.v3Node ?? '')?.node;
+        event.set(node ? effectiveStyle(node, viewport).rotation ?? 0 : 0); run(begin); }}
       onRotate={event => preview({ kind: 'rotate', degrees: event.beforeDist })}
       onRotateEnd={finish}
     />}

@@ -343,12 +343,24 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await input.click(); await input.press('ControlOrMeta+a'); await page.keyboard.insertText('한글 정밀 편집');
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('한글 정밀 편집');
   const typed = await read(page);
-  await input.press('ControlOrMeta+a');
-  await frame.getByRole('toolbar', { name: '부분 서식' }).getByRole('button', { name: '굵게', exact: true }).click();
+  await input.press('Home'); await input.press('Shift+ArrowRight'); await input.press('Shift+ArrowRight');
+  const format = page.getByRole('toolbar', { name: '부분 서식' });
+  await format.getByRole('button', { name: '굵게', exact: true }).click();
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"bold":true');
   const bold = await read(page);
+  expect(bold.blocks[0].props).toEqual({ paragraphs: [[{ text: '한글', bold: true }, { text: ' 정밀 편집' }]] });
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(typed);
   await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(bold);
+  await input.click(); await input.press('Home'); await input.press('Shift+ArrowRight'); await input.press('Shift+ArrowRight');
+  await format.getByLabel('부분 색상', { exact: true }).fill('#2255ff');
+  await format.getByRole('button', { name: '색상 적용', exact: true }).click();
+  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('#2255ff');
+  await format.getByLabel('부분 크기', { exact: true }).fill('20');
+  await format.getByRole('button', { name: '크기 적용', exact: true }).click();
+  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"font_size":{"value":20,"unit":"px"}');
+  await format.getByLabel('부분 링크', { exact: true }).fill('/about');
+  await format.getByRole('button', { name: '링크 적용', exact: true }).click();
+  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"url":"/about"');
   await input.click(); await input.press('End'); await input.press('Enter'); await input.pressSequentially('Second line');
   await expect.poll(async () => {
     const current = (await read(page)).blocks[0]; return current.type === 'content.text' ? current.props.paragraphs.length : 0;
@@ -410,6 +422,7 @@ test('v3 editor preview and PHP draft output agree within one CSS pixel', async 
     const width = await surface.evaluate(element => element.getBoundingClientRect().width);
     const canvas = await surface.evaluate(measure);
     await click(page, '구조 미리보기');
+    await page.getByTestId('v3-preview').locator('img').evaluateAll(async items => Promise.all(items.map(item => (item as HTMLImageElement).decode())));
     const preview = await page.getByTestId('v3-preview').evaluate(measure);
     const output = await context.newPage();
     await output.route('**/*', route => route.request().url().endsWith('/image.svg')

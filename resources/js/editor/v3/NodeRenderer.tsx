@@ -14,13 +14,14 @@ function Runs({ runs, document, editing }: { runs: Run[]; document: DocumentV3; 
   })}</>;
 }
 /** Canonical declarations are shared by canvas and preview; vendor styles are never persisted. */
-export function NodeRenderer({ node, document, styles, children, body, editing = false }: {
+export function NodeRenderer({ node, document, styles, children, body, editing = false, dragRef }: {
   node: Node; document: DocumentV3; styles: Map<string, Record<string, string>>;
   children?: React.ReactNode; body?: React.ReactNode; editing?: boolean;
+  dragRef?: ((element: Element | null) => void) | null;
 }) {
   const declarations = styles.get(node.instance_id) ?? {};
   if (declarations.display === 'none') return null;
-  const identity = { id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id, style: reactStyle(declarations) };
+  const identity = { ref: dragRef, id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id, style: reactStyle(declarations) };
   switch (node.type) {
     case 'layout.section': case 'layout.container': return React.createElement(node.props.tag, identity, children);
     case 'content.heading': return body !== undefined
@@ -39,5 +40,5 @@ export function StructurePreview({ document }: { document: DocumentV3 }) {
   function nodes(items: Node[]): React.ReactNode {
     return items.map(node => <NodeRenderer key={node.instance_id} node={node} document={document} styles={styles}>{nodes(node.slots.content ?? [])}</NodeRenderer>);
   }
-  return <div data-testid="v3-preview" data-v3-surface style={reactStyle(DOCUMENT_SURFACE)}>{nodes(document.blocks)}</div>;
+  return <div data-testid="v3-preview" data-v3-surface style={{ color: 'initial', ...reactStyle(DOCUMENT_SURFACE) }}>{nodes(document.blocks)}</div>;
 }

@@ -1,4 +1,5 @@
 import React, { createContext, forwardRef, useContext, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Puck, type Overrides, type ComponentConfig, type Field } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { validateDocumentV3 } from '../../documents/v3/validate';
@@ -35,16 +36,16 @@ const SlotElement = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(f
   if (!node || !('tag' in node.props)) return null;
   return React.createElement(node.props.tag, { ...props, ref, id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id });
 });
-function CanvasNode({ id, body, Content }: { id: string; body: React.ReactNode; Content: React.ElementType }) {
+function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.ReactNode; Content: React.ElementType; dragRef: ((element: Element | null) => void) | null }) {
   const context = useContext(CanvasContext);
   const node = context?.tree.get(id)?.node;
   if (!context || !node) return null;
   if (context.styles.get(id)?.display === 'none') return null;
   if (node.type === 'layout.section' || node.type === 'layout.container') {
-    return <SlotContext.Provider value={node}><Content as={SlotElement} minEmptyHeight={0}
+    return <SlotContext.Provider value={node}><Content as={SlotElement} ref={dragRef} minEmptyHeight={0}
       style={reactStyle(context.styles.get(id) ?? {})} /></SlotContext.Provider>;
   }
-  return <NodeRenderer node={node} document={context.document} styles={context.styles}
+  return <NodeRenderer node={node} document={context.document} styles={context.styles} dragRef={dragRef}
     body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link') ? body : undefined} editing />;
 }
 const control: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' };
@@ -75,6 +76,7 @@ function EditorSession(props: StructureEditorProps) {
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [textEditing, setTextEditing] = useState(false);
+  const [actionTarget, setActionTarget] = useState<HTMLDivElement | null>(null);
   const serverRevision = useRef(props.serverRevision);
   const bridge = useMemo(() => createPuckBridge(validateDocumentV3(props.document), {
     context: () => ({ sessionId: live.current.sessionId, readonly: Boolean(live.current.readonly) }),
@@ -90,7 +92,7 @@ function EditorSession(props: StructureEditorProps) {
   const config = useMemo<V3Config>(() => {
     // Canvas transforms consume static component fields, not selected-panel resolveFields.
     const component = (body: Field): ComponentConfig<NodeProps> => ({
-      label: '요소', fields: { content: { type: 'slot' }, body,
+      label: '요소', inline: true, fields: { content: { type: 'slot' }, body,
         node: { type: 'custom', render: () => <></> }, slotPresent: { type: 'custom', render: () => <></> } },
       permissions: { duplicate: false, delete: false, insert: false },
       resolvePermissions: data => {
@@ -98,7 +100,7 @@ function EditorSession(props: StructureEditorProps) {
         const editable = !live.current.readonly && Boolean(item) && !item?.node.locked && !item?.ancestors.some(node => node.locked);
         return { drag: editable, edit: editable && textEditing };
       },
-      render: ({ id, body, content: Content }) => <CanvasNode id={id} body={body} Content={Content} />,
+      render: ({ id, body, content: Content, puck }) => <CanvasNode id={id} body={body} Content={Content} dragRef={puck.dragRef} />,
     });
     return { components: {
       Node: component({ type: 'custom', render: () => <></> }),
@@ -110,8 +112,10 @@ function EditorSession(props: StructureEditorProps) {
     };
   }, [bridge, textEditing]);
   const overrides = useMemo<Partial<Overrides<V3Config>>>(() => ({
+    // Public action-bar override: keep the rich-text focus contract without covering authored content.
+    actionBar: ({ children }) => <>{actionTarget && createPortal(children, actionTarget)}</>,
     iframe: ({ children, document: frameDocument }) => <>{children}{frameDocument && <FrameHistoryBoundary frameDocument={frameDocument} bridge={bridge} />}</>,
-  }), [bridge]);
+  }), [bridge, actionTarget]);
   const run = (action: () => void): void => {
     try { action(); } catch (error) { setMessage(error instanceof Error ? error.message : '변경을 적용하지 못했습니다.'); }
   };
@@ -178,6 +182,7 @@ function EditorSession(props: StructureEditorProps) {
             </div>
           </section>
           <aside aria-label="구조 속성" style={{ padding: 16, overflow: 'auto', background: 'var(--g7pb-surface-strong)' }}>
+            <div ref={setActionTarget} aria-label="문맥 도구" />
             <h2 style={{ fontSize: 15 }}>삽입 위치</h2>
             <select aria-label="삽입 위치" value={target} onChange={event => setTarget(event.target.value)} style={{ maxWidth: '100%' }}>
               <option value="root">페이지</option>

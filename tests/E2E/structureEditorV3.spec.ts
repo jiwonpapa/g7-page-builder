@@ -105,7 +105,7 @@ const previewPrefix = '/modules/jiwonpapa-page_builder/store/previews/';
 function collectPreviewAssets(value: unknown): void {
   if (typeof value === 'string' && value.startsWith(previewPrefix)) {
     const name = value.slice(previewPrefix.length);
-    if (!/^[a-z0-9-]+\\.(webp|png)$/.test(name)) throw new Error('Unexpected bundled preview asset: ' + name);
+    if (!/^[a-z0-9-]+\.(webp|png)$/.test(name)) throw new Error('Unexpected bundled preview asset: ' + name);
     bundledPreviewAssets.set(value, { contentType: name.endsWith('.png') ? 'image/png' : 'image/webp',
       body: readFileSync(new URL('../../resources/store/dist/previews/' + name, import.meta.url)) });
   } else if (Array.isArray(value)) value.forEach(collectPreviewAssets);

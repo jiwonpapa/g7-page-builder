@@ -40,6 +40,22 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('reports a late save as edited so the product host preserves unsaved navigation protection', async () => {
+    const doc = source(), host = hostElement(), root = createRoot(host), saved = vi.fn();
+    cleanup.push(() => root.unmount());
+    let resolve!: (response: { documentId: string; revision: number }) => void;
+    const drafts: DraftPort = { save: () => new Promise(accept => { resolve = accept; }) };
+    let sequence = 950;
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="late-product-save" serverRevision={1}
+      drafts={drafts} nextId={() => id(sequence++)} iframeEnabled={false} onSaved={saved} />));
+    await flush(); await click(host, '제목 삽입'); await click(host, '저장'); await click(host, '제목 삽입');
+    await act(async () => resolve({ documentId: doc.document_id, revision: 2 })); await flush();
+    expect(saved).toHaveBeenCalledExactlyOnceWith(2, 'edited');
+    expect(host.querySelector('[aria-label="편집 상태"]')?.textContent).toContain('추가 변경 있음');
+    await click(host, '저장'); await act(async () => resolve({ documentId: doc.document_id, revision: 3 })); await flush();
+    expect(saved).toHaveBeenLastCalledWith(3, 'saved');
+  });
+
   it('records common behavior and button edits in Puck history while preview interactions stay transient', async () => {
     const doc = validateDocumentV3({ ...structuredClone(fixture), blocks: structuredClone(behaviorCases.behavior_fixtures.tabs) });
     const host = hostElement(), root = createRoot(host), changed = vi.fn(), save = vi.fn(async request => ({ documentId: request.documentId, revision: 2 }));

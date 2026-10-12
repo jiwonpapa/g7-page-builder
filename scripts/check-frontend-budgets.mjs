@@ -18,12 +18,16 @@ const budgets = [
   { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
   // UI5 adds the shared single Card shell; source caps remain unchanged.
   { path: 'dist/css/page-builder-editor.css', gzip: 45_200 },
+  // Alternative versioned entry, never loaded alongside the legacy kernel.
+  // Apply the existing editor budgets without increasing either ceiling.
+  { path: 'dist/css/page-builder-structure.css', gzip: 45_200 },
   { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
   // EP2 basic elements add one shared, separately capped stylesheet to the 18,084-byte baseline.
   { path: 'dist/css/page-builder-public.css', gzip: 18_700 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
   // UI6 measured release input: 508,050 gzip bytes; reserve 450 bytes for release metadata.
   { path: 'dist/js/page-builder-editor.iife.js', gzip: 508_500 },
+  { path: 'dist/js/page-builder-structure.iife.js', gzip: 508_500 },
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
   { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
   { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },

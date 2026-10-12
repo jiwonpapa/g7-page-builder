@@ -1,5 +1,6 @@
 import type { PageBuilderBlock, PageBuilderDocument, SitePartDocument, SiteShellLink } from '../documents/types';
 import type { InquiryFormKind } from '../documents/builtinBlockContracts';
+import type { DocumentV3 } from '../documents/v3/types';
 
 export interface RouteCatalogEntry {
   id: string;
@@ -42,8 +43,10 @@ export interface SectionPatternListResource {
   items: SectionPatternResource[];
 }
 
-export interface DocumentResource {
-  document: PageBuilderDocument;
+export type StoredPageDocument = PageBuilderDocument | DocumentV3;
+
+export interface DocumentResource<T extends StoredPageDocument = StoredPageDocument> {
+  document: T;
   title: string;
   lock_version: number;
   revision: number;
@@ -75,7 +78,7 @@ export interface RevisionListResource {
 }
 
 export interface RevisionResource extends RevisionSummary {
-  document: PageBuilderDocument;
+  document: StoredPageDocument;
 }
 
 export interface DocumentListResource {

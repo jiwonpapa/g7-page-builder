@@ -15,6 +15,23 @@ function evaluate(source: string): Record<string, unknown> {
 }
 
 describe('builtin catalog build encoding', () => {
+  it('shares construction code while keeping equal nested subtrees independent and exceptional numbers distinct', () => {
+    const subtree = { text: 'Repeated immutable text with sufficient length for a shared constructor', children: [{ size: 2, flags: ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'] }] };
+    const source = JSON.stringify({ items: [subtree, subtree, subtree] });
+    expect(compileBuiltinCatalog(source)).toContain('const v0=');
+    const result = evaluate(source), items = result.items;
+    if (!Array.isArray(items)) throw new Error('Missing catalog items');
+    items[0].children[0].flags.push('changed');
+    expect(items[1]).toEqual(subtree); expect(items[2]).toEqual(subtree);
+    expect(items[0].children).not.toBe(items[1].children);
+    const prefix = '"text":"Repeated immutable text with sufficient length for a shared constructor",';
+    const exceptional = evaluate('{"items":[' + ['-0', '0', '1e999', 'null'].flatMap(n => Array(3).fill(`{${prefix}"number":${n}}`)).join(',') + ']}').items;
+    if (!Array.isArray(exceptional)) throw new Error('Missing exceptional values');
+    expect(Object.is(exceptional[0].number, -0)).toBe(true);
+    expect(Object.is(exceptional[3].number, 0)).toBe(true);
+    expect(exceptional[6].number).toBe(Infinity); expect(exceptional[9].number).toBeNull();
+  });
+
   it('preserves canonical composition data and independent mutable instances in the Vite pipeline', async () => {
     const path = fileURLToPath(new URL('../../resources/compositions/builtin-v3.json', import.meta.url));
     const source = readFileSync(path, 'utf8'), original = JSON.parse(source);

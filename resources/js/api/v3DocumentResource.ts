@@ -4,7 +4,7 @@ import type { DocumentResource } from './resources';
 import type { PageBuilderApiClient } from './pageBuilderApi';
 
 /** Existing document endpoint metadata with the independently validated v3 source. */
-export type V3DocumentResource = Omit<DocumentResource, 'document'> & { document: DocumentV3 };
+export type V3DocumentResource = DocumentResource<DocumentV3>;
 
 function invalid(): never { throw new Error('서버의 정밀 편집 문서 응답이 올바르지 않습니다.'); }
 function nullableString(value: unknown): string | null {
@@ -45,6 +45,16 @@ export function validateV3DraftRequest(documentId: string, value: unknown, expec
   integer(expectedLock, 0);
   if (document.document_id !== documentId) return invalid();
   return document;
+}
+
+/** Creation opts into v3 explicitly; it never converts an existing document. */
+export async function createStructureDocument(
+  client: Pick<PageBuilderApiClient, 'createDocument'>,
+  input: Omit<Parameters<PageBuilderApiClient['createDocument']>[0], 'schema_version'>,
+): Promise<V3DocumentResource> {
+  const response = await client.createDocument({ ...input, schema_version: 'g7-page-builder/v3' });
+  const document = validateDocumentV3(response.document);
+  return parseV3DocumentResource(response, document.document_id);
 }
 
 /** Imported by the v3 host only: legacy manager/editor bundles do not load the v3 schema. */

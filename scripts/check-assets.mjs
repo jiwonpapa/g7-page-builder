@@ -18,6 +18,9 @@ const outputs = [
   manifest.assets?.js?.output,
   manifest.assets?.css?.output,
   'dist/js/page-builder-editor.iife.js',
+  'dist/js/page-builder-structure.iife.js',
+  'dist/css/page-builder-structure.css',
+  'dist/meta/structure-editor-modules.json',
   'dist/js/page-builder-manager.iife.js',
   'dist/js/page-builder-site-part.iife.js',
   'dist/js/page-sliders.iife.js',
@@ -66,6 +69,21 @@ if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native-components.iif
   throw new Error('Native component companion must remain under 4KB gzip and use shared React without editor dependencies.');
 }
 const editorModules = readInventory('editor');
+const structureModules = readInventory('structure-editor');
+const structureCode = readFileSync(join(root, 'dist/js/page-builder-structure.iife.js'), 'utf8');
+const compositionAssets = [...new Set(structureCode.match(/data\/builtin-v3-[\w-]+\.json/g) ?? [])];
+if (compositionAssets.length !== 1) throw new Error('Structure editor must reference one content-versioned composition data asset.');
+const compositionSource = readFileSync(join(root, 'dist', compositionAssets[0]), 'utf8');
+if (compositionSource !== JSON.stringify(JSON.parse(readFileSync(join(root, 'resources/compositions/builtin-v3.json'), 'utf8')))
+  || gzipSync(compositionSource).length > 30_000) {
+  throw new Error('Composition data asset is incomplete, stale or above its 30KB gzip budget.');
+}
+if (!structureModules.some(id => id.endsWith('/editor/v3/entry.tsx'))
+  || !structureModules.some(id => id.endsWith('/editor/v3/StructureEditor.tsx'))
+  || structureModules.some(id => /\/blocks\/v3\//.test(id)
+    || id.endsWith('/editor/PuckEditorAdapter.tsx') || id.includes('/native-editor/'))) {
+  throw new Error('Structure editor must use the generic element editor without block factories or legacy/native editors.');
+}
 const managerModules = readInventory('manager');
 const sitePartModules = readInventory('site-part');
 const publicEffectsModules = readInventory('public-effects');

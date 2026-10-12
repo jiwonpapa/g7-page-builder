@@ -706,6 +706,13 @@
           "commit": "a2d7abfcddd67d0daf2212231aeb5b8486197d16",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-document-storage.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-version-entry-api-submission",
+          "commit": "4a9918bbc35ed90bc5b28fcbe836ecbdde6ab876",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-product-entry.md"
         }
       ],
       "blocked_reason": null,

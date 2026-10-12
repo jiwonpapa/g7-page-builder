@@ -13,12 +13,12 @@ import {
 } from '../api/pageBuilderApi';
 import type { PageBuilderDocument } from '../documents/types';
 import type { DocumentResource } from '../api/resources';
-import { normalizeDocumentTransport } from '../documents/normalizeDocumentTransport';
-import { LayoutPolicyError, validateLayoutDocument } from '../documents/layoutPolicy';
+import { LayoutPolicyError } from '../documents/layoutPolicy';
 import { loadBlockPackEditorAssets } from '../blocks/runtimeLoader';
 import { PuckEditorAdapter } from './PuckEditorAdapter';
 import { clearDraftJournal, readDraftJournal, writeDraftJournal } from './draftJournal';
 import { createDraftPersistence } from './draftPersistence';
+import { loadLegacyEditorDocument, readLegacyEditorDocument as readEditorDocument } from './entryMode';
 
 export interface PageBuilderEditorOptions {
   documentId?: string;
@@ -98,12 +98,6 @@ function formatError(error: unknown): string {
 function isConflict(error: unknown): boolean {
   return error instanceof PageBuilderApiError &&
     (error.status === 409 || error.code === 'G7PB_LOCK_CONFLICT');
-}
-
-function readEditorDocument(document: PageBuilderDocument): PageBuilderDocument {
-  const normalized = normalizeDocumentTransport(document);
-  if (normalized.schema_version === 'g7-page-builder/v2') validateLayoutDocument(normalized);
-  return normalized;
 }
 
 function EditorShell({
@@ -210,14 +204,17 @@ function EditorShell({
     let active = true;
     setLoading(true);
     setMessage(null);
-    void (async () => {
-      const packs = await api.listBlockPacks();
-      await loadBlockPackEditorAssets(packs.items);
-
-      return api.getDocument(requestedDocumentId);
-    })()
+    void loadLegacyEditorDocument(requestedDocumentId, {
+      read: id => api.getDocument(id),
+      loadBlocks: async () => {
+        const packs = await api.listBlockPacks();
+        if (active) await loadBlockPackEditorAssets(packs.items);
+      },
+      redirect: url => window.location.replace(url),
+      current: () => active,
+    })
       .then(async (resource) => {
-        if (active) {
+        if (active && resource) {
           applyResource(resource, true, true);
           try {
             const preview = await api.createPreview(

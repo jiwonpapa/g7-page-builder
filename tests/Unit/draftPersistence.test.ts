@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
 import type { DocumentResource } from '../../resources/js/api/resources';
 import { createDraftPersistence } from '../../resources/js/editor/draftPersistence';
+import { readLegacyEditorDocument } from '../../resources/js/editor/entryMode';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -26,7 +27,7 @@ function setup(dirty = true) {
   const newerEdits = vi.fn(() => { status = 'dirty'; });
   const failed = vi.fn(() => { status = 'error'; });
   const persistence = createDraftPersistence({ current: () => state, cancelScheduledSave: vi.fn(), save, preview,
-    readDocument: (value) => value, started: () => { status = 'saving'; },
+    readDocument: readLegacyEditorDocument, started: () => { status = 'saving'; },
     resourceReceived: (received) => { state = { ...state, lockVersion: received.lock_version }; }, saved,
     cleanSaved: () => { status = 'saved'; }, newerEdits, failed });
   return { initial, resource, save, preview, saved, newerEdits, failed, persistence,

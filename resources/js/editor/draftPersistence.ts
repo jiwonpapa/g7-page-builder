@@ -1,5 +1,5 @@
 import type { PageBuilderDocument } from '../documents/types';
-import type { DocumentResource } from '../api/resources';
+import type { DocumentResource, StoredPageDocument } from '../api/resources';
 
 interface DraftSnapshot {
   document: PageBuilderDocument | null;
@@ -12,7 +12,7 @@ interface DraftPersistencePorts {
   cancelScheduledSave: () => void;
   save: (document: PageBuilderDocument, lockVersion: number) => Promise<DocumentResource>;
   preview: (documentId: string, lockVersion: number, isCurrent: () => boolean) => Promise<void>;
-  readDocument: (document: PageBuilderDocument) => PageBuilderDocument;
+  readDocument: (document: StoredPageDocument) => PageBuilderDocument;
   started: () => void;
   resourceReceived: (resource: DocumentResource) => void;
   saved: (resource: DocumentResource, document: PageBuilderDocument) => void;

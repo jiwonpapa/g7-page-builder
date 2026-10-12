@@ -68,8 +68,10 @@ describe('PageBuilderApiClient', () => {
     expect(loaded.document.tokens).toEqual({});
     expect(loaded.document.blocks[0].slots).toEqual({});
     expect(loaded.document.blocks[1].props).toEqual({});
+    if (loaded.document.schema_version === 'g7-page-builder/v3') throw new Error('Expected unchanged legacy schema');
     const moved = moveLayoutNode(loaded.document, headingId, { parentId: sectionId, slot: 'content', index: 0 });
     const saved = await client.saveDraft(moved.document_id, moved, loaded.lock_version);
+    if (saved.document.schema_version === 'g7-page-builder/v3') throw new Error('Expected unchanged legacy schema');
     const child = saved.document.blocks[0].slots!.content[0];
     expect(child).toMatchObject({ instance_id: headingId, props: { heading: '유지할 제목', items: [] }, slots: {} });
     expect(JSON.parse(JSON.stringify(saved.document)).blocks[0].slots.content).toHaveLength(1);

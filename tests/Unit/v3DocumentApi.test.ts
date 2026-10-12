@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import fixture from '../Contract/document-v3.fixture.json';
 import { PageBuilderApiClient, PageBuilderApiError, PAGE_BUILDER_API_PREFIX } from '../../resources/js/api/pageBuilderApi';
-import { createV3DocumentApi, parseV3DocumentResource } from '../../resources/js/api/v3DocumentResource';
+import { createStructureDocument, createV3DocumentApi, parseV3DocumentResource } from '../../resources/js/api/v3DocumentResource';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 
 const documentId = fixture.document_id;
@@ -18,6 +18,29 @@ function response(data: unknown, status = 200) {
 }
 
 describe('v3 document API adapter', () => {
+  it('creates an explicitly versioned empty document through the existing authenticated endpoint', async () => {
+    const data = { ...resource(), document: { ...source(), blocks: [] } };
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response(data));
+    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+    const input = { title: '빈 페이지', slug: 'blank', locale: 'ko', shell_mode: 'none' as const };
+    expect(await createStructureDocument(client, input)).toEqual(data);
+    const [url, options] = fetchImpl.mock.calls[0];
+    expect(url).toBe(`${PAGE_BUILDER_API_PREFIX}/documents`);
+    expect(options?.method).toBe('POST');
+    expect(new Headers(options?.headers).get('Authorization')).toBe('Bearer token');
+    expect(JSON.parse(String(options?.body))).toEqual({ ...input, mode: 'canvas', schema_version: 'g7-page-builder/v3' });
+    expect(input).not.toHaveProperty('schema_version');
+  });
+
+  it('rejects a legacy or malformed response to v3 creation instead of converting it', async () => {
+    for (const document of [{ ...source(), schema_version: 'g7-page-builder/v1' }, { ...source(), assets: [] }]) {
+      const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response({ ...resource(), document }));
+      const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+      await expect(createStructureDocument(client, { title: '새 문서', slug: 'new', locale: 'ko' })).rejects.toThrow();
+      expect(fetchImpl).toHaveBeenCalledOnce();
+    }
+  });
+
   it('loads canonical v3 through the existing authenticated transport without coercing empty maps', async () => {
     const data = resource();
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response(data));

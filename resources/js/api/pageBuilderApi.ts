@@ -175,6 +175,7 @@ export class PageBuilderApiClient {
     title: string;
     locale: string;
     shell_mode?: PageBuilderDocument['shell_mode'];
+    schema_version?: 'g7-page-builder/v1' | 'g7-page-builder/v3';
   }): Promise<DocumentResource> {
     return this.request<DocumentResource>('/documents', {
       method: 'POST',

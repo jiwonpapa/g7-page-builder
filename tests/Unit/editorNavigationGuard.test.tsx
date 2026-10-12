@@ -48,7 +48,7 @@ vi.mock('../../resources/js/editor/PuckEditorAdapter', () => ({
 const { PageBuilderApiClient } = await import('../../resources/js/api/pageBuilderApi');
 const { AUTO_SAVE_IDLE_MS, DRAFT_JOURNAL_BATCH_MS, mountPageBuilderEditor } = await import('../../resources/js/editor/main');
 
-const resource: DocumentResource = {
+const resource: DocumentResource<PageBuilderDocument> = {
   title: '이탈 방지 시험',
   document: {
     schema_version: 'g7-page-builder/v1',

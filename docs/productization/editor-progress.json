@@ -8,6 +8,11 @@
   "dashboard_file": "docs/productization/editor-progress.md",
   "documents": [
     {
+      "path": "docs/audits/2026-10-13-ip7-public-css-budget.md",
+      "role": "reference",
+      "required_text": "Frontend budget exceeded"
+    },
+    {
       "path": "AGENTS.md",
       "role": "current",
       "required_text": "editor-plan.md"

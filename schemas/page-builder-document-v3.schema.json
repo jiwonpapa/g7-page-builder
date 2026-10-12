@@ -1449,7 +1449,24 @@
                     "div",
                     "nav",
                     "header",
-                    "footer"
+                    "footer",
+                    "ul",
+                    "ol",
+                    "li",
+                    "dl",
+                    "dt",
+                    "dd",
+                    "blockquote",
+                    "figure",
+                    "figcaption",
+                    "table",
+                    "caption",
+                    "thead",
+                    "tbody",
+                    "tfoot",
+                    "tr",
+                    "th",
+                    "td"
                   ]
                 }
               },

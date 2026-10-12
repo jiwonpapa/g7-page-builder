@@ -70,6 +70,7 @@ final readonly class Validator
             if (! in_array($node->type, $this->policy['containers'], true) && get_object_vars($node->slots) !== []) {
                 Schema::reject('leaf_slots');
             }
+            Semantics::validate($node, $parent, $this->policy['semantics']);
             if ($node->type === 'media.image' && ! isset($assets[$node->props->asset_id])) {
                 Schema::reject('asset_reference');
             }
@@ -96,6 +97,12 @@ final readonly class Validator
         }
 
         return $width < $this->policy['breakpoints']['tablet'] ? 'mobile' : ($width < $this->policy['breakpoints']['desktop'] ? 'tablet' : 'base');
+    }
+
+    /** @return array<string, string> */
+    public function semanticDisplays(): array
+    {
+        return $this->policy['semantics']['display'];
     }
 
     /** @param array<string, bool> $assets */

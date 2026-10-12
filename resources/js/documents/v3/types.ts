@@ -30,8 +30,11 @@ interface NodeBase {
   instance_id: string; block_version: 1; name: string; locked: boolean;
   slots: { content?: Node[] }; style: Style; responsive: { tablet?: Style; mobile?: Style };
 }
+export type LayoutTag = 'section' | 'article' | 'aside' | 'div' | 'nav' | 'header' | 'footer'
+  | 'ul' | 'ol' | 'li' | 'dl' | 'dt' | 'dd' | 'blockquote' | 'figure' | 'figcaption'
+  | 'table' | 'caption' | 'thead' | 'tbody' | 'tfoot' | 'tr' | 'th' | 'td';
 export type Node = NodeBase & (
-  { type: 'layout.section' | 'layout.container'; props: { tag: 'section' | 'article' | 'aside' | 'div' | 'nav' | 'header' | 'footer' } } |
+  { type: 'layout.section' | 'layout.container'; props: { tag: LayoutTag } } |
   { type: 'content.heading'; props: { level: number; runs: Run[] } } |
   { type: 'content.text'; props: { paragraphs: Run[][] } } |
   { type: 'media.image'; props: { asset_id: string; alt: string } } |

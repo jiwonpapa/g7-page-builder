@@ -82,11 +82,13 @@ final class Presentation
         }
     }
 
-    /** @return array<string, string> */
-    private static function node(stdClass $node, stdClass $document, stdClass $style, ?stdClass $parent): array
+    /** @param array<string, string> $displays
+     * @return array<string, string>
+     */
+    private static function node(stdClass $node, stdClass $document, stdClass $style, ?stdClass $parent, array $displays): array
     {
         $out = ['box-sizing' => 'border-box', 'margin' => '0', 'padding' => '0', 'border-width' => '0',
-            'display' => ($style->hidden ?? false) ? 'none' : ($style->display ?? 'block'),
+            'display' => ($style->hidden ?? false) ? 'none' : ($style->display ?? ($displays[$node->props->tag ?? ''] ?? 'block')),
             'position' => ($style->position ?? 'flow') === 'flow' ? 'static' : $style->position];
         if (in_array($node->type, ['content.heading', 'content.text', 'action.link'], true)) {
             $out['white-space'] = 'pre-wrap';
@@ -171,15 +173,16 @@ final class Presentation
     }
 
     /** Caller must use the v3 Validator before this generated presentation.
+     * @param  array<string, string>  $displays
      * @return array<string, array<string, string>>
      */
-    public static function document(stdClass $document, string $viewport = 'base'): array
+    public static function document(stdClass $document, string $viewport = 'base', array $displays = []): array
     {
         $styles = [];
-        $visit = function (array $nodes, ?stdClass $parent = null) use (&$visit, &$styles, $document, $viewport): void {
+        $visit = function (array $nodes, ?stdClass $parent = null) use (&$visit, &$styles, $document, $viewport, $displays): void {
             foreach ($nodes as $node) {
                 $style = Validator::effectiveStyle($node, $viewport);
-                $styles[$node->instance_id] = self::node($node, $document, $style, $parent);
+                $styles[$node->instance_id] = self::node($node, $document, $style, $parent, $displays);
                 $visit($node->slots->content ?? [], $style);
             }
         };

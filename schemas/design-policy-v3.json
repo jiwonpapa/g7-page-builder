@@ -58,6 +58,25 @@
     "layout.section",
     "layout.container"
   ],
+  "semantics": {
+    "children": {
+      "ul": ["li"], "ol": ["li"], "dl": ["dt", "dd"],
+      "table": ["caption", "thead", "tbody", "tfoot"],
+      "thead": ["tr"], "tbody": ["tr"], "tfoot": ["tr"], "tr": ["th", "td"]
+    },
+    "parents": {
+      "li": ["ul", "ol"], "dt": ["dl"], "dd": ["dl"], "figcaption": ["figure"],
+      "caption": ["table"], "thead": ["table"], "tbody": ["table"], "tfoot": ["table"],
+      "tr": ["thead", "tbody", "tfoot"], "th": ["tr"], "td": ["tr"]
+    },
+    "display": {
+      "li": "list-item", "table": "table", "caption": "table-caption",
+      "thead": "table-header-group", "tbody": "table-row-group", "tfoot": "table-footer-group",
+      "tr": "table-row", "th": "table-cell", "td": "table-cell"
+    },
+    "sequence": { "table": { "order": ["caption", "thead", "tbody", "tfoot"], "singletons": ["caption", "thead", "tfoot"] } },
+    "edge_children": { "figure": ["figcaption"] }
+  },
   "migration": {
     "source_schemas": [
       "g7-page-builder/v1",

@@ -2,6 +2,7 @@ import schema from '../../../../schemas/page-builder-document-v3.schema.json';
 import policy from '../../../../schemas/design-policy-v3.json';
 import { jsonBytes, reject, validateRule } from './schema';
 import type { DocumentV3, Node, Style } from './types';
+import { validateNodeSemantics } from './semantics';
 
 export { V3Error } from './schema';
 export const designPolicyV3 = policy;
@@ -46,6 +47,7 @@ export function validateDocumentV3(value: unknown): DocumentV3 {
       const required = policy.node_props[node.type];
       if (Object.keys(node.props).length !== required.length || required.some(key => !Object.hasOwn(node.props, key))) reject('props_type', '$');
       if (!policy.containers.includes(node.type) && Object.keys(node.slots).length) reject('leaf_slots', '$');
+      validateNodeSemantics(node, parent);
       if (node.type === 'media.image' && !assets.has(node.props.asset_id)) reject('asset_reference', '$');
       for (const viewport of ['base', 'tablet', 'mobile'] as const) styleSemantics(effectiveStyle(node, viewport), parent && effectiveStyle(parent, viewport), assets);
       visit(node.slots.content ?? [], node, depth + 1);

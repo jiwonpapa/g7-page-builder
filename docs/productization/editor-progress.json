@@ -699,6 +699,13 @@
           "commit": "22607a6d866b9070425cdf506551650d8024189c",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-common-runtime.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-authenticated-document-storage",
+          "commit": "a2d7abfcddd67d0daf2212231aeb5b8486197d16",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-document-storage.md"
         }
       ],
       "blocked_reason": null,

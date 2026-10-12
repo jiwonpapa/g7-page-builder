@@ -1,5 +1,6 @@
 import type { DocumentV3 } from '../../documents/v3/types';
-import { executeTreeCommand, type TreeCommand, type TreeResult } from '../../documents/v3/commands';
+import type { TreeResult } from '../../documents/v3/commands';
+import { executeDocumentCommand, type DocumentCommand } from '../../documents/v3/designCommands';
 import { copyTree, type NewId, type TreeClipboard } from '../../documents/v3/clipboard';
 import { validateDocumentV3, designPolicyV3 } from '../../documents/v3/validate';
 import { reject } from '../../documents/v3/schema';
@@ -44,11 +45,11 @@ export function reopenDraft(json: string, documentId: string): DocumentV3 {
 export function createStructureSession(editor: EditorPort, nextId: NewId) {
   let saving = false;
   return {
-    execute(command: TreeCommand, expected: EditContext): TreeResult {
+    execute(command: DocumentCommand, expected: EditContext): TreeResult {
       expected = { ...expected };
       const snapshot = editor.read();
       assertContext(snapshot, expected);
-      const result = executeTreeCommand(snapshot.document, command, nextId);
+      const result = executeDocumentCommand(snapshot.document, command, nextId);
       // ID providers/adapter callbacks cannot move the command to another session.
       assertContext(editor.read(), expected);
       if (result.changed) editor.commit(result);

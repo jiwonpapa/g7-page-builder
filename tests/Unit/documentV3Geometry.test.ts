@@ -56,7 +56,22 @@ describe('v3 measured geometry commands', () => {
     const s = setup();
     const result = s.apply(geometryCommand(s.doc, s.ids, s.boxes, { kind: 'resize', width: 150, height: 99, keepRatio: true }));
     expect(result.document.blocks[0].slots.content![0].style).toMatchObject({ width: { value: 150, unit: 'px' }, height: { value: 75, unit: 'px' }, aspect_ratio: 2 });
+    expect(result.document.blocks[0].slots.content![1].style).toMatchObject({ inset_left: { value: 300, unit: 'px' }, inset_top: { value: 45, unit: 'px' } });
     expect(result.selection).toEqual(s.ids);
+  });
+  it('scales group offsets around the top-left anchor and rejects incompatible groups atomically', () => {
+    const s = setup(), operation = { kind: 'resize', width: 200, height: 50, keepRatio: false } as const;
+    s.boxes.forEach(box => { box.left += 80; box.top += 40; });
+    s.parent.slots.content![1].style.inset_right = { value: 20, unit: '%' };
+    const result = s.apply(geometryCommand(s.doc, s.ids, s.boxes, operation));
+    expect(result.document.blocks[0].slots.content![1].style).toMatchObject({ inset_left: { value: 480, unit: 'px' }, inset_top: { value: 70, unit: 'px' } });
+    expect(result.document.blocks[0].slots.content![1].style.inset_right).toBeUndefined();
+    s.parent.slots.content![1].style.rotation = 15;
+    expect(() => geometryCommand(s.doc, s.ids, s.boxes, operation)).toThrow('rotated_group_resize');
+    delete s.parent.slots.content![1].style.rotation;
+    s.parent.slots.content![1].style.position = 'flow';
+    expect(() => geometryCommand(s.doc, s.ids, s.boxes, operation)).toThrow('absolute_required');
+    expect(s.parent.slots.content![0].style.width).toEqual({ value: 100, unit: 'px' });
   });
   it('resets aspect ratio when unlocked and neutralizes Flex grow and shrink', () => {
     const s = setup(); s.parent.style.display = 'flex';

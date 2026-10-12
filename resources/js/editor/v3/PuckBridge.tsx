@@ -29,6 +29,7 @@ export function createPuckBridge(initial: DocumentV3, options: {
   let recovery: { state: State; histories: Api['history']['histories']; index: number } | null = null;
   let repairing = false;
   let disposed = false;
+  let interactionOwnsSelection = false;
   const context = (): EditContext => ({ documentId: document.document_id, ...options.context(), revision,
     readonly: disposed || options.context().readonly });
   function select(ids: string[], reflect = true): void {
@@ -63,9 +64,12 @@ export function createPuckBridge(initial: DocumentV3, options: {
     connect(current: Api) { api = current; disposed = false; },
     disconnect() { api = null; pending = null; disposed = true; },
     select(id: string, extend = false) { select(extend ? selection.includes(id) ? selection.filter(value => value !== id) : [...selection, id] : [id]); },
-    execute(command: DocumentCommand) {
+    selectMany(ids: string[]) { select([...new Set(ids)], !interactionOwnsSelection); },
+    selection: () => [...selection],
+    interactionOwner(value: boolean) { interactionOwnsSelection = value; },
+    execute(command: DocumentCommand, expected: EditContext = context()) {
       if (!api || recovery) reject('editor_not_ready', '$');
-      return session.execute(command, context());
+      return session.execute(command, expected);
     },
     copy: () => session.copy(selection, context()),
     save: (port: DraftPort, serverRevision: number) => session.save(port, context(), serverRevision),
@@ -113,7 +117,7 @@ export function createPuckBridge(initial: DocumentV3, options: {
         return;
       }
       const id = api.selectedItem?.props.id;
-      if (id && !selection.includes(id)) select([id], false);
+      if (!interactionOwnsSelection && id && !selection.includes(id)) select([id], false);
     },
   };
 }

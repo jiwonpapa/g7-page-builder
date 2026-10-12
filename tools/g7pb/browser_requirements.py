@@ -56,6 +56,11 @@ V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
     "v3 precision Inspector and typed auto layout preserve one Undo and canonical save/reopen",
     "v3 canvas text and partial formats share Puck history and preserve readonly input",
     "v3 editor preview and PHP draft output agree within one CSS pixel",
+    *(f"v3 precise handles at {zoom}% preserve CSS pixels cancel and one Undo" for zoom in (50, 100, 200)),
+    "v3 multiple selection aligns distributes rotates and keeps keyboard and readonly boundaries",
+    "v3 marquee group resize snap and pan preserve canonical history",
+    "v3 pointer movement rotation and mixed property changes each use one Undo",
+    "v3 focus loss cancels and layout constraints preserve canonical history",
 ))
 
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(
@@ -200,7 +205,8 @@ STYLE_CODE_SCOPES = {
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
     (("src/Application/Compilation/V3/*",), (V3_STRUCTURE,)),
-    (("resources/js/documents/v3/*", "resources/js/editor/v3/*", "resources/js/editor-application/v3/*"), (V3_STRUCTURE,)),
+    (("resources/js/documents/v3/*", "resources/js/editor/v3/*", "resources/js/editor-application/v3/*",
+      "resources/js/adapters/interaction/*"), (V3_STRUCTURE,)),
     (("resources/js/editor/canvasNavigationGuard.ts",), (NAVIGATION,)),
     (("resources/js/native-components/*", "resources/css/page-builder-native-components.css"), (NATIVE_COMPONENTS,)),
     (("resources/css/page-builder-basic-elements.css", "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"), (BASIC_ELEMENTS,)),

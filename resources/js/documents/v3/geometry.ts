@@ -30,11 +30,13 @@ export function geometryTargets(document: DocumentV3, ids: readonly string[], bo
 /** Geometry is an input to the canonical validator, never a replacement document. */
 export function geometryCommand(document: DocumentV3, ids: readonly string[], boxes: readonly GeometryBox[], operation: GeometryOperation): StyleBatch {
   const targets = geometryTargets(document, ids, boxes);
-  const positioned = operation.kind !== 'resize';
+  const groupResize = operation.kind === 'resize' && targets.length > 1;
+  const positioned = operation.kind !== 'resize' || groupResize;
   if (positioned && targets.some(({ item }) => item.node.style.position !== 'absolute' || !item.parent)) reject('absolute_required', '$');
   if (positioned && targets.some(({ item }) => item.parent !== targets[0].item.parent)) reject('mixed_parents', '$');
   if (targets.some(({ item }) => item.ancestors.some(node => node.style.rotation))) reject('rotated_parent', '$');
   if ((operation.kind === 'align' || operation.kind === 'distribute') && targets.some(({ item }) => item.node.style.rotation)) reject('rotated_alignment', '$');
+  if (groupResize && targets.some(({ item }) => item.node.style.rotation)) reject('rotated_group_resize', '$');
   const changes = new Map<string, Style>();
   const resets = new Map<string, (keyof Style)[]>();
   const place = (box: GeometryBox, left: number, top: number) => {
@@ -47,13 +49,22 @@ export function geometryCommand(document: DocumentV3, ids: readonly string[], bo
     const primary = targets[0].box;
     const sx = operation.width / primary.width;
     const sy = operation.keepRatio ? sx : operation.height / primary.height;
+    const left = Math.min(...targets.map(({ box }) => box.left));
+    const top = Math.min(...targets.map(({ box }) => box.top));
     for (const { box, item } of targets) {
       const set: Style = { width: px(box.width * sx), height: px(box.height * sy) };
+      const reset: (keyof Style)[] = [];
+      if (groupResize) {
+        set.inset_left = px(left + (box.left - left) * sx);
+        set.inset_top = px(top + (box.top - top) * sy);
+        reset.push('inset_right', 'inset_bottom');
+      }
       if (operation.keepRatio) set.aspect_ratio = box.width / box.height;
       // Flex shrink/grow must not silently undo a direct pixel size.
       if (item.parent?.style.display === 'flex') { set.grow = 0; set.shrink = 0; set.basis = 'auto'; }
       changes.set(box.id, set);
-      if (!operation.keepRatio && item.node.style.aspect_ratio !== undefined) resets.set(box.id, ['aspect_ratio']);
+      if (!operation.keepRatio && item.node.style.aspect_ratio !== undefined) reset.push('aspect_ratio');
+      if (reset.length) resets.set(box.id, reset);
     }
   } else if (operation.kind === 'translate') {
     if (![operation.x, operation.y].every(Number.isFinite)) reject('geometry_offset', '$');

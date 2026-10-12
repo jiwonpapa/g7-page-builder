@@ -741,6 +741,13 @@
           "commit": "7c1fad72eb4f26e2d2632877e59423a3d56fb551",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-v3-publication-ui.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-generated-thumbnail-consistency",
+          "commit": "00af0d6970212a81a5ed19562004f6558cc747f2",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-generated-assets.md"
         }
       ],
       "blocked_reason": null,

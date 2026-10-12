@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { transformSync } from 'esbuild';
 import { build } from 'vite';
 import { describe, expect, it } from 'vitest';
-import { builtinCatalogLiterals, compileBuiltinCatalog } from '../../vite.config';
+import { builtinCatalogLiterals, compileBuiltinCatalog, compileBuiltinCompositions } from '../../vite.config';
 
 function evaluate(source: string): Record<string, unknown> {
   const code = transformSync(compileBuiltinCatalog(source), { format: 'cjs', target: 'es2022' }).code;
@@ -15,6 +15,26 @@ function evaluate(source: string): Record<string, unknown> {
 }
 
 describe('builtin catalog build encoding', () => {
+  it('preserves canonical composition data and independent mutable instances in the Vite pipeline', async () => {
+    const path = fileURLToPath(new URL('../../resources/compositions/builtin-v3.json', import.meta.url));
+    const source = readFileSync(path, 'utf8'), original = JSON.parse(source);
+    const result = await build({ configFile: false, root: fileURLToPath(new URL('../..', import.meta.url)), logLevel: 'silent',
+      plugins: [builtinCatalogLiterals()], build: { write: false, minify: true, lib: { entry: path, formats: ['cjs'] } } });
+    const chunks = (Array.isArray(result) ? result : [result]).flatMap(output => 'output' in output ? output.output : []).filter(output => output.type === 'chunk');
+    expect(chunks).toHaveLength(1);
+    const module = { exports: {} }; runInNewContext(chunks[0].code, { module });
+    expect(JSON.stringify(module.exports)).toBe(JSON.stringify(original));
+    expect(chunks[0].code).not.toMatch(/\b(?:eval|fetch|atob)\(/);
+    const shared = { instance_id: 'repeated value example', style: { size: 3, color: 'neutral', enabled: true }, slots: { content: [] } };
+    const code = transformSync(compileBuiltinCompositions(JSON.stringify([shared, shared, shared])), { format: 'cjs' }).code;
+    const exported: { exports: { default?: typeof shared[] } } = { exports: {} }; runInNewContext(code, { module: exported });
+    const entries = exported.exports.default!;
+    expect(entries).toEqual([shared, shared, shared]);
+    entries[0].style.size = 9;
+    expect(entries[1].style.size).toBe(3); expect(entries[2].style.size).toBe(3);
+    expect(entries[0].slots.content).not.toBe(entries[1].slots.content);
+    for (const invalid of ['{}', 'null', '1', '"text"']) expect(() => compileBuiltinCompositions(invalid)).toThrow();
+  });
   it('preserves every real manifest field, value and insertion order', () => {
     const source = readFileSync(new URL('../../resources/block-packs/builtin-core/manifest.json', import.meta.url), 'utf8');
     const original: Record<string, unknown> = JSON.parse(source);

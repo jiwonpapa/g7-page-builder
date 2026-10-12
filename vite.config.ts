@@ -15,8 +15,14 @@ function jsonObject(value: unknown): value is Record<string, unknown> {
 // constructors, never mutable catalog objects. No decoder, eval, or extra fetch
 // is shipped; ordinary ESM exports remain tree-shakeable.
 export function compileBuiltinCatalog(source: string): string {
+  return compileCatalogData(source, false);
+}
+export function compileBuiltinCompositions(source: string): string {
+  return compileCatalogData(source, true);
+}
+function compileCatalogData(source: string, compositions: boolean): string {
   const data: unknown = JSON.parse(source);
-  if (!jsonObject(data)) throw new Error('The builtin catalog must be a JSON object.');
+  if (compositions ? !Array.isArray(data) : !jsonObject(data)) throw new Error('Unexpected builtin data root.');
   const counts = new Map<string, number>();
   const shapes = new Map<string, { keys: string[]; count: number }>();
   function collect(value: unknown): void {
@@ -55,6 +61,8 @@ export function compileBuiltinCatalog(source: string): string {
     `const ${name}=(${keys.map((_, index) => `a${index}`).join(',')})=>({${keys.map((key, index) => `${property(key)}:a${index}`).join(',')}});`,
   ).join('');
   const declarations = strings.map((value, index) => `const s${index}=${JSON.stringify(value)};`).join('');
+  if (Array.isArray(data)) return `${constructors}${declarations}export default ${literal(data)};`;
+  if (!jsonObject(data)) throw new Error('The builtin catalog must be a JSON object.');
   const entries = Object.entries(data);
   const exports = entries.map(([key, value], index) =>
     `const e${index}=${literal(value)};${key === 'default' ? '' : `export {e${index} as ${JSON.stringify(key)}};`}`,
@@ -64,15 +72,17 @@ export function compileBuiltinCatalog(source: string): string {
 }
 
 export function builtinCatalogLiterals(): Plugin {
-  let catalogPath = '';
+  let catalogPath = '', compositionsPath = '';
   return {
     name: 'g7pb-builtin-catalog-literals',
     apply: 'build',
     enforce: 'post',
     configResolved(config) {
       catalogPath = normalizePath(resolve(config.root, 'resources/block-packs/builtin-core/manifest.json'));
+      compositionsPath = normalizePath(resolve(config.root, 'resources/compositions/builtin-v3.json'));
     },
     transform(_code, id) {
+      if (normalizePath(id) === compositionsPath) return { code: compileBuiltinCompositions(readFileSync(compositionsPath, 'utf8')), map: null };
       if (normalizePath(id) !== catalogPath) return;
       return { code: compileBuiltinCatalog(readFileSync(catalogPath, 'utf8')), map: null };
     },

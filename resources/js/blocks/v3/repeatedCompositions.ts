@@ -33,10 +33,12 @@ export function pricing(p: PricingBlockProps, b: CompositionBuilder): Node {
       b.text('설명', plan.description, muted),
       b.frame('포함 항목', plan.features.map((feature, i) => b.frame(`항목 ${i + 1}`, [b.text('항목 내용', feature)], {}, 'li')), vertical(8), 'ul'),
       b.link('플랜 선택', plan.buttonLabel, plan.buttonUrl, 'primary')], { ...card,
-      ...(plan.featured ? outline(token('primary')) : {}), ...(layout === 'compact' ? padding(16) : {}) }, 'article');
+      ...(plan.featured ? outline(token('primary')) : {}), ...(layout === 'compact' ? padding(16) : {}),
+      ...(layout === 'featured' && plan.featured ? { column_span: Math.min(2, p.plans.length) } : {}) }, 'article');
+    if (layout === 'featured' && plan.featured) row.responsive.mobile = { column_span: 1 };
     return row;
   });
-  return b.section('가격 플랜', p.eyebrow, p.heading, [collection(b, '플랜 목록', plans, layout, p.plans.length)]);
+  return b.section('가격 플랜', p.eyebrow, p.heading, [collection(b, '플랜 목록', plans, layout === 'featured' ? 'cards' : layout, p.plans.length)]);
 }
 export function logos(p: LogoCloudBlockProps, b: CompositionBuilder): Node {
   const rows = p.logos.map((logo, index) => b.frame(`파트너 ${index + 1}`, [

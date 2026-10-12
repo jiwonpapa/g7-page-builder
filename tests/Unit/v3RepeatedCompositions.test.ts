@@ -64,6 +64,12 @@ describe('bundled repeated compositions become independent editable trees', () =
     expect(duplicate.blocks[0].instance_id).not.toBe(duplicate.blocks[1].instance_id);
     expect(validateDocumentV3(JSON.parse(JSON.stringify(duplicate)))).toEqual(duplicate);
   });
+  it('expands the authored featured pricing plan, not the first plan', () => {
+    const composition = createRepeatedComposition('pricing.three-tier', validateDocumentV3(fixture), ids());
+    const plans = [...indexTree(composition.source).values()].filter(item => 'tag' in item.node.props && item.node.props.tag === 'article');
+    expect(plans.map(item => item.node.style.column_span)).toEqual([undefined, 2]);
+    expect(plans[1].node.responsive.mobile).toEqual({ column_span: 1 });
+  });
   it('keeps styles detached across calls and defines real list/table semantics', () => {
     const document = validateDocumentV3(structuredClone(fixture));
     const first = createRepeatedComposition('testimonials.spotlight', document, ids());

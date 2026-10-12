@@ -182,6 +182,15 @@ test.describe(() => {
       // Ordinary data created after the product build. No composition registry or factory.
       const source: DocumentV3 = { ...structuredClone(fixture), blocks: structuredClone(cases.behavior_fixtures[kind]) };
       source.blocks[0].name = '새 동작 구성 ' + Date.now();
+      // Leave the first button unstyled to catch native host defaults, and
+      // independently prove authored appearance wins at every breakpoint.
+      const styled = allNodes(source.blocks).filter(node => node.type === 'action.button')[1];
+      styled.style = { background: { kind: 'solid', color: { kind: 'token', value: 'primary' } },
+        color: { kind: 'token', value: 'surface' }, border_bottom: { width: 2, style: 'solid', color: { kind: 'token', value: 'accent' } } };
+      styled.responsive.mobile = { background: { kind: 'solid', color: { kind: 'token', value: 'text' } } };
+      styled.responsive.tablet = { background: { kind: 'linear', angle: 90, stops: [
+        { offset: 0, color: { kind: 'token', value: 'primary' } }, { offset: 1, color: { kind: 'token', value: 'accent' } },
+      ] } };
       const connections = allNodes(source.blocks).filter(node => node.behavior).map(node => ({ id: node.instance_id, behavior: structuredClone(node.behavior!) }));
       for (const node of allNodes(source.blocks)) delete node.behavior;
       const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
@@ -194,6 +203,10 @@ test.describe(() => {
           return { id: node.dataset.v3Node, tag: node.tagName, text: node.textContent, shown, inert: node.inert,
             x: shown ? box.x - origin.x : 0, y: shown ? box.y - origin.y : 0, width: box.width, height: box.height,
             font: css.fontFamily, fontSize: css.fontSize, lineHeight: css.lineHeight, display: css.display,
+            color: css.color, backgroundColor: css.backgroundColor, backgroundImage: css.backgroundImage,
+            borders: ['top', 'right', 'bottom', 'left'].map(side => ['width', 'style', 'color'].map(property =>
+              css.getPropertyValue('border-' + side + '-' + property))),
+            textAlign: css.textAlign, boxShadow: css.boxShadow,
             role: node.getAttribute('role'), controls: node.getAttribute('aria-controls'), selected: node.getAttribute('aria-selected'),
             expanded: node.getAttribute('aria-expanded'), hidden: node.getAttribute('aria-hidden'), pressed: node.getAttribute('aria-pressed') };
         });

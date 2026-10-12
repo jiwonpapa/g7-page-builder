@@ -105,4 +105,35 @@ final class DocumentV3BehaviorsRendererTest extends TestCase
         self::assertStringNotContainsString('<script>', $html);
         self::assertStringNotContainsString('aria-label="" onmouseover=', $html);
     }
+
+    public function test_button_background_defaults_preserve_authored_and_responsive_values(): void
+    {
+        $document = $this->document('tabs');
+        $button = $document->blocks[0]->slots->content[0]->slots->content[0];
+        $validator = $this->validator();
+        $project = fn (string $screen): array => BehaviorPresentation::apply($document, Presentation::document($document, $screen, $validator->semanticDisplays()), $screen)['styles'][$button->instance_id];
+        self::assertSame('transparent', $project('base')['background-color']);
+        $button->style->background = (object) ['kind' => 'solid', 'color' => (object) ['kind' => 'token', 'value' => 'primary']];
+        $button->responsive->tablet = (object) ['background' => (object) ['kind' => 'linear', 'angle' => 90, 'stops' => [
+            (object) ['offset' => 0, 'color' => (object) ['kind' => 'token', 'value' => 'primary']],
+            (object) ['offset' => 1, 'color' => (object) ['kind' => 'token', 'value' => 'accent']],
+        ]]];
+        $button->responsive->mobile = (object) ['background' => (object) ['kind' => 'image', 'asset_id' => $document->assets[0]->asset_id, 'fit' => 'contain', 'x' => 25, 'y' => 75]];
+        $before = $this->encode($document);
+        $validator->validateJson($before);
+        self::assertSame('#2255ff', $project('base')['background']);
+        self::assertArrayNotHasKey('background-color', $project('base'));
+        self::assertSame('linear-gradient(90deg,#2255ff 0%,#ff8800 100%)', $project('tablet')['background']);
+        self::assertArrayNotHasKey('background-color', $project('tablet'));
+        self::assertSame('transparent', $project('mobile')['background-color']);
+        self::assertSame('url("/storage/example.webp")', $project('mobile')['background-image']);
+        self::assertSame('contain', $project('mobile')['background-size']);
+        self::assertSame('25% 75%', $project('mobile')['background-position']);
+        self::assertArrayNotHasKey('background', $project('mobile'));
+        self::assertSame($before, $this->encode($document));
+        unset($button->responsive->mobile->background);
+        self::assertSame('#2255ff', $project('mobile')['background']);
+        unset($button->style->background);
+        self::assertSame('transparent', $project('mobile')['background-color']);
+    }
 }

@@ -21,6 +21,9 @@ export function behaviorPresentation(document: DocumentV3, viewport: Viewport = 
       const generated = styles.get(node.instance_id)!;
       for (const key of ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'color']) generated[key] ??= 'inherit';
       generated['white-space'] = 'pre-wrap';
+      // Solids/gradients already set the background shorthand. Images use
+      // longhands: reset only the native color, never the authored image.
+      if (generated.background === undefined) generated['background-color'] = 'transparent';
     }
     const behavior = node.behavior;
     if (!behavior) continue;

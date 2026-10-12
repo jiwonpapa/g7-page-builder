@@ -40,6 +40,29 @@ describe('common behavior output from the canonical document', () => {
     expect(new Set([...host.querySelectorAll('[id]')].map(node => node.id)).size).toBe(host.querySelectorAll('[id]').length);
     expect(JSON.stringify(document)).toBe(before);
   });
+  it('resets native button backgrounds while preserving authored colors gradients images and responsive resets', () => {
+    const document = source('tabs'), button = indexTree(document).get(id(102))!.node;
+    const project = (viewport: 'base' | 'tablet' | 'mobile' = 'base') => behaviorPresentation(document, viewport).styles.get(id(102))!;
+    expect(project()['background-color']).toBe('transparent');
+    button.style.background = { kind: 'solid', color: { kind: 'token', value: 'primary' } };
+    button.responsive.tablet = { background: { kind: 'linear', angle: 90, stops: [
+      { offset: 0, color: { kind: 'token', value: 'primary' } }, { offset: 1, color: { kind: 'token', value: 'accent' } },
+    ] } };
+    button.responsive.mobile = { background: { kind: 'image', asset_id: document.assets[0].asset_id, fit: 'contain', x: 25, y: 75 } };
+    const before = JSON.stringify(document);
+    expect(project().background).toBe('#2255ff');
+    expect(project()['background-color']).toBeUndefined();
+    expect(project('tablet').background).toBe('linear-gradient(90deg,#2255ff 0%,#ff8800 100%)');
+    expect(project('tablet')['background-color']).toBeUndefined();
+    expect(project('mobile')).toMatchObject({ 'background-image': 'url("/storage/example.webp")',
+      'background-color': 'transparent', 'background-size': 'contain', 'background-position': '25% 75%' });
+    expect(project('mobile').background).toBeUndefined();
+    expect(JSON.stringify(document)).toBe(before);
+    delete button.responsive.mobile.background;
+    expect(project('mobile').background).toBe('#2255ff');
+    delete button.style.background;
+    expect(project('mobile')['background-color']).toBe('transparent');
+  });
   it('uses layout defaults only for unspecified values and preserves responsive hidden', () => {
     const document = source('carousel'), tree = indexTree(document);
     let output = behaviorPresentation(document);

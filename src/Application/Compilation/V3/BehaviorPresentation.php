@@ -37,6 +37,9 @@ final class BehaviorPresentation
                     $styles[$node->instance_id][$property] ??= 'inherit';
                 }
                 $styles[$node->instance_id]['white-space'] = 'pre-wrap';
+                if (! isset($styles[$node->instance_id]['background'])) {
+                    $styles[$node->instance_id]['background-color'] = 'transparent';
+                }
             }
             $behavior = $node->behavior ?? null;
             if ($behavior === null) {

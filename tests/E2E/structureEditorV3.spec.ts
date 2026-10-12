@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { puckHistoryCorrection } from '../../vite.puck-history.js';
 import type { DocumentV3 } from '../../resources/js/documents/v3/types';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
+import type { Editor } from '@tiptap/core';
 
 declare global {
   interface Window {
@@ -344,6 +345,21 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect(input).toHaveText('한글 정밀 편집');
   await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[{ text: '한글 정밀 편집' }]] });
   const typed = await read(page);
+  await input.evaluate(element => {
+    const editor = Reflect.get(element, 'editor') as Editor;
+    const trace: unknown[] = [];
+    Reflect.set(element, 'selectionTrace', trace);
+    const snapshot = (event: string) => {
+      const selection = element.ownerDocument.getSelection();
+      trace.push({ event, text: selection?.toString(), anchor: selection?.anchorOffset, focus: selection?.focusOffset,
+        from: editor.state.selection.from, to: editor.state.selection.to, rootIsCanvas: editor.view.root === element.ownerDocument,
+        focused: editor.view.hasFocus(), html: editor.getHTML() });
+    };
+    for (const type of ['keydown', 'keyup']) element.addEventListener(type, event => snapshot(type + ':' + (event as KeyboardEvent).key));
+    element.ownerDocument.addEventListener('selectionchange', () => snapshot('selectionchange'));
+    editor.on('transaction', ({ transaction }) => snapshot('transaction:' + transaction.docChanged));
+    snapshot('start');
+  });
   const selectionSteps = [];
   for (const key of ['Home', 'Shift+ArrowRight', 'Shift+ArrowRight']) {
     await input.press(key);
@@ -354,6 +370,7 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
     }));
   }
   await info.attach('keyboard-selection', { contentType: 'application/json', body: JSON.stringify(selectionSteps) });
+  await info.attach('selection-events', { contentType: 'application/json', body: JSON.stringify(await input.evaluate(element => Reflect.get(element, 'selectionTrace'))) });
   await expect.poll(() => input.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe('한글');
   const format = page.getByRole('toolbar', { name: '부분 서식' });
   await format.getByRole('button', { name: '굵게', exact: true }).click();

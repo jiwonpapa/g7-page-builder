@@ -121,7 +121,8 @@ class BrowserRequirementsTests(unittest.TestCase):
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 30)
+        self.assertEqual(len(V3_STRUCTURE.titles), 31)
+        self.assertIn("v3 semantic lists tables and figures preserve editing grammar and PHP parity", V3_STRUCTURE.titles)
         for key in ("hero.poster", "hero.product", "hero.backdrop", "hero.editorial", "hero.device",
                     "hero.balanced", "hero.screenshot", "hero.overlap", "hero.offset",
                     "card.plain", "card.outlined", "image-text.left", "image-text.right"):

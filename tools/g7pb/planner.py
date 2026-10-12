@@ -58,6 +58,7 @@ CONTRACT_FIXTURE_CONSUMERS = {
     ),
     "tests/Fixtures/document-v3-cases.json": (
         "tests/Unit/documentV3.test.ts", "tests/UnitPhp/DocumentV3Test.php",
+        "tests/Unit/documentV3Semantics.test.ts", "tests/UnitPhp/DocumentV3SemanticsTest.php",
     ),
     "schemas/page-builder-document.schema.json": (
         "tests/Unit/documentSchema.test.ts", "tests/Unit/cardComposition.test.ts",

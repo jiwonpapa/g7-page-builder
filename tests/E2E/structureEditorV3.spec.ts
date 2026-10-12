@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { puckHistoryCorrection } from '../../vite.puck-history.js';
 import { interFontAssets, INTER_DIST, localInterFonts } from '../../vite.inter-fonts.js';
-import type { DocumentV3 } from '../../resources/js/documents/v3/types';
+import type { DocumentV3, Node, LayoutTag } from '../../resources/js/documents/v3/types';
 import type { TiptapEditorHTMLElement } from '@tiptap/core';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
 import AxeBuilder from '@axe-core/playwright';
@@ -95,6 +95,82 @@ const click = (page: Page, name: string) => page.getByRole('button', { name, exa
 const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
 const basicCompositionKeys = ['hero.poster', 'hero.product', 'hero.backdrop', 'hero.editorial', 'hero.device',
   'hero.balanced', 'hero.screenshot', 'hero.overlap', 'hero.offset', 'card.plain', 'card.outlined', 'image-text.left', 'image-text.right'];
+test('v3 semantic lists tables and figures preserve editing grammar and PHP parity', async ({ page, context }, info) => {
+  interface TagTree { tag: LayoutTag | 'text'; children?: TagTree[] }
+  const cases = JSON.parse(readFileSync(new URL('../Fixtures/document-v3-cases.json', import.meta.url), 'utf8')) as {
+    semantics: { name: string; tree: TagTree[]; valid: boolean }[] };
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const seen = new Set<string>(), proofs: unknown[] = [];
+  const flatten = (nodes: Node[]): Node[] => nodes.flatMap(node => [node, ...flatten(node.slots.content ?? [])]);
+  const measure = (element: Element) => {
+    const origin = element.getBoundingClientRect();
+    return [...element.querySelectorAll('[data-v3-node]')].map(node => {
+      const box = node.getBoundingClientRect(), css = getComputedStyle(node);
+      return { id: node.getAttribute('data-v3-node'), tag: node.tagName, text: node.textContent,
+        x: box.x - origin.x, y: box.y - origin.y, width: box.width, height: box.height, display: css.display };
+    });
+  };
+  for (const entry of cases.semantics.filter(entry => entry.valid)) {
+    let sequence = 0;
+    const nodes = (tree: TagTree[]): Node[] => tree.map(({ tag, children = [] }) => {
+      seen.add(tag);
+      const base = { instance_id: '00000000-0000-4000-8000-' + String(++sequence).padStart(12, '0'),
+        block_version: 1 as const, name: tag, locked: false, style: {}, responsive: {} };
+      return tag === 'text' ? { ...base, type: 'content.text', props: { paragraphs: [[{ text: '한글 목록과 비교표' }]] }, slots: {} }
+        : { ...base, type: 'layout.container', props: { tag }, slots: { content: nodes(children) } };
+    });
+    const document: DocumentV3 = { ...structuredClone(fixture), blocks: nodes(entry.tree) };
+    await open(page, document);
+    const root = document.blocks[0], text = flatten(document.blocks).find(node => node.type === 'content.text');
+    if (root.type === 'layout.container' && ['ul', 'ol', 'dl', 'table'].includes(root.props.tag)) {
+      await page.getByLabel('삽입 위치', { exact: true }).selectOption(root.instance_id);
+      await click(page, '제목 삽입');
+      await expect(page.getByRole('status', { name: '편집 상태' })).toContainText('semantic_');
+      expect(await read(page)).toEqual(document);
+    }
+    if (text) {
+      await layer(page, text.instance_id).click(); await length(page, '글자 크기', 21); await click(page, '디자인 적용');
+      const designed = await read(page);
+      await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(document);
+      await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(designed);
+      await click(page, '본문 입력');
+      const editable = page.frameLocator('iframe').locator('[data-v3-node="' + text.instance_id + '"] .tiptap[contenteditable="true"]');
+      await expect(editable).toBeVisible(); await editable.fill('내용 변경 <안전한 문자>');
+      await expect.poll(async () => flatten((await read(page)).blocks).find(node => node.instance_id === text.instance_id)?.props)
+        .toEqual({ paragraphs: [[{ text: '내용 변경 <안전한 문자>' }]] });
+    }
+    await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+    const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
+    expect(saved).toEqual(await read(page));
+    for (const width of [360, 768, 1280]) {
+      await open(page, saved); await canvasWidth(page, width);
+      const canvas = await page.frameLocator('iframe').locator('[data-v3-surface]').evaluate(measure);
+      expect(canvas).toHaveLength(flatten(saved.blocks).length);
+      await click(page, '구조 미리보기');
+      const preview = await page.getByTestId('v3-preview').evaluate(measure);
+      const output = await context.newPage(); await output.setViewportSize({ width, height: 1000 });
+      await output.setContent('<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">' + phpDraft(saved, expectedViewport(width)) + '</body></html>');
+      const php = await output.locator('[data-v3-surface]').evaluate(measure);
+      proofs.push({ name: entry.name, width, canvas, preview, php });
+      await info.attach(entry.name + '-' + width, { contentType: 'application/json', body: JSON.stringify({ canvas, preview, php }) });
+      for (const other of [preview, php]) {
+        expect(other.map(node => node.id)).toEqual(canvas.map(node => node.id));
+        for (let index = 0; index < canvas.length; index++) {
+          for (const dimension of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(other[index][dimension] - canvas[index][dimension]), entry.name + ':' + width + ':' + index + ':' + dimension).toBeLessThanOrEqual(1);
+          for (const property of ['tag', 'text', 'display'] as const) expect(other[index][property]).toEqual(canvas[index][property]);
+        }
+      }
+      if (entry.name === 'full comparison table') {
+        await page.screenshot({ path: info.outputPath('ip7-semantic-table-' + width + '.png'), fullPage: true });
+        await output.screenshot({ path: info.outputPath('ip7-semantic-table-php-' + width + '.png'), fullPage: true });
+      }
+      await output.close();
+    }
+  }
+  expect([...seen].sort()).toEqual(['ul', 'ol', 'li', 'dl', 'dt', 'dd', 'blockquote', 'figure', 'figcaption', 'table', 'caption', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'text', 'div'].sort());
+  expect(errors).toEqual([]);
+  await info.attach('ip7-semantic-parity', { contentType: 'application/json', body: JSON.stringify(proofs) });
+});
 for (const key of basicCompositionKeys) test('v3 composition internal edit save reopen and PHP parity ' + key, async ({ page, context }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await open(page);

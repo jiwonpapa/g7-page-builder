@@ -50,6 +50,7 @@ NATIVE = BrowserScenario("tests/E2E/nativeEditorContract.spec.ts")
 # New v3 modules use the independent editor and injected draft-port contract.
 # The v1/v2 installed-entry scenarios retain their existing mappings below.
 V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
+    "v3 semantic lists tables and figures preserve editing grammar and PHP parity",
     "v3 independent layers preserve recursive commands in one Puck Undo and canonical save/reopen",
     "v3 canvas selection and native Puck drag use stable IDs and one reversible command",
     "v3 hidden locked clipboard and readonly states preserve source and assets",

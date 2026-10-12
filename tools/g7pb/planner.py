@@ -10,6 +10,7 @@ import shlex
 from pathlib import Path
 import subprocess
 from .model import Gate, Plan
+from .independent_probe import FILES as INDEPENDENT_PROBE_FILES, gates as independent_probe_gates
 from .inputs import source_inputs
 from .typecheck_inputs import typecheck_inputs
 from .type_import_changes import browser_sources
@@ -469,7 +470,9 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
     changed_asset_build_controllers = []
     for path in plan.paths:
         file = root / path
-        if path.endswith(".py"):
+        if path in INDEPENDENT_PROBE_FILES:
+            continue
+        elif path.endswith(".py"):
             if file.exists():
                 add("syntax:" + path, ["python3", "-B", "-c", "import ast,pathlib,sys; ast.parse(pathlib.Path(sys.argv[1]).read_text())", path], [path], "Changed Python syntax")
             affected = [t for t in py_tests if path == t or path in python_inputs(root, t)]
@@ -779,6 +782,10 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                     artifact_names.add(name)
         except (ImportError, ValueError, OSError) as error:
             plan.unresolved.append(f"Content selection required: {error}")
+    probe_gates, probe_errors = independent_probe_gates(root, plan.paths, phase)
+    plan.unresolved.extend(probe_errors)
+    for gate in probe_gates:
+        gates[gate.name] = gate
     if full:
         add("full-product", ["make", "quality-gate"], plan.paths, "Explicit full runtime/RC scope", ("node", "php", "g7", "browser"), True)
     browser_gates = [replace(gate, inputs=tuple(sorted(set(gate.inputs) | set(SITE_PART_HELPERS) | set(python_inputs(root, "tools/g7pb/runner.py")))))

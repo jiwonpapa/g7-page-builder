@@ -376,21 +376,21 @@
       "id": "IP1",
       "phase": "foundation",
       "title": "편집 엔진과 정밀 조작 결합 검증",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [],
       "acceptance_ids": [
         "IND-01"
       ],
-      "owner_task": null,
+      "owner_task": "ip1-engine-proof-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/js/editor/PuckEditorAdapter.tsx",
-        "resources/js/adapters/puck",
-        "resources/js/adapters/interaction",
-        "tests/E2E"
+        "tests/IndependentEditor",
+        "tools/g7pb/independent_probe.py",
+        "tools/g7pb/planner.py",
+        "tests/Harness/test_independent_probe.py"
       ],
       "completion": "G7 없는 기술 fixture에서 Puck·Moveable·Selecto·Tiptap의 선택/입력/iframe/줌/취소/단일 Undo를 검증한다. 정확 패키지 버전·라이선스·번들·성능 예산을 기록하고 채택 또는 구조적 차단을 판정한다. 데모 성공을 제품 전체 완료로 보고하지 않는다."
     },

@@ -1,0 +1,30 @@
+/* IP1 fixture tokens only. Not shipped product CSS. Puck copies these into its iframe. */
+:root {
+  --proof-canvas: #fff;
+  --proof-surface: #f3f4f6;
+  --proof-text: #18212c;
+  --proof-muted: #66717e;
+  --proof-line: #cbd1d8;
+  --proof-accent: #315dce;
+}
+body { margin: 0; color: var(--proof-text); background: var(--proof-canvas); font: 14px system-ui, sans-serif; }
+* { box-sizing: border-box; }
+button, select, input { font: inherit; }
+button, select { padding: 7px 9px; border: 1px solid var(--proof-line); border-radius: 4px; background: var(--proof-canvas); color: var(--proof-text); }
+button[aria-pressed="true"] { color: var(--proof-accent); border-color: var(--proof-accent); }
+.probe-workspace > header { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; min-height: 80px; padding: 12px 18px; border-bottom: 1px solid var(--proof-line); }
+small { display: block; color: var(--proof-muted); margin-top: 5px; }
+nav { display: flex; gap: 4px; }
+.probe-body { display: grid; grid-template-columns: 180px minmax(0, 1fr) 240px; height: calc(100vh - 100px); }
+aside { padding: 14px; overflow: auto; border-right: 1px solid var(--proof-line); }
+aside h2 { font-size: 13px; font-weight: 600; }
+aside p { color: var(--proof-muted); line-height: 1.6; }
+pre { font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.probe-scroll { overflow: auto; background: var(--proof-surface); padding: 24px; }
+.probe-scaled { transform-origin: top left; flex-shrink: 0; }
+.probe-scaled iframe { border: 1px solid var(--proof-line); }
+.probe-canvas { min-height: 2200px; padding: 60px; background: var(--proof-canvas); }
+[data-probe-node] { border: 1px solid var(--proof-line); background: var(--proof-surface); margin: 0 0 20px; padding: 16px; overflow: hidden; }
+.probe-text p { margin: 0; }
+.probe-selection { position: fixed; right: 16px; top: 16px; pointer-events: none; color: var(--proof-accent); }
+.probe-dialog { position: fixed; z-index: 9999; right: 30px; top: 100px; padding: 24px; background: var(--proof-canvas); border: 1px solid var(--proof-line); }

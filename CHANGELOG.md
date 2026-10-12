@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- IP1 독립 엔진 결합 시험 fixture: G7 없는 Puck/Tiptap·Moveable·Selecto의 iframe, 줌, 입력 소유권, 단일 이력 검증과 격리된 의존성/검사 계획. 제품 편집 기능이나 v3 문서 전환을 추가한 것은 아닙니다.
+
 ### Changed
 
 - 개발 목표를 G7 네이티브 확장 중심에서 독립 Page Builder의 피그마식 웹 정밀 편집으로 확정했습니다. 요소별 구조·크기·스타일·다중 선택·반응형·PB Header/Footer 스펙과 Puck/Tiptap 재사용, Moveable/Selecto 결합 검증 조건을 정책·구조·개발 계획에 반영했습니다. 기능 구현·새 패키지 설치·문서 자동 변환·배포를 뜻하지 않습니다.

@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 기존 썸네일 146개를 7개 분할 task로 통합했고 전체 148개 현재 렌더 source 검사를 통과했다. IP2 FULL 재검증은 후속 편집기 번들 용량 초과에서 차단됐다. IP2 제외 기준에서도 동일하게 재현했으며 별도 번들 최적화 승인이 필요하다. IP2 완료나 IP3 착수를 선언하지 않는다.
+상태: 승인된 썸네일 보완과 별도 번들 최적화를 통합했다. Linux 편집기 gzip 508,253/508,500 bytes와 기존 편집 브라우저 2개를 통과했으며 IP2 FULL 통합 검증을 재개한다. IP2 완료나 IP3 착수를 선언하지 않는다.
 
 ## 소유 범위
 
@@ -139,7 +139,7 @@ npx --no-install vitest run tests/Unit/layoutTree.test.ts tests/Unit/heroComposi
 
 IP2 재통합 기준은 85c353a01a5d424f31716d8a156dc0a5e05dfbef다. 공유 문서 계약에 필요한 FULL=1은 유지했으며 아래 결과를 확인했다.
 
-## 현재 차단: 기존 편집기 번들 용량
+## 이전 차단: 기존 편집기 번들 용량
 
 IP2 재제출 184c4231c800d196e58662aab27c797d26b1d493을 위 기준에 임시 통합했다. 원본 로그는 Local output/playwright/ip2-full-after-thumbnails-20261012.log에 보존한다.
 
@@ -155,3 +155,13 @@ IP2 재제출 184c4231c800d196e58662aab27c797d26b1d493을 위 기준에 임시 �
 새 번들 최적화는 자산 재생성 승인과 별도 범위이므로 착수하지 않았다. 용량 기준·제품 기능·의존성 버전을 유지한 별도 작업 승인을 요청했다. 정확 수정 경로와 관련 회귀검사를 착수 시 확정하고, 성공한 검사 입력의 불필요한 반복이나 FULL 게이트 우회는 하지 않는다.
 
 IP2 submitted 원본은 worktree에 보존한다. 미통합 제출이 남아 있으므로 integration lease를 강제 해제하거나 완료로 바꾸지 않는다. 전체 필수 검증과 통합 후에만 IP2를 done으로 바꾸고 IP3로 진행한다. 정밀 편집 UI·저장/발행·브라우저 시각 회귀·배포 성공을 주장하지 않는다.
+
+## 승인된 번들 최적화와 재개
+
+- 사용자가 별도 번들 최적화를 승인했다. `ip2-bundle-optimization-20261012`는 빌드 설정·동등성 회귀·감사 기록 3개 파일만 claim했다. 제출 `ef7c5ce3abc9950aeec1436a187a3bd9caa46e72`, 통합 `0ad15fdfe1ddd4b40ac9822d83fb58180f348894`.
+- 같은 JS bytes의 gzip 차이를 확인했다. Node 24.19.0에서 macOS zlib 1.2.12는 508,054 bytes, Linux zlib 1.3.2.1-motley-3246f1b는 510,030 bytes였다. Linux 검사 환경·압축 옵션·508,500 bytes 기준은 유지했다.
+- 내장 카탈로그의 반복 문자열과 같은 키 순서의 객체 생성 코드만 빌드 시 공유한다. 모든 JSON 필드/값/순서·개별 객체 참조·검색 문구·프리셋·썸네일을 보존한다. 기능·의존성 버전·manifest 원본은 변경하지 않았다.
+- 실제 Vite 파이프라인을 포함한 동등성 5개, 기존 Puck 이력 4개, 타입, production 8번들, asset/Store 6개 검사 통과. Linux 전체 frontend budget 검사 통과: 편집기 raw 1,729,505 bytes, gzip 508,253 bytes로 1,777 bytes 감소, 한도 여유 247 bytes다. 후속 기능의 추가 용량까지 확보됐다는 뜻은 아니다.
+- 실제 desktop `editorInspectorUx.spec.ts` 2개 통과(16.7초). Inspector 변경·키보드·빠른 Undo/Redo·저장·재열기를 확인했다. page/block Inspector 스크린샷을 직접 확인했으며 신규 정밀 편집 UI의 완료 증거로 사용하지 않는다.
+- 브라우저 증거: Local `output/playwright/gates/integration-ip2-resume-20261012/defd9246db079eb3dbb877a769e188a249dcbafc751aa8cd8b9521a397cf660f/0ec869e6a82c452fb8729eba27ba7654/`.
+- 위 통합 SHA를 기준으로 IP2 공유 계약의 `FULL=1` 통합을 재개한다. 성공 전까지 상태는 진행 중이며 운영 배포는 하지 않는다.

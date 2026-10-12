@@ -64,17 +64,22 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
     def add(kind: str, ids: Sequence[str]):
         selected.setdefault(kind, set()).update(ids)
 
-    def thumbnail_owners(relative: str):
-        owners = []
-        for item in pack["blocks"]:
-            if item.get("thumbnail") == relative:
-                owners.append(("block", f"block:{item['block_id']}@{item['block_version']}"))
-        for item in pack["presets"]:
-            if item.get("thumbnail") == relative:
-                owners.append(("preset", f"preset:{pack['pack_id']}:{item['preset_id']}"))
+    def thumbnail_owners(relative: str, previous=None):
+        owners = set()
+        # Replaced manifest assets retain their baseline owners. A removed or
+        # unknown catalog identity still requires a separately declared scope.
+        for source in [pack, *([previous] if previous is not None else [])]:
+            for item in source["blocks"]:
+                if item.get("thumbnail") == relative:
+                    owners.add(("block", f"block:{item['block_id']}@{item['block_version']}"))
+            for item in source["presets"]:
+                if item.get("thumbnail") == relative:
+                    owners.add(("preset", f"preset:{source['pack_id']}:{item['preset_id']}"))
         if not owners:
             raise ValueError(f"Unowned generated thumbnail: {relative}")
         for kind, identity in owners:
+            if identity not in inventories[kind]:
+                raise ValueError(f"Removed thumbnail owner requires explicit inventory scope: {identity}")
             add(kind, [identity])
 
     def old_json(path: str):
@@ -89,7 +94,7 @@ def select_changes(root: Path, base: str, paths: list[str]) -> list[dict]:
             old = old_json(path)
             for asset in set(old.get("files", {})) | set(pack.get("files", {})):
                 if old.get("files", {}).get(asset) != pack.get("files", {}).get(asset):
-                    thumbnail_owners(asset)
+                    thumbnail_owners(asset, old)
             for kind, field, key in [("block", "blocks", "block_id"), ("preset", "presets", "preset_id")]:
                 before = {item[key]: item for item in old[field]}
                 for item in pack[field]:

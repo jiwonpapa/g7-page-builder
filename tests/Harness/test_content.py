@@ -89,6 +89,47 @@ class ContentSelectionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unowned generated thumbnail"):
             select_changes(self.root, "BASE", [str(Path(PACK).parent / "thumbnails/generated/unowned.png")])
 
+    def test_replaced_shared_thumbnail_selects_baseline_and_current_owners_only(self):
+        old_asset = "thumbnails/generated/shared.svg"
+        self.pack["blocks"][0]["thumbnail"] = old_asset
+        self.pack["presets"][0]["thumbnail"] = old_asset
+        self.pack["files"] = {old_asset: "old"}
+        old = json.loads(json.dumps(self.pack))
+        block_asset, preset_asset = "thumbnails/generated/block.png", "thumbnails/generated/preset.png"
+        self.pack["blocks"][0]["thumbnail"] = block_asset
+        self.pack["presets"][0]["thumbnail"] = preset_asset
+        self.pack["files"] = {block_asset: "new", preset_asset: "new"}
+        self.write(PACK, self.pack)
+        expected = [{"kind": "block", "ids": ["block:content.hero@1"]},
+                    {"kind": "preset", "ids": ["preset:test/core:hero.one"]}]
+        with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(old), "")):
+            self.assertEqual(select_changes(self.root, "BASE", [PACK]), expected)
+        # A baseline owner cannot disappear silently when its asset is removed.
+        self.pack["blocks"].pop(0)
+        self.write(PACK, self.pack)
+        with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(old), "")):
+            with self.assertRaisesRegex(ValueError, "Removed thumbnail owner"):
+                select_changes(self.root, "BASE", [PACK])
+
+    def test_removed_manifest_asset_without_a_baseline_owner_still_fails(self):
+        old = {**self.pack, "files": {"thumbnails/generated/unowned.png": "old"}}
+        with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(old), "")):
+            with self.assertRaisesRegex(ValueError, "Unowned generated thumbnail"):
+                select_changes(self.root, "BASE", [PACK])
+
+    def test_changed_shared_asset_selects_both_old_and_new_catalog_owners(self):
+        asset = "thumbnails/generated/shared.png"
+        self.pack["blocks"][0]["thumbnail"] = asset
+        self.pack["files"] = {asset: "old"}
+        old = json.loads(json.dumps(self.pack))
+        self.pack["blocks"][0].pop("thumbnail")
+        self.pack["blocks"][1]["thumbnail"] = asset
+        self.pack["files"][asset] = "new"
+        self.write(PACK, self.pack)
+        with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(old), "")):
+            self.assertEqual(select_changes(self.root, "BASE", [PACK]),
+                             [{"kind": "block", "ids": ["block:content.cta@1", "block:content.hero@1"]}])
+
     def test_thumbnail_index_selects_changed_id_without_promoting_to_the_catalog(self):
         path = str(Path(PACK).parent / "thumbnails/generated/index.json")
         old = {"count": 2, "sources": {"block:content.hero@1": "same", "preset:test/core:cta.one": "old"}}

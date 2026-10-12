@@ -38,6 +38,20 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('neutralizes vendor slot dimensions without overwriting authored width and height', async () => {
+    const doc = source();
+    doc.blocks[0].style = { width: { value: 420, unit: 'px' }, height: { value: 320, unit: 'px' } };
+    doc.blocks[0].slots.content!.push(createPrimitive('layout.container', id(8), doc));
+    const host = hostElement(), root = createRoot(host); cleanup.push(() => root.unmount());
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="slot-size" serverRevision={1}
+      drafts={{ save: async request => ({ documentId: request.documentId, revision: 2 }) }}
+      nextId={() => id(100)} iframeEnabled={false} />));
+    await flush();
+    const authored = host.querySelector<HTMLElement>('[data-v3-node="' + doc.blocks[0].instance_id + '"]')!;
+    const automatic = host.querySelector<HTMLElement>('[data-v3-node="' + id(8) + '"]')!;
+    expect(authored.style.width).toBe('420px'); expect(authored.style.height).toBe('320px');
+    expect(automatic.style.width).toBe('auto'); expect(automatic.style.height).toBe('auto');
+  });
   it('inserts a complete editable composition through one canonical command', async () => {
     const doc = source(); doc.blocks = [];
     const host = hostElement(), root = createRoot(host), changed = vi.fn(); let sequence = 100;

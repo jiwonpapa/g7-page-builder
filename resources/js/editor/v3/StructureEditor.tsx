@@ -58,7 +58,10 @@ function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.Re
   if (context.styles.get(id)?.display === 'none') return null;
   if (node.type === 'layout.section' || node.type === 'layout.container') {
     return <SlotContext.Provider value={node}><Content as={SlotElement} ref={dragRef} minEmptyHeight={0}
-      style={reactStyle(context.styles.get(id) ?? {})} /></SlotContext.Provider>;
+      // Puck's slot stylesheet supplies width/height:100%. An unspecified
+      // authored dimension is CSS auto, including centered flex/grid children.
+      // Explicit canonical dimensions still take precedence over this reset.
+      style={{ width: 'auto', height: 'auto', ...reactStyle(context.styles.get(id) ?? {}) }} /></SlotContext.Provider>;
   }
   return <NodeRenderer node={node} document={context.document} styles={context.styles} dragRef={dragRef}
     body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link') ? body : undefined} editing />;

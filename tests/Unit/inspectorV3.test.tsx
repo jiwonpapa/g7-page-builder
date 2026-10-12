@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../Contract/document-v3.fixture.json';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument } from '../../resources/js/documents/v3/tree';
+import { createPrimitive } from '../../resources/js/documents/v3/primitives';
 import { executeDocumentCommand } from '../../resources/js/documents/v3/designCommands';
 import { Inspector } from '../../resources/js/editor/v3/Inspector';
 import { MultiInspector } from '../../resources/js/editor/v3/MultiInspector';
@@ -23,6 +24,25 @@ async function click(host: HTMLElement, label: string) {
   if (!button) throw new Error(label); await act(async () => button.click());
 }
 describe('precision Inspector', () => {
+  it('edits link semantics through the link property without changing layout or other nodes', async () => {
+    const doc = cloneDocument(validateDocumentV3(fixture));
+    const node = createPrimitive('action.link', '00000000-0000-4000-8000-000000009901', doc);
+    if (node.type !== 'action.link') throw new Error('link fixture');
+    node.props = { label: '상세 안내', link: { url: '/details', new_tab: false } };
+    doc.blocks[0].slots.content!.push(node);
+    const before = JSON.stringify(doc), apply = vi.fn();
+    const host = await mount(<Inspector node={node} document={doc} disabled={false} apply={apply} />);
+    expect(host.querySelector<HTMLInputElement>('[aria-label="링크 문구"]')!.value).toBe('상세 안내');
+    expect(host.querySelector<HTMLInputElement>('[aria-label="링크 주소"]')!.value).toBe('/details');
+    await act(async () => host.querySelector<HTMLInputElement>('[aria-label="텍스트 의미"] input[type="checkbox"]')!.click());
+    await click(host, '의미 적용');
+    expect(apply).toHaveBeenCalledExactlyOnceWith({ kind: 'content', id: node.instance_id,
+      props: { label: '상세 안내', link: { url: '/details', new_tab: true } } });
+    expect(JSON.stringify(doc)).toBe(before);
+    const result = executeDocumentCommand(doc, apply.mock.calls[0][0], () => '').document;
+    expect(result.blocks[0].slots.content!.at(-1)?.props).toEqual({ label: '상세 안내', link: { url: '/details', new_tab: true } });
+    expect(result.blocks[0].slots.content!.slice(0, -1)).toEqual(doc.blocks[0].slots.content!.slice(0, -1));
+  });
   it('keeps the chosen multiple property after source changes and resets that property only', async () => {
     const doc = cloneDocument(validateDocumentV3(fixture)), ids = doc.blocks[0].slots.content!.slice(0, 2).map(node => node.instance_id);
     const host = document.createElement('div'), root = createRoot(host), apply = vi.fn();

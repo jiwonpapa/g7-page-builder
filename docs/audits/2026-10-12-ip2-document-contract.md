@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 PHP 서식·품질 fixture·Card 썸네일·범위 하네스·레이아웃 회귀 보완은 별도 통합 완료. 기존 커버리지 미달을 관련 검사에서 해소했으며 IP2 FULL 재검증을 진행한다. 전체 통합 전 IP3 착수는 보류한다.
+상태: 승인된 보완은 통합됐고 전체 단위 1,011개·커버리지·production build가 통과했다. 후속 현재 렌더 source 검사에서 기존 썸네일 146개 불일치가 확인돼 IP2 FULL 통합은 차단 상태다. 생성 자산 보완의 별도 승인이 필요하며 IP3는 착수하지 않는다.
 
 ## 소유 범위
 
@@ -89,7 +89,7 @@ npx --no-install vitest run tests/Unit/blockPackManifest.test.ts tests/Unit/bloc
 - 전체 PHP 서식 304파일, PHPStan 161파일, 단위 336개/3234 assertions 통과. coverage 409개/3866 assertions와 PHPUnit notice 1건, project 75.70%·compiler-family 89.63%·서비스 96.37%·repository 94.81%로 하한선을 통과했다.
 - 프런트엔드 버전·store·편집 계약·타입·CSS 검사 통과. Vitest 121파일/1,010개 전부 통과했다. 기존 실패 19건은 해소됐다.
 - 전체 프런트엔드 coverage 집계는 statements 84.57%, branches 78.99%, functions 81.02%, lines 87.85%다. 다만 resources/js/documents/layoutPolicy.ts의 functions 93.33%가 파일별 하한선 95%에 미달하여 quality-frontend가 실패했다. 미실행 지점은 66행의 component slot 미지정 허용 여부를 찾는 some callback이다.
-- layoutPolicy.ts, 기존 tests/Unit/layoutTree.test.ts, vite.config.ts는 IP2와 승인된 수정의 diff에 없다. Git 자동 원복 후 같은 Docker runtime에서 아래 관련 4파일/76개 시험은 통과했고 동일 함수 커버리지 93.33% 실패를 재현했다. 보고서는 Local output/coverage/ip2-layout-policy-baseline-20261012/에 보존한다.
+- layoutPolicy.ts, 기존 tests/Unit/layoutTree.test.ts, vite.config.ts는 당시 IP2와 승인된 수정의 diff에 없다. Git 자동 원복 후 같은 Docker runtime에서 아래 관련 4파일/76개 시험은 통과했고 동일 함수 커버리지 93.33% 실패를 재현했다. 당시 output/coverage/ip2-layout-policy-baseline-20261012/ 보고서는 후속 전체 coverage 실행으로 갱신됐으므로 현재 남은 증거로 인용하지 않는다. 위 원본 전체 실행 로그에는 같은 미달 수치와 실패가 보존돼 있다.
 
 ```sh
 npx --no-install vitest run tests/Unit/layoutTree.test.ts tests/Unit/heroComposition.test.ts tests/Unit/cardComposition.test.ts tests/Unit/basicElementContracts.test.ts --coverage --coverage.include=resources/js/documents/layoutPolicy.ts --coverage.reportsDirectory=output/coverage/ip2-layout-policy-baseline-20261012
@@ -99,4 +99,20 @@ npx --no-install vitest run tests/Unit/layoutTree.test.ts tests/Unit/heroComposi
 
 사용자가 tests/Unit/layoutTree.test.ts 한 파일의 회귀 추가를 승인했다. 별도 task ip2-layout-policy-coverage-20261012에서 Hero·ImageText·Card의 슬롯 미지정 허용, 명시 슬롯 제한, 미등록 슬롯/구조/상속 속성 거부를 검증했다. 관련 4파일/77개 시험이 통과했고 해당 파일의 함수·줄 coverage는 100%, statements 98.98%, branches 99.03%로 기존 하한선을 통과했다. 제품 소스와 coverage 기준은 변경하지 않았다. 제출 e3c19af3efe89b5506ffb0adaefc0a62805a8d53, Local 통합 95deae4720ec08d3a07d330366e225468448136d.
 
-이제 IP2 FULL 재검증을 진행한다. 관련 커버리지 성공은 전체 통합 성공이 아니다. IP2 submitted 원본은 worktree에 보존하며 미통합 제출이 남아 있는 동안 integration lease를 강제 해제하거나 완료로 바꾸지 않는다. 전체 필수 검증과 통합을 완료해야 IP2를 done으로 바꾸고 IP3로 진행한다. 실제 정밀 편집 UI·저장/발행·브라우저 시각 회귀·배포를 계약 단위 시험으로 주장하지 않는다.
+위 관련 커버리지 성공 뒤 다음 전체 검증을 수행했다. 이전 실패는 이력으로 유지하며 현재 차단과 구분한다.
+
+## 현재 결과: 기존 썸네일 source 불일치
+
+95deae4720ec08d3a07d330366e225468448136d 기준에서 IP2 재제출 b06b8de7590fc21bae83fa3604291e53e0933059를 FULL=1로 임시 통합했다. 원본 로그는 Local output/playwright/ip2-full-after-layout-coverage-20261012.log다.
+
+- 전체 하네스 463개, PHP 단위 336개/3234 assertions, coverage 409개/3866 assertions 및 기존 하한선 통과. PHPUnit notice 1건은 유지됐다.
+- 프런트엔드 121파일/1,011개 시험 모두 통과. 전체 coverage statements 84.58%, branches 79.00%, functions 81.06%, lines 87.86%. layoutPolicy.ts 함수·줄 100%로 파일별 기준을 포함해 통과했다.
+- G7 의존 예산과 442파일 구조 검사 통과. 기존 구조 부채 220건을 늘리지 않았다. production 8개 번들과 블록 카탈로그 candidate 기술 검사 통과.
+- 이후 check:content -- --kind block --all에서 Card 외 블록 48개의 stale-thumbnail을 검출했다. 소스 hash는 카탈로그 ID·props·공개 렌더 HTML·전체 공개 CSS hash를 포함한다. 과거 품질 원장의 저장 무결성은 유효하며 해당 승인 기록을 현재 렌더 증거로 바꾸지 않았다.
+- 통합은 자동 원복됐다. IP2 소스가 없는 Local 기준 95deae4720ec08d3a07d330366e225468448136d의 같은 Docker runtime에서 기존 collectCurrentEvidence로 148개 ID를 명시해 읽기 전용 수집했다. 블록 48개·프리셋 98개, 합계 146개의 같은 source 불일치를 확인했다. 이번에 생성한 Card 두 항목은 일치한다. 정확 ID 목록은 output/playwright/ip2-baseline-stale-thumbnails-20261012.json에 보존한다. PNG·manifest·index·품질 승인 원장은 변경하지 않았다.
+- IP2 변경에는 기존 썸네일 renderer·공개 CSS·컴파일러·블록 manifest/index가 없다. 이 기록은 저장된 hash와 현재 결과의 불일치를 확인한 것이며 과거 변경 원인을 한 파일로 단정하지 않는다.
+- journal은 output/playwright/gates/integration-ip2-resume-20261012/a693de8ea703a1df64ddacd3544fe69be9eab1cd1931117fa0e01180abe04a6b/0e30a35c6d7b421fbf96c28bae50a2e9/site-part-state.json이다. sessions=[]·closed=true이며 G7 후속 검사와 실제 제품 브라우저에는 도달하지 않았다.
+
+현재 필요한 별도 범위는 불일치한 146개 썸네일을 기존 생성기로 재생성·육안/기술 검증하고 결합 manifest/index를 반영하는 작업이다. 정확 파일 24개 이하의 분할 task/커밋으로 수행해야 한다. 품질 승인 원장·제품 기능·검사 기준을 변경하거나 현재 증거만으로 배포를 승인하지 않는다. 사용자 승인을 요청했으며 승인 전 생성 자산을 변경하지 않는다.
+
+IP2 submitted 원본은 worktree에 보존한다. 미통합 제출이 남아 있으므로 integration lease를 강제 해제하거나 완료로 바꾸지 않는다. 전체 필수 검증과 통합 후에만 IP2를 done으로 바꾸고 IP3로 진행한다. 정밀 편집 UI·저장/발행·브라우저 시각 회귀·배포 성공을 주장하지 않는다.

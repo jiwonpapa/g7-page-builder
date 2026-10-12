@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useRef, useState } from 'react';
+import React, { createContext, forwardRef, useContext, useMemo, useRef, useState } from 'react';
 import { Puck, type Overrides } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { validateDocumentV3 } from '../../documents/v3/validate';
@@ -11,6 +11,11 @@ import { documentToPuck } from './codec';
 import { BridgeObserver, createPuckBridge, FrameHistoryBoundary, useV3Puck, type PuckBridge, type V3Config } from './PuckBridge';
 import { LayerTree } from './LayerTree';
 import { NodeRenderer, StructurePreview } from './NodeRenderer';
+import { documentPresentation, DOCUMENT_SURFACE } from '../../documents/v3/presentation';
+import { nodeAnchor } from '../../documents/v3/tree';
+import { reactStyle } from './presentationReact';
+import { Inspector } from './Inspector';
+import { richTextField } from './richTextField';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -23,12 +28,23 @@ export interface StructureEditorProps {
   onChange?: (document: DocumentV3) => void;
   onSaved?: (revision: number) => void;
 }
-const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Location> } | null>(null);
-function CanvasNode({ id, children }: { id: string; children?: React.ReactNode }) {
+const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Location>; styles: Map<string, Record<string, string>> } | null>(null);
+const SlotContext = createContext<Node | null>(null);
+const SlotElement = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(function SlotElement(props, ref) {
+  const node = useContext(SlotContext);
+  if (!node || !('tag' in node.props)) return null;
+  return React.createElement(node.props.tag, { ...props, ref, id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id });
+});
+function CanvasNode({ id, body, Content }: { id: string; body: React.ReactNode; Content: React.ElementType }) {
   const context = useContext(CanvasContext);
   const node = context?.tree.get(id)?.node;
   if (!context || !node) return null;
-  return <NodeRenderer node={node} document={context.document} editing>{children}</NodeRenderer>;
+  if (node.type === 'layout.section' || node.type === 'layout.container') {
+    return <SlotContext.Provider value={node}><Content as={SlotElement} minEmptyHeight={0}
+      style={reactStyle(context.styles.get(id) ?? {})} /></SlotContext.Provider>;
+  }
+  return <NodeRenderer node={node} document={context.document} styles={context.styles}
+    body={node.type.startsWith('content.') || node.type === 'action.link' ? body : undefined} editing />;
 }
 const control: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' };
 function CommandButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
@@ -52,7 +68,7 @@ function EditorSession(props: StructureEditorProps) {
   const live = useRef(props); live.current = props;
   const [document, setDocument] = useState(() => validateDocumentV3(props.document));
   const [selected, setSelected] = useState<string[]>([]);
-  const [message, setMessage] = useState('구조 편집 · 정밀 스타일과 발행 연결은 후속 단계입니다.');
+  const [message, setMessage] = useState('구조 편집 · 공통 디자인과 본문을 직접 편집합니다.');
   const [clipboard, setClipboard] = useState<TreeClipboard | null>(null);
   const [target, setTarget] = useState('root');
   const [preview, setPreview] = useState(false);
@@ -67,19 +83,26 @@ function EditorSession(props: StructureEditorProps) {
   }), []);
   const initial = useMemo(() => documentToPuck(props.document), []);
   const tree = useMemo(() => indexTree(document), [document]);
+  const styles = useMemo(() => documentPresentation(document), [document]);
   const focus = selected.length === 1 ? tree.get(selected[0]) : undefined;
   const config = useMemo<V3Config>(() => ({
     components: { Node: {
-      label: '요소', fields: { content: { type: 'slot' }, node: { type: 'custom', render: () => <></> }, slotPresent: { type: 'custom', render: () => <></> } },
-      permissions: { duplicate: false, delete: false, edit: false, insert: false },
+      label: '요소', fields: { content: { type: 'slot' }, body: richTextField(props.document, false),
+        node: { type: 'custom', render: () => <></> }, slotPresent: { type: 'custom', render: () => <></> } },
+      resolveFields: (data, { fields }) => ({ ...fields, body: data.props.node.type === 'action.link'
+        ? { type: 'text', contentEditable: true, visible: false }
+        : data.props.node.type.startsWith('content.') ? richTextField(props.document, data.props.node.type === 'content.heading')
+          : { type: 'custom', render: () => <></> } }),
+      permissions: { duplicate: false, delete: false, insert: false },
       resolvePermissions: data => {
         const item = indexTree(bridge.read()).get(data.props.id);
-        return { drag: !live.current.readonly && Boolean(item) && !item?.node.locked && !item?.ancestors.some(node => node.locked) };
+        const editable = !live.current.readonly && Boolean(item) && !item?.node.locked && !item?.ancestors.some(node => node.locked);
+        return { drag: editable, edit: editable };
       },
-      render: ({ id, node, content: Content }) => <CanvasNode id={id}>{(node.type === 'layout.section' || node.type === 'layout.container')
-        && <Content style={{ minHeight: 28 }} />}</CanvasNode>,
+      render: ({ id, body, content: Content }) => <CanvasNode id={id} body={body} Content={Content} />,
     } },
-    root: { fields: { metadata: { type: 'custom', render: () => <></> } }, render: ({ children }) => <div style={{ minHeight: 600, padding: 24 }}>{children}</div> },
+    root: { fields: { metadata: { type: 'custom', render: () => <></> } }, render: ({ children }) => <div data-v3-surface style={reactStyle(DOCUMENT_SURFACE)}>
+      <style>{'[data-v3-rich] p{margin:0;min-height:1em}'}</style>{children}</div> },
   }), [bridge]);
   const overrides = useMemo<Partial<Overrides<V3Config>>>(() => ({
     iframe: ({ children, document: frameDocument }) => <>{children}{frameDocument && <FrameHistoryBoundary frameDocument={frameDocument} bridge={bridge} />}</>,
@@ -110,17 +133,17 @@ function EditorSession(props: StructureEditorProps) {
       index: focus.index + (direction < 0 ? -1 : 2) } });
   };
   const inputBoundary = (event: React.KeyboardEvent<HTMLElement>) => {
-    const input = event.target instanceof HTMLElement && (event.target.matches('input,textarea,select') || event.target.isContentEditable);
+    const input = event.target instanceof HTMLElement && event.target.matches('input,textarea,select');
     if (input || event.nativeEvent.isComposing) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
       event.preventDefault(); event.stopPropagation(); bridge.history(event.shiftKey ? 'forward' : 'back');
     }
   };
   return <main className="g7pb-root" aria-label="독립 구조 편집기" onKeyDownCapture={inputBoundary}>
-    <CanvasContext.Provider value={{ document, tree }}>
+    <CanvasContext.Provider value={{ document, tree, styles }}>
       <Puck config={config} data={initial} onAction={bridge.onAction} onChange={bridge.onChange}
         overrides={overrides}
-        permissions={{ insert: false, duplicate: false, delete: false, edit: false, drag: !props.readonly }}
+        permissions={{ insert: false, duplicate: false, delete: false, edit: !props.readonly, drag: !props.readonly }}
         iframe={{ enabled: props.iframeEnabled !== false }}>
         <BridgeObserver bridge={bridge} />
         <header style={{ ...control, padding: 12, borderBottom: '1px solid var(--g7pb-border)', background: 'var(--g7pb-surface-strong)' }}>
@@ -129,7 +152,7 @@ function EditorSession(props: StructureEditorProps) {
           <CommandButton aria-pressed={preview} onClick={() => setPreview(!preview)}>구조 미리보기</CommandButton>
           <span role="status" aria-label="편집 상태" style={{ marginLeft: 'auto', color: 'var(--g7pb-muted)' }}>{props.readonly ? '읽기 전용' : message}</span>
         </header>
-        <div style={{ display: 'grid', gridTemplateColumns: '240px minmax(320px, 1fr) 280px', flex: 1, minHeight: 0, overflow: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '220px minmax(320px, 1fr) 320px', flex: 1, minHeight: 0, overflow: 'auto' }}>
           <aside aria-label="레이어" style={{ padding: 16, overflow: 'auto', background: 'var(--g7pb-surface-strong)' }}>
             <h2 style={{ fontSize: 15 }}>레이어</h2>
             <LayerTree nodes={document.blocks} selected={selected} select={(id, extend) => bridge.select(id, extend)} />
@@ -170,6 +193,8 @@ function EditorSession(props: StructureEditorProps) {
               <CommandButton disabled={!selected.length || props.readonly} onClick={() => command({ kind: 'lock', ids: selected, locked: !focus?.node.locked })}>{focus?.node.locked ? '잠금 해제' : '잠금'}</CommandButton>
               <CommandButton disabled={!selected.length || props.readonly} onClick={() => command({ kind: 'hide', ids: selected, hidden: !focus?.node.style.hidden })}>{focus?.node.style.hidden ? '표시' : '숨김'}</CommandButton>
             </div>
+            {focus && <Inspector key={focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
+              disabled={Boolean(props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
           </aside>
         </div>
       </Puck>

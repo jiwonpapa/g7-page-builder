@@ -1,11 +1,13 @@
-import type { Content, Data, PuckAction, Slot } from '@puckeditor/core';
+import type { Content, Data, PuckAction, Slot, RichText } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { validateDocumentV3, designPolicyV3 } from '../../documents/v3/validate';
 import { jsonBytes, record, reject } from '../../documents/v3/schema';
 import { cloneDocument, indexTree, location } from '../../documents/v3/tree';
 import { executeTreeCommand, type TreeCommand } from '../../documents/v3/commands';
+import { executeDocumentCommand } from '../../documents/v3/designCommands';
+import { propsFromHtml, textToHtml } from './richTextCodec';
 
-export interface NodeProps { node: Omit<Node, 'slots' | 'instance_id'>; content: Slot; slotPresent: boolean }
+export interface NodeProps { node: Omit<Node, 'slots' | 'instance_id'>; content: Slot; slotPresent: boolean; body: RichText }
 export type V3Components = { Node: NodeProps };
 export type V3Root = { metadata: Omit<DocumentV3, 'blocks'>; title?: string };
 export type V3Data = Data<V3Components, V3Root>;
@@ -15,7 +17,8 @@ export function documentToPuck(source: DocumentV3): V3Data {
   const { blocks, ...metadata } = document;
   function encode(nodes: Node[]): Content<V3Components> {
     return nodes.map(({ instance_id, slots, ...node }) => ({ type: 'Node', props: {
-      id: instance_id, node, slotPresent: Object.hasOwn(slots, 'content'), content: encode(slots.content ?? []),
+      id: instance_id, node, body: textToHtml({ ...node, instance_id, slots } as Node, document),
+      slotPresent: Object.hasOwn(slots, 'content'), content: encode(slots.content ?? []),
     } }));
   }
   return { root: { props: { metadata } }, content: encode(blocks) };
@@ -37,6 +40,7 @@ export function documentFromPuck(value: unknown): DocumentV3 {
   keys(props, ['metadata', 'id']);
   const metadata = object(props.metadata);
   if (Object.hasOwn(metadata, 'blocks')) reject('puck_duplicate_source', '$');
+  const bodies = new Map<string, string>();
   function decode(value: unknown, depth: number): unknown[] {
     if (!Array.isArray(value) || depth > designPolicyV3.limits.depth && value.length) reject('puck_content', '$');
     return value.map(item => {
@@ -44,7 +48,9 @@ export function documentFromPuck(value: unknown): DocumentV3 {
       keys(entry, ['type', 'props', 'readOnly']);
       if (entry.type !== 'Node') reject('puck_type', '$');
       const properties = object(entry.props);
-      keys(properties, ['id', 'node', 'content', 'slotPresent']);
+      keys(properties, ['id', 'node', 'content', 'slotPresent', 'body']);
+      if (typeof properties.id !== 'string' || typeof properties.body !== 'string') reject('puck_body', '$');
+      bodies.set(properties.id, properties.body);
       const node = object(properties.node);
       if (Object.hasOwn(node, 'slots') || Object.hasOwn(node, 'instance_id')) reject('puck_duplicate_source', '$');
       if (typeof properties.slotPresent !== 'boolean') reject('puck_slot', '$');
@@ -53,7 +59,12 @@ export function documentFromPuck(value: unknown): DocumentV3 {
         slots: properties.slotPresent || children.length ? { content: children } : {} };
     });
   }
-  return cloneDocument(validateDocumentV3({ ...metadata, blocks: decode(data.content, 1) }));
+  const document = cloneDocument(validateDocumentV3({ ...metadata, blocks: decode(data.content, 1) }));
+  for (const { node } of indexTree(document).values()) {
+    const body = bodies.get(node.instance_id)!;
+    if (body !== textToHtml(node, document)) Object.assign(node, { props: propsFromHtml(node, body) });
+  }
+  return validateDocumentV3(document);
 }
 function parentOfZone(zone: string): string | null {
   if (zone === 'root:default-zone') return null;
@@ -73,6 +84,16 @@ export function puckMoveCommand(document: DocumentV3, action: PuckAction): TreeC
 export function assessPuckMove(before: DocumentV3, candidate: unknown, action: PuckAction): DocumentV3 {
   const result = executeTreeCommand(before, puckMoveCommand(before, action), () => reject('unexpected_id', '$'));
   const decoded = documentFromPuck(candidate);
+  if (!sameDocument(decoded, result.document)) reject('puck_unexpected_change', '$');
+  return result.document;
+}
+/** Inline field replacement may change only supported content, never design or structure. */
+export function assessPuckEdit(before: DocumentV3, candidate: unknown, action: PuckAction): DocumentV3 {
+  if (action.type !== 'replace') return assessPuckMove(before, candidate, action);
+  const decoded = documentFromPuck(candidate);
+  const id = action.data.props.id;
+  const node = location(indexTree(decoded), id).node;
+  const result = executeDocumentCommand(before, { kind: 'content', id, props: node.props }, () => reject('unexpected_id', '$'));
   if (!sameDocument(decoded, result.document)) reject('puck_unexpected_change', '$');
   return result.document;
 }

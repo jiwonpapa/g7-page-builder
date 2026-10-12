@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { puckHistoryCorrection } from '../../vite.puck-history.js';
 import type { DocumentV3 } from '../../resources/js/documents/v3/types';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
@@ -83,6 +84,26 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
 const read = (page: Page) => page.evaluate(() => window.v3Proof.current);
 const click = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).click();
 const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
+async function enable(page: Page, label: string) {
+  const field = page.getByLabel(label + ' 지정', { exact: true });
+  const details = field.locator('xpath=ancestor::details');
+  if (await details.getAttribute('open') === null) await details.locator('summary').click();
+  await field.check();
+}
+async function length(page: Page, label: string, value: number, unit = 'px') {
+  await enable(page, label);
+  await page.getByLabel(label + ' 형식', { exact: true }).selectOption({ label: unit });
+  await page.getByLabel(label + ' 값', { exact: true }).fill(String(value));
+}
+function phpDraft(source: DocumentV3) {
+  return execFileSync('php', ['-r', [
+    'require "vendor/autoload.php";',
+    '$schema=json_decode(file_get_contents("schemas/page-builder-document-v3.schema.json"),true,flags:JSON_THROW_ON_ERROR);',
+    '$policy=json_decode(file_get_contents("schemas/design-policy-v3.json"),true,flags:JSON_THROW_ON_ERROR);',
+    '$validator=new Modules\\Jiwonpapa\\PageBuilder\\Domain\\Documents\\V3\\Validator($schema,$policy);',
+    'echo (new Modules\\Jiwonpapa\\PageBuilder\\Application\\Compilation\\V3\\DraftRenderer($validator))->render(stream_get_contents(STDIN));',
+  ].join('')], { cwd: fileURLToPath(new URL('../..', import.meta.url)), input: JSON.stringify(source), encoding: 'utf8' });
+}
 async function insert(page: Page, label: string) {
   await click(page, label + ' 삽입');
   await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장할 변경 있음');
@@ -250,4 +271,159 @@ test('v3 hidden locked clipboard and readonly states preserve source and assets'
   await expect(page.getByRole('button', { name: '저장', exact: true })).toBeDisabled();
   expect(await read(page)).toEqual(pasted);
   expect(errors).toEqual([]);
+});
+
+test('v3 precision Inspector and typed auto layout preserve one Undo and canonical save/reopen', async ({ page }, info) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await open(page); await insert(page, '섹션');
+  const section = (await read(page)).blocks[0].instance_id;
+  await page.getByLabel('삽입 위치', { exact: true }).selectOption(section);
+  await insert(page, '제목'); await insert(page, '본문');
+  await layer(page, section).click();
+  const before = await read(page);
+  await enable(page, '배치');
+  await page.getByLabel('배치 형식', { exact: true }).selectOption({ label: 'flex' });
+  await enable(page, '방향');
+  await page.getByLabel('방향 형식', { exact: true }).selectOption({ label: 'row' });
+  await length(page, '열 간격', 23);
+  await length(page, '안쪽 위', 17);
+  await click(page, '안쪽 위 값을 네 변에');
+  expect(await read(page)).toEqual(before);
+  await click(page, '디자인 적용');
+  await expect.poll(async () => (await read(page)).blocks[0].style.display).toBe('flex');
+  const styled = await read(page);
+  expect(styled.blocks[0].style.padding_left).toEqual({ value: 17, unit: 'px' });
+  const frame = page.frameLocator('iframe');
+  await expect(frame.locator('[data-v3-node="' + section + '"]')).toHaveCSS('column-gap', '23px');
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(styled);
+  // Omitted and zero remain distinct and reset is a reversible deletion.
+  await length(page, '열 간격', 0); await click(page, '디자인 적용');
+  await expect.poll(async () => (await read(page)).blocks[0].style.column_gap).toEqual({ value: 0, unit: 'px' });
+  await page.getByLabel('열 간격 초기화', { exact: true }).click(); await click(page, '디자인 적용');
+  await expect.poll(async () => Object.hasOwn((await read(page)).blocks[0].style, 'column_gap')).toBe(false);
+  await click(page, '실행 취소');
+  await expect.poll(async () => (await read(page)).blocks[0].style.column_gap?.value).toBe(0);
+  // Arbitrary Grid tracks, not finite column presets.
+  await page.getByLabel('배치 형식', { exact: true }).selectOption({ label: 'grid' });
+  await enable(page, '열 트랙');
+  await page.getByLabel('열 트랙 1 형식', { exact: true }).selectOption({ label: 'minmax' });
+  await page.getByLabel('열 트랙 1 최소 형식', { exact: true }).selectOption({ label: 'px' });
+  await page.getByLabel('열 트랙 1 최소 값', { exact: true }).fill('120');
+  await page.getByLabel('열 트랙 1 최대 형식', { exact: true }).selectOption({ label: 'fr' });
+  await page.getByLabel('열 트랙 1 최대 비율', { exact: true }).fill('1');
+  await click(page, '열 트랙 추가');
+  await page.getByLabel('열 트랙 2 형식', { exact: true }).selectOption({ label: 'fr' });
+  await page.getByLabel('열 트랙 2 비율', { exact: true }).fill('2');
+  await click(page, '디자인 적용');
+  await expect.poll(async () => (await read(page)).blocks[0].style.columns).toEqual([{ min: { value: 120, unit: 'px' }, max: { fr: 1 } }, { fr: 2 }]);
+  const final = await read(page); await click(page, '저장');
+  await expect.poll(() => page.evaluate(() => window.v3Proof.saved)).not.toBeNull();
+  const saved = await page.evaluate(() => window.v3Proof.saved!);
+  expect(JSON.parse(saved)).toEqual(final);
+  await open(page, JSON.parse(saved)); await layer(page, section).click();
+  await expect(page.getByLabel('배치 형식', { exact: true })).toHaveValue('2');
+  expect(await read(page)).toEqual(final);
+  expect(errors).toEqual([]);
+  await info.attach('typed-inspector-document', { contentType: 'application/json', body: saved });
+  await page.screenshot({ path: info.outputPath('v3-precision-inspector.png'), fullPage: true });
+});
+
+test('v3 canvas text and partial formats share Puck history and preserve readonly input', async ({ page }, info) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await open(page); await insert(page, '본문');
+  const id = (await read(page)).blocks[0].instance_id;
+  const frame = page.frameLocator('iframe'), node = frame.locator('[data-v3-node="' + id + '"]');
+  await node.dblclick();
+  const input = node.locator('[contenteditable="true"]');
+  await expect(input).toBeVisible();
+  await input.fill('한글 정밀 편집');
+  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('한글 정밀 편집');
+  const typed = await read(page);
+  await input.press('ControlOrMeta+a');
+  await page.getByRole('toolbar', { name: '부분 서식' }).getByRole('button', { name: '굵게', exact: true }).click();
+  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"bold":true');
+  const bold = await read(page);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(typed);
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(bold);
+  await input.click(); await input.press('End'); await input.press('Enter'); await input.pressSequentially('Second line');
+  await expect.poll(async () => {
+    const current = (await read(page)).blocks[0]; return current.type === 'content.text' ? current.props.paragraphs.length : 0;
+  }).toBe(2);
+  // Browser composition events exercise ownership; this does not claim OS IME automation.
+  await input.dispatchEvent('compositionstart', { data: '' });
+  await input.dispatchEvent('compositionupdate', { data: '가' });
+  await input.dispatchEvent('compositionend', { data: '가' });
+  await input.press('End');
+  await input.evaluate(element => {
+    const transfer = new DataTransfer(); transfer.setData('text/plain', ' 붙여넣기');
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
+  });
+  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('붙여넣기');
+  await click(page, '저장'); await expect.poll(() => page.evaluate(() => window.v3Proof.saved)).not.toBeNull();
+  const saved = await page.evaluate(() => window.v3Proof.saved!), final = JSON.parse(saved);
+  expect(saved).not.toContain('contentEditable'); expect(saved).not.toContain('<p>');
+  await open(page, final, true);
+  await layer(page, id).click();
+  await expect(page.frameLocator('iframe').locator('[contenteditable="true"]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '디자인 적용', exact: true })).toBeDisabled();
+  expect(await read(page)).toEqual(final); expect(errors).toEqual([]);
+  await info.attach('canonical-richtext', { contentType: 'application/json', body: saved });
+  await page.screenshot({ path: info.outputPath('v3-richtext-reopened.png'), fullPage: true });
+});
+
+test('v3 editor preview and PHP draft output agree within one CSS pixel', async ({ page, context }, info) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const source = structuredClone(fixture);
+  source.assets[0].url = '/image.svg';
+  const evidence: unknown[] = [];
+  for (const display of ['grid', 'flex'] as const) {
+    source.blocks[0].style.display = display;
+    if (display === 'flex') {
+      source.blocks[0].style.direction = 'column';
+      source.blocks[0].slots.content![0].style.width = 'fill';
+    }
+    await open(page, source);
+    const frame = page.frameLocator('iframe');
+    await expect(frame.locator('[data-v3-node]')).toHaveCount(5);
+    await frame.locator('img').evaluateAll(async items => Promise.all(items.map(item => (item as HTMLImageElement).decode())));
+    const measure = (element: Element) => {
+      const surface = element.getBoundingClientRect();
+      return [...element.querySelectorAll('[data-v3-node]')].map(node => {
+        const rect = node.getBoundingClientRect(), css = getComputedStyle(node);
+        return { id: node.getAttribute('data-v3-node'), x: rect.x - surface.x, y: rect.y - surface.y, width: rect.width, height: rect.height,
+          css: Object.fromEntries(['display', 'position', 'font-size', 'line-height', 'letter-spacing', 'font-weight', 'color', 'padding-top', 'padding-left',
+            'margin-top', 'border-top-width', 'border-top-color', 'border-top-left-radius', 'opacity', 'box-shadow', 'background-image',
+            'row-gap', 'column-gap', 'grid-template-columns', 'grid-template-rows'].map(key => [key, css.getPropertyValue(key)])) };
+      });
+    };
+    const surface = frame.locator('[data-v3-surface]');
+    const width = await surface.evaluate(element => element.getBoundingClientRect().width);
+    const canvas = await surface.evaluate(measure);
+    await click(page, '구조 미리보기');
+    const preview = await page.getByTestId('v3-preview').evaluate(measure);
+    const output = await context.newPage();
+    await output.route('**/*', route => route.request().url().endsWith('/image.svg')
+      ? route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><rect width="160" height="80" fill="#dbeafe"/></svg>' })
+      : route.abort());
+    await output.setViewportSize({ width: Math.ceil(width), height: 1000 });
+    const html = phpDraft(source);
+    await output.setContent('<!doctype html><html lang="ko"><head><base href="https://v3-editor.test/"></head><body style="margin:0">' + html + '</body></html>');
+    await output.locator('[data-v3-surface]').evaluate((element, width) => { if (element instanceof HTMLElement) element.style.width = width + 'px'; }, width);
+    await output.locator('img').evaluateAll(async items => Promise.all(items.map(item => (item as HTMLImageElement).decode())));
+    const php = await output.locator('[data-v3-surface]').evaluate(measure);
+    for (const [name, candidate] of [['preview', preview], ['PHP', php]] as const) {
+      expect(candidate.map(node => node.id)).toEqual(canvas.map(node => node.id));
+      for (let index = 0; index < canvas.length; index++) {
+        for (const key of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(canvas[index][key] - candidate[index][key]), display + ' ' + name + ' ' + canvas[index].id + ' ' + key).toBeLessThanOrEqual(1);
+        expect(candidate[index].css, display + ' ' + name + ' ' + canvas[index].id).toEqual(canvas[index].css);
+      }
+    }
+    evidence.push({ display, width, canvas, preview, php });
+    await page.screenshot({ path: info.outputPath('v3-' + display + '-preview.png'), fullPage: true });
+    await output.screenshot({ path: info.outputPath('v3-' + display + '-php.png'), fullPage: true });
+    await output.close();
+  }
+  expect(errors).toEqual([]);
+  await info.attach('editor-preview-php-parity', { contentType: 'application/json', body: JSON.stringify(evidence) });
 });

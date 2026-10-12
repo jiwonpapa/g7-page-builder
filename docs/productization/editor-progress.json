@@ -514,7 +514,7 @@
       "acceptance_ids": [
         "IND-04"
       ],
-      "owner_task": "ip4-design-commands-20261012",
+      "owner_task": "ip4-inspector-ui-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

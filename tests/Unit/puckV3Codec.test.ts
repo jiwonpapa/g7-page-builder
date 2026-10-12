@@ -3,7 +3,7 @@ import fixture from '../Contract/document-v3.fixture.json';
 import { cloneDocument, indexTree } from '../../resources/js/documents/v3/tree';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { executeTreeCommand } from '../../resources/js/documents/v3/commands';
-import { documentToPuck, documentFromPuck, puckMoveCommand, assessPuckMove, sameDocument } from '../../resources/js/editor/v3/codec';
+import { documentToPuck, documentFromPuck, puckMoveCommand, assessPuckMove, assessPuckEdit, sameDocument } from '../../resources/js/editor/v3/codec';
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 function source() { return cloneDocument(validateDocumentV3(fixture)); }
@@ -55,6 +55,20 @@ describe('v3 Puck codec isolates the vendor representation', () => {
 });
 
 describe('v3 Puck structure actions use canonical commands', () => {
+  it('accepts inline replace only as a canonical content command and rejects design or locked edits', () => {
+    const doc = source(), data = documentToPuck(doc);
+    const heading = data.content[0].props.content[0];
+    heading.props.body = '<p>새 입력</p>';
+    const action = { type: 'replace', destinationIndex: 0, destinationZone: id(1) + ':content', data: heading } as const;
+    const result = assessPuckEdit(doc, data, action);
+    expect(result.blocks[0].slots.content![0].props).toEqual({ level: 1, runs: [{ text: '새 입력' }] });
+    expect(result).not.toHaveProperty('body');
+    heading.props.node.style.opacity = 0.5;
+    expect(() => assessPuckEdit(doc, data, action)).toThrow('puck_unexpected_change');
+    delete heading.props.node.style.opacity;
+    doc.blocks[0].locked = true;
+    expect(() => assessPuckEdit(doc, data, action)).toThrow('locked');
+  });
   it('translates final reorder positions to pre-removal domain positions and accepts only that change', () => {
     const doc = source();
     const action = { type: 'reorder', sourceIndex: 0, destinationIndex: 3, destinationZone: id(1) + ':content' } as const;

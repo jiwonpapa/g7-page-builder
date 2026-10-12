@@ -4,8 +4,8 @@ import type { DocumentV3 } from '../../documents/v3/types';
 import { indexTree, cloneDocument } from '../../documents/v3/tree';
 import { reject } from '../../documents/v3/schema';
 import { createStructureSession, type EditContext, type DraftPort } from '../../editor-application/v3/session';
-import type { TreeCommand } from '../../documents/v3/commands';
-import { assessPuckMove, documentFromPuck, documentToPuck, sameDocument, type V3Components, type V3Root } from './codec';
+import type { DocumentCommand } from '../../documents/v3/designCommands';
+import { assessPuckEdit, documentFromPuck, documentToPuck, sameDocument, type V3Components, type V3Root } from './codec';
 
 export type V3Config = Config<V3Components, V3Root>;
 type Api = UsePuckData<V3Config>;
@@ -63,7 +63,7 @@ export function createPuckBridge(initial: DocumentV3, options: {
     connect(current: Api) { api = current; disposed = false; },
     disconnect() { api = null; pending = null; disposed = true; },
     select(id: string, extend = false) { select(extend ? selection.includes(id) ? selection.filter(value => value !== id) : [...selection, id] : [id]); },
-    execute(command: TreeCommand) {
+    execute(command: DocumentCommand) {
       if (!api || recovery) reject('editor_not_ready', '$');
       return session.execute(command, context());
     },
@@ -83,7 +83,7 @@ export function createPuckBridge(initial: DocumentV3, options: {
         if (context().readonly) reject('readonly', '$');
         accepted = undoTarget && sameDocument(decoded, undoTarget) ? undoTarget
           : pending && sameDocument(decoded, pending) ? pending
-          : assessPuckMove(document, candidate.data, action);
+          : assessPuckEdit(document, candidate.data, action);
       } catch (error) { accepted = null; fail(error, previous); }
     },
     onChange(data: State['data']) {
@@ -118,13 +118,13 @@ export function createPuckBridge(initial: DocumentV3, options: {
   };
 }
 export type PuckBridge = ReturnType<typeof createPuckBridge>;
-/** Own only history shortcuts in this editor's iframe; text/IME keeps its keys. */
+/** Rich text shares Puck history. Inspector inputs and active IME retain their input keys. */
 export function FrameHistoryBoundary({ frameDocument, bridge }: { frameDocument: Document; bridge: PuckBridge }) {
   useEffect(() => {
     const route = (event: KeyboardEvent) => {
       const target = event.target;
       const input = target && 'closest' in target && typeof target.closest === 'function'
-        && target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
+        && target.closest('input,textarea,select');
       if (input || event.isComposing || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
       event.preventDefault(); event.stopImmediatePropagation();
       bridge.history(event.shiftKey ? 'forward' : 'back');

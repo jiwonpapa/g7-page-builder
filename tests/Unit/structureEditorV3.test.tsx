@@ -6,6 +6,7 @@ import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument, indexTree } from '../../resources/js/documents/v3/tree';
 import { createPrimitive } from '../../resources/js/documents/v3/primitives';
 import { NodeRenderer, StructurePreview } from '../../resources/js/editor/v3/NodeRenderer';
+import { documentPresentation } from '../../resources/js/documents/v3/presentation';
 import type { DraftPort } from '../../resources/js/editor-application/v3/session';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -40,7 +41,7 @@ describe('v3 structural UI and explicit mount', () => {
     const doc = source(), host = hostElement(), root = createRoot(host); cleanup.push(() => root.unmount());
     for (const editing of [false, true]) {
       await act(async () => root.render(<>{doc.blocks[0].slots.content!.map(node =>
-        <NodeRenderer key={node.instance_id} node={node} document={doc} editing={editing} />)}</>));
+        <NodeRenderer key={node.instance_id} node={node} document={doc} styles={documentPresentation(doc)} editing={editing} />)}</>));
       const links = [...host.querySelectorAll('a')];
       expect(links).toHaveLength(2);
       for (const link of links) for (const type of ['click', 'auxclick']) {

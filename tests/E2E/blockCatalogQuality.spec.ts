@@ -225,8 +225,9 @@ async function expectDeterministicVisualBlock(
 async function expectCatalogPresentationQuality(
   blocks: Locator,
   expectedBlockTypes: string[],
+  emptyCardId: string,
 ): Promise<void> {
-  const metrics = await blocks.evaluateAll((elements): CatalogPresentationMetric[] => elements.map((element) => {
+  const metrics = await blocks.evaluateAll((elements, expectedEmptyCardId): CatalogPresentationMetric[] => elements.map((element) => {
     const block = element as HTMLElement;
     const rect = block.getBoundingClientRect();
     const view = block.ownerDocument.defaultView;
@@ -261,13 +262,15 @@ async function expectCatalogPresentationQuality(
     return {
       blockType,
       brokenImages,
-      empty: blockType !== 'divider' && !hasMeaningfulContent,
+      // Only the separately verified card.empty fixture may have no content.
+      empty: blockType !== 'divider' && !hasMeaningfulContent
+        && !(blockType === 'card' && block.dataset.blockId === expectedEmptyCardId),
       height: rect.height,
       minReadableFontSize: readableFontSizes.length > 0 ? Math.min(...readableFontSizes) : null,
       overflow: Math.max(0, block.scrollWidth - block.clientWidth),
       width: rect.width,
     };
-  }));
+  }), emptyCardId);
 
   expect(metrics.map((metric) => metric.blockType)).toEqual(expectedBlockTypes);
   const violations = metrics.filter((metric) => (
@@ -279,6 +282,21 @@ async function expectCatalogPresentationQuality(
     || (metric.minReadableFontSize !== null && metric.minReadableFontSize < 10)
   ));
   expect(violations, `catalog presentation violations: ${JSON.stringify(violations)}`).toEqual([]);
+}
+
+async function expectEmptyCardShell(blocks: Locator, instanceId: string): Promise<void> {
+  const card = blocks.filter({ has: blocks.page().locator('article.g7pb-single-card') });
+  await expect(card).toHaveCount(1);
+  await expect(card).toHaveAttribute('data-block-id', instanceId);
+  await expect(card).toHaveAttribute('data-block-type', 'card');
+  const shell = card.locator(':scope > article.g7pb-single-card--outlined');
+  await expect(shell).toBeVisible();
+  await expect(card.locator(':scope > *')).toHaveCount(1);
+  const slots = shell.locator(':scope > [data-card-slot]');
+  await expect(shell.locator(':scope > *')).toHaveCount(3);
+  expect(await slots.evaluateAll(elements => elements.map(element => element.getAttribute('data-card-slot'))))
+    .toEqual(['media', 'body', 'actions']);
+  for (const slot of await slots.all()) await expect(slot).toBeEmpty();
 }
 
 function adminCredentials(): { email: string; password: string } {
@@ -296,6 +314,10 @@ function allCatalogBlocks(): Array<Record<string, unknown>> {
 
   return builtinManifest.blocks.map((definition, index) => {
     const preset = presetsByBlock.get(definition.block_id);
+    if (definition.block_id === 'content.card-01') {
+      expect(preset?.preset_id).toBe('card.empty');
+      expect(preset?.props).toEqual({ variant: 'outlined' });
+    }
     const compatibilityProps = definition.block_id === 'content.hero-split-01'
       ? {
           eyebrow: '기존 문서 호환',
@@ -397,6 +419,9 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
     const configured = await metadataResponse.json() as ResourceEnvelope;
     lockVersion = Number(configured.data?.lock_version);
 
+    const catalogBlocks = allCatalogBlocks();
+    const emptyCardId = catalogBlocks.find(block => block.type === 'content.card-01')?.instance_id;
+    if (typeof emptyCardId !== 'string') throw new Error('Catalog must cover the card.empty shell.');
     const pageDocument = {
       ...configured.data?.document,
       schema_version: 'g7-page-builder/v1',
@@ -409,7 +434,7 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
         'design.width': 'standard',
         'design.scale': 'balanced',
       },
-      blocks: allCatalogBlocks(),
+      blocks: catalogBlocks,
     };
     const draftResponse = await api.put(`${API}/documents/${documentId}/draft`, {
       data: { document: pageDocument, expected_lock_version: lockVersion },
@@ -463,9 +488,11 @@ test('publishes every catalog block and keeps the responsive visual baselines', 
     await expect(comparisonScroller).toBeFocused();
     await page.evaluate(() => document.fonts.ready);
     await prepareVisualDocument(publicRoot);
+    await expectEmptyCardShell(renderedBlocks, emptyCardId);
     await expectCatalogPresentationQuality(
       renderedBlocks,
       renderedTypes,
+      emptyCardId,
     );
     for (let index = 0; index < builtinManifest.blocks.length; index += 1) {
       await waitForVisualBlockStability(renderedBlocks.nth(index));

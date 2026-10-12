@@ -16,10 +16,14 @@ const BASE_URL = process.env.G7PB_BASE_URL ?? 'https://g7pb.test';
 const EDITOR_PATH = '/modules/jiwonpapa-page_builder/admin/editor';
 const BLOCK_COUNT = 100;
 const builtinCatalog = JSON.parse(readFileSync(resolve('resources/block-packs/builtin-core/manifest.json'), 'utf8')) as {
-  blocks: Array<{ capabilities: string[] }>;
-  presets: unknown[];
+  blocks: Array<{ block_id: string; capabilities: string[] }>;
+  presets: Array<{ block_id: string }>;
 };
-const GALLERY_COUNT = builtinCatalog.blocks.filter(block => !block.capabilities.includes('editor.compatibility-only')).length + builtinCatalog.presets.length;
+// This v1 performance fixture keeps structure editing off. Card and its starter
+// require that mode, while every other non-compatibility entry remains counted.
+const GALLERY_COUNT = builtinCatalog.blocks.filter(block => !block.capabilities.includes('editor.compatibility-only')
+  && block.block_id !== 'content.card-01').length
+  + builtinCatalog.presets.filter(preset => preset.block_id !== 'content.card-01').length;
 
 const PERFORMANCE_SLUG_PATTERN = /^g7pb-perf-\d{13}-[a-z0-9]{6}$/;
 

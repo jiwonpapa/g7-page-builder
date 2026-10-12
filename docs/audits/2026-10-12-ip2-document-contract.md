@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 사용자가 Hero 빈 슬롯 제품 문제의 2파일 보완을 승인했다. 별도 task에서 수정·단위 회귀를 제출하고 실제 브라우저 검증을 진행한다. 이전 FULL 제품 브라우저는 48개 통과/1개 실패였으며 아래 이력으로 보존한다. IP2 전체 통합은 아직 완료하지 않았고 IP3·운영 배포로 진행하지 않는다.
+상태: 승인된 Hero 빈 슬롯 2파일 보완을 통합하고 실제 브라우저 11개를 통과했다. 모바일 높이 차이는 24px에서 0px가 됐고 기존 내부 구성·Undo·저장·발행을 유지했다. IP2 공유 계약의 FULL 통합을 재개한다. 이전 실패 이력은 보존하며 IP3·운영 배포로 진행하지 않는다.
 
 ## 소유 범위
 
@@ -227,4 +227,7 @@ IP2 제출 `3f187551709e048559e354ec73c3a3582527a628`을 위 통합 기준에서
 - task `ip2-hero-empty-slot-20261012`, 기준 `af8a2e06dfffd99bfc77b365376d31b7c0b21367`, 승인된 정확 2파일만 소유했다. 제출 `9c30ecbc9213db359c2fe8198d4f4829365d81d2`.
 - Puck의 공개 `getItemById` selector로 현재 Hero의 extra 내용 유무를 읽는다. 일반 편집과 읽기 전용 미리보기에서는 빈 슬롯을 렌더하지 않으며, 채운 슬롯과 v2 구조 편집의 빈 삽입 대상·기존 CTA 소유권을 유지한다. 문서·명령·Undo·CSS·공개 compiler는 변경하지 않는다.
 - 추가한 빈 슬롯 회귀는 수정 전 0개 기대/1개 실제로 실패했고 수정 후 통과했다. v1/v2 편집↔읽기 전용 전환, 채운 배지/목록·CTA 표시와 문서 무변경을 확인했다. 관련 3파일 18개 시험·타입 검사 및 제출 scoped gate가 통과했다.
-- Local runtime lease에서 지원 테마 임시 전환·원복을 포함해 scoped 브라우저 통합을 진행한다. 실제 브라우저 통과와 IP2 전체 통합은 별도로 기록한다.
+- Local 통합 `03ff36d2004c2c870d1c7c22a0a89693f47d9d4b`. scoped 브라우저 8개(직접 텍스트 1·구조/테마 6·페이지 lifecycle 1)가 통과했다. 로그는 `output/playwright/ip2-hero-empty-slot-integration-20261012.log`. Site Part 세션 1개 restored=true·closed=true이며 원래 `jwsoft-business01 0.3.1` 원복과 테마 1,667파일 해시 동일을 확인했다.
+- 원래 테마로 복구한 뒤 mobile `hero.backdrop` 비교를 재시도 없이 통과했다(4.4초). 편집/미리보기 높이 모두 438.59375px, delta=0이며 빈 DropZone이 없는 DOM을 확인했다. 증거는 `output/playwright/ip2-hero-empty-slot-proof-20261012/parity/`와 `parity-results.json`이다.
+- desktop Hero 내부 구성 2개를 재시도 없이 통과했다(26.4초). 빈 구역의 배지/목록 삽입·편집·이동·삭제·Undo·재열기·미리보기·발행과 CTA의 원자적 이전/Undo·빈 actions 저장을 확인했다. 증거는 같은 디렉터리의 `composition-results.json`, 화면과 `output/playwright/ip2-hero-composition-proof-20261012.log`다. 최초 선택 명령의 `^hero` 정규식은 전체 test 이름과 맞지 않아 0개를 선택했으며, 선택자를 바로잡은 후 위 2개를 실행했다.
+- Linux frontend budget 전체 통과. 편집기 gzip 508,316/508,500 bytes, 편집기 CSS 계열 180,077/180,100 bytes로 기준은 유지했다. IP2 공유 계약의 FULL 통합은 별도 필수 검증이다.

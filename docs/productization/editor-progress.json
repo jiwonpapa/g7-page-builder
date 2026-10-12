@@ -692,6 +692,13 @@
           "commit": "4abafae025255f73f416fd7535e8a18794ee50e6",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-common-runtime.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-common-behavior-editor",
+          "commit": "22607a6d866b9070425cdf506551650d8024189c",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-common-runtime.md"
         }
       ],
       "blocked_reason": null,

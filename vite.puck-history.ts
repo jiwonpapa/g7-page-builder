@@ -8,6 +8,19 @@ const SOURCE_HASHES = new Set([
   '4a5be5f5355088fe768bae0b72876e349010deb4b952e69a02f48acb461f3e37',
   '34b012f3b413a88b30aff0066b9616ef7c59482f85268dea40a7c52b0a024d20',
 ]);
+const POSITION_HASHES = new Set([
+  '578e5f0a97e55683169f64003853135e029a548a9afd081369abbc9f1f1a5995',
+  '34b012f3b413a88b30aff0066b9616ef7c59482f85268dea40a7c52b0a024d20',
+]);
+const POSITION_WRITE = 'el.style.position = "relative";';
+const preservePosition = (source: string) => source.replace(POSITION_WRITE, 'if (!el.style.position) ' + POSITION_WRITE);
+/** Puck inline dragRef must preserve the authored containing block; wrappers keep their default. */
+export function patchPuckPosition(source: string): string {
+  if (!POSITION_HASHES.has(createHash('sha256').update(source).digest('hex')) || source.split(POSITION_WRITE).length !== 2) {
+    throw new Error('Unreviewed Puck position source; review the pinned 0.23.0 correction.');
+  }
+  return preservePosition(source);
+}
 export function patchPuckHistory(source: string): string {
   if (!SOURCE_HASHES.has(createHash('sha256').update(source).digest('hex'))) {
     throw new Error('Unreviewed Puck history source; review the pinned 0.23.0 correction.');
@@ -30,16 +43,26 @@ export function patchPuckHistory(source: string): string {
 
 export function puckHistoryCorrection(): Plugin {
   let corrected = false;
+  let independentV3 = false, positionCorrected = false;
   return {
     name: 'g7pb-puck-023-history-correction', enforce: 'pre', apply: 'build',
+    configResolved(config) {
+      const lib = config.build.lib;
+      independentV3 = Boolean(lib && typeof lib.entry === 'string' && lib.entry.replaceAll('\\', '/').endsWith('/resources/js/editor/v3/mount.tsx'));
+    },
     transform(source, id) {
-      if (!id.includes('/@puckeditor/core/dist/') || !source.includes('createHistorySlice = (set, get) => {')) return;
-      const code = patchPuckHistory(source);
-      corrected = true;
-      return { code, map: null };
+      if (!id.includes('/@puckeditor/core/dist/')) return;
+      let code = source;
+      if (source.includes('createHistorySlice = (set, get) => {')) { code = patchPuckHistory(source); corrected = true; }
+      if (independentV3 && source.includes(POSITION_WRITE)) {
+        patchPuckPosition(source); // Verify ORIGINAL bytes before composing with the history correction (CJS).
+        code = preservePosition(code); positionCorrected = true;
+      }
+      if (code !== source) return { code, map: null };
     },
     buildEnd(error) {
       if (!error && !corrected) throw new Error('Puck history correction was not applied to the editor bundle.');
+      if (!error && independentV3 && !positionCorrected) throw new Error('Puck position correction was not applied to the independent v3 bundle.');
     },
   };
 }

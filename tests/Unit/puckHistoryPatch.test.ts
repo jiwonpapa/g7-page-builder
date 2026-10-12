@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { patchPuckHistory } from '../../vite.puck-history';
+import { patchPuckHistory, patchPuckPosition } from '../../vite.puck-history';
 
 const require = createRequire(import.meta.url);
 const dist = dirname(require.resolve('@puckeditor/core'));
@@ -84,5 +84,28 @@ describe('pinned Puck history correction', () => {
     const cjs = readFileSync(join(dist, 'index.js'), 'utf8');
     expect(patchPuckHistory(cjs)).toContain('state, selectedItem, history: get().history');
     expect(() => patchPuckHistory(source + '\n')).toThrow('Unreviewed Puck');
+  });
+});
+
+describe('pinned Puck inline position correction', () => {
+  const esm = readFileSync(join(dist, 'chunk-55V3NZVF.mjs'), 'utf8');
+  function applyPosition(input: string, position: string) {
+    const statement = input.split('\n').find(line => line.includes('el.style.position = "relative";'));
+    if (!statement) throw new Error('Missing reviewed position statement');
+    const el = { style: { position } };
+    runInNewContext(statement, { el });
+    return el.style.position;
+  }
+  it('reproduces the upstream overwrite and preserves authored positions in ESM and CJS', () => {
+    expect(applyPosition(esm, 'absolute')).toBe('relative');
+    for (const input of [esm, readFileSync(join(dist, 'index.js'), 'utf8')]) {
+      const patched = patchPuckPosition(input);
+      for (const position of ['static', 'relative', 'absolute']) expect(applyPosition(patched, position)).toBe(position);
+      expect(applyPosition(patched, '')).toBe('relative');
+    }
+  });
+  it('refuses unreviewed bytes and repeated corrections', () => {
+    expect(() => patchPuckPosition(esm + '\n')).toThrow('Unreviewed Puck position');
+    expect(() => patchPuckPosition(patchPuckPosition(esm))).toThrow('Unreviewed Puck position');
   });
 });

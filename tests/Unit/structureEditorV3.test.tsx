@@ -18,6 +18,7 @@ Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 })
 Object.defineProperty(window, 'matchMedia', { configurable: true, value: () => ({ matches: false,
   addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }) });
 const { StructureEditor, ContextActionBar } = await import('../../resources/js/editor/v3/StructureEditor');
+const { WorkspaceFrame } = await import('../../resources/js/editor/v3/Workspace');
 const { mountStructureEditor } = await import('../../resources/js/editor/v3/mount');
 const cleanup: Array<() => void> = [];
 afterEach(async () => { await act(async () => cleanup.splice(0).forEach(run => run())); });
@@ -40,6 +41,35 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('isolates mirrored frame chrome and restores only the background values it owns', async () => {
+    const frame = document.createElement('iframe'); document.body.append(frame);
+    cleanup.push(() => frame.remove());
+    const owner = frame.contentDocument;
+    if (!owner) throw new Error('Expected iframe document');
+    owner.body.className = 'g7pb-editor-shell';
+    owner.body.style.setProperty('background-color', 'navy', 'important');
+    owner.body.style.color = 'white';
+    const authored = owner.createElement('div'); authored.dataset.v3Surface = '';
+    authored.style.backgroundColor = 'red'; owner.body.append(authored);
+    frame.style.height = '123px';
+    const host = hostElement(), root = createRoot(host), extent = vi.fn();
+    let mounted = true;
+    cleanup.push(() => { if (mounted) root.unmount(); });
+    await act(async () => root.render(<WorkspaceFrame owner={owner} extent={extent} />));
+    expect(owner.documentElement.style.backgroundColor).toBe('transparent');
+    expect(owner.body.style.backgroundColor).toBe('transparent');
+    expect(owner.body.style.color).toBe('white');
+    expect(owner.body.className).toBe('g7pb-editor-shell');
+    expect(authored.style.backgroundColor).toBe('red');
+    expect(frame.style.height).toBe('800px');
+    expect(extent).toHaveBeenCalledWith(800);
+    await act(async () => { root.unmount(); mounted = false; });
+    expect(owner.documentElement.style.backgroundColor).toBe('');
+    expect(owner.body.style.backgroundColor).toBe('navy');
+    expect(owner.body.style.getPropertyPriority('background-color')).toBe('important');
+    expect(frame.style.height).toBe('123px');
+  });
+
   it('reports a late save as edited so the product host preserves unsaved navigation protection', async () => {
     const doc = source(), host = hostElement(), root = createRoot(host), saved = vi.fn();
     cleanup.push(() => root.unmount());

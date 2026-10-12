@@ -727,6 +727,13 @@
           "commit": "79c08f50741894228eccceaf1ae9636644a0a165",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-v3-public-compiler.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-installed-publication-ui",
+          "commit": "04ba68777a0b15dd1f68a3a0c9120b33394f7ea0",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-v3-publication-ui.md"
         }
       ],
       "blocked_reason": null,

@@ -82,7 +82,7 @@ for (const shell of ['none', 'template', 'builder'] as const) test(`publishes ge
     current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
     expect(current.active_artifact_sha256).toBeNull();
     await click('발행 준비'); await expect(dialog).toBeVisible();
-    await info.attach(`publication-confirm-${shell}`, { body: await page.screenshot(), contentType: 'image/png' });
+    await info.attach(`publication-confirm-${shell}`, { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
     await click('이 버전 발행');
     const publicLink = page.getByRole('link', { name: '공개 페이지 열기', exact: true }); await expect(publicLink).toBeVisible();
     const publicUrl = (await publicLink.getAttribute('href'))!;
@@ -191,7 +191,16 @@ test('creates an empty page in the installed generic editor and preserves nested
     for (const [label, width] of [['PC · 공통값', 1280], ['태블릿', 768], ['모바일', 360]] as const) {
       await click(label); await click('화면 맞춤');
       await expect(page.locator('[data-v3-workspace]')).toHaveCSS('width', width + 'px');
-      await testInfo.attach(`product-canvas-${width}`, { body: await page.screenshot(), contentType: 'image/png' });
+      // The installed host's stylesheet arrives asynchronously in Puck's frame.
+      // Once mirrored, chrome must remain transparent over the white workspace.
+      const frame = page.frameLocator('iframe');
+      const mirroredStyle = frame.locator('link[rel="stylesheet"][href*="page-builder-structure.css"]');
+      await expect(mirroredStyle).toHaveCount(1);
+      await expect.poll(() => mirroredStyle.evaluate(link => 'sheet' in link && link.sheet !== null)).toBe(true);
+      await expect(frame.locator('html')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      await expect(frame.locator('body')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      await expect(page.locator('[data-v3-workspace]')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+      await testInfo.attach(`product-canvas-${width}`, { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' });
     }
     const reopened = await api.get(`${documents}/${ownedId}`);
     expect(reopened.ok()).toBe(true);

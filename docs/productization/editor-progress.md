@@ -1,10 +1,10 @@
 # 편집기 개발 진척
 
-원장 갱신: 2026-09-09 · 기준 SHA: `280567cc650253a5d6538696fbc3383c587eaf4e`
+원장 갱신: 2026-10-12 · 기준 SHA: `df2aeedbbe016f30999ebeec128757329dd18530`
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **12/12** · 기존 기반 8개는 분모에서 제외합니다.
+계획 작업 완료 **0/10** · 기존 기반 6개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
 
@@ -13,6 +13,7 @@
 아래 완료 이력은 당시 기록이며 현재 계획의 완료 수에 합산하지 않습니다.
 
 - `editor-maturity-20260907`: **4/11** · [보존 원장](<editor-progress-puck-20260907.json>) · [보존 계획](<editor-plan-puck-20260907.md>)
+- `native-editor-20260907`: **12/12** · [보존 원장](<editor-progress-native-20261012.json>) · [보존 계획](<editor-plan-native-20261012.md>)
 
 ## 기존 구현 기반
 
@@ -20,33 +21,29 @@
 
 | 기반 | 현재 상태 | 구현 소스 | 과거 검증 근거 |
 |---|---|---|---|
-| BASE-01 · 계획 수립 당시 캔버스 직접 필드·미디어·링크·반복 편집 | 구현됨 | [resources/js/editor/canvasEditingContract.ts](<../../resources/js/editor/canvasEditingContract.ts>) · [resources/js/editor/CanvasContextControls.tsx](<../../resources/js/editor/CanvasContextControls.tsx>) · [resources/js/editor/richTextEditing.tsx](<../../resources/js/editor/richTextEditing.tsx>) | [docs/audits/2026-09-03-structure-phase-3.md](<../audits/2026-09-03-structure-phase-3.md>) |
-| BASE-02 · 계획 수립 당시 Section/Columns/Stack과 leaf5 제한 중첩 | 구현됨 | [schemas/layout-policy-v1.json](<../../schemas/layout-policy-v1.json>) · [resources/js/documents/layoutPolicy.ts](<../../resources/js/documents/layoutPolicy.ts>) · [resources/js/editor/layoutCatalogBlocks.tsx](<../../resources/js/editor/layoutCatalogBlocks.tsx>) | [docs/productization/phase-4-structure.md](<phase-4-structure.md>) · [docs/audits/2026-09-02-structure-phase-2.md](<../audits/2026-09-02-structure-phase-2.md>) |
-| BASE-03 · 계획 수립 당시 제작 단위 분류·위치별 갤러리 후보 | 일부 구현 | [resources/js/editor/blockGalleryModel.ts](<../../resources/js/editor/blockGalleryModel.ts>) · [resources/js/editor/BlockGalleryControls.tsx](<../../resources/js/editor/BlockGalleryControls.tsx>) · [resources/js/editor/puckEditorConfig.tsx](<../../resources/js/editor/puckEditorConfig.tsx>) | [docs/block-library-v2-benchmark.md](<../block-library-v2-benchmark.md>) |
-| BASE-04 · 계획 수립 당시 복합 컴포넌트 내부 자식 슬롯 | 미구현 | [schemas/layout-policy-v1.json](<../../schemas/layout-policy-v1.json>) · [resources/js/documents/layoutPolicy.ts](<../../resources/js/documents/layoutPolicy.ts>) · [resources/js/editor/canvasEditingContract.ts](<../../resources/js/editor/canvasEditingContract.ts>) | 별도 기록 없음 |
-| BASE-05 · 계획 수립 당시 layout/appearance 반응형·PC 편집/기기별 미리보기 | 구현됨 | [resources/js/documents/blockPresentation.ts](<../../resources/js/documents/blockPresentation.ts>) · [resources/js/editor/editorViewportPolicy.ts](<../../resources/js/editor/editorViewportPolicy.ts>) · [resources/js/editor/responsiveBlockStyle.tsx](<../../resources/js/editor/responsiveBlockStyle.tsx>) | [docs/productization/phase-4-responsive.md](<phase-4-responsive.md>) |
-| BASE-06 · 계획 수립 당시 Undo/저장/선택 기반과 빠른 연속 명령의 전체 보장 | 일부 구현 | [resources/js/editor/PuckEditorAdapter.tsx](<../../resources/js/editor/PuckEditorAdapter.tsx>) · [tests/E2E/editorStructureTheme.spec.ts](<../../tests/E2E/editorStructureTheme.spec.ts>) | [docs/productization/phase-4-editing-save.md](<phase-4-editing-save.md>) · [docs/audits/2026-09-02-structure-phase-2.md](<../audits/2026-09-02-structure-phase-2.md>) |
-| BASE-07 · 계획 수립 당시 개인 Section·공통영역 편집과 새 슬롯 연결 | 일부 구현 | [resources/js/editor/SectionPatternControls.tsx](<../../resources/js/editor/SectionPatternControls.tsx>) · [resources/js/editor/FullSiteCanvas.tsx](<../../resources/js/editor/FullSiteCanvas.tsx>) · [src/Domain/Site/SitePartDocument.php](<../../src/Domain/Site/SitePartDocument.php>) | [docs/productization/phase-5-patterns.md](<phase-5-patterns.md>) |
-| BASE-08 · 계획 수립 당시 일반 페이지 주소·G7 목록·실제 문의 기반 | 구현됨 | [src/Providers/PageBuilderServiceProvider.php](<../../src/Providers/PageBuilderServiceProvider.php>) · [resources/js/public/publicInquiryForms.ts](<../../resources/js/public/publicInquiryForms.ts>) · [tests/E2E/siteKitInquiry.spec.ts](<../../tests/E2E/siteKitInquiry.spec.ts>) | [docs/audits/2026-09-06-site-phase-2.md](<../audits/2026-09-06-site-phase-2.md>) · [docs/audits/2026-09-06-site-phase-4.md](<../audits/2026-09-06-site-phase-4.md>) · [docs/audits/2026-09-07-site-phase-5.md](<../audits/2026-09-07-site-phase-5.md>) |
+| BASE-IP01 · 기존 v1/v2 문서·컴파일·초안/발행 기반 | 구현됨 | [resources/js/documents/types.ts](<../../resources/js/documents/types.ts>) · [src/Application/Compilation/HtmlDocumentCompiler.php](<../../src/Application/Compilation/HtmlDocumentCompiler.php>) | [docs/productization/phase-3-boundaries.md](<phase-3-boundaries.md>) |
+| BASE-IP02 · Puck/Tiptap·구조·이력 기반, 새 조작 결합 미검증 | 일부 구현 | [resources/js/editor/PuckEditorAdapter.tsx](<../../resources/js/editor/PuckEditorAdapter.tsx>) · [vite.puck-history.ts](<../../vite.puck-history.ts>) | [docs/audits/2026-09-08-editor-ux4.md](<../audits/2026-09-08-editor-ux4.md>) |
+| BASE-IP03 · Hero/ImageText/Card 내부 구성의 제한된 기존 범위 | 일부 구현 | [schemas/layout-policy-v1.json](<../../schemas/layout-policy-v1.json>) | [docs/audits/2026-09-08-editor-ux5.md](<../audits/2026-09-08-editor-ux5.md>) · [docs/audits/2026-09-09-editor-ux6.md](<../audits/2026-09-09-editor-ux6.md>) |
+| BASE-IP04 · 프리셋 스타일·반응형 기반, 모바일 캔버스는 미리보기 전용 | 일부 구현 | [resources/js/editor/blockAppearance.ts](<../../resources/js/editor/blockAppearance.ts>) · [resources/js/editor/editorViewportPolicy.ts](<../../resources/js/editor/editorViewportPolicy.ts>) | 별도 기록 없음 |
+| BASE-IP05 · 보존 네이티브 확장, 현재 호스트 지원은 별도 확인 | 일부 구현 | [resources/js/adapters/gnuboard7/bootstrap.ts](<../../resources/js/adapters/gnuboard7/bootstrap.ts>) | [docs/productization/native-host-contract.md](<native-host-contract.md>) |
+| BASE-IP06 · Moveable/Selecto 정밀 조작과 v3 디자인 계약 | 미구현 | 없음 | 별도 기록 없음 |
 
 ## 이번 계획 작업
 
 | 단계 | 작업 | 상태 | 선행 작업 | 담당 task | 완료 근거 |
 |---|---|---|---|---|---|
-| 1차 · 공식 연동 계약과 원본 보존 | NE1 · 공식 연동 계약과 원본 보존 | 완료 | 없음 | native-ne1-browser-fix-20260907 | 구현 `b39de138d563d384dd3c92fe701f76f88ff16e87`<br>통합 `e075b8149ce9b73d7397a9eaa89ea0c867979bb4`<br>필수 증거 3/3<br>[NAT-01/host-contract](<../audits/2026-09-07-native-editor-ne1.md>) · [NAT-01/unit](<../audits/2026-09-07-native-editor-ne1.md>) · [NAT-01/browser](<../audits/2026-09-07-native-editor-ne1.md>) |
-| 2차 · 내용·스타일·미디어 편집 | NE2 · 내용·스타일·미디어 편집 | 완료 | NE1 | native-ne2-content-r4-20260907 | 구현 `1e29e89a04c1e4a75472c9938126d571ea57f915`<br>통합 `45ae4152d8321726e14eeea6daa0f8ad35c7f9a9`<br>필수 증거 2/2<br>[NAT-02/unit](<../audits/2026-09-07-native-editor-ne2.md>) · [NAT-02/browser](<../audits/2026-09-07-native-editor-ne2.md>) |
-| 3차 · 내부 트리·반복·동적 요소 편집 | NE3 · 내부 트리·반복·동적 요소 편집 | 완료 | NE2 | native-ne3-components-r2-20260908 | 구현 `85fb7f8c4a1421f857b4b316109d7d11d4179bb9`<br>통합 `9530e96a07acb9cfc749e5aac4c7c7c5824eb7be`<br>필수 증거 3/3<br>[NAT-03/unit](<../audits/2026-09-08-native-editor-ne3.md>) · [NAT-03/browser](<../audits/2026-09-08-native-editor-ne3.md>) · [NAT-03/runtime](<../audits/2026-09-08-native-editor-ne3.md>) |
-| 4차 · 사용자 조합 저장과 재삽입 | NE4 · 사용자 조합 저장과 재삽입 | 완료 | NE3 | native-ne4-editor-20260908 | 구현 `9ae68d58306203949bd658fef6d81920b69921c8`<br>통합 `54450ecf86179da01b357fcc3d572ef210aa51fa`<br>필수 증거 2/2<br>[NAT-04/unit](<../audits/2026-09-08-native-editor-ne4.md>) · [NAT-04/browser](<../audits/2026-09-08-native-editor-ne4.md>) |
-| 5차 · 삽입·설정·미리보기·저장 흐름 연결 | NE5 · 삽입·설정·미리보기·저장 흐름 연결 | 완료 | NE4 | native-ne5-editor-r3-20260908 | 구현 `ed79b0ca3dea8795da5b9216fda0812a53e181fe`<br>통합 `13d231288269b4f0d4471873a2d4ca04b1c9a651`<br>필수 증거 2/2<br>[NAT-05/unit](<../audits/2026-09-08-native-editor-ne5.md>) · [NAT-05/browser](<../audits/2026-09-08-native-editor-ne5.md>) |
-| 6차 · 호환·회귀·릴리스 | NE6 · 호환·회귀·릴리스 | 완료 | NE5 | native-ne6-release-20260908 | 구현 `339c7faa73656c3fbad4e2df0a82f8f9e0884df7`<br>통합 `881194563a68e7df10e0439ee8d9493da509f5cc`<br>필수 증거 4/4<br>[NAT-06/compatibility](<../audits/2026-09-08-native-editor-ne6.md>) · [NAT-06/browser](<../audits/2026-09-08-native-editor-ne6.md>) · [NAT-06/concurrency](<../audits/2026-09-08-native-editor-ne6.md>) · [NAT-06/deployment](<../audits/2026-09-08-native-editor-ne6.md>) |
-| 독립 PB 개선 1차 · 우측 설정창 | UI1 · 독립 PB 우측 공통 설정 및 자산 갱신 | 완료 | 없음 | inspector-ux1-20260908 | 구현 `8aa75064aeab072149becf217051d8667a3e51e1`<br>통합 `095ea5d2eca2d10fc60b217348d0115997358c52`<br>필수 증거 2/2<br>[UI-01/unit](<../audits/2026-09-08-inspector-ux1.md>) · [UI-01/browser](<../audits/2026-09-08-inspector-ux1.md>) |
-| 독립 PB 개선 2차 · 편집 출력 일치 | UI2 · Hero 반응형 출력 및 슬라이더 요약 | 완료 | UI1 | editor-ux2-20260908 | 구현 `e4be1995d8e1c5fcd233bbce1826fd5379e4a8d6`<br>통합 `acf20b2d4dd3753c0b36c2b12ee533b14453b283`<br>필수 증거 2/2<br>[UI-02/unit](<../audits/2026-09-08-editor-ux2.md>) · [UI-02/browser](<../audits/2026-09-08-editor-ux2.md>) |
-| 독립 PB 개선 3차 · Hero 내부 구성 | UI3 · Hero 배지·목록 내부 구성 | 완료 | UI2 | editor-ux3-r2-20260908 | 구현 `20e25a85951c316a4ffdb43d7318235b0d108502`<br>통합 `18ab87595f78183b2da180d1df8ebdc7a90f95d9`<br>필수 증거 2/2<br>[UI-03/unit](<../audits/2026-09-08-editor-ux3.md>) · [UI-03/browser](<../audits/2026-09-08-editor-ux3.md>) |
-| 독립 PB 개선 4차 · ImageText 내부 구성과 빠른 Undo | UI4 · ImageText 내부 구성 및 빠른 Undo/Redo | 완료 | UI3 | editor-ux4-20260908 | 구현 `6f222f53d1714bfa9227da658bfab57f62a937f5`<br>통합 `69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3`<br>필수 증거 2/2<br>[UI-04/unit](<../audits/2026-09-08-editor-ux4.md>) · [UI-04/browser](<../audits/2026-09-08-editor-ux4.md>) |
-| 독립 PB 개선 5차 | UI5 · 단일 Card 내부 구성 | 완료 | UI4 | ux5-delivery-20260908 | 구현 `6bc13339025844b2361d4b858ab71214884a8f0d`<br>통합 `a29c167e8ac49a68cfd316a0397184784c124908`<br>필수 증거 2/2<br>[UI-05/unit](<../audits/2026-09-08-editor-ux5.md>) · [UI-05/browser](<../audits/2026-09-08-editor-ux5.md>) |
-| 독립 PB 개선 6차 | UI6 · Hero·ImageText 버튼 구역 편집 | 완료 | UI5 | editor-ux6-actions-20260909 | 구현 `0babba86e015be593b0e35259e26d3c3b8c9b7af`<br>통합 `2d24d9fc14ec0f13426a0f385d69ed2d5cd5f993`<br>필수 증거 2/2<br>[UI-06/unit](<../audits/2026-09-09-editor-ux6.md>) · [UI-06/browser](<../audits/2026-09-09-editor-ux6.md>) |
+| 기반과 계약 | IP1 · 편집 엔진과 정밀 조작 결합 검증 | 계획 | 없음 | 미배정 | 미완료 |
+| 기반과 계약 | IP2 · 정밀 문서와 스타일 계약 | 계획 | IP1 | 미배정 | 미완료 |
+| 세부 편집 | IP3 · 레이어와 재귀 구조 편집 | 계획 | IP2 | 미배정 | 미완료 |
+| 세부 편집 | IP4 · 정밀 Inspector와 자동 배치 | 계획 | IP3 | 미배정 | 미완료 |
+| 세부 편집 | IP5 · 핸들과 다중 선택 작업면 | 계획 | IP4 | 미배정 | 미완료 |
+| 세부 편집 | IP6 · 반응형 상세 편집 | 계획 | IP5 | 미배정 | 미완료 |
+| 전체 연결과 수용 | IP7 · 내장 구성 템플릿과 공통영역 | 계획 | IP6 | 미배정 | 미완료 |
+| 전체 연결과 수용 | IP8 · 미디어와 재사용 구성 | 계획 | IP7 | 미배정 | 미완료 |
+| 전체 연결과 수용 | IP9 · 저장 복구와 공개 출력 일치 | 계획 | IP8 | 미배정 | 미완료 |
+| 전체 연결과 수용 | IP10 · 독립성 호환성과 제품 수용 | 계획 | IP9 | 미배정 | 미완료 |
 
-다음 진행 가능: 없음
+다음 진행 가능: IP1
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

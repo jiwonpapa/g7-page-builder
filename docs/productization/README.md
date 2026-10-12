@@ -1,10 +1,11 @@
 # Page Builder 편집 기능 개발
 
-현행 기준: **2026-09-07**. 현재 목표는 G7 일반 페이지의 네이티브 편집 확장 NE1~NE6이다. 원본·선택·트리·Undo·저장은 G7이 소유하고 PB는 공개 어댑터로 상세 편집을 보완한다. 킷이나 풀 테마 상품 제작으로 편집 기능의 완료를 대신하지 않는다.
+현행 기준: **2026-10-12**. 현재 목표는 독립 Page Builder의 요소별 정밀 편집 IP1~IP10이다. PageBuilderDocument를 단일 원본으로 Puck/Tiptap을 재사용하고 정밀 조작 부품을 결합한다. G7은 선택형 연동 Adapter이며 native editor 호스트를 필수로 요구하지 않는다. 킷이나 풀 테마 상품 제작으로 편집 기능의 완료를 대신하지 않는다.
 
 | 확인할 내용 | 현행 문서 |
 |---|---|
 | 제공 기능·제작 단위·수정 경계 | [편집 정책](editing-policy.md) |
+| 요소별 편집·추가 라이브러리·값/반응형·합격선 | [세부 스펙](independent-editor-spec.md) |
 | 개발 순서·작업 범위·합격 조건 | [편집 기능 개발 계획](editor-plan.md) |
 | 항목별 구현·통합·검증 근거 | [진척 원장](editor-progress.json) · [진척 표시판](editor-progress.md) |
 | 콘텐츠·샘플 품질 | [콘텐츠 기준](content-policy.md) |
@@ -14,7 +15,7 @@
 
 과거 [8차 실행안](roadmap.md)과 [요구사항 대응표](requirements.md)는 기존 배치의 근거를 읽는 자료다. 사이트 일반 페이지 1~5차는 `docs/audits/*-site-phase-*.md`에 기록된 별도의 작업 이력이다. 이 번호들을 새 편집 계획의 단계나 완료율로 합산하지 않는다.
 
-기존 Puck EP 계획은 [보존 계획](editor-plan-puck-20260907.md)과 [보존 원장](editor-progress-puck-20260907.json)에 원본 그대로 유지한다. 당시 4/11 완료 기록은 새 NE 계획의 완료율에 포함하지 않는다. 규칙 정비는 네이티브 구현 완료가 아니며 G7 측 공개 계약의 부족분도 원장 상태와 별도로 숨기지 않는다.
+기존 EP 4/11은 [보존 계획](editor-plan-puck-20260907.md)과 [보존 원장](editor-progress-puck-20260907.json), NE/UI 12/12는 [보존 계획](editor-plan-native-20261012.md)과 [보존 원장](editor-progress-native-20261012.json)에 유지한다. 이 수치를 새 IP 계획에 합산하지 않는다. 정책 확정은 제품 구현 완료가 아니며 네이티브 코드는 별도 호환 트랙으로 보존한다.
 
 ## 과거 제품화 추진 기록
 

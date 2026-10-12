@@ -316,6 +316,43 @@ class EditorProgressTests(unittest.TestCase):
                 self.assertTrue(unknown.unresolved)
                 self.assertFalse(unknown.full)
 
+    def test_v2_preserves_two_generations_when_independent_plan_starts(self):
+        self.migrate()
+        self.finish(self.data["items"][0])
+        self.save()
+        ledger_name = "docs/productization/native-progress.json"
+        plan_name = "docs/productization/native-plan.md"
+        self.write(ledger_name, (self.root / LEDGER).read_text())
+        self.write(plan_name, (self.root / PLAN).read_text())
+        self.data["history"].append({
+            "plan_id": self.data["plan_id"], "ledger_file": ledger_name,
+            "ledger_sha256": sha256((self.root / ledger_name).read_bytes()).hexdigest(),
+            "plan_file": plan_name,
+            "plan_sha256": sha256((self.root / plan_name).read_bytes()).hexdigest(),
+            "completed": 1, "total": 1,
+        })
+        self.data["plan_id"] = "independent-editor-20261012"
+        self.data["items"][0].update(
+            id="IP1", status="planned", implementation_commit=None,
+            integrated_commit=None, evidence=[], owner_task=None,
+        )
+        self.write(PLAN, "# 계획\n<!-- editor-plan:independent-editor-20261012 -->\n"
+                   "<!-- editor-item:IP1 -->\n<!-- editor-acceptance:CAT-01 -->\n")
+        self.write(POLICY, "# 정책\n<!-- editor-policy:independent-editor-20261012 -->\n")
+        self.save()
+        state = summary(validate(self.root))
+        self.assertEqual((state["counts"]["done"], state["total"]), (0, 1))
+        self.assertEqual(state["next"], ["IP1"])
+        self.assertEqual(len(state["history"]), 2)
+        self.assertEqual(sum(entry["completed"] for entry in state["history"]), 2)
+        self.assertFalse(state["product_verified"])
+        self.assertTrue({ledger_name, plan_name}.issubset(input_files(self.root)))
+        for historical_id in ("EP1-01", "NE1"):
+            self.data["items"][0]["id"] = historical_id
+            self.save()
+            with self.subTest(historical_id=historical_id), self.assertRaisesRegex(ValueError, "Historical item IDs"):
+                validate(self.root)
+
     def test_v2_rejects_modified_archive_bytes_and_invented_historical_counts(self):
         self.migrate()
         for field in ("ledger_file", "plan_file"):

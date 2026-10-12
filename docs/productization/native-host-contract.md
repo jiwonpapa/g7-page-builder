@@ -1,5 +1,7 @@
 # G7 네이티브 편집 공개 호스트 계약 v1
 
+2026-10-12 분류: **보존 네이티브 모드의 호환 계약**. 주 개발 대상은 [독립 정밀 편집](independent-editor-spec.md)이며 아래 host 패치/registerPanel은 그 선행조건이 아니다. 아래 상태·SHA·검증 수치는 각 기록 당시의 범위다. 현재 호스트 지원 여부는 다시 확인하며 G7 코어 수정이나 데이터 변환을 자동 실행하지 않는다. NP/H 계약은 [보존 정책](editing-policy-native-20261012.md)에 유지한다.
+
 상태: **NE1~NE4 로컬 구현·통합·수용 검증 완료**. 최신 기능 검증은 G7 공개 API 후보 `d264405fd09b70ac85aebe4f4a857cadbe22981e`(engine 1.68.1)와 PB 최종 제품 통합 `54450ecf86179da01b357fcc3d572ef210aa51fa` 조합이다. stock G7/upstream 제공이나 운영 배포를 뜻하지 않는다. [NE4 마감 증거](../audits/2026-09-08-native-editor-ne4.md), [현행 계획](editor-plan.md), [개발 헌법](../development-constitution.md)을 따른다. 아래 차수별 SHA와 제한은 당시 증거를 보존한다.
 
 조사 기준 G7 `fde750cede7fda68329cea42fb706a00d4546bd3`에는 기존 네 메서드만 있었으며 H01~H04가 부족했다. 이번 후보에 공개 `registerPanel`과 `g7.layout-editor/1`을 추가했다. 내부 hook import·PB 우회 저장·호스트 DOM 읽기를 PB 연동으로 사용하지 않는다.

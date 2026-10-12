@@ -1,8 +1,8 @@
 {
   "schema_version": "g7pb-editor-progress/v2",
-  "plan_id": "native-editor-20260907",
-  "baseline_sha": "280567cc650253a5d6538696fbc3383c587eaf4e",
-  "updated_at": "2026-09-09",
+  "plan_id": "independent-editor-20261012",
+  "baseline_sha": "df2aeedbbe016f30999ebeec128757329dd18530",
+  "updated_at": "2026-10-12",
   "policy_file": "docs/productization/editing-policy.md",
   "plan_file": "docs/productization/editor-plan.md",
   "dashboard_file": "docs/productization/editor-progress.md",
@@ -100,12 +100,12 @@
     {
       "path": "docs/productization/editing-policy.md",
       "role": "current",
-      "required_text": "editor-policy:native-editor-20260907"
+      "required_text": "editor-policy:independent-editor-20261012"
     },
     {
       "path": "docs/productization/editor-plan.md",
       "role": "current",
-      "required_text": "editor-plan:native-editor-20260907"
+      "required_text": "editor-plan:independent-editor-20261012"
     },
     {
       "path": "docs/productization/editor-policy-sources.md",
@@ -144,830 +144,478 @@
     },
     {
       "path": "docs/audits/2026-09-07-native-editor-governance.md",
-      "role": "current",
+      "role": "historical",
       "required_text": "native-editor-20260907"
     },
     {
       "path": "docs/architecture.md",
       "role": "current",
-      "required_text": "네이티브"
+      "required_text": "목표 책임과 소스 경계"
     },
     {
       "path": "docs/productization/native-host-contract.md",
-      "role": "current",
+      "role": "reference",
       "required_text": "g7.layout-editor/1"
     },
     {
       "path": "docs/audits/2026-09-07-native-editor-ne1.md",
-      "role": "current",
+      "role": "historical",
       "required_text": "NAT-01"
     },
     {
       "path": "docs/audits/2026-09-07-native-editor-ne2.md",
-      "role": "current",
+      "role": "historical",
       "required_text": "NAT-02"
     },
     {
       "path": "docs/audits/2026-09-08-native-editor-ne3.md",
-      "role": "current",
+      "role": "historical",
       "required_text": "NAT-03"
     },
     {
       "path": "docs/audits/2026-09-08-native-editor-ne4.md",
-      "role": "current",
+      "role": "historical",
       "required_text": "NAT-04"
+    },
+    {
+      "path": "docs/productization/independent-editor-spec.md",
+      "role": "current",
+      "required_text": "SPEC-16"
+    },
+    {
+      "path": "docs/productization/editing-policy-native-20261012.md",
+      "role": "historical",
+      "required_text": "editor-policy:native-editor-20260907"
+    },
+    {
+      "path": "docs/productization/editor-progress-native-20261012.md",
+      "role": "historical",
+      "required_text": "12/12"
+    },
+    {
+      "path": "docs/audits/2026-10-12-independent-editor-policy.md",
+      "role": "reference",
+      "required_text": "independent-editor-policy-20261012"
     }
   ],
   "acceptance": [
     {
-      "id": "NAT-01",
-      "description": "지원 템플릿의 실제 일반 페이지에서 한 노드 편집→Undo/Redo→저장→재열기. 수정 외 의미 diff 0, 출처·표현식·번역·반복·actions·responsive·알 수 없는 필드 보존. readonly·라우트 전환·늦은 응답은 무변경.",
-      "required_evidence": [
-        "host-contract",
-        "unit",
-        "browser"
-      ]
-    },
-    {
-      "id": "NAT-02",
-      "description": "지원된 문구·링크·이미지·alt·비율·스타일을 같은 노드 명령으로 편집하고 Undo·저장·재열기 결과를 비교. 바인딩 보존, 업로드 취소·실패·늦은 응답·문서 전환에서 오적용 0.",
-      "required_evidence": [
-        "unit",
-        "browser"
-      ]
-    },
-    {
-      "id": "NAT-03",
-      "description": "children·prop 내부 트리·배열·반복 템플릿의 삽입/이동/복제/삭제 및 거부 경로를 확인. ID·참조·출처 보존, 한 명령 Undo/Redo, Slider 항목 편집과 공개 동작 검증.",
+      "id": "IND-01",
+      "description": "편집 엔진과 정밀 조작 결합 검증 (SPEC-01, SPEC-06, SPEC-07)",
       "required_evidence": [
         "unit",
         "browser",
-        "runtime"
+        "architecture"
       ]
     },
     {
-      "id": "NAT-04",
-      "description": "선택 조합 저장→목록→다른 허용 위치 삽입→Undo→저장→재열기. 포맷·버전·자산·컴포넌트 호환 거부와 새 ID/내부 참조 재연결을 검증.",
+      "id": "IND-02",
+      "description": "정밀 문서와 스타일 계약 (SPEC-02, SPEC-05)",
+      "required_evidence": [
+        "contract",
+        "unit",
+        "compatibility"
+      ]
+    },
+    {
+      "id": "IND-03",
+      "description": "레이어와 재귀 구조 편집 (SPEC-02, SPEC-03)",
       "required_evidence": [
         "unit",
         "browser"
       ]
     },
     {
-      "id": "NAT-05",
-      "description": "찾기→위치 선택→삽입→상세 편집→기존 페이지 설정→미리보기→저장→재열기 흐름을 실제 일반 페이지에서 확인. 공개 영향·문서 제목·라우트·오류·취소가 구분됨.",
+      "id": "IND-04",
+      "description": "정밀 Inspector와 자동 배치 (SPEC-04, SPEC-05, SPEC-10)",
       "required_evidence": [
         "unit",
-        "browser"
+        "browser",
+        "parity"
       ]
     },
     {
-      "id": "NAT-06",
-      "description": "검증한 G7/지원 템플릿 조합과 기존 PB 문서·발행본·주소가 공존. 실제 동시 저장·권한·장애 복구·반응형 공개 출력 통과 후 승인 범위의 릴리스와 운영 재열기/공개 결과 증거 기록.",
+      "id": "IND-05",
+      "description": "핸들과 다중 선택 작업면 (SPEC-06, SPEC-07, SPEC-08, SPEC-10)",
       "required_evidence": [
+        "unit",
+        "browser",
+        "accessibility"
+      ]
+    },
+    {
+      "id": "IND-06",
+      "description": "반응형 상세 편집 (SPEC-09)",
+      "required_evidence": [
+        "contract",
+        "browser",
+        "parity"
+      ]
+    },
+    {
+      "id": "IND-07",
+      "description": "내장 구성 템플릿과 공통영역 (SPEC-12, SPEC-13)",
+      "required_evidence": [
+        "contract",
+        "browser",
+        "compatibility"
+      ]
+    },
+    {
+      "id": "IND-08",
+      "description": "미디어와 재사용 구성 (SPEC-11, SPEC-14)",
+      "required_evidence": [
+        "unit",
+        "browser",
+        "compatibility"
+      ]
+    },
+    {
+      "id": "IND-09",
+      "description": "저장 복구와 공개 출력 일치 (SPEC-13, SPEC-15, SPEC-16)",
+      "required_evidence": [
+        "browser",
+        "parity",
+        "concurrency"
+      ]
+    },
+    {
+      "id": "IND-10",
+      "description": "독립성 호환성과 제품 수용 (SPEC-01, SPEC-16)",
+      "required_evidence": [
+        "architecture",
         "compatibility",
         "browser",
-        "concurrency",
-        "deployment"
-      ]
-    },
-    {
-      "id": "UI-01",
-      "description": "짧은 공통 옵션 직접 선택, PAGE 선택 UI 밀도, 공통 배치 라벨, 기기별 접기/변경 요약 및 자산 내용 해시 URL. 대표 편집·Undo·저장·재열기 검증.",
-      "required_evidence": [
-        "unit",
-        "browser"
-      ]
-    },
-    {
-      "id": "UI-02",
-      "description": "Hero 기기별 정렬·글자 비율의 캔버스/미리보기/발행 일치, 슬라이더 요약의 서식 제거와 원본 보존.",
-      "required_evidence": [
-        "unit",
-        "browser"
-      ]
-    },
-    {
-      "id": "UI-03",
-      "description": "Hero extra 배지·목록 각 1개의 내부 삽입·편집·순서·삭제·저장/재열기·컴파일/발행 보존. 다른 내부 슬롯은 제외.",
-      "required_evidence": [
-        "unit",
-        "browser"
-      ]
-    },
-    {
-      "id": "UI-04",
-      "description": "ImageText extra 배지·목록·구분선 각 1개 내부 편집 및 빠른 연속 Undo/Redo 원본/출력 보존.",
-      "required_evidence": [
-        "unit",
-        "browser"
-      ]
-    },
-    {
-      "id": "UI-05",
-      "description": "단일 Card 내부 media/body/actions 편집·원본 보존·출력",
-      "required_evidence": [
-        "unit",
-        "browser"
-      ]
-    },
-    {
-      "id": "UI-06",
-      "description": "Hero·ImageText 버튼 소유권 명시 전환과 내부 편집·Undo·저장/재열기·출력",
-      "required_evidence": [
-        "unit",
-        "browser"
+        "performance",
+        "accessibility"
       ]
     }
   ],
   "phases": [
     {
-      "id": "phase-1",
-      "title": "1차 · 공식 연동 계약과 원본 보존"
+      "id": "foundation",
+      "title": "기반과 계약"
     },
     {
-      "id": "phase-2",
-      "title": "2차 · 내용·스타일·미디어 편집"
+      "id": "editing",
+      "title": "세부 편집"
     },
     {
-      "id": "phase-3",
-      "title": "3차 · 내부 트리·반복·동적 요소 편집"
-    },
-    {
-      "id": "phase-4",
-      "title": "4차 · 사용자 조합 저장과 재삽입"
-    },
-    {
-      "id": "phase-5",
-      "title": "5차 · 삽입·설정·미리보기·저장 흐름 연결"
-    },
-    {
-      "id": "phase-6",
-      "title": "6차 · 호환·회귀·릴리스"
-    },
-    {
-      "id": "inspector-ux1",
-      "title": "독립 PB 개선 1차 · 우측 설정창"
-    },
-    {
-      "id": "editor-ux2",
-      "title": "독립 PB 개선 2차 · 편집 출력 일치"
-    },
-    {
-      "id": "editor-ux3",
-      "title": "독립 PB 개선 3차 · Hero 내부 구성"
-    },
-    {
-      "id": "editor-ux4",
-      "title": "독립 PB 개선 4차 · ImageText 내부 구성과 빠른 Undo"
-    },
-    {
-      "id": "editor-ux5",
-      "title": "독립 PB 개선 5차"
-    },
-    {
-      "id": "editor-ux6",
-      "title": "독립 PB 개선 6차"
+      "id": "product",
+      "title": "전체 연결과 수용"
     }
   ],
   "baseline": [
     {
-      "id": "BASE-01",
-      "title": "계획 수립 당시 캔버스 직접 필드·미디어·링크·반복 편집",
+      "id": "BASE-IP01",
+      "title": "기존 v1/v2 문서·컴파일·초안/발행 기반",
       "state": "implemented",
       "source_paths": [
-        "resources/js/editor/canvasEditingContract.ts",
-        "resources/js/editor/CanvasContextControls.tsx",
-        "resources/js/editor/richTextEditing.tsx"
+        "resources/js/documents/types.ts",
+        "src/Application/Compilation/HtmlDocumentCompiler.php"
       ],
       "historical_evidence": [
-        "docs/audits/2026-09-03-structure-phase-3.md"
+        "docs/productization/phase-3-boundaries.md"
       ]
     },
     {
-      "id": "BASE-02",
-      "title": "계획 수립 당시 Section/Columns/Stack과 leaf5 제한 중첩",
-      "state": "implemented",
-      "source_paths": [
-        "schemas/layout-policy-v1.json",
-        "resources/js/documents/layoutPolicy.ts",
-        "resources/js/editor/layoutCatalogBlocks.tsx"
-      ],
-      "historical_evidence": [
-        "docs/productization/phase-4-structure.md",
-        "docs/audits/2026-09-02-structure-phase-2.md"
-      ]
-    },
-    {
-      "id": "BASE-03",
-      "title": "계획 수립 당시 제작 단위 분류·위치별 갤러리 후보",
+      "id": "BASE-IP02",
+      "title": "Puck/Tiptap·구조·이력 기반, 새 조작 결합 미검증",
       "state": "partial",
       "source_paths": [
-        "resources/js/editor/blockGalleryModel.ts",
-        "resources/js/editor/BlockGalleryControls.tsx",
-        "resources/js/editor/puckEditorConfig.tsx"
+        "resources/js/editor/PuckEditorAdapter.tsx",
+        "vite.puck-history.ts"
       ],
       "historical_evidence": [
-        "docs/block-library-v2-benchmark.md"
+        "docs/audits/2026-09-08-editor-ux4.md"
       ]
     },
     {
-      "id": "BASE-04",
-      "title": "계획 수립 당시 복합 컴포넌트 내부 자식 슬롯",
-      "state": "missing",
+      "id": "BASE-IP03",
+      "title": "Hero/ImageText/Card 내부 구성의 제한된 기존 범위",
+      "state": "partial",
       "source_paths": [
-        "schemas/layout-policy-v1.json",
-        "resources/js/documents/layoutPolicy.ts",
-        "resources/js/editor/canvasEditingContract.ts"
+        "schemas/layout-policy-v1.json"
+      ],
+      "historical_evidence": [
+        "docs/audits/2026-09-08-editor-ux5.md",
+        "docs/audits/2026-09-09-editor-ux6.md"
+      ]
+    },
+    {
+      "id": "BASE-IP04",
+      "title": "프리셋 스타일·반응형 기반, 모바일 캔버스는 미리보기 전용",
+      "state": "partial",
+      "source_paths": [
+        "resources/js/editor/blockAppearance.ts",
+        "resources/js/editor/editorViewportPolicy.ts"
       ],
       "historical_evidence": []
     },
     {
-      "id": "BASE-05",
-      "title": "계획 수립 당시 layout/appearance 반응형·PC 편집/기기별 미리보기",
-      "state": "implemented",
-      "source_paths": [
-        "resources/js/documents/blockPresentation.ts",
-        "resources/js/editor/editorViewportPolicy.ts",
-        "resources/js/editor/responsiveBlockStyle.tsx"
-      ],
-      "historical_evidence": [
-        "docs/productization/phase-4-responsive.md"
-      ]
-    },
-    {
-      "id": "BASE-06",
-      "title": "계획 수립 당시 Undo/저장/선택 기반과 빠른 연속 명령의 전체 보장",
+      "id": "BASE-IP05",
+      "title": "보존 네이티브 확장, 현재 호스트 지원은 별도 확인",
       "state": "partial",
       "source_paths": [
-        "resources/js/editor/PuckEditorAdapter.tsx",
-        "tests/E2E/editorStructureTheme.spec.ts"
+        "resources/js/adapters/gnuboard7/bootstrap.ts"
       ],
       "historical_evidence": [
-        "docs/productization/phase-4-editing-save.md",
-        "docs/audits/2026-09-02-structure-phase-2.md"
+        "docs/productization/native-host-contract.md"
       ]
     },
     {
-      "id": "BASE-07",
-      "title": "계획 수립 당시 개인 Section·공통영역 편집과 새 슬롯 연결",
-      "state": "partial",
-      "source_paths": [
-        "resources/js/editor/SectionPatternControls.tsx",
-        "resources/js/editor/FullSiteCanvas.tsx",
-        "src/Domain/Site/SitePartDocument.php"
-      ],
-      "historical_evidence": [
-        "docs/productization/phase-5-patterns.md"
-      ]
-    },
-    {
-      "id": "BASE-08",
-      "title": "계획 수립 당시 일반 페이지 주소·G7 목록·실제 문의 기반",
-      "state": "implemented",
-      "source_paths": [
-        "src/Providers/PageBuilderServiceProvider.php",
-        "resources/js/public/publicInquiryForms.ts",
-        "tests/E2E/siteKitInquiry.spec.ts"
-      ],
-      "historical_evidence": [
-        "docs/audits/2026-09-06-site-phase-2.md",
-        "docs/audits/2026-09-06-site-phase-4.md",
-        "docs/audits/2026-09-07-site-phase-5.md"
-      ]
+      "id": "BASE-IP06",
+      "title": "Moveable/Selecto 정밀 조작과 v3 디자인 계약",
+      "state": "missing",
+      "source_paths": [],
+      "historical_evidence": []
     }
   ],
   "items": [
     {
-      "id": "NE1",
-      "phase": "phase-1",
-      "title": "공식 연동 계약과 원본 보존",
-      "status": "done",
+      "id": "IP1",
+      "phase": "foundation",
+      "title": "편집 엔진과 정밀 조작 결합 검증",
+      "status": "planned",
       "depends_on": [],
       "acceptance_ids": [
-        "NAT-01"
+        "IND-01"
       ],
-      "owner_task": "native-ne1-browser-fix-20260907",
-      "implementation_commit": "b39de138d563d384dd3c92fe701f76f88ff16e87",
-      "integrated_commit": "e075b8149ce9b73d7397a9eaa89ea0c867979bb4",
-      "evidence": [
-        {
-          "acceptance_id": "NAT-01",
-          "kind": "host-contract",
-          "commit": "9260d521ab3d69761a428b3d1c54df1297ecf6eb",
-          "result": "pass",
-          "path": "docs/audits/2026-09-07-native-editor-ne1.md"
-        },
-        {
-          "acceptance_id": "NAT-01",
-          "kind": "unit",
-          "commit": "b39de138d563d384dd3c92fe701f76f88ff16e87",
-          "result": "pass",
-          "path": "docs/audits/2026-09-07-native-editor-ne1.md"
-        },
-        {
-          "acceptance_id": "NAT-01",
-          "kind": "browser",
-          "commit": "e075b8149ce9b73d7397a9eaa89ea0c867979bb4",
-          "result": "pass",
-          "path": "docs/audits/2026-09-07-native-editor-ne1.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/js/native-editor/entry.ts",
-        "resources/js/native-editor/domain/node.ts",
-        "resources/js/native-editor/ports/host.ts",
-        "resources/js/adapters/gnuboard7/editor.ts",
-        "vite.config.ts",
-        "resources/js/native-editor/domain/textChange.ts",
-        "tests/Unit/nativeNodeChange.test.ts",
-        "docs/productization/native-host-contract.md",
-        "docs/audits/2026-09-07-native-editor-ne1.md"
+        "resources/js/editor/PuckEditorAdapter.tsx",
+        "resources/js/adapters/puck",
+        "resources/js/adapters/interaction",
+        "tests/E2E"
       ],
-      "completion": "지원 템플릿의 실제 일반 페이지에서 한 노드 편집→Undo/Redo→저장→재열기. 수정 외 의미 diff 0, 출처·표현식·번역·반복·actions·responsive·알 수 없는 필드 보존. readonly·라우트 전환·늦은 응답은 무변경."
+      "completion": "G7 없는 기술 fixture에서 Puck·Moveable·Selecto·Tiptap의 선택/입력/iframe/줌/취소/단일 Undo를 검증한다. 정확 패키지 버전·라이선스·번들·성능 예산을 기록하고 채택 또는 구조적 차단을 판정한다. 데모 성공을 제품 전체 완료로 보고하지 않는다."
     },
     {
-      "id": "NE2",
-      "phase": "phase-2",
-      "title": "내용·스타일·미디어 편집",
-      "status": "done",
+      "id": "IP2",
+      "phase": "foundation",
+      "title": "정밀 문서와 스타일 계약",
+      "status": "planned",
       "depends_on": [
-        "NE1"
+        "IP1"
       ],
       "acceptance_ids": [
-        "NAT-02"
+        "IND-02"
       ],
-      "owner_task": "native-ne2-content-r4-20260907",
-      "implementation_commit": "1e29e89a04c1e4a75472c9938126d571ea57f915",
-      "integrated_commit": "45ae4152d8321726e14eeea6daa0f8ad35c7f9a9",
-      "evidence": [
-        {
-          "acceptance_id": "NAT-02",
-          "kind": "unit",
-          "commit": "1e29e89a04c1e4a75472c9938126d571ea57f915",
-          "result": "pass",
-          "path": "docs/audits/2026-09-07-native-editor-ne2.md"
-        },
-        {
-          "acceptance_id": "NAT-02",
-          "kind": "browser",
-          "commit": "45ae4152d8321726e14eeea6daa0f8ad35c7f9a9",
-          "result": "pass",
-          "path": "docs/audits/2026-09-07-native-editor-ne2.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/js/native-editor/domain/fields.ts",
-        "resources/js/native-editor/ports/host.ts",
-        "resources/js/native-editor/application/mediaRequest.ts",
-        "resources/js/native-editor/ui/NativeTextPanel.tsx",
-        "resources/js/native-editor/ui/content.tsx",
-        "resources/js/native-editor/ui/media.tsx",
-        "resources/js/native-editor/ui/Choice.tsx",
-        "resources/js/adapters/gnuboard7/editor.tsx",
-        "resources/js/adapters/gnuboard7/fields.ts",
-        "resources/js/adapters/gnuboard7/media.ts",
-        "resources/css/page-builder-native.css",
-        "tests/Unit/nativeFields.test.tsx",
-        "tests/Unit/nativeMedia.test.tsx",
-        "tests/E2E/nativeEditorContract.spec.ts"
+        "schemas",
+        "resources/js/documents",
+        "src/Domain",
+        "src/Application/Compilation",
+        "tests/Contract"
       ],
-      "completion": "지원된 문구·링크·이미지·alt·비율·스타일을 같은 노드 명령으로 편집하고 Undo·저장·재열기 결과를 비교. 바인딩 보존, 업로드 취소·실패·늦은 응답·문서 전환에서 오적용 0."
+      "completion": "v3 목표의 안정 노드/레이아웃/typed 스타일/단위/검증/이행 계약과 TS·PHP fixture를 고정한다. 기존 v1/v2·Site Part·미지 필드·발행본은 보존한다. 한도/예산과 구조 gate도 연결하며 UI만 먼저 자유 값을 저장하지 않는다."
     },
     {
-      "id": "NE3",
-      "phase": "phase-3",
-      "title": "내부 트리·반복·동적 요소 편집",
-      "status": "done",
+      "id": "IP3",
+      "phase": "editing",
+      "title": "레이어와 재귀 구조 편집",
+      "status": "planned",
       "depends_on": [
-        "NE2"
+        "IP2"
       ],
       "acceptance_ids": [
-        "NAT-03"
+        "IND-03"
       ],
-      "owner_task": "native-ne3-components-r2-20260908",
-      "implementation_commit": "85fb7f8c4a1421f857b4b316109d7d11d4179bb9",
-      "integrated_commit": "9530e96a07acb9cfc749e5aac4c7c7c5824eb7be",
-      "evidence": [
-        {
-          "acceptance_id": "NAT-03",
-          "kind": "unit",
-          "commit": "85fb7f8c4a1421f857b4b316109d7d11d4179bb9",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne3.md"
-        },
-        {
-          "acceptance_id": "NAT-03",
-          "kind": "browser",
-          "commit": "9530e96a07acb9cfc749e5aac4c7c7c5824eb7be",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne3.md"
-        },
-        {
-          "acceptance_id": "NAT-03",
-          "kind": "runtime",
-          "commit": "9530e96a07acb9cfc749e5aac4c7c7c5824eb7be",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne3.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/js/native-editor/domain/tree.ts",
-        "resources/js/native-editor/ui/collection.tsx",
-        "resources/js/adapters/gnuboard7/structure.ts",
-        "resources/js/adapters/gnuboard7/media.ts",
-        "resources/js/native-components/Slider.tsx",
-        "resources/js/native-components/spec.ts",
-        "tests/E2E/nativeEditorContract.spec.ts",
-        "tests/E2E/nativeSliderContract.spec.ts"
+        "resources/js/documents",
+        "resources/js/editor",
+        "resources/js/editor-application",
+        "tests/Unit",
+        "tests/E2E"
       ],
-      "completion": "children·prop 내부 트리·배열·반복 템플릿의 삽입/이동/복제/삭제 및 거부 경로를 확인. ID·참조·출처 보존, 한 명령 Undo/Redo, Slider 항목 편집과 공개 동작 검증."
+      "completion": "캔버스/트리 선택·조상 탐색·이름·잠금·숨김과 중첩 삽입/이동/복제/삭제/그룹/해제/붙여넣기를 연결한다. ID·참조·DOM 순서·거부·Undo/Redo·저장/재열기를 실제 입력으로 확인한다."
     },
     {
-      "id": "NE4",
-      "phase": "phase-4",
-      "title": "사용자 조합 저장과 재삽입",
-      "status": "done",
+      "id": "IP4",
+      "phase": "editing",
+      "title": "정밀 Inspector와 자동 배치",
+      "status": "planned",
       "depends_on": [
-        "NE3"
+        "IP3"
       ],
       "acceptance_ids": [
-        "NAT-04"
+        "IND-04"
       ],
-      "owner_task": "native-ne4-editor-20260908",
-      "implementation_commit": "9ae68d58306203949bd658fef6d81920b69921c8",
-      "integrated_commit": "54450ecf86179da01b357fcc3d572ef210aa51fa",
-      "evidence": [
-        {
-          "acceptance_id": "NAT-04",
-          "kind": "unit",
-          "commit": "9ae68d58306203949bd658fef6d81920b69921c8",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne4.md"
-        },
-        {
-          "acceptance_id": "NAT-04",
-          "kind": "browser",
-          "commit": "54450ecf86179da01b357fcc3d572ef210aa51fa",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne4.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/js/native-editor/domain/composition.ts",
-        "resources/js/native-editor/ports/compositions.ts",
-        "resources/js/native-editor/ui/compositions.tsx",
-        "resources/js/adapters/gnuboard7/compositions.ts",
-        "resources/js/native-editor/application/compositions.ts",
-        "resources/js/adapters/gnuboard7/compositionLibrary.ts",
-        "src/Domain/Compositions/NativeComposition.php",
-        "src/Application/Compositions/NativeCompositionService.php",
-        "tests/Integration/Gnuboard7/NativeCompositionPersistenceTest.php",
-        "tests/E2E/nativeEditorContract.spec.ts"
+        "resources/js/editor",
+        "resources/js/documents",
+        "resources/css",
+        "src/Application/Compilation",
+        "tests/E2E"
       ],
-      "completion": "선택 조합 저장→목록→다른 허용 위치 삽입→Undo→저장→재열기. 포맷·버전·자산·컴포넌트 호환 거부와 새 ID/내부 참조 재연결을 검증."
+      "completion": "Flex/Grid와 수치/단위 크기·padding/margin/gap·테두리·배경·글꼴/행간/자간·부분 서식을 지원한다. 직접 입력/패널은 같은 명령, 미지정/0/reset은 별개이며 저장·재열기·출력 치수/스타일이 일치한다."
     },
     {
-      "id": "NE5",
-      "phase": "phase-5",
-      "title": "삽입·설정·미리보기·저장 흐름 연결",
-      "status": "done",
+      "id": "IP5",
+      "phase": "editing",
+      "title": "핸들과 다중 선택 작업면",
+      "status": "planned",
       "depends_on": [
-        "NE4"
+        "IP4"
       ],
       "acceptance_ids": [
-        "NAT-05"
+        "IND-05"
       ],
-      "owner_task": "native-ne5-editor-r3-20260908",
-      "implementation_commit": "ed79b0ca3dea8795da5b9216fda0812a53e181fe",
-      "integrated_commit": "13d231288269b4f0d4471873a2d4ca04b1c9a651",
-      "evidence": [
-        {
-          "acceptance_id": "NAT-05",
-          "kind": "unit",
-          "commit": "ed79b0ca3dea8795da5b9216fda0812a53e181fe",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne5.md"
-        },
-        {
-          "acceptance_id": "NAT-05",
-          "kind": "browser",
-          "commit": "13d231288269b4f0d4471873a2d4ca04b1c9a651",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne5.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/js/native-editor/ui/NativeTextPanel.tsx",
-        "resources/js/native-editor/ui/InsertionPosition.tsx",
-        "resources/js/native-editor/ui/collection.tsx",
-        "resources/js/native-editor/ui/compositions.tsx",
-        "resources/js/native-editor/application/compositions.ts",
-        "resources/css/page-builder-native.css",
-        "tests/Unit/nativeWorkflow.test.tsx",
-        "tests/E2E/nativeEditorContract.spec.ts"
+        "resources/js/adapters/interaction",
+        "resources/js/editor",
+        "resources/js/editor-application",
+        "tests/E2E"
       ],
-      "completion": "찾기→위치 선택→삽입→상세 편집→기존 페이지 설정→미리보기→저장→재열기 흐름을 실제 일반 페이지에서 확인. 공개 영향·문서 제목·라우트·오류·취소가 구분됨."
+      "completion": "Moveable/Selecto를 제품 명령에 연결하여 리사이즈·비율·스냅·키보드·허용 absolute/회전·다중 변경·정렬/분배·팬/줌을 구현한다. 50/100/200%와 scroll/iframe, IME, Esc, readonly에서 오적용 0과 한 동작 한 Undo를 증명한다."
     },
     {
-      "id": "NE6",
-      "phase": "phase-6",
-      "title": "호환·회귀·릴리스",
-      "status": "done",
+      "id": "IP6",
+      "phase": "editing",
+      "title": "반응형 상세 편집",
+      "status": "planned",
       "depends_on": [
-        "NE5"
+        "IP5"
       ],
       "acceptance_ids": [
-        "NAT-06"
+        "IND-06"
       ],
-      "owner_task": "native-ne6-release-20260908",
-      "implementation_commit": "339c7faa73656c3fbad4e2df0a82f8f9e0884df7",
-      "integrated_commit": "881194563a68e7df10e0439ee8d9493da509f5cc",
-      "evidence": [
-        {
-          "acceptance_id": "NAT-06",
-          "kind": "compatibility",
-          "commit": "881194563a68e7df10e0439ee8d9493da509f5cc",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne6.md"
-        },
-        {
-          "acceptance_id": "NAT-06",
-          "kind": "browser",
-          "commit": "881194563a68e7df10e0439ee8d9493da509f5cc",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne6.md"
-        },
-        {
-          "acceptance_id": "NAT-06",
-          "kind": "concurrency",
-          "commit": "881194563a68e7df10e0439ee8d9493da509f5cc",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne6.md"
-        },
-        {
-          "acceptance_id": "NAT-06",
-          "kind": "deployment",
-          "commit": "881194563a68e7df10e0439ee8d9493da509f5cc",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-native-editor-ne6.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "docs/compatibility.md",
-        "tests/E2E/nativeEditorContract.spec.ts",
-        "tests/E2E/nativeSliderContract.spec.ts",
-        "tests/E2E/pageAddressFlow.spec.ts",
-        "docs/productization/editor-progress.json",
-        "CHANGELOG.md",
-        "module.json",
-        "package.json",
-        "package-lock.json"
+        "resources/js/documents",
+        "resources/js/editor",
+        "resources/css",
+        "src/Application/Compilation",
+        "tests/E2E"
       ],
-      "completion": "검증한 G7/지원 템플릿 조합과 기존 PB 문서·발행본·주소가 공존. 실제 동시 저장·권한·장애 복구·반응형 공개 출력 통과 후 승인 범위의 릴리스와 운영 재열기/공개 결과 증거 기록."
+      "completion": "desktop host에서 세 폭의 모든 허용 요소 값을 직접 편집한다. base 독립 상속/override/reset, 경계 폭, gap/방향/Grid/표시/크기와 DOM 의미를 검증한다. 모바일 1열/미리보기 전용 제한을 새 디자인에 남기지 않는다."
     },
     {
-      "id": "UI1",
-      "phase": "inspector-ux1",
-      "title": "독립 PB 우측 공통 설정 및 자산 갱신",
-      "status": "done",
-      "depends_on": [],
-      "acceptance_ids": [
-        "UI-01"
-      ],
-      "owner_task": "inspector-ux1-20260908",
-      "implementation_commit": "8aa75064aeab072149becf217051d8667a3e51e1",
-      "integrated_commit": "095ea5d2eca2d10fc60b217348d0115997358c52",
-      "evidence": [
-        {
-          "acceptance_id": "UI-01",
-          "kind": "unit",
-          "commit": "11bff407a1f657dfe90c90f53d5dba49cfc8756e",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-inspector-ux1.md"
-        },
-        {
-          "acceptance_id": "UI-01",
-          "kind": "browser",
-          "commit": "095ea5d2eca2d10fc60b217348d0115997358c52",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-inspector-ux1.md"
-        }
-      ],
-      "blocked_reason": null,
-      "scope": [
-        "resources/js/editor/InspectorChoiceField.tsx",
-        "resources/js/editor/blockInspectorFields.tsx",
-        "resources/js/editor/responsiveBlockStyle.tsx",
-        "resources/css/page-builder-editor-controls.css",
-        "resources/views/editor.blade.php"
-      ],
-      "completion": "짧은 옵션 직접 선택·표시 일관성·키보드·저장/재열기 및 캐시된 세션 재진입 확인. 배포는 별도."
-    },
-    {
-      "id": "UI2",
-      "phase": "editor-ux2",
-      "title": "Hero 반응형 출력 및 슬라이더 요약",
-      "status": "done",
+      "id": "IP7",
+      "phase": "product",
+      "title": "내장 구성 템플릿과 공통영역",
+      "status": "planned",
       "depends_on": [
-        "UI1"
+        "IP6"
       ],
       "acceptance_ids": [
-        "UI-02"
+        "IND-07"
       ],
-      "owner_task": "editor-ux2-20260908",
-      "implementation_commit": "e4be1995d8e1c5fcd233bbce1826fd5379e4a8d6",
-      "integrated_commit": "acf20b2d4dd3753c0b36c2b12ee533b14453b283",
-      "evidence": [
-        {
-          "acceptance_id": "UI-02",
-          "kind": "unit",
-          "commit": "acf20b2d4dd3753c0b36c2b12ee533b14453b283",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux2.md"
-        },
-        {
-          "acceptance_id": "UI-02",
-          "kind": "browser",
-          "commit": "acf20b2d4dd3753c0b36c2b12ee533b14453b283",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux2.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "resources/css/page-builder-editor-appearance.css",
-        "resources/js/editor/catalogFields.tsx",
-        "resources/js/editor/previewContent.ts",
-        "resources/css/page-builder-public.css"
+        "resources/js/blocks",
+        "resources/js/editor",
+        "resources/block-packs",
+        "src/Application/Compilation",
+        "tests/E2E"
       ],
-      "completion": "기기별 정렬·글자 비율 변경/저장/재열기와 캔버스·컴파일 출력 비교, 슬라이더 제목의 표시·원본 보존 확인. 배포 별도."
+      "completion": "내장 카탈로그 전체의 구성/편집/보호/이행 capability 대응표를 완성한다. Hero/Card/ImageText와 반복·동적 블록, PB Header/Footer의 내부 요소를 편집하고 기존 원본의 명시 이행·거부·복원을 증명한다. 대표 1종 통과로 전체를 닫지 않는다."
     },
     {
-      "id": "UI3",
-      "phase": "editor-ux3",
-      "title": "Hero 배지·목록 내부 구성",
-      "status": "done",
+      "id": "IP8",
+      "phase": "product",
+      "title": "미디어와 재사용 구성",
+      "status": "planned",
       "depends_on": [
-        "UI2"
+        "IP7"
       ],
       "acceptance_ids": [
-        "UI-03"
+        "IND-08"
       ],
-      "owner_task": "editor-ux3-r2-20260908",
-      "implementation_commit": "20e25a85951c316a4ffdb43d7318235b0d108502",
-      "integrated_commit": "18ab87595f78183b2da180d1df8ebdc7a90f95d9",
-      "evidence": [
-        {
-          "acceptance_id": "UI-03",
-          "kind": "unit",
-          "commit": "18ab87595f78183b2da180d1df8ebdc7a90f95d9",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux3.md"
-        },
-        {
-          "acceptance_id": "UI-03",
-          "kind": "browser",
-          "commit": "18ab87595f78183b2da180d1df8ebdc7a90f95d9",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux3.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "schemas/layout-policy-v1.json",
-        "resources/js/editor/HeroComposition.tsx",
-        "resources/js/editor/puckBlockCodec.ts",
-        "src/Application/Compilation/HtmlDocumentCompiler.php"
+        "resources/js/editor",
+        "resources/js/api",
+        "src/Application",
+        "src/Infrastructure/Gnuboard7",
+        "tests/E2E"
       ],
-      "completion": "허용된 extra 요소의 삽입·편집·순서·삭제와 원본/출력 보존을 실제 브라우저에서 확인하고 차수 커밋·로컬 통합. 운영 배포 별도."
+      "completion": "선택 문맥을 보존하는 미디어 업로드/교체/alt/fit/초점과 사용자 구성 저장/검색/재삽입을 제공한다. 지연·취소·문서 전환·미지원 자산·새 ID/내부 참조·독립 사본을 확인하며 원본 파일을 삭제하지 않는다."
     },
     {
-      "id": "UI4",
-      "phase": "editor-ux4",
-      "title": "ImageText 내부 구성 및 빠른 Undo/Redo",
-      "status": "done",
+      "id": "IP9",
+      "phase": "product",
+      "title": "저장 복구와 공개 출력 일치",
+      "status": "planned",
       "depends_on": [
-        "UI3"
+        "IP8"
       ],
       "acceptance_ids": [
-        "UI-04"
+        "IND-09"
       ],
-      "owner_task": "editor-ux4-20260908",
-      "implementation_commit": "6f222f53d1714bfa9227da658bfab57f62a937f5",
-      "integrated_commit": "69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3",
-      "evidence": [
-        {
-          "acceptance_id": "UI-04",
-          "kind": "unit",
-          "commit": "69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux4.md"
-        },
-        {
-          "acceptance_id": "UI-04",
-          "kind": "browser",
-          "commit": "69b0a7f6f54cd8caf3e868e95a65a70e96ee6ca3",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux4.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "schemas/layout-policy-v1.json",
-        "resources/js/editor/ComponentComposition.tsx",
-        "resources/js/editor/foundationCatalogBlocks.tsx",
-        "resources/js/editor/puckBlockCodec.ts",
-        "src/Application/Compilation/HtmlDocument/Blocks/ImageTextBlockCompiler.php",
-        "vite.puck-history.ts"
+        "resources/js/editor-application",
+        "src/Application",
+        "src/Infrastructure",
+        "resources/css",
+        "tests/E2E"
       ],
-      "completion": "내부 편집·저장/재열기·미리보기/발행과 대기 없는 빠른 Undo/Redo 검증, 차수 커밋·로컬 통합. 운영 배포 별도."
+      "completion": "단계별로 해 온 저장 검증을 종합한다. 초안/발행·충돌·늦은 응답·revision 복원·Site Part 세트 원자성·마지막 정상 발행본을 확인한다. 편집/preview/public을 동일 준비 조건에서 치수 1 CSS px 이하로 비교한다."
     },
     {
-      "id": "UI5",
-      "phase": "editor-ux5",
-      "title": "단일 Card 내부 구성",
-      "status": "done",
+      "id": "IP10",
+      "phase": "product",
+      "title": "독립성 호환성과 제품 수용",
+      "status": "planned",
       "depends_on": [
-        "UI4"
+        "IP9"
       ],
       "acceptance_ids": [
-        "UI-05"
+        "IND-10"
       ],
-      "owner_task": "ux5-delivery-20260908",
-      "implementation_commit": "6bc13339025844b2361d4b858ab71214884a8f0d",
-      "integrated_commit": "a29c167e8ac49a68cfd316a0397184784c124908",
-      "evidence": [
-        {
-          "acceptance_id": "UI-05",
-          "kind": "unit",
-          "commit": "a29c167e8ac49a68cfd316a0397184784c124908",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux5.md"
-        },
-        {
-          "acceptance_id": "UI-05",
-          "kind": "browser",
-          "commit": "a29c167e8ac49a68cfd316a0397184784c124908",
-          "result": "pass",
-          "path": "docs/audits/2026-09-08-editor-ux5.md"
-        }
-      ],
+      "owner_task": null,
+      "implementation_commit": null,
+      "integrated_commit": null,
+      "evidence": [],
       "blocked_reason": null,
       "scope": [
-        "schemas/layout-policy-v1.json",
-        "resources/js/editor/ComponentComposition.tsx",
-        "resources/js/editor/cardCatalogBlocks.tsx",
-        "resources/js/editor/puckBlockCodec.ts",
-        "src/Application/Compilation/HtmlDocument/Blocks/CardBlockCompiler.php",
-        "tests/E2E/cardComposition.editorInteractionQuality.spec.ts"
+        "tests/E2E",
+        "tests/Integration/Gnuboard7",
+        "docs/productization",
+        "docs/audits"
       ],
-      "completion": "슬롯별 삽입·편집·순서·삭제·Undo·저장/재열기·출력 검증, 차수 커밋과 로컬 통합. 운영 배포 별도."
-    },
-    {
-      "id": "UI6",
-      "phase": "editor-ux6",
-      "title": "Hero·ImageText 버튼 구역 편집",
-      "status": "done",
-      "depends_on": [
-        "UI5"
-      ],
-      "acceptance_ids": [
-        "UI-06"
-      ],
-      "owner_task": "editor-ux6-actions-20260909",
-      "implementation_commit": "0babba86e015be593b0e35259e26d3c3b8c9b7af",
-      "integrated_commit": "2d24d9fc14ec0f13426a0f385d69ed2d5cd5f993",
-      "evidence": [
-        {
-          "acceptance_id": "UI-06",
-          "kind": "unit",
-          "commit": "2d24d9fc14ec0f13426a0f385d69ed2d5cd5f993",
-          "result": "pass",
-          "path": "docs/audits/2026-09-09-editor-ux6.md"
-        },
-        {
-          "acceptance_id": "UI-06",
-          "kind": "browser",
-          "commit": "2d24d9fc14ec0f13426a0f385d69ed2d5cd5f993",
-          "result": "pass",
-          "path": "docs/audits/2026-09-09-editor-ux6.md"
-        }
-      ],
-      "blocked_reason": null,
-      "scope": [
-        "resources/js/editor/compositionActions.ts",
-        "resources/js/editor/ComponentComposition.tsx",
-        "resources/js/editor/puckBlockCodec.ts",
-        "tests/E2E/heroComposition.editorInteractionQuality.spec.ts"
-      ],
-      "completion": "명시 전환·편집·삭제·Undo·원본 보존·출력 검증, 차수 커밋과 로컬 통합. 운영 배포 별도."
+      "completion": "SPEC-01~16과 내장 대상 전체의 누락 0, G7 없는 편집 및 지원 G7/테마 조합, 100/500노드 예산, PC/태블릿/모바일·키보드/IME·실패 회귀를 판정한다. 기능 제품 수용만 다루며 운영 배포는 별도 승인·증거로 남긴다."
     }
   ],
   "history": [
@@ -979,6 +627,15 @@
       "plan_sha256": "247d563a3634400ee3d7124614d08326a7655ed8ea6dbce9cb20eb978b8368ae",
       "completed": 4,
       "total": 11
+    },
+    {
+      "plan_id": "native-editor-20260907",
+      "ledger_file": "docs/productization/editor-progress-native-20261012.json",
+      "ledger_sha256": "c9c37c3e82f6a0c0a807d3e7a6dc58dad7479750de8b6d22b2e9c2e94f803946",
+      "plan_file": "docs/productization/editor-plan-native-20261012.md",
+      "plan_sha256": "75859695726f88d76264e1e3d1b68deb2702c0759cfa1ca231a1afe82afc4e8f",
+      "completed": 12,
+      "total": 12
     }
   ]
 }

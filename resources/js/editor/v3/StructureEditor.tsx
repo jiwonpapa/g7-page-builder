@@ -17,6 +17,9 @@ import { nodeAnchor } from '../../documents/v3/tree';
 import { reactStyle } from './presentationReact';
 import { Inspector } from './Inspector';
 import { richTextField } from './richTextField';
+import { GeometryAdapter } from '../../adapters/interaction/GeometryAdapter';
+import { MultiInspector } from './MultiInspector';
+import { WorkspaceControls, WorkspaceMode, type InputMode } from './Workspace';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -30,6 +33,14 @@ export interface StructureEditorProps {
   onSaved?: (revision: number) => void;
 }
 const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Location>; styles: Map<string, Record<string, string>>; textEditing: boolean } | null>(null);
+const InteractionContext = createContext<Omit<React.ComponentProps<typeof GeometryAdapter>, 'owner'> | null>(null);
+function FrameContents({ children, document: frameDocument }: React.ComponentProps<NonNullable<Overrides<V3Config>['iframe']>>) {
+  const context = useContext(InteractionContext);
+  return <>{children}{frameDocument && context && <>
+    <FrameHistoryBoundary frameDocument={frameDocument} bridge={context.bridge} />
+    <GeometryAdapter owner={frameDocument} {...context} />
+  </>}</>;
+}
 const SlotContext = createContext<Node | null>(null);
 const SlotElement = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(function SlotElement(props, ref) {
   const node = useContext(SlotContext);
@@ -80,8 +91,12 @@ function EditorSession(props: StructureEditorProps) {
   const [target, setTarget] = useState('root');
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [textEditing, setTextEditing] = useState(false);
+  const [mode, setMode] = useState<InputMode>('structure');
+  const textEditing = mode === 'text';
+  const [zoom, setZoom] = useState(1);
+  const scrollHost = useRef<HTMLElement>(null);
   const [actionTarget, setActionTarget] = useState<HTMLDivElement | null>(null);
+  const [geometryTools, setGeometryTools] = useState<HTMLDivElement | null>(null);
   const serverRevision = useRef(props.serverRevision);
   const bridge = useMemo(() => createPuckBridge(validateDocumentV3(props.document), {
     context: () => ({ sessionId: live.current.sessionId, readonly: Boolean(live.current.readonly) }),
@@ -103,7 +118,7 @@ function EditorSession(props: StructureEditorProps) {
       resolvePermissions: data => {
         const item = indexTree(bridge.read()).get(data.props.id);
         const editable = !live.current.readonly && Boolean(item) && !item?.node.locked && !item?.ancestors.some(node => node.locked);
-        return { drag: editable, edit: editable && textEditing };
+        return { drag: editable && (mode === 'structure' || mode === 'text'), edit: editable && textEditing };
       },
       render: ({ id, body, content: Content, puck }) => <CanvasNode id={id} body={body} Content={Content} dragRef={puck.dragRef} />,
     });
@@ -115,11 +130,11 @@ function EditorSession(props: StructureEditorProps) {
     root: { fields: { metadata: { type: 'custom', render: () => <></> } }, render: ({ children }) => <div data-v3-surface style={reactStyle(DOCUMENT_SURFACE)}>
       <style>{'[data-v3-rich] p{margin:0;min-height:1em}'}</style>{children}</div> },
     };
-  }, [bridge, textEditing]);
+  }, [bridge, textEditing, mode]);
   const overrides = useMemo<Partial<Overrides<V3Config>>>(() => ({
     // Public action-bar override: keep the rich-text focus contract without covering authored content.
     actionBar: ({ children }) => <ContextActionBar target={actionTarget}>{children}</ContextActionBar>,
-    iframe: ({ children, document: frameDocument }) => <>{children}{frameDocument && <FrameHistoryBoundary frameDocument={frameDocument} bridge={bridge} />}</>,
+    iframe: FrameContents,
   }), [bridge, actionTarget]);
   const run = (action: () => void): void => {
     try { action(); } catch (error) { setMessage(error instanceof Error ? error.message : '변경을 적용하지 못했습니다.'); }
@@ -155,15 +170,20 @@ function EditorSession(props: StructureEditorProps) {
   };
   return <main className="g7pb-root" aria-label="독립 구조 편집기" onKeyDownCapture={inputBoundary}>
     <CanvasContext.Provider value={{ document, tree, styles, textEditing: textEditing && !props.readonly }}>
+      <InteractionContext.Provider value={{ source: document, bridge, selected, mode, readonly: Boolean(props.readonly || preview),
+        zoom, controls: geometryTools, report: setMessage, pan: (x, y) => scrollHost.current?.scrollBy(x, y) }}>
       <Puck config={config} data={initial} onAction={bridge.onAction} onChange={bridge.onChange}
         overrides={overrides}
-        permissions={{ insert: false, duplicate: false, delete: false, edit: textEditing && !props.readonly, drag: !props.readonly }}
+        permissions={{ insert: false, duplicate: false, delete: false, edit: textEditing && !props.readonly, drag: (mode === 'structure' || mode === 'text') && !props.readonly }}
+        ui={{ viewports: { current: { width: '100%', height: 'auto' }, options: [], controlsVisible: false } }}
         iframe={{ enabled: props.iframeEnabled !== false }}>
         <BridgeObserver bridge={bridge} />
+        <WorkspaceMode mode={mode} bridge={bridge} />
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <header style={{ ...control, padding: 12, borderBottom: '1px solid var(--g7pb-border)', background: 'var(--g7pb-surface-strong)' }}>
           <strong>페이지 구조</strong><Toolbar bridge={bridge} disabled={Boolean(props.readonly)} run={run} />
-          <CommandButton aria-pressed={textEditing} disabled={props.readonly || preview} onClick={() => setTextEditing(!textEditing)}>본문 입력</CommandButton>
+          <WorkspaceControls mode={mode} change={setMode} zoom={zoom} setZoom={setZoom} disabled={Boolean(props.readonly || preview)}
+            fit={() => { setZoom(Math.max(.1, Math.min(2, ((scrollHost.current?.clientWidth ?? 1280) - 40) / 1280))); scrollHost.current?.scrollTo(0, 0); }} />
           <CommandButton disabled={props.readonly || saving} onClick={() => void save()}>{saving ? '저장 중' : '저장'}</CommandButton>
           <CommandButton aria-pressed={preview} onClick={() => setPreview(!preview)}>구조 미리보기</CommandButton>
           <span role="status" aria-label="편집 상태" style={{ marginLeft: 'auto', color: 'var(--g7pb-muted)' }}>{props.readonly ? '읽기 전용' : message}</span>
@@ -175,19 +195,22 @@ function EditorSession(props: StructureEditorProps) {
             {!document.blocks.length && <p>삽입할 요소를 선택하세요.</p>}
             <p style={{ color: 'var(--g7pb-muted)' }}>Shift 클릭으로 구조를 함께 선택합니다.</p>
           </aside>
-          <section aria-label="작업면" onClickCapture={event => {
+          <section ref={scrollHost} aria-label="작업면" onClickCapture={event => {
             if (!preview && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
           }} style={{ overflow: 'auto', padding: 20 }}>
             <nav aria-label="조상 탐색" style={{ ...control, minHeight: 40, marginBottom: 12, flexWrap: 'nowrap', overflowX: 'auto' }}>
               {focus?.ancestors.map(parent => <CommandButton key={parent.instance_id} onClick={() => bridge.select(parent.instance_id)}>{parent.name}</CommandButton>)}
               {focus && <span aria-current="true">{focus.node.name}</span>}
             </nav>
-            <div style={{ background: 'var(--g7pb-surface-strong)', minHeight: 600 }}>
+            <div style={{ width: 1280 * zoom, minHeight: 800 * zoom }}>
+            <div data-v3-workspace style={{ background: 'var(--g7pb-surface-strong)', width: 1280, minHeight: 800, transform: 'scale(' + zoom + ')', transformOrigin: 'top left' }}>
               {preview ? <StructurePreview document={document} /> : <Puck.Preview />}
+            </div>
             </div>
           </section>
           <aside aria-label="구조 속성" style={{ padding: 16, overflow: 'auto', background: 'var(--g7pb-surface-strong)' }}>
-            <div ref={setActionTarget} aria-label="문맥 도구" />
+            <div ref={setActionTarget} role="group" aria-label="문맥 도구" />
+            <div ref={setGeometryTools} />
             <h2 style={{ fontSize: 15 }}>삽입 위치</h2>
             <select aria-label="삽입 위치" value={target} onChange={event => setTarget(event.target.value)} style={{ maxWidth: '100%' }}>
               <option value="root">페이지</option>
@@ -212,10 +235,13 @@ function EditorSession(props: StructureEditorProps) {
             </div>
             {focus && <Inspector key={focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
               disabled={Boolean(props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
+            {selected.length > 1 && <MultiInspector key={selected.join(':') + JSON.stringify(document)} document={document} ids={selected}
+              disabled={Boolean(props.readonly)} apply={value => { bridge.execute(value); }} />}
           </aside>
         </div>
         </div>
       </Puck>
+      </InteractionContext.Provider>
     </CanvasContext.Provider>
   </main>;
 }

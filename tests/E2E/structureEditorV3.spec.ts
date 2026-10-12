@@ -9,6 +9,7 @@ import { puckHistoryCorrection } from '../../vite.puck-history.js';
 import type { DocumentV3 } from '../../resources/js/documents/v3/types';
 import type { TiptapEditorHTMLElement } from '@tiptap/core';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
+import AxeBuilder from '@axe-core/playwright';
 
 declare global {
   interface Window {
@@ -109,6 +110,220 @@ async function insert(page: Page, label: string) {
   await click(page, label + ' 삽입');
   await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장할 변경 있음');
 }
+
+function geometryFixture(): DocumentV3 {
+  const source = structuredClone(fixture), section = source.blocks[0];
+  section.style = { position: 'relative', width: { value: 1100, unit: 'px' }, height: { value: 1200, unit: 'px' } };
+  section.responsive = {};
+  section.slots.content = [0, 1, 2].map((i) => ({
+    ...structuredClone(fixture.blocks[0].slots.content![0]),
+    instance_id: '00000000-0000-4000-8000-' + String(70 + i).padStart(12, '0'),
+    type: 'content.heading' as const, props: { level: 2, runs: [{ text: '요소 ' + (i + 1) }] },
+    name: '요소 ' + (i + 1), responsive: {},
+    style: { position: 'absolute' as const, inset_left: { value: [80, 360, 680][i], unit: 'px' as const },
+      inset_top: { value: 80, unit: 'px' as const }, width: { value: [160, 120, 160][i], unit: 'px' as const },
+      height: { value: 80, unit: 'px' as const }, background: { kind: 'solid' as const, color: { kind: 'hex' as const, value: '#e6efff' } } },
+  }));
+  return source;
+}
+for (const zoom of [.5, 1, 2]) {
+  test('v3 precise handles at ' + zoom * 100 + '% preserve CSS pixels cancel and one Undo', async ({ page }, info) => {
+    const source = geometryFixture(), id = source.blocks[0].slots.content![0].instance_id;
+    const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+    await open(page, source); await click(page, '정밀 조작');
+    await page.getByLabel('작업면 확대', { exact: true }).selectOption(String(zoom));
+    await page.getByLabel('스냅 가이드', { exact: true }).uncheck();
+    await page.getByRole('region', { name: '작업면' }).evaluate(element => element.scrollTop = 40);
+    const frame = page.frameLocator('iframe'), target = frame.locator('[data-v3-node="' + id + '"]');
+    await target.click();
+    await expect(page.getByRole('heading', { name: '선택 1개', exact: true })).toBeVisible();
+    const handle = frame.locator('.moveable-control[data-direction="e"]');
+    await expect(handle).toBeVisible();
+    const before = await read(page), box = await handle.boundingBox();
+    if (!box) throw Error('missing handle');
+    await info.attach('ip5-handle-start', { body: JSON.stringify(await handle.evaluate(element => {
+      const r = element.getBoundingClientRect();
+      return { handle: element.outerHTML, rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+        hit: element.ownerDocument.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.outerHTML.slice(0, 500) };
+    })), contentType: 'application/json' });
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 40 * zoom, box.y + box.height / 2, { steps: 8 });
+    expect(await read(page)).toEqual(before);
+    await page.mouse.up();
+    await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.width).toEqual({ value: 200, unit: 'px' });
+    const changed = await read(page);
+    await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+    await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(changed);
+    await target.click(); await expect(handle).toBeVisible();
+    const cancelBox = await handle.boundingBox(); if (!cancelBox) throw Error('missing renewed handle');
+    await page.mouse.move(cancelBox.x + 4, cancelBox.y + 4); await page.mouse.down();
+    await page.mouse.move(cancelBox.x + 4 + 30 * zoom, cancelBox.y + 4, { steps: 5 });
+    await page.keyboard.press('Escape'); await page.mouse.up();
+    expect(await read(page)).toEqual(changed);
+    await expect.poll(() => target.evaluate(element => parseFloat(getComputedStyle(element).width))).toBe(200);
+    await page.getByLabel('비율 잠금', { exact: true }).check();
+    await target.click(); const ratioBox = await handle.boundingBox(); if (!ratioBox) throw Error('ratio handle');
+    await page.mouse.move(ratioBox.x + 4, ratioBox.y + 4); await page.mouse.down();
+    await page.mouse.move(ratioBox.x + 4 + 20 * zoom, ratioBox.y + 4, { steps: 5 }); await page.mouse.up();
+    await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.height).toEqual({ value: 88, unit: 'px' });
+    await click(page, '저장');
+    await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+    const saved = await page.evaluate(() => window.v3Proof.saved);
+    if (!saved) throw Error('missing draft');
+    await open(page, JSON.parse(saved)); await click(page, '정밀 조작');
+    await page.getByLabel('작업면 확대', { exact: true }).selectOption(String(zoom));
+    await page.getByRole('region', { name: '작업면' }).evaluate(element => element.scrollTop = 40);
+    await frame.locator('[data-v3-node="' + id + '"]').click();
+    await expect(handle).toBeVisible();
+    const rendered = await target.evaluate(element => { const css = getComputedStyle(element); return { width: parseFloat(css.width), height: parseFloat(css.height) }; });
+    expect(rendered).toEqual({ width: 220, height: 88 });
+    await page.screenshot({ path: info.outputPath('ip5-zoom-' + zoom + '.png'), fullPage: true });
+    expect(errors).toEqual([]);
+  });
+}
+test('v3 multiple selection aligns distributes rotates and keeps keyboard and readonly boundaries', async ({ page }, info) => {
+  const source = geometryFixture(), ids = source.blocks[0].slots.content!.map(node => node.instance_id);
+  await open(page, source); await click(page, '정밀 조작');
+  await page.getByLabel('작업면 확대', { exact: true }).selectOption('0.5');
+  const frame = page.frameLocator('iframe'), node = (id: string) => frame.locator('[data-v3-node="' + id + '"]');
+  await node(ids[0]).click(); await node(ids[1]).click({ modifiers: ['Shift'] }); await node(ids[2]).click({ modifiers: ['Shift'] });
+  await expect(page.getByRole('heading', { name: '선택 3개', exact: true })).toBeVisible();
+  await expect(page.getByRole('status', { name: '선택 속성 상태' })).toHaveText('혼합값');
+  const before = await read(page);
+  await click(page, '가로 간격 균등');
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![1].style.inset_left).toEqual({ value: 400, unit: 'px' });
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+  await click(page, '아래쪽 정렬');
+  expect(await read(page)).toEqual(before);
+  await click(page, '시계 15도');
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content!.map(node => node.style.rotation)).toEqual([15, 15, 15]);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+  await node(ids[0]).click();
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.inset_left).toEqual({ value: 90, unit: 'px' });
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+  const accessibility = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(accessibility.violations.filter(item => item.impact === 'critical' || item.impact === 'serious')).toEqual([]);
+  await info.attach('ip5-accessibility', { body: JSON.stringify(accessibility), contentType: 'application/json' });
+  await open(page, source, true);
+  await expect(page.getByRole('button', { name: '정밀 조작', exact: true })).toBeDisabled();
+  await expect(frame.locator('.moveable-control')).toHaveCount(0);
+  const readOnlyBox = await frame.locator('[data-v3-node="' + ids[0] + '"]').boundingBox();
+  if (!readOnlyBox) throw Error('missing readonly element');
+  await page.mouse.click(readOnlyBox.x + 10, readOnlyBox.y + 10);
+  await page.keyboard.press('Delete'); expect(await read(page)).toEqual(source);
+});
+
+test('v3 marquee group resize snap and pan preserve canonical history', async ({ page }, info) => {
+  const source = geometryFixture(), nodes = source.blocks[0].slots.content!;
+  await open(page, source); await click(page, '정밀 조작');
+  await page.getByLabel('작업면 확대', { exact: true }).selectOption('0.5');
+  const frame = page.frameLocator('iframe'), first = frame.locator('[data-v3-node="' + nodes[0].instance_id + '"]'),
+    second = frame.locator('[data-v3-node="' + nodes[1].instance_id + '"]');
+  const a = await first.boundingBox(), b = await second.boundingBox();
+  if (!a || !b) throw Error('missing marquee targets');
+  await page.mouse.move(a.x - 8, a.y - 8); await page.mouse.down();
+  await page.mouse.move(b.x + b.width + 8, b.y + b.height + 8, { steps: 10 }); await page.mouse.up();
+  await expect(page.getByRole('heading', { name: '선택 2개', exact: true })).toBeVisible();
+  await page.getByLabel('스냅 가이드', { exact: true }).uncheck();
+  const before = await read(page), handle = frame.locator('.moveable-control[data-direction="e"]');
+  await expect(handle).toBeVisible();
+  const h = await handle.boundingBox(); if (!h) throw Error('missing group handle');
+  await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await page.mouse.down();
+  await page.mouse.move(h.x + h.width / 2 + 40, h.y + h.height / 2, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.width).not.toEqual(nodes[0].style.width);
+  const changed = await read(page);
+  expect(changed.blocks[0].slots.content![1].style.width).not.toEqual(nodes[1].style.width);
+  expect(changed.blocks[0].slots.content![2]).toEqual(nodes[2]);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+  await first.click(); await page.getByLabel('스냅 가이드', { exact: true }).check();
+  const snapHandle = await handle.boundingBox(); if (!snapHandle) throw Error('missing snap handle');
+  await page.mouse.move(snapHandle.x + snapHandle.width / 2, snapHandle.y + snapHandle.height / 2); await page.mouse.down();
+  await page.mouse.move(snapHandle.x + snapHandle.width / 2 + 58, snapHandle.y + snapHandle.height / 2, { steps: 8 });
+  await expect(frame.locator('.moveable-guideline').first()).toBeVisible();
+  await page.mouse.up();
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.width).toEqual({ value: 280, unit: 'px' });
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
+  await page.getByLabel('작업면 확대', { exact: true }).selectOption('2');
+  await click(page, '화면 이동');
+  const workspace = page.getByRole('region', { name: '작업면' });
+  const scrollBefore = await workspace.evaluate(element => ({ x: element.scrollLeft, y: element.scrollTop }));
+  const area = await workspace.boundingBox(); if (!area) throw Error('missing workspace');
+  await page.mouse.move(area.x + 250, area.y + 250); await page.mouse.down();
+  await page.mouse.move(area.x + 170, area.y + 190, { steps: 8 }); await page.mouse.up();
+  await expect.poll(() => workspace.evaluate(element => element.scrollLeft)).toBeGreaterThan(scrollBefore.x);
+  await expect.poll(() => workspace.evaluate(element => element.scrollTop)).toBeGreaterThan(scrollBefore.y);
+  expect(await read(page)).toEqual(before);
+  await click(page, '화면 맞춤');
+  await expect.poll(() => workspace.evaluate(element => element.scrollLeft)).toBe(0);
+  expect(await read(page)).toEqual(before);
+  await expect(page.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
+  await page.screenshot({ path: info.outputPath('ip5-fit-workspace.png'), fullPage: true });
+});
+
+test('v3 pointer movement rotation and mixed property changes each use one Undo', async ({ page }) => {
+  const source = geometryFixture(), nodes = source.blocks[0].slots.content!;
+  await open(page, source); await click(page, '정밀 조작');
+  await page.getByLabel('작업면 확대', { exact: true }).selectOption('0.5');
+  await page.getByLabel('스냅 가이드', { exact: true }).uncheck();
+  const frame = page.frameLocator('iframe'), node = (index: number) => frame.locator('[data-v3-node="' + nodes[index].instance_id + '"]');
+  await node(0).click();
+  const first = await node(0).boundingBox(); if (!first) throw Error('missing draggable node');
+  await page.mouse.move(first.x + 20, first.y + 20); await page.mouse.down();
+  await page.mouse.move(first.x + 40, first.y + 30, { steps: 8 });
+  expect(await read(page)).toEqual(source); await page.mouse.up();
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.inset_left).toEqual({ value: 120, unit: 'px' });
+  expect((await read(page)).blocks[0].slots.content![0].style.inset_top).toEqual({ value: 100, unit: 'px' });
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(source);
+  await node(0).click();
+  const rotation = frame.locator('.moveable-rotation-control'); await expect(rotation).toBeVisible();
+  const r = await rotation.boundingBox(), target = await node(0).boundingBox();
+  if (!r || !target) throw Error('missing rotation target');
+  const cx = target.x + target.width / 2, cy = target.y + target.height / 2;
+  const radius = Math.hypot(r.x + r.width / 2 - cx, r.y + r.height / 2 - cy);
+  await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2); await page.mouse.down();
+  await page.mouse.move(cx + radius, cy, { steps: 10 }); await page.mouse.up();
+  await expect.poll(async () => Math.abs((await read(page)).blocks[0].slots.content![0].style.rotation ?? 0)).toBeGreaterThan(10);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(source);
+  await node(0).click(); await node(1).click({ modifiers: ['Shift'] });
+  await expect(page.getByRole('heading', { name: '선택 2개', exact: true })).toBeVisible();
+  await page.getByLabel('일괄 속성', { exact: true }).selectOption('opacity');
+  await page.getByLabel('일괄 값', { exact: true }).fill('0.5');
+  await page.getByLabel('일괄 값', { exact: true }).press('ArrowLeft');
+  expect(await read(page)).toEqual(source);
+  await click(page, '선택 모두 적용');
+  const changed = await read(page);
+  expect(changed.blocks[0].slots.content!.slice(0, 2).map(item => item.style.opacity)).toEqual([.5, .5]);
+  expect(changed.blocks[0].slots.content!.map(item => item.style.width)).toEqual(nodes.map(item => item.style.width));
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(source);
+});
+
+test('v3 focus loss cancels and layout constraints preserve canonical history', async ({ page }) => {
+  const source = geometryFixture(), id = source.blocks[0].slots.content![0].instance_id;
+  const frame = page.frameLocator('iframe'), target = frame.locator('[data-v3-node="' + id + '"]');
+  const prepare = async (document: DocumentV3) => {
+    await open(page, document); await click(page, '정밀 조작');
+    await page.getByLabel('작업면 확대', { exact: true }).selectOption('0.5');
+    await page.getByLabel('스냅 가이드', { exact: true }).uncheck(); await target.click();
+    const handle = frame.locator('.moveable-control[data-direction="e"]'); await expect(handle).toBeVisible();
+    const box = await handle.boundingBox(); if (!box) throw Error('missing constraint handle');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2, { steps: 5 });
+  };
+  await prepare(source);
+  await page.getByLabel('작업면 확대', { exact: true }).focus();
+  await page.mouse.up();
+  expect(await read(page)).toEqual(source);
+  await expect.poll(() => target.evaluate(element => parseFloat(getComputedStyle(element).width))).toBe(160);
+  await expect(page.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
+  const constrained = structuredClone(source);
+  constrained.blocks[0].slots.content![0].style.max_width = { value: 180, unit: 'px' };
+  await prepare(constrained); await page.mouse.up();
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.width).toEqual({ value: 180, unit: 'px' });
+  await expect.poll(() => target.evaluate(element => parseFloat(getComputedStyle(element).width))).toBe(180);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(constrained);
+  await expect(page.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
+});
 
 test('v3 independent layers preserve recursive commands in one Puck Undo and canonical save/reopen', async ({ page }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));

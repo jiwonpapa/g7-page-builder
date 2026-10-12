@@ -366,6 +366,12 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await format.getByRole('button', { name: '색상 적용', exact: true }).click();
   const colored = { text: '한글', bold: true, color: { kind: 'hex', value: '#2255ff' } };
   await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[colored, { text: ' 정밀 편집' }]] });
+  const afterColor = await read(page);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(bold);
+  await expect(input.locator('[data-v3-color]')).toHaveCount(0);
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(afterColor);
+  await expect(input.locator('[data-v3-color]')).toHaveText('한글');
+  await selectPrefix();
   await format.getByLabel('부분 크기', { exact: true }).fill('20');
   await format.getByRole('button', { name: '크기 적용', exact: true }).click();
   const sized = { ...colored, font_size: { value: 20, unit: 'px' } };

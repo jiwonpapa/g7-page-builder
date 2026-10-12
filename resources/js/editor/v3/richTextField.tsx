@@ -6,17 +6,32 @@ import { markHtmlAttributes, markKeys, runFromAttributes } from './richTextCodec
 import { InputButton } from './TypedInput';
 
 const name = 'v3Run';
+/** Capture the visible range at the canvas-to-toolbar focus boundary, without storing a second selection. */
+function syncVisibleSelection(editor: Editor) {
+  const dom = editor.view.dom, selection = dom.ownerDocument.getSelection();
+  if (selection?.anchorNode && selection.focusNode && dom.contains(selection.anchorNode) && dom.contains(selection.focusNode)) {
+    const anchor = editor.view.posAtDOM(selection.anchorNode, selection.anchorOffset);
+    const head = editor.view.posAtDOM(selection.focusNode, selection.focusOffset);
+    const from = Math.min(anchor, head), to = Math.max(anchor, head);
+    if (editor.state.selection.from !== from || editor.state.selection.to !== to) editor.commands.setTextSelection({ from, to });
+  }
+}
+export function richTextChain(editor: Editor) {
+  // Once blurred, Tiptap owns the captured range: later markup changes can collapse the DOM range.
+  if (editor.isFocused) syncVisibleSelection(editor);
+  return editor.chain();
+}
 function toggle(editor: Editor, key: 'bold' | 'italic' | 'underline' | 'strike') {
-  return editor.chain().setMark(name, { [key]: editor.getAttributes(name)[key] !== true }).run();
+  return richTextChain(editor).setMark(name, { [key]: editor.getAttributes(name)[key] !== true }).run();
 }
 function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }) {
   const [color, setColor] = useState('#112233'), [size, setSize] = useState('16'), [unit, setUnit] = useState('px');
   const [url, setUrl] = useState(''), [error, setError] = useState('');
   if (!editor) return null;
   const apply = (attributes: Partial<Run>) => {
-    // The public RichTextMenu preserves the editor selection. Keep focus in toolbar inputs;
+    // Keep focus in toolbar inputs while synchronizing the owning canvas selection;
     // do not schedule a focus callback that can steal the next field's input across the iframe.
-    try { runFromAttributes(attributes); editor.chain().setMark(name, attributes).run(); setError(''); }
+    try { runFromAttributes(attributes); richTextChain(editor).setMark(name, attributes).run(); setError(''); }
     catch (error) { setError(error instanceof Error ? error.message : '서식을 확인해 주세요.'); }
   };
   return <RichTextMenu><div className="g7pb-portal-surface" role="toolbar" aria-label="부분 서식" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', maxWidth: 420,
@@ -31,8 +46,8 @@ function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }
     <InputButton disabled={readOnly} onClick={() => apply({ font_size: { value: Number(size), unit: unit === 'rem' ? 'rem' : 'px' } })}>크기 적용</InputButton>
     <input aria-label="부분 링크" value={url} onChange={event => setUrl(event.target.value)} />
     <InputButton disabled={readOnly} onClick={() => apply({ link: { url, new_tab: false } })}>링크 적용</InputButton>
-    <InputButton disabled={readOnly} onClick={() => editor.chain().setMark(name, { link: null }).run()}>링크 제거</InputButton>
-    <InputButton disabled={readOnly} onClick={() => editor.chain().unsetMark(name).run()}>부분 초기화</InputButton>
+    <InputButton disabled={readOnly} onClick={() => richTextChain(editor).setMark(name, { link: null }).run()}>링크 제거</InputButton>
+    <InputButton disabled={readOnly} onClick={() => richTextChain(editor).unsetMark(name).run()}>부분 초기화</InputButton>
     {error && <span role="alert">{error}</span>}
   </div></RichTextMenu>;
 }
@@ -55,6 +70,7 @@ export function richTextField(document: DocumentV3, singleLine: boolean): Richte
       const run = runFromAttributes(mark.attrs);
       return [run.link ? 'a' : 'span', markHtmlAttributes(run, document), 0];
     },
+    onBlur() { syncVisibleSelection(this.editor); },
     // Puck's public rich-text wrapper routes Mod-i through this Tiptap command.
     addCommands() { return { toggleItalic: () => ({ commands, editor }) => commands.setMark(name, { italic: editor.getAttributes(name).italic !== true }) }; },
     addKeyboardShortcuts() { return { 'Mod-b': () => toggle(this.editor, 'bold'), 'Mod-i': () => toggle(this.editor, 'italic'), 'Mod-u': () => toggle(this.editor, 'underline') }; },

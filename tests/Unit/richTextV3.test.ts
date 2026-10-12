@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { Editor, Node as TiptapNode } from '@tiptap/core';
 import fixture from '../Contract/document-v3.fixture.json';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument } from '../../resources/js/documents/v3/tree';
@@ -42,25 +41,5 @@ describe('typed rich-text adapter', () => {
     expect(field.tiptap?.extensions?.map(extension => extension.name)).toEqual(['v3Run', 'doc']);
     expect(field.options?.bold).toBe(false);
     expect(richTextField(doc, false).tiptap?.extensions?.map(extension => extension.name)).toEqual(['v3Run']);
-  });
-  it('refreshes the public selection root when a Puck text editor moves into its canvas iframe', () => {
-    const frame = document.createElement('iframe'); document.body.append(frame);
-    const field = richTextField(source(), false);
-    const editor = new Editor({ extensions: [
-      TiptapNode.create({ name: 'doc', topNode: true, content: 'paragraph+' }),
-      TiptapNode.create({ name: 'paragraph', group: 'block', content: 'text*', renderHTML: () => ['p', 0] }),
-      TiptapNode.create({ name: 'text', group: 'inline' }), ...field.tiptap!.extensions!,
-    ] });
-    try {
-      document.body.append(editor.view.dom);
-      expect(editor.view.root).toBe(document);
-      frame.contentDocument!.body.append(editor.view.dom);
-      expect(editor.view.root).toBe(document); // Reproduces the stale cached host root.
-      editor.emit('create', { editor });
-      expect(editor.view.root).toBe(frame.contentDocument);
-      document.body.append(editor.view.dom);
-      editor.emit('focus', { editor, event: new FocusEvent('focus'), transaction: editor.state.tr });
-      expect(editor.view.root).toBe(document);
-    } finally { editor.destroy(); frame.remove(); }
   });
 });

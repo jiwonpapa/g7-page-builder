@@ -67,8 +67,11 @@ describe('bundled repeated compositions become independent editable trees', () =
   it('expands the authored featured pricing plan, not the first plan', () => {
     const composition = createRepeatedComposition('pricing.three-tier', validateDocumentV3(fixture), ids());
     const plans = [...indexTree(composition.source).values()].filter(item => 'tag' in item.node.props && item.node.props.tag === 'article');
-    expect(plans.map(item => item.node.style.column_span)).toEqual([undefined, 2]);
-    expect(plans[1].node.responsive.mobile).toEqual({ column_span: 1 });
+    expect(plans.map(item => item.node.style.column_span)).toEqual([undefined, undefined]);
+    const grid = [...indexTree(composition.source).values()].find(item => item.node.name === '플랜 목록')!.node;
+    expect(grid.style.columns).toEqual([{ fr: 1 }, { fr: 2 }]);
+    expect(grid.responsive.mobile?.columns).toEqual([{ fr: 1 }]);
+    expect(plans[1].node.style.border_left?.color).toEqual({ kind: 'token', value: 'primary' });
   });
   it('keeps styles detached across calls and defines real list/table semantics', () => {
     const document = validateDocumentV3(structuredClone(fixture));

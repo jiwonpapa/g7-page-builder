@@ -19,7 +19,7 @@ test('creates an empty page in the installed generic editor and preserves nested
     await expect(page.getByTestId('structure-document-host')).toBeVisible();
     await page.getByLabel('페이지 제목', { exact: true }).fill('블록 없는 공통 요소 편집');
     await page.getByLabel('기본 주소 이름', { exact: true }).fill(slug);
-    await page.getByLabel('페이지 출력 방식', { exact: true }).selectOption('none');
+    await page.getByRole('combobox', { name: '페이지 출력 방식', exact: true }).selectOption('none');
     const creating = page.waitForResponse(response => response.url().endsWith(documents) && response.request().method() === 'POST');
     await click('빈 페이지 만들기');
     const createdResponse = await creating;

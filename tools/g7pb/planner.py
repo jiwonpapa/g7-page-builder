@@ -48,6 +48,11 @@ BROWSER_HELPER_SPECS = {
 }
 BROWSER_CONSUMER_TEST = "tests/Harness/test_planner.py"
 CONTRACT_FIXTURE_CONSUMERS = {
+    # IP4 presentation is currently consumed by the TS generator. Register
+    # further language consumers when their implementation is introduced.
+    "tests/Contract/document-v3-presentation.json": (
+        "tests/Unit/documentV3Presentation.test.ts",
+    ),
     "tests/Contract/document-v3.fixture.json": (
         "tests/Unit/documentV3.test.ts", "tests/UnitPhp/DocumentV3Test.php",
     ),

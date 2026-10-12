@@ -5,6 +5,33 @@ from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS, build_plan, contract_
 
 
 class DocumentV3ScopeTests(unittest.TestCase):
+    def test_presentation_fixture_selects_its_exact_consumer_in_every_phase(self):
+        fixture = "tests/Contract/document-v3-presentation.json"
+        consumer = "tests/Unit/documentV3Presentation.test.ts"
+        self.assertEqual(CONTRACT_FIXTURE_CONSUMERS[fixture], (consumer,))
+        self.assertIn(fixture, contract_fixture_inputs(consumer))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / fixture).parent.mkdir(parents=True)
+            (root / fixture).write_text("[]")
+            for phase in ("submission", "integration", "verification", "ci"):
+                with self.subTest(phase=phase):
+                    plan = build_plan(root, [fixture], phase=phase)
+                    self.assertTrue(plan.unresolved)
+                    self.assertTrue(any(consumer in reason for reason in plan.unresolved))
+            (root / consumer).parent.mkdir(parents=True)
+            (root / consumer).write_text("export {};")
+            for phase in ("submission", "integration", "verification", "ci"):
+                with self.subTest(phase=phase):
+                    plan = build_plan(root, [fixture], phase=phase)
+                    self.assertFalse(plan.unresolved, plan.unresolved)
+                    self.assertFalse(plan.full)
+                    gate = next(gate for gate in plan.gates if gate.name == "unit:" + consumer)
+                    self.assertIn(fixture, gate.inputs)
+                    self.assertFalse(any(gate.name == "full-product" for gate in plan.gates))
+            unknown = build_plan(root, ["tests/Contract/document-v3-unregistered.json"])
+            self.assertTrue(any("Unclassified input" in reason for reason in unknown.unresolved))
+
     def test_shared_fixtures_have_both_language_consumers(self):
         for path in ("tests/Contract/document-v3.fixture.json", "tests/Fixtures/document-v3-cases.json"):
             self.assertEqual(CONTRACT_FIXTURE_CONSUMERS[path], (

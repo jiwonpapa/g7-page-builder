@@ -394,7 +394,10 @@ async function setCanvasViewport(page: Page, projectName: string): Promise<numbe
 async function layoutMetrics(blocks: Locator, editor: boolean): Promise<LayoutMetric[]> {
   return blocks.evaluateAll((elements, usesEditorChild) => elements.map((element) => {
     const block = element as HTMLElement;
-    const measured = usesEditorChild ? block.firstElementChild as HTMLElement | null : block;
+    // Card has a renderer wrapper on both surfaces; its article owns padding.
+    const measured = block.dataset.blockType === 'card'
+      ? block.querySelector<HTMLElement>(':scope > article.g7pb-single-card')
+      : usesEditorChild ? block.firstElementChild as HTMLElement | null : block;
     if (!measured) throw new Error(`Block ${block.dataset.blockId ?? 'unknown'} has no rendered child.`);
     const documentElement = block.ownerDocument.documentElement;
     const rect = measured.getBoundingClientRect();

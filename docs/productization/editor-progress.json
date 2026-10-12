@@ -664,6 +664,13 @@
           "commit": "e88fe6cfe252bf066f5517685c989c17f365663d",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip7-catalog-compositions.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-static-compositions",
+          "commit": "6533e1e38482ab328f4a76130680e0c46689190b",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip7-catalog-compositions.md"
         }
       ],
       "blocked_reason": null,

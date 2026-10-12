@@ -2,7 +2,7 @@
 
 <!-- editor-plan:independent-editor-20261012 -->
 
-상태: **2026-10-12 스펙·정책 확정, IP1~IP10 구현 계획 4/10**. IP1 엔진 결합, IP2 정밀 문서·스타일 계약, IP3 레이어·재귀 구조, IP4 정밀 Inspector·자동 배치의 구현·Local 통합·필수 증거를 확보했다. [IP1 증거](../audits/2026-10-12-ip1-engine-proof.md), [IP2 증거](../audits/2026-10-12-ip2-document-contract.md), [IP3 증거](../audits/2026-10-12-ip3-structure-editing.md), [IP4 증거](../audits/2026-10-12-ip4-precision-inspector.md)를 참고한다. IP5는 소스 통합·독립 브라우저 39개를 통과했으나 최종 FULL의 기존 편집기 진입이 외부 Inter CSS 지연으로 차단됐다. [IP5 실행·차단 기록](../audits/2026-10-12-ip5-canvas-interactions.md)을 남겼으며 IP6는 착수하지 않았다. IP3~IP5는 독립 mount·테스트 저장 포트·PHP 초안 fragment 기준이며 기존 G7 화면·서버 저장/발행 전환 완료가 아니다. 정책 작업은 구현 분모에 넣지 않으며 제품 전체 정밀 편집·기존 문서 전환 완료로 보지 않는다. G7 코어 수정·운영 배포는 실행하지 않았다.
+상태: **2026-10-12 스펙·정책 확정, IP1~IP10 구현 계획 5/10**. IP1 엔진 결합, IP2 정밀 문서·스타일 계약, IP3 레이어·재귀 구조, IP4 정밀 Inspector·자동 배치, IP5 핸들·다중 선택 작업면의 구현·Local 통합·필수 증거를 확보했다. [IP1 증거](../audits/2026-10-12-ip1-engine-proof.md), [IP2 증거](../audits/2026-10-12-ip2-document-contract.md), [IP3 증거](../audits/2026-10-12-ip3-structure-editing.md), [IP4 증거](../audits/2026-10-12-ip4-precision-inspector.md), [IP5 증거](../audits/2026-10-12-ip5-canvas-interactions.md)를 참고한다. IP5 최종 FULL은 동일 Inter 4.1의 로컬 배포로 외부 글꼴 지연을 해소한 통합본에서 통과했다. 다음은 IP6이며 아직 착수하지 않았다. IP3~IP5는 독립 mount·테스트 저장 포트·PHP 초안 fragment 기준이며 기존 G7 화면·서버 저장/발행 전환 완료가 아니다. 정책 작업은 구현 분모에 넣지 않으며 제품 전체 정밀 편집·기존 문서 전환 완료로 보지 않는다. G7 코어 수정·운영 배포는 실행하지 않았다.
 
 [편집 정책](editing-policy.md) · [세부 스펙](independent-editor-spec.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [구조](../architecture.md)
 

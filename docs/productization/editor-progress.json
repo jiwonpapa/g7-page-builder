@@ -554,7 +554,7 @@
       "id": "IP5",
       "phase": "editing",
       "title": "핸들과 다중 선택 작업면",
-      "status": "blocked",
+      "status": "done",
       "depends_on": [
         "IP4"
       ],
@@ -563,31 +563,31 @@
       ],
       "owner_task": "ip5-canvas-ui-20261012",
       "implementation_commit": "aff9225883b330777807804b4177e16e2b3fcd13",
-      "integrated_commit": "bcb3ffba51fe6ec468b4dd59ab59ad804ecba14d",
+      "integrated_commit": "c58a1e83ba0003015cd63eccdba32a0d063332b2",
       "evidence": [
         {
           "acceptance_id": "IND-05",
           "kind": "unit",
-          "commit": "a27e47c99a1ca8bb20d142a6f861ef40f8660fd5",
+          "commit": "c58a1e83ba0003015cd63eccdba32a0d063332b2",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip5-canvas-interactions.md"
         },
         {
           "acceptance_id": "IND-05",
           "kind": "browser",
-          "commit": "a27e47c99a1ca8bb20d142a6f861ef40f8660fd5",
+          "commit": "c58a1e83ba0003015cd63eccdba32a0d063332b2",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip5-canvas-interactions.md"
         },
         {
           "acceptance_id": "IND-05",
           "kind": "accessibility",
-          "commit": "a27e47c99a1ca8bb20d142a6f861ef40f8660fd5",
+          "commit": "c58a1e83ba0003015cd63eccdba32a0d063332b2",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip5-canvas-interactions.md"
         }
       ],
-      "blocked_reason": "IP5 독립 브라우저 39개는 통과했으나 최종 FULL의 기존 편집기 진입이 외부 Inter CSS 지연으로 실패했다. 동일 시나리오 10회 중 1회 재현했으며 외부 글꼴 배포 방식 보완 전 완료로 집계하지 않는다.",
+      "blocked_reason": null,
       "scope": [
         "resources/js/adapters/interaction",
         "resources/js/editor",

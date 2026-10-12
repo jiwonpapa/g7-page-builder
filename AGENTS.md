@@ -41,12 +41,12 @@
 
 - 제품 저장소는 G7 코어 저장소와 분리한다.
 - `src/Domain`, `src/Application`, `src/Contracts`에서는 G7 클래스와 Laravel 구현을 import하지 않는다.
-- PHP의 G7 연동은 `src/Infrastructure/Gnuboard7`, 신규 네이티브 편집기의 브라우저 연동은 `resources/js/adapters/gnuboard7` Adapter에서만 수행한다. 기존 공개 Site Shell adapter의 소유권은 유지한다.
+- PHP의 G7 연동은 `src/Infrastructure/Gnuboard7`, 보존 네이티브 편집기의 브라우저 연동은 `resources/js/adapters/gnuboard7` Adapter에서만 수행한다. 기존 공개 Site Shell adapter의 소유권은 유지한다.
 - 루트 `module.php`는 G7 공개 `AbstractModule`을 연결하는 Composition Root 예외다. 여기에는 비즈니스 로직·DB 접근을 두지 않는다.
 - `src/Providers/*ServiceProvider.php`는 Adapter binding, View·공개 route·middleware 등록만 수행하는 Laravel Composition Root 예외다.
-### 기존 독립 PB 모드의 호환 경계
+### 독립 PB와 G7 연결 경계
 
-아래 경계는 기존 PB 문서·Site Part·생성 발행본에 적용한다. 신규 네이티브 원본 편집은 다음 Editor boundary의 별도 계약을 따른다. 내부 import·직접 DB 참조 금지는 두 모드 공통이다.
+아래 경계는 주 개발 대상인 독립 PB의 문서·Site Part·생성 발행본에 적용한다. 보존 네이티브 원본 편집은 다음 Editor boundary의 별도 계약을 따른다. 내부 import·직접 DB 참조 금지는 두 모드 공통이다.
 
 - 기존 독립 PB 모드의 G7 의존성은 모듈 lifecycle·Provider 발견, API·Web route, migration, admin auth·permission, 모듈 소유 admin menu와 admin route/layout 2개, 활성 User Template route 조회·모듈 소유 user route 2개/layout 3개, route merge filter, 공식 `core.layout_extension.after_apply` 후처리 filter, 정적 asset serving으로 제한한다.
 - custom role은 등록하지 않는다. `페이지 빌더` 전용 admin menu 하나만 별도 등록한다.
@@ -67,30 +67,40 @@
 
 ## Editor boundary
 
-- 현재 개발 목표는 G7 일반 페이지의 네이티브 편집 고도화 확장이다. 이 규칙 개정은 구현 착수·G7 코어 변경·배포 승인을 대신하지 않는다.
+- 현재 개발 목표는 **독립 Page Builder의 피그마식 웹 정밀 편집**이다. [세부 스펙](docs/productization/independent-editor-spec.md)과 IP1~IP10 계획을 따른다. 블록 문구/유한 프리셋 편집만으로 완료 처리하지 않는다.
+- 독립 PB는 PageBuilderDocument를 단일 원본으로 삼고 문서·명령·선택 의미·저장/발행 계약을 소유한다. G7 Layout Editor/registerPanel은 필수 의존성이 아니다. G7 없는 포트 대체 환경에서 핵심 편집을 검증한다.
+- Puck·Tiptap을 재사용하며 Moveable/Selecto는 IP1의 버전·iframe·입력 소유권·단일 Undo 검증 후 도입한다. 정책 문서만으로 의존성 설치나 결합 성공을 선언하지 않는다.
+- PB 소유 페이지/공통영역의 내부 요소·중첩·정밀 크기/스타일·다중 선택·반응형 직접 편집을 구현한다. G7 인증/게시판/결제 실행 로직과 기존 G7 원본은 인수하지 않는다.
+- 이번 정책 변경은 G7 코어 수정·운영 배포·기존 문서 자동 전환/삭제 승인이 아니다.
+
+### 보존 네이티브 모드
+
+- 기존 네이티브 확장은 호환·유지보수 트랙으로 보존하며 독립 편집기 구현의 선행조건으로 삼지 않는다.
 - 네이티브 모드의 원본·선택·트리·Undo·미리보기·저장은 G7이 소유한다. 기존 PB 모드는 `PageBuilderDocument`·Puck·PB 저장/발행을 유지한다. 같은 문서를 이중 저장·동기화하거나 자동 변환하지 않는다.
 - 네이티브 모드는 실제 제공된 G7 공개 editor API·editor-spec만 adapter 뒤에서 사용한다. 기존 공개 메서드 `registerWidget`, `registerNodeEditor`, `registerCanvasOverlay`, `onReady`와 NE1 호스트 계약에서 검증한 `registerPanel`만 허용한다. `registerPanel`은 호환 호스트에서만 제공되며 지원 소스·시험 증거는 `docs/productization/native-host-contract.md`에 기록한다. API 존재만으로 문맥·권한·삽입·저장 안전성을 보장하지 않는다.
-- 호스트 문맥·경로·명령·패널 API의 미확보 항목은 [편집 정책](docs/productization/editing-policy.md)의 H01~H08과 연결한다. 미제공 API를 상상해 호출하거나 G7 private hook·registry·전역 DOM 조작으로 우회하지 않는다. G7 측 변경이 필요하면 별도 승인·공개 계약·검증이 먼저다.
+- 호스트 문맥·경로·명령·패널 API의 미확보 항목은 [보존 네이티브 정책](docs/productization/editing-policy-native-20261012.md)의 H01~H08과 연결한다. 미제공 API를 상상해 호출하거나 G7 private hook·registry·전역 DOM 조작으로 우회하지 않는다. G7 측 변경이 필요하면 별도 승인·공개 계약·검증이 먼저다.
 - 네이티브 `domain → domain`, `ports → domain/ports`, `application → domain/ports/application`, `ui → domain/ports/application/ui` 의존만 허용한다. 조립 entry와 G7 adapter만 양쪽을 연결하며 Puck·기존 PB 문서 API를 import하지 않는다. 외부 I/O는 포트로 전달한다.
 - 원본의 출처·표현식·번역키·반복·actions·responsive·알 수 없는 필드를 보존하고, 지원된 필드만 변경한다. 상속 잠금을 풀려고 `__source`를 제거하거나 합성 Header/Footer를 본문에 복사하지 않는다.
 - 비동기 작업에는 문서/템플릿·노드 경로·세션·revision·readonly 문맥이 필요하다. 늦은 응답의 다른 노드 적용, 부분 변경, 독립 Undo 추가를 금지한다. 공식 문맥 부재는 해당 기능의 선행조건 미충족이다.
 - 네이티브 확장 entry는 G7의 React/ReactDOM/jsx-runtime을 공유한다. 기존 Puck 번들을 G7 편집기 안에 중첩하지 않는다. 지원 G7/테마/spec/renderer 조합과 장애 시 무변경 동작을 검증한 범위만 공개한다.
 - G7 첨부·페이지 설정·저장 기능을 재사용하며 저장의 공개 영향을 유지한다. 네이티브 초안·예약 발행, 임의 테마 페이지/주소/메뉴 생성 UX는 별도 계약과 후속 계획 없이 추가하지 않는다. G7의 일반 페이지 생성 기능 자체를 미지원이라고 설명하지 않는다.
 
-### 기존 독립 PB 편집기의 유지 계약
+### 독립 PB 편집기의 개발 계약
 
 - Page Builder는 G7 Layout Editor와 분리된 독립 편집 화면을 제공한다.
 - 편집기 커널은 MIT `@puckeditor/core`를 정확한 버전으로 고정해 사용하고 `EditorAdapter` 뒤에 격리한다.
 - Puck의 `AppState`와 원시 `Data`는 영속 원본이 아니다. 저장 전후 항상 `PageBuilderDocument`로 변환한다.
-- 드래그앤드롭·속성 패널·히스토리·반응형 캔버스를 새로 복제하지 않는다.
+- Puck 구조 DnD·Tiptap 리치텍스트·기존 history를 재사용한다. 정밀 Inspector·레이어·핸들·다중 선택은 같은 문서 명령/이력으로 확장하며 독립 엔진/Undo 스택을 중복 구현하지 않는다.
 - Tiptap은 Puck의 리치텍스트 필드 구현으로만 사용한다. Tiptap을 페이지 레이아웃 엔진으로 사용하지 않는다.
 - Hero 계열의 화면상 텍스트는 Puck `contentEditable`로 직접 편집한다. URL·이미지는 캔버스 문맥 도구와 속성 패널에서 같은 picker·문서 명령을 사용한다. 구조 편집은 같은 캔버스의 명시적 내부 구성 상태에서 선언된 슬롯만 대상으로 하며, 패널은 허용된 필드·스타일·변형을 보완한다. 이 역할 규칙이 미구현 슬롯의 사용을 허용하거나 구현 완료를 뜻하지 않는다.
-- 임의 class·Tailwind·inline style·raw HTML·JavaScript field를 문서 계약이나 편집기에 추가하지 않는다.
+- 임의 class·Tailwind·raw CSS 문자열·raw HTML·JavaScript field를 문서 계약이나 편집기에 추가하지 않는다. 정밀 크기/간격/색상 등의 typed 값과 검증 후 생성하는 CSS는 허용하며 공통 schema/fixture로 PHP·TS 의미를 일치시킨다.
+- 새 정밀 디자인은 v3 목표 계약으로 구현하고 v1/v2·Site Part 원본을 읽기만으로 전환하지 않는다. 명시적 이행·원본 revision 복구·마지막 정상 발행본 보존이 필수다.
+- 데스크톱 브라우저의 PC/태블릿/모바일 캔버스 모두 편집 가능해야 한다. 기존 미리보기 전용/유한 슬롯 제한은 현재 호환 구현이지 새 목표의 영구 제한이 아니다.
 - Layout Editor는 `PageBuilderDocument`와 생성된 발행본을 열거나 저장하지 않는다.
 
 ## Editor policy and progress
 
-- 현행 편집 범위는 [편집 정책](docs/productization/editing-policy.md), 실행 순서와 합격 조건은 [편집 기능 개발 계획](docs/productization/editor-plan.md)을 따른다. 과거 8차 제품화 계획과 사이트 1~5차 기록을 현재 실행 지시로 재사용하지 않는다. 현행 실행 계획은 네이티브 확장 NE1~NE6이며 기존 EP 계획·완료 증거는 별도 archive로 보존한다. 과거 완료를 새 계획에 합산하지 않는다. 현재 목표는 페이지빌더 편집 기능 고도화이며 킷·풀 테마 상품 제작의 진척으로 대신하지 않는다.
+- 현행 편집 범위는 [편집 정책](docs/productization/editing-policy.md), 실행 순서와 합격 조건은 [편집 기능 개발 계획](docs/productization/editor-plan.md)을 따른다. 과거 8차 제품화 계획과 사이트 1~5차 기록을 현재 실행 지시로 재사용하지 않는다. 현행 실행 계획은 독립 정밀 편집 IP1~IP10이며 기존 EP 및 NE/UI 계획·완료 증거는 별도 archive와 해시로 보존한다. 과거 완료를 새 계획에 합산하지 않는다. 현재 목표는 페이지빌더 편집 기능 고도화이며 킷·풀 테마 상품 제작의 진척으로 대신하지 않는다.
 - 편집 기능 작업 착수 전 `make editor-status`로 [진척 원장](docs/productization/editor-progress.json)과 [표시판](docs/productization/editor-progress.md)의 현재 항목·의존성·증거를 확인한다. 파일 소유권과 실제 변경 범위는 별도로 `make coord-status`와 `base_sha` 대비 diff로 확인하며, 계획 상태가 lease를 대신하지 않는다.
 - 작업을 시작할 때 해당 계획 항목과 필요한 상태·증거 갱신 범위를 함께 정한다. 원장·표시판을 직접 갱신하려면 해당 파일을 claim하며, 병렬 구현에서 다른 task가 소유하면 제출·통합·검증 결과를 그 소유자에게 인계한다. claim 밖의 계획 파일을 수정하거나 상태 갱신을 누락한 채 완료 처리하지 않는다.
 - 종료 보고 전 `make editor-plan-check`로 계획·원장·표시판과 증거의 정합성을 확인한다. 정책 확정, 소스 구현, 통합, 실제 동작 검증, 배포를 구별하며 표시판만 고쳐 완료 상태를 만들지 않는다. 이 검사는 제품 동작 시험이나 배포 검증을 대신하지 않는다.

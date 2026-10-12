@@ -1,14 +1,15 @@
 # 개발 헌법
 
-상태: 2026-09-07 네이티브 확장 경계를 반영한 설계·검증 기준. 이 문서는 구현 완료 보고서가 아니다. 사용자 지시가 최우선이며, 현재 동작과 목표 요구를 혼동하지 않는다.
+상태: 2026-10-12 독립 정밀 편집을 주 개발 대상으로 확정한 설계·검증 기준. 이 문서는 구현 완료 보고서가 아니다. 사용자 지시가 최우선이며, 현재 동작과 목표 요구를 혼동하지 않는다.
 
-2026-09-07 현행 기능 범위는 [편집 정책](productization/editing-policy.md), 작업 순서와 합격 조건은 [편집 기능 개발 계획](productization/editor-plan.md), 실제 상태는 [진척 원장](productization/editor-progress.json)과 [표시판](productization/editor-progress.md)으로 연결한다. 과거 차수의 완료 기록이나 카탈로그 수량을 새 편집 기능의 완료로 옮기지 않는다.
+2026-10-12 현행 기능 범위는 [편집 정책](productization/editing-policy.md), 작업 순서와 합격 조건은 [편집 기능 개발 계획](productization/editor-plan.md), 실제 상태는 [진척 원장](productization/editor-progress.json)과 [표시판](productization/editor-progress.md)으로 연결한다. 과거 차수의 완료 기록이나 카탈로그 수량을 새 편집 기능의 완료로 옮기지 않는다.
 
 ## 1. 제품과 기술의 소유권
 
-- 원본의 소유권을 편집 모드로 구분한다. 기존 독립 PB는 `PageBuilderDocument`, 신규 네이티브 확장은 G7이 소유한 원본 JSON이다. Puck 상태·생성 HTML·PB 생성 JSON은 원본을 대체하지 않는다. 같은 페이지의 이중 원본·자동 양방향 변환을 만들지 않는다.
-- G7 Layout Editor의 공개 호스트 계약을 네이티브 모드의 어댑터에서 사용한다. 소스 조사는 근거이며 내부 hook/runtime/registry import 허가가 아니다. 선택·이력·저장의 소유자는 G7이며 이를 Puck·PB 저장 엔진으로 복제하지 않는다. 기존 독립 PB의 호환 경계는 유지한다.
+- 주 개발 대상인 독립 PB는 `PageBuilderDocument`를 단일 원본으로 삼고, 보존 네이티브 확장만 G7 원본 JSON을 사용한다. Puck 상태·생성 HTML·PB 생성 JSON은 원본을 대체하지 않는다. 같은 페이지의 이중 원본·자동 양방향 변환을 만들지 않는다.
+- 독립 PB 도메인·명령·선택·저장 계약은 G7 없이 검증 가능해야 한다. G7 Layout Editor의 공개 호스트 계약은 보존 네이티브 모드의 어댑터에서만 사용한다. 소스 조사는 근거이며 내부 hook/runtime/registry import 허가가 아니다. 네이티브 선택·이력·저장의 소유자는 G7이며 이를 PB 저장 엔진으로 복제하지 않는다. 독립 PB는 Puck을 Adapter 뒤에서 사용하고 단일 문서 명령/이력 흐름을 유지한다.
 - 기존 완성 블록의 내부 구조 편집과 중첩 삽입·이동·삭제는 목표 요구다. 편집 정책이 선언한 필드·반복 항목·허용 슬롯을 개방하고 접근성·데이터·인증 등의 고정 동작은 보존한다. 현 구현의 제한을 영구 제품 정책으로 바꾸거나, 모든 DOM/CSS의 자유 편집으로 확대하거나, 문서/테스트 작성만으로 완료 처리하지 않는다.
+- 정밀 편집의 확정 범위는 [세부 스펙](productization/independent-editor-spec.md)을 따른다. typed 크기/단위·스타일·Flex/Grid·반응형 override를 지원하되 raw CSS/HTML/JS 입력을 열지 않는다. Moveable/Selecto는 좌표/선택 입력 부품이며 별도 원본이나 Undo 엔진이 아니다.
 - 기능 요구, 문서 계약, 화면 흐름, 구현, 검증 결과를 연결한다. 요구 변경에는 이유·데이터 호환 영향·미완료 항목을 적는다.
 
 ## 2. 책임과 의존 방향
@@ -27,9 +28,9 @@
 
 `G7-INTERNAL`: G7 private runtime과 LayoutEditorChrome 직접 참조는 금지한다. 기술 조사에 사용한 샘플은 제품 실행 경로로 가져오지 않는다.
 
-`NATIVE-BOUNDARY`: 신규 `resources/js/native-editor/`의 도메인·포트·사용 사례·UI는 선언된 의존 방향을 지킨다. 조립 entry와 `resources/js/adapters/gnuboard7/`만 연결 책임을 가진다. `TS-BOUNDARY`의 가장 구체적인 경로 규칙으로 Puck·기존 PB 문서/저장 API·미선언 패키지 import를 거부한다. `nativeEditor` 설정이나 보호 계층을 삭제·확대해서 검사를 통과시키지 않는다.
+`NATIVE-BOUNDARY`: 보존 `resources/js/native-editor/`의 도메인·포트·사용 사례·UI는 선언된 의존 방향을 지킨다. 조립 entry와 `resources/js/adapters/gnuboard7/`만 연결 책임을 가진다. `TS-BOUNDARY`의 가장 구체적인 경로 규칙으로 Puck·기존 PB 문서/저장 API·미선언 패키지 import를 거부한다. `nativeEditor` 설정이나 보호 계층을 삭제·확대해서 검사를 통과시키지 않는다.
 
-- G7 호스트 접근은 adapter에서 확인된 네 개 공개 editor 메서드를 직접 참조한다. host 전체 객체의 alias·유출, 계산된 전역 멤버, adapter 밖 직접 HTTP/스토리지 접근을 AST로 차단한다. 새 공개 메서드는 실제 G7 소스·버전·계약 근거와 규칙/회귀 검사를 함께 변경해야 한다.
+- 보존 네이티브의 G7 호스트 접근은 adapter에서 확인한 공개 editor 메서드와 native-host-contract에 검증된 registerPanel만 사용한다. host 전체 객체의 alias·유출, 계산된 전역 멤버, adapter 밖 직접 HTTP/스토리지 접근을 AST로 차단한다. 새 공개 메서드는 실제 G7 소스·버전·계약 근거와 규칙/회귀 검사를 함께 변경해야 한다.
 - 정적 검사는 선언된 소스와 직접 표현식 경계다. 동적으로 외부에서 전달된 객체의 실제 권한·소유권까지 증명하지 않는다. 호스트 입력은 `unknown`으로 받고 문서·템플릿·노드·revision·readonly 문맥을 실행 시 검증한다. 공식 문맥이 없으면 해당 기능을 막으며 내부 hook으로 대체하지 않는다.
 - 알 수 없는 G7 필드, 표현식·번역·반복·출처·actions·responsive를 보존한다. UI에 보이는 값으로 원본 바인딩을 평문화하지 않는다. 복제는 ID뿐 아니라 참조 관계를 함께 처리하고 한 명령의 문서·선택·Undo 결과를 검증한다.
 

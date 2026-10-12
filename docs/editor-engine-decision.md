@@ -1,22 +1,26 @@
-# Editor engine decision
+# 편집 엔진과 정밀 조작 라이브러리 결정
 
-상태: **기존 독립 PB의 Puck 유지, 신규 네이티브 모드의 G7 공개 호스트 확장 채택**. 최초 결정일: 2026-08-19. 아래 후보 비교의 버전과 평가는 도입 당시 기록이며 현재 경쟁 제품의 전수 비교가 아닙니다.
+상태: **2026-10-12 독립 PB 중심 확정**. [편집 정책](productization/editing-policy.md), [세부 스펙](productization/independent-editor-spec.md), [개발 계획](productization/editor-plan.md)을 따른다.
 
-2026-09-07 역할 정리: 현행 제공 범위는 [편집 정책](productization/editing-policy.md), 진행 순서·증거는 [개발 계획](productization/editor-plan.md)과 [진척 표시판](productization/editor-progress.md)을 따릅니다. 엔진 API의 존재, 제품에 연결된 기능, 실제 브라우저 검증을 서로 구분합니다.
+## 이번 결정
 
-## 신규 네이티브 모드
+| 역할 | 결정 | 도입 조건 |
+|---|---|---|
+| 페이지 구성/중첩/이력 | 기존 Puck 0.23.0 재사용, EditorAdapter로 격리 | IP1에서 새 조작 부품과 단일 선택/이력 결합 검증 |
+| 글자 범위 편집 | 기존 Tiptap/Puck rich-text 연결 재사용 | IME·텍스트/요소 입력 충돌·Undo 검증; 별도 레이아웃 엔진 금지 |
+| 핸들/리사이즈/스냅 | react-moveable 우선 후보 | 정확 버전·React 19·iframe/줌·취소·typed 저장 확인 후 고정 |
+| 영역/다중 선택 | react-selecto 우선 후보 | Puck 선택과 단일 의미 모델, 부모/자식 중복과 입력 충돌 검증 |
+| 팬/줌 | 기존 캔버스 기능 우선 | 부족이 재현될 때만 react-infinite-viewer 등 도입 검토 |
+| G7 native editor | 기존 호환 유지, 주 개발 엔진 아님 | G7 소유 원본과 독립 PB 분리, core/호스트 패치 필수화 금지 |
+| GrapesJS | 즉시 전환/병행하지 않음 | IP1의 Puck 구조적 차단이 입증되면 별도 변경 결정 |
 
-G7 일반 페이지는 G7 원본 JSON과 기존 편집 엔진에서 고도화합니다. 확장은 공개 `G7Core.layoutEditor` 등록 API·editor-spec와 지원 템플릿 renderer를 어댑터로 연결하며 G7의 선택·중첩·Undo·미리보기·저장을 재구현하지 않습니다. 실제 공개 계약의 부족분은 [편집 정책](productization/editing-policy.md)의 H01~H08 선행조건으로 관리합니다. API를 만들어 가정하거나 private 등록 지점을 호출하지 않습니다.
+추가 라이브러리는 아직 설치하지 않았다. 공식 기능 존재와 제품 결합 성공은 다르며, IP1에서 라이선스/보안/버전/성능/지원 브라우저와 한 Undo 흐름을 기록한다. 미충족이면 요구를 프리셋 편집으로 축소하거나 두 엔진을 몰래 병행하지 않는다.
 
-신규 확장 entry는 호스트 React/ReactDOM/jsx-runtime을 공유합니다. 독립 Puck 번들은 이 호스트에 삽입하지 않습니다. 기존 PB 문서·발행본은 유지하며 native 원본과 자동 변환하지 않습니다. 이 결정은 구현·전체 테마 호환·배포 완료 선언이 아닙니다.
+근거: [Moveable](https://github.com/daybrush/moveable), [Selecto](https://github.com/daybrush/selecto), [Puck Slot](https://puckeditor.com/docs/api-reference/fields/slot), [Puck Viewports](https://puckeditor.com/docs/integrating-puck/viewports).
 
-이 문서는 [개발 헌법](development-constitution.md)을 따릅니다. 아래 결정·후보 비교·상세 캔버스 계약은 **기존 PB 모드**에만 적용합니다.
+## 기존 결정과 호환 기록
 
-## 기존 독립 PB 결정
-
-독립 Page Builder 편집기는 MIT 라이선스의 `@puckeditor/core`를 사용합니다. 최초 도입 버전은 `0.23.0`으로 정확히 고정합니다. G7 Layout Editor와 Tiptap 단독 구현은 사용하지 않습니다.
-
-Puck은 드래그앤드롭, 블록 목록, 속성 필드, 중첩 slot, 복제·삭제, undo/redo, 반응형 iframe preview와 publish hook을 이미 제공합니다. Puck의 Rich Text field가 Tiptap 기반이므로 텍스트 블록에는 이것만 사용합니다.
+아래 후보 버전·비교와 지원 수치는 최초 도입 및 후속 작업 당시 기록이다. 현재 경쟁 제품 비교나 새 정밀 편집 합격 증거가 아니다. 기존 문서 변환·인라인 편집·출력 경계는 보존하되 새 기능 범위는 위 스펙이 우선한다.
 
 ## 후보 비교
 
@@ -65,10 +69,10 @@ Puck root props  -> 편집 UI 메타데이터, 원본 문서에는 허용된 값
 가운데 캔버스의 선택·직접 편집 상세 계약은 [Canvas Editing Contract](canvas-editing-contract.md)를 따릅니다. 내장 블록은 공통 요소 선택 계약을 사용하고 Inspector와 문맥 도구는 허용된 필드·스타일·데이터 설정에 같은 명령을 연결합니다. 명시적인 내부 구성 UX도 기존 캔버스와 문서·Undo를 사용하며 별도 블록 편집 엔진을 만들지 않습니다.
 
 - 모든 내장 블록의 주요 제목·설명·버튼 문구와 반복 항목의 핵심 문구는 Puck `contentEditable`로 캔버스에서 직접 편집합니다.
-- Hero, 독립 Rich Text, Image + Text 본문은 Puck Rich Text field를 사용하며 Puck 내부 Tiptap 구현을 별도 직접 의존성이나 문서 원본으로 취급하지 않습니다.
+- Hero, 독립 Rich Text, Image + Text 본문은 Puck Rich Text field를 사용하며 기존 Tiptap 연동을 재사용하며 Tiptap 상태를 별도 페이지 문서 원본으로 취급하지 않습니다.
 - 선택 요소 가까이의 벌룬 도구에서 해당 `fieldPath`의 글꼴·크기·굵기·정렬·색상 token만 바꾸고, 주요 버튼은 G7 route 선택기, 이미지는 MediaPort 선택기를 바로 엽니다.
 - route·media picker는 Puck overlay portal로 등록해 모달 조작 중 canvas selection과 적용 대상이 사라지지 않게 합니다.
-- URL·이미지 대체 텍스트·반복 항목 구조·블록 배경·간격·효과는 속성 패널의 typed field로 편집합니다. 임의 font-size·class·inline style은 저장하지 않습니다.
+- URL·이미지 대체 텍스트·반복 항목 구조·블록 배경·간격·효과는 속성 패널의 typed field로 편집합니다. 임의 class·raw inline style 문자열은 저장하지 않습니다. 검증한 숫자 글자 크기와 새 typed 디자인 값은 버전 계약을 통해 저장합니다.
 - Slider Hero는 편집 중 자동 재생을 끄고 선택한 장면을 고정합니다. 이전·다음·점 버튼으로 장면을 바꾸며 공개 발행본에서만 Embla 반복·자동재생을 실행합니다.
 - 화면용 `text-transform`이 인라인 입력값을 바꾸지 않도록 contentEditable 자식에는 변환을 적용하지 않습니다.
 - Puck 상태를 저장하지 않고 인라인 변경도 즉시 `PageBuilderDocument` props로 역변환합니다.

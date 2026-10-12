@@ -2,7 +2,7 @@
 
 <!-- editor-plan:independent-editor-20261012 -->
 
-상태: **2026-10-12 스펙·정책 확정, IP1~IP10 구현 계획 1/10**. IP1 엔진 결합의 격리 구현·Local 통합·실동작 검증을 완료했다. [IP1 증거](../audits/2026-10-12-ip1-engine-proof.md)를 참고한다. 다음 착수는 IP2 정밀 문서와 스타일 계약이다. 정책 작업은 구현 분모에 넣지 않으며 IP1 기술 시험을 제품 전체 편집·저장·발행 완료로 보지 않는다. G7 코어 수정·운영 배포는 실행하지 않았다.
+상태: **2026-10-12 스펙·정책 확정, IP1~IP10 구현 계획 2/10**. IP1 엔진 결합과 IP2 정밀 문서·스타일 계약의 구현·Local 통합·필수 검증을 완료했다. [IP1 증거](../audits/2026-10-12-ip1-engine-proof.md)와 [IP2 증거](../audits/2026-10-12-ip2-document-contract.md)를 참고한다. 다음 착수는 IP3 레이어와 재귀 구조 편집이다. 정책 작업은 구현 분모에 넣지 않으며 기술 시험·계약 완료를 제품 전체 정밀 편집·기존 문서 전환 완료로 보지 않는다. G7 코어 수정·운영 배포는 실행하지 않았다.
 
 [편집 정책](editing-policy.md) · [세부 스펙](independent-editor-spec.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [구조](../architecture.md)
 

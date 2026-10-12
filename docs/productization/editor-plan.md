@@ -2,7 +2,7 @@
 
 <!-- editor-plan:independent-editor-20261012 -->
 
-상태: **2026-10-12 스펙·정책 확정, IP1~IP10 구현 계획 3/10**. IP1 엔진 결합, IP2 정밀 문서·스타일 계약, IP3 독립 레이어·재귀 구조 편집의 구현·Local 통합·필수 증거를 확보했다. [IP1 증거](../audits/2026-10-12-ip1-engine-proof.md), [IP2 증거](../audits/2026-10-12-ip2-document-contract.md), [IP3 증거](../audits/2026-10-12-ip3-structure-editing.md)를 참고한다. 다음 착수는 IP4 정밀 Inspector와 자동 배치다. IP3는 독립 mount와 테스트 저장 포트 기준이며 기존 G7 화면·서버 저장/발행 전환 완료가 아니다. 정책 작업은 구현 분모에 넣지 않으며 제품 전체 정밀 편집·기존 문서 전환 완료로 보지 않는다. G7 코어 수정·운영 배포는 실행하지 않았다.
+상태: **2026-10-12 스펙·정책 확정, IP1~IP10 구현 계획 4/10**. IP1 엔진 결합, IP2 정밀 문서·스타일 계약, IP3 레이어·재귀 구조, IP4 정밀 Inspector·자동 배치의 구현·Local 통합·필수 증거를 확보했다. [IP1 증거](../audits/2026-10-12-ip1-engine-proof.md), [IP2 증거](../audits/2026-10-12-ip2-document-contract.md), [IP3 증거](../audits/2026-10-12-ip3-structure-editing.md), [IP4 증거](../audits/2026-10-12-ip4-precision-inspector.md)를 참고한다. 다음 착수는 IP5 핸들과 다중 선택 작업면이다. IP3/IP4는 독립 mount·테스트 저장 포트·PHP 초안 fragment 기준이며 기존 G7 화면·서버 저장/발행 전환 완료가 아니다. 정책 작업은 구현 분모에 넣지 않으며 제품 전체 정밀 편집·기존 문서 전환 완료로 보지 않는다. G7 코어 수정·운영 배포는 실행하지 않았다.
 
 [편집 정책](editing-policy.md) · [세부 스펙](independent-editor-spec.md) · [진척 원장](editor-progress.json) · [표시판](editor-progress.md) · [구조](../architecture.md)
 

@@ -48,6 +48,9 @@ BROWSER_HELPER_SPECS = {
 }
 BROWSER_CONSUMER_TEST = "tests/Harness/test_planner.py"
 CONTRACT_FIXTURE_CONSUMERS = {
+    "tests/Contract/site-part-v2.fixture.json": (
+        "tests/Unit/sitePartV2.test.ts", "tests/UnitPhp/ElementSitePartDocumentTest.php",
+    ),
     # IP4 shares presentation cases between the independent TS and PHP renderers.
     "tests/Contract/document-v3-presentation.json": (
         "tests/Unit/documentV3Presentation.test.ts",

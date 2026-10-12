@@ -1,0 +1,48 @@
+{
+  "source": {
+    "schema_version": "g7-page-builder/site-part/v2",
+    "kind": "header",
+    "content": {
+      "schema_version": "g7-page-builder/v3",
+      "document_id": "00000000-0000-4000-8000-000000000091",
+      "slug": "site-header",
+      "mode": "canvas",
+      "locale": "ko",
+      "shell_mode": "none",
+      "tokens": {
+        "text": {"kind":"hex","value":"#111111"}, "muted": {"kind":"hex","value":"#666666"},
+        "primary": {"kind":"hex","value":"#2255cc"}, "surface": {"kind":"hex","value":"#ffffff"},
+        "border": {"kind":"hex","value":"#dddddd"}, "accent": {"kind":"hex","value":"#ffaa00"}
+      },
+      "assets": [{"asset_id":"00000000-0000-4000-8000-000000000090","url":"/storage/logo.webp"}],
+      "blocks": [{
+        "instance_id":"00000000-0000-4000-8000-000000000001", "block_version":1,
+        "type":"layout.container", "name":"등록하지 않은 공통영역", "locked":false,
+        "props":{"tag":"div"}, "style":{"display":"flex","column_gap":{"value":24,"unit":"px"}},
+        "responsive":{"mobile":{"direction":"column","column_gap":{"value":0,"unit":"px"}}},
+        "slots":{"content":[
+          {"instance_id":"00000000-0000-4000-8000-000000000002","block_version":1,"type":"media.image","name":"로고","locked":false,"props":{"asset_id":"00000000-0000-4000-8000-000000000090","alt":""},"style":{"width":{"value":120,"unit":"px"}},"responsive":{},"slots":{}},
+          {"instance_id":"00000000-0000-4000-8000-000000000003","block_version":1,"type":"action.link","name":"메뉴","locked":false,"props":{"label":"홈","link":{"url":"/","new_tab":false}},"style":{},"responsive":{"mobile":{"hidden":false}},"slots":{}}
+        ]}
+      }]
+    }
+  },
+  "cases": [
+    {"name":"footer uses the same tree","path":["kind"],"value":"footer","valid":true},
+    {"name":"empty draft","path":["content","blocks"],"value":[],"valid":true},
+    {"name":"unknown kind","path":["kind"],"value":"sidebar","valid":false,"error":"value"},
+    {"name":"legacy not converted","path":["schema_version"],"value":"g7-page-builder/site-part/v1","valid":false,"error":"value"},
+    {"name":"no duplicate identity","path":["site_part_id"],"value":"00000000-0000-4000-8000-000000000099","valid":false,"error":"unknown_field"},
+    {"name":"no duplicate nodes","path":["blocks"],"value":[],"valid":false,"error":"unknown_field"},
+    {"name":"no vendor state","path":["puck"],"value":{},"valid":false,"error":"unknown_field"},
+    {"name":"no recursive builder shell","path":["content","shell_mode"],"value":"builder","valid":false,"error":"site_part_shell"},
+    {"name":"no external template shell","path":["content","shell_mode"],"value":"template","valid":false,"error":"site_part_shell"},
+    {"name":"no page SEO","path":["content","seo"],"value":{"title":"","description":"","og_image_url":"","robots":"noindex"},"valid":false,"error":"site_part_seo"},
+    {"name":"unknown content field","path":["content","handler"],"value":"login","valid":false,"error":"unknown_field"},
+    {"name":"unknown visual block","path":["content","blocks",0,"type"],"value":"site.header.navigation-01","valid":false,"error":"value"},
+    {"name":"missing asset","path":["content","assets"],"value":[],"valid":false,"error":"asset_reference"},
+    {"name":"duplicate element identity","path":["content","blocks",0,"slots","content",1,"instance_id"],"value":"00000000-0000-4000-8000-000000000002","valid":false,"error":"duplicate_id"},
+    {"name":"unsafe link","path":["content","blocks",0,"slots","content",1,"props","link","url"],"value":"javascript:alert(1)","valid":false,"error":"value"},
+    {"name":"object is not list","path":["content","blocks",0,"slots"],"value":[],"valid":false,"error":"shape"}
+  ]
+}

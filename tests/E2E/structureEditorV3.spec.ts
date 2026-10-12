@@ -22,6 +22,7 @@ declare global {
 let javascript = '', stylesheet = '';
 let stylesheetPath = '';
 const builtAssets = new Map<string, Buffer>();
+const bundledPreviewAssets = new Map<string, { contentType: string; body: Buffer }>();
 const fixture = JSON.parse(readFileSync(new URL('../Contract/document-v3.fixture.json', import.meta.url), 'utf8')) as DocumentV3;
 let sizes = { javascript: 0, stylesheet: 0 };
 test.beforeAll(async () => {
@@ -64,6 +65,8 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'v3-editor.test') return route.abort('blockedbyclient');
+    const previewAsset = bundledPreviewAssets.get(url.pathname);
+    if (previewAsset) return route.fulfill(previewAsset);
     const asset = builtAssets.get(url.pathname);
     if (asset) return route.fulfill({ contentType: url.pathname.endsWith('.css') ? 'text/css' : url.pathname.endsWith('.woff2') ? 'font/woff2' : 'text/plain', body: asset });
     if (url.pathname === '/image.svg') return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><rect width="160" height="80" fill="#dbeafe"/></svg>' });
@@ -95,6 +98,24 @@ const click = (page: Page, name: string) => page.getByRole('button', { name, exa
 const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
 const basicCompositionKeys = ['hero.poster', 'hero.product', 'hero.backdrop', 'hero.editorial', 'hero.device',
   'hero.balanced', 'hero.screenshot', 'hero.overlap', 'hero.offset', 'card.plain', 'card.outlined', 'image-text.left', 'image-text.right'];
+const repeatedCompositionKeys = ["buttons.primary-secondary","buttons.centered-actions","process.four-step","logo-cloud.partners","pricing.three-tier","team.leadership","gallery.project-scenes","testimonials.customer-proof","comparison.plans","articles.insights","events.upcoming","downloads.resource-center","card-grid.services","breadcrumbs.detail-page","logo-cloud.grid","logo-cloud.panel","pricing.cards","pricing.compact","pricing.editorial","team.grid","team.editorial","team.featured","gallery.grid","gallery.masonry","gallery.filmstrip","testimonials.grid","testimonials.spotlight","testimonials.split","testimonials.quote-hero","articles.list","articles.grid","articles.featured","articles.editorial","card-grid.grid","card-grid.rail","card-grid.editorial","card-grid.numbered","list.simple"];
+const bundledManifest = JSON.parse(readFileSync(new URL('../../resources/block-packs/builtin-core/manifest.json', import.meta.url), 'utf8')) as {
+  presets: { preset_id: string; props: unknown }[] };
+const previewPrefix = '/modules/jiwonpapa-page_builder/store/previews/';
+function collectPreviewAssets(value: unknown): void {
+  if (typeof value === 'string' && value.startsWith(previewPrefix)) {
+    const name = value.slice(previewPrefix.length);
+    if (!/^[a-z0-9-]+\\.(webp|png)$/.test(name)) throw new Error('Unexpected bundled preview asset: ' + name);
+    bundledPreviewAssets.set(value, { contentType: name.endsWith('.png') ? 'image/png' : 'image/webp',
+      body: readFileSync(new URL('../../resources/store/dist/previews/' + name, import.meta.url)) });
+  } else if (Array.isArray(value)) value.forEach(collectPreviewAssets);
+  else if (value && typeof value === 'object') Object.values(value).forEach(collectPreviewAssets);
+}
+for (const key of repeatedCompositionKeys) {
+  const preset = bundledManifest.presets.find(preset => preset.preset_id === key);
+  if (!preset) throw new Error('Missing bundled repeated preset: ' + key);
+  collectPreviewAssets(preset.props);
+}
 test('v3 semantic lists tables and figures preserve editing grammar and PHP parity', async ({ page, context }, info) => {
   interface TagTree { tag: LayoutTag | 'text'; children?: TagTree[] }
   const cases = JSON.parse(readFileSync(new URL('../Fixtures/document-v3-cases.json', import.meta.url), 'utf8')) as {
@@ -239,6 +260,78 @@ for (const key of basicCompositionKeys) test('v3 composition internal edit save 
   expect(await read(page)).toEqual(saved);
   expect(errors).toEqual([]);
   await info.attach('ip7-composition-proof', { contentType: 'application/json', body: JSON.stringify(evidence) });
+});
+for (const key of repeatedCompositionKeys) test('v3 repeated composition internal edit assets save reopen and PHP parity ' + key, async ({ page, context }, info) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await open(page);
+  expect(await page.getByLabel('반복 구성', { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(repeatedCompositionKeys);
+  const empty = await read(page);
+  await page.getByLabel('반복 구성', { exact: true }).selectOption(key); await click(page, '반복 구성 삽입');
+  await expect.poll(async () => (await read(page)).blocks.length).toBe(1);
+  const inserted = await read(page);
+  const flatten = (nodes: Node[]): Node[] => nodes.flatMap(node => [node, ...flatten(node.slots.content ?? [])]);
+  const nodes = flatten(inserted.blocks);
+  expect(new Set(nodes.map(node => node.instance_id)).size).toBe(nodes.length);
+  expect(nodes.every(node => !node.locked)).toBe(true);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(empty);
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(inserted);
+  // Prefer an item-level leaf, not only the enclosing section heading.
+  const inner = nodes.filter(node => ['content.text', 'content.heading', 'action.link'].includes(node.type)).at(-1)!;
+  await layer(page, inner.instance_id).click();
+  await length(page, '글자 크기', 23); await click(page, '디자인 적용');
+  await expect.poll(async () => flatten((await read(page)).blocks).find(node => node.instance_id === inner.instance_id)?.style.font_size).toEqual({ value: 23, unit: 'px' });
+  const styled = await read(page);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(inserted);
+  await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(styled);
+  await click(page, '본문 입력');
+  const editable = page.frameLocator('iframe').locator('[data-v3-node="' + inner.instance_id + '"] [contenteditable="true"]');
+  await expect(editable).toBeVisible(); await editable.fill('내부 항목 수정 <안전한 문자>');
+  await expect.poll(async () => JSON.stringify(flatten((await read(page)).blocks).find(node => node.instance_id === inner.instance_id)?.props)).toContain('내부 항목 수정 <안전한 문자>');
+  await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
+  const saved = await page.evaluate(() => JSON.parse(window.v3Proof.saved!) as DocumentV3);
+  expect(saved).toEqual(await read(page));
+  const measure = (element: Element) => {
+    const origin = element.getBoundingClientRect();
+    return [...element.querySelectorAll('[data-v3-node]')].map(node => {
+      const box = node.getBoundingClientRect(), css = getComputedStyle(node);
+      return { id: node.getAttribute('data-v3-node'), tag: node.tagName, text: node.textContent,
+        src: node.getAttribute('src'), alt: node.getAttribute('alt'), href: node.getAttribute('href'),
+        x: box.x - origin.x, y: box.y - origin.y, width: box.width, height: box.height,
+        css: Object.fromEntries(['display', 'position', 'font-size', 'font-family', 'line-height', 'color',
+          'row-gap', 'column-gap', 'grid-template-columns', 'border-top-width', 'object-fit'].map(name => [name, css.getPropertyValue(name)])) };
+    });
+  };
+  for (const width of [360, 768, 1280]) {
+    await open(page, saved); await canvasWidth(page, width);
+    const frame = page.frameLocator('iframe');
+    await frame.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
+    const canvas = await frame.locator('[data-v3-surface]').evaluate(measure);
+    expect(canvas).toHaveLength(nodes.length);
+    await click(page, '구조 미리보기');
+    await page.getByTestId('v3-preview').locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
+    const preview = await page.getByTestId('v3-preview').evaluate(measure);
+    const output = await context.newPage(); await output.setViewportSize({ width, height: 1000 });
+    await output.route('**/*', route => {
+      const asset = bundledPreviewAssets.get(new URL(route.request().url()).pathname);
+      return asset ? route.fulfill(asset) : route.abort();
+    });
+    await output.setContent('<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://v3-editor.test/"></head><body style="margin:0">' + phpDraft(saved, expectedViewport(width)) + '</body></html>');
+    await output.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
+    const php = await output.locator('[data-v3-surface]').evaluate(measure);
+    await info.attach('ip7-repeated-' + width, { contentType: 'application/json', body: JSON.stringify({ key, width, canvas, preview, php }) });
+    for (const other of [preview, php]) {
+      expect(other.map(node => node.id)).toEqual(canvas.map(node => node.id));
+      for (let index = 0; index < canvas.length; index++) {
+        for (const dimension of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(other[index][dimension] - canvas[index][dimension]), key + ':' + width + ':' + index + ':' + dimension).toBeLessThanOrEqual(1);
+        for (const property of ['tag', 'text', 'css', 'src', 'alt', 'href'] as const) expect(other[index][property]).toEqual(canvas[index][property]);
+      }
+    }
+    await page.screenshot({ path: info.outputPath('ip7-repeated-' + key + '-' + width + '.png'), fullPage: true });
+    await output.close();
+  }
+  await open(page, saved, true);
+  await expect(page.getByRole('button', { name: '반복 구성 삽입', exact: true })).toBeDisabled();
+  expect(await read(page)).toEqual(saved); expect(errors).toEqual([]);
 });
 async function enable(page: Page, label: string) {
   const field = page.getByLabel(label + ' 지정', { exact: true });

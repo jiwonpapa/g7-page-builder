@@ -1,5 +1,6 @@
 @import url("./page-builder-basic-elements.css");
 @import url("./page-builder-theme.css");
+@import url("./page-builder-v3-public.css");
 
 html.g7pb-standalone-viewer { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 :where(.g7pb-standalone-viewer, .g7pb-page, .g7pb-site-header, .g7pb-site-footer, .g7pb-mobile-menu, .g7pb-system-controls, .g7pb-mobile-menu__backdrop),

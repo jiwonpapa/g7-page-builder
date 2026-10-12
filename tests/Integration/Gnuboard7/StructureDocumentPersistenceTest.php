@@ -2,11 +2,13 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Tests\Integration\Gnuboard7;
 
+use Illuminate\Config\Repository as ConfigRepository;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Contracts\Routing\UrlGenerator as UrlGeneratorContract;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Application;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\RouteCollection;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory as ValidationFactory;
+use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockPackRuntimeRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyStructureDocument;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
@@ -22,9 +25,12 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
+use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Http\Controllers\AdminDocumentController;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\EloquentPageBuilderRepository;
+use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\PublicationRecord;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\RevisionRecord;
+use Modules\Jiwonpapa\PageBuilder\Providers\PageBuilderServiceProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use stdClass;
@@ -39,7 +45,9 @@ final class StructureDocumentPersistenceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->database = new Capsule;
+        $application = new Application(dirname(__DIR__, 3));
+        $application->instance('config', new ConfigRepository(['app' => ['locale' => 'ko']]));
+        $this->database = new Capsule($application);
         $this->database->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'foreign_key_constraints' => true]);
         $this->database->setAsGlobal();
         $this->database->bootEloquent();
@@ -96,6 +104,81 @@ final class StructureDocumentPersistenceTest extends TestCase
     private function json(mixed $source): string
     {
         return json_encode($source, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+    }
+
+    private function publicationService(): PageBuilderService
+    {
+        $container = $this->database->getContainer();
+        (new PageBuilderServiceProvider($container))->register();
+        $container->bind(BlockPackRuntimeRegistry::class, static function () {
+            throw new \RuntimeException('An optional legacy block runtime is unavailable.');
+        });
+
+        return $container->make(PageBuilderService::class);
+    }
+
+    public function test_provider_compiles_previews_publishes_and_restores_v3_without_loading_a_block_catalog(): void
+    {
+        $pages = $this->publicationService();
+        foreach (['none', 'builder', 'template'] as $mode) {
+            $empty = $pages->create('일반 요소 문서', 'publish-'.$mode, 'ko', null, $mode, 'g7-page-builder/v3');
+            $id = $empty->document->documentId;
+            $source = $this->source($empty);
+            $source->shell_mode = $mode;
+            $saved = $pages->saveDraftJson($id, $this->json($source), 1, null);
+            $preview = $pages->renderPreview($pages->preview($id, $saved->lockVersion, null)->token);
+            self::assertNotNull($preview);
+            self::assertSame($mode, $preview->shellMode);
+            $prepared = $pages->preparePublication($id, $saved->lockVersion, null);
+            self::assertNull($pages->findPublished($source->slug));
+            $published = $pages->commitPublication($prepared->token);
+            self::assertSame($preview->artifact, $published->artifact);
+            self::assertSame($preview->artifactSha256, $published->artifactSha256);
+            self::assertSame('1.0.0', PublicationRecord::query()->where('document_id', $id)->where('status', 'active')->first()->compiler_version);
+            self::assertSame($published->artifact, $pages->findPublished($source->slug)->artifact);
+
+            $source->blocks[0]->slots->content[0]->props->runs[0]->text = '새로 저장했지만 아직 공개하지 않은 문구';
+            $edited = $pages->saveDraftJson($id, $this->json($source), $saved->lockVersion, null);
+            self::assertSame($published->artifact, $pages->findPublished($source->slug)->artifact);
+            $newPreview = $pages->renderPreview($pages->preview($id, $edited->lockVersion, null)->token);
+            self::assertStringContainsString('아직 공개하지 않은', $newPreview->artifact);
+            $replacement = $pages->preparePublication($id, $edited->lockVersion, null);
+            $republished = $pages->commitPublication($replacement->token);
+            self::assertNotSame($published->artifactSha256, $republished->artifactSha256);
+            $restored = $pages->restoreRevision($id, $saved->revision, $edited->lockVersion, null);
+            self::assertSame($republished->artifact, $pages->findPublished($source->slug)->artifact);
+            $original = $pages->commitPublication($pages->preparePublication($id, $restored->lockVersion, null)->token);
+            self::assertSame($published->artifact, $original->artifact);
+        }
+    }
+
+    public function test_stale_publication_and_archive_keep_last_good_v3_artifact_without_compiling_public_reads(): void
+    {
+        $pages = $this->publicationService();
+        $empty = $pages->create('발행 보호', 'v3-publication-guard', 'ko', null, 'none', 'g7-page-builder/v3');
+        $id = $empty->document->documentId;
+        $saved = $pages->saveDraftJson($id, $this->json($this->source($empty)), 1, null);
+        $published = $pages->commitPublication($pages->preparePublication($id, 2, null)->token);
+        $candidate = $pages->preparePublication($id, 2, null);
+        $source = $this->source($saved);
+        $source->blocks[0]->slots->content[0]->props->runs[0]->text = '변경';
+        $pages->saveDraftJson($id, $this->json($source), 2, null);
+        try {
+            $pages->commitPublication($candidate->token);
+            self::fail('A stale publication replaced the active artifact.');
+        } catch (LockConflictException $error) {
+            self::assertSame(3, $error->currentLockVersion);
+        }
+        self::assertSame($published->artifact, $pages->findPublished($source->slug)->artifact);
+        RevisionRecord::query()->where('document_id', $id)->update(['document_json' => '{unreadable historical source']);
+        // This original service deliberately throws on any compiler resolution.
+        self::assertSame($published->artifact, $this->pages->findPublished($source->slug)->artifact);
+        RevisionRecord::query()->where('document_id', $id)->update(['document_json' => $this->json($source)]);
+        $archived = $pages->archive($id, 3, null);
+        self::assertNull($pages->findPublished($source->slug));
+        self::assertSame(1, PublicationRecord::query()->where('document_id', $id)->where('status', 'active')->count());
+        $this->expectException(PublicationCommitException::class);
+        $pages->preparePublication($id, $archived->lockVersion, null);
     }
 
     public function test_real_repository_preserves_structure_metadata_revisions_copy_and_explicit_restore(): void

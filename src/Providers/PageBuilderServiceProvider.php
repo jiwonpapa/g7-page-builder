@@ -14,8 +14,10 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockPackRuntimeRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\GitHubBlockPackService;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\DocumentCompilerRouter;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Compilation\V3\HtmlCompiler as StructureHtmlCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyStructureDocument;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
@@ -191,16 +193,19 @@ final class PageBuilderServiceProvider extends ServiceProvider
         $this->app->bind(GitHubBlockPackService::class);
         $this->app->singleton(
             DocumentCompilerPort::class,
-            function (): HtmlDocumentCompiler {
-                $this->app->make(BlockPackRuntimeRegistry::class);
+            fn (): DocumentCompilerRouter => new DocumentCompilerRouter(
+                function (): HtmlDocumentCompiler {
+                    $this->app->make(BlockPackRuntimeRegistry::class);
 
-                return new HtmlDocumentCompiler(
-                    $this->app->make(BlockRegistry::class),
-                    $this->app->make(BlockCompilerRegistry::class),
-                    $this->app->make(BlockSchemaRegistry::class),
-                    $this->app->make(BlockPackAssetUrlPort::class),
-                );
-            },
+                    return new HtmlDocumentCompiler(
+                        $this->app->make(BlockRegistry::class),
+                        $this->app->make(BlockCompilerRegistry::class),
+                        $this->app->make(BlockSchemaRegistry::class),
+                        $this->app->make(BlockPackAssetUrlPort::class),
+                    );
+                },
+                new StructureHtmlCompiler($this->app->make(StructureValidator::class)),
+            ),
         );
         $this->app->bind(MediaPort::class, LaravelMediaAdapter::class);
         $this->app->bind(OfficialStoreSourcePort::class, LaravelOfficialStoreSourceAdapter::class);

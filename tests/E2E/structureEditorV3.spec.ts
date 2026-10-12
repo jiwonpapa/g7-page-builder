@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { puckHistoryCorrection } from '../../vite.puck-history.js';
 import type { DocumentV3 } from '../../resources/js/documents/v3/types';
+import type { TiptapEditorHTMLElement } from '@tiptap/core';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
 
 declare global {
@@ -344,12 +345,22 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect(input).toHaveText('한글 정밀 편집');
   await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[{ text: '한글 정밀 편집' }]] });
   const typed = await read(page);
+  const selection = () => input.evaluate(element => {
+    const editor = (element as TiptapEditorHTMLElement).editor;
+    if (!editor) throw new Error('Missing Tiptap test element');
+    const { from, to, empty } = editor.state.selection;
+    const native = element.ownerDocument.getSelection();
+    return { from, to, empty, collapsed: native?.isCollapsed, text: native?.toString() };
+  });
   // Explicit pointer focus after fill represents selecting authored text. Native Home immediately
   // after synthetic fill is mistaken for a browser focus reset by ProseMirror's 200ms heuristic.
   const selectPrefix = async () => {
     await input.click();
-    for (const key of ['Home', 'Shift+ArrowRight', 'Shift+ArrowRight']) await page.keyboard.press(key);
-    await expect.poll(() => input.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe('한글');
+    await expect.poll(selection).toMatchObject({ empty: true, collapsed: true });
+    await page.keyboard.press('Home');
+    await expect.poll(selection).toMatchObject({ from: 1, to: 1, empty: true, collapsed: true });
+    for (const key of ['Shift+ArrowRight', 'Shift+ArrowRight']) await page.keyboard.press(key);
+    await expect.poll(selection).toEqual({ from: 1, to: 3, empty: false, collapsed: false, text: '한글' });
   };
   await selectPrefix();
   const format = page.getByRole('toolbar', { name: '부분 서식' });
@@ -381,10 +392,13 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[
     { ...sized, link: { url: '/about', new_tab: false } }, { text: ' 정밀 편집' },
   ]] });
-  await input.click(); await input.press('End'); await input.press('Enter'); await input.pressSequentially('Second line');
-  await expect.poll(async () => {
-    const current = (await read(page)).blocks[0]; return current.type === 'content.text' ? current.props.paragraphs.length : 0;
-  }).toBe(2);
+  const firstParagraph = [{ ...sized, link: { url: '/about', new_tab: false } }, { text: ' 정밀 편집' }];
+  await input.click();
+  await expect.poll(selection).toMatchObject({ empty: true, collapsed: true });
+  await page.keyboard.press('End');
+  await expect.poll(selection).toMatchObject({ from: 9, to: 9, empty: true, collapsed: true });
+  await page.keyboard.press('Enter'); await page.keyboard.type('Second line');
+  await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [firstParagraph, [{ text: 'Second line' }]] });
   // Chromium composition protocol exercises IME ownership, not a physical OS keyboard.
   const cdp = await context.newCDPSession(page);
   try {
@@ -393,14 +407,17 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
     await page.keyboard.insertText('글 조합');
   } finally { await cdp.detach(); }
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('한글 조합');
-  await input.press('End');
+  await page.keyboard.press('End');
   await input.evaluate(element => {
     const transfer = new DataTransfer(); transfer.setData('text/plain', ' 붙여넣기');
     element.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
   });
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('붙여넣기');
+  const finalText = { paragraphs: [firstParagraph, [{ text: 'Second line한글 조합 붙여넣기' }]] };
+  await expect.poll(async () => (await read(page)).blocks[0].props).toEqual(finalText);
   await click(page, '저장'); await expect.poll(() => page.evaluate(() => window.v3Proof.saved)).not.toBeNull();
   const saved = await page.evaluate(() => window.v3Proof.saved!), final = JSON.parse(saved);
+  expect(final.blocks[0].props).toEqual(finalText);
   expect(saved).not.toContain('contentEditable'); expect(saved).not.toContain('<p>');
   await open(page, final, true);
   await layer(page, id).click();

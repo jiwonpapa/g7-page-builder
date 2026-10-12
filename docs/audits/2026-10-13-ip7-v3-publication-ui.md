@@ -1,6 +1,6 @@
 # IP7 공통 요소 편집기의 공개 미리보기·발행 UI
 
-상태: 구현·검증 진행 중. IP7 전체와 IP8~IP10 완료 또는 운영 배포를 뜻하지 않는다.
+상태: 공개 미리보기·발행 UI 통합 검증 완료, 화면 감사에서 발견한 작업면 배경 보완 진행 중. IP7 전체와 IP8~IP10 완료 또는 운영 배포를 뜻하지 않는다.
 
 - task: `ip7-v3-publication-ui-20261013`, scoped 14개 정확 파일, 기준 `0566243557d238736e222d4b92850853b48ff35d`.
 - 기존 단일 Puck 문서/이력과 DraftPort로 현재 입력을 저장한다. 같은 편집 epoch의 저장 성공만 공개 미리보기·발행 준비로 전달한다. 블록 이름별 분기·등록·새 원본·새 Undo를 추가하지 않는다.
@@ -21,3 +21,24 @@
 선택자 보완 제출 `0420dd5cc5bc7a85cd83802e14b8da1978edcc56`의 다음 통합은 12개 중 11개 브라우저 시나리오를 통과했다. mobile 프로젝트의 template 출력 비교 1건에서 직전 27px CSS 확인은 성공했지만 이어진 샘플의 font/display가 빈 문자열로 읽혔다. Chromium에서 SSR 표면을 같은 clone으로 교체하고 이전 element를 측정하는 진단으로 연결 전 `{27px, block}`, 분리 후 `{'',''}`, 현재 노드 `{27px}`를 재현했다. 최초 측정은 연결 상태를 검사하지 않아 교체 중인 표면도 비교에 사용했다.
 
 `ip7-v3-publication-ui-ready-20261013` replacement는 글꼴·이미지 준비, DOM 연결, 두 animation frame의 동일 치수를 확인한 표면만 측정한다. 준비되지 않은 측정만 다시 수집하며 서로 다른 출력의 비교 실패를 재시도하지 않는다. 텍스트·computed style 동일성과 1px 치수 기준, 12개 시나리오는 유지한다. 두 번째 실패 증거는 `output/playwright/gates/integration-ip7-20261012/50f5a52ffee94fefcf2ce370b66f0594a9c2447baffee4fa1f134eb735189198/65d8307221304fa0848b43767bcb6efc/`에 보존했다. 통합은 원복됐고 jwsoft-business01 0.3.1 활성 상태로 복구했다.
+
+## 공식 통합과 검증 경계
+
+제출 `b9550443598894635ea87fae0045ff7679900c0d`와 검사 등록 `57d1aaa388f5002de746b0d04f7221f627c4f52c`를 공식 batch로 통합했다. Local 통합 SHA는 `04ba68777a0b15dd1f68a3a0c9120b33394f7ea0`다. Node 24·PHP 8.5·고정 Docker Chromium의 scoped 계획 16개 변경/69개 gate를 통과했다. 입력이 같은 성공 검사는 재사용했고 기준을 완화하지 않았다.
+
+- 제품 UI 12개 통과, 실패/skip/flaky 0: `output/playwright/gates/integration-ip7-20261012/9b4549dad24243eeaf32ce152cd04d8ff5bbbe208249c39ce513df6314b73136/0c8edc1871364ceeb84a54d2f7590701/results.json`.
+- 기존 문서 생성·발행·복원·재발행·발행 해제 1개 통과: `output/playwright/gates/integration-ip7-20261012/88f590fab00709173e5f2f0aeabdd56904188e2d3aaeb9f8f571dffa7d74d3ab/0d38c228714e4a2f8ed56913a821e5b0/results.json`.
+- 독립 편집 회귀 87개 통과, 실패/skip/flaky 0: `output/playwright/gates/integration-ip7-20261012/ab4bd5ae9f2d4a51f9aae30a121645ff29e0d3216848c7f7e62eefc7f01060fa/cedee46b4e4f4c058a1cfba3e95ce833/results.json`.
+- 임시 테마는 `jwsoft-business01 0.3.1` 활성으로 원복했다. 관련 테마 원본 1,667개 파일의 집계 SHA256은 전후 `0245183e355cb1e96851ee005d6718e825bb8969bd2686dad42bda4c2b3c6981`로 같다.
+
+제품 시나리오는 빈 문서에 제목을 직접 삽입하고 PC/모바일 글자 크기를 다르게 지정한 뒤 인증 저장·미리보기·Esc 취소·명시 발행·공개 조회를 수행한다. none/template/builder의 미리보기와 공개 출력에서 같은 요소 텍스트/글자 크기/표시와 치수 1px 기준을 비교했다. 후속 본문 초안을 저장해도 공개 hash와 출력은 그대로이며 재열기에 새 초안이 남는다. 이는 전체 요소의 canvas/public 치수 수용이나 미디어·Site Part·동시성 전체 완료를 뜻하지 않는다.
+
+확인창과 3개 출력 방식의 3개 폭 공개 화면을 육안 확인했다. 제목 및 해당 화면에 보이는 공통영역은 가림/잘림 없이 표시됐다. 캡처 추출본은 `output/playwright/publication-passed-review-3NpHk0/`이며 원본은 제품 JSON 보고서의 첨부다. UI 과밀도·전체 긴 내용·전체 접근성 등 최종 UX 감사는 남아 있다.
+
+## 작업면 배경 후속 보완
+
+같은 제품 캡처의 768/360px 편집 작업면에서는 흰 페이지 배경이 사라졌다. 기능 시험 성공을 이 화면의 UX 합격으로 바꾸지 않았다. Local의 별도 소유 진단 문서로 재현한 결과 Puck가 호스트 `g7pb-editor-shell` 클래스와 스타일시트를 iframe에 복사한 뒤 html/body 배경이 투명에서 `rgb(243, 241, 237)`로 바뀌었다. 스타일시트 수는 초기 2개에서 3개로 증가했다. 폭 자체의 반응형 디자인 문제가 아니라 지연된 호스트 스타일 복사에 의한 작업면 덮임이다.
+
+진단 중 iframe html/body 배경만 투명하게 바꾸자 360px 작업면 경계가 정상 표시됐다. 근거: `output/playwright/workspace-background-diagnostic-pUz4zn/measurements.json`, `before-360.png`, `transparent-frame-360.png`. 진단 문서는 소유 slug를 확인해 보관 처리했고 사용자 문서와 테마 파일은 변경하지 않았다.
+
+`ip7-workspace-surface-20261013`은 `WorkspaceFrame`의 공개 iframe 문맥 안에서 배경색만 격리하고 해제 시 원래 inline 값/우선순위를 복구한다. 작성한 요소 배경·문서 값·Undo는 변경하지 않는다. 관련 단위 시험과 실제 호스트 스타일 로딩 이후 세 폭의 배경/화면 검사를 추가하며, 화면 캡처는 진행 중 애니메이션을 끝낸 상태로 수집한다. 후속 보완의 제출/통합/실제 회귀 결과는 확보 후 기록한다.

@@ -8,6 +8,11 @@ export function WorkspaceFrame({ owner, extent }: { owner: Document; extent: (he
     const frame = owner.defaultView?.frameElement;
     if (!frame || !('style' in frame) || !(frame instanceof HTMLIFrameElement)) return;
     const previous = frame.style.height;
+    // Puck mirrors the host body class and stylesheet into this owned frame.
+    // Its editor chrome must not paint over the authored workspace underneath.
+    const backgrounds = [owner.documentElement, owner.body].map(element => ({ element,
+      value: element.style.getPropertyValue('background-color'), priority: element.style.getPropertyPriority('background-color') }));
+    for (const { element } of backgrounds) element.style.setProperty('background-color', 'transparent');
     let surface: HTMLElement | null = null;
     const measure = () => {
       if (!surface) return;
@@ -22,7 +27,14 @@ export function WorkspaceFrame({ owner, extent }: { owner: Document; extent: (he
     };
     const mutations = new MutationObserver(discover);
     mutations.observe(owner.body, { childList: true, subtree: true }); discover();
-    return () => { mutations.disconnect(); resize.disconnect(); frame.style.height = previous; };
+    return () => {
+      mutations.disconnect(); resize.disconnect(); frame.style.height = previous;
+      for (const { element, value, priority } of backgrounds) {
+        if (element.style.getPropertyValue('background-color') !== 'transparent') continue;
+        if (value) element.style.setProperty('background-color', value, priority);
+        else element.style.removeProperty('background-color');
+      }
+    };
   }, [owner, extent]);
   return null;
 }

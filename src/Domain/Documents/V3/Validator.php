@@ -37,6 +37,7 @@ final readonly class Validator
         }
         $ids = [];
         $this->nodes($value->blocks, null, 1, $ids, $assets);
+        Behaviors::validate($value, $this->policy['behaviors']);
 
         return $value;
     }

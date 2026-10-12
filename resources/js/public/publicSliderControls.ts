@@ -1,5 +1,7 @@
 export function ensureSliderControls(root: Document, slider: HTMLElement, wantsAutoplay: boolean): void {
-  const controls = slider.querySelector<HTMLElement>('.g7pb-hero-slider__controls');
+  if (slider.dataset.g7pbControlIds === 'stable') return;
+  const controls = Array.from(slider.querySelectorAll<HTMLElement>('.g7pb-hero-slider__controls'))
+    .find(node => node.closest('[data-g7pb-slider]') === slider);
   const dots = controls?.querySelector<HTMLElement>('[data-g7pb-slider-dots]');
   if (!controls || !dots) return;
 
@@ -25,3 +27,34 @@ export function ensureSliderControls(root: Document, slider: HTMLElement, wantsA
     controls.append(toggle);
   }
 }
+import type { EmblaCarouselType } from 'embla-carousel';
+
+
+/** Only the legacy output creates controls. Authored element trees keep their own. */
+export const legacySliderControls = {
+  prepare: ensureSliderControls,
+  mount(root: Document, slider: HTMLElement, slides: HTMLElement[], embla: EmblaCarouselType,
+    on: (node: HTMLElement | undefined, handler: () => void) => void) {
+    const owned = <T extends HTMLElement>(query: string) => [...slider.querySelectorAll<T>(query)]
+      .find(node => node.closest('[data-g7pb-slider]') === slider);
+    const status = owned('[data-g7pb-slider-status]'), toggle = owned<HTMLButtonElement>('[data-g7pb-slider-toggle]');
+    const dots = slides.map((_, index) => {
+      const dot = root.createElement('button'); dot.type = 'button'; dot.dataset.g7pbSliderDot = String(index);
+      dot.setAttribute('aria-label', (index + 1) + '번 슬라이드'); on(dot, () => embla.scrollTo(index)); return dot;
+    });
+    owned('[data-g7pb-slider-dots]')?.replaceChildren(...dots);
+    return {
+      update(selected: number) {
+        dots.forEach((dot, index) => { dot.classList.toggle('is-active', index === selected); dot.setAttribute('aria-current', String(index === selected)); });
+        const label = (selected + 1) + ' / ' + slides.length;
+        if (status && status.textContent !== label) status.textContent = label;
+      },
+      autoplay(playing: boolean) {
+        if (!toggle) return;
+        toggle.textContent = playing ? '일시 정지' : '재생';
+        toggle.setAttribute('aria-label', playing ? '자동 재생 일시 정지' : '자동 재생 시작');
+      },
+      dispose() { dots.forEach(dot => dot.remove()); },
+    };
+  },
+};

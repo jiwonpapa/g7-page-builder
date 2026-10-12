@@ -5,7 +5,8 @@
     "nodes": 500,
     "depth": 16,
     "utf8_bytes": 1048576,
-    "json_depth": 128
+    "json_depth": 128,
+    "transaction_commands": 32
   },
   "breakpoints": {
     "tablet": 640,
@@ -52,12 +53,20 @@
     "action.link": [
       "label",
       "link"
+    ],
+    "action.button": [
+      "label"
     ]
   },
   "containers": [
     "layout.section",
     "layout.container"
   ],
+  "behaviors": {
+    "layout_types": ["layout.section", "layout.container"],
+    "layout_tags": ["section", "article", "aside", "div", "nav", "header", "footer", "li", "dd", "figure", "td", "th"],
+    "trigger_types": ["action.button"]
+  },
   "semantics": {
     "children": {
       "ul": ["li"], "ol": ["li"], "dl": ["dt", "dd"],

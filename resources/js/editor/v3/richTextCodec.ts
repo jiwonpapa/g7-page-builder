@@ -16,7 +16,7 @@ export function markHtmlAttributes(run: Run, document: DocumentV3): Record<strin
     ...(run.link ? { href: run.link.url, ...(run.link.new_tab ? { target: '_blank', rel: 'noopener noreferrer' } : {}) } : {}) };
 }
 export function textToHtml(node: Node, document: DocumentV3): string {
-  if (node.type === 'action.link') return node.props.label;
+  if (node.type === 'action.link' || node.type === 'action.button') return node.props.label;
   const paragraphs = node.type === 'content.heading' ? [node.props.runs] : node.type === 'content.text' ? node.props.paragraphs : [];
   return paragraphs.map(runs => '<p>' + runs.map(run => {
     const tag = run.link ? 'a' : 'span', attributes = markHtmlAttributes(run, document);
@@ -25,7 +25,7 @@ export function textToHtml(node: Node, document: DocumentV3): string {
   }).join('') + '</p>').join('');
 }
 export function propsFromHtml(node: Node, html: string): Node['props'] {
-  if (node.type === 'action.link') return { ...node.props, label: html };
+  if (node.type === 'action.link' || node.type === 'action.button') return { ...node.props, label: html };
   if (node.type !== 'content.heading' && node.type !== 'content.text') {
     if (html !== '') reject('richtext_type', node.instance_id);
     return node.props;

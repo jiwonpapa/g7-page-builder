@@ -65,7 +65,7 @@ export function Inspector({ node, document, disabled, apply, viewport = 'base' }
       <p>본문과 의미는 모든 화면에 공통으로 적용합니다.</p>
       {node.type === 'content.heading' && 'level' in props && <label>제목 단계<select aria-label="제목 단계" value={props.level}
         onChange={event => setProps({ ...props, level: Number(event.target.value) })}>{[1, 2, 3, 4, 5, 6].map(level => <option key={level} value={level}>H{level}</option>)}</select></label>}
-      {node.type === 'action.link' && 'label' in props && <>
+      {node.type === 'action.link' && 'link' in props && <>
         <label>링크 문구<input aria-label="링크 문구" value={props.label} onChange={event => setProps({ ...props, label: event.target.value })} /></label>
         <label>링크 주소<input aria-label="링크 주소" value={props.link.url} onChange={event => setProps({ ...props, link: { ...props.link, url: event.target.value } })} /></label>
         <label><input type="checkbox" checked={props.link.new_tab} onChange={event => setProps({ ...props, link: { ...props.link, new_tab: event.target.checked } })} />새 탭</label>

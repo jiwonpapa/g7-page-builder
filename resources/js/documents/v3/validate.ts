@@ -3,6 +3,7 @@ import policy from '../../../../schemas/design-policy-v3.json';
 import { jsonBytes, reject, validateRule } from './schema';
 import type { DocumentV3, Node, Style } from './types';
 import { validateNodeSemantics } from './semantics';
+import { validateBehaviors } from './behaviors';
 
 export { V3Error } from './schema';
 export const designPolicyV3 = policy;
@@ -54,5 +55,6 @@ export function validateDocumentV3(value: unknown): DocumentV3 {
     }
   };
   visit(document.blocks, undefined, 1);
+  validateBehaviors(document);
   return document;
 }

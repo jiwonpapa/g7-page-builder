@@ -657,7 +657,15 @@
       "owner_task": "integration-ip7-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
-      "evidence": [],
+      "evidence": [
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-repeated-compositions",
+          "commit": "e88fe6cfe252bf066f5517685c989c17f365663d",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip7-catalog-compositions.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/blocks",

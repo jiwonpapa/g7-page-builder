@@ -39,36 +39,57 @@ function compileCatalogData(source: string, compositions: boolean): string {
   }
   collect(data);
   // Short/rare literals and shapes cost more indirection than they save.
-  const strings = [...counts].filter(([value, count]) => value.length >= 12 && count >= 2)
+  const strings = [...counts].filter(([value, count]) => value.length >= 12 && count >= 4)
     .map(([value]) => value).sort();
   const names = new Map(strings.map((value, index) => [value, `s${index}`]));
   const factories = new Map([...shapes].filter(([, shape]) => shape.keys.length >= 3 && shape.count >= 3)
     .map(([signature, shape], index) => [signature, { ...shape, name: `o${index}` }]));
   const property = (key: string): string => key === '__proto__' ? `[${JSON.stringify(key)}]` : JSON.stringify(key);
-  function literal(value: unknown): string {
+  const repeatedNames = new WeakMap<object, string>();
+  function literal(value: unknown, reuse = true): string {
+    if (reuse && value !== null && typeof value === 'object') {
+      const name = repeatedNames.get(value);
+      if (name) return `/* @__PURE__ */${name}()`;
+    }
     if (typeof value === 'string') return names.get(value) ?? JSON.stringify(value);
-    if (Array.isArray(value)) return `[${value.map(literal).join(',')}]`;
+    if (Array.isArray(value)) return `[${value.map(item => literal(item)).join(',')}]`;
     if (jsonObject(value)) {
       const factory = factories.get(JSON.stringify(Object.keys(value)));
-      if (factory) return `${factory.name}(${Object.values(value).map(literal).join(',')})`;
+      if (factory) return `/* @__PURE__ */${factory.name}(${Object.values(value).map(item => literal(item)).join(',')})`;
       return `{${Object.entries(value).map(([key, item]) => `${property(key)}:${literal(item)}`).join(',')}}`;
     }
     if (typeof value === 'number') return Object.is(value, -0) ? '-0' : String(value);
     if (value === null || typeof value === 'boolean') return String(value);
     throw new Error('Unsupported builtin catalog value.');
   }
+  // Intern construction code, not mutable values. Encoding is the identity key,
+  // so -0, Infinity, own __proto__ keys and property order remain distinct.
+  const repeated = new Map<string, object[]>();
+  function collectRepeated(value: unknown): void {
+    if (!Array.isArray(value) && !jsonObject(value)) return;
+    const encoded = literal(value);
+    if (encoded.length >= 64) {
+      const values = repeated.get(encoded) ?? [];
+      values.push(value); repeated.set(encoded, values);
+    }
+    Object.values(value).forEach(collectRepeated);
+  }
+  collectRepeated(data);
+  const shared = [...repeated.values()].filter(values => values.length >= 3);
+  shared.forEach((values, index) => values.forEach(value => repeatedNames.set(value, `v${index}`)));
+  const subtrees = shared.map((values, index) => `const v${index}=()=>(${literal(values[0], false)});`).join('');
   const constructors = [...factories.values()].map(({ keys, name }) =>
     `const ${name}=(${keys.map((_, index) => `a${index}`).join(',')})=>({${keys.map((key, index) => `${property(key)}:a${index}`).join(',')}});`,
   ).join('');
   const declarations = strings.map((value, index) => `const s${index}=${JSON.stringify(value)};`).join('');
-  if (Array.isArray(data)) return `${constructors}${declarations}export default ${literal(data)};`;
+  if (Array.isArray(data)) return `${constructors}${declarations}${subtrees}export default ${literal(data)};`;
   if (!jsonObject(data)) throw new Error('The builtin catalog must be a JSON object.');
   const entries = Object.entries(data);
   const exports = entries.map(([key, value], index) =>
     `const e${index}=${literal(value)};${key === 'default' ? '' : `export {e${index} as ${JSON.stringify(key)}};`}`,
   ).join('');
   const defaults = entries.map(([key], index) => `${property(key)}:e${index}`).join(',');
-  return `${constructors}${declarations}${exports}export default {${defaults}};`;
+  return `${constructors}${declarations}${subtrees}${exports}export default {${defaults}};`;
 }
 
 export function builtinCatalogLiterals(): Plugin {

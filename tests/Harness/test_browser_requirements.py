@@ -117,6 +117,7 @@ class BrowserRequirementsTests(unittest.TestCase):
         for path in ("resources/js/documents/v3/commands.ts", "resources/js/editor/v3/PuckBridge.tsx",
                      "resources/js/editor-application/v3/session.ts",
                      "resources/js/blocks/v3/basicCompositions.ts", "resources/js/blocks/v3/catalog.ts",
+                     "resources/compositions/builtin-v3.json",
                      "resources/js/adapters/interaction/GeometryAdapter.tsx", "resources/js/adapters/interaction/measure.ts",
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))

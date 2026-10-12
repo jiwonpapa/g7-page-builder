@@ -5,6 +5,41 @@ from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS, build_plan, contract_
 
 
 class DocumentV3ScopeTests(unittest.TestCase):
+    def test_declarative_compositions_select_consumers_and_browser_in_all_phases(self):
+        data = "resources/compositions/builtin-v3.json"
+        unit = "tests/Unit/v3BuiltinCompositions.test.ts"
+        spec = "tests/E2E/structureEditorV3.spec.ts"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for path, source in {
+                data: '{"schema_version":1,"entries":[]}',
+                unit: "import '../../" + data + "';",
+                spec: "import {test} from '@playwright/test';",
+            }.items():
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(source)
+            for phase in ("submission", "integration", "verification", "ci"):
+                with self.subTest(phase=phase):
+                    plan = build_plan(root, [data], phase=phase)
+                    self.assertFalse(plan.unresolved, plan.unresolved)
+                    self.assertFalse(plan.full)
+                    gates = {gate.name: gate for gate in plan.gates}
+                    self.assertIn(data, gates["unit:" + unit].inputs)
+                    browser = gates["browser:" + spec]
+                    self.assertIn(data, browser.inputs)
+                    self.assertTrue(browser.runtime)
+                    self.assertEqual(browser.deferred, phase == "submission")
+                    self.assertFalse(any(name.startswith("content:") or name == "full-product" for name in gates))
+            (root / unit).unlink()
+            missing_unit = build_plan(root, [data])
+            self.assertTrue(missing_unit.unresolved)
+            (root / spec).unlink()
+            missing_browser = build_plan(root, [data])
+            self.assertIn("Missing required browser scenario: " + spec, missing_browser.unresolved)
+            unknown = build_plan(root, ["resources/compositions/unknown.json"])
+            self.assertTrue(any("Unclassified input" in reason for reason in unknown.unresolved))
+
     def test_presentation_fixture_selects_its_exact_consumer_in_every_phase(self):
         fixture = "tests/Contract/document-v3-presentation.json"
         consumer = "tests/Unit/documentV3Presentation.test.ts"

@@ -141,7 +141,7 @@ test('v3 unknown composition data edits in the same built bundle without registr
       const current = flatten((await read(page)).blocks).find(node => node.instance_id === text.instance_id);
       return current?.type === 'content.text' ? current.props.paragraphs.map(runs => runs.map(run => run.text).join('')).join('\n') : null;
     }).toBe('새 구성의 정확한 문구 ' + width);
-    await click(page, '구조 편집'); await layer(page, text.instance_id).click();
+    await click(page, '구조 선택'); await layer(page, text.instance_id).click();
     const edited = await read(page);
     await click(page, '복제');
     await expect.poll(async () => flatten((await read(page)).blocks).length).toBe(flatten(edited.blocks).length + 1);

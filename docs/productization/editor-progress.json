@@ -376,15 +376,37 @@
       "id": "IP1",
       "phase": "foundation",
       "title": "편집 엔진과 정밀 조작 결합 검증",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [],
       "acceptance_ids": [
         "IND-01"
       ],
       "owner_task": "ip1-engine-proof-20261012",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "e827bf10a1ec65279412b2d86967a749f4469ade",
+      "integrated_commit": "a4b4fe8b55a22d8be96888b5f3b556d148d94108",
+      "evidence": [
+        {
+          "acceptance_id": "IND-01",
+          "kind": "unit",
+          "commit": "e827bf10a1ec65279412b2d86967a749f4469ade",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip1-engine-proof.md"
+        },
+        {
+          "acceptance_id": "IND-01",
+          "kind": "browser",
+          "commit": "a4b4fe8b55a22d8be96888b5f3b556d148d94108",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip1-engine-proof.md"
+        },
+        {
+          "acceptance_id": "IND-01",
+          "kind": "architecture",
+          "commit": "e827bf10a1ec65279412b2d86967a749f4469ade",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip1-engine-proof.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "tests/IndependentEditor",

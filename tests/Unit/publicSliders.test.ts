@@ -60,6 +60,24 @@ afterEach(() => {
   document.body.innerHTML = ''; vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks();
 });
 describe('public slider ownership with installed Embla', () => {
+  it('excludes zero-area boundary intersections after settling without hiding partially visible slides', () => {
+    const slider = stableFixture(); bootAuthoredSliders(slider);
+    const instance = observed.instances[0], viewport = slider.querySelector<HTMLElement>('[data-g7pb-slider-viewport]')!;
+    const slides = [...slider.querySelectorAll<HTMLElement>('[data-g7pb-slider-slide]')];
+    vi.spyOn(viewport, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 600, 200));
+    const first = vi.spyOn(slides[0], 'getBoundingClientRect').mockReturnValue(new DOMRect(-600, 0, 600, 200));
+    vi.spyOn(slides[1], 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 600, 200));
+    vi.spyOn(instance, 'slidesInView').mockReturnValue([0, 1]);
+    instance.emit('settle');
+    expect(slides.map(slide => slide.getAttribute('aria-hidden'))).toEqual(['true', 'false', 'true']);
+    expect(slides.map(slide => slide.inert)).toEqual([true, false, true]);
+    first.mockReturnValue(new DOMRect(-599, 0, 600, 200)); instance.emit('slidesInView');
+    expect(slides[0].getAttribute('aria-hidden')).toBe('false'); expect(slides[0].inert).toBe(false);
+    first.mockReturnValue(new DOMRect(0, -200, 600, 200)); instance.emit('settle');
+    expect(slides[0].getAttribute('aria-hidden')).toBe('true');
+    disposePageSliders(slider);
+    expect(vi.mocked(instance.off).mock.calls.map(([event]) => event)).toContain('settle');
+  });
   it('uses the same engine for authored previews without creating legacy controls', () => {
     const legacy = fixture(), before = legacy.innerHTML;
     bootAuthoredSliders(legacy); scopedRoots.add(legacy);

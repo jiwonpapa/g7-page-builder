@@ -191,7 +191,7 @@ test.describe(() => {
         return [...element.querySelectorAll<HTMLElement>('[data-v3-node]')].map(node => {
           const box = node.getBoundingClientRect(), css = getComputedStyle(node);
           const shown = node.checkVisibility();
-          return { id: node.dataset.v3Node, tag: node.tagName, text: node.textContent, shown,
+          return { id: node.dataset.v3Node, tag: node.tagName, text: node.textContent, shown, inert: node.inert,
             x: shown ? box.x - origin.x : 0, y: shown ? box.y - origin.y : 0, width: box.width, height: box.height,
             font: css.fontFamily, fontSize: css.fontSize, lineHeight: css.lineHeight, display: css.display,
             role: node.getAttribute('role'), controls: node.getAttribute('aria-controls'), selected: node.getAttribute('aria-selected'),
@@ -208,11 +208,19 @@ test.describe(() => {
           await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
           await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(connected);
         }
-        const button = allNodes((await read(page)).blocks).find(node => node.type === 'action.button')!;
+        const connected = await read(page);
+        const button = allNodes(connected.blocks).find(node => node.type === 'action.button')!;
         await layer(page, button.instance_id).click(); await click(page, '본문 입력');
-        const editable = page.frameLocator('iframe').locator(selector(button.instance_id) + ' [contenteditable="true"]');
-        await expect(editable).toBeVisible(); await editable.fill('직접 입력 <문자> ' + width);
+        // Puck's plain-text field activates on pointer/focus and uses
+        // plaintext-only, unlike the separate Tiptap rich-text editor.
+        const editable = page.frameLocator('iframe').locator(selector(button.instance_id) + ' [contenteditable]');
+        await expect(editable).toBeVisible(); await editable.hover(); await editable.click();
+        await expect(editable).toHaveAttribute('contenteditable', 'plaintext-only');
+        await editable.fill('직접 입력 <문자> ' + width);
         await expect.poll(async () => allNodes((await read(page)).blocks).find(node => node.instance_id === button.instance_id)?.props).toEqual({ label: '직접 입력 <문자> ' + width });
+        const edited = await read(page);
+        await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(connected);
+        await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(edited);
         await click(page, '구조 선택');
         const authored = await read(page);
         await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
@@ -270,6 +278,8 @@ test.describe(() => {
               const slides = allNodes(saved.blocks).find(node => node.instance_id === behavior.track_id)!.slots.content!;
               await expect(target.locator(selector(slides[1].instance_id))).toHaveAttribute('aria-hidden', 'false');
               await expect(target.locator(selector(slides[0].instance_id))).toHaveAttribute('aria-hidden', 'true');
+              await expect(target.locator(selector(slides[1].instance_id))).toHaveJSProperty('inert', false);
+              await expect(target.locator(selector(slides[0].instance_id))).toHaveJSProperty('inert', true);
             }
           }
           // Embla finishes its actual animation before geometry is compared.

@@ -114,9 +114,16 @@ function bootSliders(root: SliderRoot, reducedMotion: boolean, legacy?: typeof l
     const update = (): void => {
       if (!current()) return;
       const selected = embla.selectedScrollSnap(), visible = stable ? embla.slidesInView() : [];
+      const clip = viewport.getBoundingClientRect();
       controls?.update(selected);
       slides.forEach((slide, index) => {
-        const shown = visible.length ? visible.includes(index) : index === selected;
+        // IntersectionObserver also reports edge-adjacent, zero-area slides as
+        // intersecting. Keep partially visible slides accessible, but exclude
+        // those clipped entirely outside the viewport after an Embla transition.
+        const box = slide.getBoundingClientRect();
+        const shown = visible.length ? visible.includes(index)
+          && Math.min(box.right, clip.right) > Math.max(box.left, clip.left)
+          && Math.min(box.bottom, clip.bottom) > Math.max(box.top, clip.top) : index === selected;
         slide.setAttribute('aria-hidden', shown ? 'false' : 'true'); slide.inert = !shown;
       });
       if (previous) previous.disabled = !embla.canScrollPrev();
@@ -142,7 +149,7 @@ function bootSliders(root: SliderRoot, reducedMotion: boolean, legacy?: typeof l
     const mount: SliderMount = { inputs, reduced: reducedMotion, nodes: nodes(slider), dispose: () => {
       if (!active) return; active = false;
       cleanups.forEach(dispose => dispose()); embla.off('select', update); embla.off('reInit', update);
-      if (stable) embla.off('slidesInView', update);
+      if (stable) { embla.off('slidesInView', update); embla.off('settle', update); }
       if (autoplay) { embla.off('autoplay:play', autoplayStarted); embla.off('autoplay:stop', autoplayStopped); }
       embla.destroy(); controls?.dispose();
       slides.forEach((slide, index) => {
@@ -154,7 +161,7 @@ function bootSliders(root: SliderRoot, reducedMotion: boolean, legacy?: typeof l
     } };
     prune(owner, owner.observer.takeRecords()); owner.mounts.set(slider, mount); owners.set(slider, { runtime: owner, mount });
     embla.on('select', update); embla.on('reInit', update);
-    if (stable) embla.on('slidesInView', update);
+    if (stable) { embla.on('slidesInView', update); embla.on('settle', update); }
     if (autoplay) { embla.on('autoplay:play', autoplayStarted); embla.on('autoplay:stop', autoplayStopped); }
     slider.dataset.g7pbSliderReady = 'true'; update(); paintAutoplay();
   }

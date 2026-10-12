@@ -124,7 +124,7 @@ class BrowserRequirementsTests(unittest.TestCase):
         self.assertIn("v3 editor preview and PHP draft output agree within one CSS pixel", V3_STRUCTURE.titles)
         for zoom in (50, 100, 200):
             self.assertIn(f"v3 precise handles at {zoom}% preserve CSS pixels cancel and one Undo", V3_STRUCTURE.titles)
-        self.assertIn("v3 focus loss and layout constraints cancel pending gestures without history", V3_STRUCTURE.titles)
+        self.assertIn("v3 focus loss cancels and layout constraints preserve canonical history", V3_STRUCTURE.titles)
         self.assertEqual(set(scenarios_for(["src/Application/Compilation/HtmlDocumentCompiler.php"])),
                          {replace(PAGE, titles=tuple(sorted(PAGE.titles + NESTED.titles))), STRUCTURE_THEME})
         self.assertEqual(scenarios_for(["resources/js/documents/types.ts"]), (PAGE,))

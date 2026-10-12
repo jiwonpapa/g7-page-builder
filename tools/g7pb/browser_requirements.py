@@ -60,7 +60,7 @@ V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
     "v3 multiple selection aligns distributes rotates and keeps keyboard and readonly boundaries",
     "v3 marquee group resize snap and pan preserve canonical history",
     "v3 pointer movement rotation and mixed property changes each use one Undo",
-    "v3 focus loss and layout constraints cancel pending gestures without history",
+    "v3 focus loss cancels and layout constraints preserve canonical history",
 ))
 
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(

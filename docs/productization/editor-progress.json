@@ -467,7 +467,7 @@
       "id": "IP3",
       "phase": "editing",
       "title": "레이어와 재귀 구조 편집",
-      "status": "in_progress",
+      "status": "done",
       "depends_on": [
         "IP2"
       ],
@@ -475,9 +475,24 @@
         "IND-03"
       ],
       "owner_task": "ip3-layer-ui-production-20261012",
-      "implementation_commit": null,
-      "integrated_commit": null,
-      "evidence": [],
+      "implementation_commit": "93f861ebe2920e91025dcf5bd7b20984bbcc5b09",
+      "integrated_commit": "7dc48d130247571ed221717c751ee895b0326bef",
+      "evidence": [
+        {
+          "acceptance_id": "IND-03",
+          "kind": "unit",
+          "commit": "93f861ebe2920e91025dcf5bd7b20984bbcc5b09",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip3-structure-editing.md"
+        },
+        {
+          "acceptance_id": "IND-03",
+          "kind": "browser",
+          "commit": "7dc48d130247571ed221717c751ee895b0326bef",
+          "result": "pass",
+          "path": "docs/audits/2026-10-12-ip3-structure-editing.md"
+        }
+      ],
       "blocked_reason": null,
       "scope": [
         "resources/js/documents",

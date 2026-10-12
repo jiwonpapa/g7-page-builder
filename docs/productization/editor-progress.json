@@ -600,14 +600,14 @@
       "id": "IP6",
       "phase": "editing",
       "title": "반응형 상세 편집",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "IP5"
       ],
       "acceptance_ids": [
         "IND-06"
       ],
-      "owner_task": null,
+      "owner_task": "ip6-responsive-editor-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

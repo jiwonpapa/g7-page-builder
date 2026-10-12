@@ -1,6 +1,6 @@
 # IP5 핸들과 다중 선택 작업면
 
-상태: 소스 구현·Local 통합·독립 브라우저 39개 통과, 최종 `integration-verify FULL=1`은 기존 편집기의 외부 글꼴 CSS 지연으로 실패했다. IP4 완료 기준 `b8b90caca345284362fa8b9b65071ea70b63f91d`에서 시작했다. IP5는 차단 상태이며 완료 수는 4/10을 유지한다. IP6·배포는 실행하지 않았다.
+상태: **IP5 구현·Local 통합·필수 증거·최종 전체 검증 완료, 계획 5/10**. 기존 편집기의 외부 글꼴 CSS 지연을 동일 Inter 4.1의 로컬 배포로 보완했고 `c58a1e83ba0003015cd63eccdba32a0d063332b2`의 `integration-verify FULL=1`이 성공했다. IP4 완료 기준 `b8b90caca345284362fa8b9b65071ea70b63f91d`에서 시작했다. 아래 과거 실패 기록은 보존하며 마지막 절이 최종 결과다. 다음은 IP6이며 아직 구현하지 않았다. G7 코어 수정·운영 배포는 실행하지 않았다.
 
 ## 구현 범위
 
@@ -36,7 +36,7 @@ InteractionAdapter는 공개 Moveable/Selecto API와 Puck의 공개 iframe overr
 
 ## 검증 기록
 
-환경: macOS Local 제어, Node 24·PHP 8.5, 고정 `g7pb-dev`의 Chromium Playwright. 독립 편집 시험은 실제 v3 mount의 production 번들을 메모리에서 빌드하여 G7 없는 페이지와 주입 저장 포트에 연결한다. 외부 font 요청은 독립 fixture에서만 차단하며 기존 제품 font/번들은 변경하지 않는다.
+환경: macOS Local 제어, Node 24·PHP 8.5, 고정 `g7pb-dev`의 Chromium Playwright. 독립 편집 시험은 실제 v3 mount의 production 번들을 메모리에서 빌드하여 G7 없는 페이지와 주입 저장 포트에 연결한다. 아래 초기 기록은 당시 독립 fixture의 글꼴 대체 조건을 포함한다. 마지막 로컬 글꼴 통합부터는 fixture도 제품과 동일한 Inter 자산·빌드 플러그인을 사용하며 시스템 글꼴 대체와 외부 import 제거 전용 fixture를 없앴다.
 
 | 검사 | 명령/범위 | 확인한 결과 |
 |---|---|---|
@@ -80,7 +80,7 @@ InteractionAdapter는 공개 Moveable/Selecto API와 Puck의 공개 iframe overr
 
 폰트 준비 보완 뒤 `2b2491f397829636752ca4ba2f5f6864e82803c1`의 품질 gate는 frontend 1,140개·기존 브라우저 49개·Site Shell 45개를 통과했다. 다만 이 검증이 도는 중 위 보완 task를 먼저 제출하여, 종료 단계의 미통합 제출분 검사에서 최종 verified 기록이 거부됐다. 이는 제품 시험 실패가 아닌 작업 순서 실수이며 당시 `integration-verify` 성공으로 보고하지 않는다. 성공 시험과 원복 증거를 보존하고 보완분 통합 뒤 최종 HEAD를 다시 검증한다. 당시 Site Part journal `151c02ab30a28fd6d0a0d73255a78553d0c84e6cda89915668f3595715632725/16159b362c254be3bcc03e6a2263e1dc/site-part-state.json`은 16세션 전부 복구·종료됐고 테마 파일 해시도 같았다. Site Shell 결과와 글꼴 준비 후 생성된 Header·Footer·세트 캡처는 `output/playwright/ip5-font-ready-full-20261012/`에 보존한다. 이 중 Header 프리셋 캡처를 직접 열어 글꼴·레이아웃을 확인했다.
 
-## 최종 확인과 남은 경계
+## 초기 최종 검사 실패와 원인 확정
 
 `8e0428efc21283ae7d54cfbdd6917f4486841b67` FULL에서는 기존 언어/치수 비교의 편집기 진입이 `page.goto`의 `load` 대기 20초를 초과했다. 편집기·글꼴·치수의 실제 판정에 들어가기 전 실패였다. 실패가 확정된 실행의 Playwright runner에 정상 SIGINT를 보내 종료했고, 15 passed·1 failed·1 interrupted·32 did not run으로 기록했다. 중단된 Header 시험과 미실행 항목은 합격으로 집계하지 않는다. Site Part 4세션은 controller의 restore-all에서 모두 복구·종료됐고 원래 테마와 파일 해시도 복구됐다. 중단 시각의 fixture 문서 잔존은 공개 API의 active 목록 두 페이지에서 식별된 제목·slug 시간 범위로 확인했으며 일치 항목은 없었다. 실패 결과는 `output/playwright/ip5-navigation-failure-20261012/`에 보존한다.
 
@@ -104,4 +104,69 @@ InteractionAdapter는 공개 Moveable/Selecto API와 Puck의 공개 iframe overr
 
 현재 직접 좌표 이동·회전·정렬/분배와 그룹 크기 조절은 검증된 같은 부모 absolute 문맥에서 사용한다. flow는 구조 순서를 바꾸며, 회전된 조상의 좌표 변환·회전된 묶음의 그룹 리사이즈·absolute 부모 변경은 안전하게 거부한다. 이를 영구 제외 정책이나 전체 피그마 동등성으로 주장하지 않는다. typed Inspector의 기존 값과 원본은 보존한다.
 
-독립 v3 mount·주입 초안 포트 기준의 구현이다. 기존 G7 진입 화면/서버 저장·발행 전환, 기존 문서 자동 이행, IP6 반응형 override, IP7 전체 카탈로그/Site Part 확장, IP9 운영 저장·발행, IP10 최종 제품 수용과 배포는 미실행이다. IP5 검증 차단 해소 뒤 다음 차수는 IP6이며 범위를 앞당기지 않는다.
+독립 v3 mount·주입 초안 포트 기준의 구현이다. 기존 G7 진입 화면/서버 저장·발행 전환, 기존 문서 자동 이행, IP6 반응형 override, IP7 전체 카탈로그/Site Part 확장, IP9 운영 저장·발행, IP10 최종 제품 수용과 배포는 미실행이다. 다음 차수는 IP6이며 범위를 앞당기지 않는다.
+
+## 승인된 Inter 로컬 배포 보완
+
+외부 글꼴의 버전 고정 자체 배포 제안에 대한 사용자의 후속 진행 지시로 이 범위를 시작했다. 기존 글꼴을 다른 글꼴로 바꾸지 않는다. [공식 Inter 4.1 릴리스](https://github.com/rsms/inter/releases/tag/v4.1)의 원본 WOFF2 18개(100~900, normal/italic)를 가져와 기존 CDN 4.1 파일과 각각 바이트 일치를 확인했다. 원본 [OFL-1.1 LICENSE.txt](https://github.com/rsms/inter/blob/v4.1/LICENSE.txt)와 저작권 표시를 수정 없이 함께 배포한다. 서브셋·변환·이름 변경은 하지 않았다. Puck/PB가 사용하지 않는 InterVariable·InterDisplay family를 새로 포함하지 않는다.
+
+| 항목 | 고정값/검증 |
+|---|---|
+| 공식 ZIP SHA256 | `9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e` |
+| 기존 CDN CSS SHA256 | `46d01c7807f64a24c1b2853b756ef15f3a2facdf4a9f066eaf5d39c0c9935441` |
+| 자산 manifest SHA256 | `ce3810bd4fe9fa9bd8179d8ddb4dc3c0c197ed2f30ba6bee6402076aafc1a958` |
+| 추가 원본 글꼴 크기 | 18개, 합계 2,093,804 bytes; JS/CSS gzip 예산과 별도 명시 |
+| 소스/빌드 자산 | 원본 21파일, 배포 출력 22파일(생성 CSS 포함); 기존 payload 목록에 양쪽 LICENSE 포함 확인 |
+
+`scripts/vendor-inter-fonts.mjs`는 고정 원본 ZIP/CSS를 검증하는 일회성 생성기다. 빌드나 고객 서버에서 다운로드하지 않는다. `vite.inter-fonts.ts`는 고정 Puck 0.23.0 CSS 해시와 모든 파일의 해시/크기를 확인한 뒤 원래 18개 font-face와 Inter feature alias를 유지하고 URL만 로컬 상대 경로로 바꾼다. 내용 해시가 들어간 `fonts/inter-4.1-ce3810bd4fe9/`에 출력하여 기존 immutable 캐시와 구분한다. 누락·변조·미검토 벤더 CSS는 빌드 실패이며 fallback으로 숨기지 않는다. 기존 자산 검사에서 배포 파일과 import를 재확인한다. 기존 release payload의 포함 목록만 읽기 전용 점검했으며 릴리스 패키징·배포는 실행하지 않았다.
+
+| task | 제출 SHA | 통합 SHA |
+|---|---|---|
+| 검사 범위 등록 `ip5-font-scope-20261012` | `3757d057e0e29581f6c554103286d9a741a5dc6f` | `402bd6c79f71996f17d68726b1a013a50a91fd20` |
+| 원본 자산·무결성 `ip5-local-font-assets-current-20261012` | `b271e688e6bdcb52db0ccfd5c402ffa0baeff02d` | `c58a1e83ba0003015cd63eccdba32a0d063332b2` |
+| 제품/fixture 연결 `ip5-local-font-runtime-current-20261012` | `8f1320c9a3b96b1927bdb7b7d881d67e7f5aa9c4` | `c58a1e83ba0003015cd63eccdba32a0d063332b2` |
+
+자산 작업은 정확 24파일, 연결 작업은 별도 소유 범위로 나눴다. 새 검사 등록과 새 자산 기준을 상속할 때에는 공식 active-replacement로 이전 dirty 작업과 이력을 보존했다. 서로 의존하는 두 최종 제출은 공식 batch로 통합했다. 검사 기준·타임아웃·의존성 버전은 바꾸지 않았다.
+
+통합 batch에서 글꼴 무결성 unit 3개·기존 Puck 보정 unit 9개·타입·자산 빌드와 관련 브라우저 43개가 통과했다. 브라우저는 실제 관리자 편집기의 로컬 글꼴/캐시 2개, 실제 Inter를 사용한 독립 v3 39개, 기존 Inspector 2개다. 실제 편집기에서 18개 face 모두 decode/loaded, 동일 origin HTTP 200, 원본 바이트 일치와 외부 글꼴 요청 0건을 확인했다. `rsms.me` 요청이 발생하면 시험에서 실패하며 외부 차단을 글꼴 대체 수단으로 사용하지 않는다. 편집기 PNG를 직접 열어 렌더도 확인했다.
+
+증거는 `output/playwright/gates/integration-ip5-fonts-20261012/` 아래에 보존한다.
+
+- 글꼴/캐시: `f0639ef36fbb547e1db29f75343d60f036da43b2197e03602a94d08d76b24e04/f02c4eaabd514aeeb12b816d4dabe551/`
+- 독립 v3: `9049f18c01dbb0901ca5e0bc1266e72d826a0f5c428c72deba80a28a7d318603/bd39f1fdf2d0420fb416ced44aeb44ad/`
+- 기존 Inspector: `5a59bfc6f892a116fd165f7baf414bafd5330a6c0c16905734f01da40d6ccd65/e97d867c7dc14f22b52202806701e573/`
+
+이 통합 종료에서도 원래 `jwsoft-business01 0.3.1`을 복구했고 1,667파일 집계 해시가 같았다. IP5의 아직 미검증인 의존성 승격과 이전 FULL 실패를 마감하기 위해 최종 전체 검증을 명시적으로 실행한다. 단순 글꼴 변경만으로 전체 검사를 반복하는 것은 아니며, 실행 중 문서 task는 제출하지 않는다.
+
+### 동일 실패 시나리오 10회 재검증
+
+`c58a1e83ba0003015cd63eccdba32a0d063332b2`에서 같은 회사 소개 Page Kit를 `--project=desktop --repeat-each=10 --retries=0 --forbid-only`로 실행하여 **10 passed, skipped/unexpected/flaky 0**을 확인했다. `entry-navigation-network`의 DCL 진입은 349~472ms였고 로컬 Inter CSS 요청은 78~124ms에 완료됐다. 10회 모두 미완료 요청과 외부 origin 요청이 0건이었다. 이는 이 로컬 반복 시나리오의 관찰값이며 모든 고객 환경의 성능 보장은 아니다. 증거는 `output/playwright/ip5-local-font-navigation-20261012/results.json`, `report/`, `results/`다.
+
+실제 Inter로 다시 생성된 독립 v3의 50%·200% 화면도 직접 열어 선택 테두리·핸들·레이어/Inspector와 확대 작업면의 clipping을 확인했다. 본문의 테스트 도형은 기능 검증 fixture이며 최종 제품 UI 디자인이나 전체 카탈로그 시각 승인으로 집계하지 않는다.
+
+## 최종 전체 검증과 차수 마감
+
+`make integration-verify TASK=integration-ip5-fonts-20261012 FULL=1`은 2026-10-12 11:15:22 UTC에 정상 종료하고 **`c58a1e83ba0003015cd63eccdba32a0d063332b2`를 full verified**로 기록했다. 기준은 마지막 신뢰 IP4 SHA `b8b90caca345284362fa8b9b65071ea70b63f91d`다. 모든 제품 제출분을 통합한 뒤 실행했으며 검사 중 새로운 task를 제출하지 않았다.
+
+| 최종 검사 | 결과 |
+|---|---|
+| Python 검사 하네스 | 469개 통과 |
+| PHP 일반 / 커버리지 실행 / G7 통합 | 342개·3,358 assertion / 415개·3,990 assertion / 73개·632 assertion; 커버리지 기준 통과, 기존 PHPUnit notice 1개 유지; 서로 중복되는 시험을 합산하지 않음 |
+| Frontend 전체 | 134파일·1,145개 통과; V8 statements 82.75%, branches 77.81%, functions 78.71%, lines 86.14%; 기존 기준 유지 |
+| 정적/빌드/자산 | 타입·CSS·PHPStan·Pint·구조·production build·manifest·글꼴 무결성·기존 예산 통과; 블록 품질은 기술 검사이며 사람의 상품 승인/배포가 아님 |
+| 관련 실제 브라우저 | 로컬 글꼴/캐시 2개 + 독립 v3 39개 + 기존 Inspector 2개 통과; skipped/flaky/unexpected 0 |
+| 기존 전체 브라우저 | 제품 49개 + Site Shell 45개 통과; 원래 실패했던 회사 소개 진입·Header 캡처도 성공 |
+| 독립 v3 접근성 | 세 profile 모두 Axe main WCAG 2 A/AA 자동 위반 0·통과 규칙 21·자동 판정 불가 2; 키보드/IME/readonly 별도 동작 시험 통과; 전체 접근성 인증을 뜻하지 않음 |
+| 최종 번들 gzip | 독립 v3 JS 465,818 / 508,500, CSS 18,247 / 45,200 bytes; 기존 제품 JS 508,316 / 508,500, CSS 45,028 / 45,200 bytes |
+| 추가 글꼴 자산 | 원본 WOFF2 합계 2,093,804 bytes와 생성 CSS 약 4.05KB를 별도 배포; 기존 JS/CSS 예산 수치에 숨겨 합산하지 않음 |
+| 기존 100블록 성능 | 준비 1,235.9ms, 입력 p95 105.9ms, drag 952.4ms; 기존 상한 내이며 새 v3 전체 성능 수용으로 대체하지 않음 |
+
+최종 관련 브라우저의 재실행 증거는 같은 `output/playwright/gates/integration-ip5-fonts-20261012/` 아래에 있다.
+
+- 로컬 글꼴/캐시: `f0639ef36fbb547e1db29f75343d60f036da43b2197e03602a94d08d76b24e04/fd707144ac0049d69507b73a8701639b/`
+- 독립 v3: `9049f18c01dbb0901ca5e0bc1266e72d826a0f5c428c72deba80a28a7d318603/8397b3de2fef4f0e9107c78b2166345f/`
+- 기존 Inspector: `5a59bfc6f892a116fd165f7baf414bafd5330a6c0c16905734f01da40d6ccd65/e7b6a611dc7c4b7eb959b743c90b96e0/`
+
+전체 제품 49개와 Site Shell 45개의 HTML report를 각각 `output/playwright/ip5-local-font-full-20261012/product-report/`, `site-shell-report/`에 복사 보존했다. 같은 디렉터리에 `site-shell-product.json`의 source fingerprint 성공 기록도 보존했다. FULL Site Part journal `1ff129ae6d8d518e9c3c1978a2e1a3986d6b561608b81cfa7ab08281f163381d/6d8dde8dbae14622b997cd9453512593/site-part-state.json`은 16세션 모두 restored=true이고 closed=true다. EXIT trap 뒤 `jwsoft-business01 0.3.1` 복구와 1,667개 테마 파일의 동일 SHA256 집계를 다시 확인했다.
+
+이 근거로 IP5를 완료하고 원장·표시판·계획을 5/10으로 일치시킨다. 완료 문서 통합 후에는 검증된 제품 소스를 반복 검사하지 않고 문서 delta만 확인한다. 다음 IP6는 데스크톱 host에서 PC/태블릿/모바일 폭의 직접 편집과 base/override/reset·경계 폭·출력 일치이며 이번 차수에 구현하지 않았다. 독립 v3의 G7 운영 진입/저장·발행 연결, 기존 문서 자동 이행, 전체 피그마 동등성, 배포 완료를 주장하지 않는다. 임시파일·보존 worktree 삭제와 원격 push도 하지 않았다.

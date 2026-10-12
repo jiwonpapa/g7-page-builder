@@ -2,6 +2,7 @@ import type { DocumentV3, Style } from './types';
 import type { DesignCommand } from './designCommands';
 import { assertEditable, indexTree, selectionRoots } from './tree';
 import { reject } from './schema';
+import { effectiveStyle, type Viewport } from './validate';
 
 /** Untransformed CSS pixels in the authored parent's coordinate space; no DOM/vendor objects. */
 export interface GeometryBox { id: string; left: number; top: number; width: number; height: number }
@@ -14,12 +15,12 @@ export type GeometryOperation =
 export type StyleBatch = Extract<DesignCommand, { kind: 'styles' }>;
 const px = (value: number) => ({ value: Math.round(value * 1000) / 1000, unit: 'px' as const });
 
-export function geometryTargets(document: DocumentV3, ids: readonly string[], boxes: readonly GeometryBox[]) {
+export function geometryTargets(document: DocumentV3, ids: readonly string[], boxes: readonly GeometryBox[], viewport: Viewport = 'base') {
   const roots = selectionRoots(indexTree(document), ids);
   if (new Set(boxes.map(box => box.id)).size !== boxes.length) reject('geometry_duplicate', '$');
   return roots.map(item => {
     assertEditable(item);
-    if (item.node.style.hidden || item.ancestors.some(node => node.style.hidden)) reject('hidden', item.node.instance_id);
+    if (effectiveStyle(item.node, viewport).hidden || item.ancestors.some(node => effectiveStyle(node, viewport).hidden)) reject('hidden', item.node.instance_id);
     const box = boxes.find(value => value.id === item.node.instance_id);
     if (!box || ![box.left, box.top, box.width, box.height].every(Number.isFinite)
       || box.width <= 0 || box.height <= 0) reject('geometry_measurement', item.node.instance_id);
@@ -28,15 +29,15 @@ export function geometryTargets(document: DocumentV3, ids: readonly string[], bo
 }
 
 /** Geometry is an input to the canonical validator, never a replacement document. */
-export function geometryCommand(document: DocumentV3, ids: readonly string[], boxes: readonly GeometryBox[], operation: GeometryOperation): StyleBatch {
-  const targets = geometryTargets(document, ids, boxes);
+export function geometryCommand(document: DocumentV3, ids: readonly string[], boxes: readonly GeometryBox[], operation: GeometryOperation, viewport: Viewport = 'base'): StyleBatch {
+  const targets = geometryTargets(document, ids, boxes, viewport);
   const groupResize = operation.kind === 'resize' && targets.length > 1;
   const positioned = operation.kind !== 'resize' || groupResize;
-  if (positioned && targets.some(({ item }) => item.node.style.position !== 'absolute' || !item.parent)) reject('absolute_required', '$');
+  if (positioned && targets.some(({ item }) => effectiveStyle(item.node, viewport).position !== 'absolute' || !item.parent)) reject('absolute_required', '$');
   if (positioned && targets.some(({ item }) => item.parent !== targets[0].item.parent)) reject('mixed_parents', '$');
-  if (targets.some(({ item }) => item.ancestors.some(node => node.style.rotation))) reject('rotated_parent', '$');
-  if ((operation.kind === 'align' || operation.kind === 'distribute') && targets.some(({ item }) => item.node.style.rotation)) reject('rotated_alignment', '$');
-  if (groupResize && targets.some(({ item }) => item.node.style.rotation)) reject('rotated_group_resize', '$');
+  if (targets.some(({ item }) => item.ancestors.some(node => effectiveStyle(node, viewport).rotation))) reject('rotated_parent', '$');
+  if ((operation.kind === 'align' || operation.kind === 'distribute') && targets.some(({ item }) => effectiveStyle(item.node, viewport).rotation)) reject('rotated_alignment', '$');
+  if (groupResize && targets.some(({ item }) => effectiveStyle(item.node, viewport).rotation)) reject('rotated_group_resize', '$');
   const changes = new Map<string, Style>();
   const resets = new Map<string, (keyof Style)[]>();
   const place = (box: GeometryBox, left: number, top: number) => {
@@ -52,27 +53,28 @@ export function geometryCommand(document: DocumentV3, ids: readonly string[], bo
     const left = Math.min(...targets.map(({ box }) => box.left));
     const top = Math.min(...targets.map(({ box }) => box.top));
     for (const { box, item } of targets) {
+      const style = effectiveStyle(item.node, viewport);
       const set: Style = { width: px(box.width * sx), height: px(box.height * sy) };
       const reset: (keyof Style)[] = [];
       if (groupResize) {
         set.inset_left = px(left + (box.left - left) * sx);
         set.inset_top = px(top + (box.top - top) * sy);
         reset.push('inset_right', 'inset_bottom');
-      } else if (item.node.style.position === 'absolute') {
+      } else if (style.position === 'absolute') {
         // East/south handles keep the measured near edge, even when CSS was
         // initially anchored only by right/bottom (including near: auto).
         for (const [near, far, value] of [['inset_left', 'inset_right', box.left], ['inset_top', 'inset_bottom', box.top]] as const) {
-          if ((item.node.style[near] === undefined || item.node.style[near] === 'auto')
-            && item.node.style[far] !== undefined && item.node.style[far] !== 'auto') {
+          if ((style[near] === undefined || style[near] === 'auto')
+            && style[far] !== undefined && style[far] !== 'auto') {
             set[near] = px(value); reset.push(far);
           }
         }
       }
       if (operation.keepRatio) set.aspect_ratio = box.width / box.height;
       // Flex shrink/grow must not silently undo a direct pixel size.
-      if (item.parent?.style.display === 'flex') { set.grow = 0; set.shrink = 0; set.basis = 'auto'; }
+      if (item.parent && effectiveStyle(item.parent, viewport).display === 'flex') { set.grow = 0; set.shrink = 0; set.basis = 'auto'; }
       changes.set(box.id, set);
-      if (!operation.keepRatio && item.node.style.aspect_ratio !== undefined) reset.push('aspect_ratio');
+      if (!operation.keepRatio && style.aspect_ratio !== undefined) reset.push('aspect_ratio');
       if (reset.length) resets.set(box.id, reset);
     }
   } else if (operation.kind === 'translate') {
@@ -80,7 +82,7 @@ export function geometryCommand(document: DocumentV3, ids: readonly string[], bo
     for (const { box } of targets) place(box, box.left + operation.x, box.top + operation.y);
   } else if (operation.kind === 'rotate') {
     if (!Number.isFinite(operation.degrees)) reject('geometry_rotation', '$');
-    for (const { item } of targets) changes.set(item.node.instance_id, { rotation: (item.node.style.rotation ?? 0) + operation.degrees });
+    for (const { item } of targets) changes.set(item.node.instance_id, { rotation: (effectiveStyle(item.node, viewport).rotation ?? 0) + operation.degrees });
   } else {
     const start = (box: GeometryBox) => operation.axis === 'x' ? box.left : box.top;
     const size = (box: GeometryBox) => operation.axis === 'x' ? box.width : box.height;
@@ -97,13 +99,21 @@ export function geometryCommand(document: DocumentV3, ids: readonly string[], bo
       for (const box of ordered) { at(box, cursor); cursor += size(box) + gap; }
     }
   }
-  return { kind: 'styles', updates: targets.map(({ box }) => ({ id: box.id, set: changes.get(box.id)!,
-    ...(resets.has(box.id) ? { reset: resets.get(box.id)! } : {}) })) };
+  return { kind: 'styles', ...(viewport === 'base' ? {} : { viewport }), updates: targets.map(({ box }) => {
+    const set = changes.get(box.id)!, reset = resets.get(box.id) ?? [];
+    // Removing an override would re-inherit a far anchor. Explicit auto
+    // neutralizes it only at this width; base anchors remain untouched.
+    const remaining = reset.filter(key => {
+      if (viewport !== 'base' && (key === 'inset_right' || key === 'inset_bottom')) { set[key] = 'auto'; return false; }
+      return true;
+    });
+    return { id: box.id, set, ...(remaining.length ? { reset: remaining } : {}) };
+  }) };
 }
 
 /** Shared Inspector mixed/omitted/value semantics without inventing a saved mixed value. */
-export function selectedStyle(document: DocumentV3, ids: readonly string[], key: keyof Style): { mixed: boolean; value: Style[keyof Style] } {
+export function selectedStyle(document: DocumentV3, ids: readonly string[], key: keyof Style, viewport: Viewport = 'base'): { mixed: boolean; value: Style[keyof Style] } {
   const nodes = selectionRoots(indexTree(document), ids).map(item => item.node);
-  const value = nodes[0].style[key];
-  return { mixed: nodes.some(node => JSON.stringify(node.style[key]) !== JSON.stringify(value)), value };
+  const value = effectiveStyle(nodes[0], viewport)[key];
+  return { mixed: nodes.some(node => JSON.stringify(effectiveStyle(node, viewport)[key]) !== JSON.stringify(value)), value };
 }

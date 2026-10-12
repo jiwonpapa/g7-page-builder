@@ -17,6 +17,18 @@ function setup() {
   return { state, commit, gesture, begin, command, id };
 }
 describe('v3 provisional gesture ownership', () => {
+  it('pins a gesture to its responsive target and rejects a cross-viewport preview', () => {
+    const s = setup(), boxes = [{ id: s.id, left: 10, top: 20, width: 100, height: 50 }];
+    s.gesture.begin([s.id], boxes, 'mobile');
+    expect(() => s.gesture.preview(s.command)).toThrow('gesture_targets');
+    expect(s.commit).not.toHaveBeenCalled();
+    s.gesture.begin([s.id], boxes, 'mobile');
+    s.gesture.preview({ ...s.command, viewport: 'mobile' });
+    s.gesture.finish();
+    expect(s.commit).toHaveBeenCalledTimes(1);
+    expect(s.state.document.blocks[0].slots.content![0].responsive.mobile?.width).toEqual({ value: 200, unit: 'px' });
+    expect(s.state.document.blocks[0].slots.content![0].style.width).toEqual(fixture.blocks[0].slots.content[0].style.width);
+  });
   it('previews without writing, commits once, then saves and reopens canonical data', () => {
     const s = setup(), before = serializeDraft(s.state.document);
     s.begin();

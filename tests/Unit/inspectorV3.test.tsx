@@ -22,6 +22,22 @@ async function click(host: HTMLElement, label: string) {
   if (!button) throw new Error(label); await act(async () => button.click());
 }
 describe('precision Inspector', () => {
+  it('shows inherited values, seeds overrides from effective values and resets only the active layer', async () => {
+    const doc = cloneDocument(validateDocumentV3(fixture)), node = doc.blocks[0].slots.content![0];
+    node.style = { width: { value: 70, unit: '%' }, opacity: .5 };
+    node.responsive = { tablet: { opacity: .7 }, mobile: { opacity: 0 } };
+    const apply = vi.fn(), host = await mount(<Inspector node={node} document={doc} viewport="mobile" disabled={false} apply={apply} />);
+    expect(host.querySelector('[aria-label="너비 상속"]')?.textContent).toContain('70');
+    await act(async () => host.querySelector<HTMLInputElement>('[aria-label="너비 지정"]')!.click());
+    await click(host, '디자인 적용');
+    expect(apply.mock.calls[0][0]).toMatchObject({ viewport: 'mobile', set: { width: { value: 70, unit: '%' }, opacity: 0 } });
+    await click(host, '현재 화면 스타일 초기화');
+    await click(host, '디자인 적용');
+    expect(apply.mock.calls[1][0]).toEqual({ kind: 'style', viewport: 'mobile', id: node.instance_id, set: {}, reset: ['opacity'] });
+    const result = executeDocumentCommand(doc, apply.mock.calls[1][0], () => '').document;
+    expect(result.blocks[0].slots.content![0].style).toEqual(node.style);
+    expect(result.blocks[0].slots.content![0].responsive).toEqual({ tablet: { opacity: .7 } });
+  });
   it('covers typed layout, all size and four-sided appearance groups without JSON/CSS inputs', () => {
     const keys = groups.flatMap(group => group.keys);
     for (const key of ['display', 'columns', 'rows', 'basis', 'width', 'height', 'aspect_ratio', 'min_width', 'max_height',

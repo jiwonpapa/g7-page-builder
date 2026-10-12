@@ -99,6 +99,8 @@ const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
 const basicCompositionKeys = ['hero.poster', 'hero.product', 'hero.backdrop', 'hero.editorial', 'hero.device',
   'hero.balanced', 'hero.screenshot', 'hero.overlap', 'hero.offset', 'card.plain', 'card.outlined', 'image-text.left', 'image-text.right'];
 const repeatedCompositionKeys = ["buttons.primary-secondary","buttons.centered-actions","process.four-step","logo-cloud.partners","pricing.three-tier","team.leadership","gallery.project-scenes","testimonials.customer-proof","comparison.plans","articles.insights","events.upcoming","downloads.resource-center","card-grid.services","breadcrumbs.detail-page","logo-cloud.grid","logo-cloud.panel","pricing.cards","pricing.compact","pricing.editorial","team.grid","team.editorial","team.featured","gallery.grid","gallery.masonry","gallery.filmstrip","testimonials.grid","testimonials.spotlight","testimonials.split","testimonials.quote-hero","articles.list","articles.grid","articles.featured","articles.editorial","card-grid.grid","card-grid.rail","card-grid.editorial","card-grid.numbered","list.simple"];
+const staticCompositionKeys = ['heading.section-intro', 'heading.compact-title', 'image.landscape', 'image.square', 'cta.contact',
+  'bar-chart.quarterly', 'divider.section-break', 'blockquote.customer-voice', 'notice.service-info', 'cta.centered', 'cta.banner', 'cta.panel'];
 const bundledManifest = JSON.parse(readFileSync(new URL('../../resources/block-packs/builtin-core/manifest.json', import.meta.url), 'utf8')) as {
   presets: { preset_id: string; props: unknown }[] };
 const previewPrefix = '/modules/jiwonpapa-page_builder/store/previews/';
@@ -111,7 +113,7 @@ function collectPreviewAssets(value: unknown): void {
   } else if (Array.isArray(value)) value.forEach(collectPreviewAssets);
   else if (value && typeof value === 'object') Object.values(value).forEach(collectPreviewAssets);
 }
-for (const key of repeatedCompositionKeys) {
+for (const key of [...repeatedCompositionKeys, ...staticCompositionKeys]) {
   const preset = bundledManifest.presets.find(preset => preset.preset_id === key);
   if (!preset) throw new Error('Missing bundled repeated preset: ' + key);
   collectPreviewAssets(preset.props);
@@ -261,12 +263,15 @@ for (const key of basicCompositionKeys) test('v3 composition internal edit save 
   expect(errors).toEqual([]);
   await info.attach('ip7-composition-proof', { contentType: 'application/json', body: JSON.stringify(evidence) });
 });
-for (const key of repeatedCompositionKeys) test('v3 repeated composition internal edit assets save reopen and PHP parity ' + key, async ({ page, context }, info) => {
+for (const family of [
+  { name: 'repeated', keys: repeatedCompositionKeys, label: '반복 구성' },
+  { name: 'static', keys: staticCompositionKeys, label: '내용 구성' },
+]) for (const key of family.keys) test('v3 ' + family.name + ' composition internal edit assets save reopen and PHP parity ' + key, async ({ page, context }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await open(page);
-  expect(await page.getByLabel('반복 구성', { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(repeatedCompositionKeys);
+  expect(await page.getByLabel(family.label, { exact: true }).locator('option').evaluateAll(options => options.map(option => option.getAttribute('value')))).toEqual(family.keys);
   const empty = await read(page);
-  await page.getByLabel('반복 구성', { exact: true }).selectOption(key); await click(page, '반복 구성 삽입');
+  await page.getByLabel(family.label, { exact: true }).selectOption(key); await click(page, family.label + ' 삽입');
   await expect.poll(async () => (await read(page)).blocks.length).toBe(1);
   const inserted = await read(page);
   const flatten = (nodes: Node[]): Node[] => nodes.flatMap(node => [node, ...flatten(node.slots.content ?? [])]);
@@ -317,7 +322,7 @@ for (const key of repeatedCompositionKeys) test('v3 repeated composition interna
       return { id: node.getAttribute('data-v3-node'), tag: node.tagName, text: node.textContent,
         src: node.getAttribute('src'), alt: node.getAttribute('alt'), href: node.getAttribute('href'),
         x: box.x - origin.x, y: box.y - origin.y, width: box.width, height: box.height,
-        css: Object.fromEntries(['display', 'position', 'font-size', 'font-family', 'line-height', 'color',
+        css: Object.fromEntries(['display', 'position', 'font-size', 'font-family', 'line-height', 'color', 'background-color', 'background-image',
           'row-gap', 'column-gap', 'grid-template-columns', 'border-top-width', 'object-fit'].map(name => [name, css.getPropertyValue(name)])) };
     });
   };
@@ -342,7 +347,7 @@ for (const key of repeatedCompositionKeys) test('v3 repeated composition interna
     await output.setContent('<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://v3-editor.test/"></head><body style="margin:0">' + phpDraft(saved, expectedViewport(width)) + '</body></html>');
     await output.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const php = await output.locator('[data-v3-surface]').evaluate(measure);
-    await info.attach('ip7-repeated-' + width, { contentType: 'application/json', body: JSON.stringify({ key, width, canvas, preview, php }) });
+    await info.attach('ip7-' + family.name + '-' + width, { contentType: 'application/json', body: JSON.stringify({ key, width, canvas, preview, php }) });
     for (const other of [preview, php]) {
       expect(other.map(node => node.id)).toEqual(canvas.map(node => node.id));
       for (let index = 0; index < canvas.length; index++) {
@@ -350,11 +355,11 @@ for (const key of repeatedCompositionKeys) test('v3 repeated composition interna
         for (const property of ['tag', 'text', 'css', 'src', 'alt', 'href'] as const) expect(other[index][property]).toEqual(canvas[index][property]);
       }
     }
-    await page.screenshot({ path: info.outputPath('ip7-repeated-' + key + '-' + width + '.png'), fullPage: true });
+    await page.screenshot({ path: info.outputPath('ip7-' + family.name + '-' + key + '-' + width + '.png'), fullPage: true });
     await output.close();
   }
   await open(page, saved, true);
-  await expect(page.getByRole('button', { name: '반복 구성 삽입', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: family.label + ' 삽입', exact: true })).toBeDisabled();
   expect(await read(page)).toEqual(saved); expect(errors).toEqual([]);
 });
 async function enable(page: Page, label: string) {

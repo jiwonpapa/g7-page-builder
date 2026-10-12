@@ -109,6 +109,10 @@ V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
         "card-grid.editorial",
         "card-grid.numbered",
         "list.simple")),
+    *("v3 static composition internal edit assets save reopen and PHP parity " + key for key in (
+        "heading.section-intro", "heading.compact-title", "image.landscape", "image.square", "cta.contact",
+        "bar-chart.quarterly", "divider.section-break", "blockquote.customer-voice", "notice.service-info",
+        "cta.centered", "cta.banner", "cta.panel")),
 ))
 
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(

@@ -121,8 +121,15 @@ class BrowserRequirementsTests(unittest.TestCase):
                      "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 69)
+        self.assertEqual(len(V3_STRUCTURE.titles), 81)
         self.assertIn("v3 semantic lists tables and figures preserve editing grammar and PHP parity", V3_STRUCTURE.titles)
+        for path in ("resources/js/blocks/v3/staticCompositions.ts", "resources/js/blocks/v3/staticTemplates.ts",
+                     "resources/js/editor/v3/presentationReact.ts"):
+            self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
+        for key in ("heading.section-intro", "heading.compact-title", "image.landscape", "image.square", "cta.contact",
+                    "bar-chart.quarterly", "divider.section-break", "blockquote.customer-voice", "notice.service-info",
+                    "cta.centered", "cta.banner", "cta.panel"):
+            self.assertIn("v3 static composition internal edit assets save reopen and PHP parity " + key, V3_STRUCTURE.titles)
         for key in ("hero.poster", "hero.product", "hero.backdrop", "hero.editorial", "hero.device",
                     "hero.balanced", "hero.screenshot", "hero.overlap", "hero.offset",
                     "card.plain", "card.outlined", "image-text.left", "image-text.right"):

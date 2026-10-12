@@ -3,8 +3,10 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkInterFontDist } from '../vite.inter-fonts.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+checkInterFontDist(root);
 const manifest = JSON.parse(readFileSync(join(root, 'module.json'), 'utf8'));
 const outputs = [
   'dist/js/page-builder-native-compositions.iife.js', 'dist/meta/native-compositions-modules.json',

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { puckHistoryCorrection } from '../../vite.puck-history.js';
+import { interFontAssets, INTER_DIST, localInterFonts } from '../../vite.inter-fonts.js';
 import type { DocumentV3 } from '../../resources/js/documents/v3/types';
 import type { TiptapEditorHTMLElement } from '@tiptap/core';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
@@ -18,6 +19,8 @@ declare global {
   }
 }
 let javascript = '', stylesheet = '';
+let stylesheetPath = '';
+const builtAssets = new Map<string, Buffer>();
 const fixture = JSON.parse(readFileSync(new URL('../Contract/document-v3.fixture.json', import.meta.url), 'utf8')) as DocumentV3;
 let sizes = { javascript: 0, stylesheet: 0 };
 test.beforeAll(async () => {
@@ -29,13 +32,7 @@ test.beforeAll(async () => {
   process.env.NODE_ENV = 'production';
   let result: Awaited<ReturnType<typeof build>>;
   try { result = await build({ configFile: false, root: fileURLToPath(new URL('../..', import.meta.url)),
-    plugins: [react(), puckHistoryCorrection(), { name: 'v3-proof-offline-font', enforce: 'pre',
-      transform(source, id) {
-        if (!id.endsWith('/@puckeditor/core/dist/index.css')) return;
-        const font = '@import "https://rsms.me/inter/inter.css";';
-        if (!source.startsWith(font)) throw new Error('Review changed Puck CSS font import');
-        return source.replace(font, '/* Independent proof uses system fonts. */');
-      } }],
+    plugins: [react(), puckHistoryCorrection(), localInterFonts()],
     define: { 'process.env.NODE_ENV': '"production"' },
     build: { write: false, minify: true, lib: {
       entry: fileURLToPath(new URL('../../resources/js/editor/v3/mount.tsx', import.meta.url)),
@@ -48,7 +45,13 @@ test.beforeAll(async () => {
   if ('close' in result) throw new Error('Unexpected build watcher');
   const output: Rollup.OutputBundle[keyof Rollup.OutputBundle][] = (Array.isArray(result) ? result.flatMap(item => item.output) : result.output);
   javascript = output.filter(item => item.type === 'chunk').map(item => item.code).join('\n');
-  stylesheet = output.filter(item => item.type === 'asset').filter(item => item.fileName.endsWith('.css'))
+  for (const item of output) if (item.type === 'asset') builtAssets.set('/' + item.fileName, Buffer.from(item.source));
+  stylesheetPath = [...builtAssets.keys()].find(path => path.endsWith('.css') && !path.startsWith('/fonts/')) ?? '';
+  expect(stylesheetPath).not.toBe('');
+  for (const [name, bytes] of interFontAssets(fileURLToPath(new URL('../..', import.meta.url)))) {
+    expect(builtAssets.get('/' + INTER_DIST + '/' + name)?.equals(bytes)).toBe(true);
+  }
+  stylesheet = output.filter(item => item.type === 'asset').filter(item => item.fileName.endsWith('.css') && !item.fileName.startsWith('fonts/'))
     .map(item => typeof item.source === 'string' ? item.source : new TextDecoder().decode(item.source)).join('\n');
   sizes = { javascript: gzipSync(javascript).length, stylesheet: gzipSync(stylesheet).length };
   // Do not raise the installed editor's limits or hide its bytes in this host.
@@ -60,12 +63,14 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'v3-editor.test') return route.abort('blockedbyclient');
+    const asset = builtAssets.get(url.pathname);
+    if (asset) return route.fulfill({ contentType: url.pathname.endsWith('.css') ? 'text/css' : url.pathname.endsWith('.woff2') ? 'font/woff2' : 'text/plain', body: asset });
     if (url.pathname === '/image.svg') return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><rect width="160" height="80" fill="#dbeafe"/></svg>' });
     if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="ko"><head><meta charset="utf-8"></head><body style="margin:0"><div id="editor"></div></body></html>' });
     return route.abort('blockedbyclient');
   });
   await page.goto('https://v3-editor.test/');
-  await page.addStyleTag({ content: stylesheet });
+  await page.addStyleTag({ url: 'https://v3-editor.test' + stylesheetPath });
   await page.addScriptTag({ content: javascript });
   const initial = source ?? { ...fixture, blocks: [], assets: [{ ...fixture.assets[0], url: '/image.svg' }] } as DocumentV3;
   await page.evaluate(({ initial, readonly }) => {
@@ -82,6 +87,7 @@ async function open(page: Page, source?: DocumentV3, readonly = false) {
   }, { initial, readonly });
   await expect(page.getByRole('main', { name: '독립 구조 편집기' })).toBeVisible();
   await expect(page.locator('iframe')).toBeVisible();
+  await Promise.all(page.frames().map(frame => frame.evaluate(async () => { await document.fonts.ready; })));
 }
 const read = (page: Page) => page.evaluate(() => window.v3Proof.current);
 const click = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).click();

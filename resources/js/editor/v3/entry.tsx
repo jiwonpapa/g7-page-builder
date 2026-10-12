@@ -7,6 +7,7 @@ import '../../../css/page-builder-structure.css';
 import { ADMIN_AUTH_TOKEN_KEY, buildAdminLoginUrl, PAGE_BUILDER_EDITOR_PATH, PAGE_BUILDER_MANAGER_PATH, PageDocumentApiClient } from '../../api/pageBuilderApi';
 import { createStructureDocument, parseV3DocumentResource } from '../../api/v3DocumentResource';
 import { createApiDraftPort } from './apiDraftPort';
+import { createApiPublicationPort } from './apiPublicationPort';
 import { StructureDocumentHost, type StructureHostPorts } from './StructureDocumentHost';
 import compositionUrl from '../../../compositions/builtin-v3.json?url&no-inline';
 import { compositionChoices } from '../../editor-application/v3/compositions';
@@ -28,6 +29,7 @@ export function mountStructureDocument(element: HTMLElement): () => void {
     },
     create: input => createStructureDocument(api, input),
     drafts: createApiDraftPort(api),
+    publication: createApiPublicationPort(api, window.location.origin),
     navigate: url => window.location.assign(url),
     created: id => window.history.replaceState(null, '', `${PAGE_BUILDER_EDITOR_PATH}?document=${encodeURIComponent(id)}&editor=structure`),
     confirmLeave: () => window.confirm('저장하지 않은 변경이 있습니다. 문서함으로 이동할까요?'),

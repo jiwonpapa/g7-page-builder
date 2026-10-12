@@ -1,10 +1,111 @@
-import { devices, expect, test } from '@playwright/test';
+import { devices, expect, test, type Locator } from '@playwright/test';
 import type { DocumentV3 } from '../../resources/js/documents/v3/types';
 import { authenticateEditorInteractionAdmin, editorInteractionApi } from './support/editorInteractionFixture';
 
 test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
 const documents = '/api/modules/jiwonpapa-page_builder/admin/documents';
 const editor = '/modules/jiwonpapa-page_builder/admin/editor';
+
+async function publicNodes(surface: Locator) {
+  await surface.evaluate(async element => {
+    await element.ownerDocument.fonts.ready;
+    await Promise.all([...element.querySelectorAll('img')].map(image => image.decode().catch(() => {})));
+  });
+  return surface.evaluate(element => {
+    const origin = element.getBoundingClientRect();
+    return [...element.querySelectorAll<HTMLElement>('[data-v3-node]')].map(node => {
+      const rect = node.getBoundingClientRect(), css = getComputedStyle(node);
+      return { id: node.dataset.v3Node, text: node.innerText, font: css.fontSize, display: css.display,
+        box: [rect.x - origin.x, rect.y - origin.y, rect.width, rect.height] };
+    });
+  });
+}
+
+for (const shell of ['none', 'template', 'builder'] as const) test(`publishes generic elements through the installed UI with explicit confirmation and preserves the live version ${shell}`, async ({ page, context }, info) => {
+  const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);
+  const slug = `g7pb-public-${shell}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  let ownedId: string | undefined;
+  const click = (name: string) => page.getByRole('button', { name, exact: true }).click();
+  const viewer = await context.newPage(), preview = await context.newPage();
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(`${editor}?editor=structure`);
+    await page.getByLabel('페이지 제목', { exact: true }).fill('공통 요소의 공개 출력 ' + shell);
+    await page.getByLabel('기본 주소 이름', { exact: true }).fill(slug);
+    await page.getByLabel('페이지 출력 방식', { exact: true }).selectOption(shell);
+    const creating = page.waitForResponse(response => response.url().endsWith(documents) && response.request().method() === 'POST');
+    await click('빈 페이지 만들기');
+    const response = await creating; expect(response.ok(), await response.text()).toBe(true);
+    ownedId = (await response.json()).data.document.document_id;
+    await click('제목 삽입');
+    const layer = page.getByTestId(/^layer-/); await expect(layer).toHaveCount(1);
+    const id = (await layer.getAttribute('data-testid'))!.slice('layer-'.length);
+    await layer.click();
+    const fontGroup = page.getByLabel('글자 크기 지정', { exact: true }).locator('xpath=ancestor::details');
+    if (await fontGroup.getAttribute('open') === null) await fontGroup.locator('summary').click();
+    await page.getByLabel('글자 크기 지정', { exact: true }).check();
+    await page.getByLabel('글자 크기 형식', { exact: true }).selectOption({ label: 'px' });
+    await page.getByLabel('글자 크기 값', { exact: true }).fill('27'); await click('디자인 적용');
+    await click('모바일');
+    if (await fontGroup.getAttribute('open') === null) await fontGroup.locator('summary').click();
+    await page.getByLabel('글자 크기 지정', { exact: true }).check();
+    await page.getByLabel('글자 크기 형식', { exact: true }).selectOption({ label: 'px' });
+    await page.getByLabel('글자 크기 값', { exact: true }).fill('21'); await click('디자인 적용');
+    await click('공개 미리보기 준비');
+    const previewLink = page.getByRole('link', { name: '공개 미리보기 열기', exact: true }); await expect(previewLink).toBeVisible();
+    const previewUrl = (await previewLink.getAttribute('href'))!;
+    await expect(page.getByTestId('structure-document-status')).toHaveText('초안 저장됨');
+    let current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(current.active_artifact_sha256).toBeNull();
+    await click('발행 준비');
+    const dialog = page.getByRole('dialog', { name: '이 버전을 공개할까요?' }); await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: '취소', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape'); await expect(dialog).toBeHidden();
+    current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(current.active_artifact_sha256).toBeNull();
+    await click('발행 준비'); await expect(dialog).toBeVisible();
+    await info.attach(`publication-confirm-${shell}`, { body: await page.screenshot(), contentType: 'image/png' });
+    await click('이 버전 발행');
+    const publicLink = page.getByRole('link', { name: '공개 페이지 열기', exact: true }); await expect(publicLink).toBeVisible();
+    const publicUrl = (await publicLink.getAttribute('href'))!;
+    current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(current.active_artifact_sha256).toMatch(/^[a-f0-9]{64}$/);
+    const liveHash = current.active_artifact_sha256;
+    for (const [label, width, font] of [['PC · 공통값', 1280, '27px'], ['태블릿', 768, '27px'], ['모바일', 360, '21px']] as const) {
+      await click(label); await click('화면 맞춤');
+      await expect(page.frameLocator('iframe').locator(`[data-v3-node="${id}"]`)).toHaveCSS('font-size', font);
+      await viewer.setViewportSize({ width, height: 1000 }); await preview.setViewportSize({ width, height: 1000 });
+      expect((await viewer.goto(publicUrl))?.ok()).toBe(true); expect((await preview.goto(previewUrl))?.ok()).toBe(true);
+      const publicSurface = viewer.locator('[data-g7pb-v3-public]'), previewSurface = preview.locator('[data-g7pb-v3-public]');
+      await expect(publicSurface.locator(`[data-v3-node="${id}"]`)).toHaveCSS('font-size', font);
+      const actual = await publicNodes(publicSurface), expected = await publicNodes(previewSurface);
+      expect(actual.map(({ box: _box, ...node }) => node)).toEqual(expected.map(({ box: _box, ...node }) => node));
+      for (let index = 0; index < actual.length; index++) for (let axis = 0; axis < 4; axis++) {
+        expect(Math.abs(actual[index].box[axis] - expected[index].box[axis]), `${shell}/${width}/${id}/${axis}`).toBeLessThanOrEqual(1);
+      }
+      await info.attach(`public-output-${shell}-${width}`, { body: await viewer.screenshot(), contentType: 'image/png' });
+    }
+    // New input remains a draft; neither save nor preview silently replaces live output.
+    await click('본문 삽입'); await click('저장');
+    await expect(page.getByTestId('structure-document-status')).toHaveText('초안 저장됨');
+    current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+    expect(current.active_artifact_sha256).toBe(liveHash); expect(current.document.blocks).toHaveLength(2);
+    await viewer.reload(); await expect(viewer.locator('[data-g7pb-v3-public] [data-v3-node]')).toHaveCount(1);
+    await page.reload(); await expect(page.getByTestId(/^layer-/)).toHaveCount(2);
+    await info.attach(`canonical-publication-${shell}`, { body: JSON.stringify(current), contentType: 'application/json' });
+  } finally {
+    await viewer.close(); await preview.close();
+    try {
+      if (ownedId) {
+        const current = (await (await api.get(`${documents}/${ownedId}`)).json()).data;
+        expect(current.document.slug).toBe(slug);
+        const result = await api.post(`${documents}/${ownedId}/archive`, { data: { expected_lock_version: current.lock_version } });
+        expect(result.ok(), await result.text()).toBe(true);
+        await info.attach('owned-document-archived', { body: await result.body(), contentType: 'application/json' });
+      }
+    } finally { await api.dispose(); }
+  }
+});
 
 test('creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload', async ({ page, context }, testInfo) => {
   const token = await authenticateEditorInteractionAdmin(context), api = await editorInteractionApi(token);

@@ -43,6 +43,16 @@ const status = () => document.querySelector('[data-testid="structure-document-st
 const beforeUnload = () => { const event = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(event); return event.defaultPrevented; };
 
 describe('installed structure document host', () => {
+  it('updates publication metadata without replacing the canonical input, session, or newer dirty edits', async () => {
+    const hostPorts = ports(); await mount(hostPorts, fixture.document_id);
+    const source = editor!.document, session = editor!.sessionId;
+    await act(async () => editor!.onChange!(source));
+    await act(async () => editor!.onPublished!({ hash: 'a'.repeat(64), url: '/pages/test', publishedAt: '2026-10-13T00:00:00Z' }));
+    expect(editor!.document).toBe(source); expect(editor!.sessionId).toBe(session);
+    expect(status()).toBe('저장할 변경 있음'); expect(beforeUnload()).toBe(true);
+    expect(document.body.textContent).toContain('공개 버전과 별도인 초안');
+  });
+
   it('mounts the real authenticated entry and supplies the persisted canonical source without requesting block packs', async () => {
     window.localStorage.setItem('auth_token', 'unit-admin-token');
     const fetchImpl = vi.fn<typeof fetch>(async url => new Response(JSON.stringify(String(url).includes('/documents/')

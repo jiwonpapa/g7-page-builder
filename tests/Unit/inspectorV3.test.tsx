@@ -6,6 +6,7 @@ import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument } from '../../resources/js/documents/v3/tree';
 import { executeDocumentCommand } from '../../resources/js/documents/v3/designCommands';
 import { Inspector } from '../../resources/js/editor/v3/Inspector';
+import { MultiInspector } from '../../resources/js/editor/v3/MultiInspector';
 import { TypedInput } from '../../resources/js/editor/v3/TypedInput';
 import { groups, styleRules, choices, seed, matches, choiceLabel } from '../../resources/js/editor/v3/inspectorFields';
 
@@ -22,6 +23,23 @@ async function click(host: HTMLElement, label: string) {
   if (!button) throw new Error(label); await act(async () => button.click());
 }
 describe('precision Inspector', () => {
+  it('keeps the chosen multiple property after source changes and resets that property only', async () => {
+    const doc = cloneDocument(validateDocumentV3(fixture)), ids = doc.blocks[0].slots.content!.slice(0, 2).map(node => node.instance_id);
+    const host = document.createElement('div'), root = createRoot(host), apply = vi.fn();
+    document.body.append(host); cleanup.push(() => { root.unmount(); host.remove(); });
+    const render = (value: typeof doc) => root.render(<MultiInspector document={value} ids={ids} viewport="mobile" disabled={false} apply={apply} />);
+    await act(async () => render(doc));
+    await act(async () => {
+      const select = host.querySelector<HTMLSelectElement>('[aria-label="일괄 속성"]')!;
+      select.value = 'opacity'; select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    const changed = executeDocumentCommand(doc, { kind: 'styles', viewport: 'mobile', updates: ids.map(id => ({ id, set: { opacity: .5 } })) }, () => '').document;
+    await act(async () => render(changed));
+    expect(host.querySelector<HTMLSelectElement>('[aria-label="일괄 속성"]')!.value).toBe('opacity');
+    expect(host.querySelector<HTMLInputElement>('[aria-label="일괄 값"]')!.value).toBe('0.5');
+    await click(host, '선택 속성 초기화');
+    expect(apply).toHaveBeenCalledExactlyOnceWith({ kind: 'styles', viewport: 'mobile', updates: ids.map(id => ({ id, set: {}, reset: ['opacity'] })) });
+  });
   it('shows inherited values, seeds overrides from effective values and resets only the active layer', async () => {
     const doc = cloneDocument(validateDocumentV3(fixture)), node = doc.blocks[0].slots.content![0];
     node.style = { width: { value: 70, unit: '%' }, opacity: .5 };

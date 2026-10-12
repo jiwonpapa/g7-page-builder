@@ -88,7 +88,7 @@ function EditorSession(props: StructureEditorProps) {
   const live = useRef(props); live.current = props;
   const [document, setDocument] = useState(() => validateDocumentV3(props.document));
   const [selected, setSelected] = useState<string[]>([]);
-  const [message, setMessage] = useState('구조 편집 · 공통 디자인과 본문을 직접 편집합니다.');
+  const [message, setMessage] = useState('구조 편집 · 선택한 화면의 디자인과 공통 본문을 편집합니다.');
   const [clipboard, setClipboard] = useState<TreeClipboard | null>(null);
   const [target, setTarget] = useState('root');
   const [preview, setPreview] = useState(false);
@@ -244,7 +244,7 @@ function EditorSession(props: StructureEditorProps) {
             </div>
             {focus && <Inspector key={viewport + ':' + focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document} viewport={viewport}
               disabled={Boolean(props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
-            {selected.length > 1 && <MultiInspector key={viewport + ':' + selected.join(':') + JSON.stringify(document)} document={document} ids={selected} viewport={viewport}
+            {selected.length > 1 && <MultiInspector key={viewport + ':' + selected.join(':')} document={document} ids={selected} viewport={viewport}
               disabled={Boolean(props.readonly)} apply={value => { bridge.execute(value); }} />}
           </aside>
         </div>

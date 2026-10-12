@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { DocumentV3, Style } from '../../documents/v3/types';
 import type { StyleBatch } from '../../documents/v3/geometry';
 import { selectedStyle } from '../../documents/v3/geometry';
@@ -15,6 +15,12 @@ export function MultiInspector({ document, ids, disabled, apply, viewport = 'bas
   const [draft, setDraft] = useState<unknown>('auto');
   const [error, setError] = useState('');
   const current = selectedStyle(document, ids, key, viewport);
+  useEffect(() => {
+    const next = selectedStyle(document, ids, key, viewport);
+    setDraft(next.mixed || next.value === undefined
+      ? ['width', 'height', 'basis'].includes(key) ? 'auto' : seed(styleRules[key]!) : next.value);
+    setError('');
+  }, [document, ids, key, viewport]);
   const commit = (reset: boolean) => {
     try {
       const updates = ids.map(id => reset ? { id, set: {}, reset: [key] } : { id, set: { [key]: draft } });
@@ -27,9 +33,7 @@ export function MultiInspector({ document, ids, disabled, apply, viewport = 'bas
     <p>선택한 속성만 적용합니다. 부모·자식 중복은 부모에만 적용됩니다.</p>
     <fieldset disabled={disabled} style={{ border: 0, padding: 0 }}>
       <label>속성<select aria-label="일괄 속성" value={key} onChange={event => {
-        const next = event.target.value as keyof Style;
-        setKey(next); const value = selectedStyle(document, ids, next, viewport);
-        setDraft(value.mixed || value.value === undefined ? seed(styleRules[next]!) : value.value);
+        setKey(event.target.value as keyof Style);
       }}>{groups.flatMap(group => group.keys).map(value => <option key={value} value={value}>{labelFor(value)}</option>)}</select></label>
       <p role="status" aria-label="선택 속성 상태">{current.mixed ? '혼합값' : current.value === undefined ? '미지정' : JSON.stringify(current.value)}</p>
       <TypedInput label="일괄 값" value={draft} rule={styleRules[key]!} change={setDraft} assets={document.assets} />

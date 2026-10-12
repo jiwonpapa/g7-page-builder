@@ -944,7 +944,8 @@ test('v3 responsive boundary canvas preview and PHP output preserve layout and D
     const output = await context.newPage(); await output.setViewportSize({ width, height: 1000 });
     await output.route('**/*', route => route.request().url().endsWith('/image.svg')
       ? route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><rect width="160" height="80" fill="#dbeafe"/></svg>' }) : route.abort());
-    await output.setContent('<!doctype html><html lang="ko"><head><base href="https://v3-editor.test/"></head><body style="margin:0">' + phpDraft(source, viewport) + '</body></html>');
+    await output.setContent('<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://v3-editor.test/"></head><body style="margin:0">' + phpDraft(source, viewport) + '</body></html>');
+    await expect.poll(() => output.evaluate(() => window.innerWidth)).toBe(width);
     await output.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const php = await output.locator('[data-v3-surface]').evaluate(measure);
     for (const candidate of [preview, php]) {

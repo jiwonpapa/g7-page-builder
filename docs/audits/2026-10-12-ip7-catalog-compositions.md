@@ -74,4 +74,10 @@ Node 24·PHP 8.5·고정 Chromium의 Local runtime에서 G7 없는 실제 독립
 
 ## 남은 수용 조건
 
-반복 38개는 위 범위에서 통합됐지만 동적 블록과 나머지 내장 구성, PB Header/Footer 상세 편집 및 shell preview, 실제 기존 원본의 명시 이행·거부·복원은 완료되지 않았다. 다음 정적 구성의 진단에서 발견한 슬롯 배경 shorthand 충돌은 별도 수정·실제 출력 비교를 거쳐 통합해야 한다. IP7 원장은 `in_progress`로 유지하며 부분 증거를 IND-07 전체 수용 증거로 대신하지 않는다. 뒤이어 IP8 미디어/사용자 구성, IP9 실제 저장·발행/복구, IP10 전체 제품 수용을 순서대로 진행한다. G7 코어·테마 원본·운영 서버 변경이나 배포는 실행하지 않았다.
+정적 구성 12개·삽입 UI·배경 보정은 `6533e1e38482ab328f4a76130680e0c46689190b`로 통합됐다. 제출 SHA는 각각 `0a51e93c4d6a326e05120b3e204436c97252ec4c`, `71c3b4bb4c8867e2b23612010fb4580f3770ed09`, `d608f4a4fa4a0b24180470504faa2f53ff85870c`다. 공식 scoped batch에서 브라우저 **243개 통과, 실패/skip/flaky 0**을 확인했다. 567개 폭별 비교 기록의 최대 치수 차이는 0 CSS px다. 반복·정적 450개 기록은 배경색·배경 이미지도 비교했으며 기본 117개 기록에는 해당 비교가 없다. 어두운 CTA와 차트 캡처도 확인했다.
+
+증거: `output/playwright/gates/integration-ip7-20261012/1f80b5db0a119ec4c956688bb378bcfa243595fbe7ba76a811c53eeebb3c0c68/868a395b56f74f92ba572f7b6bae0ff0/`. 실행은 `make task-integrate-batch TASKS=ip7-static-compositions-20261012,ip7-static-composition-ui-20261012,ip7-background-presentation-20261012 INTEGRATION_TASK=integration-ip7-20261012`다. 주입 저장 포트·PHP fragment 검증이며 실제 G7 v3 발행 완료를 뜻하지 않는다.
+
+이 성공에도 일반 편집기에 블록별 조립 함수가 직접 연결된 문제가 남아 있다. [공통 요소 구조 교정](2026-10-12-ip7-element-editor-correction.md)을 먼저 수행하며, 블록별 함수를 추가하는 방식으로 남은 수를 채우지 않는다. 기존 UI 가져오기 추가분과 미통합 조립 함수는 보존하되 신규 편집 경로로 확대하지 않는다. 텍스트 전체 교체의 실제 최종 값 검사는 포함 여부 검사를 넘어 보강해야 하며, 기존 통과를 그 증거로 사용하지 않는다.
+
+동적 블록과 나머지 내장 구성, PB Header/Footer 상세 편집 및 shell preview, 실제 기존 원본의 명시 이행·거부·복원은 완료되지 않았다. IP7 원장은 `in_progress`로 유지하며 부분 증거를 IND-07 전체 수용 증거로 대신하지 않는다. 뒤이어 IP8 미디어/사용자 구성, IP9 실제 저장·발행/복구, IP10 전체 제품 수용과 실제 E2E·UI/UX 감사를 진행한다. G7 코어·테마 원본·운영 서버 변경이나 배포는 실행하지 않았다.

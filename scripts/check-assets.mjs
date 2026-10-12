@@ -18,6 +18,9 @@ const outputs = [
   manifest.assets?.js?.output,
   manifest.assets?.css?.output,
   'dist/js/page-builder-editor.iife.js',
+  'dist/js/page-builder-structure.iife.js',
+  'dist/css/page-builder-structure.css',
+  'dist/meta/structure-editor-modules.json',
   'dist/js/page-builder-manager.iife.js',
   'dist/js/page-builder-site-part.iife.js',
   'dist/js/page-sliders.iife.js',
@@ -66,6 +69,13 @@ if (gzipSync(readFileSync(join(root, 'dist/js/page-builder-native-components.iif
   throw new Error('Native component companion must remain under 4KB gzip and use shared React without editor dependencies.');
 }
 const editorModules = readInventory('editor');
+const structureModules = readInventory('structure-editor');
+if (!structureModules.some(id => id.endsWith('/editor/v3/entry.tsx'))
+  || !structureModules.some(id => id.endsWith('/editor/v3/StructureEditor.tsx'))
+  || structureModules.some(id => /\/blocks\/v3\//.test(id)
+    || id.endsWith('/editor/PuckEditorAdapter.tsx') || id.includes('/native-editor/'))) {
+  throw new Error('Structure editor must use the generic element editor without block factories or legacy/native editors.');
+}
 const managerModules = readInventory('manager');
 const sitePartModules = readInventory('site-part');
 const publicEffectsModules = readInventory('public-effects');

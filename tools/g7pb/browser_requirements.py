@@ -47,6 +47,9 @@ NATIVE_COMPONENTS = BrowserScenario("tests/E2E/nativeSliderContract.spec.ts")
 
 NATIVE = BrowserScenario("tests/E2E/nativeEditorContract.spec.ts")
 
+V3_PRODUCT = BrowserScenario("tests/E2E/structureDocumentProduct.spec.ts", titles=(
+    "creates an empty page in the installed generic editor and preserves nested edits through authenticated save and reload",))
+
 # New v3 modules use the independent editor and injected draft-port contract.
 # The v1/v2 installed-entry scenarios retain their existing mappings below.
 V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
@@ -261,6 +264,10 @@ STYLE_CODE_SCOPES = {
 # Most-specific source rules win. Adding a scenario requires a real registered
 # Playwright test; a missing spec/title must fail instead of claiming acceptance.
 RULES = (
+    (("resources/js/editor/v3/entry.tsx", "resources/js/editor/v3/StructureDocumentHost.tsx",
+      "resources/css/page-builder-structure.css", "vite.structure.config.ts"), (V3_PRODUCT,)),
+    (("resources/js/editor/v3/StructureEditor.tsx",), (V3_STRUCTURE, V3_PRODUCT)),
+    (("resources/views/editor.blade.php",), (PAGE, DOCUMENT_BOUNDARY, V3_PRODUCT)),
     (("src/Application/Compilation/V3/*",), (V3_STRUCTURE,)),
     (("resources/js/documents/v3/*", "resources/js/editor/v3/*", "resources/js/editor-application/v3/*",
       "resources/js/adapters/interaction/*", "resources/js/blocks/v3/*",

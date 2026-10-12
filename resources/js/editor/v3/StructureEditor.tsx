@@ -37,7 +37,7 @@ export interface StructureEditorProps {
   drafts: DraftPort;
   nextId: () => string;
   onChange?: (document: DocumentV3) => void;
-  onSaved?: (revision: number) => void;
+  onSaved?: (revision: number, status: 'saved' | 'edited') => void;
 }
 const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Location>; styles: Map<string, Record<string, string>>; textEditing: boolean } | null>(null);
 const InteractionContext = createContext<(Omit<React.ComponentProps<typeof GeometryAdapter>, 'owner'> & { extent: (height: number) => void }) | null>(null);
@@ -175,7 +175,7 @@ function EditorSession(props: StructureEditorProps) {
       const result = await bridge.save(live.current.drafts, serverRevision.current);
       if (result.status === 'stale') return;
       serverRevision.current = result.revision;
-      live.current.onSaved?.(result.revision);
+      live.current.onSaved?.(result.revision, result.status);
       setMessage(result.status === 'saved' ? '저장됨' : '이전 입력 저장됨 · 추가 변경 있음');
     } catch (error) { setMessage(error instanceof Error ? error.message : '저장 실패'); }
     finally { setSaving(false); }
@@ -203,7 +203,7 @@ function EditorSession(props: StructureEditorProps) {
         iframe={{ enabled: props.iframeEnabled !== false }}>
         <BridgeObserver bridge={bridge} />
         <WorkspaceMode mode={mode} bridge={bridge} />
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <header style={{ ...control, padding: 12, borderBottom: '1px solid var(--g7pb-border)', background: 'var(--g7pb-surface-strong)' }}>
           <strong>페이지 구조</strong><Toolbar bridge={bridge} disabled={Boolean(props.readonly)} run={run} />
           <WorkspaceControls mode={mode} change={setMode} zoom={zoom} setZoom={setZoom} disabled={Boolean(props.readonly || preview)}

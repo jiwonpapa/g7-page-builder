@@ -8,7 +8,7 @@ import subprocess
 from tools.g7pb.planner import build_plan
 from tools.g7pb.model import Plan
 from tools.g7pb.runner import digest_gate, execute
-from tools.g7pb.browser_requirements import V3_STRUCTURE
+from tools.g7pb.browser_requirements import V3_STRUCTURE, V3_PRODUCT
 
 
 TEXT_AND_CONTROLS = replace(TEXT, titles=tuple(sorted(TEXT.titles + CONTROLS.titles)))
@@ -113,6 +113,13 @@ EXTRACTED_PUBLIC_SCOPES = {
 
 
 class BrowserRequirementsTests(unittest.TestCase):
+    def test_installed_structure_entry_requires_real_authenticated_product_flow(self):
+        for path in ("resources/js/editor/v3/entry.tsx", "resources/js/editor/v3/StructureDocumentHost.tsx",
+                     "resources/css/page-builder-structure.css", "vite.structure.config.ts"):
+            self.assertEqual(scenarios_for([path]), (V3_PRODUCT,))
+        self.assertEqual(set(scenarios_for(["resources/js/editor/v3/StructureEditor.tsx"])), {V3_PRODUCT, V3_STRUCTURE})
+        self.assertEqual(set(scenarios_for(["resources/views/editor.blade.php"])), {V3_PRODUCT, PAGE, DOCUMENT_BOUNDARY})
+
     def test_independent_v3_owners_require_their_actual_port_and_puck_scenarios(self):
         for path in ("resources/js/documents/v3/commands.ts", "resources/js/editor/v3/PuckBridge.tsx",
                      "resources/js/editor-application/v3/session.ts",

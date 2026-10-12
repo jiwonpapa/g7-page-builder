@@ -54,15 +54,23 @@ class FrontendBudgetTests(unittest.TestCase):
                      "page-builder-site-part", "page-builder-public", "page-builder-site-shell"):
             self.write(f"resources/css/{name}.css", ".fixture {display:block;}")
         self.write("resources/css/page-builder-manager.css", "@media (max-width: 720px) {.g7pb-store-card {display:block;}}")
-        for name in ("page-builder-manager", "page-builder-editor", "page-builder-site-part", "page-builder-public"):
+        for name in ("page-builder-manager", "page-builder-editor", "page-builder-structure", "page-builder-site-part", "page-builder-public"):
             self.write(f"dist/css/{name}.css", ".fixture {display:block;}")
-        for name in ("page-builder-manager", "page-builder-editor", "page-builder-site-part", "page-effects", "page-sliders"):
+        for name in ("page-builder-manager", "page-builder-editor", "page-builder-structure", "page-builder-site-part", "page-effects", "page-sliders"):
             self.write(f"dist/js/{name}.iife.js", "void 0;")
         self.write("resources/views/viewer.blade.php", "<!doctype html><html></html>")
 
     @staticmethod
     def payload(label, count):
         return "".join(hashlib.sha256(f"{label}-{index}".encode()).hexdigest() for index in range(count))
+
+    def test_structure_entry_enforces_the_same_editor_gzip_ceiling(self):
+        self.full_fixture()
+        self.write("dist/js/page-builder-structure.iife.js", self.payload("structure-entry", 16000))
+        result = self.run_checker()
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("page-builder-structure.iife.js", result.stderr)
+        self.assertIn("/508500 gzip bytes", result.stderr)
 
     def test_full_command_rejects_split_family_total_over_original_limit(self):
         self.full_fixture()

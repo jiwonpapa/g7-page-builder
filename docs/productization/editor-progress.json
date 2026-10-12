@@ -420,7 +420,7 @@
       "id": "IP2",
       "phase": "foundation",
       "title": "정밀 문서와 스타일 계약",
-      "status": "blocked",
+      "status": "in_progress",
       "depends_on": [
         "IP1"
       ],
@@ -431,7 +431,7 @@
       "implementation_commit": "e85bdf2f8af9a78c66289e0b3dc1ec9c022240d1",
       "integrated_commit": null,
       "evidence": [],
-      "blocked_reason": "승인된 PHP 서식 수정은 별도 통합 완료. FULL 검증 중 기존 blockQualityInventory 18건과 blockPackManifest 1건 실패로 차단. IP2 없는 기준에서도 동일 19건을 재현했으며 품질 fixture·Card 썸네일 불일치 수정은 별도 승인 필요. IP2 구현은 제출 보존, 전체 통합은 미완료.",
+      "blocked_reason": null,
       "scope": [
         "schemas",
         "resources/js/documents",

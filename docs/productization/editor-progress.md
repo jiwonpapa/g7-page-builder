@@ -33,7 +33,7 @@
 | 단계 | 작업 | 상태 | 선행 작업 | 담당 task | 완료 근거 |
 |---|---|---|---|---|---|
 | 기반과 계약 | IP1 · 편집 엔진과 정밀 조작 결합 검증 | 완료 | 없음 | ip1-engine-proof-20261012 | 구현 `e827bf10a1ec65279412b2d86967a749f4469ade`<br>통합 `a4b4fe8b55a22d8be96888b5f3b556d148d94108`<br>필수 증거 3/3<br>[IND-01/unit](<../audits/2026-10-12-ip1-engine-proof.md>) · [IND-01/browser](<../audits/2026-10-12-ip1-engine-proof.md>) · [IND-01/architecture](<../audits/2026-10-12-ip1-engine-proof.md>) |
-| 기반과 계약 | IP2 · 정밀 문서와 스타일 계약 | 차단 | IP1 | ip2-document-contract-20261012 | 미완료 |
+| 기반과 계약 | IP2 · 정밀 문서와 스타일 계약 | 진행 | IP1 | ip2-document-contract-20261012 | 미완료 |
 | 세부 편집 | IP3 · 레이어와 재귀 구조 편집 | 계획 | IP2 | 미배정 | 미완료 |
 | 세부 편집 | IP4 · 정밀 Inspector와 자동 배치 | 계획 | IP3 | 미배정 | 미완료 |
 | 세부 편집 | IP5 · 핸들과 다중 선택 작업면 | 계획 | IP4 | 미배정 | 미완료 |
@@ -43,9 +43,7 @@
 | 전체 연결과 수용 | IP9 · 저장 복구와 공개 출력 일치 | 계획 | IP8 | 미배정 | 미완료 |
 | 전체 연결과 수용 | IP10 · 독립성 호환성과 제품 수용 | 계획 | IP9 | 미배정 | 미완료 |
 
-다음 진행 가능: 없음
-
-- 차단 IP2: 승인된 PHP 서식 수정은 별도 통합 완료. FULL 검증 중 기존 blockQualityInventory 18건과 blockPackManifest 1건 실패로 차단. IP2 없는 기준에서도 동일 19건을 재현했으며 품질 fixture·Card 썸네일 불일치 수정은 별도 승인 필요. IP2 구현은 제출 보존, 전체 통합은 미완료.
+다음 진행 가능: IP2
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

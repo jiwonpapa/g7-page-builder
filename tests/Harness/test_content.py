@@ -106,6 +106,8 @@ class ContentSelectionTest(unittest.TestCase):
             self.assertEqual(select_changes(self.root, "BASE", [PACK]), expected)
         # A baseline owner cannot disappear silently when its asset is removed.
         self.pack["blocks"].pop(0)
+        # Remove its new hash too so this tests owner removal, not an orphan hash.
+        self.pack["files"].pop(block_asset)
         self.write(PACK, self.pack)
         with patch("tools.g7pb.content.subprocess.run", return_value=subprocess.CompletedProcess([], 0, json.dumps(old), "")):
             with self.assertRaisesRegex(ValueError, "Removed thumbnail owner"):

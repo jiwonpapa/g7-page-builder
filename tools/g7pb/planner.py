@@ -593,7 +593,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
                              if p and (root / p).is_file())
             add("php-lint-policy", ["vendor/bin/pint", "--test", *targets],
                 [path, "composer.lock", *targets], "PHP formatting policy and tracked source", ("php",))
-        elif path == "docs/productization/inventory.json":
+        elif path in {"docs/productization/inventory.json", "resources/compositions/builtin-v3.json"}:
             # This is an executable catalog contract consumed by TypeScript tests, not prose.
             ts_sources.append(path)
         elif path in {EDITOR_PROGRESS_LEDGER, EDITOR_LIBRARY_INVENTORY}:

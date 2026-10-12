@@ -258,7 +258,8 @@ STYLE_CODE_SCOPES = {
 RULES = (
     (("src/Application/Compilation/V3/*",), (V3_STRUCTURE,)),
     (("resources/js/documents/v3/*", "resources/js/editor/v3/*", "resources/js/editor-application/v3/*",
-      "resources/js/adapters/interaction/*", "resources/js/blocks/v3/*"), (V3_STRUCTURE,)),
+      "resources/js/adapters/interaction/*", "resources/js/blocks/v3/*",
+      "resources/compositions/builtin-v3.json"), (V3_STRUCTURE,)),
     (("resources/js/editor/canvasNavigationGuard.ts",), (NAVIGATION,)),
     (("resources/js/native-components/*", "resources/css/page-builder-native-components.css"), (NATIVE_COMPONENTS,)),
     (("resources/css/page-builder-basic-elements.css", "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"), (BASIC_ELEMENTS,)),

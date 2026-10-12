@@ -25,7 +25,7 @@ ID는 소문자 UUID이며 문서 안에서 노드 ID와 자산 ID는 각각 유
 | 색/외형 | #RRGGBB/#RRGGBBAA 또는 6개 의미 토큰. 문서 토큰의 실값은 hex만 허용하여 순환 참조 방지. gradient 2~8개 단조 증가 stop, shadow 8개 이하, border/반경 개별 변 지원 |
 | 글자 | sans/serif/mono, weight 100~900의 100 단위, typed px/rem 크기·행간·자간·서식. 글꼴 다운로드/임의 font CSS를 저장하지 않음 |
 | 배치 | absolute는 relative/absolute 컨테이너의 직접 자식만 허용. 회전/inset은 absolute에만 허용. 모든 반응형 문맥에서 부모 조건 검사 |
-| 자산 | 문서 assets의 UUID 참조, URL은 HTTPS 또는 단일 /로 시작하는 상대 주소. 링크에는 안전한 #fragment도 허용. 참조 제거는 파일 삭제가 아님 |
+| 자산 | 문서 assets의 UUID 참조. HTTPS는 ASCII hostname/punycode와 선택형 1~65535 port만 허용하며 credentials·빈 호스트·특수 공백·깨진 percent/제어문자 인코딩을 거부한다. IPv6 literal은 현재 문법 밖이다. 단일 /로 시작하는 상대 주소, 링크의 안전한 #fragment도 허용한다. 참조 제거는 파일 삭제가 아님 |
 
 모든 수치 범위·enum·개별 단위 허용 목록은 스키마가 최종 기준이다. TS와 PHP에 숫자 테이블을 복제하지 않는다. opacity/gradient stop은 0.001, 정수·weight처럼 별도 step이 있는 값은 해당 명세를 따른다. 수치는 반올림/자동 보정하지 않고 정밀도 초과를 거부한다. 코드 내부 부동소수 오차 판정만 1e-7 tolerance를 쓴다.
 

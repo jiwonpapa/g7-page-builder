@@ -13,7 +13,7 @@
 
 ## 구현과 필수 증거
 
-공통 JSON Schema와 별도 의미 정책이 수치/단위/enum/한도/기본값/원본 버전을 소유한다. 양쪽 검증기는 그 값을 소비하고 공통 정상 fixture와 35개 변형 사례로 수용/거부 결과를 비교한다. 안정 ID·중복·슬롯·자산 참조·반응형 부모·원자적 override·깊이/용량/500노드·미지 필드 무변경을 확인한다.
+공통 JSON Schema와 별도 의미 정책이 수치/단위/enum/한도/기본값/원본 버전을 소유한다. 양쪽 검증기는 그 값을 소비하고 공통 정상 fixture와 48개 변형 사례로 수용/거부 결과를 비교한다. 안정 ID·중복·슬롯·자산 참조·반응형 부모·원자적 override·깊이/용량/500노드·미지 필드 무변경을 확인한다.
 
 기존 문서의 명시 이행은 snapshot 준비까지만 구현한다. 원본 문자열과 revision을 그대로 보존하며 후보/DB/발행은 만들지 않는다. 전체 mapping/복구 UI/영속 전환은 IP7/IP9 범위다.
 
@@ -40,6 +40,7 @@ make task-submit TASK=ip2-document-contract-20261012 FULL=1
 - 신규 PHP 도메인 PHPStan level 8 통과.
 - PHP 100/500노드 검증 관측 4.3/21.6 ms. 1초 예산 내 단일 로컬 관측이며 제품 p95/브라우저 성능 보증은 아니다.
 - 첫 PHP 시험에서 JSON regex의 ECMAScript 문자 escape가 PCRE와 달라 실패했다. 공통 regex 표현을 수정하고 양쪽 시험을 통과했다.
+- 추가 URL 경계 점검에서 빈 호스트와 BOM 공백 허용 차이를 발견했다. 공통 호스트/port/percent/공백 문법과 13개 회귀 fixture로 보강한다.
 - 타입 검사에서 JSON union의 선택 필드와 ES library 범위가 드러나 실제 narrowing/호환 Unicode 검사로 수정했다. unsafe assertion이나 baseline 예외를 추가하지 않았다.
 
 제출·Local 통합 SHA와 최종 판정은 검증 후 기록한다. 실제 편집 UI·저장/발행·브라우저 시각 회귀·운영 배포를 이번 계약 단위 시험으로 주장하지 않는다.

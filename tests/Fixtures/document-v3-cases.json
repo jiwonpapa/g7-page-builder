@@ -1,6 +1,147 @@
 {
   "cases": [
     {
+      "name": "empty_host_query",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://?",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "empty_host_fragment",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://#",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "credentials",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://user:pass@example.com/a",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "bad_port",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com:65536/x",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "port_zero",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com:0/x",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "bom_space",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com/﻿",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "unicode_space",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com/ ",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "percent_incomplete",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "/image%2",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "encoded_control",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "/image%0A.png",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "valid_encoded_space",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://cdn.example.com:65535/image%20a.webp",
+      "valid": true
+    },
+    {
+      "name": "bad_host_dash",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://-example.com/a",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "valid_punycode",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://xn--3e0b707e.example/a",
+      "valid": true
+    },
+    {
+      "name": "id_trailing_newline",
+      "path": [
+        "blocks",
+        0,
+        "instance_id"
+      ],
+      "value": "00000000-0000-4000-8000-000000000001\n",
+      "valid": false,
+      "error": "value"
+    },
+    {
       "name": "unknown_root",
       "path": [
         "vendor"

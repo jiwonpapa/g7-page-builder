@@ -908,7 +908,9 @@ async function assertScenario(
       });
     }
   }
-  await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`);
+  // Readiness is asserted below on the real editor, styles, fonts, media and
+  // stable block geometry. Unrelated subresource load must not gate that work.
+  await page.goto(`${EDITOR_PATH}?document=${owned.documentId}`, { waitUntil: 'domcontentloaded' });
   const editor = page.getByTestId('page-builder-editor');
   await expect(editor).toBeVisible();
   const viewportMutations: string[] = [];

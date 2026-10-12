@@ -13,6 +13,16 @@ function visibleTestId(page: Page, testId: string): Locator {
   return page.locator(`[data-testid="${testId}"]:visible`);
 }
 
+async function captureSitePart(page: Page, path: string, fullPage: boolean): Promise<void> {
+  // Puck loads Inter in each new iframe. Await the real font set before the
+  // capture action; retain the test/action timeouts and the rendered fonts.
+  // This is visual evidence readiness, not an editor performance measurement.
+  await Promise.all(page.frames().map((frame) => frame.evaluate(async () => {
+    await document.fonts.ready;
+  })));
+  await page.screenshot({ path, fullPage });
+}
+
 test.use({ locale: 'ko-KR', screenshot: 'off', trace: 'off', video: 'off' });
 
 function credentials(): { email: string; password: string } {
@@ -152,7 +162,7 @@ async function verifySetWorkspaceTools(page: Page): Promise<void> {
   await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(0);
   await editor.getByRole('button', { name: '실행 취소', exact: true }).click();
   await expect(canvas.locator('.g7pb-site-footer--columns')).toHaveCount(1);
-  await page.screenshot({ path: 'output/playwright/site-part-workspace-ux.png', fullPage: false });
+  await captureSitePart(page, 'output/playwright/site-part-workspace-ux.png', false);
 }
 
 for (const kind of ['header', 'footer'] as const) {
@@ -248,7 +258,7 @@ for (const kind of ['header', 'footer'] as const) {
       await expect(distinguishingBlock).toHaveCount(1);
       await editor.locator('.g7pb-command-bar').getByRole('button', { name: '저장', exact: true }).click();
       await expect(editor.locator('.g7pb-status')).toHaveAttribute('data-state', 'saved');
-      await page.screenshot({ path: `output/playwright/site-part-${kind}-preset-history.png`, fullPage: false });
+      await captureSitePart(page, `output/playwright/site-part-${kind}-preset-history.png`, false);
       for (const height of [800, 1000]) {
         await page.setViewportSize({ width: 1440, height });
         await expect.poll(async () => {
@@ -334,7 +344,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       await expect(mediaFileInputs.nth(index)).toBeHidden();
     }
     expect(pageErrors, pageErrors.join('\n')).toEqual([]);
-    await page.screenshot({ path: 'output/playwright/site-part-header-editor.png', fullPage: true });
+    await captureSitePart(page, 'output/playwright/site-part-header-editor.png', true);
 
     const canvas = page.frameLocator('iframe').first();
     expect(await canvas.locator('body').innerText()).toContain(originalBrand);
@@ -379,7 +389,7 @@ test('edits and publishes the Header as an independent responsive Puck Site Part
       const rect = element.getBoundingClientRect();
       return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === element;
     })).toBe(true);
-    await page.screenshot({ path: 'output/playwright/site-part-header-mobile-sheet-editor.png', fullPage: true });
+    await captureSitePart(page, 'output/playwright/site-part-header-mobile-sheet-editor.png', true);
     await canvas.locator('[data-g7pb-preview-menu-close]').click();
     await expect(editorMenuToggle).toHaveAttribute('aria-expanded', 'false');
     await expect(editorMobileMenu).toBeHidden();

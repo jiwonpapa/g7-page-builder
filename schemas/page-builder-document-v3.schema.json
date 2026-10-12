@@ -1410,6 +1410,51 @@
       "required": [],
       "additionalProperties": false
     },
+    "control_pair": {
+      "type": "object",
+      "properties": { "trigger_id": { "$ref": "#/$defs/uuid" }, "panel_id": { "$ref": "#/$defs/uuid" } },
+      "required": ["trigger_id", "panel_id"], "additionalProperties": false
+    },
+    "behavior": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "disclosure" }, "mode": { "enum": ["single", "multiple"] },
+            "pairs": {
+              "type": "array", "minItems": 1, "maxItems": 250,
+              "items": {
+                "type": "object",
+                "properties": { "item_id": { "$ref": "#/$defs/uuid" }, "trigger_id": { "$ref": "#/$defs/uuid" }, "panel_id": { "$ref": "#/$defs/uuid" }, "expanded": { "type": "boolean" } },
+                "required": ["item_id", "trigger_id", "panel_id", "expanded"], "additionalProperties": false
+              }
+            }
+          },
+          "required": ["kind", "mode", "pairs"], "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "tabs" }, "label": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "[^\\p{Z}\\p{C}]" },
+            "orientation": { "enum": ["horizontal", "vertical"] },
+            "tablist_id": { "$ref": "#/$defs/uuid" }, "active_panel_id": { "$ref": "#/$defs/uuid" },
+            "pairs": { "type": "array", "minItems": 1, "maxItems": 250, "items": { "$ref": "#/$defs/control_pair" } }
+          },
+          "required": ["kind", "label", "orientation", "tablist_id", "active_panel_id", "pairs"], "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "carousel" }, "label": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "[^\\p{Z}\\p{C}]" },
+            "viewport_id": { "$ref": "#/$defs/uuid" }, "track_id": { "$ref": "#/$defs/uuid" }, "active_slide_id": { "$ref": "#/$defs/uuid" },
+            "previous_id": { "$ref": "#/$defs/uuid" }, "next_id": { "$ref": "#/$defs/uuid" }, "rotation_id": { "$ref": "#/$defs/uuid" },
+            "autoplay": { "type": "boolean" }, "loop": { "type": "boolean" },
+            "interval_ms": { "type": "number", "minimum": 1000, "maximum": 30000, "multipleOf": 1 }
+          },
+          "required": ["kind", "label", "viewport_id", "track_id", "active_slide_id", "previous_id", "next_id", "autoplay", "loop", "interval_ms"], "additionalProperties": false
+        }
+      ]
+    },
     "node": {
       "type": "object",
       "properties": {
@@ -1423,7 +1468,8 @@
             "content.heading",
             "content.text",
             "media.image",
-            "action.link"
+            "action.link",
+            "action.button"
           ]
         },
         "block_version": {
@@ -1436,8 +1482,13 @@
         "locked": {
           "type": "boolean"
         },
+        "behavior": { "$ref": "#/$defs/behavior" },
         "props": {
           "anyOf": [
+            {
+              "type": "object", "properties": { "label": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "[^\\p{Z}\\p{C}]" } },
+              "required": ["label"], "additionalProperties": false
+            },
             {
               "type": "object",
               "properties": {

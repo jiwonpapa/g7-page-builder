@@ -103,7 +103,7 @@ export function executeTreeCommand(source: DocumentV3, command: TreeCommand, nex
         for (const item of items) {
           const node = item.node;
           // Removing a styled/semantic wrapper is not a structure-only operation.
-          if (node.type !== 'layout.container' || node.props.tag !== 'div'
+          if (node.type !== 'layout.container' || node.props.tag !== 'div' || node.behavior
             || Object.keys(node.style).length || Object.values(node.responsive).some(style => Object.keys(style).length)) reject('non_neutral_group', node.instance_id);
           groupContext(item.parent);
           const children = node.slots.content ?? [];

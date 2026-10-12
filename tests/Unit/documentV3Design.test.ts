@@ -51,7 +51,7 @@ describe('v3 atomic design commands', () => {
     expect(() => apply({ kind: 'content', id, props: { level: 2, runs: [{ text: '불가' }] } }, doc)).toThrow('locked');
     expect(() => apply({ kind: 'style', id: 'missing', set: {} })).toThrow('missing_node');
   });
-  it('updates only canonical text properties, rejects unsafe or type-changing content', () => {
+  it('updates only canonical primitive properties, rejects unsafe or type-changing content', () => {
     const props = { level: 2, runs: [{ text: '<script>문자</script>', bold: false }] };
     const result = apply({ kind: 'content', id, props });
     expect(child(result.document).props).toEqual(props);
@@ -60,7 +60,8 @@ describe('v3 atomic design commands', () => {
     expect(apply({ kind: 'content', id, props }, result.document).changed).toBe(false);
     expect(() => apply({ kind: 'content', id, props: { level: 2, runs: [{ text: 'x', link: { url: 'javascript:alert(1)', new_tab: false } }] } })).toThrow();
     expect(() => apply({ kind: 'content', id, props: { label: 'x' } })).toThrow();
-    expect(() => apply({ kind: 'content', id: fixture.blocks[0].instance_id, props: { tag: 'div' } })).toThrow('content_type');
+    expect(apply({ kind: 'content', id: fixture.blocks[0].instance_id, props: { tag: 'header' } }).document.blocks[0].props).toEqual({ tag: 'header' });
+    expect(() => apply({ kind: 'content', id: fixture.blocks[0].instance_id, props: { tag: 'script' } })).toThrow();
   });
   it('keeps tree commands on the same dispatcher', () => {
     expect(child(apply({ kind: 'rename', id, name: '통합 명령' }).document).name).toBe('통합 명령');

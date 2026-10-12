@@ -9,14 +9,26 @@ import type { NewId } from './clipboard';
 export type DesignCommand =
   | { kind: 'style'; id: string; set: Style; reset?: (keyof Style)[]; viewport?: Viewport }
   | { kind: 'styles'; updates: { id: string; set: Style; reset?: (keyof Style)[] }[]; viewport?: Viewport }
-  | { kind: 'content'; id: string; props: unknown };
-export type DocumentCommand = TreeCommand | DesignCommand;
+  | { kind: 'content'; id: string; props: unknown }
+  | { kind: 'behavior'; id: string; value: unknown };
+export type AtomicCommand = TreeCommand | DesignCommand;
+export type DocumentCommand = AtomicCommand | { kind: 'transaction'; commands: AtomicCommand[] };
 
 /** One immutable command for panel and canvas; never a vendor/history payload. */
 export function executeDocumentCommand(source: DocumentV3, command: DocumentCommand, nextId: NewId): TreeResult {
-  if (command.kind !== 'style' && command.kind !== 'styles' && command.kind !== 'content') return executeTreeCommand(source, command, nextId);
+  if (command.kind === 'transaction') {
+    validateDocumentV3(source);
+    if (jsonBytes(command, designPolicyV3.limits.json_depth) > designPolicyV3.limits.utf8_bytes) reject('byte_limit', '$');
+    if (!command.commands.length || command.commands.length > designPolicyV3.limits.transaction_commands
+      || command.commands.some(part => Object.hasOwn(part, 'commands'))) reject('transaction', '$');
+    let result: TreeResult = { document: source, selection: [], changed: false };
+    for (const part of command.commands) result = executeDocumentCommand(result.document, part, nextId);
+    const changed = JSON.stringify(source) !== JSON.stringify(result.document);
+    return { ...result, changed, document: changed ? result.document : source };
+  }
+  if (command.kind !== 'style' && command.kind !== 'styles' && command.kind !== 'content' && command.kind !== 'behavior') return executeTreeCommand(source, command, nextId);
   validateDocumentV3(source);
-  const viewport = command.kind === 'content' ? 'base' : command.viewport ?? 'base';
+  const viewport = command.kind === 'content' || command.kind === 'behavior' ? 'base' : command.viewport ?? 'base';
   if (!['base', 'tablet', 'mobile'].includes(viewport)) reject('viewport', '$');
   if (jsonBytes(command, designPolicyV3.limits.json_depth) > designPolicyV3.limits.utf8_bytes) reject('byte_limit', '$');
   const document = cloneDocument(source), tree = indexTree(document);
@@ -28,8 +40,12 @@ export function executeDocumentCommand(source: DocumentV3, command: DocumentComm
   for (const item of roots) {
     const update = updates.find(value => value.id === item.node.instance_id)!;
     if (command.kind === 'content') {
-      if (!['content.heading', 'content.text', 'action.link'].includes(item.node.type)) reject('content_type', item.node.instance_id);
+      // Every primitive uses the same schema/semantic validator; no per-composition allowlist.
       Object.assign(item.node, { props: JSON.parse(JSON.stringify(command.props)) });
+    } else if (command.kind === 'behavior') {
+      assertEditable(item, true);
+      if (command.value === null) delete item.node.behavior;
+      else Object.assign(item.node, { behavior: JSON.parse(JSON.stringify(command.value)) });
     } else if ('set' in update) {
       const layer = viewport === 'base' ? item.node.style : item.node.responsive[viewport] ?? {};
       const previousLayer = JSON.stringify(layer);

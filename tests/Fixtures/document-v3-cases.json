@@ -1982,5 +1982,1717 @@
       "width": 1280,
       "value": "base"
     }
+  ],
+  "behavior_fixtures": {
+    "tabs": [
+      {
+        "instance_id": "00000000-0000-4000-8000-000000000100",
+        "block_version": 1,
+        "type": "layout.container",
+        "name": "임의 요소 100",
+        "locked": false,
+        "props": {
+          "tag": "div"
+        },
+        "slots": {
+          "content": [
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000101",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 101",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000102",
+                    "block_version": 1,
+                    "type": "action.button",
+                    "name": "임의 요소 102",
+                    "locked": false,
+                    "props": {
+                      "label": "버튼 102"
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  },
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000103",
+                    "block_version": 1,
+                    "type": "action.button",
+                    "name": "임의 요소 103",
+                    "locked": false,
+                    "props": {
+                      "label": "버튼 103"
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000104",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 104",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000105",
+                    "block_version": 1,
+                    "type": "content.text",
+                    "name": "임의 요소 105",
+                    "locked": false,
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "내용 105"
+                          }
+                        ]
+                      ]
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000106",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 106",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000107",
+                    "block_version": 1,
+                    "type": "content.text",
+                    "name": "임의 요소 107",
+                    "locked": false,
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "내용 107"
+                          }
+                        ]
+                      ]
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            }
+          ]
+        },
+        "style": {},
+        "responsive": {},
+        "behavior": {
+          "kind": "tabs",
+          "label": "임의 구성 선택",
+          "orientation": "horizontal",
+          "tablist_id": "00000000-0000-4000-8000-000000000101",
+          "active_panel_id": "00000000-0000-4000-8000-000000000104",
+          "pairs": [
+            {
+              "trigger_id": "00000000-0000-4000-8000-000000000102",
+              "panel_id": "00000000-0000-4000-8000-000000000104"
+            },
+            {
+              "trigger_id": "00000000-0000-4000-8000-000000000103",
+              "panel_id": "00000000-0000-4000-8000-000000000106"
+            }
+          ]
+        }
+      }
+    ],
+    "disclosure": [
+      {
+        "instance_id": "00000000-0000-4000-8000-000000000200",
+        "block_version": 1,
+        "type": "layout.container",
+        "name": "임의 요소 200",
+        "locked": false,
+        "props": {
+          "tag": "div"
+        },
+        "slots": {
+          "content": [
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000201",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 201",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000202",
+                    "block_version": 1,
+                    "type": "action.button",
+                    "name": "임의 요소 202",
+                    "locked": false,
+                    "props": {
+                      "label": "버튼 202"
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  },
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000203",
+                    "block_version": 1,
+                    "type": "layout.container",
+                    "name": "임의 요소 203",
+                    "locked": false,
+                    "props": {
+                      "tag": "div"
+                    },
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000204",
+                          "block_version": 1,
+                          "type": "content.text",
+                          "name": "임의 요소 204",
+                          "locked": false,
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "내용 204"
+                                }
+                              ]
+                            ]
+                          },
+                          "slots": {},
+                          "style": {},
+                          "responsive": {}
+                        }
+                      ]
+                    },
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000205",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 205",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000206",
+                    "block_version": 1,
+                    "type": "action.button",
+                    "name": "임의 요소 206",
+                    "locked": false,
+                    "props": {
+                      "label": "버튼 206"
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  },
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000207",
+                    "block_version": 1,
+                    "type": "layout.container",
+                    "name": "임의 요소 207",
+                    "locked": false,
+                    "props": {
+                      "tag": "div"
+                    },
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000208",
+                          "block_version": 1,
+                          "type": "content.text",
+                          "name": "임의 요소 208",
+                          "locked": false,
+                          "props": {
+                            "paragraphs": [
+                              [
+                                {
+                                  "text": "내용 208"
+                                }
+                              ]
+                            ]
+                          },
+                          "slots": {},
+                          "style": {},
+                          "responsive": {}
+                        }
+                      ]
+                    },
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            }
+          ]
+        },
+        "style": {},
+        "responsive": {},
+        "behavior": {
+          "kind": "disclosure",
+          "mode": "single",
+          "pairs": [
+            {
+              "item_id": "00000000-0000-4000-8000-000000000201",
+              "trigger_id": "00000000-0000-4000-8000-000000000202",
+              "panel_id": "00000000-0000-4000-8000-000000000203",
+              "expanded": true
+            },
+            {
+              "item_id": "00000000-0000-4000-8000-000000000205",
+              "trigger_id": "00000000-0000-4000-8000-000000000206",
+              "panel_id": "00000000-0000-4000-8000-000000000207",
+              "expanded": false
+            }
+          ]
+        }
+      }
+    ],
+    "carousel": [
+      {
+        "instance_id": "00000000-0000-4000-8000-000000000300",
+        "block_version": 1,
+        "type": "layout.container",
+        "name": "임의 요소 300",
+        "locked": false,
+        "props": {
+          "tag": "div"
+        },
+        "slots": {
+          "content": [
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000301",
+              "block_version": 1,
+              "type": "action.button",
+              "name": "임의 요소 301",
+              "locked": false,
+              "props": {
+                "label": "버튼 301"
+              },
+              "slots": {},
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000302",
+              "block_version": 1,
+              "type": "action.button",
+              "name": "임의 요소 302",
+              "locked": false,
+              "props": {
+                "label": "버튼 302"
+              },
+              "slots": {},
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000303",
+              "block_version": 1,
+              "type": "action.button",
+              "name": "임의 요소 303",
+              "locked": false,
+              "props": {
+                "label": "버튼 303"
+              },
+              "slots": {},
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000304",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 304",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000305",
+                    "block_version": 1,
+                    "type": "layout.container",
+                    "name": "임의 요소 305",
+                    "locked": false,
+                    "props": {
+                      "tag": "div"
+                    },
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000306",
+                          "block_version": 1,
+                          "type": "layout.container",
+                          "name": "임의 요소 306",
+                          "locked": false,
+                          "props": {
+                            "tag": "div"
+                          },
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000307",
+                                "block_version": 1,
+                                "type": "content.text",
+                                "name": "임의 요소 307",
+                                "locked": false,
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "내용 307"
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "slots": {},
+                                "style": {},
+                                "responsive": {}
+                              }
+                            ]
+                          },
+                          "style": {},
+                          "responsive": {}
+                        },
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000308",
+                          "block_version": 1,
+                          "type": "layout.container",
+                          "name": "임의 요소 308",
+                          "locked": false,
+                          "props": {
+                            "tag": "div"
+                          },
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000309",
+                                "block_version": 1,
+                                "type": "content.text",
+                                "name": "임의 요소 309",
+                                "locked": false,
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "내용 309"
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "slots": {},
+                                "style": {},
+                                "responsive": {}
+                              }
+                            ]
+                          },
+                          "style": {},
+                          "responsive": {}
+                        }
+                      ]
+                    },
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            }
+          ]
+        },
+        "style": {},
+        "responsive": {},
+        "behavior": {
+          "kind": "carousel",
+          "label": "임의 슬라이드",
+          "viewport_id": "00000000-0000-4000-8000-000000000304",
+          "track_id": "00000000-0000-4000-8000-000000000305",
+          "active_slide_id": "00000000-0000-4000-8000-000000000306",
+          "previous_id": "00000000-0000-4000-8000-000000000302",
+          "next_id": "00000000-0000-4000-8000-000000000303",
+          "rotation_id": "00000000-0000-4000-8000-000000000301",
+          "autoplay": true,
+          "loop": true,
+          "interval_ms": 5000
+        }
+      }
+    ],
+    "nested": [
+      {
+        "instance_id": "00000000-0000-4000-8000-000000000100",
+        "block_version": 1,
+        "type": "layout.container",
+        "name": "임의 요소 100",
+        "locked": false,
+        "props": {
+          "tag": "div"
+        },
+        "slots": {
+          "content": [
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000101",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 101",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000102",
+                    "block_version": 1,
+                    "type": "action.button",
+                    "name": "임의 요소 102",
+                    "locked": false,
+                    "props": {
+                      "label": "버튼 102"
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  },
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000103",
+                    "block_version": 1,
+                    "type": "action.button",
+                    "name": "임의 요소 103",
+                    "locked": false,
+                    "props": {
+                      "label": "버튼 103"
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000104",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 104",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000105",
+                    "block_version": 1,
+                    "type": "content.text",
+                    "name": "임의 요소 105",
+                    "locked": false,
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "내용 105"
+                          }
+                        ]
+                      ]
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  },
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000200",
+                    "block_version": 1,
+                    "type": "layout.container",
+                    "name": "임의 요소 200",
+                    "locked": false,
+                    "props": {
+                      "tag": "div"
+                    },
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000201",
+                          "block_version": 1,
+                          "type": "layout.container",
+                          "name": "임의 요소 201",
+                          "locked": false,
+                          "props": {
+                            "tag": "div"
+                          },
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000202",
+                                "block_version": 1,
+                                "type": "action.button",
+                                "name": "임의 요소 202",
+                                "locked": false,
+                                "props": {
+                                  "label": "버튼 202"
+                                },
+                                "slots": {},
+                                "style": {},
+                                "responsive": {}
+                              },
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000203",
+                                "block_version": 1,
+                                "type": "layout.container",
+                                "name": "임의 요소 203",
+                                "locked": false,
+                                "props": {
+                                  "tag": "div"
+                                },
+                                "slots": {
+                                  "content": [
+                                    {
+                                      "instance_id": "00000000-0000-4000-8000-000000000204",
+                                      "block_version": 1,
+                                      "type": "content.text",
+                                      "name": "임의 요소 204",
+                                      "locked": false,
+                                      "props": {
+                                        "paragraphs": [
+                                          [
+                                            {
+                                              "text": "내용 204"
+                                            }
+                                          ]
+                                        ]
+                                      },
+                                      "slots": {},
+                                      "style": {},
+                                      "responsive": {}
+                                    }
+                                  ]
+                                },
+                                "style": {},
+                                "responsive": {}
+                              }
+                            ]
+                          },
+                          "style": {},
+                          "responsive": {}
+                        },
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000205",
+                          "block_version": 1,
+                          "type": "layout.container",
+                          "name": "임의 요소 205",
+                          "locked": false,
+                          "props": {
+                            "tag": "div"
+                          },
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000206",
+                                "block_version": 1,
+                                "type": "action.button",
+                                "name": "임의 요소 206",
+                                "locked": false,
+                                "props": {
+                                  "label": "버튼 206"
+                                },
+                                "slots": {},
+                                "style": {},
+                                "responsive": {}
+                              },
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000207",
+                                "block_version": 1,
+                                "type": "layout.container",
+                                "name": "임의 요소 207",
+                                "locked": false,
+                                "props": {
+                                  "tag": "div"
+                                },
+                                "slots": {
+                                  "content": [
+                                    {
+                                      "instance_id": "00000000-0000-4000-8000-000000000208",
+                                      "block_version": 1,
+                                      "type": "content.text",
+                                      "name": "임의 요소 208",
+                                      "locked": false,
+                                      "props": {
+                                        "paragraphs": [
+                                          [
+                                            {
+                                              "text": "내용 208"
+                                            }
+                                          ]
+                                        ]
+                                      },
+                                      "slots": {},
+                                      "style": {},
+                                      "responsive": {}
+                                    }
+                                  ]
+                                },
+                                "style": {},
+                                "responsive": {}
+                              }
+                            ]
+                          },
+                          "style": {},
+                          "responsive": {}
+                        }
+                      ]
+                    },
+                    "style": {},
+                    "responsive": {},
+                    "behavior": {
+                      "kind": "disclosure",
+                      "mode": "single",
+                      "pairs": [
+                        {
+                          "item_id": "00000000-0000-4000-8000-000000000201",
+                          "trigger_id": "00000000-0000-4000-8000-000000000202",
+                          "panel_id": "00000000-0000-4000-8000-000000000203",
+                          "expanded": true
+                        },
+                        {
+                          "item_id": "00000000-0000-4000-8000-000000000205",
+                          "trigger_id": "00000000-0000-4000-8000-000000000206",
+                          "panel_id": "00000000-0000-4000-8000-000000000207",
+                          "expanded": false
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000106",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 106",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000107",
+                    "block_version": 1,
+                    "type": "content.text",
+                    "name": "임의 요소 107",
+                    "locked": false,
+                    "props": {
+                      "paragraphs": [
+                        [
+                          {
+                            "text": "내용 107"
+                          }
+                        ]
+                      ]
+                    },
+                    "slots": {},
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            }
+          ]
+        },
+        "style": {},
+        "responsive": {},
+        "behavior": {
+          "kind": "tabs",
+          "label": "임의 구성 선택",
+          "orientation": "horizontal",
+          "tablist_id": "00000000-0000-4000-8000-000000000101",
+          "active_panel_id": "00000000-0000-4000-8000-000000000104",
+          "pairs": [
+            {
+              "trigger_id": "00000000-0000-4000-8000-000000000102",
+              "panel_id": "00000000-0000-4000-8000-000000000104"
+            },
+            {
+              "trigger_id": "00000000-0000-4000-8000-000000000103",
+              "panel_id": "00000000-0000-4000-8000-000000000106"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "behavior_cases": [
+    {
+      "name": "tabs",
+      "fixture": "tabs",
+      "patches": [],
+      "valid": true
+    },
+    {
+      "name": "disclosure",
+      "fixture": "disclosure",
+      "patches": [],
+      "valid": true
+    },
+    {
+      "name": "carousel",
+      "fixture": "carousel",
+      "patches": [],
+      "valid": true
+    },
+    {
+      "name": "nested-independent",
+      "fixture": "nested",
+      "patches": [],
+      "valid": true
+    },
+    {
+      "name": "tabs-vertical",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "orientation"
+          ],
+          "value": "vertical"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "multiple-expanded",
+      "fixture": "disclosure",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "mode"
+          ],
+          "value": "multiple"
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            1,
+            "expanded"
+          ],
+          "value": true
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "manual-carousel",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "autoplay"
+          ],
+          "value": false
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "rotation_id"
+          ],
+          "remove": true
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "unknown-execution",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "handler"
+          ],
+          "value": "alert(1)"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "blank-group-name",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "label"
+          ],
+          "value": "　\n"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "blank-button-name",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            0,
+            "props",
+            "label"
+          ],
+          "value": "　"
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "self-reference",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            0,
+            "trigger_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000100"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_reference"
+    },
+    {
+      "name": "missing-reference",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            0,
+            "trigger_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000999"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_reference"
+    },
+    {
+      "name": "duplicate-reference",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            1,
+            "trigger_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000102"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_duplicate"
+    },
+    {
+      "name": "wrong-trigger-role",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            0,
+            "trigger_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000105"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_role"
+    },
+    {
+      "name": "unknown-active-panel",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "active_panel_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000105"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_active"
+    },
+    {
+      "name": "wrong-tablist",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "tablist_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000105"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_role"
+    },
+    {
+      "name": "nested-foreign-trigger",
+      "fixture": "nested",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            1,
+            "trigger_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000202"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_owner"
+    },
+    {
+      "name": "single-multiple-expanded",
+      "fixture": "disclosure",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            1,
+            "expanded"
+          ],
+          "value": true
+        }
+      ],
+      "valid": false,
+      "error": "behavior_expanded"
+    },
+    {
+      "name": "wrong-disclosure-item",
+      "fixture": "disclosure",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            0,
+            "item_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000205"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_item"
+    },
+    {
+      "name": "empty-pairs",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs"
+          ],
+          "value": []
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "rotation-required",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "rotation_id"
+          ],
+          "remove": true
+        }
+      ],
+      "valid": false,
+      "error": "behavior_rotation"
+    },
+    {
+      "name": "unknown-active-slide",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "active_slide_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000307"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_active"
+    },
+    {
+      "name": "empty-track",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            3,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content"
+          ],
+          "value": []
+        }
+      ],
+      "valid": false,
+      "error": "behavior_track"
+    },
+    {
+      "name": "bad-track-structure",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "track_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000306"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_track"
+    },
+    {
+      "name": "duplicate-controls",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "next_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000302"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_duplicate"
+    },
+    {
+      "name": "bad-interval",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "interval_ms"
+          ],
+          "value": 0
+        }
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "late-rotation",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content"
+          ],
+          "value": [
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000302",
+              "block_version": 1,
+              "type": "action.button",
+              "name": "임의 요소 302",
+              "locked": false,
+              "props": {
+                "label": "버튼 302"
+              },
+              "slots": {},
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000303",
+              "block_version": 1,
+              "type": "action.button",
+              "name": "임의 요소 303",
+              "locked": false,
+              "props": {
+                "label": "버튼 303"
+              },
+              "slots": {},
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000304",
+              "block_version": 1,
+              "type": "layout.container",
+              "name": "임의 요소 304",
+              "locked": false,
+              "props": {
+                "tag": "div"
+              },
+              "slots": {
+                "content": [
+                  {
+                    "instance_id": "00000000-0000-4000-8000-000000000305",
+                    "block_version": 1,
+                    "type": "layout.container",
+                    "name": "임의 요소 305",
+                    "locked": false,
+                    "props": {
+                      "tag": "div"
+                    },
+                    "slots": {
+                      "content": [
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000306",
+                          "block_version": 1,
+                          "type": "layout.container",
+                          "name": "임의 요소 306",
+                          "locked": false,
+                          "props": {
+                            "tag": "div"
+                          },
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000307",
+                                "block_version": 1,
+                                "type": "content.text",
+                                "name": "임의 요소 307",
+                                "locked": false,
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "내용 307"
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "slots": {},
+                                "style": {},
+                                "responsive": {}
+                              }
+                            ]
+                          },
+                          "style": {},
+                          "responsive": {}
+                        },
+                        {
+                          "instance_id": "00000000-0000-4000-8000-000000000308",
+                          "block_version": 1,
+                          "type": "layout.container",
+                          "name": "임의 요소 308",
+                          "locked": false,
+                          "props": {
+                            "tag": "div"
+                          },
+                          "slots": {
+                            "content": [
+                              {
+                                "instance_id": "00000000-0000-4000-8000-000000000309",
+                                "block_version": 1,
+                                "type": "content.text",
+                                "name": "임의 요소 309",
+                                "locked": false,
+                                "props": {
+                                  "paragraphs": [
+                                    [
+                                      {
+                                        "text": "내용 309"
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "slots": {},
+                                "style": {},
+                                "responsive": {}
+                              }
+                            ]
+                          },
+                          "style": {},
+                          "responsive": {}
+                        }
+                      ]
+                    },
+                    "style": {},
+                    "responsive": {}
+                  }
+                ]
+              },
+              "style": {},
+              "responsive": {}
+            },
+            {
+              "instance_id": "00000000-0000-4000-8000-000000000301",
+              "block_version": 1,
+              "type": "action.button",
+              "name": "임의 요소 301",
+              "locked": false,
+              "props": {
+                "label": "버튼 301"
+              },
+              "slots": {},
+              "style": {},
+              "responsive": {}
+            }
+          ]
+        }
+      ],
+      "valid": false,
+      "error": "behavior_order"
+    },
+    {
+      "name": "behavior-on-leaf",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            1,
+            "slots",
+            "content",
+            0,
+            "behavior"
+          ],
+          "value": {
+            "kind": "tabs",
+            "label": "임의 구성 선택",
+            "orientation": "horizontal",
+            "tablist_id": "00000000-0000-4000-8000-000000000101",
+            "active_panel_id": "00000000-0000-4000-8000-000000000104",
+            "pairs": [
+              {
+                "trigger_id": "00000000-0000-4000-8000-000000000102",
+                "panel_id": "00000000-0000-4000-8000-000000000104"
+              },
+              {
+                "trigger_id": "00000000-0000-4000-8000-000000000103",
+                "panel_id": "00000000-0000-4000-8000-000000000106"
+              }
+            ]
+          }
+        }
+      ],
+      "valid": false,
+      "error": "behavior_host"
+    },
+    {
+      "name": "panel-cannot-own-another-behavior",
+      "fixture": "nested",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            0,
+            "panel_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000200"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_owner"
+    },
+    {
+      "name": "nested-panels-overlap",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            1,
+            "slots",
+            "content",
+            1
+          ],
+          "value": {
+            "instance_id": "00000000-0000-4000-8000-000000000777",
+            "block_version": 1,
+            "type": "layout.container",
+            "name": "임의 요소 777",
+            "locked": false,
+            "props": {
+              "tag": "div"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          }
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            1,
+            "panel_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000777"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_overlap"
+    },
+    {
+      "name": "trigger-inside-panel",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "pairs",
+            0,
+            "panel_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000101"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_overlap"
+    },
+    {
+      "name": "tab-triggers-outside-tablist",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            3
+          ],
+          "value": {
+            "instance_id": "00000000-0000-4000-8000-000000000777",
+            "block_version": 1,
+            "type": "layout.container",
+            "name": "임의 요소 777",
+            "locked": false,
+            "props": {
+              "tag": "div"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          }
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "tablist_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000777"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_tablist"
+    },
+    {
+      "name": "carousel-control-inside-slide",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            3,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            1
+          ],
+          "value": {
+            "instance_id": "00000000-0000-4000-8000-000000000777",
+            "block_version": 1,
+            "type": "action.button",
+            "name": "임의 요소 777",
+            "locked": false,
+            "props": {
+              "label": "이전"
+            },
+            "slots": {},
+            "style": {},
+            "responsive": {}
+          }
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "behavior",
+            "previous_id"
+          ],
+          "value": "00000000-0000-4000-8000-000000000777"
+        }
+      ],
+      "valid": false,
+      "error": "behavior_overlap"
+    },
+    {
+      "name": "carousel-slide-must-be-layout",
+      "fixture": "carousel",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            3,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            0,
+            "type"
+          ],
+          "value": "content.text"
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            3,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            0,
+            "props"
+          ],
+          "value": {
+            "paragraphs": [
+              [
+                {
+                  "text": "내용"
+                }
+              ]
+            ]
+          }
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            3,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            0,
+            "slots"
+          ],
+          "value": {}
+        }
+      ],
+      "valid": false,
+      "error": "behavior_track"
+    },
+    {
+      "name": "link-cannot-be-interaction-trigger",
+      "fixture": "tabs",
+      "patches": [
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            0,
+            "type"
+          ],
+          "value": "action.link"
+        },
+        {
+          "path": [
+            "blocks",
+            0,
+            "slots",
+            "content",
+            0,
+            "slots",
+            "content",
+            0,
+            "props"
+          ],
+          "value": {
+            "label": "이동",
+            "link": {
+              "url": "/route",
+              "new_tab": false
+            }
+          }
+        }
+      ],
+      "valid": false,
+      "error": "behavior_role"
+    }
   ]
 }

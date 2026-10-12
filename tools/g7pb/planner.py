@@ -489,6 +489,7 @@ def build_plan(root: Path, paths: list[str], *, base="HEAD", phase="submission",
         "vite.native.config.ts",
         "vite.native-components.config.ts",
         "vite.site-part.config.ts",
+        "vite.structure.config.ts",
     }
     changed_asset_build_controllers = []
     font_changed = bool(set(plan.paths) & set(INTER_FONT_INPUTS)) or (

@@ -10,6 +10,16 @@ from tools.g7pb.runner import digest_gate
 
 
 class PlannerTests(unittest.TestCase):
+    def test_structure_build_config_selects_assets_without_full_fallback(self):
+        self.write("vite.structure.config.ts", "export default {};")
+        self.write("scripts/check-assets.mjs", "export const check = true;")
+        for phase in ("submission", "integration", "verification", "ci"):
+            plan = build_plan(self.root, ["vite.structure.config.ts"], phase=phase)
+            self.assertFalse(plan.unresolved, plan.unresolved)
+            self.assertFalse(plan.full)
+            self.assertTrue(any("vite.structure.config.ts" in gate.inputs for gate in plan.gates))
+            self.assertFalse(any(gate.name.startswith("content:") for gate in plan.gates))
+
     def test_card_contracts_require_both_language_consumers(self):
         from tools.g7pb.planner import CONTRACT_FIXTURE_CONSUMERS
         for source in ("schemas/page-builder-document.schema.json",):

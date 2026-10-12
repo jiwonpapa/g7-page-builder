@@ -176,7 +176,8 @@ final class StructureDocumentPersistenceTest extends TestCase
         RevisionRecord::query()->where('document_id', $id)->update(['document_json' => $this->json($source)]);
         $archived = $pages->archive($id, 3, null);
         self::assertNull($pages->findPublished($source->slug));
-        self::assertSame(1, PublicationRecord::query()->where('document_id', $id)->where('status', 'active')->count());
+        self::assertSame(0, PublicationRecord::query()->where('document_id', $id)->where('status', 'active')->count());
+        self::assertSame($published->artifact, PublicationRecord::query()->where('document_id', $id)->where('status', 'superseded')->first()->artifact);
         $this->expectException(PublicationCommitException::class);
         $pages->preparePublication($id, $archived->lockVersion, null);
     }

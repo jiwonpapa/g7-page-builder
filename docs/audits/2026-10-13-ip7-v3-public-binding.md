@@ -7,3 +7,5 @@ Provider의 기존 DocumentCompilerPort binding만 스키마별 router로 연결
 기존 블록 runtime과 compiler의 초기화는 v1/v2 문서를 컴파일할 때만 발생한다. optional 카탈로그가 실패해도 v3 원본의 저장·미리보기·발행은 영향을 받지 않아야 한다.
 
 검증 범위는 실제 Eloquent 저장소의 in-memory DB 통합 시험과 실제 Provider의 지연 binding이다. 브라우저 발행 버튼 및 활성 User Template 화면까지의 제품 수용은 별도 실행 증거가 필요하며 이 제출로 완료 처리하지 않는다. 원장·표시판은 현재 제품 진입 task 소유자에게 제출·통합 증거를 인계한다.
+
+최초 제출 `709a9b253b766a9f7040009cc84712db72c6a172`의 공식 통합에서 SitePart 회귀 12개와 v3 생성→저장→미리보기→발행→초안 변경→재발행→revision 복원 시험은 통과했다. 새 보관 시험이 기존 archive 계약을 잘못 기대해 1건 실패했다. 기존 저장소는 보관 시 active를 해제하고 superseded 발행본을 보존한다. 제품 코드를 바꾸지 않고 활성 0개·보존된 HTML 동일성을 검사하도록 공식 replacement `ip7-v3-public-binding-archive-20261013`에서 수정한다. 최초 실패 통합은 원복됐으며 로컬 테마도 jwsoft-business01 0.3.1로 복구했다.

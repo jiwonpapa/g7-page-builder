@@ -315,6 +315,10 @@ for (const key of repeatedCompositionKeys) test('v3 repeated composition interna
     await frame.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const canvas = await frame.locator('[data-v3-surface]').evaluate(measure);
     expect(canvas).toHaveLength(nodes.length);
+    for (const node of canvas) {
+      expect(node.x, key + ':' + width + ':' + node.id + ':left').toBeGreaterThanOrEqual(-1);
+      expect(node.x + node.width, key + ':' + width + ':' + node.id + ':right').toBeLessThanOrEqual(width + 1);
+    }
     await click(page, '구조 미리보기');
     await page.getByTestId('v3-preview').locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const preview = await page.getByTestId('v3-preview').evaluate(measure);

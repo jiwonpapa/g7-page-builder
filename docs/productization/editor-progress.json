@@ -507,14 +507,14 @@
       "id": "IP4",
       "phase": "editing",
       "title": "정밀 Inspector와 자동 배치",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "IP3"
       ],
       "acceptance_ids": [
         "IND-04"
       ],
-      "owner_task": null,
+      "owner_task": "ip4-design-commands-20261012",
       "implementation_commit": null,
       "integrated_commit": null,
       "evidence": [],

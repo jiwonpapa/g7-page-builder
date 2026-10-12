@@ -22,6 +22,18 @@ function pendingPort() {
 }
 
 describe('v3 command session freshness and a single history port', () => {
+  it('commits panel style and canvas content exactly once each through the existing history port', () => {
+    const state = setup();
+    state.session.execute({ kind: 'style', id: nodeId, set: { opacity: 0, padding_top: { value: 0, unit: 'px' } } }, state.context);
+    state.session.execute({ kind: 'content', id: nodeId, props: { level: 2, runs: [{ text: '직접 입력', bold: true }] } }, { ...state.snapshot.context });
+    expect(state.commit).toHaveBeenCalledTimes(2);
+    expect(state.snapshot.context.revision).toBe(2);
+    expect(() => state.session.execute({ kind: 'style', id: nodeId, set: { opacity: 1 } }, state.context)).toThrow('stale_context');
+    state.snapshot.context.readonly = true;
+    expect(() => state.session.execute({ kind: 'content', id: nodeId, props: {} }, { ...state.snapshot.context })).toThrow('readonly');
+    expect(state.commit).toHaveBeenCalledTimes(2);
+    expect(reopenDraft(serializeDraft(state.snapshot.document), state.context.documentId)).toEqual(state.snapshot.document);
+  });
   it('commits a valid command once and does not commit a no-op or selection/copy', () => {
     const state = setup();
     state.session.copy([nodeId], state.context);

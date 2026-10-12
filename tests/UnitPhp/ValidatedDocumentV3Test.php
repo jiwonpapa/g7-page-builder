@@ -36,6 +36,9 @@ final class ValidatedDocumentV3Test extends TestCase
         self::assertSame($source->slug, $value->slug);
         self::assertSame($source->locale, $value->locale);
         self::assertSame($source->shell_mode, $value->shellMode);
+        self::assertSame('g7-page-builder/v3', $value->schemaVersion);
+        self::assertSame(count($source->blocks), $value->rootCount());
+        self::assertNull($value->seo);
         self::assertSame($this->encode($source), $value->toJson());
         self::assertSame($value->toJson(), json_encode($value->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION));
         self::assertEquals($source, $this->validator()->validateJson($value->toJson()));
@@ -58,6 +61,17 @@ final class ValidatedDocumentV3Test extends TestCase
         self::assertSame([], $empty['blocks']);
         self::assertSame([], $empty['assets']);
         self::assertInstanceOf(stdClass::class, $empty['tokens']);
+    }
+
+    public function test_optional_seo_and_empty_root_count_are_exposed_without_changing_the_source(): void
+    {
+        $source = $this->source();
+        $source->blocks = [];
+        $source->seo = (object) ['title' => '검색 제목', 'description' => '검색 설명', 'og_image_url' => '/storage/cover.webp', 'robots' => 'noindex'];
+        $value = ValidatedDocument::fromJson($this->encode($source), $this->validator());
+        self::assertSame(0, $value->rootCount());
+        self::assertSame(get_object_vars($source->seo), $value->seo->toArray());
+        self::assertSame($this->encode($source), $value->toJson());
     }
 
     public function test_transport_snapshots_cannot_mutate_the_validated_source_or_each_other(): void

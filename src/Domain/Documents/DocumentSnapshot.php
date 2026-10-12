@@ -5,7 +5,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Domain\Documents;
 final readonly class DocumentSnapshot
 {
     public function __construct(
-        public PageBuilderDocument $document,
+        public PageDocument $document,
         public string $title,
         public int $lockVersion,
         public int $revision,

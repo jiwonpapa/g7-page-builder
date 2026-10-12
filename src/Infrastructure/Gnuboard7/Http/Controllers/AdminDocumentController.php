@@ -60,6 +60,7 @@ final class AdminDocumentController
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'locale' => ['sometimes', 'string', 'min:2', 'max:16'],
             'mode' => ['sometimes', 'in:canvas'],
+            'schema_version' => ['sometimes', 'in:g7-page-builder/v1,g7-page-builder/v3'],
             'shell_mode' => ['sometimes', 'in:template,builder,none,global'],
         ]);
 
@@ -74,6 +75,7 @@ final class AdminDocumentController
                 (string) $request->input('locale', 'ko'),
                 $this->actorId($request),
                 (string) $request->input('shell_mode', 'template'),
+                (string) $request->input('schema_version', 'g7-page-builder/v1'),
             );
 
             return $this->success('페이지 문서를 생성했습니다.', $this->snapshotData($snapshot), 201);
@@ -293,12 +295,11 @@ final class AdminDocumentController
         try {
             /** @var array<string, mixed> $payload */
             $payload = $request->input('document');
-            $snapshot = $this->service->saveDraft(
-                $document,
-                $payload,
-                (int) $request->input('expected_lock_version'),
-                $this->actorId($request),
-            );
+            $lockVersion = (int) $request->input('expected_lock_version');
+            $actorId = $this->actorId($request);
+            $snapshot = ($payload['schema_version'] ?? null) === 'g7-page-builder/v3'
+                ? $this->service->saveDraftJson($document, $this->structureJson($request), $lockVersion, $actorId)
+                : $this->service->saveDraft($document, $payload, $lockVersion, $actorId);
 
             return $this->success('초안을 저장했습니다.', $this->snapshotData($snapshot));
         } catch (DocumentNotFoundException $exception) {
@@ -579,7 +580,7 @@ final class AdminDocumentController
             'title' => $revision->title,
             'slug' => $revision->document->slug,
             'locale' => $revision->document->locale,
-            'block_count' => count($revision->document->blocks),
+            'block_count' => $revision->document->rootCount(),
             'author_id' => $revision->authorId,
             'created_at' => $revision->createdAt->format(DATE_ATOM),
         ];
@@ -694,6 +695,20 @@ final class AdminDocumentController
                 'correlation_id' => $correlationId,
             ],
         ], 500, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    private function structureJson(Request $request): string
+    {
+        try {
+            $body = json_decode($request->getContent(), flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException $error) {
+            throw new \InvalidArgumentException('Structure drafts require a JSON request body.', previous: $error);
+        }
+        if (! $body instanceof \stdClass || ! ($body->document ?? null) instanceof \stdClass) {
+            throw new \InvalidArgumentException('The draft document must be a JSON object.');
+        }
+
+        return json_encode($body->document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
     }
 
     private function correlationId(Request $request): string

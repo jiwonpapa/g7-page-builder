@@ -1,6 +1,14 @@
 {
   "policy_version": "g7pb-design-policy/v3",
   "schema_version": "g7-page-builder/v3",
+  "default_tokens": {
+    "text": { "kind": "hex", "value": "#112233" },
+    "muted": { "kind": "hex", "value": "#667788" },
+    "primary": { "kind": "hex", "value": "#2255ff" },
+    "surface": { "kind": "hex", "value": "#ffffff" },
+    "border": { "kind": "hex", "value": "#ddeeff" },
+    "accent": { "kind": "hex", "value": "#ff8800" }
+  },
   "limits": {
     "nodes": 500,
     "depth": 16,

@@ -20,6 +20,7 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDesignTokens;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
 
 final class HtmlDocumentCompiler implements DocumentCompilerPort
 {
@@ -68,7 +69,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
     }
 
     public function compile(
-        PageBuilderDocument $document,
+        PageDocument $document,
         int $sourceRevision,
         string $targetFormat,
         string $targetEngineVersion,
@@ -77,7 +78,7 @@ final class HtmlDocumentCompiler implements DocumentCompilerPort
             throw new DocumentCompileException('The requested compiler target is not supported.');
         }
 
-        if (! in_array($document->schemaVersion, ['g7-page-builder/v1', 'g7-page-builder/v2'], true)) {
+        if (! $document instanceof PageBuilderDocument || ! in_array($document->schemaVersion, ['g7-page-builder/v1', 'g7-page-builder/v2'], true)) {
             throw new DocumentCompileException('The page document schema is not supported.');
         }
 

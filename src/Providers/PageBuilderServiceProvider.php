@@ -16,6 +16,8 @@ use Modules\Jiwonpapa\PageBuilder\Application\Blocks\BlockSchemaRegistry;
 use Modules\Jiwonpapa\PageBuilder\Application\Blocks\GitHubBlockPackService;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\SitePartHtmlCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyStructureDocument;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Application\Patterns\SectionPatternService;
 use Modules\Jiwonpapa\PageBuilder\Application\Store\OfficialStoreService;
@@ -41,6 +43,7 @@ use Modules\Jiwonpapa\PageBuilder\Contracts\SiteKitSourcePort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartArtifactPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SitePartRepository;
 use Modules\Jiwonpapa\PageBuilder\Contracts\SiteShellPort;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator as StructureValidator;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\BuiltInBlockPackLoader;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\Ed25519BlockPackSignatureVerifier;
 use Modules\Jiwonpapa\PageBuilder\Infrastructure\BlockPacks\GitHubReleaseSourceAdapter;
@@ -81,7 +84,24 @@ final class PageBuilderServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/official-store.php', 'g7-page-builder.official-store');
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/forms.php', 'g7-page-builder.forms');
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/site-shell.php', 'g7-page-builder.site-shell');
-        $this->app->bind(PageBuilderRepository::class, EloquentPageBuilderRepository::class);
+        $structureSchemaSource = file_get_contents(dirname(__DIR__, 2).'/schemas/page-builder-document-v3.schema.json');
+        $structurePolicySource = file_get_contents(dirname(__DIR__, 2).'/schemas/design-policy-v3.json');
+        if ($structureSchemaSource === false || $structurePolicySource === false) {
+            throw new \RuntimeException('The structure document contract is unavailable.');
+        }
+        /** @var array<string, mixed> $structureSchema */
+        $structureSchema = json_decode($structureSchemaSource, true, flags: JSON_THROW_ON_ERROR);
+        /** @var array<string, mixed> $structurePolicy */
+        $structurePolicy = json_decode($structurePolicySource, true, flags: JSON_THROW_ON_ERROR);
+        $this->app->singleton(StructureValidator::class, fn (): StructureValidator => new StructureValidator($structureSchema, $structurePolicy));
+        $this->app->bind(PageBuilderRepository::class, fn (): EloquentPageBuilderRepository => new EloquentPageBuilderRepository($this->app->make(DocumentStorageCodec::class)));
+        $this->app->bind(PageBuilderService::class, fn (): PageBuilderService => new PageBuilderService(
+            $this->app->make(PageBuilderRepository::class),
+            fn (): DocumentCompilerPort => $this->app->make(DocumentCompilerPort::class),
+            $this->app->make(DocumentStorageCodec::class),
+            $this->app->make(EmptyStructureDocument::class),
+            $structurePolicy['default_tokens'],
+        ));
         $this->app->bind(SectionPatternRepository::class, EloquentSectionPatternRepository::class);
         $this->app->bind(NativeCompositionRepository::class, EloquentNativeCompositionRepository::class);
         $this->app->bind(SectionPatternService::class);

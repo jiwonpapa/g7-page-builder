@@ -643,6 +643,19 @@
     }
   ],
   "cases": [
+    {"name":"seo_empty_fields","path":["seo"],"value":{"title":"","description":"","og_image_url":"","robots":"index"},"valid":true},
+    {"name":"seo_metadata","path":["seo"],"value":{"title":"정밀 문서","description":"원본 메타데이터","og_image_url":"/storage/cover.webp","robots":"noindex"},"valid":true},
+    {"name":"seo_https","path":["seo"],"value":{"title":"정밀 문서","description":"원본 메타데이터","og_image_url":"https://example.com/cover.webp","robots":"noindex"},"valid":true},
+    {"name":"seo_title_limit","path":["seo"],"value":{"title":"가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가","description":"원본 메타데이터","og_image_url":"/storage/cover.webp","robots":"noindex"},"valid":false,"error":"value"},
+    {"name":"seo_description_limit","path":["seo"],"value":{"title":"정밀 문서","description":"나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나나","og_image_url":"/storage/cover.webp","robots":"noindex"},"valid":false,"error":"value"},
+    {"name":"seo_unknown","path":["seo"],"value":{"title":"정밀 문서","description":"원본 메타데이터","og_image_url":"/storage/cover.webp","robots":"noindex","extra":true},"valid":false,"error":"unknown_field"},
+    {"name":"seo_missing","path":["seo"],"value":{"title":"일부 필드"},"valid":false,"error":"required"},
+    {"name":"seo_null","path":["seo"],"value":null,"valid":false,"error":"shape"},
+    {"name":"seo_list","path":["seo"],"value":[],"valid":false,"error":"shape"},
+    {"name":"seo_title_type","path":["seo"],"value":{"title":0,"description":"원본 메타데이터","og_image_url":"/storage/cover.webp","robots":"noindex"},"valid":false,"error":"shape"},
+    {"name":"seo_robots","path":["seo"],"value":{"title":"정밀 문서","description":"원본 메타데이터","og_image_url":"/storage/cover.webp","robots":"all"},"valid":false,"error":"value"},
+    {"name":"seo_javascript","path":["seo"],"value":{"title":"정밀 문서","description":"원본 메타데이터","og_image_url":"javascript:alert(1)","robots":"noindex"},"valid":false,"error":"value"},
+    {"name":"seo_protocol_relative","path":["seo"],"value":{"title":"정밀 문서","description":"원본 메타데이터","og_image_url":"//example.com/cover.webp","robots":"noindex"},"valid":false,"error":"value"},
     {
       "name": "contact_link_tel_national",
       "path": [

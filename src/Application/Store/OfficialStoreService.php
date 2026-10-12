@@ -168,6 +168,9 @@ final readonly class OfficialStoreService
         string $description,
     ): StoreArtifact {
         $snapshot = $this->pages->get($documentId);
+        if (! $snapshot->document instanceof PageBuilderDocument) {
+            throw new \DomainException('정밀 문서는 기존 Page Kit 형식으로 내보낼 수 없습니다. 원본 문서는 변경되지 않았습니다.');
+        }
         $data = $snapshot->document->toArray();
         $portable = [];
         $mediaReferences = [];

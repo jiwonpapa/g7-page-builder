@@ -53,4 +53,5 @@ export interface DocumentV3 {
   schema_version: 'g7-page-builder/v3'; document_id: string; slug: string; mode: 'canvas'; locale: string;
   shell_mode: 'template' | 'builder' | 'none'; tokens: Record<'text' | 'muted' | 'primary' | 'surface' | 'border' | 'accent', Color>;
   assets: { asset_id: string; url: string }[]; blocks: Node[];
+  seo?: import('../types').PageSeoMetadata;
 }

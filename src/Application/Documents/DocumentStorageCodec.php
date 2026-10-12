@@ -3,6 +3,8 @@
 namespace Modules\Jiwonpapa\PageBuilder\Application\Documents;
 
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\ValidatedDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator;
 use stdClass;
@@ -27,7 +29,7 @@ final readonly class DocumentStorageCodec
         return $document;
     }
 
-    public function encodeRevision(PageBuilderDocument|ValidatedDocument $document): string
+    public function encodeRevision(PageDocument $document): string
     {
         if ($document instanceof ValidatedDocument) {
             return ValidatedDocument::fromJson($document->toJson(), $this->validator)->toJson();
@@ -38,6 +40,26 @@ final readonly class DocumentStorageCodec
         PageBuilderDocument::fromArray($document->toArray());
 
         return json_encode($document->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    public function withMetadata(
+        PageDocument $source,
+        string $documentId,
+        string $slug,
+        string $locale,
+        string $shellMode,
+        ?PageSeoMetadata $seo,
+    ): PageDocument {
+        $payload = $source->toArray();
+        $payload['document_id'] = $documentId;
+        $payload['slug'] = $slug;
+        $payload['locale'] = $locale;
+        $payload['shell_mode'] = $shellMode;
+        if ($seo !== null) {
+            $payload['seo'] = (object) $seo->toArray();
+        }
+
+        return $this->decodeDraft(json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION), $documentId);
     }
 
     private function decode(string $json, bool $stored): PageBuilderDocument|ValidatedDocument

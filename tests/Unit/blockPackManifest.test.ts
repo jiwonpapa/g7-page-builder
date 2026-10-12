@@ -111,6 +111,17 @@ describe('Block Pack manifest v1 schema', () => {
     ]));
   });
 
+  it('keeps Card block and preset renderer thumbnails separately addressed with canonical pixels', () => {
+    const block = builtinManifest.blocks.find((item) => item.block_id === 'content.card-01');
+    const preset = builtinManifest.presets.find((item) => item.preset_id === 'card.empty');
+    expect(block?.thumbnail).toBe('thumbnails/generated/block-49-card.png');
+    expect(preset?.thumbnail).toBe('thumbnails/generated/preset-99-card-empty.png');
+    expect(block?.thumbnail).not.toBe(preset?.thumbnail);
+    const hashes = builtinManifest.files;
+    expect(hashes['thumbnails/generated/block-49-card.png']).toBe(hashes['thumbnails/generated/preset-99-card-empty.png']);
+    expect(hashes).not.toHaveProperty('thumbnails/generated/card.svg');
+  });
+
   it('rejects executable runtime fields in a data pack', () => {
     const invalid = {
       ...fixture,

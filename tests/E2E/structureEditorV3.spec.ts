@@ -11,7 +11,7 @@ import type { DocumentV3 } from '../../resources/js/documents/v3/types';
 import type { TiptapEditorHTMLElement } from '@tiptap/core';
 import type { mountStructureEditor } from '../../resources/js/editor/v3/mount';
 import AxeBuilder from '@axe-core/playwright';
-import { viewportAt, type Viewport } from '../../resources/js/documents/v3/validate';
+import type { Viewport } from '../../resources/js/documents/v3/validate';
 
 declare global {
   interface Window {
@@ -764,9 +764,10 @@ test('v3 editor preview and PHP draft output agree within one CSS pixel', async 
 async function canvasWidth(page: Page, width: number) {
   await page.getByLabel('캔버스 폭', { exact: true }).fill(String(width));
   await click(page, '폭 적용');
-  await expect(page.locator('[data-v3-workspace]')).toHaveAttribute('data-v3-viewport', viewportAt(width));
+  await expect(page.locator('[data-v3-workspace]')).toHaveAttribute('data-v3-viewport', expectedViewport(width));
   await expect.poll(() => page.locator('iframe').evaluate(element => element.getBoundingClientRect().width)).toBe(width);
 }
+const expectedViewport = (width: number): Viewport => width < 640 ? 'mobile' : width < 1024 ? 'tablet' : 'base';
 function responsiveFixture(): DocumentV3 {
   const source = structuredClone(fixture), section = source.blocks[0];
   source.assets[0].url = '/image.svg';
@@ -776,9 +777,11 @@ function responsiveFixture(): DocumentV3 {
   section.slots.content!.forEach(node => { node.style = {}; node.responsive = {}; });
   const [heading, image] = section.slots.content!;
   heading.style = { width: { value: 200, unit: 'px' }, font_size: { value: 20, unit: 'px' } };
-  heading.responsive = { tablet: { width: { value: 180, unit: 'px' } }, mobile: { width: { value: 120, unit: 'px' } } };
+  heading.responsive = { tablet: { width: { value: 180, unit: 'px' } },
+    mobile: { width: { value: 120, unit: 'px' }, column_start: 2, row_start: 1 } };
   image.style = { width: { value: 80, unit: 'px' }, height: { value: 40, unit: 'px' }, object_fit: 'contain' };
   image.responsive.mobile = { hidden: true };
+  section.slots.content![3].responsive.mobile = { column_start: 1, row_start: 1 };
   return source;
 }
 test('v3 responsive Inspector inherits resets and reopens independent viewport values', async ({ page }, info) => {
@@ -809,7 +812,8 @@ test('v3 responsive Inspector inherits resets and reopens independent viewport v
   // Whole-layer reset is a draft until Apply and leaves tablet/common unchanged.
   current = await read(page); await click(page, '현재 화면 스타일 초기화'); expect(await read(page)).toEqual(current);
   await click(page, '디자인 적용');
-  const reset = await read(page), node = reset.blocks[0].slots.content![0];
+  let reset = await read(page);
+  const node = reset.blocks[0].slots.content![0];
   expect(node.responsive.mobile).toBeUndefined();
   expect(node.responsive.tablet).toEqual(source.blocks[0].slots.content![0].responsive.tablet);
   expect(node.style.width).toEqual({ value: 240, unit: 'px' });
@@ -817,6 +821,18 @@ test('v3 responsive Inspector inherits resets and reopens independent viewport v
   await length(page, '너비', 99); await click(page, '태블릿'); await click(page, '모바일');
   expect(await read(page)).toEqual(reset);
   await expect(page.getByLabel('너비 상속', { exact: true })).toContainText('240');
+  await layer(page, source.blocks[0].instance_id).click();
+  await length(page, '열 간격', 7);
+  await page.getByLabel('열 트랙 2 비율', { exact: true }).fill('2');
+  await click(page, '디자인 적용');
+  await expect.poll(async () => (await read(page)).blocks[0].responsive.mobile?.columns).toEqual([{ fr: 1 }, { fr: 2 }]);
+  await expect(page.frameLocator('iframe').locator('[data-v3-node="' + source.blocks[0].instance_id + '"]')).toHaveCSS('column-gap', '7px');
+  await click(page, '태블릿'); await enable(page, '방향');
+  await page.getByLabel('방향 형식', { exact: true }).selectOption({ label: 'row' });
+  await length(page, '행 간격', 0); await click(page, '디자인 적용');
+  await expect.poll(async () => (await read(page)).blocks[0].responsive.tablet?.direction).toBe('row');
+  expect((await read(page)).blocks[0].style).toEqual(source.blocks[0].style);
+  reset = await read(page);
   await click(page, '저장'); await expect(page.getByRole('status', { name: '편집 상태' })).toHaveText('저장됨');
   const saved = await page.evaluate(() => window.v3Proof.saved!); expect(JSON.parse(saved)).toEqual(reset);
   await open(page, JSON.parse(saved)); await click(page, '모바일'); await layer(page, id).click();
@@ -911,13 +927,14 @@ test('v3 responsive boundary canvas preview and PHP output preserve layout and D
   };
   for (const width of [360, 639, 640, 768, 1023, 1024, 1280]) {
     await open(page, source); await canvasWidth(page, width);
-    const viewport = viewportAt(width), frame = page.frameLocator('iframe');
+    const viewport = expectedViewport(width), frame = page.frameLocator('iframe');
     await frame.locator('img').evaluateAll(async elements => Promise.all(elements.map(element => (element as HTMLImageElement).decode())));
     const canvas = await frame.locator('[data-v3-surface]').evaluate(measure);
     const expectedIds = [source.blocks[0].instance_id, ...ids.filter((_, i) => viewport !== 'mobile' || i !== 1)];
     expect(canvas.map(node => node.id)).toEqual(expectedIds);
     expect(canvas[0].css.display).toBe(viewport === 'mobile' ? 'grid' : 'flex');
     if (viewport === 'mobile') {
+      await expect(page.getByLabel('읽기 순서 안내', { exact: true })).toContainText('Tab');
       expect(canvas[0].css['grid-template-columns'].split(' ')).toHaveLength(2);
       expect(canvas[0].css['column-gap']).toBe('0px');
     } else expect(canvas[0].css['flex-direction']).toBe(viewport === 'tablet' ? 'column' : 'row');

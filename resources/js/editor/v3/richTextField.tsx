@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mark, Node as TiptapNode, type Editor } from '@tiptap/core';
-import type { RichtextField } from '@puckeditor/core';
+import { RichTextMenu, type RichtextField } from '@puckeditor/core';
 import type { DocumentV3, Run } from '../../documents/v3/types';
 import { markHtmlAttributes, markKeys, runFromAttributes } from './richTextCodec';
 import { InputButton } from './TypedInput';
@@ -17,7 +17,7 @@ function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }
     try { runFromAttributes(attributes); editor.chain().focus().setMark(name, attributes).run(); setError(''); }
     catch (error) { setError(error instanceof Error ? error.message : '서식을 확인해 주세요.'); }
   };
-  return <div className="g7pb-root" role="toolbar" aria-label="부분 서식" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', maxWidth: 420,
+  return <RichTextMenu><div className="g7pb-root" role="toolbar" aria-label="부분 서식" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', maxWidth: 420,
     padding: 8, background: 'var(--g7pb-surface-strong)', color: 'var(--g7pb-text)', border: '1px solid var(--g7pb-border)' }}>
     {(['bold', 'italic', 'underline', 'strike'] as const).map((key, index) => <InputButton key={key} disabled={readOnly}
       aria-pressed={editor.getAttributes(name)[key] === true} onMouseDown={event => event.preventDefault()}
@@ -32,7 +32,7 @@ function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }
     <InputButton disabled={readOnly} onClick={() => editor.chain().focus().setMark(name, { link: null }).run()}>링크 제거</InputButton>
     <InputButton disabled={readOnly} onClick={() => editor.chain().focus().unsetMark(name).run()}>부분 초기화</InputButton>
     {error && <span role="alert">{error}</span>}
-  </div>;
+  </div></RichTextMenu>;
 }
 /** Puck owns Tiptap creation and history; this adapter only describes typed run marks. */
 export function richTextField(document: DocumentV3, singleLine: boolean): RichtextField {
@@ -53,6 +53,8 @@ export function richTextField(document: DocumentV3, singleLine: boolean): Richte
       const run = runFromAttributes(mark.attrs);
       return [run.link ? 'a' : 'span', markHtmlAttributes(run, document), 0];
     },
+    // Puck's public rich-text wrapper routes Mod-i through this Tiptap command.
+    addCommands() { return { toggleItalic: () => ({ editor }) => toggle(editor, 'italic') }; },
     addKeyboardShortcuts() { return { 'Mod-b': () => toggle(this.editor, 'bold'), 'Mod-i': () => toggle(this.editor, 'italic'), 'Mod-u': () => toggle(this.editor, 'underline') }; },
   });
   return { type: 'richtext', label: '본문', contentEditable: true, visible: false,

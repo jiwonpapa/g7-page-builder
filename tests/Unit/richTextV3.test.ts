@@ -3,7 +3,8 @@ import fixture from '../Contract/document-v3.fixture.json';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument } from '../../resources/js/documents/v3/tree';
 import { textToHtml, propsFromHtml, runFromAttributes } from '../../resources/js/editor/v3/richTextCodec';
-import { richTextField } from '../../resources/js/editor/v3/richTextField';
+globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+const { richTextField } = await import('../../resources/js/editor/v3/richTextField');
 
 const source = () => cloneDocument(validateDocumentV3(fixture));
 describe('typed rich-text adapter', () => {

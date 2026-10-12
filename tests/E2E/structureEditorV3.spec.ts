@@ -322,7 +322,7 @@ test('v3 precision Inspector and typed auto layout preserve one Undo and canonic
   const saved = await page.evaluate(() => window.v3Proof.saved!);
   expect(JSON.parse(saved)).toEqual(final);
   await open(page, JSON.parse(saved)); await layer(page, section).click();
-  await expect(page.getByLabel('배치 형식', { exact: true })).toHaveValue('2');
+  await expect(page.getByLabel('배치 형식', { exact: true }).locator('option:checked')).toHaveText('grid');
   expect(await read(page)).toEqual(final);
   expect(errors).toEqual([]);
   await info.attach('typed-inspector-document', { contentType: 'application/json', body: saved });
@@ -332,12 +332,13 @@ test('v3 precision Inspector and typed auto layout preserve one Undo and canonic
 test('v3 canvas text and partial formats share Puck history and preserve readonly input', async ({ page }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await open(page); await insert(page, '본문');
+  await click(page, '본문 입력');
   const id = (await read(page)).blocks[0].instance_id;
   const frame = page.frameLocator('iframe'), node = frame.locator('[data-v3-node="' + id + '"]');
   await node.dblclick();
-  const input = node.locator('[contenteditable="true"]');
+  const input = node.locator('.tiptap[contenteditable="true"]');
   await expect(input).toBeVisible();
-  await input.fill('한글 정밀 편집');
+  await input.click(); await input.press('ControlOrMeta+a'); await page.keyboard.insertText('한글 정밀 편집');
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('한글 정밀 편집');
   const typed = await read(page);
   await input.press('ControlOrMeta+a');
@@ -384,8 +385,10 @@ test('v3 editor preview and PHP draft output agree within one CSS pixel', async 
       source.blocks[0].slots.content![0].style.width = 'fill';
     }
     await open(page, source);
+    await click(page, '본문 입력');
     const frame = page.frameLocator('iframe');
     await expect(frame.locator('[data-v3-node]')).toHaveCount(5);
+    await expect(frame.locator('.tiptap')).toHaveCount(2);
     await frame.locator('img').evaluateAll(async items => Promise.all(items.map(item => (item as HTMLImageElement).decode())));
     const measure = (element: Element) => {
       const surface = element.getBoundingClientRect();
@@ -412,6 +415,7 @@ test('v3 editor preview and PHP draft output agree within one CSS pixel', async 
     await output.locator('[data-v3-surface]').evaluate((element, width) => { if (element instanceof HTMLElement) element.style.width = width + 'px'; }, width);
     await output.locator('img').evaluateAll(async items => Promise.all(items.map(item => (item as HTMLImageElement).decode())));
     const php = await output.locator('[data-v3-surface]').evaluate(measure);
+    await info.attach('parity-' + display, { contentType: 'application/json', body: JSON.stringify({ width, canvas, preview, php }) });
     for (const [name, candidate] of [['preview', preview], ['PHP', php]] as const) {
       expect(candidate.map(node => node.id)).toEqual(canvas.map(node => node.id));
       for (let index = 0; index < canvas.length; index++) {

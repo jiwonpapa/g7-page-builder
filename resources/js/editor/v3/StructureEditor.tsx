@@ -28,7 +28,7 @@ export interface StructureEditorProps {
   onChange?: (document: DocumentV3) => void;
   onSaved?: (revision: number) => void;
 }
-const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Location>; styles: Map<string, Record<string, string>> } | null>(null);
+const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Location>; styles: Map<string, Record<string, string>>; textEditing: boolean } | null>(null);
 const SlotContext = createContext<Node | null>(null);
 const SlotElement = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(function SlotElement(props, ref) {
   const node = useContext(SlotContext);
@@ -44,7 +44,7 @@ function CanvasNode({ id, body, Content }: { id: string; body: React.ReactNode; 
       style={reactStyle(context.styles.get(id) ?? {})} /></SlotContext.Provider>;
   }
   return <NodeRenderer node={node} document={context.document} styles={context.styles}
-    body={node.type.startsWith('content.') || node.type === 'action.link' ? body : undefined} editing />;
+    body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link') ? body : undefined} editing />;
 }
 const control: React.CSSProperties = { display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' };
 function CommandButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
@@ -73,6 +73,7 @@ function EditorSession(props: StructureEditorProps) {
   const [target, setTarget] = useState('root');
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [textEditing, setTextEditing] = useState(false);
   const serverRevision = useRef(props.serverRevision);
   const bridge = useMemo(() => createPuckBridge(validateDocumentV3(props.document), {
     context: () => ({ sessionId: live.current.sessionId, readonly: Boolean(live.current.readonly) }),
@@ -97,13 +98,13 @@ function EditorSession(props: StructureEditorProps) {
       resolvePermissions: data => {
         const item = indexTree(bridge.read()).get(data.props.id);
         const editable = !live.current.readonly && Boolean(item) && !item?.node.locked && !item?.ancestors.some(node => node.locked);
-        return { drag: editable, edit: editable };
+        return { drag: editable && !textEditing, edit: editable && textEditing };
       },
       render: ({ id, body, content: Content }) => <CanvasNode id={id} body={body} Content={Content} />,
     } },
     root: { fields: { metadata: { type: 'custom', render: () => <></> } }, render: ({ children }) => <div data-v3-surface style={reactStyle(DOCUMENT_SURFACE)}>
       <style>{'[data-v3-rich] p{margin:0;min-height:1em}'}</style>{children}</div> },
-  }), [bridge]);
+  }), [bridge, textEditing]);
   const overrides = useMemo<Partial<Overrides<V3Config>>>(() => ({
     iframe: ({ children, document: frameDocument }) => <>{children}{frameDocument && <FrameHistoryBoundary frameDocument={frameDocument} bridge={bridge} />}</>,
   }), [bridge]);
@@ -140,14 +141,16 @@ function EditorSession(props: StructureEditorProps) {
     }
   };
   return <main className="g7pb-root" aria-label="독립 구조 편집기" onKeyDownCapture={inputBoundary}>
-    <CanvasContext.Provider value={{ document, tree, styles }}>
+    <CanvasContext.Provider value={{ document, tree, styles, textEditing: textEditing && !props.readonly }}>
       <Puck config={config} data={initial} onAction={bridge.onAction} onChange={bridge.onChange}
         overrides={overrides}
-        permissions={{ insert: false, duplicate: false, delete: false, edit: !props.readonly, drag: !props.readonly }}
+        permissions={{ insert: false, duplicate: false, delete: false, edit: textEditing && !props.readonly, drag: !textEditing && !props.readonly }}
         iframe={{ enabled: props.iframeEnabled !== false }}>
         <BridgeObserver bridge={bridge} />
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <header style={{ ...control, padding: 12, borderBottom: '1px solid var(--g7pb-border)', background: 'var(--g7pb-surface-strong)' }}>
           <strong>페이지 구조</strong><Toolbar bridge={bridge} disabled={Boolean(props.readonly)} run={run} />
+          <CommandButton aria-pressed={textEditing} disabled={props.readonly || preview} onClick={() => setTextEditing(!textEditing)}>본문 입력</CommandButton>
           <CommandButton disabled={props.readonly || saving} onClick={() => void save()}>{saving ? '저장 중' : '저장'}</CommandButton>
           <CommandButton aria-pressed={preview} onClick={() => setPreview(!preview)}>구조 미리보기</CommandButton>
           <span role="status" aria-label="편집 상태" style={{ marginLeft: 'auto', color: 'var(--g7pb-muted)' }}>{props.readonly ? '읽기 전용' : message}</span>
@@ -196,6 +199,7 @@ function EditorSession(props: StructureEditorProps) {
             {focus && <Inspector key={focus.node.instance_id + ':' + JSON.stringify(focus.node)} node={focus.node} document={document}
               disabled={Boolean(props.readonly || focus.node.locked || focus.ancestors.some(node => node.locked))} apply={value => { bridge.execute(value); }} />}
           </aside>
+        </div>
         </div>
       </Puck>
     </CanvasContext.Provider>

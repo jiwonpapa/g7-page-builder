@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { devices, expect, test, type Page } from '@playwright/test';
 import { build, type Rollup } from 'vite';
 import react from '@vitejs/plugin-react';
 import { gzipSync } from 'node:zlib';
@@ -99,6 +99,11 @@ async function open(page: Page, source?: DocumentV3, readonly = false, compositi
 const read = (page: Page) => page.evaluate(() => window.v3Proof.current);
 const click = (page: Page, name: string) => page.getByRole('button', { name, exact: true }).click();
 const layer = (page: Page, id: string) => page.getByTestId('layer-' + id);
+test.describe(() => {
+// SPEC-09 is desktop authoring at all canvas widths. Do not mix a Linux
+// keyboard/platform with an iOS touch UA: Tiptap maps Ctrl+A to line start
+// in that hybrid context. Existing device-context regression tests stay below.
+test.use({ isMobile: false, hasTouch: false, userAgent: devices['Desktop Chrome'].userAgent });
 test('v3 unknown composition data edits in the same built bundle without registration', async ({ page }, info) => {
   // Created only after beforeAll builds the product. The product cannot know
   // this name, identity or nested layout, and is never rebuilt for this input.
@@ -136,7 +141,10 @@ test('v3 unknown composition data edits in the same built bundle without registr
     await target.locator('[contenteditable]').click();
     const editable = target.locator('.tiptap[contenteditable="true"]');
     await expect(editable).toBeVisible(); await editable.click();
-    await editable.press('ControlOrMeta+A'); await page.keyboard.insertText('새 구성의 정확한 문구 ' + width);
+    const previousText = await editable.textContent();
+    await editable.press('ControlOrMeta+A');
+    await expect.poll(() => editable.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe(previousText);
+    await page.keyboard.insertText('새 구성의 정확한 문구 ' + width);
     await expect.poll(async () => {
       const current = flatten((await read(page)).blocks).find(node => node.instance_id === text.instance_id);
       return current?.type === 'content.text' ? current.props.paragraphs.map(runs => runs.map(run => run.text).join('')).join('\n') : null;
@@ -159,6 +167,7 @@ test('v3 unknown composition data edits in the same built bundle without registr
   await expect(page.getByRole('button', { name: '구성 삽입', exact: true })).toBeDisabled();
   await insert(page, '제목');
   await expect.poll(async () => (await read(page)).blocks[0].type).toBe('content.heading');
+});
 });
 const basicCompositionKeys = ['hero.poster', 'hero.product', 'hero.backdrop', 'hero.editorial', 'hero.device',
   'hero.balanced', 'hero.screenshot', 'hero.overlap', 'hero.offset', 'card.plain', 'card.outlined', 'image-text.left', 'image-text.right'];

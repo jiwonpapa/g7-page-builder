@@ -1,0 +1,733 @@
+{
+  "cases": [
+    {
+      "name": "empty_host_query",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://?",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "empty_host_fragment",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://#",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "credentials",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://user:pass@example.com/a",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "bad_port",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com:65536/x",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "port_zero",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com:0/x",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "bom_space",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com/﻿",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "unicode_space",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://example.com/ ",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "percent_incomplete",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "/image%2",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "encoded_control",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "/image%0A.png",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "valid_encoded_space",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://cdn.example.com:65535/image%20a.webp",
+      "valid": true
+    },
+    {
+      "name": "bad_host_dash",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://-example.com/a",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "valid_punycode",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "https://xn--3e0b707e.example/a",
+      "valid": true
+    },
+    {
+      "name": "id_trailing_newline",
+      "path": [
+        "blocks",
+        0,
+        "instance_id"
+      ],
+      "value": "00000000-0000-4000-8000-000000000001\n",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "unknown_root",
+      "path": [
+        "vendor"
+      ],
+      "value": {},
+      "valid": false,
+      "error": "unknown_field"
+    },
+    {
+      "name": "raw_css",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "css"
+      ],
+      "value": "color:red",
+      "valid": false,
+      "error": "unknown_field"
+    },
+    {
+      "name": "unknown_prop",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "props",
+        "className"
+      ],
+      "value": "x",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "wrong_props",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "props"
+      ],
+      "value": {
+        "tag": "div"
+      },
+      "valid": false,
+      "error": "props_type"
+    },
+    {
+      "name": "duplicate_id",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "instance_id"
+      ],
+      "value": "00000000-0000-4000-8000-000000000001",
+      "valid": false,
+      "error": "duplicate_id"
+    },
+    {
+      "name": "uppercase_id",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "instance_id"
+      ],
+      "value": "ABCDEF00-0000-4000-8000-000000000002",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "leaf_children",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "slots"
+      ],
+      "value": {
+        "content": []
+      },
+      "valid": false,
+      "error": "leaf_slots"
+    },
+    {
+      "name": "missing_asset",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        1,
+        "props",
+        "asset_id"
+      ],
+      "value": "00000000-0000-4000-8000-000000000091",
+      "valid": false,
+      "error": "asset_reference"
+    },
+    {
+      "name": "duplicate_asset",
+      "path": [
+        "assets"
+      ],
+      "value": [
+        {
+          "asset_id": "00000000-0000-4000-8000-000000000090",
+          "url": "/storage/example.webp"
+        },
+        {
+          "asset_id": "00000000-0000-4000-8000-000000000090",
+          "url": "/storage/example.webp"
+        }
+      ],
+      "valid": false,
+      "error": "duplicate_asset"
+    },
+    {
+      "name": "token_cycle",
+      "path": [
+        "tokens",
+        "text"
+      ],
+      "value": {
+        "kind": "token",
+        "value": "primary"
+      },
+      "valid": false,
+      "error": "token_cycle"
+    },
+    {
+      "name": "javascript_asset",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "javascript:alert(1)",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "protocol_relative_asset",
+      "path": [
+        "assets",
+        0,
+        "url"
+      ],
+      "value": "//evil.example/x",
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "unsafe_link",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "props",
+        "runs",
+        0,
+        "link"
+      ],
+      "value": {
+        "url": "javascript:alert(1)",
+        "new_tab": false
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "grid_formula",
+      "path": [
+        "blocks",
+        0,
+        "style",
+        "columns"
+      ],
+      "value": [
+        "repeat(2,1fr)"
+      ],
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "negative_padding",
+      "path": [
+        "blocks",
+        0,
+        "style",
+        "padding_top"
+      ],
+      "value": {
+        "value": -1,
+        "unit": "px"
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "precision",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "width"
+      ],
+      "value": {
+        "value": 10.001,
+        "unit": "px"
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "oversize",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "width"
+      ],
+      "value": {
+        "value": 8192.01,
+        "unit": "px"
+      },
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "null_override",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "responsive",
+        "mobile",
+        "opacity"
+      ],
+      "value": null,
+      "valid": false,
+      "error": "shape"
+    },
+    {
+      "name": "unknown_breakpoint",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "responsive",
+        "desktop"
+      ],
+      "value": {},
+      "valid": false,
+      "error": "unknown_field"
+    },
+    {
+      "name": "absolute_root",
+      "path": [
+        "blocks",
+        0,
+        "style",
+        "position"
+      ],
+      "value": "absolute",
+      "valid": false,
+      "error": "position_parent"
+    },
+    {
+      "name": "responsive_parent",
+      "path": [
+        "blocks",
+        0,
+        "responsive",
+        "mobile",
+        "position"
+      ],
+      "value": "flow",
+      "valid": false,
+      "error": "position_parent"
+    },
+    {
+      "name": "flow_rotation",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "rotation"
+      ],
+      "value": 0,
+      "valid": false,
+      "error": "position"
+    },
+    {
+      "name": "gradient_order",
+      "path": [
+        "blocks",
+        0,
+        "style",
+        "background"
+      ],
+      "value": {
+        "kind": "linear",
+        "angle": 0,
+        "stops": [
+          {
+            "offset": 1,
+            "color": {
+              "kind": "hex",
+              "value": "#ffffff"
+            }
+          },
+          {
+            "offset": 0,
+            "color": {
+              "kind": "hex",
+              "value": "#000000"
+            }
+          }
+        ]
+      },
+      "valid": false,
+      "error": "gradient_order"
+    },
+    {
+      "name": "size_order",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style"
+      ],
+      "value": {
+        "min_width": {
+          "value": 200,
+          "unit": "px"
+        },
+        "max_width": {
+          "value": 100,
+          "unit": "px"
+        }
+      },
+      "valid": false,
+      "error": "size_order"
+    },
+    {
+      "name": "empty_array_style",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style"
+      ],
+      "value": [],
+      "valid": false,
+      "error": "shape"
+    },
+    {
+      "name": "fraction_block_version",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "block_version"
+      ],
+      "value": 1.1,
+      "valid": false,
+      "error": "value"
+    },
+    {
+      "name": "false_lock",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "locked"
+      ],
+      "value": false,
+      "valid": true
+    },
+    {
+      "name": "zero_hidden",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "responsive",
+        "mobile"
+      ],
+      "value": {
+        "hidden": false,
+        "opacity": 0
+      },
+      "valid": true
+    },
+    {
+      "name": "negative_margin",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "margin_left"
+      ],
+      "value": {
+        "value": -32,
+        "unit": "px"
+      },
+      "valid": true
+    },
+    {
+      "name": "max_length",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "width"
+      ],
+      "value": {
+        "value": 8192,
+        "unit": "px"
+      },
+      "valid": true
+    },
+    {
+      "name": "safe_link",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "props",
+        "runs",
+        0,
+        "link"
+      ],
+      "value": {
+        "url": "#details",
+        "new_tab": false
+      },
+      "valid": true
+    },
+    {
+      "name": "minmax_track",
+      "path": [
+        "blocks",
+        0,
+        "style",
+        "columns"
+      ],
+      "value": [
+        {
+          "min": "min-content",
+          "max": {
+            "fr": 1.5
+          }
+        },
+        {
+          "value": 50,
+          "unit": "%"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "token_color",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "color"
+      ],
+      "value": {
+        "kind": "token",
+        "value": "accent"
+      },
+      "valid": true
+    },
+    {
+      "name": "transparent_color",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "style",
+        "color"
+      ],
+      "value": {
+        "kind": "hex",
+        "value": "#11223300"
+      },
+      "valid": true
+    },
+    {
+      "name": "responsive_reset",
+      "path": [
+        "blocks",
+        0,
+        "slots",
+        "content",
+        0,
+        "responsive",
+        "mobile"
+      ],
+      "value": {},
+      "valid": true
+    }
+  ],
+  "breakpoints": [
+    {
+      "width": 360,
+      "value": "mobile"
+    },
+    {
+      "width": 639,
+      "value": "mobile"
+    },
+    {
+      "width": 640,
+      "value": "tablet"
+    },
+    {
+      "width": 768,
+      "value": "tablet"
+    },
+    {
+      "width": 1023,
+      "value": "tablet"
+    },
+    {
+      "width": 1024,
+      "value": "base"
+    },
+    {
+      "width": 1280,
+      "value": "base"
+    }
+  ]
+}

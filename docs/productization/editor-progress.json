@@ -420,15 +420,15 @@
       "id": "IP2",
       "phase": "foundation",
       "title": "정밀 문서와 스타일 계약",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "IP1"
       ],
       "acceptance_ids": [
         "IND-02"
       ],
-      "owner_task": null,
-      "implementation_commit": null,
+      "owner_task": "ip2-document-contract-20261012",
+      "implementation_commit": "e85bdf2f8af9a78c66289e0b3dc1ec9c022240d1",
       "integrated_commit": null,
       "evidence": [],
       "blocked_reason": null,

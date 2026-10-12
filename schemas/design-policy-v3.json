@@ -1,0 +1,77 @@
+{
+  "policy_version": "g7pb-design-policy/v3",
+  "schema_version": "g7-page-builder/v3",
+  "limits": {
+    "nodes": 500,
+    "depth": 16,
+    "utf8_bytes": 1048576,
+    "json_depth": 128
+  },
+  "breakpoints": {
+    "tablet": 640,
+    "desktop": 1024
+  },
+  "units": {
+    "px": "css-pixel",
+    "rem": "root-font-size",
+    "vw": "viewport-width-percent",
+    "vh": "viewport-height-percent",
+    "%": "property-containing-block-percent"
+  },
+  "defaults": {
+    "display": "block",
+    "position": "flow",
+    "hidden": false,
+    "opacity": 1
+  },
+  "performance": {
+    "nodes": [
+      100,
+      500
+    ],
+    "validation_ms": 1000
+  },
+  "node_props": {
+    "layout.section": [
+      "tag"
+    ],
+    "layout.container": [
+      "tag"
+    ],
+    "content.heading": [
+      "level",
+      "runs"
+    ],
+    "content.text": [
+      "paragraphs"
+    ],
+    "media.image": [
+      "asset_id",
+      "alt"
+    ],
+    "action.link": [
+      "label",
+      "link"
+    ]
+  },
+  "containers": [
+    "layout.section",
+    "layout.container"
+  ],
+  "migration": {
+    "source_schemas": [
+      "g7-page-builder/v1",
+      "g7-page-builder/v2"
+    ],
+    "source_max_bytes": 1048576,
+    "automatic": false,
+    "requires": [
+      "explicit_choice",
+      "source_revision",
+      "source_snapshot",
+      "supported_mapping",
+      "candidate_validation"
+    ],
+    "publishes": false
+  }
+}

@@ -134,4 +134,14 @@ final class DocumentV3CompilerTest extends TestCase
         $this->expectException(DocumentCompileException::class);
         (new HtmlCompiler($this->validator()))->compile($this->source($this->fixture()), 1, 'html', 'unsupported');
     }
+
+    public function test_generic_publication_never_resolves_an_unavailable_legacy_catalog(): void
+    {
+        $router = new DocumentCompilerRouter(static function () {
+            throw new \RuntimeException('Optional block pack unavailable');
+        }, new HtmlCompiler($this->validator()));
+        self::assertTrue($router->supports('html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION));
+        $source = $this->source($this->fixture());
+        self::assertStringContainsString('data-g7pb-v3-public', $router->compile($source, 1, 'html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION)->artifact);
+    }
 }

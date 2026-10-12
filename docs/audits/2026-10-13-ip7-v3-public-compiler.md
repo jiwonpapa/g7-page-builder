@@ -21,3 +21,5 @@ Chromium 비교는 공통 스타일 fixture, 네 가지 동작 구성, 숨김, �
 첫 비교에서 버튼의 CSS-wide inherit를 custom property 값으로 전달하면 무효화되는 문제를 확인해 최종 속성 fallback으로 보존했다. 두 번째 비교에서 소수 max-width가 CSS 정밀도 때문에 640px에 걸치는 문제를 확인해 정책의 정확한 열린 구간으로 변경했다. 보정 후 2개 시험과 모든 폭 비교가 통과했다. 테스트 기준과 허용 오차는 유지했다.
 
 서버 composition root binding, 실제 발행 API·UI, 활성 User Template sanitizer를 거친 최종 동작과 배포는 아직 증명하지 않았다. 이 기록으로 IP7/IP9/IP10을 완료 처리하지 않는다.
+
+최초 제출 `0c5f22bba21c8c9605c4e211b11932a99e830caf`는 보존한다. 서버 binding 조사 중 legacy compiler를 생성할 때 optional block registry도 초기화됨을 확인했다. 이를 v3의 선행조건으로 만들지 않도록 공식 replacement `ip7-v3-public-compiler-lazy-20261013`에서 legacy port의 지연 주입을 허용한다. v3 지원 확인·컴파일은 legacy resolver를 호출하지 않으며, 해당 resolver가 예외를 던지는 회귀 시험으로 확인한다.

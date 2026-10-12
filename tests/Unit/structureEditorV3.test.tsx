@@ -6,6 +6,7 @@ import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { cloneDocument, indexTree } from '../../resources/js/documents/v3/tree';
 import { createPrimitive } from '../../resources/js/documents/v3/primitives';
 import { NodeRenderer, StructurePreview } from '../../resources/js/editor/v3/NodeRenderer';
+import { documentPresentation } from '../../resources/js/documents/v3/presentation';
 import type { DraftPort } from '../../resources/js/editor-application/v3/session';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -13,7 +14,7 @@ globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} 
 Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
 Object.defineProperty(window, 'matchMedia', { configurable: true, value: () => ({ matches: false,
   addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }) });
-const { StructureEditor } = await import('../../resources/js/editor/v3/StructureEditor');
+const { StructureEditor, ContextActionBar } = await import('../../resources/js/editor/v3/StructureEditor');
 const { mountStructureEditor } = await import('../../resources/js/editor/v3/mount');
 const cleanup: Array<() => void> = [];
 afterEach(async () => { await act(async () => cleanup.splice(0).forEach(run => run())); });
@@ -36,11 +37,23 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('keeps portaled format actions from bubbling into the canvas deselection handler', async () => {
+    const host = hostElement(), target = hostElement(), root = createRoot(host);
+    cleanup.push(() => root.unmount());
+    const deselect = vi.fn(), apply = vi.fn();
+    await act(async () => root.render(<div onClick={deselect}>
+      <ContextActionBar target={target}><button onClick={apply}>부분 서식 적용</button></ContextActionBar>
+    </div>));
+    await act(async () => target.querySelector('button')!.click());
+    expect(apply).toHaveBeenCalledOnce();
+    expect(deselect).not.toHaveBeenCalled();
+    expect(target.querySelector('button')).not.toBeNull();
+  });
   it('keeps click and auxiliary link activation in the editing canvas but preserves preview navigation', async () => {
     const doc = source(), host = hostElement(), root = createRoot(host); cleanup.push(() => root.unmount());
     for (const editing of [false, true]) {
       await act(async () => root.render(<>{doc.blocks[0].slots.content!.map(node =>
-        <NodeRenderer key={node.instance_id} node={node} document={doc} editing={editing} />)}</>));
+        <NodeRenderer key={node.instance_id} node={node} document={doc} styles={documentPresentation(doc)} editing={editing} />)}</>));
       const links = [...host.querySelectorAll('a')];
       expect(links).toHaveLength(2);
       for (const link of links) for (const type of ['click', 'auxclick']) {

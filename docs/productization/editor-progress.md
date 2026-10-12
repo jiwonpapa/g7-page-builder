@@ -35,7 +35,7 @@
 | 기반과 계약 | IP1 · 편집 엔진과 정밀 조작 결합 검증 | 완료 | 없음 | ip1-engine-proof-20261012 | 구현 `e827bf10a1ec65279412b2d86967a749f4469ade`<br>통합 `a4b4fe8b55a22d8be96888b5f3b556d148d94108`<br>필수 증거 3/3<br>[IND-01/unit](<../audits/2026-10-12-ip1-engine-proof.md>) · [IND-01/browser](<../audits/2026-10-12-ip1-engine-proof.md>) · [IND-01/architecture](<../audits/2026-10-12-ip1-engine-proof.md>) |
 | 기반과 계약 | IP2 · 정밀 문서와 스타일 계약 | 완료 | IP1 | ip2-document-contract-20261012 | 구현 `e85bdf2f8af9a78c66289e0b3dc1ec9c022240d1`<br>통합 `257dc97c936fecf236482665633c69bea2b604d6`<br>필수 증거 3/3<br>[IND-02/contract](<../audits/2026-10-12-ip2-document-contract.md>) · [IND-02/unit](<../audits/2026-10-12-ip2-document-contract.md>) · [IND-02/compatibility](<../audits/2026-10-12-ip2-document-contract.md>) |
 | 세부 편집 | IP3 · 레이어와 재귀 구조 편집 | 완료 | IP2 | ip3-layer-ui-production-20261012 | 구현 `93f861ebe2920e91025dcf5bd7b20984bbcc5b09`<br>통합 `7dc48d130247571ed221717c751ee895b0326bef`<br>필수 증거 2/2<br>[IND-03/unit](<../audits/2026-10-12-ip3-structure-editing.md>) · [IND-03/browser](<../audits/2026-10-12-ip3-structure-editing.md>) |
-| 세부 편집 | IP4 · 정밀 Inspector와 자동 배치 | 진행 | IP3 | ip4-design-commands-20261012 | 미완료 |
+| 세부 편집 | IP4 · 정밀 Inspector와 자동 배치 | 진행 | IP3 | ip4-inspector-ui-20261012 | 미완료 |
 | 세부 편집 | IP5 · 핸들과 다중 선택 작업면 | 계획 | IP4 | 미배정 | 미완료 |
 | 세부 편집 | IP6 · 반응형 상세 편집 | 계획 | IP5 | 미배정 | 미완료 |
 | 전체 연결과 수용 | IP7 · 내장 구성 템플릿과 공통영역 | 계획 | IP6 | 미배정 | 미완료 |

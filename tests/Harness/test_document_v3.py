@@ -8,8 +8,10 @@ class DocumentV3ScopeTests(unittest.TestCase):
     def test_presentation_fixture_selects_its_exact_consumer_in_every_phase(self):
         fixture = "tests/Contract/document-v3-presentation.json"
         consumer = "tests/Unit/documentV3Presentation.test.ts"
-        self.assertEqual(CONTRACT_FIXTURE_CONSUMERS[fixture], (consumer,))
+        php_consumer = "tests/UnitPhp/DocumentV3PresentationTest.php"
+        self.assertEqual(CONTRACT_FIXTURE_CONSUMERS[fixture], (consumer, php_consumer))
         self.assertIn(fixture, contract_fixture_inputs(consumer))
+        self.assertIn(fixture, contract_fixture_inputs(php_consumer))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / fixture).parent.mkdir(parents=True)
@@ -21,6 +23,10 @@ class DocumentV3ScopeTests(unittest.TestCase):
                     self.assertTrue(any(consumer in reason for reason in plan.unresolved))
             (root / consumer).parent.mkdir(parents=True)
             (root / consumer).write_text("export {};")
+            missing_php = build_plan(root, [fixture])
+            self.assertTrue(any(php_consumer in reason for reason in missing_php.unresolved))
+            (root / php_consumer).parent.mkdir(parents=True)
+            (root / php_consumer).write_text("<?php")
             for phase in ("submission", "integration", "verification", "ci"):
                 with self.subTest(phase=phase):
                     plan = build_plan(root, [fixture], phase=phase)
@@ -28,6 +34,8 @@ class DocumentV3ScopeTests(unittest.TestCase):
                     self.assertFalse(plan.full)
                     gate = next(gate for gate in plan.gates if gate.name == "unit:" + consumer)
                     self.assertIn(fixture, gate.inputs)
+                    php_gate = next(gate for gate in plan.gates if php_consumer in gate.argv)
+                    self.assertIn(fixture, php_gate.inputs)
                     self.assertFalse(any(gate.name == "full-product" for gate in plan.gates))
             unknown = build_plan(root, ["tests/Contract/document-v3-unregistered.json"])
             self.assertTrue(any("Unclassified input" in reason for reason in unknown.unresolved))

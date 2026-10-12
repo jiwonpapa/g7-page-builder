@@ -115,10 +115,14 @@ EXTRACTED_PUBLIC_SCOPES = {
 class BrowserRequirementsTests(unittest.TestCase):
     def test_independent_v3_owners_require_their_actual_port_and_puck_scenarios(self):
         for path in ("resources/js/documents/v3/commands.ts", "resources/js/editor/v3/PuckBridge.tsx",
-                     "resources/js/editor-application/v3/session.ts"):
+                     "resources/js/editor-application/v3/session.ts",
+                     "src/Application/Compilation/V3/Presentation.php", "src/Application/Compilation/V3/DraftRenderer.php"):
             self.assertEqual(scenarios_for([path]), (V3_STRUCTURE,))
         self.assertEqual(V3_STRUCTURE.projects, ("desktop",))
-        self.assertEqual(len(V3_STRUCTURE.titles), 3)
+        self.assertEqual(len(V3_STRUCTURE.titles), 6)
+        self.assertIn("v3 editor preview and PHP draft output agree within one CSS pixel", V3_STRUCTURE.titles)
+        self.assertEqual(set(scenarios_for(["src/Application/Compilation/HtmlDocumentCompiler.php"])),
+                         {replace(PAGE, titles=tuple(sorted(PAGE.titles + NESTED.titles))), STRUCTURE_THEME})
         self.assertEqual(scenarios_for(["resources/js/documents/types.ts"]), (PAGE,))
         self.assertEqual(set(scenarios_for(["resources/js/editor/PuckEditorAdapter.tsx"])),
                          {PAGE, TEXT, STRUCTURE_THEME, DOCUMENT_BOUNDARY})

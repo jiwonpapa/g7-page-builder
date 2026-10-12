@@ -3,15 +3,29 @@ import fixture from '../Contract/document-v3.fixture.json';
 import { cloneDocument, indexTree } from '../../resources/js/documents/v3/tree';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { executeTreeCommand } from '../../resources/js/documents/v3/commands';
-import { documentToPuck, documentFromPuck, puckMoveCommand, assessPuckMove, sameDocument } from '../../resources/js/editor/v3/codec';
+import { documentToPuck, documentFromPuck, puckMoveCommand, assessPuckMove, assessPuckEdit, sameDocument } from '../../resources/js/editor/v3/codec';
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 function source() { return cloneDocument(validateDocumentV3(fixture)); }
 
 describe('v3 Puck codec isolates the vendor representation', () => {
+  it('allows escaped adapter overhead without raising the canonical document byte limit', () => {
+    const doc = source(), text = doc.blocks[0].slots.content![2];
+    if (text.type !== 'content.text') throw new Error('fixture');
+    text.props.paragraphs = Array.from({ length: 50 }, () => [{ text: '&'.repeat(10000) }]);
+    const data = documentToPuck(doc);
+    expect(new TextEncoder().encode(JSON.stringify(doc)).length).toBeLessThan(1048576);
+    expect(new TextEncoder().encode(JSON.stringify(data)).length).toBeGreaterThan(2 * 1048576);
+    expect(documentFromPuck(data)).toEqual(doc);
+    const vendorText = data.content[0].props.content[2].props.node;
+    if (vendorText.type !== 'content.text' || !('paragraphs' in vendorText.props)) throw new Error('fixture');
+    vendorText.props.paragraphs = Array.from({ length: 110 }, () => [{ text: '&'.repeat(10000) }]);
+    expect(() => documentFromPuck(data)).toThrow('byte_limit');
+  });
   it('round trips the full typed schema and does not alias the original or vendor state', () => {
     const doc = source(), data = documentToPuck(doc);
     const restored = documentFromPuck(data);
+    expect(data.content[0].props.content.map(item => item.type)).toEqual(['Heading', 'Node', 'Text', 'Link']);
     expect(restored).toEqual(doc);
     expect(restored).not.toBe(doc);
     expect(sameDocument(restored, doc)).toBe(true);
@@ -55,6 +69,20 @@ describe('v3 Puck codec isolates the vendor representation', () => {
 });
 
 describe('v3 Puck structure actions use canonical commands', () => {
+  it('accepts inline replace only as a canonical content command and rejects design or locked edits', () => {
+    const doc = source(), data = documentToPuck(doc);
+    const heading = data.content[0].props.content[0];
+    heading.props.body = '<p>새 입력</p>';
+    const action = { type: 'replace', destinationIndex: 0, destinationZone: id(1) + ':content', data: heading } as const;
+    const result = assessPuckEdit(doc, data, action);
+    expect(result.blocks[0].slots.content![0].props).toEqual({ level: 1, runs: [{ text: '새 입력' }] });
+    expect(result).not.toHaveProperty('body');
+    heading.props.node.style.opacity = 0.5;
+    expect(() => assessPuckEdit(doc, data, action)).toThrow('puck_unexpected_change');
+    delete heading.props.node.style.opacity;
+    doc.blocks[0].locked = true;
+    expect(() => assessPuckEdit(doc, data, action)).toThrow('locked');
+  });
   it('translates final reorder positions to pre-removal domain positions and accepts only that change', () => {
     const doc = source();
     const action = { type: 'reorder', sourceIndex: 0, destinationIndex: 3, destinationZone: id(1) + ':content' } as const;

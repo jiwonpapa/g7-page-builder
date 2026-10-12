@@ -3,7 +3,9 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { patchPuckHistory } from '../../vite.puck-history';
+import React, { act, useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { patchPuckHistory, patchPuckPosition, patchPuckRichTextSync } from '../../vite.puck-history';
 
 const require = createRequire(import.meta.url);
 const dist = dirname(require.resolve('@puckeditor/core'));
@@ -84,5 +86,80 @@ describe('pinned Puck history correction', () => {
     const cjs = readFileSync(join(dist, 'index.js'), 'utf8');
     expect(patchPuckHistory(cjs)).toContain('state, selectedItem, history: get().history');
     expect(() => patchPuckHistory(source + '\n')).toThrow('Unreviewed Puck');
+  });
+});
+
+describe('pinned Puck inline position correction', () => {
+  const esm = readFileSync(join(dist, 'chunk-55V3NZVF.mjs'), 'utf8');
+  function applyPosition(input: string, position: string) {
+    const statement = input.split('\n').find(line => line.includes('el.style.position = "relative";'));
+    if (!statement) throw new Error('Missing reviewed position statement');
+    const el = { style: { position } };
+    runInNewContext(statement, { el });
+    return el.style.position;
+  }
+  it('reproduces the upstream overwrite and preserves authored positions in ESM and CJS', () => {
+    expect(applyPosition(esm, 'absolute')).toBe('relative');
+    for (const input of [esm, readFileSync(join(dist, 'index.js'), 'utf8')]) {
+      const patched = patchPuckPosition(input);
+      for (const position of ['static', 'relative', 'absolute']) expect(applyPosition(patched, position)).toBe(position);
+      expect(applyPosition(patched, '')).toBe('relative');
+    }
+  });
+  it('refuses unreviewed bytes and repeated corrections', () => {
+    expect(() => patchPuckPosition(esm + '\n')).toThrow('Unreviewed Puck position');
+    expect(() => patchPuckPosition(patchPuckPosition(esm))).toThrow('Unreviewed Puck position');
+  });
+});
+
+describe('pinned Puck deferred rich-text reconciliation', () => {
+  const source = readFileSync(join(dist, 'Editor-44C53YAG.mjs'), 'utf8');
+  async function mounted(input: string) {
+    const start = input.indexOf('function useSyncedEditor({'), end = input.indexOf('\n  return editor;\n}', start) + '\n  return editor;\n}'.length;
+    let html = '<p>plain</p>', update = () => {};
+    const setContent = vi.fn((value: string, _options: { emitUpdate: boolean }) => { html = value; });
+    const editor = { getHTML: () => html, state: { selection: { from: 1, to: 3 } },
+      commands: { setContent, setTextSelection: vi.fn() }, setEditable() {}, on() {}, off() {} };
+    const store = { getState: () => ({ state: { ui: { field: { focus: 'body', metadata: { from: 1, to: 3 } } } } }) };
+    // Execute the installed hook with real React scheduling, isolating only Tiptap and debounce I/O.
+    const useEditor = (options: { onUpdate: (value: { editor: typeof editor }) => void }) => { update = () => options.onUpdate({ editor }); return editor; };
+    const useDebounce = () => [null, () => {}];
+    const hook = runInNewContext(input.slice(start, end) + '\nuseSyncedEditor', {
+      useEffect, useRef, useState, useEditor, useDebounce, useAppStoreApi: () => store, setTimeout, clearTimeout,
+      import_react40: { useEffect, useRef, useState }, import_react39: { useEditor }, import_use_debounce: { useDebounce },
+    }) as (props: { content: string; name: string; extensions: never[]; onChange: () => void }) => unknown;
+    const onChange = vi.fn(), host = document.createElement('div'), root = createRoot(host);
+    function Consumer({ content }: { content: string }) { hook({ content, name: 'body', extensions: [], onChange }); return null; }
+    const render = async (content: string) => { await act(async () => root.render(React.createElement(Consumer, { content }))); };
+    await render(html);
+    return { render, setContent, onChange, read: () => html,
+      async type(value: string) { html = value; await act(async () => update()); },
+      async dispose() { await act(async () => root.unmount()); },
+    };
+  }
+  it('reproduces dropped Undo during the pending typing window and retries without an edit', async () => {
+    vi.useFakeTimers();
+    for (const corrected of [false, true]) {
+      const view = await mounted(corrected ? patchPuckRichTextSync(source) : source);
+      try {
+        await view.type('<p>bold</p>'); await view.render('<p>bold</p>'); await view.render('<p>plain</p>');
+        expect(view.read()).toBe('<p>bold</p>');
+        await act(async () => vi.advanceTimersByTime(200));
+        expect(view.read()).toBe(corrected ? '<p>plain</p>' : '<p>bold</p>');
+        if (corrected) expect(view.setContent).toHaveBeenLastCalledWith('<p>plain</p>', { emitUpdate: false });
+        expect(view.onChange).not.toHaveBeenCalled();
+      } finally { await view.dispose(); }
+    }
+  });
+  it('keeps the latest edit window and cancels its timer on unmount', async () => {
+    vi.useFakeTimers(); const view = await mounted(patchPuckRichTextSync(source));
+    await view.type('<p>first</p>'); await act(async () => vi.advanceTimersByTime(100));
+    await view.type('<p>latest</p>'); await view.render('<p>latest</p>');
+    await act(async () => vi.advanceTimersByTime(100)); expect(view.read()).toBe('<p>latest</p>');
+    await view.dispose(); expect(vi.getTimerCount()).toBe(0);
+  });
+  it('supports pinned CJS and rejects unknown bytes', () => {
+    expect(patchPuckRichTextSync(readFileSync(join(dist, 'index.js'), 'utf8'))).toContain('[content, editor, appStoreApi, editEpoch]');
+    expect(() => patchPuckRichTextSync(source + '\n')).toThrow('Unreviewed Puck rich-text');
   });
 });

@@ -6,20 +6,17 @@ import { markHtmlAttributes, markKeys, runFromAttributes } from './richTextCodec
 import { InputButton } from './TypedInput';
 
 const name = 'v3Run';
-function focus(editor: Editor) {
-  // Tiptap chain.focus() schedules a frame; a later toolbar input must not lose focus to it.
-  editor.view.focus();
-  return editor.chain();
-}
 function toggle(editor: Editor, key: 'bold' | 'italic' | 'underline' | 'strike') {
-  return focus(editor).setMark(name, { [key]: editor.getAttributes(name)[key] !== true }).run();
+  return editor.chain().setMark(name, { [key]: editor.getAttributes(name)[key] !== true }).run();
 }
 function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }) {
   const [color, setColor] = useState('#112233'), [size, setSize] = useState('16'), [unit, setUnit] = useState('px');
   const [url, setUrl] = useState(''), [error, setError] = useState('');
   if (!editor) return null;
   const apply = (attributes: Partial<Run>) => {
-    try { runFromAttributes(attributes); focus(editor).setMark(name, attributes).run(); setError(''); }
+    // The public RichTextMenu preserves the editor selection. Keep focus in toolbar inputs;
+    // do not schedule a focus callback that can steal the next field's input across the iframe.
+    try { runFromAttributes(attributes); editor.chain().setMark(name, attributes).run(); setError(''); }
     catch (error) { setError(error instanceof Error ? error.message : '서식을 확인해 주세요.'); }
   };
   return <RichTextMenu><div className="g7pb-portal-surface" role="toolbar" aria-label="부분 서식" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', maxWidth: 420,
@@ -34,8 +31,8 @@ function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }
     <InputButton disabled={readOnly} onClick={() => apply({ font_size: { value: Number(size), unit: unit === 'rem' ? 'rem' : 'px' } })}>크기 적용</InputButton>
     <input aria-label="부분 링크" value={url} onChange={event => setUrl(event.target.value)} />
     <InputButton disabled={readOnly} onClick={() => apply({ link: { url, new_tab: false } })}>링크 적용</InputButton>
-    <InputButton disabled={readOnly} onClick={() => focus(editor).setMark(name, { link: null }).run()}>링크 제거</InputButton>
-    <InputButton disabled={readOnly} onClick={() => focus(editor).unsetMark(name).run()}>부분 초기화</InputButton>
+    <InputButton disabled={readOnly} onClick={() => editor.chain().setMark(name, { link: null }).run()}>링크 제거</InputButton>
+    <InputButton disabled={readOnly} onClick={() => editor.chain().unsetMark(name).run()}>부분 초기화</InputButton>
     {error && <span role="alert">{error}</span>}
   </div></RichTextMenu>;
 }

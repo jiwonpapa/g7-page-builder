@@ -5,7 +5,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Domain\Documents;
 /**
  * G7 구현과 독립적인 페이지 빌더 원본 문서입니다.
  */
-final readonly class PageBuilderDocument
+final readonly class PageBuilderDocument implements PageDocument
 {
     /** @var array<string, string|int|float|bool|null> */
     public array $tokens;
@@ -124,6 +124,11 @@ final readonly class PageBuilderDocument
                 ? PageSeoMetadata::fromArray($data['seo'])
                 : null,
         );
+    }
+
+    public function rootCount(): int
+    {
+        return count($this->blocks);
     }
 
     /** @return array<string, mixed> */

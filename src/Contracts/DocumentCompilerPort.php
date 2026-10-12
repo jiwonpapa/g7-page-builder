@@ -3,12 +3,12 @@
 namespace Modules\Jiwonpapa\PageBuilder\Contracts;
 
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
-use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
 
 interface DocumentCompilerPort
 {
     public function compile(
-        PageBuilderDocument $document,
+        PageDocument $document,
         int $sourceRevision,
         string $targetFormat,
         string $targetEngineVersion,

@@ -3,6 +3,8 @@
 namespace Modules\Jiwonpapa\PageBuilder\Tests\UnitPhp;
 
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyStructureDocument;
 use Modules\Jiwonpapa\PageBuilder\Application\PageBuilderService;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
@@ -10,12 +12,86 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\DocumentCompileException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\PublicationCommitException;
 use PHPUnit\Framework\TestCase;
 
 final class PageBuilderServiceTest extends TestCase
 {
+    public function test_empty_structure_creation_and_save_do_not_resolve_a_block_catalog_or_compiler(): void
+    {
+        $policy = json_decode(file_get_contents(__DIR__.'/../../schemas/design-policy-v3.json'), true, flags: JSON_THROW_ON_ERROR);
+        $validator = new Validator(json_decode(file_get_contents(__DIR__.'/../../schemas/page-builder-document-v3.schema.json'), true, flags: JSON_THROW_ON_ERROR), $policy);
+        $repository = $this->createMock(PageBuilderRepository::class);
+        $repository->expects(self::once())->method('create')
+            ->willReturnCallback(static fn (string $title, PageDocument $document): DocumentSnapshot => new DocumentSnapshot($document, $title, 1, 1));
+        $repository->expects(self::once())->method('saveDraft')
+            ->with(self::callback(static fn (PageDocument $document): bool => $document->schemaVersion === 'g7-page-builder/v3'), 1, 7)
+            ->willReturnCallback(static fn (PageDocument $document): DocumentSnapshot => new DocumentSnapshot($document, '정밀 문서', 2, 2));
+        $service = new PageBuilderService($repository,
+            static function (): DocumentCompilerPort {
+                throw new \LogicException('Storage resolved a compiler.');
+            },
+            new DocumentStorageCodec($validator), new EmptyStructureDocument($validator), $policy['default_tokens']);
+
+        $empty = $service->create(' 정밀 문서 ', 'empty-structure', 'ko', 7, 'none', 'g7-page-builder/v3');
+        self::assertSame('정밀 문서', $empty->title);
+        self::assertSame([], $empty->document->toArray()['blocks']);
+        self::assertSame([], $empty->document->toArray()['assets']);
+        self::assertSame(0, $empty->document->rootCount());
+        $json = json_encode($empty->document->toArray(), JSON_THROW_ON_ERROR);
+        $saved = $service->saveDraftJson($empty->document->documentId, $json, 1, 7);
+        self::assertSame(2, $saved->lockVersion);
+        self::assertEquals($empty->document->toArray(), $saved->document->toArray());
+    }
+
+    public function test_lazy_compiler_is_resolved_once_only_when_output_is_requested(): void
+    {
+        $snapshot = new DocumentSnapshot($this->document(), 'Fixture', 1, 1);
+        $repository = $this->createMock(PageBuilderRepository::class);
+        $repository->method('find')->willReturn($snapshot);
+        $repository->expects(self::exactly(2))->method('storePreviewToken');
+        $compiler = $this->createMock(DocumentCompilerPort::class);
+        $compiler->expects(self::exactly(2))->method('compile')->willReturn(new CompileResult(
+            '0.10.0', $snapshot->document->documentId, 1, 'html', HtmlDocumentCompiler::TARGET_ENGINE_VERSION,
+            '<section></section>', hash('sha256', '<section></section>')));
+        $resolutions = 0;
+        $service = new PageBuilderService($repository, static function () use (&$resolutions, $compiler): DocumentCompilerPort {
+            $resolutions++;
+
+            return $compiler;
+        });
+        $service->get($snapshot->document->documentId);
+        self::assertSame(0, $resolutions);
+        $service->preview($snapshot->document->documentId, 1, null);
+        $service->preview($snapshot->document->documentId, 1, null);
+        self::assertSame(1, $resolutions);
+    }
+
+    public function test_unknown_new_document_version_and_missing_structure_configuration_fail_before_persistence(): void
+    {
+        $repository = $this->createMock(PageBuilderRepository::class);
+        $repository->expects(self::never())->method('create');
+        $repository->expects(self::never())->method('saveDraft');
+        $service = new PageBuilderService($repository, $this->createStub(DocumentCompilerPort::class));
+        try {
+            $service->create('Future', 'future', 'ko', null, 'none', 'g7-page-builder/v4');
+            self::fail('Unsupported version was created.');
+        } catch (\InvalidArgumentException $error) {
+            self::assertStringContainsString('schema', $error->getMessage());
+        }
+        try {
+            $service->create('Structure', 'structure', 'ko', null, 'none', 'g7-page-builder/v3');
+            self::fail('Missing empty document factory was ignored.');
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('not configured', $error->getMessage());
+        }
+        $this->expectException(\LogicException::class);
+        $service->saveDraftJson($this->document()->documentId, '{}', 1, null);
+    }
+
     public function test_archived_document_cannot_compile_or_prepare_a_publication(): void
     {
         $snapshot = new DocumentSnapshot($this->document(), 'Fixture', 2, 1, archivedAt: new \DateTimeImmutable);

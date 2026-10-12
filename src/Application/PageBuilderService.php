@@ -3,11 +3,14 @@
 namespace Modules\Jiwonpapa\PageBuilder\Application;
 
 use Modules\Jiwonpapa\PageBuilder\Application\Compilation\HtmlDocumentCompiler;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\EmptyStructureDocument;
 use Modules\Jiwonpapa\PageBuilder\Contracts\DocumentCompilerPort;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\DocumentNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
@@ -19,9 +22,17 @@ use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
 
 final class PageBuilderService
 {
+    private ?DocumentCompilerPort $resolvedCompiler = null;
+
+    /** @param DocumentCompilerPort|\Closure(): DocumentCompilerPort $compiler
+     * @param  array<string, array{kind: string, value: string}>  $structureTokens
+     */
     public function __construct(
         private readonly PageBuilderRepository $repository,
-        private readonly DocumentCompilerPort $compiler,
+        private readonly DocumentCompilerPort|\Closure $compiler,
+        private readonly ?DocumentStorageCodec $documents = null,
+        private readonly ?EmptyStructureDocument $structures = null,
+        private readonly array $structureTokens = [],
     ) {}
 
     public function create(
@@ -30,11 +41,22 @@ final class PageBuilderService
         string $locale,
         ?int $actorId,
         string $shellMode = 'template',
+        string $schemaVersion = 'g7-page-builder/v1',
     ): DocumentSnapshot {
         $title = trim($title);
 
         if ($title === '') {
             throw new \InvalidArgumentException('Page title must not be empty.');
+        }
+
+        if ($schemaVersion === 'g7-page-builder/v3') {
+            $document = ($this->structures ?? throw new \LogicException('Structure document creation is not configured.'))
+                ->create($this->uuidV4(), $slug, $locale, $this->structureTokens, $shellMode);
+
+            return $this->repository->create($title, $document, $actorId);
+        }
+        if ($schemaVersion !== 'g7-page-builder/v1') {
+            throw new \InvalidArgumentException('Requested new document schema is not supported.');
         }
 
         $document = new PageBuilderDocument(
@@ -83,6 +105,12 @@ final class PageBuilderService
             throw new LockConflictException($source->lockVersion);
         }
 
+        if (! $source->document instanceof PageBuilderDocument) {
+            $copy = $this->documentCodec()->withMetadata($source->document, $this->uuidV4(), $slug, $source->document->locale, $source->document->shellMode, $source->document->seo);
+
+            return $this->repository->create($title, $copy, $actorId);
+        }
+
         $copy = new PageBuilderDocument(
             documentId: $this->uuidV4(),
             slug: $slug,
@@ -122,7 +150,7 @@ final class PageBuilderService
         );
 
         // 외부 Page Kit은 저장 전에 현재 compiler와 활성 Block Registry를 반드시 통과합니다.
-        $this->compiler->compile(
+        $this->compiler()->compile(
             $document,
             1,
             'html',
@@ -176,6 +204,11 @@ final class PageBuilderService
         $document = PageBuilderDocument::fromArray($payload);
 
         return $this->repository->saveDraft($document, $expectedLockVersion, $actorId);
+    }
+
+    public function saveDraftJson(string $documentId, string $json, int $expectedLockVersion, ?int $actorId): DocumentSnapshot
+    {
+        return $this->repository->saveDraft($this->documentCodec()->decodeDraft($json, $documentId), $expectedLockVersion, $actorId);
     }
 
     /** @param array<string, mixed>|null $seo */
@@ -246,7 +279,7 @@ final class PageBuilderService
             return null;
         }
 
-        $result = $this->compiler->compile(
+        $result = $this->compiler()->compile(
             $source->document,
             $source->revision,
             'html',
@@ -278,7 +311,7 @@ final class PageBuilderService
             throw new PublicationCommitException('An archived page must be restored before publication.');
         }
 
-        $result = $this->compiler->compile(
+        $result = $this->compiler()->compile(
             $snapshot->document,
             $snapshot->revision,
             'html',
@@ -402,10 +435,10 @@ final class PageBuilderService
     private function createPreviewTicket(
         string $documentId,
         int $revision,
-        PageBuilderDocument $document,
+        PageDocument $document,
         ?int $actorId,
     ): PreviewTicket {
-        $this->compiler->compile(
+        $this->compiler()->compile(
             $document,
             $revision,
             'html',
@@ -424,5 +457,15 @@ final class PageBuilderService
         );
 
         return new PreviewTicket($token, $expiresAt);
+    }
+
+    private function documentCodec(): DocumentStorageCodec
+    {
+        return $this->documents ?? throw new \LogicException('The structure document codec is not configured.');
+    }
+
+    private function compiler(): DocumentCompilerPort
+    {
+        return $this->resolvedCompiler ??= ($this->compiler instanceof \Closure ? ($this->compiler)() : $this->compiler);
     }
 }

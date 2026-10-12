@@ -5,14 +5,14 @@ namespace Modules\Jiwonpapa\PageBuilder\Contracts;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
-use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\PreviewSource;
 use Modules\Jiwonpapa\PageBuilder\Domain\Publishing\RenderedPage;
 
 interface PageBuilderRepository
 {
-    public function create(string $title, PageBuilderDocument $document, ?int $actorId): DocumentSnapshot;
+    public function create(string $title, PageDocument $document, ?int $actorId): DocumentSnapshot;
 
     /**
      * @return array{items: list<DocumentSnapshot>, total: int, page: int, per_page: int}
@@ -34,7 +34,7 @@ interface PageBuilderRepository
     ): DocumentSnapshot;
 
     public function saveDraft(
-        PageBuilderDocument $document,
+        PageDocument $document,
         int $expectedLockVersion,
         ?int $actorId,
     ): DocumentSnapshot;

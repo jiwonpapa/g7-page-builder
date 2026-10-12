@@ -2,6 +2,8 @@
 
 namespace Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3;
 
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use stdClass;
 
 /**
@@ -9,7 +11,7 @@ use stdClass;
  * The validator is supplied by composition; this value performs no I/O.
  * Keep JSON object/list distinctions through persistence and HTTP adapters.
  */
-final readonly class ValidatedDocument
+final readonly class ValidatedDocument implements PageDocument
 {
     private string $json;
 
@@ -21,6 +23,12 @@ final readonly class ValidatedDocument
 
     public string $shellMode;
 
+    public string $schemaVersion;
+
+    public ?PageSeoMetadata $seo;
+
+    private int $rootNodes;
+
     private function __construct(stdClass $document)
     {
         $this->json = json_encode($document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
@@ -28,6 +36,9 @@ final readonly class ValidatedDocument
         $this->slug = $document->slug;
         $this->locale = $document->locale;
         $this->shellMode = $document->shell_mode;
+        $this->schemaVersion = $document->schema_version;
+        $this->seo = isset($document->seo) ? PageSeoMetadata::fromArray(get_object_vars($document->seo)) : null;
+        $this->rootNodes = count($document->blocks);
     }
 
     public static function fromJson(string $json, Validator $validator): self
@@ -38,6 +49,11 @@ final readonly class ValidatedDocument
     public function toJson(): string
     {
         return $this->json;
+    }
+
+    public function rootCount(): int
+    {
+        return $this->rootNodes;
     }
 
     /**

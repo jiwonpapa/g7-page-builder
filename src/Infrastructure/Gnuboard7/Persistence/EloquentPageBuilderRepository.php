@@ -4,11 +4,13 @@ namespace Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Contracts\PageBuilderRepository;
 use Modules\Jiwonpapa\PageBuilder\Domain\Compilation\CompileResult;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentRevision;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\DocumentSnapshot;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\DocumentNotFoundException;
 use Modules\Jiwonpapa\PageBuilder\Domain\Persistence\LockConflictException;
@@ -24,7 +26,9 @@ use Modules\Jiwonpapa\PageBuilder\Infrastructure\Gnuboard7\Persistence\Models\Re
 
 final class EloquentPageBuilderRepository implements PageBuilderRepository
 {
-    public function create(string $title, PageBuilderDocument $document, ?int $actorId): DocumentSnapshot
+    public function __construct(private readonly ?DocumentStorageCodec $documents = null) {}
+
+    public function create(string $title, PageDocument $document, ?int $actorId): DocumentSnapshot
     {
         return DB::transaction(function () use ($title, $document, $actorId): DocumentSnapshot {
             if (DocumentRecord::query()->where('slug', $document->slug)->exists()) {
@@ -148,7 +152,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
     }
 
     public function saveDraft(
-        PageBuilderDocument $document,
+        PageDocument $document,
         int $expectedLockVersion,
         ?int $actorId,
     ): DocumentSnapshot {
@@ -157,15 +161,16 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             $this->assertLockVersion($record, $expectedLockVersion);
             $this->assertSlugAvailable($document->slug, $document->documentId);
 
+            $current = $this->loadDocument($record);
+            if (($current->schemaVersion === 'g7-page-builder/v3') !== ($document->schemaVersion === 'g7-page-builder/v3')) {
+                throw new \InvalidArgumentException('Changing document generation requires an explicit migration or revision restore.');
+            }
+
             // The visual editor deliberately does not own SEO fields. Preserve
             // metadata configured in the manager when an editor round-trip omits it.
             if ($document->seo === null) {
-                $current = $this->loadDocument($record);
                 if ($current->seo instanceof PageSeoMetadata) {
-                    $document = PageBuilderDocument::fromArray([
-                        ...$document->toArray(),
-                        'seo' => $current->seo->toArray(),
-                    ]);
+                    $document = $this->withMetadata($document, $document->slug, $document->locale, $document->shellMode, $current->seo);
                 }
             }
 
@@ -203,17 +208,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
             $this->assertLockVersion($record, $expectedLockVersion);
             $this->assertSlugAvailable($slug, $documentId);
             $current = $this->loadDocument($record);
-            $next = new PageBuilderDocument(
-                documentId: $current->documentId,
-                slug: $slug,
-                mode: 'canvas',
-                locale: $locale,
-                tokens: $current->tokens,
-                blocks: $current->blocks,
-                schemaVersion: $current->schemaVersion,
-                shellMode: $shellMode ?? $current->shellMode,
-                seo: $seo ?? $current->seo,
-            );
+            $next = $this->withMetadata($current, $slug, $locale, $shellMode ?? $current->shellMode, $seo ?? $current->seo);
             $nextRevision = $record->current_revision + 1;
             $this->insertRevision($next, $title, $nextRevision, $actorId);
 
@@ -658,7 +653,7 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         );
     }
 
-    private function loadDocument(DocumentRecord $record): PageBuilderDocument
+    private function loadDocument(DocumentRecord $record): PageDocument
     {
         /** @var RevisionRecord|null $revision */
         $revision = RevisionRecord::query()
@@ -714,27 +709,34 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
     }
 
     private function insertRevision(
-        PageBuilderDocument $document,
+        PageDocument $document,
         string $title,
         int $revision,
         ?int $actorId,
     ): void {
         // A recovered historical document is readable, but is never a write exemption.
-        PageBuilderDocument::fromArray($document->toArray());
+        $json = $this->documents?->encodeRevision($document);
+        if ($json === null) {
+            PageBuilderDocument::fromArray($document->toArray());
+            $json = $this->encodeJson($document->toArray());
+        }
         RevisionRecord::query()->create([
             'id' => $this->uuidV4(),
             'document_id' => $document->documentId,
             'revision' => $revision,
             'schema_version' => $document->schemaVersion,
             'title' => $title,
-            'document_json' => $this->encodeJson($document->toArray()),
+            'document_json' => $json,
             'author_id' => $actorId,
             'created_at' => new \DateTimeImmutable,
         ]);
     }
 
-    private function decodeDocument(string $json): PageBuilderDocument
+    private function decodeDocument(string $json): PageDocument
     {
+        if ($this->documents !== null) {
+            return $this->documents->decodeStored($json);
+        }
         $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
         if (! is_array($data)) {
@@ -742,6 +744,18 @@ final class EloquentPageBuilderRepository implements PageBuilderRepository
         }
 
         return PageBuilderDocument::fromStoredArray($data);
+    }
+
+    private function withMetadata(PageDocument $source, string $slug, string $locale, string $shellMode, ?PageSeoMetadata $seo): PageDocument
+    {
+        if ($this->documents !== null) {
+            return $this->documents->withMetadata($source, $source->documentId, $slug, $locale, $shellMode, $seo);
+        }
+        if (! $source instanceof PageBuilderDocument) {
+            throw new \LogicException('The structure document codec is not configured.');
+        }
+
+        return new PageBuilderDocument($source->documentId, $slug, 'canvas', $locale, $source->tokens, $source->blocks, $source->schemaVersion, $shellMode, $seo);
     }
 
     private function assertPublishable(DocumentRecord $record): void

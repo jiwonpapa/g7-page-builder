@@ -4,6 +4,7 @@ namespace Modules\Jiwonpapa\PageBuilder\Tests\UnitPhp;
 
 use Modules\Jiwonpapa\PageBuilder\Application\Documents\DocumentStorageCodec;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageBuilderDocument;
+use Modules\Jiwonpapa\PageBuilder\Domain\Documents\PageSeoMetadata;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\ValidatedDocument;
 use Modules\Jiwonpapa\PageBuilder\Domain\Documents\V3\Validator;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -78,6 +79,44 @@ final class DocumentStorageCodecTest extends TestCase
             $source->blocks[0]->name = '서버가 모르는 새 구성 '.$kind;
             $draft = $codec->decodeDraft(json_encode($source, JSON_THROW_ON_ERROR), $source->document_id);
             self::assertEquals($source, json_decode($codec->encodeRevision($draft), flags: JSON_THROW_ON_ERROR));
+        }
+    }
+
+    #[DataProvider('identities')]
+    public function test_metadata_changes_preserve_the_original_body_and_version(string $fixture): void
+    {
+        $codec = $this->codec();
+        $original = $codec->decodeStored($this->fixture($fixture));
+        $before = $codec->encodeRevision($original);
+        $seo = new PageSeoMetadata('검색 제목', '설명', '/storage/cover.webp', 'noindex');
+        $changed = $codec->withMetadata($original, '00000000-0000-4000-8000-000000000777', 'renamed', 'en', 'builder', $seo);
+        self::assertSame($original->schemaVersion, $changed->schemaVersion);
+        self::assertSame('00000000-0000-4000-8000-000000000777', $changed->documentId);
+        self::assertSame('renamed', $changed->slug);
+        self::assertSame('en', $changed->locale);
+        self::assertSame('builder', $changed->shellMode);
+        self::assertSame($seo->toArray(), $changed->seo->toArray());
+        foreach (['blocks', 'tokens', 'assets'] as $key) {
+            if (array_key_exists($key, $original->toArray())) {
+                self::assertEquals($original->toArray()[$key], $changed->toArray()[$key]);
+            }
+        }
+        self::assertSame($before, $codec->encodeRevision($original));
+        $retained = $codec->withMetadata($changed, $changed->documentId, 'again', 'ko', 'none', null);
+        self::assertSame($seo->toArray(), $retained->seo->toArray());
+    }
+
+    #[DataProvider('identities')]
+    public function test_invalid_metadata_does_not_mutate_the_source(string $fixture): void
+    {
+        $codec = $this->codec();
+        $original = $codec->decodeStored($this->fixture($fixture));
+        $before = $codec->encodeRevision($original);
+        try {
+            $codec->withMetadata($original, $original->documentId, 'bad/slug', 'ko', 'none', null);
+            self::fail('Invalid metadata was accepted.');
+        } catch (\InvalidArgumentException) {
+            self::assertSame($before, $codec->encodeRevision($original));
         }
     }
 

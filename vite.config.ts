@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { puckHistoryCorrection } from './vite.puck-history';
 import { bundleInventory } from './vite.bundle-inventory';
+import { localInterFonts } from './vite.inter-fonts.js';
 
 function jsonObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -79,7 +80,7 @@ export function builtinCatalogLiterals(): Plugin {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [puckHistoryCorrection(), react(), builtinCatalogLiterals(), bundleInventory('editor')],
+  plugins: [puckHistoryCorrection(), react(), builtinCatalogLiterals(), bundleInventory('editor'), localInterFonts()],
   define: command === 'build'
     ? {
         'process.env.NODE_ENV': JSON.stringify('production'),

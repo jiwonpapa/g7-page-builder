@@ -222,12 +222,14 @@ test('v3 canvas selection and native Puck drag use stable IDs and one reversible
   await expect(layer(page, heading.instance_id)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('textbox', { name: '레이어 이름' })).toHaveValue('제목');
   const from = await headingButton.boundingBox();
-  const to = await frame.getByRole('button', { name: '새 본문', exact: true }).boundingBox();
-  if (!from || !to) throw new Error('Missing Puck draggable');
+  if (!from) throw new Error('Missing Puck draggable');
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 2 + 15, from.y + from.height / 2 + 15, { steps: 5 });
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height - 2, { steps: 20 });
+  // Activation can shift the live target; measure after activation instead of dropping on its old neighbor.
+  const to = await frame.locator('[data-v3-node="' + text.instance_id + '"]').boundingBox();
+  if (!to) throw new Error('Missing live drop target');
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 20 });
   await page.mouse.up();
   await expect.poll(async () => (await read(page)).blocks.map(node => node.instance_id)).toEqual([text.instance_id, heading.instance_id, before.blocks[2].instance_id]);
   await page.keyboard.press('ControlOrMeta+z');
@@ -329,7 +331,7 @@ test('v3 precision Inspector and typed auto layout preserve one Undo and canonic
   await page.screenshot({ path: info.outputPath('v3-precision-inspector.png'), fullPage: true });
 });
 
-test('v3 canvas text and partial formats share Puck history and preserve readonly input', async ({ page }, info) => {
+test('v3 canvas text and partial formats share Puck history and preserve readonly input', async ({ page, context }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await open(page); await insert(page, '본문');
   await click(page, '본문 입력');
@@ -342,7 +344,7 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('한글 정밀 편집');
   const typed = await read(page);
   await input.press('ControlOrMeta+a');
-  await page.getByRole('toolbar', { name: '부분 서식' }).getByRole('button', { name: '굵게', exact: true }).click();
+  await frame.getByRole('toolbar', { name: '부분 서식' }).getByRole('button', { name: '굵게', exact: true }).click();
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"bold":true');
   const bold = await read(page);
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(typed);
@@ -351,10 +353,14 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect.poll(async () => {
     const current = (await read(page)).blocks[0]; return current.type === 'content.text' ? current.props.paragraphs.length : 0;
   }).toBe(2);
-  // Browser composition events exercise ownership; this does not claim OS IME automation.
-  await input.dispatchEvent('compositionstart', { data: '' });
-  await input.dispatchEvent('compositionupdate', { data: '가' });
-  await input.dispatchEvent('compositionend', { data: '가' });
+  // Chromium composition protocol exercises IME ownership, not a physical OS keyboard.
+  const cdp = await context.newCDPSession(page);
+  try {
+    for (const text of ['ㅎ', '하', '한']) await cdp.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
+    await cdp.send('Input.insertText', { text: '한' });
+    await page.keyboard.insertText('글 조합');
+  } finally { await cdp.detach(); }
+  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('한글 조합');
   await input.press('End');
   await input.evaluate(element => {
     const transfer = new DataTransfer(); transfer.setData('text/plain', ' 붙여넣기');

@@ -17,7 +17,7 @@ function Menu({ editor, readOnly }: { editor: Editor | null; readOnly: boolean }
     try { runFromAttributes(attributes); editor.chain().focus().setMark(name, attributes).run(); setError(''); }
     catch (error) { setError(error instanceof Error ? error.message : '서식을 확인해 주세요.'); }
   };
-  return <RichTextMenu><div className="g7pb-root" role="toolbar" aria-label="부분 서식" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', maxWidth: 420,
+  return <RichTextMenu><div className="g7pb-portal-surface" role="toolbar" aria-label="부분 서식" style={{ display: 'flex', gap: 5, flexWrap: 'wrap', maxWidth: 420,
     padding: 8, background: 'var(--g7pb-surface-strong)', color: 'var(--g7pb-text)', border: '1px solid var(--g7pb-border)' }}>
     {(['bold', 'italic', 'underline', 'strike'] as const).map((key, index) => <InputButton key={key} disabled={readOnly}
       aria-pressed={editor.getAttributes(name)[key] === true} onMouseDown={event => event.preventDefault()}

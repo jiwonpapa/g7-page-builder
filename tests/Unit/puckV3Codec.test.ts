@@ -12,6 +12,7 @@ describe('v3 Puck codec isolates the vendor representation', () => {
   it('round trips the full typed schema and does not alias the original or vendor state', () => {
     const doc = source(), data = documentToPuck(doc);
     const restored = documentFromPuck(data);
+    expect(data.content[0].props.content.map(item => item.type)).toEqual(['Heading', 'Node', 'Text', 'Link']);
     expect(restored).toEqual(doc);
     expect(restored).not.toBe(doc);
     expect(sameDocument(restored, doc)).toBe(true);

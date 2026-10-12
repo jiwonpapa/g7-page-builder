@@ -8,7 +8,9 @@ import { executeDocumentCommand } from '../../documents/v3/designCommands';
 import { propsFromHtml, textToHtml } from './richTextCodec';
 
 export interface NodeProps { node: Omit<Node, 'slots' | 'instance_id'>; content: Slot; slotPresent: boolean; body: RichText }
-export type V3Components = { Node: NodeProps };
+export type V3Components = Record<'Node' | 'Heading' | 'Text' | 'Link', NodeProps>;
+const componentType = (type: Node['type']): keyof V3Components => type === 'content.heading' ? 'Heading'
+  : type === 'content.text' ? 'Text' : type === 'action.link' ? 'Link' : 'Node';
 export type V3Root = { metadata: Omit<DocumentV3, 'blocks'>; title?: string };
 export type V3Data = Data<V3Components, V3Root>;
 
@@ -16,7 +18,7 @@ export function documentToPuck(source: DocumentV3): V3Data {
   const document = cloneDocument(validateDocumentV3(source));
   const { blocks, ...metadata } = document;
   function encode(nodes: Node[]): Content<V3Components> {
-    return nodes.map(({ instance_id, slots, ...node }) => ({ type: 'Node', props: {
+    return nodes.map(({ instance_id, slots, ...node }) => ({ type: componentType(node.type), props: {
       id: instance_id, node, body: textToHtml({ ...node, instance_id, slots } as Node, document),
       slotPresent: Object.hasOwn(slots, 'content'), content: encode(slots.content ?? []),
     } }));
@@ -41,16 +43,18 @@ export function documentFromPuck(value: unknown): DocumentV3 {
   const metadata = object(props.metadata);
   if (Object.hasOwn(metadata, 'blocks')) reject('puck_duplicate_source', '$');
   const bodies = new Map<string, string>();
+  const types = new Map<string, unknown>();
   function decode(value: unknown, depth: number): unknown[] {
     if (!Array.isArray(value) || depth > designPolicyV3.limits.depth && value.length) reject('puck_content', '$');
     return value.map(item => {
       const entry = object(item);
       keys(entry, ['type', 'props', 'readOnly']);
-      if (entry.type !== 'Node') reject('puck_type', '$');
+      if (!['Node', 'Heading', 'Text', 'Link'].includes(String(entry.type))) reject('puck_type', '$');
       const properties = object(entry.props);
       keys(properties, ['id', 'node', 'content', 'slotPresent', 'body']);
       if (typeof properties.id !== 'string' || typeof properties.body !== 'string') reject('puck_body', '$');
       bodies.set(properties.id, properties.body);
+      types.set(properties.id, entry.type);
       const node = object(properties.node);
       if (Object.hasOwn(node, 'slots') || Object.hasOwn(node, 'instance_id')) reject('puck_duplicate_source', '$');
       if (typeof properties.slotPresent !== 'boolean') reject('puck_slot', '$');
@@ -61,6 +65,7 @@ export function documentFromPuck(value: unknown): DocumentV3 {
   }
   const document = cloneDocument(validateDocumentV3({ ...metadata, blocks: decode(data.content, 1) }));
   for (const { node } of indexTree(document).values()) {
+    if (types.get(node.instance_id) !== componentType(node.type)) reject('puck_type', node.instance_id);
     const body = bodies.get(node.instance_id)!;
     if (body !== textToHtml(node, document)) Object.assign(node, { props: propsFromHtml(node, body) });
   }

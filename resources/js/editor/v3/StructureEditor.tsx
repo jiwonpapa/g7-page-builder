@@ -1,5 +1,5 @@
 import React, { createContext, forwardRef, useContext, useMemo, useRef, useState } from 'react';
-import { Puck, type Overrides } from '@puckeditor/core';
+import { Puck, type Overrides, type ComponentConfig, type Field } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { validateDocumentV3 } from '../../documents/v3/validate';
 import { indexTree, type Location } from '../../documents/v3/tree';
@@ -7,7 +7,7 @@ import { createPrimitive, primitiveLabels } from '../../documents/v3/primitives'
 import type { TreeClipboard } from '../../documents/v3/clipboard';
 import type { TreeCommand } from '../../documents/v3/commands';
 import type { DraftPort } from '../../editor-application/v3/session';
-import { documentToPuck } from './codec';
+import { documentToPuck, type NodeProps } from './codec';
 import { BridgeObserver, createPuckBridge, FrameHistoryBoundary, useV3Puck, type PuckBridge, type V3Config } from './PuckBridge';
 import { LayerTree } from './LayerTree';
 import { NodeRenderer, StructurePreview } from './NodeRenderer';
@@ -87,25 +87,28 @@ function EditorSession(props: StructureEditorProps) {
   const tree = useMemo(() => indexTree(document), [document]);
   const styles = useMemo(() => documentPresentation(document), [document]);
   const focus = selected.length === 1 ? tree.get(selected[0]) : undefined;
-  const config = useMemo<V3Config>(() => ({
-    components: { Node: {
-      label: '요소', fields: { content: { type: 'slot' }, body: richTextField(props.document, false),
+  const config = useMemo<V3Config>(() => {
+    // Canvas transforms consume static component fields, not selected-panel resolveFields.
+    const component = (body: Field): ComponentConfig<NodeProps> => ({
+      label: '요소', fields: { content: { type: 'slot' }, body,
         node: { type: 'custom', render: () => <></> }, slotPresent: { type: 'custom', render: () => <></> } },
-      resolveFields: (data, { fields }) => ({ ...fields, body: data.props.node.type === 'action.link'
-        ? { type: 'text', contentEditable: true, visible: false }
-        : data.props.node.type.startsWith('content.') ? richTextField(props.document, data.props.node.type === 'content.heading')
-          : { type: 'custom', render: () => <></> } }),
       permissions: { duplicate: false, delete: false, insert: false },
       resolvePermissions: data => {
         const item = indexTree(bridge.read()).get(data.props.id);
         const editable = !live.current.readonly && Boolean(item) && !item?.node.locked && !item?.ancestors.some(node => node.locked);
-        return { drag: editable && !textEditing, edit: editable && textEditing };
+        return { drag: editable, edit: editable && textEditing };
       },
       render: ({ id, body, content: Content }) => <CanvasNode id={id} body={body} Content={Content} />,
-    } },
+    });
+    return { components: {
+      Node: component({ type: 'custom', render: () => <></> }),
+      Heading: component(richTextField(props.document, true)), Text: component(richTextField(props.document, false)),
+      Link: component({ type: 'text', contentEditable: true, visible: false }),
+    },
     root: { fields: { metadata: { type: 'custom', render: () => <></> } }, render: ({ children }) => <div data-v3-surface style={reactStyle(DOCUMENT_SURFACE)}>
       <style>{'[data-v3-rich] p{margin:0;min-height:1em}'}</style>{children}</div> },
-  }), [bridge, textEditing]);
+    };
+  }, [bridge, textEditing]);
   const overrides = useMemo<Partial<Overrides<V3Config>>>(() => ({
     iframe: ({ children, document: frameDocument }) => <>{children}{frameDocument && <FrameHistoryBoundary frameDocument={frameDocument} bridge={bridge} />}</>,
   }), [bridge]);
@@ -145,7 +148,7 @@ function EditorSession(props: StructureEditorProps) {
     <CanvasContext.Provider value={{ document, tree, styles, textEditing: textEditing && !props.readonly }}>
       <Puck config={config} data={initial} onAction={bridge.onAction} onChange={bridge.onChange}
         overrides={overrides}
-        permissions={{ insert: false, duplicate: false, delete: false, edit: textEditing && !props.readonly, drag: !textEditing && !props.readonly }}
+        permissions={{ insert: false, duplicate: false, delete: false, edit: textEditing && !props.readonly, drag: !props.readonly }}
         iframe={{ enabled: props.iframeEnabled !== false }}>
         <BridgeObserver bridge={bridge} />
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>

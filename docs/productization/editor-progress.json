@@ -678,6 +678,20 @@
           "commit": "a5b12ab9220e0d3e6f224a97d13daf92ec9c6951",
           "result": "pass",
           "path": "docs/audits/2026-10-12-ip7-element-editor-correction.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-common-link-contract",
+          "commit": "58197df3ae09430aab52f44af8fcedf250924cd7",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-common-runtime.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-common-content-runtime",
+          "commit": "4abafae025255f73f416fd7535e8a18794ee50e6",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-common-runtime.md"
         }
       ],
       "blocked_reason": null,

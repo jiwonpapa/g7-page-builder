@@ -1,6 +1,6 @@
 # IP2 정밀 문서 계약 검증
 
-상태: 승인된 보완은 통합됐고 전체 단위 1,011개·커버리지·production build가 통과했다. 후속 현재 렌더 source 검사에서 기존 썸네일 146개 불일치가 확인돼 IP2 FULL 통합은 차단 상태다. 생성 자산 보완의 별도 승인이 필요하며 IP3는 착수하지 않는다.
+상태: 승인된 기존 썸네일 146개 재생성·시각 확인·현재 렌더 source 검사를 7개 분할 task로 통합했다. IP2의 필수 FULL 통합 검증을 재개하며, 아직 IP2 완료나 IP3 착수를 선언하지 않는다.
 
 ## 소유 범위
 
@@ -101,7 +101,7 @@ npx --no-install vitest run tests/Unit/layoutTree.test.ts tests/Unit/heroComposi
 
 위 관련 커버리지 성공 뒤 다음 전체 검증을 수행했다. 이전 실패는 이력으로 유지하며 현재 차단과 구분한다.
 
-## 현재 결과: 기존 썸네일 source 불일치
+## 이전 차단: 기존 썸네일 source 불일치
 
 95deae4720ec08d3a07d330366e225468448136d 기준에서 IP2 재제출 b06b8de7590fc21bae83fa3604291e53e0933059를 FULL=1로 임시 통합했다. 원본 로그는 Local output/playwright/ip2-full-after-layout-coverage-20261012.log다.
 
@@ -113,6 +113,30 @@ npx --no-install vitest run tests/Unit/layoutTree.test.ts tests/Unit/heroComposi
 - IP2 변경에는 기존 썸네일 renderer·공개 CSS·컴파일러·블록 manifest/index가 없다. 이 기록은 저장된 hash와 현재 결과의 불일치를 확인한 것이며 과거 변경 원인을 한 파일로 단정하지 않는다.
 - journal은 output/playwright/gates/integration-ip2-resume-20261012/a693de8ea703a1df64ddacd3544fe69be9eab1cd1931117fa0e01180abe04a6b/0e30a35c6d7b421fbf96c28bae50a2e9/site-part-state.json이다. sessions=[]·closed=true이며 G7 후속 검사와 실제 제품 브라우저에는 도달하지 않았다.
 
-현재 필요한 별도 범위는 불일치한 146개 썸네일을 기존 생성기로 재생성·육안/기술 검증하고 결합 manifest/index를 반영하는 작업이다. 정확 파일 24개 이하의 분할 task/커밋으로 수행해야 한다. 품질 승인 원장·제품 기능·검사 기준을 변경하거나 현재 증거만으로 배포를 승인하지 않는다. 사용자 승인을 요청했으며 승인 전 생성 자산을 변경하지 않는다.
+당시 불일치한 146개 썸네일의 재생성·육안/기술 검증과 결합 manifest/index 반영을 별도 범위로 요청했다. 사용자의 후속 진행 승인에 따라 아래와 같이 수행했다. 품질 승인 원장·제품 기능·검사 기준은 변경하지 않는다.
+
+## 승인된 썸네일 재생성과 통합
+
+- 기준 SHA: 95deae4720ec08d3a07d330366e225468448136d. 정확한 대상은 보존한 ip2-baseline-stale-thumbnails-20261012.json의 블록 48개·프리셋 98개다. 정상 Card 두 항목은 다시 생성하지 않았다.
+- 기존 scripts/generate-block-thumbnails.mjs의 --catalog-id 선택 생성만 사용했다. 각 task는 manifest/index와 최대 22개 PNG, 합계 최대 24개 정확 파일을 claim했다. 블록과 canonical 첫 프리셋은 같은 task에서 생성했다.
+- 146개를 모두 실제 PHP renderer·공개 CSS·Playwright로 재생성했다. 그중 5개 PNG는 기존 bytes와 동일하며 전체 Git delta는 PNG 141개와 manifest/index 2개다. hash만 임의 교체하지 않았다.
+- 아래 7개 task의 제출·통합 gate가 모두 통과했다. 카탈로그 148개 candidate 기술 검사와 각 선택 항목의 현재 source 검사를 통과했으며 release_authorized=false, ledger_written=false를 유지했다.
+
+| 차수 | 생성 항목 | 제출 SHA | 통합 SHA |
+|---|---:|---|---|
+| 1 | 22 | `64b25a6f3b661253d15c952b5b59d7b5a687667b` | `6106f07dfd7067da841d8540f49f33e619ff4e28` |
+| 2 | 22 | `c106e8b1a82bcce5509e28ddc45161dc66518898` | `081a6b91e2d2518f218eda0c1ca07fb12eac966e` |
+| 3 | 19 | `e593745369800d2d973dc1f67f977a6b690ae25e` | `a1f5392888b77253cdd5879bfa447b50411a49c3` |
+| 4 | 19 | `56c18512a642f2de8c092b99100912f802d063ea` | `6a2f6cc04f8407f6ce391ef7cf31d87924c49edb` |
+| 5 | 22 | `af762c93174a5ef40e49fae0a607fabadbbeda46` | `3d7c15b27e8c78573f7e71e8a6e676515a572477` |
+| 6 | 22 | `56f12d9182798b3d097e164f090f1d742bc09f46` | `9646d7f495d8e2d18c954df86a0050c9c4902917` |
+| 7 | 20 | `963e20f5220d28bf33340f478f63933e81f78de7` | `85c353a01a5d424f31716d8a156dc0a5e05dfbef` |
+
+- 7개 묶음 모두 이미지 contact sheet를 직접 확인했다. 한글, 로컬 사진, 아이콘, canonical 쌍과 기존 변형을 확인했다. 증거 경로는 /Users/neojins/.codex/worktrees/ip2-hero-format/g7-page-builder/output/playwright/ip2-thumbnails-01-20261012-sheet.png부터 ip2-thumbnails-07-20261012-sheet.png까지다.
+- 기존 960×600 고정 crop을 320×200 PNG로 만드는 계약은 유지했다. 긴 가격·팀·갤러리·목록의 하단은 crop될 수 있으며 전체 페이지 노출을 보증하지 않는다. 문의·지도·영상·G7 데이터는 기존 안전 placeholder/sample을 사용하며 외부 실행 성공으로 보고하지 않는다.
+- 4차 갤러리 기본 블록/첫 프리셋의 최초 PNG bytes가 달라 canonical 검사와 고유 이미지 수 검사가 실패했다. 두 ID만 기존 생성기로 재생성한 뒤 동일 기준을 통과하고 최종 이미지를 다시 확인했다. 생성기나 허용 기준을 변경하지 않았다.
+- Playwright 스킬의 실제 렌더 확인과 write-page의 증거 경계에 따라 생성 이미지·기술 검사·제품 동작·배포를 구분했다. 제품 코드·생성기·스타일·버전·품질 승인 원장에는 변경이 없다.
+
+IP2 재통합 기준은 85c353a01a5d424f31716d8a156dc0a5e05dfbef다. 공유 문서 계약에 필요한 FULL=1은 유지하며 전체 검증 결과는 후속으로 기록한다.
 
 IP2 submitted 원본은 worktree에 보존한다. 미통합 제출이 남아 있으므로 integration lease를 강제 해제하거나 완료로 바꾸지 않는다. 전체 필수 검증과 통합 후에만 IP2를 done으로 바꾸고 IP3로 진행한다. 정밀 편집 UI·저장/발행·브라우저 시각 회귀·배포 성공을 주장하지 않는다.

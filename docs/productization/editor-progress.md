@@ -4,7 +4,7 @@
 
 이 계획의 작업 진척이며 전체 제품 완성률이 아닙니다. 문서 검사와 제품 검증은 다릅니다. 이 명령은 배포를 실행하지 않습니다.
 
-계획 작업 완료 **5/10** · 기존 기반 6개는 분모에서 제외합니다.
+계획 작업 완료 **6/10** · 기존 기반 6개는 분모에서 제외합니다.
 
 [개발 계획](editor-plan.md) · [편집 정책](editing-policy.md) · [진척 원장](editor-progress.json)
 
@@ -37,13 +37,13 @@
 | 세부 편집 | IP3 · 레이어와 재귀 구조 편집 | 완료 | IP2 | ip3-layer-ui-production-20261012 | 구현 `93f861ebe2920e91025dcf5bd7b20984bbcc5b09`<br>통합 `7dc48d130247571ed221717c751ee895b0326bef`<br>필수 증거 2/2<br>[IND-03/unit](<../audits/2026-10-12-ip3-structure-editing.md>) · [IND-03/browser](<../audits/2026-10-12-ip3-structure-editing.md>) |
 | 세부 편집 | IP4 · 정밀 Inspector와 자동 배치 | 완료 | IP3 | ip4-richtext-race-20261012 | 구현 `2a2596997a886c19ffa8f752d08f7f43f95c2d94`<br>통합 `9118103d91f2c5674f555e81667b260ec9aa4cb6`<br>필수 증거 3/3<br>[IND-04/unit](<../audits/2026-10-12-ip4-precision-inspector.md>) · [IND-04/browser](<../audits/2026-10-12-ip4-precision-inspector.md>) · [IND-04/parity](<../audits/2026-10-12-ip4-precision-inspector.md>) |
 | 세부 편집 | IP5 · 핸들과 다중 선택 작업면 | 완료 | IP4 | ip5-canvas-ui-20261012 | 구현 `aff9225883b330777807804b4177e16e2b3fcd13`<br>통합 `c58a1e83ba0003015cd63eccdba32a0d063332b2`<br>필수 증거 3/3<br>[IND-05/unit](<../audits/2026-10-12-ip5-canvas-interactions.md>) · [IND-05/browser](<../audits/2026-10-12-ip5-canvas-interactions.md>) · [IND-05/accessibility](<../audits/2026-10-12-ip5-canvas-interactions.md>) |
-| 세부 편집 | IP6 · 반응형 상세 편집 | 진행 | IP5 | ip6-responsive-editor-20261012 | 미완료 |
+| 세부 편집 | IP6 · 반응형 상세 편집 | 완료 | IP5 | ip6-responsive-editor-20261012 | 구현 `b23d204f8183c971b5b093e5736bb30b5da36630`<br>통합 `29f80fdab86058ce2683343e5ff6e056efca1c27`<br>필수 증거 3/3<br>[IND-06/contract](<../audits/2026-10-12-ip6-responsive-editing.md>) · [IND-06/browser](<../audits/2026-10-12-ip6-responsive-editing.md>) · [IND-06/parity](<../audits/2026-10-12-ip6-responsive-editing.md>) |
 | 전체 연결과 수용 | IP7 · 내장 구성 템플릿과 공통영역 | 계획 | IP6 | 미배정 | 미완료 |
 | 전체 연결과 수용 | IP8 · 미디어와 재사용 구성 | 계획 | IP7 | 미배정 | 미완료 |
 | 전체 연결과 수용 | IP9 · 저장 복구와 공개 출력 일치 | 계획 | IP8 | 미배정 | 미완료 |
 | 전체 연결과 수용 | IP10 · 독립성 호환성과 제품 수용 | 계획 | IP9 | 미배정 | 미완료 |
 
-다음 진행 가능: IP6
+다음 진행 가능: IP7
 
 조회: `make editor-status` · 정합성 검사: `make editor-plan-check`
 

@@ -13,7 +13,6 @@ const budgets = [
   { path: 'resources/css/page-builder-editor.css', raw: 180_100 },
   { path: 'resources/css/page-builder-editor-wysiwyg.css', raw: 2_000 },
   { path: 'resources/css/page-builder-site-part.css', raw: 1_000 },
-  { path: 'resources/css/page-builder-public.css', raw: 105_000 },
   { path: 'resources/css/page-builder-site-shell.css', raw: 9_000 },
   { path: 'dist/css/page-builder-manager.css', gzip: 8_000 },
   // UI5 adds the shared single Card shell; source caps remain unchanged.
@@ -22,8 +21,6 @@ const budgets = [
   // Apply the existing editor budgets without increasing either ceiling.
   { path: 'dist/css/page-builder-structure.css', gzip: 45_200 },
   { path: 'dist/css/page-builder-site-part.css', gzip: 32_000 },
-  // EP2 basic elements add one shared, separately capped stylesheet to the 18,084-byte baseline.
-  { path: 'dist/css/page-builder-public.css', gzip: 18_700 },
   { path: 'dist/js/page-builder-manager.iife.js', gzip: 90_000 },
   // UI6 measured release input: 508,050 gzip bytes; reserve 450 bytes for release metadata.
   { path: 'dist/js/page-builder-editor.iife.js', gzip: 508_500 },
@@ -31,6 +28,13 @@ const budgets = [
   { path: 'dist/js/page-builder-site-part.iife.js', gzip: 410_000 },
   { path: 'dist/js/page-effects.iife.js', gzip: 24_000 },
   { path: 'dist/js/page-sliders.iife.js', gzip: 12_000 },
+];
+
+// User-approved 2026-10-13: public CSS size is observable, not a release ceiling.
+// Keep both files required and leave every other asset budget unchanged.
+const PUBLIC_CSS_MEASUREMENTS = [
+  { path: 'resources/css/page-builder-public.css', unit: 'raw' },
+  { path: 'dist/css/page-builder-public.css', unit: 'gzip' },
 ];
 
 const PUBLIC_RUNTIME_BUNDLES = [
@@ -115,6 +119,11 @@ async function main(args) {
     const unit = budget.gzip === undefined ? 'raw' : 'gzip';
     report.push(`${budget.path}=${actual}/${limit} ${unit} bytes`);
     if (actual > limit) throw new Error(`Frontend budget exceeded: ${report.at(-1)}`);
+  }
+  for (const { path, unit } of PUBLIC_CSS_MEASUREMENTS) {
+    const bytes = readFileSync(join(root, path));
+    const actual = unit === 'gzip' ? gzipSync(bytes).byteLength : bytes.byteLength;
+    report.push(`${path}=${actual} ${unit} bytes (reported; no size ceiling)`);
   }
 
   const publicRuntimeBytes = PUBLIC_RUNTIME_BUNDLES.map(path =>

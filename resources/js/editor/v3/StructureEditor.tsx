@@ -19,7 +19,7 @@ import { Inspector } from './Inspector';
 import { richTextField } from './richTextField';
 import { GeometryAdapter } from '../../adapters/interaction/GeometryAdapter';
 import { MultiInspector } from './MultiInspector';
-import { WorkspaceControls, WorkspaceMode, type InputMode } from './Workspace';
+import { WorkspaceControls, WorkspaceFrame, WorkspaceMode, type InputMode } from './Workspace';
 
 export interface StructureEditorProps {
   document: DocumentV3;
@@ -33,10 +33,11 @@ export interface StructureEditorProps {
   onSaved?: (revision: number) => void;
 }
 const CanvasContext = createContext<{ document: DocumentV3; tree: Map<string, Location>; styles: Map<string, Record<string, string>>; textEditing: boolean } | null>(null);
-const InteractionContext = createContext<Omit<React.ComponentProps<typeof GeometryAdapter>, 'owner'> | null>(null);
+const InteractionContext = createContext<(Omit<React.ComponentProps<typeof GeometryAdapter>, 'owner'> & { extent: (height: number) => void }) | null>(null);
 function FrameContents({ children, document: frameDocument }: React.ComponentProps<NonNullable<Overrides<V3Config>['iframe']>>) {
   const context = useContext(InteractionContext);
   return <>{children}{frameDocument && context && <>
+    <WorkspaceFrame owner={frameDocument} extent={context.extent} />
     <FrameHistoryBoundary frameDocument={frameDocument} bridge={context.bridge} />
     <GeometryAdapter owner={frameDocument} {...context} />
   </>}</>;
@@ -94,6 +95,7 @@ function EditorSession(props: StructureEditorProps) {
   const [mode, setMode] = useState<InputMode>('structure');
   const textEditing = mode === 'text';
   const [zoom, setZoom] = useState(1);
+  const [canvasHeight, setCanvasHeight] = useState(800);
   const scrollHost = useRef<HTMLElement>(null);
   const [actionTarget, setActionTarget] = useState<HTMLDivElement | null>(null);
   const [geometryTools, setGeometryTools] = useState<HTMLDivElement | null>(null);
@@ -171,7 +173,7 @@ function EditorSession(props: StructureEditorProps) {
   return <main className="g7pb-root" aria-label="독립 구조 편집기" onKeyDownCapture={inputBoundary}>
     <CanvasContext.Provider value={{ document, tree, styles, textEditing: textEditing && !props.readonly }}>
       <InteractionContext.Provider value={{ source: document, bridge, selected, mode, readonly: Boolean(props.readonly || preview),
-        zoom, controls: geometryTools, report: setMessage, pan: (x, y) => scrollHost.current?.scrollBy(x, y) }}>
+        zoom, controls: geometryTools, report: setMessage, pan: (x, y) => scrollHost.current?.scrollBy(x, y), extent: setCanvasHeight }}>
       <Puck config={config} data={initial} onAction={bridge.onAction} onChange={bridge.onChange}
         overrides={overrides}
         permissions={{ insert: false, duplicate: false, delete: false, edit: textEditing && !props.readonly, drag: (mode === 'structure' || mode === 'text') && !props.readonly }}
@@ -202,8 +204,8 @@ function EditorSession(props: StructureEditorProps) {
               {focus?.ancestors.map(parent => <CommandButton key={parent.instance_id} onClick={() => bridge.select(parent.instance_id)}>{parent.name}</CommandButton>)}
               {focus && <span aria-current="true">{focus.node.name}</span>}
             </nav>
-            <div style={{ width: 1280 * zoom, minHeight: 800 * zoom }}>
-            <div data-v3-workspace style={{ background: 'var(--g7pb-surface-strong)', width: 1280, minHeight: 800, transform: 'scale(' + zoom + ')', transformOrigin: 'top left' }}>
+            <div style={{ width: 1280 * zoom, height: canvasHeight * zoom, position: 'relative' }}>
+            <div data-v3-workspace style={{ position: 'absolute', background: 'var(--g7pb-surface-strong)', width: 1280, minHeight: 800, transform: 'scale(' + zoom + ')', transformOrigin: 'top left' }}>
               {preview ? <StructurePreview document={document} /> : <Puck.Preview />}
             </div>
             </div>

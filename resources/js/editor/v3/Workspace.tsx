@@ -2,6 +2,30 @@ import React, { useEffect } from 'react';
 import { useV3Puck, type PuckBridge } from './PuckBridge';
 
 export type InputMode = 'structure' | 'geometry' | 'text' | 'pan';
+/** Measure only our authored surface through Puck's public iframe override. */
+export function WorkspaceFrame({ owner, extent }: { owner: Document; extent: (height: number) => void }) {
+  useEffect(() => {
+    const frame = owner.defaultView?.frameElement;
+    if (!frame || !('style' in frame) || !(frame instanceof HTMLIFrameElement)) return;
+    const previous = frame.style.height;
+    let surface: HTMLElement | null = null;
+    const measure = () => {
+      if (!surface) return;
+      const height = Math.ceil(Math.max(800, surface.scrollHeight, surface.getBoundingClientRect().height));
+      frame.style.height = height + 'px'; extent(height);
+    };
+    const resize = new ResizeObserver(measure);
+    const discover = () => {
+      const next = owner.querySelector<HTMLElement>('[data-v3-surface]');
+      if (surface !== next) { resize.disconnect(); surface = next; if (surface) resize.observe(surface); }
+      measure();
+    };
+    const mutations = new MutationObserver(discover);
+    mutations.observe(owner.body, { childList: true, subtree: true }); discover();
+    return () => { mutations.disconnect(); resize.disconnect(); frame.style.height = previous; };
+  }, [owner, extent]);
+  return null;
+}
 /** Public Puck preview mode relinquishes structure DnD while the interaction adapter owns input. */
 export function WorkspaceMode({ mode, bridge }: { mode: InputMode; bridge: PuckBridge }) {
   const dispatch = useV3Puck(state => state.dispatch);

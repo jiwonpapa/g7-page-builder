@@ -9,7 +9,7 @@ import { GeometryAdapter } from '../../resources/js/adapters/interaction/Geometr
 import { MultiInspector } from '../../resources/js/editor/v3/MultiInspector';
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
-const { WorkspaceControls } = await import('../../resources/js/editor/v3/Workspace');
+const { WorkspaceControls, WorkspaceFrame } = await import('../../resources/js/editor/v3/Workspace');
 const cleanups: (() => void)[] = [];
 afterEach(async () => { await act(async () => cleanups.splice(0).forEach(cleanup => cleanup())); });
 function host() {
@@ -17,6 +17,18 @@ function host() {
   cleanups.push(() => element.remove()); return element;
 }
 describe('interaction measurement and UI ownership', () => {
+  it('sizes only the owned iframe from the authored surface and restores it on unmount', async () => {
+    const container = host(), frame = document.createElement('iframe'); container.append(frame);
+    frame.style.height = '300px';
+    const owner = frame.contentDocument!, surface = owner.createElement('div');
+    surface.dataset.v3Surface = ''; owner.body.append(surface);
+    Object.defineProperty(surface, 'scrollHeight', { value: 1200 });
+    const root = createRoot(host()), extent = vi.fn();
+    await act(async () => root.render(React.createElement(WorkspaceFrame, { owner, extent })));
+    expect(frame.style.height).toBe('1200px'); expect(extent).toHaveBeenCalledWith(1200);
+    await act(async () => root.unmount());
+    expect(frame.style.height).toBe('300px');
+  });
   it('recognizes owned text inputs and contenteditable descendants without host realm assumptions', () => {
     const container = host();
     container.innerHTML = '<input/><textarea></textarea><select></select><div contenteditable="true"><span>text</span></div><button>node</button>';

@@ -19,6 +19,7 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
   const [targets, setTargets] = useState<HTMLElement[]>([]);
   const [ratio, setRatio] = useState(false), [snap, setSnap] = useState(true);
   const moveable = useRef<Moveable>(null), selecto = useRef<Selecto>(null);
+  const groupClick = useRef<string | null>(null);
   const before = useRef<{ boxes: GeometryBox[]; styles: Map<HTMLElement, string> } | null>(null);
   const transaction = useMemo(() => createGeometryGesture({
     read: () => ({ document: bridge.read(), context: bridge.context() }), execute: bridge.execute,
@@ -204,6 +205,10 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
       onDragStart={event => {
         const element: Element = event.inputEvent.target;
         if (element.closest('.moveable-control-box') || ownsTextInput(element) || transaction.active()) event.stop();
+        else if (allowed && absolute && targets.length > 1 && !event.inputEvent.shiftKey
+          && targets.some(target => target === element || target.contains(element))) {
+          event.stop(); moveable.current?.dragStart(event.inputEvent);
+        }
       }}
       onSelectEnd={event => {
         const inputTarget: Element = event.inputEvent.target;
@@ -234,9 +239,17 @@ export function GeometryAdapter({ owner, source, bridge, selected, mode, readonl
       onDragStart={event => { event.set([0, 0]); run(begin); }}
       onDrag={event => preview({ kind: 'translate', x: event.beforeDist[0], y: event.beforeDist[1] })}
       onDragEnd={finish}
-      onDragGroupStart={event => { event.events.forEach(item => item.set([0, 0])); run(begin); }}
+      onDragGroupStart={event => {
+        const element: Element = event.inputEvent.target;
+        groupClick.current = element.closest<HTMLElement>('[data-v3-node]')?.dataset.v3Node ?? null;
+        event.events.forEach(item => item.set([0, 0])); run(begin);
+      }}
       onDragGroup={event => preview({ kind: 'translate', x: event.beforeDist[0], y: event.beforeDist[1] })}
-      onDragGroupEnd={finish}
+      onDragGroupEnd={event => {
+        finish();
+        if (!event.isDrag && groupClick.current) bridge.selectMany([groupClick.current]);
+        groupClick.current = null;
+      }}
       onRotateStart={event => { event.set(indexTree(source).get(targets[0].dataset.v3Node ?? '')?.node.style.rotation ?? 0); run(begin); }}
       onRotate={event => preview({ kind: 'rotate', degrees: event.beforeDist })}
       onRotateEnd={finish}

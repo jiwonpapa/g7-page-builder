@@ -233,7 +233,10 @@ test('v3 marquee group resize snap and pan preserve canonical history', async ({
   await page.mouse.move(h.x + h.width / 2 + 40, h.y + h.height / 2, { steps: 8 }); await page.mouse.up();
   await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.width).not.toEqual(nodes[0].style.width);
   const changed = await read(page);
-  expect(changed.blocks[0].slots.content![1].style.width).not.toEqual(nodes[1].style.width);
+  expect(changed.blocks[0].slots.content!.slice(0, 2).map(node => node.style.width))
+    .toEqual([{ value: 192, unit: 'px' }, { value: 144, unit: 'px' }]);
+  expect(changed.blocks[0].slots.content!.slice(0, 2).map(node => node.style.inset_left))
+    .toEqual([{ value: 80, unit: 'px' }, { value: 416, unit: 'px' }]);
   expect(changed.blocks[0].slots.content![2]).toEqual(nodes[2]);
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(before);
   await first.click(); await page.getByLabel('스냅 가이드', { exact: true }).check();
@@ -287,6 +290,13 @@ test('v3 pointer movement rotation and mixed property changes each use one Undo'
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(source);
   await node(0).click(); await node(1).click({ modifiers: ['Shift'] });
   await expect(page.getByRole('heading', { name: '선택 2개', exact: true })).toBeVisible();
+  const groupTarget = await node(0).boundingBox(); if (!groupTarget) throw Error('missing group drag target');
+  await page.mouse.move(groupTarget.x + 20, groupTarget.y + 20); await page.mouse.down();
+  await page.mouse.move(groupTarget.x + 40, groupTarget.y + 20, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content!.slice(0, 2).map(item => item.style.inset_left))
+    .toEqual([{ value: 120, unit: 'px' }, { value: 400, unit: 'px' }]);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(source);
+  await node(0).click(); await node(1).click({ modifiers: ['Shift'] });
   await page.getByLabel('일괄 속성', { exact: true }).selectOption('opacity');
   await page.getByLabel('일괄 값', { exact: true }).fill('0.5');
   await page.getByLabel('일괄 값', { exact: true }).press('ArrowLeft');
@@ -323,6 +333,23 @@ test('v3 focus loss cancels and layout constraints preserve canonical history', 
   await expect.poll(() => target.evaluate(element => parseFloat(getComputedStyle(element).width))).toBe(180);
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(constrained);
   await expect(page.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
+  const longPage = structuredClone(source);
+  longPage.blocks[0].slots.content![0].style.inset_top = { value: 1000, unit: 'px' };
+  await open(page, longPage); await click(page, '정밀 조작');
+  await page.getByLabel('작업면 확대', { exact: true }).selectOption('2');
+  await page.getByLabel('스냅 가이드', { exact: true }).uncheck();
+  await expect.poll(() => page.locator('iframe').evaluate(element => {
+    if (!(element instanceof HTMLIFrameElement)) throw Error('Expected owned iframe');
+    return element.offsetHeight;
+  })).toBeGreaterThanOrEqual(1200);
+  await page.getByRole('region', { name: '작업면' }).evaluate(element => element.scrollTop = 1800);
+  await target.click();
+  const h = await frame.locator('.moveable-control[data-direction="e"]').boundingBox();
+  if (!h) throw Error('missing scrolled page handle');
+  await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await page.mouse.down();
+  await page.mouse.move(h.x + h.width / 2 + 80, h.y + h.height / 2, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.width).toEqual({ value: 200, unit: 'px' });
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(longPage);
 });
 
 test('v3 independent layers preserve recursive commands in one Puck Undo and canonical save/reopen', async ({ page }, info) => {
@@ -429,7 +456,9 @@ test('v3 independent layers preserve recursive commands in one Puck Undo and can
 
 test('v3 canvas selection and native Puck drag use stable IDs and one reversible command', async ({ page }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  for (const zoom of [.5, 1, 2]) {
   await open(page);
+  await page.getByLabel('작업면 확대', { exact: true }).selectOption(String(zoom));
   for (const label of ['제목', '본문', '링크']) await insert(page, label);
   const before = await read(page), [heading, text] = before.blocks;
   const frame = page.frameLocator('iframe');
@@ -439,13 +468,13 @@ test('v3 canvas selection and native Puck drag use stable IDs and one reversible
   await expect(page.getByRole('textbox', { name: '레이어 이름' })).toHaveValue('제목');
   const from = await headingButton.boundingBox();
   if (!from) throw new Error('Missing Puck draggable');
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.move(from.x + 20, from.y + from.height / 2);
   await page.mouse.down();
-  await page.mouse.move(from.x + from.width / 2 + 15, from.y + from.height / 2 + 15, { steps: 5 });
+  await page.mouse.move(from.x + 35, from.y + from.height / 2 + 15, { steps: 5 });
   // Activation can shift the live target; measure after activation instead of dropping on its old neighbor.
   const to = await frame.locator('[data-v3-node="' + text.instance_id + '"]').boundingBox();
   if (!to) throw new Error('Missing live drop target');
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 20 });
+  await page.mouse.move(to.x + 20, to.y + to.height / 2, { steps: 20 });
   await page.mouse.up();
   await expect.poll(async () => (await read(page)).blocks.map(node => node.instance_id)).toEqual([text.instance_id, heading.instance_id, before.blocks[2].instance_id]);
   await page.keyboard.press('ControlOrMeta+z');
@@ -453,7 +482,8 @@ test('v3 canvas selection and native Puck drag use stable IDs and one reversible
   await click(page, '다시 실행');
   await expect.poll(async () => (await read(page)).blocks[0].instance_id).toBe(text.instance_id);
   expect(errors).toEqual([]);
-  await page.screenshot({ path: info.outputPath('v3-canvas-drag.png'), fullPage: true });
+  await page.screenshot({ path: info.outputPath('v3-canvas-drag-' + zoom + '.png'), fullPage: true });
+  }
 });
 
 test('v3 hidden locked clipboard and readonly states preserve source and assets', async ({ page }) => {

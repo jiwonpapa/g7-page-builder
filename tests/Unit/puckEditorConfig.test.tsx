@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PageBuilderDocument } from '../../resources/js/documents/types';
+import fixtures from '../Fixtures/layout-policy-cases.json';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
@@ -54,6 +55,43 @@ function mount(initial: PageBuilderDocument) {
 }
 
 describe('extracted Puck configuration owners', () => {
+  it('omits the empty Hero grid item outside structure editing without changing the document', async () => {
+    for (const schema_version of ['g7-page-builder/v1', 'g7-page-builder/v2'] as const) {
+      const document: PageBuilderDocument = { ...structuredClone(fixtures.hero), schema_version, mode: 'canvas', shell_mode: 'none' };
+      document.blocks[0].slots = { extra: [] };
+      const original = structuredClone(document);
+      const view = mount(document);
+      await view.render();
+      const hero = await element(view.host, '.g7pb-preview-hero');
+      // A zero-height direct grid child still adds a gap. Keep it only as an
+      // insertion target in the explicitly enabled, editable structure mode.
+      expect(hero.querySelectorAll(':scope > div:empty')).toHaveLength(schema_version === 'g7-page-builder/v2' ? 1 : 0);
+      await view.render(document, true);
+      expect((await element(view.host, '.g7pb-preview-hero')).querySelectorAll(':scope > div:empty')).toHaveLength(0);
+      await view.render(document);
+      expect((await element(view.host, '.g7pb-preview-hero')).querySelectorAll(':scope > div:empty'))
+        .toHaveLength(schema_version === 'g7-page-builder/v2' ? 1 : 0);
+      expect(document).toEqual(original);
+      expect(view.onChange).not.toHaveBeenCalled();
+    }
+  });
+
+  it('retains populated Hero slots and CTA in both editing and readonly preview', async () => {
+    const document: PageBuilderDocument = { ...structuredClone(fixtures.hero), schema_version: 'g7-page-builder/v2', mode: 'canvas', shell_mode: 'none' };
+    const original = structuredClone(document);
+    const view = mount(document);
+    for (const disabled of [false, true, false]) {
+      await view.render(document, disabled);
+      const hero = await element(view.host, '.g7pb-preview-hero');
+      expect(hero.textContent).toContain('추가 배지');
+      expect(hero.textContent).toContain('추가 목록');
+      expect(hero.querySelector('a')?.getAttribute('href')).toBe('/contact');
+      expect(hero.querySelectorAll(':scope > div:empty')).toHaveLength(0);
+    }
+    expect(document).toEqual(original);
+    expect(view.onChange).not.toHaveBeenCalled();
+  });
+
   it('keeps the shared config and live Hero/Features text DOM focused across parent and field updates', async () => {
     expect(compatibilityConfig).toBe(pageBuilderPuckConfig);
     const document = source([

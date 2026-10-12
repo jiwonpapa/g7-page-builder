@@ -542,7 +542,16 @@ export function createRuntimePuckConfig(structureEditingEnabled: boolean, editin
           composition: { type: 'custom', label: '내부 요소', render: ({ readOnly }) =>
             <ComponentComposition readOnly={readOnly} structureEnabled={structureEditingEnabled} /> },
         } },
-        Hero: { ...pageBuilderPuckConfig.components.Hero, resolveFields: (data, { fields }) => {
+        Hero: { ...pageBuilderPuckConfig.components.Hero, render: (props) => {
+          const hasExtra = usePageBuilderPuck((state) => {
+            const item = state.getItemById(props.id);
+            return item?.type === 'Hero' && Boolean(item.props.extra?.length);
+          });
+          // Empty DropZones still add a CSS grid gap. Retain them only when
+          // structure editing needs an insertion target; populated slots stay visible.
+          return pageBuilderPuckConfig.components.Hero.render({ ...props,
+            extra: hasExtra || (structureEditingEnabled && !editingDisabled) ? props.extra : undefined });
+        }, resolveFields: (data, { fields }) => {
           const selected: Partial<typeof fields> = { ...fields };
           if (data.props.actionsEnabled) { delete selected.primaryLabel; delete selected.primaryUrl; }
           else delete selected.actions;

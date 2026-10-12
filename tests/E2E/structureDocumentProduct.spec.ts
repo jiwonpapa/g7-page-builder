@@ -15,7 +15,10 @@ test('creates an empty page in the installed generic editor and preserves nested
     await page.setViewportSize({ width: 1440, height: 1000 });
     const loadedScripts: string[] = [];
     page.on('request', request => { if (request.resourceType() === 'script') loadedScripts.push(request.url()); });
+    const catalogResponse = page.waitForResponse(response => /\/data\/builtin-v3-[\w-]+\.json$/.test(response.url()));
     await page.goto(`${editor}?editor=structure`);
+    const catalog = await catalogResponse;
+    expect(catalog.ok()).toBe(true); expect(await catalog.json()).toHaveLength(63);
     await expect(page.getByTestId('structure-document-host')).toBeVisible();
     await page.getByLabel('페이지 제목', { exact: true }).fill('블록 없는 공통 요소 편집');
     await page.getByLabel('기본 주소 이름', { exact: true }).fill(slug);
@@ -31,6 +34,7 @@ test('creates an empty page in the installed generic editor and preserves nested
     await expect(page).toHaveURL(new RegExp(`document=${ownedId}&editor=structure$`));
     await testInfo.attach('owned-document', { body: JSON.stringify({ documentId: ownedId, slug }), contentType: 'application/json' });
     await expect(page.getByRole('main', { name: '독립 구조 편집기' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: '구성 선택', exact: true }).locator('option')).toHaveCount(63);
     expect(loadedScripts.some(url => url.includes('/page-builder-structure.iife.js'))).toBe(true);
     expect(loadedScripts.some(url => url.includes('/page-builder-editor.iife.js'))).toBe(false);
     await click('컨테이너 삽입');

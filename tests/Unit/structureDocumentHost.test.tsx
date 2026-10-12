@@ -45,16 +45,62 @@ const beforeUnload = () => { const event = new Event('beforeunload', { cancelabl
 describe('installed structure document host', () => {
   it('mounts the real authenticated entry and supplies the persisted canonical source without requesting block packs', async () => {
     window.localStorage.setItem('auth_token', 'unit-admin-token');
-    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ success: true, data: resource() }), { status: 200 }));
+    const fetchImpl = vi.fn<typeof fetch>(async url => new Response(JSON.stringify(String(url).includes('/documents/')
+      ? { success: true, data: resource() } : []), { status: 200 }));
     vi.stubGlobal('fetch', fetchImpl);
     const container = document.createElement('div'); container.dataset.documentId = fixture.document_id;
     document.body.append(container);
     await act(async () => { disposers.push(mountStructureDocument(container)); });
-    expect(fetchImpl).toHaveBeenCalledOnce();
-    expect(String(fetchImpl.mock.calls[0][0])).toContain('/documents/' + fixture.document_id);
-    expect(new Headers(fetchImpl.mock.calls[0][1]?.headers).get('Authorization')).toBe('Bearer unit-admin-token');
+    const reads = fetchImpl.mock.calls.filter(([url]) => String(url).includes('/documents/'));
+    expect(reads).toHaveLength(1);
+    expect(String(reads[0][0])).toContain('/documents/' + fixture.document_id);
+    expect(new Headers(reads[0][1]?.headers).get('Authorization')).toBe('Bearer unit-admin-token');
+    expect(fetchImpl.mock.calls.some(([url]) => String(url).includes('builtin-v3'))).toBe(true);
+    expect(fetchImpl.mock.calls.some(([url]) => String(url).includes('block-packs'))).toBe(false);
     expect(editor?.document).toEqual(resource().document);
     expect(status()).toBe('초안 저장됨');
+  });
+
+  it('keeps document editing and saving available when the optional composition asset fails', async () => {
+    window.localStorage.setItem('auth_token', 'unit-admin-token');
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>(async url => String(url).includes('/documents/')
+      ? new Response(JSON.stringify({ success: true, data: resource() }), { status: 200 })
+      : new Response('unavailable', { status: 503 })));
+    const container = document.createElement('div'); container.dataset.documentId = fixture.document_id;
+    document.body.append(container);
+    await act(async () => { disposers.push(mountStructureDocument(container)); });
+    expect(editor?.document).toEqual(resource().document); expect(editor?.drafts.save).toBeTypeOf('function');
+    expect(editor?.compositions).toEqual([]);
+    expect(container.textContent).toContain('구성 목록을 불러오지 못했습니다.');
+    expect(status()).toBe('초안 저장됨');
+  });
+
+  it('cancels the catalog read on unmount and ignores its late response', async () => {
+    window.localStorage.setItem('auth_token', 'unit-admin-token');
+    const pending = deferred<Response>();
+    const fetchImpl = vi.fn<typeof fetch>(() => pending.promise); vi.stubGlobal('fetch', fetchImpl);
+    const container = document.createElement('div'); document.body.append(container);
+    let dispose: (() => void) | undefined;
+    await act(async () => { dispose = mountStructureDocument(container); });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    await act(async () => dispose!());
+    expect(fetchImpl.mock.calls[0][1]?.signal?.aborted).toBe(true);
+    await act(async () => pending.resolve(new Response('[]')));
+    expect(container.children).toHaveLength(0);
+  });
+
+  it('preserves the in-progress create form when catalog data arrives later', async () => {
+    window.localStorage.setItem('auth_token', 'unit-admin-token');
+    const pending = deferred<Response>();
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>(() => pending.promise));
+    const container = document.createElement('div'); document.body.append(container);
+    await act(async () => { disposers.push(mountStructureDocument(container)); });
+    await input(0, '작성 중인 제목'); await input(1, 'in-progress');
+    await act(async () => pending.resolve(new Response(JSON.stringify([fixture]))));
+    expect(container.querySelectorAll('input')[0].value).toBe('작성 중인 제목');
+    expect(container.querySelectorAll('input')[1].value).toBe('in-progress');
+    expect(container.textContent).not.toContain('구성 목록을 불러오는 중');
+    expect(container.textContent).not.toContain('구성 목록을 불러오지 못했습니다');
   });
 
   it('creates an empty page without any catalog and passes the single save port to the editor', async () => {

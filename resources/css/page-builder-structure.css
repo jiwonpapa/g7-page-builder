@@ -18,6 +18,7 @@
 }
 
 .g7pb-structure-host__publication { color: var(--g7pb-muted); }
+.g7pb-structure-host__catalog { margin: 0; padding: 8px 16px; color: var(--g7pb-muted); }
 .g7pb-structure-host__workspace { flex: 1; min-height: 0; }
 .g7pb-structure-host__workspace > .g7pb-root { height: 100%; min-height: 0; }
 .g7pb-structure-host__error { margin: 0; padding: 12px 16px; color: var(--g7pb-danger); }

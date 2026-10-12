@@ -31,3 +31,11 @@ G7 코어·테마 원본·운영 서버는 변경하지 않았으며 배포하�
 ## 실제 제품 브라우저 검사 보완
 
 제출 `21bd800fdfe16e8c892095126006c872332fe274`의 첫 공식 통합은 새 제품 시험에서 중단되어 Local이 원복됐다. 세 프로젝트 모두 생성 전 `getByLabel`의 정확 일치가 중첩 select의 label 전체 텍스트와 맞지 않았다. 같은 실행의 접근성 snapshot에는 `combobox "페이지 출력 방식"`이 있고 화면에서도 선택 상자가 정상 표시된다. 해당 컨트롤을 접근성 역할과 정확한 이름으로 선택하도록 수정한다. 필드·선택값·저장 시나리오·검사 기준은 유지한다. 원 제출은 `ip7-product-entry-browser-20261013`의 공식 submitted replacement로 보존했다. 실패 증거는 `output/playwright/gates/integration-ip7-20261012/1d71cf2512dda38ef40562166b1051fcc83f66ea6475e55f629b0a02fac10e48/0dc713a14c7d4084878d3127b9fc80b1/`이며, 종료 trap으로 원래 로컬 테마의 활성 상태를 복구했다.
+
+교체 제출 `b12999e363cd0f2effc1249430d473f101e5d199`의 실제 제품 시험은 desktop/tablet/mobile 프로젝트 3개 모두 통과했다. 빈 페이지 UI 생성, 컨테이너/제목 삽입과 중첩, Undo/Redo, 한글 전체 교체, 실제 API 저장/재조회/새로고침, 세 캔버스 폭과 구 북마크 분기를 확인했다. 증거는 `output/playwright/gates/integration-ip7-20261012/466c72c6cc46cecf30731beda0737b69d389e826bb65e8f32766f6ea1a153177/9a4881dd1f7a4c69990e03b7d73e0994/`다. 1280/360px 캡처에서 문구·레이어·작업면을 확인했으나 최종 선택/Inspector/이미지/발행 UX 수용을 의미하지 않는다. 발행은 이 시나리오에 없다.
+
+후속 FULL에서 PHP 395개와 프런트 1,630개는 통과했으나 구조 진입점의 Linux gzip 510,164바이트가 508,500 한도를 넘어 통합은 다시 원복됐다. 동일 JS 바이트가 macOS zlib 1.2.12에서는 508,170, Linux zlib 1.3.2.1-motley에서는 510,164로 측정된다. 기준을 바꾸지 않는다. FULL의 Site Part journal은 closed=true, sessions=0으로 실제 Site Part 시험 전에 종료됐으며 로컬 테마는 복구됐다.
+
+`ip7-product-entry-assets-20261013`은 원 제출을 보존하고 구성 목록을 내용 버전이 포함된 정적 JSON 자산으로 분리한다. 모든 63개 원본 데이터를 유지하며 공통 편집기는 목록 성공을 기다리지 않는다. 로딩/실패 안내, 늦은 도착 시 생성 폼 보존, unmount 시 취소를 검사한다. JSON은 공백만 제거하고 구조·값·배열 순서는 동일해야 한다. 자산 유실/변질과 30,000 gzip bytes 초과도 검사한다. 초기 분리 측정은 구조 JS Linux 489,746바이트이며 별도 JSON 전송량을 함께 기록한다. 이는 전체 전송량이 그만큼 감소했다는 주장이 아니다.
+
+별도 `ip7-catalog-compression-20261013`은 `vite.config.ts`와 `tests/Unit/catalogBundle.test.ts` 두 파일만 소유한다. 기존 데이터의 중복 하위 구조를 매번 새 객체를 반환하는 생성 코드로 공유하여 제품 데이터·편집 기능·의존성·한도를 유지한다. 값 동일성/순서/자기 prototype 키/독립 가변 객체/-0/Infinity 검사와 실제 빌드를 확인했다. 기존 편집기 Linux gzip은 508,432바이트이며 제출·통합 결과는 후속 증거로 기록한다.

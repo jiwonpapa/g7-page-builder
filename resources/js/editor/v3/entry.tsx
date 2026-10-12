@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '@puckeditor/core/puck.css';
@@ -7,7 +8,8 @@ import { ADMIN_AUTH_TOKEN_KEY, buildAdminLoginUrl, PAGE_BUILDER_EDITOR_PATH, PAG
 import { createStructureDocument, parseV3DocumentResource } from '../../api/v3DocumentResource';
 import { createApiDraftPort } from './apiDraftPort';
 import { StructureDocumentHost, type StructureHostPorts } from './StructureDocumentHost';
-import compositions from '../../../compositions/builtin-v3.json';
+import compositionUrl from '../../../compositions/builtin-v3.json?url&no-inline';
+import { compositionChoices } from '../../editor-application/v3/compositions';
 
 export function mountStructureDocument(element: HTMLElement): () => void {
   let token: string | null = null;
@@ -32,9 +34,20 @@ export function mountStructureDocument(element: HTMLElement): () => void {
     nextId: () => crypto.randomUUID(),
   };
   const root = createRoot(element);
-  root.render(<StructureDocumentHost documentId={element.dataset.documentId || undefined} locale={element.dataset.locale || 'ko'}
-    ports={ports} compositions={compositions} libraryUrl={PAGE_BUILDER_MANAGER_PATH} />);
-  return () => root.unmount();
+  const controller = new AbortController();
+  let active = true;
+  const render = (compositions: readonly unknown[], catalogMessage = '') => {
+    if (active) root.render(<StructureDocumentHost documentId={element.dataset.documentId || undefined} locale={element.dataset.locale || 'ko'}
+      ports={ports} compositions={compositions} catalogMessage={catalogMessage} libraryUrl={PAGE_BUILDER_MANAGER_PATH} />);
+  };
+  render([], '구성 목록을 불러오는 중입니다. 기본 요소로 편집할 수 있습니다.');
+  void fetch(compositionUrl, { credentials: 'same-origin', signal: controller.signal }).then(async response => {
+    if (!response.ok) throw new Error('Composition asset unavailable');
+    const sources: unknown = await response.json();
+    if (!Array.isArray(sources)) throw new Error('Invalid composition asset');
+    render(compositionChoices(sources).map(choice => choice.source));
+  }).catch(() => render([], '구성 목록을 불러오지 못했습니다. 기본 요소 편집과 문서 저장은 계속 사용할 수 있습니다.'));
+  return () => { active = false; controller.abort(); root.unmount(); };
 }
 
 if (typeof document !== 'undefined') {

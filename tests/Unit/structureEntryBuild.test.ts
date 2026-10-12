@@ -29,6 +29,14 @@ describe('installed structure entry artifact', () => {
     const javascript = chunks.map(chunk => chunk.code).join('\n');
     const stylesheet = output.filter(item => item.type === 'asset' && item.fileName.endsWith('.css'))
       .map(item => item.type === 'asset' ? typeof item.source === 'string' ? item.source : new TextDecoder().decode(item.source) : '').join('\n');
+    const catalog = output.find(item => item.type === 'asset' && /builtin-v3.*\.json$/.test(item.fileName));
+    if (!catalog || catalog.type !== 'asset') throw new Error('Missing independently served composition data');
+    const source = typeof catalog.source === 'string' ? catalog.source : new TextDecoder().decode(catalog.source);
+    expect(catalog.fileName).toMatch(/^data\/builtin-v3-[\w-]+\.json$/);
+    expect(source).toBe(JSON.stringify(JSON.parse(readFileSync('resources/compositions/builtin-v3.json', 'utf8'))));
+    expect(gzipSync(source).length).toBeLessThanOrEqual(30_000);
+    expect(javascript).toContain('/api/modules/assets/jiwonpapa-page_builder/dist/' + catalog.fileName);
+    expect(modules.some(path => path.endsWith('/compositions/builtin-v3.json'))).toBe(false);
     expect(gzipSync(javascript).length).toBeLessThanOrEqual(508_500);
     expect(gzipSync(stylesheet).length).toBeLessThanOrEqual(45_200);
   });

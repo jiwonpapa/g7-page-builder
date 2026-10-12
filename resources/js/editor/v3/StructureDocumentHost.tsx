@@ -14,8 +14,8 @@ export interface StructureHostPorts {
 }
 
 /** Product chrome consumes ports; StructureEditor owns the document, commands and save history. */
-export function StructureDocumentHost({ documentId, locale = 'ko', ports, compositions = [], libraryUrl }: {
-  documentId?: string; locale?: string; ports: StructureHostPorts; compositions?: readonly unknown[]; libraryUrl: string;
+export function StructureDocumentHost({ documentId, locale = 'ko', ports, compositions = [], catalogMessage, libraryUrl }: {
+  documentId?: string; locale?: string; ports: StructureHostPorts; compositions?: readonly unknown[]; catalogMessage?: string; libraryUrl: string;
 }) {
   const [resource, setResource] = useState<V3DocumentResource | null>(null);
   const [busy, setBusy] = useState(Boolean(documentId));
@@ -79,6 +79,7 @@ export function StructureDocumentHost({ documentId, locale = 'ko', ports, compos
         ? resource.status === 'archived' ? '보관된 문서 · 읽기 전용' : dirty ? '저장할 변경 있음' : '초안 저장됨' : '새 문서'}</span>
       {resource && <span className="g7pb-structure-host__publication">{resource.active_artifact_sha256 ? '공개 버전과 별도인 초안' : '발행되지 않은 초안'}</span>}
     </header>
+    {catalogMessage && <p className="g7pb-structure-host__catalog" role="status">{catalogMessage}</p>}
     {error && <p className="g7pb-structure-host__error" role="alert">{error}</p>}
     {resource ? <div className="g7pb-structure-host__workspace">
       <StructureEditor document={resource.document} sessionId={`${resource.document.document_id}:${resource.lock_version}`}

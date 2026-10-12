@@ -200,6 +200,13 @@ export class PageBuilderApiClient {
     return this.request<DocumentResource>(`/documents/${encodeURIComponent(documentId)}`);
   }
 
+  /** Version-specific adapters validate the source; auth/error transport stays shared. */
+  async documentSource(documentId: string, write?: { document: unknown; expectedLockVersion: number }): Promise<unknown> {
+    return this.request<unknown>(`/documents/${encodeURIComponent(documentId)}${write ? '/draft' : ''}`, write ? {
+      method: 'PUT', body: JSON.stringify({ document: write.document, expected_lock_version: write.expectedLockVersion }),
+    } : {});
+  }
+
   async duplicateDocument(
     documentId: string,
     input: {

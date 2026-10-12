@@ -58,6 +58,15 @@ export function geometryCommand(document: DocumentV3, ids: readonly string[], bo
         set.inset_left = px(left + (box.left - left) * sx);
         set.inset_top = px(top + (box.top - top) * sy);
         reset.push('inset_right', 'inset_bottom');
+      } else if (item.node.style.position === 'absolute') {
+        // East/south handles keep the measured near edge, even when CSS was
+        // initially anchored only by right/bottom (including near: auto).
+        for (const [near, far, value] of [['inset_left', 'inset_right', box.left], ['inset_top', 'inset_bottom', box.top]] as const) {
+          if ((item.node.style[near] === undefined || item.node.style[near] === 'auto')
+            && item.node.style[far] !== undefined && item.node.style[far] !== 'auto') {
+            set[near] = px(value); reset.push(far);
+          }
+        }
       }
       if (operation.keepRatio) set.aspect_ratio = box.width / box.height;
       // Flex shrink/grow must not silently undo a direct pixel size.

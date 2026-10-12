@@ -81,6 +81,19 @@ describe('v3 measured geometry commands', () => {
     expect(style).toMatchObject({ height: { value: 90, unit: 'px' }, grow: 0, shrink: 0, basis: 'auto' });
     expect(style.aspect_ratio).toBeUndefined();
   });
+  it.each([undefined, 'auto'] as const)('keeps a far-anchored resize at its measured origin when near anchors are %s', near => {
+    const s = setup(), style = s.parent.slots.content![0].style;
+    style.inset_right = { value: 20, unit: '%' }; style.inset_bottom = { value: 40, unit: 'px' };
+    if (near) { style.inset_left = near; style.inset_top = near; }
+    s.boxes[0].left = 80; s.boxes[0].top = 40;
+    const before = JSON.stringify(s.doc);
+    const result = s.apply(geometryCommand(s.doc, [s.ids[0]], s.boxes, { kind: 'resize', width: 150, height: 90, keepRatio: false }));
+    const changed = result.document.blocks[0].slots.content![0].style;
+    expect(changed).toMatchObject({ width: { value: 150, unit: 'px' }, height: { value: 90, unit: 'px' },
+      inset_left: { value: 80, unit: 'px' }, inset_top: { value: 40, unit: 'px' } });
+    expect(changed.inset_right).toBeUndefined(); expect(changed.inset_bottom).toBeUndefined();
+    expect(JSON.stringify(s.doc)).toBe(before);
+  });
   it('moves absolute nodes by CSS pixels and resets conflicting far anchors', () => {
     const s = setup(); s.parent.slots.content![0].style.inset_right = { value: 10, unit: '%' };
     const result = s.apply(geometryCommand(s.doc, s.ids, s.boxes, { kind: 'translate', x: 10, y: -5 }));

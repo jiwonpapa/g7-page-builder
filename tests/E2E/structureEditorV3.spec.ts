@@ -318,14 +318,14 @@ test('v3 pointer movement rotation and mixed property changes each use one Undo'
 test('v3 focus loss cancels and layout constraints preserve canonical history', async ({ page }) => {
   const source = geometryFixture(), id = source.blocks[0].slots.content![0].instance_id;
   const frame = page.frameLocator('iframe'), target = frame.locator('[data-v3-node="' + id + '"]');
-  const prepare = async (document: DocumentV3) => {
+  const prepare = async (document: DocumentV3, direction = 'e', dy = 0) => {
     await open(page, document); await click(page, '정밀 조작');
     await page.getByLabel('작업면 확대', { exact: true }).selectOption('0.5');
     await page.getByLabel('스냅 가이드', { exact: true }).uncheck(); await target.click();
-    const handle = frame.locator('.moveable-control[data-direction="e"]'); await expect(handle).toBeVisible();
+    const handle = frame.locator('.moveable-control[data-direction="' + direction + '"]'); await expect(handle).toBeVisible();
     const box = await handle.boundingBox(); if (!box) throw Error('missing constraint handle');
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2, { steps: 5 });
+    await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2 + dy, { steps: 5 });
   };
   await prepare(source);
   await page.getByLabel('작업면 확대', { exact: true }).focus();
@@ -339,6 +339,19 @@ test('v3 focus loss cancels and layout constraints preserve canonical history', 
   await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style.width).toEqual({ value: 180, unit: 'px' });
   await expect.poll(() => target.evaluate(element => parseFloat(getComputedStyle(element).width))).toBe(180);
   await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(constrained);
+  await expect(page.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
+  const anchored = structuredClone(source), anchoredStyle = anchored.blocks[0].slots.content![0].style;
+  anchoredStyle.inset_left = 'auto'; anchoredStyle.inset_top = 'auto';
+  anchoredStyle.inset_right = { value: 860, unit: 'px' }; anchoredStyle.inset_bottom = { value: 1040, unit: 'px' };
+  await prepare(anchored, 'se', 20); await page.mouse.up();
+  await expect.poll(async () => (await read(page)).blocks[0].slots.content![0].style).toEqual({
+    ...source.blocks[0].slots.content![0].style, width: { value: 200, unit: 'px' }, height: { value: 120, unit: 'px' },
+  });
+  await expect.poll(() => target.evaluate(element => {
+    if (!(element instanceof HTMLElement)) throw Error('Expected authored element');
+    return [element.offsetLeft, element.offsetTop, element.offsetWidth, element.offsetHeight];
+  })).toEqual([80, 80, 200, 120]);
+  await click(page, '실행 취소'); await expect.poll(() => read(page)).toEqual(anchored);
   await expect(page.getByRole('button', { name: '실행 취소', exact: true })).toBeDisabled();
   const longPage = structuredClone(source);
   longPage.blocks[0].slots.content![0].style.inset_top = { value: 1000, unit: 'px' };

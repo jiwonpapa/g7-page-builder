@@ -65,6 +65,10 @@ V3_STRUCTURE = BrowserScenario("tests/E2E/structureEditorV3.spec.ts", titles=(
     "v3 responsive handles and mixed edits keep viewport ownership and one Undo",
     "v3 responsive canvases keep structure and direct text editing at all three widths",
     "v3 responsive boundary canvas preview and PHP output preserve layout and DOM semantics",
+    *("v3 composition internal edit save reopen and PHP parity " + key for key in (
+        "hero.poster", "hero.product", "hero.backdrop", "hero.editorial", "hero.device",
+        "hero.balanced", "hero.screenshot", "hero.overlap", "hero.offset",
+        "card.plain", "card.outlined", "image-text.left", "image-text.right")),
 ))
 
 PAGE = BrowserScenario("tests/E2E/pageBuilderLifecycle.spec.ts", titles=(
@@ -210,7 +214,7 @@ STYLE_CODE_SCOPES = {
 RULES = (
     (("src/Application/Compilation/V3/*",), (V3_STRUCTURE,)),
     (("resources/js/documents/v3/*", "resources/js/editor/v3/*", "resources/js/editor-application/v3/*",
-      "resources/js/adapters/interaction/*"), (V3_STRUCTURE,)),
+      "resources/js/adapters/interaction/*", "resources/js/blocks/v3/*"), (V3_STRUCTURE,)),
     (("resources/js/editor/canvasNavigationGuard.ts",), (NAVIGATION,)),
     (("resources/js/native-components/*", "resources/css/page-builder-native-components.css"), (NATIVE_COMPONENTS,)),
     (("resources/css/page-builder-basic-elements.css", "src/Application/Compilation/HtmlDocument/Blocks/BasicElementBlockCompiler.php"), (BASIC_ELEMENTS,)),

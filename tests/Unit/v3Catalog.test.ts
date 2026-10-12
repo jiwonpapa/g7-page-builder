@@ -46,6 +46,12 @@ describe('v3 composition source coverage (not completed conversion)', () => {
     expect(data.fields).toMatchObject({ heading: 'content', emptyMessage: 'content', source: 'binding', audience: 'binding' });
     expect(Object.hasOwn(data.fields, 'endpoint')).toBe(false);
     expect(Object.hasOwn(data.fields, 'response')).toBe(false);
+    expect(compositionContract('content.heading-01', 1)?.fields.level).toBe('content');
+    for (const type of Object.values(layout.layouts)) {
+      expect(Object.hasOwn(compositionContract(type, 1)!.fields, 'appearance')).toBe(false);
+      expect(inspectCompositionSource([block(type, { appearance: {} })], 'page'))
+        .toEqual([{ path: 'blocks.0.props.appearance', code: 'unknown_field' }]);
+    }
   });
   it('preserves unknown blocks and fields and reports exact paths', () => {
     const source = [block('external.custom', { untouched: true }), block('content.card-01', { unknown: 'preserve me' }, { future: [] }),

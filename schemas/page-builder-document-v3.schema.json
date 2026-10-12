@@ -1,0 +1,1589 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jwsoft.local/schemas/page-builder-document-v3",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "g7-page-builder/v3"
+    },
+    "document_id": {
+      "$ref": "#/$defs/uuid"
+    },
+    "slug": {
+      "type": "string",
+      "maxLength": 120,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$(?![\\s\\S])"
+    },
+    "mode": {
+      "const": "canvas"
+    },
+    "locale": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$(?![\\s\\S])"
+    },
+    "shell_mode": {
+      "enum": [
+        "template",
+        "builder",
+        "none"
+      ]
+    },
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "$ref": "#/$defs/color"
+        },
+        "muted": {
+          "$ref": "#/$defs/color"
+        },
+        "primary": {
+          "$ref": "#/$defs/color"
+        },
+        "surface": {
+          "$ref": "#/$defs/color"
+        },
+        "border": {
+          "$ref": "#/$defs/color"
+        },
+        "accent": {
+          "$ref": "#/$defs/color"
+        }
+      },
+      "required": [
+        "text",
+        "muted",
+        "primary",
+        "surface",
+        "border",
+        "accent"
+      ],
+      "additionalProperties": false
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "asset_id": {
+            "$ref": "#/$defs/uuid"
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "pattern": "^(https://[^\\s\\\\<>\"\u0000-\u001f]+|/(?!/)[^\\s\\\\<>\"\u0000-\u001f]*)$(?![\\s\\S])"
+          }
+        },
+        "required": [
+          "asset_id",
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 500
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      },
+      "minItems": 0,
+      "maxItems": 500
+    }
+  },
+  "required": [
+    "schema_version",
+    "document_id",
+    "slug",
+    "mode",
+    "locale",
+    "shell_mode",
+    "tokens",
+    "assets",
+    "blocks"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$(?![\\s\\S])"
+    },
+    "color": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "hex"
+            },
+            "value": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$(?![\\s\\S])"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "token"
+            },
+            "value": {
+              "enum": [
+                "text",
+                "muted",
+                "primary",
+                "surface",
+                "border",
+                "accent"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "length": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 8192,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "px"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "%"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 512,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "rem"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "vw"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "vh"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "signed_length": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": -8192,
+              "maximum": 8192,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "px"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "%"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": -512,
+              "maximum": 512,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "rem"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "vw"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000,
+              "multipleOf": 0.01
+            },
+            "unit": {
+              "const": "vh"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "size": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/length"
+        },
+        {
+          "enum": [
+            "auto",
+            "hug",
+            "fill"
+          ]
+        }
+      ]
+    },
+    "track": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/length"
+        },
+        {
+          "enum": [
+            "auto",
+            "min-content",
+            "max-content"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "fr": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 100,
+              "multipleOf": 0.01
+            }
+          },
+          "required": [
+            "fr"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "grid_track": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/track"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "min": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/length"
+                },
+                {
+                  "enum": [
+                    "auto",
+                    "min-content",
+                    "max-content"
+                  ]
+                }
+              ]
+            },
+            "max": {
+              "$ref": "#/$defs/track"
+            }
+          },
+          "required": [
+            "min",
+            "max"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "border": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 128,
+          "multipleOf": 0.01
+        },
+        "style": {
+          "enum": [
+            "solid",
+            "dashed",
+            "dotted",
+            "none"
+          ]
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        }
+      },
+      "required": [
+        "width",
+        "style",
+        "color"
+      ],
+      "additionalProperties": false
+    },
+    "shadow": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": -1024,
+          "maximum": 1024,
+          "multipleOf": 0.01
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1024,
+          "maximum": 1024,
+          "multipleOf": 0.01
+        },
+        "blur": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1024,
+          "multipleOf": 0.01
+        },
+        "spread": {
+          "type": "number",
+          "minimum": -1024,
+          "maximum": 1024,
+          "multipleOf": 0.01
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "inset": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "blur",
+        "spread",
+        "color",
+        "inset"
+      ],
+      "additionalProperties": false
+    },
+    "link": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^(https://[^\\s\\\\<>\"\u0000-\u001f]+|/(?!/)[^\\s\\\\<>\"\u0000-\u001f]*|#[A-Za-z][A-Za-z0-9_-]*)$(?![\\s\\S])"
+        },
+        "new_tab": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "url",
+        "new_tab"
+      ],
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "underline": {
+          "type": "boolean"
+        },
+        "strike": {
+          "type": "boolean"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8192,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "px"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 512,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "rem"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "link": {
+          "$ref": "#/$defs/link"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "background": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "solid"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            }
+          },
+          "required": [
+            "kind",
+            "color"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "linear"
+            },
+            "angle": {
+              "type": "number",
+              "minimum": -360,
+              "maximum": 360,
+              "multipleOf": 0.01
+            },
+            "stops": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "offset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "multipleOf": 0.001
+                  },
+                  "color": {
+                    "$ref": "#/$defs/color"
+                  }
+                },
+                "required": [
+                  "offset",
+                  "color"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 2,
+              "maxItems": 8
+            }
+          },
+          "required": [
+            "kind",
+            "angle",
+            "stops"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "image"
+            },
+            "asset_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "fit": {
+              "enum": [
+                "cover",
+                "contain"
+              ]
+            },
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "multipleOf": 0.01
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "multipleOf": 0.01
+            }
+          },
+          "required": [
+            "kind",
+            "asset_id",
+            "fit",
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "min_width": {
+          "$ref": "#/$defs/length"
+        },
+        "max_width": {
+          "$ref": "#/$defs/length"
+        },
+        "min_height": {
+          "$ref": "#/$defs/length"
+        },
+        "max_height": {
+          "$ref": "#/$defs/length"
+        },
+        "aspect_ratio": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 100,
+          "multipleOf": 0.01
+        },
+        "display": {
+          "enum": [
+            "flex",
+            "grid",
+            "block"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "row",
+            "column"
+          ]
+        },
+        "wrap": {
+          "enum": [
+            "nowrap",
+            "wrap"
+          ]
+        },
+        "justify": {
+          "enum": [
+            "start",
+            "end",
+            "center",
+            "space-between",
+            "space-around",
+            "space-evenly"
+          ]
+        },
+        "align": {
+          "enum": [
+            "start",
+            "end",
+            "center",
+            "stretch",
+            "baseline"
+          ]
+        },
+        "align_self": {
+          "enum": [
+            "auto",
+            "start",
+            "end",
+            "center",
+            "stretch",
+            "baseline"
+          ]
+        },
+        "grow": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "multipleOf": 0.01
+        },
+        "shrink": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "multipleOf": 0.01
+        },
+        "basis": {
+          "$ref": "#/$defs/size"
+        },
+        "row_gap": {
+          "$ref": "#/$defs/length"
+        },
+        "column_gap": {
+          "$ref": "#/$defs/length"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grid_track"
+          },
+          "minItems": 1,
+          "maxItems": 24
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grid_track"
+          },
+          "minItems": 1,
+          "maxItems": 24
+        },
+        "column_start": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 24,
+          "multipleOf": 1
+        },
+        "row_start": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 24,
+          "multipleOf": 1
+        },
+        "column_span": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 24,
+          "multipleOf": 1
+        },
+        "row_span": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 24,
+          "multipleOf": 1
+        },
+        "position": {
+          "enum": [
+            "flow",
+            "relative",
+            "absolute"
+          ]
+        },
+        "z_index": {
+          "type": "number",
+          "minimum": -1000,
+          "maximum": 1000,
+          "multipleOf": 1
+        },
+        "rotation": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360,
+          "multipleOf": 0.01
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "multipleOf": 0.001
+        },
+        "background": {
+          "$ref": "#/$defs/background"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "shadows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/shadow"
+          },
+          "minItems": 0,
+          "maxItems": 8
+        },
+        "font_family": {
+          "enum": [
+            "sans",
+            "serif",
+            "mono"
+          ]
+        },
+        "font_weight": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 900,
+          "multipleOf": 100
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8192,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "px"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 512,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "rem"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "line_height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 5,
+              "multipleOf": 0.01
+            },
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 8192,
+                      "multipleOf": 0.01
+                    },
+                    "unit": {
+                      "const": "px"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 512,
+                      "multipleOf": 0.01
+                    },
+                    "unit": {
+                      "const": "rem"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          ]
+        },
+        "letter_spacing": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": -8192,
+                  "maximum": 8192,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "px"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": -512,
+                  "maximum": 512,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "rem"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "text_align": {
+          "enum": [
+            "start",
+            "end",
+            "center",
+            "justify"
+          ]
+        },
+        "text_decoration": {
+          "enum": [
+            "none",
+            "underline",
+            "line-through"
+          ]
+        },
+        "object_fit": {
+          "enum": [
+            "cover",
+            "contain",
+            "fill",
+            "none",
+            "scale-down"
+          ]
+        },
+        "object_x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "multipleOf": 0.01
+        },
+        "object_y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "multipleOf": 0.01
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "padding_top": {
+          "$ref": "#/$defs/length"
+        },
+        "margin_top": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "inset_top": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "border_top": {
+          "$ref": "#/$defs/border"
+        },
+        "padding_right": {
+          "$ref": "#/$defs/length"
+        },
+        "margin_right": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "inset_right": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "border_right": {
+          "$ref": "#/$defs/border"
+        },
+        "padding_bottom": {
+          "$ref": "#/$defs/length"
+        },
+        "margin_bottom": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "inset_bottom": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "border_bottom": {
+          "$ref": "#/$defs/border"
+        },
+        "padding_left": {
+          "$ref": "#/$defs/length"
+        },
+        "margin_left": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "inset_left": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/signed_length"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "border_left": {
+          "$ref": "#/$defs/border"
+        },
+        "radius_top_left": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8192,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "px"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "%"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 512,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "rem"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "radius_top_right": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8192,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "px"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "%"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 512,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "rem"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "radius_bottom_left": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8192,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "px"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "%"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 512,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "rem"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "radius_bottom_right": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8192,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "px"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "%"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 512,
+                  "multipleOf": 0.01
+                },
+                "unit": {
+                  "const": "rem"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "instance_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "type": {
+          "enum": [
+            "layout.section",
+            "layout.container",
+            "content.heading",
+            "content.text",
+            "media.image",
+            "action.link"
+          ]
+        },
+        "block_version": {
+          "const": 1
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "props": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "tag": {
+                  "enum": [
+                    "section",
+                    "article",
+                    "aside",
+                    "div",
+                    "nav",
+                    "header",
+                    "footer"
+                  ]
+                }
+              },
+              "required": [
+                "tag"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "level": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 6,
+                  "multipleOf": 1
+                },
+                "runs": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/run"
+                  },
+                  "minItems": 0,
+                  "maxItems": 200
+                }
+              },
+              "required": [
+                "level",
+                "runs"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "paragraphs": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/run"
+                    },
+                    "minItems": 0,
+                    "maxItems": 200
+                  },
+                  "minItems": 0,
+                  "maxItems": 200
+                }
+              },
+              "required": [
+                "paragraphs"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "asset_id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "alt": {
+                  "type": "string",
+                  "maxLength": 1000
+                }
+              },
+              "required": [
+                "asset_id",
+                "alt"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                "link": {
+                  "$ref": "#/$defs/link"
+                }
+              },
+              "required": [
+                "label",
+                "link"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "slots": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/node"
+              },
+              "minItems": 0,
+              "maxItems": 500
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "responsive": {
+          "type": "object",
+          "properties": {
+            "tablet": {
+              "$ref": "#/$defs/style"
+            },
+            "mobile": {
+              "$ref": "#/$defs/style"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "instance_id",
+        "type",
+        "block_version",
+        "name",
+        "locked",
+        "props",
+        "slots",
+        "style",
+        "responsive"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

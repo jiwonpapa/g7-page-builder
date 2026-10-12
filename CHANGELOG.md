@@ -8,6 +8,8 @@
 
 ### Added
 
+- IP2 v3 목표 문서·정밀 스타일 공통 스키마와 순수 TS/PHP 검증, 기존 원본의 명시적 이행 준비 snapshot 계약. 기존 저장/컴파일러와 Site Part는 전환하지 않으며 정밀 편집 UI·이행 실행·발행은 후속 차수입니다.
+
 - IP1 독립 엔진 결합 시험 fixture: G7 없는 Puck/Tiptap·Moveable·Selecto의 iframe, 줌, 입력 소유권, 단일 이력 검증과 격리된 의존성/검사 계획. 제품 편집 기능이나 v3 문서 전환을 추가한 것은 아닙니다.
 
 ### Changed

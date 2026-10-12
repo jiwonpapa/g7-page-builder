@@ -48,6 +48,12 @@ BROWSER_HELPER_SPECS = {
 }
 BROWSER_CONSUMER_TEST = "tests/Harness/test_planner.py"
 CONTRACT_FIXTURE_CONSUMERS = {
+    "tests/Contract/document-v3.fixture.json": (
+        "tests/Unit/documentV3.test.ts", "tests/UnitPhp/DocumentV3Test.php",
+    ),
+    "tests/Fixtures/document-v3-cases.json": (
+        "tests/Unit/documentV3.test.ts", "tests/UnitPhp/DocumentV3Test.php",
+    ),
     "schemas/page-builder-document.schema.json": (
         "tests/Unit/documentSchema.test.ts", "tests/Unit/cardComposition.test.ts",
         "tests/UnitPhp/CardCompositionTest.php", "tests/UnitPhp/HtmlDocumentCompilerTest.php",

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import fixture from '../Contract/document-v3.fixture.json';
-import { PageBuilderApiClient, PageBuilderApiError, PAGE_BUILDER_API_PREFIX } from '../../resources/js/api/pageBuilderApi';
+import { PageDocumentApiClient, PageBuilderApiError, PAGE_BUILDER_API_PREFIX } from '../../resources/js/api/pageBuilderApi';
 import { createStructureDocument, createV3DocumentApi, parseV3DocumentResource } from '../../resources/js/api/v3DocumentResource';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 
@@ -21,7 +21,7 @@ describe('v3 document API adapter', () => {
   it('creates an explicitly versioned empty document through the existing authenticated endpoint', async () => {
     const data = { ...resource(), document: { ...source(), blocks: [] } };
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response(data));
-    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+    const client = new PageDocumentApiClient({ fetchImpl, readAuthToken: () => 'token' });
     const input = { title: '빈 페이지', slug: 'blank', locale: 'ko', shell_mode: 'none' as const };
     expect(await createStructureDocument(client, input)).toEqual(data);
     const [url, options] = fetchImpl.mock.calls[0];
@@ -35,7 +35,7 @@ describe('v3 document API adapter', () => {
   it('rejects a legacy or malformed response to v3 creation instead of converting it', async () => {
     for (const document of [{ ...source(), schema_version: 'g7-page-builder/v1' }, { ...source(), assets: [] }]) {
       const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response({ ...resource(), document }));
-      const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+      const client = new PageDocumentApiClient({ fetchImpl, readAuthToken: () => 'token' });
       await expect(createStructureDocument(client, { title: '새 문서', slug: 'new', locale: 'ko' })).rejects.toThrow();
       expect(fetchImpl).toHaveBeenCalledOnce();
     }
@@ -44,7 +44,7 @@ describe('v3 document API adapter', () => {
   it('loads canonical v3 through the existing authenticated transport without coercing empty maps', async () => {
     const data = resource();
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response(data));
-    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'test-token' });
+    const client = new PageDocumentApiClient({ fetchImpl, readAuthToken: () => 'test-token' });
     expect(await createV3DocumentApi(client).getStructureDocument(documentId)).toEqual(data);
     expect(fetchImpl).toHaveBeenCalledOnce();
     const [url, options] = fetchImpl.mock.calls[0];
@@ -58,7 +58,7 @@ describe('v3 document API adapter', () => {
     const before = JSON.stringify(document);
     const data = { ...resource(), lock_version: 8, revision: 5 };
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response(data));
-    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'test-token' });
+    const client = new PageDocumentApiClient({ fetchImpl, readAuthToken: () => 'test-token' });
     expect(await createV3DocumentApi(client).saveStructureDraft(documentId, document, 7)).toEqual(data);
     const [url, options] = fetchImpl.mock.calls[0];
     expect(url).toBe(`${PAGE_BUILDER_API_PREFIX}/documents/${documentId}/draft`);
@@ -94,34 +94,34 @@ describe('v3 document API adapter', () => {
       { ...source(), blocks: [{ ...source().blocks[0], slots: [] }] },
     ];
     for (const document of malformed) {
-      const client = new PageBuilderApiClient({ fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(response({ ...resource(), document })), readAuthToken: () => 'token' });
+      const client = new PageDocumentApiClient({ fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(response({ ...resource(), document })), readAuthToken: () => 'token' });
       await expect(createV3DocumentApi(client).getStructureDocument(documentId)).rejects.toThrow();
     }
   });
 
   it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])('rejects an invalid save lock before HTTP: %s', async (lock) => {
     const fetchImpl = vi.fn<typeof fetch>();
-    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+    const client = new PageDocumentApiClient({ fetchImpl, readAuthToken: () => 'token' });
     await expect(createV3DocumentApi(client).saveStructureDraft(documentId, source(), lock)).rejects.toThrow();
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it('rejects a wrong source identity before HTTP', async () => {
     const fetchImpl = vi.fn<typeof fetch>();
-    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token' });
+    const client = new PageDocumentApiClient({ fetchImpl, readAuthToken: () => 'token' });
     await expect(createV3DocumentApi(client).saveStructureDraft('00000000-0000-4000-8000-000000000098', source(), 7)).rejects.toThrow();
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it.each([{ lock_version: 7 }, { lock_version: 6 }, { lock_version: 8, status: 'archived' }])('rejects an invalid save acknowledgement: %j', async (patch) => {
-    const client = new PageBuilderApiClient({ fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(response({ ...resource(), ...patch })), readAuthToken: () => 'token' });
+    const client = new PageDocumentApiClient({ fetchImpl: vi.fn<typeof fetch>().mockResolvedValue(response({ ...resource(), ...patch })), readAuthToken: () => 'token' });
     await expect(createV3DocumentApi(client).saveStructureDraft(documentId, source(), 7)).rejects.toThrow();
   });
 
   it.each([401, 403, 409, 422, 500])('preserves existing API errors without retrying a write: %s', async (status) => {
     const onUnauthorized = vi.fn();
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response({ success: false, error: { code: 'G7PB_TEST_FAILURE', message: '저장 거부' } }, status));
-    const client = new PageBuilderApiClient({ fetchImpl, readAuthToken: () => 'token', onUnauthorized });
+    const client = new PageDocumentApiClient({ fetchImpl, readAuthToken: () => 'token', onUnauthorized });
     await expect(createV3DocumentApi(client).saveStructureDraft(documentId, source(), 7)).rejects.toBeInstanceOf(PageBuilderApiError);
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(onUnauthorized).toHaveBeenCalledTimes(status === 401 ? 1 : 0);

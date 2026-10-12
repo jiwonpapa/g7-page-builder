@@ -157,7 +157,8 @@ function parseEnvelope<T>(payload: unknown): T {
   throw parseErrorPayload(payload, 0);
 }
 
-export class PageBuilderApiClient {
+/** Shared authentication and document-only endpoints; the structure entry does not load manager/store methods. */
+export class PageDocumentApiClient {
   private readonly fetchImpl: typeof fetch;
   private readonly readAuthToken: () => string | null;
   private readonly onUnauthorized: (loginUrl: string) => void;
@@ -183,6 +184,74 @@ export class PageBuilderApiClient {
     });
   }
 
+  async getDocument(documentId: string): Promise<DocumentResource> {
+    return this.request<DocumentResource>(`/documents/${encodeURIComponent(documentId)}`);
+  }
+
+  /** Version-specific adapters validate the source; auth/error transport stays shared. */
+  async documentSource(documentId: string, write?: { document: unknown; expectedLockVersion: number }): Promise<unknown> {
+    return this.request<unknown>(`/documents/${encodeURIComponent(documentId)}${write ? '/draft' : ''}`, write ? {
+      method: 'PUT', body: JSON.stringify({ document: write.document, expected_lock_version: write.expectedLockVersion }),
+    } : {});
+  }
+
+  protected async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const response = await this.authorizedFetch(path, init);
+    const payload = await response.json().catch(() => null);
+    if (response.status === 401) {
+      const loginUrl = buildAdminLoginUrl(this.currentUrl());
+      this.onUnauthorized(loginUrl);
+      throw parseErrorPayload(payload, response.status);
+    }
+
+    if (!response.ok) {
+      throw parseErrorPayload(payload, response.status);
+    }
+
+    return normalizeDocumentTransport(parseEnvelope<T>(payload));
+  }
+
+  protected async authorizedFetch(path: string, init: RequestInit = {}, accept = 'application/json'): Promise<Response> {
+    const token = this.readAuthToken();
+    if (!token) {
+      const loginUrl = buildAdminLoginUrl(this.currentUrl());
+      this.onUnauthorized(loginUrl);
+      throw new PageBuilderApiError(
+        '관리자 로그인이 필요합니다. 로그인 화면으로 이동합니다.',
+        401,
+        'G7PB_AUTH_REQUIRED',
+      );
+    }
+
+    const headers: Record<string, string> = {
+      Accept: accept,
+      'X-Requested-With': 'XMLHttpRequest',
+      Authorization: `Bearer ${token}`,
+    };
+    if (!(init.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${PAGE_BUILDER_API_PREFIX}${path}`, {
+        ...init,
+        credentials: 'same-origin',
+        headers: { ...headers, ...init.headers },
+      });
+    } catch (error) {
+      throw new PageBuilderApiError(
+        error instanceof Error ? error.message : '서버에 연결할 수 없습니다.',
+        0,
+        'G7PB_NETWORK_ERROR',
+      );
+    }
+
+    return response;
+  }
+}
+
+export class PageBuilderApiClient extends PageDocumentApiClient {
   async listDocuments(
     page = 1,
     perPage = 100,
@@ -195,17 +264,6 @@ export class PageBuilderApiClient {
     });
 
     return this.request<DocumentListResource>(`/documents?${query.toString()}`);
-  }
-
-  async getDocument(documentId: string): Promise<DocumentResource> {
-    return this.request<DocumentResource>(`/documents/${encodeURIComponent(documentId)}`);
-  }
-
-  /** Version-specific adapters validate the source; auth/error transport stays shared. */
-  async documentSource(documentId: string, write?: { document: unknown; expectedLockVersion: number }): Promise<unknown> {
-    return this.request<unknown>(`/documents/${encodeURIComponent(documentId)}${write ? '/draft' : ''}`, write ? {
-      method: 'PUT', body: JSON.stringify({ document: write.document, expected_lock_version: write.expectedLockVersion }),
-    } : {});
   }
 
   async duplicateDocument(
@@ -691,60 +749,6 @@ export class PageBuilderApiClient {
     return parseSiteKitReceipt(await this.request<unknown>('/site-kits/install', { method: 'POST', body: JSON.stringify(input) }));
   }
 
-  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const response = await this.authorizedFetch(path, init);
-    const payload = await response.json().catch(() => null);
-    if (response.status === 401) {
-      const loginUrl = buildAdminLoginUrl(this.currentUrl());
-      this.onUnauthorized(loginUrl);
-      throw parseErrorPayload(payload, response.status);
-    }
-
-    if (!response.ok) {
-      throw parseErrorPayload(payload, response.status);
-    }
-
-    return normalizeDocumentTransport(parseEnvelope<T>(payload));
-  }
-
-  private async authorizedFetch(path: string, init: RequestInit = {}, accept = 'application/json'): Promise<Response> {
-    const token = this.readAuthToken();
-    if (!token) {
-      const loginUrl = buildAdminLoginUrl(this.currentUrl());
-      this.onUnauthorized(loginUrl);
-      throw new PageBuilderApiError(
-        '관리자 로그인이 필요합니다. 로그인 화면으로 이동합니다.',
-        401,
-        'G7PB_AUTH_REQUIRED',
-      );
-    }
-
-    const headers: Record<string, string> = {
-      Accept: accept,
-      'X-Requested-With': 'XMLHttpRequest',
-      Authorization: `Bearer ${token}`,
-    };
-    if (!(init.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    let response: Response;
-    try {
-      response = await this.fetchImpl(`${PAGE_BUILDER_API_PREFIX}${path}`, {
-        ...init,
-        credentials: 'same-origin',
-        headers: { ...headers, ...init.headers },
-      });
-    } catch (error) {
-      throw new PageBuilderApiError(
-        error instanceof Error ? error.message : '서버에 연결할 수 없습니다.',
-        0,
-        'G7PB_NETWORK_ERROR',
-      );
-    }
-
-    return response;
-  }
 }
 
 export type PageBuilderApiEnvelope<T> = ApiEnvelope<T>;

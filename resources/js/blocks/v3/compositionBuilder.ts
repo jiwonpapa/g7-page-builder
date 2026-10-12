@@ -4,6 +4,7 @@ import { indexTree } from '../../documents/v3/tree';
 import { validateDocumentV3 } from '../../documents/v3/validate';
 
 export const px = (value: number) => ({ value, unit: 'px' as const });
+export const fluidTrack = (fr = 1) => ({ min: px(0), max: { fr } });
 export const token = (value: Extract<Color, { kind: 'token' }>['value']): Color => ({ kind: 'token', value });
 export const padding = (value: number): Style => ({ padding_top: px(value), padding_right: px(value), padding_bottom: px(value), padding_left: px(value) });
 export const radius = (value: number): Style => ({ radius_top_left: px(value), radius_top_right: px(value), radius_bottom_left: px(value), radius_bottom_right: px(value) });
@@ -30,7 +31,7 @@ export class CompositionBuilder {
   }
   frame(name: string, children: Node[], style: Style = {}, tag: LayoutTag = 'div'): Node {
     return { ...this.base(name), type: tag === 'section' ? 'layout.section' : 'layout.container',
-      props: { tag }, slots: { content: children }, style: structuredClone(style) };
+      props: { tag }, slots: { content: children }, style: { min_width: px(0), ...structuredClone(style) } };
   }
   text(name: string, value: string, style: Style = {}): Node {
     return { ...this.base(name), type: 'content.text', props: { paragraphs: [[{ text: value }]] }, style: structuredClone(style) };
@@ -42,7 +43,7 @@ export class CompositionBuilder {
   link(name: string, label: string, url: string, variant: 'primary' | 'secondary' | 'text' = 'text'): Node {
     if (!url) return this.text(name, label);
     const style: Style = variant === 'text' ? { color: token('primary'), text_decoration: 'underline' }
-      : { ...padding(12), ...radius(8), width: 'hug', text_decoration: 'none',
+      : { ...padding(12), ...radius(8), width: 'hug', max_width: { value: 100, unit: '%' }, text_decoration: 'none',
         ...(variant === 'primary' ? { background: { kind: 'solid', color: token('primary') }, color: token('surface') } : outline()) };
     return { ...this.base(name), type: 'action.link', props: { label, link: { url, new_tab: false } }, style };
   }
@@ -55,17 +56,17 @@ export class CompositionBuilder {
       this.source.assets.push(asset);
     }
     return { ...this.base(name), type: 'media.image', props: { asset_id: asset.asset_id, alt },
-      style: { width: 'fill', aspect_ratio: 1.5, object_fit: 'cover', ...radius(8), ...style } };
+      style: { width: 'fill', max_width: { value: 100, unit: '%' }, aspect_ratio: 1.5, object_fit: 'cover', ...radius(8), ...style } };
   }
   section(name: string, eyebrow: string, heading: string, children: Node[]): Node {
     return this.frame(name, [...(eyebrow ? [this.text('보조 문구', eyebrow, { color: token('accent'), font_size: px(14) })] : []),
       ...(heading ? [this.heading('제목', heading)] : []), ...children], { ...vertical(24), ...padding(32), width: 'fill' }, 'section');
   }
   grid(name: string, children: Node[], columns: number, gap = 24): Node {
-    const root = this.frame(name, children, { display: 'grid', columns: Array.from({ length: columns }, () => ({ fr: 1 })),
+    const root = this.frame(name, children, { display: 'grid', columns: Array.from({ length: columns }, () => fluidTrack()),
       column_gap: px(gap), row_gap: px(gap), width: 'fill', align: 'start' });
-    root.responsive.tablet = { columns: Array.from({ length: Math.min(2, columns) }, () => ({ fr: 1 })) };
-    root.responsive.mobile = { columns: [{ fr: 1 }] };
+    root.responsive.tablet = { columns: Array.from({ length: Math.min(2, columns) }, () => fluidTrack()) };
+    root.responsive.mobile = { columns: [fluidTrack()] };
     return root;
   }
   finish(root: Node): TreeClipboard {

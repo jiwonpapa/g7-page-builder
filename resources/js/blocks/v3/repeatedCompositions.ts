@@ -2,7 +2,7 @@ import type { Node, Style } from '../../documents/v3/types';
 import type { ArticleListBlockProps, BreadcrumbsBlockProps, ButtonsBlockProps, CardGridBlockProps, ComparisonTableBlockProps,
   DownloadResourcesBlockProps, EventScheduleBlockProps, GalleryBlockProps, LogoCloudBlockProps, PricingBlockProps,
   ProcessTimelineBlockProps, TeamBlockProps, TestimonialsBlockProps } from '../../documents/builtinBlockContracts';
-import { CompositionBuilder, outline, padding, px, radius, token, vertical } from './compositionBuilder';
+import { CompositionBuilder, fluidTrack, outline, padding, px, radius, token, vertical } from './compositionBuilder';
 
 const muted: Style = { color: token('muted'), line_height: 1.6 };
 const card: Style = { ...vertical(), ...padding(24), ...radius(12), ...outline() };
@@ -37,7 +37,7 @@ export function pricing(p: PricingBlockProps, b: CompositionBuilder): Node {
     return row;
   });
   const content = collection(b, '플랜 목록', plans, layout === 'featured' ? 'cards' : layout, p.plans.length);
-  if (layout === 'featured') content.style.columns = p.plans.map(plan => ({ fr: plan.featured ? 2 : 1 }));
+  if (layout === 'featured') content.style.columns = p.plans.map(plan => fluidTrack(plan.featured ? 2 : 1));
   return b.section('가격 플랜', p.eyebrow, p.heading, [content]);
 }
 export function logos(p: LogoCloudBlockProps, b: CompositionBuilder): Node {
@@ -80,7 +80,7 @@ export function process(p: ProcessTimelineBlockProps, b: CompositionBuilder): No
     ...(item.linkLabel ? [b.link('단계 링크', item.linkLabel, item.linkUrl)] : []),
   ], { ...card, display: 'block' }, 'li'));
   const list = b.frame('진행 순서', items, p.layout === 'horizontal'
-    ? { display: 'grid', columns: items.map(() => ({ fr: 1 })), column_gap: px(24), row_gap: px(24) } : vertical(24), 'ol');
+    ? { display: 'grid', columns: items.map(() => fluidTrack()), column_gap: px(24), row_gap: px(24) } : vertical(24), 'ol');
   list.responsive.mobile = { display: 'flex', direction: 'column' };
   return b.section('진행 과정', p.eyebrow, p.heading, [list]);
 }

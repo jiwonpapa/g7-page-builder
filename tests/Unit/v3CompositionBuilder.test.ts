@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../Contract/document-v3.fixture.json';
-import { CompositionBuilder, outline, px, token } from '../../resources/js/blocks/v3/compositionBuilder';
+import { CompositionBuilder, fluidTrack, outline, px, token } from '../../resources/js/blocks/v3/compositionBuilder';
 import { validateDocumentV3 } from '../../resources/js/documents/v3/validate';
 import { executeTreeCommand } from '../../resources/js/documents/v3/commands';
 import { indexTree } from '../../resources/js/documents/v3/tree';
@@ -43,6 +43,20 @@ describe('canonical composition builder', () => {
     expect(nodes.find(node => node.name === '열')?.responsive.tablet?.columns).toHaveLength(2);
     expect(nodes.find(node => node.name === '열')?.responsive.mobile?.columns).toHaveLength(1);
     expect(nodes.find(node => node.name === '제목')?.style.font_size).toEqual(px(28));
+  });
+  it('keeps intrinsic images and long buttons within shrinkable responsive tracks', () => {
+    const b = new CompositionBuilder(validateDocumentV3(fixture), ids());
+    const image = b.image('사진', '/photo.webp', '사진');
+    const button = b.link('버튼', '긴 버튼 문구를 줄바꿈해서 읽습니다', '/next', 'primary');
+    const frame = b.frame('항목', [image, button]);
+    const grid = b.grid('목록', [frame], 3);
+    expect(frame.style.min_width).toEqual(px(0));
+    expect(image.style.max_width).toEqual({ value: 100, unit: '%' });
+    expect(button.style.max_width).toEqual({ value: 100, unit: '%' });
+    expect(grid.style.columns).toEqual([fluidTrack(), fluidTrack(), fluidTrack()]);
+    expect(grid.responsive.tablet?.columns).toEqual([fluidTrack(), fluidTrack()]);
+    expect(grid.responsive.mobile?.columns).toEqual([fluidTrack()]);
+    expect(validateDocumentV3(b.finish(grid).source)).toBeTruthy();
   });
   it('rejects unsafe assets, IDs, and over-limit trees without changing the target', () => {
     const document = validateDocumentV3(structuredClone(fixture)), before = JSON.stringify(document);

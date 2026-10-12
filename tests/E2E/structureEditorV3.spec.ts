@@ -346,11 +346,12 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   const typed = await read(page);
   // Explicit pointer focus after fill represents selecting authored text. Native Home immediately
   // after synthetic fill is mistaken for a browser focus reset by ProseMirror's 200ms heuristic.
-  await input.click();
-  for (const key of ['Home', 'Shift+ArrowRight', 'Shift+ArrowRight']) {
-    await page.keyboard.press(key);
-  }
-  await expect.poll(() => input.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe('한글');
+  const selectPrefix = async () => {
+    await input.click();
+    for (const key of ['Home', 'Shift+ArrowRight', 'Shift+ArrowRight']) await page.keyboard.press(key);
+    await expect.poll(() => input.evaluate(element => element.ownerDocument.getSelection()?.toString())).toBe('한글');
+  };
+  await selectPrefix();
   const format = page.getByRole('toolbar', { name: '부분 서식' });
   await format.getByRole('button', { name: '굵게', exact: true }).click();
   await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"bold":true');
@@ -360,16 +361,20 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await expect(input.locator('[data-v3-bold="true"]')).toHaveCount(0);
   await click(page, '다시 실행'); await expect.poll(() => read(page)).toEqual(bold);
   await expect(input.locator('[data-v3-bold="true"]')).toHaveText('한글');
-  await input.click(); await input.press('Home'); await input.press('Shift+ArrowRight'); await input.press('Shift+ArrowRight');
+  await selectPrefix();
   await format.getByLabel('부분 색상', { exact: true }).fill('#2255ff');
   await format.getByRole('button', { name: '색상 적용', exact: true }).click();
-  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('#2255ff');
+  const colored = { text: '한글', bold: true, color: { kind: 'hex', value: '#2255ff' } };
+  await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[colored, { text: ' 정밀 편집' }]] });
   await format.getByLabel('부분 크기', { exact: true }).fill('20');
   await format.getByRole('button', { name: '크기 적용', exact: true }).click();
-  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"font_size":{"value":20,"unit":"px"}');
+  const sized = { ...colored, font_size: { value: 20, unit: 'px' } };
+  await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[sized, { text: ' 정밀 편집' }]] });
   await format.getByLabel('부분 링크', { exact: true }).fill('/about');
   await format.getByRole('button', { name: '링크 적용', exact: true }).click();
-  await expect.poll(async () => JSON.stringify((await read(page)).blocks[0].props)).toContain('"url":"/about"');
+  await expect.poll(async () => (await read(page)).blocks[0].props).toEqual({ paragraphs: [[
+    { ...sized, link: { url: '/about', new_tab: false } }, { text: ' 정밀 편집' },
+  ]] });
   await input.click(); await input.press('End'); await input.press('Enter'); await input.pressSequentially('Second line');
   await expect.poll(async () => {
     const current = (await read(page)).blocks[0]; return current.type === 'content.text' ? current.props.paragraphs.length : 0;
@@ -394,6 +399,7 @@ test('v3 canvas text and partial formats share Puck history and preserve readonl
   await open(page, final, true);
   await layer(page, id).click();
   await expect(page.frameLocator('iframe').locator('[contenteditable="true"]')).toHaveCount(0);
+  await expect(page.getByLabel('문맥 도구', { exact: true })).toBeEmpty();
   await expect(page.getByRole('button', { name: '디자인 적용', exact: true })).toBeDisabled();
   expect(await read(page)).toEqual(final); expect(errors).toEqual([]);
   await info.attach('canonical-richtext', { contentType: 'application/json', body: saved });

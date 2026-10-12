@@ -54,7 +54,8 @@ function CommandButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLBu
 }
 /** Preserve Puck's public click boundary when the action bar is portaled into the Inspector. */
 export function ContextActionBar({ target, children }: { target: HTMLElement | null; children: React.ReactNode }) {
-  return target ? createPortal(<ActionBar>{children}</ActionBar>, target) : null;
+  const actions = React.Children.toArray(children);
+  return target && actions.length ? createPortal(<ActionBar>{actions}</ActionBar>, target) : null;
 }
 function RenameControl({ node, disabled, rename }: { node: Node; disabled?: boolean; rename: (name: string) => void }) {
   const [name, setName] = useState(node.name);

@@ -734,6 +734,13 @@
           "commit": "04ba68777a0b15dd1f68a3a0c9120b33394f7ea0",
           "result": "pass",
           "path": "docs/audits/2026-10-13-ip7-v3-publication-ui.md"
+        },
+        {
+          "acceptance_id": "IND-07",
+          "kind": "partial-workspace-surface-ux",
+          "commit": "7c1fad72eb4f26e2d2632877e59423a3d56fb551",
+          "result": "pass",
+          "path": "docs/audits/2026-10-13-ip7-v3-publication-ui.md"
         }
       ],
       "blocked_reason": null,

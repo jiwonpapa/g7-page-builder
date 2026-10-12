@@ -1,6 +1,6 @@
 # IP7 공통 요소 편집기의 공개 미리보기·발행 UI
 
-상태: 공개 미리보기·발행 UI 통합 검증 완료, 화면 감사에서 발견한 작업면 배경 보완 진행 중. IP7 전체와 IP8~IP10 완료 또는 운영 배포를 뜻하지 않는다.
+상태: 공개 미리보기·발행 UI 및 화면 감사에서 발견한 작업면 배경 보완의 Local 통합 검증 완료. IP7 전체와 IP8~IP10 완료 또는 운영 배포를 뜻하지 않는다.
 
 - task: `ip7-v3-publication-ui-20261013`, scoped 14개 정확 파일, 기준 `0566243557d238736e222d4b92850853b48ff35d`.
 - 기존 단일 Puck 문서/이력과 DraftPort로 현재 입력을 저장한다. 같은 편집 epoch의 저장 성공만 공개 미리보기·발행 준비로 전달한다. 블록 이름별 분기·등록·새 원본·새 Undo를 추가하지 않는다.
@@ -42,3 +42,13 @@
 진단 중 iframe html/body 배경만 투명하게 바꾸자 360px 작업면 경계가 정상 표시됐다. 근거: `output/playwright/workspace-background-diagnostic-pUz4zn/measurements.json`, `before-360.png`, `transparent-frame-360.png`. 진단 문서는 소유 slug를 확인해 보관 처리했고 사용자 문서와 테마 파일은 변경하지 않았다.
 
 `ip7-workspace-surface-20261013`은 `WorkspaceFrame`의 공개 iframe 문맥 안에서 배경색만 격리하고 해제 시 원래 inline 값/우선순위를 복구한다. 작성한 요소 배경·문서 값·Undo는 변경하지 않는다. 관련 단위 시험과 실제 호스트 스타일 로딩 이후 세 폭의 배경/화면 검사를 추가하며, 화면 캡처는 진행 중 애니메이션을 끝낸 상태로 수집한다. 후속 보완의 제출/통합/실제 회귀 결과는 확보 후 기록한다.
+
+## 작업면 수정 검증 완료
+
+제출 `15f027537710471dcedadb324e69733ba10c4fe2`, Local 통합 `7c1fad72eb4f26e2d2632877e59423a3d56fb551`. 공식 `make task-integrate-scoped TASK=ip7-workspace-surface-20261013 INTEGRATION_TASK=integration-ip7-20261012`가 6개 변경/11개 gate를 통과했다. Node 24·PHP 8.5·고정 Docker Chromium이며 동일 입력 성공 검사는 재사용했다.
+
+- 실제 제품 UI **12/12 통과**: `output/playwright/gates/integration-ip7-20261012/9f014c4b7ae4fc79d641e2e490c6db752ca437a9ef9d7fd54d112dbf7b1f56fb/5ed4d8ae0a49445ea55ba99502ea3cb3/results.json`.
+- 독립 구조 편집 **87/87 통과**: `output/playwright/gates/integration-ip7-20261012/d9061f22b4b2b70b8cfcc0e4528eab44498a3f32841d02c7ea6f2eb9f75793b2/648d191c658a4286947a2eae57e90549/results.json`.
+- 두 보고서 모두 실패·skip·flaky 0. 실제 UI 시험은 호스트 스타일시트 복사가 완료된 뒤 iframe html/body 투명 및 작업면 흰 배경을 확인한다. 단위 시험은 원래 inline 값/priority·높이 복구와 작성 요소 배경 불변을 확인한다.
+- 원본 보고서의 360/768/1280px 캡처 추출본 `output/playwright/workspace-fixed-review-XccuCA/`를 육안 확인했다. 작업면과 주변 배경 경계가 보이고 입력한 제목이 유지된다. 이 간단한 문서의 가독성 확인을 전체 UI·UX 감사로 확대하지 않는다.
+- 실행 종료 시 `jwsoft-business01 0.3.1` 활성·`sirsoft-basic 1.1.4` 비활성으로 복구됐다. 관련 테마 1,667개 파일의 집계 SHA256은 `0245183e355cb1e96851ee005d6718e825bb8969bd2686dad42bda4c2b3c6981`로 이전과 같다. G7 코어·테마 원본·운영 서버를 수정하지 않았다.

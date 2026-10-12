@@ -1,6 +1,6 @@
 import React, { createContext, forwardRef, useContext, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field } from '@puckeditor/core';
+import { ActionBar, Puck, type Overrides, type ComponentConfig, type Field, type SlotComponent } from '@puckeditor/core';
 import type { DocumentV3, Node } from '../../documents/v3/types';
 import { effectiveStyle, validateDocumentV3, viewportAt } from '../../documents/v3/validate';
 import { indexTree, type Location } from '../../documents/v3/tree';
@@ -52,17 +52,20 @@ const SlotElement = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(f
   if (!node || !('tag' in node.props)) return null;
   return React.createElement(node.props.tag, { ...props, ref, id: nodeAnchor(node.instance_id), 'data-v3-node': node.instance_id });
 });
-function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.ReactNode; Content: React.ElementType; dragRef: ((element: Element | null) => void) | null }) {
+function CanvasNode({ id, body, Content, dragRef }: { id: string; body: React.ReactNode; Content: SlotComponent; dragRef: ((element: Element | null) => void) | null }) {
   const context = useContext(CanvasContext);
   const node = context?.tree.get(id)?.node;
   if (!context || !node) return null;
   if (context.styles.get(id)?.display === 'none') return null;
   if (node.type === 'layout.section' || node.type === 'layout.container') {
-    return <SlotContext.Provider value={node}><Content as={SlotElement} ref={dragRef} minEmptyHeight={0}
+    // SlotComponent is Puck's public render function. Its closure changes when
+    // descendants change; using that closure as a React type remounts the tree
+    // and destroys active Tiptap input, focus and composition state.
+    return <SlotContext.Provider value={node}>{Content({ as: SlotElement, ref: dragRef, minEmptyHeight: 0,
       // Puck's slot stylesheet supplies width/height:100%. An unspecified
       // authored dimension is CSS auto, including centered flex/grid children.
       // Explicit canonical dimensions still take precedence over this reset.
-      style={{ width: 'auto', height: 'auto', ...reactStyle(context.styles.get(id) ?? {}) }} /></SlotContext.Provider>;
+      style: { width: 'auto', height: 'auto', ...reactStyle(context.styles.get(id) ?? {}) } })}</SlotContext.Provider>;
   }
   return <NodeRenderer node={node} document={context.document} styles={context.styles} dragRef={dragRef}
     body={context.textEditing && (node.type.startsWith('content.') || node.type === 'action.link') ? body : undefined} editing />;

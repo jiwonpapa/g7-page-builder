@@ -38,6 +38,29 @@ function hostElement() {
 }
 
 describe('v3 structural UI and explicit mount', () => {
+  it('preserves nested canvas nodes when a canonical edit replaces the slot render function', async () => {
+    const doc = source(), leaf = doc.blocks[0].slots.content![0];
+    const frame = createPrimitive('layout.container', id(70), doc);
+    frame.slots.content = [leaf]; doc.blocks[0].slots.content![0] = frame;
+    const host = hostElement(), root = createRoot(host), changed = vi.fn();
+    cleanup.push(() => root.unmount());
+    await act(async () => root.render(<StructureEditor document={doc} sessionId="stable-slot" serverRevision={1}
+      drafts={{ save: async request => ({ documentId: request.documentId, revision: 2 }) }}
+      nextId={() => id(100)} iframeEnabled={false} onChange={changed} />));
+    await flush();
+    const selector = '[data-v3-node="' + leaf.instance_id + '"]';
+    const original = host.querySelector(selector);
+    expect(original).not.toBeNull();
+    await act(async () => host.querySelector<HTMLButtonElement>('[data-testid="layer-' + leaf.instance_id + '"]')!.click());
+    const input = host.querySelector<HTMLInputElement>('[aria-label="레이어 이름"]')!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '내부 본문 이름');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await click(host, '이름 적용');
+    expect(indexTree(changed.mock.calls.at(-1)![0]).get(leaf.instance_id)?.node.name).toBe('내부 본문 이름');
+    expect(host.querySelector(selector)).toBe(original);
+  });
   it('neutralizes vendor slot dimensions without overwriting authored width and height', async () => {
     const doc = source();
     doc.blocks[0].style = { width: { value: 420, unit: 'px' }, height: { value: 320, unit: 'px' } };

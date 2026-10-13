@@ -66,6 +66,7 @@ test('generic Site Parts preserve separate histories save reopen preview and ato
     await click(header, '제목 삽입');
     const heading = (await header.getByTestId(/^layer-/).last().getAttribute('data-testid'))!.slice('layer-'.length);
     await header.getByTestId('layer-' + heading).click(); await click(header, '본문 입력');
+    await header.frameLocator('iframe').locator('[data-v3-node="' + heading + '"] [contenteditable]').click();
     const rich = header.frameLocator('iframe').locator('[data-v3-node="' + heading + '"] .tiptap[contenteditable="true"]');
     await rich.click(); await rich.press('ControlOrMeta+A'); await page.keyboard.insertText('공통 요소로 만든 헤더');
     await expect(rich).toHaveText('공통 요소로 만든 헤더'); await click(header, '구조 선택');
@@ -171,7 +172,10 @@ test('generic Site Part save conflicts and delayed responses preserve current in
     const external = await api.put(API + '/site-parts/header/draft', { data: { set_id: set.id, locale: 'ko',
       title: previous.title, document: previous.document, expected_lock_version: previous.lock_version } });
     expect(external.ok(), await external.text()).toBe(true);
-    await click(header, '제목 삽입'); await click(header, '저장');
+    await click(header, '제목 삽입');
+    const conflict = page.waitForResponse(value => value.url().endsWith('/site-parts/header/draft') && value.request().method() === 'PUT');
+    await click(header, '저장');
+    expect((await conflict).status()).toBe(409);
     await expect(header.getByRole('status', { name: '편집 상태' })).not.toHaveText(/저장 중|저장됨/);
     await expect(header.getByTestId(/^layer-/)).toHaveCount(3);
     await expect(page.getByRole('button', { name: 'Header·Footer 함께 발행' })).toBeDisabled();
